@@ -41,10 +41,10 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from 'vue'
-import {WeatherForecastResponse} from '../models/weather-forecast'
-import {WeatherService} from '../services/weather-service'
-import {AlertType, getAlertBootstrapClass} from '../models/alert-type'
+import { computed, ref } from 'vue'
+import { WeatherForecastResponse } from '../models/weather-forecast'
+import { WeatherService } from '../services/weather-service'
+import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 
 const alertMessage = ref('')
 const alertType = ref<AlertType | null>(null)
