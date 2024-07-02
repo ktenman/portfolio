@@ -1,5 +1,5 @@
-import {WeatherForecastResponse} from '../models/weather-forecast'
-import {ApiError} from '../models/api-error'
+import { WeatherForecastResponse } from '../models/weather-forecast'
+import { ApiError } from '../models/api-error'
 
 export class WeatherService {
   private readonly baseUrl = '/api/weather/forecast'

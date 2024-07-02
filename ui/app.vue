@@ -3,5 +3,5 @@ import WeatherComponent from './components/weather-component.vue'
 </script>
 
 <template>
-  <WeatherComponent/>
+  <WeatherComponent />
 </template>
