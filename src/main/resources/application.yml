@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: portfolio
+
+alphavantage:
+  url: https://www.alphavantage.co
