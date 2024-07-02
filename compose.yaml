@@ -1,13 +1,32 @@
 services:
-  postgres:
-    image: 'postgres:latest'
+  postgres-dev:
+    image: postgres:16-alpine
     environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: portfolio
     ports:
-      - '5432'
-  redis:
-    image: 'redis:latest'
+      - '5432:5432'
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+
+  redis-dev:
+    image: redis:7-alpine
     ports:
-      - '6379'
+      - '6379:6379'
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: [ 'CMD', 'redis-cli', 'ping' ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
