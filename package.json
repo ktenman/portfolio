@@ -1,0 +1,30 @@
+{
+  "name": "ui",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint ui --fix",
+    "format": "prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\""
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "vue": "^3.4.31"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.15.0",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-vue": "^9.27.0",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.2",
+    "vue-tsc": "^2.0.24"
+  }
+}
