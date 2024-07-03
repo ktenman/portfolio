@@ -133,16 +133,21 @@ const cancelEdit = () => {
   isEditing.value = false
 }
 
-const deleteInstrument = async (id: number) => {
+const deleteInstrument = async (id: number | undefined) => {
+  if (id === undefined) {
+    console.error('Attempted to delete an instrument with undefined id');
+    return;
+  }
+
   if (confirm('Are you sure you want to delete this instrument?')) {
     try {
-      await instrumentService.deleteInstrument(id)
-      instruments.value = instruments.value.filter(i => i.id !== id)
-      alertType.value = AlertType.SUCCESS
-      alertMessage.value = 'Instrument deleted successfully.'
+      await instrumentService.deleteInstrument(id);
+      instruments.value = instruments.value.filter(i => i.id !== id);
+      alertType.value = AlertType.SUCCESS;
+      alertMessage.value = 'Instrument deleted successfully.';
     } catch (error) {
-      alertType.value = AlertType.ERROR
-      alertMessage.value = 'Failed to delete instrument. Please try again.'
+      alertType.value = AlertType.ERROR;
+      alertMessage.value = 'Failed to delete instrument. Please try again.';
     }
   }
 }
