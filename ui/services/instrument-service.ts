@@ -1,5 +1,5 @@
-import {ApiError} from '../models/api-error'
-import {Instrument} from '../models/instrument'
+import { ApiError } from '../models/api-error'
+import { Instrument } from '../models/instrument'
 
 export class InstrumentService {
   private readonly baseUrl = '/api/instruments'

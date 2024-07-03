@@ -13,7 +13,7 @@
             />
           </div>
           <div class="mb-3">
-            <input v-model="newInstrument.name" class="form-control" placeholder="Name" required/>
+            <input v-model="newInstrument.name" class="form-control" placeholder="Name" required />
           </div>
           <div class="mb-3">
             <input
@@ -48,22 +48,22 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref} from 'vue'
-import {InstrumentService} from '../services/instrument-service'
-import {Instrument} from '../models/instrument'
-import {AlertType, getAlertBootstrapClass} from '../models/alert-type'
+import { computed, onMounted, ref } from 'vue'
+import { InstrumentService } from '../services/instrument-service'
+import { Instrument } from '../models/instrument'
+import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 
 const alertMessage = ref('')
 const alertType = ref<AlertType | null>(null)
 const instrumentService = new InstrumentService()
 const instruments = ref<Instrument[]>([])
-const newInstrument = ref<Instrument>({symbol: '', name: '', category: ''})
+const newInstrument = ref<Instrument>({ symbol: '', name: '', category: '' })
 
 const saveInstrument = async () => {
   try {
     const savedInstrument = await instrumentService.saveInstrument(newInstrument.value)
     instruments.value.push(savedInstrument)
-    newInstrument.value = {symbol: '', name: '', category: ''}
+    newInstrument.value = { symbol: '', name: '', category: '' }
     alertType.value = AlertType.SUCCESS
     alertMessage.value = 'Instrument saved successfully.'
   } catch (error) {
