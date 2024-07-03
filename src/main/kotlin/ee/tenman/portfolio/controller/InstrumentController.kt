@@ -38,20 +38,22 @@ class InstrumentController(private val instrumentService: InstrumentService) {
     @field:NotBlank(message = "Symbol must not be blank")
     val symbol: String,
 
-    @field:NotBlank(message = "Name must not be blank")
     val name: String,
 
-    @field:NotBlank(message = "Category must not be blank")
-    val category: String
+    val category: String,
+
+    @field:NotBlank(message = "Base currency must not be blank")
+    val baseCurrency: String
   ) {
-    fun toEntity() = Instrument(symbol = symbol, name = name, category = category)
+    fun toEntity() = Instrument(symbol = symbol, name = name, category = category, baseCurrency = baseCurrency)
 
     companion object {
       fun fromEntity(instrument: Instrument) = InstrumentDto(
         id = instrument.id,
         symbol = instrument.symbol,
         name = instrument.name,
-        category = instrument.category
+        category = instrument.category,
+        baseCurrency = instrument.baseCurrency
       )
     }
   }

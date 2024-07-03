@@ -13,13 +13,16 @@
             />
           </div>
           <div class="mb-3">
-            <input v-model="newInstrument.name" class="form-control" placeholder="Name" required />
+            <input v-model="newInstrument.name" class="form-control" placeholder="Name" />
+          </div>
+          <div class="mb-3">
+            <input v-model="newInstrument.category" class="form-control" placeholder="Category" />
           </div>
           <div class="mb-3">
             <input
-              v-model="newInstrument.category"
+              v-model="newInstrument.baseCurrency"
               class="form-control"
-              placeholder="Category"
+              placeholder="Base Currency"
               required
             />
           </div>
@@ -30,7 +33,9 @@
           <ul class="list-group">
             <li v-for="instrument in instruments" :key="instrument.id" class="list-group-item">
               <strong>{{ instrument.symbol }}</strong>
-              - {{ instrument.name }} ({{ instrument.category }})
+              {{ instrument.name ? '-' + instrument.name : '' }}
+              {{ instrument.category ? '(' + instrument.category + ')' : '' }}
+              [{{ instrument.baseCurrency }}]
             </li>
           </ul>
         </div>
@@ -48,22 +53,22 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
-import { InstrumentService } from '../services/instrument-service'
-import { Instrument } from '../models/instrument'
-import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
+import {computed, onMounted, ref} from 'vue'
+import {InstrumentService} from '../services/instrument-service'
+import {Instrument} from '../models/instrument'
+import {AlertType, getAlertBootstrapClass} from '../models/alert-type'
 
 const alertMessage = ref('')
 const alertType = ref<AlertType | null>(null)
 const instrumentService = new InstrumentService()
 const instruments = ref<Instrument[]>([])
-const newInstrument = ref<Instrument>({ symbol: '', name: '', category: '' })
+const newInstrument = ref<Instrument>({ symbol: '', name: '', category: '', baseCurrency: '' })
 
 const saveInstrument = async () => {
   try {
     const savedInstrument = await instrumentService.saveInstrument(newInstrument.value)
     instruments.value.push(savedInstrument)
-    newInstrument.value = { symbol: '', name: '', category: '' }
+    newInstrument.value = { symbol: '', name: '', category: '', baseCurrency: '' }
     alertType.value = AlertType.SUCCESS
     alertMessage.value = 'Instrument saved successfully.'
   } catch (error) {

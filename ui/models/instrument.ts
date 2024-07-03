@@ -3,4 +3,5 @@ export interface Instrument {
   symbol: string
   name: string
   category: string
+  baseCurrency: string
 }
