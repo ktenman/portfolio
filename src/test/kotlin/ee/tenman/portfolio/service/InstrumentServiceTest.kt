@@ -3,15 +3,11 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
-import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 @IntegrationTest
-class InstrumentServiceTest {
-
-  @Resource
-  lateinit var instrumentRepository: InstrumentRepository
+class InstrumentServiceTest(private val instrumentRepository: InstrumentRepository) {
 
   @Test
   fun `should save and retrieve instrument when repository operations are performed`() {
