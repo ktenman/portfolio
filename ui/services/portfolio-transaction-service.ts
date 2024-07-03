@@ -1,23 +1,23 @@
 import { ApiError } from '../models/api-error'
-import { Instrument } from '../models/instrument'
+import { PortfolioTransaction } from '../models/portfolio-transaction'
 
-export class InstrumentService {
-  private readonly baseUrl = '/api/instruments'
+export class PortfolioTransactionService {
+  private readonly baseUrl = '/api/transactions'
 
-  async saveInstrument(instrument: Instrument): Promise<Instrument> {
+  async saveTransaction(transaction: PortfolioTransaction): Promise<PortfolioTransaction> {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(instrument),
+      body: JSON.stringify(transaction),
     })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new ApiError(
         response.status,
-        errorData?.message ?? 'Failed to save instrument',
+        errorData?.message ?? 'Failed to save transaction',
         errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
         errorData?.validationErrors ?? {}
       )
@@ -26,14 +26,14 @@ export class InstrumentService {
     return response.json()
   }
 
-  async getAllInstruments(): Promise<Instrument[]> {
+  async getAllTransactions(): Promise<PortfolioTransaction[]> {
     const response = await fetch(this.baseUrl)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new ApiError(
         response.status,
-        errorData?.message ?? 'Failed to fetch instruments',
+        errorData?.message ?? 'Failed to fetch transactions',
         errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
         errorData?.validationErrors ?? {}
       )
@@ -42,20 +42,23 @@ export class InstrumentService {
     return response.json()
   }
 
-  async updateInstrument(id: number, instrument: Instrument): Promise<Instrument> {
+  async updateTransaction(
+    id: number,
+    transaction: PortfolioTransaction
+  ): Promise<PortfolioTransaction> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(instrument),
+      body: JSON.stringify(transaction),
     })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new ApiError(
         response.status,
-        errorData?.message ?? 'Failed to update instrument',
+        errorData?.message ?? 'Failed to update transaction',
         errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
         errorData?.validationErrors ?? {}
       )
@@ -64,7 +67,7 @@ export class InstrumentService {
     return response.json()
   }
 
-  async deleteInstrument(id: number): Promise<void> {
+  async deleteTransaction(id: number): Promise<void> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: 'DELETE',
     })
@@ -73,10 +76,26 @@ export class InstrumentService {
       const errorData = await response.json().catch(() => ({}))
       throw new ApiError(
         response.status,
-        errorData?.message ?? 'Failed to delete instrument',
+        errorData?.message ?? 'Failed to delete transaction',
         errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
         errorData?.validationErrors ?? {}
       )
     }
+  }
+
+  async getTransaction(id: number): Promise<PortfolioTransaction> {
+    const response = await fetch(`${this.baseUrl}/${id}`)
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new ApiError(
+        response.status,
+        errorData?.message ?? 'Failed to fetch transaction',
+        errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
+        errorData?.validationErrors ?? {}
+      )
+    }
+
+    return response.json()
   }
 }
