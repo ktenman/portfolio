@@ -14,7 +14,12 @@
             />
           </div>
           <div class="mb-3">
-            <input id="name" v-model="currentInstrument.name" class="form-control" placeholder="Name" />
+            <input
+              id="name"
+              v-model="currentInstrument.name"
+              class="form-control"
+              placeholder="Name"
+            />
           </div>
           <div class="mb-3">
             <input
@@ -87,7 +92,10 @@ const saveInstrument = async () => {
   try {
     let savedInstrument: Instrument
     if (isEditing.value) {
-      savedInstrument = await instrumentService.updateInstrument(currentInstrument.value.id!, currentInstrument.value)
+      savedInstrument = await instrumentService.updateInstrument(
+        currentInstrument.value.id!,
+        currentInstrument.value
+      )
       const index = instruments.value.findIndex(i => i.id === savedInstrument.id)
       if (index !== -1) {
         instruments.value[index] = savedInstrument

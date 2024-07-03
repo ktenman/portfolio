@@ -21,4 +21,7 @@ class PortfolioTransactionService(private val portfolioTransactionRepository: Po
 
   @Transactional
   fun deleteTransaction(id: Long) = portfolioTransactionRepository.deleteById(id)
+
+  @Transactional(readOnly = true)
+  fun getAllTransactions(): List<PortfolioTransaction> = portfolioTransactionRepository.findAll()
 }
