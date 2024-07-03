@@ -6,6 +6,7 @@
         <form @submit.prevent="saveInstrument">
           <div class="mb-3">
             <input
+              id="symbol"
               v-model="newInstrument.symbol"
               class="form-control"
               placeholder="Symbol"
@@ -13,13 +14,19 @@
             />
           </div>
           <div class="mb-3">
-            <input v-model="newInstrument.name" class="form-control" placeholder="Name" />
-          </div>
-          <div class="mb-3">
-            <input v-model="newInstrument.category" class="form-control" placeholder="Category" />
+            <input id="name" v-model="newInstrument.name" class="form-control" placeholder="Name" />
           </div>
           <div class="mb-3">
             <input
+              id="category"
+              v-model="newInstrument.category"
+              class="form-control"
+              placeholder="Category"
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              id="currency"
               v-model="newInstrument.baseCurrency"
               class="form-control"
               placeholder="Base Currency"
