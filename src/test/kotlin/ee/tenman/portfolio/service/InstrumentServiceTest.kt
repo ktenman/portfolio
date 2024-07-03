@@ -5,9 +5,12 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 
 @IntegrationTest
-class InstrumentServiceTest(private val instrumentRepository: InstrumentRepository) {
+class InstrumentServiceTest {
+  @Autowired
+  private lateinit var instrumentRepository: InstrumentRepository
 
   @Test
   fun `should save and retrieve instrument when repository operations are performed`() {

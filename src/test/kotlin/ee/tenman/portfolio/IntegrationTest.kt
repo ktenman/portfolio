@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.util.TestPropertyValues
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.jdbc.Sql
 import org.testcontainers.containers.GenericContainer
@@ -15,6 +16,7 @@ import org.testcontainers.utility.DockerImageName
 @Retention(AnnotationRetention.RUNTIME)
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @ContextConfiguration(initializers = [IntegrationTest.Initializer::class])
 @Sql(scripts = ["/clear_database.sql"], executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 annotation class IntegrationTest {
