@@ -1,95 +1,155 @@
 <template>
   <div class="container mt-3">
-    <h3 class="mb-4">Add New Transaction</h3>
-    <form @submit.prevent="saveTransaction" class="mb-5">
-      <div class="mb-3">
-        <label for="instrumentId" class="form-label">Instrument</label>
-        <select
-          v-model="currentTransaction.instrumentId"
-          id="instrumentId"
-          class="form-select"
-          required
-        >
-          <option value="" disabled>Select Instrument</option>
-          <option v-for="instrument in instruments" :key="instrument.id" :value="instrument.id">
-            {{ instrument.symbol }} - {{ instrument.name }}
-          </option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label for="transactionType" class="form-label">Transaction Type</label>
-        <select
-          v-model="currentTransaction.transactionType"
-          id="transactionType"
-          class="form-select"
-          required
-        >
-          <option value="" disabled>Select Transaction Type</option>
-          <option value="BUY">Buy</option>
-          <option value="SELL">Sell</option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label for="quantity" class="form-label">Quantity</label>
-        <input
-          v-model="currentTransaction.quantity"
-          type="number"
-          step="0.00000001"
-          class="form-control"
-          id="quantity"
-          placeholder="Enter quantity"
-          required
-        />
-      </div>
-      <div class="mb-3">
-        <label for="price" class="form-label">Price</label>
-        <input
-          v-model="currentTransaction.price"
-          type="number"
-          step="0.01"
-          class="form-control"
-          id="price"
-          placeholder="Enter price"
-          required
-        />
-      </div>
-      <div class="mb-3">
-        <label for="transactionDate" class="form-label">Transaction Date</label>
-        <input
-          v-model="currentTransaction.transactionDate"
-          type="date"
-          class="form-control"
-          id="transactionDate"
-          required
-        />
-      </div>
-      <button class="btn btn-primary" type="submit">
-        {{ isEditing ? 'Update' : 'Save' }} Transaction
-      </button>
-      <button v-if="isEditing" class="btn btn-secondary ms-2" @click="cancelEdit">Cancel</button>
-    </form>
+    <h3 class="mb-4">Portfolio Transactions</h3>
 
-    <h3 class="mb-4">Saved Transactions</h3>
-    <div v-if="transactions.length > 0">
-      <div v-for="transaction in transactions" :key="transaction.id" class="card mb-3">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <strong>{{ getInstrumentSymbol(transaction.instrumentId) }}</strong>
-            {{ transaction.transactionType }} {{ transaction.quantity }} @
-            {{ transaction.price }} on {{ formatDate(transaction.transactionDate) }}
+    <button class="btn btn-primary mb-3" @click="showAddTransactionModal">
+      Add New Transaction
+    </button>
+
+    <!-- Loading spinner -->
+    <div v-if="isLoading" class="text-left my-5">
+      <p class="mt-2">Loading transactions...</p>
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Excel-like table for transactions -->
+    <div v-else-if="transactions.length > 0" class="table-responsive">
+      <table class="table table-striped table-bordered table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Instrument</th>
+            <th>Type</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="transaction in transactions" :key="transaction.id">
+            <td>{{ getInstrumentSymbol(transaction.instrumentId) }}</td>
+            <td>{{ transaction.transactionType }}</td>
+            <td>{{ transaction.quantity }}</td>
+            <td>{{ transaction.price }}</td>
+            <td>{{ formatDate(transaction.transactionDate) }}</td>
+            <td>
+              <button class="btn btn-sm btn-warning me-2" @click="editTransaction(transaction)">
+                Edit
+              </button>
+              <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">
+                Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-else class="alert alert-info" role="alert">
+      No transactions found. Add a new transaction to get started.
+    </div>
+
+    <!-- Modal for Add/Edit Transaction -->
+    <div
+      class="modal fade"
+      id="transactionModal"
+      tabindex="-1"
+      aria-labelledby="transactionModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="transactionModalLabel">
+              {{ isEditing ? 'Edit Transaction' : 'Add New Transaction' }}
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
-          <div>
-            <button class="btn btn-sm btn-warning me-2" @click="editTransaction(transaction)">
-              Edit
-            </button>
-            <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">
-              Delete
+          <div class="modal-body">
+            <form @submit.prevent="saveTransaction">
+              <div class="mb-3">
+                <label for="instrumentId" class="form-label">Instrument</label>
+                <select
+                  v-model="currentTransaction.instrumentId"
+                  id="instrumentId"
+                  class="form-select"
+                  required
+                >
+                  <option value="" disabled selected>Select Instrument</option>
+                  <option
+                    v-for="instrument in instruments"
+                    :key="instrument.id"
+                    :value="instrument.id"
+                  >
+                    {{ instrument.symbol }} - {{ instrument.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="transactionType" class="form-label">Transaction Type</label>
+                <select
+                  v-model="currentTransaction.transactionType"
+                  id="transactionType"
+                  class="form-select"
+                  required
+                >
+                  <option value="" disabled selected>Select Transaction Type</option>
+                  <option value="BUY">Buy</option>
+                  <option value="SELL">Sell</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="quantity" class="form-label">Quantity</label>
+                <input
+                  v-model="currentTransaction.quantity"
+                  type="number"
+                  step="0.00000001"
+                  class="form-control"
+                  id="quantity"
+                  placeholder="Enter quantity"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="price" class="form-label">Price</label>
+                <input
+                  v-model="currentTransaction.price"
+                  type="number"
+                  step="0.01"
+                  class="form-control"
+                  id="price"
+                  placeholder="Enter price"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="transactionDate" class="form-label">Transaction Date</label>
+                <input
+                  v-model="currentTransaction.transactionDate"
+                  type="date"
+                  class="form-control"
+                  id="transactionDate"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="saveTransaction">
+              {{ isEditing ? 'Update' : 'Save' }} Transaction
             </button>
           </div>
         </div>
       </div>
     </div>
-    <div v-else class="alert alert-info" role="alert">No transactions saved yet.</div>
 
     <div v-if="alertMessage" class="mt-3">
       <div :class="['alert', alertClass]" role="alert">
@@ -98,8 +158,10 @@
     </div>
   </div>
 </template>
+
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
+import { Modal } from 'bootstrap'
 import { PortfolioTransactionService } from '../services/portfolio-transaction-service'
 import { InstrumentService } from '../services/instrument-service'
 import { PortfolioTransaction } from '../models/portfolio-transaction'
@@ -112,32 +174,48 @@ const transactionService = new PortfolioTransactionService()
 const instrumentService = new InstrumentService()
 const transactions = ref<PortfolioTransaction[]>([])
 const instruments = ref<Instrument[]>([])
-const currentTransaction = ref<PortfolioTransaction>({
-  instrumentId: 0,
-  transactionType: 'BUY',
-  quantity: 0,
-  price: 0,
+const currentTransaction = ref<Partial<PortfolioTransaction>>({
   transactionDate: new Date().toISOString().split('T')[0],
 })
 const isEditing = ref(false)
+const isLoading = ref(true)
+let transactionModal: Modal | null = null
+
+onMounted(() => {
+  fetchTransactions()
+  fetchInstruments()
+  transactionModal = new Modal(document.getElementById('transactionModal')!)
+})
+
+const showAddTransactionModal = () => {
+  isEditing.value = false
+  resetCurrentTransaction()
+  transactionModal?.show()
+}
 
 const saveTransaction = async () => {
   try {
+    if (!isValidTransaction(currentTransaction.value)) {
+      throw new Error('Invalid transaction data')
+    }
+
     let savedTransaction: PortfolioTransaction
-    if (isEditing.value) {
+    if (isEditing.value && currentTransaction.value.id) {
       savedTransaction = await transactionService.updateTransaction(
-        currentTransaction.value.id!,
-        currentTransaction.value
+        currentTransaction.value.id,
+        currentTransaction.value as PortfolioTransaction
       )
       const index = transactions.value.findIndex(t => t.id === savedTransaction.id)
       if (index !== -1) {
         transactions.value[index] = savedTransaction
       }
-      isEditing.value = false
     } else {
-      savedTransaction = await transactionService.saveTransaction(currentTransaction.value)
+      savedTransaction = await transactionService.saveTransaction(
+        currentTransaction.value as PortfolioTransaction
+      )
       transactions.value.push(savedTransaction)
     }
+    transactionModal?.hide()
     resetCurrentTransaction()
     alertType.value = AlertType.SUCCESS
     alertMessage.value = `Transaction ${isEditing.value ? 'updated' : 'saved'} successfully.`
@@ -148,11 +226,14 @@ const saveTransaction = async () => {
 }
 
 const fetchTransactions = async () => {
+  isLoading.value = true
   try {
     transactions.value = await transactionService.getAllTransactions()
   } catch (error) {
     alertType.value = AlertType.ERROR
     alertMessage.value = 'Failed to load transactions. Please try again.'
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -168,11 +249,7 @@ const fetchInstruments = async () => {
 const editTransaction = (transaction: PortfolioTransaction) => {
   currentTransaction.value = { ...transaction }
   isEditing.value = true
-}
-
-const cancelEdit = () => {
-  resetCurrentTransaction()
-  isEditing.value = false
+  transactionModal?.show()
 }
 
 const deleteTransaction = async (id: number | undefined) => {
@@ -196,15 +273,24 @@ const deleteTransaction = async (id: number | undefined) => {
 
 const resetCurrentTransaction = () => {
   currentTransaction.value = {
-    instrumentId: 0,
-    transactionType: 'BUY',
-    quantity: 0,
-    price: 0,
     transactionDate: new Date().toISOString().split('T')[0],
   }
 }
 
-const getInstrumentSymbol = (instrumentId: number) => {
+const isValidTransaction = (
+  transaction: Partial<PortfolioTransaction>
+): transaction is PortfolioTransaction => {
+  return (
+    typeof transaction.instrumentId === 'number' &&
+    (transaction.transactionType === 'BUY' || transaction.transactionType === 'SELL') &&
+    typeof transaction.quantity === 'number' &&
+    typeof transaction.price === 'number' &&
+    typeof transaction.transactionDate === 'string'
+  )
+}
+
+const getInstrumentSymbol = (instrumentId: number | undefined) => {
+  if (instrumentId === undefined) return 'Unknown'
   const instrument = instruments.value.find(i => i.id === instrumentId)
   return instrument ? instrument.symbol : 'Unknown'
 }
@@ -213,16 +299,15 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
 
-onMounted(() => {
-  fetchTransactions()
-  fetchInstruments()
-})
-
 const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
 </script>
 
 <style scoped>
-.form-label {
-  font-weight: bold;
+.table {
+  font-size: 0.9rem;
+}
+.table th,
+.table td {
+  vertical-align: middle;
 }
 </style>
