@@ -175,7 +175,12 @@ const cancelEdit = () => {
   isEditing.value = false
 }
 
-const deleteTransaction = async (id: number) => {
+const deleteTransaction = async (id: number | undefined) => {
+  if (id === undefined) {
+    console.error('Attempted to delete a transaction with undefined id')
+    return
+  }
+
   if (confirm('Are you sure you want to delete this transaction?')) {
     try {
       await transactionService.deleteTransaction(id)
