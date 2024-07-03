@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import WeatherComponent from './components/weather-component.vue'
+import InstrumentComponent from './components/instrument-component.vue'
 </script>
 
 <template>
-  <WeatherComponent />
+  <InstrumentComponent/>
 </template>
