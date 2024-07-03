@@ -17,7 +17,8 @@ class InstrumentServiceTest {
     val instrument = Instrument(
       "QDVE",
       "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-      "ETF"
+      "ETF",
+      "EUR"
     )
 
     instrumentRepository.save(instrument)
@@ -26,6 +27,7 @@ class InstrumentServiceTest {
       assertThat(it.symbol).isEqualTo("QDVE")
       assertThat(it.name).isEqualTo("iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)")
       assertThat(it.category).isEqualTo("ETF")
+      assertThat(it.baseCurrency).isEqualTo("EUR")
     })
   }
 }
