@@ -1,5 +1,5 @@
-import { ApiError } from '../models/api-error'
-import { Instrument } from '../models/instrument'
+import {ApiError} from '../models/api-error'
+import {Instrument} from '../models/instrument'
 
 export class InstrumentService {
   private readonly baseUrl = '/api/instruments'
@@ -40,5 +40,43 @@ export class InstrumentService {
     }
 
     return response.json()
+  }
+
+  async updateInstrument(id: number, instrument: Instrument): Promise<Instrument> {
+    const response = await fetch(`${this.baseUrl}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(instrument),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new ApiError(
+        response.status,
+        errorData?.message ?? 'Failed to update instrument',
+        errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
+        errorData?.validationErrors ?? {}
+      )
+    }
+
+    return response.json()
+  }
+
+  async deleteInstrument(id: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new ApiError(
+        response.status,
+        errorData?.message ?? 'Failed to delete instrument',
+        errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
+        errorData?.validationErrors ?? {}
+      )
+    }
   }
 }
