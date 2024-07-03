@@ -14,22 +14,22 @@ import java.util.TreeMap;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AlphaVantageResponse {
-	@JsonProperty("Monthly Time Series")
-	private TreeMap<String, AlphaVantageDayData> monthlyTimeSeries;
-	
-	@JsonProperty("Information")
-	private String information;
-	
-	@JsonProperty("Error Message")
-	private String errorMessage;
-	
-	@Data
-	@Builder
-	@AllArgsConstructor
-	@NoArgsConstructor
-	public static class AlphaVantageDayData {
-		@JsonProperty("4. close")
-		private BigDecimal close;
-	}
-	
+  @JsonProperty("Monthly Time Series")
+  private TreeMap<String, AlphaVantageDayData> monthlyTimeSeries;
+
+  @JsonProperty("Information")
+  private String information;
+
+  @JsonProperty("Error Message")
+  private String errorMessage;
+
+  @Data
+  @Builder
+  @AllArgsConstructor
+  @NoArgsConstructor
+  public static class AlphaVantageDayData {
+    @JsonProperty("4. close")
+    private BigDecimal close;
+  }
+
 }
