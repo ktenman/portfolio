@@ -99,7 +99,7 @@ in your editor for the best development experience.
     weather-forecast.ts
     weather-forecast-response.ts
   /services
-    weather-service.ts
+    instrument-service.ts
   app.vue
   index.html
   main.ts

@@ -8,6 +8,7 @@ CREATE TABLE instrument
   symbol              VARCHAR(20)                                        NOT NULL UNIQUE,
   name                VARCHAR(255),
   instrument_category VARCHAR(50),
+  base_currency       VARCHAR(3)                                         NOT NULL DEFAULT 'EUR',
   created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );

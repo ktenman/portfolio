@@ -19,4 +19,7 @@ class InstrumentService(private val instrumentRepository: InstrumentRepository) 
 
   @Transactional
   fun deleteInstrument(id: Long) = instrumentRepository.deleteById(id)
+
+  @Transactional(readOnly = true)
+  fun getAllInstruments(): List<Instrument> = instrumentRepository.findAll()
 }
