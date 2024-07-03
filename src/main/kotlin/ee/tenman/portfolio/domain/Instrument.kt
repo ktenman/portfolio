@@ -14,5 +14,8 @@ class Instrument(
   var name: String,
 
   @Column(name = "instrument_category", nullable = true)
-  var category: String
+  var category: String,
+
+  @Column(name = "base_currency", nullable = false)
+  var baseCurrency: String
 ) : BaseEntity()
