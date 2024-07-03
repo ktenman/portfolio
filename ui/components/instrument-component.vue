@@ -60,10 +60,10 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref} from 'vue'
-import {InstrumentService} from '../services/instrument-service'
-import {Instrument} from '../models/instrument'
-import {AlertType, getAlertBootstrapClass} from '../models/alert-type'
+import { computed, onMounted, ref } from 'vue'
+import { InstrumentService } from '../services/instrument-service'
+import { Instrument } from '../models/instrument'
+import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 
 const alertMessage = ref('')
 const alertType = ref<AlertType | null>(null)
