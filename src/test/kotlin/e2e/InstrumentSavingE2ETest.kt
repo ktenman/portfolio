@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 import org.openqa.selenium.By.className
 
-class WeatherForecastSearchE2ETest {
+class InstrumentSavingE2ETest {
 
   companion object {
     private const val DEFAULT_SYMBOL = "QDVE"
@@ -21,7 +21,7 @@ class WeatherForecastSearchE2ETest {
   }
 
   @Test
-  fun shouldDisplayWeatherForecastForLocation_whenSearchingForValidLocation() {
+  fun `should display success message when saving instrument with valid data`() {
     open("http://localhost:61234")
 
     id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue(DEFAULT_SYMBOL)
