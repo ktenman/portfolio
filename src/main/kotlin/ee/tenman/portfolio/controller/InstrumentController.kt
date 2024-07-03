@@ -58,9 +58,9 @@ class InstrumentController(private val instrumentService: InstrumentService) {
 
   @ExceptionHandler(ConstraintViolationException::class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
-  fun handleValidationExceptions(ex: ConstraintViolationException): Map<String, String> {
+  fun handleValidationExceptions(exception: ConstraintViolationException): Map<String, String> {
     val errors = mutableMapOf<String, String>()
-    ex.constraintViolations.forEach { violation ->
+    exception.constraintViolations.forEach { violation ->
       errors[violation.propertyPath.toString()] = violation.message
     }
     return errors
