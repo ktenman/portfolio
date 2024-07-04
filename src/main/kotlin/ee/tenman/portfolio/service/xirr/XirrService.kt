@@ -20,10 +20,13 @@ class XirrService(
     private val BASE_ORIGINAL_BIG_DECIMAL_STOCK = BigDecimal("3000.00")
   }
 
-  fun getHistoricalData(ticker: String): SortedMap<LocalDate, BigDecimal> =
-    alphaVantageService.getMonthlyTimeSeries(ticker)
+  fun getHistoricalData(ticker: String): SortedMap<LocalDate, BigDecimal> {
+    val monthlyTimeSeries = alphaVantageService.getMonthlyTimeSeries(ticker)
+    return monthlyTimeSeries
       .mapValues { it.value.close }
       .toSortedMap()
+  }
+
 
   fun calculateStockXirr(ticker: String): Double = runCatching {
     val transactions = processHistoricalData(ticker)
