@@ -84,14 +84,6 @@ class InstrumentController(
         category = instrument.category,
         baseCurrency = instrument.baseCurrency
       )
-
-      fun fromEntity(map: Map<*, *>) = InstrumentDto(
-        id = map["id"] as Long,
-        symbol = map["symbol"] as String,
-        name = map["name"] as String,
-        category = map["category"] as String,
-        baseCurrency = map["baseCurrency"] as String
-      )
     }
   }
 
