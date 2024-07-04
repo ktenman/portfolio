@@ -10,7 +10,7 @@ import kotlin.math.pow
 class Xirr(private val transactions: List<Transaction>) {
   private val endDate = transactions.maxByOrNull { it.date }?.date
     ?: throw IllegalArgumentException("No transactions")
-  private val yearsToEnd = { date: LocalDate -> DAYS.between(date, endDate).toDouble() / 365.25 }
+  private val yearsToEnd = { date: LocalDate -> DAYS.between(date, endDate).toDouble() / 365.0 }
 
   fun calculate(): Double {
     require(transactions.size >= 2) { "Must have at least two transactions" }
