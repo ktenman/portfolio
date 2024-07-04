@@ -25,6 +25,7 @@ extra["springCloudVersion"] = "2023.0.2"
 val selenideVersion = "7.3.3"
 val springRetryVersion = "2.0.6"
 val guavaVersion = "33.2.1-jre"
+val commonsMathVersion = "3.6.1"
 
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -40,11 +41,9 @@ dependencies {
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation("org.springframework.retry:spring-retry:$springRetryVersion")
   implementation("com.google.guava:guava:$guavaVersion")
-  implementation("org.apache.commons:commons-math3:3.6.1")
-  compileOnly("org.projectlombok:lombok")
+  implementation("org.apache.commons:commons-math3:$commonsMathVersion")
   developmentOnly("org.springframework.boot:spring-boot-docker-compose")
   runtimeOnly("org.postgresql:postgresql")
-  annotationProcessor("org.projectlombok:lombok")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

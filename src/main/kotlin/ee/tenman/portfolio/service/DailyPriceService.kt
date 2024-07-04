@@ -10,10 +10,15 @@ import java.time.LocalDate
 class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) {
 
   @Transactional(readOnly = true)
-  fun getDailyPriceById(id: Long): DailyPrice? = dailyPriceRepository.findById(id).orElse(null)
+  fun getDailyPriceById(id: Long): DailyPrice =
+    dailyPriceRepository.findById(id).orElseThrow { IllegalArgumentException("Daily price not found") }
 
   @Transactional(readOnly = true)
-  fun getDailyPricesByInstrumentAndDateRange(instrumentId: Long, startDate: LocalDate, endDate: LocalDate): List<DailyPrice> =
+  fun getDailyPricesByInstrumentAndDateRange(
+    instrumentId: Long,
+    startDate: LocalDate,
+    endDate: LocalDate
+  ): List<DailyPrice> =
     dailyPriceRepository.findByInstrumentIdAndEntryDateBetween(instrumentId, startDate, endDate)
 
   @Transactional

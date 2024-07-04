@@ -1,10 +1,7 @@
 package ee.tenman.portfolio.configuration
 
-import lombok.AccessLevel
-import lombok.NoArgsConstructor
-
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 object TimeUtility {
+
   fun durationInSeconds(startTime: Long): CustomDuration {
     return CustomDuration(startTime)
   }
