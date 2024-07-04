@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.controller
 
+import com.google.gson.Gson
+import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.service.InstrumentService
 import jakarta.validation.ConstraintViolationException
@@ -21,7 +23,10 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/instruments")
 @Validated
-class InstrumentController(private val instrumentService: InstrumentService) {
+class InstrumentController(
+  private val instrumentService: InstrumentService,
+  private val gson: Gson
+) {
 
   @PostMapping
   fun saveInstrument(@Valid @RequestBody instrumentDto: InstrumentDto): InstrumentDto {
@@ -30,6 +35,7 @@ class InstrumentController(private val instrumentService: InstrumentService) {
   }
 
   @GetMapping
+  @Loggable
   fun getAllInstruments(): List<InstrumentDto> {
     val instruments = instrumentService.getAllInstruments()
     return instruments.map { InstrumentDto.fromEntity(it) }
@@ -38,8 +44,6 @@ class InstrumentController(private val instrumentService: InstrumentService) {
   @PutMapping("/{id}")
   fun updateInstrument(@PathVariable id: Long, @Valid @RequestBody instrumentDto: InstrumentDto): InstrumentDto {
     val existingInstrument = instrumentService.getInstrumentById(id)
-      ?: throw RuntimeException("Instrument not found with id: $id")
-
     val updatedInstrument = existingInstrument.apply {
       symbol = instrumentDto.symbol
       name = instrumentDto.name
@@ -79,6 +83,14 @@ class InstrumentController(private val instrumentService: InstrumentService) {
         name = instrument.name,
         category = instrument.category,
         baseCurrency = instrument.baseCurrency
+      )
+
+      fun fromEntity(map: Map<*, *>) = InstrumentDto(
+        id = map["id"] as Long,
+        symbol = map["symbol"] as String,
+        name = map["name"] as String,
+        category = map["category"] as String,
+        baseCurrency = map["baseCurrency"] as String
       )
     }
   }
