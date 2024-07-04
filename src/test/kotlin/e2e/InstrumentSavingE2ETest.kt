@@ -14,10 +14,10 @@ import org.openqa.selenium.By.className
 class InstrumentSavingE2ETest {
 
   companion object {
-    private const val DEFAULT_SYMBOL = "QDVE"
-    private const val DEFAULT_NAME = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)"
-    private const val DEFAULT_CATEGORY = "ETF"
-    private const val DEFAULT_CURRENCY = "EUR"
+    private const val DEFAULT_SYMBOL = "AAPL"
+    private const val DEFAULT_NAME = "Apple Inc."
+    private const val DEFAULT_CATEGORY = "STOCKS"
+    private const val DEFAULT_CURRENCY = "USD"
   }
 
   @Test
