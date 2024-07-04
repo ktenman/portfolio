@@ -32,20 +32,13 @@ class XirrTest {
       ),
       XirrTestCase(
         "Complex set of transactions over multiple years",
-        parseTransactions(complexTransactionData),
+        complexTransactions,
         0.1473247604457929
       )
     )
 
-    private fun parseTransactions(data: String): List<Transaction> =
-      data.split(Regex("\\s+"))
-        .windowed(2, 2, partialWindows = false)
-        .map { (amount, dateStr) ->
-          Transaction(amount.toDouble(), LocalDate.parse(dateStr, XirrTest.FORMATTER))
-        }
-
-    private val complexTransactionData = """
-          -22390.95 04.07.2024 103.85 18.04.2019 69.23 18.04.2019 250 23.05.2019 150 23.05.2019 250 26.06.2019
+    private val complexTransactions: List<Transaction> =
+      """-22390.95 04.07.2024 103.85 18.04.2019 69.23 18.04.2019 250 23.05.2019 150 23.05.2019 250 26.06.2019
           150 26.06.2019 187.5 24.07.2019 200 24.07.2019 250 21.08.2019 150 21.08.2019 250 25.09.2019
           150 25.09.2019 250 23.10.2019 150 23.10.2019 250 21.11.2019 150 21.11.2019 271.73 13.12.2019
           163.04 13.12.2019 262.5 23.01.2020 157.5 23.01.2020 262.5 20.02.2020 157.5 20.02.2020 157.5 13.03.2020
@@ -56,7 +49,9 @@ class XirrTest {
           312.5 24.03.2021 187.5 21.04.2021 312.5 21.04.2021 187.5 20.05.2021 312.5 20.05.2021 187.5 23.06.2021
           312.5 23.06.2021 187.5 21.07.2021 312.5 21.07.2021 187.5 20.08.2021 312.5 20.08.2021 187.5 16.09.2021
           312.5 16.09.2021
-     """.trimIndent()
+       """.trimIndent().split(Regex("\\s+"))
+        .windowed(2, 2)
+        .map { (amount, dateStr) -> Transaction(amount.toDouble(), LocalDate.parse(dateStr, FORMATTER)) }
   }
 
   @ParameterizedTest(name = "{0}")
