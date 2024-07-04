@@ -7,20 +7,31 @@ import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
+import ee.tenman.portfolio.service.PortfolioTransactionService
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @IntegrationTest
-class InstrumentDataRetrievalJobIT {
+class DailyPortfolioXirrJobIT {
+  @Autowired
+  private lateinit var portfolioTransactionService: PortfolioTransactionService
 
   @Resource
   private lateinit var instrumentDataRetrievalJob: InstrumentDataRetrievalJob
+
+  @Resource
+  private lateinit var dailyPortfolioXirrJob: DailyPortfolioXirrJob
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
@@ -28,8 +39,29 @@ class InstrumentDataRetrievalJobIT {
   @Resource
   private lateinit var dailyPriceRepository: DailyPriceRepository
 
+  @Resource
+  private lateinit var portfolioDailySummaryRepository: PortfolioDailySummaryRepository
+
   @Test
   fun `should not create duplicated rows when triggered multiple times with same data`() {
+    val instrument = Instrument(
+      "QDVE.DEX",
+      "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+      "ETF",
+      "EUR"
+    ).let {
+      instrumentRepository.save(it)
+    }
+
+    PortfolioTransaction(
+      instrument = instrument,
+      transactionType = TransactionType.BUY,
+      quantity = BigDecimal("3.37609300"),
+      price = BigDecimal("29.62003713"),
+      transactionDate = LocalDate.of(2024, 7, 1)
+    ).let {
+      portfolioTransactionService.saveTransaction(it)
+    }
     assertThat(dailyPriceRepository.findAll()).isEmpty()
     stubFor(
       get(urlPathEqualTo("/query"))
@@ -53,27 +85,22 @@ class InstrumentDataRetrievalJobIT {
             .withBodyFile("alpha-vantage-response.json")
         )
     )
-    Instrument(
-      "QDVE.DEX",
-      "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-      "ETF",
-      "EUR"
-    ).let {
-      instrumentRepository.save(it)
-    }
 
     instrumentDataRetrievalJob.retrieveInstrumentData()
     instrumentDataRetrievalJob.retrieveInstrumentData()
 
-    assertThat(dailyPriceRepository.findAll()).isNotEmpty.hasSize(100)
-      .first().satisfies({
-        assertThat(it.entryDate).isEqualTo("2024-02-12")
-        assertThat(it.instrument.symbol).isEqualTo("QDVE.DEX")
-        assertThat(it.openPrice).isEqualByComparingTo(BigDecimal("25.21"))
-        assertThat(it.highPrice).isEqualByComparingTo(BigDecimal("25.335"))
-        assertThat(it.lowPrice).isEqualByComparingTo(BigDecimal("25.12500000"))
-        assertThat(it.closePrice).isEqualByComparingTo(BigDecimal("25.33000000"))
-        assertThat(it.volume).isEqualTo(776199)
-      })
+    dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
+    dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
+
+    assertThat(portfolioDailySummaryRepository.findAll()).hasSize(1).singleElement().satisfies({ it ->
+      assertThat(it.entryDate).isEqualTo(LocalDate.now())
+      assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("101.8398000000"))
+      assertThat(it.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("4.27828650"))
+      assertThat(it.totalProfit).isEqualByComparingTo(BigDecimal("1.8398000000"))
+      assertThat(it.earningsPerDay).isEqualByComparingTo(BigDecimal("1.1929000000"))
+    })
   }
 }
+
+
+

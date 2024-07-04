@@ -1,9 +1,11 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) {
@@ -28,6 +30,18 @@ class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) 
     } else {
       dailyPriceRepository.save(dailyPrice)
     }
+  }
+
+  @Transactional(readOnly = true)
+  fun findLastDailyPrice(instrument: Instrument): DailyPrice? {
+    val latestDate = LocalDate.now()
+    val earliestDate = latestDate.minusDays(5) // Adjust this range as needed
+
+    return dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      instrument,
+      earliestDate,
+      latestDate
+    )
   }
 
 }
