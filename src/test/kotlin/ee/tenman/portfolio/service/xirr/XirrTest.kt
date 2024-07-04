@@ -61,8 +61,8 @@ class XirrTest {
   @MethodSource("xirrTestCases")
   fun `should calculate correct XIRR value`(testCase: XirrTestCase) {
     val xirrValue = Xirr(testCase.transactions).calculate()
-    assertThat(xirrValue).isCloseTo(testCase.expectedXirr, within(1e-14))
 
+    assertThat(xirrValue).isCloseTo(testCase.expectedXirr, within(1e-14))
   }
 
 }
