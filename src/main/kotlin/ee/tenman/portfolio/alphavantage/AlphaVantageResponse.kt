@@ -1,35 +1,36 @@
-package ee.tenman.portfolio.alphavantage;
+package ee.tenman.portfolio.alphavantage
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty
+import java.math.BigDecimal
+import java.util.*
 
-import java.math.BigDecimal;
-import java.util.TreeMap;
-
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class AlphaVantageResponse {
+data class AlphaVantageResponse(
   @JsonProperty("Monthly Time Series")
-  private TreeMap<String, AlphaVantageDayData> monthlyTimeSeries;
+  val monthlyTimeSeries: TreeMap<String, AlphaVantageDayData>? = null,
+
+  @JsonProperty("Time Series (Daily)")
+  val dailyTimeSeries: TreeMap<String, AlphaVantageDayData>? = null,
 
   @JsonProperty("Information")
-  private String information;
+  val information: String? = null,
 
   @JsonProperty("Error Message")
-  private String errorMessage;
+  val errorMessage: String? = null
+) {
+  data class AlphaVantageDayData(
+    @JsonProperty("1. open")
+    val open: BigDecimal,
 
-  @Data
-  @Builder
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static class AlphaVantageDayData {
+    @JsonProperty("2. high")
+    val high: BigDecimal,
+
+    @JsonProperty("3. low")
+    val low: BigDecimal,
+
     @JsonProperty("4. close")
-    private BigDecimal close;
-  }
+    val close: BigDecimal,
 
+    @JsonProperty("5. volume")
+    val volume: Long
+  )
 }
