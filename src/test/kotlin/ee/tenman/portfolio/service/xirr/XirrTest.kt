@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.xirr
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
@@ -62,7 +63,7 @@ class XirrTest {
   @MethodSource("xirrTestCases")
   fun `should calculate correct XIRR value`(testCase: XirrTestCase) {
     val xirrValue = Xirr(testCase.transactions).calculate()
-    assertThat(xirrValue).isEqualTo(testCase.expectedXirr)
+    assertThat(xirrValue).isCloseTo(testCase.expectedXirr, within(1e-14))
   }
 
 }
