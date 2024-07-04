@@ -49,9 +49,12 @@ class XirrTest {
           312.5 24.03.2021 187.5 21.04.2021 312.5 21.04.2021 187.5 20.05.2021 312.5 20.05.2021 187.5 23.06.2021
           312.5 23.06.2021 187.5 21.07.2021 312.5 21.07.2021 187.5 20.08.2021 312.5 20.08.2021 187.5 16.09.2021
           312.5 16.09.2021
-       """.trimIndent().split(Regex("\\s+"))
+       """.trimIndent()
+        .split(Regex("\\s+"))
         .windowed(2, 2)
-        .map { (amount, dateStr) -> Transaction(amount.toDouble(), LocalDate.parse(dateStr, FORMATTER)) }
+        .map { (amount, dateStr) ->
+          Transaction(amount.toDouble(), LocalDate.parse(dateStr, FORMATTER))
+        }
   }
 
   @ParameterizedTest(name = "{0}")
