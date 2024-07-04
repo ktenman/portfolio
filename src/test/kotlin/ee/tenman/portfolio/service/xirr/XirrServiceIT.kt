@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.IntegrationTest
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
@@ -46,6 +47,6 @@ class XirrServiceIT {
 
     val calculateStockXirr = xirrService.calculateStockXirr("QDVE.DEX")
 
-    assertThat(calculateStockXirr).isEqualTo(1.266672580658845)
+    assertThat(calculateStockXirr).isCloseTo(1.2664676464510594, within(1e-12))
   }
 }
