@@ -1,0 +1,18 @@
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  profiles:
+    active: test
+
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+alphavantage:
+  url: http://localhost:${wiremock.server.port}

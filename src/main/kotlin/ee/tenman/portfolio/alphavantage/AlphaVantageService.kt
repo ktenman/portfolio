@@ -1,8 +1,6 @@
-package ee.tenman.portfolio.service
+package ee.tenman.portfolio.alphavantage
 
 import com.google.gson.Gson
-import ee.tenman.portfolio.alphavantage.AlphaVantageClient
-import ee.tenman.portfolio.alphavantage.AlphaVantageResponse
 import ee.tenman.portfolio.alphavantage.AlphaVantageResponse.AlphaVantageDayData
 import jakarta.annotation.Resource
 import org.slf4j.Logger
@@ -36,10 +34,8 @@ class AlphaVantageService {
 
       timeSeriesMonthly.monthlyTimeSeries?.asSequence()
         ?.associate { (dateString, data) ->
-          YearMonth.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM"))
-            .atEndOfMonth() to data
-        }
-        ?.toMap()
+          YearMonth.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM")).atEndOfMonth() to data
+        }?.toMap()
         ?: emptyMap()
     } catch (e: Exception) {
       log.error("Error fetching monthly data from Alpha Vantage for ticker $ticker", e)
@@ -55,25 +51,15 @@ class AlphaVantageService {
       val timeSeriesDaily = client.getDailyTimeSeries("TIME_SERIES_DAILY", ticker)
       log.info("Retrieved daily ticker data for $ticker: ${GSON.toJson(timeSeriesDaily)}")
 
-      val today = LocalDate.now()
-      val lastWeek = today.minusWeeks(1)
-
       timeSeriesDaily.dailyTimeSeries?.asSequence()
         ?.associate { (dateString, data) ->
           LocalDate.parse(dateString, DATE_FORMATTER) to data
-        }
-        ?.filterKeys { date -> date.isAfter(lastWeek) && !date.isAfter(today) }
-        ?.toMap()
+        }?.toMap()
         ?: emptyMap()
     } catch (e: Exception) {
       log.error("Error fetching daily data from Alpha Vantage for ticker $ticker", e)
       throw RuntimeException("Error fetching daily data from Alpha Vantage for ticker $ticker", e)
     }
-  }
-
-  @Retryable(backoff = Backoff(delay = 1000))
-  fun getTodayData(symbol: String): AlphaVantageDayData? {
-    return getDailyTimeSeriesForLastWeek(symbol)[LocalDate.now()]
   }
 
   @Retryable(backoff = Backoff(delay = 1000))

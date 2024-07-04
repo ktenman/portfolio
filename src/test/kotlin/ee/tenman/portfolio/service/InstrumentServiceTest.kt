@@ -14,6 +14,7 @@ class InstrumentServiceTest {
 
   @Test
   fun `should save and retrieve instrument when repository operations are performed`() {
+    assertThat(instrumentRepository.findAll()).isEmpty()
     val instrument = Instrument(
       "QDVE",
       "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",

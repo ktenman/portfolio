@@ -17,7 +17,26 @@ class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) 
     dailyPriceRepository.findByInstrumentIdAndEntryDateBetween(instrumentId, startDate, endDate)
 
   @Transactional
-  fun saveDailyPrice(dailyPrice: DailyPrice): DailyPrice = dailyPriceRepository.save(dailyPrice)
+  fun saveDailyPrice(dailyPrice: DailyPrice): DailyPrice {
+    val existingPrice = dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
+      dailyPrice.instrument,
+      dailyPrice.entryDate,
+      dailyPrice.providerName
+    )
+
+    return if (existingPrice != null) {
+      existingPrice.apply {
+        openPrice = dailyPrice.openPrice
+        highPrice = dailyPrice.highPrice
+        lowPrice = dailyPrice.lowPrice
+        closePrice = dailyPrice.closePrice
+        volume = dailyPrice.volume
+      }
+      dailyPriceRepository.save(existingPrice)
+    } else {
+      dailyPriceRepository.save(dailyPrice)
+    }
+  }
 
   @Transactional
   fun deleteDailyPrice(id: Long) = dailyPriceRepository.deleteById(id)
