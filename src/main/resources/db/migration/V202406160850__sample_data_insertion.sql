@@ -10,7 +10,7 @@ INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, pr
 VALUES ((SELECT id FROM instrument WHERE symbol = 'QDVE.DEX'), 'BUY', 3.37609300, 29.62003713, '2024-07-01');
 
 INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, price, transaction_date)
-VALUES ((SELECT id FROM instrument WHERE symbol = 'EXXT'), 'BUY', 1, 196.18, '2024-07-04');
+VALUES ((SELECT id FROM instrument WHERE symbol = 'EXXT'), 'BUY', 1, 181.5400000000, '2024-07-04');
 
 INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, price, transaction_date)
 VALUES ((SELECT id FROM instrument WHERE symbol = 'NQSE'), 'BUY', 8.2304526749, 12.15, '2024-07-04');
