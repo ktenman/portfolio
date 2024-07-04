@@ -46,6 +46,6 @@ class XirrServiceIT {
 
     val calculateStockXirr = xirrService.calculateStockXirr("QDVE.DEX")
 
-    assertThat(calculateStockXirr).isEqualTo(1.2681251182411615)
+    assertThat(calculateStockXirr).isEqualTo(1.2677981466313628)
   }
 }

@@ -1,36 +1,26 @@
 package ee.tenman.portfolio.service.xirr
 
 import ee.tenman.portfolio.alphavantage.AlphaVantageService
-import ee.tenman.portfolio.service.OnceInstrumentDataRetrievalService
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Service
-class XirrService(
-  private val alphaVantageService: AlphaVantageService
-) {
-  val log: Logger = LoggerFactory.getLogger(XirrService::class.java)
+class XirrService(private val alphaVantageService: AlphaVantageService) {
+  private val log = LoggerFactory.getLogger(XirrService::class.java)
 
   companion object {
-    private val log = LoggerFactory.getLogger(OnceInstrumentDataRetrievalService::class.java)
-    private val BASE_ORIGINAL_BIG_DECIMAL_STOCK = BigDecimal("3000.00")
+    private const val BASE_MONTHLY_INVESTMENT = 3000.00
   }
-
-  fun getHistoricalData(ticker: String): SortedMap<LocalDate, BigDecimal> {
-    val monthlyTimeSeries = alphaVantageService.getMonthlyTimeSeries(ticker)
-    return monthlyTimeSeries
-      .mapValues { it.value.close }
-      .toSortedMap()
-  }
-
 
   fun calculateStockXirr(ticker: String): Double = runCatching {
-    val transactions = processHistoricalData(ticker)
-    val xirrValue = Xirr(transactions).xirr()
+    val historicalData = getHistoricalData(ticker)
+    val transactions = processHistoricalData(historicalData)
+    val xirrValue = Xirr(transactions).calculate()
     log.info("$ticker : ${String.format("%,.3f%%", xirrValue * 100)}")
     xirrValue + 1
   }.getOrElse {
@@ -38,13 +28,38 @@ class XirrService(
     Double.NaN
   }
 
-  private fun processHistoricalData(ticker: String): List<Transaction> {
-    val historicalData = getHistoricalData(ticker)
-    val lastDataDate = historicalData.lastKey()
-
-    return TransactionCalculator(BASE_ORIGINAL_BIG_DECIMAL_STOCK).apply {
-      historicalData.forEach { (date, price) -> processDate(date, price, lastDataDate) }
-    }.getTransactions()
+  private fun getHistoricalData(ticker: String): SortedMap<LocalDate, BigDecimal> {
+    return alphaVantageService.getMonthlyTimeSeries(ticker)
+      .mapValues { it.value.close }
+      .toSortedMap()
   }
 
+  private fun processHistoricalData(historicalData: SortedMap<LocalDate, BigDecimal>): List<Transaction> {
+    val transactions = mutableListOf<Transaction>()
+    var totalBoughtStocksCount = BigDecimal.ZERO
+    var lastMonthDate: LocalDate? = null
+
+    historicalData.forEach { (date, price) ->
+      if (shouldAddStockPurchase(date, lastMonthDate)) {
+        val stocksCount = BigDecimal(BASE_MONTHLY_INVESTMENT).divide(price, RoundingMode.DOWN)
+        totalBoughtStocksCount += stocksCount
+        transactions.add(Transaction(-BASE_MONTHLY_INVESTMENT, date))
+        lastMonthDate = date
+      }
+
+      if (date == historicalData.lastKey()) {
+        val amount = price.multiply(totalBoughtStocksCount).toDouble()
+        transactions.add(Transaction(amount, date))
+      }
+    }
+
+    return transactions
+  }
+
+  private fun shouldAddStockPurchase(currentDate: LocalDate, lastMonthDate: LocalDate?): Boolean {
+    return lastMonthDate == null || ChronoUnit.MONTHS.between(
+      lastMonthDate.withDayOfMonth(1),
+      currentDate.withDayOfMonth(1)
+    ) >= 1
+  }
 }
