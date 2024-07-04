@@ -43,9 +43,18 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from 'vue'
 import {Line as LineChart} from 'vue-chartjs'
-import {CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title, Tooltip} from 'chart.js'
-import {fetchPortfolioSummary} from "../services/portfolio-summary-service.ts";
-import {PortfolioSummary} from "../models/portfolio-summary.ts";
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+} from 'chart.js'
+import {fetchPortfolioSummary} from '../services/portfolio-summary-service.ts'
+import {PortfolioSummary} from '../models/portfolio-summary.ts'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
@@ -74,13 +83,13 @@ const chartData = computed(() => ({
       label: 'Total Profit',
       borderColor: '#FF6384',
       data: summaryData.value.map(summary => summary.totalProfit),
-    }
-  ]
+    },
+  ],
 }))
 
 const chartOptions = {
   responsive: true,
-  maintainAspectRatio: false
+  maintainAspectRatio: false,
 }
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString()

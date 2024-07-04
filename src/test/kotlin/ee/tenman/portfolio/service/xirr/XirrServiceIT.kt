@@ -10,12 +10,10 @@ import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @IntegrationTest
-@AutoConfigureWireMock(port = 0)
 class XirrServiceIT {
 
   @Resource
