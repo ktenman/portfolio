@@ -1,41 +1,24 @@
-package ee.tenman.portfolio.alphavantage;
+package ee.tenman.portfolio.alphavantage
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty
 
-import java.util.List;
-
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class SearchResponse {
+data class SearchResponse(
   @JsonProperty("bestMatches")
-  private List<SearchData> bestMatches;
+  val bestMatches: List<SearchData>? = null,
 
   @JsonProperty("Information")
-  private String information;
+  val information: String? = null,
 
   @JsonProperty("Error Message")
-  private String errorMessage;
-
-  @Data
-  @Builder
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static class SearchData implements Comparable<SearchData> {
+  val errorMessage: String? = null
+) {
+  data class SearchData(
     @JsonProperty("1. symbol")
-    private String symbol;
+    val symbol: String,
 
     @JsonProperty("8. currency")
-    private String currency;
-
-    @Override
-    public int compareTo(final SearchData other) {
-      return this.symbol.compareTo(other.getSymbol());
-    }
+    val currency: String
+  ) : Comparable<SearchData> {
+    override fun compareTo(other: SearchData): Int = this.symbol.compareTo(other.symbol)
   }
 }
