@@ -41,7 +41,6 @@ dependencies {
   implementation("org.springframework.retry:spring-retry:$springRetryVersion")
   implementation("com.google.guava:guava:$guavaVersion")
   compileOnly("org.projectlombok:lombok")
-  developmentOnly("org.springframework.boot:spring-boot-devtools")
   developmentOnly("org.springframework.boot:spring-boot-docker-compose")
   runtimeOnly("org.postgresql:postgresql")
   annotationProcessor("org.projectlombok:lombok")

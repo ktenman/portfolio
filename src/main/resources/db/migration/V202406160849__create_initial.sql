@@ -19,8 +19,8 @@ CREATE TABLE portfolio_transaction
   id               BIGSERIAL PRIMARY KEY,
   instrument_id    BIGINT REFERENCES instrument (id),
   transaction_type VARCHAR(10)                                        NOT NULL CHECK (transaction_type IN ('BUY', 'SELL')),
-  quantity         NUMERIC(20, 8)                                     NOT NULL,
-  price            NUMERIC(20, 8)                                     NOT NULL,
+  quantity NUMERIC(20, 10) NOT NULL,
+  price    NUMERIC(20, 10) NOT NULL,
   transaction_date DATE                                               NOT NULL,
   created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -33,10 +33,10 @@ CREATE TABLE daily_price
   instrument_id BIGINT REFERENCES instrument (id),
   entry_date    DATE                                               NOT NULL,
   provider_name VARCHAR(255)                                       NOT NULL,
-  open_price    NUMERIC(20, 8),
-  high_price    NUMERIC(20, 8),
-  low_price     NUMERIC(20, 8),
-  close_price   NUMERIC(20, 8)                                     NOT NULL,
+  open_price  NUMERIC(20, 10),
+  high_price  NUMERIC(20, 10),
+  low_price   NUMERIC(20, 10),
+  close_price NUMERIC(20, 10) NOT NULL,
   volume        BIGINT,
   created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -48,10 +48,10 @@ CREATE TABLE portfolio_daily_summary
 (
   id                 BIGSERIAL PRIMARY KEY,
   entry_date         DATE                                               NOT NULL UNIQUE,
-  total_value        NUMERIC(20, 8)                                     NOT NULL,
+  total_value      NUMERIC(20, 10) NOT NULL,
   xirr_annual_return NUMERIC(10, 8)                                     NOT NULL, -- Percentage
-  total_profit       NUMERIC(20, 8)                                     NOT NULL, -- In euros
-  earnings_per_day   NUMERIC(20, 8)                                     NOT NULL, -- (XIRR * total_value) / 365.25
+  total_profit     NUMERIC(20, 10) NOT NULL,                                      -- In euros
+  earnings_per_day NUMERIC(20, 10) NOT NULL,                                      -- (XIRR * total_value) / 365.25
   created_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
