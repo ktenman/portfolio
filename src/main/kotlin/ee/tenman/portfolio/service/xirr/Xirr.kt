@@ -7,64 +7,47 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.pow
 
-class Xirr(transactions: Collection<Transaction>?) {
-  private val investments: List<Investment>
-  private val details: XirrDetails
-  private val solver = NewtonRaphsonSolver()
-  private var guess: Double? = null
-
-  init {
-    require(!(transactions == null || transactions.size < 2)) { "Must have at least two transactions" }
-    this.details = XirrDetails(transactions)
-    this.investments = transactions.stream()
-      .map { t: Transaction -> Investment(t, details.end) }
-      .toList()
+class Xirr(private val transactions: List<Transaction>) {
+  private val endDate = try {
+    transactions.maxOf { it.date }
+  } catch (e: NoSuchElementException) {
+    throw IllegalArgumentException("No transactions")
   }
+  private val yearsToEnd = { date: LocalDate -> ChronoUnit.DAYS.between(date, endDate).toDouble() / 365.25 }
 
-  fun xirr(): Double {
-    if (details.maxAmount == 0.0) {
-      return (-1).toDouble()
-    }
-    this.guess =
-      if ((this.guess != null)) this.guess else (details.total / details.deposits) / (ChronoUnit.DAYS.between(
-        details.start,
-        details.end
-      ) / DAYS_IN_YEAR)
-    val xirrFunction = this.createXirrFunction()
-    return solver.solve(1000, xirrFunction, guess!!, -1.0, 1.0)
+  fun calculate(): Double {
+    require(transactions.size >= 2) { "Must have at least two transactions" }
+    require(transactions.any { it.amount > 0 } && transactions.any { it.amount < 0 }) { "Need both positive and negative transactions" }
+
+    val guess = estimateInitialRate()
+    return NewtonRaphsonSolver().solve(1000, createXirrFunction(), guess, -1.0, 1.0)
   }
 
   private fun createXirrFunction(): UnivariateDifferentiableFunction {
     return object : UnivariateDifferentiableFunction {
-      override fun value(rate: Double): Double {
-        return investments.stream().mapToDouble { investment: Investment -> investment.presentValue(rate) }
-          .sum()
-      }
+      override fun value(x: Double): Double = netPresentValue(x)
 
       override fun value(t: DerivativeStructure): DerivativeStructure {
-        val rate = t.value
-        return DerivativeStructure(
-          t.freeParameters, t.order, this.value(rate),
-          investments.stream().mapToDouble { inv: Investment -> inv.derivative(rate) }.sum()
-        )
+        val x = t.value
+        val value = netPresentValue(x)
+        val derivative = netPresentValueDerivative(x)
+        return DerivativeStructure(t.freeParameters, t.order, value, derivative)
       }
     }
   }
 
-  private class Investment(transaction: Transaction, endDate: LocalDate?) {
-    val amount: Double = transaction.amount
-    val years: Double = ChronoUnit.DAYS.between(transaction.date, endDate) / DAYS_IN_YEAR
+  private fun netPresentValue(rate: Double): Double =
+    transactions.sumOf { it.amount * (1 + rate).pow(yearsToEnd(it.date)) }
 
-    fun presentValue(rate: Double): Double {
-      return if (this.years == 0.0) this.amount else this.amount * (1 + rate).pow(this.years)
+  private fun netPresentValueDerivative(rate: Double): Double =
+    transactions.sumOf {
+      it.amount * yearsToEnd(it.date) * (1 + rate).pow(yearsToEnd(it.date) - 1)
     }
 
-    fun derivative(rate: Double): Double {
-      return if (this.years == 0.0) 0.0 else this.amount * this.years * (1 + rate).pow(this.years - 1)
-    }
-  }
-
-  companion object {
-    private const val DAYS_IN_YEAR = 365.25
+  private fun estimateInitialRate(): Double {
+    val totalAmount = transactions.sumOf { it.amount }
+    val totalDeposits = transactions.filter { it.amount < 0 }.sumOf { -it.amount }
+    val daysSpan = ChronoUnit.DAYS.between(transactions.minByOrNull { it.date }?.date ?: endDate, endDate).toDouble()
+    return (totalAmount / totalDeposits - 1) / (daysSpan / 365.25)
   }
 }
