@@ -2,6 +2,8 @@ package ee.tenman.portfolio.domain
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -20,7 +22,8 @@ class DailyPrice(
   var entryDate: LocalDate,
 
   @Column(name = "provider_name", nullable = false)
-  var providerName: String,
+  @Enumerated(EnumType.STRING)
+  var providerName: ProviderName,
 
   @Column(name = "open_price")
   var openPrice: BigDecimal?,
