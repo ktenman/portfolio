@@ -3,6 +3,7 @@ package ee.tenman.portfolio
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.util.TestPropertyValues
+import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ActiveProfiles
@@ -16,6 +17,7 @@ import org.testcontainers.utility.DockerImageName
 @Retention(AnnotationRetention.RUNTIME)
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureWireMock(port = 0)
 @ActiveProfiles("test")
 @ContextConfiguration(initializers = [IntegrationTest.Initializer::class])
 @Sql(scripts = ["/clear_database.sql"], executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)

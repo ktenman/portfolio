@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.PortfolioSummaryService
 import ee.tenman.portfolio.service.PortfolioTransactionService
 import ee.tenman.portfolio.service.xirr.Transaction
@@ -17,64 +19,80 @@ import java.time.LocalDate
 @Component
 class DailyPortfolioXirrJob(
   private val portfolioTransactionService: PortfolioTransactionService,
-  private val portfolioSummaryService: PortfolioSummaryService
+  private val portfolioSummaryService: PortfolioSummaryService,
+  private val dailyPriceService: DailyPriceService
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(DailyPortfolioXirrJob::class.java)
-  }
+  private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 0 1 * * ?") // Runs at 1:00 AM every day
+  @Scheduled(cron = "0 0 1 * * ?")
   fun calculateDailyPortfolioXirr() {
     log.info("Starting daily portfolio XIRR calculation")
-    val today = LocalDate.now()
     val transactions = portfolioTransactionService.getAllTransactions()
 
-    val xirrTransactions = transactions.map { transaction ->
-      Transaction(
-        -transaction.price.multiply(transaction.quantity).toDouble(),
-        transaction.transactionDate
-      )
+    if (transactions.isEmpty()) {
+      log.info("No transactions found. Skipping XIRR calculation.")
+      return
     }
 
-    // Add the current portfolio value as a positive cash flow
-    val currentPortfolioValue = calculateCurrentPortfolioValue(transactions)
-    xirrTransactions.plus(Transaction(currentPortfolioValue.toDouble(), today))
-
-    val xirr = Xirr(xirrTransactions).calculate()
-    val totalProfit = currentPortfolioValue.subtract(calculateTotalInvestment(transactions))
-    val earningsPerDay = (xirr * currentPortfolioValue.toDouble() / 365).toBigDecimal()
-
-    val portfolioDailySummary = PortfolioDailySummary(
-      entryDate = today,
-      totalValue = currentPortfolioValue,
-      xirrAnnualReturn = BigDecimal(xirr).setScale(8, RoundingMode.HALF_UP),
-      totalProfit = totalProfit,
-      earningsPerDay = earningsPerDay.setScale(2, RoundingMode.HALF_UP)
-    )
-
-    portfolioSummaryService.saveDailySummary(portfolioDailySummary)
-    log.info("Completed daily portfolio XIRR calculation")
+    try {
+      val (totalInvestment, currentValue) = processTransactions(transactions)
+      val xirrResult = calculateXirr(transactions, currentValue)
+      saveDailySummary(totalInvestment, currentValue, xirrResult)
+      log.info("Daily portfolio XIRR calculation completed. XIRR: $xirrResult")
+    } catch (e: Exception) {
+      log.error("Error calculating XIRR", e)
+    }
   }
 
-  private fun calculateCurrentPortfolioValue(transactions: List<PortfolioTransaction>): BigDecimal {
-    // This is a simplified calculation. In a real-world scenario, you'd fetch current market prices.
-    return transactions.groupBy { it.instrument }
-      .map { (instrument, instrumentTransactions) ->
-        val quantity = instrumentTransactions.sumOf {
-          if (it.transactionType == TransactionType.BUY) it.quantity else it.quantity.negate()
-        }
-        val lastPrice = instrumentTransactions.maxByOrNull { it.transactionDate }?.price ?: BigDecimal.ZERO
-        quantity.multiply(lastPrice)
+  private fun processTransactions(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> {
+    val (totalInvestment, holdings) = calculateInvestmentAndHoldings(transactions)
+    val currentValue = calculateCurrentValue(holdings)
+    return Pair(totalInvestment, currentValue)
+  }
+
+  private fun calculateInvestmentAndHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, Map<Instrument, BigDecimal>> {
+    var totalInvestment = BigDecimal.ZERO
+    val holdings = mutableMapOf<Instrument, BigDecimal>()
+
+    transactions.forEach { transaction ->
+      val amount = transaction.price * transaction.quantity
+      totalInvestment += if (transaction.transactionType == TransactionType.BUY) amount else -amount
+
+      val currentHolding = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO)
+      val newHolding = when (transaction.transactionType) {
+        TransactionType.BUY -> currentHolding + transaction.quantity
+        TransactionType.SELL -> currentHolding - transaction.quantity
       }
-      .sumOf { it }
+      holdings[transaction.instrument] = newHolding
+    }
+
+    return Pair(totalInvestment, holdings)
   }
 
-  private fun calculateTotalInvestment(transactions: List<PortfolioTransaction>): BigDecimal {
-    return transactions.sumOf {
-      if (it.transactionType == TransactionType.BUY)
-        it.price.multiply(it.quantity)
-      else
-        it.price.multiply(it.quantity).negate()
+  private fun calculateCurrentValue(holdings: Map<Instrument, BigDecimal>): BigDecimal {
+    return holdings.entries.sumOf { (instrument, quantity) ->
+      val lastPrice = dailyPriceService.findLastDailyPrice(instrument)?.closePrice
+        ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol}")
+      quantity * lastPrice
     }
+  }
+
+  private fun calculateXirr(transactions: List<PortfolioTransaction>, currentValue: BigDecimal): Double {
+    val xirrTransactions = transactions.map { transaction ->
+      Transaction(-transaction.price.multiply(transaction.quantity).toDouble(), transaction.transactionDate)
+    }
+    val finalTransaction = Transaction(currentValue.toDouble(), LocalDate.now())
+    return Xirr(xirrTransactions + finalTransaction).calculate()
+  }
+
+  private fun saveDailySummary(totalInvestment: BigDecimal, currentValue: BigDecimal, xirrResult: Double) {
+    PortfolioDailySummary(
+      entryDate = LocalDate.now(),
+      totalValue = currentValue.setScale(4, RoundingMode.HALF_UP),
+      xirrAnnualReturn = BigDecimal(xirrResult).setScale(8, RoundingMode.HALF_UP),
+      totalProfit = currentValue.subtract(totalInvestment).setScale(4, RoundingMode.HALF_UP),
+      earningsPerDay = currentValue.multiply(BigDecimal(xirrResult))
+        .divide(BigDecimal(365.25), 4, RoundingMode.HALF_UP)
+    ).let { portfolioSummaryService.saveDailySummary(it) }
   }
 }

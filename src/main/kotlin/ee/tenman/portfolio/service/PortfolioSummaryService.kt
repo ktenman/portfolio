@@ -12,6 +12,16 @@ class PortfolioSummaryService(private val portfolioDailySummaryRepository: Portf
   fun getAllDailySummaries(): List<PortfolioDailySummary> = portfolioDailySummaryRepository.findAll()
 
   @Transactional
-  fun saveDailySummary(dailySummary: PortfolioDailySummary): PortfolioDailySummary = portfolioDailySummaryRepository.save(dailySummary)
+  fun saveDailySummary(dailySummary: PortfolioDailySummary): PortfolioDailySummary {
+    val existingSummary = portfolioDailySummaryRepository.findByEntryDate(dailySummary.entryDate)
+
+    return existingSummary?.apply {
+      totalValue = dailySummary.totalValue
+      xirrAnnualReturn = dailySummary.xirrAnnualReturn
+      totalProfit = dailySummary.totalProfit
+      earningsPerDay = dailySummary.earningsPerDay
+    }?.let { portfolioDailySummaryRepository.save(it) }
+      ?: portfolioDailySummaryRepository.save(dailySummary)
+  }
 
 }

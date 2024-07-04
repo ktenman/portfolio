@@ -12,13 +12,11 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import java.math.BigDecimal
 
 @IntegrationTest
-@AutoConfigureWireMock(port = 0)
 class InstrumentDataRetrievalJobIT {
 
   @Resource

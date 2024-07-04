@@ -7,5 +7,6 @@ import java.time.LocalDate
 
 @Repository
 interface PortfolioDailySummaryRepository : JpaRepository<PortfolioDailySummary, Long> {
-  fun findByEntryDateBetween(startDate: LocalDate, endDate: LocalDate): List<PortfolioDailySummary>
+  fun findByEntryDate(entryDate: LocalDate): PortfolioDailySummary?
+  fun save(dailySummary: PortfolioDailySummary): PortfolioDailySummary
 }

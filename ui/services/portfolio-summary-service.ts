@@ -1,4 +1,4 @@
-import {PortfolioSummary} from "../models/portfolio-summary.ts";
+import {PortfolioSummary} from '../models/portfolio-summary.ts'
 
 export async function fetchPortfolioSummary(): Promise<PortfolioSummary[]> {
   try {
@@ -6,7 +6,7 @@ export async function fetchPortfolioSummary(): Promise<PortfolioSummary[]> {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    return await response.json() as PortfolioSummary[]
+    return (await response.json()) as PortfolioSummary[]
   } catch (error) {
     console.error('Error fetching portfolio summary:', error)
     throw error
@@ -19,7 +19,7 @@ export async function fetchLatestPortfolioSummary(): Promise<PortfolioSummary> {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    return await response.json() as PortfolioSummary
+    return (await response.json()) as PortfolioSummary
   } catch (error) {
     console.error('Error fetching latest portfolio summary:', error)
     throw error
