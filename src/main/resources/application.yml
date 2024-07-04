@@ -54,3 +54,9 @@ server:
 
 alphavantage:
   url: https://www.alphavantage.co
+
+feign:
+  client:
+    config:
+      default:
+        loggerLevel: FULL
