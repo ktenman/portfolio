@@ -34,7 +34,7 @@ class AlphaVantageService {
 
       timeSeriesMonthly.monthlyTimeSeries?.asSequence()
         ?.associate { (dateString, data) ->
-          YearMonth.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM")).atEndOfMonth() to data
+          YearMonth.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd")).atEndOfMonth() to data
         }?.toMap()
         ?: emptyMap()
     } catch (e: Exception) {
