@@ -40,6 +40,7 @@ dependencies {
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation("org.springframework.retry:spring-retry:$springRetryVersion")
   implementation("com.google.guava:guava:$guavaVersion")
+  implementation("org.apache.commons:commons-math3:3.6.1")
   compileOnly("org.projectlombok:lombok")
   developmentOnly("org.springframework.boot:spring-boot-docker-compose")
   runtimeOnly("org.postgresql:postgresql")
