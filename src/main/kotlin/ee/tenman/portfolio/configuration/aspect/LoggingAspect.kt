@@ -3,7 +3,6 @@ package ee.tenman.portfolio.configuration.aspect
 import com.fasterxml.jackson.databind.ObjectMapper
 import ee.tenman.portfolio.configuration.TimeUtility
 import jakarta.annotation.Resource
-import lombok.extern.slf4j.Slf4j
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -15,7 +14,6 @@ import java.util.*
 
 @Aspect
 @Component
-@Slf4j
 class LoggingAspect {
 
   @Resource
