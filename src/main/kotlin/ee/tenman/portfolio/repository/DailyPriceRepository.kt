@@ -9,7 +9,6 @@ import java.time.LocalDate
 
 @Repository
 interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
-  fun findByInstrumentIdAndEntryDateBetween(instrumentId: Long, startDate: LocalDate, endDate: LocalDate): List<DailyPrice>
   fun findByInstrumentAndEntryDateAndProviderName(
     instrument: Instrument,
     entryDate: LocalDate,

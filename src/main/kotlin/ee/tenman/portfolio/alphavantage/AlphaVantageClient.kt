@@ -46,7 +46,9 @@ interface AlphaVantageClient {
         "DOSJJM3U7HKZ741I",
         "WIODF0D96B7EKTK2",
         "3919KXD313S1RX7J",
-        "0MOK4N559XJ9EIDR"
+        "0MOK4N559XJ9EIDR",
+        "CCYG4Q2OJISVSNNI",
+        "0C7DCIJ21M3HM3PU"
       )
 
       val randomKey = keys[RANDOM.nextInt(keys.size)]

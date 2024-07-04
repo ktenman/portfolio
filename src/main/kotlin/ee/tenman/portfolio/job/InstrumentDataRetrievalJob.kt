@@ -13,7 +13,8 @@ import org.springframework.stereotype.Component
 class InstrumentDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val alphaVantageService: AlphaVantageService,
-  private val dailyPriceService: DailyPriceService
+  private val dailyPriceService: DailyPriceService,
+  private val transactionRunner: TransactionRunner
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(InstrumentDataRetrievalJob::class.java)
@@ -29,18 +30,20 @@ class InstrumentDataRetrievalJob(
         log.info("Retrieving data for instrument: ${instrument.symbol}")
         val dailyData = alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
 
-        dailyData.forEach { (date, data) ->
-          val dailyPrice = DailyPrice(
-            instrument = instrument,
-            entryDate = date,
-            providerName = ProviderName.ALPHA_VANTAGE,
-            openPrice = data.open,
-            highPrice = data.high,
-            lowPrice = data.low,
-            closePrice = data.close,
-            volume = data.volume
-          )
-          dailyPriceService.saveDailyPrice(dailyPrice)
+        transactionRunner.runInTransaction {
+          dailyData.forEach { (date, data) ->
+            val dailyPrice = DailyPrice(
+              instrument = instrument,
+              entryDate = date,
+              providerName = ProviderName.ALPHA_VANTAGE,
+              openPrice = data.open,
+              highPrice = data.high,
+              lowPrice = data.low,
+              closePrice = data.close,
+              volume = data.volume
+            )
+            dailyPriceService.saveDailyPrice(dailyPrice)
+          }
         }
 
         log.info("Successfully retrieved and processed data for ${instrument.symbol}")
