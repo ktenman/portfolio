@@ -17,10 +17,10 @@ CREATE TABLE instrument
 CREATE TABLE portfolio_transaction
 (
   id               BIGSERIAL PRIMARY KEY,
-  instrument_id    BIGINT REFERENCES instrument (id),
+  instrument_id BIGINT REFERENCES instrument (id) NOT NULL,
   transaction_type VARCHAR(10)                                        NOT NULL CHECK (transaction_type IN ('BUY', 'SELL')),
-  quantity NUMERIC(20, 10) NOT NULL,
-  price    NUMERIC(20, 10) NOT NULL,
+  quantity      NUMERIC(20, 10)                   NOT NULL,
+  price         NUMERIC(20, 10)                   NOT NULL,
   transaction_date DATE                                               NOT NULL,
   created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL

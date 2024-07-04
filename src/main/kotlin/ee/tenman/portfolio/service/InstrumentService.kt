@@ -17,10 +17,6 @@ class InstrumentService(private val instrumentRepository: InstrumentRepository) 
   fun getInstrumentById(id: Long): Instrument = instrumentRepository.findById(id)
     .orElseThrow { RuntimeException("Instrument not found with id: $id") }
 
-  @Transactional(readOnly = true)
-  @Cacheable(value = [INSTRUMENT_CACHE], key = "#symbol")
-  fun getInstrumentBySymbol(symbol: String): Instrument? = instrumentRepository.findBySymbol(symbol)
-
   @Transactional
   @Caching(
     evict = [
