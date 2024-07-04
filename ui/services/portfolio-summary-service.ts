@@ -1,4 +1,4 @@
-import {PortfolioSummary} from '../models/portfolio-summary.ts'
+import { PortfolioSummary } from '../models/portfolio-summary.ts'
 
 export async function fetchPortfolioSummary(): Promise<PortfolioSummary[]> {
   try {
