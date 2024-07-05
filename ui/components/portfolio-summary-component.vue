@@ -72,7 +72,7 @@ onMounted(async () => {
 })
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString()
-const formatCurrency = (value: number) => `$${value.toFixed(2)}`
+const formatCurrency = (value: number) => `€${value.toFixed(2)}`
 const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
 const chartData = computed(() => {
