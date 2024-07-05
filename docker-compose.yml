@@ -31,8 +31,6 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
     image: ktenman/portfolio-be:latest
-    ports:
-      - '61123:8080'
     depends_on:
       - postgres
       - redis
@@ -40,25 +38,31 @@ services:
 
   frontend:
     image: ktenman/portfolio-fe:latest
-    ports:
-      - '61122:80'
     depends_on:
       - backend
     restart: always
 
+#  app:
+#    image: caddy:latest
+#    ports:
+#      - '80:80'
+#      - '443:443'
+#    volumes:
+#      - ./Caddyfile:/etc/caddy/Caddyfile
+#      - caddy_data:/data
+#      - caddy_config:/config
+#    depends_on:
+#      - backend
+#      - frontend
+#    restart: always
   app:
-    image: caddy:latest
+    image: nginx:alpine
     ports:
       - '80:80'
-      - '443:443'
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - backend
       - frontend
-    restart: always
 
 volumes:
   postgres_data:
