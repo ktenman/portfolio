@@ -59,12 +59,12 @@ services:
 
   certbot:
     image: certbot/certbot:latest
-    user: "1000:1000"  # Run as user and group with ID 1000
+    user: root # Run as root
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./certbot/logs:/var/log/letsencrypt # Add this line to mount logs directory
-    command: sh -c "chown -R 1000:1000 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt && chmod -R 755 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt"
+    command: sh -c "certbot renew; sleep 12h & wait $${!}; done;"
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     restart: always
 
