@@ -1,7 +1,5 @@
 <template>
   <div class="container mt-3">
-    <h3 class="mb-4">Portfolio Transactions</h3>
-
     <button class="btn btn-primary mb-3" @click="showAddTransactionModal">
       Add New Transaction
     </button>
@@ -306,6 +304,7 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
 .table {
   font-size: 0.9rem;
 }
+
 .table th,
 .table td {
   vertical-align: middle;
