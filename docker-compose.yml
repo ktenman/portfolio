@@ -58,7 +58,8 @@ services:
     restart: always
 
   certbot:
-    image: certbot/certbot
+    image: alpine:latest
+    command: /bin/sh -c "apk add --no-cache certbot && certbot renew && sleep 12h & wait $${!}; done;"
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
