@@ -10,7 +10,7 @@
 
     <div v-else>
       <div class="mb-5">
-        <Line :data="chartData" :options="chartOptions"/>
+        <Line :data="chartData" :options="chartOptions" />
       </div>
 
       <div class="table-responsive">
@@ -40,10 +40,10 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref} from 'vue'
-import {fetchPortfolioSummary} from '../services/portfolio-summary-service'
-import {PortfolioSummary} from '../models/portfolio-summary'
-import {Line} from 'vue-chartjs'
+import { computed, onMounted, ref } from 'vue'
+import { fetchPortfolioSummary } from '../services/portfolio-summary-service'
+import { PortfolioSummary } from '../models/portfolio-summary'
+import { Line } from 'vue-chartjs'
 import {
   CategoryScale,
   Chart as ChartJS,
