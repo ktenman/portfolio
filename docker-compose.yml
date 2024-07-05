@@ -48,7 +48,7 @@ services:
       - '80:80'
       - '443:443'
     volumes:
-      - ./apache/site.conf:/usr/local/apache2/conf/site.conf
+      - ./apache/site.conf:/usr/local/apache2/conf/httpd.conf
       - ./apache/htdocs:/usr/local/apache2/htdocs
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
