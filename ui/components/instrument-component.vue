@@ -1,7 +1,5 @@
 <template>
   <div class="container mt-3">
-    <h3 class="mb-4">Instruments</h3>
-
     <button class="btn btn-primary mb-3" id="addNewInstrument" @click="showAddInstrumentModal">
       Add New Instrument
     </button>
