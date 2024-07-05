@@ -24,7 +24,7 @@ class DailyPortfolioXirrJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 0 1 * * ?")
+  @Scheduled(cron = "0 0 1 * * *")
   fun calculateDailyPortfolioXirr() {
     log.info("Starting daily portfolio XIRR calculation")
     val transactions = portfolioTransactionService.getAllTransactions()
