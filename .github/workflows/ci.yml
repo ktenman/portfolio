@@ -46,8 +46,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.3.0
-        platforms: linux/amd64, linux/arm64/v8
         with:
+          platforms: linux/amd64, linux/arm64/v8
           context: .
           file: Dockerfile.${{ matrix.type }}
           push: true
