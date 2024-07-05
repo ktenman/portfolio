@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -44,7 +42,7 @@ services:
       - backend
     restart: always
 
-  caddy:
+  app:
     image: caddy:latest
     ports:
       - '80:80'
