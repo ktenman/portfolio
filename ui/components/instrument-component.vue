@@ -2,8 +2,8 @@
   <div class="container mt-3">
     <h3 class="mb-4">Instruments</h3>
 
-    <button class="btn btn-primary mb-3" id="addNewInstrument"
-            @click="showAddInstrumentModal">Add New Instrument
+    <button class="btn btn-primary mb-3" id="addNewInstrument" @click="showAddInstrumentModal">
+      Add New Instrument
     </button>
 
     <!-- Loading spinner -->
@@ -18,29 +18,29 @@
     <div v-else-if="instruments.length > 0" class="table-responsive">
       <table class="table table-striped table-hover">
         <thead>
-        <tr>
-          <th>Symbol</th>
-          <th>Name</th>
-          <th>Category</th>
-          <th>Currency</th>
-          <th>Actions</th>
-        </tr>
+          <tr>
+            <th>Symbol</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Currency</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
-        <tr v-for="instrument in instruments" :key="instrument.id">
-          <td>{{ instrument.symbol }}</td>
-          <td>{{ instrument.name }}</td>
-          <td>{{ instrument.category }}</td>
-          <td>{{ instrument.baseCurrency }}</td>
-          <td>
-            <button class="btn btn-sm btn-warning me-2" @click="editInstrument(instrument)">
-              Edit
-            </button>
-            <button class="btn btn-sm btn-danger" @click="deleteInstrument(instrument.id)">
-              Delete
-            </button>
-          </td>
-        </tr>
+          <tr v-for="instrument in instruments" :key="instrument.id">
+            <td>{{ instrument.symbol }}</td>
+            <td>{{ instrument.name }}</td>
+            <td>{{ instrument.category }}</td>
+            <td>{{ instrument.baseCurrency }}</td>
+            <td>
+              <button class="btn btn-sm btn-warning me-2" @click="editInstrument(instrument)">
+                Edit
+              </button>
+              <button class="btn btn-sm btn-danger" @click="deleteInstrument(instrument.id)">
+                Delete
+              </button>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -152,12 +152,12 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref} from 'vue'
-import {Modal} from 'bootstrap'
-import {InstrumentService} from '../services/instrument-service'
-import {Instrument} from '../models/instrument'
-import {AlertType, getAlertBootstrapClass} from '../models/alert-type'
-import {ApiError} from '../models/api-error'
+import { computed, onMounted, ref } from 'vue'
+import { Modal } from 'bootstrap'
+import { InstrumentService } from '../services/instrument-service'
+import { Instrument } from '../models/instrument'
+import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
+import { ApiError } from '../models/api-error'
 
 const alertMessage = ref('')
 const debugMessage = ref('')
@@ -247,7 +247,7 @@ const fetchInstruments = async () => {
 }
 
 const editInstrument = (instrument: Instrument) => {
-  currentInstrument.value = {...instrument}
+  currentInstrument.value = { ...instrument }
   isEditing.value = true
   instrumentModal?.show()
 }
