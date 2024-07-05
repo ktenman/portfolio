@@ -16,9 +16,7 @@ class InstrumentDataRetrievalJob(
   private val dailyPriceService: DailyPriceService,
   private val transactionRunner: TransactionRunner
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(InstrumentDataRetrievalJob::class.java)
-  }
+  private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 0 12 * * * ")
   fun retrieveInstrumentData() {
