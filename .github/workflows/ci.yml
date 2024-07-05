@@ -5,8 +5,8 @@ on:
   pull_request:
 
 env:
-  DOCKER_IMAGE_NAME_backend: ktenman/portfolio-be
-  DOCKER_IMAGE_NAME_frontend: ktenman/portfolio-fe
+  DOCKER_IMAGE_NAME_BACKEND: ktenman/portfolio-be
+  DOCKER_IMAGE_NAME_FRONTEND: ktenman/portfolio-fe
   DOCKER_IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
           context: .
           file: Dockerfile.${{ matrix.type }}
           push: true
-          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_backend || env.DOCKER_IMAGE_NAME_frontend }}:latest
+          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || env.DOCKER_IMAGE_NAME_FRONTEND }}:latest
 
   test:
     name: 🧪 Test with Gradle
