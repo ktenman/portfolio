@@ -10,6 +10,22 @@ env:
   DOCKER_IMAGE_TAG: ${{ github.sha }}
 
 jobs:
+  lint-and-format:
+    name: 🧹 Lint and Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Use Node.js
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
+      - name: Check Prettier formatting
+        run: npm run format:check
+
   build_and_push:
     name: 🔨 Build and push
     if: github.ref == 'refs/heads/main' && github.event_name != 'repository_dispatch'
@@ -38,21 +54,6 @@ jobs:
           cache-from: type=registry,ref=ktenman/${{ env.DOCKER_IMAGE_NAME_}}${{ matrix.type }}-${{ matrix.arch }}:${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}-${{ matrix.arch }}
           cache-to: type=inline
           platforms: linux/${{ matrix.arch }}
-  lint-and-format:
-    name: 🧹 Lint and Format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.1.7
-      - name: Use Node.js
-        uses: actions/setup-node@v4.0.2
-        with:
-          node-version: '20'
-      - name: Install dependencies
-        run: npm ci
-      - name: Run ESLint
-        run: npm run lint
-      - name: Check Prettier formatting
-        run: npm run format:check
 
   test:
     name: 🧪 Test with Gradle
