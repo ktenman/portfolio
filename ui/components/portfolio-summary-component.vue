@@ -16,10 +16,10 @@
           <thead>
             <tr>
               <th>Date</th>
-              <th>Total Value</th>
-              <th>XIRR Annual Return</th>
-              <th>Total Profit</th>
-              <th>Earnings Per Day</th>
+              <th>Total</th>
+              <th>XIRR</th>
+              <th>Profit</th>
+              <th>Per Day</th>
             </tr>
           </thead>
           <tbody>
@@ -69,7 +69,16 @@ onMounted(async () => {
   }
 })
 
-const formatDate = (date: string) => new Date(date).toLocaleDateString()
+const formatDate = (date: string): string => {
+  const dateObj = new Date(date)
+
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const year = String(dateObj.getFullYear()).slice(-2)
+
+  return `${day}.${month}.${year}`
+}
+
 const formatCurrency = (value: number) => `€${value.toFixed(2)}`
 const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
@@ -137,3 +146,11 @@ const chartOptions = {
   },
 }
 </script>
+
+<style scoped>
+@media (max-width: 767px) {
+  .table {
+    font-size: 12px;
+  }
+}
+</style>
