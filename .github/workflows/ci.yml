@@ -31,7 +31,7 @@ jobs:
         uses: docker/build-push-action@v5.3.0
         with:
           context: .
-          dockerfile: Dockerfile.${{ matrix.type }}
+          file: Dockerfile.${{ matrix.type }}
           push: true
           tags: ${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}:latest
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME_}}${{ matrix.type }}:${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}
