@@ -33,6 +33,8 @@ Before you begin, ensure your system meets the following requirements:
 
 The Portfolio Management System is built with a modular architecture, comprising several key components that work together to deliver a comprehensive portfolio management experience.
 
+![System Architecture](./screenshots/architecture.svg)
+
 ### Frontend 🌐
 
 The frontend, built with Vue.js and Bootstrap, provides a responsive user interface. It communicates with the backend via HTTP to retrieve and display portfolio data, transactions, and performance metrics.
@@ -84,8 +86,6 @@ Navigate to the root directory and compile the Java application using Gradle:
 ./gradlew clean build
 ./gradlew bootRun
 ```
-
-You can access Swagger documentation in your web browser at http://localhost:8080/swagger-ui/index.html
 
 ### Frontend Setup
 
