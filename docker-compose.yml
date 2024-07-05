@@ -63,7 +63,6 @@ services:
       - ./certbot/www:/var/www/certbot
       - ./certbot/logs:/var/log/letsencrypt
     command: sh -c "chown -R 1000:1000 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt && chmod -R 755 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt"
-    # entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --apache --apache-server-root /usr/local/apache2/conf/ --apache-webroot /var/www/certbot; sleep 12h & wait $${!}; done;'" # Remove this line
     restart: always
 
 volumes:
