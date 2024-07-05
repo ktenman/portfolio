@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -42,29 +44,22 @@ services:
       - backend
     restart: always
 
-  apache:
-    image: httpd:latest
+  caddy:
+    image: caddy:latest
     ports:
       - '80:80'
       - '443:443'
     volumes:
-      - ./apache/site.conf:/usr/local/apache2/conf/httpd.conf
-      - ./apache/htdocs:/usr/local/apache2/htdocs
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - backend
       - frontend
     restart: always
 
-  certbot:
-    image: certbot/certbot:latest
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    command: certbot renew --webroot -w /var/www/certbot --deploy-hook "apachectl -k graceful"
-    restart: always
-
 volumes:
   postgres_data:
   redis_data:
+  caddy_data:
+  caddy_config:
