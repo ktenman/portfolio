@@ -37,7 +37,9 @@ services:
     restart: always
 
   frontend:
-    image: ktenman/portfolio-fe:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     depends_on:
       - backend
     restart: always
