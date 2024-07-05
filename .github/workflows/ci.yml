@@ -17,6 +17,7 @@ jobs:
     strategy:
       matrix:
         type: [ 'backend', 'frontend' ]
+        arch: [ 'amd64', 'intel' ]
     steps:
       - uses: actions/checkout@v4.1.2
         with:
@@ -33,9 +34,10 @@ jobs:
           context: .
           file: Dockerfile.${{ matrix.type }}
           push: true
-          tags: ${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}:latest
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME_}}${{ matrix.type }}:${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}
+          tags: ${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}-${{ matrix.arch }}:latest
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME_}}${{ matrix.type }}-${{ matrix.arch }}:${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}-${{ matrix.arch }}
           cache-to: type=inline
+          platforms: linux/${{ matrix.arch }}
 
   lint-and-format:
     name: 🧹 Lint and Format
