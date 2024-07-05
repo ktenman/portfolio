@@ -17,22 +17,22 @@
       <div class="table-responsive">
         <table class="table table-striped table-hover">
           <thead>
-          <tr>
-            <th>Date</th>
-            <th>Total Value</th>
-            <th>XIRR Annual Return</th>
-            <th>Total Profit</th>
-            <th>Earnings Per Day</th>
-          </tr>
+            <tr>
+              <th>Date</th>
+              <th>Total Value</th>
+              <th>XIRR Annual Return</th>
+              <th>Total Profit</th>
+              <th>Earnings Per Day</th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="summary in summaryData" :key="summary.date">
-            <td>{{ formatDate(summary.date) }}</td>
-            <td>{{ formatCurrency(summary.totalValue) }}</td>
-            <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-            <td>{{ formatCurrency(summary.totalProfit) }}</td>
-            <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
-          </tr>
+            <tr v-for="summary in summaryData" :key="summary.date">
+              <td>{{ formatDate(summary.date) }}</td>
+              <td>{{ formatCurrency(summary.totalValue) }}</td>
+              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
+              <td>{{ formatCurrency(summary.totalProfit) }}</td>
+              <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
