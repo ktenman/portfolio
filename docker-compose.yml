@@ -38,6 +38,8 @@ services:
 
   frontend:
     image: ktenman/portfolio-fe:latest
+    ports:
+      - '61122:61122'
     depends_on:
       - backend
     restart: always
