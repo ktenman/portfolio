@@ -29,6 +29,7 @@ class InstrumentController(
 ) {
 
   @PostMapping
+  @Loggable
   fun saveInstrument(@Valid @RequestBody instrumentDto: InstrumentDto): InstrumentDto {
     val savedInstrument = instrumentService.saveInstrument(instrumentDto.toEntity())
     return InstrumentDto.fromEntity(savedInstrument)
@@ -42,6 +43,7 @@ class InstrumentController(
   }
 
   @PutMapping("/{id}")
+  @Loggable
   fun updateInstrument(@PathVariable id: Long, @Valid @RequestBody instrumentDto: InstrumentDto): InstrumentDto {
     val existingInstrument = instrumentService.getInstrumentById(id)
     val updatedInstrument = existingInstrument.apply {

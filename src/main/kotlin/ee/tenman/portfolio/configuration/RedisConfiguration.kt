@@ -26,6 +26,7 @@ class RedisConfiguration {
 
   companion object {
     const val INSTRUMENT_CACHE = "instrument-cache"
+    const val SUMMARY_CACHE = "summary-cache"
     const val ONE_DAY_CACHE: String = "one-day-cache"
     const val THIRTY_MINUTES: String = "thirty-minutes-cache"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
