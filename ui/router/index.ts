@@ -6,8 +6,8 @@ import PortfolioSummaryComponent from '../components/portfolio-summary-component
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'Instruments',
-    component: InstrumentComponent,
+    name: 'Portfolio Summary',
+    component: PortfolioSummaryComponent,
   },
   {
     path: '/transactions',
@@ -15,9 +15,9 @@ const routes: Array<RouteRecordRaw> = [
     component: PortfolioTransactionComponent,
   },
   {
-    path: '/summary',
-    name: 'Portfolio Summary',
-    component: PortfolioSummaryComponent,
+    path: '/instruments',
+    name: 'Instruments',
+    component: InstrumentComponent,
   },
 ]
 
