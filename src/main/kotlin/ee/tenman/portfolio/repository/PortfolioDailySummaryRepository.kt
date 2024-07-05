@@ -9,4 +9,7 @@ import java.time.LocalDate
 interface PortfolioDailySummaryRepository : JpaRepository<PortfolioDailySummary, Long> {
   fun findByEntryDate(entryDate: LocalDate): PortfolioDailySummary?
   fun save(dailySummary: PortfolioDailySummary): PortfolioDailySummary
+  fun findTopByOrderByEntryDateDesc(): PortfolioDailySummary?
+  fun findAllByEntryDateIn(dates: List<LocalDate>): List<PortfolioDailySummary>
+
 }

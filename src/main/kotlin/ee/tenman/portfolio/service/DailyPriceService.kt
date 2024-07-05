@@ -33,9 +33,8 @@ class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) 
   }
 
   @Transactional(readOnly = true)
-  fun findLastDailyPrice(instrument: Instrument): DailyPrice? {
-    val latestDate = LocalDate.now()
-    val earliestDate = latestDate.minusDays(5) // Adjust this range as needed
+  fun findLastDailyPrice(instrument: Instrument, latestDate: LocalDate): DailyPrice? {
+    val earliestDate = latestDate.minusYears(10)
 
     return dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
       instrument,

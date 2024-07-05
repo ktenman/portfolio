@@ -16,6 +16,8 @@ class PortfolioSummaryController(
   @GetMapping
   fun getPortfolioSummary(): List<PortfolioSummaryDto> {
     return portfolioSummaryService.getAllDailySummaries()
+      .sortedBy { it.entryDate }
+      .reversed()
       .map { summary ->
         PortfolioSummaryDto(
           date = summary.entryDate,
