@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: portfolio
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
+      POSTGRES_DB: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: test
     ports:
-      - '5432:5432'
+      - '54320:5432'
     volumes:
-      - postgres_data_e2e:/var/lib/postgresql/data
+      - postgres_data_test:/var/lib/postgresql/data
     healthcheck:
-      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      test: [ 'CMD-SHELL', 'pg_isready -U test' ]
       interval: 3s
       timeout: 1s
       retries: 5
@@ -20,7 +20,7 @@ services:
     ports:
       - '6379:6379'
     volumes:
-      - redis_data_e2e:/data
+      - redis_data_test:/data
     healthcheck:
       test: [ 'CMD', 'redis-cli', 'ping' ]
       interval: 3s
@@ -29,9 +29,9 @@ services:
 
   backend:
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/test
+      SPRING_DATASOURCE_USERNAME: test
+      SPRING_DATASOURCE_PASSWORD: test
     build:
       context: .
       dockerfile: Dockerfile.backend
@@ -58,5 +58,5 @@ services:
       - frontend
 
 volumes:
-  postgres_data_e2e:
-  redis_data_e2e:
+  postgres_data_test:
+  redis_data_test:
