@@ -1,26 +1,13 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <nav class="navbar navbar-expand navbar-light bg-light">
     <div class="container-fluid">
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNav"
-        aria-controls="navbarNav"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-          <li class="nav-item" v-for="route in routes" :key="route.path">
-            <router-link class="nav-link" :to="route.path" active-class="active">
-              {{ route.name }}
-              <span class="nav-indicator"></span>
-            </router-link>
-          </li>
-        </ul>
+      <div class="navbar-nav">
+        <li class="nav-item" v-for="route in routes" :key="route.path">
+          <router-link class="nav-link" :to="route.path" active-class="active">
+            {{ route.name }}
+            <span class="nav-indicator"></span>
+          </router-link>
+        </li>
       </div>
     </div>
   </nav>
@@ -30,7 +17,7 @@
 import { ref } from 'vue'
 
 const routes = ref([
-  { path: '/', name: 'Portfolio Summary' },
+  { path: '/', name: 'Summary' },
   { path: '/transactions', name: 'Transactions' },
   { path: '/instruments', name: 'Instruments' },
 ])
@@ -74,5 +61,12 @@ const routes = ref([
 .nav-link.active {
   color: #007bff;
   font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .navbar-nav {
+    flex-direction: column;
+    align-items: center;
+  }
 }
 </style>
