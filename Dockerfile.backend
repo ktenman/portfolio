@@ -8,7 +8,7 @@ COPY src /app/src
 
 RUN gradle clean build -x test --no-daemon
 
-FROM bellsoft/liberica-openjdk-alpine:latest
+FROM bellsoft/liberica-openjdk-alpine:21
 
 WORKDIR /app
 
