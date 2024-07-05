@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.job.DailyPortfolioXirrJob
 import ee.tenman.portfolio.job.InstrumentDataRetrievalJob
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Service
 @Profile("!test")
 class OnceInstrumentDataRetrievalService(
   private val instrumentDataRetrievalJob: InstrumentDataRetrievalJob,
-  private val dataRetrievalJob: InstrumentDataRetrievalJob
+  private val dailyPortfolioXirrJob: DailyPortfolioXirrJob
 ) {
 
   companion object {
@@ -20,8 +21,8 @@ class OnceInstrumentDataRetrievalService(
   @PostConstruct
   fun retrieveData() {
     log.info("Retrieving data for all instruments")
-    instrumentDataRetrievalJob.retrieveInstrumentData()
-    dataRetrievalJob.retrieveInstrumentData()
+//    instrumentDataRetrievalJob.retrieveInstrumentData()
+    dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
   }
 
 }

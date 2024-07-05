@@ -57,7 +57,6 @@ class PortfolioTransactionController(
       ?: throw RuntimeException("Transaction not found with id: $id")
 
     val instrument = instrumentService.getInstrumentById(transactionDto.instrumentId)
-      ?: throw RuntimeException("Instrument not found with id: ${transactionDto.instrumentId}")
 
     existingTransaction.apply {
       this.instrument = instrument

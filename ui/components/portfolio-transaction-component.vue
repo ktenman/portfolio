@@ -16,8 +16,8 @@
 
     <!-- Excel-like table for transactions -->
     <div v-else-if="transactions.length > 0" class="table-responsive">
-      <table class="table table-striped table-bordered table-hover">
-        <thead class="table-light">
+      <table class="table table-striped table-hover">
+        <thead>
           <tr>
             <th>Instrument</th>
             <th>Type</th>
