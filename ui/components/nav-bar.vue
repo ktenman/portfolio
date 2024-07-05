@@ -15,13 +15,13 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <router-link class="nav-link" to="/">Instruments</router-link>
+            <router-link class="nav-link" to="/">Portfolio Summary</router-link>
           </li>
           <li class="nav-item">
             <router-link class="nav-link" to="/transactions">Transactions</router-link>
           </li>
           <li class="nav-item">
-            <router-link class="nav-link" to="/summary">Portfolio Summary</router-link>
+            <router-link class="nav-link" to="/instruments">Instruments</router-link>
           </li>
         </ul>
       </div>
@@ -29,4 +29,5 @@
   </nav>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+</script>
