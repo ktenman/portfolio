@@ -10,7 +10,7 @@
 
     <div v-else>
       <div class="mb-5">
-        <Line :data="chartData" :options="chartOptions" />
+        <Line v-if="chartData" :data="chartData" :options="chartOptions" />
       </div>
 
       <div class="table-responsive">
@@ -75,35 +75,38 @@ const formatDate = (date: string) => new Date(date).toLocaleDateString()
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`
 const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
-const chartData = computed(() => ({
-  labels: summaryData.value.map(item => formatDate(item.date)),
-  datasets: [
-    {
-      label: 'Total Value',
-      borderColor: '#8884d8',
-      data: summaryData.value.map(item => item.totalValue),
-      yAxisID: 'y',
-    },
-    {
-      label: 'XIRR Annual Return',
-      borderColor: '#82ca9d',
-      data: summaryData.value.map(item => item.xirrAnnualReturn * 100),
-      yAxisID: 'y1',
-    },
-    {
-      label: 'Total Profit',
-      borderColor: '#ffc658',
-      data: summaryData.value.map(item => item.totalProfit),
-      yAxisID: 'y',
-    },
-    {
-      label: 'Earnings Per Day',
-      borderColor: '#ff7300',
-      data: summaryData.value.map(item => item.earningsPerDay),
-      yAxisID: 'y',
-    },
-  ],
-}))
+const chartData = computed(() => {
+  if (summaryData.value.length === 0) return null
+  return {
+    labels: summaryData.value.map(item => formatDate(item.date)),
+    datasets: [
+      {
+        label: 'Total Value',
+        borderColor: '#8884d8',
+        data: summaryData.value.map(item => item.totalValue),
+        yAxisID: 'y',
+      },
+      {
+        label: 'XIRR Annual Return',
+        borderColor: '#82ca9d',
+        data: summaryData.value.map(item => item.xirrAnnualReturn * 100),
+        yAxisID: 'y1',
+      },
+      {
+        label: 'Total Profit',
+        borderColor: '#ffc658',
+        data: summaryData.value.map(item => item.totalProfit),
+        yAxisID: 'y',
+      },
+      {
+        label: 'Earnings Per Day',
+        borderColor: '#ff7300',
+        data: summaryData.value.map(item => item.earningsPerDay),
+        yAxisID: 'y',
+      },
+    ],
+  }
+})
 
 const chartOptions = {
   responsive: true,
