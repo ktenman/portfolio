@@ -63,8 +63,9 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    command: sh -c "chown -R 1000:1000 /etc/letsencrypt /var/www/certbot && chmod -R 755 /etc/letsencrypt /var/www/certbot" # Added to set correct permissions
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'" # Use entrypoint to run Certbot itself
+      - ./certbot/logs:/var/log/letsencrypt # Add this line to mount logs directory
+    command: sh -c "chown -R 1000:1000 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt && chmod -R 755 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     restart: always
 
 volumes:
