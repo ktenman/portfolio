@@ -42,30 +42,28 @@ services:
       - backend
     restart: always
 
-  nginx:
-    image: nginx:alpine
+  apache:
+    image: httpd:latest
     ports:
       - '80:80'
       - '443:443'
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./apache/site.conf:/usr/local/apache2/conf/site.conf
+      - ./apache/htdocs:/usr/local/apache2/htdocs
     depends_on:
-      - frontend
       - backend
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+      - frontend
     restart: always
 
   certbot:
     image: certbot/certbot:latest
-    user: root # Run as root
+    user: "1000:1000"
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./certbot/logs:/var/log/letsencrypt # Add this line to mount logs directory
-    command: sh -c "certbot renew; sleep 12h & wait $${!}; done;"
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    command: sh -c "chown -R 1000:1000 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt && chmod -R 755 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --apache --apache-server-root /usr/local/apache2/conf/ --apache-webroot /var/www/certbot; sleep 12h & wait $${!}; done;'"
     restart: always
 
 volumes:
