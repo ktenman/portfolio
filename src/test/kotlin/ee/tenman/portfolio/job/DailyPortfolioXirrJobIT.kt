@@ -92,13 +92,15 @@ class DailyPortfolioXirrJobIT {
     dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
     dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
 
-    assertThat(portfolioDailySummaryRepository.findAll()).hasSize(4).singleElement().satisfies({ it ->
-      assertThat(it.entryDate).isEqualTo(LocalDate.now())
-      assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("101.8398000000"))
-      assertThat(it.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("4.27828650"))
-      assertThat(it.totalProfit).isEqualByComparingTo(BigDecimal("1.8398000000"))
-      assertThat(it.earningsPerDay).isEqualByComparingTo(BigDecimal("1.1929000000"))
-    })
+    val summaries = portfolioDailySummaryRepository.findAll()
+    assertThat(summaries).hasSize(4)
+    summaries.minByOrNull { it.entryDate }!!.let {
+      assertThat(it.entryDate).isEqualTo("2024-07-01")
+      assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("100.4556000000"))
+      assertThat(it.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("0.00455647"))
+      assertThat(it.totalProfit).isEqualByComparingTo(BigDecimal("0.4556000000"))
+      assertThat(it.earningsPerDay).isEqualByComparingTo(BigDecimal("0.0013000000"))
+    }
   }
 }
 
