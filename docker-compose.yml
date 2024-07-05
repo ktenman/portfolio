@@ -50,6 +50,8 @@ services:
     volumes:
       - ./apache/site.conf:/usr/local/apache2/conf/site.conf
       - ./apache/htdocs:/usr/local/apache2/htdocs
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - backend
       - frontend
@@ -57,12 +59,10 @@ services:
 
   certbot:
     image: certbot/certbot:latest
-    user: "1000:1000"
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-      - ./certbot/logs:/var/log/letsencrypt
-    command: sh -c "chown -R 1000:1000 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt && chmod -R 755 /etc/letsencrypt /var/www/certbot /var/log/letsencrypt"
+    command: certbot renew --webroot -w /var/www/certbot --deploy-hook "apachectl -k graceful"
     restart: always
 
 volumes:
