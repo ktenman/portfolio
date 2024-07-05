@@ -52,7 +52,6 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - backend
       - frontend
     restart: always
 #  app:
