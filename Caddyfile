@@ -1,0 +1,3 @@
+ati.ee {
+    reverse_proxy backend:8080
+}
