@@ -33,7 +33,6 @@ jobs:
     strategy:
       matrix:
         type: [ 'backend', 'frontend' ]
-        arch: [ 'amd64', 'intel' ]
     steps:
       - uses: actions/checkout@v4.1.2
         with:
@@ -50,8 +49,7 @@ jobs:
           context: .
           file: Dockerfile.${{ matrix.type }}
           push: true
-          tags: ktenman/${{ env.DOCKER_IMAGE_NAME_ }}${{ matrix.type }}-${{ matrix.arch }}:latest
-          platforms: linux/${{ matrix.arch }}
+          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_backend || env.DOCKER_IMAGE_NAME_frontend }}:latest
 
   test:
     name: 🧪 Test with Gradle
