@@ -62,7 +62,10 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    command: >
+      sh -c "chown -R 1000:1000 /etc/letsencrypt /var/www/certbot &&
+             chmod -R 755 /etc/letsencrypt /var/www/certbot &&
+             trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"
     restart: always
 
 volumes:
