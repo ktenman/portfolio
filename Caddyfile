@@ -4,5 +4,10 @@ www.ati.ee {
 
 ati.ee {
     reverse_proxy /api/* backend:8080
-    reverse_proxy /* frontend:80
+    reverse_proxy /* frontend:80 {
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Real-IP {remote_host}
+        header_up Host {upstream_host}
+    }
+    try_files {path} /index.html
 }
