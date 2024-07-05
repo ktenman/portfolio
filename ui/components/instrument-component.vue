@@ -31,12 +31,12 @@
             <td>{{ instrument.category }}</td>
             <td>{{ instrument.baseCurrency }}</td>
             <td>
-              <button class="btn btn-sm btn-warning me-2" @click="editInstrument(instrument)">
+              <button class="btn btn-sm btn-secondary me-2" @click="editInstrument(instrument)">
                 Edit
               </button>
-              <button class="btn btn-sm btn-danger" @click="deleteInstrument(instrument.id)">
-                Delete
-              </button>
+              <!--              <button class="btn btn-sm btn-danger" @click="deleteInstrument(instrument.id)">-->
+              <!--                Delete-->
+              <!--              </button>-->
             </td>
           </tr>
         </tbody>
