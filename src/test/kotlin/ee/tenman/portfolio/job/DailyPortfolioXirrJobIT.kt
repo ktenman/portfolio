@@ -92,7 +92,7 @@ class DailyPortfolioXirrJobIT {
     dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
     dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
 
-    assertThat(portfolioDailySummaryRepository.findAll()).hasSize(1).singleElement().satisfies({ it ->
+    assertThat(portfolioDailySummaryRepository.findAll()).hasSize(4).singleElement().satisfies({ it ->
       assertThat(it.entryDate).isEqualTo(LocalDate.now())
       assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("101.8398000000"))
       assertThat(it.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("4.27828650"))

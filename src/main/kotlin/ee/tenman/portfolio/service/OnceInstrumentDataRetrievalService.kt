@@ -21,7 +21,7 @@ class OnceInstrumentDataRetrievalService(
   @PostConstruct
   fun retrieveData() {
     log.info("Retrieving data for all instruments")
-//    instrumentDataRetrievalJob.retrieveInstrumentData()
+    instrumentDataRetrievalJob.retrieveInstrumentData()
     dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
   }
 
