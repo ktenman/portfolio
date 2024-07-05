@@ -31,6 +31,8 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
     image: ktenman/portfolio-be:latest
+    ports:
+      - '61123:8080'
     depends_on:
       - postgres
       - redis
@@ -38,6 +40,8 @@ services:
 
   frontend:
     image: ktenman/portfolio-fe:latest
+    ports:
+      - '61122:80'
     depends_on:
       - backend
     restart: always
