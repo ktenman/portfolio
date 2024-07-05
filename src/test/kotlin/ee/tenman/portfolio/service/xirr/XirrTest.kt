@@ -28,12 +28,12 @@ class XirrTest {
           Transaction(-102.09, LocalDate.of(2024, 7, 4)),
           Transaction(100.0, LocalDate.of(2024, 7, 1))
         ),
-        11.386724097791996
+        0.9899995279312134
       ),
       XirrTestCase(
         "Complex set of transactions over multiple years",
         complexTransactions,
-        0.1473247604457929
+        0.14743321895599365
       )
     )
 

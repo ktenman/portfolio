@@ -9,6 +9,10 @@
     </div>
 
     <div v-else>
+      <div class="mb-5">
+        <Line :data="chartData" :options="chartOptions"/>
+      </div>
+
       <div class="table-responsive">
         <table class="table table-striped table-hover">
           <thead>
@@ -36,9 +40,22 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
-import { fetchPortfolioSummary } from '../services/portfolio-summary-service.ts'
-import { PortfolioSummary } from '../models/portfolio-summary.ts'
+import {computed, onMounted, ref} from 'vue'
+import {fetchPortfolioSummary} from '../services/portfolio-summary-service'
+import {PortfolioSummary} from '../models/portfolio-summary'
+import {Line} from 'vue-chartjs'
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+} from 'chart.js'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
@@ -46,6 +63,7 @@ const isLoading = ref(true)
 onMounted(async () => {
   try {
     summaryData.value = await fetchPortfolioSummary()
+    summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (error) {
     console.error('Error fetching portfolio summary:', error)
   } finally {
@@ -56,4 +74,65 @@ onMounted(async () => {
 const formatDate = (date: string) => new Date(date).toLocaleDateString()
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`
 const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
+
+const chartData = computed(() => ({
+  labels: summaryData.value.map(item => formatDate(item.date)),
+  datasets: [
+    {
+      label: 'Total Value',
+      borderColor: '#8884d8',
+      data: summaryData.value.map(item => item.totalValue),
+      yAxisID: 'y',
+    },
+    {
+      label: 'XIRR Annual Return',
+      borderColor: '#82ca9d',
+      data: summaryData.value.map(item => item.xirrAnnualReturn * 100),
+      yAxisID: 'y1',
+    },
+    {
+      label: 'Total Profit',
+      borderColor: '#ffc658',
+      data: summaryData.value.map(item => item.totalProfit),
+      yAxisID: 'y',
+    },
+    {
+      label: 'Earnings Per Day',
+      borderColor: '#ff7300',
+      data: summaryData.value.map(item => item.earningsPerDay),
+      yAxisID: 'y',
+    },
+  ],
+}))
+
+const chartOptions = {
+  responsive: true,
+  interaction: {
+    mode: 'index' as const,
+    intersect: false,
+  },
+  scales: {
+    y: {
+      type: 'linear' as const,
+      display: true,
+      position: 'left' as const,
+      title: {
+        display: true,
+        text: 'Amount ($)',
+      },
+    },
+    y1: {
+      type: 'linear' as const,
+      display: true,
+      position: 'right' as const,
+      title: {
+        display: true,
+        text: 'XIRR (%)',
+      },
+      grid: {
+        drawOnChartArea: false,
+      },
+    },
+  },
+}
 </script>
