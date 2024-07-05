@@ -10,7 +10,7 @@ The Portfolio Management System is a comprehensive application designed to help 
 
 Before you begin, ensure your system meets the following requirements:
 
-- Kotlin: v1.9.0 
+- Kotlin: v1.9.0
 - Java: v21 (for running Kotlin)
 - Gradle: v8.8
 - Node.js: v20.11.1
