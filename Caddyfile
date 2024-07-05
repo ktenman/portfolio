@@ -1,8 +1,8 @@
-www.ati.ee {
-    redir https://ati.ee{uri}
+www.fov.ee {
+    redir https://fov.ee{uri}
 }
 
-ati.ee {
+fov.ee {
     reverse_proxy /api/* backend:8080
     reverse_proxy /* frontend:80
 }
