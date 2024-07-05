@@ -1,7 +1,5 @@
 <template>
   <div class="container mt-3">
-    <h2 class="mb-4">Portfolio Summary</h2>
-
     <div v-if="isLoading" class="text-left my-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
