@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import InstrumentComponent from '../components/instrument-component.vue'
 import PortfolioTransactionComponent from '../components/portfolio-transaction-component.vue'
 import PortfolioSummaryComponent from '../components/portfolio-summary-component.vue'
@@ -22,7 +22,7 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 })
 
