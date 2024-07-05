@@ -2,18 +2,13 @@
   <div class="container mt-3">
     <h2 class="mb-4">Portfolio Summary</h2>
 
-    <div v-if="isLoading" class="text-center my-5">
+    <div v-if="isLoading" class="text-left my-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
 
     <div v-else>
-      <div class="mb-4">
-        <h3>Portfolio Performance Chart</h3>
-        <LineChart :data="chartData" :options="chartOptions" />
-      </div>
-
       <div class="table-responsive">
         <table class="table table-striped table-hover">
           <thead>
@@ -41,22 +36,9 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
-import { Line as LineChart } from 'vue-chartjs'
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-} from 'chart.js'
+import { onMounted, ref } from 'vue'
 import { fetchPortfolioSummary } from '../services/portfolio-summary-service.ts'
 import { PortfolioSummary } from '../models/portfolio-summary.ts'
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
@@ -70,27 +52,6 @@ onMounted(async () => {
     isLoading.value = false
   }
 })
-
-const chartData = computed(() => ({
-  labels: summaryData.value.map(summary => formatDate(summary.date)),
-  datasets: [
-    {
-      label: 'Total Value',
-      borderColor: '#36A2EB',
-      data: summaryData.value.map(summary => summary.totalValue),
-    },
-    {
-      label: 'Total Profit',
-      borderColor: '#FF6384',
-      data: summaryData.value.map(summary => summary.totalProfit),
-    },
-  ],
-}))
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-}
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString()
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`
