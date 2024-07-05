@@ -53,7 +53,7 @@ services:
     ports:
       - '61234:80'
     volumes:
-      - ./nginx.e2e.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - frontend
 
