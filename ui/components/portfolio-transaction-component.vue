@@ -33,12 +33,12 @@
             <td>{{ transaction.price }}</td>
             <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td>
-              <button class="btn btn-sm btn-warning me-2" @click="editTransaction(transaction)">
+              <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
                 Edit
               </button>
-              <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">
-                Delete
-              </button>
+              <!--              <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">-->
+              <!--                Delete-->
+              <!--              </button>-->
             </td>
           </tr>
         </tbody>
