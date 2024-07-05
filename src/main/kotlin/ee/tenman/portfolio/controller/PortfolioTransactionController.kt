@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.PortfolioTransactionService
@@ -25,7 +26,6 @@ class PortfolioTransactionController(
   @ResponseStatus(HttpStatus.CREATED)
   fun createTransaction(@Valid @RequestBody transactionDto: PortfolioTransactionDto): PortfolioTransactionDto {
     val instrument = instrumentService.getInstrumentById(transactionDto.instrumentId)
-      ?: throw RuntimeException("Instrument not found with id: ${transactionDto.instrumentId}")
 
     val transaction = PortfolioTransaction(
       instrument = instrument,
@@ -40,11 +40,13 @@ class PortfolioTransactionController(
   }
 
   @GetMapping
+  @Loggable
   fun getAllTransactions(): List<PortfolioTransactionDto> {
     return portfolioTransactionService.getAllTransactions().map { PortfolioTransactionDto.fromEntity(it) }
   }
 
   @GetMapping("/{id}")
+  @Loggable
   fun getTransaction(@PathVariable id: Long): PortfolioTransactionDto {
     val transaction = portfolioTransactionService.getTransactionById(id)
       ?: throw RuntimeException("Transaction not found with id: $id")
@@ -52,6 +54,7 @@ class PortfolioTransactionController(
   }
 
   @PutMapping("/{id}")
+  @Loggable
   fun updateTransaction(@PathVariable id: Long, @Valid @RequestBody transactionDto: PortfolioTransactionDto): PortfolioTransactionDto {
     val existingTransaction = portfolioTransactionService.getTransactionById(id)
       ?: throw RuntimeException("Transaction not found with id: $id")

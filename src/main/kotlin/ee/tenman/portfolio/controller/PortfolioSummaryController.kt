@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.service.PortfolioSummaryService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -14,6 +15,7 @@ class PortfolioSummaryController(
 ) {
 
   @GetMapping
+  @Loggable
   fun getPortfolioSummary(): List<PortfolioSummaryDto> {
     return portfolioSummaryService.getAllDailySummaries()
       .sortedBy { it.entryDate }
