@@ -27,7 +27,7 @@ class InstrumentSavingE2ETest {
 
   @Test
   fun `should display success message when saving instrument with valid data`() {
-    open("http://localhost:61234")
+    open("http://localhost:61234/instruments")
 
     id("addNewInstrument").click()
     id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue(DEFAULT_SYMBOL)
