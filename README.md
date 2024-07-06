@@ -1,4 +1,4 @@
-~~# Portfolio Management System
+# Portfolio Management System
 
 [![Build & Test](https://github.com/ktenman/portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/ci.yml)
 
