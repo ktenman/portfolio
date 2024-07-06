@@ -16,10 +16,14 @@ import ee.tenman.portfolio.service.PortfolioTransactionService
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 
 @IntegrationTest
@@ -42,8 +46,13 @@ class DailyPortfolioXirrJobIT {
   @Resource
   private lateinit var portfolioDailySummaryRepository: PortfolioDailySummaryRepository
 
+  @MockBean
+  private lateinit var clock: Clock
+
   @Test
   fun `should not create duplicated rows when triggered multiple times with same data`() {
+    whenever(clock.instant()).thenReturn(Instant.parse("2024-07-05T00:00:00Z"))
+    whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
     val instrument = Instrument(
       "QDVE.DEX",
       "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
