@@ -3,6 +3,23 @@ www.ati.ee {
 }
 
 ati.ee {
+    oauth2 {
+        provider google {
+            client_id {$GOOGLE_CLIENT_ID}
+            client_secret {$GOOGLE_CLIENT_SECRET}
+            scopes openid email
+            auth_url https://accounts.google.com/o/oauth2/v2/auth
+            token_url https://oauth2.googleapis.com/token
+            allow ktenman@gmail.com
+        }
+        callback /oauth2/callback
+        logout /oauth2/logout
+    }
+
+    reverse_proxy /oauth2/* {
+        to oauth2
+    }
+
     reverse_proxy /api/* backend:8080
     reverse_proxy /* frontend:80
 }
