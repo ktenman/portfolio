@@ -1,4 +1,10 @@
 services:
+  postgres:
+    volumes:
+      - postgres_data_e2e:/var/lib/postgresql/data
+  redis:
+    volumes:
+      - redis_data_e2e:/data
   app:
     image: nginx:alpine
     ports:
@@ -7,3 +13,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - frontend
+
+volumes:
+  postgres_data_e2e:
+  redis_data_e2e:

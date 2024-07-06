@@ -131,9 +131,10 @@ docker-compose -f docker-compose.yml up -d
 To run end-to-end tests:
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d
-export E2E=true
-./gradlew test --info -Pheadless=true
+docker-compose -f docker-compose.yml -f docker-compose.e2e.yml down
+docker volume rm portfolio_postgres_data_e2e
+docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d && sleep 30
+export E2E=true && ./gradlew test --info -Pheadless=true
 ```
 
 ### Continuous Integration and Deployment

@@ -1,12 +1,12 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     environment:
       POSTGRES_DB: portfolio
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_v15:/var/lib/postgresql/data
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
       interval: 3s
@@ -58,7 +58,7 @@ services:
     restart: always
 
 volumes:
-  postgres_data:
+  postgres_data_v15:
   redis_data:
   caddy_data:
   caddy_config:
