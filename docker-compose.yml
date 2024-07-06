@@ -28,6 +28,7 @@ services:
     restart: always
 
   backend:
+    container_name: backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
       SPRING_DATASOURCE_USERNAME: postgres
@@ -39,6 +40,7 @@ services:
     restart: always
 
   frontend:
+    container_name: frontend
     image: ktenman/portfolio-fe:latest
     depends_on:
       - backend
