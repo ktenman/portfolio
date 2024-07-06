@@ -250,34 +250,34 @@ const editInstrument = (instrument: Instrument) => {
   instrumentModal?.show()
 }
 
-const deleteInstrument = async (id: number | undefined) => {
-  if (id === undefined) {
-    console.error('Attempted to delete an instrument with undefined id')
-    return
-  }
-
-  if (confirm('Are you sure you want to delete this instrument?')) {
-    try {
-      await instrumentService.deleteInstrument(id)
-      instruments.value = instruments.value.filter(i => i.id !== id)
-      alertType.value = AlertType.SUCCESS
-      alertMessage.value = 'Instrument deleted successfully.'
-      debugMessage.value = ''
-      validationErrors.value = {}
-    } catch (error) {
-      alertType.value = AlertType.ERROR
-      if (error instanceof ApiError) {
-        alertMessage.value = error.message
-        debugMessage.value = error.debugMessage
-        validationErrors.value = error.validationErrors
-      } else {
-        alertMessage.value = 'Failed to delete instrument. Please try again.'
-        debugMessage.value = error instanceof Error ? error.message : 'Unknown error occurred'
-        validationErrors.value = {}
-      }
-    }
-  }
-}
+// const deleteInstrument = async (id: number | undefined) => {
+//   if (id === undefined) {
+//     console.error('Attempted to delete an instrument with undefined id')
+//     return
+//   }
+//
+//   if (confirm('Are you sure you want to delete this instrument?')) {
+//     try {
+//       await instrumentService.deleteInstrument(id)
+//       instruments.value = instruments.value.filter(i => i.id !== id)
+//       alertType.value = AlertType.SUCCESS
+//       alertMessage.value = 'Instrument deleted successfully.'
+//       debugMessage.value = ''
+//       validationErrors.value = {}
+//     } catch (error) {
+//       alertType.value = AlertType.ERROR
+//       if (error instanceof ApiError) {
+//         alertMessage.value = error.message
+//         debugMessage.value = error.debugMessage
+//         validationErrors.value = error.validationErrors
+//       } else {
+//         alertMessage.value = 'Failed to delete instrument. Please try again.'
+//         debugMessage.value = error instanceof Error ? error.message : 'Unknown error occurred'
+//         validationErrors.value = {}
+//       }
+//     }
+//   }
+// }
 
 const resetCurrentInstrument = () => {
   currentInstrument.value = {}

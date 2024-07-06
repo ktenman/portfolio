@@ -250,24 +250,24 @@ const editTransaction = (transaction: PortfolioTransaction) => {
   transactionModal?.show()
 }
 
-const deleteTransaction = async (id: number | undefined) => {
-  if (id === undefined) {
-    console.error('Attempted to delete a transaction with undefined id')
-    return
-  }
-
-  if (confirm('Are you sure you want to delete this transaction?')) {
-    try {
-      await transactionService.deleteTransaction(id)
-      transactions.value = transactions.value.filter(t => t.id !== id)
-      alertType.value = AlertType.SUCCESS
-      alertMessage.value = 'Transaction deleted successfully.'
-    } catch (error) {
-      alertType.value = AlertType.ERROR
-      alertMessage.value = 'Failed to delete transaction. Please try again.'
-    }
-  }
-}
+// const deleteTransaction = async (id: number | undefined) => {
+//   if (id === undefined) {
+//     console.error('Attempted to delete a transaction with undefined id')
+//     return
+//   }
+//
+//   if (confirm('Are you sure you want to delete this transaction?')) {
+//     try {
+//       await transactionService.deleteTransaction(id)
+//       transactions.value = transactions.value.filter(t => t.id !== id)
+//       alertType.value = AlertType.SUCCESS
+//       alertMessage.value = 'Transaction deleted successfully.'
+//     } catch (error) {
+//       alertType.value = AlertType.ERROR
+//       alertMessage.value = 'Failed to delete transaction. Please try again.'
+//     }
+//   }
+// }
 
 const resetCurrentTransaction = () => {
   currentTransaction.value = {
