@@ -320,4 +320,10 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
 .table td {
   vertical-align: middle;
 }
+
+@media (max-width: 767px) {
+  .table {
+    font-size: 12px;
+  }
+}
 </style>
