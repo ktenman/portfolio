@@ -1,17 +1,14 @@
 import { PortfolioSummary } from '../models/portfolio-summary.ts'
 
-export async function fetchPortfolioSummary(): Promise<PortfolioSummary[]> {
-  const response = await fetch('/api/portfolio-summary')
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-  return (await response.json()) as PortfolioSummary[]
-}
+export class PortfolioSummaryService {
+  private apiUrl = '/api/portfolio-summary'
 
-export async function fetchLatestPortfolioSummary(): Promise<PortfolioSummary> {
-  const response = await fetch('/api/portfolio-summary/latest')
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+  async fetchPortfolioSummary(): Promise<PortfolioSummary[]> {
+    const response = await fetch(this.apiUrl)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return (await response.json()) as PortfolioSummary[]
   }
-  return (await response.json()) as PortfolioSummary
+
 }
