@@ -35,6 +35,13 @@ class DailyPortfolioXirrJob(
     log.info("Completed daily portfolio XIRR job")
   }
 
+  @Scheduled(cron = "0 22 02 * * *")
+  fun runJob2() {
+    log.info("Running daily portfolio XIRR job")
+    jobExecutionService.executeJob(this)
+    log.info("Completed daily portfolio XIRR job")
+  }
+
   override fun execute() {
     log.info("Starting daily portfolio XIRR calculation")
     val allTransactions = portfolioTransactionService.getAllTransactions().sortedBy { it.transactionDate }
