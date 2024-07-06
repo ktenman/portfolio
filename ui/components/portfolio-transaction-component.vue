@@ -25,7 +25,7 @@
             <th>Quantity</th>
             <th>Price</th>
             <th>Date</th>
-            <th>Actions</th>
+            <th class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -35,7 +35,7 @@
             <td>{{ formatNumber(transaction.quantity) }}</td>
             <td>{{ formatNumber(transaction.price) }}</td>
             <td>{{ formatDate(transaction.transactionDate) }}</td>
-            <td>
+            <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
                 <font-awesome-icon icon="pencil-alt" />
                 <span class="d-none d-md-inline ms-1">Edit</span>
