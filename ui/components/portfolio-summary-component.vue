@@ -16,8 +16,8 @@
             <tr>
               <th>Date</th>
               <th>Total</th>
-              <th>XIRR</th>
               <th>Profit</th>
+              <th>XIRR</th>
               <th>Per Day</th>
             </tr>
           </thead>
@@ -25,8 +25,8 @@
             <tr v-for="summary in summaryData" :key="summary.date">
               <td>{{ formatDate(summary.date) }}</td>
               <td>{{ formatCurrency(summary.totalValue) }}</td>
-              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
               <td>{{ formatCurrency(summary.totalProfit) }}</td>
+              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
               <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
             </tr>
           </tbody>
@@ -85,19 +85,19 @@ const processedChartData = computed(() => {
   if (summaryData.value.length === 0) return null
   const labels = []
   const totalValues = []
-  const xirrValues = []
   const profitValues = []
+  const xirrValues = []
   const earningsValues = []
 
   for (const item of summaryData.value) {
     labels.push(formatDate(item.date))
     totalValues.push(item.totalValue)
-    xirrValues.push(item.xirrAnnualReturn * 100)
     profitValues.push(item.totalProfit)
+    xirrValues.push(item.xirrAnnualReturn * 100)
     earningsValues.push(item.earningsPerDay)
   }
 
-  return { labels, totalValues, xirrValues, profitValues, earningsValues }
+  return { labels, totalValues, profitValues, xirrValues, earningsValues }
 })
 
 const chartData = computed(() => {
@@ -114,16 +114,16 @@ const chartData = computed(() => {
         yAxisID: 'y',
       },
       {
-        label: 'XIRR Annual Return',
-        borderColor: '#82ca9d',
-        data: data.xirrValues,
-        yAxisID: 'y1',
-      },
-      {
         label: 'Total Profit',
         borderColor: '#ffc658',
         data: data.profitValues,
         yAxisID: 'y',
+      },
+      {
+        label: 'XIRR Annual Return',
+        borderColor: '#82ca9d',
+        data: data.xirrValues,
+        yAxisID: 'y1',
       },
       {
         label: 'Earnings Per Day',
