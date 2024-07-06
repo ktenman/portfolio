@@ -1,10 +1,8 @@
 <template>
-  <div class="container mt-3">
-    <!-- make this add new transaction button a separate component to the right align to right of the screen layout bootstrap
-   -->
-    <div class="d-flex justify-content-between">
-      <h4>Transactions</h4>
-      <button class="btn btn-primary mb-3" @click="showAddTransactionModal">
+  <div class="container mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Transactions</h4>
+      <button class="btn btn-primary btn-sm" @click="showAddTransactionModal">
         Add New Transaction
       </button>
     </div>
@@ -39,7 +37,8 @@
             <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td>
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
-                Edit
+                <font-awesome-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline ms-1">Edit</span>
               </button>
               <!--              <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">-->
               <!--                Delete-->
@@ -328,7 +327,11 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
 
 @media (max-width: 767px) {
   .table {
-    font-size: 12px;
+    font-size: 2.8vw;
+  }
+
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
   }
 }
 </style>
