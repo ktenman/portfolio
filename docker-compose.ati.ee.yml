@@ -49,7 +49,7 @@ services:
 
   app:
     container_name: app
-    image: caddy:2.8-alpine
+    image: caddy:latest
     environment:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
