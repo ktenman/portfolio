@@ -5,7 +5,6 @@
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
-
     <div v-else>
       <div class="mb-5">
         <Line v-if="chartData" :data="chartData" :options="chartOptions" />
@@ -36,7 +35,6 @@
     </div>
   </div>
 </template>
-
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
@@ -44,16 +42,20 @@ import { Line } from 'vue-chartjs'
 import {
   CategoryScale,
   Chart as ChartJS,
-  Legend,
   LinearScale,
   LineElement,
   PointElement,
-  Title,
   Tooltip,
 } from 'chart.js'
 import { PortfolioSummaryService } from '../services/portfolio-summary-service.ts'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip
+)
 
 const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
@@ -83,33 +85,54 @@ const formatDate = (date: string): string => {
 const formatCurrency = (value: number) => `€${value.toFixed(2)}`
 const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
-const chartData = computed(() => {
+const processedChartData = computed(() => {
   if (summaryData.value.length === 0) return null
+  const labels = []
+  const totalValues = []
+  const xirrValues = []
+  const profitValues = []
+  const earningsValues = []
+
+  for (const item of summaryData.value) {
+    labels.push(formatDate(item.date))
+    totalValues.push(item.totalValue)
+    xirrValues.push(item.xirrAnnualReturn * 100)
+    profitValues.push(item.totalProfit)
+    earningsValues.push(item.earningsPerDay)
+  }
+
+  return { labels, totalValues, xirrValues, profitValues, earningsValues }
+})
+
+const chartData = computed(() => {
+  const data = processedChartData.value
+  if (!data) return null
+
   return {
-    labels: summaryData.value.map(item => formatDate(item.date)),
+    labels: data.labels,
     datasets: [
       {
         label: 'Total Value',
         borderColor: '#8884d8',
-        data: summaryData.value.map(item => item.totalValue),
+        data: data.totalValues,
         yAxisID: 'y',
       },
       {
         label: 'XIRR Annual Return',
         borderColor: '#82ca9d',
-        data: summaryData.value.map(item => item.xirrAnnualReturn * 100),
+        data: data.xirrValues,
         yAxisID: 'y1',
       },
       {
         label: 'Total Profit',
         borderColor: '#ffc658',
-        data: summaryData.value.map(item => item.totalProfit),
+        data: data.profitValues,
         yAxisID: 'y',
       },
       {
         label: 'Earnings Per Day',
         borderColor: '#ff7300',
-        data: summaryData.value.map(item => item.earningsPerDay),
+        data: data.earningsValues,
         yAxisID: 'y',
       },
     ],
@@ -147,7 +170,6 @@ const chartOptions = {
   },
 }
 </script>
-
 <style scoped>
 @media (max-width: 767px) {
   .table {
