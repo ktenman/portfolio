@@ -22,7 +22,6 @@
           <tr>
             <th>Symbol</th>
             <th>Name</th>
-            <th>Category</th>
             <th>Currency</th>
             <th>Actions</th>
           </tr>
@@ -31,7 +30,6 @@
           <tr v-for="instrument in instruments" :key="instrument.id">
             <td>{{ instrument.symbol }}</td>
             <td>{{ instrument.name }}</td>
-            <td>{{ instrument.category }}</td>
             <td>{{ instrument.baseCurrency }}</td>
             <td>
               <button class="btn btn-sm btn-secondary me-2" @click="editInstrument(instrument)">
