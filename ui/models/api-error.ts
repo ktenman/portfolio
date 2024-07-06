@@ -1,15 +1,14 @@
-interface ValidationErrors {
-  [key: string]: string
-}
-
 /* eslint-disable no-unused-vars */
-export class ApiError {
+export class ApiError extends Error {
   constructor(
-    public status: number | string,
+    public status: number,
     public message: string,
     public debugMessage: string,
-    public validationErrors: ValidationErrors = {}
-  ) {}
+    public validationErrors: Record<string, string> = {}
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
 }
 
 /* eslint-enable no-unused-vars */
