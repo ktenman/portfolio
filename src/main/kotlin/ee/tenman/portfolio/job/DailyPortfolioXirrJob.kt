@@ -35,7 +35,7 @@ class DailyPortfolioXirrJob(
     log.info("Completed daily portfolio XIRR job")
   }
 
-  @Scheduled(cron = "0 22 02 * * *")
+  @Scheduled(cron = "0 35 02 * * *")
   fun runJob2() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
