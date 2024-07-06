@@ -42,14 +42,16 @@ import { Line } from 'vue-chartjs'
 import {
   CategoryScale,
   Chart as ChartJS,
+  Legend,
   LinearScale,
   LineElement,
   PointElement,
+  Title,
   Tooltip,
 } from 'chart.js'
 import { PortfolioSummaryService } from '../services/portfolio-summary-service.ts'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
 const summaryData = shallowRef<PortfolioSummary[]>([])
 const isLoading = ref(true)
