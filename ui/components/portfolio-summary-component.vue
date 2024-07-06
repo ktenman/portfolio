@@ -1,5 +1,10 @@
 <template>
   <div class="container mt-3">
+    <div class="mb-3">
+      <div class="d-flex justify-content-between">
+        <h4>Portfolio Summary</h4>
+      </div>
+    </div>
     <div v-if="isLoading" class="text-left my-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
