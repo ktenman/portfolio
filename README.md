@@ -1,10 +1,12 @@
-# Portfolio Management System
+~~# Portfolio Management System
 
 [![Build & Test](https://github.com/ktenman/portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/ci.yml)
 
 ## Introduction
 
-The Portfolio Management System is a comprehensive application designed to help users manage their investment portfolios. It retrieves financial data from the Alpha Vantage API, stores it in a database, and provides a user-friendly interface for viewing and managing portfolio transactions, instruments, and performance metrics.
+The Portfolio Management System is a comprehensive application designed to help users manage their investment
+portfolios. It retrieves financial data from the Alpha Vantage API, stores it in a database, and provides a
+user-friendly interface for viewing and managing portfolio transactions, instruments, and performance metrics.
 
 <img src="screenshots/app.png" width="600" alt="Portfolio Management System application home page">
 
@@ -33,32 +35,41 @@ Before you begin, ensure your system meets the following requirements:
 
 ## Architecture 🏗️
 
-The Portfolio Management System is built with a modular architecture, comprising several key components that work together to deliver a comprehensive portfolio management experience.
+The Portfolio Management System is built with a modular architecture, comprising several key components that work
+together to deliver a comprehensive portfolio management experience.
 
 ![System Architecture](./screenshots/architecture.svg)
 
 ### Frontend 🌐
 
-The frontend, built with Vue.js and Bootstrap, provides a responsive user interface. It communicates with the backend via HTTP to retrieve and display portfolio data, transactions, and performance metrics.
+The frontend, built with Vue.js and Bootstrap, provides a responsive user interface. It communicates with the backend
+via HTTP to retrieve and display portfolio data, transactions, and performance metrics.
 
 ### Backend 🧠
 
-Developed using Spring Boot, the backend handles API requests, processes data, and interacts with the database and cache. It exposes RESTful endpoints for the frontend to consume and manages the business logic for portfolio calculations.
+Developed using Spring Boot, the backend handles API requests, processes data, and interacts with the database and
+cache. It exposes RESTful endpoints for the frontend to consume and manages the business logic for portfolio
+calculations.
 
 ### Database 🗄️
 
-PostgreSQL, a reliable and scalable relational database, stores the portfolio data, including instruments, transactions, and daily price information. The backend performs CRUD operations using Spring Data JPA.
+PostgreSQL, a reliable and scalable relational database, stores the portfolio data, including instruments, transactions,
+and daily price information. The backend performs CRUD operations using Spring Data JPA.
 
 ### Cache 🚀
 
-Redis, an in-memory data store, is used as a caching layer to improve data retrieval performance. Frequently accessed data, such as instrument details and portfolio summaries, is stored in the cache, reducing database queries and enhancing responsiveness.
+Redis, an in-memory data store, is used as a caching layer to improve data retrieval performance. Frequently accessed
+data, such as instrument details and portfolio summaries, is stored in the cache, reducing database queries and
+enhancing responsiveness.
 
 ### Data Retrieval Jobs ⚙️
 
 Two main jobs run periodically to keep the system updated:
 
-1. **Instrument Data Retrieval Job**: Fetches the latest price data for all instruments in the portfolio from the Alpha Vantage API.
-2. **Daily Portfolio XIRR Job**: Calculates the Extended Internal Rate of Return (XIRR) for the portfolio on a daily basis, providing up-to-date performance metrics.
+1. **Instrument Data Retrieval Job**: Fetches the latest price data for all instruments in the portfolio from the Alpha
+   Vantage API.
+2. **Daily Portfolio XIRR Job**: Calculates the Extended Internal Rate of Return (XIRR) for the portfolio on a daily
+   basis, providing up-to-date performance metrics.
 
 ### Interaction Flow 📊
 
@@ -74,7 +85,8 @@ Two main jobs run periodically to keep the system updated:
 
 ### Docker Containers Setup
 
-Initialize necessary Docker containers with Docker Compose to ensure the database and Redis services are up before proceeding:
+Initialize necessary Docker containers with Docker Compose to ensure the database and Redis services are up before
+proceeding:
 
 ```bash
 docker-compose -f compose.yaml up -d
@@ -206,6 +218,35 @@ Relationships:
 - `PortfolioDailySummary` is independent but calculated based on transactions and prices.
 - `JobExecution` is independent and used for monitoring and auditing system jobs.
 
+## Deployment
+
+1. Rename the .env.example file to .env and fill in the necessary information.
+2. Create a shell script (e.g., deploy.sh) to deploy the application:
+
+   ```bash
+   #!/bin/bash
+
+   cd portfolio
+   git pull
+   docker-compose -f docker-compose.yml down
+   docker-compose -f docker-compose.yml pull
+   docker-compose -f docker-compose.yml build
+   docker-compose -f docker-compose.yml up -d
+   docker rmi $(docker images -f "dangling=true" -q)
+   ```
+
+3. Make the shell script executable:
+
+   ```bash
+   chmod +x deploy.sh
+   ```
+
+4. Run the shell script to deploy the application:
+   ```bash
+   ./deploy.sh
+   ```
+
 ---
 
-This README provides a comprehensive guide for developers to set up, run, and understand the core functionalities and technical aspects of the Portfolio Management System.
+This README provides a comprehensive guide for developers to set up, run, and understand the core functionalities and
+technical aspects of the Portfolio Management System.~~
