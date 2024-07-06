@@ -6,7 +6,7 @@
       </div>
     </div>
     <div v-else>
-      <div class="mb-5 chart-container">
+      <div class="mb-3 chart-container">
         <Line v-if="chartData" :data="chartData" :options="chartOptions as any" />
       </div>
 
@@ -184,9 +184,11 @@ const chartOptions = {
     font-size: 12px;
   }
 }
-.chart-container {
-  height: 50vh;
-  width: 80vw;
-  margin: 0 auto;
+
+@media (min-width: 1000px) {
+  .chart-container {
+    height: 50vh;
+    margin: 0 auto;
+  }
 }
 </style>
