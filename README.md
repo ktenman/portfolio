@@ -192,6 +192,7 @@ Here's a simplified representation of the main database tables:
 ```
 
 Key points:
+
 - All tables include `id`, `created_at`, and `updated_at` fields for tracking creation and modifications.
 - `Instrument` table stores information about financial instruments.
 - `PortfolioTransaction` table records buy and sell transactions, linked to instruments.
@@ -200,6 +201,7 @@ Key points:
 - `JobExecution` table logs the execution of scheduled jobs, including their status and duration.
 
 Relationships:
+
 - `PortfolioTransaction` and `DailyPrice` have a many-to-one relationship with `Instrument`.
 - `PortfolioDailySummary` is independent but calculated based on transactions and prices.
 - `JobExecution` is independent and used for monitoring and auditing system jobs.
