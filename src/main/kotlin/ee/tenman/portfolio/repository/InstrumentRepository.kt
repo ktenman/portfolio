@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface InstrumentRepository : JpaRepository<Instrument, Long> {
-  fun findBySymbol(symbol: String): Instrument?
 }
 
