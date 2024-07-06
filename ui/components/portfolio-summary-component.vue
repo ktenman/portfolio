@@ -39,7 +39,6 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
-import { fetchPortfolioSummary } from '../services/portfolio-summary-service'
 import { PortfolioSummary } from '../models/portfolio-summary'
 import { Line } from 'vue-chartjs'
 import {
@@ -52,15 +51,17 @@ import {
   Title,
   Tooltip,
 } from 'chart.js'
+import { PortfolioSummaryService } from '../services/portfolio-summary-service.ts'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
+const portfolioSummaryService = new PortfolioSummaryService()
 
 onMounted(async () => {
   try {
-    summaryData.value = await fetchPortfolioSummary()
+    summaryData.value = await portfolioSummaryService.fetchPortfolioSummary()
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (error) {
     console.error('Error fetching portfolio summary:', error)
