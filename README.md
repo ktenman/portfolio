@@ -155,6 +155,10 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 
 Here's a simplified representation of the main database tables:
 
+## Database Design
+
+Here's a simplified representation of the main database tables:
+
 ```
 +------------------+      +------------------------+      +-------------------+
 |    Instrument    |      |  PortfolioTransaction  |      |    DailyPrice     |
@@ -164,23 +168,41 @@ Here's a simplified representation of the main database tables:
 | name             |      | transaction_type       |      | entry_date        |
 | category         |      | quantity               |      | provider_name     |
 | base_currency    |      | price                  |      | open_price        |
-+------------------+      | transaction_date       |      | high_price        |
-                          +------------------------+      | low_price         |
-                                                          | close_price       |
-                                                          | volume            |
+| created_at       |      | transaction_date       |      | high_price        |
+| updated_at       |      | created_at             |      | low_price         |
++------------------+      | updated_at             |      | close_price       |
+                          +------------------------+      | volume            |
+                                                          | created_at        |
+                                                          | updated_at        |
                                                           +-------------------+
 
-+------------------------+
-| PortfolioDailySummary  |
-+------------------------+
-| id                     |
-| entry_date             |
-| total_value            |
-| xirr_annual_return     |
-| total_profit           |
-| earnings_per_day       |
-+------------------------+
++------------------------+      +------------------------+
+| PortfolioDailySummary  |      |    JobExecution        |
++------------------------+      +------------------------+
+| id                     |      | id                     |
+| entry_date             |      | job_name               |
+| total_value            |      | start_time             |
+| xirr_annual_return     |      | end_time               |
+| total_profit           |      | duration_in_millis     |
+| earnings_per_day       |      | status                 |
+| created_at             |      | message                |
+| updated_at             |      | created_at             |
++------------------------+      | updated_at             |
+                                +------------------------+
 ```
+
+Key points:
+- All tables include `id`, `created_at`, and `updated_at` fields for tracking creation and modifications.
+- `Instrument` table stores information about financial instruments.
+- `PortfolioTransaction` table records buy and sell transactions, linked to instruments.
+- `DailyPrice` table stores daily price data for instruments, including the data provider.
+- `PortfolioDailySummary` table keeps track of daily portfolio performance metrics.
+- `JobExecution` table logs the execution of scheduled jobs, including their status and duration.
+
+Relationships:
+- `PortfolioTransaction` and `DailyPrice` have a many-to-one relationship with `Instrument`.
+- `PortfolioDailySummary` is independent but calculated based on transactions and prices.
+- `JobExecution` is independent and used for monitoring and auditing system jobs.
 
 ---
 
