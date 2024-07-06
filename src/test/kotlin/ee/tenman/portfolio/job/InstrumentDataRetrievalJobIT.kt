@@ -62,8 +62,8 @@ class InstrumentDataRetrievalJobIT {
       instrumentRepository.save(it)
     }
 
-    instrumentDataRetrievalJob.retrieveInstrumentData()
-    instrumentDataRetrievalJob.retrieveInstrumentData()
+    instrumentDataRetrievalJob.execute()
+    instrumentDataRetrievalJob.execute()
 
     assertThat(dailyPriceRepository.findAll()).isNotEmpty.hasSize(100)
       .first().satisfies({
