@@ -21,7 +21,7 @@ class PortfolioSummaryService(private val portfolioDailySummaryRepository: Portf
   @Transactional
   @Caching(
     evict = [
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "'summaries'")
+      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'")
     ]
   )
   fun saveDailySummaries(summaries: List<PortfolioDailySummary>) {
@@ -41,7 +41,6 @@ class PortfolioSummaryService(private val portfolioDailySummaryRepository: Portf
   }
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [SUMMARY_CACHE], key = "#date")
   fun getDailySummary(date: LocalDate): PortfolioDailySummary? {
     return portfolioDailySummaryRepository.findByEntryDate(date)
   }
