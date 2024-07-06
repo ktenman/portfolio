@@ -1,7 +1,7 @@
 <template>
   <div class="container mt-3">
     <div class="d-flex justify-content-between">
-      <h4>Portfolio Transactions</h4>
+      <h4>Instruments</h4>
       <button class="btn btn-primary mb-3" id="addNewInstrument" @click="showAddInstrumentModal">
         Add New Instrument
       </button>
