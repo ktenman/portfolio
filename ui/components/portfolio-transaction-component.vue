@@ -1,8 +1,13 @@
 <template>
   <div class="container mt-3">
-    <button class="btn btn-primary mb-3" @click="showAddTransactionModal">
-      Add New Transaction
-    </button>
+    <!-- make this add new transaction button a separate component to the right align to right of the screen layout bootstrap
+   -->
+    <div class="d-flex justify-content-between">
+      <h4>Portfolio Transactions</h4>
+      <button class="btn btn-primary mb-3" @click="showAddTransactionModal">
+        Add New Transaction
+      </button>
+    </div>
 
     <!-- Loading spinner -->
     <div v-if="isLoading" class="text-left my-5">
