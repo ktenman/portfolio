@@ -7,7 +7,7 @@
     </div>
     <div v-else>
       <div class="mb-5 chart-container">
-        <Line v-if="chartData" :data="chartData" :options="chartOptions" />
+        <Line v-if="chartData" :data="chartData" :options="chartOptions as any" />
       </div>
 
       <div class="table-responsive">
