@@ -1,8 +1,11 @@
 <template>
   <div class="container mt-3">
-    <button class="btn btn-primary mb-3" id="addNewInstrument" @click="showAddInstrumentModal">
-      Add New Instrument
-    </button>
+    <div class="d-flex justify-content-between">
+      <h4>Portfolio Transactions</h4>
+      <button class="btn btn-primary mb-3" @click="showAddInstrumentModal">
+        Add New Instrument
+      </button>
+    </div>
 
     <!-- Loading spinner -->
     <div v-if="isLoading" class="text-left my-5">
