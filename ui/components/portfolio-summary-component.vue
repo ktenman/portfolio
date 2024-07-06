@@ -1,6 +1,6 @@
 <template>
-  <div class="container mt-3">
-    <div class="d-flex justify-content-between">
+  <div class="container mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-3">
       <h4>Portfolio Summary</h4>
     </div>
     <div v-if="isLoading" class="text-left my-5">
