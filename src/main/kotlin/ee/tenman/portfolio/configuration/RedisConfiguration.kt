@@ -18,6 +18,7 @@ class RedisConfiguration {
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(366))
     cacheConfigurations[THIRTY_MINUTES] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30))
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+    cacheConfigurations[TRANSACTION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager.builder(connectionFactory!!)
       .cacheDefaults(defaultConfig)
@@ -28,6 +29,7 @@ class RedisConfiguration {
   companion object {
     const val INSTRUMENT_CACHE = "instrument-cache"
     const val SUMMARY_CACHE = "summary-cache"
+    const val TRANSACTION_CACHE = "transaction-cache"
     const val ONE_DAY_CACHE: String = "one-day-cache"
     const val THIRTY_MINUTES: String = "thirty-minutes-cache"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
