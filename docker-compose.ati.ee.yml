@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
     volumes:
-      - postgres_data_15:/var/lib/postgresql/data
+      - postgres_data_v15:/var/lib/postgresql/data
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
       interval: 3s
@@ -25,8 +25,6 @@ services:
       interval: 3s
       timeout: 1s
       retries: 5
-    depends_on:
-      - postgres
     restart: always
 
   backend:
@@ -37,6 +35,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
     image: ktenman/portfolio-be:latest
     depends_on:
+      - postgres
       - redis
     restart: always
 
@@ -62,7 +61,7 @@ services:
     restart: always
 
 volumes:
-  postgres_data_15:
+  postgres_data_v15:
   redis_data:
   caddy_data:
   caddy_config:
