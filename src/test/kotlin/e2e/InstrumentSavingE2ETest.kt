@@ -1,12 +1,7 @@
 package e2e
 
-import com.codeborne.selenide.Condition
 import com.codeborne.selenide.Condition.text
-import com.codeborne.selenide.Condition.visible
-import com.codeborne.selenide.Selectors.withText
 import com.codeborne.selenide.Selenide
-import com.codeborne.selenide.Selenide.element
-import com.codeborne.selenide.Selenide.elements
 import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.SelenideElement
 import org.assertj.core.api.Assertions.assertThat
@@ -35,11 +30,11 @@ class InstrumentSavingE2ETest {
     id("category").selectOption(DEFAULT_CATEGORY)
     id("currency").selectOption(DEFAULT_CURRENCY)
 
-    elements(tagName("button")).filter(text("Save")).first().click()
+    Selenide.elements(tagName("button")).filter(text("Save")).first().click()
 
     Selenide.sleep(1000)
 
-    val alertMessage = element(className("alert-success"))
+    val alertMessage = Selenide.element(className("alert-success"))
     if (alertMessage.exists()) {
       assertThat(alertMessage.text).isEqualTo("Instrument saved successfully.")
     } else {
@@ -47,5 +42,5 @@ class InstrumentSavingE2ETest {
     }
   }
 
-  private fun id(id: String): SelenideElement = element(By.id(id))
+  private fun id(id: String): SelenideElement = Selenide.element(By.id(id))
 }

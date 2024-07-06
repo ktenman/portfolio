@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import NavBar from './components/nav-bar.vue'
 
 const currentYear = ref(new Date().getFullYear())
