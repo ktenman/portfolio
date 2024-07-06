@@ -6,7 +6,7 @@
       </div>
     </div>
     <div v-else>
-      <div class="mb-5">
+      <div class="mb-5 chart-container">
         <Line v-if="chartData" :data="chartData" :options="chartOptions" />
       </div>
 
@@ -36,7 +36,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
 import { Line } from 'vue-chartjs'
 import {
@@ -49,15 +49,9 @@ import {
 } from 'chart.js'
 import { PortfolioSummaryService } from '../services/portfolio-summary-service.ts'
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip
-)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip)
 
-const summaryData = ref<PortfolioSummary[]>([])
+const summaryData = shallowRef<PortfolioSummary[]>([])
 const isLoading = ref(true)
 const portfolioSummaryService = new PortfolioSummaryService()
 
@@ -141,11 +135,17 @@ const chartData = computed(() => {
 
 const chartOptions = {
   responsive: true,
+  animation: false,
   interaction: {
     mode: 'index' as const,
     intersect: false,
   },
   scales: {
+    x: {
+      ticks: {
+        maxTicksLimit: 5,
+      },
+    },
     y: {
       type: 'linear' as const,
       display: true,
@@ -153,6 +153,9 @@ const chartOptions = {
       title: {
         display: true,
         text: 'Amount ($)',
+      },
+      ticks: {
+        maxTicksLimit: 8,
       },
     },
     y1: {
@@ -166,6 +169,9 @@ const chartOptions = {
       grid: {
         drawOnChartArea: false,
       },
+      ticks: {
+        maxTicksLimit: 8,
+      },
     },
   },
 }
@@ -175,5 +181,10 @@ const chartOptions = {
   .table {
     font-size: 12px;
   }
+}
+.chart-container {
+  height: 50vh;
+  width: 80vw;
+  margin: 0 auto;
 }
 </style>
