@@ -14,13 +14,15 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 
 @Component
 class DailyPortfolioXirrJob(
   private val portfolioTransactionService: PortfolioTransactionService,
   private val portfolioSummaryService: PortfolioSummaryService,
-  private val dailyPriceService: DailyPriceService
+  private val dailyPriceService: DailyPriceService,
+  private val clock: Clock
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -35,7 +37,7 @@ class DailyPortfolioXirrJob(
     }
 
     val firstTransactionDate = allTransactions.first().transactionDate
-    val yesterday = LocalDate.now().minusDays(1)
+    val yesterday = LocalDate.now(clock).minusDays(1)
 
     log.info("Calculating summaries from $firstTransactionDate to $yesterday")
 

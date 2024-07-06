@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class PortfolioTransactionService(private val portfolioTransactionRepository: PortfolioTransactionRepository) {
+class PortfolioTransactionService(
+  private val portfolioTransactionRepository: PortfolioTransactionRepository
+) {
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
