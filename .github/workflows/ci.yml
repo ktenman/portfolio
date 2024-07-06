@@ -69,9 +69,6 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Build with Docker Compose (for E2E tests)
-        if: matrix.test-type == 'e2e'
-        run: docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d build
       - name: Start services with Docker Compose (for E2E tests)
         if: matrix.test-type == 'e2e'
         run: docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d
