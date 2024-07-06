@@ -293,8 +293,14 @@ const getInstrumentSymbol = (instrumentId: number | undefined) => {
   return instrument ? instrument.symbol : 'Unknown'
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString()
+const formatDate = (date: string): string => {
+  const dateObj = new Date(date)
+
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const year = String(dateObj.getFullYear()).slice(-2)
+
+  return `${day}.${month}.${year}`
 }
 
 const alertClass = computed(() => getAlertBootstrapClass(alertType.value))

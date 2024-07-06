@@ -10,5 +10,4 @@ export class PortfolioSummaryService {
     }
     return (await response.json()) as PortfolioSummary[]
   }
-
 }
