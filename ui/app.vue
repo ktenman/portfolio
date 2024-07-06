@@ -2,7 +2,7 @@
   <div class="d-flex flex-column min-vh-100">
     <NavBar />
     <main class="flex-grow-1">
-      <div class="container-fluid py-4">
+      <div class="container-fluid py-2">
         <router-view></router-view>
       </div>
     </main>
