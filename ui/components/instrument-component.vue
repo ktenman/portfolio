@@ -23,7 +23,7 @@
             <th>Symbol</th>
             <th>Name</th>
             <th>Currency</th>
-            <th>Actions</th>
+            <th class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -31,14 +31,11 @@
             <td>{{ instrument.symbol }}</td>
             <td>{{ instrument.name }}</td>
             <td>{{ instrument.baseCurrency }}</td>
-            <td>
-              <button class="btn btn-sm btn-secondary me-2" @click="editInstrument(instrument)">
+            <td class="text-end">
+              <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
                 <font-awesome-icon icon="pencil-alt" />
                 <span class="d-none d-md-inline ms-1">Edit</span>
               </button>
-              <!--              <button class="btn btn-sm btn-danger" @click="deleteInstrument(instrument.id)">-->
-              <!--                Delete-->
-              <!--              </button>-->
             </td>
           </tr>
         </tbody>
