@@ -45,7 +45,7 @@ services:
     restart: always
 
   app:
-    image: caddy:latest
+    image: caddy:2.8-alpine
     ports:
       - '80:80'
       - '443:443'
