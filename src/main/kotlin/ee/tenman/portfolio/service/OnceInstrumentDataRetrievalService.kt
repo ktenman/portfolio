@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service
 @Profile("!test")
 class OnceInstrumentDataRetrievalService(
   private val instrumentDataRetrievalJob: InstrumentDataRetrievalJob,
-  private val dailyPortfolioXirrJob: DailyPortfolioXirrJob
+  private val dailyPortfolioXirrJob: DailyPortfolioXirrJob,
+  private val jobExecutionService: JobExecutionService
 ) {
-
   companion object {
     private val log = LoggerFactory.getLogger(OnceInstrumentDataRetrievalService::class.java)
   }
@@ -21,8 +21,7 @@ class OnceInstrumentDataRetrievalService(
   @PostConstruct
   fun retrieveData() {
     log.info("Retrieving data for all instruments")
-    instrumentDataRetrievalJob.retrieveInstrumentData()
-    dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
+    jobExecutionService.executeJob(instrumentDataRetrievalJob)
+    jobExecutionService.executeJob(dailyPortfolioXirrJob)
   }
-
 }

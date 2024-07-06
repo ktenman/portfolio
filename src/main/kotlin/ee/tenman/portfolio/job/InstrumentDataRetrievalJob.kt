@@ -15,11 +15,11 @@ class InstrumentDataRetrievalJob(
   private val alphaVantageService: AlphaVantageService,
   private val dailyPriceService: DailyPriceService,
   private val transactionRunner: TransactionRunner
-) {
+) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 0 3,6,18,21 * * *")
-  fun retrieveInstrumentData() {
+  override fun execute() {
     log.info("Starting instrument data retrieval job")
     val instruments = instrumentService.getAllInstruments()
 
@@ -52,4 +52,6 @@ class InstrumentDataRetrievalJob(
 
     log.info("Completed instrument data retrieval job. Processed ${instruments.size} instruments.")
   }
+
+  override fun getName(): String = "InstrumentDataRetrievalJob"
 }
