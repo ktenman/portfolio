@@ -131,6 +131,7 @@ docker-compose -f docker-compose.yml up -d
 To run end-to-end tests:
 
 ```bash
+docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d
 export E2E=true
 ./gradlew test --info -Pheadless=true
 ```
