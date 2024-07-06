@@ -18,7 +18,7 @@ class LoggingAspect {
 
   @Resource
   private lateinit var objectMapper: ObjectMapper
-  private val log = LoggerFactory.getLogger(LoggingAspect::class.java)
+  private val log = LoggerFactory.getLogger(javaClass)
 
   @Around("@annotation(Loggable)")
   @Throws(Throwable::class)

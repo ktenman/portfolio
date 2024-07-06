@@ -23,11 +23,11 @@ class DailyPortfolioXirrJob(
   private val portfolioSummaryService: PortfolioSummaryService,
   private val dailyPriceService: DailyPriceService,
   private val clock: Clock
-) {
+) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 30 22 * * *")
-  fun calculateDailyPortfolioXirr() {
+  override fun execute() {
     log.info("Starting daily portfolio XIRR calculation")
     val allTransactions = portfolioTransactionService.getAllTransactions().sortedBy { it.transactionDate }
 
@@ -133,4 +133,6 @@ class DailyPortfolioXirrJob(
         .divide(BigDecimal(365.25), 4, RoundingMode.HALF_UP)
     )
   }
+
+  override fun getName(): String = "DailyPortfolioXirrJob"
 }

@@ -14,9 +14,8 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class AlphaVantageService {
-
+  private val log = LoggerFactory.getLogger(javaClass)
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(AlphaVantageService::class.java)
     private val GSON = Gson()
     private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
   }

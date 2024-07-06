@@ -95,11 +95,11 @@ class DailyPortfolioXirrJobIT {
         )
     )
 
-    instrumentDataRetrievalJob.retrieveInstrumentData()
-    instrumentDataRetrievalJob.retrieveInstrumentData()
+    instrumentDataRetrievalJob.execute()
+    instrumentDataRetrievalJob.execute()
 
-    dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
-    dailyPortfolioXirrJob.calculateDailyPortfolioXirr()
+    dailyPortfolioXirrJob.execute()
+    dailyPortfolioXirrJob.execute()
 
     val summaries = portfolioDailySummaryRepository.findAll()
     assertThat(summaries).hasSize(4)

@@ -10,7 +10,7 @@ import java.time.temporal.ChronoUnit
 
 @Service
 class XirrService(private val alphaVantageService: AlphaVantageService) {
-  private val log = LoggerFactory.getLogger(XirrService::class.java)
+  private val log = LoggerFactory.getLogger(javaClass)
   private val baseMonthlyInvestment = BigDecimal(3000.00)
 
   fun calculateStockXirr(ticker: String): Double = runCatching {
