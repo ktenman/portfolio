@@ -9,31 +9,36 @@
       </div>
     </div>
     <div v-else>
-      <div class="mb-3 chart-container">
-        <Line v-if="chartData" :data="chartData" :options="chartOptions as any" />
+      <div v-if="summaryData.length === 0" class="alert alert-info" role="alert">
+        No portfolio summary data found.
       </div>
+      <div v-else>
+        <div class="mb-3 chart-container">
+          <Line v-if="chartData" :data="chartData" :options="chartOptions as any" />
+        </div>
 
-      <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Total</th>
-              <th>Profit</th>
-              <th>XIRR</th>
-              <th>Per Day</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="summary in summaryData" :key="summary.date">
-              <td>{{ formatDate(summary.date) }}</td>
-              <td>{{ formatCurrency(summary.totalValue) }}</td>
-              <td>{{ formatCurrency(summary.totalProfit) }}</td>
-              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-              <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Profit</th>
+                <th>XIRR</th>
+                <th>Per Day</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="summary in summaryData" :key="summary.date">
+                <td>{{ formatDate(summary.date) }}</td>
+                <td>{{ formatCurrency(summary.totalValue) }}</td>
+                <td>{{ formatCurrency(summary.totalProfit) }}</td>
+                <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
+                <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
