@@ -34,8 +34,8 @@
           <tr v-for="transaction in transactions" :key="transaction.id">
             <td>{{ getInstrumentSymbol(transaction.instrumentId) }}</td>
             <td>{{ transaction.transactionType }}</td>
-            <td>{{ transaction.quantity }}</td>
-            <td>{{ transaction.price }}</td>
+            <td>{{ formatNumber(transaction.quantity) }}</td>
+            <td>{{ formatNumber(transaction.price) }}</td>
             <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td>
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
@@ -296,6 +296,11 @@ const getInstrumentSymbol = (instrumentId: number | undefined) => {
   if (instrumentId === undefined) return 'Unknown'
   const instrument = instruments.value.find(i => i.id === instrumentId)
   return instrument ? instrument.symbol : 'Unknown'
+}
+
+const formatNumber = (value: number | undefined): string => {
+  if (value === undefined) return ''
+  return value.toFixed(2)
 }
 
 const formatDate = (date: string): string => {
