@@ -5,7 +5,7 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data_e2e:/var/lib/postgresql/data
-      -
+
   redis:
     volumes:
       - redis_data_e2e:/data
