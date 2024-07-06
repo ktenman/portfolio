@@ -3,7 +3,7 @@
     <!-- make this add new transaction button a separate component to the right align to right of the screen layout bootstrap
    -->
     <div class="d-flex justify-content-between">
-      <h4>Portfolio Transactions</h4>
+      <h4>Transactions</h4>
       <button class="btn btn-primary mb-3" @click="showAddTransactionModal">
         Add New Transaction
       </button>
