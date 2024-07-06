@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.DailyPriceService
+import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.service.PortfolioSummaryService
 import ee.tenman.portfolio.service.PortfolioTransactionService
 import ee.tenman.portfolio.service.xirr.Transaction
@@ -22,11 +23,18 @@ class DailyPortfolioXirrJob(
   private val portfolioTransactionService: PortfolioTransactionService,
   private val portfolioSummaryService: PortfolioSummaryService,
   private val dailyPriceService: DailyPriceService,
-  private val clock: Clock
+  private val clock: Clock,
+  private val jobExecutionService: JobExecutionService
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 30 22 * * *")
+  fun runJob() {
+    log.info("Running daily portfolio XIRR job")
+    jobExecutionService.executeJob(this)
+    log.info("Completed daily portfolio XIRR job")
+  }
+
   override fun execute() {
     log.info("Starting daily portfolio XIRR calculation")
     val allTransactions = portfolioTransactionService.getAllTransactions().sortedBy { it.transactionDate }
