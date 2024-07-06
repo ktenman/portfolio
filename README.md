@@ -179,5 +179,7 @@ Here's a simplified representation of the main database tables:
 | earnings_per_day       |
 +------------------------+
 ```
+
 ---
+
 This README provides a comprehensive guide for developers to set up, run, and understand the core functionalities and technical aspects of the Portfolio Management System.
