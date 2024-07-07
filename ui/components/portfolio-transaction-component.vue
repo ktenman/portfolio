@@ -189,6 +189,7 @@ onMounted(() => {
   transactionModal = new Modal(document.getElementById('transactionModal')!)
 })
 
+
 const showAddTransactionModal = () => {
   isEditing.value = false
   resetCurrentTransaction()
