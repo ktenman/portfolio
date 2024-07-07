@@ -8,7 +8,7 @@ services:
     volumes:
       - postgres_data_v16:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d portfolio"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d portfolio" ]
       interval: 3s
       timeout: 1s
       retries: 5
@@ -34,14 +34,21 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     image: ktenman/portfolio-be:latest
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.backend
     depends_on:
       - postgres
       - redis
     restart: always
+    mem_limit: 1024m
 
   frontend:
     container_name: frontend
     image: ktenman/portfolio-fe:latest
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.frontend
     depends_on:
       - backend
     restart: always
