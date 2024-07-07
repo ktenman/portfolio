@@ -49,6 +49,9 @@ services:
 
   app:
     image: caddy:2.8-alpine
+    environment:
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     ports:
       - '80:80'
       - '443:443'
