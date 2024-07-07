@@ -25,13 +25,13 @@ class OnceInstrumentDataRetrievalService(
     CompletableFuture.runAsync {
       log.info("Retrieving data for all instruments")
       val allDailySummaries = portfolioSummaryService.getAllDailySummaries()
-      if (allDailySummaries.isNotEmpty()) {
-        log.info("Data already retrieved. Skipping.")
-        return@runAsync
+      if (allDailySummaries.isEmpty()) {
+        log.info("No daily summaries found. Running instrument data retrieval job.")
+        jobExecutionService.executeJob(instrumentDataRetrievalJob)
+        jobExecutionService.executeJob(dailyPortfolioXirrJob)
+      } else {
+        log.info("Daily summaries found. Skipping instrument data retrieval job.")
       }
-      log.info("No daily summaries found. Running instrument data retrieval job.")
-      jobExecutionService.executeJob(instrumentDataRetrievalJob)
-      jobExecutionService.executeJob(dailyPortfolioXirrJob)
     }
   }
 }
