@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import java.util.concurrent.CompletableFuture
 
 @Service
 @Profile("!test")
@@ -21,14 +22,16 @@ class OnceInstrumentDataRetrievalService(
 
   @PostConstruct
   fun retrieveData() {
-    log.info("Retrieving data for all instruments")
-    val allDailySummaries = portfolioSummaryService.getAllDailySummaries()
-    if (allDailySummaries.isNotEmpty()) {
-      log.info("Data already retrieved. Skipping.")
-      return
+    CompletableFuture.runAsync {
+      log.info("Retrieving data for all instruments")
+      val allDailySummaries = portfolioSummaryService.getAllDailySummaries()
+      if (allDailySummaries.isNotEmpty()) {
+        log.info("Data already retrieved. Skipping.")
+        return@runAsync
+      }
+      log.info("No daily summaries found. Running instrument data retrieval job.")
+      jobExecutionService.executeJob(instrumentDataRetrievalJob)
+      jobExecutionService.executeJob(dailyPortfolioXirrJob)
     }
-    log.info("No daily summaries found. Running instrument data retrieval job.")
-    jobExecutionService.executeJob(instrumentDataRetrievalJob)
-    jobExecutionService.executeJob(dailyPortfolioXirrJob)
   }
 }
