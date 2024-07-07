@@ -1,0 +1,73 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: portfolio
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data_v16:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d portfolio" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+    restart: always
+    ports:
+      - '5432:5432'
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ 'CMD', 'redis-cli', 'ping' ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+    restart: always
+
+  backend:
+    container_name: backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    image: ktenman/portfolio-be:latest
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.backend
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+    mem_limit: 1024m
+
+  frontend:
+    container_name: frontend
+    image: ktenman/portfolio-fe:latest
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.frontend
+    depends_on:
+      - backend
+    restart: always
+
+  app:
+    image: caddy:2.8-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    restart: always
+
+volumes:
+  postgres_data_v16:
+  redis_data:
+  caddy_data:
+  caddy_config:
