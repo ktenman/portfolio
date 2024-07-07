@@ -29,7 +29,7 @@ class DailyPortfolioXirrJob(
   private val log = LoggerFactory.getLogger(javaClass)
 
 //  @Scheduled(cron = "0 30 22 * * *")
-  @Scheduled(cron = "0 0/5 * * * *")
+  @Scheduled(cron = "0 * * * * *")
   fun runJob() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
