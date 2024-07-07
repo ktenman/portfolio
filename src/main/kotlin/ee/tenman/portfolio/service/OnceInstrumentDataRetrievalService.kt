@@ -16,9 +16,7 @@ class OnceInstrumentDataRetrievalService(
   private val jobExecutionService: JobExecutionService,
   private val portfolioSummaryService: PortfolioSummaryService
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(OnceInstrumentDataRetrievalService::class.java)
-  }
+  private val log = LoggerFactory.getLogger(javaClass)
 
   @PostConstruct
   fun retrieveData() {
