@@ -112,31 +112,23 @@ npm run dev
 
 You can access it in your web browser at http://localhost:61234
 
-### Running in Production
-
-To run the application in production, use Docker Compose:
-
-```bash
-docker-compose -f docker-compose.yml up -d
-```
-
-Once the application is up and running, you can access it in your web browser at http://localhost
-
-### Updating the Application
+### Running and Updating the Application
 
 To update the application or its services after making changes:
 
 1. Rebuild the services:
 
 ```bash
-docker-compose -f docker-compose.yml build
+docker-compose -f docker-compose.local.yml build
 ```
 
 2. Restart the services for the changes to take effect:
 
 ```bash
-docker-compose -f docker-compose.yml up -d
+docker-compose -f docker-compose.local.yml up -d
 ```
+
+Once the application is up and running, you can access it in your web browser at http://localhost
 
 ### End-to-End Tests
 
