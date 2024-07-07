@@ -19,6 +19,10 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Instruments',
     component: InstrumentComponent,
   },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
+  },
 ]
 
 const router = createRouter({
