@@ -145,7 +145,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="saveTransaction">
+            <button type="button" class="btn btn-primary" :disabled="!isValidTransaction(currentTransaction.value)" @click="saveTransaction">
               {{ isEditing ? 'Update' : 'Save' }} Transaction
             </button>
           </div>
@@ -288,7 +288,12 @@ const isValidTransaction = (
     (transaction.transactionType === 'BUY' || transaction.transactionType === 'SELL') &&
     typeof transaction.quantity === 'number' &&
     typeof transaction.price === 'number' &&
-    typeof transaction.transactionDate === 'string'
+    typeof transaction.transactionDate === 'string' &&
+    transaction.instrumentId !== undefined &&
+    transaction.transactionType !== undefined &&
+    transaction.quantity !== undefined &&
+    transaction.price !== undefined &&
+    transaction.transactionDate.trim() !== ''
   )
 }
 
