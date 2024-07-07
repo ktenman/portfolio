@@ -3,16 +3,10 @@ www.fov.ee {
 }
 
 fov.ee {
-    basicauth /* {
-        estimol $2y$05$i1Qdvsw9sT1xfn/mtYFMguu3.JbKWknK2UEoyXZIOeWkjSZDwe.1m
-    }
+    encode gzip
 
-    basicauth_cookie {
-        name auth_cookie
-        max_age 31536000  # 1 year in seconds
-        secure
-        httponly
-        same_site lax
+    basic_auth /* {
+        estimol $2y$05$i1Qdvsw9sT1xfn/mtYFMguu3.JbKWknK2UEoyXZIOeWkjSZDwe.1m
     }
 
     reverse_proxy /api/* backend:8080
