@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.service
 
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
