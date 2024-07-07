@@ -33,9 +33,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: ktenman/portfolio-be:latest
     depends_on:
       - postgres
       - redis
@@ -44,9 +42,7 @@ services:
 
   frontend:
     container_name: frontend
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: ktenman/portfolio-fe:latest
     depends_on:
       - backend
     restart: always
