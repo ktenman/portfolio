@@ -12,7 +12,7 @@ import java.time.Duration
 @EnableCaching
 class RedisConfiguration {
   @Bean
-  fun cacheManager(connectionFactory: RedisConnectionFactory?): RedisCacheManager {
+  fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager {
     val cacheConfigurations: MutableMap<String, RedisCacheConfiguration> = HashMap()
     cacheConfigurations[ONE_DAY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(366))
@@ -20,7 +20,7 @@ class RedisConfiguration {
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[TRANSACTION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
-    return RedisCacheManager.builder(connectionFactory!!)
+    return RedisCacheManager.builder(connectionFactory)
       .cacheDefaults(defaultConfig)
       .withInitialCacheConfigurations(cacheConfigurations)
       .build()
