@@ -145,7 +145,12 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" :disabled="!isValidTransaction(currentTransaction.value)" @click="saveTransaction">
+            <button
+              type="button"
+              class="btn btn-primary"
+              :disabled="!isValidTransaction(currentTransaction.value)"
+              @click="saveTransaction"
+            >
               {{ isEditing ? 'Update' : 'Save' }} Transaction
             </button>
           </div>
@@ -188,7 +193,6 @@ onMounted(() => {
   fetchInstruments()
   transactionModal = new Modal(document.getElementById('transactionModal')!)
 })
-
 
 const showAddTransactionModal = () => {
   isEditing.value = false
