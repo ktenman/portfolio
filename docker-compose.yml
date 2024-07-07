@@ -19,7 +19,7 @@ services:
   redis:
     image: redis:7-alpine
     volumes:
-      - redis_data_local:/data
+      - redis_data:/data
     healthcheck:
       test: [ 'CMD', 'redis-cli', 'ping' ]
       interval: 3s
