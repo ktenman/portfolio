@@ -1,8 +1,3 @@
-{
-    # Import the OAuth2 plugin
-    import http.authentication.providers.oauth2
-}
-
 www.fov.ee {
     redir https://fov.ee{uri}
 }
@@ -10,30 +5,10 @@ www.fov.ee {
 fov.ee {
     encode gzip
 
-    # Google OAuth2 configuration
-    oauth2 {
-        provider google
-        client_id ${GOOGLE_CLIENT_ID}
-        client_secret ${GOOGLE_CLIENT_SECRET}
-        scopes openid email profile
-        redirect_url https://fov.ee/oauth2/callback
-        auth_url https://accounts.google.com/o/oauth2/auth
-        token_url https://oauth2.googleapis.com/token
-        user_info_url${GOOGLE_CLIENT_SECRET} https://www.googleapis.com/oauth2/v3/userinfo
-        allowed_domains gmail.com
-        allowed_emails ktenman@gmail.com
-        auth_method login
+    basic_auth /* {
+        estimol $2y$05$i1Qdvsw9sT1xfn/mtYFMguu3.JbKWknK2UEoyXZIOeWkjSZDwe.1m
     }
 
-    reverse_proxy /api/* backend:8080 {
-        header_up X-Real-IP {remote}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
-    }
-
-    reverse_proxy /* frontend:80 {
-        header_up X-Real-IP {remote}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
-    }
+    reverse_proxy /api/* backend:8080
+    reverse_proxy /* frontend:80
 }
