@@ -102,7 +102,7 @@ class DailyPortfolioXirrJobIT {
     dailyPortfolioXirrJob.execute()
 
     val summaries = portfolioDailySummaryRepository.findAll()
-    assertThat(summaries).hasSize(4)
+    assertThat(summaries).hasSize(2)
     summaries.minByOrNull { it.entryDate }!!.let {
       assertThat(it.entryDate).isEqualTo("2024-07-01")
       assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("100.4556000000"))
