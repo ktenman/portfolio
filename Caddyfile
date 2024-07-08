@@ -19,7 +19,7 @@ fov.ee {
         redirect_url https://fov.ee/oauth2/callback
         auth_url https://accounts.google.com/o/oauth2/auth
         token_url https://oauth2.googleapis.com/token
-        user_info_url https://www.googleapis.com/oauth2/v3/userinfo
+        user_info_url${GOOGLE_CLIENT_SECRET} https://www.googleapis.com/oauth2/v3/userinfo
         allowed_domains gmail.com
         allowed_emails ktenman@gmail.com
         auth_method login
