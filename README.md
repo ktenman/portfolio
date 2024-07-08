@@ -35,20 +35,20 @@ Before you begin, ensure your system meets the following requirements:
 
 ## Architecture 🏗️
 
-The Portfolio Management System is built with a modular architecture, comprising several key components that work
+The Portfolio Management System is built with a modular architecture, comprising several vital components that work
 together to deliver a comprehensive portfolio management experience.
 
 ![System Architecture](./screenshots/architecture.svg)
 
 ### Frontend 🌐
 
-The frontend, built with Vue.js and Bootstrap, provides a responsive user interface. It communicates with the backend
+The front end, built with Vue.js and Bootstrap, provides a responsive user interface. It communicates with the backend
 via HTTP to retrieve and display portfolio data, transactions, and performance metrics.
 
 ### Backend 🧠
 
 Developed using Spring Boot, the backend handles API requests, processes data, and interacts with the database and
-cache. It exposes RESTful endpoints for the frontend to consume and manages the business logic for portfolio
+cache. It exposes RESTful endpoints for the front end to consume and manages the business logic for portfolio
 calculations.
 
 ### Database 🗄️
@@ -58,7 +58,7 @@ and daily price information. The backend performs CRUD operations using Spring D
 
 ### Cache 🚀
 
-Redis, an in-memory data store, is used as a caching layer to improve data retrieval performance. Frequently accessed
+Redis, an in-memory data store, is a caching layer to improve data retrieval performance. Frequently accessed
 data, such as instrument details and portfolio summaries, is stored in the cache, reducing database queries and
 enhancing responsiveness.
 
@@ -74,10 +74,10 @@ Two main jobs run periodically to keep the system updated:
 ### Interaction Flow 📊
 
 1. User accesses the frontend, triggering HTTP requests to the backend for portfolio data.
-2. Backend checks the Redis cache for the requested data.
-3. If data is cached, the backend retrieves it and sends it to the frontend.
-4. If data is not cached, the backend queries the PostgreSQL database.
-5. Retrieved data is cached in Redis for future requests and sent to the frontend.
+2. The backend checks the Redis cache for the requested data.
+3. If data is cached, the backend retrieves and sends it to the frontend.
+4. the backend queries the PostgreSQL database if data is not cached.
+5. Retrieved data is cached in Redis for future requests and sent to the front end.
 6. Frontend receives and displays the portfolio data to the user.
 7. Periodic jobs update the database with the latest financial data and calculate performance metrics.
 
@@ -103,7 +103,7 @@ Navigate to the root directory and compile the Java application using Gradle:
 
 ### Frontend Setup
 
-Install frontend dependencies, and start the development server:
+Install frontend dependencies and start the development server:
 
 ```bash
 npm install
@@ -144,7 +144,7 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 ### Continuous Integration and Deployment
 
 - A CI pipeline via GitHub Actions in the `.github` folder automates unit and integration tests.
-- Dependabot keeps Gradle and GitHub Actions versions up-to-date, automating dependency management.
+- The Dependabot updates Gradle and GitHub Actions versions, automating dependency management.
 
 ## Key Features
 
@@ -157,11 +157,7 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 
 ## Database Design
 
-Here's a simplified representation of the main database tables:
-
-## Database Design
-
-Here's a simplified representation of the main database tables:
+Here's a simplified representation of the primary database tables:
 
 ```
 +------------------+      +------------------------+      +-------------------+
@@ -197,18 +193,18 @@ Here's a simplified representation of the main database tables:
 
 Key points:
 
-- All tables include `id`, `created_at`, and `updated_at` fields for tracking creation and modifications.
-- `Instrument` table stores information about financial instruments.
-- `PortfolioTransaction` table records buy and sell transactions, linked to instruments.
-- `DailyPrice` table stores daily price data for instruments, including the data provider.
-- `PortfolioDailySummary` table keeps track of daily portfolio performance metrics.
-- `JobExecution` table logs the execution of scheduled jobs, including their status and duration.
+- All tables include `id,` `created_at,` and `updated_at` fields for tracking creation and modifications.
+- The `Instrument` table stores information about financial instruments.
+- `PortfolioTransaction` table records buy and sell transactions linked to instruments.
+- The `DailyPrice` table stores daily price data for instruments, including the data provider.
+- The `PortfolioDailySummary` table keeps track of daily portfolio performance metrics.
+- The `JobExecution` table logs the execution of scheduled jobs, including their status and duration.
 
 Relationships:
 
-- `PortfolioTransaction` and `DailyPrice` have a many-to-one relationship with `Instrument`.
+- `PortfolioTransaction` and `DailyPrice` have a many-to-one relationship with `Instrument.`
 - `PortfolioDailySummary` is independent but calculated based on transactions and prices.
-- `JobExecution` is independent and used for monitoring and auditing system jobs.
+- `JobExecution` is independent and used to monitor and audit system jobs.
 
 ## Deployment
 
