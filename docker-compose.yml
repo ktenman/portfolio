@@ -48,7 +48,9 @@ services:
     restart: always
 
   app:
-    image: caddy:2.8-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile-caddy
     environment:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
