@@ -44,7 +44,7 @@ class DailyPortfolioXirrJob(
     }
 
     val firstTransactionDate = allTransactions.first().transactionDate
-    val yesterday = LocalDate.now(clock).minusDays(1)
+    val yesterday = LocalDate.now(clock).minusDays(3)
 
     log.info("Calculating summaries from $firstTransactionDate to $yesterday")
 
