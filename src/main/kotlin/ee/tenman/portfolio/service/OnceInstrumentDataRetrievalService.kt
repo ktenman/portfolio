@@ -26,10 +26,12 @@ class OnceInstrumentDataRetrievalService(
       if (allDailySummaries.isEmpty()) {
         log.info("No daily summaries found. Running instrument data retrieval job.")
         jobExecutionService.executeJob(instrumentDataRetrievalJob)
-        jobExecutionService.executeJob(dailyPortfolioXirrJob)
       } else {
         log.info("Daily summaries found. Skipping instrument data retrieval job.")
       }
+    }.thenRun {
+      log.info("Running daily portfolio XIRR job")
+      jobExecutionService.executeJob(dailyPortfolioXirrJob)
     }
   }
 }
