@@ -32,22 +32,12 @@ class DailyPortfolioXirrJob(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 30 23 * * *")
-  @Caching(
-    evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'")
-    ]
-  )
   fun runJob() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
     log.info("Completed daily portfolio XIRR job")
   }
 
-  @Caching(
-    evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'")
-    ]
-  )
   override fun execute() {
     log.info("Starting daily portfolio XIRR calculation")
     val allTransactions = portfolioTransactionService.getAllTransactions().sortedBy { it.transactionDate }
@@ -92,14 +82,20 @@ class DailyPortfolioXirrJob(
     }
   }
 
-  private fun calculateSummaryForDate(transactions: List<PortfolioTransaction>, date: LocalDate): PortfolioDailySummary {
+  private fun calculateSummaryForDate(
+    transactions: List<PortfolioTransaction>,
+    date: LocalDate
+  ): PortfolioDailySummary {
     val (totalInvestment, currentValue) = processTransactions(transactions, date)
     log.info("For date $date: Total Investment = $totalInvestment, Current Value = $currentValue")
     val xirrResult = calculateXirr(transactions, currentValue, date)
     return createDailySummary(totalInvestment, currentValue, xirrResult, date)
   }
 
-  private fun processTransactions(transactions: List<PortfolioTransaction>, latestDate: LocalDate): Pair<BigDecimal, BigDecimal> {
+  private fun processTransactions(
+    transactions: List<PortfolioTransaction>,
+    latestDate: LocalDate
+  ): Pair<BigDecimal, BigDecimal> {
     val (totalInvestment, holdings) = calculateInvestmentAndHoldings(transactions)
     val currentValue = calculateCurrentValue(holdings, latestDate)
     return Pair(totalInvestment, currentValue)
@@ -133,7 +129,11 @@ class DailyPortfolioXirrJob(
     }
   }
 
-  private fun calculateXirr(transactions: List<PortfolioTransaction>, currentValue: BigDecimal, date: LocalDate): Double {
+  private fun calculateXirr(
+    transactions: List<PortfolioTransaction>,
+    currentValue: BigDecimal,
+    date: LocalDate
+  ): Double {
     val xirrTransactions = transactions.map { transaction ->
       Transaction(-transaction.price.multiply(transaction.quantity).toDouble(), transaction.transactionDate)
     }
@@ -144,7 +144,12 @@ class DailyPortfolioXirrJob(
     return Xirr(xirrTransactions + finalTransaction).calculate()
   }
 
-  private fun createDailySummary(totalInvestment: BigDecimal, currentValue: BigDecimal, xirrResult: Double, date: LocalDate): PortfolioDailySummary {
+  private fun createDailySummary(
+    totalInvestment: BigDecimal,
+    currentValue: BigDecimal,
+    xirrResult: Double,
+    date: LocalDate
+  ): PortfolioDailySummary {
     return PortfolioDailySummary(
       entryDate = date,
       totalValue = currentValue.setScale(4, RoundingMode.HALF_UP),
