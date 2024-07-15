@@ -46,7 +46,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6.3.0
+        uses: docker/build-push-action@v6.4.0
         with:
           platforms: linux/amd64, linux/arm64/v8
           context: .
