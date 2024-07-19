@@ -50,7 +50,9 @@ class PortfolioTransactionController(
   @GetMapping
   @Loggable
   fun getAllTransactions(): List<PortfolioTransactionDto> {
-    return portfolioTransactionService.getAllTransactions().map { PortfolioTransactionDto.fromEntity(it) }
+    return portfolioTransactionService.getAllTransactions()
+      .sortedBy { it.transactionDate }
+      .map { PortfolioTransactionDto.fromEntity(it) }
   }
 
   @GetMapping("/{id}")
