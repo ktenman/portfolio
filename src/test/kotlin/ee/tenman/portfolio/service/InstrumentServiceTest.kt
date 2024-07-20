@@ -3,13 +3,14 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
+import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 
 @IntegrationTest
 class InstrumentServiceTest {
-  @Autowired
+  @Resource
   private lateinit var instrumentRepository: InstrumentRepository
 
   @Test
