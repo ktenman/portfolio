@@ -11,7 +11,7 @@ import kotlin.math.pow
 
 class Xirr(private val transactions: List<Transaction>) {
   companion object {
-    private const val MAX_ELEVATIONS = 100_000
+    private const val MAX_ELEVATIONS = 1_000_000
   }
 
   private val log = LoggerFactory.getLogger(javaClass)
