@@ -24,7 +24,8 @@ class PortfolioSummaryService(private val portfolioDailySummaryRepository: Portf
     ]
   )
   fun saveDailySummaries(summaries: List<PortfolioDailySummary>) {
-    val existingSummaries = portfolioDailySummaryRepository.findAllByEntryDateIn(summaries.map { it.entryDate })
+    val existingSummaries = portfolioDailySummaryRepository.findAllByEntryDateIn(
+      summaries.map { it.entryDate })
       .associateBy { it.entryDate }
 
     val updatedSummaries = summaries.map { newSummary ->
