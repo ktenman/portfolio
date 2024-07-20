@@ -6,7 +6,6 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 
 @IntegrationTest
 class InstrumentServiceTest {

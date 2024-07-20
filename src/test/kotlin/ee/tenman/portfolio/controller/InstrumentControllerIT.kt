@@ -3,15 +3,15 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
+import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -19,10 +19,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @IntegrationTest
 class InstrumentControllerIT {
 
-  @Autowired
+  @Resource
   private lateinit var mockMvc: MockMvc
 
-  @Autowired
+  @Resource
   private lateinit var instrumentRepository: InstrumentRepository
 
   @Test
