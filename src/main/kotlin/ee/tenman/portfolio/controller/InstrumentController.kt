@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.controller
 
-import com.google.gson.Gson
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.service.InstrumentService
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController
 @Validated
 class InstrumentController(
   private val instrumentService: InstrumentService,
-  private val gson: Gson
 ) {
 
   @PostMapping

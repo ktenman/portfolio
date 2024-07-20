@@ -18,8 +18,7 @@ class PortfolioSummaryController(
   @Loggable
   fun getPortfolioSummary(): List<PortfolioSummaryDto> {
     return portfolioSummaryService.getAllDailySummaries()
-      .sortedBy { it.entryDate }
-      .reversed()
+      .sortedByDescending { it.entryDate }
       .map { summary ->
         PortfolioSummaryDto(
           date = summary.entryDate,
