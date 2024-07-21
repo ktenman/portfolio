@@ -47,6 +47,21 @@ services:
       - backend
     restart: always
 
+  auth:
+    container_name: auth
+    image: ktenman/auth:latest
+    environment:
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SPRING_REDIS_HOST: redis
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
   app:
     image: caddy:2.8-alpine
     ports:
