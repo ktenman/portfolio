@@ -39,7 +39,7 @@ class GlobalExceptionHandler {
     return ResponseEntity(apiError, HttpStatus.BAD_REQUEST)
   }
 
-  private fun handleValidationException(exception: Exception): ResponseEntity<ApiError> {
+  fun handleValidationException(exception: Exception): ResponseEntity<ApiError> {
     val errors = extractErrors(exception)
     val apiError = ApiError(
       status = HttpStatus.BAD_REQUEST,
