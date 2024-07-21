@@ -9,11 +9,12 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./healthcheck.sh:/usr/local/bin/healthcheck.sh
     secrets:
       - postgres_user
       - postgres_password
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d portfolio" ]
+      test: [ "CMD-SHELL", "/usr/local/bin/healthcheck.sh" ]
       interval: 3s
       timeout: 1s
       retries: 5
