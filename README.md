@@ -71,13 +71,18 @@ Two main jobs run periodically to keep the system updated:
 2. **Daily Portfolio XIRR Job**: Calculates the Extended Internal Rate of Return (XIRR) for the portfolio on a daily
    basis, providing up-to-date performance metrics.
 
+### Authentication 🔐
+
+The system uses OAuth 2.0 for authentication, specifically integrating with Google's OAuth service. This ensures secure
+user authentication and authorization.
+
 ### Interaction Flow 📊
 
-1. User accesses the frontend, triggering HTTP requests to the backend for portfolio data.
-2. The backend checks the Redis cache for the requested data.
-3. If data is cached, the backend retrieves and sends it to the frontend.
-4. the backend queries the PostgreSQL database if data is not cached.
-5. Retrieved data is cached in Redis for future requests and sent to the front end.
+1. User initiates login through the frontend.
+2. The frontend redirects to the OAuth service for authentication.
+3. Upon successful authentication, the user is redirected back to the application with an authentication token.
+4. The frontend includes this token in subsequent requests to the backend.
+5. The backend validates the token with the Auth service before processing requests.
 6. Frontend receives and displays the portfolio data to the user.
 7. Periodic jobs update the database with the latest financial data and calculate performance metrics.
 
