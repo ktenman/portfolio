@@ -1,12 +1,9 @@
 FROM node:lts-slim as build
 
 WORKDIR /app
-# Copying files separately can help in utilizing Docker's cache mechanism efficiently.
-COPY package.json package-lock.json ./
+
 RUN npm install
 
-# Copying the rest of the files after npm install ensures that a change in the source
-# does not invalidate the Docker cache from the npm install layer.
 COPY ui/ ./ui
 COPY tsconfig.json ./
 COPY tsconfig.node.json ./
@@ -15,8 +12,6 @@ COPY vite-env.d.ts ./
 
 RUN npm run build && find /app -name "index.html"
 
-# Verify that the dist directory exists and contains the expected files.
-# This is just for debugging purposes. You can remove this line once everything works fine.
 RUN ls -la /app/dist/
 
 FROM nginx:alpine
