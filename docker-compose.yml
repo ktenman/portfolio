@@ -60,7 +60,6 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - postgres
       - redis
     restart: always
 
