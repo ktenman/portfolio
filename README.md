@@ -238,6 +238,15 @@ Relationships:
    ```bash
    ./deploy.sh
    ```
+   
+### Example .env file needed for deployment
+
+  ```bash
+  POSTGRES_USER=postgres
+  POSTGRES_PASSWORD=postgres
+  GOOGLE_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXX.apps.googleusercontent.com
+  GOOGLE_CLIENT_SECRET=XXXXXXXXXXXXXXXXXXXXXXXX
+  ```
 
 ---
 
