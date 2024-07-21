@@ -42,5 +42,27 @@ class InstrumentSavingE2ETest {
     }
   }
 
+  @Test
+  fun `should display success message when editing instrument with valid data`() { // Method name updated
+    open("http://localhost:61234/#/instruments")
+
+    Selenide.elements(tagName("button")).filter(text("Edit")).first().click()
+    id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue("GOOGL")
+    id("name").shouldNotHave(text(DEFAULT_NAME)).setValue("Alphabet Inc.")
+    id("category").selectOption("Stock")
+    id("currency").selectOption("USD")
+
+    Selenide.elements(tagName("button")).filter(text("Update")).first().click()
+
+    Selenide.sleep(1000)
+
+    val alertMessage = Selenide.element(className("alert-success"))
+    if (alertMessage.exists()) {
+      assertThat(alertMessage.text).isEqualTo("Instrument updated successfully.")
+    } else {
+      fail("Alert message not found.")
+    }
+  }
+
   private fun id(id: String): SelenideElement = Selenide.element(By.id(id))
 }
