@@ -5,12 +5,15 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: portfolio
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    secrets:
+      - postgres_user
+      - postgres_password
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d portfolio" ]
+      test: [ "CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d portfolio" ]
       interval: 3s
       timeout: 1s
       retries: 5
@@ -37,8 +40,8 @@ services:
     image: ktenman/portfolio-be:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_USERNAME_FILE: /run/secrets/postgres_user
+      SPRING_DATASOURCE_PASSWORD_FILE: /run/secrets/postgres_password
     depends_on:
       - postgres
       - redis
@@ -49,7 +52,7 @@ services:
       restart_policy:
         condition: on-failure
     ports:
-      - '8080:8080' # Ensure this matches your backend service port
+      - '8080:8080'
 
   frontend:
     image: ktenman/portfolio-fe:latest
@@ -79,3 +82,9 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
+
+secrets:
+  postgres_user:
+    external: true
+  postgres_password:
+    external: true
