@@ -13,10 +13,6 @@ object TimeUtility {
   class CustomDuration(startTime: Long) {
     private val durationInSeconds = (System.nanoTime() - startTime) / 1000000000.0
 
-    fun asString(): String {
-      return formatDuration(durationInSeconds)
-    }
-
     override fun toString(): String {
       return formatDuration(durationInSeconds)
     }
