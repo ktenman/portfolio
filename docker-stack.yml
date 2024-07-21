@@ -42,12 +42,20 @@ services:
     depends_on:
       - postgres
       - redis
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     deploy:
       resources:
         limits:
           memory: 1024M
       restart_policy:
         condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
     ports:
       - '8080:8080'
 
@@ -79,3 +87,9 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
+
+secrets:
+  postgres_user:
+    external: true
+  postgres_password:
+    external: true
