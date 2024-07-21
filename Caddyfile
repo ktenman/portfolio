@@ -1,3 +1,4 @@
+# Redirect all HTTP traffic to HTTPS
 www.fov.ee {
     redir https://fov.ee{uri}
 }
@@ -5,10 +6,39 @@ www.fov.ee {
 fov.ee {
     encode gzip
 
-    basic_auth /* {
-        estimol $2y$05$i1Qdvsw9sT1xfn/mtYFMguu3.JbKWknK2UEoyXZIOeWkjSZDwe.1m
+    # Redirect all HTTP traffic to HTTPS
+    @http {
+        protocol http
+    }
+    redir @http https://fov.ee{uri}
+
+    # Login and OAuth routes are handled by the auth server
+    @auth_routes {
+        path /login /login/* /oauth2/* /logout
+    }
+    handle @auth_routes {
+        reverse_proxy auth:8083
     }
 
-    reverse_proxy /api/* backend:8080
-    reverse_proxy /* frontend:80
+    # For all other routes, use authentication
+    @protected {
+        not path /login /login/* /oauth2/* /logout
+    }
+    handle @protected {
+        forward_auth auth:8083 {
+            uri /validate
+            copy_headers X-User-Id
+        }
+
+        # API routes
+        @api {
+            path /api/*
+        }
+        handle @api {
+            reverse_proxy backend:8080
+        }
+
+        # All other routes go to the frontend
+        reverse_proxy frontend:80
+    }
 }
