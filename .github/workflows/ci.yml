@@ -46,13 +46,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.4.0
         with:
@@ -61,13 +54,6 @@ jobs:
           file: Dockerfile.${{ matrix.type }}
           push: true
           tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || env.DOCKER_IMAGE_NAME_FRONTEND }}:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-      - name: Move new cache to old cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
   test:
     name: 🧪 Test with Gradle
     needs: [ lint-and-format ]
@@ -94,10 +80,6 @@ jobs:
         run: echo "E2E=${{ matrix.test-type == 'e2e' }}" >> $GITHUB_ENV
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3.4.2
-      - name: Create gradle.properties
-        run: |
-          echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
-          echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
       - name: Run Gradle test
         run: ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
       - uses: actions/upload-artifact@v4.3.4
