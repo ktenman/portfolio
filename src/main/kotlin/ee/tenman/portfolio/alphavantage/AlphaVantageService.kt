@@ -3,7 +3,6 @@ package ee.tenman.portfolio.alphavantage
 import com.google.gson.Gson
 import ee.tenman.portfolio.alphavantage.AlphaVantageResponse.AlphaVantageDayData
 import jakarta.annotation.Resource
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
