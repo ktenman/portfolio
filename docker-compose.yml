@@ -53,6 +53,7 @@ services:
     environment:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      REDIRECT_URI: "https://fov.ee"
       SPRING_REDIS_HOST: redis
       SERVER_PORT: 8083
     ports:
