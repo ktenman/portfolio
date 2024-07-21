@@ -5,10 +5,9 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: portfolio
-      POSTGRES_USER_FILE: /run/secrets/postgres_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./set_pg_env.sh:/docker-entrypoint-initdb.d/set_pg_env.sh
     secrets:
       - postgres_user
       - postgres_password
