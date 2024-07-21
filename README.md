@@ -14,7 +14,7 @@ user-friendly interface for viewing and managing portfolio transactions, instrum
 
 Before you begin, ensure your system meets the following requirements:
 
-- Kotlin: v1.9.0
+- Kotlin: v2
 - Java: v21 (for running Kotlin)
 - Gradle: v8.8
 - Node.js: v20.11.1
@@ -38,7 +38,7 @@ Before you begin, ensure your system meets the following requirements:
 The Portfolio Management System is built with a modular architecture, comprising several vital components that work
 together to deliver a comprehensive portfolio management experience.
 
-![System Architecture](./screenshots/architecture.svg)
+<img src="./screenshots/architecture.svg" width="500" alt="System Architecture">
 
 ### Frontend 🌐
 
