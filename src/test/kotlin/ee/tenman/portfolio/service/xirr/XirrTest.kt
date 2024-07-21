@@ -23,7 +23,7 @@ class XirrTest {
     @JvmStatic
     fun xirrTestCases() = listOf(
       XirrTestCase(
-        "Short period with two transactions",
+        "short period with two transactions",
         listOf(
           Transaction(-102.09, LocalDate.of(2024, 7, 4)),
           Transaction(100.0, LocalDate.of(2024, 7, 1))
@@ -31,7 +31,7 @@ class XirrTest {
         0.9899995279312134
       ),
       XirrTestCase(
-        "Complex set of transactions over multiple years",
+        "complex set of transactions over multiple years",
         complexTransactions,
         0.14743321895599365
       )
