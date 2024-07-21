@@ -64,6 +64,7 @@ services:
     depends_on:
       - backend
     deploy:
+      replicas: 2
       restart_policy:
         condition: on-failure
 
