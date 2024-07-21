@@ -5,95 +5,77 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: portfolio
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    deploy:
-      replicas: 1
-      placement:
-        constraints: [node.role == manager]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d portfolio"]
-      interval: 10s
-      timeout: 5s
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d portfolio" ]
+      interval: 3s
+      timeout: 1s
       retries: 5
+    ports:
+      - '5432:5432'
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   redis:
     image: redis:7-alpine
     volumes:
       - redis_data:/data
-    deploy:
-      replicas: 1
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      test: [ 'CMD', 'redis-cli', 'ping' ]
+      interval: 3s
+      timeout: 1s
       retries: 5
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   backend:
     image: ktenman/portfolio-be:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      - postgres
+      - redis
     deploy:
-      replicas: 2
-      update_config:
-        parallelism: 1
-        order: stop-first
-        failure_action: rollback
-        delay: 10s
-      rollback_config:
-        parallelism: 1
-        order: stop-first
+      resources:
+        limits:
+          memory: 1024M
       restart_policy:
         condition: on-failure
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    ports:
+      - '8080:8080' # Ensure this matches your backend service port
 
   frontend:
     image: ktenman/portfolio-fe:latest
+    depends_on:
+      - backend
     deploy:
-      replicas: 2
-      update_config:
-        parallelism: 1
-        order: stop-first
-        failure_action: rollback
-        delay: 10s
-      rollback_config:
-        parallelism: 1
-        order: stop-first
       restart_policy:
         condition: on-failure
 
   app:
     image: caddy:2.8-alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
-    deploy:
-      replicas: 1
-      placement:
-        constraints: [node.role == manager]
     depends_on:
       - frontend
-      - backend
+    deploy:
+      restart_policy:
+        condition: on-failure
 
 volumes:
   postgres_data:
   redis_data:
   caddy_data:
   caddy_config:
-
-networks:
-  default:
-    driver: overlay
