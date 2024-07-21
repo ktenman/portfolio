@@ -7,7 +7,6 @@ on:
 env:
   DOCKER_IMAGE_NAME_BACKEND: ktenman/portfolio-be
   DOCKER_IMAGE_NAME_FRONTEND: ktenman/portfolio-fe
-  DOCKER_IMAGE_NAME_CADDY: ktenman/caddy
   DOCKER_IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -79,6 +78,10 @@ jobs:
         run: echo "E2E=${{ matrix.test-type == 'e2e' }}" >> $GITHUB_ENV
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3.4.2
+      - name: Create gradle.properties
+        run: |
+          echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
+          echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
       - name: Run Gradle test
         run: ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
       - uses: actions/upload-artifact@v4.3.4
