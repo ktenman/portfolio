@@ -21,7 +21,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["ui/**/*.ts", "ui/**/*.d.ts", "ui/**/*.tsx", "ui/**/*.vue"],
+  "include": ["ui/**/*.ts", "ui/**/*.d.ts", "ui/**/*.tsx", "ui/**/*.vue", "ui/shims-vue.d.ts"],
   "exclude": ["node_modules", "dist"],
   "references": [
     {

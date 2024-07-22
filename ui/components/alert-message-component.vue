@@ -12,8 +12,10 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent, watch, ref } from 'vue'
+
+export default defineComponent({
   name: 'AlertMessageComponent',
   props: {
     message: {
@@ -33,43 +35,28 @@ export default {
       default: () => ({}),
     },
   },
-  data() {
+  setup(props) {
+    const visible = ref(true)
+
+    const resetVisibility = () => {
+      visible.value = true
+      if (props.message || props.debugMessage || Object.keys(props.validationErrors).length > 0) {
+        setTimeout(() => {
+          visible.value = false
+        }, 3000)
+      }
+    }
+
+    watch(() => [props.message, props.debugMessage, props.validationErrors], resetVisibility, {
+      immediate: true,
+    })
+
     return {
-      visible: true,
+      visible,
+      resetVisibility,
     }
   },
-  watch: {
-    message: {
-      immediate: true,
-      handler() {
-        this.resetVisibility()
-      },
-    },
-    debugMessage: {
-      immediate: true,
-      handler() {
-        this.resetVisibility()
-      },
-    },
-    validationErrors: {
-      immediate: true,
-      handler() {
-        this.resetVisibility()
-      },
-    },
-  },
-  methods: {
-    resetVisibility() {
-      this.visible = true
-      if (this.message || this.debugMessage || Object.keys(this.validationErrors).length > 0) {
-        setTimeout(this.hideAlert, 3000)
-      }
-    },
-    hideAlert() {
-      this.visible = false
-    },
-  },
-}
+})
 </script>
 
 <style scoped>
