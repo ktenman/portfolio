@@ -29,7 +29,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="summary in summaryData" :key="summary.date">
+              <tr v-for="summary in reversedSummaryData" :key="summary.date">
                 <td>{{ formatDate(summary.date) }}</td>
                 <td>{{ formatCurrency(summary.totalValue) }}</td>
                 <td>{{ formatCurrency(summary.totalProfit) }}</td>
@@ -43,6 +43,7 @@
     </div>
   </div>
 </template>
+
 <script lang="ts" setup>
 import { computed, onMounted, ref, shallowRef } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
@@ -74,6 +75,10 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
+})
+
+const reversedSummaryData = computed(() => {
+  return [...summaryData.value].reverse()
 })
 
 const formatDate = (date: string): string => {
@@ -186,6 +191,7 @@ const chartOptions = {
   },
 }
 </script>
+
 <style scoped>
 @media (max-width: 767px) {
   .table {
