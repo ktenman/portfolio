@@ -51,7 +51,7 @@ class PortfolioTransactionController(
   @Loggable
   fun getAllTransactions(): List<PortfolioTransactionDto> {
     return portfolioTransactionService.getAllTransactions()
-      .sortedBy { it.transactionDate }
+      .sortedByDescending { it.transactionDate }
       .map { PortfolioTransactionDto.fromEntity(it) }
   }
 
