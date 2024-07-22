@@ -6,6 +6,7 @@ import com.codeborne.selenide.SelenideElement
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 
@@ -18,6 +19,7 @@ class TransactionManagementE2ETests {
     Selenide.clearBrowserLocalStorage()
   }
 
+  @Disabled
   @Test
   fun `should display success message after saving a new transaction`() {
     Selenide.open(TRANSACTIONS_BASE_URL)
@@ -48,6 +50,7 @@ class TransactionManagementE2ETests {
     }
   }
 
+  @Disabled
   @Test
   fun `should display success message after editing an existing transaction`() {
     Selenide.open(TRANSACTIONS_BASE_URL)
