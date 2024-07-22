@@ -2,6 +2,7 @@ package e2e
 
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Selenide
+import com.codeborne.selenide.Selenide.clearBrowserLocalStorage
 import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.SelenideElement
 import org.assertj.core.api.Assertions.assertThat
@@ -40,6 +41,8 @@ class InstrumentSavingE2ETest {
     } else {
       fail("Alert message not found.")
     }
+
+    clearBrowserLocalStorage()
   }
 
   @Test
@@ -62,6 +65,8 @@ class InstrumentSavingE2ETest {
     } else {
       fail("Alert message not found.")
     }
+
+    clearBrowserLocalStorage()
   }
 
   private fun id(id: String): SelenideElement = Selenide.element(By.id(id))
