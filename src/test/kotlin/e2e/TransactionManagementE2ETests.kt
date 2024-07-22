@@ -3,7 +3,6 @@ package e2e
 import com.codeborne.selenide.Condition
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.SelenideElement
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.jupiter.api.AfterEach
@@ -11,10 +10,6 @@ import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 
 private const val TRANSACTIONS_BASE_URL = "http://localhost:61234/transactions"
-private const val DEFAULT_SYMBOL = "AAPL"
-private const val DEFAULT_NAME = "Apple Inc."
-private const val DEFAULT_CATEGORY = "Stock"
-private const val DEFAULT_CURRENCY = "USD"
 
 class TransactionManagementE2ETests {
 
@@ -24,7 +19,7 @@ class TransactionManagementE2ETests {
   }
 
   @Test
-  fun `should display success message when saving instrument with valid data`() {
+  fun `should display success message after saving a new transaction`() {
     Selenide.open(TRANSACTIONS_BASE_URL)
 
     id("addNewTransaction").click()
@@ -54,7 +49,7 @@ class TransactionManagementE2ETests {
   }
 
   @Test
-  fun `should display success message when editing instrument with valid data`() { // Method name updated
+  fun `should display success message after editing an existing transaction`() {
     Selenide.open(TRANSACTIONS_BASE_URL)
 
     Selenide.elements(By.tagName("button")).filter(Condition.text("Edit")).first().click()
