@@ -1,9 +1,14 @@
 import { ApiError } from '../models/api-error'
 import { PortfolioTransaction } from '../models/portfolio-transaction'
+import { Cacheable } from '../decorators/cacheable.decorator'
+import { CachePut } from '../decorators/cache-put.decorator'
+import { CacheEvict } from '../decorators/cache-evict.decorator'
+import { CACHE_KEYS } from '../constants/cache-keys'
 
 export class PortfolioTransactionService {
   private readonly baseUrl = '/api/transactions'
 
+  @CachePut(CACHE_KEYS.TRANSACTIONS)
   async saveTransaction(transaction: PortfolioTransaction): Promise<PortfolioTransaction> {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
@@ -26,6 +31,7 @@ export class PortfolioTransactionService {
     return response.json()
   }
 
+  @Cacheable(CACHE_KEYS.TRANSACTIONS)
   async getAllTransactions(): Promise<PortfolioTransaction[]> {
     const response = await fetch(this.baseUrl)
 
@@ -42,6 +48,7 @@ export class PortfolioTransactionService {
     return response.json()
   }
 
+  @CacheEvict(CACHE_KEYS.TRANSACTIONS)
   async updateTransaction(
     id: number,
     transaction: PortfolioTransaction
@@ -67,6 +74,7 @@ export class PortfolioTransactionService {
     return response.json()
   }
 
+  @CacheEvict(CACHE_KEYS.TRANSACTIONS)
   async deleteTransaction(id: number): Promise<void> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: 'DELETE',
@@ -81,21 +89,5 @@ export class PortfolioTransactionService {
         errorData?.validationErrors ?? {}
       )
     }
-  }
-
-  async getTransaction(id: number): Promise<PortfolioTransaction> {
-    const response = await fetch(`${this.baseUrl}/${id}`)
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new ApiError(
-        response.status,
-        errorData?.message ?? 'Failed to fetch transaction',
-        errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
-        errorData?.validationErrors ?? {}
-      )
-    }
-
-    return response.json()
   }
 }
