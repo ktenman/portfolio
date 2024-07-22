@@ -1,7 +1,7 @@
 # Portfolio Management System
 
 [![Build & Test](https://github.com/ktenman/portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/ci.yml)
-[![asolntsev's GitHub | Stats](https://stats.quine.sh/ktenman/github?theme=dark)](https://quine.sh?utm_source=widgets&utm_campaign=ktenman)
+
 ## Introduction
 
 The Portfolio Management System is a comprehensive application designed to help users manage their investment
