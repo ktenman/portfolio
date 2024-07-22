@@ -11,7 +11,6 @@ COPY ui/ ./ui
 COPY tsconfig.json ./
 COPY tsconfig.node.json ./
 COPY vite.config.ts ./
-COPY vite-env.d.ts ./
 
 RUN npm run build && find /app -name "index.html"
 
