@@ -1,4 +1,4 @@
-FROM gradle:jdk21 AS build
+FROM gradle:jdk21-alpine AS build
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY src /app/src
 
 RUN gradle clean build -x test --no-daemon
 
-FROM bellsoft/liberica-openjdk-alpine:21
+FROM bellsoft/liberica-openjre-alpine-musl:21
 
 WORKDIR /app
 
