@@ -15,3 +15,10 @@ services:
       - '61234:80'
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+
+  auth:
+    container_name: auth
+    image: ktenman/auth:latest
+    environment:
+      GOOGLE_CLIENT_ID: YOUR_GOOGLE_CLIENT_ID
+      GOOGLE_CLIENT_SECRET: YOUR_GOOGLE_CLIENT_SECRET
