@@ -13,15 +13,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch, ref } from 'vue'
+import { defineComponent, ref, watch } from 'vue'
 
 export default defineComponent({
   name: 'AlertMessageComponent',
   props: {
-    message: {
-      type: String,
-      required: false,
-    },
+    message: String,
     alertClass: {
       type: String,
       default: 'alert-info',
@@ -40,21 +37,16 @@ export default defineComponent({
 
     const resetVisibility = () => {
       visible.value = true
-      if (props.message || props.debugMessage || Object.keys(props.validationErrors).length > 0) {
-        setTimeout(() => {
-          visible.value = false
-        }, 3000)
-      }
+      setTimeout(() => {
+        visible.value = false
+      }, 3000)
     }
 
     watch(() => [props.message, props.debugMessage, props.validationErrors], resetVisibility, {
       immediate: true,
     })
 
-    return {
-      visible,
-      resetVisibility,
-    }
+    return { visible }
   },
 })
 </script>
