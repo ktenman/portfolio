@@ -17,7 +17,7 @@ services:
       - '5432:5432'
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.0-alpine
     volumes:
       - redis_data:/data
     healthcheck:
