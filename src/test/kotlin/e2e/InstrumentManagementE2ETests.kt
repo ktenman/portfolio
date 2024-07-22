@@ -19,7 +19,7 @@ private const val DEFAULT_NAME = "Apple Inc."
 private const val DEFAULT_CATEGORY = "Stock"
 private const val DEFAULT_CURRENCY = "USD"
 
-class InstrumentSavingE2ETest {
+class InstrumentManagementE2ETests {
 
   @AfterEach
   fun tearDown() {
