@@ -104,12 +104,16 @@ class PortfolioTransactionControllerIT {
     mockMvc.perform(get("/api/transactions"))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].transactionDate").value("2023-07-18"))
-      .andExpect(jsonPath("$[1].transactionDate").value("2023-07-19"))
+      .andExpect(jsonPath("$[0].transactionDate").value("2023-07-19"))
+      .andExpect(jsonPath("$[1].transactionDate").value("2023-07-18"))
 
-    val allTransactions = portfolioTransactionRepository.findAll().sortedBy { it.transactionDate }
-    assertThat(allTransactions[0].transactionDate).isEqualTo(LocalDate.of(2023, 7, 18))
-    assertThat(allTransactions[1].transactionDate).isEqualTo(LocalDate.of(2023, 7, 19))
+    val allTransactions = portfolioTransactionRepository.findAll()
+    assertThat(allTransactions).hasSize(2)
+      .extracting("transactionDate")
+      .containsExactlyInAnyOrder(
+        LocalDate.of(2023, 7, 18),
+        LocalDate.of(2023, 7, 19)
+      )
   }
 
   @Test
