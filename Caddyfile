@@ -14,7 +14,7 @@ fov.ee {
 
     # Login and OAuth routes are handled by the auth server
     @auth_routes {
-        path /login /login/* /logout
+        path /login /login/* /oauth2/* /logout
     }
     handle @auth_routes {
         reverse_proxy auth:8083
@@ -22,7 +22,7 @@ fov.ee {
 
     # For all other routes, use authentication
     @protected {
-        not path /login /login/* /logout
+        not path /login /login/* /oauth2/* /logout
     }
     handle @protected {
         forward_auth auth:8083 {
