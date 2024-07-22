@@ -2,11 +2,9 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.service.AuthService
 import ee.tenman.portfolio.service.InstrumentService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -24,9 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 @Validated
 class InstrumentController(
   private val instrumentService: InstrumentService,
-  private val authService: AuthService
 ) {
-  private val log = LoggerFactory.getLogger(javaClass)
 
   @PostMapping
   @Loggable
@@ -38,8 +34,6 @@ class InstrumentController(
   @GetMapping
   @Loggable
   fun getAllInstruments(): List<InstrumentDto> {
-    val currentUserEmail = authService.getCurrentUserEmail()
-    log.info("Current user email: $currentUserEmail")
     val instruments = instrumentService.getAllInstruments()
     return instruments.map { InstrumentDto.fromEntity(it) }
   }
