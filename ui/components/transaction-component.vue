@@ -2,7 +2,11 @@
   <div class="container mt-2">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Transactions</h4>
-      <button class="btn btn-primary btn-sm" @click="showAddTransactionModal">
+      <button
+        class="btn btn-primary btn-sm"
+        id="addNewTransaction"
+        @click="showAddTransactionModal"
+      >
         Add New Transaction
       </button>
     </div>
@@ -40,9 +44,9 @@
                 <font-awesome-icon icon="pencil-alt" />
                 <span class="d-none d-md-inline ms-1">Edit</span>
               </button>
-              <!--              <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">-->
-              <!--                Delete-->
-              <!--              </button>-->
+              <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">
+                Delete
+              </button>
             </td>
           </tr>
         </tbody>
@@ -153,11 +157,12 @@
       </div>
     </div>
 
-    <div v-if="alertMessage" class="mt-3">
-      <div :class="['alert', alertClass]" role="alert">
-        {{ alertMessage }}
-      </div>
-    </div>
+    <AlertMessageComponent
+      :message="alertMessage"
+      :alertClass="alertClass"
+      :debugMessage="debugMessage"
+      :validationErrors="validationErrors"
+    />
   </div>
 </template>
 
@@ -169,7 +174,10 @@ import { InstrumentService } from '../services/instrument-service'
 import { PortfolioTransaction } from '../models/portfolio-transaction'
 import { Instrument } from '../models/instrument'
 import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
+import AlertMessageComponent from './alert-message-component.vue'
 
+const debugMessage = ref('')
+const validationErrors = ref({})
 const alertMessage = ref('')
 const alertType = ref<AlertType | null>(null)
 const transactionService = new PortfolioTransactionService()
@@ -254,24 +262,24 @@ const editTransaction = (transaction: PortfolioTransaction) => {
   transactionModal?.show()
 }
 
-// const deleteTransaction = async (id: number | undefined) => {
-//   if (id === undefined) {
-//     console.error('Attempted to delete a transaction with undefined id')
-//     return
-//   }
-//
-//   if (confirm('Are you sure you want to delete this transaction?')) {
-//     try {
-//       await transactionService.deleteTransaction(id)
-//       transactions.value = transactions.value.filter(t => t.id !== id)
-//       alertType.value = AlertType.SUCCESS
-//       alertMessage.value = 'Transaction deleted successfully.'
-//     } catch (error) {
-//       alertType.value = AlertType.ERROR
-//       alertMessage.value = 'Failed to delete transaction. Please try again.'
-//     }
-//   }
-// }
+const deleteTransaction = async (id: number | undefined) => {
+  if (id === undefined) {
+    console.error('Attempted to delete a transaction with undefined id')
+    return
+  }
+
+  if (confirm('Are you sure you want to delete this transaction?')) {
+    try {
+      await transactionService.deleteTransaction(id)
+      transactions.value = transactions.value.filter(t => t.id !== id)
+      alertType.value = AlertType.SUCCESS
+      alertMessage.value = 'Transaction deleted successfully.'
+    } catch (error) {
+      alertType.value = AlertType.ERROR
+      alertMessage.value = 'Failed to delete transaction. Please try again.'
+    }
+  }
+}
 
 const resetCurrentTransaction = () => {
   currentTransaction.value = {

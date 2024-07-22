@@ -134,17 +134,12 @@
       </div>
     </div>
 
-    <div v-if="alertMessage || debugMessage" class="mt-3">
-      <div :class="['alert', alertClass]" role="alert">
-        <strong>{{ alertMessage }}</strong>
-        <p v-if="debugMessage" class="mb-0 mt-2">
-          <small>Debug: {{ debugMessage }}</small>
-        </p>
-        <ul v-if="Object.keys(validationErrors).length > 0" class="mt-2 mb-0">
-          <li v-for="(error, field) in validationErrors" :key="field">{{ field }}: {{ error }}</li>
-        </ul>
-      </div>
-    </div>
+    <AlertMessageComponent
+      :message="alertMessage"
+      :alertClass="alertClass"
+      :debugMessage="debugMessage"
+      :validationErrors="validationErrors"
+    />
   </div>
 </template>
 
@@ -155,6 +150,7 @@ import { InstrumentService } from '../services/instrument-service'
 import { Instrument } from '../models/instrument'
 import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 import { ApiError } from '../models/api-error'
+import AlertMessageComponent from './alert-message-component.vue'
 
 const alertMessage = ref('')
 const debugMessage = ref('')
