@@ -59,7 +59,7 @@ class TransactionManagementE2ETests {
     id("transactionType").selectOption("Sell")
     id("quantity").setValue("112255.1211")
     id("price").setValue("332211.189")
-    id("transactionDate").setValue("07.07.2025")
+    id("transactionDate").setValue("11.07.2025")
 
     Selenide.elements(By.tagName("button")).filter(Condition.text("Update")).first().click()
 
@@ -80,7 +80,7 @@ class TransactionManagementE2ETests {
       "SELL",
       "112255.12",
       "332211.19",
-      "07.07.25",
+      "11.07.25",
       "EditDelete",
     )
   }
