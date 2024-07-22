@@ -42,6 +42,8 @@ dependencies {
   implementation("org.springframework.retry:spring-retry:$springRetryVersion")
   implementation("com.google.guava:guava:$guavaVersion")
   implementation("org.apache.commons:commons-math3:$commonsMathVersion")
+  implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+  implementation("org.springframework.boot:spring-boot-starter-security")
   developmentOnly("org.springframework.boot:spring-boot-docker-compose")
   runtimeOnly("org.postgresql:postgresql")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -55,6 +57,7 @@ dependencies {
   testImplementation("com.codeborne:selenide:$selenideVersion")
   testImplementation("org.mockito.kotlin:mockito-kotlin:$mokitoKotlinVersion")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+  testImplementation("org.springframework.security:spring-security-test")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
