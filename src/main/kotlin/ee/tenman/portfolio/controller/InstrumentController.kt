@@ -2,13 +2,12 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.service.AuthService
 import ee.tenman.portfolio.service.InstrumentService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
-import org.springframework.security.core.Authentication
-import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -25,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 @Validated
 class InstrumentController(
   private val instrumentService: InstrumentService,
+  private val authService: AuthService
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -37,9 +37,9 @@ class InstrumentController(
 
   @GetMapping
   @Loggable
-  fun getAllInstruments(authentication: Authentication): List<InstrumentDto> {
-    val email = (authentication.principal as OAuth2User).attributes["email"] as String?
-    log.info("User $email retrieved all instruments")
+  fun getAllInstruments(): List<InstrumentDto> {
+    val currentUserEmail = authService.getCurrentUserEmail()
+    log.info("Current user email: $currentUserEmail")
     val instruments = instrumentService.getAllInstruments()
     return instruments.map { InstrumentDto.fromEntity(it) }
   }
