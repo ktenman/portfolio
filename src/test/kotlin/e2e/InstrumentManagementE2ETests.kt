@@ -8,6 +8,7 @@ import com.codeborne.selenide.SelenideElement
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 import org.openqa.selenium.By.className
@@ -21,6 +22,11 @@ private const val DEFAULT_CURRENCY = "USD"
 
 class InstrumentManagementE2ETests {
 
+  @BeforeEach
+  fun setUp() {
+    open(INSTRUMENTS_BASE_URL)
+  }
+
   @AfterEach
   fun tearDown() {
     clearBrowserLocalStorage()
@@ -28,7 +34,6 @@ class InstrumentManagementE2ETests {
 
   @Test
   fun `should display success message when saving instrument with valid data`() {
-    open(INSTRUMENTS_BASE_URL)
 
     id("addNewInstrument").click()
     id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue(DEFAULT_SYMBOL)
@@ -49,8 +54,7 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
-  fun `should display success message when editing instrument with valid data`() { // Method name updated
-    open(INSTRUMENTS_BASE_URL)
+  fun `should display success message when editing instrument with valid data`() {
 
     Selenide.elements(tagName("button")).filter(text("Edit")).first().click()
     id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue("GOOGL")
@@ -71,4 +75,6 @@ class InstrumentManagementE2ETests {
   }
 
   private fun id(id: String): SelenideElement = Selenide.element(By.id(id))
+
+
 }
