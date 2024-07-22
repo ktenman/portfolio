@@ -14,18 +14,7 @@ WORKDIR /app
 
 COPY --from=build /app/build/libs/*.jar /app/app.jar
 
-# Install required packages for locale support
-RUN apk add --no-cache tzdata
-
-# Set the timezone
-ENV TZ=Europe/Tallinn
-
-# Set the locale
-ENV LANG=et_EE.UTF-8
-ENV LANGUAGE=et_EE:en
-ENV LC_ALL=et_EE.UTF-8
-
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -Duser.timezone=Europe/Tallinn -Duser.country=EE -Duser.language=et"
+ENV JAVA_OPTS="-Xms512m -Xmx1024m -Duser.timezone=Europe/Tallinn"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=80"
 
 ENV SERVER_PORT=8080
