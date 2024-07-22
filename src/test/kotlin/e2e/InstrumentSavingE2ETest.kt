@@ -7,6 +7,7 @@ import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.SelenideElement
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 import org.openqa.selenium.By.className
@@ -19,6 +20,11 @@ class InstrumentSavingE2ETest {
     private const val DEFAULT_NAME = "Apple Inc."
     private const val DEFAULT_CATEGORY = "Stock"
     private const val DEFAULT_CURRENCY = "USD"
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearBrowserLocalStorage()
   }
 
   @Test
@@ -41,8 +47,6 @@ class InstrumentSavingE2ETest {
     } else {
       fail("Alert message not found.")
     }
-
-    clearBrowserLocalStorage()
   }
 
   @Test
@@ -65,8 +69,6 @@ class InstrumentSavingE2ETest {
     } else {
       fail("Alert message not found.")
     }
-
-    clearBrowserLocalStorage()
   }
 
   private fun id(id: String): SelenideElement = Selenide.element(By.id(id))
