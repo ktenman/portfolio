@@ -8,7 +8,10 @@ RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
 # Build Caddy with the cache module
 RUN xcaddy build \
-     --with github.com/caddyserver/cache-handler
+     --with github.com/caddyserver/cache-handler@v0.13.0
+
+# Verify cache module is installed
+RUN /go/caddy list-modules | grep http.handlers.cache || (echo "Cache module not found" && exit 1)
 
 # Stage 2: Create the final image
 FROM alpine:3.20
