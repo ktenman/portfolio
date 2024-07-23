@@ -4,7 +4,8 @@ plugins {
   kotlin("plugin.jpa") version "2.0.0"
   kotlin("jvm") version "2.0.0"
   kotlin("plugin.spring") version "2.0.0"
-  id("jacoco")
+  id("jacoco") version "0.8.8"
+  id("test-retry") version "1.5.6"
 }
 
 group = "ee.tenman"
@@ -80,6 +81,20 @@ val test by tasks.getting(Test::class) {
     exclude("**/e2e/**")
   }
   finalizedBy(":jacocoTestReport")
+
+  retry {
+    maxRetries.set(3)
+    maxFailures.set(10)
+    failOnPassedAfterRetry.set(false)
+  }
+
+  testLogging {
+    events("passed", "skipped", "failed")
+    showExceptions = true
+    showCauses = true
+    showStackTraces = true
+    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+  }
 }
 
 fun Test.configureE2ETestEnvironment() {
