@@ -8,48 +8,51 @@ fov.ee {
     @cacheable {
         not path /login /login/* /oauth2/* /logout /validate /validate/*
     }
-    handle @cacheable {
-        cache {
-            max_age 300
-        }
-        reverse_proxy frontend:80
-    }
 
     @cache_validate {
         path /validate /validate/*
-    }
-    handle @cache_validate {
-        cache {
-            max_age 60
-        }
-        reverse_proxy auth:8083
     }
 
     @auth_routes {
         path /login /login/* /oauth2/* /logout
     }
+
+    @api {
+        path /api/*
+    }
+
+    cache {
+        ttl 300s
+        match {
+            header Content-Type text/*
+        }
+    }
+
+    handle @cacheable {
+        reverse_proxy frontend:80
+    }
+
+    handle @cache_validate {
+        cache {
+            ttl 60s
+        }
+        reverse_proxy auth:8083
+    }
+
     handle @auth_routes {
         reverse_proxy auth:8083
     }
 
-    @protected {
-        not path /login /login/* /oauth2/* /logout
-    }
-    handle @protected {
+    handle {
         forward_auth auth:8083 {
             uri /validate
             copy_headers X-User-Id
         }
 
-        @api {
-            path /api/*
-        }
         handle @api {
             reverse_proxy backend:8080
         }
 
-        handle {
-            reverse_proxy frontend:80
-        }
+        reverse_proxy frontend:80
     }
 }
