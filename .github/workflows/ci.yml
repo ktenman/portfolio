@@ -27,37 +27,9 @@ jobs:
       - name: Check Prettier formatting
         run: npm run format:check
 
-  build-push:
-    name: 🔨 Build & Push
-    needs: [ test ]
-    if: github.ref == 'refs/heads/main' && github.event_name != 'repository_dispatch'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        type: [ 'backend', 'frontend', 'caddy' ]
-    steps:
-      - uses: actions/checkout@v4.1.7
-        with:
-          fetch-depth: 1
-      - uses: docker/setup-buildx-action@v3.5.0
-        with:
-          buildkitd-flags: --debug
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6.5.0
-        with:
-          platforms: linux/amd64, linux/arm64/v8
-          context: .
-          file: Dockerfile.${{ matrix.type }}
-          push: true
-          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_CADDY }}:latest
   test:
     name: 🧪 Gradle Test
-    needs: [ lint-and-format ]
+#    needs: [ lint-and-format ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -90,6 +62,36 @@ jobs:
           path: |
             build/reports/tests
             build/reports/selenide
+
+
+  build-push:
+    name: 🔨 Build & Push
+#    needs: [ test ]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'repository_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        type: [ 'backend', 'frontend', 'caddy' ]
+    steps:
+      - uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 1
+      - uses: docker/setup-buildx-action@v3.5.0
+        with:
+          buildkitd-flags: --debug
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6.5.0
+        with:
+          platforms: linux/amd64, linux/arm64/v8
+          context: .
+          file: Dockerfile.${{ matrix.type }}
+          push: true
+          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_CADDY }}:latest
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PRnv
