@@ -1,3 +1,4 @@
+# Stage 1: Build Caddy with cache module
 FROM golang:alpine AS builder
 
 RUN apk add --no-cache git
@@ -9,6 +10,7 @@ RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 RUN xcaddy build \
     --with github.com/caddyserver/cache-handler
 
+# Stage 2: Create the final image
 FROM alpine:3.20
 
 RUN apk add --no-cache \
@@ -16,7 +18,7 @@ RUN apk add --no-cache \
     libcap \
     mailcap
 
-COPY --from=builder /go/caddy /usr/bin/caddy
+COPY --from=builder /go/bin/caddy /usr/bin/caddy
 
 RUN set -eux; \
     mkdir -p \
