@@ -44,8 +44,9 @@
                 <font-awesome-icon icon="pencil-alt" />
                 <span class="d-none d-md-inline ms-1">Edit</span>
               </button>
-              <button class="btn btn-sm btn-danger" @click="deleteTransaction(transaction.id)">
-                Delete
+              <button class="btn btn-sm btn-danger me-2" @click="deleteTransaction(transaction.id)">
+                <font-awesome-icon icon="trash-alt" />
+                <span class="d-none d-md-inline ms-1">Delete</span>
               </button>
             </td>
           </tr>
@@ -340,6 +341,10 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
 
   .btn-sm {
     padding: 0.25rem 0.5rem;
+  }
+
+  .btn-danger {
+    display: none;
   }
 }
 </style>
