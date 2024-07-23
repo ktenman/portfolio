@@ -43,7 +43,7 @@ services:
     mem_limit: 1024m
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 5
 
@@ -74,7 +74,7 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 5
 
