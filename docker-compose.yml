@@ -43,9 +43,9 @@ services:
     mem_limit: 1024m
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
-      interval: 8s
-      timeout: 3s
-      retries: 15
+      interval: 5s
+      timeout: 2s
+      retries: 20
 
   frontend:
     container_name: frontend
@@ -74,9 +74,9 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
-      interval: 8s
-      timeout: 3s
-      retries: 15
+      interval: 5s
+      timeout: 2s
+      retries: 20
 
   app:
     container_name: app
