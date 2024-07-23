@@ -19,7 +19,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4.0.3
         with:
-          node-version: '20'
+          node-version: 'lts/iron'
       - name: Install dependencies
         run: npm ci
       - name: Run ESLint
@@ -92,7 +92,7 @@ jobs:
             build/reports/selenide
 
   auto-merge-dependabot:
-    name: 🤖 Auto-Merge Dependabot PR
+    name: 🤖 Auto-Merge Dependabot PRnv
     needs: [ test ]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
