@@ -1,3 +1,16 @@
+{
+    order cache before rewrite
+    cache {
+        log_level debug
+        ttl 1h
+        stale 3h
+        default_cache_control public, max-age=3600
+        redis {
+            url redis:6379
+        }
+    }
+}
+
 www.fov.ee {
     redir https://fov.ee{uri}
 }
@@ -5,13 +18,11 @@ www.fov.ee {
 fov.ee {
     encode gzip
 
-    # Redirect all HTTP traffic to HTTPS
     @http {
         protocol http
     }
     redir @http https://fov.ee{uri}
 
-    # Healthcheck endpoint
     @healthcheck {
         path /healthz
     }
@@ -19,7 +30,6 @@ fov.ee {
         respond "OK" 200
     }
 
-    # Login and OAuth routes are handled by the auth server
     @auth_routes {
         path /login /login/* /oauth2/* /logout
     }
@@ -27,7 +37,6 @@ fov.ee {
         reverse_proxy auth:8083
     }
 
-    # For all other routes, use authentication
     @protected {
         not path /login /login/* /oauth2/* /logout /healthz
     }
@@ -37,7 +46,6 @@ fov.ee {
             copy_headers X-User-Id
         }
 
-        # API routes
         @api {
             path /api/*
         }
@@ -45,7 +53,17 @@ fov.ee {
             reverse_proxy backend:8080
         }
 
-        # All other routes go to the frontend
-        reverse_proxy frontend:80
+        handle {
+            reverse_proxy frontend:80
+        }
+    }
+
+    handle {
+        cache {
+            redis {
+                url redis:6379
+            }
+            ttl 5m
+        }
     }
 }
