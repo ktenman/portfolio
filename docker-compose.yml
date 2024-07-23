@@ -69,8 +69,6 @@ services:
       REDIRECT_URI: "https://fov.ee"
       SPRING_REDIS_HOST: redis
       SERVER_PORT: 8083
-    ports:
-      - "8083:8083"
     depends_on:
       - redis
     restart: always
