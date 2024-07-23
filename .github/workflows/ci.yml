@@ -71,7 +71,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        type: [ 'backend', 'frontend', 'caddy' ]
+#        type: [ 'backend', 'frontend', 'caddy' ]
+        type: [ 'backend', 'frontend' ]
     steps:
       - uses: actions/checkout@v4.1.7
         with:
@@ -91,7 +92,8 @@ jobs:
           context: .
           file: Dockerfile.${{ matrix.type }}
           push: true
-          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_CADDY }}:latest
+#          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_CADDY }}:latest
+          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND }}:latest
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PRnv
