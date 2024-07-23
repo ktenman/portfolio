@@ -43,8 +43,8 @@ services:
     mem_limit: 1024m
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
-      interval: 30s
-      timeout: 10s
+      interval: 120s
+      timeout: 40s
       retries: 5
 
   frontend:
