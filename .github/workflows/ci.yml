@@ -27,8 +27,8 @@ jobs:
       - name: Check Prettier formatting
         run: npm run format:check
 
-  build_and_push:
-    name: 🔨 Build and push
+  build-push:
+    name: 🔨 Build & Push
     needs: [ test ]
     if: github.ref == 'refs/heads/main' && github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
           push: true
           tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_CADDY }}:latest
   test:
-    name: 🧪 Test with Gradle
+    name: 🧪 Gradle Test
     needs: [ lint-and-format ]
     runs-on: ubuntu-latest
     strategy:
@@ -92,7 +92,7 @@ jobs:
             build/reports/selenide
 
   auto-merge-dependabot:
-    name: 🤖 Auto merge dependabot PR
+    name: 🤖 Dependabot Auto-Merge
     needs: [ test ]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
