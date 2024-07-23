@@ -5,54 +5,39 @@ www.fov.ee {
 fov.ee {
     encode gzip
 
-    @cacheable {
-        not path /login /login/* /oauth2/* /logout /validate /validate/*
+    # Redirect all HTTP traffic to HTTPS
+    @http {
+        protocol http
     }
+    redir @http https://fov.ee{uri}
 
-    @cache_validate {
-        path /validate /validate/*
-    }
-
+    # Login and OAuth routes are handled by the auth server
     @auth_routes {
         path /login /login/* /oauth2/* /logout
     }
-
-    @api {
-        path /api/*
-    }
-
-    cache {
-        ttl 300s
-        match {
-            header Content-Type text/*
-        }
-    }
-
-    handle @cacheable {
-        reverse_proxy frontend:80
-    }
-
-    handle @cache_validate {
-        cache {
-            ttl 60s
-        }
-        reverse_proxy auth:8083
-    }
-
     handle @auth_routes {
         reverse_proxy auth:8083
     }
 
-    handle {
+    # For all other routes, use authentication
+    @protected {
+        not path /login /login/* /oauth2/* /logout
+    }
+    handle @protected {
         forward_auth auth:8083 {
             uri /validate
             copy_headers X-User-Id
         }
 
+        # API routes
+        @api {
+            path /api/*
+        }
         handle @api {
             reverse_proxy backend:8080
         }
 
+        # All other routes go to the frontend
         reverse_proxy frontend:80
     }
 }
