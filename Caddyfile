@@ -11,6 +11,14 @@ fov.ee {
     }
     redir @http https://fov.ee{uri}
 
+    # Healthcheck endpoint
+    @healthcheck {
+        path /healthz
+    }
+    handle @healthcheck {
+        respond "OK" 200
+    }
+
     # Login and OAuth routes are handled by the auth server
     @auth_routes {
         path /login /login/* /oauth2/* /logout
@@ -21,7 +29,7 @@ fov.ee {
 
     # For all other routes, use authentication
     @protected {
-        not path /login /login/* /oauth2/* /logout
+        not path /login /login/* /oauth2/* /logout /healthz
     }
     handle @protected {
         forward_auth auth:8083 {
