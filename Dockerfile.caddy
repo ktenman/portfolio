@@ -18,7 +18,8 @@ RUN apk add --no-cache \
     libcap \
     mailcap
 
-COPY --from=builder /go/bin/caddy /usr/bin/caddy
+# Copy the caddy binary from the builder stage
+COPY --from=builder /go/caddy /usr/bin/caddy
 
 RUN set -eux; \
     mkdir -p \
