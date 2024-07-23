@@ -64,7 +64,7 @@ services:
     restart: always
 
   app:
-    image: caddy:2.8-alpine
+    image: ktenman/caddy:latest
     ports:
       - '80:80'
       - '443:443'
