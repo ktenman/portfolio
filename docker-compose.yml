@@ -43,8 +43,8 @@ services:
     mem_limit: 1024m
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
-      interval: 120s
-      timeout: 40s
+      interval: 40s
+      timeout: 15s
       retries: 5
 
   frontend:
@@ -74,6 +74,11 @@ services:
     depends_on:
       - redis
     restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      interval: 40s
+      timeout: 15s
+      retries: 5
 
   app:
     container_name: app
