@@ -66,4 +66,26 @@ fov.ee {
             ttl 5m
         }
     }
+
+    # Caching for /validate endpoint
+    @validate {
+        path /validate
+    }
+    handle @validate {
+        cache {
+            ttl 1m
+        }
+        reverse_proxy auth:8083
+    }
+
+    # Don't cache specific endpoints
+    @no_cache {
+        path /login /login/* /oauth2/* /logout /healthz
+    }
+    handle @no_cache {
+        cache {
+            default_cache_control no-store
+        }
+        reverse_proxy auth:8083
+    }
 }
