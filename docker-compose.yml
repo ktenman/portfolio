@@ -84,11 +84,11 @@ services:
     depends_on:
       - frontend
     restart: always
-  healthcheck:
-    test: [ "CMD-SHELL", "apk add --no-cache curl && curl -f -k http://localhost:80/healthz || exit 1" ]
-    interval: 30s
-    timeout: 10s
-    retries: 3
+    healthcheck:
+      test: [ "CMD-SHELL", "apk add --no-cache curl && curl -f -k http://localhost:80/healthz || exit 1" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
 
 volumes:
   postgres_data:
