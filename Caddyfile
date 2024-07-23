@@ -12,10 +12,15 @@ fov.ee {
     }
     redir @http https://fov.ee{uri}
 
-    # Cache configuration
-    route {
-        cache {
-            default_max_age 300  # Set default cache duration to 300 seconds (5 minutes)
+    # Cache configuration for specific routes
+    @cacheable {
+        not path /login /login/* /oauth2/* /logout /validate /validate/*
+    }
+    handle @cacheable {
+        route {
+            cache {
+                default_max_age 300  # Set default cache duration to 300 seconds (5 minutes)
+            }
         }
     }
 
