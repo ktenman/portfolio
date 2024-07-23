@@ -4,8 +4,8 @@ plugins {
   kotlin("plugin.jpa") version "2.0.0"
   kotlin("jvm") version "2.0.0"
   kotlin("plugin.spring") version "2.0.0"
-  id("jacoco") version "0.8.8"
-  id("test-retry") version "1.5.6"
+  id("jacoco")
+  id("org.gradle.test-retry") version "1.5.9"
 }
 
 group = "ee.tenman"
