@@ -80,8 +80,8 @@ services:
 
   app:
     container_name: app
-    #    image: ktenman/caddy:latest
-    image: caddy:2.8-alpine
+    image: ktenman/caddy:latest
+#    image: caddy:2.8-alpine
     ports:
       - '80:80'
       - '443:443'
