@@ -92,7 +92,7 @@ jobs:
             build/reports/selenide
 
   auto-merge-dependabot:
-    name: 🤖 Dependabot Auto-Merge
+    name: 🤖 Auto-Merge Dependabot PR
     needs: [ test ]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
