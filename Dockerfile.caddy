@@ -2,7 +2,8 @@
 FROM caddy:2.8.4-builder AS builder
 
 RUN xcaddy build \
-    --with github.com/caddyserver/cache-handler@v0.13.0
+    --with github.com/caddyserver/cache-handler@v0.13.0 \
+    --with github.com/caddyserver/redis-storage@v1.3.0
 
 FROM caddy:2.8.4-alpine
 
