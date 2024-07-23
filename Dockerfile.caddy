@@ -16,6 +16,8 @@ RUN apk add --no-cache \
     libcap \
     mailcap
 
+COPY --from=builder /go/caddy /usr/bin/caddy
+
 RUN set -eux; \
     mkdir -p \
         /config/caddy \
@@ -25,9 +27,6 @@ RUN set -eux; \
     ; \
     wget -O /etc/caddy/Caddyfile "https://github.com/caddyserver/dist/raw/509c30cecd3cbc4012f6b1cc88d8f3f000fb06e4/config/Caddyfile"; \
     wget -O /usr/share/caddy/index.html "https://github.com/caddyserver/dist/raw/509c30cecd3cbc4012f6b1cc88d8f3f000fb06e4/welcome/index.html"
-
-# Use the built Caddy from the builder stage
-COPY --from=builder /go/caddy /usr/bin/caddy
 
 # See https://github.com/caddyserver/caddy/releases
 ENV CADDY_VERSION=v2.8.4
