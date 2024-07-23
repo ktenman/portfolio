@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint ui --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
-    "format:check": "prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\""
+    "format:check": "prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\"",
+    "lint-format": "eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
