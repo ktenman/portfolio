@@ -1,5 +1,6 @@
 services:
   postgres:
+    container_name: postgres
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: portfolio
@@ -17,6 +18,7 @@ services:
       - '5432:5432'
 
   redis:
+    container_name: redis
     image: redis:7.0-alpine
     volumes:
       - redis_data:/data
@@ -64,6 +66,7 @@ services:
     restart: always
 
   app:
+    container_name: app
     image: ktenman/caddy:latest
     ports:
       - '80:80'
