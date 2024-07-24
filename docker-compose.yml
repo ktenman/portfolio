@@ -96,9 +96,9 @@ services:
       - frontend
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "for i in 1 2 3 4 5 6 7 8; do apk add --no-cache curl && break || sleep 8; done && curl -f -k http://localhost:80/healthz || exit 1" ]
-      interval: 15s
-      timeout: 5s
+      test: [ "CMD-SHELL", "for i in 1 2 3 4 5; do apk add --no-cache curl && break || sleep 5; done && curl -f -k http://localhost:80/healthz || exit 1" ]
+      interval: 12s
+      timeout: 3s
       retries: 5
 
 volumes:
