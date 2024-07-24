@@ -28,7 +28,7 @@ class DailyPortfolioXirrJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 50 23 * * *")
+  @Scheduled(cron = "0 30 23 * * *")
   fun runJob() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
@@ -45,7 +45,7 @@ class DailyPortfolioXirrJob(
     }
 
     val firstTransactionDate = allTransactions.first().transactionDate
-    val yesterday = LocalDate.now(clock)
+    val yesterday = LocalDate.now(clock).minusDays(1)
 
     log.info("Calculating summaries from $firstTransactionDate to $yesterday")
 
