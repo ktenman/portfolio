@@ -7,7 +7,7 @@ on:
 env:
   DOCKER_IMAGE_NAME_BACKEND: ktenman/portfolio-be
   DOCKER_IMAGE_NAME_FRONTEND: ktenman/portfolio-fe
-  DOCKER_IMAGE_NAME_CADDY: ktenman/caddy
+  DOCKER_IMAGE_NAME_MARKET_PRICE_TRACKER: ktenman/market-price-tracker
   DOCKER_IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
 
   test:
     name: 🧪 Gradle Test
-#    needs: [ lint-and-format ]
+    #    needs: [ lint-and-format ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -66,13 +66,12 @@ jobs:
 
   build-push:
     name: 🔨 Build & Push
-#    needs: [ test ]
+    #    needs: [ test ]
     if: github.ref == 'refs/heads/main' && github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-#        type: [ 'backend', 'frontend', 'caddy' ]
-        type: [ 'backend', 'frontend' ]
+        type: [ 'backend', 'frontend' , 'market-price-tracker' ]
     steps:
       - uses: actions/checkout@v4.1.7
         with:
@@ -89,11 +88,10 @@ jobs:
         uses: docker/build-push-action@v6.5.0
         with:
           platforms: linux/amd64, linux/arm64/v8
-          context: .
-          file: Dockerfile.${{ matrix.type }}
+          context: ${{ matrix.type == 'market-price-tracker' && './market-price-tracker' || '.' }}
+          file: ${{ matrix.type == 'market-price-tracker' && 'Dockerfile' || format('Dockerfile.{0}', matrix.type) }}
           push: true
-#          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_CADDY }}:latest
-          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND }}:latest
+          tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_MARKET_PRICE_TRACKER }}:latest
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PRnv
