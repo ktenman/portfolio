@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install geckodriver for Firefox
-RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz" -O /tmp/geckodriver.tar.gz \
+RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz" -O /tmp/geckodriver.tar.gz \
     && tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin \
     && rm /tmp/geckodriver.tar.gz
 
