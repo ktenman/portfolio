@@ -20,7 +20,7 @@ import java.math.BigDecimal
 class CurrentPriceRetrievalJobIT {
 
   @Resource
-  private lateinit var instrumentDataRetrievalJob: CurrentPriceRetrievalJob
+  private lateinit var instrumentDataRetrievalJob: InstrumentDataRetrievalJob
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository

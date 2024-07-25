@@ -10,29 +10,14 @@ COPY src /app/src
 RUN gradle clean build -x test --no-daemon
 
 # Stage 2: Create the final image
-FROM openjdk:21-jdk-slim-bookworm
+FROM bellsoft/liberica-openjre-alpine-musl:21
+
 WORKDIR /app
 
-# Install necessary utilities
-RUN apt-get update && \
-    apt-get install -y firefox-esr wget tar curl && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install GeckoDriver
-RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz && \
-    tar -xzf geckodriver-v0.34.0-linux64.tar.gz && \
-    mv geckodriver /usr/bin/ && \
-    chmod +x /usr/bin/geckodriver && \
-    rm geckodriver-v0.34.0-linux64.tar.gz
-
-ENV PATH="/usr/bin/firefox:/usr/bin/geckodriver:${PATH}"
-
-# Optionally, create the cache directory and set proper permissions
-RUN mkdir /app/cache && chown 1000:1000 /app/cache
-RUN mkdir /build && chown 1000:1000 /build
-
 COPY --from=build /app/build/libs/*.jar /app/app.jar
+
+# Install curl and necessary libraries in the target stage
+RUN apk update && apk add --no-cache curl libressl nghttp2-libs libssh2 brotli zlib
 
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -Duser.timezone=Europe/Tallinn"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=80"
