@@ -128,7 +128,7 @@ def fetch_current_prices():
   logger.info("Completed fetching current prices")
 
 # Schedule the job
-schedule.every(10).seconds.do(fetch_current_prices)
+schedule.every(60).seconds.do(fetch_current_prices)
 
 # Keep the script running
 while True:
