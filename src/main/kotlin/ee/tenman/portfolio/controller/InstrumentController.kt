@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import java.math.BigDecimal
 
 @RestController
 @RequestMapping("/api/instruments")
@@ -47,6 +48,7 @@ class InstrumentController(
       name = instrumentDto.name
       category = instrumentDto.category
       baseCurrency = instrumentDto.baseCurrency
+      currentPrice = instrumentDto.currentPrice
     }
 
     val savedInstrument = instrumentService.saveInstrument(updatedInstrument)
@@ -70,9 +72,17 @@ class InstrumentController(
     val category: String,
 
     @field:NotBlank(message = "Base currency must not be blank")
-    val baseCurrency: String
+    val baseCurrency: String,
+
+    val currentPrice: BigDecimal? = null
   ) {
-    fun toEntity() = Instrument(symbol = symbol, name = name, category = category, baseCurrency = baseCurrency)
+    fun toEntity() = Instrument(
+      symbol = symbol,
+      name = name,
+      category = category,
+      baseCurrency = baseCurrency,
+      currentPrice = currentPrice
+    )
 
     companion object {
       fun fromEntity(instrument: Instrument) = InstrumentDto(
@@ -80,7 +90,8 @@ class InstrumentController(
         symbol = instrument.symbol,
         name = instrument.name,
         category = instrument.category,
-        baseCurrency = instrument.baseCurrency
+        baseCurrency = instrument.baseCurrency,
+        currentPrice = instrument.currentPrice
       )
     }
   }

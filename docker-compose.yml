@@ -36,6 +36,8 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     image: ktenman/portfolio-be:latest
+    ports:
+      - '8080:8080'
     depends_on:
       - postgres
       - redis
