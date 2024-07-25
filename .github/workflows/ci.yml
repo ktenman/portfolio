@@ -104,7 +104,7 @@ jobs:
           tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_MARKET_PRICE_TRACKER }}:latest
 
   auto-merge-dependabot:
-    name: 🤖 Auto-Merge Dependabot PRnv
+    name: 🤖 Auto-Merge Dependabot PR
     needs: [ test ]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
