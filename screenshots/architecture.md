@@ -1,22 +1,32 @@
 ```
 @startuml
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+' Include material icons
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/material
+!define ICONURL2 https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons2
+!include ICONURL/cloud.puml
+!include ICONURL2/redis.puml
+!include ICONURL2/postgresql.puml
+!include ICONURL2/vuejs.puml
+!include ICONURL2/kotlin.puml
+!include ICONURL2/spring.puml
+!include ICONURL2/python.puml
 
 LAYOUT_WITH_LEGEND()
 
 Person(user, "User", "End user of the Portfolio Management System")
 
 System_Boundary(portfolio_system, "Portfolio Management System") {
-    Container(frontend, "Frontend", "Vue.js, Bootstrap", "Provides the user interface for managing portfolio and viewing data")
-    Container(backend, "Backend", "Spring Boot, Kotlin", "Handles API requests, processes data, and manages business logic")
-    Container(database, "Database", "PostgreSQL", "Stores portfolio data, transactions, and financial information")
-    Container(cache, "Cache", "Redis", "Caches financial data and portfolio summaries for improved performance")
-    Container(jobs, "Scheduled Jobs", "Spring Scheduler", "Runs periodic tasks for data retrieval and calculations")
-    Container(auth, "Auth Service", "Spring Boot, Kotlin", "Handles OAuth authentication and authorization")
+    Container(frontend, "Frontend", "Vue.js, Bootstrap", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
+    Container(backend, "Backend", "Kotlin, Spring Boot", "Handles API requests, processes data, and manages business logic", $sprite="kotlin")
+    ContainerDb(database, "Database", "PostgreSQL", "Handles API requests, processes data, and manages business logic", $sprite="postgresql")
+    ContainerDb(cache, "Cache", "Redis", "Caches financial data and portfolio summaries for improved performance", $sprite="redis")
+    Container(auth, "Auth Service", "Kotlin, Spring Boot", "Handles OAuth authentication and authorization", $sprite="kotlin")
+    Container(market_price_tracker, "Market Price Tracker", "Python, Selenium", "Tracks and updates market prices using web scraping", $sprite="python")
 }
 
-System_Ext(alphavantage, "Alpha Vantage API", "Provides financial market data")
-System_Ext(google_oauth, "Google OAuth", "Provides OAuth 2.0 authentication")
+System_Ext(alphavantage, "Alpha Vantage API", "Provides financial market data", $sprite="cloud")
+System_Ext(google_oauth, "Google OAuth", "Provides OAuth 2.0 authentication", $sprite="cloud")
 
 Rel(user, frontend, "Uses", "HTTPS")
 Rel(frontend, auth, "Authenticates via", "HTTPS")
@@ -25,9 +35,8 @@ Rel(frontend, backend, "Sends requests to", "REST API")
 Rel(backend, auth, "Validates tokens with", "Internal calls")
 Rel(backend, database, "Reads from and writes to", "JDBC")
 Rel(backend, cache, "Reads from and writes to", "Redis protocol")
-Rel(jobs, alphavantage, "Retrieves financial data from", "HTTPS")
-Rel(jobs, database, "Writes financial data to", "JDBC")
-Rel(jobs, backend, "Triggers calculations via", "Internal method calls")
+Rel(backend, alphavantage, "Retrieves financial data from", "HTTPS")
+Rel(market_price_tracker, backend, "Retrieves instrument data from", "HTTP")
 
 @enduml
 ```
