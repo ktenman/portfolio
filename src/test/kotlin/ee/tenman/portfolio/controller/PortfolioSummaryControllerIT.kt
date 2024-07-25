@@ -1,12 +1,20 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.IntegrationTest
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
+import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.whenever
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.test.web.servlet.MockMvc
@@ -14,6 +22,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 
 @ExtendWith(OutputCaptureExtension::class)
@@ -26,10 +36,42 @@ class PortfolioSummaryControllerIT {
   @Resource
   private lateinit var portfolioSummaryRepository: PortfolioDailySummaryRepository
 
+  @Resource
+  private lateinit var instrumentRepository: InstrumentRepository
+
+  @Resource
+  private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
+
+  @MockBean
+  lateinit var clock: Clock
+
   @Test
   fun `should return all portfolio summaries in the correct order when GET request is made to portfolio-summary endpoint`(
     output: CapturedOutput
   ) {
+    whenever(clock.instant()).thenReturn(Instant.parse("2023-07-21T10:00:00Z"))
+    whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
+
+    val instrument = instrumentRepository.save(
+      Instrument(
+        symbol = "QDVE",
+        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+        category = "ETF",
+        baseCurrency = "EUR",
+        currentPrice = 28.25.toBigDecimal()
+      ),
+    )
+
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = 3.4.toBigDecimal(),
+        price = 27.25.toBigDecimal(),
+        transactionDate = LocalDate.of(2023, 7, 15)
+      )
+    )
+
     portfolioSummaryRepository.saveAll(
       listOf(
         PortfolioDailySummary(
@@ -59,22 +101,27 @@ class PortfolioSummaryControllerIT {
     mockMvc.perform(get("/api/portfolio-summary"))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].date").value("2023-07-20"))
-      .andExpect(jsonPath("$[0].totalValue").value(10500.00))
-      .andExpect(jsonPath("$[0].xirrAnnualReturn").value(0.06))
-      .andExpect(jsonPath("$[0].totalProfit").value(600.00))
-      .andExpect(jsonPath("$[0].earningsPerDay").value(20.00))
-      .andExpect(jsonPath("$[1].date").value("2023-07-19"))
-      .andExpect(jsonPath("$[1].totalValue").value(10000.00))
-      .andExpect(jsonPath("$[1].xirrAnnualReturn").value(0.05))
-      .andExpect(jsonPath("$[1].totalProfit").value(500.00))
-      .andExpect(jsonPath("$[1].earningsPerDay").value(15.00))
-      .andExpect(jsonPath("$[2].date").value("2023-07-18"))
-      .andExpect(jsonPath("$[2].totalValue").value(9500.00))
-      .andExpect(jsonPath("$[2].xirrAnnualReturn").value(0.04))
-      .andExpect(jsonPath("$[2].totalProfit").value(400.00))
-      .andExpect(jsonPath("$[2].earningsPerDay").value(10.00))
-
+      .andExpect(jsonPath("$", hasSize<Any>(4)))
+      .andExpect(jsonPath("$[0].date").value("2023-07-21"))
+      .andExpect(jsonPath("$[0].totalValue").value(96.0500))
+      .andExpect(jsonPath("$[0].xirrAnnualReturn").value(7.97040776))
+      .andExpect(jsonPath("$[0].totalProfit").value(3.4000))
+      .andExpect(jsonPath("$[0].earningsPerDay").value(2.0960))
+      .andExpect(jsonPath("$[1].date").value("2023-07-20"))
+      .andExpect(jsonPath("$[1].totalValue").value(10500.0000000000))
+      .andExpect(jsonPath("$[1].xirrAnnualReturn").value(0.06000000))
+      .andExpect(jsonPath("$[1].totalProfit").value(600.0000000000))
+      .andExpect(jsonPath("$[1].earningsPerDay").value(20.0000000000))
+      .andExpect(jsonPath("$[2].date").value("2023-07-19"))
+      .andExpect(jsonPath("$[2].totalValue").value(10000.0000000000))
+      .andExpect(jsonPath("$[2].xirrAnnualReturn").value(0.05000000))
+      .andExpect(jsonPath("$[2].totalProfit").value(500.0000000000))
+      .andExpect(jsonPath("$[2].earningsPerDay").value(15.0000000000))
+      .andExpect(jsonPath("$[3].date").value("2023-07-18"))
+      .andExpect(jsonPath("$[3].totalValue").value(9500.0000000000))
+      .andExpect(jsonPath("$[3].xirrAnnualReturn").value(0.04000000))
+      .andExpect(jsonPath("$[3].totalProfit").value(400.0000000000))
+      .andExpect(jsonPath("$[3].earningsPerDay").value(10.0000000000))
 
     val summaries = portfolioSummaryRepository.findAll()
     assertThat(summaries).hasSize(3)
