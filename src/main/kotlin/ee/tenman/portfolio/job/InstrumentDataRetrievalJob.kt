@@ -20,7 +20,7 @@ class InstrumentDataRetrievalJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 0 */4 * * *")
+  @Scheduled(cron = "0 45 0/4 * * *")
   fun runJob() {
     log.info("Running instrument data retrieval job")
     jobExecutionService.executeJob(this)
