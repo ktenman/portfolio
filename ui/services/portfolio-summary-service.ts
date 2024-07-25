@@ -1,11 +1,8 @@
-import { PortfolioSummary } from '../models/portfolio-summary'
-import { Cacheable } from '../decorators/cacheable.decorator'
-import { CACHE_KEYS } from '../constants/cache-keys'
+import {PortfolioSummary} from '../models/portfolio-summary'
 
 export class PortfolioSummaryService {
   private apiUrl = '/api/portfolio-summary'
 
-  @Cacheable(CACHE_KEYS.PORTFOLIO_SUMMARY)
   async fetchPortfolioSummary(): Promise<PortfolioSummary[]> {
     const response = await fetch(this.apiUrl)
     if (!response.ok) {
