@@ -1,5 +1,6 @@
 services:
   postgres:
+    container_name: postgres
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: portfolio
@@ -17,6 +18,7 @@ services:
       - '5432:5432'
 
   redis:
+    container_name: redis
     image: redis:7-alpine
     volumes:
       - redis_data_local:/data
@@ -52,6 +54,7 @@ services:
     restart: always
 
   app:
+    container_name: app
     image: nginx:alpine
     ports:
       - '80:80'
@@ -60,6 +63,18 @@ services:
     depends_on:
       - frontend
     restart: always
+
+  market_price_tracker:
+    container_name: market_price_tracker
+    build:
+      context: ./market-price-tracker
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    restart: always
+    environment:
+      - OTHER_SERVICE_URL=http://backend:8080/api/instruments
+    mem_limit: 512m
 
 volumes:
   postgres_data_v16_local:

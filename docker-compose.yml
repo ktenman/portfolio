@@ -85,7 +85,7 @@ services:
 
   app:
     container_name: app
-#    image: ktenman/caddy:latest
+    #    image: ktenman/caddy:latest
     image: caddy:2.8-alpine
     ports:
       - '80:80'
@@ -102,6 +102,18 @@ services:
       interval: 12s
       timeout: 3s
       retries: 5
+
+  market_price_tracker:
+    container_name: market_price_tracker
+    build:
+      context: ./market-price-tracker
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    restart: always
+    environment:
+      - OTHER_SERVICE_URL=http://backend:8080/api/instruments
+    mem_limit: 512m
 
 volumes:
   postgres_data:
