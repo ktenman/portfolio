@@ -151,7 +151,7 @@ def fetch_current_prices():
 
 
 # Schedule the job
-schedule.every(600).seconds.do(fetch_current_prices)
+schedule.every(900).seconds.do(fetch_current_prices)
 
 # Keep the script running
 if __name__ == '__main__':
