@@ -1,4 +1,4 @@
-```
+```plantuml
 @startuml
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 ' Include material icons
@@ -17,12 +17,12 @@ LAYOUT_WITH_LEGEND()
 Person(user, "User", "End user of the Portfolio Management System")
 
 System_Boundary(portfolio_system, "Portfolio Management System") {
-    Container(frontend, "Frontend", "Vue.js, Bootstrap", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
-    Container(backend, "Backend", "Kotlin, Spring Boot", "Handles API requests, processes data, and manages business logic", $sprite="kotlin")
-    ContainerDb(database, "Database", "PostgreSQL", "Handles API requests, processes data, and manages business logic", $sprite="postgresql")
-    ContainerDb(cache, "Cache", "Redis", "Caches financial data and portfolio summaries for improved performance", $sprite="redis")
-    Container(auth, "Auth Service", "Kotlin, Spring Boot", "Handles OAuth authentication and authorization", $sprite="kotlin")
-    Container(market_price_tracker, "Market Price Tracker", "Python, Selenium", "Tracks and updates market prices using web scraping", $sprite="python")
+Container(frontend, "Frontend", "Vue.js, Bootstrap", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
+Container(backend, "Backend", "Kotlin, Spring Boot", "Handles API requests, processes data, and manages business logic", $sprite="kotlin")
+ContainerDb(database, "Database", "PostgreSQL", "Handles API requests, processes data, and manages business logic", $sprite="postgresql")
+ContainerDb(cache, "Cache", "Redis", "Caches financial data and portfolio summaries for improved performance", $sprite="redis")
+Container(auth, "Auth Service", "Kotlin, Spring Boot", "Handles OAuth authentication and authorization", $sprite="kotlin")
+Container(market_price_tracker, "Market Price Tracker", "Python, Selenium", "Tracks and updates market prices using web scraping", $sprite="python")
 }
 
 System_Ext(alphavantage, "Alpha Vantage API", "Provides financial market data", $sprite="cloud")
@@ -36,7 +36,7 @@ Rel(backend, auth, "Validates tokens with", "Internal calls")
 Rel(backend, database, "Reads from and writes to", "JDBC")
 Rel(backend, cache, "Reads from and writes to", "Redis protocol")
 Rel(backend, alphavantage, "Retrieves financial data from", "HTTPS")
-Rel(market_price_tracker, backend, "Retrieves instrument data from", "HTTP")
+Rel(market_price_tracker, backend, "Pushes updates to", "HTTP")
 
 @enduml
 ```
