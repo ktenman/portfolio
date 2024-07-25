@@ -5,7 +5,7 @@ import { CachePut } from '../decorators/cache-put.decorator'
 import { CacheEvict } from '../decorators/cache-evict.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
 
-export class PortfolioTransactionService {
+export class TransactionService {
   private readonly baseUrl = '/api/transactions'
 
   @CachePut(CACHE_KEYS.TRANSACTIONS)
