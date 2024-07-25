@@ -37,6 +37,7 @@ dependencies {
   implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
+  implementation("com.codeborne:selenide:$selenideVersion")
   implementation("org.flywaydb:flyway-core")
   implementation("org.flywaydb:flyway-database-postgresql")
   implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -53,7 +54,6 @@ dependencies {
   testImplementation("org.testcontainers:junit-jupiter")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("com.codeborne:selenide:$selenideVersion")
   testImplementation("org.mockito.kotlin:mockito-kotlin:$mokitoKotlinVersion")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
@@ -83,8 +83,7 @@ val test by tasks.getting(Test::class) {
   finalizedBy(":jacocoTestReport")
 
   retry {
-    maxRetries.set(3)
-    maxFailures.set(10)
+    maxRetries.set(2)
     failOnPassedAfterRetry.set(false)
   }
 
