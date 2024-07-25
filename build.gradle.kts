@@ -5,7 +5,6 @@ plugins {
   kotlin("jvm") version "2.0.0"
   kotlin("plugin.spring") version "2.0.0"
   id("jacoco")
-  id("org.gradle.test-retry") version "1.5.10"
 }
 
 group = "ee.tenman"
@@ -28,6 +27,7 @@ val springRetryVersion = "2.0.7"
 val guavaVersion = "33.2.1-jre"
 val commonsMathVersion = "3.6.1"
 val mokitoKotlinVersion = "5.4.0"
+val coroutinesVersion = "1.7.1"
 
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -44,6 +44,8 @@ dependencies {
   implementation("org.springframework.retry:spring-retry:$springRetryVersion")
   implementation("com.google.guava:guava:$guavaVersion")
   implementation("org.apache.commons:commons-math3:$commonsMathVersion")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
   developmentOnly("org.springframework.boot:spring-boot-docker-compose")
   runtimeOnly("org.postgresql:postgresql")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -81,19 +83,6 @@ val test by tasks.getting(Test::class) {
     exclude("**/e2e/**")
   }
   finalizedBy(":jacocoTestReport")
-
-  retry {
-    maxRetries.set(2)
-    failOnPassedAfterRetry.set(false)
-  }
-
-  testLogging {
-    events("passed", "skipped", "failed")
-    showExceptions = true
-    showCauses = true
-    showStackTraces = true
-    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-  }
 }
 
 fun Test.configureE2ETestEnvironment() {
