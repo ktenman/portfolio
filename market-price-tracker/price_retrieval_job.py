@@ -13,8 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(mess
                     handlers=[logging.StreamHandler()])
 logger = logging.getLogger()
 
-OTHER_SERVICE_URL = "http://localhost:8080/api/instruments"
-
+OTHER_SERVICE_URL = os.environ.get('OTHER_SERVICE_URL', 'http://backend:8080/api/instruments')
 
 class Instrument:
   def __init__(self, name, symbol, id=None):
@@ -23,6 +22,25 @@ class Instrument:
     self.current_price = None
     self.id = id
 
+class InstrumentDto:
+  def __init__(self, id, symbol, name, category, baseCurrency, currentPrice):
+    self.id = id
+    self.symbol = symbol
+    self.name = name
+    self.category = category
+    self.baseCurrency = baseCurrency
+    self.currentPrice = currentPrice
+
+  @staticmethod
+  def from_instrument(instrument):
+    return InstrumentDto(
+      id=instrument.id,
+      symbol=instrument.symbol,
+      name=instrument.name,
+      category="",
+      baseCurrency="USD",
+      currentPrice=str(instrument.current_price)
+    )
 
 class InstrumentService:
   def save_instrument(self, instrument):
@@ -46,18 +64,27 @@ class InstrumentService:
       return
 
     try:
-      response = requests.put(
-        f"{OTHER_SERVICE_URL}/{instrument.id}",
-        json={"currentPrice": str(instrument.current_price)}
-      )
+      dto = InstrumentDto.from_instrument(instrument)
+      payload = {
+        "id": dto.id,
+        "symbol": dto.symbol,
+        "name": dto.name,
+        "category": dto.category,
+        "baseCurrency": dto.baseCurrency,
+        "currentPrice": dto.currentPrice
+      }
+
+      logger.info(f"Updating other service for {instrument.name} with current price: {instrument.current_price}")
+      response = requests.put(f"{OTHER_SERVICE_URL}/{instrument.id}", json=payload)
+
       if response.status_code == 200:
-        logger.info(
-          f"Successfully updated other service for {instrument.name} with current price: {instrument.current_price}")
+        logger.info(f"Successfully updated other service for {instrument.name} with current price: {instrument.current_price}")
       else:
         logger.error(f"Failed to update other service for {instrument.name}. Status code: {response.status_code}")
+        logger.error(f"Response text: {response.text}")
+        logger.error(f"Response headers: {response.headers}")
     except Exception as e:
       logger.error(f"Error updating other service for {instrument.name}: {e}")
-
 
 def fetch_current_prices():
   logger.info("Fetching current prices")
@@ -72,7 +99,7 @@ def fetch_current_prices():
 
   driver = webdriver.Firefox(options=firefox_options)
 
-  for instrument in local_instruments:
+  for instrument in remote_instruments:
     if instrument.symbol in instrument_map:
       remote_instrument = instrument_map[instrument.symbol]
       instrument.id = remote_instrument.id
@@ -99,7 +126,6 @@ def fetch_current_prices():
       logger.warning(f"Instrument with symbol {instrument.symbol} not found in remote service.")
 
   logger.info("Completed fetching current prices")
-
 
 # Schedule the job
 schedule.every(10).seconds.do(fetch_current_prices)
