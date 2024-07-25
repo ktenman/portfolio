@@ -10,7 +10,7 @@ import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s.%(msecs)03d [%(threadName)s] %(levelname)-5s %(name)-20s %%(transactionId)s- %(message)s',
+                    format='%(asctime)s.%(msecs)03d [%(threadName)s] %(levelname)-5s %(name)-20s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     handlers=[logging.StreamHandler()])
 logger = logging.getLogger()
@@ -19,11 +19,13 @@ OTHER_SERVICE_URL = os.environ.get('OTHER_SERVICE_URL', 'http://backend:8080/api
 
 
 class Instrument:
-  def __init__(self, name, symbol, id=None):
+  def __init__(self, name, symbol, id=None, category=None, baseCurrency=None, current_price=None):
     self.name = name
     self.symbol = symbol
-    self.current_price = None
+    self.current_price = current_price
     self.id = id
+    self.category = category
+    self.baseCurrency = baseCurrency
 
 
 class InstrumentDto:
@@ -36,20 +38,29 @@ class InstrumentDto:
     self.currentPrice = currentPrice
 
   @staticmethod
-  def from_instrument(instrument):
+  def from_entity(instrument):
     return InstrumentDto(
       id=instrument.id,
       symbol=instrument.symbol,
       name=instrument.name,
-      category="",
-      baseCurrency="USD",
+      category=instrument.category,
+      baseCurrency=instrument.baseCurrency,
       currentPrice=str(instrument.current_price)
+    )
+
+  def to_entity(self):
+    return Instrument(
+      id=self.id,
+      symbol=self.symbol,
+      name=self.name,
+      category=self.category,
+      baseCurrency=self.baseCurrency,
+      current_price=Decimal(self.currentPrice)
     )
 
 
 class InstrumentService:
   def save_instrument(self, instrument):
-    # Placeholder for saving instrument, replace with actual implementation
     logger.info(f"Saved {instrument.name} with current price: {instrument.current_price}")
     self.update_other_service(instrument)
 
@@ -58,7 +69,9 @@ class InstrumentService:
       response = requests.get(OTHER_SERVICE_URL)
       response.raise_for_status()
       instruments = response.json()
-      return [Instrument(name=inst['name'], symbol=inst['symbol'], id=inst['id']) for inst in instruments]
+      return [Instrument(name=inst['name'], symbol=inst['symbol'], id=inst['id'],
+                         category=inst.get('category'), baseCurrency=inst.get('baseCurrency'),
+                         current_price=Decimal(inst['currentPrice'])) for inst in instruments]
     except Exception as e:
       logger.error(f"Error fetching instruments from other service: {e}")
       return []
@@ -69,7 +82,7 @@ class InstrumentService:
       return
 
     try:
-      dto = InstrumentDto.from_instrument(instrument)
+      dto = InstrumentDto.from_entity(instrument)
       payload = {
         "id": dto.id,
         "symbol": dto.symbol,
@@ -97,7 +110,6 @@ def fetch_current_prices():
   logger.info("Fetching current prices")
   instrument_service = InstrumentService()
   remote_instruments = instrument_service.get_all_instruments()
-
   instrument_map = {inst.symbol: inst for inst in remote_instruments}
 
   firefox_options = Options()
@@ -107,30 +119,33 @@ def fetch_current_prices():
   driver = webdriver.Firefox(options=firefox_options)
 
   for instrument in remote_instruments:
-    if instrument.symbol in instrument_map:
-      remote_instrument = instrument_map[instrument.symbol]
-      instrument.id = remote_instrument.id
-
-      try:
-        driver.get(f"https://markets.ft.com/data/etfs/tearsheet/summary?s={instrument.symbol}")
-        time.sleep(3)
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        if len(iframes) == 4:
-          driver.switch_to.frame(iframes[-1])
-          accept_button = driver.find_element(By.XPATH, "//button[text()='Accept Cookies']")
-          accept_button.click()
-          driver.switch_to.default_content()
-        price_text = driver.find_element(By.CLASS_NAME, "mod-ui-data-list__value").text
-        price = Decimal(price_text.replace(",", ""))
-        instrument.current_price = price
-        instrument_service.save_instrument(instrument)
-        logger.info(f"{instrument.name} current price: {price}")
-      except Exception as e:
-        logger.error(f"Error retrieving current price for {instrument.name}: {e}")
-      finally:
-        driver.quit()
-    else:
+    if instrument.symbol not in instrument_map:
       logger.warning(f"Instrument with symbol {instrument.symbol} not found in remote service.")
+      continue
+
+    remote_instrument = instrument_map[instrument.symbol]
+    instrument.id = remote_instrument.id
+
+    try:
+      driver.get(f"https://markets.ft.com/data/etfs/tearsheet/summary?s={instrument.symbol}")
+      time.sleep(3)
+
+      iframes = driver.find_elements(By.TAG_NAME, "iframe")
+      if len(iframes) == 4:
+        driver.switch_to.frame(iframes[-1])
+        accept_button = driver.find_element(By.XPATH, "//button[text()='Accept Cookies']")
+        accept_button.click()
+        driver.switch_to.default_content()
+
+      price_text = driver.find_element(By.CLASS_NAME, "mod-ui-data-list__value").text
+      price = Decimal(price_text.replace(",", ""))
+      instrument.current_price = price
+      instrument_service.save_instrument(instrument)
+      logger.info(f"{instrument.name} current price: {price}")
+    except Exception as e:
+      logger.error(f"Error retrieving current price for {instrument.name}: {e}")
+    finally:
+      driver.quit()
 
   logger.info("Completed fetching current prices")
 
@@ -139,6 +154,7 @@ def fetch_current_prices():
 schedule.every(60).seconds.do(fetch_current_prices)
 
 # Keep the script running
-while True:
-  schedule.run_pending()
-  time.sleep(1)
+if __name__ == '__main__':
+  while True:
+    schedule.run_pending()
+    time.sleep(1)
