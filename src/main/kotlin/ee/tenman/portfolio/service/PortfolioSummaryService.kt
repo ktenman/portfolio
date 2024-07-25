@@ -44,10 +44,10 @@ class PortfolioSummaryService(
     return PortfolioDailySummary(
       entryDate = currentDate,
       totalValue = currentValue.setScale(4, RoundingMode.HALF_UP),
-      xirrAnnualReturn = BigDecimal(xirrResult).setScale(8, RoundingMode.HALF_UP),
+      xirrAnnualReturn = xirrResult.toBigDecimal().setScale(8, RoundingMode.HALF_UP),
       totalProfit = currentValue.subtract(totalInvestment).setScale(4, RoundingMode.HALF_UP),
       earningsPerDay = currentValue.multiply(BigDecimal(xirrResult))
-        .divide(BigDecimal(365.25), 4, RoundingMode.HALF_UP)
+        .divide(365.25.toBigDecimal(), 4, RoundingMode.HALF_UP)
     )
   }
 
