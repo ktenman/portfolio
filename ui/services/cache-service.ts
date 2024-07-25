@@ -4,7 +4,7 @@ type CacheContent<T> = {
 }
 
 export class CacheService {
-  private readonly cacheValidity: number = 300_000 // 5 minutes in milliseconds
+  private readonly cacheValidity: number = 60_000 // 1 minute
 
   setItem<T>(key: string, data: T): void {
     const cacheContent: CacheContent<T> = { timestamp: Date.now(), data }
