@@ -10,6 +10,7 @@ import ee.tenman.portfolio.service.PortfolioSummaryService
 import ee.tenman.portfolio.service.PortfolioTransactionService
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
+import ee.tenman.portfolio.service.xirr.XirrService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -24,7 +25,8 @@ class DailyPortfolioXirrJob(
   private val portfolioSummaryService: PortfolioSummaryService,
   private val dailyPriceService: DailyPriceService,
   private val clock: Clock,
-  private val jobExecutionService: JobExecutionService
+  private val jobExecutionService: JobExecutionService,
+  private val xirrService: XirrService
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -93,29 +95,9 @@ class DailyPortfolioXirrJob(
     transactions: List<PortfolioTransaction>,
     latestDate: LocalDate
   ): Pair<BigDecimal, BigDecimal> {
-    val (totalInvestment, holdings) = calculateInvestmentAndHoldings(transactions)
+    val (totalInvestment, holdings) = xirrService.calculateInvestmentAndHoldings(transactions)
     val currentValue = calculateCurrentValue(holdings, latestDate)
     return Pair(totalInvestment, currentValue)
-  }
-
-  private fun calculateInvestmentAndHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, Map<Instrument, BigDecimal>> {
-    var totalInvestment = BigDecimal.ZERO
-    val holdings = mutableMapOf<Instrument, BigDecimal>()
-
-    transactions.forEach { transaction ->
-      val amount = transaction.price * transaction.quantity
-      totalInvestment += if (transaction.transactionType == TransactionType.BUY) amount else -amount
-
-      val currentHolding = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO)
-      val newHolding = when (transaction.transactionType) {
-        TransactionType.BUY -> currentHolding + transaction.quantity
-        TransactionType.SELL -> currentHolding - transaction.quantity
-      }
-      holdings[transaction.instrument] = newHolding
-    }
-
-    log.info("Total Investment: $totalInvestment, Holdings: $holdings")
-    return Pair(totalInvestment, holdings)
   }
 
   private fun calculateCurrentValue(holdings: Map<Instrument, BigDecimal>, latestDate: LocalDate): BigDecimal {

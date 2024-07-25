@@ -42,4 +42,8 @@ class InstrumentService(private val instrumentRepository: InstrumentRepository) 
     return instrumentRepository.findAll()
   }
 
+  fun findInstrument(id: Long): Instrument {
+    return getInstrumentById(id)
+  }
+
 }
