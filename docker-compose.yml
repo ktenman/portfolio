@@ -105,9 +105,7 @@ services:
 
   market_price_tracker:
     container_name: market_price_tracker
-    build:
-      context: ./market-price-tracker
-      dockerfile: Dockerfile
+    image: ktenman/market-price-tracker:latest
     depends_on:
       - backend
     restart: always
