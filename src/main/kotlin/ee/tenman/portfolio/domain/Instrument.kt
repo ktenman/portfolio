@@ -3,6 +3,7 @@ package ee.tenman.portfolio.domain
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
+import java.math.BigDecimal
 
 @Entity
 @Table(name = "instrument")
@@ -17,5 +18,8 @@ class Instrument(
   var category: String,
 
   @Column(name = "base_currency", nullable = false)
-  var baseCurrency: String
+  var baseCurrency: String,
+
+  @Column(name = "current_price", nullable = true)
+  var currentPrice: BigDecimal? = null,
 ) : BaseEntity()
