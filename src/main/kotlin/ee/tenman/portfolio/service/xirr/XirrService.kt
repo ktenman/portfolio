@@ -1,6 +1,9 @@
 package ee.tenman.portfolio.service.xirr
 
 import ee.tenman.portfolio.alphavantage.AlphaVantageService
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.TransactionType
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -39,5 +42,25 @@ class XirrService(private val alphaVantageService: AlphaVantageService) {
   }.getOrElse {
     log.error("Error in calculating XIRR for ticker: $ticker", it)
     Double.NaN
+  }
+
+  fun calculateInvestmentAndHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, Map<Instrument, BigDecimal>> {
+    var totalInvestment = BigDecimal.ZERO
+    val holdings = mutableMapOf<Instrument, BigDecimal>()
+
+    transactions.forEach { transaction ->
+      val amount = transaction.price * transaction.quantity
+      totalInvestment += if (transaction.transactionType == TransactionType.BUY) amount else -amount
+
+      val currentHolding = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO)
+      val newHolding = when (transaction.transactionType) {
+        TransactionType.BUY -> currentHolding + transaction.quantity
+        TransactionType.SELL -> currentHolding - transaction.quantity
+      }
+      holdings[transaction.instrument] = newHolding
+    }
+
+    log.info("Total Investment: $totalInvestment, Holdings: $holdings")
+    return Pair(totalInvestment, holdings)
   }
 }

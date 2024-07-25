@@ -17,7 +17,10 @@ class PortfolioSummaryController(
   @GetMapping
   @Loggable
   fun getPortfolioSummary(): List<PortfolioSummaryDto> {
-    return portfolioSummaryService.getAllDailySummaries()
+    val historicalSummaries = portfolioSummaryService.getAllDailySummaries()
+    val currentDaySummary = portfolioSummaryService.getCurrentDaySummary()
+
+    return (historicalSummaries + currentDaySummary)
       .sortedByDescending { it.entryDate }
       .map { summary ->
         PortfolioSummaryDto(
