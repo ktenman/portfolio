@@ -21,7 +21,7 @@ class PriceRetrievalJob(
     Configuration.headless = true
   }
 
-  @Scheduled(cron = "0 0/2 * * * *")
+  @Scheduled(cron = "0/10 * * * * *")
   fun fetchCurrentPrices() {
     log.info("Fetching current prices")
     val instruments = instrumentService.getAllInstruments()
