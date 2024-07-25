@@ -84,12 +84,22 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+      - name: Set build context and Dockerfile path
+        id: set_build_params
+        run: |
+          if [ "${{ matrix.type }}" == "market-price-tracker" ]; then
+            echo "context=./market-price-tracker" >> $GITHUB_OUTPUT
+            echo "dockerfile=./market-price-tracker/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "context=." >> $GITHUB_OUTPUT
+            echo "dockerfile=./Dockerfile.${{ matrix.type }}" >> $GITHUB_OUTPUT
+          fi
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.5.0
         with:
           platforms: linux/amd64, linux/arm64/v8
-          context: ${{ matrix.type == 'market-price-tracker' && './market-price-tracker' || '.' }}
-          file: ${{ matrix.type == 'market-price-tracker' && 'Dockerfile' || format('Dockerfile.{0}', matrix.type) }}
+          context: ${{ steps.set_build_params.outputs.context }}
+          file: ${{ steps.set_build_params.outputs.dockerfile }}
           push: true
           tags: ${{ matrix.type == 'backend' && env.DOCKER_IMAGE_NAME_BACKEND || matrix.type == 'frontend' && env.DOCKER_IMAGE_NAME_FRONTEND || env.DOCKER_IMAGE_NAME_MARKET_PRICE_TRACKER }}:latest
 
