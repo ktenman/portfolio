@@ -104,10 +104,11 @@ services:
       retries: 5
 
   market_price_tracker:
-    container_name: market_price_tracker
+    container_name: market-price-tracker
     image: ktenman/market-price-tracker:latest
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: always
     environment:
       - OTHER_SERVICE_URL=http://backend:8080/api/instruments
