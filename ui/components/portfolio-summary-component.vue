@@ -58,18 +58,26 @@ import {
   Title,
   Tooltip,
 } from 'chart.js'
-import { PortfolioSummaryService } from '../services/portfolio-summary-service.ts'
+import { SummaryService } from '../services/summary-service.ts'
+import { TransactionService } from '../services/transaction-service.ts'
+import { InstrumentService } from '../services/instrument-service.ts'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
 const summaryData = shallowRef<PortfolioSummary[]>([])
 const isLoading = ref(true)
-const portfolioSummaryService = new PortfolioSummaryService()
+const summaryService = new SummaryService()
+const transactionService = new TransactionService()
+const instrumentService = new InstrumentService()
 
 onMounted(async () => {
   try {
-    summaryData.value = await portfolioSummaryService.fetchPortfolioSummary()
+    summaryData.value = await summaryService.fetchPortfolioSummary()
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    await Promise.all([
+      transactionService.getAllTransactions(),
+      instrumentService.getAllInstruments(),
+    ])
   } catch (error) {
     console.error('Error fetching portfolio summary:', error)
   } finally {

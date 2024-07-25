@@ -2,7 +2,7 @@ import { PortfolioSummary } from '../models/portfolio-summary'
 import { Cacheable } from '../decorators/cacheable.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
 
-export class PortfolioSummaryService {
+export class SummaryService {
   private apiUrl = '/api/portfolio-summary'
 
   @Cacheable(CACHE_KEYS.PORTFOLIO_SUMMARY)

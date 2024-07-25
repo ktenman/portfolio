@@ -170,7 +170,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { Modal } from 'bootstrap'
-import { PortfolioTransactionService } from '../services/portfolio-transaction-service'
+import { TransactionService } from '../services/transaction-service.ts'
 import { InstrumentService } from '../services/instrument-service'
 import { PortfolioTransaction } from '../models/portfolio-transaction'
 import { Instrument } from '../models/instrument'
@@ -181,7 +181,7 @@ const debugMessage = ref('')
 const validationErrors = ref({})
 const alertMessage = ref('')
 const alertType = ref<AlertType | null>(null)
-const transactionService = new PortfolioTransactionService()
+const transactionService = new TransactionService()
 const instrumentService = new InstrumentService()
 const transactions = ref<PortfolioTransaction[]>([])
 const instruments = ref<Instrument[]>([])
