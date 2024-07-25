@@ -33,6 +33,7 @@ class PortfolioSummaryService(
   fun getAllDailySummaries(): List<PortfolioDailySummary> = portfolioDailySummaryRepository.findAll()
 
   @Transactional(readOnly = true)
+  @Cacheable(value = [SUMMARY_CACHE], key = "'currentDaySummary'")
   fun getCurrentDaySummary(): PortfolioDailySummary {
     val currentDate = LocalDate.now(clock)
     val transactions = portfolioTransactionService.getAllTransactions()
