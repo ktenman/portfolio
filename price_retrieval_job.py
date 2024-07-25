@@ -1,11 +1,11 @@
-import os
-import time
 import logging
+import os
+import schedule
+import time
 from decimal import Decimal
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
-import schedule
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s', handlers=[logging.StreamHandler()])
