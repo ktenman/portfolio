@@ -9,11 +9,14 @@ import schedule
 import requests
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s',
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s.%(msecs)03d [%(threadName)s] %(levelname)-5s %(name)-20s %%(transactionId)s- %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
                     handlers=[logging.StreamHandler()])
 logger = logging.getLogger()
 
 OTHER_SERVICE_URL = os.environ.get('OTHER_SERVICE_URL', 'http://backend:8080/api/instruments')
+
 
 class Instrument:
   def __init__(self, name, symbol, id=None):
@@ -21,6 +24,7 @@ class Instrument:
     self.symbol = symbol
     self.current_price = None
     self.id = id
+
 
 class InstrumentDto:
   def __init__(self, id, symbol, name, category, baseCurrency, currentPrice):
@@ -41,6 +45,7 @@ class InstrumentDto:
       baseCurrency="USD",
       currentPrice=str(instrument.current_price)
     )
+
 
 class InstrumentService:
   def save_instrument(self, instrument):
@@ -78,13 +83,15 @@ class InstrumentService:
       response = requests.put(f"{OTHER_SERVICE_URL}/{instrument.id}", json=payload)
 
       if response.status_code == 200:
-        logger.info(f"Successfully updated other service for {instrument.name} with current price: {instrument.current_price}")
+        logger.info(
+          f"Successfully updated other service for {instrument.name} with current price: {instrument.current_price}")
       else:
         logger.error(f"Failed to update other service for {instrument.name}. Status code: {response.status_code}")
         logger.error(f"Response text: {response.text}")
         logger.error(f"Response headers: {response.headers}")
     except Exception as e:
       logger.error(f"Error updating other service for {instrument.name}: {e}")
+
 
 def fetch_current_prices():
   logger.info("Fetching current prices")
@@ -126,6 +133,7 @@ def fetch_current_prices():
       logger.warning(f"Instrument with symbol {instrument.symbol} not found in remote service.")
 
   logger.info("Completed fetching current prices")
+
 
 # Schedule the job
 schedule.every(60).seconds.do(fetch_current_prices)
