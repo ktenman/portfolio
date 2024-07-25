@@ -73,7 +73,7 @@ services:
       - backend
     restart: always
     environment:
-      - OTHER_SERVICE_URL=http://backend:8080/api/instruments
+      - BACKEND_URL=http://backend:8080/api/instruments
     mem_limit: 512m
 
 volumes:

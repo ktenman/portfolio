@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO,
                     handlers=[logging.StreamHandler()])
 logger = logging.getLogger()
 
-OTHER_SERVICE_URL = os.environ.get('OTHER_SERVICE_URL', 'http://backend:8080/api/instruments')
+BACKEND_URL = os.environ.get('BACKEND_URL', 'http://backend:8080/api/instruments')
 
 
 class Instrument:
@@ -66,14 +66,14 @@ class InstrumentService:
 
   def get_all_instruments(self):
     try:
-      response = requests.get(OTHER_SERVICE_URL)
+      response = requests.get(BACKEND_URL)
       response.raise_for_status()
       instruments = response.json()
       return [Instrument(name=inst['name'], symbol=inst['symbol'], id=inst['id'],
                          category=inst.get('category'), baseCurrency=inst.get('baseCurrency'),
                          current_price=Decimal(inst['currentPrice'])) for inst in instruments]
     except Exception as e:
-      logger.error(f"Error fetching instruments from other service: {e}")
+      logger.error(f"Error fetching instruments from backend: {e}")
       return []
 
   def update_other_service(self, instrument):
@@ -92,18 +92,18 @@ class InstrumentService:
         "currentPrice": dto.currentPrice
       }
 
-      logger.info(f"Updating other service for {instrument.name} with current price: {instrument.current_price}")
-      response = requests.put(f"{OTHER_SERVICE_URL}/{instrument.id}", json=payload)
+      logger.info(f"Updating {instrument.symbol} instrument with current price: {instrument.current_price}")
+      response = requests.put(f"{BACKEND_URL}/{instrument.id}", json=payload)
 
       if response.status_code == 200:
         logger.info(
-          f"Successfully updated other service for {instrument.name} with current price: {instrument.current_price}")
+          f"Successfully updated {instrument.symbol} instrument with current price: {instrument.current_price}")
       else:
-        logger.error(f"Failed to update other service for {instrument.name}. Status code: {response.status_code}")
+        logger.error(f"Failed to update {instrument.symbol} instrument. Status code: {response.status_code}")
         logger.error(f"Response text: {response.text}")
         logger.error(f"Response headers: {response.headers}")
     except Exception as e:
-      logger.error(f"Error updating other service for {instrument.name}: {e}")
+      logger.error(f"Error updating {instrument.symbol} instrument: {e}")
 
 
 def fetch_current_prices():
