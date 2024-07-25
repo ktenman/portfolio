@@ -1,35 +1,70 @@
-import logging
 import os
-import schedule
 import time
+import logging
 from decimal import Decimal
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
+import schedule
+import requests
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s', handlers=[logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s',
+                    handlers=[logging.StreamHandler()])
 logger = logging.getLogger()
 
+OTHER_SERVICE_URL = "http://localhost:8080/api/instruments"
+
+
 class Instrument:
-  def __init__(self, name, symbol):
+  def __init__(self, name, symbol, id=None):
     self.name = name
     self.symbol = symbol
     self.current_price = None
+    self.id = id
+
 
 class InstrumentService:
-  def get_all_instruments(self):
-    # Placeholder for fetching all instruments, replace with actual implementation
-    return [Instrument(name="QDVE", symbol="QDVE:GER:EUR")]
-
   def save_instrument(self, instrument):
     # Placeholder for saving instrument, replace with actual implementation
     logger.info(f"Saved {instrument.name} with current price: {instrument.current_price}")
+    self.update_other_service(instrument)
+
+  def get_all_instruments(self):
+    try:
+      response = requests.get(OTHER_SERVICE_URL)
+      response.raise_for_status()
+      instruments = response.json()
+      return [Instrument(name=inst['name'], symbol=inst['symbol'], id=inst['id']) for inst in instruments]
+    except Exception as e:
+      logger.error(f"Error fetching instruments from other service: {e}")
+      return []
+
+  def update_other_service(self, instrument):
+    if instrument.id is None:
+      logger.error(f"Instrument ID is missing for {instrument.name}. Skipping update.")
+      return
+
+    try:
+      response = requests.put(
+        f"{OTHER_SERVICE_URL}/{instrument.id}",
+        json={"currentPrice": str(instrument.current_price)}
+      )
+      if response.status_code == 200:
+        logger.info(
+          f"Successfully updated other service for {instrument.name} with current price: {instrument.current_price}")
+      else:
+        logger.error(f"Failed to update other service for {instrument.name}. Status code: {response.status_code}")
+    except Exception as e:
+      logger.error(f"Error updating other service for {instrument.name}: {e}")
+
 
 def fetch_current_prices():
   logger.info("Fetching current prices")
   instrument_service = InstrumentService()
-  instruments = instrument_service.get_all_instruments()
+  remote_instruments = instrument_service.get_all_instruments()
+
+  instrument_map = {inst.symbol: inst for inst in remote_instruments}
 
   firefox_options = Options()
   if os.getenv("HEADLESS", "False") == "True":
@@ -37,10 +72,13 @@ def fetch_current_prices():
 
   driver = webdriver.Firefox(options=firefox_options)
 
-  for instrument in instruments:
-    if "QDVE" in instrument.symbol:
+  for instrument in local_instruments:
+    if instrument.symbol in instrument_map:
+      remote_instrument = instrument_map[instrument.symbol]
+      instrument.id = remote_instrument.id
+
       try:
-        driver.get("https://markets.ft.com/data/etfs/tearsheet/summary?s=QDVE:GER:EUR")
+        driver.get(f"https://markets.ft.com/data/etfs/tearsheet/summary?s={instrument.symbol}")
         time.sleep(3)
         iframes = driver.find_elements(By.TAG_NAME, "iframe")
         if len(iframes) == 4:
@@ -57,8 +95,11 @@ def fetch_current_prices():
         logger.error(f"Error retrieving current price for {instrument.name}: {e}")
       finally:
         driver.quit()
+    else:
+      logger.warning(f"Instrument with symbol {instrument.symbol} not found in remote service.")
 
   logger.info("Completed fetching current prices")
+
 
 # Schedule the job
 schedule.every(10).seconds.do(fetch_current_prices)
