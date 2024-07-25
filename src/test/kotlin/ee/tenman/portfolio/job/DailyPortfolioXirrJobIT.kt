@@ -31,7 +31,7 @@ class DailyPortfolioXirrJobIT {
   private lateinit var portfolioTransactionService: PortfolioTransactionService
 
   @Resource
-  private lateinit var instrumentDataRetrievalJob: InstrumentDataRetrievalJob
+  private lateinit var instrumentDataRetrievalJob: CurrentPriceRetrievalJob
 
   @Resource
   private lateinit var dailyPortfolioXirrJob: DailyPortfolioXirrJob

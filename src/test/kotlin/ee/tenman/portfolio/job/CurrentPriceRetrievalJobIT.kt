@@ -17,10 +17,10 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import java.math.BigDecimal
 
 @IntegrationTest
-class InstrumentDataRetrievalJobIT {
+class CurrentPriceRetrievalJobIT {
 
   @Resource
-  private lateinit var instrumentDataRetrievalJob: InstrumentDataRetrievalJob
+  private lateinit var instrumentDataRetrievalJob: CurrentPriceRetrievalJob
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
