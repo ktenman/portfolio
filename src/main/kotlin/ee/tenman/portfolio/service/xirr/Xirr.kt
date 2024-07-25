@@ -3,7 +3,6 @@ package ee.tenman.portfolio.service.xirr
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction
 import org.apache.commons.math3.analysis.solvers.BisectionSolver
-import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -11,7 +10,7 @@ import kotlin.math.pow
 
 class Xirr(private val transactions: List<Transaction>) {
   companion object {
-    private const val MAX_ELEVATIONS = 1_000_000
+    private const val MAX_ELEVATIONS = 1000
   }
 
   private val log = LoggerFactory.getLogger(javaClass)
@@ -36,21 +35,9 @@ class Xirr(private val transactions: List<Transaction>) {
     val guess = estimateInitialRate()
     log.info("Initial guess for XIRR: $guess")
 
-    return try {
-      calculateXirrWithNewtonRaphson(guess)
-    } catch (e: Exception) {
-      log.warn("Newton-Raphson method failed. Falling back to Bisection method.", e)
-      calculateXirrWithBisection()
-    }
-  }
 
-  private fun calculateXirrWithNewtonRaphson(guess: Double): Double {
-    val solver = NewtonRaphsonSolver()
-    log.info("Newton-Raphson solver configuration: maxEvaluations=$MAX_ELEVATIONS")
-
-    val result = solver.solve(MAX_ELEVATIONS, createXirrFunction(), -0.99, 0.99, guess)
-    log.info("XIRR calculation result (Newton-Raphson): $result")
-    return result
+    log.warn("Initial guess is NaN, defaulting to Bisection method.")
+    return calculateXirrWithBisection()
   }
 
   private fun calculateXirrWithBisection(): Double {
@@ -105,6 +92,8 @@ class Xirr(private val transactions: List<Transaction>) {
     } else {
       0.0
     }
-    return estimatedRate.coerceIn(-0.9, 0.9)
+    return estimatedRate.coerceIn(-1000.0, 1000.0)
   }
+
+
 }
