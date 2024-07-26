@@ -17,7 +17,6 @@ logger = logging.getLogger()
 
 BACKEND_URL = os.environ.get('BACKEND_URL', 'http://backend:8080/api/instruments')
 
-
 class Instrument:
   def __init__(self, name, symbol, id=None, category=None, baseCurrency=None, current_price=None):
     self.name = name
@@ -26,7 +25,6 @@ class Instrument:
     self.id = id
     self.category = category
     self.baseCurrency = baseCurrency
-
 
 class InstrumentDto:
   def __init__(self, id, symbol, name, category, baseCurrency, currentPrice):
@@ -57,7 +55,6 @@ class InstrumentDto:
       baseCurrency=self.baseCurrency,
       current_price=Decimal(self.currentPrice) if self.currentPrice is not None else None
     )
-
 
 class InstrumentService:
   def log_instrument_save(self, instrument):
@@ -106,11 +103,12 @@ class InstrumentService:
     except Exception as e:
       logger.error(f"Error updating {instrument.symbol} instrument: {e}")
 
-
-def fetch_current_prices():
+def fetch_current_prices(instrument_service=None):
   logger.info("Fetching current prices")
-  instrument_service = InstrumentService()
+  if instrument_service is None:
+    instrument_service = InstrumentService()
   remote_instruments = instrument_service.fetch_instruments_from_backend()
+  logger.info(f"Fetched instruments from backend: {remote_instruments}")
   instrument_map = {inst.symbol: inst for inst in remote_instruments}
 
   firefox_options = Options()
@@ -119,37 +117,43 @@ def fetch_current_prices():
 
   driver = webdriver.Firefox(options=firefox_options)
 
-  for instrument in remote_instruments:
-    if instrument.symbol not in instrument_map:
-      logger.warning(f"Instrument with symbol {instrument.symbol} not found in remote service.")
-      continue
+  try:
+    for instrument in remote_instruments:
+      logger.info(f"Processing instrument: {instrument.symbol}")
+      if instrument.symbol not in instrument_map:
+        logger.warning(f"Instrument with symbol {instrument.symbol} not found in remote service.")
+        continue
 
-    remote_instrument = instrument_map[instrument.symbol]
-    instrument.id = remote_instrument.id
+      remote_instrument = instrument_map[instrument.symbol]
+      instrument.id = remote_instrument.id
 
-    try:
-      driver.get(f"https://markets.ft.com/data/etfs/tearsheet/summary?s={instrument.symbol}")
-      time.sleep(3)
+      try:
+        driver.get(f"https://markets.ft.com/data/etfs/tearsheet/summary?s={instrument.symbol}")
+        logger.info(f"Opened URL for instrument: {instrument.symbol}")
+        time.sleep(3)
 
-      iframes = driver.find_elements(By.TAG_NAME, "iframe")
-      if len(iframes) == 4:
-        driver.switch_to.frame(iframes[-1])
-        accept_button = driver.find_element(By.XPATH, "//button[text()='Accept Cookies']")
-        accept_button.click()
-        driver.switch_to.default_content()
+        iframes = driver.find_elements(By.TAG_NAME, "iframe")
+        logger.info(f"Found {len(iframes)} iframes for {instrument.symbol}")
+        if len(iframes) == 4:
+          driver.switch_to.frame(iframes[-1])
+          accept_button = driver.find_element(By.XPATH, "//button[text()='Accept Cookies']")
+          accept_button.click()
+          driver.switch_to.default_content()
+          logger.info(f"Accepted cookies for {instrument.symbol}")
 
-      price_text = driver.find_element(By.CLASS_NAME, "mod-ui-data-list__value").text
-      price = Decimal(price_text.replace(",", ""))
-      instrument.current_price = price
-      instrument_service.log_instrument_save(instrument)
-      logger.info(f"{instrument.name} current price: {price}")
-    except Exception as e:
-      logger.error(f"Error retrieving current price for {instrument.name}: {e}")
-    finally:
-      driver.quit()
+        price_text = driver.find_element(By.CLASS_NAME, "mod-ui-data-list__value").text
+        logger.info(f"Found price text for {instrument.symbol}: {price_text}")
+        price = Decimal(price_text.replace(",", ""))
+        instrument.current_price = price
+        logger.info(f"Updating instrument {instrument.name} with price {price}")
+        instrument_service.log_instrument_save(instrument)
+        logger.info(f"Saved instrument {instrument.name} with current price: {price}")
+      except Exception as e:
+        logger.error(f"Error retrieving current price for {instrument.name}: {e}")
+  finally:
+    driver.quit()
 
   logger.info("Completed fetching current prices")
-
 
 # Schedule the job
 schedule.every(10).seconds.do(fetch_current_prices)
