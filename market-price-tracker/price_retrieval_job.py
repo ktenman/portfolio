@@ -45,7 +45,7 @@ class InstrumentDto:
       name=instrument.name,
       category=instrument.category,
       baseCurrency=instrument.baseCurrency,
-      currentPrice=str(instrument.current_price)
+      currentPrice=str(instrument.current_price) if instrument.current_price is not None else None
     )
 
   def to_entity(self):
@@ -55,28 +55,29 @@ class InstrumentDto:
       name=self.name,
       category=self.category,
       baseCurrency=self.baseCurrency,
-      current_price=Decimal(self.currentPrice)
+      current_price=Decimal(self.currentPrice) if self.currentPrice is not None else None
     )
 
 
 class InstrumentService:
-  def save_instrument(self, instrument):
+  def log_instrument_save(self, instrument):
     logger.info(f"Saved {instrument.name} with current price: {instrument.current_price}")
-    self.update_other_service(instrument)
+    self.update_backend_instrument(instrument)
 
-  def get_all_instruments(self):
+  def fetch_instruments_from_backend(self):
     try:
       response = requests.get(BACKEND_URL)
       response.raise_for_status()
       instruments = response.json()
       return [Instrument(name=inst['name'], symbol=inst['symbol'], id=inst['id'],
                          category=inst.get('category'), baseCurrency=inst.get('baseCurrency'),
-                         current_price=Decimal(inst['currentPrice'])) for inst in instruments]
+                         current_price=Decimal(inst['currentPrice']) if inst['currentPrice'] is not None else None)
+              for inst in instruments]
     except Exception as e:
       logger.error(f"Error fetching instruments from backend: {e}")
       return []
 
-  def update_other_service(self, instrument):
+  def update_backend_instrument(self, instrument):
     if instrument.id is None:
       logger.error(f"Instrument ID is missing for {instrument.name}. Skipping update.")
       return
@@ -109,7 +110,7 @@ class InstrumentService:
 def fetch_current_prices():
   logger.info("Fetching current prices")
   instrument_service = InstrumentService()
-  remote_instruments = instrument_service.get_all_instruments()
+  remote_instruments = instrument_service.fetch_instruments_from_backend()
   instrument_map = {inst.symbol: inst for inst in remote_instruments}
 
   firefox_options = Options()
@@ -140,7 +141,7 @@ def fetch_current_prices():
       price_text = driver.find_element(By.CLASS_NAME, "mod-ui-data-list__value").text
       price = Decimal(price_text.replace(",", ""))
       instrument.current_price = price
-      instrument_service.save_instrument(instrument)
+      instrument_service.log_instrument_save(instrument)
       logger.info(f"{instrument.name} current price: {price}")
     except Exception as e:
       logger.error(f"Error retrieving current price for {instrument.name}: {e}")
@@ -151,7 +152,7 @@ def fetch_current_prices():
 
 
 # Schedule the job
-schedule.every(900).seconds.do(fetch_current_prices)
+schedule.every(10).seconds.do(fetch_current_prices)
 
 # Keep the script running
 if __name__ == '__main__':
