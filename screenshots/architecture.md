@@ -11,6 +11,7 @@
 !include ICONURL2/kotlin.puml
 !include ICONURL2/spring.puml
 !include ICONURL2/python.puml
+!include ICONURL2/chrome.puml
 
 LAYOUT_WITH_LEGEND()
 
@@ -29,7 +30,10 @@ System_Boundary(portfolio_system, "Portfolio Management System") {
 System_Ext(alphavantage, "Alpha Vantage API", "Provides financial market data", $sprite="cloud")
 System_Ext(google_oauth, "Google OAuth", "Provides OAuth 2.0 authentication", $sprite="cloud")
 
-Rel(user, api_gateway, "Accesses", "HTTPS")
+Container_Ext(browser, "Browser", "Chrome, LocalStorage, Cookies", "Caches some calls and stores cookies", $sprite="chrome")
+
+Rel(user, browser, "Uses", "HTTPS")
+Rel(browser, api_gateway, "Accesses", "HTTPS")
 Rel(api_gateway, auth, "Handles authentication with", "HTTPS")
 Rel(api_gateway, frontend, "Forwards to", "HTTPS")
 Rel(api_gateway, backend, "Forwards to", "HTTPS")
@@ -40,6 +44,5 @@ Rel(backend, database, "Reads from and writes to", "JDBC")
 Rel(backend, cache, "Reads from and writes to", "Redis protocol")
 Rel(backend, alphavantage, "Retrieves financial data from", "HTTPS")
 Rel(market_price_tracker, backend, "Pushes updates to", "HTTP")
-
 @enduml
 ```
