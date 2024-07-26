@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE_15
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -33,7 +34,7 @@ class PortfolioSummaryService(
   fun getAllDailySummaries(): List<PortfolioDailySummary> = portfolioDailySummaryRepository.findAll()
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [SUMMARY_CACHE], key = "'currentDaySummary'")
+  @Cacheable(value = [SUMMARY_CACHE_15], key = "'currentDaySummary'")
   fun getCurrentDaySummary(): PortfolioDailySummary {
     val currentDate = LocalDate.now(clock)
     val transactions = portfolioTransactionService.getAllTransactions()
