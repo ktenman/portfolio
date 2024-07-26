@@ -7,6 +7,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 import schedule
 import requests
+from flask import Flask, jsonify
+from threading import Thread
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -16,6 +18,9 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger()
 
 BACKEND_URL = os.environ.get('BACKEND_URL', 'http://backend:8080/api/instruments')
+
+# Create Flask app
+app = Flask(__name__)
 
 class Instrument:
   def __init__(self, name, symbol, id=None, category=None, baseCurrency=None, current_price=None):
@@ -141,11 +146,24 @@ def fetch_current_prices(instrument_service=None):
 
   logger.info("Completed fetching current prices")
 
+# Add health check endpoint
+@app.route('/health')
+def health_check():
+  return jsonify({"status": "healthy"}), 200
+
+def run_flask_app():
+  app.run(host='0.0.0.0', port=5000)
+
 # Schedule the job
 schedule.every(900).seconds.do(fetch_current_prices)
 
 # Keep the script running
 if __name__ == '__main__':
+  # Start Flask app in a separate thread
+  flask_thread = Thread(target=run_flask_app)
+  flask_thread.start()
+
+  # Run the scheduled job
   while True:
     schedule.run_pending()
     time.sleep(1)
