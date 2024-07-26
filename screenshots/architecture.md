@@ -19,12 +19,12 @@ Person(user, "User", "End user of the Portfolio Management System")
 
 System_Boundary(portfolio_system, "Portfolio Management System") {
   Container(api_gateway, "API Gateway", "Caddy", "Handles authentication and reverse proxy")
-    Container(market_price_tracker, "Market Price Tracker", "Python, Selenium", "Tracks and updates market prices using web scraping", $sprite="python")
+  Container(auth, "Auth Service", "Kotlin, Spring Boot", "Handles OAuth authentication and authorization", $sprite="kotlin")
+  Container(frontend, "Frontend", "Vue.js, Bootstrap", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
   Container(backend, "Backend", "Kotlin, Spring Boot", "Handles API requests, processes data, and manages business logic", $sprite="kotlin")
   ContainerDb(database, "Database", "PostgreSQL", "Stores portfolio and financial data", $sprite="postgresql")
   ContainerDb(cache, "Cache", "Redis", "Caches financial data and portfolio summaries for improved performance", $sprite="redis")
-  Container(auth, "Auth Service", "Kotlin, Spring Boot", "Handles OAuth authentication and authorization", $sprite="kotlin")
-  Container(frontend, "Frontend", "Vue.js, Bootstrap", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
+  Container(market_price_tracker, "Market Price Tracker", "Python, Selenium", "Tracks and updates market prices using web scraping", $sprite="python")
 }
 
 System_Ext(alphavantage, "Alpha Vantage API", "Provides financial market data", $sprite="cloud")
@@ -35,14 +35,13 @@ Container_Ext(browser, "Browser", "Chrome, LocalStorage, Cookies", "Caches some 
 Rel(user, browser, "Uses", "HTTPS")
 Rel(browser, api_gateway, "Accesses", "HTTPS")
 Rel(api_gateway, auth, "Handles authentication with", "HTTPS")
+Rel(auth, google_oauth, "Authenticates with", "OAuth 2.0")
 Rel(api_gateway, frontend, "Forwards to", "HTTPS")
 Rel(api_gateway, backend, "Forwards to", "HTTPS")
-Rel(auth, google_oauth, "Authenticates with", "OAuth 2.0")
-Rel(market_price_tracker, backend, "Pushes updates to", "HTTP")
-Rel(backend, auth, "Validates tokens with", "Internal calls")
+Rel(frontend, backend, "Sends requests to", "REST API")
 Rel(backend, database, "Reads from and writes to", "JDBC")
 Rel(backend, cache, "Reads from and writes to", "Redis protocol")
 Rel(backend, alphavantage, "Retrieves financial data from", "HTTPS")
-Rel(frontend, backend, "Sends requests to", "REST API")
+Rel(market_price_tracker, backend, "Pushes updates to", "HTTP")
 @enduml
 ```
