@@ -86,7 +86,7 @@ class DailyPortfolioXirrJobIT {
       get(urlPathEqualTo("/query"))
         .withQueryParam("function", equalTo("TIME_SERIES_DAILY"))
         .withQueryParam("symbol", equalTo("QDVE.DEX"))
-        .withQueryParam("outputsize", equalTo("compact"))
+        .withQueryParam("outputsize", equalTo("full"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
