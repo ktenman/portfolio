@@ -32,36 +32,6 @@ class Instrument:
   def __repr__(self):
     return self.__str__()
 
-class InstrumentDto:
-  def __init__(self, id, symbol, name, category, baseCurrency, currentPrice):
-    self.id = id
-    self.symbol = symbol
-    self.name = name
-    self.category = category
-    self.baseCurrency = baseCurrency
-    self.currentPrice = currentPrice
-
-  @staticmethod
-  def from_entity(instrument):
-    return InstrumentDto(
-      id=instrument.id,
-      symbol=instrument.symbol,
-      name=instrument.name,
-      category=instrument.category,
-      baseCurrency=instrument.baseCurrency,
-      currentPrice=str(instrument.current_price) if instrument.current_price is not None else None
-    )
-
-  def to_entity(self):
-    return Instrument(
-      id=self.id,
-      symbol=self.symbol,
-      name=self.name,
-      category=self.category,
-      baseCurrency=self.baseCurrency,
-      current_price=Decimal(self.currentPrice) if self.currentPrice is not None else None
-    )
-
 class InstrumentService:
   def log_instrument_save(self, instrument):
     logger.info(f"Saved {instrument.name} with current price: {instrument.current_price}")
@@ -86,14 +56,13 @@ class InstrumentService:
       return
 
     try:
-      dto = InstrumentDto.from_entity(instrument)
       payload = {
-        "id": dto.id,
-        "symbol": dto.symbol,
-        "name": dto.name,
-        "category": dto.category,
-        "baseCurrency": dto.baseCurrency,
-        "currentPrice": dto.currentPrice
+        "id": instrument.id,
+        "symbol": instrument.symbol,
+        "name": instrument.name,
+        "category": instrument.category,
+        "baseCurrency": instrument.baseCurrency,
+        "currentPrice": str(instrument.current_price) if instrument.current_price is not None else None
       }
 
       logger.info(f"Updating {instrument.symbol} instrument with current price: {instrument.current_price}")
@@ -109,6 +78,43 @@ class InstrumentService:
     except Exception as e:
       logger.error(f"Error updating {instrument.symbol} instrument: {e}")
 
+def setup_webdriver():
+  firefox_options = Options()
+  if os.getenv("HEADLESS", "False") == "True":
+    firefox_options.add_argument("--headless")
+  return webdriver.Firefox(options=firefox_options)
+
+def accept_cookies(driver):
+  iframes = driver.find_elements(By.TAG_NAME, "iframe")
+  logger.info(f"Found {len(iframes)} iframes")
+  if len(iframes) == 4:
+    driver.switch_to.frame(iframes[-1])
+    accept_button = driver.find_element(By.XPATH, "//button[text()='Accept Cookies']")
+    accept_button.click()
+    driver.switch_to.default_content()
+    logger.info("Accepted cookies")
+
+def fetch_price(driver, instrument):
+  driver.get(f"https://markets.ft.com/data/etfs/tearsheet/summary?s={instrument.symbol}")
+  logger.info(f"Opened URL for instrument: {instrument.symbol}")
+  time.sleep(3)
+
+  accept_cookies(driver)
+
+  price_text = driver.find_element(By.CLASS_NAME, "mod-ui-data-list__value").text
+  logger.info(f"Found price text for {instrument.symbol}: {price_text}")
+  return Decimal(price_text.replace(",", ""))
+
+def process_instrument(driver, instrument, instrument_service):
+  try:
+    price = fetch_price(driver, instrument)
+    instrument.current_price = price
+    logger.info(f"Updating instrument {instrument.name} with price {price}")
+    instrument_service.log_instrument_save(instrument)
+    logger.info(f"Saved instrument {instrument.name} with current price: {price}")
+  except Exception as e:
+    logger.error(f"Error retrieving current price for {instrument.name}: {e}")
+
 def fetch_current_prices(instrument_service=None):
   logger.info("Fetching current prices")
   if instrument_service is None:
@@ -117,11 +123,7 @@ def fetch_current_prices(instrument_service=None):
   logger.info(f"Fetched instruments from backend: {remote_instruments}")
   instrument_map = {inst.symbol: inst for inst in remote_instruments}
 
-  firefox_options = Options()
-  if os.getenv("HEADLESS", "False") == "True":
-    firefox_options.add_argument("--headless")
-
-  driver = webdriver.Firefox(options=firefox_options)
+  driver = setup_webdriver()
 
   try:
     for instrument in remote_instruments:
@@ -133,29 +135,7 @@ def fetch_current_prices(instrument_service=None):
       remote_instrument = instrument_map[instrument.symbol]
       instrument.id = remote_instrument.id
 
-      try:
-        driver.get(f"https://markets.ft.com/data/etfs/tearsheet/summary?s={instrument.symbol}")
-        logger.info(f"Opened URL for instrument: {instrument.symbol}")
-        time.sleep(3)
-
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        logger.info(f"Found {len(iframes)} iframes for {instrument.symbol}")
-        if len(iframes) == 4:
-          driver.switch_to.frame(iframes[-1])
-          accept_button = driver.find_element(By.XPATH, "//button[text()='Accept Cookies']")
-          accept_button.click()
-          driver.switch_to.default_content()
-          logger.info(f"Accepted cookies for {instrument.symbol}")
-
-        price_text = driver.find_element(By.CLASS_NAME, "mod-ui-data-list__value").text
-        logger.info(f"Found price text for {instrument.symbol}: {price_text}")
-        price = Decimal(price_text.replace(",", ""))
-        instrument.current_price = price
-        logger.info(f"Updating instrument {instrument.name} with price {price}")
-        instrument_service.log_instrument_save(instrument)
-        logger.info(f"Saved instrument {instrument.name} with current price: {price}")
-      except Exception as e:
-        logger.error(f"Error retrieving current price for {instrument.name}: {e}")
+      process_instrument(driver, instrument, instrument_service)
   finally:
     driver.quit()
 
