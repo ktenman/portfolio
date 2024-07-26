@@ -19,11 +19,8 @@ interface AlphaVantageClient {
     val RANDOM = Random()
   }
 
-  @GetMapping("/query?function={function}&symbol={symbol}")
-  fun getMonthlyTimeSeries(@PathVariable function: String, @PathVariable symbol: String): AlphaVantageResponse
-
-  @GetMapping("/query?function={function}&symbol={symbol}&outputsize=compact")
-  fun getDailyTimeSeries(@PathVariable function: String, @PathVariable symbol: String): AlphaVantageResponse
+  @GetMapping("/query?function={function}&symbol={symbol}&outputsize=full")
+  fun getTimeSeries(@PathVariable function: String, @PathVariable symbol: String): AlphaVantageResponse
 
   @GetMapping("/query?function={function}&keywords={search}&page={page}")
   fun getSearch(
