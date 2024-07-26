@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter
 @Service
 class AlphaVantageService {
   private val log = LoggerFactory.getLogger(javaClass)
+
   companion object {
     private val GSON = Gson()
     private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -27,7 +28,7 @@ class AlphaVantageService {
     val ticker = getTicker(symbol) ?: throw RuntimeException("Failed to get ticker for symbol: $symbol")
 
     return try {
-      val timeSeriesMonthly = client.getMonthlyTimeSeries("TIME_SERIES_MONTHLY", ticker)
+      val timeSeriesMonthly = client.getTimeSeries("TIME_SERIES_MONTHLY", ticker)
       log.info("Retrieved monthly ticker data for $ticker: ${GSON.toJson(timeSeriesMonthly)}")
 
       timeSeriesMonthly.monthlyTimeSeries?.asSequence()
@@ -43,10 +44,14 @@ class AlphaVantageService {
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun getDailyTimeSeriesForLastWeek(symbol: String): Map<LocalDate, AlphaVantageDayData> {
-    val ticker = getTicker(symbol) ?: throw RuntimeException("Failed to get ticker for symbol: $symbol")
+    var adjustedSymbol = symbol
+    if ("QDVE:GER:EUR" == symbol) {
+      adjustedSymbol = "QDVE.DEX"
+    }
+    val ticker = getTicker(adjustedSymbol) ?: throw RuntimeException("Failed to get ticker for symbol: $adjustedSymbol")
 
     return try {
-      val timeSeriesDaily = client.getDailyTimeSeries("TIME_SERIES_DAILY", ticker)
+      val timeSeriesDaily = client.getTimeSeries("TIME_SERIES_DAILY", ticker)
       log.info("Retrieved daily ticker data for $ticker: ${GSON.toJson(timeSeriesDaily)}")
 
       timeSeriesDaily.dailyTimeSeries?.asSequence()
