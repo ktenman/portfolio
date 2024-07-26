@@ -26,6 +26,12 @@ class Instrument:
     self.category = category
     self.baseCurrency = baseCurrency
 
+  def __str__(self):
+    return f"Instrument(id={self.id}, name='{self.name}', symbol='{self.symbol}', category='{self.category}', baseCurrency='{self.baseCurrency}', current_price={self.current_price})"
+
+  def __repr__(self):
+    return self.__str__()
+
 class InstrumentDto:
   def __init__(self, id, symbol, name, category, baseCurrency, currentPrice):
     self.id = id
