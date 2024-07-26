@@ -104,7 +104,7 @@ services:
       retries: 5
 
   market_price_tracker:
-    container_name: market-price-tracker
+    container_name: mpt
     image: ktenman/market-price-tracker:latest
     depends_on:
       backend:
