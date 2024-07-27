@@ -17,7 +17,7 @@ class RedisConfiguration {
     cacheConfigurations[ONE_DAY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(366))
     cacheConfigurations[THIRTY_MINUTES] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30))
-    cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+    cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(12))
     cacheConfigurations[SUMMARY_CACHE_15] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15))
     cacheConfigurations[TRANSACTION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
@@ -28,12 +28,12 @@ class RedisConfiguration {
   }
 
   companion object {
-    const val INSTRUMENT_CACHE = "instrument-cache-v15"
-    const val SUMMARY_CACHE = "summary-cache-v15"
-    const val SUMMARY_CACHE_15 = "summary-cache-15-v15"
-    const val TRANSACTION_CACHE = "transaction-cache-v15"
-    const val ONE_DAY_CACHE: String = "one-day-cache-v15"
-    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v15"
+    const val INSTRUMENT_CACHE = "instrument-cache-v16"
+    const val SUMMARY_CACHE = "summary-cache-v16"
+    const val SUMMARY_CACHE_15 = "summary-cache-15-v16"
+    const val TRANSACTION_CACHE = "transaction-cache-v16"
+    const val ONE_DAY_CACHE: String = "one-day-cache-v16"
+    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v16"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
   }
 }
