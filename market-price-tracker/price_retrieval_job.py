@@ -9,6 +9,7 @@ import schedule
 import requests
 from flask import Flask, jsonify
 from threading import Thread
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -21,6 +22,7 @@ BACKEND_URL = os.environ.get('BACKEND_URL', 'http://backend:8080/api/instruments
 
 # Create Flask app
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 class Instrument:
   def __init__(self, name, symbol, id=None, category=None, baseCurrency=None, current_price=None):
@@ -150,6 +152,14 @@ def fetch_current_prices(instrument_service=None):
 @app.route('/health')
 def health_check():
   return jsonify({"status": "healthy"}), 200
+
+# Custom log filter to exclude health check logs
+class ExcludeHealthFilter(logging.Filter):
+  def filter(self, record):
+    return 'GET /health' not in record.getMessage()
+
+# Apply the custom filter to the Werkzeug logger
+logging.getLogger('werkzeug').addFilter(ExcludeHealthFilter())
 
 def run_flask_app():
   app.run(host='0.0.0.0', port=5000)
