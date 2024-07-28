@@ -48,6 +48,18 @@
               required
             />
           </div>
+          <div class="mb-3">
+            <label for="years" class="form-label">Number of Years:</label>
+            <input
+              type="number"
+              v-model="form.years"
+              id="years"
+              class="form-control"
+              step="1"
+              min="1"
+              required
+            />
+          </div>
           <button type="submit" class="btn btn-primary">Recalculate</button>
         </form>
       </div>
@@ -84,34 +96,35 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
-import { Chart, registerables } from 'chart.js'
-
-Chart.register(...registerables)
+import { ref, reactive, onMounted, watch } from 'vue'
+import Chart from 'chart.js/auto'
 
 export default {
   setup() {
-    const form = ref({
+    const form = reactive({
       initialWorth: 1000,
       monthlyInvestment: 2800,
       yearlyGrowthRate: 5,
       annualReturnRate: 25.341,
+      years: 10,
     })
-    const chart = ref(null)
+
     const portfolioChart = ref(null)
     const yearSummary = ref([])
+    let chart = null
 
     const calculate = () => {
-      const initialWorth = parseFloat(form.value.initialWorth)
-      let monthlyInvestment = parseFloat(form.value.monthlyInvestment)
-      const yearlyGrowthRate = parseFloat(form.value.yearlyGrowthRate)
-      const annualReturnRate = parseFloat(form.value.annualReturnRate)
+      const initialWorth = Math.max(0, form.initialWorth)
+      let monthlyInvestment = Math.max(0, form.monthlyInvestment)
+      const yearlyGrowthRate = Math.max(0, form.yearlyGrowthRate)
+      const annualReturnRate = Math.max(0, form.annualReturnRate)
+      const years = Math.max(1, Math.floor(form.years))
 
       const values = []
       let totalWorth = initialWorth
       yearSummary.value = []
 
-      for (let year = 1; year <= 10; year++) {
+      for (let year = 1; year <= years; year++) {
         let yearStartWorth = totalWorth
         for (let month = 1; month <= 12; month++) {
           totalWorth += monthlyInvestment
@@ -135,12 +148,12 @@ export default {
     }
 
     const renderChart = data => {
-      if (chart.value) {
-        chart.value.destroy()
+      if (chart) {
+        chart.destroy()
       }
 
       const ctx = portfolioChart.value.getContext('2d')
-      chart.value = new Chart(ctx, {
+      chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: Array.from({ length: data.length }, (_, i) => i + 1),
@@ -179,15 +192,25 @@ export default {
     }
 
     const formatCurrency = value => {
-      return (
-        '€' +
-        value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      )
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value)
     }
 
     onMounted(() => {
       calculate()
     })
+
+    watch(
+      form,
+      () => {
+        calculate()
+      },
+      { deep: true }
+    )
 
     return {
       form,
@@ -209,7 +232,6 @@ canvas {
 .table {
   font-size: 0.9rem;
 }
-
 @media (max-width: 767px) {
   .table {
     font-size: 0.8rem;
