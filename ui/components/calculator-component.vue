@@ -152,43 +152,45 @@ export default {
         chart.destroy()
       }
 
-      const ctx = portfolioChart.value.getContext('2d')
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: Array.from({ length: data.length }, (_, i) => i + 1),
-          datasets: [
-            {
-              label: 'Portfolio Worth',
-              data: data,
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 2,
-              fill: false,
+      if (portfolioChart.value) {
+        const ctx = portfolioChart.value.getContext('2d')
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: Array.from({ length: data.length }, (_, i) => i + 1),
+            datasets: [
+              {
+                label: 'Portfolio Worth',
+                data: data,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                fill: false,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: {
+                title: { display: true, text: 'Year' },
+                grid: { display: false },
+              },
+              y: {
+                title: { display: true, text: 'Worth (€)' },
+                ticks: { _: value => '€' + value.toLocaleString() },
+              },
             },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              title: { display: true, text: 'Year' },
-              grid: { display: false },
-            },
-            y: {
-              title: { display: true, text: 'Worth (€)' },
-              ticks: { callback: value => '€' + value.toLocaleString() },
+            plugins: {
+              title: {
+                display: true,
+                text: 'Portfolio Growth Over Time',
+                font: { size: 16 },
+              },
+              legend: { display: false },
             },
           },
-          plugins: {
-            title: {
-              display: true,
-              text: 'Portfolio Growth Over Time',
-              font: { size: 16 },
-            },
-            legend: { display: false },
-          },
-        },
-      })
+        })
+      }
     }
 
     const formatCurrency = value => {
@@ -232,6 +234,7 @@ canvas {
 .table {
   font-size: 0.9rem;
 }
+
 @media (max-width: 767px) {
   .table {
     font-size: 0.8rem;
