@@ -20,6 +20,7 @@ const routes = ref([
   { path: '/', name: 'Summary' },
   { path: '/transactions', name: 'Transactions' },
   { path: '/instruments', name: 'Instruments' },
+  { path: '/calculator', name: 'Calculator' },
 ])
 </script>
 
