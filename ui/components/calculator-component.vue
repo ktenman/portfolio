@@ -4,59 +4,15 @@
     <div class="row">
       <div class="col-md-4">
         <form @submit.prevent="calculate">
-          <div class="mb-3">
-            <label for="initialWorth" class="form-label">Initial Worth (€):</label>
+          <div class="mb-3" v-for="(field, key) in form" :key="key">
+            <label :for="key" class="form-label">{{ getFieldLabel(key) }}:</label>
             <input
-              type="number"
-              v-model="form.initialWorth"
-              id="initialWorth"
+              :type="key === 'years' ? 'number' : 'text'"
+              v-model="form[key]"
+              :id="key"
               class="form-control"
-              step="0.01"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <label for="monthlyInvestment" class="form-label">Monthly Investment (€):</label>
-            <input
-              type="number"
-              v-model="form.monthlyInvestment"
-              id="monthlyInvestment"
-              class="form-control"
-              step="0.01"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <label for="yearlyGrowthRate" class="form-label">Yearly Growth Rate (%):</label>
-            <input
-              type="number"
-              v-model="form.yearlyGrowthRate"
-              id="yearlyGrowthRate"
-              class="form-control"
-              step="0.001"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <label for="annualReturnRate" class="form-label">Annual Return Rate (%):</label>
-            <input
-              type="number"
-              v-model="form.annualReturnRate"
-              id="annualReturnRate"
-              class="form-control"
-              step="0.001"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <label for="years" class="form-label">Number of Years:</label>
-            <input
-              type="number"
-              v-model="form.years"
-              id="years"
-              class="form-control"
-              step="1"
-              min="1"
+              :step="getFieldStep(key)"
+              :min="key === 'years' ? 1 : undefined"
               required
             />
           </div>
@@ -114,27 +70,27 @@ export default {
     let chart = null
 
     const calculate = () => {
-      const initialWorth = Math.max(0, form.initialWorth)
-      let monthlyInvestment = Math.max(0, form.monthlyInvestment)
-      const yearlyGrowthRate = Math.max(0, form.yearlyGrowthRate)
-      const annualReturnRate = Math.max(0, form.annualReturnRate)
-      const years = Math.max(1, Math.floor(form.years))
-
+      const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
       const values = []
-      let totalWorth = initialWorth
+      let totalWorth = Math.max(0, parseFloat(initialWorth))
+      let currentMonthlyInvestment = Math.max(0, parseFloat(monthlyInvestment))
+      const growthRate = Math.max(0, parseFloat(yearlyGrowthRate)) / 100
+      const returnRate = Math.max(0, parseFloat(annualReturnRate)) / 100
+      const numYears = Math.max(1, parseInt(years))
+
       yearSummary.value = []
 
-      for (let year = 1; year <= years; year++) {
-        let yearStartWorth = totalWorth
+      for (let year = 1; year <= numYears; year++) {
+        const yearStartWorth = totalWorth
         for (let month = 1; month <= 12; month++) {
-          totalWorth += monthlyInvestment
-          totalWorth += totalWorth * (annualReturnRate / 100 / 12)
+          totalWorth += currentMonthlyInvestment
+          totalWorth *= 1 + returnRate / 12
         }
-        monthlyInvestment *= 1 + yearlyGrowthRate / 100
+        currentMonthlyInvestment *= 1 + growthRate
         values.push(totalWorth)
 
         const yearGrowth = totalWorth - yearStartWorth
-        const earningsPerDay = (totalWorth * (annualReturnRate / 100)) / 365.25
+        const earningsPerDay = (totalWorth * returnRate) / 365.25
 
         yearSummary.value.push({
           year,
@@ -177,7 +133,7 @@ export default {
               },
               y: {
                 title: { display: true, text: 'Worth (€)' },
-                ticks: { _: value => '€' + value.toLocaleString() },
+                ticks: { callback: value => '€' + value.toLocaleString() },
               },
             },
             plugins: {
@@ -202,6 +158,28 @@ export default {
       }).format(value)
     }
 
+    const getFieldLabel = key => {
+      const labels = {
+        initialWorth: 'Initial Worth (€)',
+        monthlyInvestment: 'Monthly Investment (€)',
+        yearlyGrowthRate: 'Yearly Growth Rate (%)',
+        annualReturnRate: 'Annual Return Rate (%)',
+        years: 'Number of Years',
+      }
+      return labels[key] || key
+    }
+
+    const getFieldStep = key => {
+      const steps = {
+        initialWorth: '0.01',
+        monthlyInvestment: '0.01',
+        yearlyGrowthRate: '0.001',
+        annualReturnRate: '0.001',
+        years: '1',
+      }
+      return steps[key] || 'any'
+    }
+
     onMounted(() => {
       calculate()
     })
@@ -220,6 +198,8 @@ export default {
       portfolioChart,
       yearSummary,
       formatCurrency,
+      getFieldLabel,
+      getFieldStep,
     }
   },
 }
