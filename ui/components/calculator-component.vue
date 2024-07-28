@@ -4,7 +4,7 @@
     <div class="row">
       <div class="col-md-4">
         <form @submit.prevent="calculate">
-          <div class="mb-3" v-for="(field, key) in form" :key="key">
+          <div class="mb-3" v-for="(_, key) in form" :key="key">
             <label :for="key" class="form-label">{{ getFieldLabel(key) }}:</label>
             <input
               :type="key === 'years' ? 'number' : 'text'"
