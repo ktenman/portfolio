@@ -19,11 +19,7 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "paths": {
-      "@/*": ["/*"],
-      "@ui/*": ["/ui/*"]
-    }
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["ui/**/*.ts", "ui/**/*.d.ts", "ui/**/*.tsx", "ui/**/*.vue"],
   "exclude": ["node_modules", "dist"],
