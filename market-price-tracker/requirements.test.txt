@@ -1,4 +1,4 @@
-selenium==4.16.0
+selenium==4.23.1
 schedule==1.2.2
 requests==2.32.3
 pytest
