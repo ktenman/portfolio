@@ -24,6 +24,7 @@ class CalculatorService(
     val startDate = LocalDate.of(2000, 1, 1)
     val endDate = LocalDate.now()
     val dailyPrices = dailyPriceService.findAllDailyPrices(qdve, startDate, endDate)
+      .sortedBy { it.entryDate }
 
     var totalBoughtStocks = BigDecimal.ZERO
     var lastMonthDate: LocalDate? = null
