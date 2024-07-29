@@ -10,59 +10,63 @@ export class InstrumentService {
 
   @Cacheable(CACHE_KEYS.INSTRUMENTS)
   async getAllInstruments(): Promise<Instrument[]> {
-    const response = await fetch(this.apiUrl)
-    return this.handleResponse(response)
+    return this.makeRequest(this.apiUrl)
   }
 
   @CachePut(CACHE_KEYS.INSTRUMENTS)
   async saveInstrument(instrument: Instrument): Promise<Instrument> {
-    const response = await fetch(this.apiUrl, {
+    return this.makeRequest(this.apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(instrument),
     })
-    return this.handleResponse(response)
   }
 
   @CacheEvict(CACHE_KEYS.INSTRUMENTS)
   async updateInstrument(id: number, instrument: Instrument): Promise<Instrument> {
-    const response = await fetch(`${this.apiUrl}/${id}`, {
+    return this.makeRequest(`${this.apiUrl}/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(instrument),
     })
-    return this.handleResponse(response)
   }
 
   @CacheEvict(CACHE_KEYS.INSTRUMENTS)
   async deleteInstrument(id: number): Promise<void> {
-    const response = await fetch(`${this.apiUrl}/${id}`, {
+    await this.makeRequest(`${this.apiUrl}/${id}`, {
       method: 'DELETE',
     })
-    await this.handleResponse(response)
   }
 
-  private async handleResponse(response: Response): Promise<any> {
-    if (response.ok) {
-      return response.json()
+  private async makeRequest(url: string, options: RequestInit = {}): Promise<any> {
+    const response = await fetch(url, {
+      ...options,
+      redirect: 'manual', // This prevents automatic redirect following
+    })
+
+    if (response.type === 'opaqueredirect' || response.status === 302) {
+      // Handle redirect manually
+      const location = response.headers.get('Location')
+      if (location) {
+        window.location.href = location
+        throw new Error('Redirecting to login page')
+      }
     }
 
-    if (response.status === 302 || response.status === 304) {
-      // The backend is requesting a redirect, follow it
-      window.location.href = response.headers.get('Location') || '/login'
-      throw new Error('Redirecting as requested by the server')
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new ApiError(
+        response.status,
+        errorData.message || 'An error occurred',
+        errorData.debugMessage || 'No debug message provided',
+        errorData.validationErrors || {}
+      )
     }
 
-    const errorData = await response.json()
-    throw new ApiError(
-      response.status,
-      errorData.message || 'An error occurred',
-      errorData.debugMessage || 'No debug message provided',
-      errorData.validationErrors || {}
-    )
+    return response.json()
   }
 }
