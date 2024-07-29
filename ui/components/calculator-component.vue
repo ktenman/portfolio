@@ -21,7 +21,7 @@
               required
             />
           </div>
-          <button type="submit" class="btn btn-primary">Recalculate</button>
+          <!--          <button type="submit" class="btn btn-primary">Recalculate</button>-->
         </form>
       </div>
       <div class="col-md-8">
