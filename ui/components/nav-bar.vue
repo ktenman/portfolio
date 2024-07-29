@@ -1,13 +1,15 @@
 <template>
   <nav class="navbar navbar-expand navbar-light bg-light">
     <div class="container-fluid">
-      <div class="navbar-nav">
-        <li class="nav-item" v-for="route in routes" :key="route.path">
-          <router-link class="nav-link" :to="route.path" active-class="active">
-            {{ route.name }}
-            <span class="nav-indicator"></span>
-          </router-link>
-        </li>
+      <div class="navbar-scroll-container">
+        <ul class="navbar-nav">
+          <li class="nav-item" v-for="route in routes" :key="route.path">
+            <router-link class="nav-link" :to="route.path" active-class="active">
+              {{ route.name }}
+              <span class="nav-indicator"></span>
+            </router-link>
+          </li>
+        </ul>
       </div>
     </div>
   </nav>
@@ -25,13 +27,27 @@ const routes = ref([
 </script>
 
 <style scoped>
+.navbar-scroll-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.navbar-scroll-container::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
 .navbar-nav {
   display: flex;
+  flex-wrap: nowrap;
   gap: 1rem;
+  padding-bottom: 5px; /* Add some padding to account for the scrollbar */
 }
 
 .nav-item {
   position: relative;
+  white-space: nowrap;
 }
 
 .nav-link {
@@ -66,8 +82,8 @@ const routes = ref([
 
 @media (max-width: 768px) {
   .navbar-nav {
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
   }
 }
 </style>
