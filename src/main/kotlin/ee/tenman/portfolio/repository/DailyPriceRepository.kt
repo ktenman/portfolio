@@ -19,4 +19,10 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
     startDate: LocalDate,
     endDate: LocalDate
   ): DailyPrice?
+
+  fun findAllByInstrumentAndEntryDateBetweenOrderByEntryDateAsc(
+    instrument: Instrument,
+    startDate: LocalDate,
+    endDate: LocalDate
+  ): List<DailyPrice>
 }

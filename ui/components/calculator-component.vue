@@ -1,7 +1,12 @@
 <template>
   <div class="container mt-2">
     <h4 class="mb-4">Investment Calculator</h4>
-    <div class="row">
+    <div v-if="isLoading" class="text-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+    <div v-else class="row">
       <div class="col-md-4">
         <form @submit.prevent="calculate">
           <div class="mb-3" v-for="(_, key) in form" :key="key">
@@ -23,7 +28,7 @@
         <canvas ref="portfolioChart"></canvas>
       </div>
     </div>
-    <div class="row mt-4">
+    <div v-if="!isLoading" class="row mt-4">
       <div class="col-12">
         <h5>Year-by-Year Summary</h5>
         <div class="table-responsive">
@@ -52,17 +57,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { nextTick, onMounted, reactive, ref, watch } from 'vue'
 import Chart from 'chart.js/auto'
+import { CalculatorService } from '../services/calculator-service.ts'
+
+const calculatorService = new CalculatorService()
 
 const form = reactive({
   initialWorth: 1000,
   monthlyInvestment: 2800,
   yearlyGrowthRate: 5,
-  annualReturnRate: 25.341,
+  annualReturnRate: 0,
   years: 10,
 })
 
+const isLoading = ref(true)
 const portfolioChart = ref<HTMLCanvasElement | null>(null)
 const yearSummary = ref<
   Array<{
@@ -73,6 +82,20 @@ const yearSummary = ref<
   }>
 >([])
 let chart: Chart | null = null
+
+const fetchXirr = async () => {
+  try {
+    const xirr = await calculatorService.getXirr()
+    form.annualReturnRate = Number((xirr * 100).toFixed(3))
+    isLoading.value = false
+    await nextTick()
+    calculate()
+  } catch (error) {
+    console.error('Error fetching XIRR:', error)
+    isLoading.value = false
+    // Handle error (e.g., show an error message to the user)
+  }
+}
 
 const calculate = () => {
   const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
@@ -105,54 +128,55 @@ const calculate = () => {
     })
   }
 
-  renderChart(values)
+  nextTick(() => renderChart(values))
 }
 
 const renderChart = (data: number[]) => {
+  if (!portfolioChart.value) return
+
   if (chart) {
     chart.destroy()
   }
 
-  if (portfolioChart.value) {
-    const ctx = portfolioChart.value.getContext('2d')
-    if (ctx) {
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: Array.from({ length: data.length }, (_, i) => i + 1),
-          datasets: [
-            {
-              label: 'Portfolio Worth',
-              data: data,
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 2,
-              fill: false,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              title: { display: true, text: 'Year' },
-              grid: { display: false },
-            },
-            y: {
-              title: { display: true, text: 'Worth (€)' },
-              ticks: { callback: value => '€' + value.toLocaleString() },
-            },
+  const ctx = portfolioChart.value.getContext('2d')
+  if (ctx) {
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array.from({ length: data.length }, (_, i) => i + 1),
+        datasets: [
+          {
+            label: 'Portfolio Worth',
+            data: data,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2,
+            fill: false,
           },
-          plugins: {
-            title: {
-              display: true,
-              text: 'Portfolio Growth Over Time',
-              font: { size: 16 },
-            },
-            legend: { display: false },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: 'Year' },
+            grid: { display: false },
+          },
+          y: {
+            title: { display: true, text: 'Worth (€)' },
+            ticks: { callback: value => '€' + value.toLocaleString() },
           },
         },
-      })
-    }
+        plugins: {
+          title: {
+            display: true,
+            text: 'Portfolio Growth Over Time',
+            font: { size: 16 },
+          },
+          legend: { display: false },
+        },
+      },
+    })
   }
 }
 
@@ -187,14 +211,22 @@ const getFieldStep = (key: string) => {
   return steps[key] || 'any'
 }
 
-onMounted(() => {
-  calculate()
+onMounted(async () => {
+  await fetchXirr()
 })
 
 watch(
-  form,
+  () => ({
+    initialWorth: form.initialWorth,
+    monthlyInvestment: form.monthlyInvestment,
+    yearlyGrowthRate: form.yearlyGrowthRate,
+    annualReturnRate: form.annualReturnRate,
+    years: form.years,
+  }),
   () => {
-    calculate()
+    if (!isLoading.value) {
+      calculate()
+    }
   },
   { deep: true }
 )
@@ -203,7 +235,7 @@ watch(
 <style scoped>
 canvas {
   width: 100% !important;
-  height: auto !important;
+  height: 400px !important;
 }
 
 .table {
