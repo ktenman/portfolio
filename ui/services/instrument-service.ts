@@ -12,7 +12,7 @@ export class InstrumentService {
   async getAllInstruments(): Promise<Instrument[]> {
     const response = await fetch(this.apiUrl)
     if (!response.ok) {
-      throw await this.handleErrorResponse(response)
+      await this.handleErrorResponse(response)
     }
     return response.json()
   }
@@ -27,7 +27,7 @@ export class InstrumentService {
       body: JSON.stringify(instrument),
     })
     if (!response.ok) {
-      throw await this.handleErrorResponse(response)
+      await this.handleErrorResponse(response)
     }
     return response.json()
   }
@@ -42,7 +42,7 @@ export class InstrumentService {
       body: JSON.stringify(instrument),
     })
     if (!response.ok) {
-      throw await this.handleErrorResponse(response)
+      await this.handleErrorResponse(response)
     }
     return response.json()
   }
@@ -53,17 +53,26 @@ export class InstrumentService {
       method: 'DELETE',
     })
     if (!response.ok) {
-      throw await this.handleErrorResponse(response)
+      await this.handleErrorResponse(response)
     }
   }
 
-  private async handleErrorResponse(response: Response): Promise<ApiError> {
+  private async handleErrorResponse(response: Response): Promise<never> {
+    if (response.status === 304) {
+      this.redirectToLogin()
+      throw new Error('Redirecting to login page')
+    }
+
     const errorData = await response.json()
-    return new ApiError(
+    throw new ApiError(
       response.status,
       errorData.message || 'An error occurred',
       errorData.debugMessage || 'No debug message provided',
       errorData.validationErrors || {}
     )
+  }
+
+  private redirectToLogin(): void {
+    window.location.href = '/login'
   }
 }
