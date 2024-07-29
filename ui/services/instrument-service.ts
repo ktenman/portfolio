@@ -11,10 +11,7 @@ export class InstrumentService {
   @Cacheable(CACHE_KEYS.INSTRUMENTS)
   async getAllInstruments(): Promise<Instrument[]> {
     const response = await fetch(this.apiUrl)
-    if (!response.ok) {
-      await this.handleErrorResponse(response)
-    }
-    return response.json()
+    return this.handleResponse(response)
   }
 
   @CachePut(CACHE_KEYS.INSTRUMENTS)
@@ -26,10 +23,7 @@ export class InstrumentService {
       },
       body: JSON.stringify(instrument),
     })
-    if (!response.ok) {
-      await this.handleErrorResponse(response)
-    }
-    return response.json()
+    return this.handleResponse(response)
   }
 
   @CacheEvict(CACHE_KEYS.INSTRUMENTS)
@@ -41,10 +35,7 @@ export class InstrumentService {
       },
       body: JSON.stringify(instrument),
     })
-    if (!response.ok) {
-      await this.handleErrorResponse(response)
-    }
-    return response.json()
+    return this.handleResponse(response)
   }
 
   @CacheEvict(CACHE_KEYS.INSTRUMENTS)
@@ -52,15 +43,18 @@ export class InstrumentService {
     const response = await fetch(`${this.apiUrl}/${id}`, {
       method: 'DELETE',
     })
-    if (!response.ok) {
-      await this.handleErrorResponse(response)
-    }
+    await this.handleResponse(response)
   }
 
-  private async handleErrorResponse(response: Response): Promise<never> {
-    if (response.status === 304) {
-      this.redirectToLogin()
-      throw new Error('Redirecting to login page')
+  private async handleResponse(response: Response): Promise<any> {
+    if (response.ok) {
+      return response.json()
+    }
+
+    if (response.status === 302 || response.status === 304) {
+      // The backend is requesting a redirect, follow it
+      window.location.href = response.headers.get('Location') || '/login'
+      throw new Error('Redirecting as requested by the server')
     }
 
     const errorData = await response.json()
@@ -70,9 +64,5 @@ export class InstrumentService {
       errorData.debugMessage || 'No debug message provided',
       errorData.validationErrors || {}
     )
-  }
-
-  private redirectToLogin(): void {
-    window.location.href = '/login'
   }
 }
