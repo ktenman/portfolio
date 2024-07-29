@@ -49,12 +49,11 @@ export class InstrumentService {
     })
 
     if (response.type === 'opaqueredirect' || response.status === 302) {
-      // Handle redirect manually
-      const location = response.headers.get('Location')
-      if (location) {
-        window.location.href = location
-        throw new Error('Redirecting to login page')
-      }
+      // Handle redirect by forcing a full page reload
+      window.location.href = response.headers.get('Location') || '/login'
+      // Force reload to ensure Caddy handles the redirect
+      window.location.reload()
+      throw new Error('Redirecting and reloading page')
     }
 
     if (!response.ok) {
