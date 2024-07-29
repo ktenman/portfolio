@@ -19,9 +19,25 @@ fov.ee {
         reverse_proxy auth:8083
     }
 
+    # Unprotected calculator route and its assets
+    @calculator_routes {
+        path /calculator /calculator/* /assets/* *.js *.css *.svg
+    }
+    handle @calculator_routes {
+        header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+        header Pragma "no-cache"
+        header Expires "0"
+        reverse_proxy frontend:80
+    }
+
+    # Unprotected API calculator route for backend
+    handle /api/calculator {
+        reverse_proxy backend:8080
+    }
+
     # For all other routes, use authentication
     @protected {
-        not path /login /login/* /oauth2/* /logout
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
     }
     handle @protected {
         forward_auth auth:8083 {
