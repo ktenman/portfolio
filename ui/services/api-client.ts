@@ -1,4 +1,4 @@
-import {ApiError} from '../models/api-error'
+import { ApiError } from '../models/api-error'
 
 export class ApiClient {
   static async request<T>(url: string, options: RequestInit = {}): Promise<T> {
