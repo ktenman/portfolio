@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -16,6 +18,7 @@ class CalculatorService(
 
   private val baseMonthlyInvestment = BigDecimal("10000.00")
 
+  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr'", unless = "#result == null")
   fun calculateXirr(): BigDecimal {
     val qdve = instrumentService.findInstrument("QDVE:GER:EUR")
     val startDate = LocalDate.of(2000, 1, 1)
