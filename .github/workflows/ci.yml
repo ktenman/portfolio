@@ -105,7 +105,7 @@ jobs:
 
   deploy:
     name: 🚀 Deploy to fov.ee
-    needs: build-and-push
+    needs: build-push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
