@@ -119,6 +119,7 @@ services:
       start_period: 40s
 
   healthcheck:
+    container_name: healthcheck
     image: alpine:latest
     depends_on:
       postgres:
