@@ -1,13 +1,13 @@
-import os
-import time
 import logging
+import os
+import requests
+import schedule
+import time
 from decimal import Decimal
+from flask import Flask, jsonify
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
-import schedule
-import requests
-from flask import Flask, jsonify
 from threading import Thread
 from werkzeug.middleware.proxy_fix import ProxyFix
 
