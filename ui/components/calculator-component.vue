@@ -1,10 +1,8 @@
 <template>
   <div class="container mt-2">
     <h4 class="mb-4">Investment Calculator</h4>
-    <div v-if="isLoading" class="text-center">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+    <div v-if="isLoading" class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
     <div v-else class="row">
       <div class="col-md-4">

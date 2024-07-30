@@ -3,11 +3,11 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4>Portfolio Summary</h4>
     </div>
-    <div v-if="isLoading" class="text-left my-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+
+    <div v-if="isLoading" class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
+
     <div v-else>
       <div v-if="summaryData.length === 0" class="alert alert-info" role="alert">
         No portfolio summary data found.
