@@ -7,12 +7,8 @@
       </button>
     </div>
 
-    <!-- Loading spinner -->
-    <div v-if="isLoading" class="text-left my-5">
-      <p class="mt-2">Loading instruments...</p>
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+    <div v-if="isLoading" class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
 
     <!-- Excel-like table for instruments -->
