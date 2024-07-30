@@ -144,7 +144,7 @@ jobs:
             echo 'Pruning unused Docker images...' && \
             docker image prune -af"
       - name: Cleanup on runner
-        run: rm ~/docker-compose.yml ~/.env ~/Caddyfile
+        run: rm .env
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
