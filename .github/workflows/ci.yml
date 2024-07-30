@@ -67,7 +67,7 @@ jobs:
             build/reports/selenide
 
   build-push:
-    name: 🐳 Build & Push
+    name: 🐳 Build & Push ${{ matrix.name }} image
     needs: test
     if: always() && (needs.test.result == 'success' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
