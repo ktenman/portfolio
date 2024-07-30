@@ -3,7 +3,6 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.service.PortfolioSummaryService
@@ -30,7 +29,7 @@ class DailyPortfolioXirrJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 0 6 * * *")
+  @Scheduled(cron = "0 30 3 * * *")
   fun runJob() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
