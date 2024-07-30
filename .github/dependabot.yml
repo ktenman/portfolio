@@ -3,23 +3,26 @@ updates:
   - package-ecosystem: 'gradle'
     directory: '/'
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
 
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
 
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
 
   - package-ecosystem: 'pip'
     directory: '/market-price-tracker'
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: 'selenium'
+        versions: ['4.16.0']
