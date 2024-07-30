@@ -118,8 +118,10 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
 
-      - name: Add SSH key of fov.ee to known hosts
-        run: echo "${{ secrets.FOV_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+      - name: Add fov.ee SSH fingerprint to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H fov.ee >> ~/.ssh/known_hosts
 
       - name: Create .env file
         run: |
