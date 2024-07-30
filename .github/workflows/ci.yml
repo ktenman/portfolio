@@ -2,6 +2,12 @@ name: Build, Test, and Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Build, push Docker images, and deploy to fov.ee'
+        required: true
+        type: boolean
+        default: true
   push:
   pull_request:
 
@@ -106,6 +112,7 @@ jobs:
   deploy:
     name: 🚀 Deploy to fov.ee
     needs: build-push
+    if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
