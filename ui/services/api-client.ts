@@ -8,14 +8,12 @@ export class ApiClient {
     })
 
     if (response.type === 'opaqueredirect' || response.status === 302) {
-      // Handle redirect by forcing a full page reload
       window.location.href = response.headers.get('Location') || '/login'
-      // Force reload to ensure Caddy handles the redirect
       window.location.reload()
       throw new Error('Redirecting and reloading page')
     }
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 302) {
       const errorData = await response.json().catch(() => ({}))
       throw new ApiError(
         response.status,
