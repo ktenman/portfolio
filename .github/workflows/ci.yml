@@ -139,10 +139,6 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
-            docker pull 'ktenman/auth:latest' && \
-            docker pull 'ktenman/portfolio-be:latest' && \
-            docker pull 'ktenman/portfolio-fe:latest' && \
-            docker pull 'ktenman/market-price-tracker:latest' && \
             docker-compose pull && \
             docker-compose up -d --build && \
             echo 'Pruning unused Docker images...' && \
