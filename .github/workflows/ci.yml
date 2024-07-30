@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-type: ['unit', 'e2e']
+        test-type: [ 'unit', 'e2e' ]
     steps:
       - uses: actions/checkout@v4.1.7
         with:
@@ -161,4 +161,21 @@ jobs:
             docker-compose up -d --build && \
             echo 'Pruning unused Docker images...' && \
             docker image prune -af"
-      - name:
+      - name: Cleanup on runner
+        run: rm .env
+
+  auto-merge-dependabot:
+    name: 🤖 Auto-Merge Dependabot PR
+    needs: [ test ]
+    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: 🤖Merge PR from dependabot
+        uses: fastify/github-action-merge-dependabot@v3.10.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target: minor
+          merge-method: rebase
