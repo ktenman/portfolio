@@ -24,7 +24,7 @@ jobs:
 
   test:
     name: 🧪 Gradle Test
-    needs: [ lint-and-format ]
+    needs: lint-and-format
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -61,6 +61,7 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
