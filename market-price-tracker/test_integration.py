@@ -1,5 +1,4 @@
 import pytest
-import pytest
 import requests_mock
 import schedule
 from decimal import Decimal
