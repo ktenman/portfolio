@@ -135,7 +135,7 @@ jobs:
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
       - name: Copy files to server
         run: |
-          scp .env docker-compose.yml Caddyfile githubuser@fov.ee:~/
+          scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\

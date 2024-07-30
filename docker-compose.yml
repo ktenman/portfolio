@@ -23,7 +23,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ 'CMD', 'redis-cli', 'ping' ]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 3s
       timeout: 1s
       retries: 5
@@ -103,7 +103,7 @@ services:
       retries: 5
 
   market_price_tracker:
-    container_name: mpt
+    container_name: market_price_tracker
     image: ktenman/market-price-tracker:latest
     depends_on:
       backend:
@@ -122,46 +122,26 @@ services:
     container_name: healthcheck
     image: alpine:latest
     depends_on:
-      - postgres
-      - redis
-      - backend
-      - frontend
-      - auth
-      - app
-      - market_price_tracker
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+      market_price_tracker:
+        condition: service_healthy
     environment:
       - HEALTHCHECK_URL=${HEALTHCHECK_URL}
-    command: |
-      /bin/sh -c '
-      apk add --no-cache curl jq;
-      if [ -z "$${HEALTHCHECK_URL}" ]; then
-        echo "Error: HEALTHCHECK_URL is not set";
-        exit 1;
-      fi;
-      while true; do
-        all_healthy=true;
-        for service in postgres redis backend frontend auth app market_price_tracker; do
-          health=$$(curl -s --unix-socket /var/run/docker.sock http://localhost/containers/$${service}/json | jq -r .State.Health.Status);
-          echo "$(date): $${service} status: $${health}";
-          if [ "$${health}" != "healthy" ]; then
-            all_healthy=false;
-          fi
-        done;
-        if $${all_healthy}; then
-          echo "$(date): All services are healthy. Sending ping to $${HEALTHCHECK_URL}";
-          if curl -fsS -m 10 --retry 5 -o /dev/null "$${HEALTHCHECK_URL}"; then
-            echo "$(date): Health check ping sent successfully";
-          else
-            echo "$(date): Failed to send health check ping";
-          fi
-        else
-          echo "$(date): Not all services are healthy. Skipping health check ping.";
-        fi;
-        sleep 60;
-      done
-      '
     volumes:
+      - ./healthcheck.sh:/usr/local/bin/healthcheck.sh
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: /usr/local/bin/healthcheck.sh
 
 volumes:
   postgres_data:
