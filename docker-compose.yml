@@ -85,7 +85,6 @@ services:
 
   app:
     container_name: app
-    #    image: ktenman/caddy:latest
     image: caddy:2.8-alpine
     ports:
       - '80:80'
@@ -112,13 +111,40 @@ services:
     restart: always
     environment:
       - BACKEND_URL=http://backend:8080/api/instruments
-    mem_limit: 512m
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  healthcheck:
+    image: alpine:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+      market_price_tracker:
+        condition: service_healthy
+    environment:
+      - HEALTHCHECK_URL=${HEALTHCHECK_URL}
+    command: |
+      /bin/sh -c '
+      apk add --no-cache curl;
+      while true; do
+        curl -fsS -m 10 --retry 5 -o /dev/null $${HEALTHCHECK_URL};
+        sleep 60;
+      done
+      '
 
 volumes:
   postgres_data:
