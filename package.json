@@ -20,7 +20,7 @@
     "chart.js": "^4.4.3",
     "vue": "^3.4.34",
     "vue-chartjs": "^5.3.1",
-    "vue-router": "^4.4.0"
+    "vue-router": "^4.4.1"
   },
   "devDependencies": {
     "@types/bootstrap": "^5.2.10",
