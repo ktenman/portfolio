@@ -142,6 +142,7 @@ services:
       - ./healthcheck.sh:/usr/local/bin/healthcheck.sh
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: /usr/local/bin/healthcheck.sh
+    restart: always
 
 volumes:
   postgres_data:
