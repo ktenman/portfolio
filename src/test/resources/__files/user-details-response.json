@@ -1,0 +1,18 @@
+{
+  "status": "AUTHORIZED",
+  "user": {
+    "email": "user@example.com",
+    "name": "John Doe",
+    "givenName": "John",
+    "familyName": "Doe",
+    "picture": "https://example.com/profile-picture.jpg"
+  },
+  "authorities": [
+    "OAUTH2_USER",
+    "SCOPE_https://www.googleapis.com/auth/userinfo.email",
+    "SCOPE_https://www.googleapis.com/auth/userinfo.profile",
+    "SCOPE_openid"
+  ],
+  "provider": "google",
+  "message": null
+}

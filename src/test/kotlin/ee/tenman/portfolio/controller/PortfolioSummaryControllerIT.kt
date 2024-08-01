@@ -1,5 +1,9 @@
 package ee.tenman.portfolio.controller
 
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.stubFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
@@ -9,6 +13,7 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
+import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
@@ -17,6 +22,8 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
+import org.springframework.http.HttpHeaders.CONTENT_TYPE
+import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -25,6 +32,8 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+
+private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz")
 
 @ExtendWith(OutputCaptureExtension::class)
 @IntegrationTest
@@ -49,6 +58,14 @@ class PortfolioSummaryControllerIT {
   fun `should return all portfolio summaries in the correct order when GET request is made to portfolio-summary endpoint`(
     output: CapturedOutput
   ) {
+    stubFor(
+      WireMock.get(urlPathEqualTo("/user"))
+        .willReturn(
+          aResponse()
+            .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+            .withBodyFile("user-details-response.json")
+        )
+    )
     whenever(clock.instant()).thenReturn(Instant.parse("2023-07-21T10:00:00Z"))
     whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
 
@@ -98,7 +115,7 @@ class PortfolioSummaryControllerIT {
       )
     )
 
-    mockMvc.perform(get("/api/portfolio-summary"))
+    mockMvc.perform(get("/api/portfolio-summary").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
       .andExpect(jsonPath("$", hasSize<Any>(4)))

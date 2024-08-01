@@ -60,6 +60,9 @@ server:
 alphavantage:
   url: https://www.alphavantage.co
 
+auth:
+  url: http://auth:8083
+
 feign:
   client:
     config:
