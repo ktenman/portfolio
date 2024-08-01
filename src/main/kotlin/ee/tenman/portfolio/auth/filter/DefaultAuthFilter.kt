@@ -15,6 +15,10 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Profile("default")
 class DefaultAuthFilter(private val authService: AuthService) : OncePerRequestFilter()  {
 
+  override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+    return request.requestURI.startsWith("/actuator/health")
+  }
+
   override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
     val sessionId = request.cookies?.find { it.name == "AUTHSESSION" }?.value
 
