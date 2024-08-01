@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration.exception
 
+import ee.tenman.portfolio.auth.AuthenticationException
 import jakarta.validation.ConstraintViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -37,6 +38,16 @@ class GlobalExceptionHandler {
       validationErrors = errors
     )
     return ResponseEntity(apiError, HttpStatus.BAD_REQUEST)
+  }
+
+  @ExceptionHandler(AuthenticationException::class)
+  fun handleAuthenticationException(exception: AuthenticationException): ResponseEntity<ApiError> {
+    val apiError = ApiError(
+      status = HttpStatus.UNAUTHORIZED,
+      message = "Authentication failed",
+      debugMessage = exception.message ?: "An authentication error occurred"
+    )
+    return ResponseEntity(apiError, HttpStatus.UNAUTHORIZED)
   }
 
   fun handleValidationException(exception: Exception): ResponseEntity<ApiError> {

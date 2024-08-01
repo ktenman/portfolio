@@ -1,8 +1,11 @@
 package ee.tenman.portfolio.auth.filter
 
 import ee.tenman.portfolio.auth.AuthService
+import ee.tenman.portfolio.auth.AuthenticationException
 import ee.tenman.portfolio.auth.UserContextHolder
 import ee.tenman.portfolio.auth.model.AuthStatus
+import ee.tenman.portfolio.domain.UserAccount
+import ee.tenman.portfolio.service.UserAccountService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -13,39 +16,53 @@ import org.springframework.web.filter.OncePerRequestFilter
 
 @Component
 @Profile("default")
-class DefaultAuthFilter(private val authService: AuthService) : OncePerRequestFilter()  {
+class DefaultAuthFilter(
+  private val authService: AuthService,
+  private val userAccountService: UserAccountService
+) : OncePerRequestFilter() {
 
-  override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-    return request.requestURI.startsWith("/actuator/health")
-  }
+  override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+    request.requestURI.startsWith("/actuator/health")
 
   override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
-    val sessionId = request.cookies?.find { it.name == "AUTHSESSION" }?.value
+    try {
+      val sessionId = request.cookies?.find { it.name == "AUTHSESSION" }?.value
+        ?: throw AuthenticationException("No session ID found")
 
-    if (sessionId == null) {
-      response.status = HttpStatus.UNAUTHORIZED.value()
-      return
+      val userAccount = getUserAccount(sessionId)
+      UserContextHolder.setUserAccount(userAccount)
+      request.setAttribute("userAccount", userAccount)
+      filterChain.doFilter(request, response)
+    } catch (e: AuthenticationException) {
+      response.sendError(HttpStatus.UNAUTHORIZED.value(), e.message)
+    } finally {
+      UserContextHolder.clear()
     }
+  }
 
+  private fun getUserAccount(sessionId: String): UserAccount =
+    userAccountService.findBySessionId(sessionId)
+      ?: getAuthenticatedUserAccount(sessionId)
+
+  private fun getAuthenticatedUserAccount(sessionId: String): UserAccount {
     val authResponse = try {
       authService.getAuthResponse(sessionId)
     } catch (e: Exception) {
-      response.status = HttpStatus.UNAUTHORIZED.value()
-      return
+      throw AuthenticationException("Failed to authenticate session", e)
     }
 
     if (authResponse.status == AuthStatus.UNAUTHORIZED) {
-      response.status = HttpStatus.UNAUTHORIZED.value()
-      return
+      throw AuthenticationException("Unauthorized session")
     }
 
     val userInfo = authResponse.user
-    UserContextHolder.setUserInfo(userInfo)
-    try {
-      request.setAttribute("userInfo", userInfo)
-      filterChain.doFilter(request, response)
-    } finally {
-      UserContextHolder.clear()
+      ?: throw AuthenticationException("No user info found for authenticated session")
+
+    return userAccountService.getOrCreateByEmail(userInfo.email).apply {
+      if (this.sessionId != sessionId) {
+        this.sessionId = sessionId
+        userAccountService.save(this)
+      }
     }
   }
 }
