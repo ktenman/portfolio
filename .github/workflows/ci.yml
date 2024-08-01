@@ -110,10 +110,17 @@ jobs:
           tags: ${{ matrix.image }}:latest
 
   call-deploy-pipeline:
-    name: 🚀 Deploy to fov.ee
+    name: 🔄 Call Deploy Pipeline
     needs: build-push
     if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
     uses: ./.github/workflows/deploy-pipeline.yml
+    secrets:
+      FOV_SSH_PRIVATE_KEY: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
