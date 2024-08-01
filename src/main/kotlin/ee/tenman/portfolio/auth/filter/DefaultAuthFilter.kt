@@ -32,6 +32,7 @@ class DefaultAuthFilter(
       val sessionId = request.cookies?.find { it.name == "AUTHSESSION" }?.value
         ?: throw AuthenticationException("No session ID found")
 
+      log.info("Session ID: $sessionId")
       val userAccount = getUserAccount(sessionId)
       UserContextHolder.setUserAccount(userAccount)
       request.setAttribute("userAccount", userAccount)
