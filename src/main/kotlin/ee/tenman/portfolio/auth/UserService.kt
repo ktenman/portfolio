@@ -1,9 +1,9 @@
 package ee.tenman.portfolio.auth
 
-import ee.tenman.portfolio.auth.model.UserInfo
+import ee.tenman.portfolio.domain.UserAccount
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.util.Optional
+import java.util.*
 
 @Service
 class UserService {
@@ -12,9 +12,9 @@ class UserService {
   /**
    * @return the current user's UserInfo.
    */
-  fun getCurrentUserInfo(): Optional<UserInfo> {
-    val userInfo = UserContextHolder.getUserInfo()
-    log.debug("Found userInfo '{}' in custom context", userInfo)
-    return Optional.ofNullable(userInfo)
+  fun getCurrentUserInfo(): Optional<UserAccount> {
+    val userAccount = UserContextHolder.getUserAccount()
+    log.debug("Found userInfo '{}' in custom context", userAccount)
+    return Optional.ofNullable(userAccount)
   }
 }

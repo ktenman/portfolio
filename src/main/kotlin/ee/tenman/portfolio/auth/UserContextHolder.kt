@@ -1,23 +1,17 @@
 package ee.tenman.portfolio.auth
 
-import ee.tenman.portfolio.auth.model.UserInfo
+import ee.tenman.portfolio.domain.UserAccount
 
 object UserContextHolder {
-  private val userContext = ThreadLocal<UserInfo>()
+  private val userAccountThreadLocal = ThreadLocal<UserAccount>()
 
-  fun setUserInfo(userInfo: UserInfo?) {
-    userContext.set(userInfo)
+  fun setUserAccount(userAccount: UserAccount) {
+    userAccountThreadLocal.set(userAccount)
   }
 
-  fun getUserInfo(): UserInfo? {
-    return userContext.get()
-  }
-
-  fun getEmail(): String? {
-    return userContext.get()?.email
-  }
+  fun getUserAccount(): UserAccount? = userAccountThreadLocal.get()
 
   fun clear() {
-    userContext.remove()
+    userAccountThreadLocal.remove()
   }
 }
