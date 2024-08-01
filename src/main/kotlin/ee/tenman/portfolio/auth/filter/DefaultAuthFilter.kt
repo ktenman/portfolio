@@ -9,6 +9,7 @@ import ee.tenman.portfolio.service.UserAccountService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -20,11 +21,13 @@ class DefaultAuthFilter(
   private val authService: AuthService,
   private val userAccountService: UserAccountService
 ) : OncePerRequestFilter() {
+  private val log = LoggerFactory.getLogger(javaClass)
 
   override fun shouldNotFilter(request: HttpServletRequest): Boolean =
     request.requestURI.startsWith("/actuator/health")
 
   override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
+    log.info("Filtering request: ${request.requestURI}")
     try {
       val sessionId = request.cookies?.find { it.name == "AUTHSESSION" }?.value
         ?: throw AuthenticationException("No session ID found")
@@ -34,8 +37,10 @@ class DefaultAuthFilter(
       request.setAttribute("userAccount", userAccount)
       filterChain.doFilter(request, response)
     } catch (e: AuthenticationException) {
+      log.error("Failed to authenticate request", e)
       response.sendError(HttpStatus.UNAUTHORIZED.value(), e.message)
     } finally {
+      log.info("Clearing user context")
       UserContextHolder.clear()
     }
   }
@@ -45,6 +50,7 @@ class DefaultAuthFilter(
       ?: getAuthenticatedUserAccount(sessionId)
 
   private fun getAuthenticatedUserAccount(sessionId: String): UserAccount {
+    log.info("Getting authenticated user account for session: $sessionId")
     val authResponse = try {
       authService.getAuthResponse(sessionId)
     } catch (e: Exception) {
