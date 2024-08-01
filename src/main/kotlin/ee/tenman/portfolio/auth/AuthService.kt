@@ -12,8 +12,9 @@ import org.springframework.web.server.ResponseStatusException
 class AuthService(private val authClient: AuthClient) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Cacheable(value = [USER_SESSION_CACHE], key = "#sessionId")
+//  @Cacheable(value = [USER_SESSION_CACHE], key = "#sessionId")
   fun getAuthResponse(sessionId: String): AuthResponse {
+    log.info("Checking session: $sessionId")
     val response = authClient.getUser(sessionId)
 
     if (response.statusCode != HttpStatus.OK) {

@@ -15,7 +15,7 @@ class UserAccountService(private val userAccountRepository: UserAccountRepositor
     userAccountRepository.findByEmail(email) ?: createNewUserAccount(email)
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [USER_SESSION_ID_CACHE], key = "#sessionId")
+//  @Cacheable(value = [USER_SESSION_ID_CACHE], key = "#sessionId")
   fun findBySessionId(sessionId: String): UserAccount? =
     userAccountRepository.findBySessionId(sessionId)
 
