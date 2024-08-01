@@ -110,7 +110,7 @@ jobs:
           tags: ${{ matrix.image }}:latest
 
   call-deploy-pipeline:
-    name: 🔄 Call Deploy Pipeline
+    name: 🚀 Deploy to fov.ee
     needs: build-push
     if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
     uses: ./.github/workflows/deploy-pipeline.yml
