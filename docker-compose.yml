@@ -35,6 +35,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_PROFILES_ACTIVE: default
     image: ktenman/portfolio-be:latest
     ports:
       - '8080:8080'

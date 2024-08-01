@@ -1,6 +1,10 @@
 package ee.tenman.portfolio.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.stubFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -8,10 +12,14 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
+import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.system.OutputCaptureExtension
+import org.springframework.http.HttpHeaders.CONTENT_TYPE
+import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -21,6 +29,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.math.BigDecimal
 import java.time.LocalDate
+
+private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz")
 
 @ExtendWith(OutputCaptureExtension::class)
 @IntegrationTest
@@ -49,6 +59,18 @@ class PortfolioTransactionControllerIT {
     )
   }
 
+  @BeforeEach
+  fun setup() {
+    stubFor(
+      WireMock.get(urlPathEqualTo("/user"))
+        .willReturn(
+          aResponse()
+            .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+            .withBodyFile("user-details-response.json")
+        )
+    )
+  }
+
   @Test
   fun `should create a new portfolio transaction`() {
     val instrument = setupInstrument()
@@ -65,6 +87,7 @@ class PortfolioTransactionControllerIT {
       post("/api/transactions")
         .contentType("application/json")
         .content(objectMapper.writeValueAsString(transactionDto))
+        .cookie(DEFAULT_COOKIE)
     )
       .andExpect(status().isCreated)
       .andExpect(jsonPath("$.id").isNotEmpty)
@@ -101,7 +124,7 @@ class PortfolioTransactionControllerIT {
       )
     )
 
-    mockMvc.perform(get("/api/transactions"))
+    mockMvc.perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
       .andExpect(jsonPath("$[0].transactionDate").value("2023-07-19"))
@@ -129,7 +152,7 @@ class PortfolioTransactionControllerIT {
       )
     )
 
-    mockMvc.perform(get("/api/transactions/${transaction.id}"))
+    mockMvc.perform(get("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.id").value(transaction.id))
       .andExpect(jsonPath("$.transactionType").value("BUY"))
@@ -167,6 +190,7 @@ class PortfolioTransactionControllerIT {
       put("/api/transactions/${transaction.id}")
         .contentType("application/json")
         .content(objectMapper.writeValueAsString(updatedDto))
+        .cookie(DEFAULT_COOKIE)
     )
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.id").value(transaction.id))
@@ -193,7 +217,7 @@ class PortfolioTransactionControllerIT {
       )
     )
 
-    mockMvc.perform(delete("/api/transactions/${transaction.id}"))
+    mockMvc.perform(delete("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
       .andExpect(status().isNoContent)
 
     assertThat(portfolioTransactionRepository.findById(transaction.id)).isEmpty

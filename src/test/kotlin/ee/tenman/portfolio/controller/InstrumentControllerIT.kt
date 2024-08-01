@@ -1,12 +1,20 @@
 package ee.tenman.portfolio.controller
 
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.stubFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
+import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.http.MediaType
+import org.springframework.http.HttpHeaders.CONTENT_TYPE
+import org.springframework.http.MediaType.APPLICATION_JSON
+import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -15,6 +23,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
+private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz")
 
 @IntegrationTest
 class InstrumentControllerIT {
@@ -25,11 +34,26 @@ class InstrumentControllerIT {
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
 
+  @BeforeEach
+  fun setup() {
+    stubFor(
+      WireMock.get(urlPathEqualTo("/user"))
+        .willReturn(
+          aResponse()
+            .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+            .withBodyFile("user-details-response.json")
+        )
+    )
+  }
+
   @Test
   fun `should save instrument when POST request is made to instruments endpoint`() {
+
     mockMvc.perform(
-      post("/api/instruments").contentType(MediaType.APPLICATION_JSON).content(
-        """
+      post("/api/instruments").contentType(APPLICATION_JSON)
+        .cookie(DEFAULT_COOKIE)
+        .content(
+          """
         {
           "symbol": "QDVE",
           "name": "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
@@ -37,7 +61,7 @@ class InstrumentControllerIT {
           "baseCurrency": "EUR"
         }
       """.trimIndent()
-      )
+        )
     ).andExpect(status().isOk).andExpect(jsonPath("$.symbol").value("QDVE"))
       .andExpect(jsonPath("$.name").value("iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)"))
       .andExpect(jsonPath("$.category").value("ETF")).andExpect(jsonPath("$.baseCurrency").value("EUR"))
@@ -69,7 +93,7 @@ class InstrumentControllerIT {
       )
     )
 
-    mockMvc.perform(get("/api/instruments"))
+    mockMvc.perform(get("/api/instruments").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
       .andExpect(jsonPath("$[0].symbol").value("QDVE"))
@@ -95,8 +119,9 @@ class InstrumentControllerIT {
     )
 
     mockMvc.perform(
-      put("/api/instruments/{id}", savedInstrument.id).contentType(MediaType.APPLICATION_JSON).content(
-        """
+      put("/api/instruments/{id}", savedInstrument.id).cookie(DEFAULT_COOKIE)
+        .contentType(APPLICATION_JSON).content(
+          """
         {
           "symbol": "QDVE",
           "name": "Updated Instrument Name",
@@ -104,7 +129,7 @@ class InstrumentControllerIT {
           "baseCurrency": "USD"
         }
       """.trimIndent()
-      )
+        )
     ).andExpect(status().isOk).andExpect(jsonPath("$.symbol").value("QDVE"))
       .andExpect(jsonPath("$.name").value("Updated Instrument Name")).andExpect(jsonPath("$.category").value("ETF"))
       .andExpect(jsonPath("$.baseCurrency").value("USD"))
@@ -125,7 +150,8 @@ class InstrumentControllerIT {
       )
     )
 
-    mockMvc.perform(delete("/api/instruments/{id}", savedInstrument.id)).andExpect(status().isNoContent)
+    mockMvc.perform(delete("/api/instruments/{id}", savedInstrument.id).cookie(DEFAULT_COOKIE))
+      .andExpect(status().isNoContent)
 
     assertThat(instrumentRepository.findById(savedInstrument.id)).isEmpty
   }

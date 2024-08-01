@@ -8,6 +8,7 @@ services:
     environment:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
 
   app:
     image: nginx:alpine
