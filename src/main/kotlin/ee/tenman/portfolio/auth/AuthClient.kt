@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam
 
 @FeignClient(name = AuthClient.CLIENT_NAME, url = "\${auth.url}")
 fun interface AuthClient {
-  @GetMapping("/user")
+  @GetMapping("/user-by-session")
   fun getUser(@RequestParam sessionId: String): ResponseEntity<AuthResponse>
 
   companion object {

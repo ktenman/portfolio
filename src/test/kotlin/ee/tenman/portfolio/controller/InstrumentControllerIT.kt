@@ -2,6 +2,7 @@ package ee.tenman.portfolio.controller
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.IntegrationTest
@@ -37,7 +38,8 @@ class InstrumentControllerIT {
   @BeforeEach
   fun setup() {
     stubFor(
-      WireMock.get(urlPathEqualTo("/user"))
+      WireMock.get(urlPathEqualTo("/user-by-session"))
+        .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
