@@ -1,0 +1,61 @@
+name: Deploy Pipeline
+
+on:
+  workflow_call:
+    secrets:
+      FOV_SSH_PRIVATE_KEY:
+        required: true
+      POSTGRES_USER:
+        required: true
+      POSTGRES_PASSWORD:
+        required: true
+      GOOGLE_CLIENT_ID:
+        required: true
+      GOOGLE_CLIENT_SECRET:
+        required: true
+      HEALTHCHECK_URL:
+        required: true
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to fov.ee'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to fov.ee
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.0.0
+        with:
+          fetch-depth: 1
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
+      - name: Add fov.ee SSH fingerprint to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H fov.ee >> ~/.ssh/known_hosts
+      - name: Create .env file
+        run: |
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          echo "HEALTHCHECK_URL=${{ secrets.HEALTHCHECK_URL }}" >> .env
+      - name: Copy files to server
+        run: |
+          scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
+      - name: Deploy with Docker Compose
+        run: |
+          ssh githubuser@fov.ee "\
+            docker-compose pull && \
+            docker-compose up -d --build && \
+            echo 'Pruning unused Docker images...' && \
+            docker image prune -af"
+      - name: Cleanup on runner
+        run: rm .env
