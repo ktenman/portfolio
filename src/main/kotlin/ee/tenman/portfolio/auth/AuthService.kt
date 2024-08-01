@@ -12,23 +12,12 @@ import org.springframework.web.server.ResponseStatusException
 class AuthService(private val authClient: AuthClient) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-//  @Cacheable(value = [USER_SESSION_CACHE], key = "#sessionId")
+  //  @Cacheable(value = [USER_SESSION_CACHE], key = "#sessionId")
   fun getAuthResponse(sessionId: String): AuthResponse {
     log.info("Checking session: $sessionId")
     val response = authClient.getUser(sessionId)
 
-    if (response.statusCode != HttpStatus.OK) {
-      log.error("Unauthorized access attempt by session: $sessionId. Status code: ${response.statusCode}")
-      throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid session")
-    }
-
-    val body = response.body
-    if (body == null) {
-      log.error("Null response body for session: $sessionId")
-      throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid response from auth service")
-    }
-
     log.info("User session $sessionId is valid")
-    return body
+    return response
   }
 }
