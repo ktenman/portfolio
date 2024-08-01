@@ -47,9 +47,9 @@ spring:
 
 logging:
   level:
-    root: DEBUG
-    org.springframework: DEBUG
-    org.hibernate: DEBUG
+    root: INFO
+    org.springframework: INFO
+    org.hibernate: INFO
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{transactionId}- %msg%n'
     file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{transactionId}- %msg%n'
