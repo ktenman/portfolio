@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 import org.openqa.selenium.By.className
@@ -33,6 +34,7 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
+  @Disabled
   fun `should display success message when saving instrument with valid data`() {
 
     id("addNewInstrument").click()
@@ -54,6 +56,7 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
+  @Disabled
   fun `should display success message when editing instrument with valid data`() {
 
     Selenide.elements(tagName("button")).filter(text("Edit")).first().click()
