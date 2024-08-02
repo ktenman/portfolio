@@ -34,7 +34,6 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
-  @Disabled
   fun `should display success message when saving instrument with valid data`() {
 
     id("addNewInstrument").click()

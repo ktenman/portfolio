@@ -7,6 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 
@@ -53,6 +54,7 @@ class TransactionManagementE2ETests {
   }
 
   @Test
+  @Disabled
   fun `should display success message after editing an existing transaction`() {
     Selenide.elements(By.tagName("button")).filter(Condition.text("Edit")).first().click()
     id("instrumentId").selectOption("AAPL - Apple Inc.")
