@@ -58,7 +58,7 @@ jobs:
         run: |
           export E2E=${{ matrix.test-type == 'e2e' }}
           ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
-      - uses: actions/upload-artifact@v4.3.4
+      - uses: actions/upload-artifact@v4.3.5
         if: always()
         with:
           name: ${{ format('Test reports and screenshots ({0})', matrix.test-type) }}
