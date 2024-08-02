@@ -43,7 +43,7 @@ class InstrumentManagementE2ETests {
 
     Selenide.elements(tagName("button")).filter(text("Save")).first().click()
 
-    Selenide.sleep(1000)
+    Selenide.sleep(2000)
 
     val alertMessage = Selenide.element(className("alert-success"))
     if (alertMessage.exists()) {
@@ -64,7 +64,7 @@ class InstrumentManagementE2ETests {
 
     Selenide.elements(tagName("button")).filter(text("Update")).first().click()
 
-    Selenide.sleep(1000)
+    Selenide.sleep(2000)
 
     val alertMessage = Selenide.element(className("alert-success"))
     if (alertMessage.exists()) {
