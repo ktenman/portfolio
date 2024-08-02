@@ -23,9 +23,16 @@ class DefaultAuthFilter(
 ) : OncePerRequestFilter() {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  override fun shouldNotFilter(request: HttpServletRequest): Boolean =
-    request.requestURI.startsWith("/actuator/health")
-      || request.requestURI.startsWith("/api/instruments")
+
+  override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+    return request.requestURI.startsWith("/actuator/health") || isInternalCall(request)
+  }
+
+  private fun isInternalCall(request: HttpServletRequest): Boolean {
+    val isLocalhost = request.remoteAddr == "127.0.0.1" || request.remoteAddr == "0:0:0:0:0:0:0:1"
+    val hasInternalHeader = request.getHeader("X-Internal-Call") == "true"
+    return isLocalhost || hasInternalHeader
+  }
 
   override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
     log.info("Filtering request: ${request.requestURI}")
