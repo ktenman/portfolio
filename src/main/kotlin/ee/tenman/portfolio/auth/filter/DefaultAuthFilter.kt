@@ -15,8 +15,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 
-@Component
-@Profile("default")
+//@Component
+//@Profile("default")
 class DefaultAuthFilter(
   private val authService: AuthService,
   private val userAccountService: UserAccountService
