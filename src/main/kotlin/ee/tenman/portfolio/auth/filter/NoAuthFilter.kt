@@ -11,7 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.util.*
 
 @Component
-@Profile("local")
+@Profile("local", "default")
 class NoAuthFilter(private val userAccountService: UserAccountService) : OncePerRequestFilter() {
 
   override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
