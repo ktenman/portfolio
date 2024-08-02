@@ -34,7 +34,6 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
-  @Disabled
   fun `should display success message when saving instrument with valid data`() {
 
     id("addNewInstrument").click()
@@ -45,7 +44,7 @@ class InstrumentManagementE2ETests {
 
     Selenide.elements(tagName("button")).filter(text("Save")).first().click()
 
-    Selenide.sleep(2000)
+    Selenide.sleep(1500)
 
     val alertMessage = Selenide.element(className("alert-success"))
     if (alertMessage.exists()) {
@@ -56,7 +55,6 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
-  @Disabled
   fun `should display success message when editing instrument with valid data`() {
 
     Selenide.elements(tagName("button")).filter(text("Edit")).first().click()
@@ -67,7 +65,7 @@ class InstrumentManagementE2ETests {
 
     Selenide.elements(tagName("button")).filter(text("Update")).first().click()
 
-    Selenide.sleep(2000)
+    Selenide.sleep(1500)
 
     val alertMessage = Selenide.element(className("alert-success"))
     if (alertMessage.exists()) {
