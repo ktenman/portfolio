@@ -36,7 +36,7 @@ class TransactionManagementE2ETests {
 
     Selenide.elements(By.tagName("button")).filter(Condition.text("Save")).first().click()
 
-    Selenide.sleep(2000)
+    Selenide.sleep(1500)
 
     val alertMessage = Selenide.element(By.className("alert-success"))
     if (alertMessage.exists()) {
@@ -65,7 +65,7 @@ class TransactionManagementE2ETests {
 
     Selenide.elements(By.tagName("button")).filter(Condition.text("Update")).first().click()
 
-    Selenide.sleep(2000)
+    Selenide.sleep(1500)
 
     val alertMessage = Selenide.element(By.className("alert-success"))
     if (alertMessage.exists()) {
