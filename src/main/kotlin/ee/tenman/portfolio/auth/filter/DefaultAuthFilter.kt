@@ -25,6 +25,7 @@ class DefaultAuthFilter(
 
   override fun shouldNotFilter(request: HttpServletRequest): Boolean =
     request.requestURI.startsWith("/actuator/health")
+      || request.requestURI.startsWith("/api/instruments")
 
   override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
     log.info("Filtering request: ${request.requestURI}")
