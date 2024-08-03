@@ -48,6 +48,8 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3.5.0
+      - name: Set up Docker Compose
+        uses: ndeloof/install-compose-action@v0.0.1
       - name: Start services with Docker Compose (for E2E tests)
         if: matrix.test-type == 'e2e'
         run: |
