@@ -17,8 +17,6 @@ class CalculatorController(
 
   @GetMapping
   @Loggable
-  fun calculateXirr(): BigDecimal {
-    return calculatorService.calculateXirr()
-  }
+  fun calculateXirr(): BigDecimal = calculatorService.calculateXirr()
 
 }
