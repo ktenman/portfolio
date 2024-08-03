@@ -56,9 +56,7 @@ class InstrumentController(
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  fun deleteInstrument(@PathVariable id: Long) {
-    instrumentService.deleteInstrument(id)
-  }
+  fun deleteInstrument(@PathVariable id: Long) = instrumentService.deleteInstrument(id)
 
   data class InstrumentDto(
     val id: Long? = null,
