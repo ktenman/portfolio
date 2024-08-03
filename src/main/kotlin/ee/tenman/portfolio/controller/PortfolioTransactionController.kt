@@ -85,9 +85,7 @@ class PortfolioTransactionController(
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  fun deleteTransaction(@PathVariable id: Long) {
-    portfolioTransactionService.deleteTransaction(id)
-  }
+  fun deleteTransaction(@PathVariable id: Long) = portfolioTransactionService.deleteTransaction(id)
 
   data class PortfolioTransactionDto(
     val id: Long?,
