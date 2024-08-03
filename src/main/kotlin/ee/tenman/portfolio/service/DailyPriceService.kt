@@ -43,13 +43,4 @@ class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) 
     )
   }
 
-  @Transactional(readOnly = true)
-  fun findAllDailyPrices(instrument: Instrument, startDate: LocalDate, endDate: LocalDate): List<DailyPrice> {
-    return dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateAsc(
-      instrument,
-      startDate,
-      endDate
-    )
-  }
-
 }
