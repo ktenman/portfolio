@@ -88,6 +88,11 @@ let chartInstance: Chart | null = null
 let resultChartInstance: Chart | null = null
 
 const calculate = async () => {
+  const calculationResult = await fetchCalculationResult()
+  form.annualReturnRate = Number(
+    Number(calculationResult.xirrs[calculationResult.xirrs.length - 1].amount).toFixed(3)
+  )
+
   const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
   const values = []
   let totalWorth = initialWorth
@@ -113,7 +118,6 @@ const calculate = async () => {
   }
 
   renderChart(values)
-  const calculationResult = await fetchCalculationResult()
   renderResultChart(calculationResult)
 }
 
