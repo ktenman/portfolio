@@ -22,6 +22,8 @@ class Xirr(private val transactions: List<Transaction>) {
   private val startDate = transactions.minOf { it.date }
   private val yearsToEnd = { date: LocalDate -> ChronoUnit.DAYS.between(date, endDate).toDouble() / 365.25 }
 
+  fun getTransactions(): List<Transaction> = transactions
+
   fun calculate(): Double = runBlocking {
     log.info("Starting XIRR calculation with ${transactions.size} transactions")
     log.info("Start date: $startDate, End date: $endDate")
