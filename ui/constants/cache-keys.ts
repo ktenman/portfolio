@@ -3,4 +3,5 @@ export const CACHE_KEYS = {
   PORTFOLIO_SUMMARY: 'portfolio-summary',
   TRANSACTIONS: 'transactions',
   XIRR: 'xirr',
+  CALCULATION_RESULT: 'calculation-result',
 }

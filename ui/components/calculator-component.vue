@@ -21,6 +21,7 @@
       </div>
       <div class="col-md-8">
         <canvas ref="chart"></canvas>
+        <canvas ref="resultChart" class="mt-4"></canvas>
       </div>
     </div>
     <div class="row mt-4">
@@ -47,8 +48,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import Chart from 'chart.js/auto'
+import { CalculationService } from '../services/calculation-service.ts'
+import { CalculationResult } from '../models/calculation-result.ts'
 
 const form = reactive({
   initialWorth: 1000,
@@ -76,11 +79,15 @@ const steps = {
 
 const tableHeaders = ['Year', 'Total Worth', "Year's Growth", 'Earnings Per Day']
 
+const calculationService = new CalculationService()
+
 const chart = ref<HTMLCanvasElement | null>(null)
+const resultChart = ref<HTMLCanvasElement | null>(null)
 const yearSummary = ref<Array<Record<string, number>>>([])
 let chartInstance: Chart | null = null
+let resultChartInstance: Chart | null = null
 
-const calculate = () => {
+const calculate = async () => {
   const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
   const values = []
   let totalWorth = initialWorth
@@ -106,6 +113,8 @@ const calculate = () => {
   }
 
   renderChart(values)
+  const calculationResult = await fetchCalculationResult()
+  renderResultChart(calculationResult)
 }
 
 const renderChart = (data: number[]) => {
@@ -142,6 +151,49 @@ const renderChart = (data: number[]) => {
       },
     })
   }
+}
+
+const renderResultChart = (result: CalculationResult) => {
+  if (resultChartInstance) resultChartInstance.destroy()
+  const ctx = resultChart.value?.getContext('2d')
+  if (ctx) {
+    resultChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: result.xirrs.map(x => x.date),
+        datasets: [
+          {
+            label: 'XIRR',
+            data: result.xirrs.map(x => x.amount),
+            backgroundColor: 'rgba(153, 102, 255, 0.6)',
+            borderColor: 'rgba(153, 102, 255, 1)',
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Date' }, grid: { display: false } },
+          y: {
+            title: { display: true, text: 'XIRR (%)' },
+            ticks: {
+              callback: value => '' + (value as number).toLocaleString() + '%',
+              stepSize: 5, // Ticks every 5%
+            },
+          },
+        },
+        plugins: {
+          title: { display: true, text: 'XIRR Rolling Result', font: { size: 16 } },
+          legend: { display: false },
+        },
+      },
+    })
+  }
+}
+
+const fetchCalculationResult = async (): Promise<CalculationResult> => {
+  return calculationService.fetchCalculationResult()
 }
 
 const formatCurrency = (value: number) =>

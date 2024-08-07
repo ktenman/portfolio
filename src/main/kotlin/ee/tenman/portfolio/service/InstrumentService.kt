@@ -47,7 +47,7 @@ class InstrumentService(private val instrumentRepository: InstrumentRepository) 
   }
 
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#symbol", unless = "#result == null")
-  fun findInstrument(symbol: String): Instrument {
+  fun getInstrument(symbol: String): Instrument {
     return instrumentRepository.findBySymbol(symbol)
       .orElseThrow { RuntimeException("Instrument not found with symbol: $symbol") }
   }
