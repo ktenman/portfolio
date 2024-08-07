@@ -19,4 +19,5 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
     startDate: LocalDate,
     endDate: LocalDate
   ): DailyPrice?
+  fun findAllByInstrument(instrument: Instrument): List<DailyPrice>
 }
