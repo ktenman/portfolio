@@ -2,12 +2,12 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
-import jakarta.annotation.PostConstruct
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -17,7 +17,8 @@ private const val TICKER = "QDVE:GER:EUR"
 @Service
 class CalculatorService(
   private val dataRetrievalService: DailyPriceService,
-  private val instrumentService: InstrumentService
+  private val instrumentService: InstrumentService,
+  private val calculationDispatcher: CoroutineDispatcher
 ) {
 
   private val log = LoggerFactory.getLogger(javaClass)
@@ -34,65 +35,60 @@ class CalculatorService(
     }
   }
 
-  fun calculateAverage(xirrs: List<Double>): Double {
-    return if (xirrs.isEmpty()) {
-      0.0 // or you could throw an exception here
-    } else {
-      xirrs.sum() / xirrs.size
-    }
-  }
-
-  @PostConstruct
-  fun init() {
+  @Cacheable("xirr-v2")
+  fun getCalculationResult(): CalculationResult {
     val xirrs = calculateRollingXirr(TICKER).reversed()
     val xirrs2 = runBlocking {
       val deferredResults = xirrs.map { xirr ->
-        async(Dispatchers.Default) {
-          xirr.calculate()
+        async(calculationDispatcher) {
+          Transaction(xirr.calculate() * 100.0, xirr.getTransactions().maxOf { it.date })
         }
       }
       deferredResults.awaitAll()
     }
-    log.info("Median: " + calculateMedian(xirrs2))
-    log.info("Average: " + calculateAverage(xirrs2))
+    return CalculationResult(
+      median = calculateMedian(xirrs2.map { it.amount }),
+      average = xirrs2.map { it.amount }.average(),
+      xirrs = xirrs2
+    )
   }
 
   fun calculateRollingXirr(instrumentCode: String): List<Xirr> {
     val instrument = instrumentService.getInstrument(instrumentCode)
-    var dailyPrices = dataRetrievalService.findAllByInstrument(instrument).sortedBy { it.entryDate }
+    val allDailyPrices = dataRetrievalService.findAllByInstrument(instrument)
+      .sortedBy { it.entryDate }
 
-    var localDate = LocalDate.now()
+    if (allDailyPrices.size < 2) return emptyList()
+
     val xirrs = mutableListOf<Xirr>()
+    var endDate = LocalDate.now()
+    val startDate = allDailyPrices.first().entryDate
 
-    do {
-      val transactions = mutableListOf<Transaction>()
-      var totalAmount = 0.0
-      var spentAmount = 0.0
-
-      dailyPrices = dailyPrices.filter { it.entryDate.isBefore(localDate) }
-
+    while (endDate.isAfter(startDate)) {
+      val dailyPrices = allDailyPrices.takeWhile { it.entryDate <= endDate }
       if (dailyPrices.size < 2) break
 
-      dailyPrices.forEach { price ->
-        transactions.add(Transaction(AMOUNT_TO_SPEND, price.entryDate))
+      val (totalShares, transactions) = dailyPrices.fold(
+        Pair(
+          0.0,
+          mutableListOf<Transaction>()
+        )
+      ) { (totalShares, transactions), price ->
         val sharesAmount = AMOUNT_TO_SPEND / price.closePrice.toDouble()
-        totalAmount += sharesAmount
-        spentAmount += AMOUNT_TO_SPEND
+        transactions.add(Transaction(AMOUNT_TO_SPEND, price.entryDate))
+        Pair(totalShares + sharesAmount, transactions)
       }
 
       val lastPrice = dailyPrices.last()
-      val finalValue = -totalAmount * lastPrice.closePrice.toDouble()
+      val finalValue = -totalShares * lastPrice.closePrice.toDouble()
       transactions.add(Transaction(finalValue, lastPrice.entryDate))
 
-      val xirr = Xirr(transactions)
-      xirrs.add(xirr)
-
-      localDate = localDate.minusDays(1)
-    } while (dailyPrices.isNotEmpty())
+      xirrs.add(Xirr(transactions))
+      endDate = endDate.minusMonths(2)
+    }
 
     return xirrs
   }
-
 
 
 }
