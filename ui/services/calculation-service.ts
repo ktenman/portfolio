@@ -4,7 +4,7 @@ import { Cacheable } from '../decorators/cacheable.decorator.ts'
 import { CalculationResult } from '../models/calculation-result.ts'
 
 export class CalculationService {
-  private apiUrl = '/api/calculator/calculate'
+  private apiUrl = '/api/calculator'
 
   @Cacheable(CACHE_KEYS.CALCULATION_RESULT)
   async fetchCalculationResult(): Promise<CalculationResult> {
