@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 @Validated
 class CalculatorController(private val calculatorService: CalculatorService) {
 
-  @GetMapping("/calculate")
+  @GetMapping
   fun calculate(): CalculationResult = calculatorService.getCalculationResult()
 
 }
