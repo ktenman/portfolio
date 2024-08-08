@@ -20,6 +20,11 @@
         </form>
       </div>
       <div class="col-md-8">
+        <div v-if="isLoading" class="d-flex justify-content-center align-items-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
         <canvas ref="chart"></canvas>
         <canvas ref="resultChart" class="mt-4"></canvas>
       </div>
@@ -69,6 +74,7 @@ const labels = {
   years: 'Number of Years',
 }
 
+const isLoading = ref(true)
 const steps = {
   initialWorth: '0.01',
   monthlyInvestment: '0.01',
@@ -197,7 +203,11 @@ const renderResultChart = (result: CalculationResult) => {
 }
 
 const fetchCalculationResult = async (): Promise<CalculationResult> => {
-  return calculationService.fetchCalculationResult()
+  try {
+    return await calculationService.fetchCalculationResult()
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const formatCurrency = (value: number) =>
