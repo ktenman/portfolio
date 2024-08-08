@@ -18,6 +18,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
+import java.util.concurrent.CompletableFuture
 
 @Component
 class DailyPortfolioXirrJob(
@@ -80,9 +81,11 @@ class DailyPortfolioXirrJob(
     } catch (e: Exception) {
       log.error("Error calculating XIRR", e)
     } finally {
-      log.info("Finished daily portfolio XIRR calculation")
-      val calculationResult = calculatorService.getCalculationResult()
-      log.info("XIRR Calculation result average: ${calculationResult.average}, median: ${calculationResult.median}")
+      CompletableFuture.runAsync {
+        log.info("Finished daily portfolio XIRR calculation")
+        val calculationResult = calculatorService.getCalculationResult()
+        log.info("XIRR Calculation result average: ${calculationResult.average}, median: ${calculationResult.median}")
+      }
     }
   }
 
