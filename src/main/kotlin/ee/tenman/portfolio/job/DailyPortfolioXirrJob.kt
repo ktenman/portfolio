@@ -32,7 +32,7 @@ class DailyPortfolioXirrJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 30 5 * * *")
+  @Scheduled(cron = "0 30 23 * * *")
   fun runJob() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
@@ -110,7 +110,7 @@ class DailyPortfolioXirrJob(
 
   private fun calculateCurrentValue(holdings: Map<Instrument, BigDecimal>, latestDate: LocalDate): BigDecimal {
     return holdings.entries.sumOf { (instrument, quantity) ->
-      val lastPrice = dailyPriceService.findLastDailyPrice(instrument, latestDate)?.closePrice
+      val lastPrice = dailyPriceService.findLastDailyPrice(instrument)?.closePrice
         ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $latestDate")
       quantity * lastPrice
     }

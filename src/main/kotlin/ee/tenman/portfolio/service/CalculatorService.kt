@@ -36,7 +36,7 @@ class CalculatorService(
     }
   }
 
-  @Cacheable(value = [ONE_DAY_CACHE], key="'xirr-v3'")
+  @Cacheable(value = [ONE_DAY_CACHE], key="'xirr-v7'")
   fun getCalculationResult(): CalculationResult {
     log.info("Calculating XIRR")
     val xirrs = calculateRollingXirr(TICKER).reversed()
@@ -86,7 +86,7 @@ class CalculatorService(
       transactions.add(Transaction(finalValue, lastPrice.entryDate))
 
       xirrs.add(Xirr(transactions))
-      endDate = endDate.minusMonths(2)
+      endDate = endDate.minusMonths(3)
     }
 
     return xirrs

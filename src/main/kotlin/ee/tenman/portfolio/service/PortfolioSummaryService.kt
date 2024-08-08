@@ -65,7 +65,7 @@ class PortfolioSummaryService(
   private fun calculateCurrentValue(holdings: Map<Instrument, BigDecimal>, latestDate: LocalDate): BigDecimal {
     return holdings.entries.sumOf { (instrument, quantity) ->
       val price = instrumentService.findInstrument(instrument.id).currentPrice
-        ?: dailyPriceService.findLastDailyPrice(instrument, latestDate)?.closePrice
+        ?: dailyPriceService.findLastDailyPrice(instrument)?.closePrice
         ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $latestDate")
       quantity * price
     }
