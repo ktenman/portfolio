@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,8 +36,9 @@ class CalculatorService(
     }
   }
 
-  @Cacheable("xirr-v2")
+  @Cacheable(value = [ONE_DAY_CACHE], key="'xirr-v3'")
   fun getCalculationResult(): CalculationResult {
+    log.info("Calculating XIRR")
     val xirrs = calculateRollingXirr(TICKER).reversed()
     val xirrs2 = runBlocking {
       val deferredResults = xirrs.map { xirr ->
