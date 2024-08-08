@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.service.CalculatorService
 import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.service.PortfolioSummaryService
@@ -25,7 +26,8 @@ class DailyPortfolioXirrJob(
   private val dailyPriceService: DailyPriceService,
   private val clock: Clock,
   private val jobExecutionService: JobExecutionService,
-  private val xirrService: XirrService
+  private val xirrService: XirrService,
+  private val calculatorService: CalculatorService
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -77,6 +79,10 @@ class DailyPortfolioXirrJob(
 
     } catch (e: Exception) {
       log.error("Error calculating XIRR", e)
+    } finally {
+      log.info("Finished daily portfolio XIRR calculation")
+      val calculationResult = calculatorService.getCalculationResult()
+      log.info("XIRR Calculation result average: ${calculationResult.average}, median: ${calculationResult.median}")
     }
   }
 
