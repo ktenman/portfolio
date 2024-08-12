@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
 # Set the timezone to Europe/Tallinn
 RUN ln -fs /usr/share/zoneinfo/Europe/Tallinn /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
 
-# Install geckodriver for Firefox
-RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz" -O /tmp/geckodriver.tar.gz \
+# Install geckodriver for Firefox (updated to version 0.35.0)
+RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.35.0/geckodriver-v0.35.0-linux64.tar.gz" -O /tmp/geckodriver.tar.gz \
     && tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin \
     && rm /tmp/geckodriver.tar.gz
 
