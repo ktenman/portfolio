@@ -10,85 +10,112 @@ user-friendly interface for viewing and managing portfolio transactions, instrum
 
 <img src="screenshots/app.png" width="600" alt="Portfolio Management System application home page">
 
-## Prerequisites
+## Key Features
 
-Before you begin, ensure your system meets the following requirements:
-
-- Kotlin: v2
-- Java: v21 (for running Kotlin)
-- Gradle: v8.8
-- Node.js: v20.11.1
-- npm: v10.2.4
-- Docker: v25.0.2
-- Docker Compose: v2.24.3
+- **Instrument Management**: Add, update, and delete financial instruments in your portfolio.
+- **Transaction Tracking**: Record buy and sell transactions for your portfolio.
+- **Performance Metrics**: Calculate and display portfolio performance metrics, including XIRR (Extended Internal Rate
+  of Return).
+- **Data Synchronization**: Automatically fetch and update financial data from Alpha Vantage API.
+- **Caching**: Utilize Redis caching for improved performance and reduced API calls.
+- **User Interface**: Provide a user-friendly interface for managing and viewing portfolio data.
+- **Authentication**: Secure user authentication using OAuth 2.0 with Google and GitHub.
+- **Stock Market Tracker**: Real-time price updates for portfolio instruments.
 
 ## Technical Stack
 
-- **Backend**: Spring Boot v3.3
-- **Frontend**:
-  - **Build Tool**: Vite
-  - Vue.js v3.4
-  - Bootstrap v5.3
-- **Database**: PostgreSQL for data persistence and Flyway for database migration management
-- **Caching**: Redis, utilized for caching financial data and portfolio summaries
-- **Testing**: JUnit, Mockito, AssertJ, Selenide, and Testcontainers for robust testing coverage
+### Backend
+
+- Spring Boot v3.3
+- Kotlin v2
+- Java v21
+
+### Frontend
+
+- Vue.js v3.4
+- Bootstrap v5.3
+- Vite (Build Tool)
+
+### Database & Caching
+
+- PostgreSQL with Flyway for migrations
+- Redis for caching
+
+### Testing
+
+- JUnit, Mockito, AssertJ, Selenide, and Testcontainers
+
+### CI/CD & Containerization
+
+- GitHub Actions
+- Docker and Docker Compose
+
+### API Integration
+
+- Alpha Vantage for financial data
+
+### Stock Market Tracker
+
+- Python
+- Selenium
+- Flask
 
 ## Architecture 🏗️
 
-The Portfolio Management System is built with a modular architecture, comprising several vital components that work
-together to deliver a comprehensive portfolio management experience.
-
 <img src="./screenshots/architecture.svg" width="600" alt="System Architecture">
 
-### Frontend 🌐
+The system consists of:
 
-The front end, built with Vue.js and Bootstrap, provides a responsive user interface. It communicates with the backend
-via HTTP to retrieve and display portfolio data, transactions, and performance metrics.
-
-### Backend 🧠
-
-Developed using Spring Boot, the backend handles API requests, processes data, and interacts with the database and
-cache. It exposes RESTful endpoints for the front end to consume and manages the business logic for portfolio
-calculations.
+- Vue.js frontend
+- Spring Boot backend
+- PostgreSQL database
+- Redis cache
+- Authentication service
+- Scheduled jobs for data retrieval and XIRR calculation
+- Stock market tracker for real-time price updates
 
 ### Database 🗄️
 
-PostgreSQL, a reliable and scalable relational database, stores the portfolio data, including instruments, transactions,
-and daily price information. The backend performs CRUD operations using Spring Data JPA.
+PostgreSQL stores portfolio data, including instruments, transactions, and daily price information. The backend performs
+CRUD operations using Spring Data JPA.
 
 ### Cache 🚀
 
-Redis, an in-memory data store, is a caching layer to improve data retrieval performance. Frequently accessed
-data, such as instrument details and portfolio summaries, is stored in the cache, reducing database queries and
-enhancing responsiveness.
+Redis serves as a caching layer to improve data retrieval performance, storing frequently accessed data like instrument
+details and portfolio summaries.
 
 ### Data Retrieval Jobs ⚙️
 
-Two main jobs run periodically to keep the system updated:
-
-1. **Instrument Data Retrieval Job**: Fetches the latest price data for all instruments in the portfolio from the Alpha
-   Vantage API.
-2. **Daily Portfolio XIRR Job**: Calculates the Extended Internal Rate of Return (XIRR) for the portfolio on a daily
-   basis, providing up-to-date performance metrics.
+1. **Instrument Data Retrieval Job**: Fetches the latest price data for all instruments from the Alpha Vantage API.
+2. **Daily Portfolio XIRR Job**: Calculates the Extended Internal Rate of Return (XIRR) for the portfolio daily.
 
 ### Authentication 🔐
 
-The system uses OAuth 2.0 for authentication, specifically integrating with Google's OAuth service. This ensures secure
-user authentication and authorization.
+The system uses OAuth 2.0 for authentication, integrating with Google's OAuth service.
 
 ### Interaction Flow 📊
 
-1. User initiates login through the frontend.
-2. The frontend redirects to the OAuth service for authentication.
-3. Upon successful authentication, the user is redirected back to the application with an authentication token.
-4. The frontend includes this token in subsequent requests to the backend.
-5. The backend validates the token with the Auth service before processing requests.
-6. Frontend receives and displays the portfolio data to the user.
-7. Periodic jobs update the database with the latest financial data and calculate performance metrics.
+1. User logs in via the frontend.
+2. Frontend redirects to OAuth service for authentication.
+3. User is redirected back with an authentication token.
+4. Frontend includes this token in backend requests.
+5. Backend validates the token with the Auth service.
+6. Frontend displays portfolio data to the user.
+7. Periodic jobs update the database and calculate metrics.
 
 ## Setup and Running Instructions
 
-### Docker Containers Setup
+### Prerequisites
+
+- Kotlin v2
+- Java v21
+- Gradle v8.8
+- Node.js v20.11.1
+- npm v10.2.4
+- Docker v25.0.2
+- Docker Compose v2.24.3
+
+### Local Development Setup
 
 Initialize necessary Docker containers with Docker Compose to ensure the database and Redis services are up before
 proceeding:
@@ -173,10 +200,10 @@ Here's a simplified representation of the primary database tables:
 | name             |      | transaction_type       |      | entry_date        |
 | category         |      | quantity               |      | provider_name     |
 | base_currency    |      | price                  |      | open_price        |
-| created_at       |      | transaction_date       |      | high_price        |
-| updated_at       |      | created_at             |      | low_price         |
-+------------------+      | updated_at             |      | close_price       |
-                          +------------------------+      | volume            |
+| current_price    |      | transaction_date       |      | high_price        |
+| created_at       |      | created_at             |      | low_price         |
+| updated_at       |      | updated_at             |      | close_price       |
++------------------+      +------------------------+      | volume            |
                                                           | created_at        |
                                                           | updated_at        |
                                                           +-------------------+
@@ -194,6 +221,16 @@ Here's a simplified representation of the primary database tables:
 | updated_at             |      | created_at             |
 +------------------------+      | updated_at             |
                                 +------------------------+
+
++------------------+
+|   UserAccount    |
++------------------+
+| id               |
+| email            |
+| session_id       |
+| created_at       |
+| updated_at       |
++------------------+
 ```
 
 Key points:
