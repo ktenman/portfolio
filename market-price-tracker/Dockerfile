@@ -28,4 +28,4 @@ WORKDIR /app
 ENV HEADLESS=True
 
 # Run the script
-CMD ["python", "price_retrieval_job.py"]
+CMD ["python", "main.py"]
