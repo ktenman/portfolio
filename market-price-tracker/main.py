@@ -88,7 +88,7 @@ def process_instrument(instrument_service):
         except Exception as e:
             logger.error(f"Error processing {instrument.name}: {str(e)}")
 
-@scheduled(fixed_rate=10)  # 900 seconds = 15 minutes
+@scheduled(fixed_rate=900)
 def fetch_current_prices():
     logger.info("Fetching current prices")
     instrument_service = InstrumentService(BACKEND_URL)
