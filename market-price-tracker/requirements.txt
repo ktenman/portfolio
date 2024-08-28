@@ -1,4 +1,4 @@
-selenium==4.16.0 # don't upgrade
+selenium==4.24.0 # don't upgrade
 schedule==1.2.2
 requests==2.32.3
 Flask==3.0.3
