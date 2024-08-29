@@ -21,8 +21,8 @@ import { ref } from 'vue'
 const routes = ref([
   { path: '/', name: 'Summary' },
   { path: '/calculator', name: 'Calculator' },
-  { path: '/transactions', name: 'Transactions' },
   { path: '/instruments', name: 'Instruments' },
+  { path: '/transactions', name: 'Transactions' },
 ])
 </script>
 
