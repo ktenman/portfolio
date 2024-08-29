@@ -19,7 +19,7 @@ fov.ee {
         reverse_proxy auth:8083
     }
 
-    # Unprotected routes: calculator, portfolio summary, and their assets
+    # Unprotected routes: calculator, portfolio summary, index, and their assets
     @unprotected_routes {
         path /calculator /calculator/* /assets/* *.js *.css *.svg / /api/portfolio-summary
     }
@@ -39,10 +39,7 @@ fov.ee {
     }
 
     # For all other routes, use authentication
-    @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg / /api/calculator /api/portfolio-summary
-    }
-    handle @protected {
+    handle {
         forward_auth auth:8083 {
             uri /validate
             copy_headers X-User-Id
