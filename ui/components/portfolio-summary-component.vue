@@ -66,6 +66,18 @@ const summaryData = shallowRef<PortfolioSummary[]>([])
 const isLoading = ref(true)
 const summaryService = new SummaryService()
 
+// Modified ASAP algorithm implementation
+function modifiedAsap(timeSeries: number[], maxPoints: number): number[] {
+  const n = timeSeries.length
+  if (n <= maxPoints) return Array.from(Array(n).keys()) // Return all indices if series is already short enough
+
+  const step = Math.ceil(n / maxPoints)
+  const baseIndices = Array.from(Array(Math.floor(n / step)).keys()).map(i => i * step)
+
+  // Always include the first and last points
+  return Array.from(new Set([0, ...baseIndices, n - 1])).sort((a, b) => a - b)
+}
+
 onMounted(async () => {
   try {
     summaryData.value = await summaryService.fetchPortfolioSummary()
@@ -83,11 +95,9 @@ const reversedSummaryData = computed(() => {
 
 const formatDate = (date: string): string => {
   const dateObj = new Date(date)
-
   const day = String(dateObj.getDate()).padStart(2, '0')
   const month = String(dateObj.getMonth() + 1).padStart(2, '0')
   const year = String(dateObj.getFullYear()).slice(-2)
-
   return `${day}.${month}.${year}`
 }
 
@@ -96,21 +106,23 @@ const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
 const processedChartData = computed(() => {
   if (summaryData.value.length === 0) return null
-  const labels = []
-  const totalValues = []
-  const profitValues = []
-  const xirrValues = []
-  const earningsValues = []
+  const labels = summaryData.value.map(item => formatDate(item.date))
+  const totalValues = summaryData.value.map(item => item.totalValue)
+  const profitValues = summaryData.value.map(item => item.totalProfit)
+  const xirrValues = summaryData.value.map(item => item.xirrAnnualReturn * 100)
+  const earningsValues = summaryData.value.map(item => item.earningsPerDay)
 
-  for (const item of summaryData.value) {
-    labels.push(formatDate(item.date))
-    totalValues.push(item.totalValue)
-    profitValues.push(item.totalProfit)
-    xirrValues.push(item.xirrAnnualReturn * 100)
-    earningsValues.push(item.earningsPerDay)
+  // Apply modified ASAP algorithm to each series
+  const maxPoints = Math.min(30, labels.length) // Adjust this value to control the maximum number of points
+  const indices = modifiedAsap(totalValues, maxPoints)
+
+  return {
+    labels: indices.map(i => labels[i]),
+    totalValues: indices.map(i => totalValues[i]),
+    profitValues: indices.map(i => profitValues[i]),
+    xirrValues: indices.map(i => xirrValues[i]),
+    earningsValues: indices.map(i => earningsValues[i]),
   }
-
-  return { labels, totalValues, profitValues, xirrValues, earningsValues }
 })
 
 const chartData = computed(() => {
@@ -147,7 +159,6 @@ const chartData = computed(() => {
     ],
   }
 })
-
 const chartOptions = {
   responsive: true,
   animation: false,
