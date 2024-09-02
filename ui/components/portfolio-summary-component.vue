@@ -113,7 +113,7 @@ const processedChartData = computed(() => {
   const earningsValues = summaryData.value.map(item => item.earningsPerDay)
 
   // Apply modified ASAP algorithm to each series
-  const maxPoints = Math.min(30, labels.length) // Adjust this value to control the maximum number of points
+  const maxPoints = Math.min(31, labels.length) // Adjust this value to control the maximum number of points
   const indices = modifiedAsap(totalValues, maxPoints)
 
   return {
