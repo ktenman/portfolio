@@ -250,7 +250,7 @@ Relationships:
 
 ## Deployment
 
-1. Rename the `.env_example` file to `.env` and fill in the necessary information.
+1. Rename the `.env.example` file to `.env` and fill in the necessary information.
 2. Create a shell script (e.g., deploy.sh) to deploy the application:
 
    ```bash
