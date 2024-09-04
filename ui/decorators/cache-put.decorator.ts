@@ -7,7 +7,9 @@ export function CachePut(key: string) {
     const originalMethod = descriptor.value
     descriptor.value = async function (...args: unknown[]) {
       const result = await originalMethod.apply(this, args)
-      result && cacheService.setItem(key, result)
+      if (result) {
+        void cacheService.setItem(key, result)
+      }
       return result
     }
     return descriptor
