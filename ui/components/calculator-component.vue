@@ -95,8 +95,8 @@ let resultChartInstance: Chart | null = null
 
 const calculate = async () => {
   const calculationResult = await fetchCalculationResult()
-  form.annualReturnRate = Number(calculationResult.average).toFixed(3)
-  form.initialWorth = Number(calculationResult.total).toFixed(2)
+  form.annualReturnRate = Number(Number(calculationResult.average).toFixed(3))
+  form.initialWorth = Number(Number(calculationResult.total).toFixed(2))
 
   const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
   const values = []
