@@ -28,6 +28,8 @@ jobs:
         run: npm run lint
       - name: Check Prettier formatting
         run: npm run format:check
+      - name: Check README links
+        run: .github/workflows/check-readme-links.sh
 
   test:
     name: 🧪 ${{ matrix.test-type }} Test
