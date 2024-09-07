@@ -163,10 +163,9 @@ const renderChart = (data: number[]) => {
 }
 
 const applyASAP = (data: { date: string; amount: number }[], maxPoints: number) => {
-  const effectiveMaxPoints = Math.max(maxPoints, 31) // Ensure at least 31 points
-  if (data.length <= effectiveMaxPoints) return data
+  if (data.length <= maxPoints) return data
 
-  const step = Math.floor(data.length / effectiveMaxPoints)
+  const step = Math.floor(data.length / maxPoints)
   const result = []
 
   for (let i = 0; i < data.length; i += step) {
@@ -187,7 +186,7 @@ const renderResultChart = (result: CalculationResult) => {
   if (resultChartInstance) resultChartInstance.destroy()
   const ctx = resultChart.value?.getContext('2d')
   if (ctx) {
-    const maxPoints = Math.max(Math.floor(ctx.canvas.width / 15), 30) // Adjust for minimum 31 points
+    const maxPoints = Math.max(Math.floor(ctx.canvas.width / 15), 26)
     const asapData = applyASAP(result.xirrs, maxPoints)
 
     resultChartInstance = new Chart(ctx, {
