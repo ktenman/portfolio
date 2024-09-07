@@ -60,10 +60,10 @@ import { CalculationResult } from '../models/calculation-result.ts'
 
 const form = reactive({
   initialWorth: 1000,
-  monthlyInvestment: 2800,
+  monthlyInvestment: 1000,
   yearlyGrowthRate: 5,
   annualReturnRate: 25.341,
-  years: 10,
+  years: 15,
 })
 
 const labels = {
@@ -95,9 +95,8 @@ let resultChartInstance: Chart | null = null
 
 const calculate = async () => {
   const calculationResult = await fetchCalculationResult()
-  form.annualReturnRate = Number(
-    Number(calculationResult.xirrs[calculationResult.xirrs.length - 1].amount).toFixed(3)
-  )
+  form.annualReturnRate = Number(calculationResult.average).toFixed(3)
+  form.initialWorth = Number(calculationResult.total).toFixed(2)
 
   const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
   const values = []

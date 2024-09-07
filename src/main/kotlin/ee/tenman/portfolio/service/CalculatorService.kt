@@ -19,7 +19,8 @@ private const val TICKER = "QDVE:GER:EUR"
 class CalculatorService(
   private val dataRetrievalService: DailyPriceService,
   private val instrumentService: InstrumentService,
-  private val calculationDispatcher: CoroutineDispatcher
+  private val calculationDispatcher: CoroutineDispatcher,
+  private val portfolioSummaryService: PortfolioSummaryService
 ) {
 
   private val log = LoggerFactory.getLogger(javaClass)
@@ -48,10 +49,12 @@ class CalculatorService(
       }
       deferredResults.awaitAll()
     }
+    var totalCurrentValue = portfolioSummaryService.getCurrentDaySummary().totalValue
     return CalculationResult(
       median = calculateMedian(xirrs2.map { it.amount }),
       average = xirrs2.map { it.amount }.average(),
-      xirrs = xirrs2
+      xirrs = xirrs2,
+      total = totalCurrentValue
     )
   }
 
