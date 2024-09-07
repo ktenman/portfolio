@@ -89,7 +89,7 @@ class CalculatorService(
       transactions.add(Transaction(finalValue, lastPrice.entryDate))
 
       xirrs.add(Xirr(transactions))
-      endDate = endDate.minusMonths(2)
+      endDate = endDate.minusMonths(1)
     }
 
     return xirrs
