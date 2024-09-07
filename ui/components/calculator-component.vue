@@ -162,20 +162,44 @@ const renderChart = (data: number[]) => {
   }
 }
 
+const applyASAP = (data: { date: string; amount: number }[], maxPoints: number) => {
+  const effectiveMaxPoints = Math.max(maxPoints, 31) // Ensure at least 31 points
+  if (data.length <= effectiveMaxPoints) return data
+
+  const step = Math.floor(data.length / effectiveMaxPoints)
+  const result = []
+
+  for (let i = 0; i < data.length; i += step) {
+    const chunk = data.slice(i, Math.min(i + step, data.length))
+    const avgAmount = chunk.reduce((sum, item) => sum + item.amount, 0) / chunk.length
+    result.push({ date: chunk[0].date, amount: avgAmount })
+  }
+
+  // Always include the last point if it's not already included
+  if (result[result.length - 1].date !== data[data.length - 1].date) {
+    result.push(data[data.length - 1])
+  }
+
+  return result
+}
+
 const renderResultChart = (result: CalculationResult) => {
   if (resultChartInstance) resultChartInstance.destroy()
   const ctx = resultChart.value?.getContext('2d')
   if (ctx) {
+    const maxPoints = Math.max(Math.floor(ctx.canvas.width / 15), 30) // Adjust for minimum 31 points
+    const asapData = applyASAP(result.xirrs, maxPoints)
+
     resultChartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: result.xirrs.map(x => x.date),
+        labels: asapData.map(x => x.date),
         datasets: [
           {
             label: 'XIRR',
-            data: result.xirrs.map(x => x.amount),
-            backgroundColor: 'rgba(153, 102, 255, 0.6)',
-            borderColor: 'rgba(153, 102, 255, 1)',
+            data: asapData.map(x => x.amount),
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 1,
           },
         ],
@@ -183,18 +207,35 @@ const renderResultChart = (result: CalculationResult) => {
       options: {
         responsive: true,
         scales: {
-          x: { title: { display: true, text: 'Date' }, grid: { display: false } },
+          x: {
+            title: { display: true, text: 'Date' },
+            grid: { display: false },
+            ticks: {
+              maxTicksLimit: 10,
+              callback: function (val, index) {
+                // Show only every nth label to prevent overcrowding
+                return index % Math.ceil(asapData.length / 10) === 0
+                  ? this.getLabelForValue(val as number)
+                  : ''
+              },
+            },
+          },
           y: {
             title: { display: true, text: 'XIRR (%)' },
             ticks: {
-              callback: value => '' + (value as number).toLocaleString() + '%',
-              stepSize: 5, // Ticks every 5%
+              callback: value => (value as number).toFixed(2) + '%',
+              maxTicksLimit: 8, // Limit the number of y-axis labels
             },
           },
         },
         plugins: {
-          title: { display: true, text: 'XIRR Rolling Result', font: { size: 16 } },
+          title: { display: true, text: 'XIRR Rolling Result (ASAP)', font: { size: 16 } },
           legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: context => `XIRR: ${context.parsed.y.toFixed(2)}%`,
+            },
+          },
         },
       },
     })
