@@ -14,6 +14,7 @@
               :step="steps[key]"
               :min="key === 'years' ? 1 : undefined"
               required
+              @input="manualInputDetected = true"
             />
           </div>
           <button type="submit" class="btn btn-primary">Recalculate</button>
@@ -93,10 +94,15 @@ const yearSummary = ref<Array<Record<string, number>>>([])
 let chartInstance: Chart | null = null
 let resultChartInstance: Chart | null = null
 
+const manualInputDetected = ref(false)
+
 const calculate = async () => {
   const calculationResult = await fetchCalculationResult()
-  form.annualReturnRate = Number(Number(calculationResult.average).toFixed(3))
-  form.initialWorth = Number(Number(calculationResult.total).toFixed(2))
+
+  if (!manualInputDetected.value) {
+    form.annualReturnRate = Number(Number(calculationResult.average).toFixed(3))
+    form.initialWorth = Number(Number(calculationResult.total).toFixed(2))
+  }
 
   const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
   const values = []
@@ -124,6 +130,9 @@ const calculate = async () => {
 
   renderChart(values)
   renderResultChart(calculationResult)
+
+  // Reset the manual input detection after calculation
+  manualInputDetected.value = false
 }
 
 const renderChart = (data: number[]) => {
