@@ -27,7 +27,7 @@ val springRetryVersion = "2.0.8"
 val guavaVersion = "33.3.0-jre"
 val commonsMathVersion = "3.6.1"
 val mokitoKotlinVersion = "5.4.0"
-val coroutinesVersion = "1.8.1"
+val coroutinesVersion = "1.9.0"
 
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
