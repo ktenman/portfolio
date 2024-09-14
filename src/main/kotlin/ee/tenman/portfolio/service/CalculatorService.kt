@@ -26,14 +26,14 @@ class CalculatorService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun calculateMedian(xirrs: List<Double>): Double {
+    val size = xirrs.size
+    if (size == 0) return 0.0
     val sortedXirrs = xirrs.sorted()
-    val size = sortedXirrs.size
+    val middle = size / 2
     return if (size % 2 == 0) {
-      val middleRight = size / 2
-      val middleLeft = middleRight - 1
-      (sortedXirrs[middleLeft] + sortedXirrs[middleRight]) / 2.0
+      (sortedXirrs[middle - 1] + sortedXirrs[middle]) / 2.0
     } else {
-      sortedXirrs[size / 2]
+      sortedXirrs[middle]
     }
   }
 
