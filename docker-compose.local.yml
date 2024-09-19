@@ -81,6 +81,7 @@ services:
     restart: always
     environment:
       - BACKEND_URL=http://backend:8080/api/instruments
+      - FETCH_INTERVAL=30
     mem_limit: 512m
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
