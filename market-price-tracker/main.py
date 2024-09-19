@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from flask import Flask, jsonify
-from threading import Thread
+from threading import Thread, Event
 from werkzeug.middleware.proxy_fix import ProxyFix
 from scheduler import scheduled, scheduler
 from price_fetcher import PriceFetcher
@@ -21,19 +21,39 @@ FETCH_INTERVAL = int(os.environ.get('FETCH_INTERVAL', 900))  # Default to 900 se
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
+# Event to signal threads to stop
+stop_event = Event()
 
-def price_fetcher_thread():
+
+def price_fetcher_thread(stop_event):
   fetcher = PriceFetcher(BACKEND_URL)
-  fetcher.fetch_all_prices()  # Corrected method name
+  try:
+    fetcher.fetch_all_prices()
+  except Exception as e:
+    logger.error(f"Error in price fetcher: {e}")
+  finally:
+    logger.info("Price fetcher thread completed")
 
 
 @scheduled(fixed_rate=FETCH_INTERVAL)
 def fetch_current_prices():
+  if stop_event.is_set():
+    return
   logger.info(f"Scheduling new thread for fetching current prices every {FETCH_INTERVAL} seconds")
-  thread = Thread(target=price_fetcher_thread)
+  thread = Thread(target=price_fetcher_thread, args=(stop_event,))
   thread.start()
-  thread.join()  # Wait for the thread to complete
-  logger.info("Price fetching thread completed")
+
+  try:
+    # Wait for the thread to complete or for the stop event
+    while thread.is_alive() and not stop_event.is_set():
+      thread.join(timeout=1.0)
+  except Exception as e:
+    logger.error(f"Error while waiting for price fetcher thread: {e}")
+  finally:
+    if thread.is_alive():
+      logger.warning("Price fetcher thread did not complete in time. It may still be running.")
+    else:
+      logger.info("Price fetcher thread completed successfully")
 
 
 @app.route('/health')
@@ -54,7 +74,7 @@ def run_flask_app():
 
 
 def run_scheduler():
-  while True:
+  while not stop_event.is_set():
     scheduler.run_pending()
     time.sleep(1)
 
