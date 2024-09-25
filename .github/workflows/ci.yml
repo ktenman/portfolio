@@ -17,7 +17,7 @@ jobs:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4.2.0
       - name: Use Node.js
         uses: actions/setup-node@v4.0.4
         with:
@@ -40,7 +40,7 @@ jobs:
       matrix:
         test-type: [ 'unit', 'e2e' ]
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 0
       - name: Set up JDK 21
@@ -93,7 +93,7 @@ jobs:
             context: ./market-price-tracker
     steps:
       - name: Checkout main branch
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 1
       - name: Set up Docker Buildx
