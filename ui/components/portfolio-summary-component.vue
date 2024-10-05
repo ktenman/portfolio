@@ -25,7 +25,7 @@
                 <th>Total</th>
                 <th>Profit</th>
                 <th>XIRR</th>
-                <th>Per Day</th>
+                <th>Per Month</th>
               </tr>
             </thead>
             <tbody>
@@ -34,7 +34,7 @@
                 <td>{{ formatCurrency(summary.totalValue) }}</td>
                 <td>{{ formatCurrency(summary.totalProfit) }}</td>
                 <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-                <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
+                <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
               </tr>
             </tbody>
           </table>

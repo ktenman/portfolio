@@ -28,7 +28,8 @@ class PortfolioSummaryController(
           totalValue = summary.totalValue,
           xirrAnnualReturn = summary.xirrAnnualReturn,
           totalProfit = summary.totalProfit,
-          earningsPerDay = summary.earningsPerDay
+          earningsPerDay = summary.earningsPerDay,
+          earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25/12))
         )
       }
   }
@@ -38,6 +39,7 @@ class PortfolioSummaryController(
     val totalValue: BigDecimal,
     val xirrAnnualReturn: BigDecimal,
     val totalProfit: BigDecimal,
-    val earningsPerDay: BigDecimal
+    val earningsPerDay: BigDecimal,
+    val earningsPerMonth: BigDecimal
   )
 }
