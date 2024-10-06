@@ -3,6 +3,6 @@ export interface PortfolioSummary {
   totalValue: number
   xirrAnnualReturn: number
   totalProfit: number
-  earningsPerDay: number,
-  earningsPerMonth: number,
+  earningsPerDay: number
+  earningsPerMonth: number
 }
