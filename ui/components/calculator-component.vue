@@ -35,17 +35,17 @@
         <h5>Year-by-Year Summary</h5>
         <table class="table table-striped table-hover">
           <thead>
-            <tr>
-              <th v-for="header in tableHeaders" :key="header">{{ header }}</th>
-            </tr>
+          <tr>
+            <th v-for="header in tableHeaders" :key="header">{{ header }}</th>
+          </tr>
           </thead>
           <tbody>
-            <tr v-for="summary in yearSummary" :key="summary.year">
-              <td>{{ summary.year }}</td>
-              <td v-for="key in ['totalWorth', 'yearGrowth', 'earningsPerDay']" :key="key">
-                {{ formatCurrency(summary[key]) }}
-              </td>
-            </tr>
+          <tr v-for="summary in yearSummary" :key="summary.year">
+            <td>{{ summary.year }}</td>
+            <td v-for="key in ['totalWorth', 'yearGrowth', 'earningsPerMonth']" :key="key">
+              {{ formatCurrency(summary[key]) }}
+            </td>
+          </tr>
           </tbody>
         </table>
       </div>
@@ -84,7 +84,7 @@ const steps = {
   years: '1',
 }
 
-const tableHeaders = ['Year', 'Total Worth', "Year's Growth", 'Earnings Per Day']
+const tableHeaders = ['Year', 'Total Worth', "Year's Growth", 'Earnings Per Month']
 
 const calculationService = new CalculationService()
 
@@ -124,7 +124,7 @@ const calculate = async () => {
       year,
       totalWorth,
       yearGrowth: totalWorth - yearStartWorth,
-      earningsPerDay: (totalWorth * annualReturnRate) / 36525,
+      earningsPerMonth: (totalWorth * annualReturnRate) / 1200,
     })
   }
 
