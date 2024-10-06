@@ -110,7 +110,7 @@ const processedChartData = computed(() => {
   const totalValues = summaryData.value.map(item => item.totalValue)
   const profitValues = summaryData.value.map(item => item.totalProfit)
   const xirrValues = summaryData.value.map(item => item.xirrAnnualReturn * 100)
-  const earningsValues = summaryData.value.map(item => item.earningsPerDay)
+  const earningsValues = summaryData.value.map(item => item.earningsPerMonth)
 
   // Apply modified ASAP algorithm to each series
   const maxPoints = Math.min(31, labels.length) // Adjust this value to control the maximum number of points
@@ -151,7 +151,7 @@ const chartData = computed(() => {
         yAxisID: 'y1',
       },
       {
-        label: 'Earnings Per Day',
+        label: 'Earnings Per Month',
         borderColor: '#ff7300',
         data: data.earningsValues,
         yAxisID: 'y',
