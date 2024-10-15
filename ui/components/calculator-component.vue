@@ -60,11 +60,11 @@ import { CalculationService } from '../services/calculation-service.ts'
 import { CalculationResult } from '../models/calculation-result.ts'
 
 const form = reactive({
-  initialWorth: 1000,
-  monthlyInvestment: 1000,
+  initialWorth: 2000,
+  monthlyInvestment: 2800,
   yearlyGrowthRate: 5,
-  annualReturnRate: 25.341,
-  years: 15,
+  annualReturnRate: 21.672,
+  years: 20,
 })
 
 const labels = {
