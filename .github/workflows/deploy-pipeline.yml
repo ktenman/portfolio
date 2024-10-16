@@ -47,6 +47,7 @@ jobs:
           echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
           echo "HEALTHCHECK_URL=${{ secrets.HEALTHCHECK_URL }}" >> .env
+          echo "ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}" >> .env
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
