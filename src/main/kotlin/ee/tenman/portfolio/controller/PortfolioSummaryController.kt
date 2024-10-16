@@ -14,13 +14,12 @@ class PortfolioSummaryController(
   private val portfolioSummaryService: PortfolioSummaryService
 ) {
 
-  @GetMapping
+  @GetMapping("/historical")
   @Loggable
-  fun getPortfolioSummary(): List<PortfolioSummaryDto> {
+  fun getHistoricalPortfolioSummary(): List<PortfolioSummaryDto> {
     val historicalSummaries = portfolioSummaryService.getAllDailySummaries()
-    val currentDaySummary = portfolioSummaryService.getCurrentDaySummary()
 
-    return (historicalSummaries + currentDaySummary)
+    return historicalSummaries
       .sortedByDescending { it.entryDate }
       .map { summary ->
         PortfolioSummaryDto(
@@ -29,10 +28,26 @@ class PortfolioSummaryController(
           xirrAnnualReturn = summary.xirrAnnualReturn,
           totalProfit = summary.totalProfit,
           earningsPerDay = summary.earningsPerDay,
-          earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25/12))
+          earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25 / 12))
         )
       }
   }
+
+  @GetMapping("/current")
+  @Loggable
+  fun getCurrentPortfolioSummary(): PortfolioSummaryDto {
+    val currentDaySummary = portfolioSummaryService.getCurrentDaySummary()
+
+    return PortfolioSummaryDto(
+      date = currentDaySummary.entryDate,
+      totalValue = currentDaySummary.totalValue,
+      xirrAnnualReturn = currentDaySummary.xirrAnnualReturn,
+      totalProfit = currentDaySummary.totalProfit,
+      earningsPerDay = currentDaySummary.earningsPerDay,
+      earningsPerMonth = currentDaySummary.earningsPerDay.multiply(BigDecimal(365.25 / 12))
+    )
+  }
+
 
   data class PortfolioSummaryDto(
     val date: LocalDate,

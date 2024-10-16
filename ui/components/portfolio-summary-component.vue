@@ -80,7 +80,7 @@ function modifiedAsap(timeSeries: number[], maxPoints: number): number[] {
 
 onMounted(async () => {
   try {
-    summaryData.value = await summaryService.fetchPortfolioSummary()
+    summaryData.value = await summaryService.fetchAllSummaries()
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (error) {
     console.error('Error fetching portfolio summary:', error)
