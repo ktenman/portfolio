@@ -70,7 +70,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      ALLOWED_EMAILS: "ktenman@gmail.com,ktenman.cyber@gmail.com,konstantin@tenman.ee"
+      ALLOWED_EMAILS: "ktenman@gmail.com,ktenman.cyber@gmail.com,konstantin@tenman.ee,eduardo.brito@cyber.ee"
       ALLOWED_LOGINS: "ktenman"
       REDIRECT_URI: "https://fov.ee"
       SPRING_REDIS_HOST: redis
