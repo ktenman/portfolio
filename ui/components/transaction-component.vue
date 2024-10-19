@@ -21,8 +21,9 @@
           <tr>
             <th>Instrument</th>
             <th>Type</th>
-            <th>Quantity</th>
-            <th>Price</th>
+            <th class="d-none d-md-table-cell">Quantity</th>
+            <th class="d-none d-md-table-cell">Price</th>
+            <th>Amount</th>
             <th>Date</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -31,17 +32,21 @@
           <tr v-for="transaction in transactions" :key="transaction.id">
             <td>{{ getInstrumentSymbol(transaction.instrumentId) }}</td>
             <td>{{ transaction.transactionType }}</td>
-            <td>{{ formatNumber(transaction.quantity) }}</td>
-            <td>{{ formatNumber(transaction.price) }}</td>
+            <td class="d-none d-md-table-cell">{{ formatNumber(transaction.quantity) }}</td>
+            <td class="d-none d-md-table-cell">{{ formatNumber(transaction.price) }}</td>
+            <td>{{ formatNumber(transaction.quantity * transaction.price) }}</td>
             <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
                 <font-awesome-icon icon="pencil-alt" />
                 <span class="d-none d-md-inline ms-1">Edit</span>
               </button>
-              <button class="btn btn-sm btn-danger me-2" @click="deleteTransaction(transaction.id)">
+              <button
+                class="btn btn-sm btn-danger d-none d-md-inline-block"
+                @click="deleteTransaction(transaction.id)"
+              >
                 <font-awesome-icon icon="trash-alt" />
-                <span class="d-none d-md-inline ms-1">Delete</span>
+                <span class="ms-1">Delete</span>
               </button>
             </td>
           </tr>
@@ -336,10 +341,6 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
 
   .btn-sm {
     padding: 0.25rem 0.5rem;
-  }
-
-  .btn-danger {
-    display: none;
   }
 }
 </style>
