@@ -40,6 +40,7 @@ class InstrumentManagementE2ETests {
     id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue(DEFAULT_SYMBOL)
     id("name").shouldNotHave(text(DEFAULT_NAME)).setValue(DEFAULT_NAME)
     id("category").selectOption(DEFAULT_CATEGORY)
+    id("providerName").selectOption("Binance")
     id("currency").selectOption(DEFAULT_CURRENCY)
 
     Selenide.elements(tagName("button")).filter(text("Save")).first().click()
@@ -61,6 +62,7 @@ class InstrumentManagementE2ETests {
     id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue("GOOGL")
     id("name").shouldNotHave(text(DEFAULT_NAME)).setValue("Alphabet Inc.")
     id("category").selectOption("Stock")
+    id("providerName").selectOption("Alpha Vantage")
     id("currency").selectOption("USD")
 
     Selenide.elements(tagName("button")).filter(text("Update")).first().click()
