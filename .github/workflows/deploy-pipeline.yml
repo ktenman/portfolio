@@ -15,6 +15,8 @@ on:
         required: true
       HEALTHCHECK_URL:
         required: true
+      ALLOWED_EMAILS:
+        required: true
   workflow_dispatch:
     inputs:
       deploy:
