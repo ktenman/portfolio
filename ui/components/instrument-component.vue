@@ -88,6 +88,19 @@
                 />
               </div>
               <div class="mb-3">
+                <label for="providerName" class="form-label">Data Provider</label>
+                <select
+                  v-model="currentInstrument.providerName"
+                  id="providerName"
+                  class="form-select"
+                  required
+                >
+                  <option value="" disabled selected>Select Data Provider</option>
+                  <option value="ALPHA_VANTAGE">Alpha Vantage</option>
+                  <option value="BINANCE">Binance</option>
+                </select>
+              </div>
+              <div class="mb-3">
                 <label for="category" class="form-label">Category</label>
                 <select
                   v-model="currentInstrument.category"
