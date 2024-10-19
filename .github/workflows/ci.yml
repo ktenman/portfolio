@@ -126,6 +126,7 @@ jobs:
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+      ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
