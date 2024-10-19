@@ -4,4 +4,5 @@ export interface Instrument {
   name: string
   category: string
   baseCurrency: string
+  providerName: 'ALPHA_VANTAGE' | 'BINANCE'
 }
