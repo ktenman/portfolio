@@ -60,6 +60,9 @@ server:
 alphavantage:
   url: https://www.alphavantage.co
 
+binance:
+  url: https://api.binance.com
+
 auth:
   url: http://auth:8083
 

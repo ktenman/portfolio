@@ -2,6 +2,8 @@ package ee.tenman.portfolio.domain
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
 import java.math.BigDecimal
 
@@ -22,4 +24,8 @@ class Instrument(
 
   @Column(name = "current_price", nullable = true)
   var currentPrice: BigDecimal? = null,
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "provider_name", nullable = true)
+  var providerName: ProviderName = ProviderName.ALPHA_VANTAGE
 ) : BaseEntity()

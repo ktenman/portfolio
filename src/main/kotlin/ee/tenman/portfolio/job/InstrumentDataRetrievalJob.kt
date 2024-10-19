@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.alphavantage.AlphaVantageService
+import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.DailyPriceService
@@ -16,7 +17,8 @@ class InstrumentDataRetrievalJob(
   private val alphaVantageService: AlphaVantageService,
   private val dailyPriceService: DailyPriceService,
   private val transactionRunner: TransactionRunner,
-  private val jobExecutionService: JobExecutionService
+  private val jobExecutionService: JobExecutionService,
+  private val binanceService: BinanceService
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -34,14 +36,18 @@ class InstrumentDataRetrievalJob(
     instruments.forEach { instrument ->
       try {
         log.info("Retrieving data for instrument: ${instrument.symbol}")
-        val dailyData = alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
+        val dailyData = when (instrument.providerName) {
+          ProviderName.ALPHA_VANTAGE -> alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
+          ProviderName.BINANCE -> binanceService.getDailyPrices(instrument.symbol)
+          else -> throw IllegalArgumentException("Unsupported provider: ${instrument.providerName}")
+        }
 
         transactionRunner.runInTransaction {
           dailyData.forEach { (date, data) ->
             val dailyPrice = DailyPrice(
               instrument = instrument,
               entryDate = date,
-              providerName = ProviderName.ALPHA_VANTAGE,
+              providerName = instrument.providerName,
               openPrice = data.open,
               highPrice = data.high,
               lowPrice = data.low,

@@ -17,5 +17,8 @@ server:
 alphavantage:
   url: http://localhost:${wiremock.server.port}
 
+binance:
+  url: http://localhost:${wiremock.server.port}
+
 auth:
   url: http://localhost:${wiremock.server.port}
