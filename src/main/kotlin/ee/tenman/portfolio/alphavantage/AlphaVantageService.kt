@@ -24,7 +24,7 @@ class AlphaVantageService {
   private lateinit var client: AlphaVantageClient
 
   @Retryable(backoff = Backoff(delay = 1000))
-  fun getMonthlyTimeSeries(symbol: String): Map<LocalDate, AlphaVantageResponse.AlphaVantageDayData> {
+  fun getMonthlyTimeSeries(symbol: String): Map<LocalDate, AlphaVantageDayData> {
     val ticker = getTicker(symbol) ?: throw RuntimeException("Failed to get ticker for symbol: $symbol")
 
     return try {

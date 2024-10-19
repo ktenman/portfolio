@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.alphavantage
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import ee.tenman.portfolio.common.DayData
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.*
 
 data class AlphaVantageResponse(
@@ -19,18 +21,18 @@ data class AlphaVantageResponse(
 ) {
   data class AlphaVantageDayData(
     @JsonProperty("1. open")
-    val open: BigDecimal,
+    override val open: BigDecimal,
 
     @JsonProperty("2. high")
-    val high: BigDecimal,
+    override val high: BigDecimal,
 
     @JsonProperty("3. low")
-    val low: BigDecimal,
+    override val low: BigDecimal,
 
     @JsonProperty("4. close")
-    val close: BigDecimal,
+    override val close: BigDecimal,
 
     @JsonProperty("5. volume")
-    val volume: Long
-  )
+    override val volume: Long
+  ) : DayData
 }

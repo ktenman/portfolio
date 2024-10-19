@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.domain
 
 enum class ProviderName {
-  ALPHA_VANTAGE
+  ALPHA_VANTAGE,
+  BINANCE
 }
