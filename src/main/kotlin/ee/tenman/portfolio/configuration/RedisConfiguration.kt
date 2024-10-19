@@ -31,14 +31,14 @@ class RedisConfiguration {
   }
 
   companion object {
-    const val INSTRUMENT_CACHE = "instrument-cache-v29"
-    const val SUMMARY_CACHE = "summary-cache-v29"
-    const val SUMMARY_CACHE_15 = "summary-cache-15-v29"
-    const val TRANSACTION_CACHE = "transaction-cache-v29"
-    const val ONE_DAY_CACHE: String = "one-day-cache-v29"
-    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v29"
-    const val USER_SESSION_CACHE: String = "user-session-cache-v29"
-    const val USER_SESSION_ID_CACHE: String = "user-session-id-cache-v29"
+    const val INSTRUMENT_CACHE = "instrument-cache-v30"
+    const val SUMMARY_CACHE = "summary-cache-v30"
+    const val SUMMARY_CACHE_15 = "summary-cache-15-v30"
+    const val TRANSACTION_CACHE = "transaction-cache-v30"
+    const val ONE_DAY_CACHE: String = "one-day-cache-v30"
+    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v30"
+    const val USER_SESSION_CACHE: String = "user-session-cache-v30"
+    const val USER_SESSION_ID_CACHE: String = "user-session-id-cache-v30"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
   }
 }
