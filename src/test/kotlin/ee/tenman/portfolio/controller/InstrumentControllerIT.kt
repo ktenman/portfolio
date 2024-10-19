@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
@@ -60,7 +61,8 @@ class InstrumentControllerIT {
           "symbol": "QDVE",
           "name": "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
           "category": "ETF",
-          "baseCurrency": "EUR"
+          "baseCurrency": "EUR",
+          "providerName": "ALPHA_VANTAGE"
         }
       """.trimIndent()
         )
@@ -116,7 +118,8 @@ class InstrumentControllerIT {
         symbol = "QDVE",
         name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
         category = "ETF",
-        baseCurrency = "EUR"
+        baseCurrency = "EUR",
+        providerName = ProviderName.ALPHA_VANTAGE
       )
     )
 
@@ -128,7 +131,8 @@ class InstrumentControllerIT {
           "symbol": "QDVE",
           "name": "Updated Instrument Name",
           "category": "ETF",
-          "baseCurrency": "USD"
+          "baseCurrency": "USD",
+          "providerName": "ALPHA_VANTAGE"
         }
       """.trimIndent()
         )
