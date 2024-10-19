@@ -2,6 +2,7 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.InstrumentService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -60,25 +61,23 @@ class InstrumentController(
 
   data class InstrumentDto(
     val id: Long? = null,
-
     @field:NotBlank(message = "Symbol must not be blank")
     val symbol: String,
-
     val name: String,
-
     val category: String,
-
     @field:NotBlank(message = "Base currency must not be blank")
     val baseCurrency: String,
-
-    val currentPrice: BigDecimal? = null
+    val currentPrice: BigDecimal? = null,
+    @field:NotBlank(message = "Provider name must not be blank")
+    val providerName: String
   ) {
     fun toEntity() = Instrument(
       symbol = symbol,
       name = name,
       category = category,
       baseCurrency = baseCurrency,
-      currentPrice = currentPrice
+      currentPrice = currentPrice,
+      providerName = ProviderName.valueOf(providerName)
     )
 
     companion object {
@@ -88,7 +87,8 @@ class InstrumentController(
         name = instrument.name,
         category = instrument.category,
         baseCurrency = instrument.baseCurrency,
-        currentPrice = instrument.currentPrice
+        currentPrice = instrument.currentPrice,
+        providerName = instrument.providerName.name
       )
     }
   }
