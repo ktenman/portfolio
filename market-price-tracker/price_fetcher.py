@@ -84,6 +84,9 @@ class PriceFetcher:
     logger.info("Starting price fetching process")
     remote_instruments = self.instrument_service.fetch_instruments_from_backend()
     for instrument in remote_instruments:
+      if instrument.provider_name != "ALPHA_VANTAGE":
+        logger.info(f"Skipping instrument {instrument.name} with provider {instrument.provider_name}")
+        continue
       try:
         price = self.fetch_price(instrument)
         instrument.current_price = price
