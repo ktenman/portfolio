@@ -45,7 +45,8 @@ class InstrumentService:
       "name": instrument.name,
       "category": instrument.category,
       "baseCurrency": instrument.base_currency,
-      "currentPrice": str(instrument.current_price) if instrument.current_price is not None else None
+      "currentPrice": str(instrument.current_price) if instrument.current_price is not None else None,
+      "providerName": instrument.provider_name
     }
 
     try:
@@ -54,4 +55,5 @@ class InstrumentService:
       response.raise_for_status()
       logger.info(f"Successfully updated {instrument.symbol} instrument with current price: {instrument.current_price}")
     except requests.exceptions.RequestException as e:
-      logger.error(f"Failed to update {instrument.symbol} instrument. Error: {e}")
+      error_content = e.response.json() if e.response else "No response content"
+      logger.error(f"Failed to update {instrument.symbol} instrument. Error: {e}. Response content: {error_content}")
