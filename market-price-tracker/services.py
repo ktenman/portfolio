@@ -31,7 +31,7 @@ class InstrumentService:
       category=inst.get('category'),
       base_currency=inst.get('baseCurrency'),
       current_price=Decimal(inst['currentPrice']) if inst['currentPrice'] is not None else None,
-      provider_name=inst.get('providerName') if inst.get('providerName') is not None else None
+      provider_name=inst.get('providerName') if inst['providerName'] is not None else None
     )
 
   def update_backend_instrument(self, instrument):
