@@ -94,6 +94,54 @@ async function fetchSummaries() {
     currentPage.value++
     hasMoreData.value = currentPage.value < response.totalPages
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+    // Recalculate processedChartData and chartData
+    const labels = summaryData.value.map(item => formatDate(item.date))
+    const totalValues = summaryData.value.map(item => item.totalValue)
+    const profitValues = summaryData.value.map(item => item.totalProfit)
+    const xirrValues = summaryData.value.map(item => item.xirrAnnualReturn * 100)
+    const earningsValues = summaryData.value.map(item => item.earningsPerMonth)
+
+    const maxPoints = Math.min(window.innerWidth >= 1000 ? 31 : 15, labels.length)
+    const indices = modifiedAsap(totalValues, maxPoints)
+
+    const processedChartData = {
+      labels: indices.map(i => labels[i]),
+      totalValues: indices.map(i => totalValues[i]),
+      profitValues: indices.map(i => profitValues[i]),
+      xirrValues: indices.map(i => xirrValues[i]),
+      earningsValues: indices.map(i => earningsValues[i]),
+    }
+
+    chartData.value = {
+      labels: processedChartData.labels,
+      datasets: [
+        {
+          label: 'Total Value',
+          borderColor: '#8884d8',
+          data: processedChartData.totalValues,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Total Profit',
+          borderColor: '#ffc658',
+          data: processedChartData.profitValues,
+          yAxisID: 'y',
+        },
+        {
+          label: 'XIRR Annual Return',
+          borderColor: '#82ca9d',
+          data: processedChartData.xirrValues,
+          yAxisID: 'y1',
+        },
+        {
+          label: 'Earnings Per Month',
+          borderColor: '#ff7300',
+          data: processedChartData.earningsValues,
+          yAxisID: 'y',
+        },
+      ],
+    }
   } catch (err) {
     error.value = 'Failed to fetch summary data. Please try again later.'
   } finally {
