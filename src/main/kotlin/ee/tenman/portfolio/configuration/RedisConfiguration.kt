@@ -15,6 +15,7 @@ class RedisConfiguration {
   fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager {
     val cacheConfigurations: MutableMap<String, RedisCacheConfiguration> = HashMap()
     cacheConfigurations[ONE_DAY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+    cacheConfigurations[ONE_HOUR_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(366))
     cacheConfigurations[THIRTY_MINUTES] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30))
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(6))
@@ -31,14 +32,15 @@ class RedisConfiguration {
   }
 
   companion object {
-    const val INSTRUMENT_CACHE = "instrument-cache-v32"
-    const val SUMMARY_CACHE = "summary-cache-v32"
-    const val SUMMARY_CACHE_10 = "summary-cache-10-v32"
-    const val TRANSACTION_CACHE = "transaction-cache-v32"
-    const val ONE_DAY_CACHE: String = "one-day-cache-v32"
-    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v32"
-    const val USER_SESSION_CACHE: String = "user-session-cache-v32"
-    const val USER_SESSION_ID_CACHE: String = "user-session-id-cache-v32"
+    const val INSTRUMENT_CACHE = "instrument-cache-v33"
+    const val SUMMARY_CACHE = "summary-cache-v33"
+    const val SUMMARY_CACHE_10 = "summary-cache-10-v33"
+    const val TRANSACTION_CACHE = "transaction-cache-v33"
+    const val ONE_DAY_CACHE: String = "one-day-cache-v33"
+    const val ONE_HOUR_CACHE: String = "one-hour-cache-v33"
+    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v33"
+    const val USER_SESSION_CACHE: String = "user-session-cache-v33"
+    const val USER_SESSION_ID_CACHE: String = "user-session-id-cache-v33"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
   }
 }
