@@ -21,9 +21,9 @@ class RedisConfiguration {
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(6))
     cacheConfigurations[SUMMARY_CACHE_10] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10))
     cacheConfigurations[TRANSACTION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
-    cacheConfigurations[USER_SESSION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+    cacheConfigurations[USER_SESSION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(7))
     cacheConfigurations[USER_SESSION_ID_CACHE] =
-      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(7))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager.builder(connectionFactory)
       .cacheDefaults(defaultConfig)
