@@ -10,6 +10,9 @@ import ee.tenman.portfolio.service.JobExecutionService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.time.Clock
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Component
 class InstrumentDataRetrievalJob(
@@ -18,7 +21,8 @@ class InstrumentDataRetrievalJob(
   private val dailyPriceService: DailyPriceService,
   private val transactionRunner: TransactionRunner,
   private val jobExecutionService: JobExecutionService,
-  private val binanceService: BinanceService
+  private val binanceService: BinanceService,
+  private val clock: Clock
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -61,6 +65,17 @@ class InstrumentDataRetrievalJob(
         log.info("Successfully retrieved and processed data for ${instrument.symbol}")
       } catch (e: Exception) {
         log.error("Error retrieving data for instrument ${instrument.symbol}", e)
+      } finally {
+        val currentDate = LocalDate.now(clock)
+        val currentInstant = currentDate.atStartOfDay(clock.zone).toInstant()
+        val closePrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)?.closePrice
+        if (instrument.currentPrice == null) {
+          instrument.currentPrice = closePrice
+        }
+        if (instrument.updatedAt.isBefore(currentInstant.minus(1, ChronoUnit.DAYS))) {
+          instrument.currentPrice = closePrice
+        }
+        instrumentService.saveInstrument(instrument)
       }
     }
 
