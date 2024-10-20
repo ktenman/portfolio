@@ -20,7 +20,6 @@
         <thead>
           <tr>
             <th>Instrument</th>
-            <th>Type</th>
             <th class="d-none d-md-table-cell">Quantity</th>
             <th class="d-none d-md-table-cell">Price</th>
             <th>Amount</th>
@@ -31,10 +30,9 @@
         <tbody>
           <tr v-for="transaction in transactions" :key="transaction.id">
             <td>{{ getInstrumentSymbol(transaction.instrumentId) }}</td>
-            <td>{{ transaction.transactionType }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.quantity) }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.price) }}</td>
-            <td>{{ formatNumber(transaction.quantity * transaction.price) }}</td>
+            <td :class="amountClass(transaction)">{{ formattedAmount(transaction) }}</td>
             <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
@@ -308,7 +306,29 @@ const getInstrumentSymbol = (instrumentId: number | undefined) => {
 
 const formatNumber = (value: number | undefined): string => {
   if (value === undefined) return ''
-  return value.toFixed(2)
+
+  if (value < 1 && value > 0) {
+    return value.toExponential(3).replace('e-', ' * 10^-')
+  }
+
+  const [integerPart, decimalPart] = value.toString().split('.')
+  const integerDigits = integerPart.length
+
+  if (integerDigits === 1) {
+    return value.toFixed(3)
+  } else {
+    return value.toFixed(2)
+  }
+}
+
+const formattedAmount = (transaction: PortfolioTransaction): string => {
+  const amount = transaction.quantity * transaction.price
+  const formattedAmount = amount.toFixed(2)
+  return transaction.transactionType === 'BUY' ? `+${formattedAmount}` : `-${formattedAmount}`
+}
+
+const amountClass = (transaction: PortfolioTransaction): string => {
+  return transaction.transactionType === 'BUY' ? 'text-success' : 'text-danger'
 }
 
 const formatDate = (date: string): string => {
