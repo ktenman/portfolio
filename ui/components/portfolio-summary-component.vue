@@ -17,7 +17,7 @@
         No portfolio summary data found.
       </div>
       <div v-else>
-        <div class="mb-3 chart-container">
+        <div class="mb-3 chart-container" v-if="chartData">
           <Line :data="chartData" :options="chartOptions" />
         </div>
 
@@ -69,6 +69,7 @@ import {
   PointElement,
   Title,
   Tooltip,
+  ChartOptions,
 } from 'chart.js'
 import { SummaryService } from '../services/summary-service.ts'
 
@@ -92,10 +93,8 @@ async function fetchSummaries() {
     summaryData.value = [...summaryData.value, ...response.content]
     currentPage.value++
     hasMoreData.value = currentPage.value < response.totalPages
-    // Sort the data chronologically after fetching
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (err) {
-    console.error('Error fetching summaries:', err)
     error.value = 'Failed to fetch summary data. Please try again later.'
   } finally {
     isFetching.value = false
@@ -109,15 +108,12 @@ const handleScroll = async () => {
 }
 
 onMounted(async () => {
-  console.log('Component mounted, fetching summaries...')
   try {
     await fetchSummaries()
     const currentSummary = await summaryService.fetchCurrentSummary()
     summaryData.value = [...summaryData.value, currentSummary]
-    // Sort the data chronologically after adding current summary
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (err) {
-    console.error('Error fetching portfolio summary:', err)
     error.value = 'Failed to load initial data. Please refresh the page.'
   } finally {
     isLoading.value = false
@@ -151,7 +147,6 @@ const modifiedAsap = (data: number[], maxPoints: number): number[] => {
 
 const processedChartData = computed(() => {
   if (summaryData.value.length === 0) return null
-  // Use the chronologically sorted data (oldest to newest)
   const labels = summaryData.value.map(item => formatDate(item.date))
   const totalValues = summaryData.value.map(item => item.totalValue)
   const profitValues = summaryData.value.map(item => item.totalProfit)
@@ -205,9 +200,9 @@ const chartData = computed(() => {
   }
 })
 
-const chartOptions = {
+const chartOptions: ChartOptions<'line'> = {
   responsive: true,
-  animation: false,
+  animation: false, // Changed from boolean to false
   interaction: {
     mode: 'index',
     intersect: false,
