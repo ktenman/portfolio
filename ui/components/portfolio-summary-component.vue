@@ -8,36 +8,48 @@
       <span class="visually-hidden">Loading...</span>
     </div>
 
+    <div v-else-if="error" class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
+
     <div v-else>
       <div v-if="summaryData.length === 0" class="alert alert-info" role="alert">
         No portfolio summary data found.
       </div>
       <div v-else>
         <div class="mb-3 chart-container">
-          <Line v-if="chartData" :data="chartData" :options="chartOptions as any" />
+          <Line :data="chartData" :options="chartOptions" />
         </div>
 
         <div class="table-responsive">
-          <table class="table table-striped table-hover">
+          <table class="table table-striped">
             <thead>
-              <tr>
-                <th>Date</th>
-                <th>Total</th>
-                <th>Profit</th>
-                <th>XIRR</th>
-                <th>Per Month</th>
-              </tr>
+            <tr>
+              <th>Date</th>
+              <th>Total Value</th>
+              <th>XIRR Annual Return</th>
+              <th>Total Profit</th>
+              <th>Earnings Per Day</th>
+              <th>Earnings Per Month</th>
+            </tr>
             </thead>
             <tbody>
-              <tr v-for="summary in reversedSummaryData" :key="summary.date">
-                <td>{{ formatDate(summary.date) }}</td>
-                <td>{{ formatCurrency(summary.totalValue) }}</td>
-                <td>{{ formatCurrency(summary.totalProfit) }}</td>
-                <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-                <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
-              </tr>
+            <tr v-for="summary in reversedSummaryData" :key="summary.date">
+              <td>{{ formatDate(summary.date) }}</td>
+              <td>{{ formatCurrency(summary.totalValue) }}</td>
+              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
+              <td>{{ formatCurrency(summary.totalProfit) }}</td>
+              <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
+              <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
+            </tr>
             </tbody>
           </table>
+        </div>
+
+        <div v-if="isFetching" class="text-center mt-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading more data...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -45,7 +57,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
 import { Line } from 'vue-chartjs'
 import {
@@ -62,31 +74,59 @@ import { SummaryService } from '../services/summary-service.ts'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
-const summaryData = shallowRef<PortfolioSummary[]>([])
+const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
+const isFetching = ref(false)
+const currentPage = ref(0)
+const pageSize = 60
+const hasMoreData = ref(true)
+const error = ref<string | null>(null)
 const summaryService = new SummaryService()
 
-// Modified ASAP algorithm implementation
-function modifiedAsap(timeSeries: number[], maxPoints: number): number[] {
-  const n = timeSeries.length
-  if (n <= maxPoints) return Array.from(Array(n).keys()) // Return all indices if series is already short enough
+async function fetchSummaries() {
+  if (isFetching.value || !hasMoreData.value) return
+  isFetching.value = true
+  error.value = null
+  try {
+    const response = await summaryService.fetchHistoricalSummary(currentPage.value, pageSize)
+    summaryData.value = [...summaryData.value, ...response.content]
+    currentPage.value++
+    hasMoreData.value = currentPage.value < response.totalPages
+    // Sort the data chronologically after fetching
+    summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  } catch (err) {
+    console.error('Error fetching summaries:', err)
+    error.value = 'Failed to fetch summary data. Please try again later.'
+  } finally {
+    isFetching.value = false
+  }
+}
 
-  const step = Math.ceil(n / maxPoints)
-  const baseIndices = Array.from(Array(Math.floor(n / step)).keys()).map(i => i * step)
-
-  // Always include the first and last points
-  return Array.from(new Set([0, ...baseIndices, n - 1])).sort((a, b) => a - b)
+const handleScroll = async () => {
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+    await fetchSummaries()
+  }
 }
 
 onMounted(async () => {
+  console.log('Component mounted, fetching summaries...')
   try {
-    summaryData.value = await summaryService.fetchAllSummaries()
+    await fetchSummaries()
+    const currentSummary = await summaryService.fetchCurrentSummary()
+    summaryData.value = [...summaryData.value, currentSummary]
+    // Sort the data chronologically after adding current summary
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  } catch (error) {
-    console.error('Error fetching portfolio summary:', error)
+  } catch (err) {
+    console.error('Error fetching portfolio summary:', err)
+    error.value = 'Failed to load initial data. Please refresh the page.'
   } finally {
     isLoading.value = false
   }
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 
 const reversedSummaryData = computed(() => {
@@ -104,16 +144,21 @@ const formatDate = (date: string): string => {
 const formatCurrency = (value: number) => `€${value.toFixed(2)}`
 const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
+const modifiedAsap = (data: number[], maxPoints: number): number[] => {
+  const step = Math.ceil(data.length / maxPoints)
+  return Array.from({ length: maxPoints }, (_, i) => i * step).filter(i => i < data.length)
+}
+
 const processedChartData = computed(() => {
   if (summaryData.value.length === 0) return null
+  // Use the chronologically sorted data (oldest to newest)
   const labels = summaryData.value.map(item => formatDate(item.date))
   const totalValues = summaryData.value.map(item => item.totalValue)
   const profitValues = summaryData.value.map(item => item.totalProfit)
   const xirrValues = summaryData.value.map(item => item.xirrAnnualReturn * 100)
   const earningsValues = summaryData.value.map(item => item.earningsPerMonth)
 
-  // Apply modified ASAP algorithm to each series
-  const maxPoints = Math.min(31, labels.length) // Adjust this value to control the maximum number of points
+  const maxPoints = Math.min(31, labels.length)
   const indices = modifiedAsap(totalValues, maxPoints)
 
   return {
@@ -159,11 +204,12 @@ const chartData = computed(() => {
     ],
   }
 })
+
 const chartOptions = {
   responsive: true,
   animation: false,
   interaction: {
-    mode: 'index' as const,
+    mode: 'index',
     intersect: false,
   },
   scales: {
@@ -178,7 +224,7 @@ const chartOptions = {
       position: 'left' as const,
       title: {
         display: true,
-        text: 'Amount ($)',
+        text: 'Amount (€)',
       },
       ticks: {
         maxTicksLimit: 8,
@@ -212,8 +258,7 @@ const chartOptions = {
 
 @media (min-width: 1000px) {
   .chart-container {
-    height: 50vh;
-    margin: 0 auto;
+    height: 400px;
   }
 }
 </style>
