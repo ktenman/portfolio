@@ -2,8 +2,10 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.service.PortfolioSummaryService
+import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -16,21 +18,22 @@ class PortfolioSummaryController(
 
   @GetMapping("/historical")
   @Loggable
-  fun getHistoricalPortfolioSummary(): List<PortfolioSummaryDto> {
-    val historicalSummaries = portfolioSummaryService.getAllDailySummaries()
+  fun getHistoricalPortfolioSummary(
+    @RequestParam page: Int,
+    @RequestParam size: Int
+  ): Page<PortfolioSummaryDto> {
+    val historicalSummaries = portfolioSummaryService.getAllDailySummaries(page, size)
 
-    return historicalSummaries
-      .sortedByDescending { it.entryDate }
-      .map { summary ->
-        PortfolioSummaryDto(
-          date = summary.entryDate,
-          totalValue = summary.totalValue,
-          xirrAnnualReturn = summary.xirrAnnualReturn,
-          totalProfit = summary.totalProfit,
-          earningsPerDay = summary.earningsPerDay,
-          earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25 / 12))
-        )
-      }
+    return historicalSummaries.map { summary ->
+      PortfolioSummaryDto(
+        date = summary.entryDate,
+        totalValue = summary.totalValue,
+        xirrAnnualReturn = summary.xirrAnnualReturn,
+        totalProfit = summary.totalProfit,
+        earningsPerDay = summary.earningsPerDay,
+        earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25 / 12))
+      )
+    }
   }
 
   @GetMapping("/current")
