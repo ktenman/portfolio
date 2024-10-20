@@ -311,7 +311,7 @@ const formatNumber = (value: number | undefined): string => {
     return value.toExponential(3).replace('e-', ' * 10^-')
   }
 
-  const [integerPart, decimalPart] = value.toString().split('.')
+  const [integerPart] = value.toString().split('.')
   const integerDigits = integerPart.length
 
   if (integerDigits === 1) {
