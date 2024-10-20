@@ -18,30 +18,30 @@
       </div>
       <div v-else>
         <div class="mb-3 chart-container" v-if="chartData">
-          <Line :data="chartData" :options="chartOptions" />
+          <Line :data="chartData" :options="chartOptions"/>
         </div>
 
         <div class="table-responsive">
           <table class="table table-striped">
             <thead>
-              <tr>
-                <th>Date</th>
-                <th>XIRR Annual Return</th>
-                <th>Earnings Per Day</th>
-                <th>Earnings Per Month</th>
-                <th>Total Profit</th>
-                <th>Total Value</th>
-              </tr>
+            <tr>
+              <th>Date</th>
+              <th>XIRR Annual Return</th>
+              <th class="hide-on-mobile">Earnings Per Day</th>
+              <th>Earnings Per Month</th>
+              <th>Total Profit</th>
+              <th>Total Value</th>
+            </tr>
             </thead>
             <tbody>
-              <tr v-for="summary in reversedSummaryData" :key="summary.date">
-                <td>{{ formatDate(summary.date) }}</td>
-                <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-                <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
-                <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
-                <td>{{ formatCurrency(summary.totalProfit) }}</td>
-                <td>{{ formatCurrency(summary.totalValue) }}</td>
-              </tr>
+            <tr v-for="summary in reversedSummaryData" :key="summary.date">
+              <td>{{ formatDate(summary.date) }}</td>
+              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
+              <td class="hide-on-mobile">{{ formatCurrency(summary.earningsPerDay) }}</td>
+              <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
+              <td>{{ formatCurrency(summary.totalProfit) }}</td>
+              <td>{{ formatCurrency(summary.totalValue) }}</td>
+            </tr>
             </tbody>
           </table>
         </div>
@@ -57,9 +57,9 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, onUnmounted } from 'vue'
-import { PortfolioSummary } from '../models/portfolio-summary'
-import { Line } from 'vue-chartjs'
+import {computed, onMounted, ref, onUnmounted} from 'vue'
+import {PortfolioSummary} from '../models/portfolio-summary'
+import {Line} from 'vue-chartjs'
 import {
   CategoryScale,
   Chart as ChartJS,
@@ -71,7 +71,7 @@ import {
   Tooltip,
   ChartOptions,
 } from 'chart.js'
-import { SummaryService } from '../services/summary-service.ts'
+import {SummaryService} from '../services/summary-service.ts'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
@@ -142,7 +142,7 @@ const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
 const modifiedAsap = (data: number[], maxPoints: number): number[] => {
   const step = Math.ceil(data.length / maxPoints)
-  return Array.from({ length: maxPoints }, (_, i) => i * step).filter(i => i < data.length)
+  return Array.from({length: maxPoints}, (_, i) => i * step).filter(i => i < data.length)
 }
 
 const processedChartData = computed(() => {
@@ -153,7 +153,7 @@ const processedChartData = computed(() => {
   const xirrValues = summaryData.value.map(item => item.xirrAnnualReturn * 100)
   const earningsValues = summaryData.value.map(item => item.earningsPerMonth)
 
-  const maxPoints = Math.min(31, labels.length)
+  const maxPoints = Math.min( window.innerWidth >= 1000 ? 31 : 15, labels.length)
   const indices = modifiedAsap(totalValues, maxPoints)
 
   return {
@@ -248,6 +248,10 @@ const chartOptions: ChartOptions<'line'> = {
 @media (max-width: 767px) {
   .table {
     font-size: 12px;
+  }
+
+  .hide-on-mobile {
+    display: none;
   }
 }
 
