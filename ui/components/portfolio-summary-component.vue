@@ -79,7 +79,7 @@ const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
 const isFetching = ref(false)
 const currentPage = ref(0)
-const pageSize = 60
+const pageSize = 90
 const hasMoreData = ref(true)
 const error = ref<string | null>(null)
 const summaryService = new SummaryService()
@@ -102,7 +102,7 @@ async function fetchSummaries() {
     const xirrValues = summaryData.value.map(item => item.xirrAnnualReturn * 100)
     const earningsValues = summaryData.value.map(item => item.earningsPerMonth)
 
-    const maxPoints = Math.min(window.innerWidth >= 1000 ? 31 : 15, labels.length)
+    const maxPoints = Math.min(window.innerWidth >= 1000 ? 30 : 15, labels.length)
     const indices = modifiedAsap(totalValues, maxPoints)
 
     const processedChartData = {
