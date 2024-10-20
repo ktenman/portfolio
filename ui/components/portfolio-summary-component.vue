@@ -26,21 +26,21 @@
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Total Value</th>
                 <th>XIRR Annual Return</th>
-                <th>Total Profit</th>
                 <th>Earnings Per Day</th>
                 <th>Earnings Per Month</th>
+                <th>Total Profit</th>
+                <th>Total Value</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="summary in reversedSummaryData" :key="summary.date">
                 <td>{{ formatDate(summary.date) }}</td>
-                <td>{{ formatCurrency(summary.totalValue) }}</td>
                 <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-                <td>{{ formatCurrency(summary.totalProfit) }}</td>
                 <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
                 <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
+                <td>{{ formatCurrency(summary.totalProfit) }}</td>
+                <td>{{ formatCurrency(summary.totalValue) }}</td>
               </tr>
             </tbody>
           </table>
