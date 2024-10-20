@@ -24,24 +24,24 @@
         <div class="table-responsive">
           <table class="table table-striped">
             <thead>
-            <tr>
-              <th>Date</th>
-              <th>Total Value</th>
-              <th>XIRR Annual Return</th>
-              <th>Total Profit</th>
-              <th>Earnings Per Day</th>
-              <th>Earnings Per Month</th>
-            </tr>
+              <tr>
+                <th>Date</th>
+                <th>Total Value</th>
+                <th>XIRR Annual Return</th>
+                <th>Total Profit</th>
+                <th>Earnings Per Day</th>
+                <th>Earnings Per Month</th>
+              </tr>
             </thead>
             <tbody>
-            <tr v-for="summary in reversedSummaryData" :key="summary.date">
-              <td>{{ formatDate(summary.date) }}</td>
-              <td>{{ formatCurrency(summary.totalValue) }}</td>
-              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-              <td>{{ formatCurrency(summary.totalProfit) }}</td>
-              <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
-              <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
-            </tr>
+              <tr v-for="summary in reversedSummaryData" :key="summary.date">
+                <td>{{ formatDate(summary.date) }}</td>
+                <td>{{ formatCurrency(summary.totalValue) }}</td>
+                <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
+                <td>{{ formatCurrency(summary.totalProfit) }}</td>
+                <td>{{ formatCurrency(summary.earningsPerDay) }}</td>
+                <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -103,7 +103,7 @@ async function fetchSummaries() {
 }
 
 const handleScroll = async () => {
-  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
     await fetchSummaries()
   }
 }
