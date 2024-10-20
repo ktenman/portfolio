@@ -28,8 +28,8 @@ class InstrumentService:
       name=inst['name'],
       symbol=inst['symbol'],
       id=inst['id'],
-      category=inst.get('category'),
-      base_currency=inst.get('baseCurrency'),
+      category=inst['category'],
+      base_currency=inst['baseCurrency'],
       current_price=Decimal(inst['currentPrice']) if inst['currentPrice'] is not None else None,
       provider_name=inst.get('providerName') if inst['providerName'] is not None else None
     )
