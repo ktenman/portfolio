@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
+import jakarta.persistence.Version
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import java.io.Serializable
@@ -23,4 +24,8 @@ abstract class BaseEntity : Serializable {
   @UpdateTimestamp
   @Column(nullable = false)
   lateinit var updatedAt: Instant
+
+  @Version
+  @Column(nullable = false)
+  var version: Long = 0
 }
