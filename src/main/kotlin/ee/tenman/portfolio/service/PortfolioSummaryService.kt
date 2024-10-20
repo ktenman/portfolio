@@ -12,6 +12,9 @@ import ee.tenman.portfolio.service.xirr.XirrService
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -32,6 +35,13 @@ class PortfolioSummaryService(
   @Transactional(readOnly = true)
   @Cacheable(value = [SUMMARY_CACHE], key = "'summaries'", unless = "#result.isEmpty()")
   fun getAllDailySummaries(): List<PortfolioDailySummary> = portfolioDailySummaryRepository.findAll()
+
+  @Transactional(readOnly = true)
+  @Cacheable(value = [SUMMARY_CACHE], key = "'summaries-page-' + #page + '-size-' + #size", unless = "#result.isEmpty()")
+  fun getAllDailySummaries(page: Int, size: Int): Page<PortfolioDailySummary> {
+    val pageable = PageRequest.of(page, size, Sort.by("entryDate").descending())
+    return portfolioDailySummaryRepository.findAll(pageable)
+  }
 
   @Transactional(readOnly = true)
   @Cacheable(value = [SUMMARY_CACHE_10], key = "'currentDaySummary'")
