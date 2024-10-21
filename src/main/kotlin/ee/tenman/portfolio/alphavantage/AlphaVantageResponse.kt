@@ -3,7 +3,6 @@ package ee.tenman.portfolio.alphavantage
 import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.common.DayData
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.util.*
 
 data class AlphaVantageResponse(

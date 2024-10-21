@@ -1,6 +1,7 @@
 import logging
 import requests
 from decimal import Decimal
+
 from models import Instrument
 
 logger = logging.getLogger(__name__)

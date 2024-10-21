@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_HOUR_CACHE
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
 import kotlinx.coroutines.CoroutineDispatcher
