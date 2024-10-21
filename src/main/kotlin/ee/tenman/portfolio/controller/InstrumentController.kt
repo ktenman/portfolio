@@ -3,7 +3,6 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.InstrumentService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
