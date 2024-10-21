@@ -25,8 +25,7 @@ import java.time.LocalDate
 @RequestMapping("/api/instruments")
 @Validated
 class InstrumentController(
-  private val instrumentService: InstrumentService,
-  private val dailyPriceService: DailyPriceService
+  private val instrumentService: InstrumentService
 ) {
 
   @PostMapping
@@ -64,14 +63,7 @@ class InstrumentController(
 
   @GetMapping("/latest-prices")
   @Loggable
-  fun getLatestPrices(): Map<String, BigDecimal> {
-    val instruments = instrumentService.getAllInstruments()
-    return instruments.mapNotNull { instrument ->
-      dailyPriceService.findLastDailyPrice(instrument, LocalDate.now())?.let { dailyPrice ->
-        instrument.symbol to dailyPrice.closePrice
-      }
-    }.toMap()
-  }
+  fun getLatestPrices(): Map<String, BigDecimal> = instrumentService.getLatestPrices()
 
   data class InstrumentPriceDto(
     val instrumentId: Long,
