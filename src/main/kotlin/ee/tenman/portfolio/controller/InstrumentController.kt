@@ -3,6 +3,7 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.InstrumentService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -18,12 +19,14 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/instruments")
 @Validated
 class InstrumentController(
   private val instrumentService: InstrumentService,
+  private val dailyPriceService: DailyPriceService
 ) {
 
   @PostMapping
@@ -58,6 +61,24 @@ class InstrumentController(
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   fun deleteInstrument(@PathVariable id: Long) = instrumentService.deleteInstrument(id)
+
+  @GetMapping("/latest-prices")
+  @Loggable
+  fun getLatestPrices(): Map<String, BigDecimal> {
+    val instruments = instrumentService.getAllInstruments()
+    return instruments.mapNotNull { instrument ->
+      dailyPriceService.findLastDailyPrice(instrument, LocalDate.now())?.let { dailyPrice ->
+        instrument.symbol to dailyPrice.closePrice
+      }
+    }.toMap()
+  }
+
+  data class InstrumentPriceDto(
+    val instrumentId: Long,
+    val symbol: String,
+    val latestPrice: BigDecimal,
+    val date: LocalDate
+  )
 
   data class InstrumentDto(
     val id: Long? = null,

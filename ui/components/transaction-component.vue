@@ -23,6 +23,7 @@
             <th class="d-none d-md-table-cell">Quantity</th>
             <th class="d-none d-md-table-cell">Price</th>
             <th>Amount</th>
+            <th>Earnings</th>
             <th>Date</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -33,6 +34,7 @@
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.quantity) }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.price) }}</td>
             <td :class="amountClass(transaction)">{{ formattedAmount(transaction) }}</td>
+            <td :class="earningsClass(transaction)">{{ formattedEarnings(transaction) }}</td>
             <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
@@ -183,6 +185,7 @@ const transactionService = new TransactionService()
 const instrumentService = new InstrumentService()
 const transactions = ref<PortfolioTransaction[]>([])
 const instruments = ref<Instrument[]>([])
+const latestPrices = ref<Record<string, number>>({})
 const currentTransaction = ref<Partial<PortfolioTransaction>>({
   transactionDate: new Date().toISOString().split('T')[0],
 })
@@ -193,6 +196,7 @@ let transactionModal: Modal | null = null
 onMounted(() => {
   fetchTransactions()
   fetchInstruments()
+  fetchLatestPrices()
   transactionModal = new Modal(document.getElementById('transactionModal')!)
 })
 
@@ -252,6 +256,15 @@ const fetchInstruments = async () => {
   } catch (error) {
     alertType.value = AlertType.ERROR
     alertMessage.value = 'Failed to load instruments. Please try again.'
+  }
+}
+
+const fetchLatestPrices = async () => {
+  try {
+    latestPrices.value = await transactionService.getLatestPrices()
+  } catch (error) {
+    alertType.value = AlertType.ERROR
+    alertMessage.value = 'Failed to load latest prices. Please try again.'
   }
 }
 
@@ -331,6 +344,22 @@ const amountClass = (transaction: PortfolioTransaction): string => {
   return transaction.transactionType === 'BUY' ? 'text-success' : 'text-danger'
 }
 
+const formattedEarnings = (transaction: PortfolioTransaction): string => {
+  const symbol = getInstrumentSymbol(transaction.instrumentId)
+  const latestPrice = latestPrices.value[symbol] || 0
+  const earnings = (latestPrice - transaction.price) * transaction.quantity
+  const absEarnings = Math.abs(earnings)
+  const formattedAbsEarnings = absEarnings.toFixed(2)
+  return earnings >= 0 ? `+${formattedAbsEarnings}` : `-${formattedAbsEarnings}`
+}
+
+const earningsClass = (transaction: PortfolioTransaction): string => {
+  const symbol = getInstrumentSymbol(transaction.instrumentId)
+  const latestPrice = latestPrices.value[symbol] || 0
+  const earnings = (latestPrice - transaction.price) * transaction.quantity
+  return earnings >= 0 ? 'text-success' : 'text-danger'
+}
+
 const formatDate = (date: string): string => {
   const dateObj = new Date(date)
 
@@ -364,3 +393,4 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
   }
 }
 </style>
+np

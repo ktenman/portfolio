@@ -96,5 +96,4 @@ class CalculatorService(
     return xirrs
   }
 
-
 }
