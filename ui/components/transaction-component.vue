@@ -393,4 +393,3 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
   }
 }
 </style>
-np
