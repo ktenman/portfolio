@@ -8,9 +8,14 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.time.LocalDate
 
 @Service
-class InstrumentService(private val instrumentRepository: InstrumentRepository) {
+class InstrumentService(
+  private val instrumentRepository: InstrumentRepository,
+  private val dailyPriceService: DailyPriceService
+) {
 
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
@@ -40,6 +45,16 @@ class InstrumentService(private val instrumentRepository: InstrumentRepository) 
   @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'", unless = "#result.isEmpty()")
   fun getAllInstruments(): List<Instrument> {
     return instrumentRepository.findAll()
+  }
+
+  @Cacheable(value = [INSTRUMENT_CACHE], key = "'getLatestPrices'", unless = "#result.isEmpty()")
+  fun getLatestPrices(): Map<String, BigDecimal>  {
+    val instruments = instrumentRepository.findAll()
+    return instruments.mapNotNull { instrument ->
+      dailyPriceService.findLastDailyPrice(instrument, LocalDate.now())?.let { dailyPrice ->
+        instrument.symbol to dailyPrice.closePrice
+      }
+    }.toMap()
   }
 
   fun findInstrument(id: Long): Instrument {
