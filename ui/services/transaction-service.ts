@@ -30,4 +30,9 @@ export class TransactionService {
   async deleteTransaction(id: number): Promise<void> {
     await ApiClient.delete(`${this.baseUrl}/${id}`)
   }
+
+  @Cacheable(CACHE_KEYS.PRICES)
+  async getLatestPrices(): Promise<Record<string, number>> {
+    return await ApiClient.get<Record<string, number>>('/api/instruments/latest-prices')
+  }
 }
