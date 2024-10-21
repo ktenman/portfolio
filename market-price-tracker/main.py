@@ -4,8 +4,9 @@ import time
 from flask import Flask, jsonify
 from threading import Thread, Event
 from werkzeug.middleware.proxy_fix import ProxyFix
-from scheduler import scheduled, scheduler
+
 from price_fetcher import PriceFetcher
+from scheduler import scheduled, scheduler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,

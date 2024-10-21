@@ -1,15 +1,16 @@
 import logging
 import os
-from decimal import Decimal
 from contextlib import contextmanager
+from decimal import Decimal
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchDriverException
+from selenium.webdriver.support.ui import WebDriverWait
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
 from services import InstrumentService
 
 logger = logging.getLogger(__name__)

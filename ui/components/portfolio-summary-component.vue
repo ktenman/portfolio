@@ -57,19 +57,19 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
 import { Line } from 'vue-chartjs'
 import {
   CategoryScale,
   Chart as ChartJS,
+  ChartOptions,
   Legend,
   LinearScale,
   LineElement,
   PointElement,
   Title,
   Tooltip,
-  ChartOptions,
 } from 'chart.js'
 import { SummaryService } from '../services/summary-service.ts'
 

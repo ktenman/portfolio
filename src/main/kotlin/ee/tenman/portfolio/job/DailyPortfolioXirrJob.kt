@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
