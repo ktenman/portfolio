@@ -52,8 +52,7 @@ class InstrumentService(
   fun getLatestPrices(): Map<String, BigDecimal> {
     val instruments = instrumentRepository.findAll()
     return instruments.map { instrument ->
-      val dailyPrice = dailyPriceService.findLastDailyPrice(instrument, LocalDate.now())
-      Pair(instrument.symbol, instrument.currentPrice ?: (dailyPrice?.closePrice ?: BigDecimal.ZERO))
+      Pair(instrument.symbol, instrument.currentPrice ?: BigDecimal.ZERO)
     }.toMap()
   }
 
