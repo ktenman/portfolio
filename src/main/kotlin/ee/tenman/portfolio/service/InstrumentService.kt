@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE_10
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
 import org.springframework.cache.annotation.CacheEvict
@@ -47,7 +48,7 @@ class InstrumentService(
     return instrumentRepository.findAll()
   }
 
-  @Cacheable(value = [INSTRUMENT_CACHE], key = "'getLatestPrices'", unless = "#result.isEmpty()")
+  @Cacheable(value = [INSTRUMENT_CACHE_10], key = "'getLatestPrices'", unless = "#result.isEmpty()")
   fun getLatestPrices(): Map<String, BigDecimal>  {
     val instruments = instrumentRepository.findAll()
     return instruments.mapNotNull { instrument ->
