@@ -81,6 +81,9 @@ def run_scheduler():
 
 
 if __name__ == '__main__':
+  # Perform the first fetch on startup
+  fetch_current_prices()
+
   # Start Flask app in a separate thread
   flask_thread = Thread(target=run_flask_app)
   flask_thread.start()
