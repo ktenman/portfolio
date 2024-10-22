@@ -17,7 +17,7 @@ class RedisConfiguration {
     cacheConfigurations[ONE_DAY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[ONE_HOUR_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(366))
-    cacheConfigurations[INSTRUMENT_CACHE_10] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10))
+    cacheConfigurations[INSTRUMENT_CACHE_5] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5))
     cacheConfigurations[THIRTY_MINUTES] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30))
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(6))
     cacheConfigurations[SUMMARY_CACHE_10] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10))
@@ -33,16 +33,16 @@ class RedisConfiguration {
   }
 
   companion object {
-    const val INSTRUMENT_CACHE = "instrument-cache-v34"
-    const val INSTRUMENT_CACHE_10 = "instrument-cache-10-v34"
-    const val SUMMARY_CACHE = "summary-cache-v34"
-    const val SUMMARY_CACHE_10 = "summary-cache-10-v34"
-    const val TRANSACTION_CACHE = "transaction-cache-v34"
-    const val ONE_DAY_CACHE: String = "one-day-cache-v34"
-    const val ONE_HOUR_CACHE: String = "one-hour-cache-v34"
-    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v34"
-    const val USER_SESSION_CACHE: String = "user-session-cache-v34"
-    const val USER_SESSION_ID_CACHE: String = "user-session-id-cache-v34"
+    const val INSTRUMENT_CACHE = "instrument-cache-v1"
+    const val INSTRUMENT_CACHE_5 = "instrument-cache-5-v1"
+    const val SUMMARY_CACHE = "summary-cache-v1"
+    const val SUMMARY_CACHE_10 = "summary-cache-10-v1"
+    const val TRANSACTION_CACHE = "transaction-cache-v1"
+    const val ONE_DAY_CACHE: String = "one-day-cache-v1"
+    const val ONE_HOUR_CACHE: String = "one-hour-cache-v1"
+    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v1"
+    const val USER_SESSION_CACHE: String = "user-session-cache-v1"
+    const val USER_SESSION_ID_CACHE: String = "user-session-id-cache-v1"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
   }
 }
