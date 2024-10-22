@@ -49,12 +49,11 @@ class InstrumentService(
   }
 
   @Cacheable(value = [INSTRUMENT_CACHE_5], key = "'getLatestPrices'", unless = "#result.isEmpty()")
-  fun getLatestPrices(): Map<String, BigDecimal>  {
+  fun getLatestPrices(): Map<String, BigDecimal> {
     val instruments = instrumentRepository.findAll()
-    return instruments.mapNotNull { instrument ->
-      dailyPriceService.findLastDailyPrice(instrument, LocalDate.now())?.let { dailyPrice ->
-        instrument.symbol to dailyPrice.closePrice
-      }
+    return instruments.map { instrument ->
+      val dailyPrice = dailyPriceService.findLastDailyPrice(instrument, LocalDate.now())
+      Pair(instrument.symbol, instrument.currentPrice ?: (dailyPrice?.closePrice ?: BigDecimal.ZERO))
     }.toMap()
   }
 
