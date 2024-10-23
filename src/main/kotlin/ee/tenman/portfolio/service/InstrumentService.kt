@@ -48,12 +48,12 @@ class InstrumentService(
     return instrumentRepository.findAll()
   }
 
-  @Cacheable(value = [INSTRUMENT_CACHE_5], key = "'getLatestPrices'", unless = "#result.isEmpty()")
+//  @Cacheable(value = [INSTRUMENT_CACHE_5], key = "'getLatestPrices'", unless = "#result.isEmpty()")
   fun getLatestPrices(): Map<String, BigDecimal> {
     val instruments = instrumentRepository.findAll()
-    return instruments.map { instrument ->
+    return instruments.associate { instrument ->
       Pair(instrument.symbol, instrument.currentPrice ?: BigDecimal.ZERO)
-    }.toMap()
+    }
   }
 
   fun findInstrument(id: Long): Instrument {
