@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Component
 import java.util.*
+import kotlin.compareTo
 
 @Aspect
 @Component
@@ -53,17 +54,25 @@ class LoggingAspect {
 
   @Throws(Throwable::class)
   private fun logEntry(joinPoint: ProceedingJoinPoint) {
-    val argsJson = objectMapper.writeValueAsString(joinPoint.getArgs())
-    log.info("{} entered with arguments: {}", joinPoint.getSignature().toShortString(), argsJson)
+    val argsJson = objectMapper.writeValueAsString(joinPoint.args)
+    log.info("{} entered with arguments: {}", joinPoint.signature.toShortString(), argsJson)
   }
 
   @Throws(Throwable::class)
   private fun logExit(joinPoint: ProceedingJoinPoint, result: Any, startTime: Long) {
     val resultJson = objectMapper.writeValueAsString(result)
+    val maxLength = 200
+    val truncatedResultJson = if (resultJson.length > maxLength) {
+      val start = resultJson.substring(0, maxLength / 2)
+      val end = resultJson.substring(resultJson.length - maxLength / 2)
+      "$start ... $end"
+    } else {
+      resultJson
+    }
     log.info(
       "{} exited with result: {} in {} seconds",
-      joinPoint.getSignature().toShortString(),
-      resultJson,
+      joinPoint.signature.toShortString(),
+      truncatedResultJson,
       TimeUtility.durationInSeconds(startTime)
     )
   }
