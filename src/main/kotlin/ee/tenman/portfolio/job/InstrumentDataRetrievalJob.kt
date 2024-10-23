@@ -72,7 +72,7 @@ class InstrumentDataRetrievalJob(
         if (instrument.currentPrice == null) {
           instrument.currentPrice = closePrice
         }
-        if (instrument.updatedAt.isBefore(currentInstant.minus(1, ChronoUnit.DAYS))) {
+        if (instrument.updatedAt.isBefore(currentInstant.minus(1, ChronoUnit.HOURS))) {
           instrument.currentPrice = closePrice
         }
         instrumentService.saveInstrument(instrument)
