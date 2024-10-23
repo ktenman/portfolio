@@ -67,14 +67,8 @@ class InstrumentDataRetrievalJob(
         log.error("Error retrieving data for instrument ${instrument.symbol}", e)
       } finally {
         val currentDate = LocalDate.now(clock)
-        val currentInstant = currentDate.atStartOfDay(clock.zone).toInstant()
-        val closePrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)?.closePrice
-        if (instrument.currentPrice == null) {
-          instrument.currentPrice = closePrice
-        }
-        if (instrument.updatedAt.isBefore(currentInstant.minus(1, ChronoUnit.HOURS))) {
-          instrument.currentPrice = closePrice
-        }
+        var dailyPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)
+        instrument.currentPrice = dailyPrice?.closePrice
         instrumentService.saveInstrument(instrument)
       }
     }
