@@ -1,10 +1,6 @@
 package ee.tenman.portfolio.job
 
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalTo
-import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.stubFor
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import ee.tenman.portfolio.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.DailyPriceRepository
@@ -20,7 +16,7 @@ import java.math.BigDecimal
 class CurrentPriceRetrievalJobIT {
 
   @Resource
-  private lateinit var instrumentDataRetrievalJob: InstrumentDataRetrievalJob
+  private lateinit var alphaVantageDataRetrievalJob: AlphaVantageDataRetrievalJob
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
@@ -62,8 +58,8 @@ class CurrentPriceRetrievalJobIT {
       instrumentRepository.save(it)
     }
 
-    instrumentDataRetrievalJob.execute()
-    instrumentDataRetrievalJob.execute()
+    alphaVantageDataRetrievalJob.execute()
+    alphaVantageDataRetrievalJob.execute()
 
     assertThat(dailyPriceRepository.findAll()).isNotEmpty.hasSize(100)
       .first().satisfies({
