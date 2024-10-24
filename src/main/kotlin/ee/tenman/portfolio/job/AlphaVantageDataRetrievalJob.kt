@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.alphavantage.AlphaVantageService
-import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.InstrumentService
@@ -12,39 +12,41 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 @Component
-class InstrumentDataRetrievalJob(
+class AlphaVantageDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val alphaVantageService: AlphaVantageService,
   private val dailyPriceService: DailyPriceService,
   private val transactionRunner: TransactionRunner,
   private val jobExecutionService: JobExecutionService,
-  private val binanceService: BinanceService,
   private val clock: Clock
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 0 0/3 * * *")
+  @Scheduled(cron = "0 0 0/3 * * *") // Runs every 3 hours
   fun runJob() {
-    log.info("Running instrument data retrieval job")
+    log.info("Running AlphaVantage data retrieval job")
     jobExecutionService.executeJob(this)
-    log.info("Completed instrument data retrieval job")
+    log.info("Completed AlphaVantage data retrieval job")
   }
 
   override fun execute() {
-    log.info("Starting instrument data retrieval job")
+    log.info("Starting AlphaVantage data retrieval job")
     val instruments = instrumentService.getAllInstruments()
+      .filter { it.providerName == ProviderName.ALPHA_VANTAGE }
 
+    processInstruments(instruments)
+    log.info("Completed AlphaVantage data retrieval job. Processed ${instruments.size} instruments.")
+  }
+
+  override fun getName(): String = "AlphaVantageDataRetrievalJob"
+
+  private fun processInstruments(instruments: List<Instrument>) {
     instruments.forEach { instrument ->
       try {
         log.info("Retrieving data for instrument: ${instrument.symbol}")
-        val dailyData = when (instrument.providerName) {
-          ProviderName.ALPHA_VANTAGE -> alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
-          ProviderName.BINANCE -> binanceService.getDailyPrices(instrument.symbol)
-          else -> throw IllegalArgumentException("Unsupported provider: ${instrument.providerName}")
-        }
+        val dailyData = alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
 
         transactionRunner.runInTransaction {
           dailyData.forEach { (date, data) ->
@@ -62,19 +64,18 @@ class InstrumentDataRetrievalJob(
           }
         }
 
+        updateInstrumentPrice(instrument)
         log.info("Successfully retrieved and processed data for ${instrument.symbol}")
       } catch (e: Exception) {
         log.error("Error retrieving data for instrument ${instrument.symbol}", e)
-      } finally {
-        val currentDate = LocalDate.now(clock)
-        var dailyPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)
-        instrument.currentPrice = dailyPrice?.closePrice
-        instrumentService.saveInstrument(instrument)
       }
     }
-
-    log.info("Completed instrument data retrieval job. Processed ${instruments.size} instruments.")
   }
 
-  override fun getName(): String = "InstrumentDataRetrievalJob"
+  private fun updateInstrumentPrice(instrument: Instrument) {
+    val currentDate = LocalDate.now(clock)
+    val dailyPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)
+    instrument.currentPrice = dailyPrice?.closePrice
+    instrumentService.saveInstrument(instrument)
+  }
 }
