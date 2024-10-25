@@ -1,17 +1,14 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE_5
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
-import ee.tenman.portfolio.service.xirr.XirrService
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.time.LocalDate
 
 @Service
 class InstrumentService(
@@ -65,7 +62,7 @@ class InstrumentService(
     }
   }
 
-  @Cacheable(value = [INSTRUMENT_CACHE_5], key = "'getLatestPrices'", unless = "#result.isEmpty()")
+  @Cacheable(value = [INSTRUMENT_CACHE], key = "'getLatestPrices'", unless = "#result.isEmpty()")
   fun getLatestPrices(): Map<String, BigDecimal> {
     val instruments = instrumentRepository.findAll()
     return instruments.associate { instrument ->
