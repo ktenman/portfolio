@@ -27,5 +27,8 @@ class Instrument(
 
   @Enumerated(EnumType.STRING)
   @Column(name = "provider_name", nullable = true)
-  var providerName: ProviderName = ProviderName.ALPHA_VANTAGE
+  var providerName: ProviderName = ProviderName.ALPHA_VANTAGE,
+
+  @Transient
+  var xirr: Double? = null
 ) : BaseEntity()
