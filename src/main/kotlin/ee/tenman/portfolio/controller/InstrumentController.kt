@@ -81,7 +81,8 @@ class InstrumentController(
     val baseCurrency: String,
     val currentPrice: BigDecimal? = null,
     @field:NotBlank(message = "Provider name must not be blank")
-    val providerName: String
+    val providerName: String,
+    val xirr: Double? = null
   ) {
     fun toEntity() = Instrument(
       symbol = symbol,
@@ -90,7 +91,9 @@ class InstrumentController(
       baseCurrency = baseCurrency,
       currentPrice = currentPrice,
       providerName = ProviderName.valueOf(providerName)
-    )
+    ).apply {
+      xirr = this@InstrumentDto.xirr
+    }
 
     companion object {
       fun fromEntity(instrument: Instrument) = InstrumentDto(
@@ -100,9 +103,9 @@ class InstrumentController(
         category = instrument.category,
         baseCurrency = instrument.baseCurrency,
         currentPrice = instrument.currentPrice,
-        providerName = instrument.providerName.name
+        providerName = instrument.providerName.name,
+        xirr = instrument.xirr
       )
     }
   }
-
 }

@@ -5,4 +5,5 @@ export interface Instrument {
   category: string
   baseCurrency: string
   providerName: 'ALPHA_VANTAGE' | 'BINANCE'
+  xirr: number
 }

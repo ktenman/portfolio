@@ -19,6 +19,7 @@
             <th>Symbol</th>
             <th>Name</th>
             <th>Currency</th>
+            <th>XIRR Annual Return</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -27,6 +28,7 @@
             <td>{{ instrument.symbol }}</td>
             <td>{{ instrument.name }}</td>
             <td>{{ instrument.baseCurrency }}</td>
+            <td>{{ formatPercentage(instrument.xirr) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
                 <font-awesome-icon icon="pencil-alt" />
@@ -182,6 +184,8 @@ const showAddInstrumentModal = () => {
   resetCurrentInstrument()
   instrumentModal?.show()
 }
+
+const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
 const saveInstrument = async () => {
   try {

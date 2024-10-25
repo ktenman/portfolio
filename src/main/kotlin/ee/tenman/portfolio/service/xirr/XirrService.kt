@@ -16,6 +16,55 @@ class XirrService(private val alphaVantageService: AlphaVantageService) {
   private val log = LoggerFactory.getLogger(javaClass)
   private val baseMonthlyInvestment = BigDecimal(3000.00)
 
+  fun calculateInstrumentXirr(instrument: Instrument, transactions: List<PortfolioTransaction>): Double {
+    if (transactions.isEmpty()) return 0.0
+
+    // Convert portfolio transactions to XIRR transactions
+    val xirrTransactions = mutableListOf<Transaction>()
+    var runningQuantity = BigDecimal.ZERO
+
+    // Sort transactions by date
+    val sortedTransactions = transactions.sortedBy { it.transactionDate }
+
+    // Process each transaction
+    sortedTransactions.forEach { transaction ->
+      // Calculate the cash flow (negative for buys, positive for sells)
+      val cashFlow = when (transaction.transactionType) {
+        TransactionType.BUY -> {
+          runningQuantity += transaction.quantity
+          -(transaction.price * transaction.quantity).toDouble()
+        }
+        TransactionType.SELL -> {
+          runningQuantity -= transaction.quantity
+          (transaction.price * transaction.quantity).toDouble()
+        }
+      }
+      xirrTransactions.add(Transaction(cashFlow, transaction.transactionDate))
+    }
+
+    // Add current value as final transaction if we have holdings
+    val currentPrice = instrument.currentPrice
+    if (runningQuantity > BigDecimal.ZERO && currentPrice != null) {
+      val currentValue = (runningQuantity * currentPrice).toDouble()
+      xirrTransactions.add(Transaction(currentValue, LocalDate.now()))
+    }
+
+    // Need at least two cash flows to calculate XIRR
+    if (xirrTransactions.size < 2) {
+      log.debug("Not enough transactions to calculate XIRR for ${instrument.symbol}")
+      return 0.0
+    }
+
+    return try {
+      val xirr = Xirr(xirrTransactions).calculate()
+      log.info("${instrument.symbol} XIRR: ${String.format("%,.3f%%", xirr * 100)}")
+      xirr
+    } catch (e: Exception) {
+      log.error("Failed to calculate XIRR for ${instrument.symbol}", e)
+      0.0
+    }
+  }
+
   fun calculateStockXirr(ticker: String): Double = runCatching {
     val historicalData = alphaVantageService.getMonthlyTimeSeries(ticker)
       .mapValues { it.value.close }
