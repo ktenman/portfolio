@@ -15,33 +15,35 @@
     <div v-else-if="instruments.length > 0" class="table-responsive">
       <table class="table table-striped table-hover">
         <thead>
-          <tr>
-            <th>Symbol</th>
-            <th>Name</th>
-            <th>Currency</th>
-            <th>XIRR Annual Return</th>
-            <th>Invested</th>
-            <th>Current Value</th>
-            <th>Profit/Loss</th>
-            <th class="text-end">Actions</th>
-          </tr>
+        <tr>
+          <th>Symbol</th>
+          <th>Name</th>
+          <th>Currency</th>
+          <th>XIRR Annual Return</th>
+          <th>Invested</th>
+          <th>Current Value</th>
+          <th>Profit/Loss</th>
+          <th class="text-end">Actions</th>
+        </tr>
         </thead>
         <tbody>
-          <tr v-for="instrument in instruments" :key="instrument.id">
-            <td>{{ instrument.symbol }}</td>
-            <td>{{ instrument.name }}</td>
-            <td>{{ instrument.baseCurrency }}</td>
-            <td>{{ formatPercentage(instrument.xirr) }}</td>
-            <td>{{ formatCurrency(instrument.totalInvestment) }}</td>
-            <td>{{ formatCurrency(instrument.currentValue) }}</td>
-            <td :class="amountClass(instrument)">{{ formattedAmount(instrument) }}</td>
-            <td class="text-end">
-              <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
-                <font-awesome-icon icon="pencil-alt" />
-                <span class="d-none d-md-inline ms-1">Edit</span>
-              </button>
-            </td>
-          </tr>
+        <tr v-for="instrument in instruments" :key="instrument.id">
+          <td data-label="Symbol">{{ instrument.symbol }}</td>
+          <td data-label="Name">{{ instrument.name }}</td>
+          <td data-label="Currency">{{ instrument.baseCurrency }}</td>
+          <td data-label="XIRR Annual Return">{{ formatPercentage(instrument.xirr) }}</td>
+          <td data-label="Invested">{{ formatCurrency(instrument.totalInvestment) }}</td>
+          <td data-label="Current Value">{{ formatCurrency(instrument.currentValue) }}</td>
+          <td data-label="Profit/Loss" :class="amountClass(instrument)">
+            {{ formattedAmount(instrument) }}
+          </td>
+          <td data-label="Actions" class="text-end">
+            <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
+              <font-awesome-icon icon="pencil-alt" />
+              <span class="d-none d-md-inline ms-1">Edit</span>
+            </button>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
@@ -303,11 +305,45 @@ const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
 
 @media (max-width: 767px) {
   .table {
-    font-size: 2.8vw;
+    display: block;
+    width: 100%;
+    overflow: hidden;
   }
 
-  .btn-sm {
-    padding: 0.25rem 0.5rem;
+  .table thead {
+    display: none;
+  }
+
+  .table tbody, .table tr, .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    font-size: 1rem;
+    text-align: left;
+  }
+
+  .table td[data-label]:before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #6c757d;
+    margin-right: 0.5rem;
+    width: 50%;
+    flex-shrink: 0;
+  }
+
+  .table td.text-end {
+    justify-content: flex-end;
   }
 }
 </style>
