@@ -82,7 +82,10 @@ class InstrumentController(
     val currentPrice: BigDecimal? = null,
     @field:NotBlank(message = "Provider name must not be blank")
     val providerName: String,
-    val xirr: Double? = null
+    val totalInvestment: BigDecimal = BigDecimal.ZERO,
+    val currentValue: BigDecimal = BigDecimal.ZERO,
+    val profit: BigDecimal = BigDecimal.ZERO,
+    val xirr: Double = 0.0
   ) {
     fun toEntity() = Instrument(
       symbol = symbol,
@@ -92,6 +95,10 @@ class InstrumentController(
       currentPrice = currentPrice,
       providerName = ProviderName.valueOf(providerName)
     ).apply {
+      id?.let { this.id = it }
+      totalInvestment = this@InstrumentDto.totalInvestment
+      currentValue = this@InstrumentDto.currentValue
+      profit = this@InstrumentDto.profit
       xirr = this@InstrumentDto.xirr
     }
 
@@ -104,6 +111,9 @@ class InstrumentController(
         baseCurrency = instrument.baseCurrency,
         currentPrice = instrument.currentPrice,
         providerName = instrument.providerName.name,
+        totalInvestment = instrument.totalInvestment,
+        currentValue = instrument.currentValue,
+        profit = instrument.profit,
         xirr = instrument.xirr
       )
     }

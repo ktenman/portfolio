@@ -20,6 +20,9 @@
             <th>Name</th>
             <th>Currency</th>
             <th>XIRR Annual Return</th>
+            <th>Invested</th>
+            <th>Current Value</th>
+            <th>Profit/Loss</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -29,6 +32,9 @@
             <td>{{ instrument.name }}</td>
             <td>{{ instrument.baseCurrency }}</td>
             <td>{{ formatPercentage(instrument.xirr) }}</td>
+            <td>{{ formatCurrency(instrument.totalInvestment) }}</td>
+            <td>{{ formatCurrency(instrument.currentValue) }}</td>
+            <td :class="amountClass(instrument)">{{ formattedAmount(instrument) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
                 <font-awesome-icon icon="pencil-alt" />
@@ -162,6 +168,7 @@ import { Instrument } from '../models/instrument'
 import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 import { ApiError } from '../models/api-error'
 import AlertMessageComponent from './alert-message-component.vue'
+import {PortfolioTransaction} from "../models/portfolio-transaction.ts";
 
 const alertMessage = ref('')
 const debugMessage = ref('')
@@ -186,6 +193,22 @@ const showAddInstrumentModal = () => {
 }
 
 const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
+
+const formatCurrency = (value: number): string => {
+  return `${Math.abs(value).toFixed(2)}`
+}
+
+const formattedAmount = (instrument: Instrument): string => {
+  if (instrument.profit === 0) {
+    return '0.00'
+  }
+  const formattedAmount = formatCurrency(instrument.profit)
+  return instrument.profit > 0 ? `+${formattedAmount}` : `-${formattedAmount}`
+}
+
+const amountClass = (instrument: Instrument): string => {
+  return instrument.profit >= 0 ? 'text-success' : 'text-danger'
+}
 
 const saveInstrument = async () => {
   try {
