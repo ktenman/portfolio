@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE_5
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.xirr.XirrService
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
@@ -15,7 +16,8 @@ import java.time.LocalDate
 @Service
 class InstrumentService(
   private val instrumentRepository: InstrumentRepository,
-  private val dailyPriceService: DailyPriceService
+  private val portfolioTransactionService: PortfolioTransactionService,
+  private val xirrService: XirrService
 ) {
 
   @Transactional(readOnly = true)
@@ -45,10 +47,18 @@ class InstrumentService(
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'", unless = "#result.isEmpty()")
   fun getAllInstruments(): List<Instrument> {
-    return instrumentRepository.findAll()
+    val instruments = instrumentRepository.findAll()
+    val transactions = portfolioTransactionService.getAllTransactions()
+      .groupBy { it.instrument.id }
+
+    return instruments.map { instrument ->
+      instrument.apply {
+        xirr = xirrService.calculateInstrumentXirr(this, transactions[id] ?: emptyList())
+      }
+    }
   }
 
-//  @Cacheable(value = [INSTRUMENT_CACHE_5], key = "'getLatestPrices'", unless = "#result.isEmpty()")
+  @Cacheable(value = [INSTRUMENT_CACHE_5], key = "'getLatestPrices'", unless = "#result.isEmpty()")
   fun getLatestPrices(): Map<String, BigDecimal> {
     val instruments = instrumentRepository.findAll()
     return instruments.associate { instrument ->
