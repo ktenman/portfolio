@@ -19,23 +19,23 @@
       <table class="table table-striped table-hover">
         <thead>
           <tr>
+            <th>Date</th>
             <th>Instrument</th>
             <th class="d-none d-md-table-cell">Quantity</th>
             <th class="d-none d-md-table-cell">Price</th>
             <th>Amount</th>
-            <th>Earnings</th>
-            <th>Date</th>
+            <th>Profit/Loss</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="transaction in transactions" :key="transaction.id">
+            <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td>{{ getInstrumentSymbol(transaction.instrumentId) }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.quantity) }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.price) }}</td>
             <td :class="amountClass(transaction)">{{ formattedAmount(transaction) }}</td>
             <td :class="earningsClass(transaction)">{{ formattedEarnings(transaction) }}</td>
-            <td>{{ formatDate(transaction.transactionDate) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
                 <font-awesome-icon icon="pencil-alt" />
