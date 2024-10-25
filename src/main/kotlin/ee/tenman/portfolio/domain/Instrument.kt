@@ -30,5 +30,14 @@ class Instrument(
   var providerName: ProviderName = ProviderName.ALPHA_VANTAGE,
 
   @Transient
-  var xirr: Double? = null
+  var totalInvestment: BigDecimal = BigDecimal.ZERO,
+
+  @Transient
+  var currentValue: BigDecimal = BigDecimal.ZERO,
+
+  @Transient
+  var profit:BigDecimal = BigDecimal.ZERO,
+
+  @Transient
+  var xirr: Double = 0.0
 ) : BaseEntity()

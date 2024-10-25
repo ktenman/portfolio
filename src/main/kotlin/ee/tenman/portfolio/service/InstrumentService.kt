@@ -17,7 +17,7 @@ import java.time.LocalDate
 class InstrumentService(
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionService: PortfolioTransactionService,
-  private val xirrService: XirrService
+  private val investmentMetricsService: InvestmentMetricsService
 ) {
 
   @Transactional(readOnly = true)
@@ -53,7 +53,14 @@ class InstrumentService(
 
     return instruments.map { instrument ->
       instrument.apply {
-        xirr = xirrService.calculateInstrumentXirr(this, transactions[id] ?: emptyList())
+        val metrics = investmentMetricsService.calculateInstrumentMetrics(
+          this,
+          transactions[id] ?: emptyList()
+        )
+        totalInvestment = metrics.totalInvestment
+        currentValue = metrics.currentValue
+        profit = metrics.profit
+        xirr = metrics.xirr
       }
     }
   }
