@@ -168,7 +168,6 @@ import { Instrument } from '../models/instrument'
 import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 import { ApiError } from '../models/api-error'
 import AlertMessageComponent from './alert-message-component.vue'
-import {PortfolioTransaction} from "../models/portfolio-transaction.ts";
 
 const alertMessage = ref('')
 const debugMessage = ref('')
