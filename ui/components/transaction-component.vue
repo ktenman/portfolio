@@ -185,7 +185,6 @@ const transactionService = new TransactionService()
 const instrumentService = new InstrumentService()
 const transactions = ref<PortfolioTransaction[]>([])
 const instruments = ref<Instrument[]>([])
-const latestPrices = ref<Record<string, number>>({})
 const currentTransaction = ref<Partial<PortfolioTransaction>>({
   transactionDate: new Date().toISOString().split('T')[0],
 })
@@ -196,7 +195,6 @@ let transactionModal: Modal | null = null
 onMounted(() => {
   fetchTransactions()
   fetchInstruments()
-  fetchLatestPrices()
   transactionModal = new Modal(document.getElementById('transactionModal')!)
 })
 
@@ -256,15 +254,6 @@ const fetchInstruments = async () => {
   } catch (error) {
     alertType.value = AlertType.ERROR
     alertMessage.value = 'Failed to load instruments. Please try again.'
-  }
-}
-
-const fetchLatestPrices = async () => {
-  try {
-    latestPrices.value = await transactionService.getLatestPrices()
-  } catch (error) {
-    alertType.value = AlertType.ERROR
-    alertMessage.value = 'Failed to load latest prices. Please try again.'
   }
 }
 
@@ -345,19 +334,12 @@ const amountClass = (transaction: PortfolioTransaction): string => {
 }
 
 const formattedEarnings = (transaction: PortfolioTransaction): string => {
-  const symbol = getInstrumentSymbol(transaction.instrumentId)
-  const latestPrice = latestPrices.value[symbol] || 0
-  const earnings = (latestPrice - transaction.price) * transaction.quantity
-  const absEarnings = Math.abs(earnings)
-  const formattedAbsEarnings = absEarnings.toFixed(2)
-  return earnings >= 0 ? `+${formattedAbsEarnings}` : `-${formattedAbsEarnings}`
+  const formattedAbsEarnings = Math.abs(transaction.profit).toFixed(2)
+  return transaction.profit >= 0 ? `+${formattedAbsEarnings}` : `-${formattedAbsEarnings}`
 }
 
 const earningsClass = (transaction: PortfolioTransaction): string => {
-  const symbol = getInstrumentSymbol(transaction.instrumentId)
-  const latestPrice = latestPrices.value[symbol] || 0
-  const earnings = (latestPrice - transaction.price) * transaction.quantity
-  return earnings >= 0 ? 'text-success' : 'text-danger'
+  return transaction.profit >= 0 ? 'text-success' : 'text-danger'
 }
 
 const formatDate = (date: string): string => {

@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
-import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/instruments")
@@ -59,17 +58,6 @@ class InstrumentController(
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   fun deleteInstrument(@PathVariable id: Long) = instrumentService.deleteInstrument(id)
-
-  @GetMapping("/latest-prices")
-  @Loggable
-  fun getLatestPrices(): Map<String, BigDecimal> = instrumentService.getLatestPrices()
-
-  data class InstrumentPriceDto(
-    val instrumentId: Long,
-    val symbol: String,
-    val latestPrice: BigDecimal,
-    val date: LocalDate
-  )
 
   data class InstrumentDto(
     val id: Long? = null,
