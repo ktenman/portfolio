@@ -19,7 +19,14 @@ class PortfolioTransactionService(
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
-  fun getTransactionById(id: Long): PortfolioTransaction? = portfolioTransactionRepository.findById(id).orElse(null)
+  fun getTransactionById(id: Long): PortfolioTransaction? = portfolioTransactionRepository.findById(id)
+    .map { transaction ->
+      transaction.apply {
+        currentValue = calculateCurrentValue(this)
+        profit = calculateProfit(this)
+      }
+    }
+    .orElseThrow( { RuntimeException("Transaction not found with id: $id") })
 
   @Transactional
   @Caching(
@@ -28,7 +35,8 @@ class PortfolioTransactionService(
       CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'")
     ]
   )
-  fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction = portfolioTransactionRepository.save(transaction)
+  fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction =
+    portfolioTransactionRepository.save(transaction)
 
   @Transactional
   @Caching(
@@ -44,13 +52,13 @@ class PortfolioTransactionService(
   fun getAllTransactions(): List<PortfolioTransaction> {
     return portfolioTransactionRepository.findAllWithInstruments().map { transaction ->
       transaction.apply {
-        currentValue = calculateCurrentValue(transaction)
-        profit = calculateProfit(transaction)
+        currentValue = calculateCurrentValue(this)
+        profit = calculateProfit(this)
       }
     }
   }
 
-  private fun calculateCurrentValue(transaction: PortfolioTransaction): BigDecimal {
+  fun calculateCurrentValue(transaction: PortfolioTransaction): BigDecimal {
     val currentPrice = transaction.instrument.currentPrice ?: BigDecimal.ZERO
     return when (transaction.transactionType) {
       TransactionType.BUY -> transaction.quantity.multiply(currentPrice)
@@ -58,7 +66,7 @@ class PortfolioTransactionService(
     }
   }
 
-  private fun calculateProfit(transaction: PortfolioTransaction): BigDecimal {
+  fun calculateProfit(transaction: PortfolioTransaction): BigDecimal {
     if (transaction.transactionType == TransactionType.SELL) {
       return BigDecimal.ZERO
     }
