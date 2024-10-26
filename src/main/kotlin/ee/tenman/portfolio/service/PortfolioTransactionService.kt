@@ -2,12 +2,15 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Service
 class PortfolioTransactionService(
@@ -38,5 +41,33 @@ class PortfolioTransactionService(
 
   @Transactional(readOnly = true)
 //  @Cacheable(value = [TRANSACTION_CACHE], key = "'transactions'", unless = "#result.isEmpty()")
-  fun getAllTransactions(): List<PortfolioTransaction> = portfolioTransactionRepository.findAll()
+  fun getAllTransactions(): List<PortfolioTransaction> {
+    return portfolioTransactionRepository.findAllWithInstruments().map { transaction ->
+      transaction.apply {
+        currentValue = calculateCurrentValue(transaction)
+        profit = calculateProfit(transaction)
+      }
+    }
+  }
+
+  private fun calculateCurrentValue(transaction: PortfolioTransaction): BigDecimal {
+    val currentPrice = transaction.instrument.currentPrice ?: BigDecimal.ZERO
+    return when (transaction.transactionType) {
+      TransactionType.BUY -> transaction.quantity.multiply(currentPrice)
+      TransactionType.SELL -> BigDecimal.ZERO
+    }
+  }
+
+  private fun calculateProfit(transaction: PortfolioTransaction): BigDecimal {
+    if (transaction.transactionType == TransactionType.SELL) {
+      return BigDecimal.ZERO
+    }
+
+    val currentPrice = transaction.instrument.currentPrice ?: return BigDecimal.ZERO
+    val initialInvestment = transaction.quantity.multiply(transaction.price)
+    val currentValue = transaction.quantity.multiply(currentPrice)
+
+    return currentValue.subtract(initialInvestment).setScale(2, RoundingMode.HALF_UP)
+  }
+
 }

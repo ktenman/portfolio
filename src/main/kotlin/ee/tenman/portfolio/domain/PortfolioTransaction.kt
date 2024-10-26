@@ -29,5 +29,11 @@ class PortfolioTransaction(
   var price: BigDecimal,
 
   @Column(name = "transaction_date", nullable = false)
-  var transactionDate: LocalDate
+  var transactionDate: LocalDate,
+
+  @Transient
+  var currentValue: BigDecimal = BigDecimal.ZERO,
+
+  @Transient
+  var profit: BigDecimal = BigDecimal.ZERO,
 ) : BaseEntity()

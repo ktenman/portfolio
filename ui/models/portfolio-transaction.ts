@@ -5,4 +5,5 @@ export interface PortfolioTransaction {
   quantity: number
   price: number
   transactionDate: string
+  profit: number
 }
