@@ -8,7 +8,6 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
 
 @Service
 class InstrumentService(
@@ -58,14 +57,6 @@ class InstrumentService(
         profit = metrics.profit
         xirr = metrics.xirr
       }
-    }
-  }
-
-  @Cacheable(value = [INSTRUMENT_CACHE], key = "'getLatestPrices'", unless = "#result.isEmpty()")
-  fun getLatestPrices(): Map<String, BigDecimal> {
-    val instruments = instrumentRepository.findAll()
-    return instruments.associate { instrument ->
-      Pair(instrument.symbol, instrument.currentPrice ?: BigDecimal.ZERO)
     }
   }
 

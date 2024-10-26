@@ -25,7 +25,7 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/transactions")
 @Validated
-class PortfolioTransactionController(
+class TransactionController(
   private val portfolioTransactionService: PortfolioTransactionService,
   private val instrumentService: InstrumentService
 ) {
@@ -91,6 +91,7 @@ class PortfolioTransactionController(
     val id: Long?,
     @field:NotNull(message = "Instrument ID is required")
     val instrumentId: Long,
+    val symbol: String,  // Added instrument symbol
     @field:NotNull(message = "Transaction type is required")
     val transactionType: TransactionType,
     @field:NotNull(message = "Quantity is required")
@@ -100,16 +101,21 @@ class PortfolioTransactionController(
     @field:Positive(message = "Price must be positive")
     val price: BigDecimal,
     @field:NotNull(message = "Transaction date is required")
-    val transactionDate: LocalDate
+    val transactionDate: LocalDate,
+    val currentValue: BigDecimal = BigDecimal.ZERO,
+    val profit: BigDecimal = BigDecimal.ZERO
   ) {
     companion object {
       fun fromEntity(transaction: PortfolioTransaction) = PortfolioTransactionDto(
         id = transaction.id,
         instrumentId = transaction.instrument.id,
+        symbol = transaction.instrument.symbol,
         transactionType = transaction.transactionType,
         quantity = transaction.quantity,
         price = transaction.price,
-        transactionDate = transaction.transactionDate
+        transactionDate = transaction.transactionDate,
+        currentValue = transaction.currentValue,
+        profit = transaction.profit
       )
     }
   }
