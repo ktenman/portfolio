@@ -76,7 +76,7 @@ class PortfolioTransactionControllerIT {
   @Test
   fun `should create a new portfolio transaction`() {
     val instrument = setupInstrument()
-    val transactionDto = TransactionController.PortfolioTransactionDto(
+    val transactionDto = PortfolioTransactionController.TransactionRequestDto(
       id = null,
       instrumentId = instrument.id,
       transactionType = TransactionType.BUY,
@@ -179,7 +179,7 @@ class PortfolioTransactionControllerIT {
       )
     )
 
-    val updatedDto = TransactionController.PortfolioTransactionDto(
+    val updatedDto = PortfolioTransactionController.TransactionRequestDto(
       id = transaction.id,
       instrumentId = instrument.id,
       transactionType = TransactionType.SELL,
