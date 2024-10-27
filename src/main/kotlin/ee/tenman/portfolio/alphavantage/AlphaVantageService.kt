@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.alphavantage
 
 import com.google.gson.Gson
-import ee.tenman.portfolio.alphavantage.AlphaVantageResponse.AlphaVantageDayData
+import ee.tenman.portfolio.alphavantage.AlphaVantageResponse.AlphaVantageDailyPriceData
 import jakarta.annotation.Resource
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
@@ -24,7 +24,7 @@ class AlphaVantageService {
   private lateinit var client: AlphaVantageClient
 
   @Retryable(backoff = Backoff(delay = 1000))
-  fun getMonthlyTimeSeries(symbol: String): Map<LocalDate, AlphaVantageDayData> {
+  fun getMonthlyTimeSeries(symbol: String): Map<LocalDate, AlphaVantageDailyPriceData> {
     val ticker = getTicker(symbol) ?: throw RuntimeException("Failed to get ticker for symbol: $symbol")
 
     return try {
@@ -43,7 +43,7 @@ class AlphaVantageService {
   }
 
   @Retryable(backoff = Backoff(delay = 1000))
-  fun getDailyTimeSeriesForLastWeek(symbol: String): Map<LocalDate, AlphaVantageDayData> {
+  fun getDailyTimeSeriesForLastWeek(symbol: String): Map<LocalDate, AlphaVantageDailyPriceData> {
     var adjustedSymbol = symbol
     if ("QDVE:GER:EUR" == symbol) {
       adjustedSymbol = "QDVE.DEX"
