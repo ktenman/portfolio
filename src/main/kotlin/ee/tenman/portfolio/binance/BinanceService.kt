@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.binance
 
-import ee.tenman.portfolio.common.DayData
+import ee.tenman.portfolio.common.DailyPriceData
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
@@ -20,9 +20,9 @@ class BinanceService(private val binanceClient: BinanceClient) {
     symbol: String,
     startDate: LocalDate? = null,
     endDate: LocalDate? = null
-  ): SortedMap<LocalDate, DayData> {
+  ): SortedMap<LocalDate, DailyPriceData> {
     log.info("Getting daily prices for symbol: $symbol")
-    val dailyPrices = TreeMap<LocalDate, DayData>()
+    val dailyPrices = TreeMap<LocalDate, DailyPriceData>()
     try {
       var currentStartTime = startDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
       val endTime = endDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
@@ -41,7 +41,7 @@ class BinanceService(private val binanceClient: BinanceClient) {
         for (kline in klines) {
           val timestamp = kline[0].toLong()
           val date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
-          dailyPrices[date] = BinanceDayData(
+          dailyPrices[date] = BinanceDailyPriceData(
             open = kline[1].toBigDecimal(),
             high = kline[2].toBigDecimal(),
             low = kline[3].toBigDecimal(),
