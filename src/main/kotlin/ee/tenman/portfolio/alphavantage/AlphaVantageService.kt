@@ -1,7 +1,8 @@
 package ee.tenman.portfolio.alphavantage
 
-import com.google.gson.Gson
 import ee.tenman.portfolio.alphavantage.AlphaVantageResponse.AlphaVantageDailyPriceData
+import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.OBJECT_MAPPER
+import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.truncateJson
 import jakarta.annotation.Resource
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
@@ -16,7 +17,6 @@ class AlphaVantageService {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val GSON = Gson()
     private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
   }
 
@@ -29,13 +29,18 @@ class AlphaVantageService {
 
     return try {
       val timeSeriesMonthly = client.getTimeSeries("TIME_SERIES_MONTHLY", ticker)
-      log.info("Retrieved monthly ticker data for $ticker: ${GSON.toJson(timeSeriesMonthly)}")
-
-      timeSeriesMonthly.monthlyTimeSeries?.asSequence()
-        ?.associate { (dateString, data) ->
+      log.info(
+        "Retrieved monthly ticker data for $ticker: ${
+          truncateJson(
+            OBJECT_MAPPER.writeValueAsString(
+              timeSeriesMonthly
+            )
+          )
+        }"
+      )
+      timeSeriesMonthly.monthlyTimeSeries?.asSequence()?.associate { (dateString, data) ->
           YearMonth.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd")).atEndOfMonth() to data
-        }?.toMap()
-        ?: emptyMap()
+      }?.toMap() ?: emptyMap()
     } catch (e: Exception) {
       log.error("Error fetching monthly data from Alpha Vantage for ticker $ticker", e)
       throw RuntimeException("Error fetching monthly data from Alpha Vantage for ticker $ticker", e)
@@ -52,13 +57,11 @@ class AlphaVantageService {
 
     return try {
       val timeSeriesDaily = client.getTimeSeries("TIME_SERIES_DAILY", ticker)
-      log.info("Retrieved daily ticker data for $ticker: ${GSON.toJson(timeSeriesDaily)}")
+      log.info("Retrieved daily ticker data for $ticker: ${truncateJson(OBJECT_MAPPER.writeValueAsString(timeSeriesDaily))}")
 
-      timeSeriesDaily.dailyTimeSeries?.asSequence()
-        ?.associate { (dateString, data) ->
+      timeSeriesDaily.dailyTimeSeries?.asSequence()?.associate { (dateString, data) ->
           LocalDate.parse(dateString, DATE_FORMATTER) to data
-        }?.toMap()
-        ?: emptyMap()
+      }?.toMap() ?: emptyMap()
     } catch (e: Exception) {
       log.error("Error fetching daily data from Alpha Vantage for ticker $ticker", e)
       throw RuntimeException("Error fetching daily data from Alpha Vantage for ticker $ticker", e)
@@ -71,3 +74,4 @@ class AlphaVantageService {
     return symbolSearch.bestMatches?.firstOrNull()?.symbol
   }
 }
+

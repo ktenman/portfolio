@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.configuration.aspect
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.OBJECT_MAPPER
+import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.truncateJson
 import ee.tenman.portfolio.configuration.TimeUtility
-import jakarta.annotation.Resource
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -16,8 +16,6 @@ import java.util.*
 @Component
 class LoggingAspect {
 
-  @Resource
-  private lateinit var objectMapper: ObjectMapper
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Around("@annotation(Loggable)")
@@ -53,25 +51,16 @@ class LoggingAspect {
 
   @Throws(Throwable::class)
   private fun logEntry(joinPoint: ProceedingJoinPoint) {
-    val argsJson = objectMapper.writeValueAsString(joinPoint.args)
+    val argsJson = OBJECT_MAPPER.writeValueAsString(joinPoint.args)
     log.info("{} entered with arguments: {}", joinPoint.signature.toShortString(), argsJson)
   }
 
   @Throws(Throwable::class)
   private fun logExit(joinPoint: ProceedingJoinPoint, result: Any, startTime: Long) {
-    val resultJson = objectMapper.writeValueAsString(result)
-    val maxLength = 200
-    val truncatedResultJson = if (resultJson.length > maxLength) {
-      val start = resultJson.substring(0, maxLength / 2)
-      val end = resultJson.substring(resultJson.length - maxLength / 2)
-      "$start ... $end"
-    } else {
-      resultJson
-    }
     log.info(
       "{} exited with result: {} in {} seconds",
       joinPoint.signature.toShortString(),
-      truncatedResultJson,
+      truncateJson(OBJECT_MAPPER.writeValueAsString(result)),
       TimeUtility.durationInSeconds(startTime)
     )
   }
