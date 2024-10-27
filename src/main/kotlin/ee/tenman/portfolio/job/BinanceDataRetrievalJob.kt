@@ -18,7 +18,7 @@ class BinanceDataRetrievalJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 */5 * * * *")
+  @Scheduled(cron = "0 */2 * * * *")
   fun runJob() {
     log.info("Running Binance data retrieval job")
     jobExecutionService.executeJob(this)
