@@ -2,7 +2,7 @@ package ee.tenman.portfolio.common
 
 import java.math.BigDecimal
 
-interface DayData {
+interface DailyPriceData {
   val open: BigDecimal
   val high: BigDecimal
   val low: BigDecimal

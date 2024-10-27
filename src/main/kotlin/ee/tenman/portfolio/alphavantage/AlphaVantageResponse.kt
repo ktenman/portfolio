@@ -1,16 +1,16 @@
 package ee.tenman.portfolio.alphavantage
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import ee.tenman.portfolio.common.DayData
+import ee.tenman.portfolio.common.DailyPriceData
 import java.math.BigDecimal
 import java.util.*
 
 data class AlphaVantageResponse(
   @JsonProperty("Monthly Time Series")
-  val monthlyTimeSeries: TreeMap<String, AlphaVantageDayData>? = null,
+  val monthlyTimeSeries: TreeMap<String, AlphaVantageDailyPriceData>? = null,
 
   @JsonProperty("Time Series (Daily)")
-  val dailyTimeSeries: TreeMap<String, AlphaVantageDayData>? = null,
+  val dailyTimeSeries: TreeMap<String, AlphaVantageDailyPriceData>? = null,
 
   @JsonProperty("Information")
   val information: String? = null,
@@ -18,7 +18,7 @@ data class AlphaVantageResponse(
   @JsonProperty("Error Message")
   val errorMessage: String? = null
 ) {
-  data class AlphaVantageDayData(
+  data class AlphaVantageDailyPriceData(
     @JsonProperty("1. open")
     override val open: BigDecimal,
 
@@ -33,5 +33,5 @@ data class AlphaVantageResponse(
 
     @JsonProperty("5. volume")
     override val volume: Long
-  ) : DayData
+  ) : DailyPriceData
 }
