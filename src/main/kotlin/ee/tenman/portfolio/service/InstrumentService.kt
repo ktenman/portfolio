@@ -18,25 +18,28 @@ class InstrumentService(
 
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
-  fun getInstrumentById(id: Long): Instrument = instrumentRepository.findById(id)
-    .orElseThrow { RuntimeException("Instrument not found with id: $id") }
+  fun getInstrumentById(id: Long): Instrument =
+    instrumentRepository.findById(id).orElseThrow { RuntimeException("Instrument not found with id: $id") }
 
   @Transactional
   @Caching(
-    evict = [
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.id", condition = "#instrument.id != null"),
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"),
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
-    ]
+    evict = [CacheEvict(
+      value = [INSTRUMENT_CACHE],
+      key = "#instrument.id",
+      condition = "#instrument.id != null"
+    ), CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"), CacheEvict(
+      value = [INSTRUMENT_CACHE],
+      key = "'allInstruments'"
+    )]
   )
   fun saveInstrument(instrument: Instrument): Instrument = instrumentRepository.save(instrument)
 
   @Transactional
   @Caching(
-    evict = [
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "#id"),
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
-    ]
+    evict = [CacheEvict(value = [INSTRUMENT_CACHE], key = "#id"), CacheEvict(
+      value = [INSTRUMENT_CACHE],
+      key = "'allInstruments'"
+    )]
   )
   fun deleteInstrument(id: Long) = instrumentRepository.deleteById(id)
 
@@ -44,15 +47,11 @@ class InstrumentService(
   @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
   fun getAllInstruments(): List<Instrument> {
     val instruments = instrumentRepository.findAll()
-    val transactions = portfolioTransactionService.getAllTransactions()
-      .groupBy { it.instrument.id }
+    val transactions = portfolioTransactionService.getAllTransactions().groupBy { it.instrument.id }
 
     return instruments.map { instrument ->
       instrument.apply {
-        val metrics = investmentMetricsService.calculateInstrumentMetrics(
-          this,
-          transactions[id] ?: emptyList()
-        )
+        val metrics = investmentMetricsService.calculateInstrumentMetrics(this, transactions[id] ?: emptyList())
         totalInvestment = metrics.totalInvestment
         currentValue = metrics.currentValue
         profit = metrics.profit
