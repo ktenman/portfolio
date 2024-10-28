@@ -19,7 +19,11 @@ class InvestmentMetricsService {
     val currentValue: BigDecimal,
     val profit: BigDecimal,
     val xirr: Double
-  )
+  ) {
+    override fun toString(): String {
+      return "InstrumentMetrics(totalInvestment=$totalInvestment, currentValue=$currentValue, profit=$profit, xirr=${String.format("%.2f%%", xirr * 100)})"
+    }
+  }
 
   fun calculateInstrumentMetrics(instrument: Instrument, transactions: List<PortfolioTransaction>): InstrumentMetrics {
     if (transactions.isEmpty()) {
@@ -79,19 +83,15 @@ class InvestmentMetricsService {
       0.0
     }
 
-    log.info(
-      """${instrument.symbol} metrics:
-            |Investment: $totalInvestment
-            |Current value: $currentValue
-            |Profit: $profit
-            |XIRR: ${String.format("%.2f%%", xirr * 100)}""".trimMargin()
-    )
-
-    return InstrumentMetrics(
+    val instrumentMetrics = InstrumentMetrics(
       totalInvestment = totalInvestment,
       currentValue = currentValue,
       profit = profit,
       xirr = xirr
     )
+
+    log.info("Calculated metrics for ${instrument.symbol}: $instrumentMetrics")
+
+    return instrumentMetrics
   }
 }
