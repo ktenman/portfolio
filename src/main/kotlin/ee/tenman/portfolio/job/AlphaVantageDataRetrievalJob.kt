@@ -18,7 +18,7 @@ class AlphaVantageDataRetrievalJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 0 0/2 * * *") // Runs every 3 hours
+  @Scheduled(cron = "0 0 0/1 * * *")
   fun runJob() {
     log.info("Running AlphaVantage data retrieval job")
     jobExecutionService.executeJob(this)
