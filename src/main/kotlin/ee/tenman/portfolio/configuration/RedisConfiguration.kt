@@ -15,14 +15,9 @@ class RedisConfiguration {
   fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager {
     val cacheConfigurations: MutableMap<String, RedisCacheConfiguration> = HashMap()
     cacheConfigurations[ONE_DAY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
-    cacheConfigurations[ONE_HOUR_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(2))
-    cacheConfigurations[THIRTY_MINUTES] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30))
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10))
     cacheConfigurations[TRANSACTION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
-    cacheConfigurations[USER_SESSION_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(7))
-    cacheConfigurations[USER_SESSION_ID_CACHE] =
-      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(7))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager.builder(connectionFactory)
       .cacheDefaults(defaultConfig)
@@ -35,10 +30,6 @@ class RedisConfiguration {
     const val SUMMARY_CACHE = "summary-cache-v3"
     const val TRANSACTION_CACHE = "transaction-cache-v3"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
-    const val ONE_HOUR_CACHE: String = "one-hour-cache-v3"
-    const val THIRTY_MINUTES: String = "thirty-minutes-cache-v3"
-    const val USER_SESSION_CACHE: String = "user-session-cache-v3"
-    const val USER_SESSION_ID_CACHE: String = "user-session-id-cache-v3"
-    private val DEFAULT_TTL: Duration = Duration.ofMinutes(30)
+    private val DEFAULT_TTL: Duration = Duration.ofMinutes(10)
   }
 }
