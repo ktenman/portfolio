@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
-import ee.tenman.portfolio.IntegrationTest
+import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -14,6 +14,7 @@ import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.cache.CacheManager
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -34,6 +35,9 @@ class InstrumentControllerIT {
   private lateinit var mockMvc: MockMvc
 
   @Resource
+  private lateinit var cacheManager: CacheManager
+
+  @Resource
   private lateinit var instrumentRepository: InstrumentRepository
 
   @BeforeEach
@@ -47,6 +51,7 @@ class InstrumentControllerIT {
             .withBodyFile("user-details-response.json")
         )
     )
+    cacheManager.cacheNames.forEach { cacheName -> cacheManager.getCache(cacheName)?.clear() }
   }
 
   @Test
