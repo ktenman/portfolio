@@ -48,7 +48,6 @@ class PortfolioTransactionService(
   fun deleteTransaction(id: Long) = portfolioTransactionRepository.deleteById(id)
 
   @Transactional(readOnly = true)
-//  @Cacheable(value = [TRANSACTION_CACHE], key = "'transactions'", unless = "#result.isEmpty()")
   fun getAllTransactions(): List<PortfolioTransaction> {
     return portfolioTransactionRepository.findAllWithInstruments().map { transaction ->
       transaction.apply {

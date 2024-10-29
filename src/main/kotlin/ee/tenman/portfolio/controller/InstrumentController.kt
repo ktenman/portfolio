@@ -35,9 +35,11 @@ class InstrumentController(
 
   @GetMapping
   @Loggable
-  fun getAllInstruments(): List<InstrumentDto> = instrumentService.getAllInstruments()
-    .sortedBy { it.id }
-    .map { InstrumentDto.fromEntity(it) }
+  fun getAllInstruments(): List<InstrumentDto> {
+    return instrumentService.getAllInstruments()
+      .sortedBy { it.id }
+      .map { InstrumentDto.fromEntity(it) }
+  }
 
   @PutMapping("/{id}")
   @Loggable
