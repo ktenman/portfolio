@@ -1,4 +1,4 @@
-package ee.tenman.portfolio
+package ee.tenman.portfolio.configuration
 
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -26,6 +26,7 @@ annotation class IntegrationTest {
     private val POSTGRES_DB_CONTAINER: PostgreSQLContainer<*> =
       PostgreSQLContainer("postgres:15-alpine")
         .apply { start() }
+
     private val REDIS_CONTAINER: GenericContainer<*> =
       GenericContainer(DockerImageName.parse("redis:7-alpine"))
         .withExposedPorts(6379)
@@ -46,4 +47,3 @@ annotation class IntegrationTest {
   }
 
 }
-

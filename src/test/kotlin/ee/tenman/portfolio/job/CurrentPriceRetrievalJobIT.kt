@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.job
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import ee.tenman.portfolio.IntegrationTest
+import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository

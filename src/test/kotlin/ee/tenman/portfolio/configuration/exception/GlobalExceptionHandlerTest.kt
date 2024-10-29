@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration.exception
 
+import ee.tenman.portfolio.configuration.GlobalExceptionHandler
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Path
