@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.configuration.exception
+package ee.tenman.portfolio.configuration
 
 import jakarta.validation.ConstraintViolationException
 import org.springframework.http.HttpStatus

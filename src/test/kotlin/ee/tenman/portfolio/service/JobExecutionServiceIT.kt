@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.service
 
-import ee.tenman.portfolio.IntegrationTest
+import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.repository.JobExecutionRepository

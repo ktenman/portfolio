@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
-import ee.tenman.portfolio.IntegrationTest
+import ee.tenman.portfolio.configuration.IntegrationTest
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
