@@ -44,7 +44,6 @@ class InstrumentService(
   fun deleteInstrument(id: Long) = instrumentRepository.deleteById(id)
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
   fun getAllInstruments(): List<Instrument> {
     val instruments = instrumentRepository.findAll()
     val transactions = portfolioTransactionService.getAllTransactions().groupBy { it.instrument.id }
