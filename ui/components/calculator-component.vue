@@ -221,7 +221,6 @@ const renderResultChart = (result: CalculationResult) => {
             ticks: {
               maxTicksLimit: 10,
               callback: function (val, index) {
-                // Show only every nth label to prevent overcrowding
                 return index % Math.ceil(asapData.length / 10) === 0
                   ? this.getLabelForValue(val as number)
                   : ''
@@ -232,7 +231,7 @@ const renderResultChart = (result: CalculationResult) => {
             title: { display: true, text: 'XIRR (%)' },
             ticks: {
               callback: value => (value as number).toFixed(2) + '%',
-              maxTicksLimit: 8, // Limit the number of y-axis labels
+              maxTicksLimit: 8,
             },
           },
         },
