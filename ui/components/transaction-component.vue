@@ -175,10 +175,11 @@ import { InstrumentService } from '../services/instrument-service'
 import { PortfolioTransaction } from '../models/portfolio-transaction'
 import { Instrument } from '../models/instrument'
 import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
+import { ApiError } from '../models/api-error'
 import AlertMessageComponent from './alert-message-component.vue'
 
 const debugMessage = ref('')
-const validationErrors = ref({})
+const validationErrors = ref<Record<string, string>>({})
 const alertMessage = ref('')
 const alertType = ref<AlertType | null>(null)
 const transactionService = new TransactionService()
@@ -230,9 +231,10 @@ const saveTransaction = async () => {
     resetCurrentTransaction()
     alertType.value = AlertType.SUCCESS
     alertMessage.value = `Transaction ${isEditing.value ? 'updated' : 'saved'} successfully.`
+    debugMessage.value = ''
+    validationErrors.value = {}
   } catch (error) {
-    alertType.value = AlertType.ERROR
-    alertMessage.value = `Failed to ${isEditing.value ? 'update' : 'save'} transaction. Please try again.`
+    handleApiError(error)
   }
 }
 
@@ -241,8 +243,7 @@ const fetchTransactions = async () => {
   try {
     transactions.value = await transactionService.getAllTransactions()
   } catch (error) {
-    alertType.value = AlertType.ERROR
-    alertMessage.value = 'Failed to load transactions. Please try again.'
+    handleApiError(error)
   } finally {
     isLoading.value = false
   }
@@ -252,8 +253,7 @@ const fetchInstruments = async () => {
   try {
     instruments.value = await instrumentService.getAllInstruments()
   } catch (error) {
-    alertType.value = AlertType.ERROR
-    alertMessage.value = 'Failed to load instruments. Please try again.'
+    handleApiError(error)
   }
 }
 
@@ -275,9 +275,10 @@ const deleteTransaction = async (id: number | undefined) => {
       transactions.value = transactions.value.filter(t => t.id !== id)
       alertType.value = AlertType.SUCCESS
       alertMessage.value = 'Transaction deleted successfully.'
+      debugMessage.value = ''
+      validationErrors.value = {}
     } catch (error) {
-      alertType.value = AlertType.ERROR
-      alertMessage.value = 'Failed to delete transaction. Please try again.'
+      handleApiError(error)
     }
   }
 }
@@ -286,6 +287,9 @@ const resetCurrentTransaction = () => {
   currentTransaction.value = {
     transactionDate: new Date().toISOString().split('T')[0],
   }
+  debugMessage.value = ''
+  validationErrors.value = {}
+  alertMessage.value = ''
 }
 
 const isValidTransaction = (
@@ -298,6 +302,19 @@ const isValidTransaction = (
     typeof transaction.price === 'number' &&
     typeof transaction.transactionDate === 'string'
   )
+}
+
+const handleApiError = (error: unknown) => {
+  alertType.value = AlertType.ERROR
+  if (error instanceof ApiError) {
+    alertMessage.value = error.message
+    debugMessage.value = error.debugMessage
+    validationErrors.value = error.validationErrors
+  } else {
+    alertMessage.value = error instanceof Error ? error.message : 'An unexpected error occurred'
+    debugMessage.value = ''
+    validationErrors.value = {}
+  }
 }
 
 const getInstrumentSymbol = (instrumentId: number | undefined) => {
