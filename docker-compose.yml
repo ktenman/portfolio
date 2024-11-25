@@ -129,8 +129,7 @@ services:
     container_name: restart_scheduler
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: >
-      sh -c "while true; do sleep 300; docker restart market_price_tracker; done"
+    command: sh -c 'while true; do [ "$(date +%H:%M)" = "03:00" ] && docker restart market_price_tracker && sleep 3600; sleep 30; done'
     restart: always
 
   healthcheck:
