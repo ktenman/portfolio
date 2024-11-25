@@ -129,7 +129,7 @@ services:
     container_name: watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --schedule "0 3 * * *" --cleanup --restart market_price_tracker
+    command: --schedule "0 3 * * *" --cleanup market_price_tracker
     restart: always
 
   healthcheck:
