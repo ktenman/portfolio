@@ -124,12 +124,16 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"  # Enable Watchtower for this container
 
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
+  restart_scheduler:
+    image: alpine:latest
+    container_name: restart_scheduler
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --schedule "0 3 * * *" --cleanup market_price_tracker
+    command: >
+      sh -c '
+      apk add --no-cache dcron docker-cli;
+      echo "0 3 * * * docker restart market_price_tracker" | crontab -;
+      crond -f -d 8'
     restart: always
 
   healthcheck:
