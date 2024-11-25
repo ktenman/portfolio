@@ -125,15 +125,12 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"  # Enable Watchtower for this container
 
   restart_scheduler:
-    image: alpine:latest
+    image: docker:cli
     container_name: restart_scheduler
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     command: >
-      sh -c '
-      apk add --no-cache dcron docker-cli;
-      echo "0 3 * * * docker restart market_price_tracker" | crontab -;
-      crond -f -d 8'
+      sh -c "while true; do sleep 300; docker restart market_price_tracker; done"
     restart: always
 
   healthcheck:
