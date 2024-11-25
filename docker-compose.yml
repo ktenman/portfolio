@@ -114,13 +114,23 @@ services:
     restart: always
     environment:
       - BACKEND_URL=http://backend:8080/api/instruments
-      - FETCH_INTERVAL=300
+      - FETCH_INTERVAL=600
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"  # Enable Watchtower for this container
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --schedule "0 3 * * *" --cleanup --restart market_price_tracker
+    restart: always
 
   healthcheck:
     container_name: healthcheck
