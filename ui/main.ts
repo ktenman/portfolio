@@ -7,11 +7,11 @@ import router from './router'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faPencilAlt } from '@fortawesome/free-solid-svg-icons'
-import { faTrashAlt } from '@fortawesome/free-solid-svg-icons/faTrashAlt'
+import { faPencilAlt, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 
-library.add(faPencilAlt)
-library.add(faTrashAlt)
+library.add(faPencilAlt as IconDefinition)
+library.add(faTrashAlt as IconDefinition)
 
 const app = createApp(App)
 
