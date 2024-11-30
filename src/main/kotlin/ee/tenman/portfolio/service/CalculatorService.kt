@@ -10,6 +10,8 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 private const val AMOUNT_TO_SPEND = 1000.0
@@ -22,7 +24,6 @@ class CalculatorService(
   private val calculationDispatcher: CoroutineDispatcher,
   private val portfolioSummaryService: PortfolioSummaryService
 ) {
-
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun calculateMedian(xirrs: List<Double>): Double {
@@ -37,23 +38,30 @@ class CalculatorService(
     }
   }
 
-  @Cacheable(value = [ONE_DAY_CACHE], key="'xirr-v8'")
+  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr-v15'")
   fun getCalculationResult(): CalculationResult {
     log.info("Calculating XIRR")
     val xirrs = calculateRollingXirr(TICKER).reversed()
-    val xirrs2 = runBlocking {
+
+    val xirrsResults = runBlocking {
       val deferredResults = xirrs.map { xirr ->
         async(calculationDispatcher) {
-          Transaction(xirr.calculate() * 100.0, xirr.getTransactions().maxOf { it.date })
+          val xirrValue = xirr.calculate()
+          // Only include positive or reasonable negative returns
+          if (xirrValue > -1.0) {
+            Transaction(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
+          } else null
         }
       }
-      deferredResults.awaitAll()
+      deferredResults.awaitAll().filterNotNull()
     }
-    var totalCurrentValue = portfolioSummaryService.getCurrentDaySummary().totalValue
+
+    val totalCurrentValue = portfolioSummaryService.getCurrentDaySummary().totalValue
+
     return CalculationResult(
-      median = calculateMedian(xirrs2.map { it.amount }),
-      average = xirrs2.map { it.amount }.average(),
-      xirrs = xirrs2,
+      median = if (xirrsResults.isEmpty()) 0.0 else calculateMedian(xirrsResults.map { it.amount }),
+      average = if (xirrsResults.isEmpty()) 0.0 else xirrsResults.map { it.amount }.average(),
+      xirrs = xirrsResults,
       total = totalCurrentValue
     )
   }
@@ -73,26 +81,48 @@ class CalculatorService(
       val dailyPrices = allDailyPrices.takeWhile { it.entryDate <= endDate }
       if (dailyPrices.size < 2) break
 
-      val (totalShares, transactions) = dailyPrices.fold(
-        Pair(
-          0.0,
-          mutableListOf<Transaction>()
-        )
-      ) { (totalShares, transactions), price ->
-        val sharesAmount = AMOUNT_TO_SPEND / price.closePrice.toDouble()
-        transactions.add(Transaction(AMOUNT_TO_SPEND, price.entryDate))
-        Pair(totalShares + sharesAmount, transactions)
+      // Calculate investment periods
+      val transactions = mutableListOf<Transaction>()
+      var remainingShares = BigDecimal.ZERO
+      var cumulativeInvestment = BigDecimal.ZERO
+
+      // Process all prices up to current date
+      for (price in dailyPrices) {
+        val sharesAmount = BigDecimal(AMOUNT_TO_SPEND)
+          .divide(price.closePrice, 8, RoundingMode.HALF_UP)
+        remainingShares += sharesAmount
+
+        if (remainingShares > BigDecimal.ZERO) {
+          cumulativeInvestment = cumulativeInvestment.add(BigDecimal(AMOUNT_TO_SPEND))
+          transactions.add(Transaction(-AMOUNT_TO_SPEND, price.entryDate))
+        }
       }
 
-      val lastPrice = dailyPrices.last()
-      val finalValue = -totalShares * lastPrice.closePrice.toDouble()
-      transactions.add(Transaction(finalValue, lastPrice.entryDate))
+      // Only calculate XIRR if we have remaining shares
+      if (remainingShares > BigDecimal.ZERO) {
+        val lastPrice = dailyPrices.last()
+        val currentValue = remainingShares.multiply(lastPrice.closePrice)
+        if (currentValue > BigDecimal.ZERO) {
+          transactions.add(Transaction(currentValue.toDouble(), lastPrice.entryDate))
 
-      xirrs.add(Xirr(transactions))
+          // Only add to XIRR list if we have more than one transaction
+          if (transactions.size > 1) {
+            xirrs.add(Xirr(transactions))
+          }
+        }
+      }
+
       endDate = endDate.minusWeeks(2)
     }
 
-    return xirrs
+    return xirrs.filter { xirr ->
+      try {
+        val result = xirr.calculate()
+        result > -1.0 // Filter out extreme negative values
+      } catch (e: Exception) {
+        log.error("Error calculating XIRR", e)
+        false
+      }
+    }
   }
-
 }

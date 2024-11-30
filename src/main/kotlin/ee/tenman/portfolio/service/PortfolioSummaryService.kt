@@ -4,10 +4,11 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CA
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
-import ee.tenman.portfolio.service.xirr.XirrService
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
@@ -26,10 +27,9 @@ class PortfolioSummaryService(
   private val portfolioDailySummaryRepository: PortfolioDailySummaryRepository,
   private val portfolioTransactionService: PortfolioTransactionService,
   private val dailyPriceService: DailyPriceService,
-  private val clock: Clock,
-  private val xirrService: XirrService,
-  private val instrumentService: InstrumentService
+  private val clock: Clock
 ) {
+  private val log = LoggerFactory.getLogger(javaClass)
 
   @Transactional(readOnly = true)
   @Cacheable(value = [SUMMARY_CACHE], key = "'summaries'", unless = "#result.isEmpty()")
@@ -46,56 +46,96 @@ class PortfolioSummaryService(
   @Cacheable(value = [SUMMARY_CACHE], key = "'currentDaySummary'")
   fun getCurrentDaySummary(): PortfolioDailySummary {
     val currentDate = LocalDate.now(clock)
-    val transactions = portfolioTransactionService.getAllTransactions()
-      .filter { !it.transactionDate.isAfter(currentDate) }
+    return calculateSummaryForDate(currentDate)
+  }
 
-    val (totalInvestment, currentValue) = processTransactions(transactions, currentDate)
-    val xirrResult = calculateXirr(transactions, currentValue, currentDate)
+  @Transactional(readOnly = true)
+  fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
+    val transactions = portfolioTransactionService.getAllTransactions()
+      .filter { !it.transactionDate.isAfter(date) }
+      .sortedBy { it.transactionDate }
+
+    val xirrTransactions = mutableListOf<Transaction>()
+    var netInvestment = BigDecimal.ZERO
+    var totalValue = BigDecimal.ZERO
+
+    // Process all transactions up to the date
+    transactions.forEach { transaction ->
+      val amount = transaction.price.multiply(transaction.quantity)
+      val transactionValue = when (transaction.transactionType) {
+        TransactionType.BUY -> -amount
+        TransactionType.SELL -> amount
+      }
+      xirrTransactions.add(Transaction(transactionValue.toDouble(), transaction.transactionDate))
+
+      when (transaction.transactionType) {
+        TransactionType.BUY -> netInvestment = netInvestment.add(amount)
+        TransactionType.SELL -> netInvestment = netInvestment.subtract(amount)
+      }
+    }
+
+    // Calculate current holdings value
+    val holdings = calculateHoldings(transactions)
+    totalValue = calculateTotalValue(holdings, date)
+
+    // Add current value as the final transaction
+    xirrTransactions.add(Transaction(totalValue.toDouble(), date))
+
+    // Calculate XIRR
+    val xirrResult = if (xirrTransactions.size > 1) {
+      try {
+        Xirr(xirrTransactions).calculate()
+      } catch (e: Exception) {
+        log.error("Error calculating XIRR", e)
+        0.0
+      }
+    } else 0.0
+
+    val profit = totalValue.subtract(netInvestment)
+    val xirrAnnual = BigDecimal(xirrResult)
+
+    log.debug("Date: $date, Total Value: $totalValue, Net Investment: $netInvestment, XIRR: $xirrResult")
 
     return PortfolioDailySummary(
-      entryDate = currentDate,
-      totalValue = currentValue.setScale(4, RoundingMode.HALF_UP),
-      xirrAnnualReturn = xirrResult.toBigDecimal().setScale(8, RoundingMode.HALF_UP),
-      totalProfit = currentValue.subtract(totalInvestment).setScale(4, RoundingMode.HALF_UP),
-      earningsPerDay = currentValue.multiply(BigDecimal(xirrResult))
-        .divide(365.25.toBigDecimal(), 4, RoundingMode.HALF_UP)
+      entryDate = date,
+      totalValue = totalValue.setScale(2, RoundingMode.HALF_UP),
+      xirrAnnualReturn = xirrAnnual.setScale(8, RoundingMode.HALF_UP),
+      totalProfit = profit.setScale(2, RoundingMode.HALF_UP),
+      earningsPerDay = totalValue.multiply(xirrAnnual)
+        .divide(BigDecimal(365.25), 2, RoundingMode.HALF_UP)
     )
   }
 
-  private fun processTransactions(
-    transactions: List<PortfolioTransaction>,
-    latestDate: LocalDate
-  ): Pair<BigDecimal, BigDecimal> {
-    val (totalInvestment, holdings) = xirrService.calculateInvestmentAndHoldings(transactions)
-    val currentValue = calculateCurrentValue(holdings, latestDate)
-    return Pair(totalInvestment, currentValue)
-  }
+  private fun calculateHoldings(transactions: List<PortfolioTransaction>): Map<Instrument, BigDecimal> {
+    val holdings = mutableMapOf<Instrument, BigDecimal>()
 
-  private fun calculateCurrentValue(holdings: Map<Instrument, BigDecimal>, latestDate: LocalDate): BigDecimal {
-    return holdings.entries.sumOf { (instrument, quantity) ->
-      val price = instrumentService.findInstrument(instrument.id).currentPrice
-        ?: dailyPriceService.findLastDailyPrice(instrument, latestDate)?.closePrice
-        ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $latestDate")
-      quantity * price
+    transactions.forEach { transaction ->
+      val currentHolding = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO)
+      holdings[transaction.instrument] = when (transaction.transactionType) {
+        TransactionType.BUY -> currentHolding.add(transaction.quantity)
+        TransactionType.SELL -> currentHolding.subtract(transaction.quantity)
+      }
     }
+
+    return holdings.filterValues { it > BigDecimal.ZERO }
   }
 
-  private fun calculateXirr(
-    transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal,
+  private fun calculateTotalValue(
+    holdings: Map<Instrument, BigDecimal>,
     date: LocalDate
-  ): Double {
-    val xirrTransactions = transactions.map { transaction ->
-      Transaction(-transaction.price.multiply(transaction.quantity).toDouble(), transaction.transactionDate)
+  ): BigDecimal {
+    return holdings.entries.sumOf { (instrument, quantity) ->
+      val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
+        ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
+      quantity.multiply(lastPrice)
     }
-    val finalTransaction = Transaction(currentValue.toDouble(), date)
-    return Xirr(xirrTransactions + finalTransaction).calculate()
   }
 
   @Transactional
   @Caching(
     evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'")
+      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
+      CacheEvict(value = [SUMMARY_CACHE], allEntries = true)
     ]
   )
   fun saveDailySummaries(summaries: List<PortfolioDailySummary>) {
