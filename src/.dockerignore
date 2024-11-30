@@ -1,0 +1,11 @@
+.git
+.gradle
+build/
+!build/libs/*.jar
+*.md
+*.log
+.idea/
+*.iml
+*.iws
+*.ipr
+.env*
