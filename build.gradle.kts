@@ -3,7 +3,7 @@ plugins {
   id("io.spring.dependency-management") version "1.1.6"
   kotlin("plugin.jpa") version "2.1.0"
   kotlin("jvm") version "2.1.0"
-  kotlin("plugin.spring") version "2.0.21"
+  kotlin("plugin.spring") version "2.1.0"
   id("jacoco")
 }
 
