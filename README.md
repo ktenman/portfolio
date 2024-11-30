@@ -8,7 +8,7 @@ The Portfolio Management System is a comprehensive application designed to help 
 portfolios. It retrieves financial data from the Alpha Vantage API, stores it in a database, and provides a
 user-friendly interface for viewing and managing portfolio transactions, instruments, and performance metrics.
 
-<img src="screenshots2/app.png" width="600" alt="Portfolio Management System application home page">
+<img src="screenshots/app.png" width="600" alt="Portfolio Management System application home page">
 
 ## Key Features
 
