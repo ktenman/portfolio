@@ -37,8 +37,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_PROFILES_ACTIVE: local
     build:
-      context: ./src
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/Dockerfile
     depends_on:
       - postgres
       - redis
@@ -53,8 +53,8 @@ services:
   frontend:
     container_name: frontend
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ui/Dockerfile
     depends_on:
       - backend
     restart: always
