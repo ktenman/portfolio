@@ -1,0 +1,16 @@
+[project]
+name = "market-price-tracker"
+version = "0.1.0"
+description = "Market price tracker for portfolio application"
+requires-python = ">=3.9"
+dependencies = [
+  "selenium==4.16.0",  # don't upgrade as specified in original requirements
+  "schedule==1.2.2",
+  "requests==2.32.3",
+  "Flask==3.1.0",
+  "tenacity==9.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

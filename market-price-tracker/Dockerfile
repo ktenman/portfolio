@@ -11,18 +11,21 @@ RUN apt-get update && apt-get install -y \
 # Set the timezone to Europe/Tallinn
 RUN ln -fs /usr/share/zoneinfo/Europe/Tallinn /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
 
-# Install geckodriver for Firefox (updated to version 0.35.0)
+# Install geckodriver for Firefox
 RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.35.0/geckodriver-v0.35.0-linux64.tar.gz" -O /tmp/geckodriver.tar.gz \
     && tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin \
     && rm /tmp/geckodriver.tar.gz
 
-# Install pip packages
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Install uv
+RUN pip install uv
 
-# Copy the application code
+# Copy project files
+COPY pyproject.toml .
 COPY .. /app
 WORKDIR /app
+
+# Install dependencies using uv
+RUN uv pip install --system .
 
 # Set environment variable for headless browser
 ENV HEADLESS=True
