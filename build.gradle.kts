@@ -1,5 +1,5 @@
 plugins {
-  id("org.springframework.boot") version "3.3.5"
+  id("org.springframework.boot") version "3.4.0"
   id("io.spring.dependency-management") version "1.1.6"
   kotlin("plugin.jpa") version "2.0.21"
   kotlin("jvm") version "2.0.21"
@@ -18,9 +18,10 @@ java {
 
 repositories {
   mavenCentral()
+  maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-extra["springCloudVersion"] = "2023.0.2"
+extra["springCloudVersion"] = "2024.0.0-RC1"
 
 val selenideVersion = "7.6.0"
 val springRetryVersion = "2.0.10"
