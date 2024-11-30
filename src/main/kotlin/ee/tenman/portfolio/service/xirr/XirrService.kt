@@ -48,19 +48,38 @@ class XirrService(private val alphaVantageService: AlphaVantageService) {
     var totalInvestment = BigDecimal.ZERO
     val holdings = mutableMapOf<Instrument, BigDecimal>()
 
-    transactions.forEach { transaction ->
-      val amount = transaction.price * transaction.quantity
-      totalInvestment += if (transaction.transactionType == TransactionType.BUY) amount else -amount
+    // Group transactions by instrument
+    val transactionsByInstrument = transactions.groupBy { it.instrument }
 
-      val currentHolding = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO)
-      val newHolding = when (transaction.transactionType) {
-        TransactionType.BUY -> currentHolding + transaction.quantity
-        TransactionType.SELL -> currentHolding - transaction.quantity
+    transactionsByInstrument.forEach { (instrument, instrumentTransactions) ->
+      var currentHolding = BigDecimal.ZERO
+      var investmentForInstrument = BigDecimal.ZERO
+
+      // Process transactions in chronological order
+      instrumentTransactions.sortedBy { it.transactionDate }.forEach { transaction ->
+        val amount = transaction.price * transaction.quantity
+        when (transaction.transactionType) {
+          TransactionType.BUY -> {
+            currentHolding += transaction.quantity
+            // Only count investment if we still hold some position
+            investmentForInstrument += amount
+          }
+          TransactionType.SELL -> {
+            val sellRatio = transaction.quantity.divide(currentHolding, 10, RoundingMode.HALF_UP)
+            investmentForInstrument = investmentForInstrument.multiply(BigDecimal.ONE.subtract(sellRatio))
+            currentHolding -= transaction.quantity
+          }
+        }
       }
-      holdings[transaction.instrument] = newHolding
+
+      // Only count instruments with remaining positions
+      if (currentHolding > BigDecimal.ZERO) {
+        holdings[instrument] = currentHolding
+        totalInvestment += investmentForInstrument
+      }
     }
 
-    log.info("Total Investment: $totalInvestment, Holdings: $holdings")
+    log.info("Calculated total investment: $totalInvestment, Holdings: $holdings")
     return Pair(totalInvestment, holdings)
   }
 }

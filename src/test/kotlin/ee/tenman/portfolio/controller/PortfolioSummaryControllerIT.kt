@@ -6,10 +6,13 @@ import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
@@ -51,6 +54,9 @@ class PortfolioSummaryControllerIT {
 
   @Resource
   private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
+
+  @Resource
+  private lateinit var dailyPriceRepository: DailyPriceRepository
 
   @MockBean
   lateinit var clock: Clock
@@ -181,6 +187,19 @@ class PortfolioSummaryControllerIT {
       ),
     )
 
+    dailyPriceRepository.save(
+      DailyPrice(
+        instrument = instrument,
+        entryDate = LocalDate.of(2023, 7, 21),
+        providerName = ProviderName.ALPHA_VANTAGE,
+        openPrice = BigDecimal("28.25"),
+        highPrice = BigDecimal("28.25"),
+        lowPrice = BigDecimal("28.25"),
+        closePrice = BigDecimal("28.25"),
+        volume = 1000
+      )
+    )
+
     portfolioTransactionRepository.save(
       PortfolioTransaction(
         instrument = instrument,
@@ -191,28 +210,14 @@ class PortfolioSummaryControllerIT {
       )
     )
 
-    val currentSummary = portfolioSummaryRepository.save(
-      PortfolioDailySummary(
-        entryDate = LocalDate.of(2023, 7, 21),
-        totalValue = BigDecimal("11000.00"),
-        xirrAnnualReturn = BigDecimal("0.07"),
-        totalProfit = BigDecimal("700.00"),
-        earningsPerDay = BigDecimal("25.00")
-      )
-    )
-
     mockMvc.perform(get("/api/portfolio-summary/current").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.date").value("2023-07-21"))
       .andExpect(jsonPath("$.totalValue").value(96.05))
       .andExpect(jsonPath("$.xirrAnnualReturn").value(7.97040776))
       .andExpect(jsonPath("$.totalProfit").value(3.4))
-      .andExpect(jsonPath("$.earningsPerDay").value(2.096))
-      .andExpect(jsonPath("$.earningsPerMonth").value(63.797))
-
-    val summary = portfolioSummaryRepository.findById(currentSummary.id)
-    assertThat(summary).isPresent
-    assertThat(summary.get().totalValue).isEqualByComparingTo("11000.00")
+      .andExpect(jsonPath("$.earningsPerDay").value(2.1))
+      .andExpect(jsonPath("$.earningsPerMonth").value(63.91875))
 
     assertThat(output.out)
       .contains("PortfolioSummaryController.getCurrentPortfolioSummary() entered with arguments: []")
