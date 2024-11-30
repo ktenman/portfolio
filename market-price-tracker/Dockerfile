@@ -19,16 +19,23 @@ RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.35.0/ge
 # Install uv
 RUN pip install uv
 
-# Copy project files
-COPY pyproject.toml .
-COPY .. /app
+# Set working directory first
 WORKDIR /app
 
-# Install dependencies using uv
-RUN uv pip install --system .
+# Copy only pyproject.toml first for better caching
+COPY pyproject.toml .
+RUN uv pip install --system '.[dev]'
+
+# Copy application code
+COPY . .
+RUN uv pip install --system -e .
 
 # Set environment variable for headless browser
 ENV HEADLESS=True
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
 
 # Run the script
 CMD ["python", "main.py"]

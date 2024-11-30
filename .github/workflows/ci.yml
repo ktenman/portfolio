@@ -80,11 +80,11 @@ jobs:
       matrix:
         include:
           - name: backend
-            dockerfile: ./Dockerfile.backend
+            dockerfile: ./Dockerfile
             image: ktenman/portfolio-be
             context: .
           - name: frontend
-            dockerfile: ./Dockerfile.frontend
+            dockerfile: ./Dockerfile
             image: ktenman/portfolio-fe
             context: .
           - name: market-price-tracker
