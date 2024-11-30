@@ -1,0 +1,10 @@
+.git
+node_modules/
+dist/
+*.log
+.idea/
+*.iml
+*.iws
+*.ipr
+.env*
+*.md
