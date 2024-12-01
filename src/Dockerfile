@@ -2,20 +2,17 @@
 FROM gradle:jdk21-alpine AS build
 WORKDIR /app
 
-# Copy only build config first to cache dependencies
+# Copy necessary files
 COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle ./gradle
+COPY src ./src
 
 # Build with optimizations
-RUN gradle build --no-daemon \
+RUN gradle clean build -x test --no-daemon \
     --build-cache \
     -Dorg.gradle.caching=true \
     -Dorg.gradle.parallel=true \
     -Dorg.gradle.configureondemand=true
-
-# Copy source and build
-COPY src ./src
-RUN gradle clean build -x test --no-daemon
 
 # Stage 2: Runtime
 FROM bellsoft/liberica-openjre-alpine-musl:21
