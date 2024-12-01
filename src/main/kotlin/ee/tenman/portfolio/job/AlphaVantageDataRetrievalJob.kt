@@ -38,6 +38,5 @@ class AlphaVantageDataRetrievalJob(
     log.info("Completed AlphaVantage data retrieval job. Processed ${instruments.size} instruments.")
   }
 
-  override fun getName(): String = "AlphaVantageDataRetrievalJob"
-
+  override fun getName(): String = this::class.simpleName!!
 }
