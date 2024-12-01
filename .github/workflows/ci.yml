@@ -38,6 +38,8 @@ jobs:
     strategy:
       matrix:
         test-type: [ 'unit', 'e2e' ]
+    outputs:
+      image_digest: ${{ steps.docker_build.outputs.digest }}
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -49,6 +51,21 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.7.1
+        with:
+          buildkitd-flags: --debug
+      - name: Build Backend Image
+        if: matrix.test-type == 'e2e'
+        id: docker_build
+        uses: docker/build-push-action@v6.10.0
+        with:
+          context: .
+          file: ./src/Dockerfile
+          load: true
+          tags: ktenman/portfolio-be:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Set up Docker Compose
         if: matrix.test-type == 'e2e'
         uses: ndeloof/install-compose-action@v0.0.1
@@ -69,6 +86,16 @@ jobs:
           path: |
             build/reports/tests
             build/reports/selenide
+      - name: Save docker image
+        if: matrix.test-type == 'e2e'
+        run: |
+          docker save ktenman/portfolio-be:test -o backend-image.tar
+      - name: Upload artifact
+        if: matrix.test-type == 'e2e'
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: backend-image
+          path: backend-image.tar
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
@@ -104,15 +131,30 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+      - name: Download backend image
+        if: matrix.name == 'backend'
+        uses: actions/download-artifact@v4.1.4
+        with:
+          name: backend-image
+      - name: Load backend image
+        if: matrix.name == 'backend'
+        run: |
+          docker load -i backend-image.tar
+          docker tag ktenman/portfolio-be:test ${{ matrix.image }}:latest
       - name: Build and push ${{ matrix.name }} image
+        if: matrix.name != 'backend'
         uses: docker/build-push-action@v6.10.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-#          platforms: linux/amd64,linux/arm64/v8
           platforms: linux/amd64
           push: true
           tags: ${{ matrix.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Push backend image
+        if: matrix.name == 'backend'
+        run: docker push ${{ matrix.image }}:latest
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
