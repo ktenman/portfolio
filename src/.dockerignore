@@ -1,11 +1,45 @@
+# Version control
 .git
+.gitignore
+
+# Gradle
 .gradle
 build/
 !build/libs/*.jar
-*.md
-*.log
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
 .idea/
 *.iml
 *.iws
 *.ipr
+
+# Logs
+*.log
+
+# Environment
 .env*
+
+# Test files
+**/test/
+src/test/
+
+# Documentation
+*.md
+LICENSE*
+README*
+
+# Node/UI related
+node_modules/
+ui/dist/
+*.config.ts
+.vscode/
+
+# Generated files
+combined_files.txt
+clean.sh
+
+# Docker related
+Dockerfile
+.dockerignore
+docker-compose*.yml
