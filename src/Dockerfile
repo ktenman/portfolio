@@ -1,27 +1,35 @@
-# Stage 1: Build the application and install curl
+# Stage 1: Build the application
 FROM gradle:jdk21-alpine AS build
-
 WORKDIR /app
 
-COPY build.gradle.kts settings.gradle.kts /app/
-COPY gradle /app/gradle
-COPY src /app/src
+# Copy only build config first to cache dependencies
+COPY build.gradle.kts settings.gradle.kts ./
+COPY gradle ./gradle
 
+# Build with optimizations
+RUN gradle build --no-daemon \
+    --build-cache \
+    -Dorg.gradle.caching=true \
+    -Dorg.gradle.parallel=true \
+    -Dorg.gradle.configureondemand=true
+
+# Copy source and build
+COPY src ./src
 RUN gradle clean build -x test --no-daemon
 
-# Stage 2: Create the final image
+# Stage 2: Runtime
 FROM bellsoft/liberica-openjre-alpine-musl:21
-
 WORKDIR /app
 
-COPY --from=build /app/build/libs/*.jar /app/app.jar
+# Install curl and necessary libraries in a single layer
+RUN apk update && \
+    apk add --no-cache curl libressl nghttp2-libs libssh2 brotli zlib && \
+    rm -rf /var/cache/apk/*
 
-# Install curl and necessary libraries in the target stage
-RUN apk update && apk add --no-cache curl libressl nghttp2-libs libssh2 brotli zlib
+COPY --from=build /app/build/libs/*.jar app.jar
 
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -Duser.timezone=Europe/Tallinn"
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=80"
+ENV JAVA_OPTS="-Xms512m -Xmx1024m -Duser.timezone=Europe/Tallinn" \
+    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=80" \
+    SERVER_PORT=8080
 
-ENV SERVER_PORT=8080
-
-CMD ["sh", "-c", "java $JAVA_OPTS -Dserver.port=$SERVER_PORT -jar /app/app.jar"]
+CMD ["java", "-jar", "app.jar"]
