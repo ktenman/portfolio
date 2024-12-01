@@ -156,7 +156,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
       - name: Download Docker images
         if: matrix.name == 'backend' || matrix.name == 'frontend'
-        uses: actions/download-artifact@v4.1.4
+        uses: actions/download-artifact@v4.1.7
         with:
           name: docker-images
       - name: Load and tag images
