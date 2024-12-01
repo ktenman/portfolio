@@ -49,41 +49,6 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Set up Docker Buildx
-        if: matrix.test-type == 'e2e'
-        uses: docker/setup-buildx-action@v3.7.1
-        with:
-          buildkitd-flags: --debug
-      - name: Build Backend Image
-        if: matrix.test-type == 'e2e'
-        uses: docker/build-push-action@v6.10.0
-        with:
-          context: .
-          file: ./src/Dockerfile
-          load: true
-          tags: ktenman/portfolio-be:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Build Frontend Image
-        if: matrix.test-type == 'e2e'
-        uses: docker/build-push-action@v6.10.0
-        with:
-          context: .
-          file: ./ui/Dockerfile
-          load: true
-          tags: ktenman/portfolio-fe:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Build Market Price Tracker Image
-        if: matrix.test-type == 'e2e'
-        uses: docker/build-push-action@v6.10.0
-        with:
-          context: ./market-price-tracker
-          file: ./market-price-tracker/Dockerfile
-          load: true
-          tags: ktenman/market-price-tracker:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Set up Docker Compose
         if: matrix.test-type == 'e2e'
         uses: ndeloof/install-compose-action@v0.0.1
@@ -104,21 +69,6 @@ jobs:
           path: |
             build/reports/tests
             build/reports/selenide
-      - name: Save Docker images
-        if: matrix.test-type == 'e2e'
-        run: |
-          docker save ktenman/portfolio-be:test -o backend-image.tar
-          docker save ktenman/portfolio-fe:test -o frontend-image.tar
-          docker save ktenman/market-price-tracker:test -o market-price-tracker-image.tar
-      - name: Upload Docker images
-        if: matrix.test-type == 'e2e'
-        uses: actions/upload-artifact@v4.4.3
-        with:
-          name: docker-images
-          path: |
-            backend-image.tar
-            frontend-image.tar
-            market-price-tracker-image.tar
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
@@ -154,29 +104,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - name: Download Docker images
-        if: matrix.name == 'backend' || matrix.name == 'frontend'
-        uses: actions/download-artifact@v4.1.4
+      - name: Build and push ${{ matrix.name }} image
+        uses: docker/build-push-action@v6.10.0
         with:
-          name: docker-images
-      - name: Load and tag images
-        run: |
-          case "${{ matrix.name }}" in
-            "backend")
-              docker load -i backend-image.tar
-              docker tag ktenman/portfolio-be:test ${{ matrix.image }}:latest
-              ;;
-            "frontend")
-              docker load -i frontend-image.tar
-              docker tag ktenman/portfolio-fe:test ${{ matrix.image }}:latest
-              ;;
-            "market-price-tracker")
-              docker load -i market-price-tracker-image.tar
-              docker tag ktenman/market-price-tracker:test ${{ matrix.image }}:latest
-              ;;
-          esac
-      - name: Push image
-        run: docker push ${{ matrix.image }}:latest
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          #          platforms: linux/amd64,linux/arm64/v8
+          platforms: linux/amd64
+          push: true
+          tags: ${{ matrix.image }}:latest
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
