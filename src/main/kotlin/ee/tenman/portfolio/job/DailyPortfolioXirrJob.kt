@@ -28,7 +28,7 @@ class DailyPortfolioXirrJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0/5 * * * * *")
+  @Scheduled(cron = "0 30 6 * * *")
   fun runJob() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
@@ -51,19 +51,22 @@ class DailyPortfolioXirrJob(
     log.info("Calculating summaries from $firstTransactionDate to $yesterday")
 
     try {
-      val summariesToSave = mutableListOf<PortfolioDailySummary>()
-      var currentDate = firstTransactionDate
+      val existingDates = portfolioSummaryService.getDailySummariesBetween(firstTransactionDate, yesterday)
+        .map { it.entryDate }
+        .toSet()
 
-      while (!currentDate.isAfter(yesterday)) {
-        val existingSummary = portfolioSummaryService.getDailySummary(currentDate)
-        if (existingSummary == null) {
-          val relevantTransactions = allTransactions.filter { !it.transactionDate.isAfter(currentDate) }
-          log.info("Calculating summary for date: $currentDate with ${relevantTransactions.size} transactions")
-          val summary = calculateSummaryForDate(relevantTransactions, currentDate)
-          summariesToSave.add(summary)
-          log.info("Calculated summary for date: $currentDate. XIRR: ${summary.xirrAnnualReturn}")
-        }
-        currentDate = currentDate.plusDays(1)
+      val datesToProcess = generateSequence(firstTransactionDate) { date ->
+        val next = date.plusDays(1)
+        if (next.isAfter(yesterday)) null else next
+      }.filterNot { it in existingDates }
+        .toList()
+
+      val summariesToSave = datesToProcess.map { currentDate ->
+        val relevantTransactions = allTransactions.filter { !it.transactionDate.isAfter(currentDate) }
+        log.info("Calculating summary for date: $currentDate with ${relevantTransactions.size} transactions")
+        val summary = calculateSummaryForDate(relevantTransactions, currentDate)
+        log.info("Calculated summary for date: $currentDate. XIRR: ${summary.xirrAnnualReturn}")
+        summary
       }
 
       if (summariesToSave.isNotEmpty()) {
