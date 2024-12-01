@@ -156,7 +156,7 @@ class PortfolioSummaryService(
   }
 
   @Transactional(readOnly = true)
-  fun getDailySummary(date: LocalDate): PortfolioDailySummary? {
-    return portfolioDailySummaryRepository.findByEntryDate(date)
+  fun getDailySummariesBetween(startDate: LocalDate, endDate: LocalDate): List<PortfolioDailySummary> {
+    return portfolioDailySummaryRepository.findAllByEntryDateBetween(startDate, endDate)
   }
 }
