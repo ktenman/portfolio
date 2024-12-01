@@ -163,6 +163,4 @@ class DailyPortfolioXirrJob(
       }
     }
   }
-
-  override fun getName(): String = this::class.simpleName!!
 }

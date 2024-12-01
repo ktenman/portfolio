@@ -37,6 +37,4 @@ class BinanceDataRetrievalJob(
 
     log.info("Completed Binance data retrieval job. Processed ${instruments.size} instruments.")
   }
-
-  override fun getName(): String = this::class.simpleName!!
 }
