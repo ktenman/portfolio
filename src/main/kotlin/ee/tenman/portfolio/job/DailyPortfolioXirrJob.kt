@@ -17,7 +17,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
-import java.util.concurrent.CompletableFuture
 
 @Component
 class DailyPortfolioXirrJob(
@@ -29,7 +28,7 @@ class DailyPortfolioXirrJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 30 6 * * *")
+  @Scheduled(cron = "0/5 * * * * *")
   fun runJob() {
     log.info("Running daily portfolio XIRR job")
     jobExecutionService.executeJob(this)
@@ -82,92 +81,85 @@ class DailyPortfolioXirrJob(
     transactions: List<PortfolioTransaction>,
     date: LocalDate
   ): PortfolioDailySummary {
-    val instrumentHoldings = calculateHoldings(transactions)
-    val currentValue = calculateCurrentValue(instrumentHoldings, date)
-    val totalInvestment = calculateTotalInvestment(transactions, instrumentHoldings)
-    val xirrResult = calculateXirr(transactions, currentValue, date, instrumentHoldings)
+    val instrumentGroups = transactions.groupBy { it.instrument }
+    var totalValue = BigDecimal.ZERO
+    val xirrTransactions = mutableListOf<Transaction>()
 
-    return createDailySummary(totalInvestment, currentValue, xirrResult, date)
-  }
+    instrumentGroups.forEach { (instrument, instrumentTransactions) ->
+      val (instrumentValue, instrumentXirrTransactions) = calculateInstrumentMetrics(
+        instrument,
+        instrumentTransactions,
+        date
+      )
+      totalValue += instrumentValue
+      xirrTransactions.addAll(instrumentXirrTransactions)
+    }
 
-  private fun calculateHoldings(transactions: List<PortfolioTransaction>): Map<Instrument, BigDecimal> {
-    val holdings = mutableMapOf<Instrument, BigDecimal>()
-    transactions.forEach { transaction ->
-      val currentHolding = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO)
-      holdings[transaction.instrument] = when (transaction.transactionType) {
-        TransactionType.BUY -> currentHolding + transaction.quantity
-        TransactionType.SELL -> currentHolding - transaction.quantity
+    val xirrResult = if (xirrTransactions.size >= 2) {
+      try {
+        Xirr(xirrTransactions).calculate()
+      } catch (e: Exception) {
+        log.error("Error calculating XIRR for date $date", e)
+        0.0
       }
-    }
-    return holdings.filterValues { it > BigDecimal.ZERO }
-  }
+    } else 0.0
 
-  private fun calculateCurrentValue(
-    holdings: Map<Instrument, BigDecimal>,
-    date: LocalDate
-  ): BigDecimal {
-    return holdings.entries.sumOf { (instrument, quantity) ->
-      val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
-        ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
-      quantity * lastPrice
-    }
-  }
+    val totalInvestment = calculateTotalInvestment(transactions)
+    val profit = totalValue - totalInvestment
 
-  private fun calculateTotalInvestment(
-    transactions: List<PortfolioTransaction>,
-    activeHoldings: Map<Instrument, BigDecimal>
-  ): BigDecimal {
-    return transactions
-      .filter { activeHoldings.containsKey(it.instrument) }
-      .filter { it.transactionType == TransactionType.BUY }
-      .sumOf { it.quantity * it.price }
-  }
-
-  private fun calculateXirr(
-    transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal,
-    date: LocalDate,
-    activeHoldings: Map<Instrument, BigDecimal>
-  ): Double {
-    val xirrTransactions = transactions
-      .filter { activeHoldings.containsKey(it.instrument) }.mapNotNull { transaction ->
-        when (transaction.transactionType) {
-          TransactionType.BUY -> Transaction(
-            -(transaction.price * transaction.quantity).toDouble(),
-            transaction.transactionDate
-          )
-
-          TransactionType.SELL -> null
-        }
-      }
-      .toMutableList()
-
-    xirrTransactions.add(Transaction(currentValue.toDouble(), date))
-
-    return try {
-      if (xirrTransactions.size < 2) return 0.0
-      Xirr(xirrTransactions).calculate()
-    } catch (e: Exception) {
-      log.error("Error calculating XIRR for date $date", e)
-      0.0
-    }
-  }
-
-  private fun createDailySummary(
-    totalInvestment: BigDecimal,
-    currentValue: BigDecimal,
-    xirrResult: Double,
-    date: LocalDate
-  ): PortfolioDailySummary {
     return PortfolioDailySummary(
       entryDate = date,
-      totalValue = currentValue.setScale(4, RoundingMode.HALF_UP),
+      totalValue = totalValue.setScale(4, RoundingMode.HALF_UP),
       xirrAnnualReturn = BigDecimal(xirrResult).setScale(8, RoundingMode.HALF_UP),
-      totalProfit = currentValue.subtract(totalInvestment).setScale(4, RoundingMode.HALF_UP),
-      earningsPerDay = currentValue.multiply(BigDecimal(xirrResult))
+      totalProfit = profit.setScale(4, RoundingMode.HALF_UP),
+      earningsPerDay = totalValue.multiply(BigDecimal(xirrResult))
         .divide(BigDecimal(365.25), 4, RoundingMode.HALF_UP)
     )
   }
 
-  override fun getName(): String = "DailyPortfolioXirrJob"
+  private fun calculateInstrumentMetrics(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    date: LocalDate
+  ): Pair<BigDecimal, List<Transaction>> {
+    var remainingShares = BigDecimal.ZERO
+    val xirrTransactions = mutableListOf<Transaction>()
+
+    transactions.sortedBy { it.transactionDate }.forEach { transaction ->
+      val transactionAmount = transaction.price.multiply(transaction.quantity)
+      when (transaction.transactionType) {
+        TransactionType.BUY -> {
+          remainingShares += transaction.quantity
+          xirrTransactions.add(Transaction(-transactionAmount.toDouble(), transaction.transactionDate))
+        }
+        TransactionType.SELL -> {
+          remainingShares -= transaction.quantity
+          xirrTransactions.add(Transaction(transactionAmount.toDouble(), transaction.transactionDate))
+        }
+      }
+    }
+
+    val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
+      ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
+
+    val currentValue = remainingShares.multiply(lastPrice)
+
+    // Only add current value to XIRR calculation if we have remaining shares
+    if (remainingShares > BigDecimal.ZERO) {
+      xirrTransactions.add(Transaction(currentValue.toDouble(), date))
+    }
+
+    return Pair(currentValue, xirrTransactions)
+  }
+
+  private fun calculateTotalInvestment(transactions: List<PortfolioTransaction>): BigDecimal {
+    return transactions.fold(BigDecimal.ZERO) { acc, transaction ->
+      when (transaction.transactionType) {
+        TransactionType.BUY -> acc + (transaction.price * transaction.quantity)
+        TransactionType.SELL -> acc - (transaction.price * transaction.quantity)
+      }
+    }
+  }
+
+  override fun getName(): String = this::class.simpleName!!
 }
