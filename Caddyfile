@@ -49,7 +49,7 @@ fov.ee {
 
     # For all other routes, use authentication
     @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha /captcha/* /captcha/docs /captcha/docs/* /captcha/openapi.json
     }
     handle @protected {
         forward_auth auth:8083 {
