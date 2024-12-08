@@ -4,6 +4,7 @@ import com.codeborne.selenide.Condition
 import com.codeborne.selenide.Configuration
 import com.codeborne.selenide.Selenide
 import org.openqa.selenium.By
+import org.openqa.selenium.firefox.FirefoxOptions
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.*
@@ -20,8 +21,21 @@ class Auto24(private val captchaService: CaptchaService) {
   }
 
   fun findCarPrice(regNr: String): String {
-    Configuration.headless = true
+
+    val options = FirefoxOptions()
+    val profilePath = System.getenv("FIREFOX_PROFILE_PATH");
+    options.addArguments("--disable-blink-features=AutomationControlled") // Mask automation flag
+    options.addArguments("--disable-web-security") // Prevent cross-origin issues
+    options.addArguments("--disable-extensions") // Avoid extension loading delays
+    options.addArguments("--disable-popup-blocking") // Allow all popups
+    Configuration.browserCapabilities.setCapability(
+      "general.useragent.override",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0"
+    )
+    options.addArguments("--profile", profilePath)
     Configuration.browser = "firefox"
+    Configuration.browserCapabilities = options
+    Configuration.headless = false // Visible browser for realism
 
     try {
       openPageAndHandleCookies(regNr)
