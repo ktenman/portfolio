@@ -6,6 +6,8 @@ import com.codeborne.selenide.Selenide
 import org.openqa.selenium.By
 import org.openqa.selenium.firefox.FirefoxOptions
 import org.slf4j.LoggerFactory
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -44,20 +46,17 @@ class Auto24Service(private val captchaService: CaptchaService) {
     return options
   }
 
+  @Retryable(backoff = Backoff(delay = 1000))
   fun findCarPrice(regNr: String): String {
     try {
       createFirefoxOptions()
       openPageAndHandleCookies(regNr)
       solveCaptcha(regNr)
       return extractCarPrice()
-    } catch (e: Exception) {
-      log.error("Failed to find car price for $regNr", e)
-      return "Error processing request"
     } finally {
       try {
         Selenide.closeWebDriver()
-      } catch (e: Exception) {
-        log.warn("Failed to close WebDriver", e)
+      } catch (_: Exception) {
       }
     }
   }
