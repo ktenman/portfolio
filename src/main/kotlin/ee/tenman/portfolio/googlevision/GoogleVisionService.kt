@@ -6,6 +6,7 @@ import org.slf4j.MDC
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
+import java.io.File
 import java.util.*
 
 @Service
@@ -20,6 +21,13 @@ class GoogleVisionService {
 
   @Resource
   private lateinit var googleVisionClient: GoogleVisionClient
+
+  @Retryable(maxAttempts = 2, backoff = Backoff(delay = 1000))
+  fun getPlateNumber(photoFile: File): Map<String, String> {
+    val base64Image = FileToBase64.encodeToBase64(photoFile.readBytes())
+    val uuid = UUID.randomUUID()
+    return getPlateNumber(base64Image, uuid)
+  }
 
   @Retryable(maxAttempts = 2, backoff = Backoff(delay = 1000))
   fun getPlateNumber(base64EncodedImage: String, uuid: UUID): Map<String, String> {

@@ -20,7 +20,6 @@ class Auto24(private val captchaService: CaptchaService) {
   }
 
   fun findCarPrice(regNr: String): String {
-    Configuration.browserSize = "1920x1080"
     Configuration.headless = true
     Configuration.browser = "firefox"
 

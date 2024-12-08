@@ -19,6 +19,8 @@ on:
         required: true
       VISION_BASE64_ENCODED_KEY:
         required: true
+      TELEGRAM_BOT_TOKEN:
+        required: true
   workflow_dispatch:
     inputs:
       deploy:
@@ -53,6 +55,7 @@ jobs:
           echo "HEALTHCHECK_URL=${{ secrets.HEALTHCHECK_URL }}" >> .env
           echo "ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}" >> .env
           echo "VISION_BASE64_ENCODED_KEY=${{ secrets.VISION_BASE64_ENCODED_KEY }}" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
