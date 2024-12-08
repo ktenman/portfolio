@@ -1,4 +1,17 @@
-# Redirect www to non-www
+# Captcha subdomain
+captcha.fov.ee {
+    # First handle the root path redirect
+    @root {
+        path /
+        expression `{path} == "/"`
+    }
+    redir @root https://captcha.fov.ee/docs permanent
+
+    # Then handle all other paths
+    reverse_proxy captcha-solver:8000
+}
+
+# Main domain and www redirect
 www.fov.ee {
     redir https://fov.ee{uri}
 }
@@ -59,12 +72,4 @@ fov.ee {
         # All other routes go to the frontend
         reverse_proxy frontend:80
     }
-}
-
-# Captcha subdomain
-captcha.fov.ee {
-    # Redirect root to docs over HTTPS
-    redir / https://captcha.fov.ee/docs permanent
-
-    reverse_proxy captcha-solver:8000
 }
