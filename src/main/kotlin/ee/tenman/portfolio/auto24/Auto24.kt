@@ -34,9 +34,7 @@ class Auto24(private val captchaService: CaptchaService) {
 
     val arguments = listOf(
       "--disable-blink-features=AutomationControlled",
-      "--no-sandbox",
-      "--width=1920",
-      "--height=1080"
+      "--no-sandbox"
     )
     options.addArguments(arguments)
 
