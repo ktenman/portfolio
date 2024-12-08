@@ -17,6 +17,8 @@ on:
         required: true
       ALLOWED_EMAILS:
         required: true
+      VISION_BASE64_ENCODED_KEY:
+        required: true
   workflow_dispatch:
     inputs:
       deploy:
@@ -50,6 +52,7 @@ jobs:
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
           echo "HEALTHCHECK_URL=${{ secrets.HEALTHCHECK_URL }}" >> .env
           echo "ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}" >> .env
+          echo "VISION_BASE64_ENCODED_KEY=${{ secrets.VISION_BASE64_ENCODED_KEY }}" >> .env
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
