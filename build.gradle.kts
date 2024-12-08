@@ -18,6 +18,7 @@ java {
 
 repositories {
   mavenCentral()
+  maven { url = uri("https://djl.ai/maven") }
   maven { url = uri("https://repo.spring.io/milestone") }
 }
 
@@ -46,6 +47,11 @@ dependencies {
   implementation("com.google.guava:guava:$guavaVersion")
   implementation("org.apache.commons:commons-math3:$commonsMathVersion")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+  
+  implementation("com.google.cloud:google-cloud-vision:3.45.0") {
+    exclude(group = "commons-logging", module = "commons-logging")
+  }
+
   developmentOnly("org.springframework.boot:spring-boot-docker-compose")
   runtimeOnly("org.postgresql:postgresql")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
