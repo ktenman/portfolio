@@ -1,27 +1,27 @@
+(common) {
+    encode gzip
+}
+
+# Redirect www to non-www
 www.fov.ee {
     redir https://fov.ee{uri}
 }
 
+# Captcha subdomain
+captcha.fov.ee {
+    import common
+    reverse_proxy captcha-solver:8000
+}
+
+# Main domain
 fov.ee {
-    encode gzip
+    import common
 
     # Redirect all HTTP traffic to HTTPS
     @http {
         protocol http
     }
     redir @http https://fov.ee{uri}
-
-    # Captcha solver routes with proper handling
-    @captcha_routes {
-        path /captcha/*
-    }
-    handle @captcha_routes {
-        reverse_proxy captcha-solver:8000 {
-            header_up Host {upstream_hostport}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-Prefix /captcha
-        }
-    }
 
     # Login and OAuth routes are handled by the auth server
     @auth_routes {
@@ -36,9 +36,9 @@ fov.ee {
         reverse_proxy backend:8080
     }
 
-    # Single definition of protected routes
+    # Protected routes
     @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha/*
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
     }
 
     handle @protected {
