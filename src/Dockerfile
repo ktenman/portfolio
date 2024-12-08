@@ -42,25 +42,14 @@ RUN ARCH=$(uname -m); \
     curl -sL https://github.com/mozilla/geckodriver/releases/download/v0.35.0/geckodriver-v0.35.0-${GECKODRIVER_ARCH}.tar.gz | tar -xz -C /usr/bin/ && \
     chmod +x /usr/bin/geckodriver
 
-# Setup Firefox profile
-RUN mkdir -p /usr/lib/firefox/profiles/default && \
-    mkdir -p /root/.mozilla/firefox && \
-    echo '[General]\nStartWithLastProfile=1\n\n[Profile0]\nName=default\nIsRelative=0\nPath=/usr/lib/firefox/profiles/default\nDefault=1' > /root/.mozilla/firefox/profiles.ini
-
-# Copy and extract the Firefox profile if needed
-COPY src/firefox-profile.tar.gz /tmp/firefox-profile.tar.gz
-RUN tar -xzf /tmp/firefox-profile.tar.gz -C /usr/lib/firefox/profiles/default && \
-    rm /tmp/firefox-profile.tar.gz
-
 # Set environment variables
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -Duser.timezone=Europe/Tallinn" \
+ENV JAVA_OPTS="-Xms1024m -Xmx2048m -Duser.timezone=Europe/Tallinn" \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=80" \
     PATH="/usr/bin/firefox:/usr/bin/geckodriver:${PATH}" \
     SERVER_PORT=8080 \
     MOZ_HEADLESS=1 \
     MOZ_HEADLESS_WIDTH=1920 \
-    MOZ_HEADLESS_HEIGHT=1080 \
-    FIREFOX_PROFILE_PATH="/usr/lib/firefox/profiles/default"
+    MOZ_HEADLESS_HEIGHT=1080
 
 # Copy the JAR file from the build stage
 COPY --from=build /app/build/libs/*.jar app.jar
