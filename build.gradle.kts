@@ -47,7 +47,9 @@ dependencies {
   implementation("com.google.guava:guava:$guavaVersion")
   implementation("org.apache.commons:commons-math3:$commonsMathVersion")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-  
+  implementation("org.telegram:telegrambots:6.9.7.1")
+  implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
+
   implementation("com.google.cloud:google-cloud-vision:3.45.0") {
     exclude(group = "commons-logging", module = "commons-logging")
   }

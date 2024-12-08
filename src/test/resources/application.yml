@@ -28,3 +28,7 @@ captcha:
 
 vision:
   base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}
+
+telegram:
+  bot:
+    token: ${TELEGRAM_BOT_TOKEN:}
