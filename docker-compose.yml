@@ -129,9 +129,14 @@ services:
   captcha-solver:
     container_name: captcha_solver
     image: ktenman/captcha-solver:latest
-    ports:
-      - "8000:8000"
     restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - app
 
   restart_scheduler:
     image: docker:cli
