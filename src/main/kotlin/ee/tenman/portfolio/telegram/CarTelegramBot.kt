@@ -2,6 +2,7 @@ package ee.tenman.portfolio.telegram
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import ee.tenman.portfolio.auto24.Auto24
+import ee.tenman.portfolio.configuration.TimeUtility
 import ee.tenman.portfolio.googlevision.GoogleVisionService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -39,52 +40,54 @@ class CarTelegramBot(
   override fun getBotUsername(): String = "CarTelegramBot"
 
   override fun onUpdateReceived(update: Update) {
+    val startTime = System.nanoTime()
     if (!update.hasMessage()) return
     val message = update.message
 
     try {
-      processMessage(message)
+      processMessage(message, startTime)
     } catch (e: Exception) {
       log.error("Error processing message", e)
       sendMessage(message.chatId.toString(), "Error: ${e.message}", message.messageId)
     }
   }
 
-  private fun processMessage(message: Message) {
+  private fun processMessage(message: Message, startTime: Long) {
     val chatId = message.chatId.toString()
     val messageId = message.messageId
 
     when {
       message.hasPhoto() -> message.photo.maxByOrNull { it.fileSize }?.let { photo ->
-        processImageOrDocument(downloadTelegramFile(photo.fileId), chatId, messageId)
+        processImageOrDocument(downloadTelegramFile(photo.fileId), chatId, messageId, startTime)
       }
       message.hasDocument() && supportedImageTypes.contains(message.document?.mimeType) ->
-        processImageOrDocument(downloadTelegramFile(message.document.fileId), chatId, messageId)
+        processImageOrDocument(downloadTelegramFile(message.document.fileId), chatId, messageId, startTime)
       message.hasText() -> commandRegex.find(message.text)?.groupValues?.get(2)?.uppercase()?.let { plateNumber ->
         log.info("Processing plate number: $plateNumber")
-        lookupAndSendCarPrice(plateNumber, chatId, messageId)
+        lookupAndSendCarPrice(plateNumber, chatId, messageId, startTime)
       }
       else -> sendMessage(chatId, "Unsupported message type. Send an image or use 'car XXX123' command.", messageId)
     }
   }
 
-  private fun processImageOrDocument(imageFile: File, chatId: String, replyToMessageId: Int) = try {
+  private fun processImageOrDocument(imageFile: File, chatId: String, replyToMessageId: Int, startTime: Long) = try {
     val visionResult = googleVisionService.getPlateNumber(imageFile)
     log.debug("Vision result: {}", objectMapper.writeValueAsString(visionResult))
 
     when {
       visionResult["hasCar"] == "false" -> sendMessage(chatId, "No car detected.", replyToMessageId)
       visionResult["plateNumber"] == null -> sendMessage(chatId, "No license plate detected.", replyToMessageId)
-      else -> lookupAndSendCarPrice(visionResult["plateNumber"].toString(), chatId, replyToMessageId)
+      else -> lookupAndSendCarPrice(visionResult["plateNumber"].toString(), chatId, replyToMessageId, startTime)
     }
   } finally {
     imageFile.delete()
   }
 
-  private fun lookupAndSendCarPrice(plateNumber: String, chatId: String, replyToMessageId: Int) =
-    auto24.findCarPrice(plateNumber).let { price ->
-      sendMessage(chatId, "Plate: $plateNumber\nEstimated price: $price", replyToMessageId)
-    }
+  private fun lookupAndSendCarPrice(plateNumber: String, chatId: String, replyToMessageId: Int, startTime: Long): Any? {
+    val carPrice = auto24.findCarPrice(plateNumber).replace("kuni", "to")
+    val duration = TimeUtility.durationInSeconds(startTime)
+    return sendMessage(chatId, "Plate: $plateNumber\nEstimated price: $carPrice\nDuration: $duration seconds", replyToMessageId)
+  }
 
   private fun downloadTelegramFile(fileId: String): File = execute(GetFile().apply { this.fileId = fileId })
     .let { tgFile ->
