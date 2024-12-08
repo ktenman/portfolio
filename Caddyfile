@@ -31,24 +31,14 @@ fov.ee {
         reverse_proxy auth:8083
     }
 
-    @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha/*
-    }
-    handle @captcha_routes {
-        uri strip_prefix /captcha
-        reverse_proxy captcha-solver:8000 {
-            header_up Host {upstream_hostport}
-            header_up X-Real-IP {remote_host}
-        }
-    }
-
     # Unprotected API calculator route for backend
     handle /api/calculator {
         reverse_proxy backend:8080
     }
 
+    # Single definition of protected routes
     @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha /captcha/* /captcha/docs /captcha/docs/* /captcha/openapi.json /captcha/redoc /captcha/redoc/* /captcha/static/* /openapi.json
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha/*
     }
 
     handle @protected {
