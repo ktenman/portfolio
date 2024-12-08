@@ -31,15 +31,16 @@ fov.ee {
         reverse_proxy auth:8083
     }
 
-    # Unprotected calculator route and its assets
-    @calculator_routes {
-        path /calculator /calculator/* /assets/* *.js *.css *.svg
+    # Captcha solver routes with proper handling
+    @captcha_routes {
+        path /captcha /captcha/* /captcha/docs /captcha/docs/* /captcha/openapi.json /captcha/redoc /captcha/redoc/* /captcha/static/* /openapi.json
     }
-    handle @calculator_routes {
-        header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
-        header Pragma "no-cache"
-        header Expires "0"
-        reverse_proxy frontend:80
+    handle @captcha_routes {
+        uri strip_prefix /captcha
+        reverse_proxy captcha-solver:8000 {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+        }
     }
 
     # Unprotected API calculator route for backend
@@ -47,10 +48,10 @@ fov.ee {
         reverse_proxy backend:8080
     }
 
-    # For all other routes, use authentication
     @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha /captcha/* /captcha/docs /captcha/docs/* /captcha/openapi.json
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha /captcha/* /captcha/docs /captcha/docs/* /captcha/openapi.json /captcha/redoc /captcha/redoc/* /captcha/static/* /openapi.json
     }
+
     handle @protected {
         forward_auth auth:8083 {
             uri /validate
