@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 
 @Service
-class Auto24(private val captchaService: CaptchaService) {
+class Auto24Service(private val captchaService: CaptchaService) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
@@ -49,7 +49,6 @@ class Auto24(private val captchaService: CaptchaService) {
   }
 
   fun findCarPrice(regNr: String): String {
-
     try {
       createFirefoxOptions()
       openPageAndHandleCookies(regNr)
@@ -58,6 +57,12 @@ class Auto24(private val captchaService: CaptchaService) {
     } catch (e: Exception) {
       log.error("Failed to find car price for $regNr", e)
       return "Error processing request"
+    } finally {
+      try {
+        Selenide.closeWebDriver()
+      } catch (e: Exception) {
+        log.warn("Failed to close WebDriver", e)
+      }
     }
   }
 

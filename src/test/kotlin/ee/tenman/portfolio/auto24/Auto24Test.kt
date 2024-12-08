@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test
 class Auto24Test {
 
   @Resource
-  private lateinit var auto24: Auto24
+  private lateinit var auto24Service: Auto24Service
 
   @Test
   @Disabled
   fun findCarPrice() {
-    val findCarPrice = auto24.findCarPrice("463BKH")
+    val findCarPrice = auto24Service.findCarPrice("463BKH")
 
     assertThat(findCarPrice).isEqualTo("6200 € kuni 10000 €")
   }
