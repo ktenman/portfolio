@@ -37,6 +37,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_PROFILES_ACTIVE: local
       VISION_BASE64_ENCODED_KEY: ${VISION_BASE64_ENCODED_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     build:
       context: .
       dockerfile: src/Dockerfile
@@ -69,6 +70,13 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - frontend
+    restart: always
+
+  captcha-solver:
+    container_name: captcha_solver
+    image: ktenman/captcha-solver:latest
+    ports:
+      - "8000:8000"
     restart: always
 
   market_price_tracker:

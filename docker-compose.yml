@@ -37,6 +37,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_PROFILES_ACTIVE: default
       VISION_BASE64_ENCODED_KEY: ${VISION_BASE64_ENCODED_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     image: ktenman/portfolio-be:latest
     ports:
       - '8080:8080'
@@ -124,6 +125,13 @@ services:
       start_period: 40s
     labels:
       - "com.centurylinklabs.watchtower.enable=true"  # Enable Watchtower for this container
+
+  captcha-solver:
+    container_name: captcha_solver
+    image: ktenman/captcha-solver:latest
+    ports:
+      - "8000:8000"
+    restart: always
 
   restart_scheduler:
     image: docker:cli
