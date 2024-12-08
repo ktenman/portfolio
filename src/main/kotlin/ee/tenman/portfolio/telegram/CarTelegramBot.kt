@@ -36,6 +36,7 @@ class CarTelegramBot(
   private val commandRegex = Regex("^(ark|car)\\s+([0-9]{3}[A-Za-z]{3})\\b", RegexOption.IGNORE_CASE)
   private val supportedImageTypes = setOf("image/jpeg", "image/png")
 
+  @Deprecated("Deprecated in Java")
   override fun getBotToken(): String = botToken
   override fun getBotUsername(): String = "CarTelegramBot"
 
