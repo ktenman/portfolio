@@ -9,8 +9,6 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_PROFILES_ACTIVE: local
-      VISION_BASE64_ENCODED_KEY: ${VISION_BASE64_ENCODED_KEY}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
 
   app:
     image: nginx:alpine
