@@ -7,8 +7,10 @@ import org.openqa.selenium.By
 import org.openqa.selenium.firefox.FirefoxOptions
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.imageio.ImageIO
 
 @Service
 class Auto24(private val captchaService: CaptchaService) {
@@ -20,24 +22,49 @@ class Auto24(private val captchaService: CaptchaService) {
     private const val AUTO24_URL = "https://www.auto24.ee/ostuabi/?t=soiduki-turuhinna-paring&vpc_reg_nr=463bkh&checksec1=387c&vpc_reg_search=1"
   }
 
-  fun findCarPrice(regNr: String): String {
-
+  private fun createFirefoxOptions(): FirefoxOptions {
     val options = FirefoxOptions()
-    val profilePath = System.getenv("FIREFOX_PROFILE_PATH");
-    options.addArguments("--disable-blink-features=AutomationControlled") // Mask automation flag
-    options.addArguments("--disable-web-security") // Prevent cross-origin issues
-    options.addArguments("--disable-extensions") // Avoid extension loading delays
-    options.addArguments("--disable-popup-blocking") // Allow all popups
-    Configuration.browserCapabilities.setCapability(
-      "general.useragent.override",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0"
+
+    val prefs = mapOf(
+      "browser.download.folderList" to 2,
+      "browser.download.manager.showWhenStarting" to false,
+      "general.useragent.override" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0"
     )
-    options.addArguments("--profile", profilePath)
-    Configuration.browser = "firefox"
-    Configuration.browserCapabilities = options
-    Configuration.headless = false // Visible browser for realism
+
+    prefs.forEach { (key, value) -> options.addPreference(key, value) }
+
+    val arguments = listOf(
+      "--disable-blink-features=AutomationControlled",
+      "--no-sandbox",
+      "--width=1920",
+      "--height=1080"
+    )
+    options.addArguments(arguments)
+
+    val profilePath = System.getenv("FIREFOX_PROFILE_PATH")?.takeIf { it.isNotBlank() }
+      ?: throw IllegalStateException("FIREFOX_PROFILE_PATH environment variable is not set or empty")
 
     try {
+      check(File(profilePath).exists()) { "Firefox profile directory does not exist: $profilePath" }
+      options.addArguments("--profile", profilePath)
+    } catch (e: Exception) {
+      log.error("Failed to set Firefox profile: ${e.message}")
+      throw e
+    }
+
+    Configuration.browser = "firefox"
+    Configuration.browserCapabilities = options
+    Configuration.browserSize = "1920x1080"
+    Configuration.timeout = 10000
+    Configuration.headless = System.getProperty("selenide.headless", "true").toBoolean()
+
+    return options
+  }
+
+  fun findCarPrice(regNr: String): String {
+
+    try {
+      createFirefoxOptions()
       openPageAndHandleCookies(regNr)
       solveCaptcha(regNr)
       return extractCarPrice()
@@ -82,7 +109,16 @@ class Auto24(private val captchaService: CaptchaService) {
     TimeUnit.SECONDS.sleep(2)
     val screenshot = Selenide.element(By.id("vpc_captcha")).screenshot() ?: return false
 
-    val base64Image = Base64.getEncoder().encodeToString(screenshot.toPath().toFile().readBytes())
+    val imageFile = screenshot.toPath().toFile()
+    val imageBytes = imageFile.readBytes()
+    val image = ImageIO.read(imageFile)
+
+    log.info("Captcha image details - Size: ${imageBytes.size} bytes, " +
+      "Width: ${image.width}px, " +
+      "Height: ${image.height}px")
+
+    val base64Image = Base64.getEncoder().encodeToString(imageBytes)
+
     val response = captchaService.predict(PredictionRequest(UUID.randomUUID(), base64Image))
 
     log.info("Captcha prediction: ${response.prediction}")

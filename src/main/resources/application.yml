@@ -73,7 +73,7 @@ feign:
         loggerLevel: FULL
 
 captcha:
-  url: http://localhost:8000
+  url: http://captcha-solver:8000
 
 vision:
   base64EncodedKey: ${VISION_BASE64_ENCODED_KEY}
