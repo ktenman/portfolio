@@ -7,7 +7,6 @@ import org.openqa.selenium.By
 import org.openqa.selenium.firefox.FirefoxOptions
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
@@ -17,7 +16,7 @@ class Auto24(private val captchaService: CaptchaService) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private const val MAX_ATTEMPTS = 10
+    private const val MAX_ATTEMPTS = 20
     private const val RETRY_DELAY_MS = 2000L
     private const val AUTO24_URL = "https://www.auto24.ee/ostuabi/?t=soiduki-turuhinna-paring&vpc_reg_nr=463bkh&checksec1=387c&vpc_reg_search=1"
   }
@@ -41,22 +40,12 @@ class Auto24(private val captchaService: CaptchaService) {
     )
     options.addArguments(arguments)
 
-    val profilePath = System.getenv("FIREFOX_PROFILE_PATH")?.takeIf { it.isNotBlank() }
-      ?: throw IllegalStateException("FIREFOX_PROFILE_PATH environment variable is not set or empty")
-
-    try {
-      check(File(profilePath).exists()) { "Firefox profile directory does not exist: $profilePath" }
-      options.addArguments("--profile", profilePath)
-    } catch (e: Exception) {
-      log.error("Failed to set Firefox profile: ${e.message}")
-      throw e
-    }
-
+    // Basic Selenide configuration
     Configuration.browser = "firefox"
     Configuration.browserCapabilities = options
     Configuration.browserSize = "1920x1080"
     Configuration.timeout = 10000
-    Configuration.headless = System.getProperty("selenide.headless", "true").toBoolean()
+    Configuration.headless = true
 
     return options
   }

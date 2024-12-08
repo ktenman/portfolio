@@ -85,8 +85,8 @@ class CarTelegramBot(
         }
 
         else -> {
-          val plateNumber = visionResult["plateNumber"]!!.uppercase()
-          lookupAndSendCarPrice(plateNumber, chatId, replyToMessageId)
+          val plateNumber = visionResult["plateNumber"]
+          lookupAndSendCarPrice(plateNumber.toString(), chatId, replyToMessageId)
         }
       }
     } finally {
