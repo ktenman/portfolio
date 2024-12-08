@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.telegram
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import ee.tenman.portfolio.auto24.Auto24
+import ee.tenman.portfolio.auto24.Auto24Service
 import ee.tenman.portfolio.configuration.TimeUtility
 import ee.tenman.portfolio.googlevision.GoogleVisionService
 import org.slf4j.LoggerFactory
@@ -28,7 +28,7 @@ import java.net.URI
 class CarTelegramBot(
   @Value("\${telegram.bot.token}") private val botToken: String,
   private val googleVisionService: GoogleVisionService,
-  private val auto24: Auto24,
+  private val auto24Service: Auto24Service,
   private val objectMapper: ObjectMapper
 ) : TelegramLongPollingBot(botToken) {
 
@@ -85,7 +85,7 @@ class CarTelegramBot(
   }
 
   private fun lookupAndSendCarPrice(plateNumber: String, chatId: String, replyToMessageId: Int, startTime: Long): Any? {
-    val carPrice = auto24.findCarPrice(plateNumber).replace("kuni", "to")
+    val carPrice = auto24Service.findCarPrice(plateNumber).replace("kuni", "to")
     val duration = TimeUtility.durationInSeconds(startTime)
     return sendMessage(chatId, "Plate: $plateNumber\nEstimated price: $carPrice\nDuration: $duration seconds", replyToMessageId)
   }
