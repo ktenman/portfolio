@@ -22,3 +22,9 @@ binance:
 
 auth:
   url: http://localhost:${wiremock.server.port}
+
+captcha:
+  url: http://localhost:8000
+
+vision:
+  base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}
