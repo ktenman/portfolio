@@ -31,4 +31,5 @@ vision:
 
 telegram:
   bot:
+    enabled: false
     token: ${TELEGRAM_BOT_TOKEN:}
