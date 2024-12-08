@@ -11,6 +11,14 @@ fov.ee {
     }
     redir @http https://fov.ee{uri}
 
+    # Captcha solver routes
+    @captcha_routes {
+        path /captcha /captcha/*
+    }
+    handle @captcha_routes {
+        reverse_proxy captcha-solver:8000
+    }
+
     # Login and OAuth routes are handled by the auth server
     @auth_routes {
         path /login /login/* /oauth2/* /logout
