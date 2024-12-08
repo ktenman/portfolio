@@ -18,33 +18,29 @@ class Auto24Service(private val captchaService: CaptchaService) {
   companion object {
     private const val MAX_ATTEMPTS = 20
     private const val RETRY_DELAY_MS = 2000L
-    private const val AUTO24_URL = "https://www.auto24.ee/ostuabi/?t=soiduki-turuhinna-paring&vpc_reg_nr=463bkh&checksec1=387c&vpc_reg_search=1"
+    private const val AUTO24_URL =
+      "https://www.auto24.ee/ostuabi/?t=soiduki-turuhinna-paring&vpc_reg_nr=463bkh&checksec1=387c&vpc_reg_search=1"
   }
 
   private fun createFirefoxOptions(): FirefoxOptions {
     val options = FirefoxOptions()
-
-    val prefs = mapOf(
+    mapOf(
       "browser.download.folderList" to 2,
       "browser.download.manager.showWhenStarting" to false,
       "general.useragent.override" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0"
-    )
-
-    prefs.forEach { (key, value) -> options.addPreference(key, value) }
-
+    ).forEach { (key, value) ->
+      options.addPreference(key, value)
+    }
     val arguments = listOf(
       "--disable-blink-features=AutomationControlled",
       "--no-sandbox"
     )
     options.addArguments(arguments)
-
-    // Basic Selenide configuration
     Configuration.browser = "firefox"
     Configuration.browserCapabilities = options
     Configuration.browserSize = "1920x1080"
     Configuration.timeout = 10000
     Configuration.headless = true
-
     return options
   }
 
@@ -68,7 +64,7 @@ class Auto24Service(private val captchaService: CaptchaService) {
 
   private fun openPageAndHandleCookies(regNr: String) {
     Selenide.open(AUTO24_URL)
-    TimeUnit.SECONDS.sleep(2)
+    TimeUnit.MILLISECONDS.sleep(1500)
 
     val acceptCookies = Selenide.elements(By.tagName("button"))
       .find(Condition.text("Nõustun"))
@@ -78,7 +74,7 @@ class Auto24Service(private val captchaService: CaptchaService) {
 
     Selenide.element(By.name("vpc_reg_nr")).value = regNr
     Selenide.element(By.className("sbmt")).click()
-    TimeUnit.SECONDS.sleep(2)
+    TimeUnit.MILLISECONDS.sleep(1500)
   }
 
   private fun solveCaptcha(regNr: String) {
@@ -98,16 +94,18 @@ class Auto24Service(private val captchaService: CaptchaService) {
   }
 
   private fun processCaptchaAttempt(): Boolean {
-    TimeUnit.SECONDS.sleep(2)
+    TimeUnit.MILLISECONDS.sleep(1500)
     val screenshot = Selenide.element(By.id("vpc_captcha")).screenshot() ?: return false
 
     val imageFile = screenshot.toPath().toFile()
     val imageBytes = imageFile.readBytes()
     val image = ImageIO.read(imageFile)
 
-    log.info("Captcha image details - Size: ${imageBytes.size} bytes, " +
-      "Width: ${image.width}px, " +
-      "Height: ${image.height}px")
+    log.info(
+      "Captcha image details - Size: ${imageBytes.size} bytes, " +
+        "Width: ${image.width}px, " +
+        "Height: ${image.height}px"
+    )
 
     val base64Image = Base64.getEncoder().encodeToString(imageBytes)
 
