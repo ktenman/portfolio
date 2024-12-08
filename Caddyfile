@@ -1,14 +1,19 @@
 # Captcha subdomain
 captcha.fov.ee {
-    # First handle the root path redirect
+    # First handle exact root redirects
     @root {
-        path /
-        expression `{path} == "/"`
+        path_regexp ^/?$
     }
-    redir @root https://captcha.fov.ee/docs permanent
+    handle @root {
+        redir https://captcha.fov.ee/docs permanent
+    }
 
-    # Then handle all other paths
-    reverse_proxy captcha-solver:8000
+    # Then proxy everything else
+    handle * {
+        reverse_proxy captcha-solver:8000 {
+            header_up X-Real-IP {remote_host}
+        }
+    }
 }
 
 # Main domain and www redirect
