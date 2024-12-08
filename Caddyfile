@@ -13,7 +13,7 @@ fov.ee {
 
     # Captcha solver routes with proper handling
     @captcha_routes {
-        path_regexp ^/captcha(/.*)?$
+        path /captcha/*
     }
     handle @captcha_routes {
         reverse_proxy captcha-solver:8000 {
@@ -32,8 +32,7 @@ fov.ee {
     }
 
     @protected {
-        not path_regexp ^/captcha(/.*)?$
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /captcha/*
     }
     handle @captcha_routes {
         uri strip_prefix /captcha
