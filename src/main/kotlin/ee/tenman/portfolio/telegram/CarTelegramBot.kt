@@ -15,6 +15,14 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.io.File
 import java.net.URI
 
+/**
+ * Telegram bot for processing car-related queries and images.
+ * Supports license plate detection from images and car price estimation.
+ * Commands:
+ * - ark {plateNumber} : Look up car price by plate number
+ * - car {plateNumber} : Alternative command for price lookup
+ * Image processing: Supports JPEG and PNG formats
+ */
 @Service
 class CarTelegramBot(
   @Value("\${telegram.bot.token}") private val botToken: String,
@@ -25,6 +33,7 @@ class CarTelegramBot(
 
   private val log = LoggerFactory.getLogger(javaClass)
   private val commandRegex = Regex("^(ark|car)\\s+([0-9]{3}[A-Za-z]{3})\\b", RegexOption.IGNORE_CASE)
+  private val supportedImageTypes = setOf("image/jpeg", "image/png")
 
   override fun getBotToken(): String = botToken
   override fun getBotUsername(): String = "CarTelegramBot"
@@ -32,89 +41,69 @@ class CarTelegramBot(
   override fun onUpdateReceived(update: Update) {
     if (!update.hasMessage()) return
     val message = update.message
+
+    try {
+      processMessage(message)
+    } catch (e: Exception) {
+      log.error("Error processing message", e)
+      sendMessage(message.chatId.toString(), "Error: ${e.message}", message.messageId)
+    }
+  }
+
+  private fun processMessage(message: Message) {
     val chatId = message.chatId.toString()
     val messageId = message.messageId
 
-    try {
-      processMessage(message, chatId, messageId)
-    } catch (e: Exception) {
-      log.error("Error processing message", e)
-      sendMessage(chatId, "Error processing request: ${e.message}", messageId)
-    }
-  }
-
-  private fun processMessage(message: Message, chatId: String, messageId: Int) {
     when {
-      message.hasPhoto() -> {
-        val photo = message.photo.maxByOrNull { it.fileSize }
-          ?: throw IllegalStateException("No photo found in message")
+      message.hasPhoto() -> message.photo.maxByOrNull { it.fileSize }?.let { photo ->
         processImageOrDocument(downloadTelegramFile(photo.fileId), chatId, messageId)
       }
-      message.hasDocument() -> {
-        val document = message.document
-        if (document?.mimeType?.startsWith("image/") == true) {
-          processImageOrDocument(downloadTelegramFile(document.fileId), chatId, messageId)
-        } else {
-          sendMessage(chatId, "This document is not a supported image (jpeg or png).", messageId)
+      message.hasDocument() && supportedImageTypes.contains(message.document?.mimeType) ->
+        processImageOrDocument(downloadTelegramFile(message.document.fileId), chatId, messageId)
+      message.hasText() -> commandRegex.find(message.text)?.groupValues?.get(2)?.uppercase()?.let { plateNumber ->
+        log.info("Processing plate number: $plateNumber")
+        lookupAndSendCarPrice(plateNumber, chatId, messageId)
+      }
+      else -> sendMessage(chatId, "Unsupported message type. Send an image or use 'car XXX123' command.", messageId)
+    }
+  }
+
+  private fun processImageOrDocument(imageFile: File, chatId: String, replyToMessageId: Int) = try {
+    val visionResult = googleVisionService.getPlateNumber(imageFile)
+    log.debug("Vision result: {}", objectMapper.writeValueAsString(visionResult))
+
+    when {
+      visionResult["hasCar"] == "false" -> sendMessage(chatId, "No car detected.", replyToMessageId)
+      visionResult["plateNumber"] == null -> sendMessage(chatId, "No license plate detected.", replyToMessageId)
+      else -> lookupAndSendCarPrice(visionResult["plateNumber"].toString(), chatId, replyToMessageId)
+    }
+  } finally {
+    imageFile.delete()
+  }
+
+  private fun lookupAndSendCarPrice(plateNumber: String, chatId: String, replyToMessageId: Int) =
+    auto24.findCarPrice(plateNumber).let { price ->
+      sendMessage(chatId, "Plate: $plateNumber\nEstimated price: $price", replyToMessageId)
+    }
+
+  private fun downloadTelegramFile(fileId: String): File = execute(GetFile().apply { this.fileId = fileId })
+    .let { tgFile ->
+      File.createTempFile("telegram_", "_file").apply {
+        URI.create(fileUrl(tgFile.filePath)).toURL().openStream().use { input ->
+          outputStream().use { output -> input.copyTo(output) }
         }
       }
-      message.hasText() -> {
-        val plateNumber = commandRegex.find(message.text)?.groupValues?.get(2)?.uppercase()
-        if (plateNumber != null) {
-          log.info("Found plate number in text: $plateNumber")
-          lookupAndSendCarPrice(plateNumber, chatId, messageId)
-        }
-      }
     }
-  }
-
-  private fun processImageOrDocument(imageFile: File, chatId: String, replyToMessageId: Int) {
-    try {
-      val visionResult = googleVisionService.getPlateNumber(imageFile)
-      log.info("Vision result: {}", objectMapper.writeValueAsString(visionResult))
-
-      if (visionResult["hasCar"] == "false") {
-        sendMessage(chatId, "No car detected in the image.", replyToMessageId)
-        return
-      }
-
-      val plateNumber = visionResult["plateNumber"]
-      if (plateNumber == null) {
-        sendMessage(chatId, "No license plate detected in the image.", replyToMessageId)
-        return
-      }
-
-      lookupAndSendCarPrice(plateNumber.toString(), chatId, replyToMessageId)
-    } finally {
-      imageFile.delete()
-    }
-  }
-
-  private fun lookupAndSendCarPrice(plateNumber: String, chatId: String, replyToMessageId: Int) {
-    val price = auto24.findCarPrice(plateNumber)
-    sendMessage(chatId, "Detected plate number: $plateNumber\nEstimated price: $price", replyToMessageId)
-  }
-
-  private fun downloadTelegramFile(fileId: String): File {
-    val tgFile = execute(GetFile().apply { this.fileId = fileId })
-    return File.createTempFile("telegram_", "_file").apply {
-      URI.create(fileUrl(tgFile.filePath)).toURL().openStream().use { input ->
-        outputStream().use { output -> input.copyTo(output) }
-      }
-    }
-  }
 
   private fun fileUrl(filePath: String) = "https://api.telegram.org/file/bot${getBotToken()}/$filePath"
 
-  private fun sendMessage(chatId: String, text: String, replyToMessageId: Int? = null) {
-    try {
-      execute(SendMessage().apply {
-        this.chatId = chatId
-        this.text = text
-        replyToMessageId?.let { this.replyToMessageId = it }
-      })
-    } catch (e: TelegramApiException) {
-      log.error("Failed to send message: {}", text, e)
-    }
+  private fun sendMessage(chatId: String, text: String, replyToMessageId: Int? = null) = try {
+    execute(SendMessage().apply {
+      this.chatId = chatId
+      this.text = text
+      replyToMessageId?.let { this.replyToMessageId = it }
+    })
+  } catch (e: TelegramApiException) {
+    log.error("Failed to send message: {}", text, e)
   }
 }
