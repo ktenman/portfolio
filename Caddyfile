@@ -13,13 +13,13 @@ fov.ee {
 
     # Captcha solver routes with proper handling
     @captcha_routes {
-        path /captcha /captcha/*
+        path_regexp ^/captcha(/.*)?$
     }
     handle @captcha_routes {
-        uri strip_prefix /captcha
         reverse_proxy captcha-solver:8000 {
             header_up Host {upstream_hostport}
             header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Prefix /captcha
         }
     }
 
@@ -31,9 +31,9 @@ fov.ee {
         reverse_proxy auth:8083
     }
 
-    # Captcha solver routes with proper handling
-    @captcha_routes {
-        path /captcha /captcha/* /captcha/docs /captcha/docs/* /captcha/openapi.json /captcha/redoc /captcha/redoc/* /captcha/static/* /openapi.json
+    @protected {
+        not path_regexp ^/captcha(/.*)?$
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
     }
     handle @captcha_routes {
         uri strip_prefix /captcha
