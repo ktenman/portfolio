@@ -63,5 +63,8 @@ fov.ee {
 
 # Captcha subdomain
 captcha.fov.ee {
+    # Redirect root to docs over HTTPS
+    redir / https://captcha.fov.ee/docs permanent
+
     reverse_proxy captcha-solver:8000
 }
