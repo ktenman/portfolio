@@ -3,17 +3,6 @@ www.fov.ee {
     redir https://fov.ee{uri}
 }
 
-# Captcha subdomain
-captcha.fov.ee {
-    # Handle HTTP to HTTPS redirect
-    @http {
-        protocol http
-    }
-    redir @http https://captcha.fov.ee{uri}
-
-    reverse_proxy captcha-solver:8000
-}
-
 # Main domain
 fov.ee {
     encode gzip
@@ -23,6 +12,17 @@ fov.ee {
         protocol http
     }
     redir @http https://fov.ee{uri}
+
+    # Calculator related routes
+    @calculator_routes {
+        path /calculator /calculator/* /assets/* *.js *.css *.svg
+    }
+    handle @calculator_routes {
+        header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+        header Pragma "no-cache"
+        header Expires "0"
+        reverse_proxy frontend:80
+    }
 
     # Login and OAuth routes are handled by the auth server
     @auth_routes {
@@ -59,4 +59,9 @@ fov.ee {
         # All other routes go to the frontend
         reverse_proxy frontend:80
     }
+}
+
+# Captcha subdomain
+captcha.fov.ee {
+    reverse_proxy captcha-solver:8000
 }
