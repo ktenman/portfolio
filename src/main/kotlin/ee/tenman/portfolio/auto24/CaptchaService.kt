@@ -2,6 +2,8 @@ package ee.tenman.portfolio.auto24
 
 import ee.tenman.portfolio.configuration.TimeUtility
 import org.slf4j.LoggerFactory
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
 
@@ -9,6 +11,7 @@ import java.util.concurrent.TimeUnit
 class CaptchaService(private val captchaClient: CaptchaClient) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  @Retryable(backoff = Backoff(delay = 1000))
   fun predict(predictionRequest: PredictionRequest): PredictionResponse {
     val startTime = System.currentTimeMillis()
     log.info("Starting CAPTCHA prediction")
