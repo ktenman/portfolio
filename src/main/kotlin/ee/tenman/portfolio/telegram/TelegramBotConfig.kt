@@ -10,14 +10,23 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 class TelegramBotConfig {
 
   @Bean
-  @ConditionalOnProperty(name = ["telegram.bot.enabled"], havingValue = "true", matchIfMissing = true)
+  @ConditionalOnProperty(
+    name = ["telegram.bot.token"],
+    matchIfMissing = false,
+    havingValue = "false",
+    prefix = ""
+  )
   fun telegramBotsApi(): TelegramBotsApi = TelegramBotsApi(DefaultBotSession::class.java)
 
   @Bean
-  @ConditionalOnProperty(name = ["telegram.bot.enabled"], havingValue = "true", matchIfMissing = true)
+  @ConditionalOnProperty(
+    name = ["telegram.bot.token"],
+    matchIfMissing = false,
+    havingValue = "false",
+    prefix = ""
+  )
   fun registerBot(bot: CarTelegramBot, api: TelegramBotsApi): TelegramBotsApi {
     api.registerBot(bot)
     return api
   }
 }
-

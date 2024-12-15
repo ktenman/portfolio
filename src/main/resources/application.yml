@@ -76,8 +76,10 @@ captcha:
   url: http://captcha-solver:8000
 
 vision:
-  base64EncodedKey: ${VISION_BASE64_ENCODED_KEY}
+  enabled: ${VISION_ENABLED:false}
+  base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}
 
 telegram:
   bot:
-    token: ${TELEGRAM_BOT_TOKEN}
+    enabled: ${TELEGRAM_BOT_ENABLED:false}
+    token: ${TELEGRAM_BOT_TOKEN:}
