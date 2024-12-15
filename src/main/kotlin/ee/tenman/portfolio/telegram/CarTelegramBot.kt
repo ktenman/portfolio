@@ -6,6 +6,7 @@ import ee.tenman.portfolio.configuration.TimeUtility
 import ee.tenman.portfolio.googlevision.GoogleVisionService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.GetFile
@@ -25,8 +26,15 @@ import java.net.URI
  * Image processing: Supports JPEG and PNG formats
  */
 @Service
+@ConditionalOnProperty(
+  name = ["telegram.bot.token"],
+  matchIfMissing = false,
+  havingValue = "false",
+  prefix = ""
+)
 class CarTelegramBot(
-  @Value("\${telegram.bot.token}") private val botToken: String,
+  @Value("\${telegram.bot.token:}") private val botToken: String,
+  @Value("\${telegram.bot.enabled:false}") private val botEnabled: Boolean,
   private val googleVisionService: GoogleVisionService,
   private val auto24Service: Auto24Service,
   private val objectMapper: ObjectMapper
@@ -36,11 +44,22 @@ class CarTelegramBot(
   private val commandRegex = Regex("^(ark|car)\\s+([0-9]{3}[A-Za-z]{3})\\b", RegexOption.IGNORE_CASE)
   private val supportedImageTypes = setOf("image/jpeg", "image/png")
 
+  companion object {
+    private const val BOT_DISABLED_MESSAGE = "Telegram bot is disabled. No token provided."
+  }
+
+  private fun isBotDisabled() = (!botEnabled).also { disabled ->
+    if (disabled) log.info(BOT_DISABLED_MESSAGE)
+  }
+
   @Deprecated("Deprecated in Java")
   override fun getBotToken(): String = botToken
+
   override fun getBotUsername(): String = "CarTelegramBot"
 
   override fun onUpdateReceived(update: Update) {
+    if (isBotDisabled()) return
+
     val startTime = System.nanoTime()
     if (!update.hasMessage()) return
     val message = update.message
@@ -87,7 +106,11 @@ class CarTelegramBot(
   private fun lookupAndSendCarPrice(plateNumber: String, chatId: String, replyToMessageId: Int, startTime: Long): Any? {
     val carPrice = auto24Service.findCarPrice(plateNumber).replace("kuni", "to")
     val duration = TimeUtility.durationInSeconds(startTime)
-    return sendMessage(chatId, "Plate: $plateNumber\nEstimated price: $carPrice\nDuration: $duration seconds", replyToMessageId)
+    return sendMessage(
+      chatId,
+      "Plate: $plateNumber\nEstimated price: $carPrice\nDuration: $duration seconds",
+      replyToMessageId
+    )
   }
 
   private fun downloadTelegramFile(fileId: String): File = execute(GetFile().apply { this.fileId = fileId })

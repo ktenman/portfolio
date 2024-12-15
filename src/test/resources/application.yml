@@ -27,9 +27,10 @@ captcha:
   url: http://localhost:${wiremock.server.port}
 
 vision:
+  enabled: ${VISION_ENABLED:false}
   base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}
 
 telegram:
   bot:
-    enabled: false
+    enabled: ${TELEGRAM_BOT_ENABLED:false}
     token: ${TELEGRAM_BOT_TOKEN:}

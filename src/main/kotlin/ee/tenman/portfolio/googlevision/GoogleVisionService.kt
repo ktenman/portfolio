@@ -3,6 +3,7 @@ package ee.tenman.portfolio.googlevision
 import jakarta.annotation.Resource
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
@@ -10,13 +11,18 @@ import java.io.File
 import java.util.*
 
 @Service
-class GoogleVisionService {
+class GoogleVisionService(
+  @Value("\${vision.base64EncodedKey:}") private val base64EncodedKey: String,
+  @Value("\${vision.enabled:false}") private val visionEnabled: Boolean
+) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
     private const val REGEX = "\\b\\d{3}\\s?[A-Z]{3}\\b"
     val CAR_PLATE_NUMBER_PATTERN = Regex(REGEX, RegexOption.IGNORE_CASE)
     private val VEHICLE_LABELS = setOf("vehicle", "car")
+    private const val VISION_DISABLED_MESSAGE = "Vision service is disabled. Skipping plate number detection."
+    private val VISION_DISABLED_RESPONSE = mapOf("error" to "Vision service is disabled")
   }
 
   @Resource
@@ -24,6 +30,10 @@ class GoogleVisionService {
 
   @Retryable(maxAttempts = 2, backoff = Backoff(delay = 1000))
   fun getPlateNumber(photoFile: File): Map<String, String> {
+    if (isVisionDisabled()) {
+      return VISION_DISABLED_RESPONSE
+    }
+
     val base64Image = FileToBase64.encodeToBase64(photoFile.readBytes())
     val uuid = UUID.randomUUID()
     return getPlateNumber(base64Image, uuid)
@@ -31,6 +41,10 @@ class GoogleVisionService {
 
   @Retryable(maxAttempts = 2, backoff = Backoff(delay = 1000))
   fun getPlateNumber(base64EncodedImage: String, uuid: UUID): Map<String, String> {
+    if (isVisionDisabled()) {
+      return VISION_DISABLED_RESPONSE
+    }
+
     MDC.put("uuid", uuid.toString())
     log.debug("Starting plate number detection from image. Image size: {} bytes", base64EncodedImage.toByteArray().size)
 
@@ -44,15 +58,9 @@ class GoogleVisionService {
       val labelResponse = googleVisionClient.analyzeImage(labelRequest)
       log.info("Received label detection response: {}", labelResponse)
 
-      val hasVehicleOrCar = labelResponse.labelAnnotations?.any { labelAnnotation ->
-          labelAnnotation.description.lowercase().split("\\s+".toRegex())
-            .any { VEHICLE_LABELS.contains(it) }
-      } == true
-      log.debug("Vehicle/car detected: {}", hasVehicleOrCar)
-
       val response = mutableMapOf<String, String>()
-      val hasCar = hasCar(labelResponse.labelAnnotations)
-      response["hasCar"] = hasCar
+      val hasVehicleOrCar = detectVehicle(labelResponse.labelAnnotations)
+      response["hasCar"] = hasVehicleOrCar.toString()
 
       if (!hasVehicleOrCar) {
         return response
@@ -89,10 +97,13 @@ class GoogleVisionService {
     }
   }
 
-  private fun hasCar(labelAnnotations: List<GoogleVisionApiResponse.EntityAnnotation>?): String {
-    return labelAnnotations?.any { annotation ->
-      annotation.description.contains("car", ignoreCase = true) ||
-        annotation.description.contains("vehicle", ignoreCase = true)
-    }?.toString() ?: "false"
+  private fun isVisionDisabled(): Boolean = (!visionEnabled).also {
+    if (it) log.info(VISION_DISABLED_MESSAGE)
   }
+
+  private fun detectVehicle(labelAnnotations: List<GoogleVisionApiResponse.EntityAnnotation>?) =
+    labelAnnotations?.any { annotation ->
+      annotation.description.lowercase().split("\\s+".toRegex())
+        .any { it in VEHICLE_LABELS }
+    } == true
 }

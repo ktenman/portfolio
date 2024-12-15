@@ -8,14 +8,20 @@ import java.io.ByteArrayInputStream
 
 @Service
 class VisionAuthenticatorService(
-  @Value("\${vision.base64EncodedKey}") private val base64EncodedKey: String
+  @Value("\${vision.base64EncodedKey:}") private val base64EncodedKey: String,
+  @Value("\${vision.enabled:false}") private val visionEnabled: Boolean
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
   private val credentials: GoogleCredentials? = initializeCredentials()
 
   private fun initializeCredentials(): GoogleCredentials? {
+    if (!visionEnabled) {
+      log.info("Vision service is disabled. Skipping credentials initialization.")
+      return null
+    }
+
     if (base64EncodedKey.isBlank()) {
-      log.error("VISION_BASE64_ENCODED_KEY environment variable is not set")
+      log.info("Vision base64 encoded key is not provided. Skipping credentials initialization.")
       return null
     }
 
@@ -37,6 +43,9 @@ class VisionAuthenticatorService(
 
   val accessToken: String
     get() = try {
+      if (!visionEnabled) {
+        throw RuntimeException("Vision service is disabled")
+      }
       credentials?.refreshIfExpired()
       credentials?.accessToken?.tokenValue
         ?: throw RuntimeException("Google Vision credentials not initialized")
