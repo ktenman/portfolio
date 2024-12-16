@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
@@ -62,7 +63,8 @@ class DailyPortfolioXirrJobIT {
       transactionType = TransactionType.BUY,
       quantity = BigDecimal("3.37609300"),
       price = BigDecimal("29.62003713"),
-      transactionDate = LocalDate.of(2024, 7, 1)
+      transactionDate = LocalDate.of(2024, 7, 1),
+      platform = Platform.SWEDBANK
     ).let {
       portfolioTransactionService.saveTransaction(it)
     }
