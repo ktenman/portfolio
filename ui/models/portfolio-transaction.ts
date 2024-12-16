@@ -1,3 +1,5 @@
+import { Platform } from './platform'
+
 export interface PortfolioTransaction {
   id?: number
   instrumentId: number
@@ -6,4 +8,5 @@ export interface PortfolioTransaction {
   price: number
   transactionDate: string
   profit: number
+  platform: Platform
 }
