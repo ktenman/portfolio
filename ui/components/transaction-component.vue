@@ -288,17 +288,19 @@ const deleteTransaction = async (id: number | undefined) => {
     return
   }
 
-  if (confirm('Are you sure you want to delete this transaction?')) {
-    try {
-      await transactionService.deleteTransaction(id)
-      transactions.value = transactions.value.filter(t => t.id !== id)
-      alertType.value = AlertType.SUCCESS
-      alertMessage.value = 'Transaction deleted successfully.'
-      debugMessage.value = ''
-      validationErrors.value = {}
-    } catch (error) {
-      handleApiError(error)
-    }
+  if (!confirm('Are you sure you want to delete this transaction?')) {
+    return
+  }
+
+  try {
+    await transactionService.deleteTransaction(id)
+    transactions.value = transactions.value.filter(t => t.id !== id)
+    alertType.value = AlertType.SUCCESS
+    alertMessage.value = 'Transaction deleted successfully.'
+    debugMessage.value = ''
+    validationErrors.value = {}
+  } catch (error) {
+    handleApiError(error)
   }
 }
 

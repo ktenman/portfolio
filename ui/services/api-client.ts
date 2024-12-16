@@ -1,10 +1,16 @@
-import { ApiError } from '../models/api-error'
+import { ApiError } from '../models/api-error.ts'
+
+interface ErrorResponse {
+  message?: string
+  debugMessage?: string
+  validationErrors?: Record<string, string>
+}
 
 export class ApiClient {
   static async request<T>(url: string, options: RequestInit = {}): Promise<T> {
     const response = await fetch(url, {
       ...options,
-      redirect: 'manual', // This prevents automatic redirect following
+      redirect: 'manual',
     })
 
     if (response.type === 'opaqueredirect' || response.status === 302) {
@@ -13,16 +19,29 @@ export class ApiClient {
       throw new Error('Redirecting and reloading page')
     }
 
-    if (!response.ok && response.status !== 302) {
-      const errorData = await response.json().catch(() => ({}))
+    // Handle non-successful responses
+    if (!response.ok) {
+      let errorData: ErrorResponse = {}
+      try {
+        errorData = await response.json()
+      } catch {
+        // If parsing fails, use default error message
+      }
+
       throw new ApiError(
         response.status,
-        errorData?.message ?? `API request failed`,
-        errorData?.debugMessage ?? `HTTP error! status: ${response.status}`,
-        errorData?.validationErrors ?? {}
+        errorData.message ?? 'API request failed',
+        errorData.debugMessage ?? `HTTP error! status: ${response.status}`,
+        errorData.validationErrors ?? {}
       )
     }
 
+    // Return void for 204 responses
+    if (response.status === 204) {
+      return undefined as unknown as T
+    }
+
+    // Parse JSON for other successful responses
     return response.json()
   }
 
