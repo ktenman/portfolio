@@ -100,6 +100,24 @@
                 </select>
               </div>
               <div class="mb-3">
+                <label for="platform" class="form-label">Platform</label>
+                <select
+                  v-model="currentTransaction.platform"
+                  id="platform"
+                  class="form-select"
+                  required
+                >
+                  <option value="" disabled selected>Select Platform</option>
+                  <option
+                    v-for="platform in Object.values(Platform)"
+                    :key="platform"
+                    :value="platform"
+                  >
+                    {{ platform }}
+                  </option>
+                </select>
+              </div>
+              <div class="mb-3">
                 <label for="transactionType" class="form-label">Transaction Type</label>
                 <select
                   v-model="currentTransaction.transactionType"
@@ -177,6 +195,7 @@ import { Instrument } from '../models/instrument'
 import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 import { ApiError } from '../models/api-error'
 import AlertMessageComponent from './alert-message-component.vue'
+import { Platform } from '../models/platform'
 
 const debugMessage = ref('')
 const validationErrors = ref<Record<string, string>>({})

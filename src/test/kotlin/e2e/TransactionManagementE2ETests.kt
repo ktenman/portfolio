@@ -33,6 +33,7 @@ class TransactionManagementE2ETests {
     id("quantity").setValue("10.144")
     id("price").setValue("29.615")
     id("transactionDate").setValue("10.07.2024")
+    id("platform").selectOption("TRADING212")
 
     Selenide.elements(By.tagName("button")).filter(Condition.text("Save")).first().click()
 
