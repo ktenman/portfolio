@@ -1,17 +1,9 @@
 package ee.tenman.portfolio.controller
 
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalTo
-import com.github.tomakehurst.wiremock.client.WireMock.stubFor
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import ee.tenman.portfolio.configuration.IntegrationTest
-import ee.tenman.portfolio.domain.DailyPrice
-import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.PortfolioDailySummary
-import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.domain.*
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
@@ -93,7 +85,8 @@ class PortfolioSummaryControllerIT {
         transactionType = TransactionType.BUY,
         quantity = 3.4.toBigDecimal(),
         price = 27.25.toBigDecimal(),
-        transactionDate = LocalDate.of(2023, 7, 15)
+        transactionDate = LocalDate.of(2023, 7, 15),
+        platform = Platform.LIGHTYEAR
       )
     )
 
@@ -206,7 +199,8 @@ class PortfolioSummaryControllerIT {
         transactionType = TransactionType.BUY,
         quantity = 3.4.toBigDecimal(),
         price = 27.25.toBigDecimal(),
-        transactionDate = LocalDate.of(2023, 7, 15)
+        transactionDate = LocalDate.of(2023, 7, 15),
+        platform = Platform.LIGHTYEAR
       )
     )
 

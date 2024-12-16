@@ -1,10 +1,6 @@
 package ee.tenman.portfolio.service.xirr
 
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalTo
-import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.stubFor
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import ee.tenman.portfolio.configuration.IntegrationTest
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat

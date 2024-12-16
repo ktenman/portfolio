@@ -7,7 +7,9 @@ import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.controller.PortfolioTransactionController.TransactionRequestDto
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -76,13 +78,14 @@ class PortfolioTransactionControllerIT {
   @Test
   fun `should create a new portfolio transaction`() {
     val instrument = setupInstrument()
-    val transactionDto = PortfolioTransactionController.TransactionRequestDto(
+    val transactionDto = TransactionRequestDto(
       id = null,
       instrumentId = instrument.id,
       transactionType = TransactionType.BUY,
       quantity = BigDecimal("10"),
       price = BigDecimal("100"),
-      transactionDate = LocalDate.now()
+      transactionDate = LocalDate.now(),
+      platform = Platform.TRADING212
     )
 
     mockMvc.perform(
@@ -98,6 +101,7 @@ class PortfolioTransactionControllerIT {
       .andExpect(jsonPath("$.quantity").value(10))
       .andExpect(jsonPath("$.price").value(100))
       .andExpect(jsonPath("$.transactionDate").value(LocalDate.now().toString()))
+      .andExpect(jsonPath("$.platform").value("TRADING212"))
 
     val savedTransaction = portfolioTransactionRepository.findAll().first()
     assertThat(savedTransaction.instrument.id).isEqualTo(instrument.id)
@@ -114,14 +118,16 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
-          transactionDate = LocalDate.of(2023, 7, 18)
+          transactionDate = LocalDate.of(2023, 7, 18),
+          platform = Platform.TRADING212
         ),
         PortfolioTransaction(
           instrument = instrument,
           transactionType = TransactionType.SELL,
           quantity = BigDecimal("5"),
           price = BigDecimal("150"),
-          transactionDate = LocalDate.of(2023, 7, 19)
+          transactionDate = LocalDate.of(2023, 7, 19),
+          platform = Platform.TRADING212
         )
       )
     )
@@ -150,7 +156,8 @@ class PortfolioTransactionControllerIT {
         transactionType = TransactionType.BUY,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.of(2023, 7, 18)
+        transactionDate = LocalDate.of(2023, 7, 18),
+        platform = Platform.LHV
       )
     )
 
@@ -161,6 +168,7 @@ class PortfolioTransactionControllerIT {
       .andExpect(jsonPath("$.quantity").value(10))
       .andExpect(jsonPath("$.price").value(100))
       .andExpect(jsonPath("$.transactionDate").value("2023-07-18"))
+      .andExpect(jsonPath("$.platform").value("LHV"))
 
     val foundTransaction = portfolioTransactionRepository.findById(transaction.id)
     assertThat(foundTransaction).isPresent
@@ -175,17 +183,19 @@ class PortfolioTransactionControllerIT {
         transactionType = TransactionType.BUY,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.of(2023, 7, 18)
+        transactionDate = LocalDate.of(2023, 7, 18),
+        platform = Platform.LHV
       )
     )
 
-    val updatedDto = PortfolioTransactionController.TransactionRequestDto(
+    val updatedDto = TransactionRequestDto(
       id = transaction.id,
       instrumentId = instrument.id,
       transactionType = TransactionType.SELL,
       quantity = BigDecimal("5"),
       price = BigDecimal("150"),
-      transactionDate = LocalDate.of(2023, 7, 19)
+      transactionDate = LocalDate.of(2023, 7, 19),
+      platform = Platform.TRADING212
     )
 
     mockMvc.perform(
@@ -200,6 +210,7 @@ class PortfolioTransactionControllerIT {
       .andExpect(jsonPath("$.quantity").value(5))
       .andExpect(jsonPath("$.price").value(150))
       .andExpect(jsonPath("$.transactionDate").value("2023-07-19"))
+      .andExpect(jsonPath("$.platform").value("TRADING212"))
 
     val updatedTransaction = portfolioTransactionRepository.findById(transaction.id).get()
     assertThat(updatedTransaction.transactionType).isEqualTo(TransactionType.SELL)
@@ -215,7 +226,8 @@ class PortfolioTransactionControllerIT {
         transactionType = TransactionType.BUY,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.of(2023, 7, 18)
+        transactionDate = LocalDate.of(2023, 7, 18),
+        platform = Platform.LHV
       )
     )
 

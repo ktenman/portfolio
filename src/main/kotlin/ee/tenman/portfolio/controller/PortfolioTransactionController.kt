@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.InstrumentService
@@ -10,15 +11,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -39,7 +32,8 @@ class PortfolioTransactionController(
       transactionType = request.transactionType,
       quantity = request.quantity,
       price = request.price,
-      transactionDate = request.transactionDate
+      transactionDate = request.transactionDate,
+      platform = request.platform
     )
     val savedTransaction = portfolioTransactionService.saveTransaction(transaction)
     return TransactionResponseDto.fromEntity(savedTransaction)
@@ -78,6 +72,7 @@ class PortfolioTransactionController(
       this.quantity = request.quantity
       this.price = request.price
       this.transactionDate = request.transactionDate
+      this.platform = request.platform
     }
 
     val updatedTransaction = portfolioTransactionService.saveTransaction(existingTransaction)
@@ -101,10 +96,11 @@ class PortfolioTransactionController(
     @field:Positive(message = "Price must be positive")
     val price: BigDecimal,
     @field:NotNull(message = "Transaction date is required")
-    val transactionDate: LocalDate
+    val transactionDate: LocalDate,
+    @field:NotNull(message = "Platform is required")
+    val platform: Platform
   )
 
-  // DTO for responses
   data class TransactionResponseDto(
     val id: Long?,
     val instrumentId: Long,
@@ -114,7 +110,8 @@ class PortfolioTransactionController(
     val price: BigDecimal,
     val transactionDate: LocalDate,
     val currentValue: BigDecimal,
-    val profit: BigDecimal
+    val profit: BigDecimal,
+    val platform: Platform
   ) {
     companion object {
       fun fromEntity(transaction: PortfolioTransaction) = TransactionResponseDto(
@@ -126,7 +123,8 @@ class PortfolioTransactionController(
         price = transaction.price,
         transactionDate = transaction.transactionDate,
         currentValue = transaction.currentValue,
-        profit = transaction.profit
+        profit = transaction.profit,
+        platform = transaction.platform
       )
     }
   }
