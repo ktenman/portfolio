@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
 export enum Platform {
-  AVIVA = 'Aviva',
-  BINANCE = 'Binance',
-  COINBASE = 'Coinbase',
+  AVIVA = 'AVIVA',
+  BINANCE = 'BINANCE',
+  COINBASE = 'COINBASE',
   LHV = 'LHV',
-  LIGHTYEAR = 'Lightyear',
-  SWEDBANK = 'Swedbank',
-  TRADING212 = 'Trading212',
-  UNKNOWN = 'Unknown',
+  LIGHTYEAR = 'LIGHTYEAR',
+  SWEDBANK = 'SWEDBANK',
+  TRADING212 = 'TRADING212',
+  UNKNOWN = 'UNKNOWN',
 }
 /* eslint-enable no-unused-vars */

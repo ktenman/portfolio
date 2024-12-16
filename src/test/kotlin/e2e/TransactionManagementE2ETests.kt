@@ -63,6 +63,7 @@ class TransactionManagementE2ETests {
     id("quantity").setValue("112255.1211")
     id("price").setValue("332211.189")
     id("transactionDate").setValue("07.07.2025")
+    id("platform").selectOption("SWEDBANK")
 
     Selenide.elements(By.tagName("button")).filter(Condition.text("Update")).first().click()
 
