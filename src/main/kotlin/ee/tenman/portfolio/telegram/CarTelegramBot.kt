@@ -27,10 +27,8 @@ import java.net.URI
  */
 @Service
 @ConditionalOnProperty(
-  name = ["telegram.bot.token"],
-  matchIfMissing = false,
-  havingValue = "false",
-  prefix = ""
+  name = ["telegram.bot.enabled"],
+  havingValue = "true"
 )
 class CarTelegramBot(
   @Value("\${telegram.bot.token:}") private val botToken: String,

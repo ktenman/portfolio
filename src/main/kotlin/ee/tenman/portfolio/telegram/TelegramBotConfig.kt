@@ -11,19 +11,15 @@ class TelegramBotConfig {
 
   @Bean
   @ConditionalOnProperty(
-    name = ["telegram.bot.token"],
-    matchIfMissing = false,
-    havingValue = "false",
-    prefix = ""
+    name = ["telegram.bot.enabled"],
+    havingValue = "true"
   )
   fun telegramBotsApi(): TelegramBotsApi = TelegramBotsApi(DefaultBotSession::class.java)
 
   @Bean
   @ConditionalOnProperty(
-    name = ["telegram.bot.token"],
-    matchIfMissing = false,
-    havingValue = "false",
-    prefix = ""
+    name = ["telegram.bot.enabled"],
+    havingValue = "true"
   )
   fun registerBot(bot: CarTelegramBot, api: TelegramBotsApi): TelegramBotsApi {
     api.registerBot(bot)
