@@ -13,7 +13,7 @@
     "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\""
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.7.1",
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "bootstrap": "^5.3.3",
