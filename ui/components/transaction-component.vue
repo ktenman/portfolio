@@ -37,8 +37,12 @@
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.quantity) }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.price) }}</td>
             <td :class="amountClass(transaction)">{{ formattedAmount(transaction) }}</td>
-            <td>{{ formatNumber(transaction.realizedProfit) }}</td>
-            <td>{{ formatNumber(transaction.unrealizedProfit) }}</td>
+            <td :class="profitClass(transaction.realizedProfit)">
+              {{ formatProfitLoss(transaction.realizedProfit) }}
+            </td>
+            <td :class="profitClass(transaction.unrealizedProfit)">
+              {{ formatProfitLoss(transaction.unrealizedProfit) }}
+            </td>
             <td>{{ formatNumber(transaction.averageCost) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
@@ -348,9 +352,8 @@ const getInstrumentSymbol = (instrumentId: number | undefined) => {
   return instrument ? instrument.symbol : 'Unknown'
 }
 
-const formatNumber = (value: number | undefined): string => {
-  if (value === undefined) return ''
-
+const formatNumber = (value: number | undefined | null): string => {
+  if (value === undefined || value === null) return ''
   if (value < 1 && value > 0) {
     return value.toExponential(3).replace('e-', ' * 10^-')
   }
@@ -375,13 +378,15 @@ const amountClass = (transaction: PortfolioTransaction): string => {
   return transaction.transactionType === 'BUY' ? 'text-success' : 'text-danger'
 }
 
-const formattedEarnings = (transaction: PortfolioTransaction): string => {
-  const formattedAbsEarnings = Math.abs(transaction.profit).toFixed(2)
-  return transaction.profit >= 0 ? `+${formattedAbsEarnings}` : `-${formattedAbsEarnings}`
+const formatProfitLoss = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return '0.00'
+  const formattedValue = Math.abs(value).toFixed(2)
+  return value >= 0 ? `+${formattedValue}` : `-${formattedValue}`
 }
 
-const earningsClass = (transaction: PortfolioTransaction): string => {
-  return transaction.profit >= 0 ? 'text-success' : 'text-danger'
+const profitClass = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return ''
+  return value >= 0 ? 'text-success' : 'text-danger'
 }
 
 const formatDate = (date: string): string => {

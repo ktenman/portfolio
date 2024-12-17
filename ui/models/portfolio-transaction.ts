@@ -7,8 +7,8 @@ export interface PortfolioTransaction {
   quantity: number
   price: number
   transactionDate: string
-  realizedProfit?: number
-  unrealizedProfit?: number
-  averageCost?: number
+  realizedProfit?: number | null
+  unrealizedProfit?: number | null
+  averageCost?: number | null
   platform: Platform
 }
