@@ -110,41 +110,50 @@ class PortfolioTransactionControllerIT {
 
   @Test
   fun `should return all transactions in the correct order`() {
-    val instrument = setupInstrument()
-    portfolioTransactionRepository.saveAll(
-      listOf(
-        PortfolioTransaction(
-          instrument = instrument,
-          transactionType = TransactionType.BUY,
-          quantity = BigDecimal("10"),
-          price = BigDecimal("100"),
-          transactionDate = LocalDate.of(2023, 7, 18),
-          platform = Platform.TRADING212
-        ),
-        PortfolioTransaction(
-          instrument = instrument,
-          transactionType = TransactionType.SELL,
-          quantity = BigDecimal("5"),
-          price = BigDecimal("150"),
-          transactionDate = LocalDate.of(2023, 7, 19),
-          platform = Platform.TRADING212
-        )
+    val instrument = instrumentRepository.save(
+      Instrument(
+        symbol = "QDVE",
+        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+        category = "ETF",
+        baseCurrency = "EUR",
+        currentPrice = BigDecimal("29.62")
       )
     )
+
+    val transaction1 = PortfolioTransaction(
+      instrument = instrument,
+      transactionType = TransactionType.BUY,
+      quantity = BigDecimal("3.37609300"),
+      price = BigDecimal("29.62"),
+      transactionDate = LocalDate.of(2024, 7, 1),
+      platform = Platform.SWEDBANK
+    )
+    val transaction2 = PortfolioTransaction(
+      instrument = instrument,
+      transactionType = TransactionType.SELL,
+      quantity = BigDecimal("5"),
+      price = BigDecimal("150"),
+      transactionDate = LocalDate.of(2024, 7, 19),
+      platform = Platform.SWEDBANK
+    )
+
+    portfolioTransactionRepository.saveAll(listOf(transaction1, transaction2))
 
     mockMvc.perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].transactionDate").value("2023-07-19"))
-      .andExpect(jsonPath("$[1].transactionDate").value("2023-07-18"))
-
-    val allTransactions = portfolioTransactionRepository.findAll()
-    assertThat(allTransactions).hasSize(2)
-      .extracting("transactionDate")
-      .containsExactlyInAnyOrder(
-        LocalDate.of(2023, 7, 18),
-        LocalDate.of(2023, 7, 19)
-      )
+      .andExpect(jsonPath("$[0].transactionDate").value("2024-07-19"))
+      .andExpect(jsonPath("$[0].transactionType").value("SELL"))
+      .andExpect(jsonPath("$[0].quantity").value(5))
+      .andExpect(jsonPath("$[0].price").value(150))
+      .andExpect(jsonPath("$[0].realizedProfit").isNumber())
+      .andExpect(jsonPath("$[0].averageCost").isNumber())
+      .andExpect(jsonPath("$[1].transactionDate").value("2024-07-01"))
+      .andExpect(jsonPath("$[1].transactionType").value("BUY"))
+      .andExpect(jsonPath("$[1].quantity").value(3.37609300))
+      .andExpect(jsonPath("$[1].price").value(29.62))
+      .andExpect(jsonPath("$[1].unrealizedProfit").isNumber())
+      .andExpect(jsonPath("$[1].averageCost").isNumber())
   }
 
   @Test

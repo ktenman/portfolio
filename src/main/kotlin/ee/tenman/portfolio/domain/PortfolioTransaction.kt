@@ -34,4 +34,13 @@ class PortfolioTransaction(
 
   @Transient
   var profit: BigDecimal = BigDecimal.ZERO,
+
+  @Column(name = "realized_profit", nullable = true)
+  var realizedProfit: BigDecimal? = null,
+
+  @Column(name = "average_cost", nullable = true)
+  var averageCost: BigDecimal? = null,
+
+  @Transient
+  var unrealizedProfit: BigDecimal = BigDecimal.ZERO
 ) : BaseEntity()
