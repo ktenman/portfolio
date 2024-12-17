@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
+import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
@@ -166,21 +167,42 @@ class PortfolioTransactionControllerIT {
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
         transactionDate = LocalDate.of(2023, 7, 18),
-        platform = Platform.LHV
+        platform = Platform.LHV,
+        unrealizedProfit = BigDecimal.ZERO,
+        realizedProfit = BigDecimal.ZERO,
+        averageCost = BigDecimal("100")
       )
     )
 
-    mockMvc.perform(get("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
+    mockMvc.perform(get("/api/transactions/${transaction.id}")
+      .cookie(DEFAULT_COOKIE)
+      .contentType(APPLICATION_JSON))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.id").value(transaction.id))
-      .andExpect(jsonPath("$.transactionType").value("BUY"))
+      .andExpect(jsonPath("$.instrumentId").value(instrument.id))
+      .andExpect(jsonPath("$.symbol").value(instrument.symbol))
+      .andExpect(jsonPath("$.transactionType").value(transaction.transactionType.name))
       .andExpect(jsonPath("$.quantity").value(10))
       .andExpect(jsonPath("$.price").value(100))
       .andExpect(jsonPath("$.transactionDate").value("2023-07-18"))
-      .andExpect(jsonPath("$.platform").value("LHV"))
+      .andExpect(jsonPath("$.platform").value(Platform.LHV.name))
+      .andExpect(jsonPath("$.realizedProfit").value(0))
+      .andExpect(jsonPath("$.unrealizedProfit").value(0))
+      .andExpect(jsonPath("$.averageCost").value(100))
 
-    val foundTransaction = portfolioTransactionRepository.findById(transaction.id)
-    assertThat(foundTransaction).isPresent
+    assertThat(portfolioTransactionRepository.findAll().first())
+      .matches { actualTransaction ->
+        actualTransaction.id == transaction.id &&
+          actualTransaction.instrument.id == instrument.id &&
+          actualTransaction.transactionType == TransactionType.BUY &&
+          actualTransaction.quantity.compareTo(BigDecimal("10")) == 0 &&
+          actualTransaction.price.compareTo(BigDecimal("100")) == 0 &&
+          actualTransaction.transactionDate == LocalDate.of(2023, 7, 18) &&
+          actualTransaction.platform == Platform.LHV &&
+          actualTransaction.unrealizedProfit.compareTo(BigDecimal.ZERO) == 0 &&
+          actualTransaction.realizedProfit?.compareTo(BigDecimal.ZERO) == 0 &&
+          actualTransaction.averageCost?.compareTo(BigDecimal("100")) == 0
+      }
   }
 
   @Test
