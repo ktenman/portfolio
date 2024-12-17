@@ -18,7 +18,7 @@ class Auto24Service(private val captchaService: CaptchaService) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private const val MAX_ATTEMPTS = 20
+    private const val MAX_ATTEMPTS = 10
     private const val RETRY_DELAY_MS = 2000L
     private const val AUTO24_URL =
       "https://www.auto24.ee/ostuabi/?t=soiduki-turuhinna-paring&vpc_reg_nr=463bkh&checksec1=387c&vpc_reg_search=1"
@@ -48,17 +48,10 @@ class Auto24Service(private val captchaService: CaptchaService) {
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun findCarPrice(regNr: String): String {
-    try {
-      createFirefoxOptions()
-      openPageAndHandleCookies(regNr)
-      solveCaptcha(regNr)
-      return extractCarPrice()
-    } finally {
-      try {
-        Selenide.closeWebDriver()
-      } catch (_: Exception) {
-      }
-    }
+    createFirefoxOptions()
+    openPageAndHandleCookies(regNr)
+    solveCaptcha(regNr)
+    return extractCarPrice()
   }
 
   private fun openPageAndHandleCookies(regNr: String) {
