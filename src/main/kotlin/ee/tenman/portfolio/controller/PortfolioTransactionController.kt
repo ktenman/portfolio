@@ -111,7 +111,7 @@ class PortfolioTransactionController(
     val transactionDate: LocalDate,
     val platform: Platform,
     val realizedProfit: BigDecimal?,
-    val unrealizedProfit: BigDecimal,
+    val unrealizedProfit: BigDecimal = BigDecimal.ZERO,  // Default value
     val averageCost: BigDecimal?
   ) {
     companion object {
@@ -130,5 +130,4 @@ class PortfolioTransactionController(
       )
     }
   }
-
 }
