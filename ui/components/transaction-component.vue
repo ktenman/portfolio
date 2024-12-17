@@ -24,7 +24,9 @@
             <th class="d-none d-md-table-cell">Quantity</th>
             <th class="d-none d-md-table-cell">Price</th>
             <th>Amount</th>
-            <th>Profit/Loss</th>
+            <th>Realized Profit</th>
+            <th>Unrealized Profit</th>
+            <th>Average Cost</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -35,7 +37,9 @@
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.quantity) }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.price) }}</td>
             <td :class="amountClass(transaction)">{{ formattedAmount(transaction) }}</td>
-            <td :class="earningsClass(transaction)">{{ formattedEarnings(transaction) }}</td>
+            <td>{{ formatNumber(transaction.realizedProfit) }}</td>
+            <td>{{ formatNumber(transaction.unrealizedProfit) }}</td>
+            <td>{{ formatNumber(transaction.averageCost) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
                 <font-awesome-icon icon="pencil-alt" />
