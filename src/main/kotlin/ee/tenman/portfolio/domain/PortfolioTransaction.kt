@@ -26,21 +26,15 @@ class PortfolioTransaction(
   var transactionDate: LocalDate,
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "platform", nullable = true)
+  @Column(name = "platform", nullable = false)
   var platform: Platform,
 
-  @Transient
-  var currentValue: BigDecimal = BigDecimal.ZERO,
-
-  @Transient
-  var profit: BigDecimal = BigDecimal.ZERO,
-
-  @Column(name = "realized_profit", nullable = true)
+  @Column(name = "realized_profit")
   var realizedProfit: BigDecimal? = null,
 
-  @Column(name = "average_cost", nullable = true)
-  var averageCost: BigDecimal? = null,
+  @Column(name = "unrealized_profit")
+  var unrealizedProfit: BigDecimal = BigDecimal.ZERO,  // Initialize with ZERO
 
-  @Transient
-  var unrealizedProfit: BigDecimal = BigDecimal.ZERO
+  @Column(name = "average_cost")
+  var averageCost: BigDecimal? = null
 ) : BaseEntity()
