@@ -38,6 +38,8 @@ services:
       SPRING_PROFILES_ACTIVE: default
       VISION_BASE64_ENCODED_KEY: ${VISION_BASE64_ENCODED_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      VISION_ENABLED: true
+      TELEGRAM_ENABLED: true
     image: ktenman/portfolio-be:latest
     ports:
       - '8080:8080'
