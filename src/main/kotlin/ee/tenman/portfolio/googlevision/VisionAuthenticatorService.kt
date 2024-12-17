@@ -18,6 +18,8 @@ class VisionAuthenticatorService(
     if (!visionEnabled) {
       log.info("Vision service is disabled. Skipping credentials initialization.")
       return null
+    } else {
+      log.info("Vision service is enabled")
     }
 
     if (base64EncodedKey.isBlank()) {
@@ -45,10 +47,13 @@ class VisionAuthenticatorService(
     get() = try {
       if (!visionEnabled) {
         throw RuntimeException("Vision service is disabled")
+      } else {
+        log.info("Getting access token")
       }
       credentials?.refreshIfExpired()
-      credentials?.accessToken?.tokenValue
-        ?: throw RuntimeException("Google Vision credentials not initialized")
+      credentials?.accessToken?.tokenValue?.also {
+        log.info("Successfully authorized with Google Vision API")
+      } ?: throw RuntimeException("Google Vision credentials not initialized")
     } catch (e: Exception) {
       log.error("Failed to get access token", e)
       throw e

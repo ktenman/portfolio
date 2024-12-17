@@ -12,7 +12,6 @@ import java.util.*
 
 @Service
 class GoogleVisionService(
-  @Value("\${vision.base64EncodedKey:}") private val base64EncodedKey: String,
   @Value("\${vision.enabled:false}") private val visionEnabled: Boolean
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -97,8 +96,8 @@ class GoogleVisionService(
     }
   }
 
-  private fun isVisionDisabled(): Boolean = (!visionEnabled).also {
-    if (it) log.info(VISION_DISABLED_MESSAGE)
+  private fun isVisionDisabled(): Boolean = (!visionEnabled).also { disabled ->
+    log.info(if (disabled) VISION_DISABLED_MESSAGE else "Vision service is enabled.")
   }
 
   private fun detectVehicle(labelAnnotations: List<GoogleVisionApiResponse.EntityAnnotation>?) =

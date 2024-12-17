@@ -49,7 +49,7 @@ class CarTelegramBot(
   }
 
   private fun isBotDisabled() = (!botEnabled).also { disabled ->
-    if (disabled) log.info(BOT_DISABLED_MESSAGE)
+    log.info(if (disabled) BOT_DISABLED_MESSAGE else "Telegram bot is enabled.")
   }
 
   @Deprecated("Deprecated in Java")
