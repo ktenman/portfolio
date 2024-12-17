@@ -24,9 +24,8 @@
             <th class="d-none d-md-table-cell">Quantity</th>
             <th class="d-none d-md-table-cell">Price</th>
             <th>Amount</th>
-            <th>Realized Profit</th>
-            <th>Unrealized Profit</th>
-            <th>Average Cost</th>
+            <th>Profit/Loss</th>
+            <th class="d-none d-md-table-cell">Average Cost</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -37,13 +36,10 @@
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.quantity) }}</td>
             <td class="d-none d-md-table-cell">{{ formatNumber(transaction.price) }}</td>
             <td :class="amountClass(transaction)">{{ formattedAmount(transaction) }}</td>
-            <td :class="profitClass(transaction.realizedProfit)">
-              {{ formatProfitLoss(transaction.realizedProfit) }}
+            <td :class="profitClass(getTransactionProfit(transaction))">
+              {{ formatProfitLoss(getTransactionProfit(transaction)) }}
             </td>
-            <td :class="profitClass(transaction.unrealizedProfit)">
-              {{ formatProfitLoss(transaction.unrealizedProfit) }}
-            </td>
-            <td>{{ formatNumber(transaction.averageCost) }}</td>
+            <td class="d-none d-md-table-cell">{{ formatNumber(transaction.averageCost) }}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-secondary me-2" @click="editTransaction(transaction)">
                 <font-awesome-icon icon="pencil-alt" />
@@ -376,6 +372,12 @@ const formattedAmount = (transaction: PortfolioTransaction): string => {
 
 const amountClass = (transaction: PortfolioTransaction): string => {
   return transaction.transactionType === 'BUY' ? 'text-success' : 'text-danger'
+}
+
+const getTransactionProfit = (transaction: PortfolioTransaction): number | null | undefined => {
+  return transaction.transactionType === 'SELL'
+    ? transaction.realizedProfit
+    : transaction.unrealizedProfit
 }
 
 const formatProfitLoss = (value: number | null | undefined): string => {
