@@ -109,9 +109,10 @@ class PortfolioTransactionController(
     val quantity: BigDecimal,
     val price: BigDecimal,
     val transactionDate: LocalDate,
-    val currentValue: BigDecimal,
-    val profit: BigDecimal,
-    val platform: Platform
+    val platform: Platform,
+    val realizedProfit: BigDecimal?,
+    val unrealizedProfit: BigDecimal,
+    val averageCost: BigDecimal?
   ) {
     companion object {
       fun fromEntity(transaction: PortfolioTransaction) = TransactionResponseDto(
@@ -122,9 +123,10 @@ class PortfolioTransactionController(
         quantity = transaction.quantity,
         price = transaction.price,
         transactionDate = transaction.transactionDate,
-        currentValue = transaction.currentValue,
-        profit = transaction.profit,
-        platform = transaction.platform
+        platform = transaction.platform,
+        realizedProfit = transaction.realizedProfit,
+        unrealizedProfit = transaction.unrealizedProfit,
+        averageCost = transaction.averageCost
       )
     }
   }
