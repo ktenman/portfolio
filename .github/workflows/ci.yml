@@ -67,8 +67,8 @@ jobs:
         id: run-tests
         uses: nick-fields/retry@v2.9.0
         with:
-          timeout_minutes: 10
-          max_attempts: 5
+          timeout_minutes: 5
+          max_attempts: 10
           retry_on: error
           command: |
             export E2E=${{ matrix.test-type == 'e2e' }}
