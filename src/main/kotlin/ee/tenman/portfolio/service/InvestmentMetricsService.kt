@@ -8,25 +8,15 @@ import ee.tenman.portfolio.service.xirr.Xirr
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
-/**
- * Service responsible for calculating investment metrics for financial instruments.
- */
 @Service
 class InvestmentMetricsService {
   private companion object {
     private val log = LoggerFactory.getLogger(InvestmentMetricsService::class.java)
   }
 
-  /**
-   * Represents the calculated metrics for a financial instrument.
-   *
-   * @property totalInvestment Total amount invested
-   * @property currentValue Current value of the investment
-   * @property profit Total profit or loss
-   * @property xirr Internal rate of return
-   */
   data class InstrumentMetrics(
     val totalInvestment: BigDecimal,
     val currentValue: BigDecimal,
@@ -49,13 +39,6 @@ class InvestmentMetricsService {
     }
   }
 
-  /**
-   * Calculates investment metrics for a given instrument based on its transactions.
-   *
-   * @param instrument The financial instrument to analyze
-   * @param transactions List of transactions for the instrument
-   * @return Calculated metrics for the instrument
-   */
   fun calculateInstrumentMetrics(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>
@@ -64,13 +47,28 @@ class InvestmentMetricsService {
       return InstrumentMetrics.EMPTY
     }
 
-    val positionMetrics = calculatePositionMetrics(transactions)
-    val currentValue = calculateCurrentValue(instrument.currentPrice, positionMetrics.quantityHeld)
-    val profit = currentValue - positionMetrics.totalInvestment
+    val currentHoldings = calculateCurrentHoldings(transactions)
+    val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
+    val currentValue = currentHoldings.quantity.multiply(currentPrice)
+
+    // Calculate total cost of current holdings using average cost
+    val totalInvestment = if (currentHoldings.quantity > BigDecimal.ZERO) {
+      currentHoldings.quantity.multiply(currentHoldings.averageCost)
+    } else {
+      BigDecimal.ZERO
+    }
+
+    // Calculate unrealized profit (current value minus cost basis of current holdings)
+    val profit = if (currentHoldings.quantity > BigDecimal.ZERO) {
+      currentValue.subtract(totalInvestment)
+    } else {
+      BigDecimal.ZERO
+    }
+
     val xirr = calculateXirr(transactions, currentValue)
 
     return InstrumentMetrics(
-      totalInvestment = positionMetrics.totalInvestment,
+      totalInvestment = totalInvestment,
       currentValue = currentValue,
       profit = profit,
       xirr = xirr
@@ -79,40 +77,45 @@ class InvestmentMetricsService {
     }
   }
 
-  private data class PositionMetrics(
-    val totalInvestment: BigDecimal,
-    val quantityHeld: BigDecimal
+  private data class Holdings(
+    val quantity: BigDecimal,
+    val averageCost: BigDecimal
   )
 
-  private fun calculatePositionMetrics(
-    transactions: List<PortfolioTransaction>
-  ): PositionMetrics = transactions.fold(
-    PositionMetrics(BigDecimal.ZERO, BigDecimal.ZERO)
-  ) { accumulatedMetrics, transaction ->
-    val transactionAmount = transaction.price * transaction.quantity
-    when (transaction.transactionType) {
-      TransactionType.BUY -> PositionMetrics(
-        totalInvestment = accumulatedMetrics.totalInvestment + transactionAmount,
-        quantityHeld = accumulatedMetrics.quantityHeld + transaction.quantity
-      )
-      TransactionType.SELL -> PositionMetrics(
-        totalInvestment = accumulatedMetrics.totalInvestment - transactionAmount,
-        quantityHeld = accumulatedMetrics.quantityHeld - transaction.quantity
-      )
-    }
-  }
+  private fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Holdings {
+    var quantity = BigDecimal.ZERO
+    var totalCost = BigDecimal.ZERO
 
-  private fun calculateCurrentValue(
-    currentPrice: BigDecimal?,
-    quantityHeld: BigDecimal
-  ): BigDecimal = (currentPrice ?: BigDecimal.ZERO) * quantityHeld
+    transactions.sortedBy { it.transactionDate }.forEach { transaction ->
+      when (transaction.transactionType) {
+        TransactionType.BUY -> {
+          val cost = transaction.price.multiply(transaction.quantity)
+          totalCost = totalCost.add(cost)
+          quantity = quantity.add(transaction.quantity)
+        }
+        TransactionType.SELL -> {
+          // When selling, reduce the quantity and proportionally reduce the total cost
+          val sellRatio = transaction.quantity.divide(quantity, 10, RoundingMode.HALF_UP)
+          totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
+          quantity = quantity.subtract(transaction.quantity)
+        }
+      }
+    }
+
+    val averageCost = if (quantity > BigDecimal.ZERO) {
+      totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
+    } else {
+      BigDecimal.ZERO
+    }
+
+    return Holdings(quantity, averageCost)
+  }
 
   private fun calculateXirr(
     transactions: List<PortfolioTransaction>,
     currentValue: BigDecimal
   ): Double {
     val xirrTransactions = buildXirrTransactions(transactions, currentValue)
-
     return when {
       xirrTransactions.size < 2 -> 0.0
       else -> calculateXirrSafely(xirrTransactions)
@@ -123,7 +126,7 @@ class InvestmentMetricsService {
     transactions: List<PortfolioTransaction>,
     currentValue: BigDecimal
   ): List<Transaction> {
-    val baseTransactions = transactions.map { transaction ->
+    val cashflows = transactions.map { transaction ->
       val amount = when (transaction.transactionType) {
         TransactionType.BUY -> -(transaction.price * transaction.quantity)
         TransactionType.SELL -> transaction.price * transaction.quantity
@@ -132,9 +135,9 @@ class InvestmentMetricsService {
     }
 
     return if (currentValue > BigDecimal.ZERO) {
-      baseTransactions + Transaction(currentValue.toDouble(), LocalDate.now())
+      cashflows + Transaction(currentValue.toDouble(), LocalDate.now())
     } else {
-      baseTransactions
+      cashflows
     }
   }
 
