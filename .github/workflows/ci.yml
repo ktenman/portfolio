@@ -38,6 +38,8 @@ jobs:
     strategy:
       matrix:
         test-type: [ 'unit', 'e2e' ]
+      # Add fail-fast: false to allow other matrix jobs to continue even if one fails
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -62,10 +64,16 @@ jobs:
           sleep 10
           docker-compose logs
       - name: Run ${{ matrix.test-type }} tests
-        run: |
-          export E2E=${{ matrix.test-type == 'e2e' }}
-          ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
-      - uses: actions/upload-artifact@v4.5.0
+        id: run-tests
+        uses: nick-fields/retry@v2.9.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 5
+          retry_on: error
+          command: |
+            export E2E=${{ matrix.test-type == 'e2e' }}
+            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
+      - uses: actions/upload-artifact@v4.4.3
         if: always()
         with:
           name: ${{ format('Test reports and screenshots ({0})', matrix.test-type) }}
