@@ -56,32 +56,51 @@ class PortfolioSummaryService(
       .sortedBy { it.transactionDate }
 
     val xirrTransactions = mutableListOf<Transaction>()
-    var netInvestment = BigDecimal.ZERO
-    var totalValue = BigDecimal.ZERO
+    val holdings = calculateHoldings(transactions)
+    val totalValue = calculateTotalValue(holdings, date)
 
-    // Process all transactions up to the date
-    transactions.forEach { transaction ->
-      val amount = transaction.price.multiply(transaction.quantity)
-      val transactionValue = when (transaction.transactionType) {
-        TransactionType.BUY -> -amount
-        TransactionType.SELL -> amount
-      }
-      xirrTransactions.add(Transaction(transactionValue.toDouble(), transaction.transactionDate))
+    // Group transactions by instrument for accurate profit calculation
+    val transactionsByInstrument = transactions.groupBy { it.instrument }
+    var totalInvestment = BigDecimal.ZERO
+    var totalProfit = BigDecimal.ZERO
 
-      when (transaction.transactionType) {
-        TransactionType.BUY -> netInvestment = netInvestment.add(amount)
-        TransactionType.SELL -> netInvestment = netInvestment.subtract(amount)
+    transactionsByInstrument.forEach { (instrument, instrumentTransactions) ->
+      val instrumentHoldings = calculateCurrentHoldings(instrumentTransactions)
+      val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
+        ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
+
+      if (instrumentHoldings.quantity > BigDecimal.ZERO) {
+        // Add current value to totalInvestment using average cost basis
+        totalInvestment = totalInvestment.add(
+          instrumentHoldings.quantity.multiply(instrumentHoldings.averageCost)
+        )
+
+        // Calculate profit for current holdings
+        val currentValue = instrumentHoldings.quantity.multiply(lastPrice)
+        val profitForInstrument = currentValue.subtract(
+          instrumentHoldings.quantity.multiply(instrumentHoldings.averageCost)
+        )
+        totalProfit = totalProfit.add(profitForInstrument)
+
+        // Add XIRR transactions
+        instrumentTransactions.forEach { transaction ->
+          val amount = transaction.price.multiply(transaction.quantity)
+          xirrTransactions.add(
+            Transaction(
+              when (transaction.transactionType) {
+                TransactionType.BUY -> -amount
+                TransactionType.SELL -> amount
+              }.toDouble(),
+              transaction.transactionDate
+            )
+          )
+        }
+
+        // Add current value for XIRR calculation
+        xirrTransactions.add(Transaction(currentValue.toDouble(), date))
       }
     }
 
-    // Calculate current holdings value
-    val holdings = calculateHoldings(transactions)
-    totalValue = calculateTotalValue(holdings, date)
-
-    // Add current value as the final transaction
-    xirrTransactions.add(Transaction(totalValue.toDouble(), date))
-
-    // Calculate XIRR
     val xirrResult = if (xirrTransactions.size > 1) {
       try {
         Xirr(xirrTransactions).calculate()
@@ -91,19 +110,51 @@ class PortfolioSummaryService(
       }
     } else 0.0
 
-    val profit = totalValue.subtract(netInvestment)
-    val xirrAnnual = BigDecimal(xirrResult)
-
-    log.debug("Date: $date, Total Value: $totalValue, Net Investment: $netInvestment, XIRR: $xirrResult")
+    log.debug("Date: $date, Total Value: $totalValue, Total Investment: $totalInvestment")
+    log.info("Total profit: $totalProfit")
 
     return PortfolioDailySummary(
       entryDate = date,
       totalValue = totalValue.setScale(2, RoundingMode.HALF_UP),
-      xirrAnnualReturn = xirrAnnual.setScale(8, RoundingMode.HALF_UP),
-      totalProfit = profit.setScale(2, RoundingMode.HALF_UP),
-      earningsPerDay = totalValue.multiply(xirrAnnual)
+      xirrAnnualReturn = BigDecimal(xirrResult).setScale(8, RoundingMode.HALF_UP),
+      totalProfit = totalProfit.setScale(2, RoundingMode.HALF_UP),
+      earningsPerDay = totalValue.multiply(BigDecimal(xirrResult))
         .divide(BigDecimal(365.25), 2, RoundingMode.HALF_UP)
     )
+  }
+
+  private data class Holdings(
+    val quantity: BigDecimal,
+    val averageCost: BigDecimal
+  )
+
+  private fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Holdings {
+    var quantity = BigDecimal.ZERO
+    var totalCost = BigDecimal.ZERO
+
+    transactions.sortedBy { it.transactionDate }.forEach { transaction ->
+      when (transaction.transactionType) {
+        TransactionType.BUY -> {
+          val cost = transaction.price.multiply(transaction.quantity)
+          totalCost = totalCost.add(cost)
+          quantity = quantity.add(transaction.quantity)
+        }
+        TransactionType.SELL -> {
+          // When selling, reduce the quantity and proportionally reduce the total cost
+          val sellRatio = transaction.quantity.divide(quantity, 10, RoundingMode.HALF_UP)
+          totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
+          quantity = quantity.subtract(transaction.quantity)
+        }
+      }
+    }
+
+    val averageCost = if (quantity > BigDecimal.ZERO) {
+      totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
+    } else {
+      BigDecimal.ZERO
+    }
+
+    return Holdings(quantity, averageCost)
   }
 
   private fun calculateHoldings(transactions: List<PortfolioTransaction>): Map<Instrument, BigDecimal> {

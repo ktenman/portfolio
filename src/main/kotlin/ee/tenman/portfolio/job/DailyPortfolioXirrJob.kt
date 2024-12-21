@@ -22,7 +22,6 @@ import java.time.LocalDate
 class DailyPortfolioXirrJob(
   private val portfolioTransactionService: PortfolioTransactionService,
   private val portfolioSummaryService: PortfolioSummaryService,
-  private val dailyPriceService: DailyPriceService,
   private val clock: Clock,
   private val jobExecutionService: JobExecutionService
 ) : Job {
@@ -62,9 +61,8 @@ class DailyPortfolioXirrJob(
         .toList()
 
       val summariesToSave = datesToProcess.map { currentDate ->
-        val relevantTransactions = allTransactions.filter { !it.transactionDate.isAfter(currentDate) }
-        log.info("Calculating summary for date: $currentDate with ${relevantTransactions.size} transactions")
-        val summary = calculateSummaryForDate(relevantTransactions, currentDate)
+        log.info("Calculating summary for date: $currentDate")
+        val summary = portfolioSummaryService.calculateSummaryForDate(currentDate)
         log.info("Calculated summary for date: $currentDate. XIRR: ${summary.xirrAnnualReturn}")
         summary
       }
@@ -77,90 +75,6 @@ class DailyPortfolioXirrJob(
     } catch (e: Exception) {
       log.error("Error calculating XIRR", e)
       throw e
-    }
-  }
-
-  private fun calculateSummaryForDate(
-    transactions: List<PortfolioTransaction>,
-    date: LocalDate
-  ): PortfolioDailySummary {
-    val instrumentGroups = transactions.groupBy { it.instrument }
-    var totalValue = BigDecimal.ZERO
-    val xirrTransactions = mutableListOf<Transaction>()
-
-    instrumentGroups.forEach { (instrument, instrumentTransactions) ->
-      val (instrumentValue, instrumentXirrTransactions) = calculateInstrumentMetrics(
-        instrument,
-        instrumentTransactions,
-        date
-      )
-      totalValue += instrumentValue
-      xirrTransactions.addAll(instrumentXirrTransactions)
-    }
-
-    val xirrResult = if (xirrTransactions.size >= 2) {
-      try {
-        Xirr(xirrTransactions).calculate()
-      } catch (e: Exception) {
-        log.error("Error calculating XIRR for date $date", e)
-        0.0
-      }
-    } else 0.0
-
-    val totalInvestment = calculateTotalInvestment(transactions)
-    val profit = totalValue - totalInvestment
-
-    return PortfolioDailySummary(
-      entryDate = date,
-      totalValue = totalValue.setScale(4, RoundingMode.HALF_UP),
-      xirrAnnualReturn = BigDecimal(xirrResult).setScale(8, RoundingMode.HALF_UP),
-      totalProfit = profit.setScale(4, RoundingMode.HALF_UP),
-      earningsPerDay = totalValue.multiply(BigDecimal(xirrResult))
-        .divide(BigDecimal(365.25), 4, RoundingMode.HALF_UP)
-    )
-  }
-
-  private fun calculateInstrumentMetrics(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-    date: LocalDate
-  ): Pair<BigDecimal, List<Transaction>> {
-    var remainingShares = BigDecimal.ZERO
-    val xirrTransactions = mutableListOf<Transaction>()
-
-    transactions.sortedBy { it.transactionDate }.forEach { transaction ->
-      val transactionAmount = transaction.price.multiply(transaction.quantity)
-      when (transaction.transactionType) {
-        TransactionType.BUY -> {
-          remainingShares += transaction.quantity
-          xirrTransactions.add(Transaction(-transactionAmount.toDouble(), transaction.transactionDate))
-        }
-        TransactionType.SELL -> {
-          remainingShares -= transaction.quantity
-          xirrTransactions.add(Transaction(transactionAmount.toDouble(), transaction.transactionDate))
-        }
-      }
-    }
-
-    val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
-      ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
-
-    val currentValue = remainingShares.multiply(lastPrice)
-
-    // Only add current value to XIRR calculation if we have remaining shares
-    if (remainingShares > BigDecimal.ZERO) {
-      xirrTransactions.add(Transaction(currentValue.toDouble(), date))
-    }
-
-    return Pair(currentValue, xirrTransactions)
-  }
-
-  private fun calculateTotalInvestment(transactions: List<PortfolioTransaction>): BigDecimal {
-    return transactions.fold(BigDecimal.ZERO) { acc, transaction ->
-      when (transaction.transactionType) {
-        TransactionType.BUY -> acc + (transaction.price * transaction.quantity)
-        TransactionType.SELL -> acc - (transaction.price * transaction.quantity)
-      }
     }
   }
 }
