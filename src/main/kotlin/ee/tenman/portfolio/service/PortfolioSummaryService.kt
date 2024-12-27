@@ -161,10 +161,11 @@ class PortfolioSummaryService(
     val holdings = mutableMapOf<Instrument, BigDecimal>()
 
     transactions.forEach { transaction ->
-      val currentHolding = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO)
-      holdings[transaction.instrument] = when (transaction.transactionType) {
-        TransactionType.BUY -> currentHolding.add(transaction.quantity)
-        TransactionType.SELL -> currentHolding.subtract(transaction.quantity)
+      holdings[transaction.instrument] = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO).let { currentHolding ->
+        when (transaction.transactionType) {
+          TransactionType.BUY -> currentHolding.add(transaction.quantity)
+          TransactionType.SELL -> currentHolding.subtract(transaction.quantity)
+        }
       }
     }
 
@@ -175,10 +176,16 @@ class PortfolioSummaryService(
     holdings: Map<Instrument, BigDecimal>,
     date: LocalDate
   ): BigDecimal {
+    val isCurrentDay = date == LocalDate.now(clock)
+
     return holdings.entries.sumOf { (instrument, quantity) ->
-      val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
-        ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
-      quantity.multiply(lastPrice)
+      val price = if (isCurrentDay && instrument.currentPrice != null) {
+        instrument.currentPrice
+      } else {
+        dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
+          ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
+      }
+      quantity.multiply(price)
     }
   }
 
