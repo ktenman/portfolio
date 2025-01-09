@@ -70,7 +70,7 @@ jobs:
             ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
           attempt_limit: 5
           attempt_delay: 30000
-      - uses: actions/upload-artifact@v4.5.0
+      - uses: actions/upload-artifact@v4.6.0
         if: always()
         with:
           name: ${{ format('Test reports and screenshots ({0})', matrix.test-type) }}
