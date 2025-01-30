@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Service
 class ProfitCalculationService {
@@ -23,38 +24,62 @@ class ProfitCalculationService {
   )
   fun calculateProfits(transactions: List<PortfolioTransaction>) {
     try {
-      transactions.forEach { transaction ->
-        calculateProfit(transaction)
-      }
+      transactions.groupBy { it.platform to it.instrument.id }
+        .forEach { (_, platformTransactions) ->
+          calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate })
+        }
     } catch (e: ObjectOptimisticLockingFailureException) {
       log.warn("Optimistic locking failure while calculating profits. Will retry.", e)
       throw e
     }
   }
 
-  private fun calculateProfit(transaction: PortfolioTransaction) {
-    when (transaction.transactionType) {
-      TransactionType.BUY -> {
-        val currentPrice = transaction.instrument.currentPrice ?: BigDecimal.ZERO
-        val profit = calculateProfitForPrice(
-          quantity = transaction.quantity,
-          buyPrice = transaction.price,
-          currentPrice = currentPrice
-        )
+  private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
+    var runningQuantity = BigDecimal.ZERO
+    var runningCost = BigDecimal.ZERO
 
-        transaction.realizedProfit = BigDecimal.ZERO
-        transaction.unrealizedProfit = profit
-        transaction.averageCost = transaction.price
-      }
-      TransactionType.SELL -> {
-        val profit = calculateProfitForPrice(
-          quantity = transaction.quantity,
-          buyPrice = transaction.averageCost ?: BigDecimal.ZERO,
-          currentPrice = transaction.price
-        )
+    transactions.forEach { transaction ->
+      when (transaction.transactionType) {
+        TransactionType.BUY -> {
+          runningCost = runningCost.add(transaction.price.multiply(transaction.quantity))
+          runningQuantity = runningQuantity.add(transaction.quantity)
 
-        transaction.realizedProfit = profit
-        transaction.unrealizedProfit = BigDecimal.ZERO
+          val currentPrice = transaction.instrument.currentPrice ?: BigDecimal.ZERO
+          val profit = calculateProfitForPrice(
+            quantity = transaction.quantity,
+            buyPrice = transaction.price,
+            currentPrice = currentPrice
+          )
+
+          transaction.averageCost = if (runningQuantity > BigDecimal.ZERO) {
+            runningCost.divide(runningQuantity, 10, RoundingMode.HALF_UP)
+          } else transaction.price
+
+          transaction.realizedProfit = BigDecimal.ZERO
+          transaction.unrealizedProfit = profit
+        }
+        TransactionType.SELL -> {
+          val previousAverageCost = if (runningQuantity > BigDecimal.ZERO) {
+            runningCost.divide(runningQuantity, 10, RoundingMode.HALF_UP)
+          } else BigDecimal.ZERO
+
+          val profit = calculateProfitForPrice(
+            quantity = transaction.quantity,
+            buyPrice = previousAverageCost,
+            currentPrice = transaction.price
+          )
+
+          runningQuantity = runningQuantity.subtract(transaction.quantity)
+          if (runningQuantity > BigDecimal.ZERO) {
+            runningCost = previousAverageCost.multiply(runningQuantity)
+          } else {
+            runningCost = BigDecimal.ZERO
+          }
+
+          transaction.averageCost = previousAverageCost
+          transaction.realizedProfit = profit
+          transaction.unrealizedProfit = BigDecimal.ZERO
+        }
       }
     }
   }
