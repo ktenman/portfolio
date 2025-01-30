@@ -37,16 +37,25 @@ class ProfitCalculationService {
     var totalQuantity = BigDecimal.ZERO
     var averageCost = BigDecimal.ZERO
     var totalCost = BigDecimal.ZERO
+    var investmentPeriodStarted = false
 
     transactions.forEach { transaction ->
       when (transaction.transactionType) {
         TransactionType.BUY -> {
+          if (!investmentPeriodStarted) {
+            // Start of a new investment period
+            investmentPeriodStarted = true
+            totalQuantity = BigDecimal.ZERO
+            totalCost = BigDecimal.ZERO
+            averageCost = BigDecimal.ZERO
+          }
+
           val newCost = transaction.price.multiply(transaction.quantity)
           totalCost = totalCost.add(newCost)
           totalQuantity = totalQuantity.add(transaction.quantity)
-          averageCost = if (totalQuantity > BigDecimal.ZERO)
+          averageCost = if (totalQuantity > BigDecimal.ZERO) {
             totalCost.divide(totalQuantity, 10, RoundingMode.HALF_UP)
-          else BigDecimal.ZERO
+          } else BigDecimal.ZERO
 
           transaction.averageCost = averageCost
           transaction.realizedProfit = BigDecimal.ZERO
@@ -65,13 +74,33 @@ class ProfitCalculationService {
           )
 
           totalQuantity = totalQuantity.subtract(transaction.quantity)
-          totalCost = averageCost.multiply(totalQuantity)
+          if (totalQuantity == BigDecimal.ZERO) {
+            // All positions closed, reset for next investment period
+            investmentPeriodStarted = false
+          } else {
+            totalCost = averageCost.multiply(totalQuantity)
+          }
 
           transaction.averageCost = averageCost
           transaction.realizedProfit = realizedProfit
           transaction.unrealizedProfit = BigDecimal.ZERO
         }
       }
+    }
+
+    // Update final unrealized profits for any remaining positions
+    if (totalQuantity > BigDecimal.ZERO) {
+      val lastTransaction = transactions.last()
+      val currentPrice = lastTransaction.instrument.currentPrice ?: BigDecimal.ZERO
+      transactions
+        .filter { it.transactionType == TransactionType.BUY }
+        .forEach { buyTransaction ->
+          buyTransaction.unrealizedProfit = calculateUnrealizedProfit(
+            buyTransaction.quantity,
+            averageCost,
+            currentPrice
+          )
+        }
     }
   }
 
