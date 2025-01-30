@@ -35,56 +35,36 @@ class ProfitCalculationService {
   }
 
   private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
-    var runningQuantity = BigDecimal.ZERO
-    var runningCost = BigDecimal.ZERO
+    var buyPrice = BigDecimal.ZERO
 
     transactions.forEach { transaction ->
       when (transaction.transactionType) {
         TransactionType.BUY -> {
-          runningCost = runningCost.add(transaction.price.multiply(transaction.quantity))
-          runningQuantity = runningQuantity.add(transaction.quantity)
+          buyPrice = transaction.price
+          transaction.averageCost = buyPrice
+          transaction.realizedProfit = BigDecimal.ZERO
 
           val currentPrice = transaction.instrument.currentPrice ?: BigDecimal.ZERO
-          val profit = calculateProfitForPrice(
+          transaction.unrealizedProfit = calculateProfit(
             quantity = transaction.quantity,
-            buyPrice = transaction.price,
+            buyPrice = buyPrice,
             currentPrice = currentPrice
           )
-
-          transaction.averageCost = if (runningQuantity > BigDecimal.ZERO) {
-            runningCost.divide(runningQuantity, 10, RoundingMode.HALF_UP)
-          } else transaction.price
-
-          transaction.realizedProfit = BigDecimal.ZERO
-          transaction.unrealizedProfit = profit
         }
         TransactionType.SELL -> {
-          val previousAverageCost = if (runningQuantity > BigDecimal.ZERO) {
-            runningCost.divide(runningQuantity, 10, RoundingMode.HALF_UP)
-          } else BigDecimal.ZERO
-
-          val profit = calculateProfitForPrice(
+          transaction.averageCost = buyPrice
+          transaction.realizedProfit = calculateProfit(
             quantity = transaction.quantity,
-            buyPrice = previousAverageCost,
+            buyPrice = buyPrice,
             currentPrice = transaction.price
           )
-
-          runningQuantity = runningQuantity.subtract(transaction.quantity)
-          if (runningQuantity > BigDecimal.ZERO) {
-            runningCost = previousAverageCost.multiply(runningQuantity)
-          } else {
-            runningCost = BigDecimal.ZERO
-          }
-
-          transaction.averageCost = previousAverageCost
-          transaction.realizedProfit = profit
           transaction.unrealizedProfit = BigDecimal.ZERO
         }
       }
     }
   }
 
-  private fun calculateProfitForPrice(
+  private fun calculateProfit(
     quantity: BigDecimal,
     buyPrice: BigDecimal,
     currentPrice: BigDecimal
