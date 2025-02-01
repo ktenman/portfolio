@@ -47,24 +47,24 @@ class InvestmentMetricsService {
       return InstrumentMetrics.EMPTY
     }
 
-    val currentHoldings = calculateCurrentHoldings(transactions)
+    // Group transactions by platform
+    val groupedByPlatform = transactions.groupBy { it.platform }
+
+    var totalInvestment = BigDecimal.ZERO
+    var totalHoldings = BigDecimal.ZERO
+
+    // Calculate metrics for each platform separately
+    groupedByPlatform.forEach { (_, platformTransactions) ->
+      val holdings = calculateCurrentHoldings(platformTransactions)
+      if (holdings.quantity > BigDecimal.ZERO) {
+        totalInvestment = totalInvestment.add(holdings.quantity.multiply(holdings.averageCost))
+        totalHoldings = totalHoldings.add(holdings.quantity)
+      }
+    }
+
     val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
-    val currentValue = currentHoldings.quantity.multiply(currentPrice)
-
-    // Calculate total cost of current holdings using average cost
-    val totalInvestment = if (currentHoldings.quantity > BigDecimal.ZERO) {
-      currentHoldings.quantity.multiply(currentHoldings.averageCost)
-    } else {
-      BigDecimal.ZERO
-    }
-
-    // Calculate unrealized profit (current value minus cost basis of current holdings)
-    val profit = if (currentHoldings.quantity > BigDecimal.ZERO) {
-      currentValue.subtract(totalInvestment)
-    } else {
-      BigDecimal.ZERO
-    }
-
+    val currentValue = totalHoldings.multiply(currentPrice)
+    val profit = currentValue.subtract(totalInvestment)
     val xirr = calculateXirr(transactions, currentValue)
 
     return InstrumentMetrics(
@@ -72,9 +72,7 @@ class InvestmentMetricsService {
       currentValue = currentValue,
       profit = profit,
       xirr = xirr
-    ).also {
-      log.info("Calculated metrics for ${instrument.symbol}: $it")
-    }
+    )
   }
 
   private data class Holdings(
