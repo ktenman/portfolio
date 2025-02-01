@@ -27,7 +27,7 @@ CREATE TABLE portfolio_transaction
 );
 
 -- Table for daily price tracking
-CREATE TABLE daily_price
+CREATE TABLE IF NOT EXISTS daily_price
 (
   id            BIGSERIAL PRIMARY KEY,
   instrument_id BIGINT REFERENCES instrument (id),
