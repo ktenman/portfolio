@@ -1,5 +1,6 @@
 -- Enable the pg_trgm extension for text search
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE
+EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Table for financial instruments (with instrument_category)
 CREATE TABLE instrument
@@ -29,19 +30,47 @@ CREATE TABLE portfolio_transaction
 -- Table for daily price tracking
 CREATE TABLE IF NOT EXISTS daily_price
 (
-  id            BIGSERIAL PRIMARY KEY,
-  instrument_id BIGINT REFERENCES instrument (id),
-  entry_date    DATE                                               NOT NULL,
-  provider_name VARCHAR(255)                                       NOT NULL,
-  open_price    NUMERIC(20, 10),
-  high_price    NUMERIC(20, 10),
-  low_price     NUMERIC(20, 10),
-  close_price   NUMERIC(20, 10)                                    NOT NULL,
-  volume        BIGINT,
-  created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  updated_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  UNIQUE (instrument_id, entry_date, provider_name)
-);
+  id
+  BIGSERIAL
+  PRIMARY
+  KEY,
+  instrument_id
+  BIGINT
+  REFERENCES
+  instrument
+(
+  id
+),
+  entry_date DATE NOT NULL,
+  provider_name VARCHAR
+(
+  255
+) NOT NULL,
+  open_price NUMERIC
+(
+  20,
+  10
+),
+  high_price NUMERIC
+(
+  20,
+  10
+),
+  low_price NUMERIC
+(
+  20,
+  10
+),
+  close_price NUMERIC
+(
+  20,
+  10
+) NOT NULL,
+  volume BIGINT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                         UNIQUE (instrument_id, entry_date, provider_name)
+  );
 
 -- Combined table for portfolio daily summary
 CREATE TABLE portfolio_daily_summary
@@ -49,7 +78,7 @@ CREATE TABLE portfolio_daily_summary
   id                 BIGSERIAL PRIMARY KEY,
   entry_date         DATE                                               NOT NULL UNIQUE,
   total_value        NUMERIC(20, 10)                                    NOT NULL,
-  xirr_annual_return NUMERIC(10, 8)                                     NOT NULL, -- Percentage
+  xirr_annual_return NUMERIC(20, 10)                                    NOT NULL, -- Percentage
   total_profit       NUMERIC(20, 10)                                    NOT NULL, -- In euros
   earnings_per_day   NUMERIC(20, 10)                                    NOT NULL, -- (XIRR * total_value) / 365.25
   created_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
