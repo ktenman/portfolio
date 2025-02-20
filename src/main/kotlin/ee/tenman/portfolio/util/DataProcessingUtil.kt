@@ -3,6 +3,7 @@ package ee.tenman.portfolio.util
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.job.TransactionRunner
 import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.InstrumentService
@@ -22,11 +23,12 @@ class DataProcessingUtil(
 
   fun processDailyData(
     instrument: Instrument,
-    dailyData: Map<LocalDate, DailyPriceData>
+    dailyData: Map<LocalDate, DailyPriceData>,
+    providerName: ProviderName
   ) {
     transactionRunner.runInTransaction {
       dailyData.forEach { (date, data) ->
-        val dailyPrice = createDailyPrice(instrument, date, data)
+        val dailyPrice = createDailyPrice(instrument, date, data, providerName)
         dailyPriceService.saveDailyPrice(dailyPrice)
       }
     }
@@ -35,11 +37,11 @@ class DataProcessingUtil(
     log.info("Successfully retrieved and processed data for ${instrument.symbol}")
   }
 
-  private fun createDailyPrice(instrument: Instrument, date: LocalDate, data: DailyPriceData): DailyPrice {
+  private fun createDailyPrice(instrument: Instrument, date: LocalDate, data: DailyPriceData, providerName: ProviderName): DailyPrice {
     return DailyPrice(
       instrument = instrument,
       entryDate = date,
-      providerName = instrument.providerName,
+      providerName = providerName,
       openPrice = data.open,
       highPrice = data.high,
       lowPrice = data.low,

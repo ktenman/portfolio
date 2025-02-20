@@ -30,8 +30,10 @@ val guavaVersion = "33.4.0-jre"
 val commonsMathVersion = "3.6.1"
 val mokitoKotlinVersion = "5.4.0"
 val coroutinesVersion = "1.10.1"
+val jsoupVersion = "1.15.4"
 
 dependencies {
+  implementation("org.jsoup:jsoup:$jsoupVersion")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-validation")
   implementation("org.springframework.boot:spring-boot-starter-data-redis")

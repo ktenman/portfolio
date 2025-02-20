@@ -32,7 +32,11 @@ class BinanceDataRetrievalJob(
     instruments.forEach { instrument ->
       log.info("Retrieving data for instrument: ${instrument.symbol}")
       val dailyData = binanceService.getDailyPrices(instrument.symbol)
-      dataProcessingUtil.processDailyData(instrument, dailyData)
+      dataProcessingUtil.processDailyData(
+        instrument = instrument,
+        dailyData = dailyData,
+        providerName = ProviderName.BINANCE
+      )
     }
 
     log.info("Completed Binance data retrieval job. Processed ${instruments.size} instruments.")
