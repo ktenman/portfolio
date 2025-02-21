@@ -22,7 +22,6 @@ class AlphaVantageService {
   @Resource
   private lateinit var client: AlphaVantageClient
 
-  @Retryable(backoff = Backoff(delay = 1000))
   fun getDailyTimeSeriesForLastWeek(symbol: String): Map<LocalDate, AlphaVantageDailyPriceData> {
     var adjustedSymbol = symbol
     if ("QDVE:GER:EUR" == symbol) {
@@ -47,7 +46,6 @@ class AlphaVantageService {
     }
   }
 
-  @Retryable(backoff = Backoff(delay = 1000))
   fun getTicker(search: String): String? {
     val symbolSearch = client.getSearch("SYMBOL_SEARCH", search, "1")
     return symbolSearch.bestMatches?.firstOrNull()?.symbol

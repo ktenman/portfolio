@@ -2,7 +2,6 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.alphavantage.AlphaVantageService
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.ft.HistoricalPricesService
 import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.util.DataProcessingUtil
@@ -15,9 +14,9 @@ class AlphaVantageDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val alphaVantageService: AlphaVantageService,
   private val dataProcessingUtil: DataProcessingUtil,
-  private val jobExecutionService: JobExecutionService,
-  private val historicalPricesService: HistoricalPricesService
+  private val jobExecutionService: JobExecutionService
 ) : Job {
+
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 0 0/2 * * *")
@@ -28,8 +27,9 @@ class AlphaVantageDataRetrievalJob(
   }
 
   override fun execute() {
-    log.info("Starting AlphaVantage data retrieval job")
-    val instruments = instrumentService.getAllInstruments().filter { it.providerName == ProviderName.ALPHA_VANTAGE }
+    log.info("Starting AlphaVantage data retrieval execution")
+    val instruments = instrumentService.getAllInstruments()
+      .filter { it.providerName == ProviderName.ALPHA_VANTAGE }
 
     instruments.forEach { instrument ->
       log.info("Retrieving data for instrument: ${instrument.symbol}")
@@ -37,12 +37,10 @@ class AlphaVantageDataRetrievalJob(
       if (dailyData.isNotEmpty()) {
         dataProcessingUtil.processDailyData(instrument, dailyData, ProviderName.ALPHA_VANTAGE)
       } else {
-        log.warn("No daily data found for instrument: ${instrument.symbol}, falling back to historical prices.")
-        val fetchPrices = historicalPricesService.fetchPrices(instrument.symbol)
-        dataProcessingUtil.processDailyData(instrument, fetchPrices, ProviderName.FT)
+        log.warn("No daily data found for instrument: ${instrument.symbol}")
       }
     }
 
-    log.info("Completed AlphaVantage data retrieval job. Processed ${instruments.size} instruments.")
+    log.info("Completed AlphaVantage data retrieval execution. Processed ${instruments.size} instruments.")
   }
 }
