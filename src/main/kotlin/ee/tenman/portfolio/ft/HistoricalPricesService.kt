@@ -33,7 +33,7 @@ class HistoricalPricesService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun fetchPrices(symbol: String): Map<LocalDate, DailyPriceData> = runBlocking {
-    // Create a dispatcher with 4 threads for parallel fetching.
+    // Create a dispatcher for parallel fetching.
     val dispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
 
     // Prepare a list to hold all the one-year date ranges.
@@ -48,7 +48,7 @@ class HistoricalPricesService(
       chunks.add(formattedStart to formattedEnd)
 
       // Terminate if we've reached or passed our lower bound.
-      if (currentStartDate.year <= 2000) break
+      if (currentStartDate.year <= 2015) break
 
       // Shift window one year back (subtract one day to avoid overlap)
       currentEndDate = currentStartDate.minusDays(1)
