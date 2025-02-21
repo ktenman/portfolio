@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.alphavantage.AlphaVantageService
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.ft.HistoricalPricesService
 import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.util.DataProcessingUtil
@@ -10,9 +10,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 @Component
-class AlphaVantageDataRetrievalJob(
+class FtDataRetrievalJob(
   private val instrumentService: InstrumentService,
-  private val alphaVantageService: AlphaVantageService,
+  private val historicalPricesService: HistoricalPricesService,
   private val dataProcessingUtil: DataProcessingUtil,
   private val jobExecutionService: JobExecutionService
 ) : Job {
@@ -21,26 +21,26 @@ class AlphaVantageDataRetrievalJob(
 
   @Scheduled(cron = "0 0 0/2 * * *")
   fun runJob() {
-    log.info("Running AlphaVantage data retrieval job")
+    log.info("Running FT data retrieval job")
     jobExecutionService.executeJob(this)
-    log.info("Completed AlphaVantage data retrieval job")
+    log.info("Completed FT data retrieval job")
   }
 
   override fun execute() {
-    log.info("Starting AlphaVantage data retrieval execution")
+    log.info("Starting FT data retrieval execution")
     val instruments = instrumentService.getAllInstruments()
-      .filter { it.providerName == ProviderName.ALPHA_VANTAGE }
+      .filter { it.providerName == ProviderName.FT }
 
     instruments.forEach { instrument ->
-      log.info("Retrieving data for instrument: ${instrument.symbol}")
-      val dailyData = alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
-      if (dailyData.isNotEmpty()) {
-        dataProcessingUtil.processDailyData(instrument, dailyData, ProviderName.ALPHA_VANTAGE)
+      log.info("Retrieving FT data for instrument: ${instrument.symbol}")
+      val ftData = historicalPricesService.fetchPrices(instrument.symbol)
+      if (ftData.isNotEmpty()) {
+        dataProcessingUtil.processDailyData(instrument, ftData, ProviderName.FT)
       } else {
-        log.warn("No daily data found for instrument: ${instrument.symbol}")
+        log.warn("No FT data found for instrument: ${instrument.symbol}")
       }
     }
 
-    log.info("Completed AlphaVantage data retrieval execution. Processed ${instruments.size} instruments.")
+    log.info("Completed FT data retrieval execution. Processed ${instruments.size} instruments.")
   }
 }
