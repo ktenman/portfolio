@@ -29,7 +29,7 @@ val springRetryVersion = "2.0.11"
 val guavaVersion = "33.4.6-jre"
 val commonsMathVersion = "3.6.1"
 val mokitoKotlinVersion = "5.4.0"
-val coroutinesVersion = "1.10.1"
+val coroutinesVersion = "1.10.2"
 val jsoupVersion = "1.19.1"
 
 dependencies {
