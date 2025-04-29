@@ -30,7 +30,7 @@ val guavaVersion = "33.4.8-jre"
 val commonsMathVersion = "3.6.1"
 val mokitoKotlinVersion = "5.4.0"
 val coroutinesVersion = "1.10.2"
-val jsoupVersion = "1.19.1"
+val jsoupVersion = "1.20.1"
 
 dependencies {
   implementation("org.jsoup:jsoup:$jsoupVersion")
