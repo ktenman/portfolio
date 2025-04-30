@@ -62,6 +62,7 @@ class InstrumentController(
     @field:NotBlank(message = "Base currency must not be blank")
     val baseCurrency: String,
     val currentPrice: BigDecimal? = null,
+    val quantity: BigDecimal? = BigDecimal.ZERO,
     @field:NotBlank(message = "Provider name must not be blank")
     val providerName: String,
     val totalInvestment: BigDecimal? = BigDecimal.ZERO,
@@ -92,6 +93,7 @@ class InstrumentController(
         category = instrument.category,
         baseCurrency = instrument.baseCurrency,
         currentPrice = instrument.currentPrice,
+        quantity = instrument.quantity,
         providerName = instrument.providerName.name,
         totalInvestment = instrument.totalInvestment,
         currentValue = instrument.currentValue,

@@ -38,7 +38,7 @@ class CalculatorService(
     }
   }
 
-  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr+v9'")
+  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr+v2'")
   fun getCalculationResult(): CalculationResult {
     log.info("Calculating XIRR")
     val xirrs = calculateRollingXirr(TICKER).reversed()
