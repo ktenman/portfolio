@@ -9,4 +9,6 @@ export interface Instrument {
   totalInvestment: number
   currentValue: number
   profit: number
+  currentPrice: number
+  quantity: number
 }

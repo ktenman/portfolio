@@ -36,5 +36,8 @@ class Instrument(
   var profit:BigDecimal = BigDecimal.ZERO,
 
   @Transient
-  var xirr: Double = 0.0
+  var xirr: Double = 0.0,
+
+  @Transient
+  var quantity: BigDecimal = BigDecimal.ZERO
 ) : BaseEntity()

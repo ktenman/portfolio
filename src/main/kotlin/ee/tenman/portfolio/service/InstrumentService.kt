@@ -55,6 +55,7 @@ class InstrumentService(
         currentValue = metrics.currentValue
         profit = metrics.profit
         xirr = metrics.xirr
+        quantity = metrics.quantity
       }
     }
   }

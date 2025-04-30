@@ -21,7 +21,8 @@ class InvestmentMetricsService {
     val totalInvestment: BigDecimal,
     val currentValue: BigDecimal,
     val profit: BigDecimal,
-    val xirr: Double
+    val xirr: Double,
+    val quantity: BigDecimal
   ) {
     override fun toString(): String =
       "InstrumentMetrics(totalInvestment=$totalInvestment, " +
@@ -34,7 +35,8 @@ class InvestmentMetricsService {
         totalInvestment = BigDecimal.ZERO,
         currentValue = BigDecimal.ZERO,
         profit = BigDecimal.ZERO,
-        xirr = 0.0
+        xirr = 0.0,
+        quantity = BigDecimal.ZERO
       )
     }
   }
@@ -71,7 +73,8 @@ class InvestmentMetricsService {
       totalInvestment = totalInvestment,
       currentValue = currentValue,
       profit = profit,
-      xirr = xirr
+      xirr = xirr,
+      quantity = totalHoldings
     )
   }
 
@@ -91,6 +94,7 @@ class InvestmentMetricsService {
           totalCost = totalCost.add(cost)
           quantity = quantity.add(transaction.quantity)
         }
+
         TransactionType.SELL -> {
           // When selling, reduce the quantity and proportionally reduce the total cost
           val sellRatio = transaction.quantity.divide(quantity, 10, RoundingMode.HALF_UP)

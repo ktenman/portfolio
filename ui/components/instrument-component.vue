@@ -15,35 +15,39 @@
     <div v-else-if="instruments.length > 0" class="table-responsive">
       <table class="table table-striped table-hover">
         <thead>
-          <tr>
-            <th>Symbol</th>
-            <th>Name</th>
-            <th>Currency</th>
-            <th>XIRR Annual Return</th>
-            <th>Invested</th>
-            <th>Current Value</th>
-            <th>Profit/Loss</th>
-            <th class="text-end">Actions</th>
-          </tr>
+        <tr>
+          <th>Symbol</th>
+          <th>Name</th>
+          <th>Currency</th>
+          <th class="d-none d-md-table-cell">Quantity</th>
+          <th class="d-none d-md-table-cell">Current Price</th>
+          <th>XIRR Annual Return</th>
+          <th>Invested</th>
+          <th>Current Value</th>
+          <th>Profit/Loss</th>
+          <th class="text-end">Actions</th>
+        </tr>
         </thead>
         <tbody>
-          <tr v-for="instrument in instruments" :key="instrument.id">
-            <td data-label="Symbol">{{ instrument.symbol }}</td>
-            <td data-label="Name">{{ instrument.name }}</td>
-            <td data-label="Currency">{{ instrument.baseCurrency }}</td>
-            <td data-label="XIRR Annual Return">{{ formatPercentage(instrument.xirr) }}</td>
-            <td data-label="Invested">{{ formatCurrency(instrument.totalInvestment) }}</td>
-            <td data-label="Current Value">{{ formatCurrency(instrument.currentValue) }}</td>
-            <td data-label="Profit/Loss" :class="amountClass(instrument)">
-              {{ formattedAmount(instrument) }}
-            </td>
-            <td data-label="Actions" class="text-end">
-              <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
-                <font-awesome-icon icon="pencil-alt" />
-                <span class="d-none d-md-inline ms-1">Edit</span>
-              </button>
-            </td>
-          </tr>
+        <tr v-for="instrument in instruments" :key="instrument.id">
+          <td data-label="Symbol">{{ instrument.symbol }}</td>
+          <td data-label="Name">{{ instrument.name }}</td>
+          <td data-label="Currency">{{ instrument.baseCurrency }}</td>
+          <td data-label="Quantity" class="d-none d-md-table-cell">{{ formatNumber(instrument.quantity) }}</td>
+          <td data-label="Current Price" class="d-none d-md-table-cell">{{ formatCurrency(instrument.currentPrice) }}</td>
+          <td data-label="XIRR Annual Return">{{ formatPercentage(instrument.xirr) }}</td>
+          <td data-label="Invested">{{ formatCurrency(instrument.totalInvestment) }}</td>
+          <td data-label="Current Value">{{ formatCurrency(instrument.currentValue) }}</td>
+          <td data-label="Profit/Loss" :class="amountClass(instrument)">
+            {{ formattedAmount(instrument) }}
+          </td>
+          <td data-label="Actions" class="text-end">
+            <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
+              <font-awesome-icon icon="pencil-alt"/>
+              <span class="d-none d-md-inline ms-1">Edit</span>
+            </button>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
@@ -163,12 +167,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
-import { Modal } from 'bootstrap'
-import { InstrumentService } from '../services/instrument-service'
-import { Instrument } from '../models/instrument'
-import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
-import { ApiError } from '../models/api-error'
+import {computed, onMounted, ref} from 'vue'
+import {Modal} from 'bootstrap'
+import {InstrumentService} from '../services/instrument-service'
+import {Instrument} from '../models/instrument'
+import {AlertType, getAlertBootstrapClass} from '../models/alert-type'
+import {ApiError} from '../models/api-error'
 import AlertMessageComponent from './alert-message-component.vue'
 
 const alertMessage = ref('')
@@ -271,8 +275,24 @@ const handleApiError = (error: unknown) => {
   }
 }
 
+const formatNumber = (value: number | undefined | null): string => {
+  if (value === undefined || value === null) return ''
+  if (value < 1 && value > 0) {
+    return value.toExponential(5).replace('e-', ' * 10^-')
+  }
+
+  const [integerPart] = value.toString().split('.')
+  const integerDigits = integerPart.length
+
+  if (integerDigits === 1) {
+    return value.toFixed(4)
+  } else {
+    return value.toFixed(2)
+  }
+}
+
 const editInstrument = (instrument: Instrument) => {
-  currentInstrument.value = { ...instrument }
+  currentInstrument.value = {...instrument}
   isEditing.value = true
   instrumentModal?.show()
 }
