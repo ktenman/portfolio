@@ -9,13 +9,13 @@
               <span class="nav-indicator"></span>
             </router-link>
           </li>
-        </ul>
-      </div>
 
-      <div class="build-info ms-auto" v-if="buildInfo">
-        <small class="text-muted">
-          {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
-        </small>
+          <li class="nav-item build-info" v-if="buildInfo">
+            <span class="text-muted build-info-text">
+              {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
+            </span>
+          </li>
+        </ul>
       </div>
     </div>
   </nav>
@@ -48,7 +48,10 @@ function formatDate(dateString: string): string {
 
   try {
     const date = new Date(dateString)
-    return date.toLocaleDateString()
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0') // Month is 0-indexed
+    const year = date.getFullYear()
+    return `${day}.${month}.${year}`
   } catch (e) {
     return dateString
   }
@@ -61,6 +64,7 @@ function formatDate(dateString: string): string {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer 10+ */
+  width: 100%; /* Ensure the container takes full width */
 }
 
 .navbar-scroll-container::-webkit-scrollbar {
@@ -72,6 +76,7 @@ function formatDate(dateString: string): string {
   flex-wrap: nowrap;
   gap: 1rem;
   padding-bottom: 5px; /* Add some padding to account for the scrollbar */
+  width: max-content; /* Allow the navbar to expand beyond visible area */
 }
 
 .nav-item {
@@ -109,10 +114,29 @@ function formatDate(dateString: string): string {
   font-weight: bold;
 }
 
+/* Style for build info */
+.build-info {
+  font-size: 0.75rem;
+  padding: 0 10px;
+  margin-left: auto; /* Push it to the right */
+  display: flex;
+  align-items: center;
+}
+
+.build-info-text {
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .navbar-nav {
     flex-direction: row;
     justify-content: flex-start;
+  }
+
+  /* Ensure build info doesn't wrap on mobile */
+  .build-info-text {
+    font-size: 0.7rem;
   }
 }
 </style>

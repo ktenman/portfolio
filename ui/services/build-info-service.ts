@@ -1,8 +1,8 @@
 import { ApiClient } from './api-client.ts'
 
 export interface BuildInfo {
-  hash: string;
-  time: string;
+  hash: string
+  time: string
 }
 
 export class BuildInfoService {
@@ -15,7 +15,7 @@ export class BuildInfoService {
       console.error('Failed to fetch build info:', error)
       return {
         hash: 'unknown',
-        time: 'unknown'
+        time: 'unknown',
       }
     }
   }
