@@ -56,6 +56,8 @@ jobs:
           echo "ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}" >> .env
           echo "VISION_BASE64_ENCODED_KEY=${{ secrets.VISION_BASE64_ENCODED_KEY }}" >> .env
           echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> .env
+          echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> .env
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/

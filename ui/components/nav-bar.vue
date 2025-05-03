@@ -11,12 +11,19 @@
           </li>
         </ul>
       </div>
+
+      <div class="build-info ms-auto" v-if="buildInfo">
+        <small class="text-muted">
+          {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
+        </small>
+      </div>
     </div>
   </nav>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { BuildInfoService, BuildInfo } from '../services/build-info-service'
 
 const routes = ref([
   { path: '/', name: 'Summary' },
@@ -24,6 +31,28 @@ const routes = ref([
   { path: '/instruments', name: 'Instruments' },
   { path: '/transactions', name: 'Transactions' },
 ])
+
+const buildInfo = ref<BuildInfo | null>(null)
+const buildInfoService = new BuildInfoService()
+
+onMounted(async () => {
+  try {
+    buildInfo.value = await buildInfoService.getBuildInfo()
+  } catch (error) {
+    console.error('Error fetching build info:', error)
+  }
+})
+
+function formatDate(dateString: string): string {
+  if (!dateString || dateString === 'unknown') return 'unknown'
+
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString()
+  } catch (e) {
+    return dateString
+  }
+}
 </script>
 
 <style scoped>

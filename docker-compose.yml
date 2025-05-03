@@ -40,6 +40,8 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       VISION_ENABLED: true
       TELEGRAM_BOT_ENABLED: true
+      BUILD_HASH: ${BUILD_HASH:-local}
+      BUILD_TIME: ${BUILD_TIME:-local}
     image: ktenman/portfolio-be:latest
     ports:
       - '8080:8080'
