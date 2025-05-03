@@ -3,6 +3,9 @@ management:
     web:
       exposure:
         include: health,info
+  info:
+    env:
+      enabled: true
 spring:
   application:
     name: portfolio
@@ -83,3 +86,7 @@ telegram:
   bot:
     enabled: ${TELEGRAM_BOT_ENABLED:false}
     token: ${TELEGRAM_BOT_TOKEN:}
+
+build:
+  hash: ${BUILD_HASH:unknown}
+  time: ${BUILD_TIME:unknown}

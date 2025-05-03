@@ -2,6 +2,14 @@
 FROM gradle:jdk21-alpine AS build
 WORKDIR /app
 
+# src/Dockerfile - Add these near the top
+ARG BUILD_HASH=unknown
+ARG BUILD_TIME=unknown
+
+# Later in the file, in the runtime stage
+ENV BUILD_HASH=${BUILD_HASH}
+ENV BUILD_TIME=${BUILD_TIME}
+
 # Copy necessary files
 COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle ./gradle
