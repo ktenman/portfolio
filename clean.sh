@@ -1,13 +1,22 @@
-rm -rf .gradle
-rm -rf build
-rm -rf .idea
-rm -rf *.iml
-rm -rf node_modules
-rm -rf .kotlin
-rm gradlew
-rm LICENSE
-rm package-lock.json
-rm combined_files.txt
+#!/usr/bin/env bash
+set -e
+
+# 1) Clean out build artifacts & IDE cruft
+rm -rf \
+  .gradle/ build/ dist/ out/ target/ \
+  .idea/ .vscode/ \
+  node_modules/ __pycache__/ \
+  *.iml \
+  .kotlin/
+
+# 2) Remove lockfiles, generated summaries & helper scripts we don't need
+rm -f \
+  gradlew gradlew.bat \
+  package-lock.json yarn.lock \
+  combined_files.txt
+
+# 3) Regenerate our combined summary (code.py will only pick .kt/.py/.ts/etc.)
 python3 code.py
-git reset --hard
+
+# 4) (Re)install frontend deps for a clean state
 npm install
