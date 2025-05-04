@@ -152,7 +152,8 @@ function formatDate(dateString: string): string {
   }
 
   /* Ensure vertical alignment */
-  .nav-link, .build-info {
+  .nav-link,
+  .build-info {
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     display: flex;
