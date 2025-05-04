@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
+import { ref, onMounted, watch, nextTick, reactive } from 'vue'
 import Chart from 'chart.js/auto'
 import { CalculationService } from '../services/calculation-service.ts'
 import { CalculationResult } from '../models/calculation-result.ts'
@@ -95,13 +95,25 @@ let chartInstance: Chart | null = null
 let resultChartInstance: Chart | null = null
 
 const manualInputDetected = ref(false)
+const isUpdatingForm = ref(false)
 
 const calculate = async () => {
+  // Prevent recursive calculations
+  if (isUpdatingForm.value) return
+
   const calculationResult = await fetchCalculationResult()
 
   if (!manualInputDetected.value) {
-    form.annualReturnRate = Number(Number(calculationResult.average).toFixed(3))
-    form.initialWorth = Number(Number(calculationResult.total).toFixed(2))
+    try {
+      isUpdatingForm.value = true
+      form.annualReturnRate = Number(Number(calculationResult.average).toFixed(3))
+      form.initialWorth = Number(Number(calculationResult.total).toFixed(2))
+    } finally {
+      // Use nextTick to ensure DOM updates complete before clearing flag
+      nextTick(() => {
+        isUpdatingForm.value = false
+      })
+    }
   }
 
   const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
