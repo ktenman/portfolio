@@ -1,21 +1,23 @@
 <template>
   <nav class="navbar navbar-expand navbar-light bg-light">
-    <div class="container-fluid">
+    <div class="container-fluid d-flex align-items-center">
+      <!-- Left side navigation links -->
       <div class="navbar-scroll-container">
-        <ul class="navbar-nav">
+        <ul class="navbar-nav me-auto">
           <li class="nav-item" v-for="route in routes" :key="route.path">
             <router-link class="nav-link" :to="route.path" active-class="active">
               {{ route.name }}
               <span class="nav-indicator"></span>
             </router-link>
           </li>
-
-          <li class="nav-item build-info" v-if="buildInfo">
-            <span class="text-muted build-info-text">
-              {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
-            </span>
-          </li>
         </ul>
+      </div>
+
+      <!-- Right side build info -->
+      <div class="build-info" v-if="buildInfo">
+        <span class="build-info-text">
+          {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
+        </span>
       </div>
     </div>
   </nav>
@@ -59,12 +61,19 @@ function formatDate(dateString: string): string {
 </script>
 
 <style scoped>
+.container-fluid {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .navbar-scroll-container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer 10+ */
-  width: 100%; /* Ensure the container takes full width */
+  flex-grow: 1;
 }
 
 .navbar-scroll-container::-webkit-scrollbar {
@@ -75,8 +84,6 @@ function formatDate(dateString: string): string {
   display: flex;
   flex-wrap: nowrap;
   gap: 1rem;
-  padding-bottom: 5px; /* Add some padding to account for the scrollbar */
-  width: max-content; /* Allow the navbar to expand beyond visible area */
 }
 
 .nav-item {
@@ -87,6 +94,9 @@ function formatDate(dateString: string): string {
 .nav-link {
   position: relative;
   transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .nav-link:hover {
@@ -114,29 +124,39 @@ function formatDate(dateString: string): string {
   font-weight: bold;
 }
 
-/* Style for build info */
+/* Build info styles */
 .build-info {
-  font-size: 0.75rem;
-  padding: 0 10px;
-  margin-left: auto; /* Push it to the right */
   display: flex;
   align-items: center;
-}
-
-.build-info-text {
-  padding: 4px 8px;
+  padding-left: 15px;
   white-space: nowrap;
 }
 
+.build-info-text {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
 @media (max-width: 768px) {
-  .navbar-nav {
+  .container-fluid {
     flex-direction: row;
-    justify-content: flex-start;
+    padding: 0.5rem 1rem;
   }
 
-  /* Ensure build info doesn't wrap on mobile */
+  .navbar-nav {
+    flex-direction: row;
+  }
+
   .build-info-text {
-    font-size: 0.7rem;
+    font-size: 0.75rem; /* Keep consistent with desktop */
+  }
+
+  /* Ensure vertical alignment */
+  .nav-link, .build-info {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
   }
 }
 </style>
