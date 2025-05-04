@@ -1,23 +1,26 @@
 <template>
   <nav class="navbar navbar-expand navbar-light bg-light">
-    <div class="container-fluid d-flex align-items-center">
-      <!-- Left side navigation links -->
+    <div class="container-fluid">
       <div class="navbar-scroll-container">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item" v-for="route in routes" :key="route.path">
-            <router-link class="nav-link" :to="route.path" active-class="active">
-              {{ route.name }}
-              <span class="nav-indicator"></span>
-            </router-link>
-          </li>
-        </ul>
-      </div>
+        <!-- Put everything inside the scrollable container -->
+        <div class="navbar-content">
+          <!-- Navigation links on left -->
+          <ul class="navbar-nav">
+            <li class="nav-item" v-for="route in routes" :key="route.path">
+              <router-link class="nav-link" :to="route.path" active-class="active">
+                {{ route.name }}
+                <span class="nav-indicator"></span>
+              </router-link>
+            </li>
+          </ul>
 
-      <!-- Right side build info -->
-      <div class="build-info" v-if="buildInfo">
-        <span class="build-info-text">
-          {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
-        </span>
+          <!-- Build info on right (inside scrollable area) -->
+          <div class="build-info" v-if="buildInfo">
+            <span class="text-muted build-info-text">
+              {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -61,29 +64,33 @@ function formatDate(dateString: string): string {
 </script>
 
 <style scoped>
-.container-fluid {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
 .navbar-scroll-container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer 10+ */
-  flex-grow: 1;
+  width: 100%; /* Ensure the container takes full width */
 }
 
 .navbar-scroll-container::-webkit-scrollbar {
   display: none; /* WebKit */
 }
 
+/* New container for both nav links and build info */
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 100%; /* At minimum take up full width */
+  width: max-content; /* But expand if content requires more space */
+  padding-right: 15px; /* Add some padding on right side */
+}
+
 .navbar-nav {
   display: flex;
   flex-wrap: nowrap;
   gap: 1rem;
+  padding-bottom: 5px;
 }
 
 .nav-item {
@@ -94,9 +101,6 @@ function formatDate(dateString: string): string {
 .nav-link {
   position: relative;
   transition: color 0.3s ease;
-  display: flex;
-  align-items: center;
-  height: 100%;
 }
 
 .nav-link:hover {
@@ -126,38 +130,36 @@ function formatDate(dateString: string): string {
 
 /* Build info styles */
 .build-info {
+  font-size: 0.75rem;
+  padding: 0 10px;
   display: flex;
   align-items: center;
-  padding-left: 15px;
+  margin-left: 20px; /* Add space between nav items and build info */
   white-space: nowrap;
 }
 
 .build-info-text {
-  font-size: 0.75rem;
-  color: #6c757d;
+  padding: 4px 8px;
 }
 
 @media (max-width: 768px) {
-  .container-fluid {
-    flex-direction: row;
-    padding: 0.5rem 1rem;
+  .navbar-content {
+    padding-right: 10px;
+    gap: 0.5rem;
   }
 
   .navbar-nav {
-    flex-direction: row;
+    gap: 0.5rem;
   }
 
+  /* Ensure build info doesn't wrap on mobile */
   .build-info-text {
-    font-size: 0.75rem; /* Keep consistent with desktop */
+    font-size: 0.7rem;
   }
 
-  /* Ensure vertical alignment */
-  .nav-link,
+  /* Add more space so it's clear there's scrollable content */
   .build-info {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
+    margin-left: 30px;
   }
 }
 </style>
