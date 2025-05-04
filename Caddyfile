@@ -31,14 +31,24 @@ fov.ee {
     }
     redir @http https://fov.ee{uri}
 
-    # Calculator related routes
-    @calculator_routes {
-        path /calculator /calculator/* /assets/* *.js *.css *.svg
+    # Explicitly define calculator frontend routes
+    @calculator_frontend {
+        path /calculator /calculator/*
     }
-    handle @calculator_routes {
+    handle @calculator_frontend {
         header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
         header Pragma "no-cache"
         header Expires "0"
+        # Skip authentication for calculator routes
+        reverse_proxy frontend:80
+    }
+
+    # Static assets (make sure these are accessible without auth)
+    @static_assets {
+        path /assets/* *.js *.css *.svg
+    }
+    handle @static_assets {
+        header Cache-Control "public, max-age=3600"
         reverse_proxy frontend:80
     }
 
@@ -52,6 +62,10 @@ fov.ee {
 
     # Unprotected API calculator route for backend
     handle /api/calculator {
+        # Add CORS headers to ensure proper access
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type"
         reverse_proxy backend:8080
     }
 
