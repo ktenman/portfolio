@@ -31,50 +31,60 @@ fov.ee {
     }
     redir @http https://fov.ee{uri}
 
-    # Explicitly define calculator frontend routes
-    @calculator_frontend {
-        path /calculator /calculator/*
+    # ============ PUBLIC ROUTES - NO AUTHENTICATION ============
+
+    # PUBLIC: Calculator frontend (must come before protected routes)
+    @public_calculator {
+        path /calculator
+        path /calculator/*
     }
-    handle @calculator_frontend {
+    handle @public_calculator {
+        # Skip authentication check entirely
         header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
         header Pragma "no-cache"
         header Expires "0"
-        # Skip authentication for calculator routes
         reverse_proxy frontend:80
     }
 
-    # Static assets (make sure these are accessible without auth)
-    @static_assets {
-        path /assets/* *.js *.css *.svg
+    # PUBLIC: Calculator API endpoint
+    handle /api/calculator {
+        # Explicitly allow cross-origin requests
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization"
+        reverse_proxy backend:8080
     }
-    handle @static_assets {
+
+    # PUBLIC: Static assets needed by calculator
+    @public_assets {
+        path /assets/*
+        path *.js
+        path *.css
+        path *.svg
+    }
+    handle @public_assets {
         header Cache-Control "public, max-age=3600"
         reverse_proxy frontend:80
     }
 
-    # Login and OAuth routes are handled by the auth server
+    # ============ AUTH ROUTES ============
+
+    # Login and OAuth routes
     @auth_routes {
-        path /login /login/* /oauth2/* /logout
+        path /login
+        path /login/*
+        path /oauth2/*
+        path /logout
     }
     handle @auth_routes {
         reverse_proxy auth:8083
     }
 
-    # Unprotected API calculator route for backend
-    handle /api/calculator {
-        # Add CORS headers to ensure proper access
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, OPTIONS"
-        header Access-Control-Allow-Headers "Content-Type"
-        reverse_proxy backend:8080
-    }
+    # ============ PROTECTED ROUTES ============
 
-    # Protected routes
-    @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
-    }
-
-    handle @protected {
+    # Everything else not already handled is protected
+    handle {
+        # This will catch all paths not handled above
         forward_auth auth:8083 {
             uri /validate
             copy_headers X-User-Id
@@ -88,7 +98,7 @@ fov.ee {
             reverse_proxy backend:8080
         }
 
-        # All other routes go to the frontend
+        # All other protected routes
         reverse_proxy frontend:80
     }
 }
