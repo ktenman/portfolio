@@ -11,7 +11,6 @@ rm -rf \
 
 # 2) Remove lockfiles, generated summaries & helper scripts we don't need
 rm -f \
-  gradlew gradlew.bat \
   package-lock.json yarn.lock \
   combined_files.txt
 
