@@ -42,8 +42,8 @@ class InstrumentManagementE2ETests {
   fun `should display success message when saving instrument with valid data`() {
 
     id("addNewInstrument").click()
-    id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue(DEFAULT_SYMBOL)
-    id("name").shouldNotHave(text(DEFAULT_NAME)).setValue(DEFAULT_NAME)
+    id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).value = DEFAULT_SYMBOL
+    id("name").shouldNotHave(text(DEFAULT_NAME)).value = DEFAULT_NAME
     id("category").selectOption(DEFAULT_CATEGORY)
     id("providerName").selectOption("Binance")
     id("currency").selectOption(DEFAULT_CURRENCY)
@@ -51,7 +51,7 @@ class InstrumentManagementE2ETests {
     elements(tagName("button")).filter(text("Save")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(10))
+      .shouldBe(visible, Duration.ofSeconds(4))
       .shouldHave(text("Instrument saved successfully."))
   }
 
@@ -59,8 +59,8 @@ class InstrumentManagementE2ETests {
   fun `should display success message when editing instrument with valid data`() {
 
     elements(tagName("button")).filter(text("Edit")).first().click()
-    id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).setValue("GOOGL")
-    id("name").shouldNotHave(text(DEFAULT_NAME)).setValue("Alphabet Inc.")
+    id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).value = "GOOGL"
+    id("name").shouldNotHave(text(DEFAULT_NAME)).value = "Alphabet Inc."
     id("category").selectOption("Stock")
     id("providerName").selectOption("Alpha Vantage")
     id("currency").selectOption("USD")
@@ -68,7 +68,7 @@ class InstrumentManagementE2ETests {
     elements(tagName("button")).filter(text("Update")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(10))
+      .shouldBe(visible, Duration.ofSeconds(4))
       .shouldHave(text("Instrument updated successfully."))
   }
 
