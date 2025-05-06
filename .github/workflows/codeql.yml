@@ -6,14 +6,13 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '45 10 * * 1'  # Run weekly on Mondays
+    - cron: '45 10 * * 1'  # Run weekly on Mondays (fixed syntax spacing)
 
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
-      # Required permissions
       security-events: write
       packages: read
       actions: read
@@ -23,71 +22,86 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: actions  # Covers GitHub Actions YAML files
-          build-mode: none
-        - language: java-kotlin
-          # For Java/Kotlin, use autobuild for simpler projects, or set to manual
-          # if you need a custom build process (e.g., Gradle or Maven commands)
-          build-mode: autobuild
-        - language: javascript-typescript  # Covers JS, TS, and Vue
-          build-mode: none
-        - language: python
-          build-mode: none
+          - language: actions  # Covers GitHub Actions YAML files
+            build-mode: none
+          - language: java-kotlin
+            # Switching to manual build to use Gradle explicitly
+            build-mode: manual
+          - language: javascript-typescript  # Covers JS, TS, and Vue
+            build-mode: none
+          - language: python
+            build-mode: none
+          # Adding IaC analysis for Docker files and other configs
+          - language: iac
+            build-mode: none
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Full git history is needed for proper analysis of code changes
+          fetch-depth: 0
 
-    # For Java/Kotlin: Improve build by setting up Java
-    - name: Set up JDK
-      if: matrix.language == 'java-kotlin'
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        
-    # For JavaScript/TypeScript: Set up Node.js
-    - name: Set up Node.js
-      if: matrix.language == 'javascript-typescript'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        
-    # For Python: Set up Python
-    - name: Set up Python
-      if: matrix.language == 'python'
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-        
-    # Initialize CodeQL
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
-        # Uncomment the line below to enable additional security checks
-        # queries: security-extended,security-and-quality
+      # For Java/Kotlin: Improve build by setting up Java with Gradle
+      - name: Set up JDK 21
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'  # Matching your project's Java version
+          distribution: 'temurin'
+          cache: 'gradle'  # Enable Gradle caching for faster builds
 
-    # For Java/Kotlin manual build (if needed)
-    - name: Build Java/Kotlin code
-      if: matrix.language == 'java-kotlin' && matrix.build-mode == 'manual'
-      run: |
-        # Replace with your actual build commands if using manual mode
-        # Example: ./gradlew build
-        echo "Using autobuild for Java/Kotlin"
+      # For JavaScript/TypeScript: Set up Node.js
+      - name: Set up Node.js
+        if: matrix.language == 'javascript-typescript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    # For JavaScript/TypeScript projects that need build steps
-    - name: Build JavaScript/TypeScript
-      if: matrix.language == 'javascript-typescript' && matrix.build-mode == 'manual'
-      run: |
-        # Replace with your actual build commands if using manual mode
-        # Example: npm ci && npm run build
-        echo "Using simple analysis for JavaScript/TypeScript"
+      # For Python: Set up Python
+      - name: Set up Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    # Perform the analysis
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
+      # Setup Gradle wrapper validation
+      - name: Validate Gradle wrapper
+        if: matrix.language == 'java-kotlin'
+        uses: gradle/wrapper-validation-action@v2
+
+      # Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended,security-and-quality
+
+      # For Java/Kotlin using Gradle build
+      - name: Build with Gradle
+        if: matrix.language == 'java-kotlin'
+        run: |
+          # Skip tests to speed up the build while still generating the necessary files for analysis
+          ./gradlew clean compileJava compileKotlin compileTestJava compileTestKotlin --no-daemon
+
+      # For JavaScript/TypeScript projects that need build steps
+      - name: Install npm dependencies
+        if: matrix.language == 'javascript-typescript'
+        run: npm ci
+
+      # Docker linting for enhanced container security
+      - name: Lint Docker files
+        if: matrix.language == 'iac'
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: "**/Dockerfile*"
+          failure-threshold: error
+
+      # Perform the analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+          upload: true
