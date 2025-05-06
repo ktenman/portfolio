@@ -1,0 +1,93 @@
+name: "CodeQL Quality Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '45 10 * * 1'  # Run weekly on Mondays
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      # Required permissions
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - language: actions  # Covers GitHub Actions YAML files
+          build-mode: none
+        - language: java-kotlin
+          # For Java/Kotlin, use autobuild for simpler projects, or set to manual
+          # if you need a custom build process (e.g., Gradle or Maven commands)
+          build-mode: autobuild
+        - language: javascript-typescript  # Covers JS, TS, and Vue
+          build-mode: none
+        - language: python
+          build-mode: none
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # For Java/Kotlin: Improve build by setting up Java
+    - name: Set up JDK
+      if: matrix.language == 'java-kotlin'
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    # For JavaScript/TypeScript: Set up Node.js
+    - name: Set up Node.js
+      if: matrix.language == 'javascript-typescript'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    # For Python: Set up Python
+    - name: Set up Python
+      if: matrix.language == 'python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    # Initialize CodeQL
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        # Uncomment the line below to enable additional security checks
+        # queries: security-extended,security-and-quality
+
+    # For Java/Kotlin manual build (if needed)
+    - name: Build Java/Kotlin code
+      if: matrix.language == 'java-kotlin' && matrix.build-mode == 'manual'
+      run: |
+        # Replace with your actual build commands if using manual mode
+        # Example: ./gradlew build
+        echo "Using autobuild for Java/Kotlin"
+
+    # For JavaScript/TypeScript projects that need build steps
+    - name: Build JavaScript/TypeScript
+      if: matrix.language == 'javascript-typescript' && matrix.build-mode == 'manual'
+      run: |
+        # Replace with your actual build commands if using manual mode
+        # Example: npm ci && npm run build
+        echo "Using simple analysis for JavaScript/TypeScript"
+
+    # Perform the analysis
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
