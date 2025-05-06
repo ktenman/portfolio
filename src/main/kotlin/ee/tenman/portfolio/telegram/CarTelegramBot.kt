@@ -16,6 +16,8 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.io.File
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 
 /**
  * Telegram bot for processing car-related queries and images.
@@ -78,12 +80,15 @@ class CarTelegramBot(
       message.hasPhoto() -> message.photo.maxByOrNull { it.fileSize }?.let { photo ->
         processImageOrDocument(downloadTelegramFile(photo.fileId), chatId, messageId, startTime)
       }
+
       message.hasDocument() && supportedImageTypes.contains(message.document?.mimeType) ->
         processImageOrDocument(downloadTelegramFile(message.document.fileId), chatId, messageId, startTime)
+
       message.hasText() -> commandRegex.find(message.text)?.groupValues?.get(2)?.uppercase()?.let { plateNumber ->
         log.info("Processing plate number: $plateNumber")
         lookupAndSendCarPrice(plateNumber, chatId, messageId, startTime)
       }
+
       else -> sendMessage(chatId, "Unsupported message type. Send an image or use 'car XXX123' command.", messageId)
     }
   }
@@ -111,14 +116,37 @@ class CarTelegramBot(
     )
   }
 
-  private fun downloadTelegramFile(fileId: String): File = execute(GetFile().apply { this.fileId = fileId })
-    .let { tgFile ->
-      File.createTempFile("telegram_", "_file").apply {
-        URI.create(fileUrl(tgFile.filePath)).toURL().openStream().use { input ->
-          outputStream().use { output -> input.copyTo(output) }
+  private fun downloadTelegramFile(fileId: String): File {
+    val fileInfo = execute(GetFile().apply { this.fileId = fileId })
+
+    try {
+      val tempDir = Files.createTempDirectory("telegram_app_")
+      Files.setPosixFilePermissions(
+        tempDir,
+        setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE)
+      )
+
+      val tempFile = Files.createTempFile(tempDir, "telegram_", "_file")
+      Files.setPosixFilePermissions(
+        tempFile,
+        setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+      )
+
+      URI.create(fileUrl(fileInfo.filePath)).toURL().openStream().use { input ->
+        Files.newOutputStream(tempFile).use { output ->
+          input.copyTo(output)
         }
       }
+
+      tempFile.toFile().deleteOnExit()
+      tempDir.toFile().deleteOnExit()
+
+      return tempFile.toFile()
+    } catch (e: Exception) {
+      log.error("Error downloading file from Telegram: ${e.message}", e)
+      throw e
     }
+  }
 
   private fun fileUrl(filePath: String) = "https://api.telegram.org/file/bot${getBotToken()}/$filePath"
 
