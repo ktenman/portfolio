@@ -91,7 +91,7 @@ jobs:
       # Setup Gradle wrapper validation
       - name: Validate Gradle wrapper
         if: matrix.language == 'java-kotlin'
-        uses: gradle/wrapper-validation-action@v2.0.0
+        uses: gradle/wrapper-validation-action@v3.5.0
 
       # Run secret scanning with unique output name per job
       - name: Run secret scanning
