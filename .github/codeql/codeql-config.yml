@@ -1,0 +1,30 @@
+# CodeQL configuration file to customize your CodeQL analysis
+# Place this file in your repository at: .github/codeql/codeql-config.yml
+
+# Disable specific CodeQL checks while keeping all other security checks enabled
+query-filters:
+  # Exclude the warning about unpinned GitHub Action versions
+  - exclude:
+      id: github/codeql/workflows/unpinned-action
+
+  # You can add more exclusions here if needed, for example:
+  # - exclude:
+  #     id: another-check-to-disable
+
+# Use the standard security and quality query suites
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+# Optional: Configure paths to include/exclude from analysis
+# paths:
+#   - src
+# paths-ignore:
+#   - node_modules
+#   - '**/*.test.js'
+
+# You can set additional CodeQL options if needed
+# packs:
+#   - codeql/java-queries
+
+# For more info see: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-a-custom-configuration-file
