@@ -11,6 +11,10 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   lint-and-format:
     name: 🧹 Lint and Format
@@ -83,6 +87,9 @@ jobs:
     needs: test
     if: always() && (needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
@@ -134,6 +141,8 @@ jobs:
     name: 🔄 Call Deploy Pipeline
     needs: build-push
     if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
+    permissions:
+      contents: read
     uses: ./.github/workflows/deploy-pipeline.yml
     secrets:
       FOV_SSH_PRIVATE_KEY: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
