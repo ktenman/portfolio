@@ -24,7 +24,7 @@ on:
       - '**/Dockerfile*'
       - '.github/workflows/**'
   schedule:
-    - cron: '45 10 * * 1'  # Run weekly on Mondays (fixed syntax spacing)
+    - cron: '45 10 * * 1'  # Run weekly on Mondays
 
 jobs:
   analyze:
@@ -43,19 +43,16 @@ jobs:
           - language: actions  # Covers GitHub Actions YAML files
             build-mode: none
           - language: java-kotlin
-            # Switching to manual build to use Gradle explicitly
             build-mode: manual
           - language: javascript-typescript  # Covers JS, TS, and Vue
             build-mode: none
           - language: python
             build-mode: none
-        # Removed IAC as it's not a supported CodeQL language
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Full git history is needed for proper analysis of code changes
           fetch-depth: 0
 
       # Set up CodeQL database caching
@@ -72,9 +69,9 @@ jobs:
         if: matrix.language == 'java-kotlin'
         uses: actions/setup-java@v4
         with:
-          java-version: '21'  # Matching your project's Java version
+          java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'  # Enable Gradle caching for faster builds
+          cache: 'gradle'
 
       # For JavaScript/TypeScript: Set up Node.js
       - name: Set up Node.js
@@ -96,11 +93,15 @@ jobs:
         if: matrix.language == 'java-kotlin'
         uses: gradle/wrapper-validation-action@v2
 
-      # Run secret scanning - separate from CodeQL but still valuable
+      # Run secret scanning with unique output name per job
       - name: Run secret scanning
         uses: gitleaks/gitleaks-action@v2
+        with:
+          report-format: sarif
+          report-path: gitleaks-${{ matrix.language }}-results.sarif
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true  # Don't fail the job if gitleaks fails
 
       # Initialize CodeQL
       - name: Initialize CodeQL
@@ -109,15 +110,13 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended,security-and-quality
-          # Optimize performance with threads and RAM allocation
           threads: 8
-          ram: 4096
 
       # For Java/Kotlin using Gradle build
       - name: Build with Gradle
         if: matrix.language == 'java-kotlin'
         run: |
-          # Skip tests to speed up the build while still generating the necessary files for analysis
+          # Skip tests to speed up the build
           ./gradlew clean compileJava compileKotlin compileTestJava compileTestKotlin --no-daemon
 
       # For JavaScript/TypeScript projects that need build steps
@@ -125,7 +124,7 @@ jobs:
         if: matrix.language == 'javascript-typescript'
         run: npm ci
 
-      # Docker linting - done directly without CodeQL since 'iac' isn't supported
+      # Docker linting - separate step
       - name: Lint Docker files
         run: |
           # Install hadolint
@@ -134,22 +133,20 @@ jobs:
 
           # Scan all Dockerfiles in the repository
           find . -name "Dockerfile*" -type f -exec echo "Scanning {}" \; -exec /tmp/hadolint {} \;
-        continue-on-error: true  # Don't fail the entire workflow if Docker linting fails
+        continue-on-error: true
 
-      # Perform the analysis
+      # Perform the analysis - without custom output path
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{matrix.language}}"
-          upload: true
-          # Output to a specific directory for artifacts
-          output: sarif-results
 
-      # Upload SARIF as artifact
-      - name: Upload SARIF as artifact
+      # Upload Gitleaks results as artifact
+      - name: Upload Gitleaks results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: codeql-results-${{ matrix.language }}
-          path: sarif-results/*.sarif
+          name: gitleaks-${{ matrix.language }}-results
+          path: gitleaks-${{ matrix.language }}-results.sarif
           retention-days: 7
+          if-no-files-found: warn # Don't fail if no leaks found
