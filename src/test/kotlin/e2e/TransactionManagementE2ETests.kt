@@ -2,8 +2,10 @@ package e2e
 
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.visible
-import com.codeborne.selenide.Selenide
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide.clearBrowserLocalStorage
+import com.codeborne.selenide.Selenide.element
+import com.codeborne.selenide.Selenide.elements
+import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
@@ -11,7 +13,6 @@ import e2e.retry.RetryExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.openqa.selenium.By
@@ -34,7 +35,7 @@ class TransactionManagementE2ETests {
 
   @AfterEach
   fun tearDown() {
-    Selenide.clearBrowserLocalStorage()
+    clearBrowserLocalStorage()
   }
 
   @Test
@@ -50,7 +51,7 @@ class TransactionManagementE2ETests {
     elements(tagName("button")).filter(text("Save")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(10))
+      .shouldBe(visible, Duration.ofSeconds(4))
       .shouldHave(text("Transaction saved successfully."))
 
     elements(tagName("td")).findBy(text("AAPL"))
@@ -59,7 +60,6 @@ class TransactionManagementE2ETests {
   }
 
   @Test
-  @Disabled
   fun `should display success message after editing an existing transaction`() {
     elements(tagName("button")).filter(text("Edit")).first().click()
     id("instrumentId").selectOption("AAPL - Apple Inc.")
@@ -72,7 +72,7 @@ class TransactionManagementE2ETests {
     elements(tagName("button")).filter(text("Update")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(10))
+      .shouldBe(visible, Duration.ofSeconds(4))
       .shouldHave(text("Transaction updated successfully."))
 
     val transactionDetails = elements(tagName("td")).findBy(text("112255.12"))
