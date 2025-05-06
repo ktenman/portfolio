@@ -111,6 +111,7 @@ jobs:
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended,security-and-quality
           threads: 8
+          config-file: ./.github/codeql/codeql-config.yml  # Add this line
 
       # For Java/Kotlin using Gradle build
       - name: Build with Gradle
