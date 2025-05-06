@@ -1,23 +1,35 @@
 package e2e
 
-import com.codeborne.selenide.Condition
+import com.codeborne.selenide.Condition.text
+import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.Selenide
+import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
+import com.codeborne.selenide.ex.ElementNotFound
+import e2e.retry.Retry
+import e2e.retry.RetryExtension
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.fail
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.openqa.selenium.By
+import org.openqa.selenium.By.className
+import org.openqa.selenium.By.tagName
+import org.openqa.selenium.TimeoutException
+import java.time.Duration
 
 private const val TRANSACTIONS_BASE_URL = "http://localhost:61234/transactions"
 
+@ExtendWith(RetryExtension::class)
+@Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])
 class TransactionManagementE2ETests {
 
   @BeforeEach
   fun setUp() {
-    Selenide.open(TRANSACTIONS_BASE_URL)
+    BrowserConfig.configureBrowser()
+    open(TRANSACTIONS_BASE_URL)
   }
 
   @AfterEach
@@ -30,54 +42,41 @@ class TransactionManagementE2ETests {
     id("addNewTransaction").click()
     id("instrumentId").selectOption("AAPL - Apple Inc.")
     id("transactionType").selectOption("Buy")
-    id("quantity").setValue("10.144")
-    id("price").setValue("29.615")
-    id("transactionDate").setValue("10.07.2024")
+    id("quantity").value = "10.144"
+    id("price").value = "29.615"
+    id("transactionDate").value = "10.07.2024"
     id("platform").selectOption("TRADING212")
 
-    Selenide.elements(By.tagName("button")).filter(Condition.text("Save")).first().click()
+    elements(tagName("button")).filter(text("Save")).first().click()
 
-    Selenide.sleep(1500)
+    element(className("alert-success"))
+      .shouldBe(visible, Duration.ofSeconds(10))
+      .shouldHave(text("Transaction saved successfully."))
 
-    val alertMessage = Selenide.element(By.className("alert-success"))
-    if (alertMessage.exists()) {
-      assertThat(alertMessage.text).isEqualTo("Transaction saved successfully.")
-    } else {
-      fail("Alert message not found.")
-    }
-
-    val qdveTransaction = Selenide.elements(By.tagName("td")).findBy(Condition.text("AAPL"))
-    if (qdveTransaction.exists()) {
-      assertThat(qdveTransaction.text).isEqualTo("AAPL")
-    } else {
-      fail("Transaction not found.")
-    }
+    elements(tagName("td")).findBy(text("AAPL"))
+      .shouldBe(visible)
+      .shouldHave(text("AAPL"))
   }
 
   @Test
   @Disabled
   fun `should display success message after editing an existing transaction`() {
-    Selenide.elements(By.tagName("button")).filter(Condition.text("Edit")).first().click()
+    elements(tagName("button")).filter(text("Edit")).first().click()
     id("instrumentId").selectOption("AAPL - Apple Inc.")
     id("transactionType").selectOption("Sell")
-    id("quantity").setValue("112255.1211")
-    id("price").setValue("332211.189")
-    id("transactionDate").setValue("07.07.2025")
+    id("quantity").value = "112255.1211"
+    id("price").value = "332211.189"
+    id("transactionDate").value = "07.07.2025"
     id("platform").selectOption("SWEDBANK")
 
-    Selenide.elements(By.tagName("button")).filter(Condition.text("Update")).first().click()
+    elements(tagName("button")).filter(text("Update")).first().click()
 
-    Selenide.sleep(1500)
+    element(className("alert-success"))
+      .shouldBe(visible, Duration.ofSeconds(10))
+      .shouldHave(text("Transaction updated successfully."))
 
-    val alertMessage = Selenide.element(By.className("alert-success"))
-    if (alertMessage.exists()) {
-      assertThat(alertMessage.text).isEqualTo("Transaction updated successfully.")
-    } else {
-      fail("Alert message not found.")
-    }
-
-    val transactionDetails = Selenide.elements(By.tagName("td")).findBy(Condition.text("112255.12"))
-      .closest("tr").findAll(By.tagName("td"))
+    val transactionDetails = elements(tagName("td")).findBy(text("112255.12"))
+      .closest("tr").findAll(tagName("td"))
 
     assertThat(transactionDetails.texts()).containsExactlyInAnyOrder(
       "AAPL",
@@ -89,7 +88,6 @@ class TransactionManagementE2ETests {
     )
   }
 
-  private fun id(id: String): SelenideElement = Selenide.element(By.id(id))
-
+  private fun id(id: String): SelenideElement = element(By.id(id))
 
 }
