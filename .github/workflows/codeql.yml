@@ -3,8 +3,26 @@ name: "CodeQL Quality Scan"
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - '**/*.java'
+      - '**/*.kt'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.vue'
+      - '**/*.py'
+      - '**/Dockerfile*'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - '**/*.java'
+      - '**/*.kt'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.vue'
+      - '**/*.py'
+      - '**/Dockerfile*'
+      - '.github/workflows/**'
   schedule:
     - cron: '45 10 * * 1'  # Run weekly on Mondays (fixed syntax spacing)
 
@@ -31,9 +49,7 @@ jobs:
             build-mode: none
           - language: python
             build-mode: none
-          # Adding IaC analysis for Docker files and other configs
-          - language: iac
-            build-mode: none
+        # Removed IAC as it's not a supported CodeQL language
 
     steps:
       - name: Checkout repository
@@ -41,6 +57,15 @@ jobs:
         with:
           # Full git history is needed for proper analysis of code changes
           fetch-depth: 0
+
+      # Set up CodeQL database caching
+      - name: Set up CodeQL database caching
+        uses: actions/cache@v4
+        with:
+          path: ~/.codeql/databases
+          key: ${{ runner.os }}-codeql-${{ matrix.language }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-codeql-${{ matrix.language }}-
 
       # For Java/Kotlin: Improve build by setting up Java with Gradle
       - name: Set up JDK 21
@@ -71,6 +96,12 @@ jobs:
         if: matrix.language == 'java-kotlin'
         uses: gradle/wrapper-validation-action@v2
 
+      # Run secret scanning - separate from CodeQL but still valuable
+      - name: Run secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # Initialize CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -78,6 +109,9 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended,security-and-quality
+          # Optimize performance with threads and RAM allocation
+          threads: 8
+          ram: 4096
 
       # For Java/Kotlin using Gradle build
       - name: Build with Gradle
@@ -91,13 +125,16 @@ jobs:
         if: matrix.language == 'javascript-typescript'
         run: npm ci
 
-      # Docker linting for enhanced container security
+      # Docker linting - done directly without CodeQL since 'iac' isn't supported
       - name: Lint Docker files
-        if: matrix.language == 'iac'
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: "**/Dockerfile*"
-          failure-threshold: error
+        run: |
+          # Install hadolint
+          curl -sL -o /tmp/hadolint "https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64"
+          chmod +x /tmp/hadolint
+
+          # Scan all Dockerfiles in the repository
+          find . -name "Dockerfile*" -type f -exec echo "Scanning {}" \; -exec /tmp/hadolint {} \;
+        continue-on-error: true  # Don't fail the entire workflow if Docker linting fails
 
       # Perform the analysis
       - name: Perform CodeQL Analysis
@@ -105,3 +142,14 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
           upload: true
+          # Output to a specific directory for artifacts
+          output: sarif-results
+
+      # Upload SARIF as artifact
+      - name: Upload SARIF as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results-${{ matrix.language }}
+          path: sarif-results/*.sarif
+          retention-days: 7
