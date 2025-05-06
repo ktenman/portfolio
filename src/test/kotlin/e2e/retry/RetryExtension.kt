@@ -2,9 +2,11 @@ package e2e.retry
 
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler
+import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 class RetryExtension : TestExecutionExceptionHandler {
+  private val log = LoggerFactory.getLogger(javaClass)
   private val attemptsPerTest = mutableMapOf<String, AtomicInteger>()
 
   override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
@@ -26,12 +28,15 @@ class RetryExtension : TestExecutionExceptionHandler {
       val currentAttempt = attempts.incrementAndGet()
 
       if (currentAttempt <= retryAnnotation.times) {
-        println("Retrying test '$testName' after failure (Attempt $currentAttempt/${retryAnnotation.times})")
-        println("Failure was: ${throwable.javaClass.simpleName}: ${throwable.message}")
+        log.info(
+          "Retrying test '{}' after failure (Attempt {}/{})",
+          testName, currentAttempt, retryAnnotation.times
+        )
+        log.info("Failure was: {}: {}", throwable.javaClass.simpleName, throwable.message)
         return // Retry by not throwing
       }
 
-      println("Test '$testName' failed after ${retryAnnotation.times} attempts")
+      log.error("Test '{}' failed after {} attempts", testName, retryAnnotation.times)
     }
 
     throw throwable // Re-throw if no more retries or exception not in allowed list
