@@ -98,6 +98,7 @@ services:
     restart: always
 
   keycloak-initializer:
+    container_name: keycloak-initializer
     image: alpine:latest
     depends_on:
       keycloak:
@@ -111,7 +112,7 @@ services:
     volumes:
       - ./keycloak-init.sh:/keycloak-init.sh
     command: sh -c "apk add --no-cache curl jq && chmod +x /keycloak-init.sh && /keycloak-init.sh"
-    restart: on-failure
+    restart: "no"  # Container stops after completion and won't be restarted
 
   keycloak-gatekeeper:
     container_name: keycloak-gatekeeper

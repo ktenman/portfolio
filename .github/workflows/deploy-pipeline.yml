@@ -76,10 +76,11 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
-            chmod +x setup-keycloak.sh && \
-            ./setup-keycloak.sh && \
+            # First, try to remove any existing initializer containers
+            docker rm -f githubuser-keycloak-initializer-1 2>/dev/null || true && \
+            # Then pull and restart with the remove-orphans flag
             docker-compose pull && \
-            docker-compose up -d --build && \
+            docker-compose up -d --build --remove-orphans && \
             echo 'Pruning unused Docker images...' && \
             docker image prune -af"
 
