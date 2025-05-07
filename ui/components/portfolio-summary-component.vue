@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4>Portfolio Summary</h4>
       <button
-        class="btn btn-warning btn-sm"
+        class="btn btn-secondary btn-sm"
         @click="recalculateSummaries"
         :disabled="isRecalculating"
       >
