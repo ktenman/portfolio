@@ -87,7 +87,7 @@ services:
       KC_HTTP_RELATIVE_PATH: /auth
       KC_HEALTH_ENABLED: "true"
     healthcheck:
-      test: ["CMD", "/opt/keycloak/bin/kc.sh", "show-config"]
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q 'status.*UP' <&3"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -98,20 +98,19 @@ services:
     restart: always
 
   keycloak-initializer:
-    image: quay.io/keycloak/keycloak:24.0.0
+    image: alpine:latest
     depends_on:
       keycloak:
         condition: service_healthy
     environment:
       KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      ALLOWED_EMAILS: ${ALLOWED_EMAILS}
     volumes:
       - ./keycloak-init.sh:/keycloak-init.sh
-    entrypoint: [ "/bin/bash", "/keycloak-init.sh" ]
+    command: sh -c "apk add --no-cache curl jq && chmod +x /keycloak-init.sh && /keycloak-init.sh"
     restart: on-failure
 
   keycloak-gatekeeper:

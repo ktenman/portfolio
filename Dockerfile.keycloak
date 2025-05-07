@@ -17,30 +17,15 @@ FROM quay.io/keycloak/keycloak:24.0.0
 # Copy from builder
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
-# Install curl for healthcheck - using the correct package manager
+# Set up scripts directory (already as user keycloak)
 USER root
-RUN bash -c "if command -v dnf &> /dev/null; then \
-        dnf install -y curl && dnf clean all; \
-    elif command -v apt-get &> /dev/null; then \
-        apt-get update && apt-get install -y curl && apt-get clean; \
-    elif command -v apk &> /dev/null; then \
-        apk add --no-cache curl; \
-    else \
-        echo 'No package manager found'; exit 1; \
-    fi"
-
-# Set up directories for scripts with proper permissions
 RUN mkdir -p /scripts && \
     chown -R 1000:0 /scripts && \
     chmod -R g+rwX /scripts
 
-# Copy initialization script to a location where we have write access
+# Copy initialization script
 COPY keycloak-init.sh /scripts/keycloak-init.sh
 RUN chmod +x /scripts/keycloak-init.sh
-
-# Add wait-for-it script with proper permissions
-ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /scripts/wait-for-it.sh
-RUN chmod +x /scripts/wait-for-it.sh
 
 # Switch back to keycloak user
 USER 1000
@@ -49,6 +34,7 @@ ENV PATH="/scripts:${PATH}"
 ENV KC_PROXY=edge
 ENV KC_HTTP_RELATIVE_PATH=/auth
 ENV KC_HEALTH_ENABLED=true
+ENV KC_HTTP_PORT=8080
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 CMD ["start-dev"]
