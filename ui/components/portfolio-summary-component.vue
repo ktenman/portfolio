@@ -155,10 +155,16 @@ async function recalculateSummaries() {
     await fetchSummaries()
     const currentSummary = await summaryService.fetchCurrentSummary()
 
-    // Re-sort the data
-    summaryData.value = [...summaryData.value, currentSummary].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    )
+    // Check if current summary date already exists before adding
+    const currentDate = currentSummary.date
+    const alreadyExists = summaryData.value.some(item => item.date === currentDate)
+
+    // Only add current summary if it doesn't already exist
+    if (!alreadyExists) {
+      summaryData.value = [...summaryData.value, currentSummary]
+    }
+
+    summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (err) {
     recalculationMessage.value = 'Failed to recalculate summaries. Please try again later.'
     console.error('Error during recalculation:', err)
@@ -177,7 +183,16 @@ onMounted(async () => {
   try {
     await fetchSummaries()
     const currentSummary = await summaryService.fetchCurrentSummary()
-    summaryData.value = [...summaryData.value, currentSummary]
+
+    // Check if the current summary date already exists in the data
+    const currentDate = currentSummary.date
+    const alreadyExists = summaryData.value.some(item => item.date === currentDate)
+
+    // Only add current summary if it doesn't already exist
+    if (!alreadyExists) {
+      summaryData.value = [...summaryData.value, currentSummary]
+    }
+
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (err) {
     error.value = 'Failed to load initial data. Please refresh the page.'
