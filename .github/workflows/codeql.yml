@@ -95,7 +95,7 @@ jobs:
 
       # Run secret scanning with unique output name per job
       - name: Run secret scanning
-        uses: gitleaks/gitleaks-action@v2.0.0
+        uses: gitleaks/gitleaks-action@v2.3.9
         with:
           report-format: sarif
           report-path: gitleaks-${{ matrix.language }}-results.sarif
