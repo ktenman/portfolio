@@ -2,6 +2,14 @@
   <div class="container mt-2">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4>Portfolio Summary</h4>
+      <button
+        class="btn btn-warning btn-sm"
+        @click="recalculateSummaries"
+        :disabled="isRecalculating"
+      >
+        <span v-if="isRecalculating" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        {{ isRecalculating ? 'Recalculating...' : 'Recalculate All Data' }}
+      </button>
     </div>
 
     <div v-if="isLoading" class="spinner-border text-primary" role="status">
@@ -10,6 +18,11 @@
 
     <div v-else-if="error" class="alert alert-danger" role="alert">
       {{ error }}
+    </div>
+
+    <div v-if="recalculationMessage" class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+      {{ recalculationMessage }}
+      <button type="button" class="btn-close" @click="recalculationMessage = ''" aria-label="Close"></button>
     </div>
 
     <div v-else>
@@ -24,24 +37,24 @@
         <div class="table-responsive">
           <table class="table table-striped">
             <thead>
-              <tr>
-                <th>Date</th>
-                <th>XIRR Annual Return</th>
-                <th class="hide-on-mobile">Earnings Per Day</th>
-                <th>Earnings Per Month</th>
-                <th>Total Profit</th>
-                <th>Total Value</th>
-              </tr>
+            <tr>
+              <th>Date</th>
+              <th>XIRR Annual Return</th>
+              <th class="hide-on-mobile">Earnings Per Day</th>
+              <th>Earnings Per Month</th>
+              <th>Total Profit</th>
+              <th>Total Value</th>
+            </tr>
             </thead>
             <tbody>
-              <tr v-for="summary in reversedSummaryData" :key="summary.date">
-                <td>{{ formatDate(summary.date) }}</td>
-                <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-                <td class="hide-on-mobile">{{ formatCurrency(summary.earningsPerDay) }}</td>
-                <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
-                <td>{{ formatCurrency(summary.totalProfit) }}</td>
-                <td>{{ formatCurrency(summary.totalValue) }}</td>
-              </tr>
+            <tr v-for="summary in reversedSummaryData" :key="summary.date">
+              <td>{{ formatDate(summary.date) }}</td>
+              <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
+              <td class="hide-on-mobile">{{ formatCurrency(summary.earningsPerDay) }}</td>
+              <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
+              <td>{{ formatCurrency(summary.totalProfit) }}</td>
+              <td>{{ formatCurrency(summary.totalValue) }}</td>
+            </tr>
             </tbody>
           </table>
         </div>
@@ -84,6 +97,10 @@ const hasMoreData = ref(true)
 const error = ref<string | null>(null)
 const summaryService = new SummaryService()
 
+// New refs for recalculation functionality
+const isRecalculating = ref(false)
+const recalculationMessage = ref('')
+
 async function fetchSummaries() {
   if (isFetching.value || !hasMoreData.value) return
   isFetching.value = true
@@ -98,6 +115,37 @@ async function fetchSummaries() {
     error.value = 'Failed to fetch summary data. Please try again later.'
   } finally {
     isFetching.value = false
+  }
+}
+
+// New function for recalculation
+async function recalculateSummaries() {
+  if (!confirm('This will delete all current summary data and recalculate it from scratch. This operation may take some time. Continue?')) {
+    return
+  }
+
+  isRecalculating.value = true
+  recalculationMessage.value = ''
+
+  try {
+    const response = await summaryService.recalculateAllSummaries()
+    recalculationMessage.value = response.message
+
+    // Reset current page and refetch data
+    currentPage.value = 0
+    summaryData.value = []
+    await fetchSummaries()
+    const currentSummary = await summaryService.fetchCurrentSummary()
+
+    // Re-sort the data
+    summaryData.value = [...summaryData.value, currentSummary]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  } catch (err) {
+    recalculationMessage.value = 'Failed to recalculate summaries. Please try again later.'
+    console.error('Error during recalculation:', err)
+  } finally {
+    isRecalculating.value = false
   }
 }
 
