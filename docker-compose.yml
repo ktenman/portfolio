@@ -79,19 +79,16 @@ services:
       dockerfile: Dockerfile.keycloak
     environment:
       KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_DB: postgres
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./keycloak-init.sh:/scripts/keycloak-init.sh
+    command: start-dev
     depends_on:
       - postgres
     restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   keycloak-initializer:
     image: quay.io/keycloak/keycloak:24.0.0

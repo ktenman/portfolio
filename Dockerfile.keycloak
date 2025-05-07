@@ -13,14 +13,30 @@ WORKDIR /opt/keycloak
 RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:24.0.0
+
+# Copy from builder
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
-# Copy initialization script
-COPY keycloak-init.sh /opt/keycloak/bin/keycloak-init.sh
-RUN chmod +x /opt/keycloak/bin/keycloak-init.sh
+# Set up directories for scripts with proper permissions
+USER root
+RUN mkdir -p /scripts && \
+    chown -R 1000:0 /scripts && \
+    chmod -R g+rwX /scripts
 
-# Add wait-for-it script
-ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /opt/keycloak/bin/wait-for-it.sh
-RUN chmod +x /opt/keycloak/bin/wait-for-it.sh
+# Copy initialization script to a location where we have write access
+COPY keycloak-init.sh /scripts/keycloak-init.sh
+RUN chmod +x /scripts/keycloak-init.sh
+
+# Add wait-for-it script with proper permissions
+ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /scripts/wait-for-it.sh
+RUN chmod +x /scripts/wait-for-it.sh
+
+# Switch back to keycloak user
+USER 1000
+
+ENV PATH="/scripts:${PATH}"
+ENV KC_PROXY=edge
+ENV KC_HTTP_RELATIVE_PATH=/auth
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+CMD ["start-dev"]
