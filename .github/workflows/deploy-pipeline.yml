@@ -72,8 +72,7 @@ jobs:
 
       - name: Copy files to server
         run: |
-          scp .env docker-compose.yml Caddyfile keycloak-gatekeeper.yml keycloak-init.sh setup-keycloak.sh healthcheck.sh githubuser@fov.ee:~/
-
+          scp .env docker-compose.yml Dockerfile.keycloak Caddyfile healthcheck.sh keycloak-init.sh keycloak-gatekeeper.yml githubuser@fov.ee:~/
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
