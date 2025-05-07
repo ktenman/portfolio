@@ -67,6 +67,7 @@ jobs:
 
       - name: Run Keycloak setup script
         run: |
+          chmod +x ./setup-keycloak.sh
           ./setup-keycloak.sh
 
       - name: Copy files to server
