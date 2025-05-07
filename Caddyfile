@@ -1,109 +1,63 @@
-# Captcha subdomain
-captcha.fov.ee {
-    # First handle exact root redirects
-    @root {
-        path_regexp ^/?$
-    }
-    handle @root {
-        redir https://captcha.fov.ee/docs permanent
-    }
-    # Then proxy everything else
-    handle * {
-        reverse_proxy captcha-solver:8000 {
-            header_up X-Real-IP {remote_host}
-        }
-    }
-}
-
-# Calculator subdomain - completely public with no auth
-calculator.fov.ee {
-    encode gzip
-
-    # Root redirects to calculator page
-    handle / {
-        redir /calculator permanent
-    }
-
-    # Calculator frontend route
-    handle /calculator* {
-        header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
-        header Pragma "no-cache"
-        header Expires "0"
-        reverse_proxy frontend:80
-    }
-
-    # Calculator API endpoint
-    handle /api/calculator {
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, OPTIONS"
-        header Access-Control-Allow-Headers "Content-Type"
-        reverse_proxy backend:8080
-    }
-
-    # Static assets needed by calculator
-    handle {
-        header Cache-Control "public, max-age=3600"
-        reverse_proxy frontend:80
-    }
-}
-
-# Main domain and www redirect
-www.fov.ee {
-    redir https://fov.ee{uri}
-}
-
 # Main domain
 fov.ee {
-    encode gzip
-    # Redirect all HTTP traffic to HTTPS
-    @http {
-        protocol http
-    }
-    redir @http https://fov.ee{uri}
+  encode gzip
+  # Redirect all HTTP traffic to HTTPS
+  @http {
+    protocol http
+  }
+  redir @http https://fov.ee{uri}
 
-    # Calculator related routes
-    @calculator_routes {
-        path /calculator /calculator/* /assets/* *.js *.css *.svg
-    }
-    handle @calculator_routes {
-        header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
-        header Pragma "no-cache"
-        header Expires "0"
-        reverse_proxy frontend:80
+  # Calculator related routes - public
+  @calculator_routes {
+    path /calculator /calculator/* /assets/* *.js *.css *.svg
+  }
+  handle @calculator_routes {
+    header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+    header Pragma "no-cache"
+    header Expires "0"
+    reverse_proxy frontend:80
+  }
+
+  # Keycloak admin and auth endpoints
+  handle /auth/* {
+    reverse_proxy keycloak:8080
+  }
+
+  # Unprotected API calculator route
+  handle /api/calculator {
+    reverse_proxy backend:8080
+  }
+
+  # Health check endpoint
+  handle /healthz {
+    respond "OK" 200
+  }
+
+  # Protected routes
+  @protected {
+    not path /auth/* /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /healthz
+  }
+  handle @protected {
+    # Use Keycloak for authentication
+    forward_auth keycloak-gatekeeper:3000 {
+      uri /oauth/validate
+      copy_headers X-User-Email X-User-Name X-User-Id
     }
 
-    # Login and OAuth routes are handled by the auth server
-    @auth_routes {
-        path /login /login/* /oauth2/* /logout
+    # API routes
+    @api {
+      path /api/*
     }
-    handle @auth_routes {
-        reverse_proxy auth:8083
-    }
-
-    # Unprotected API calculator route for backend
-    handle /api/calculator {
-        reverse_proxy backend:8080
+    handle @api {
+      reverse_proxy backend:8080
     }
 
-    # Protected routes
-    @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
-    }
-    handle @protected {
-        forward_auth auth:8083 {
-            uri /validate
-            copy_headers X-User-Id
-        }
+    # All other routes go to frontend
+    reverse_proxy frontend:80
+  }
 
-        # API routes
-        @api {
-            path /api/*
-        }
-        handle @api {
-            reverse_proxy backend:8080
-        }
-
-        # All other routes go to the frontend
-        reverse_proxy frontend:80
-    }
+  log {
+    output file /var/log/caddy/access.log
+    format json
+  }
 }

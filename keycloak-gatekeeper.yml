@@ -1,0 +1,23 @@
+listen: 0.0.0.0:3000
+discovery-url: http://keycloak:8080/auth/realms/portfolio
+client-id: portfolio-app
+client-secret: ${KEYCLOAK_CLIENT_SECRET}
+enable-refresh-tokens: true
+encryption-key: ${KEYCLOAK_ENCRYPTION_KEY}
+secure-cookie: true
+redirection-url: https://fov.ee
+upstream-url: http://backend:8080
+resources:
+  - uri: /*
+    methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    roles:
+      - user
+skip-token-verification: false
+skip-openid-provider-tls-verify: true
+enable-authorization-header: true
+enable-authorization-cookies: true
+verbose: true

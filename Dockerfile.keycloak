@@ -1,0 +1,26 @@
+FROM quay.io/keycloak/keycloak:24.0.0 as builder
+
+# Enable health and metrics
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+
+# Configure database
+ENV KC_DB=postgres
+
+WORKDIR /opt/keycloak
+
+# Create optimized build
+RUN /opt/keycloak/bin/kc.sh build
+
+FROM quay.io/keycloak/keycloak:24.0.0
+COPY --from=builder /opt/keycloak/ /opt/keycloak/
+
+# Copy initialization script
+COPY keycloak-init.sh /opt/keycloak/bin/keycloak-init.sh
+RUN chmod +x /opt/keycloak/bin/keycloak-init.sh
+
+# Add wait-for-it script
+ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /opt/keycloak/bin/wait-for-it.sh
+RUN chmod +x /opt/keycloak/bin/wait-for-it.sh
+
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]

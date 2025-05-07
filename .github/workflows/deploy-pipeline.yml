@@ -41,14 +41,17 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 1
+
       - name: Install SSH key
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
+
       - name: Add fov.ee SSH fingerprint to known hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H fov.ee >> ~/.ssh/known_hosts
+
       - name: Create .env file
         run: |
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > .env
@@ -61,15 +64,33 @@ jobs:
           echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
           echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> .env
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> .env
+
+      - name: Run Keycloak setup script
+        run: |
+          ./setup-keycloak.sh
+
       - name: Copy files to server
         run: |
-          scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
+          scp .env docker-compose.yml Caddyfile keycloak-gatekeeper.yml keycloak-init.sh setup-keycloak.sh healthcheck.sh githubuser@fov.ee:~/
+
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
+            chmod +x setup-keycloak.sh && \
+            ./setup-keycloak.sh && \
             docker-compose pull && \
             docker-compose up -d --build && \
             echo 'Pruning unused Docker images...' && \
             docker image prune -af"
+
+      - name: Verify Deployment
+        run: |
+          ssh githubuser@fov.ee "\
+            docker-compose ps && \
+            echo 'Checking backend logs...' && \
+            docker-compose logs --tail=20 backend && \
+            echo 'Checking keycloak logs...' && \
+            docker-compose logs --tail=20 keycloak"
+
       - name: Cleanup on runner
         run: rm .env
