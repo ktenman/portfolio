@@ -83,11 +83,17 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - ./keycloak-init.sh:/scripts/keycloak-init.sh
-    command: start-dev
+      KC_PROXY: edge
+      KC_HTTP_RELATIVE_PATH: /auth
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: always
 
   keycloak-initializer:
@@ -117,7 +123,8 @@ services:
       - ./keycloak-gatekeeper.yml:/etc/keycloak-gatekeeper.yml
     command: --config /etc/keycloak-gatekeeper.yml
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
     restart: always
 
   app:

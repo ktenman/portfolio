@@ -17,8 +17,11 @@ FROM quay.io/keycloak/keycloak:24.0.0
 # Copy from builder
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
-# Set up directories for scripts with proper permissions
+# Install curl for healthcheck
 USER root
+RUN microdnf update -y && microdnf install -y curl && microdnf clean all
+
+# Set up directories for scripts with proper permissions
 RUN mkdir -p /scripts && \
     chown -R 1000:0 /scripts && \
     chmod -R g+rwX /scripts
@@ -37,6 +40,7 @@ USER 1000
 ENV PATH="/scripts:${PATH}"
 ENV KC_PROXY=edge
 ENV KC_HTTP_RELATIVE_PATH=/auth
+ENV KC_HEALTH_ENABLED=true
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 CMD ["start-dev"]
