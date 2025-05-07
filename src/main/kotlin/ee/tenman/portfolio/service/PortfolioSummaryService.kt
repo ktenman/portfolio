@@ -31,12 +31,87 @@ class PortfolioSummaryService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  @Transactional
+  @Caching(
+    evict = [
+      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
+      CacheEvict(value = [SUMMARY_CACHE], allEntries = true)
+    ]
+  )
+  fun deleteAllDailySummaries() {
+    log.info("Deleting all portfolio daily summaries")
+    portfolioDailySummaryRepository.deleteAll()
+  }
+
+  @Transactional
+  fun recalculateAllDailySummaries(): Int {
+    log.info("Starting full recalculation of portfolio daily summaries")
+
+    // Get all transactions to determine date range
+    val transactions = portfolioTransactionService.getAllTransactions()
+      .sortedBy { it.transactionDate }
+
+    if (transactions.isEmpty()) {
+      log.info("No transactions found. Nothing to recalculate.")
+      return 0
+    }
+
+    // Determine date range
+    val firstTransactionDate = transactions.first().transactionDate
+    val today = LocalDate.now(clock)
+
+    log.info("Recalculating summaries from $firstTransactionDate to $today")
+
+    try {
+      // First safely delete all existing summaries
+      log.info("Deleting existing daily summaries")
+      portfolioDailySummaryRepository.deleteAll()
+      portfolioDailySummaryRepository.flush() // Ensure delete is committed to database
+
+      // Generate all dates between first transaction and today
+      val datesToProcess = generateSequence(firstTransactionDate) { date ->
+        val next = date.plusDays(1)
+        if (next.isAfter(today)) null else next
+      }.toList()
+
+      log.info("Processing ${datesToProcess.size} days of data")
+
+      // Process dates in smaller batches to avoid overwhelming the database
+      val batchSize = 30
+      val summariesSaved = datesToProcess.chunked(batchSize).sumOf { dateBatch ->
+        val summariesToSave = dateBatch.map { currentDate ->
+          log.debug("Calculating summary for date: {}", currentDate)
+          calculateSummaryForDate(currentDate)
+        }
+
+        // Save batch and return count
+        if (summariesToSave.isNotEmpty()) {
+          portfolioDailySummaryRepository.saveAll(summariesToSave)
+          log.debug("Saved batch of ${summariesToSave.size} summaries")
+        }
+
+        summariesToSave.size
+      }
+
+      log.info("Successfully recalculated and saved $summariesSaved daily summaries")
+      return summariesSaved
+
+    } catch (e: Exception) {
+      log.error("Error during summary recalculation", e)
+      throw e
+    }
+  }
+
   @Transactional(readOnly = true)
   @Cacheable(value = [SUMMARY_CACHE], key = "'summaries'", unless = "#result.isEmpty()")
   fun getAllDailySummaries(): List<PortfolioDailySummary> = portfolioDailySummaryRepository.findAll()
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [SUMMARY_CACHE], key = "'summaries-page-' + #page + '-size-' + #size", unless = "#result.isEmpty()")
+  @Cacheable(
+    value = [SUMMARY_CACHE],
+    key = "'summaries-page-' + #page + '-size-' + #size",
+    unless = "#result.isEmpty()"
+  )
   fun getAllDailySummaries(page: Int, size: Int): Page<PortfolioDailySummary> {
     val pageable = PageRequest.of(page, size, Sort.by("entryDate").descending())
     return portfolioDailySummaryRepository.findAll(pageable)
@@ -139,6 +214,7 @@ class PortfolioSummaryService(
           totalCost = totalCost.add(cost)
           quantity = quantity.add(transaction.quantity)
         }
+
         TransactionType.SELL -> {
           // When selling, reduce the quantity and proportionally reduce the total cost
           val sellRatio = transaction.quantity.divide(quantity, 10, RoundingMode.HALF_UP)
@@ -161,12 +237,13 @@ class PortfolioSummaryService(
     val holdings = mutableMapOf<Instrument, BigDecimal>()
 
     transactions.forEach { transaction ->
-      holdings[transaction.instrument] = holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO).let { currentHolding ->
-        when (transaction.transactionType) {
-          TransactionType.BUY -> currentHolding.add(transaction.quantity)
-          TransactionType.SELL -> currentHolding.subtract(transaction.quantity)
+      holdings[transaction.instrument] =
+        holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO).let { currentHolding ->
+          when (transaction.transactionType) {
+            TransactionType.BUY -> currentHolding.add(transaction.quantity)
+            TransactionType.SELL -> currentHolding.subtract(transaction.quantity)
+          }
         }
-      }
     }
 
     return holdings.filterValues { it > BigDecimal.ZERO }
