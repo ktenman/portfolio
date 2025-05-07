@@ -19,6 +19,6 @@ export class SummaryService {
   }
 
   async recalculateAllSummaries(): Promise<any> {
-    return ApiClient.post<any>('/api/portfolio-summary/recalculate', {});
+    return ApiClient.post<any>('/api/portfolio-summary/recalculate', {})
   }
 }
