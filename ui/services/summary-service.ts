@@ -17,4 +17,8 @@ export class SummaryService {
   async fetchCurrentSummary(): Promise<PortfolioSummary> {
     return ApiClient.get<PortfolioSummary>(this.currentApiUrl)
   }
+
+  async recalculateAllSummaries(): Promise<any> {
+    return ApiClient.post<any>('/api/portfolio-summary/recalculate', {});
+  }
 }
