@@ -20,4 +20,6 @@ skip-token-verification: false
 skip-openid-provider-tls-verify: true
 enable-authorization-header: true
 enable-authorization-cookies: true
+forbidden-page: /auth/realms/portfolio/protocol/openid-connect/logout?redirect_uri=https://fov.ee/calculator
+# This will redirect unauthorized users to a friendly page
 verbose: true

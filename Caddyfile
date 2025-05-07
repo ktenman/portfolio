@@ -33,9 +33,16 @@ fov.ee {
     respond "OK" 200
   }
 
+  # Access denied page
+  handle /access-denied {
+    respond 403 {
+      body "Access denied. Please contact the administrator if you believe this is an error."
+    }
+  }
+
   # Protected routes
   @protected {
-    not path /auth/* /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /healthz
+    not path /auth/* /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /healthz /access-denied
   }
   handle @protected {
     # Use Keycloak for authentication

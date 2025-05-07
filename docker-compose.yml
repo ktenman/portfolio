@@ -105,6 +105,7 @@ services:
       CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS}
     volumes:
       - ./keycloak-init.sh:/keycloak-init.sh
     entrypoint: [ "/bin/bash", "/keycloak-init.sh" ]

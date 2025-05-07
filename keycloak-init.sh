@@ -76,6 +76,56 @@ else
   echo "User role already exists, skipping creation."
 fi
 
+# Create email validator script for allowlisting
+echo "Creating email validator script..."
+SCRIPT_ID=$(/opt/keycloak/bin/kcadm.sh create authentication/flows -r portfolio -s alias=email-allowlist -s providerId=basic-flow -s description="Email Allowlist Flow" -s topLevel=true -i)
+
+# Create execution for the flow
+EXECUTION_ID=$(/opt/keycloak/bin/kcadm.sh create authentication/flows/email-allowlist/executions/execution -r portfolio -s provider=auth-script-based -i)
+
+# Get the execution ID
+EXECUTION_INFO=$(/opt/keycloak/bin/kcadm.sh get authentication/flows/email-allowlist/executions -r portfolio | grep -B5 -A5 "$EXECUTION_ID")
+EXEC_ID=$(echo "$EXECUTION_INFO" | grep '"id"' | head -1 | cut -d'"' -f4)
+
+# Update the execution to be REQUIRED
+/opt/keycloak/bin/kcadm.sh update authentication/flows/email-allowlist/executions -r portfolio -b "{\"id\": \"$EXEC_ID\", \"requirement\": \"REQUIRED\"}"
+
+# Create the script authenticator
+IFS=',' read -ra EMAILS <<< "${ALLOWED_EMAILS}"
+EMAIL_LIST=$(printf '"%s",' "${EMAILS[@]}" | sed 's/,$//')
+
+cat <<EOF > /tmp/email-allowlist-script.js
+// Email allowlist script
+function authenticate(context) {
+    var allowedEmails = [$EMAIL_LIST];
+    var email = user.email;
+
+    if (!email) {
+        Output.warn("User has no email");
+        return AuthenticationFlowError.INVALID_USER;
+    }
+
+    if (allowedEmails.indexOf(email) === -1) {
+        Output.warn("Email " + email + " is not in the allowed list");
+        return AuthenticationFlowError.ACCESS_DENIED;
+    }
+
+    Output.success("Email is allowed");
+    return context.success();
+}
+EOF
+
+# Create the authenticator script
+/opt/keycloak/bin/kcadm.sh create "authentication/flows/email-allowlist/executions/$EXEC_ID/config" -r portfolio -b "{
+  \"alias\": \"email-allowlist-authenticator\",
+  \"config\": {
+    \"scriptCode\": \"$(cat /tmp/email-allowlist-script.js | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')\"
+  }
+}"
+
+# Set email-allowlist as browser flow
+/opt/keycloak/bin/kcadm.sh update realms/portfolio -r portfolio -b '{"browserFlow": "email-allowlist"}'
+
 # Check if Google identity provider exists
 IDP_EXISTS=$(/opt/keycloak/bin/kcadm.sh get identity-provider/instances -r portfolio | grep -c '"alias" : "google"' || true)
 
