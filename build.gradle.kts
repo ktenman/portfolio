@@ -52,7 +52,7 @@ dependencies {
   implementation("org.telegram:telegrambots:6.9.7.1")
   implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
 
-  implementation("com.google.cloud:google-cloud-vision:3.59.0") {
+  implementation("com.google.cloud:google-cloud-vision:3.60.0") {
     exclude(group = "commons-logging", module = "commons-logging")
   }
 
