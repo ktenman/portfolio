@@ -1,9 +1,18 @@
 package ee.tenman.portfolio.controller
 
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.stubFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
-import ee.tenman.portfolio.domain.*
+import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository

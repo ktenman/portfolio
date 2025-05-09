@@ -2,7 +2,6 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
@@ -14,8 +13,6 @@ import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
-import java.math.RoundingMode
 
 @Service
 class PortfolioTransactionService(
