@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.service
 
-import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.xirr.Transaction

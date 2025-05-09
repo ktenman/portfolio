@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.math.RoundingMode  // Added import for RoundingMode
 
 @Service
 class InvestmentMetricsService(
@@ -63,7 +64,8 @@ class InvestmentMetricsService(
 
         // Keep track of average weighted cost for later profit calculation
         if (totalHoldings > BigDecimal.ZERO) {
-          val weight = quantity.divide(totalHoldings, 10, BigDecimal.ROUND_HALF_UP)
+          // Fixed: Use non-deprecated version of divide with explicit RoundingMode
+          val weight = quantity.divide(totalHoldings, 10, RoundingMode.HALF_UP)
           totalAverageWeightedCost = totalAverageWeightedCost.add(averageCost.multiply(weight))
         }
       }
