@@ -23,11 +23,7 @@
     </div>
 
     <!-- Error message - show only if there's an error and not loading -->
-    <div
-      v-if="error && !isLoading"
-      class="alert alert-danger"
-      role="alert"
-    >
+    <div v-if="error && !isLoading" class="alert alert-danger" role="alert">
       {{ error }}
     </div>
 
