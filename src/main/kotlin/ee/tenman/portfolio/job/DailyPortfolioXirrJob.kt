@@ -1,20 +1,11 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.PortfolioDailySummary
-import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TransactionType
-import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.service.PortfolioSummaryService
 import ee.tenman.portfolio.service.PortfolioTransactionService
-import ee.tenman.portfolio.service.xirr.Transaction
-import ee.tenman.portfolio.service.xirr.Xirr
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
 

@@ -5,8 +5,6 @@ import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.OBJECT_MAP
 import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.truncateJson
 import jakarta.annotation.Resource
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
