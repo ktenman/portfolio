@@ -67,8 +67,12 @@ class UnifiedProfitCalculationService {
       // Apply dampening for very recent investments (gradually phase in over 60 days)
       val dampingFactor = min(1.0, weightedDays / 60.0)
 
-      // Cap extreme values
-      val boundedXirr = xirrResult.coerceIn(-0.95, 0.95)
+      // Use a much higher bound or remove bounds entirely for short-term investments
+      // Option 1: Higher bound
+      val boundedXirr = xirrResult.coerceIn(-10.0, 10.0) // Allow up to 1000% returns
+
+      // OR Option 2: No upper bound, just prevent extreme negative values
+      // val boundedXirr = if (xirrResult < -0.95) -0.95 else xirrResult
 
       return boundedXirr * dampingFactor
     } catch (e: Exception) {
@@ -92,6 +96,7 @@ class UnifiedProfitCalculationService {
           totalCost = totalCost.add(cost)
           quantity = quantity.add(transaction.quantity)
         }
+
         TransactionType.SELL -> {
           if (quantity.compareTo(BigDecimal.ZERO) > 0) {
             val sellRatio = transaction.quantity.divide(quantity, 10, RoundingMode.HALF_UP)
