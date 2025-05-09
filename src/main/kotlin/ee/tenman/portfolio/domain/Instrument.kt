@@ -36,7 +36,7 @@ class Instrument(
   var currentValue: BigDecimal = BigDecimal.ZERO,
 
   @Transient
-  var profit:BigDecimal = BigDecimal.ZERO,
+  var profit: BigDecimal = BigDecimal.ZERO,
 
   @Transient
   var xirr: Double = 0.0,
