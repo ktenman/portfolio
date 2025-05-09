@@ -7,7 +7,6 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.xirr.Transaction
-import ee.tenman.portfolio.service.xirr.Xirr
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -27,6 +26,7 @@ class PortfolioSummaryService(
   private val portfolioDailySummaryRepository: PortfolioDailySummaryRepository,
   private val portfolioTransactionService: PortfolioTransactionService,
   private val dailyPriceService: DailyPriceService,
+  private val unifiedProfitCalculationService: UnifiedProfitCalculationService,
   private val clock: Clock
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -140,21 +140,17 @@ class PortfolioSummaryService(
     var totalProfit = BigDecimal.ZERO
 
     transactionsByInstrument.forEach { (instrument, instrumentTransactions) ->
-      val instrumentHoldings = calculateCurrentHoldings(instrumentTransactions)
+      val (quantity, averageCost) = unifiedProfitCalculationService.calculateCurrentHoldings(instrumentTransactions)
       val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
         ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
 
-      if (instrumentHoldings.quantity > BigDecimal.ZERO) {
-        // Add current value to totalInvestment using average cost basis
-        totalInvestment = totalInvestment.add(
-          instrumentHoldings.quantity.multiply(instrumentHoldings.averageCost)
-        )
+      if (quantity > BigDecimal.ZERO) {
+        // Calculate investment and profit using unified service
+        val investment = quantity.multiply(averageCost)
+        totalInvestment = totalInvestment.add(investment)
 
-        // Calculate profit for current holdings
-        val currentValue = instrumentHoldings.quantity.multiply(lastPrice)
-        val profitForInstrument = currentValue.subtract(
-          instrumentHoldings.quantity.multiply(instrumentHoldings.averageCost)
-        )
+        val currentValue = unifiedProfitCalculationService.calculateCurrentValue(quantity, lastPrice)
+        val profitForInstrument = unifiedProfitCalculationService.calculateProfit(quantity, averageCost, lastPrice)
         totalProfit = totalProfit.add(profitForInstrument)
 
         // Add XIRR transactions
@@ -176,17 +172,13 @@ class PortfolioSummaryService(
       }
     }
 
+    // Calculate XIRR with time-weighted adjustment for better accuracy
     val xirrResult = if (xirrTransactions.size > 1) {
-      try {
-        Xirr(xirrTransactions).calculate()
-      } catch (e: Exception) {
-        log.error("Error calculating XIRR", e)
-        0.0
-      }
+      unifiedProfitCalculationService.calculateAdjustedXirr(xirrTransactions, totalValue)
     } else 0.0
 
     log.debug("Date: $date, Total Value: $totalValue, Total Investment: $totalInvestment")
-    log.info("Total profit: $totalProfit")
+    log.debug("Total profit: $totalProfit, XIRR: $xirrResult")
 
     return PortfolioDailySummary(
       entryDate = date,
@@ -196,41 +188,6 @@ class PortfolioSummaryService(
       earningsPerDay = totalValue.multiply(BigDecimal(xirrResult))
         .divide(BigDecimal(365.25), 2, RoundingMode.HALF_UP)
     )
-  }
-
-  private data class Holdings(
-    val quantity: BigDecimal,
-    val averageCost: BigDecimal
-  )
-
-  private fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Holdings {
-    var quantity = BigDecimal.ZERO
-    var totalCost = BigDecimal.ZERO
-
-    transactions.sortedBy { it.transactionDate }.forEach { transaction ->
-      when (transaction.transactionType) {
-        TransactionType.BUY -> {
-          val cost = transaction.price.multiply(transaction.quantity)
-          totalCost = totalCost.add(cost)
-          quantity = quantity.add(transaction.quantity)
-        }
-
-        TransactionType.SELL -> {
-          // When selling, reduce the quantity and proportionally reduce the total cost
-          val sellRatio = transaction.quantity.divide(quantity, 10, RoundingMode.HALF_UP)
-          totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
-          quantity = quantity.subtract(transaction.quantity)
-        }
-      }
-    }
-
-    val averageCost = if (quantity > BigDecimal.ZERO) {
-      totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
-    } else {
-      BigDecimal.ZERO
-    }
-
-    return Holdings(quantity, averageCost)
   }
 
   private fun calculateHoldings(transactions: List<PortfolioTransaction>): Map<Instrument, BigDecimal> {

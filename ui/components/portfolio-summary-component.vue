@@ -5,7 +5,7 @@
       <button
         class="btn btn-secondary btn-sm"
         @click="recalculateSummaries"
-        :disabled="isRecalculating"
+        :disabled="isRecalculating || isLoading"
       >
         <span
           v-if="isRecalculating"
@@ -17,16 +17,23 @@
       </button>
     </div>
 
+    <!-- Loading indicator -->
     <div v-if="isLoading" class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
 
-    <div v-else-if="error" class="alert alert-danger" role="alert">
+    <!-- Error message - show only if there's an error and not loading -->
+    <div
+      v-if="error && !isLoading"
+      class="alert alert-danger"
+      role="alert"
+    >
       {{ error }}
     </div>
 
+    <!-- Recalculation message -->
     <div
-      v-if="recalculationMessage"
+      v-if="recalculationMessage && !error"
       class="alert alert-info alert-dismissible fade show mt-3"
       role="alert"
     >
@@ -39,10 +46,14 @@
       ></button>
     </div>
 
-    <div v-else>
+    <!-- Only show content when not loading and no error -->
+    <div v-if="!isLoading && !error">
+      <!-- No data message - only show when confirmed no data, not loading, and no error -->
       <div v-if="summaryData.length === 0" class="alert alert-info" role="alert">
         No portfolio summary data found.
       </div>
+
+      <!-- Regular content when we have data -->
       <div v-else>
         <div class="mb-3 chart-container" v-if="chartData">
           <Line :data="chartData" :options="chartOptions" />
