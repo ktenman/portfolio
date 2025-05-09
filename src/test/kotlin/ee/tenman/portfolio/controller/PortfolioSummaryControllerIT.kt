@@ -125,10 +125,12 @@ class PortfolioSummaryControllerIT {
       )
     )
 
-    mockMvc.perform(get("/api/portfolio-summary/historical")
-      .param("page", "0")
-      .param("size", "3")
-      .cookie(DEFAULT_COOKIE))
+    mockMvc.perform(
+      get("/api/portfolio-summary/historical")
+        .param("page", "0")
+        .param("size", "3")
+        .cookie(DEFAULT_COOKIE)
+    )
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.content").isArray)
       .andExpect(jsonPath("$.content", hasSize<Any>(3)))

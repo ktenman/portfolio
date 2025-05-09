@@ -25,4 +25,4 @@ updates:
     open-pull-requests-limit: 10
     ignore:
       - dependency-name: "selenium"
-        versions: [">4.16.0"]  # This ignores all versions higher than 4.16.0
+        versions: [ ">4.16.0" ]  # This ignores all versions higher than 4.16.0

@@ -37,7 +37,12 @@ class DataProcessingUtil(
     log.info("Successfully retrieved and processed data for ${instrument.symbol}")
   }
 
-  private fun createDailyPrice(instrument: Instrument, date: LocalDate, data: DailyPriceData, providerName: ProviderName): DailyPrice {
+  private fun createDailyPrice(
+    instrument: Instrument,
+    date: LocalDate,
+    data: DailyPriceData,
+    providerName: ProviderName
+  ): DailyPrice {
     return DailyPrice(
       instrument = instrument,
       entryDate = date,
