@@ -44,7 +44,7 @@ class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) 
   }
 
   @Transactional(readOnly = true)
-  fun findAllByInstrument(instrument: Instrument) : List<DailyPrice> {
+  fun findAllByInstrument(instrument: Instrument): List<DailyPrice> {
     return dailyPriceRepository.findAllByInstrument(instrument)
   }
 

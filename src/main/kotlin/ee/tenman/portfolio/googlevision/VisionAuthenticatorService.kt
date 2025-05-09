@@ -31,10 +31,12 @@ class VisionAuthenticatorService(
       val decodedJsonBytes = FileToBase64.decode(base64EncodedKey)
       ByteArrayInputStream(decodedJsonBytes).use { credentialsStream ->
         GoogleCredentials.fromStream(credentialsStream)
-          .createScoped(listOf(
-            "https://www.googleapis.com/auth/cloud-vision",
-            "https://www.googleapis.com/auth/cloud-platform"
-          ))
+          .createScoped(
+            listOf(
+              "https://www.googleapis.com/auth/cloud-vision",
+              "https://www.googleapis.com/auth/cloud-platform"
+            )
+          )
           .also { log.info("Google Vision credentials initialized successfully") }
       }
     } catch (e: Exception) {

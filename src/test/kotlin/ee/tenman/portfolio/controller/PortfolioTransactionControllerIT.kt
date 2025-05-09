@@ -174,9 +174,11 @@ class PortfolioTransactionControllerIT {
       )
     )
 
-    mockMvc.perform(get("/api/transactions/${transaction.id}")
-      .cookie(DEFAULT_COOKIE)
-      .contentType(APPLICATION_JSON))
+    mockMvc.perform(
+      get("/api/transactions/${transaction.id}")
+        .cookie(DEFAULT_COOKIE)
+        .contentType(APPLICATION_JSON)
+    )
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.id").value(transaction.id))
       .andExpect(jsonPath("$.instrumentId").value(instrument.id))

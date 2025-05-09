@@ -50,6 +50,7 @@ class ProfitCalculationService {
             currentPrice = currentPrice
           )
         }
+
         TransactionType.SELL -> {
           transaction.averageCost = buyPrice
           transaction.realizedProfit = calculateProfit(
