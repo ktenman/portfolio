@@ -5,10 +5,23 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Service
 class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) {
+
+  @Transactional(readOnly = true)
+  fun getPrice(instrument: Instrument, date: LocalDate): BigDecimal {
+    val dp = dailyPriceRepository
+      .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        instrument,
+        date.minusYears(10),
+        date
+      )
+      ?: throw NoSuchElementException("No price found for ${instrument.symbol} on or before $date")
+    return dp.closePrice
+  }
 
   @Transactional
   fun saveDailyPrice(dailyPrice: DailyPrice): DailyPrice {
