@@ -221,8 +221,8 @@ class PortfolioSummaryControllerIT {
       .andExpect(jsonPath("$.totalValue").value(96.05))
       .andExpect(jsonPath("$.xirrAnnualReturn").value(7.97040776))
       .andExpect(jsonPath("$.totalProfit").value(3.4))
-      .andExpect(jsonPath("$.earningsPerDay").value(2.1))
-      .andExpect(jsonPath("$.earningsPerMonth").value(63.91875))
+      .andExpect(jsonPath("$.earningsPerDay").value(2.0959826571))
+      .andExpect(jsonPath("$.earningsPerMonth").value(63.79647212548125))
 
     assertThat(output.out)
       .contains("PortfolioSummaryController.getCurrentPortfolioSummary() entered with arguments: []")

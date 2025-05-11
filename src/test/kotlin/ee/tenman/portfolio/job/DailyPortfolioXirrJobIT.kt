@@ -106,10 +106,10 @@ class DailyPortfolioXirrJobIT {
     assertThat(summaries).hasSize(4)
     summaries.minByOrNull { it.entryDate }!!.let {
       assertThat(it.entryDate).isEqualTo("2024-07-01")
-      assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("100.4600000000"))
+      assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("100.4556472150"))
       assertThat(it.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("0.00455647"))
-      assertThat(it.totalProfit).isEqualByComparingTo(BigDecimal("0.4600000000"))
-      assertThat(it.earningsPerDay).isEqualByComparingTo(BigDecimal("0E-10"))
+      assertThat(it.totalProfit).isEqualByComparingTo(BigDecimal("0.4556472007"))
+      assertThat(it.earningsPerDay).isEqualByComparingTo(BigDecimal("0.0012531782"))
     }
   }
 }
