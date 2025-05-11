@@ -27,6 +27,7 @@ class PortfolioSummaryService(
   private val portfolioTransactionService: PortfolioTransactionService,
   private val dailyPriceService: DailyPriceService,
   private val unifiedProfitCalculationService: UnifiedProfitCalculationService,
+  private val investmentMetricsService: InvestmentMetricsService,
   private val clock: Clock
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -118,7 +119,6 @@ class PortfolioSummaryService(
   }
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [SUMMARY_CACHE], key = "'currentDaySummary'")
   fun getCurrentDaySummary(): PortfolioDailySummary {
     val currentDate = LocalDate.now(clock)
     return calculateSummaryForDate(currentDate)
@@ -130,45 +130,43 @@ class PortfolioSummaryService(
       .filter { !it.transactionDate.isAfter(date) }
       .sortedBy { it.transactionDate }
 
-    val xirrTransactions = mutableListOf<Transaction>()
-    val holdings = calculateHoldings(transactions)
-    val totalValue = calculateTotalValue(holdings, date)
+    // Get all instruments that have transactions up to this date
+    val instruments = transactions.map { it.instrument }.distinct()
 
     // Group transactions by instrument for accurate profit calculation
     val transactionsByInstrument = transactions.groupBy { it.instrument }
-    var totalInvestment = BigDecimal.ZERO
+
+    // Use InvestmentMetricsService for calculating consistent profits
+    var totalValue = BigDecimal.ZERO
     var totalProfit = BigDecimal.ZERO
+    val xirrTransactions = mutableListOf<Transaction>()
 
-    transactionsByInstrument.forEach { (instrument, instrumentTransactions) ->
-      val (quantity, averageCost) = unifiedProfitCalculationService.calculateCurrentHoldings(instrumentTransactions)
-      val lastPrice = dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
-        ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
+    instruments.forEach { instrument ->
+      val instrumentTransactions = transactionsByInstrument[instrument] ?: emptyList()
 
-      if (quantity > BigDecimal.ZERO) {
-        // Calculate investment and profit using unified service
-        val investment = quantity.multiply(averageCost)
-        totalInvestment = totalInvestment.add(investment)
+      // Use the same metrics calculation as used on the instruments page
+      val metrics = investmentMetricsService.calculateInstrumentMetrics(instrument, instrumentTransactions)
 
-        val currentValue = unifiedProfitCalculationService.calculateCurrentValue(quantity, lastPrice)
-        val profitForInstrument = unifiedProfitCalculationService.calculateProfit(quantity, averageCost, lastPrice)
-        totalProfit = totalProfit.add(profitForInstrument)
+      totalValue = totalValue.add(metrics.currentValue)
+      totalProfit = totalProfit.add(metrics.profit)
 
-        // Add XIRR transactions
-        instrumentTransactions.forEach { transaction ->
-          val amount = transaction.price.multiply(transaction.quantity)
-          xirrTransactions.add(
-            Transaction(
-              when (transaction.transactionType) {
-                TransactionType.BUY -> -amount
-                TransactionType.SELL -> amount
-              }.toDouble(),
-              transaction.transactionDate
-            )
+      // Add transactions for XIRR calculation
+      instrumentTransactions.forEach { transaction ->
+        val amount = transaction.price.multiply(transaction.quantity)
+        xirrTransactions.add(
+          Transaction(
+            when (transaction.transactionType) {
+              TransactionType.BUY -> -amount
+              TransactionType.SELL -> amount
+            }.toDouble(),
+            transaction.transactionDate
           )
-        }
+        )
+      }
 
-        // Add current value for XIRR calculation
-        xirrTransactions.add(Transaction(currentValue.toDouble(), date))
+      // Add current value for XIRR calculation if there are holdings
+      if (metrics.quantity > BigDecimal.ZERO) {
+        xirrTransactions.add(Transaction(metrics.currentValue.toDouble(), date))
       }
     }
 
@@ -177,8 +175,8 @@ class PortfolioSummaryService(
       unifiedProfitCalculationService.calculateAdjustedXirr(xirrTransactions, totalValue)
     } else 0.0
 
-    log.debug("Date: $date, Total Value: $totalValue, Total Investment: $totalInvestment")
-    log.debug("Total profit: $totalProfit, XIRR: $xirrResult")
+    log.debug("Date: $date, Total Value: $totalValue, Total Profit: $totalProfit")
+    log.debug("XIRR: $xirrResult")
 
     return PortfolioDailySummary(
       entryDate = date,
@@ -188,39 +186,6 @@ class PortfolioSummaryService(
       earningsPerDay = totalValue.multiply(BigDecimal(xirrResult))
         .divide(BigDecimal(365.25), 2, RoundingMode.HALF_UP)
     )
-  }
-
-  private fun calculateHoldings(transactions: List<PortfolioTransaction>): Map<Instrument, BigDecimal> {
-    val holdings = mutableMapOf<Instrument, BigDecimal>()
-
-    transactions.forEach { transaction ->
-      holdings[transaction.instrument] =
-        holdings.getOrDefault(transaction.instrument, BigDecimal.ZERO).let { currentHolding ->
-          when (transaction.transactionType) {
-            TransactionType.BUY -> currentHolding.add(transaction.quantity)
-            TransactionType.SELL -> currentHolding.subtract(transaction.quantity)
-          }
-        }
-    }
-
-    return holdings.filterValues { it > BigDecimal.ZERO }
-  }
-
-  private fun calculateTotalValue(
-    holdings: Map<Instrument, BigDecimal>,
-    date: LocalDate
-  ): BigDecimal {
-    val isCurrentDay = date == LocalDate.now(clock)
-
-    return holdings.entries.sumOf { (instrument, quantity) ->
-      val price = if (isCurrentDay && instrument.currentPrice != null) {
-        instrument.currentPrice
-      } else {
-        dailyPriceService.findLastDailyPrice(instrument, date)?.closePrice
-          ?: throw IllegalStateException("No price found for instrument: ${instrument.symbol} on or before $date")
-      }
-      quantity.multiply(price)
-    }
   }
 
   @Transactional

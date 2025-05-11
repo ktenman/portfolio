@@ -9,7 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -23,7 +23,7 @@ class JobExecutionServiceIT {
   @Resource
   private lateinit var jobExecutionRepository: JobExecutionRepository
 
-  @MockBean
+  @MockitoBean
   private lateinit var clock: Clock
 
   private lateinit var fixedClock: Clock
