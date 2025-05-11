@@ -18,9 +18,9 @@ import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
@@ -46,7 +46,7 @@ class DailyPortfolioXirrJobIT {
   @Resource
   private lateinit var portfolioDailySummaryRepository: PortfolioDailySummaryRepository
 
-  @MockBean
+  @MockitoBean
   private lateinit var clock: Clock
 
   @Test
