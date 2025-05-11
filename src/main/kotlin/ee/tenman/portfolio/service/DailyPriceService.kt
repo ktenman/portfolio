@@ -13,14 +13,14 @@ class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) 
 
   @Transactional(readOnly = true)
   fun getPrice(instrument: Instrument, date: LocalDate): BigDecimal {
-    val dp = dailyPriceRepository
+    val dailyPrice = dailyPriceRepository
       .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         instrument,
         date.minusYears(10),
         date
       )
       ?: throw NoSuchElementException("No price found for ${instrument.symbol} on or before $date")
-    return dp.closePrice
+    return dailyPrice.closePrice
   }
 
   @Transactional
