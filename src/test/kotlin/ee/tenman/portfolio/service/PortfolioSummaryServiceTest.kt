@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.lenient
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
@@ -35,7 +36,6 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 @ExtendWith(MockitoExtension::class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class PortfolioSummaryServiceTest {
 
   @Mock
@@ -76,10 +76,9 @@ class PortfolioSummaryServiceTest {
   fun setup() {
     testDate = LocalDate.of(2025, 5, 10)
 
-    // Always setup the clock with a valid instant to avoid NullPointerException
     val fixedInstant = ZonedDateTime.of(2025, 5, 10, 12, 0, 0, 0, ZoneId.systemDefault()).toInstant()
-    whenever(clock.instant()).thenReturn(fixedInstant)
-    whenever(clock.zone).thenReturn(ZoneId.systemDefault())
+    lenient().whenever(clock.instant()).thenReturn(fixedInstant)
+    lenient().whenever(clock.zone).thenReturn(ZoneId.systemDefault())
 
     instrument = Instrument(
       symbol = "QDVE:GER:EUR",
@@ -102,23 +101,12 @@ class PortfolioSummaryServiceTest {
       transactionDate = testDate.minusDays(10),
       platform = Platform.TRADING212
     )
-
-    // Setup commonly used mocks
-    whenever(instrumentService.getAllInstruments()).thenReturn(listOf(instrument))
-
-    // Since we're using @MockitoSettings(strictness = Strictness.LENIENT),
-    // we don't need to worry about "unnecessary stubbings" warnings
   }
 
   @Test
   fun `getCurrentDaySummary should always reflect current instrument data`() {
-    val initialValue = BigDecimal("21870.94")
-    whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(transaction))
-    val initPrice = initialValue.divide(transaction.quantity, 10, RoundingMode.HALF_UP)
-    whenever(dailyPriceService.getPrice(eq(instrument), any())).thenReturn(initPrice)
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
-      .thenReturn(transaction.quantity to transaction.price)
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any())).thenReturn(-0.1048)
+    val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
+    whenever(clock.instant()).thenReturn(fixedInstant)
 
     val todaySummary = PortfolioDailySummary(
       entryDate = testDate,
@@ -129,7 +117,15 @@ class PortfolioSummaryServiceTest {
     )
     whenever(portfolioDailySummaryRepository.findByEntryDate(testDate)).thenReturn(todaySummary)
 
+    whenever(instrumentService.getAllInstruments()).thenReturn(listOf(
+      instrument.apply {
+        profit = BigDecimal("-1762.39")
+        totalInvestment = BigDecimal("23633.33")
+      }
+    ))
+
     val summary = portfolioSummaryService.getCurrentDaySummary()
+
     assertThat(summary.totalProfit)
       .isEqualByComparingTo("-1762.39")
     assertThat(summary.earningsPerDay)
