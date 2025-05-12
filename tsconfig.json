@@ -4,11 +4,7 @@
     "useDefineForClassFields": true,
     "experimentalDecorators": true,
     "module": "ESNext",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -25,16 +21,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "ui/**/*.ts",
-    "ui/**/*.d.ts",
-    "ui/**/*.tsx",
-    "ui/**/*.vue"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
+  "include": ["ui/**/*.ts", "ui/**/*.d.ts", "ui/**/*.tsx", "ui/**/*.vue"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     {
       "path": "./tsconfig.node.json"
