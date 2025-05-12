@@ -73,7 +73,6 @@ class PortfolioSummaryController(
     )
   }
 
-
   data class PortfolioSummaryDto(
     val date: LocalDate,
     val totalValue: BigDecimal,

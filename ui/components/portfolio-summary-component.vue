@@ -68,7 +68,14 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="summary in reversedSummaryData" :key="summary.date">
+              <tr
+                v-for="(summary, index) in reversedSummaryData"
+                :key="summary.date"
+                :class="{
+                  'font-weight-bold':
+                    index === 0 && summary.date === new Date().toISOString().split('T')[0],
+                }"
+              >
                 <td>{{ formatDate(summary.date) }}</td>
                 <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
                 <td class="hide-on-mobile">{{ formatCurrency(summary.earningsPerDay) }}</td>
@@ -106,6 +113,7 @@ import {
   Tooltip,
 } from 'chart.js'
 import { SummaryService } from '../services/summary-service.ts'
+import { CACHE_KEYS } from '../constants/cache-keys.ts'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
@@ -139,7 +147,6 @@ async function fetchSummaries() {
   }
 }
 
-// New function for recalculation
 async function recalculateSummaries() {
   if (
     !confirm(
@@ -153,24 +160,34 @@ async function recalculateSummaries() {
   recalculationMessage.value = ''
 
   try {
+    // Clear any cached data
+    localStorage.removeItem(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
+    localStorage.removeItem(CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL)
+    localStorage.removeItem(CACHE_KEYS.INSTRUMENTS)
+
     const response = await summaryService.recalculateAllSummaries()
     recalculationMessage.value = response.message
 
-    // Reset current page and refetch data
+    // Reset and refresh all data
     currentPage.value = 0
     summaryData.value = []
+    hasMoreData.value = true
     await fetchSummaries()
+
+    // Get fresh current summary
     const currentSummary = await summaryService.fetchCurrentSummary()
 
-    // Check if current summary date already exists before adding
+    // Ensure it's in the display data
     const currentDate = currentSummary.date
-    const alreadyExists = summaryData.value.some(item => item.date === currentDate)
+    const existingIndex = summaryData.value.findIndex(item => item.date === currentDate)
 
-    // Only add current summary if it doesn't already exist
-    if (!alreadyExists) {
-      summaryData.value = [...summaryData.value, currentSummary]
+    if (existingIndex >= 0) {
+      summaryData.value[existingIndex] = currentSummary
+    } else {
+      summaryData.value.push(currentSummary)
     }
 
+    // Sort the data
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   } catch (err) {
     recalculationMessage.value = 'Failed to recalculate summaries. Please try again later.'
