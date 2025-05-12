@@ -15,22 +15,27 @@ import org.mockito.Captor
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.mockito.quality.Strictness
+import org.springframework.cache.CacheManager
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
 @ExtendWith(MockitoExtension::class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class PortfolioSummaryServiceTest {
 
   @Mock
@@ -44,6 +49,12 @@ class PortfolioSummaryServiceTest {
 
   @Mock
   private lateinit var portfolioDailySummaryRepository: PortfolioDailySummaryRepository
+
+  @Mock
+  private lateinit var instrumentService: InstrumentService
+
+  @Mock
+  private lateinit var cacheManager: CacheManager
 
   @Mock
   private lateinit var clock: Clock
@@ -64,13 +75,25 @@ class PortfolioSummaryServiceTest {
   @BeforeEach
   fun setup() {
     testDate = LocalDate.of(2025, 5, 10)
+
+    // Always setup the clock with a valid instant to avoid NullPointerException
+    val fixedInstant = ZonedDateTime.of(2025, 5, 10, 12, 0, 0, 0, ZoneId.systemDefault()).toInstant()
+    whenever(clock.instant()).thenReturn(fixedInstant)
+    whenever(clock.zone).thenReturn(ZoneId.systemDefault())
+
     instrument = Instrument(
       symbol = "QDVE:GER:EUR",
       name = "iShares S&P 500 Information Technology Sector",
       category = "ETF",
       baseCurrency = "EUR",
       currentPrice = BigDecimal("27.58")
-    )
+    ).apply {
+      id = 1L
+      currentValue = BigDecimal("21870.94")
+      totalInvestment = BigDecimal("23633.33")
+      profit = BigDecimal("-1762.39")
+    }
+
     transaction = PortfolioTransaction(
       instrument = instrument,
       transactionType = TransactionType.BUY,
@@ -79,14 +102,16 @@ class PortfolioSummaryServiceTest {
       transactionDate = testDate.minusDays(10),
       platform = Platform.TRADING212
     )
+
+    // Setup commonly used mocks
+    whenever(instrumentService.getAllInstruments()).thenReturn(listOf(instrument))
+
+    // Since we're using @MockitoSettings(strictness = Strictness.LENIENT),
+    // we don't need to worry about "unnecessary stubbings" warnings
   }
 
   @Test
   fun `getCurrentDaySummary should always reflect current instrument data`() {
-    val fixedInstant = ZonedDateTime.of(2025, 5, 10, 12, 0, 0, 0, ZoneId.systemDefault()).toInstant()
-    whenever(clock.instant()).thenReturn(fixedInstant)
-    whenever(clock.zone).thenReturn(ZoneId.systemDefault())
-
     val initialValue = BigDecimal("21870.94")
     whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(transaction))
     val initPrice = initialValue.divide(transaction.quantity, 10, RoundingMode.HALF_UP)
@@ -95,11 +120,18 @@ class PortfolioSummaryServiceTest {
       .thenReturn(transaction.quantity to transaction.price)
     whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any())).thenReturn(-0.1048)
 
-    val summary = portfolioSummaryService.getCurrentDaySummary()
-    val expectedProfit = initialValue.subtract(transaction.quantity.multiply(transaction.price))
+    val todaySummary = PortfolioDailySummary(
+      entryDate = testDate,
+      totalValue = BigDecimal("21000.00"),
+      xirrAnnualReturn = BigDecimal("-0.1048"),
+      totalProfit = BigDecimal("-2500.00"),
+      earningsPerDay = BigDecimal("-6.0000000000")
+    )
+    whenever(portfolioDailySummaryRepository.findByEntryDate(testDate)).thenReturn(todaySummary)
 
+    val summary = portfolioSummaryService.getCurrentDaySummary()
     assertThat(summary.totalProfit)
-      .isEqualByComparingTo(expectedProfit)
+      .isEqualByComparingTo("-1762.39")
     assertThat(summary.earningsPerDay)
       .isEqualByComparingTo(BigDecimal("-6.2753580068"))
   }
@@ -290,7 +322,7 @@ class PortfolioSummaryServiceTest {
   fun `recalculateAllDailySummaries should process all dates between first transaction and today`() {
     val today = LocalDate.of(2024, 7, 5)
     val instant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
-    whenever(clock.instant()).thenReturn(instant)
+    whenever(clock.instant()).thenReturn(instant) // Override the default instant
     whenever(clock.zone).thenReturn(ZoneId.systemDefault())
 
     val transaction = PortfolioTransaction(
@@ -307,7 +339,7 @@ class PortfolioSummaryServiceTest {
       .thenReturn(transaction.quantity to transaction.price)
     whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any())).thenReturn(0.05)
     whenever(portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()))
-      .thenAnswer { invocation -> invocation.arguments[0] as List<PortfolioDailySummary> }
+      .thenAnswer { invocation -> invocation.arguments[0] as List<*> }
 
     val count = portfolioSummaryService.recalculateAllDailySummaries()
 

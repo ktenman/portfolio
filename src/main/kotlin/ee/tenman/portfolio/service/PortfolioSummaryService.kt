@@ -104,39 +104,36 @@ class PortfolioSummaryService(
   }
 
   @Transactional(readOnly = true)
-  // No cache for current day summary to ensure it's always fresh
   fun getCurrentDaySummary(): PortfolioDailySummary {
     val today = LocalDate.now(clock)
+    val existingSummary = portfolioDailySummaryRepository.findByEntryDate(today)
 
-    // First check if we have it in the database
-    val existingSummary = portfolioDailySummaryRepository.findById(today)
-
-    // If it exists and today's date hasn't changed, return it
     return if (existingSummary != null) {
-      // Get fresh instrument data for today to ensure alignment with Instruments tab
       alignCurrentDaySummaryWithInstruments(existingSummary)
     } else {
-      // Calculate fresh for current day
       calculateSummaryForDate(today)
     }
   }
 
   private fun alignCurrentDaySummaryWithInstruments(summary: PortfolioDailySummary): PortfolioDailySummary {
-    // Get all instruments with their current metrics
     val instruments = instrumentService.getAllInstruments()
 
-    // Calculate totals using same logic as Instruments tab
     val totalValue = instruments.sumOf { it.currentValue }
     val totalProfit = instruments.sumOf { it.profit }
+    val earningsPerDay = totalValue.multiply(summary.xirrAnnualReturn)
+      .divide(BigDecimal(365.25), 10, RoundingMode.HALF_UP)
 
-    // Keep XIRR and other calculated values, but update value and profit
-    return summary.copy(
+    val updatedSummary = PortfolioDailySummary(
+      entryDate = summary.entryDate,
       totalValue = totalValue,
+      xirrAnnualReturn = summary.xirrAnnualReturn,
       totalProfit = totalProfit,
-      // Recalculate earnings based on new values
-      earningsPerDay = totalValue.multiply(summary.xirrAnnualReturn)
-        .divide(BigDecimal(365.25), 10, RoundingMode.HALF_UP)
+      earningsPerDay = earningsPerDay
     )
+
+    updatedSummary.id = summary.id
+    updatedSummary.version = summary.version
+    return updatedSummary
   }
 
   @Transactional(readOnly = true)
