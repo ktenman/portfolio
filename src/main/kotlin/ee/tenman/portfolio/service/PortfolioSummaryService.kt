@@ -180,8 +180,8 @@ class PortfolioSummaryService(
         val holdingsResult = unifiedProfitCalculationService.calculateCurrentHoldings(instrumentTransactions)
 
         // Safely get components with null check
-        val currentHoldings = holdingsResult?.first ?: BigDecimal.ZERO
-        val averageCost = holdingsResult?.second ?: BigDecimal.ZERO
+        val currentHoldings = holdingsResult.first
+        val averageCost = holdingsResult.second
 
         if (currentHoldings > BigDecimal.ZERO) {
           // Get price for this date
