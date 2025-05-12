@@ -1,11 +1,13 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.xirr.Transaction
 import org.slf4j.LoggerFactory
+import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
@@ -25,6 +27,8 @@ class PortfolioSummaryService(
   private val portfolioTransactionService: PortfolioTransactionService,
   private val dailyPriceService: DailyPriceService,
   private val unifiedProfitCalculationService: UnifiedProfitCalculationService,
+  private val instrumentService: InstrumentService,
+  private val cacheManager: CacheManager,
   private val clock: Clock
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -42,28 +46,43 @@ class PortfolioSummaryService(
   }
 
   @Transactional
+  @Caching(
+    evict = [
+      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
+      CacheEvict(value = [SUMMARY_CACHE], allEntries = true)
+    ]
+  )
   fun recalculateAllDailySummaries(): Int {
     log.info("Starting full recalculation of portfolio daily summaries")
+
+    // Clear instrument cache to ensure fresh data
+    cacheManager.getCache(INSTRUMENT_CACHE)?.clear()
+
     val transactions = portfolioTransactionService.getAllTransactions()
       .sortedBy { it.transactionDate }
     if (transactions.isEmpty()) {
       log.info("No transactions found. Nothing to recalculate.")
       return 0
     }
+
     val firstTransactionDate = transactions.first().transactionDate
     val today = LocalDate.now(clock)
     log.info("Recalculating summaries from $firstTransactionDate to $today")
+
     portfolioDailySummaryRepository.deleteAll()
     portfolioDailySummaryRepository.flush()
+
     val datesToProcess = generateSequence(firstTransactionDate) { d ->
       d.plusDays(1).takeIf { !it.isAfter(today) }
     }.toList()
+
     val batchSize = 30
     val summariesSaved = datesToProcess.chunked(batchSize).sumOf { batch ->
       val summaries = batch.map { calculateSummaryForDate(it) }
       portfolioDailySummaryRepository.saveAll(summaries)
       summaries.size
     }
+
     log.info("Successfully recalculated and saved $summariesSaved daily summaries")
     return summariesSaved
   }
@@ -85,11 +104,60 @@ class PortfolioSummaryService(
   }
 
   @Transactional(readOnly = true)
-  fun getCurrentDaySummary(): PortfolioDailySummary =
-    calculateSummaryForDate(LocalDate.now(clock))
+  // No cache for current day summary to ensure it's always fresh
+  fun getCurrentDaySummary(): PortfolioDailySummary {
+    val today = LocalDate.now(clock)
+
+    // First check if we have it in the database
+    val existingSummary = portfolioDailySummaryRepository.findById(today)
+
+    // If it exists and today's date hasn't changed, return it
+    return if (existingSummary != null) {
+      // Get fresh instrument data for today to ensure alignment with Instruments tab
+      alignCurrentDaySummaryWithInstruments(existingSummary)
+    } else {
+      // Calculate fresh for current day
+      calculateSummaryForDate(today)
+    }
+  }
+
+  private fun alignCurrentDaySummaryWithInstruments(summary: PortfolioDailySummary): PortfolioDailySummary {
+    // Get all instruments with their current metrics
+    val instruments = instrumentService.getAllInstruments()
+
+    // Calculate totals using same logic as Instruments tab
+    val totalValue = instruments.sumOf { it.currentValue }
+    val totalProfit = instruments.sumOf { it.profit }
+
+    // Keep XIRR and other calculated values, but update value and profit
+    return summary.copy(
+      totalValue = totalValue,
+      totalProfit = totalProfit,
+      // Recalculate earnings based on new values
+      earningsPerDay = totalValue.multiply(summary.xirrAnnualReturn)
+        .divide(BigDecimal(365.25), 10, RoundingMode.HALF_UP)
+    )
+  }
 
   @Transactional(readOnly = true)
   fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
+    val isToday = date.isEqual(LocalDate.now(clock))
+
+    // Use detailed calculation logic
+    val summary = calculateSummaryDetailsForDate(date)
+
+    // For today's date, align with instrument tab values
+    return if (isToday) {
+      alignCurrentDaySummaryWithInstruments(summary)
+    } else {
+      summary
+    }
+  }
+
+  /**
+   * Helper method containing the original calculation logic
+   */
+  private fun calculateSummaryDetailsForDate(date: LocalDate): PortfolioDailySummary {
     val transactions = portfolioTransactionService.getAllTransactions()
       .filter { !it.transactionDate.isAfter(date) }
       .sortedBy { it.transactionDate }

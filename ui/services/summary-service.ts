@@ -13,12 +13,12 @@ export class SummaryService {
     return await ApiClient.get<Page<PortfolioSummary>>(url)
   }
 
+  async recalculateAllSummaries(): Promise<any> {
+    return ApiClient.post<any>('/api/portfolio-summary/recalculate', {})
+  }
+
   @Cacheable(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
   async fetchCurrentSummary(): Promise<PortfolioSummary> {
     return ApiClient.get<PortfolioSummary>(this.currentApiUrl)
-  }
-
-  async recalculateAllSummaries(): Promise<any> {
-    return ApiClient.post<any>('/api/portfolio-summary/recalculate', {})
   }
 }
