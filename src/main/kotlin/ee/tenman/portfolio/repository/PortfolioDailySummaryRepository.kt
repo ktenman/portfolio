@@ -10,4 +10,5 @@ interface PortfolioDailySummaryRepository : JpaRepository<PortfolioDailySummary,
   fun save(dailySummary: PortfolioDailySummary): PortfolioDailySummary
   fun findAllByEntryDateIn(dates: List<LocalDate>): List<PortfolioDailySummary>
   fun findAllByEntryDateBetween(startDate: LocalDate, endDate: LocalDate): List<PortfolioDailySummary>
+  fun findByEntryDate(entryDate: LocalDate): PortfolioDailySummary?
 }
