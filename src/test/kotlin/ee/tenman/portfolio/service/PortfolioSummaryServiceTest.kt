@@ -16,21 +16,18 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.lenient
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.quality.Strictness
 import org.springframework.cache.CacheManager
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -117,7 +114,8 @@ class PortfolioSummaryServiceTest {
     )
     whenever(portfolioDailySummaryRepository.findByEntryDate(testDate)).thenReturn(todaySummary)
 
-    whenever(instrumentService.getAllInstruments()).thenReturn(listOf(
+    whenever(instrumentService.getAllInstruments()).thenReturn(
+      listOf(
       instrument.apply {
         profit = BigDecimal("-1762.39")
         totalInvestment = BigDecimal("23633.33")
