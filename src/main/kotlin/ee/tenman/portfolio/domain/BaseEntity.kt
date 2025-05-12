@@ -13,6 +13,7 @@ import java.time.Instant
 
 @MappedSuperclass
 abstract class BaseEntity : Serializable {
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   var id: Long = 0
