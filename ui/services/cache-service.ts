@@ -1,3 +1,5 @@
+import { CACHE_KEYS } from '../constants/cache-keys'
+
 type CacheContent<T> = {
   timestamp: number
   data: T
@@ -22,5 +24,18 @@ export class CacheService {
 
     localStorage.removeItem(key)
     return null
+  }
+
+  clearItem(key: string): void {
+    localStorage.removeItem(key)
+  }
+
+  clearAllSummaryCaches(): void {
+    const summaryKeys = [
+      CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT,
+      CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL,
+    ]
+
+    summaryKeys.forEach(key => this.clearItem(key))
   }
 }
