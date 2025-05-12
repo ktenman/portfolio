@@ -59,7 +59,6 @@ class PortfolioTransactionController(
   @Loggable
   fun getTransaction(@PathVariable id: Long): TransactionResponseDto {
     val transaction = portfolioTransactionService.getTransactionById(id)
-      ?: throw RuntimeException("Transaction not found with id: $id")
     return TransactionResponseDto.fromEntity(transaction)
   }
 
@@ -70,7 +69,6 @@ class PortfolioTransactionController(
     @Valid @RequestBody request: TransactionRequestDto
   ): TransactionResponseDto {
     val existingTransaction = portfolioTransactionService.getTransactionById(id)
-      ?: throw RuntimeException("Transaction not found with id: $id")
 
     val instrument = instrumentService.getInstrumentById(request.instrumentId)
 
