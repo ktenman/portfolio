@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.matching
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
@@ -76,7 +77,7 @@ class DailyPortfolioXirrJobIT {
     stubFor(
       get(urlPathEqualTo("/query"))
         .withQueryParam("function", equalTo("SYMBOL_SEARCH"))
-        .withQueryParam("keywords", equalTo("QDVE.DEX"))
+        .withQueryParam("keywords", matching("QDVE.*"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
