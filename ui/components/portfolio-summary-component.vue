@@ -208,13 +208,16 @@ onMounted(async () => {
     await fetchSummaries()
     const currentSummary = await summaryService.fetchCurrentSummary()
 
-    // Check if the current summary date already exists in the data
+    // Always replace or add the current day's data
     const currentDate = currentSummary.date
-    const alreadyExists = summaryData.value.some(item => item.date === currentDate)
+    const existingIndex = summaryData.value.findIndex(item => item.date === currentDate)
 
-    // Only add current summary if it doesn't already exist
-    if (!alreadyExists) {
-      summaryData.value = [...summaryData.value, currentSummary]
+    if (existingIndex >= 0) {
+      // Replace existing data for today with current data
+      summaryData.value[existingIndex] = currentSummary
+    } else {
+      // Add today's data if not present
+      summaryData.value.push(currentSummary)
     }
 
     summaryData.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())

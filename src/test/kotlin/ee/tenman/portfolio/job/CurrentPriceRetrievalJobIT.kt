@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.job
 
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.matching
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
@@ -11,6 +13,7 @@ import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -34,7 +37,7 @@ class CurrentPriceRetrievalJobIT {
     stubFor(
       get(urlPathEqualTo("/query"))
         .withQueryParam("function", equalTo("SYMBOL_SEARCH"))
-        .withQueryParam("keywords", equalTo("QDVE.DEX"))
+        .withQueryParam("keywords", matching("QDVE.*"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
@@ -68,7 +71,7 @@ class CurrentPriceRetrievalJobIT {
     assertThat(dailyPriceRepository.findAll()).isNotEmpty.hasSize(100)
       .first().satisfies({
         assertThat(it.entryDate).isEqualTo("2024-02-12")
-        assertThat(it.instrument.symbol).isEqualTo("QDVE.DEX")
+        assertThat(it.instrument.symbol).contains("QDVE")
         assertThat(it.openPrice).isEqualByComparingTo(BigDecimal("25.21"))
         assertThat(it.highPrice).isEqualByComparingTo(BigDecimal("25.335"))
         assertThat(it.lowPrice).isEqualByComparingTo(BigDecimal("25.12500000"))

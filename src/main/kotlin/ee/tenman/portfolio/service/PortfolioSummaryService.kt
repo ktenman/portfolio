@@ -67,13 +67,19 @@ class PortfolioSummaryService(
 
     val firstTransactionDate = transactions.first().transactionDate
     val today = LocalDate.now(clock)
-    log.info("Recalculating summaries from $firstTransactionDate to $today")
+    val yesterday = today.minusDays(1)  // Use yesterday as the upper bound
+    log.info("Recalculating summaries from $firstTransactionDate to $yesterday (excluding current day)")
 
-    portfolioDailySummaryRepository.deleteAll()
+    // Delete all historical summaries (excluding today)
+    portfolioDailySummaryRepository.findAll().forEach { summary ->
+      if (summary.entryDate != today) {
+        portfolioDailySummaryRepository.delete(summary)
+      }
+    }
     portfolioDailySummaryRepository.flush()
 
     val datesToProcess = generateSequence(firstTransactionDate) { d ->
-      d.plusDays(1).takeIf { !it.isAfter(today) }
+      d.plusDays(1).takeIf { !it.isAfter(yesterday) }  // Only up to yesterday
     }.toList()
 
     val batchSize = 30
@@ -83,7 +89,7 @@ class PortfolioSummaryService(
       summaries.size
     }
 
-    log.info("Successfully recalculated and saved $summariesSaved daily summaries")
+    log.info("Successfully recalculated and saved $summariesSaved daily summaries (excluding current day)")
     return summariesSaved
   }
 

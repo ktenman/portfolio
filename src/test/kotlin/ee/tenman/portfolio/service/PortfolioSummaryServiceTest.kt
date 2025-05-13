@@ -313,7 +313,7 @@ class PortfolioSummaryServiceTest {
   }
 
   @Test
-  fun `recalculateAllDailySummaries should process all dates between first transaction and today`() {
+  fun `recalculateAllDailySummaries should process all dates between first transaction and yesterday`() {
     val today = LocalDate.of(2024, 7, 5)
     val instant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(instant) // Override the default instant
@@ -335,20 +335,23 @@ class PortfolioSummaryServiceTest {
     whenever(portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()))
       .thenAnswer { invocation -> invocation.arguments[0] as List<*> }
 
+    val emptyList = emptyList<PortfolioDailySummary>()
+    whenever(portfolioDailySummaryRepository.findAll()).thenReturn(emptyList)
+
     val count = portfolioSummaryService.recalculateAllDailySummaries()
 
     assertThat(count)
-      .isEqualTo(5)
-    verify(portfolioDailySummaryRepository).deleteAll()
+      .isEqualTo(4)
+    verify(portfolioDailySummaryRepository).findAll()
     verify(portfolioDailySummaryRepository).flush()
     verify(portfolioDailySummaryRepository).saveAll(summaryListCaptor.capture())
+
     assertThat(summaryListCaptor.value.map { it.entryDate })
       .containsExactly(
         LocalDate.of(2024, 7, 1),
         LocalDate.of(2024, 7, 2),
         LocalDate.of(2024, 7, 3),
-        LocalDate.of(2024, 7, 4),
-        LocalDate.of(2024, 7, 5)
+        LocalDate.of(2024, 7, 4)
       )
   }
 
