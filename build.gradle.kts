@@ -41,6 +41,7 @@ dependencies {
   implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
+  implementation("io.micrometer:micrometer-registry-prometheus")
   implementation("com.codeborne:selenide:$selenideVersion")
   implementation("org.flywaydb:flyway-core")
   implementation("org.flywaydb:flyway-database-postgresql")
