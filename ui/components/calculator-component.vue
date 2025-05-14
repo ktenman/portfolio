@@ -3,10 +3,14 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4>Investment Calculator</h4>
       <div>
-        <button type="button" class="btn btn-outline-secondary me-2" @click="resetCalculator">
+        <button
+          type="button"
+          class="btn btn-outline-secondary me-2 btn-sm"
+          @click="resetCalculator"
+        >
           Reset Calculator
         </button>
-        <button type="button" class="btn btn-primary" @click="calculate">Calculate</button>
+        <button type="button" class="btn btn-primary btn-sm" @click="calculate">Calculate</button>
       </div>
     </div>
 
