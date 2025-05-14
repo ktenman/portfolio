@@ -1,23 +1,34 @@
 <template>
   <div class="container mt-2">
-    <h4 class="mb-4">Investment Calculator</h4>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4>Investment Calculator</h4>
+      <div>
+        <button type="button" class="btn btn-outline-secondary me-2" @click="resetCalculator">
+          Reset Calculator
+        </button>
+        <button type="button" class="btn btn-primary" @click="calculate">Calculate</button>
+      </div>
+    </div>
+
     <div class="row">
       <div class="col-md-4">
         <form @submit.prevent="calculate">
           <div v-for="(label, key) in labels" :key="key" class="mb-3">
             <label :for="key" class="form-label">{{ label }}:</label>
             <input
-              v-model.number="form[key]"
+              v-model.number="form[key as keyof typeof form]"
               :id="key"
               :type="key === 'years' ? 'number' : 'text'"
               class="form-control"
               :step="steps[key]"
               :min="key === 'years' ? 1 : undefined"
               required
-              @input="manualInputDetected = true"
+              @input="handleInput(key)"
             />
           </div>
-          <button type="submit" class="btn btn-primary">Recalculate</button>
+          <div class="form-text mb-3">
+            <small>Your data is automatically saved in your browser</small>
+          </div>
         </form>
       </div>
       <div class="col-md-8">
@@ -33,39 +44,45 @@
     <div class="row mt-4">
       <div class="col-12">
         <h5>Year-by-Year Summary</h5>
-        <table class="table table-striped table-hover">
-          <thead>
-            <tr>
-              <th v-for="header in tableHeaders" :key="header">{{ header }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="summary in yearSummary" :key="summary.year">
-              <td>{{ summary.year }}</td>
-              <td v-for="key in ['totalWorth', 'yearGrowth', 'earningsPerMonth']" :key="key">
-                {{ formatCurrency(summary[key]) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th v-for="header in tableHeaders" :key="header">{{ header }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="summary in yearSummary" :key="summary.year">
+                <td>{{ summary.year }}</td>
+                <td v-for="key in ['totalWorth', 'yearGrowth', 'earningsPerMonth']" :key="key">
+                  {{ formatCurrency(summary[key]) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick, reactive } from 'vue'
+import { ref, onMounted, watch, reactive, nextTick, toRaw } from 'vue'
 import Chart from 'chart.js/auto'
 import { CalculationService } from '../services/calculation-service.ts'
 import { CalculationResult } from '../models/calculation-result.ts'
 
-const form = reactive({
+const defaultForm = {
   initialWorth: 2000,
   monthlyInvestment: 585,
   yearlyGrowthRate: 5,
   annualReturnRate: 21.672,
   years: 28,
-})
+}
+
+const STORAGE_KEY = 'investment-calculator-form'
+
+const form = reactive({ ...defaultForm })
 
 const labels = {
   initialWorth: 'Initial Worth (€)',
@@ -94,57 +111,116 @@ const yearSummary = ref<Array<Record<string, number>>>([])
 let chartInstance: Chart | null = null
 let resultChartInstance: Chart | null = null
 
-const manualInputDetected = ref(false)
 const isUpdatingForm = ref(false)
+const formChanges = ref<Record<string, boolean>>({})
+
+const loadFromLocalStorage = () => {
+  try {
+    const savedForm = localStorage.getItem(STORAGE_KEY)
+    if (savedForm) {
+      const parsedForm = JSON.parse(savedForm)
+
+      // Apply saved values to form
+      Object.assign(form, parsedForm)
+
+      // Mark all fields loaded from localStorage as manually changed
+      Object.keys(parsedForm).forEach(key => {
+        formChanges.value[key] = true
+      })
+    }
+  } catch (error) {
+    console.error('Error loading form data from localStorage:', error)
+  }
+}
+
+const saveToLocalStorage = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toRaw(form)))
+  } catch (error) {
+    console.error('Error saving form data to localStorage:', error)
+  }
+}
+
+const handleInput = (field: string) => {
+  // Mark field as manually changed
+  formChanges.value[field] = true
+  // Save the entire form to localStorage
+  saveToLocalStorage()
+}
+
+const resetCalculator = () => {
+  if (
+    confirm(
+      'Are you sure you want to reset the calculator? This will clear all your current values.'
+    )
+  ) {
+    Object.keys(form).forEach(key => {
+      form[key as keyof typeof form] = defaultForm[key as keyof typeof defaultForm]
+    })
+    // Clear all change flags when resetting
+    formChanges.value = {}
+    localStorage.removeItem(STORAGE_KEY)
+    calculate()
+  }
+}
 
 const calculate = async () => {
-  // Prevent recursive calculations
+  isLoading.value = true
+
   if (isUpdatingForm.value) return
 
-  const calculationResult = await fetchCalculationResult()
+  try {
+    const calculationResult = await fetchCalculationResult()
 
-  if (!manualInputDetected.value) {
     try {
       isUpdatingForm.value = true
-      form.annualReturnRate = Number(Number(calculationResult.average).toFixed(3))
-      form.initialWorth = Number(Number(calculationResult.total).toFixed(2))
+
+      // Only update fields that haven't been manually changed
+      if (!formChanges.value.annualReturnRate) {
+        form.annualReturnRate = Number(calculationResult.average.toFixed(3))
+      }
+
+      if (!formChanges.value.initialWorth) {
+        form.initialWorth = Number(calculationResult.total.toFixed(2))
+      }
+
+      // Always save the current state to localStorage
+      saveToLocalStorage()
     } finally {
-      // Use nextTick to ensure DOM updates complete before clearing flag
-      nextTick(() => {
+      await nextTick(() => {
         isUpdatingForm.value = false
       })
     }
-  }
 
-  const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
-  const values = []
-  let totalWorth = initialWorth
-  let currentMonthlyInvestment = monthlyInvestment
+    const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
+    const values = []
+    let totalWorth = initialWorth
+    let currentMonthlyInvestment = monthlyInvestment
 
-  yearSummary.value = []
+    yearSummary.value = []
 
-  for (let year = 1; year <= years; year++) {
-    const yearStartWorth = totalWorth
-    for (let month = 1; month <= 12; month++) {
-      totalWorth += currentMonthlyInvestment
-      totalWorth *= 1 + annualReturnRate / 1200
+    for (let year = 1; year <= years; year++) {
+      const yearStartWorth = totalWorth
+      for (let month = 1; month <= 12; month++) {
+        totalWorth += currentMonthlyInvestment
+        totalWorth *= 1 + annualReturnRate / 1200
+      }
+      currentMonthlyInvestment *= 1 + yearlyGrowthRate / 100
+      values.push(totalWorth)
+
+      yearSummary.value.push({
+        year,
+        totalWorth,
+        yearGrowth: totalWorth - yearStartWorth,
+        earningsPerMonth: (totalWorth * annualReturnRate) / 1200,
+      })
     }
-    currentMonthlyInvestment *= 1 + yearlyGrowthRate / 100
-    values.push(totalWorth)
 
-    yearSummary.value.push({
-      year,
-      totalWorth,
-      yearGrowth: totalWorth - yearStartWorth,
-      earningsPerMonth: (totalWorth * annualReturnRate) / 1200,
-    })
+    renderChart(values)
+    renderResultChart(calculationResult)
+  } finally {
+    isLoading.value = false
   }
-
-  renderChart(values)
-  renderResultChart(calculationResult)
-
-  // Reset the manual input detection after calculation
-  manualInputDetected.value = false
 }
 
 const renderChart = (data: number[]) => {
@@ -195,7 +271,6 @@ const applyASAP = (data: { date: string; amount: number }[], maxPoints: number) 
     result.push({ date: chunk[0].date, amount: avgAmount })
   }
 
-  // Always include the last point if it's not already included
   if (result[result.length - 1].date !== data[data.length - 1].date) {
     result.push(data[data.length - 1])
   }
@@ -276,8 +351,29 @@ const formatCurrency = (value: number) =>
     minimumFractionDigits: 2,
   }).format(value)
 
-onMounted(calculate)
-watch(form, calculate, { deep: true })
+onMounted(() => {
+  loadFromLocalStorage()
+  calculate()
+})
+
+let debounceTimer: number | null = null
+watch(
+  form,
+  () => {
+    if (isUpdatingForm.value) return
+
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer)
+    }
+
+    debounceTimer = setTimeout(() => {
+      saveToLocalStorage()
+      calculate()
+      debounceTimer = null
+    }, 1000) as unknown as number
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>
