@@ -80,6 +80,8 @@ SOURCE_CODE_EXTENSIONS = {
   '.js',  # JavaScript
   '.kts',  # Gradle Kotlin DSL
   '.sql',  # SQL scripts are now explicitly marked as source code
+  '.yaml',
+  '.yml',  # YAML files (e.g., for CI/CD)
 }
 
 # Whitelist only the file types and specific filenames that matter for understanding the project
@@ -106,6 +108,13 @@ ALLOWED_FILENAMES = {
   'build.gradle.kts', 'settings.gradle.kts',
   'README.md', 'package.json',
   'nginx.conf', 'eslint.config.js',
+  # GitHub specific files
+  'codeql-config.yml',
+  'check-readme-links.sh',
+  'ci.yml',
+  'codeql.yml',
+  'deploy-pipeline.yml',
+  'dependabot.yml',
 }
 
 # Folders to include in a limited capacity (not skipped entirely, but we'll be selective)
@@ -122,7 +131,7 @@ SKIP_FOLDERS = [
   'examples', 'example',  # demo code or snippets
   'samples', 'sample',  # likewise
   '.venv',  # Python virtual-envs
-  '.git',  # Git metadata
+  '.git',  # Git metadata - NOTE: This should NOT include .github
   '.gradle',  # Gradle cache
   'generated',  # Generated code
   'coverage',  # Test coverage reports
@@ -205,7 +214,30 @@ CORE_ARCHITECTURAL_PATTERNS = [
   # Database schema & migrations
   'src/main/resources/db/migration/V202406160849__create_initial.sql',  # Initial schema
   'src/main/resources/application.yml',  # App configuration
+
+  # GitHub workflows and configuration - explicitly listed by exact path
+  '.github/codeql/codeql-config.yml',  # CodeQL configuration
+  '.github/workflows/check-readme-links.sh',  # README links checker script
+  '.github/workflows/ci.yml',  # CI workflow
+  '.github/workflows/codeql.yml',  # CodeQL workflow
+  '.github/workflows/deploy-pipeline.yml',  # Deployment pipeline
+  '.github/workflows/dependabot.yml',  # Dependabot configuration
 ]
+
+# GitHub-specific files to include
+GITHUB_FILES = [
+  '.github/codeql/codeql-config.yml',
+  '.github/workflows/check-readme-links.sh',
+  '.github/workflows/ci.yml',
+  '.github/workflows/codeql.yml',
+  '.github/workflows/deploy-pipeline.yml',
+  '.github/workflows/dependabot.yml',
+]
+
+# Add GitHub patterns to core architectural patterns
+for github_file in GITHUB_FILES:
+  if github_file not in CORE_ARCHITECTURAL_PATTERNS:
+    CORE_ARCHITECTURAL_PATTERNS.append(github_file)
 
 # Patterns to identify duplicate or non-architectural code
 # We've removed general test patterns from here to be more selective
@@ -262,6 +294,17 @@ PRIORITY_FILES = [
   # Add important SQL files to priority list if they exist
   'src/main/resources/db/migration/V202406160849__create_initial.sql',
 ]
+
+# GitHub workflow files to prioritize
+GITHUB_PRIORITY_FILES = [
+  '.github/workflows/ci.yml',
+  '.github/workflows/deploy-pipeline.yml',
+  '.github/workflows/codeql.yml',
+  '.github/codeql/codeql-config.yml',
+]
+
+# Add GitHub files to priority list
+PRIORITY_FILES.extend(GITHUB_PRIORITY_FILES)
 
 # Maximum file sizes
 MAX_FILE_SIZE = 5000  # For most files
@@ -327,6 +370,11 @@ def is_binary_file(path: Path) -> bool:
 
 def is_important_architectural_file(rel_path: str) -> bool:
   """Checks if a file is part of the core architecture we want to include."""
+  # Include GitHub workflow files
+  if rel_path.startswith('.github/workflows/') or rel_path.startswith('.github/codeql/'):
+    return True
+
+  # Check against the explicit list of architectural file patterns
   return any(pattern in str(rel_path) for pattern in CORE_ARCHITECTURAL_PATTERNS)
 
 
@@ -350,6 +398,10 @@ def is_data_migration(rel_path: str) -> bool:
 
 def is_in_skip_folder(rel_path: str) -> bool:
   """Check if the path is in a folder that should be completely skipped."""
+  # Special handling for .github vs .git
+  if rel_path.startswith('.github/'):
+    return False
+
   for folder in SKIP_FOLDERS:
     if rel_path.startswith(folder) or f"/{folder}/" in f"/{rel_path}/":
       return True
@@ -384,10 +436,26 @@ def is_test_file(rel_path: str) -> bool:
   return any(re.match(pattern, rel_path) for pattern in test_patterns)
 
 
+def should_include_file(path: Path, rel_path: str) -> bool:
+  """Determine if a file should be included based on name, extension, or location."""
+  # Always include GitHub files
+  if rel_path.startswith('.github/'):
+    return True
+
+  # Otherwise use standard filters
+  return (path.name in ALLOWED_FILENAMES or
+          path.suffix.lower() in ALLOWED_EXTENSIONS or
+          is_important_test_file(rel_path))
+
+
 def is_ignored(path: Path, matcher, base_dir: Path) -> bool:
   """Return True if path should be skipped."""
   rel = path.relative_to(base_dir)
   rel_str = str(rel)
+
+  # Special handling for .github directory
+  if rel_str.startswith('.github/'):
+    return False  # Never ignore .github files
 
   # First check: Skip folders entirely - this is more efficient
   if is_in_skip_folder(rel_str):
@@ -468,6 +536,7 @@ def combine_files(base_dir: str = '.', output_file: str = 'combined_files.txt'):
   # First collect all files
   all_files = []
   test_files = []
+  github_files = []  # Add dedicated list for GitHub files
 
   # Before processing, print which directories we're skipping entirely
   print("\nSkipping these directories completely:")
@@ -483,16 +552,27 @@ def combine_files(base_dir: str = '.', output_file: str = 'combined_files.txt'):
 
     rel_path = str(path.relative_to(base))
 
-    # Skip .git files early without showing messages
-    if rel_path.startswith('.git'):
+    # Special case for .github directory - always include
+    if rel_path.startswith('.github/'):
+      try:
+        content = path.read_text(encoding='utf-8')
+        # Store GitHub files separately for inclusion and sorting
+        github_files.append((path, content))
+        print(f"Including GitHub file: {rel_path}")
+        continue
+      except Exception as e:
+        print(f"Error reading GitHub file {path}: {e}")
+        continue
+
+    # Skip .git files (but not .github!)
+    if rel_path.startswith('.git') and not rel_path.startswith('.github'):
       continue
 
     if is_ignored(path, matcher, base):
       continue
 
-    # Skip anything not in our whitelist unless it's an important test file
-    if path.name not in ALLOWED_FILENAMES and path.suffix.lower() not in ALLOWED_EXTENSIONS and not is_important_test_file(
-      rel_path):
+    # Use our improved function to determine if we should include this file
+    if not should_include_file(path, rel_path):
       continue
 
     try:
@@ -509,23 +589,36 @@ def combine_files(base_dir: str = '.', output_file: str = 'combined_files.txt'):
 
   # Now prioritize and write in a specific order
   with open(output_file, 'w', encoding='utf-8') as out:
-    print(f"\nWriting {len(all_files) + len(test_files)} files to {output_file}")
+    print(f"\nWriting {len(all_files) + len(test_files) + len(github_files)} files to {output_file}")
 
     # First write priority files in order
     priority_written = 0
     for priority_file in PRIORITY_FILES:
       priority_path = base / priority_file
       if priority_path.exists():
-        for path, content in list(all_files):  # Create a copy to modify during iteration
-          if path == priority_path:
-            out.write(f"File: {path.relative_to(base)}\n")
-            out.write(content)
-            out.write("\n\n")
-            all_files.remove((path, content))
-            priority_written += 1
-            break
+        # Check in all collections: regular files, GitHub files, and test files
+        for file_list in [all_files, github_files, test_files]:
+          for i, (path, content) in enumerate(file_list):
+            if path == priority_path:
+              out.write(f"File: {path.relative_to(base)}\n")
+              out.write(content)
+              out.write("\n\n")
+              # Remove from the original list to avoid duplicates
+              file_list.pop(i)
+              priority_written += 1
+              break
 
     print(f"Wrote {priority_written} priority files at the top")
+
+    # Write GitHub files next (those that weren't already written as priority files)
+    github_written = 0
+    for path, content in github_files:
+      out.write(f"File: {path.relative_to(base)}\n")
+      out.write(content)
+      out.write("\n\n")
+      github_written += 1
+
+    print(f"Wrote {github_written} GitHub workflow files")
 
     # Then write remaining regular files
     for path, content in all_files:
@@ -548,7 +641,7 @@ def combine_files(base_dir: str = '.', output_file: str = 'combined_files.txt'):
 
     print(f"Wrote {len(all_files)} additional source files")
     print(f"Wrote {len(test_files)} test files")
-    print(f"Total files included: {priority_written + len(all_files) + len(test_files)}")
+    print(f"Total files included: {priority_written + github_written + len(all_files) + len(test_files)}")
 
 
 if __name__ == '__main__':
