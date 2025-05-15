@@ -114,8 +114,9 @@
                   required
                 >
                   <option value="" disabled selected>Select Data Provider</option>
-                  <option value="ALPHA_VANTAGE">Alpha Vantage</option>
-                  <option value="BINANCE">Binance</option>
+                  <option v-for="provider in providerNames" :key="provider" :value="provider">
+                    {{ PROVIDER_NAME_DISPLAY[provider] }}
+                  </option>
                 </select>
               </div>
               <div class="mb-3">
@@ -178,6 +179,7 @@ import { Instrument } from '../models/instrument'
 import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
 import { ApiError } from '../models/api-error'
 import AlertMessageComponent from './alert-message-component.vue'
+import { PROVIDER_NAME_DISPLAY, ProviderName } from '../constants/provider-name.ts'
 
 const alertMessage = ref('')
 const debugMessage = ref('')
@@ -315,6 +317,9 @@ const isValidInstrument = (instrument: Partial<Instrument>): instrument is Instr
 }
 
 const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
+
+// Get all provider names for the dropdown
+const providerNames = Object.values(ProviderName)
 </script>
 
 <style scoped>
