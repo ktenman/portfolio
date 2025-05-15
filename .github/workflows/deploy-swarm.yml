@@ -69,7 +69,7 @@ jobs:
 
       - name: Copy files to server
         run: |
-          scp .env docker-stack.yml Caddyfile githubuser@fov.ee:~/
+          scp .env docker-stack.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
 
       - name: Deploy to Docker Swarm
         run: |
