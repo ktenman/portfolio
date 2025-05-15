@@ -74,6 +74,9 @@ jobs:
       - name: Deploy to Docker Swarm
         run: |
           ssh githubuser@fov.ee "
+            # Change to home directory to ensure files are found
+            cd ~
+
             # Initialize swarm if not already in swarm mode
             if [ \"\$(docker info --format '{{.Swarm.LocalNodeState}}')\" != \"active\" ]; then
               docker swarm init --advertise-addr \$(hostname -i)
