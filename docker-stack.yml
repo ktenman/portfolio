@@ -154,7 +154,7 @@ services:
         source: ./Caddyfile
         target: /etc/caddy/Caddyfile
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f -k http://localhost:80/healthz || exit 1" ]
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
       interval: 12s
       timeout: 3s
       retries: 5
@@ -170,8 +170,6 @@ services:
         condition: on-failure
     networks:
       - portfolio_network
-    depends_on:
-      - frontend
 
   market_price_tracker:
     image: ktenman/market-price-tracker:latest
