@@ -70,7 +70,7 @@ services:
       retries: 15
     deploy:
       mode: replicated
-      replicas: 2  # Run multiple instances for high availability
+      replicas: 1  # Run multiple instances for high availability
       update_config:
         parallelism: 1  # Update one at a time
         delay: 30s  # Wait 30s between updates
@@ -210,7 +210,7 @@ services:
       retries: 3
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
       update_config:
         parallelism: 1
         delay: 10s
