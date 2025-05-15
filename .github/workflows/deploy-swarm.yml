@@ -74,15 +74,18 @@ jobs:
       - name: Deploy to Docker Swarm
         run: |
           ssh githubuser@fov.ee "
-          # Initialize swarm if not already in swarm mode
-          if [ \"\$(docker info --format '{{.Swarm.LocalNodeState}}')\" != \"active\" ]; then
-            docker swarm init --advertise-addr \$(hostname -i)
-            docker network create --driver overlay portfolio_network
-          fi
+            # Initialize swarm if not already in swarm mode
+            if [ \"\$(docker info --format '{{.Swarm.LocalNodeState}}')\" != \"active\" ]; then
+              docker swarm init --advertise-addr \$(hostname -i)
+              docker network create --driver overlay portfolio_network
+            fi
 
-          # Deploy or update the stack
-          docker stack deploy -c docker-stack.yml --with-registry-auth portfolio
+            # Load environment variables from .env file
+            export \$(grep -v '^#' .env | xargs)
 
-          # Clean up old images
-          docker image prune -af --filter 'until=24h'
+            # Deploy or update the stack with variables now in environment
+            docker stack deploy -c docker-stack.yml --with-registry-auth portfolio
+
+            # Clean up old images
+            docker image prune -af --filter 'until=24h'
           "
