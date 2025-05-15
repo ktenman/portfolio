@@ -2,16 +2,6 @@
   <div class="container mt-2">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4>Investment Calculator</h4>
-      <div>
-        <button
-          type="button"
-          class="btn btn-outline-secondary me-2 btn-sm"
-          @click="resetCalculator"
-        >
-          Reset Calculator
-        </button>
-        <button type="button" class="btn btn-primary btn-sm" @click="calculate">Calculate</button>
-      </div>
     </div>
 
     <div class="row">
@@ -30,8 +20,17 @@
               @input="handleInput(key)"
             />
           </div>
-          <div class="form-text mb-3">
-            <small>Your data is automatically saved in your browser</small>
+          <div class="calculator-buttons-desktop">
+            <button
+              type="button"
+              class="btn btn-outline-secondary me-2 btn-sm"
+              @click="resetCalculator"
+            >
+              Reset Calculator
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" @click="calculate">
+              Calculate
+            </button>
           </div>
         </form>
       </div>
@@ -45,6 +44,15 @@
         <canvas ref="resultChart" class="mt-4"></canvas>
       </div>
     </div>
+
+    <!-- Buttons for mobile view, fixed at bottom of screen -->
+    <div class="calculator-buttons-mobile">
+      <button type="button" class="btn btn-outline-secondary me-2" @click="resetCalculator">
+        Reset Calculator
+      </button>
+      <button type="button" class="btn btn-primary" @click="calculate">Calculate</button>
+    </div>
+
     <div class="row mt-4">
       <div class="col-12">
         <h5>Year-by-Year Summary</h5>
@@ -390,9 +398,56 @@ canvas {
   font-size: 0.9rem;
 }
 
+/* Desktop button styling */
+.calculator-buttons-desktop {
+  display: flex;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Mobile button styling - hidden by default on desktop */
+.calculator-buttons-mobile {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .table {
     font-size: 0.8rem;
+  }
+
+  /* Hide desktop buttons on mobile */
+  .calculator-buttons-desktop {
+    display: none;
+  }
+
+  /* Show and style mobile buttons */
+  .calculator-buttons-mobile {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    padding: 10px 15px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    justify-content: space-between;
+  }
+
+  /* Make buttons equal width and larger */
+  .calculator-buttons-mobile .btn {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .calculator-buttons-mobile .btn:first-child {
+    margin-right: 10px;
+  }
+
+  /* Add bottom padding to container to prevent content being hidden behind fixed buttons */
+  .container {
+    padding-bottom: 60px;
   }
 }
 </style>
