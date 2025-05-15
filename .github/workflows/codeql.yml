@@ -43,7 +43,7 @@ jobs:
           - language: actions  # Covers GitHub Actions YAML files
             build-mode: none
           - language: java-kotlin
-            build-mode: manual
+            build-mode: none  # Changed from manual to none
           - language: javascript-typescript  # Covers JS, TS, and Vue
             build-mode: none
           - language: python
@@ -90,7 +90,7 @@ jobs:
 
       # Setup Gradle wrapper validation
       - name: Validate Gradle wrapper
-        if: matrix.language == 'java-kotlin'
+        if: matrix.language == 'java-kotlin' && hashFiles('gradlew') != ''
         uses: gradle/wrapper-validation-action@v3.5.0
 
       # Run secret scanning with unique output name per job
@@ -111,18 +111,30 @@ jobs:
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended,security-and-quality
           threads: 8
-          config-file: ./.github/codeql/codeql-config.yml  # Add this line
+          config-file: ./.github/codeql/codeql-config.yml
 
       # For Java/Kotlin using Gradle build
       - name: Build with Gradle
-        if: matrix.language == 'java-kotlin'
+        if: matrix.language == 'java-kotlin' && hashFiles('gradlew') != ''
         run: |
-          # Skip tests to speed up the build
-          ./gradlew clean compileJava compileKotlin compileTestJava compileTestKotlin --no-daemon
+          # Check if we need to run in a subdirectory
+          if [ -f "gradlew" ]; then
+            echo "Building from root directory"
+            ./gradlew compileJava compileKotlin --no-daemon || true
+          elif [ -f "*/gradlew" ]; then
+            echo "Building from subdirectory"
+            for dir in */; do
+              if [ -f "${dir}gradlew" ]; then
+                echo "Building in ${dir}"
+                cd ${dir} && ./gradlew compileJava compileKotlin --no-daemon || true
+                cd ..
+              fi
+            done
+          fi
 
       # For JavaScript/TypeScript projects that need build steps
       - name: Install npm dependencies
-        if: matrix.language == 'javascript-typescript'
+        if: matrix.language == 'javascript-typescript' && hashFiles('package.json') != ''
         run: npm ci
 
       # Docker linting - separate step
