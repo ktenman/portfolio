@@ -143,7 +143,7 @@ jobs:
     if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
     permissions:
       contents: read
-    uses: ./.github/workflows/deploy-pipeline.yml
+    uses: ./.github/workflows/deploy-swarm.yml
     secrets:
       FOV_SSH_PRIVATE_KEY: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
