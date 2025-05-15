@@ -1,5 +1,26 @@
+# Global configuration
+{
+    # Add your email for important Let's Encrypt notifications
+    email ktenman@gmail.com
+
+    # Use HTTP challenge instead of TLS-ALPN
+    # This is more reliable in container environments
+    acme_http01_port 80
+
+    # Uncomment for testing with staging (avoids rate limits)
+    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+
+    # Enable debug logging for certificate issues
+    debug
+}
+
 # Captcha subdomain
 captcha.fov.ee {
+    # Explicit TLS configuration
+    tls {
+        issuer acme
+    }
+
     # First handle exact root redirects
     @root {
         path_regexp ^/?$
@@ -17,6 +38,11 @@ captcha.fov.ee {
 
 # Calculator subdomain - completely public with no auth
 calculator.fov.ee {
+    # Explicit TLS configuration
+    tls {
+        issuer acme
+    }
+
     encode gzip
 
     # Root redirects to calculator page
@@ -49,17 +75,32 @@ calculator.fov.ee {
 
 # Main domain and www redirect
 www.fov.ee {
+    # Explicit TLS configuration
+    tls {
+        issuer acme
+    }
+
     redir https://fov.ee{uri}
 }
 
 # Main domain
 fov.ee {
+    # Explicit TLS configuration
+    tls {
+        issuer acme
+    }
+
     encode gzip
     # Redirect all HTTP traffic to HTTPS
     @http {
         protocol http
     }
     redir @http https://fov.ee{uri}
+
+    # Add a health check endpoint
+    handle /healthz {
+        respond "OK" 200
+    }
 
     # Calculator related routes
     @calculator_routes {
@@ -87,7 +128,7 @@ fov.ee {
 
     # Protected routes
     @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator /healthz
     }
     handle @protected {
         forward_auth auth:8083 {
