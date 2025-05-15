@@ -19,9 +19,13 @@ queries:
 # Optional: Configure paths to include/exclude from analysis
 # paths:
 #   - src
-# paths-ignore:
-#   - node_modules
-#   - '**/*.test.js'
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/test/**'
+  - '**/vendor/**'
+  - '**/third-party/**'
+  - '**/build/**'
+  - '**/generated/**'
 
 # You can set additional CodeQL options if needed
 # packs:
