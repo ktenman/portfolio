@@ -37,6 +37,7 @@ jobs:
 
   test:
     name: 🧪 ${{ matrix.test-type }} Test
+    needs: lint-and-format
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
