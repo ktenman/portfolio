@@ -151,7 +151,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
       - type: bind
-        source: ./Caddyfile
+        source: /home/githubuser/Caddyfile
         target: /etc/caddy/Caddyfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
