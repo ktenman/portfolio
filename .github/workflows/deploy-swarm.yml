@@ -24,7 +24,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: 'Deploy to fov.ee'
+        description: 'Deploy Docker Swarm to fov.ee'
         required: true
         type: boolean
         default: true
