@@ -22,7 +22,7 @@ repositories {
   maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-extra["springCloudVersion"] = "2024.0.0"
+extra["springCloudVersion"] = "2024.0.1"
 
 val selenideVersion = "7.9.2"
 val springRetryVersion = "2.0.11"
