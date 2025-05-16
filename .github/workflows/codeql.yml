@@ -105,7 +105,7 @@ jobs:
 
       # Initialize CodeQL
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3.28.17
+        uses: github/codeql-action/init@v3.28.18
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -150,7 +150,7 @@ jobs:
 
       # Perform the analysis - without custom output path
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3.28.17
+        uses: github/codeql-action/analyze@v3.28.18
         with:
           category: "/language:${{matrix.language}}"
 
