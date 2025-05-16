@@ -24,11 +24,11 @@ import org.testcontainers.utility.DockerImageName
 annotation class IntegrationTest {
   companion object {
     private val POSTGRES_DB_CONTAINER: PostgreSQLContainer<*> =
-      PostgreSQLContainer("postgres:15-alpine")
+      PostgreSQLContainer("postgres:17-alpine")
         .apply { start() }
 
     private val REDIS_CONTAINER: GenericContainer<*> =
-      GenericContainer(DockerImageName.parse("redis:7-alpine"))
+      GenericContainer(DockerImageName.parse("redis:8-alpine"))
         .withExposedPorts(6379)
         .apply { start() }
   }

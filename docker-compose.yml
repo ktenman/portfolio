@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: postgres
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: portfolio
       POSTGRES_USER: ${POSTGRES_USER}
@@ -19,7 +19,7 @@ services:
 
   redis:
     container_name: redis
-    image: redis:7.0-alpine
+    image: redis:8-alpine
     volumes:
       - redis_data:/data
     healthcheck:
