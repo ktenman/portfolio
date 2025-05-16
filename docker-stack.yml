@@ -26,11 +26,11 @@ services:
           - node.role == manager
       resources:
         limits:
-          memory: 1536M
+          memory: 2048M
           cpus: '1'
         reservations:
-          memory: 512M
-          cpus: '0.3'
+          memory: 1024M
+          cpus: '0.5'
     networks:
       - portfolio_network
     ports:
