@@ -27,10 +27,10 @@ class RedisConfiguration {
   }
 
   companion object {
-    const val INSTRUMENT_CACHE = "instrument-cache+v2"
-    const val SUMMARY_CACHE = "summary-cache+v2"
-    const val TRANSACTION_CACHE = "transaction-cache+v2"
-    const val ONE_DAY_CACHE: String = "one-day-cache+v2"
+    const val INSTRUMENT_CACHE = "instrument-cache-v3"
+    const val SUMMARY_CACHE = "summary-cache-v3"
+    const val TRANSACTION_CACHE = "transaction-cache-v3"
+    const val ONE_DAY_CACHE: String = "one-day-cache-v3"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }
