@@ -79,6 +79,9 @@ services:
         monitor: 60s  # Monitor for failure for 60s after update
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          memory: 2048M
     networks:
       - portfolio_network
     depends_on:
@@ -132,13 +135,6 @@ services:
         failure_action: rollback
       restart_policy:
         condition: on-failure
-      resources:
-        limits:
-          memory: 768M
-          cpus: '1'
-        reservations:
-          memory: 256M
-          cpus: '0.2'
     networks:
       - portfolio_network
     ports:
@@ -247,13 +243,6 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.2'
-        reservations:
-          memory: 32M
-          cpus: '0.05'
     networks:
       - portfolio_network
 
