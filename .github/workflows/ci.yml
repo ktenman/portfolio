@@ -73,7 +73,7 @@ jobs:
           command: |
             export E2E=${{ matrix.test-type == 'e2e' }}
             ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
-          attempt_limit: 5
+          attempt_limit: 3
           attempt_delay: 30000
       - uses: actions/upload-artifact@v4.6.2
         if: always()
