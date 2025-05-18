@@ -39,11 +39,11 @@ class UnifiedProfitCalculationService {
     return holdings.multiply(currentPrice)
   }
 
-  /**
-   * Calculates XIRR with time-weighted adjustment
-   * Dampens extreme XIRR values for recent investments
-   */
-  fun calculateAdjustedXirr(transactions: List<Transaction>, currentValue: BigDecimal): Double {
+  fun calculateAdjustedXirr(
+    transactions: List<Transaction>,
+    currentValue: BigDecimal,
+    calculationDate: LocalDate = LocalDate.now() // Default for backward compatibility
+  ): Double {
     if (transactions.size < 2) {
       return 0.0
     }
@@ -60,19 +60,14 @@ class UnifiedProfitCalculationService {
       val totalInvestment = cashFlows.sumOf { -it.amount }
       val weightedDays = cashFlows.sumOf { transaction ->
         val weight = -transaction.amount / totalInvestment
-        val days = ChronoUnit.DAYS.between(transaction.date, LocalDate.now()).toDouble()
+        // Use the provided calculation date instead of LocalDate.now()
+        val days = ChronoUnit.DAYS.between(transaction.date, calculationDate).toDouble()
         days * weight
       }
 
-      // Apply dampening for very recent investments (gradually phase in over 60 days)
+      // Apply dampening for very recent investments
       val dampingFactor = min(1.0, weightedDays / 60.0)
-
-      // Use a much higher bound or remove bounds entirely for short-term investments
-      // Option 1: Higher bound
-      val boundedXirr = xirrResult.coerceIn(-10.0, 10.0) // Allow up to 1000% returns
-
-      // OR Option 2: No upper bound, just prevent extreme negative values
-      // val boundedXirr = if (xirrResult < -0.95) -0.95 else xirrResult
+      val boundedXirr = xirrResult.coerceIn(-10.0, 10.0)
 
       return boundedXirr * dampingFactor
     } catch (e: Exception) {
