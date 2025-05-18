@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 
 private const val AMOUNT_TO_SPEND = 1000.0
@@ -22,7 +23,8 @@ class CalculatorService(
   private val dataRetrievalService: DailyPriceService,
   private val instrumentService: InstrumentService,
   private val calculationDispatcher: CoroutineDispatcher,
-  private val portfolioSummaryService: PortfolioSummaryService
+  private val portfolioSummaryService: PortfolioSummaryService,
+  private val clock: Clock
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -74,7 +76,7 @@ class CalculatorService(
     if (allDailyPrices.size < 2) return emptyList()
 
     val xirrs = mutableListOf<Xirr>()
-    var endDate = LocalDate.now()
+    var endDate = LocalDate.now(clock)
     val startDate = allDailyPrices.first().entryDate
 
     while (endDate.isAfter(startDate)) {
