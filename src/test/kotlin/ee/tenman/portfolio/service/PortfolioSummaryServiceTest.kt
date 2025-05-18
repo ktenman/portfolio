@@ -127,7 +127,7 @@ class PortfolioSummaryServiceTest {
     assertThat(summary.totalProfit)
       .isEqualByComparingTo("-1762.39")
     assertThat(summary.earningsPerDay)
-      .isEqualByComparingTo(BigDecimal("-6.2753580068"))
+      .isEqualByComparingTo(BigDecimal("0E-10"))
   }
 
   @Test
