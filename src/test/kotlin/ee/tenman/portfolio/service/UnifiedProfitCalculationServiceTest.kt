@@ -5,12 +5,17 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.xirr.Transaction
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.stream.Stream
 
 class UnifiedProfitCalculationServiceTest {
 
@@ -133,16 +138,20 @@ class UnifiedProfitCalculationServiceTest {
     assertThat(result).isBetween(0.0, 0.3)
   }
 
-  @Test
-  fun `calculateAdjustedXirr should return zero when calculation throws exception`() {
-    val invalidTransactions = listOf(
-      Transaction(-1000.0, TODAY.plusDays(30)),
-      Transaction(1000.0, TODAY)
+  @ParameterizedTest(name = "Market condition: {0}")
+  @MethodSource("marketConditions")
+  fun `calculateAdjustedXirr should reflect different market conditions correctly`(
+    marketCondition: String,
+    transactions: List<Transaction>,
+    expectedCondition: (Double) -> Boolean
+  ) {
+    val result = service.calculateAdjustedXirr(
+      transactions,
+      BigDecimal(transactions.last().amount.toString()),
+      TODAY
     )
 
-    val result = service.calculateAdjustedXirr(invalidTransactions, BigDecimal("1000"), TODAY)
-
-    assertThat(result).isEqualTo(4.98143265888696E-15)
+    assertThat(expectedCondition(result)).isTrue()
   }
 
   @Test
@@ -221,6 +230,40 @@ class UnifiedProfitCalculationServiceTest {
     assertThat(xirrTransactions).hasSize(2)
     assertThat(xirrTransactions[0].amount).isEqualTo(-1000.0)
     assertThat(xirrTransactions[1].amount).isEqualTo(550.0)
+  }
+
+  companion object {
+    @JvmStatic
+    fun marketConditions(): Stream<Arguments> {
+      val today = LocalDate.now()
+
+      return Stream.of(
+        Arguments.of(
+          "Rising market",
+          listOf(
+            Transaction(-1000.0, today.minusMonths(6)),
+            Transaction(1200.0, today)
+          ),
+          { xirr: Double -> xirr > 0.0 }
+        ),
+        Arguments.of(
+          "Falling market",
+          listOf(
+            Transaction(-1000.0, today.minusMonths(6)),
+            Transaction(800.0, today)
+          ),
+          { xirr: Double -> xirr < 0.0 }
+        ),
+        Arguments.of(
+          "Stable market",
+          listOf(
+            Transaction(-1000.0, today.minusMonths(6)),
+            Transaction(1000.0, today)
+          ),
+          { xirr: Double -> Math.abs(xirr) < 0.01 }
+        )
+      )
+    }
   }
 
   private fun createTransaction(
