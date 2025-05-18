@@ -154,10 +154,11 @@ services:
         source: /home/githubuser/Caddyfile
         target: /etc/caddy/Caddyfile
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
-      interval: 12s
-      timeout: 3s
+      test: ["CMD", "curl", "-fsS", "-H", "Host: fov.ee", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 5s
       retries: 5
+      start_period: 120s
     deploy:
       mode: replicated
       replicas: 1
