@@ -19,7 +19,7 @@ class BuildInfoController(
   @GetMapping
   fun getBuildInfo(): Map<String, String> {
     // If buildTime is empty, use current time
-    val time = if ("unknown".equals(buildTime)) {
+    val time = if ("unknown" == buildTime) {
       LocalDateTime.now().format(dateTimeFormatter)
     } else {
       buildTime
