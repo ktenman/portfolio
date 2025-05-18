@@ -2,21 +2,19 @@
     email ktenman@gmail.com
 }
 
-# Health check endpoint required by Docker Swarm
-:80 {
-    handle /healthz {
+/* ──────────────── fov.ee ──────────────── */
+fov.ee {
+    # Swarm/LB health-probe
+    handle_path /healthz {
         respond "OK" 200
     }
-}
 
-# Main domain
-fov.ee {
-    # API endpoints
+    # API
     handle /api/* {
         reverse_proxy backend:8080
     }
 
-    # Auth routes
+    # Auth
     @auth_routes {
         path /login /login/* /oauth2/* /logout
     }
@@ -24,55 +22,60 @@ fov.ee {
         reverse_proxy auth:8083
     }
 
-    # Calculator routes
+    # Calculator SPA
     handle /calculator* {
         reverse_proxy frontend:80
     }
 
-    # Default to frontend
+    # Default → frontend
     handle {
         reverse_proxy frontend:80
     }
 }
 
-# www redirect
+/* www → canonical */
 www.fov.ee {
     redir https://fov.ee{uri} permanent
 }
 
-# Captcha subdomain
+/* ──────────────── captcha.fov.ee ──────────────── */
 captcha.fov.ee {
-    # Root redirects
+    # health
+    handle_path /healthz {
+        respond "OK" 200
+    }
+
     @root {
         path_regexp ^/?$
     }
     handle @root {
         redir https://captcha.fov.ee/docs permanent
     }
-    # All other paths
+
     handle * {
         reverse_proxy captcha-solver:8000
     }
 }
 
-# Calculator subdomain
+/* ──────────────── calculator.fov.ee ──────────────── */
 calculator.fov.ee {
-    # Root redirects
+    # health
+    handle_path /healthz {
+        respond "OK" 200
+    }
+
     handle / {
         redir /calculator permanent
     }
 
-    # Calculator frontend
     handle /calculator* {
         reverse_proxy frontend:80
     }
 
-    # Calculator API
     handle /api/calculator {
         reverse_proxy backend:8080
     }
 
-    # Static assets
     handle {
         reverse_proxy frontend:80
     }
