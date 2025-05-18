@@ -94,7 +94,7 @@ services:
 
   app:
     container_name: app
-    image: caddy:2.8-alpine
+    image: caddy:2.10-alpine
     ports:
       - '80:80'
       - '443:443'
