@@ -34,7 +34,6 @@ jobs:
   deploy:
     name: 🚀 Deploy to K3s
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_call' || (github.event_name == 'workflow_dispatch' && inputs.deploy == true)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
