@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # Replace with your email
+    email: ktenman@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    # HTTP01 challenge for domain validation
+    solvers:
+      - http01:
+          ingress:
+            class: traefik
+        selector:
+          dnsNames:
+            - fov.ee
+            - www.fov.ee
+            - captcha.fov.ee
+            - calculator.fov.ee

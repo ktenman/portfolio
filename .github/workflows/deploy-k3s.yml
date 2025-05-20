@@ -82,6 +82,7 @@ jobs:
             kubectl apply -f ~/k8s-deploy/auth.yaml
             kubectl apply -f ~/k8s-deploy/market-tracker.yaml
             kubectl apply -f ~/k8s-deploy/captcha-solver.yaml
+            kubectl apply -f ~/k8s-deploy/cluster-issuer.yaml
             kubectl apply -f ~/k8s-deploy/ingress.yaml
 
             # Wait for deployments to be ready

@@ -6,15 +6,23 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
+    # Force redirect HTTP to HTTPS
+    traefik.ingress.kubernetes.io/redirect-entry-point: websecure
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+    # Certificate management
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   tls:
     - hosts:
         - fov.ee
         - www.fov.ee
-        - captcha.fov.ee
-        - calculator.fov.ee
       secretName: fov-ee-tls
+    - hosts:
+        - captcha.fov.ee
+      secretName: captcha-fov-ee-tls
+    - hosts:
+        - calculator.fov.ee
+      secretName: calculator-fov-ee-tls
 
   rules:
     # Main domain - fov.ee
@@ -56,6 +64,18 @@ spec:
                 name: frontend
                 port:
                   number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+
+    # WWW redirect
+    - host: www.fov.ee
+      http:
+        paths:
           - path: /
             pathType: Prefix
             backend:
