@@ -52,8 +52,8 @@ jobs:
 
       - name: Copy Kubernetes manifests to server
         run: |
-          ssh githubuser@fov.ee "mkdir -p ~/k8s-deploy"
-          scp -r k8s/ githubuser@fov.ee:~/k8s-deploy/
+          ssh githubuser@fov.ee "rm -rf ~/k8s-deploy && mkdir -p ~/k8s-deploy"
+          scp k8s/*.yaml githubuser@fov.ee:~/k8s-deploy/
 
       - name: Deploy to K3s cluster
         run: |
