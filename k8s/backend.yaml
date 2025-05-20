@@ -4,7 +4,7 @@ metadata:
   name: backend
   namespace: portfolio
 spec:
-  replicas: 2  # Minimum for zero downtime
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
