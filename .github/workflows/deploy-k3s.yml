@@ -1,0 +1,92 @@
+name: Deploy to K3s
+
+on:
+  workflow_call:
+    secrets:
+      FOV_SSH_PRIVATE_KEY:
+        required: true
+      POSTGRES_USER:
+        required: true
+      POSTGRES_PASSWORD:
+        required: true
+      GOOGLE_CLIENT_ID:
+        required: true
+      GOOGLE_CLIENT_SECRET:
+        required: true
+      ALLOWED_EMAILS:
+        required: true
+      VISION_BASE64_ENCODED_KEY:
+        required: true
+      TELEGRAM_BOT_TOKEN:
+        required: true
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy k3s'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to K3s
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_call' || (github.event_name == 'workflow_dispatch' && inputs.deploy == true)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 1
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
+
+      - name: Add fov.ee SSH fingerprint to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H fov.ee >> ~/.ssh/known_hosts
+
+      - name: Copy Kubernetes manifests to server
+        run: |
+          scp -r k8s/ githubuser@fov.ee:~/k8s-deploy/
+
+      - name: Deploy to K3s cluster
+        run: |
+          ssh githubuser@fov.ee "
+            # Use the K3s-generated kubeconfig that already exists on the server
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+            # Set up environment variables for secret substitution
+            export POSTGRES_USER='${{ secrets.POSTGRES_USER }}'
+            export POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'
+            export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
+            export GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}'
+            export ALLOWED_EMAILS='${{ secrets.ALLOWED_EMAILS }}'
+            export VISION_BASE64_ENCODED_KEY='${{ secrets.VISION_BASE64_ENCODED_KEY }}'
+            export TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+
+            # Create namespace and apply secrets
+            kubectl create namespace portfolio --dry-run=client -o yaml | kubectl apply -f -
+            envsubst < ~/k8s-deploy/secrets.yaml | kubectl apply -f -
+
+            # Deploy all applications
+            kubectl apply -f ~/k8s-deploy/postgres.yaml
+            kubectl apply -f ~/k8s-deploy/redis.yaml
+            kubectl apply -f ~/k8s-deploy/backend.yaml
+            kubectl apply -f ~/k8s-deploy/frontend.yaml
+            kubectl apply -f ~/k8s-deploy/auth.yaml
+            kubectl apply -f ~/k8s-deploy/market-tracker.yaml
+            kubectl apply -f ~/k8s-deploy/captcha-solver.yaml
+            kubectl apply -f ~/k8s-deploy/ingress.yaml
+
+            # Wait for deployments to be ready
+            kubectl rollout status deployment/backend -n portfolio --timeout=300s
+            kubectl rollout status deployment/frontend -n portfolio --timeout=300s
+
+            echo '✅ Deployment complete'
+          "

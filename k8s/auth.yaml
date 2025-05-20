@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: portfolio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth
+          image: ktenman/auth:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: ALLOWED_EMAILS
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: ALLOWED_EMAILS
+            - name: ALLOWED_LOGINS
+              value: "ktenman"
+            - name: REDIRECT_URI
+              value: "https://fov.ee"
+            - name: SPRING_REDIS_HOST
+              value: "redis"
+            - name: SERVER_PORT
+              value: "8083"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  namespace: portfolio
+spec:
+  ports:
+    - port: 8083
+  selector:
+    app: auth
