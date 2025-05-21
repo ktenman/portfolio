@@ -3,6 +3,12 @@ kind: Deployment
 metadata:
   name: backend
   namespace: portfolio
+  labels:
+    app: backend
+    build-hash: "${BUILD_HASH}"
+  annotations:
+    build-time: "${BUILD_TIME}"
+    deployment.kubernetes.io/revision: "1"
 spec:
   replicas: 1
   strategy:
@@ -16,13 +22,20 @@ spec:
     metadata:
       labels:
         app: backend
+        build-hash: "${BUILD_HASH}"
+      annotations:
+        build-time: "${BUILD_TIME}"
+        # Force pod restart when build info changes
+        kubectl.kubernetes.io/restartedAt: "${BUILD_TIME}"
     spec:
       containers:
         - name: backend
           image: ktenman/portfolio-be:latest
           ports:
             - containerPort: 8080
+              name: http
           env:
+            # Database configuration
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://postgres:5432/portfolio"
             - name: SPRING_DATASOURCE_USERNAME
@@ -37,6 +50,8 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: SPRING_PROFILES_ACTIVE
               value: "default"
+
+            # Vision and Telegram configuration
             - name: VISION_ENABLED
               value: "true"
             - name: TELEGRAM_BOT_ENABLED
@@ -51,13 +66,89 @@ spec:
                 secretKeyRef:
                   name: portfolio-secrets
                   key: TELEGRAM_BOT_TOKEN
-          # Essential health check for zero downtime
+
+            # BUILD INFORMATION - This is the key fix for your missing git hash!
+            # These environment variables will be substituted by envsubst in the deployment script
+            - name: BUILD_HASH
+              value: "${BUILD_HASH}"
+            - name: BUILD_TIME
+              value: "${BUILD_TIME}"
+
+            # Additional environment variables for better observability
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBERNETES_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          # HEALTH CHECKS - Enhanced for better visibility and debugging
+          # Readiness probe - determines when the container is ready to serve traffic
           readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+              httpHeaders:
+                - name: User-Agent
+                  value: "k8s-readiness-probe"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+          # Liveness probe - determines when to restart the container
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+              httpHeaders:
+                - name: User-Agent
+                  value: "k8s-liveness-probe"
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+          # Startup probe - gives the app time to start up before other probes begin
+          startupProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 30
-            periodSeconds: 10
+              httpHeaders:
+                - name: User-Agent
+                  value: "k8s-startup-probe"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 30  # Allow up to 2.5 minutes for startup
+
+          # Resource limits and requests for better scheduling
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+
+          # Security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
 
 ---
 apiVersion: v1
@@ -65,8 +156,19 @@ kind: Service
 metadata:
   name: backend
   namespace: portfolio
+  labels:
+    app: backend
+  annotations:
+    # Service annotations for monitoring
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/actuator/prometheus"
 spec:
+  type: ClusterIP
   ports:
     - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
   selector:
     app: backend

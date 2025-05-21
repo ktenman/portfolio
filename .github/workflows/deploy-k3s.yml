@@ -19,6 +19,8 @@ on:
         required: true
       TELEGRAM_BOT_TOKEN:
         required: true
+      HEALTHCHECK_URL:
+        required: false
   workflow_dispatch:
     inputs:
       deploy:
@@ -69,19 +71,35 @@ jobs:
             export ALLOWED_EMAILS='${{ secrets.ALLOWED_EMAILS }}'
             export VISION_BASE64_ENCODED_KEY='${{ secrets.VISION_BASE64_ENCODED_KEY }}'
             export TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+            export HEALTHCHECK_URL='${{ secrets.HEALTHCHECK_URL }}'
+
+            # NEW: Set up build information - this is the key fix for the missing git hash
+            export BUILD_HASH=\$(git -C ~/k8s-deploy rev-parse --short HEAD 2>/dev/null || echo 'unknown')
+            export BUILD_TIME=\$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+            # If we want the actual commit from the repository being deployed, we need to get it differently
+            # Since we're on the server, we'll use the hash from the GitHub context instead
+            export BUILD_HASH='${{ github.sha }}'
+            export BUILD_TIME=\$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+            echo \"Deploying with BUILD_HASH: \$BUILD_HASH and BUILD_TIME: \$BUILD_TIME\"
 
             # Create namespace and apply secrets
             kubectl create namespace portfolio --dry-run=client -o yaml | kubectl apply -f -
             envsubst < ~/k8s-deploy/secrets.yaml | kubectl apply -f -
 
-            # Deploy all applications
+            # Deploy all applications with environment variable substitution
             kubectl apply -f ~/k8s-deploy/postgres.yaml
             kubectl apply -f ~/k8s-deploy/redis.yaml
-            kubectl apply -f ~/k8s-deploy/backend.yaml
+
+            # Apply backend with build info substitution - this is crucial
+            envsubst < ~/k8s-deploy/backend.yaml | kubectl apply -f -
+
             kubectl apply -f ~/k8s-deploy/frontend.yaml
             kubectl apply -f ~/k8s-deploy/auth.yaml
             kubectl apply -f ~/k8s-deploy/market-tracker.yaml
             kubectl apply -f ~/k8s-deploy/captcha-solver.yaml
+            kubectl apply -f ~/k8s-deploy/healthcheck.yaml
             kubectl apply -f ~/k8s-deploy/caddy-config.yaml
             kubectl apply -f ~/k8s-deploy/caddy.yaml
 
@@ -89,5 +107,5 @@ jobs:
             kubectl rollout status deployment/backend -n portfolio --timeout=300s
             kubectl rollout status deployment/frontend -n portfolio --timeout=300s
 
-            echo '✅ Deployment complete'
+            echo '✅ Deployment complete with build info: Hash=' \$BUILD_HASH ' Time=' \$BUILD_TIME
           "
