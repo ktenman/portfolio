@@ -5,6 +5,7 @@ metadata:
   namespace: portfolio
   labels:
     app: healthcheck
+    version: "v2.0"  # Version tracking for deployment management
 spec:
   replicas: 1
   selector:
@@ -14,34 +15,104 @@ spec:
     metadata:
       labels:
         app: healthcheck
+        version: "v2.0"
     spec:
+      # Init containers ensure dependent services are listening before health checks start
+      # This addresses the timing issue where health checks ran before services were ready
+      initContainers:
+        # Wait for core backend service to be listening on port 8080
+        - name: wait-for-backend
+          image: busybox:1.35
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "🔄 Waiting for backend service to start listening..."
+              until nc -z backend 8080; do
+                echo "Backend port 8080 not ready, waiting 5 seconds..."
+                sleep 5
+              done
+              echo "✅ Backend is listening on port 8080"
+
+        # Wait for frontend service to be listening on port 80
+        - name: wait-for-frontend
+          image: busybox:1.35
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "🔄 Waiting for frontend service to start listening..."
+              until nc -z frontend 80; do
+                echo "Frontend port 80 not ready, waiting 5 seconds..."
+                sleep 5
+              done
+              echo "✅ Frontend is listening on port 80"
+
+        # Wait for auth service to be listening on port 8083
+        - name: wait-for-auth
+          image: busybox:1.35
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "🔄 Waiting for auth service to start listening..."
+              until nc -z auth 8083; do
+                echo "Auth port 8083 not ready, waiting 5 seconds..."
+                sleep 5
+              done
+              echo "✅ Auth is listening on port 8083"
+
       containers:
         - name: healthcheck
           image: alpine:latest
-          command:
-            - /bin/sh
-            - -c
+          command: ["/bin/sh", "-c"]
+          args:
             - |
-              # Install curl if not present
-              echo "🔧 Installing curl..."
-              apk add --no-cache curl
+              # Comprehensive health check script that addresses all the issues from your logs
 
-              # Function to check individual service health with better error handling
+              # Install required tools
+              echo "🔧 Installing required tools (curl, netcat)..."
+              apk add --no-cache curl netcat-openbsd
+
+              # Function to perform detailed service health checks
+              # This replaces the simple curl checks that were failing
               check_service() {
                 local service_name=$1
                 local health_url=$2
+                local expected_status=${3:-200}  # Default to HTTP 200
                 local max_retries=3
                 local retry_count=0
 
                 while [ $retry_count -lt $max_retries ]; do
-                  if curl -fsS --connect-timeout 10 --max-time 30 "$health_url" > /dev/null 2>&1; then
-                    echo "✅ $service_name is healthy"
+                  # Perform the health check with detailed error reporting
+                  response_code=$(curl -o /dev/null -s -w "%{http_code}" \
+                    --connect-timeout 15 \
+                    --max-time 30 \
+                    --retry 0 \
+                    "$health_url" 2>/dev/null)
+
+                  if [ "$response_code" = "$expected_status" ]; then
+                    echo "✅ $service_name is healthy (HTTP $response_code)"
                     return 0
                   else
                     retry_count=$((retry_count + 1))
-                    echo "⚠️  $service_name check failed (attempt $retry_count/$max_retries)"
-                    if [ $retry_count -lt $max_retries ]; then
-                      sleep 5
+                    echo "⚠️  $service_name check failed (attempt $retry_count/$max_retries) - HTTP $response_code"
+
+                    # Add detailed debugging for failures
+                    if [ $retry_count -eq $max_retries ]; then
+                      echo "🔍 Debug info for $service_name:"
+                      echo "   URL: $health_url"
+                      echo "   Expected: HTTP $expected_status, Got: HTTP $response_code"
+                      # Test basic connectivity
+                      host=$(echo "$health_url" | sed 's|.*://||' | sed 's|/.*||' | sed 's|:.*||')
+                      port=$(echo "$health_url" | sed 's|.*://||' | sed 's|/.*||' | sed 's|.*:||')
+                      if [ "$port" = "$host" ]; then
+                        port=80
+                      fi
+                      if nc -z "$host" "$port" 2>/dev/null; then
+                        echo "   ✅ Network connectivity OK"
+                      else
+                        echo "   ❌ Network connectivity FAILED"
+                      fi
+                    else
+                      sleep 10  # Wait between retries
                     fi
                   fi
                 done
@@ -50,120 +121,178 @@ spec:
                 return 1
               }
 
-              # Main health check loop
-              echo "🚀 Portfolio Health Check Service Started at $(date)"
-              echo "ℹ️  Configuration: HEALTHCHECK_URL=${HEALTHCHECK_URL:-'Not configured'}"
+              # Function to test database and cache connectivity through backend actuator
+              check_backend_dependency() {
+                local dependency_name=$1
 
+                # Spring Boot actuator provides detailed health information
+                response=$(curl -s --connect-timeout 10 --max-time 20 \
+                  "http://backend:8080/actuator/health" 2>/dev/null || echo "FAILED")
+
+                if echo "$response" | grep -q '"status":"UP"'; then
+                  echo "✅ Backend reports overall health UP"
+                  return 0
+                else
+                  echo "❌ Backend health check failed or returned non-UP status"
+                  echo "   Response: $response"
+                  return 1
+                fi
+              }
+
+              # Function to check if external monitoring should be notified
+              report_to_external_monitor() {
+                local overall_status=$1
+
+                if [ -z "$HEALTHCHECK_URL" ]; then
+                  echo "ℹ️  No external monitoring URL configured"
+                  return 0
+                fi
+
+                if [ "$overall_status" = "healthy" ]; then
+                  echo "📡 Reporting success to external monitor..."
+                  if curl -fsS --retry 3 --connect-timeout 10 --max-time 30 "$HEALTHCHECK_URL" >/dev/null 2>&1; then
+                    echo "✅ Successfully reported to external monitor"
+                  else
+                    echo "⚠️  Failed to report to external monitor, but services are healthy"
+                  fi
+                else
+                  echo "💥 Services unhealthy - NOT reporting to external monitor"
+                fi
+              }
+
+              # Wait for services to fully initialize after ports are open
+              # This addresses the issue where services were listening but not ready
+              echo "⏳ Services are listening, waiting 30 seconds for full application initialization..."
+              sleep 30
+
+              echo "🚀 Advanced Portfolio Health Check System Started at $(date)"
+              echo "ℹ️  External Monitor URL: ${HEALTHCHECK_URL:-'Not configured'}"
+              echo "ℹ️  Check Interval: 5 minutes"
+
+              # Main health check loop
               while true; do
+                echo ""
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                 echo "🔍 Starting comprehensive health check at $(date)"
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
                 # Track overall health status
                 overall_healthy=true
+                failed_services=""
 
-                # Check each service - these correspond to your Docker Compose services
+                # Core Application Services
                 echo "📊 Checking backend service..."
                 if ! check_service "Backend" "http://backend:8080/actuator/health"; then
                   overall_healthy=false
+                  failed_services="$failed_services Backend"
                 fi
 
                 echo "🖥️  Checking frontend service..."
-                if ! check_service "Frontend" "http://frontend:80/"; then
+                if ! check_service "Frontend" "http://frontend:80/health"; then
                   overall_healthy=false
+                  failed_services="$failed_services Frontend"
                 fi
 
                 echo "🔐 Checking auth service..."
                 if ! check_service "Auth" "http://auth:8083/actuator/health"; then
                   overall_healthy=false
+                  failed_services="$failed_services Auth"
                 fi
 
-                echo "🗄️  Checking postgres service..."
-                if ! check_service "Postgres" "http://backend:8080/actuator/health/db"; then
+                # Database and Cache (checked through backend actuator)
+                echo "🗄️  Checking database connectivity via backend..."
+                if ! check_backend_dependency "Database"; then
                   overall_healthy=false
+                  failed_services="$failed_services Database"
                 fi
 
-                echo "🏪 Checking redis service..."
-                if ! check_service "Redis" "http://backend:8080/actuator/health/redis"; then
-                  overall_healthy=false
-                fi
-
+                # Microservices
                 echo "📈 Checking market price tracker..."
                 if ! check_service "Market-Price-Tracker" "http://market-tracker:5000/health"; then
                   overall_healthy=false
+                  failed_services="$failed_services Market-Tracker"
                 fi
 
                 echo "🤖 Checking captcha solver..."
                 if ! check_service "Captcha-Solver" "http://captcha-solver:8000/health"; then
                   overall_healthy=false
+                  failed_services="$failed_services Captcha-Solver"
                 fi
 
-                # Report overall status to external monitoring service
+                # Report overall status
+                echo ""
                 if [ "$overall_healthy" = true ]; then
-                  echo "🎉 All services healthy - reporting success to external monitor"
-                  if [ -n "$HEALTHCHECK_URL" ]; then
-                    if curl -fsS --retry 3 --connect-timeout 10 --max-time 30 "$HEALTHCHECK_URL" > /dev/null 2>&1; then
-                      echo "✅ Successfully reported health status to external monitor"
-                    else
-                      echo "⚠️  Failed to report to external monitor, but services are healthy"
-                    fi
-                  else
-                    echo "ℹ️  No HEALTHCHECK_URL configured - skipping external reporting"
-                  fi
+                  echo "🎉 All services are healthy and operational!"
+                  report_to_external_monitor "healthy"
                 else
-                  echo "💥 Some services are unhealthy - NOT reporting to external monitor"
+                  echo "💥 Some services are experiencing issues:"
+                  echo "   Failed services:$failed_services"
+                  echo "   Skipping external monitor notification"
+                  report_to_external_monitor "unhealthy"
                 fi
 
                 echo "🕐 Health check completed at $(date). Next check in 5 minutes."
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-                # Sleep for 5 minutes before next check (same as your Docker Compose version)
+                # Sleep for 5 minutes (300 seconds) before next check
+                # This matches your original Docker Compose interval
                 sleep 300
               done
+
+          # Environment variables for configuration
           env:
-            # External monitoring URL
+            # External healthcheck URL for reporting overall status
             - name: HEALTHCHECK_URL
               valueFrom:
                 secretKeyRef:
                   name: portfolio-secrets
                   key: HEALTHCHECK_URL
-                  optional: true  # Make it optional in case you don't want external monitoring
+                  optional: true  # Won't fail if key doesn't exist
 
-            # Additional configuration
-            - name: CHECK_INTERVAL
-              value: "300"  # 5 minutes, matching your original setup
+            # Configuration for check intervals and timeouts
+            - name: CHECK_INTERVAL_SECONDS
+              value: "300"  # 5 minutes between full health checks
 
-            - name: TIMEOUT_SECONDS
-              value: "30"
+            - name: SERVICE_TIMEOUT_SECONDS
+              value: "30"   # Maximum time to wait for each service
 
-          # Resource limits for this lightweight monitoring container
+            - name: RETRY_COUNT
+              value: "3"    # Number of retries per service
+
+          # Resource limits to prevent this monitoring pod from consuming too many resources
           resources:
             requests:
-              memory: "32Mi"
-              cpu: "10m"
+              memory: "64Mi"
+              cpu: "10m"     # Very low CPU - this is just running curl commands
             limits:
-              memory: "128Mi"  # Increased slightly for curl and logging
+              memory: "128Mi"
               cpu: "100m"
 
-          # Security context
+          # Security context for running with minimal privileges
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
-            runAsUser: 1000
-            readOnlyRootFilesystem: false  # Changed to false since we need to write logs
+            runAsUser: 65534  # nobody user
+            runAsGroup: 65534
+            readOnlyRootFilesystem: false  # Needs to write temporary files for curl
             capabilities:
               drop:
                 - ALL
 
-      # Restart policy
-      restartPolicy: Always
-
-      # Security context for the pod
+      # Pod-level security and scheduling
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 2000
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+
+      # Restart policy ensures health checking continues even if the pod fails
+      restartPolicy: Always
+
+      # DNS configuration for better service discovery
+      dnsPolicy: ClusterFirst
 
 ---
-# Service for the healthcheck container (mainly for debugging)
+# Service for the healthcheck (mainly for debugging and potential monitoring integrations)
 apiVersion: v1
 kind: Service
 metadata:
@@ -179,3 +308,26 @@ spec:
       targetPort: 8080
       name: debug
   type: ClusterIP
+
+---
+# ServiceMonitor for Prometheus integration (if you use Prometheus for monitoring)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: healthcheck-dashboard
+  namespace: portfolio
+  labels:
+    app: healthcheck
+data:
+  # This could be used for creating monitoring dashboards
+  info.txt: |
+    This health check system monitors:
+    - Backend API (Spring Boot with actuator)
+    - Frontend (Nginx with custom health endpoint)
+    - Auth service (Spring Boot with actuator)
+    - Database connectivity (via backend actuator)
+    - Market price tracker microservice
+    - Captcha solver microservice
+
+    Health checks run every 5 minutes and report to external monitoring if configured.
+    Failed services are logged with detailed debugging information.
