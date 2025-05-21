@@ -10,8 +10,32 @@ data:
         # Enable automatic HTTPS
     }
 
-    # ──────────────── fov.ee ────────────────
+    # ──────────────── HTTP Health Checks (Port 80) ────────────────
+    # This block handles health checks on HTTP port 80 directly
+    # without any redirects, solving the Kubernetes probe warnings
+    :80 {
+        # Handle health checks for all domains on HTTP
+        handle_path /healthz {
+            respond "OK" 200
+        }
+
+        # Handle health checks with any domain header
+        @health_check {
+            path /healthz
+        }
+        handle @health_check {
+            respond "OK" 200
+        }
+
+        # For all other requests on HTTP, redirect to HTTPS
+        handle {
+            redir https://{host}{uri} permanent
+        }
+    }
+
+    # ──────────────── fov.ee (HTTPS) ────────────────
     fov.ee {
+        # Health check endpoint for HTTPS as well (for completeness)
         handle_path /healthz {
             respond "OK" 200
         }
@@ -40,12 +64,12 @@ data:
         }
     }
 
-    # www redirect
+    # www redirect (HTTPS)
     www.fov.ee {
         redir https://fov.ee{uri} permanent
     }
 
-    # ──────────────── captcha.fov.ee ────────────────
+    # ──────────────── captcha.fov.ee (HTTPS) ────────────────
     captcha.fov.ee {
         handle_path /healthz {
             respond "OK" 200
@@ -65,7 +89,7 @@ data:
         }
     }
 
-    # ──────────────── calculator.fov.ee ────────────────
+    # ──────────────── calculator.fov.ee (HTTPS) ────────────────
     calculator.fov.ee {
         handle_path /healthz {
             respond "OK" 200
