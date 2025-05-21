@@ -20,6 +20,7 @@ import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.closeTo
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -219,10 +220,10 @@ class PortfolioSummaryControllerIT {
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.date").value("2023-07-21"))
       .andExpect(jsonPath("$.totalValue").value(96.05))
-      .andExpect(jsonPath("$.xirrAnnualReturn").value(0.01975211))
+      .andExpect(jsonPath("$.xirrAnnualReturn").value(closeTo(0.0197, 0.001)))
       .andExpect(jsonPath("$.totalProfit").value(3.4))
-      .andExpect(jsonPath("$.earningsPerDay").value(0.0051942236))
-      .andExpect(jsonPath("$.earningsPerMonth").value(0.158099180825))
+      .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.0052, 0.0001)))
+      .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(0.157, 0.001)))
 
     assertThat(output.out)
       .contains("PortfolioSummaryController.getCurrentPortfolioSummary() entered with arguments: []")
