@@ -1,0 +1,181 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcheck
+  namespace: portfolio
+  labels:
+    app: healthcheck
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthcheck
+  template:
+    metadata:
+      labels:
+        app: healthcheck
+    spec:
+      containers:
+        - name: healthcheck
+          image: alpine:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Install curl if not present
+              echo "🔧 Installing curl..."
+              apk add --no-cache curl
+
+              # Function to check individual service health with better error handling
+              check_service() {
+                local service_name=$1
+                local health_url=$2
+                local max_retries=3
+                local retry_count=0
+
+                while [ $retry_count -lt $max_retries ]; do
+                  if curl -fsS --connect-timeout 10 --max-time 30 "$health_url" > /dev/null 2>&1; then
+                    echo "✅ $service_name is healthy"
+                    return 0
+                  else
+                    retry_count=$((retry_count + 1))
+                    echo "⚠️  $service_name check failed (attempt $retry_count/$max_retries)"
+                    if [ $retry_count -lt $max_retries ]; then
+                      sleep 5
+                    fi
+                  fi
+                done
+
+                echo "❌ $service_name is unhealthy after $max_retries attempts"
+                return 1
+              }
+
+              # Main health check loop
+              echo "🚀 Portfolio Health Check Service Started at $(date)"
+              echo "ℹ️  Configuration: HEALTHCHECK_URL=${HEALTHCHECK_URL:-'Not configured'}"
+
+              while true; do
+                echo "🔍 Starting comprehensive health check at $(date)"
+
+                # Track overall health status
+                overall_healthy=true
+
+                # Check each service - these correspond to your Docker Compose services
+                echo "📊 Checking backend service..."
+                if ! check_service "Backend" "http://backend:8080/actuator/health"; then
+                  overall_healthy=false
+                fi
+
+                echo "🖥️  Checking frontend service..."
+                if ! check_service "Frontend" "http://frontend:80/"; then
+                  overall_healthy=false
+                fi
+
+                echo "🔐 Checking auth service..."
+                if ! check_service "Auth" "http://auth:8083/actuator/health"; then
+                  overall_healthy=false
+                fi
+
+                echo "🗄️  Checking postgres service..."
+                if ! check_service "Postgres" "http://backend:8080/actuator/health/db"; then
+                  overall_healthy=false
+                fi
+
+                echo "🏪 Checking redis service..."
+                if ! check_service "Redis" "http://backend:8080/actuator/health/redis"; then
+                  overall_healthy=false
+                fi
+
+                echo "📈 Checking market price tracker..."
+                if ! check_service "Market-Price-Tracker" "http://market-tracker:5000/health"; then
+                  overall_healthy=false
+                fi
+
+                echo "🤖 Checking captcha solver..."
+                if ! check_service "Captcha-Solver" "http://captcha-solver:8000/health"; then
+                  overall_healthy=false
+                fi
+
+                # Report overall status to external monitoring service
+                if [ "$overall_healthy" = true ]; then
+                  echo "🎉 All services healthy - reporting success to external monitor"
+                  if [ -n "$HEALTHCHECK_URL" ]; then
+                    if curl -fsS --retry 3 --connect-timeout 10 --max-time 30 "$HEALTHCHECK_URL" > /dev/null 2>&1; then
+                      echo "✅ Successfully reported health status to external monitor"
+                    else
+                      echo "⚠️  Failed to report to external monitor, but services are healthy"
+                    fi
+                  else
+                    echo "ℹ️  No HEALTHCHECK_URL configured - skipping external reporting"
+                  fi
+                else
+                  echo "💥 Some services are unhealthy - NOT reporting to external monitor"
+                fi
+
+                echo "🕐 Health check completed at $(date). Next check in 5 minutes."
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+                # Sleep for 5 minutes before next check (same as your Docker Compose version)
+                sleep 300
+              done
+          env:
+            # External monitoring URL
+            - name: HEALTHCHECK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: HEALTHCHECK_URL
+                  optional: true  # Make it optional in case you don't want external monitoring
+
+            # Additional configuration
+            - name: CHECK_INTERVAL
+              value: "300"  # 5 minutes, matching your original setup
+
+            - name: TIMEOUT_SECONDS
+              value: "30"
+
+          # Resource limits for this lightweight monitoring container
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "10m"
+            limits:
+              memory: "128Mi"  # Increased slightly for curl and logging
+              cpu: "100m"
+
+          # Security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: false  # Changed to false since we need to write logs
+            capabilities:
+              drop:
+                - ALL
+
+      # Restart policy
+      restartPolicy: Always
+
+      # Security context for the pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+
+---
+# Service for the healthcheck container (mainly for debugging)
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcheck
+  namespace: portfolio
+  labels:
+    app: healthcheck
+spec:
+  selector:
+    app: healthcheck
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: debug
+  type: ClusterIP
