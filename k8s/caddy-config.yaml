@@ -7,19 +7,21 @@ data:
   Caddyfile: |
     {
         email ktenman@gmail.com
-        # Enable automatic HTTPS
+        # Enable automatic HTTPS with Let's Encrypt
+        # Caddy will automatically obtain and renew certificates
     }
 
-    # ──────────────── HTTP Health Checks (Port 80) ────────────────
-    # This block handles health checks on HTTP port 80 directly
-    # without any redirects, solving the Kubernetes probe warnings
+    # ──────────────── HEALTH CHECK ENDPOINTS (HTTP) ────────────────
+    # These endpoints handle health checks on HTTP port 80 directly
+    # This solves the Kubernetes probe warnings by providing a simple endpoint
+    # that doesn't require HTTPS or authentication
     :80 {
-        # Handle health checks for all domains on HTTP
+        # Handle health checks for all domains on HTTP without redirects
         handle_path /healthz {
             respond "OK" 200
         }
 
-        # Handle health checks with any domain header
+        # Handle health checks with any domain header (for load balancers)
         @health_check {
             path /healthz
         }
@@ -27,55 +29,22 @@ data:
             respond "OK" 200
         }
 
-        # For all other requests on HTTP, redirect to HTTPS
+        # For all other requests on HTTP, redirect to HTTPS for security
         handle {
             redir https://{host}{uri} permanent
         }
     }
 
-    # ──────────────── fov.ee (HTTPS) ────────────────
-    fov.ee {
-        # Health check endpoint for HTTPS as well (for completeness)
-        handle_path /healthz {
-            respond "OK" 200
-        }
-
-        # API endpoints
-        handle /api/* {
-            reverse_proxy backend:8080
-        }
-
-        # Auth routes
-        @auth_routes {
-            path /login /login/* /oauth2/* /logout
-        }
-        handle @auth_routes {
-            reverse_proxy auth:8083
-        }
-
-        # Calculator routes
-        handle /calculator* {
-            reverse_proxy frontend:80
-        }
-
-        # Default to frontend
-        handle {
-            reverse_proxy frontend:80
-        }
-    }
-
-    # www redirect (HTTPS)
-    www.fov.ee {
-        redir https://fov.ee{uri} permanent
-    }
-
-    # ──────────────── captcha.fov.ee (HTTPS) ────────────────
+    # ──────────────── CAPTCHA SUBDOMAIN (Public Service) ────────────────
+    # This subdomain provides a completely public captcha-solving service
+    # No authentication required - it's a utility service for external use
     captcha.fov.ee {
+        # Add health check endpoint for HTTPS as well
         handle_path /healthz {
             respond "OK" 200
         }
 
-        # Root redirects
+        # Redirect root requests to the documentation page
         @root {
             path_regexp ^/?$
         }
@@ -83,35 +52,159 @@ data:
             redir https://captcha.fov.ee/docs permanent
         }
 
-        # All other paths
+        # Proxy all other requests to the captcha solver service
         handle * {
-            reverse_proxy captcha-solver:8000
+            reverse_proxy captcha-solver:8000 {
+                # Pass the real client IP to the captcha service
+                header_up X-Real-IP {remote_host}
+                header_up X-Forwarded-For {remote_host}
+            }
         }
     }
 
-    # ──────────────── calculator.fov.ee (HTTPS) ────────────────
+    # ──────────────── CALCULATOR SUBDOMAIN (Public Service) ────────────────
+    # This provides a completely public calculator service
+    # Think of this as a "demo mode" that showcases your calculation capabilities
+    # without requiring users to create accounts
     calculator.fov.ee {
+        # Enable compression for better performance
+        encode gzip
+
+        # Add health check endpoint
         handle_path /healthz {
             respond "OK" 200
         }
 
-        # Root redirects
+        # Redirect root to the calculator interface
         handle / {
             redir /calculator permanent
         }
 
-        # Calculator frontend
+        # Serve the calculator frontend interface
         handle /calculator* {
+            # Disable caching for the calculator interface to ensure users get updates
+            header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+            header Pragma "no-cache"
+            header Expires "0"
             reverse_proxy frontend:80
         }
 
-        # Calculator API
+        # Public API endpoint for calculator functionality
+        # This allows external applications to use your calculation API
         handle /api/calculator {
+            # Enable CORS for external API usage
+            header Access-Control-Allow-Origin "*"
+            header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            header Access-Control-Allow-Headers "Content-Type"
             reverse_proxy backend:8080
         }
 
-        # Static assets
+        # Serve static assets (JavaScript, CSS, images) needed by the calculator
         handle {
+            # Cache static assets for better performance
+            header Cache-Control "public, max-age=3600"
             reverse_proxy frontend:80
+        }
+    }
+
+    # ──────────────── WWW REDIRECT ────────────────
+    # Redirect www.fov.ee to fov.ee for SEO consistency
+    www.fov.ee {
+        redir https://fov.ee{uri} permanent
+    }
+
+    # ──────────────── MAIN DOMAIN (Protected Application) ────────────────
+    # This is your main application with sophisticated authentication
+    fov.ee {
+        # Enable compression for all responses
+        encode gzip
+
+        # Add health check endpoint for HTTPS
+        handle_path /healthz {
+            respond "OK" 200
+        }
+
+        # ────── PUBLIC CALCULATOR ROUTES (No Auth Required) ──────
+        # These routes provide calculator functionality on the main domain
+        # without requiring authentication, making it easy for users to try
+        @calculator_routes {
+            path /calculator /calculator/* /assets/* *.js *.css *.svg *.ico *.png *.jpg *.jpeg *.gif *.woff *.woff2 *.ttf
+        }
+        handle @calculator_routes {
+            # Disable caching for dynamic calculator content
+            header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+            header Pragma "no-cache"
+            header Expires "0"
+            reverse_proxy frontend:80
+        }
+
+        # ────── AUTHENTICATION INFRASTRUCTURE ROUTES ──────
+        # These routes handle the authentication machinery itself
+        # They must remain unprotected so users can actually log in
+        @auth_routes {
+            path /login /login/* /oauth2/* /logout
+        }
+        handle @auth_routes {
+            # Forward authentication requests to the auth service
+            reverse_proxy auth:8083 {
+                # Preserve the original host header for OAuth redirects
+                header_up Host {http.request.host}
+            }
+        }
+
+        # ────── PUBLIC API ENDPOINTS ──────
+        # Calculator API endpoint - publicly accessible for demo purposes
+        handle /api/calculator {
+            # Enable CORS for the public calculator API
+            header Access-Control-Allow-Origin "*"
+            header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            header Access-Control-Allow-Headers "Content-Type"
+            reverse_proxy backend:8080
+        }
+
+        # ────── PROTECTED ROUTES (Authentication Required) ──────
+        # Everything else requires authentication using our sophisticated matcher
+        # This uses a "negative matcher" - protected routes are defined as
+        # "everything that isn't explicitly public"
+        @protected {
+            not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg *.ico *.png *.jpg *.jpeg *.gif *.woff *.woff2 *.ttf /api/calculator
+        }
+        handle @protected {
+            # ────── AUTHENTICATION GATEKEEPER ──────
+            # Before forwarding any protected request, first validate authentication
+            # This is the heart of your security system
+            forward_auth auth:8083 {
+                # The auth service validation endpoint
+                uri /validate
+                # Copy user identification headers back to the main request
+                copy_headers X-User-Id X-User-Email
+                # Preserve important headers for the validation request
+                header_up Host {http.request.host}
+                header_up X-Forwarded-Method {http.request.method}
+                header_up X-Forwarded-Uri {http.request.uri}
+            }
+
+            # ────── PROTECTED API ROUTES ──────
+            # These are your main application APIs - portfolio, transactions, etc.
+            @api {
+                path /api/*
+            }
+            handle @api {
+                reverse_proxy backend:8080 {
+                    # Pass through any user identification headers from auth
+                    header_up X-User-Id {http.request.header.X-User-Id}
+                    header_up X-User-Email {http.request.header.X-User-Email}
+                }
+            }
+
+            # ────── PROTECTED FRONTEND ROUTES ──────
+            # All other requests go to your main application frontend
+            # This includes routes like /, /instruments, /transactions, etc.
+            handle {
+                reverse_proxy frontend:80 {
+                    # Add cache headers for the main application
+                    header_up Cache-Control "no-cache, no-store, must-revalidate"
+                }
+            }
         }
     }
