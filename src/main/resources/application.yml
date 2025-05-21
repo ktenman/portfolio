@@ -10,6 +10,20 @@ management:
   endpoint:
     health:
       show-details: always
+      show-components: always
+      status:
+        http-mapping:
+          down: 503
+          out-of-service: 503
+          up: 200
+          unknown: 200
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true
+    diskspace:
+      enabled: true
   info:
     env:
       enabled: true

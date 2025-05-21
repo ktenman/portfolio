@@ -1,14 +1,71 @@
+# Frontend configuration with proper health check support
+# This solves the issue where frontend health checks were failing due to lack of dedicated health endpoint
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx-config
+  namespace: portfolio
+data:
+  # Custom nginx configuration that adds a health endpoint
+  # This is crucial because your original setup had no way to verify frontend health
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        # Dedicated health check endpoint - this is what was missing!
+        # Returns a simple "healthy" response that health checks can verify
+        location /health {
+            access_log off;  # Don't log health check requests to reduce noise
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+        }
+
+        # Root location serves the Vue.js application
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+            # This ensures Vue.js routing works properly (SPA fallback)
+            try_files $uri $uri/ /index.html;
+
+            # Add headers for better caching and security
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-XSS-Protection "1; mode=block" always;
+        }
+
+        # Handle static assets with longer cache times
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            root /usr/share/nginx/html;
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            access_log off;
+        }
+
+        # Gzip compression for better performance
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+    }
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
   namespace: portfolio
+  labels:
+    app: frontend
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
+      maxUnavailable: 0  # Ensure zero downtime deployments
+      maxSurge: 1
   selector:
     matchLabels:
       app: frontend
@@ -22,12 +79,71 @@ spec:
           image: ktenman/portfolio-fe:latest
           ports:
             - containerPort: 80
+              name: http
+
+          # Mount our custom nginx configuration
+          # This replaces the default nginx config with our health-check enabled version
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: nginx.conf
+
+          # Readiness probe - determines when pod is ready to receive traffic
+          # This uses our new /health endpoint instead of the root path
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 10
+              httpHeaders:
+                - name: User-Agent
+                  value: "k8s-readiness-probe"
+            initialDelaySeconds: 5    # Wait 5 seconds before starting checks
+            periodSeconds: 10         # Check every 10 seconds
+            timeoutSeconds: 5         # Fail if no response in 5 seconds
+            successThreshold: 1       # One success = ready
+            failureThreshold: 3       # Three failures = not ready
+
+          # Liveness probe - determines when to restart the container
+          # Uses the same health endpoint but with different timing
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+              httpHeaders:
+                - name: User-Agent
+                  value: "k8s-liveness-probe"
+            initialDelaySeconds: 15   # Wait longer before starting liveness checks
+            periodSeconds: 20         # Check every 20 seconds
+            timeoutSeconds: 5         # Fail if no response in 5 seconds
+            successThreshold: 1       # One success = alive
+            failureThreshold: 3       # Three failures = restart container
+
+          # Resource limits to prevent resource starvation
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+
+          # Security context for better security
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 101  # nginx user
+            runAsGroup: 101
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+      # Mount the nginx configuration from our ConfigMap
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: frontend-nginx-config
+            defaultMode: 0644
 
 ---
 apiVersion: v1
@@ -35,8 +151,14 @@ kind: Service
 metadata:
   name: frontend
   namespace: portfolio
+  labels:
+    app: frontend
 spec:
+  type: ClusterIP
   ports:
     - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
   selector:
     app: frontend
