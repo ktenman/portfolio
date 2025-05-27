@@ -24,7 +24,7 @@ repositories {
 
 extra["springCloudVersion"] = "2024.0.1"
 
-val selenideVersion = "7.9.2"
+val selenideVersion = "7.9.3"
 val springRetryVersion = "2.0.12"
 val guavaVersion = "33.4.8-jre"
 val commonsMathVersion = "3.6.1"
