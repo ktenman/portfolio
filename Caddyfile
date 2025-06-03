@@ -1,66 +1,54 @@
-{
-    email ktenman@gmail.com
-    # Enable automatic HTTPS with Let's Encrypt
-    # Caddy will automatically obtain and renew certificates
-}
-
-# ──────────────── HEALTH CHECK ENDPOINTS (HTTP) ────────────────
-# These endpoints handle health checks on HTTP port 80 directly
-# This solves the Kubernetes probe warnings by providing a simple endpoint
-# that doesn't require HTTPS or authentication
-:80 {
-    # Handle health checks for all domains on HTTP without redirects
-    handle_path /healthz {
-        respond "OK" 200
-    }
-
-    # Handle health checks with any domain header (for load balancers)
-    @health_check {
-        path /healthz
-    }
-    handle @health_check {
-        respond "OK" 200
-    }
-
-    # For all other requests on HTTP, redirect to HTTPS for security
-    handle {
-        redir https://{host}{uri} permanent
-    }
-}
-
-# ──────────────── CAPTCHA SUBDOMAIN (Public Service) ────────────────
-# This subdomain provides a completely public captcha-solving service
-# No authentication required - it's a utility service for external use
+# Captcha subdomain
 captcha.fov.ee {
-    # Add health check endpoint for HTTPS as well
-    handle_path /healthz {
-        respond "OK" 200
-    }
-
-    # Redirect root requests to the documentation page
+    # First handle exact root redirects
     @root {
         path_regexp ^/?$
     }
     handle @root {
         redir https://captcha.fov.ee/docs permanent
     }
-
-    # Proxy all other requests to the captcha solver service
+    # Then proxy everything else
     handle * {
         reverse_proxy captcha-solver:8000 {
-            # Pass the real client IP to the captcha service
             header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
         }
     }
 }
 
-# ──────────────── CALCULATOR SUBDOMAIN (Public Service) ────────────────
-# This provides a completely public calculator service
-# Think of this as a "demo mode" that showcases your calculation capabilities
-# without requiring users to create accounts
+# Calculator subdomain - completely public with no auth
 calculator.fov.ee {
-    # Enable compression for better performance
+    encode gzip
+
+    # Root redirects to calculator page
+    handle / {
+        redir /calculator permanent
+    }
+
+    # Calculator frontend route
+    handle /calculator* {
+        header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+        header Pragma "no-cache"
+        header Expires "0"
+        reverse_proxy frontend:80
+    }
+
+    # Calculator API endpoint
+    handle /api/calculator {
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type"
+        reverse_proxy backend:8080
+    }
+
+    # Static assets needed by calculator
+    handle {
+        header Cache-Control "public, max-age=3600"
+        reverse_proxy frontend:80
+    }
+}
+
+# Torrents subdomain - public access
+torrents.fov.ee {
     encode gzip
 
     # Add health check endpoint
@@ -68,223 +56,81 @@ calculator.fov.ee {
         respond "OK" 200
     }
 
-    # Redirect root to the calculator interface
-    handle / {
-        redir /calculator permanent
+    # Serve files from /srv/torrents with directory browsing
+    root * /srv/torrents
+    file_server browse {
+        # Hide dotfiles for security
+        hide .*
     }
 
-    # Serve the calculator frontend interface
-    handle /calculator* {
-        # Disable caching for the calculator interface to ensure users get updates
-        header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
-        header Pragma "no-cache"
-        header Expires "0"
-        reverse_proxy frontend:80
+    # Optional: Rate limiting for public access
+    @downloads {
+        path *.torrent *.zip *.tar.gz *.iso
     }
-
-    # Public API endpoint for calculator functionality
-    # This allows external applications to use your calculation API
-    handle /api/calculator {
-        # Enable CORS for external API usage
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, POST, OPTIONS"
-        header Access-Control-Allow-Headers "Content-Type"
-        reverse_proxy backend:8080
-    }
-
-    # Serve static assets (JavaScript, CSS, images) needed by the calculator
-    handle {
-        # Cache static assets for better performance
-        header Cache-Control "public, max-age=3600"
-        reverse_proxy frontend:80
+    handle @downloads {
+        # Add rate limiting headers if needed
+        header X-Content-Type-Options "nosniff"
+        header X-Frame-Options "DENY"
     }
 }
 
-# ──────────────── TORRENTS SUBDOMAIN (Protected File Server) ────────────────
-# This provides authenticated access to torrent files using the same auth pattern as the main domain
-# Follows the established security model with forward_auth validation
-torrents.fov.ee {
-    # Enable compression for better file transfer performance
-    encode gzip
-
-    # Health check endpoint (follows the same pattern as other subdomains)
-    handle_path /healthz {
-        respond "OK" 200
-    }
-
-    # ────── LOGIN INFRASTRUCTURE ROUTES ──────
-    # Handle login redirects by sending users to the main domain
-    # This prevents redirect loops when users aren't authenticated
-    @login_routes {
-        path /login /login/* /oauth2/*
-    }
-    handle @login_routes {
-        # Redirect to main domain for authentication, then return to torrents
-        redir https://fov.ee{uri}?return_to=https://torrents.fov.ee/
-    }
-
-    # All other routes require authentication using the same forward_auth pattern as main domain
-    handle {
-        # ────── AUTHENTICATION GATEKEEPER (modified for cross-domain flow) ──────
-        # Use the exact same authentication validation as your protected routes
-        forward_auth auth:8083 {
-            # Same validation endpoint as main domain
-            uri /validate
-            # Copy the same user identification headers
-            copy_headers X-User-Id X-User-Email
-            # Preserve important headers for the validation request
-            header_up Host {http.request.host}
-            header_up X-Forwarded-Method {http.request.method}
-            header_up X-Forwarded-Uri {http.request.uri}
-            # Add header to help auth service know where to redirect on failure
-            header_up X-Original-URL https://torrents.fov.ee{http.request.uri}
-        }
-
-        # ────── FILE SERVER (after successful authentication) ──────
-        # Serve files from the torrents directory with directory browsing enabled
-        file_server {
-            root /srv/torrents
-            # Enable directory browsing with Caddy's built-in template
-            browse
-            # Hide system files and directories (same security approach as your existing setup)
-            hide .* Thumbs.db Desktop.ini .DS_Store
-        }
-
-        # Set security headers (following your established security practices)
-        header {
-            # Same security headers pattern as your main domain
-            X-Frame-Options "SAMEORIGIN"
-            X-Content-Type-Options "nosniff"
-            X-XSS-Protection "1; mode=block"
-            Referrer-Policy "strict-origin-when-cross-origin"
-
-            # Additional headers for file downloads
-            -Server  # Hide server information for security
-        }
-
-        # Set appropriate cache headers for different file types
-        @media_files {
-            path *.mp4 *.mkv *.avi *.mov *.wmv *.flv *.webm *.m4v
-        }
-        header @media_files {
-            Cache-Control "public, max-age=3600"  # 1 hour cache for media files
-        }
-
-        @torrent_files {
-            path *.torrent
-        }
-        header @torrent_files {
-            Content-Type "application/x-bittorrent"
-            Cache-Control "public, max-age=86400"  # 24 hour cache for torrent files
-        }
-
-        @archive_files {
-            path *.zip *.rar *.7z *.tar *.gz *.bz2
-        }
-        header @archive_files {
-            Cache-Control "public, max-age=7200"  # 2 hour cache for archives
-        }
-    }
-}
-
-# ──────────────── WWW REDIRECT ────────────────
-# Redirect www.fov.ee to fov.ee for SEO consistency
+# Main domain and www redirect
 www.fov.ee {
-    redir https://fov.ee{uri} permanent
+    redir https://fov.ee{uri}
 }
 
-# ──────────────── MAIN DOMAIN (Protected Application) ────────────────
-# This is your main application with sophisticated authentication
+# Main domain
 fov.ee {
-    # Enable compression for all responses
     encode gzip
-
-    # Add health check endpoint for HTTPS
-    handle_path /healthz {
-        respond "OK" 200
+    # Redirect all HTTP traffic to HTTPS
+    @http {
+        protocol http
     }
+    redir @http https://fov.ee{uri}
 
-    # ────── PUBLIC CALCULATOR ROUTES (No Auth Required) ──────
-    # These routes provide calculator functionality on the main domain
-    # without requiring authentication, making it easy for users to try
+    # Calculator related routes
     @calculator_routes {
-        path /calculator /calculator/* /assets/* *.js *.css *.svg *.ico *.png *.jpg *.jpeg *.gif *.woff *.woff2 *.ttf
+        path /calculator /calculator/* /assets/* *.js *.css *.svg
     }
     handle @calculator_routes {
-        # Disable caching for dynamic calculator content
         header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
         header Pragma "no-cache"
         header Expires "0"
         reverse_proxy frontend:80
     }
 
-    # ────── AUTHENTICATION INFRASTRUCTURE ROUTES ──────
-    # These routes handle the authentication machinery itself
-    # They must remain unprotected so users can actually log in
+    # Login and OAuth routes are handled by the auth server
     @auth_routes {
         path /login /login/* /oauth2/* /logout
     }
     handle @auth_routes {
-        # Forward authentication requests to the auth service
-        reverse_proxy auth:8083 {
-            # Preserve the original host header for OAuth redirects
-            header_up Host {http.request.host}
-        }
+        reverse_proxy auth:8083
     }
 
-    # ────── PUBLIC API ENDPOINTS ──────
-    # Calculator API endpoint - publicly accessible for demo purposes
+    # Unprotected API calculator route for backend
     handle /api/calculator {
-        # Enable CORS for the public calculator API
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, POST, OPTIONS"
-        header Access-Control-Allow-Headers "Content-Type"
         reverse_proxy backend:8080
     }
 
-    # ────── PROTECTED ROUTES (Authentication Required) ──────
-    # Everything else requires authentication using our sophisticated matcher
-    # This uses a "negative matcher" - protected routes are defined as
-    # "everything that isn't explicitly public"
+    # Protected routes
     @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg *.ico *.png *.jpg *.jpeg *.gif *.woff *.woff2 *.ttf /api/calculator
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
     }
     handle @protected {
-        # ────── AUTHENTICATION GATEKEEPER ──────
-        # Before forwarding any protected request, first validate authentication
-        # This is the heart of your security system
         forward_auth auth:8083 {
-            # The auth service validation endpoint
             uri /validate
-            # Copy user identification headers back to the main request
-            copy_headers X-User-Id X-User-Email
-            # Preserve important headers for the validation request
-            header_up Host {http.request.host}
-            header_up X-Forwarded-Method {http.request.method}
-            header_up X-Forwarded-Uri {http.request.uri}
+            copy_headers X-User-Id
         }
 
-        # ────── PROTECTED API ROUTES ──────
-        # These are your main application APIs - portfolio, transactions, etc.
+        # API routes
         @api {
             path /api/*
         }
         handle @api {
-            reverse_proxy backend:8080 {
-                # Pass through any user identification headers from auth
-                header_up X-User-Id {http.request.header.X-User-Id}
-                header_up X-User-Email {http.request.header.X-User-Email}
-            }
+            reverse_proxy backend:8080
         }
 
-        # ────── PROTECTED FRONTEND ROUTES ──────
-        # All other requests go to your main application frontend
-        # This includes routes like /, /instruments, /transactions, etc.
-        handle {
-            reverse_proxy frontend:80 {
-                # Add cache headers for the main application
-                header_up Cache-Control "no-cache, no-store, must-revalidate"
-            }
-        }
+        # All other routes go to the frontend
+        reverse_proxy frontend:80
     }
 }
