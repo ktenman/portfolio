@@ -1,109 +1,320 @@
-# Captcha subdomain
+{
+    email ktenman@gmail.com
+    # Enable automatic HTTPS with Let's Encrypt
+    # Caddy will automatically obtain and renew certificates
+}
+
+# ──────────────── HEALTH CHECK ENDPOINTS (HTTP) ────────────────
+# These endpoints handle health checks on HTTP port 80 directly
+# This solves the Kubernetes probe warnings by providing a simple endpoint
+# that doesn't require HTTPS or authentication
+:80 {
+    # Handle health checks for all domains on HTTP without redirects
+    handle_path /healthz {
+        respond "OK" 200
+    }
+
+    # Handle health checks with any domain header (for load balancers)
+    @health_check {
+        path /healthz
+    }
+    handle @health_check {
+        respond "OK" 200
+    }
+
+    # For all other requests on HTTP, redirect to HTTPS for security
+    handle {
+        redir https://{host}{uri} permanent
+    }
+}
+
+# ──────────────── CAPTCHA SUBDOMAIN (Public Service) ────────────────
+# This subdomain provides a completely public captcha-solving service
+# No authentication required - it's a utility service for external use
 captcha.fov.ee {
-    # First handle exact root redirects
+    # Add health check endpoint for HTTPS as well
+    handle_path /healthz {
+        respond "OK" 200
+    }
+
+    # Redirect root requests to the documentation page
     @root {
         path_regexp ^/?$
     }
     handle @root {
         redir https://captcha.fov.ee/docs permanent
     }
-    # Then proxy everything else
+
+    # Proxy all other requests to the captcha solver service
     handle * {
         reverse_proxy captcha-solver:8000 {
+            # Pass the real client IP to the captcha service
             header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
         }
     }
 }
 
-# Calculator subdomain - completely public with no auth
+# ──────────────── CALCULATOR SUBDOMAIN (Public Service) ────────────────
+# This provides a completely public calculator service
+# Think of this as a "demo mode" that showcases your calculation capabilities
+# without requiring users to create accounts
 calculator.fov.ee {
+    # Enable compression for better performance
     encode gzip
 
-    # Root redirects to calculator page
+    # Add health check endpoint
+    handle_path /healthz {
+        respond "OK" 200
+    }
+
+    # Redirect root to the calculator interface
     handle / {
         redir /calculator permanent
     }
 
-    # Calculator frontend route
+    # Serve the calculator frontend interface
     handle /calculator* {
+        # Disable caching for the calculator interface to ensure users get updates
         header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
         header Pragma "no-cache"
         header Expires "0"
         reverse_proxy frontend:80
     }
 
-    # Calculator API endpoint
+    # Public API endpoint for calculator functionality
+    # This allows external applications to use your calculation API
     handle /api/calculator {
+        # Enable CORS for external API usage
         header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, OPTIONS"
+        header Access-Control-Allow-Methods "GET, POST, OPTIONS"
         header Access-Control-Allow-Headers "Content-Type"
         reverse_proxy backend:8080
     }
 
-    # Static assets needed by calculator
+    # Serve static assets (JavaScript, CSS, images) needed by the calculator
     handle {
+        # Cache static assets for better performance
         header Cache-Control "public, max-age=3600"
         reverse_proxy frontend:80
     }
 }
 
-# Main domain and www redirect
-www.fov.ee {
-    redir https://fov.ee{uri}
+# ──────────────── TORRENTS SUBDOMAIN (Protected File Server) ────────────────
+# This provides authenticated access to torrent files using the same auth pattern as the main domain
+# Follows the established security model with forward_auth validation
+torrents.fov.ee {
+    # Enable compression for better file transfer performance
+    encode gzip
+
+    # Health check endpoint (follows the same pattern as other subdomains)
+    handle_path /healthz {
+        respond "OK" 200
+    }
+
+    # All other routes require authentication using the same forward_auth pattern as main domain
+    handle {
+        # ────── AUTHENTICATION GATEKEEPER (same as main domain) ──────
+        # Use the exact same authentication validation as your protected routes
+        forward_auth auth:8083 {
+            # Same validation endpoint as main domain
+            uri /validate
+            # Copy the same user identification headers
+            copy_headers X-User-Id X-User-Email
+            # Preserve important headers for the validation request
+            header_up Host {http.request.host}
+            header_up X-Forwarded-Method {http.request.method}
+            header_up X-Forwarded-Uri {http.request.uri}
+        }
+
+        # ────── FILE SERVER (after successful authentication) ──────
+        # Serve files from the torrents directory with directory browsing enabled
+        file_server {
+            root /srv/torrents
+            browse {
+                # Customize the directory listing template for better UX
+                template `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Torrent Archive - {{.Name}}</title>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 40px; background: #f5f5f5; }
+                        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+                        th { background: #f8f9fa; font-weight: 600; }
+                        tr:hover { background: #f8f9fa; }
+                        a { color: #007bff; text-decoration: none; }
+                        a:hover { text-decoration: underline; }
+                        .size { text-align: right; }
+                        .date { color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>📁 {{.Name}}</h1>
+                        {{if .CanGoUp}}<p><a href="../">⬆️ Parent Directory</a></p>{{end}}
+                        <table>
+                            <thead>
+                                <tr><th>Name</th><th>Size</th><th>Modified</th></tr>
+                            </thead>
+                            <tbody>
+                                {{range .Items}}
+                                <tr>
+                                    <td><a href="{{.URL}}">{{if .IsDir}}📁{{else}}📄{{end}} {{.Name}}</a></td>
+                                    <td class="size">{{.HumanSize}}</td>
+                                    <td class="date">{{.HumanModTime "Jan 2, 2006 15:04"}}</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </body>
+                </html>`
+            }
+            # Hide system files and directories (same security approach as your existing setup)
+            hide .* Thumbs.db Desktop.ini .DS_Store
+        }
+
+        # Set security headers (following your established security practices)
+        header {
+            # Same security headers pattern as your main domain
+            X-Frame-Options "SAMEORIGIN"
+            X-Content-Type-Options "nosniff"
+            X-XSS-Protection "1; mode=block"
+            Referrer-Policy "strict-origin-when-cross-origin"
+
+            # Additional headers for file downloads
+            -Server  # Hide server information for security
+        }
+
+        # Set appropriate cache headers for different file types
+        @media_files {
+            path *.mp4 *.mkv *.avi *.mov *.wmv *.flv *.webm *.m4v
+        }
+        header @media_files {
+            Cache-Control "public, max-age=3600"  # 1 hour cache for media files
+        }
+
+        @torrent_files {
+            path *.torrent
+        }
+        header @torrent_files {
+            Content-Type "application/x-bittorrent"
+            Cache-Control "public, max-age=86400"  # 24 hour cache for torrent files
+        }
+
+        @archive_files {
+            path *.zip *.rar *.7z *.tar *.gz *.bz2
+        }
+        header @archive_files {
+            Cache-Control "public, max-age=7200"  # 2 hour cache for archives
+        }
+    }
 }
 
-# Main domain
-fov.ee {
-    encode gzip
-    # Redirect all HTTP traffic to HTTPS
-    @http {
-        protocol http
-    }
-    redir @http https://fov.ee{uri}
+# ──────────────── WWW REDIRECT ────────────────
+# Redirect www.fov.ee to fov.ee for SEO consistency
+www.fov.ee {
+    redir https://fov.ee{uri} permanent
+}
 
-    # Calculator related routes
+# ──────────────── MAIN DOMAIN (Protected Application) ────────────────
+# This is your main application with sophisticated authentication
+fov.ee {
+    # Enable compression for all responses
+    encode gzip
+
+    # Add health check endpoint for HTTPS
+    handle_path /healthz {
+        respond "OK" 200
+    }
+
+    # ────── PUBLIC CALCULATOR ROUTES (No Auth Required) ──────
+    # These routes provide calculator functionality on the main domain
+    # without requiring authentication, making it easy for users to try
     @calculator_routes {
-        path /calculator /calculator/* /assets/* *.js *.css *.svg
+        path /calculator /calculator/* /assets/* *.js *.css *.svg *.ico *.png *.jpg *.jpeg *.gif *.woff *.woff2 *.ttf
     }
     handle @calculator_routes {
+        # Disable caching for dynamic calculator content
         header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
         header Pragma "no-cache"
         header Expires "0"
         reverse_proxy frontend:80
     }
 
-    # Login and OAuth routes are handled by the auth server
+    # ────── AUTHENTICATION INFRASTRUCTURE ROUTES ──────
+    # These routes handle the authentication machinery itself
+    # They must remain unprotected so users can actually log in
     @auth_routes {
         path /login /login/* /oauth2/* /logout
     }
     handle @auth_routes {
-        reverse_proxy auth:8083
+        # Forward authentication requests to the auth service
+        reverse_proxy auth:8083 {
+            # Preserve the original host header for OAuth redirects
+            header_up Host {http.request.host}
+        }
     }
 
-    # Unprotected API calculator route for backend
+    # ────── PUBLIC API ENDPOINTS ──────
+    # Calculator API endpoint - publicly accessible for demo purposes
     handle /api/calculator {
+        # Enable CORS for the public calculator API
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type"
         reverse_proxy backend:8080
     }
 
-    # Protected routes
+    # ────── PROTECTED ROUTES (Authentication Required) ──────
+    # Everything else requires authentication using our sophisticated matcher
+    # This uses a "negative matcher" - protected routes are defined as
+    # "everything that isn't explicitly public"
     @protected {
-        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg /api/calculator
+        not path /login /login/* /oauth2/* /logout /calculator /calculator/* /assets/* *.js *.css *.svg *.ico *.png *.jpg *.jpeg *.gif *.woff *.woff2 *.ttf /api/calculator
     }
     handle @protected {
+        # ────── AUTHENTICATION GATEKEEPER ──────
+        # Before forwarding any protected request, first validate authentication
+        # This is the heart of your security system
         forward_auth auth:8083 {
+            # The auth service validation endpoint
             uri /validate
-            copy_headers X-User-Id
+            # Copy user identification headers back to the main request
+            copy_headers X-User-Id X-User-Email
+            # Preserve important headers for the validation request
+            header_up Host {http.request.host}
+            header_up X-Forwarded-Method {http.request.method}
+            header_up X-Forwarded-Uri {http.request.uri}
         }
 
-        # API routes
+        # ────── PROTECTED API ROUTES ──────
+        # These are your main application APIs - portfolio, transactions, etc.
         @api {
             path /api/*
         }
         handle @api {
-            reverse_proxy backend:8080
+            reverse_proxy backend:8080 {
+                # Pass through any user identification headers from auth
+                header_up X-User-Id {http.request.header.X-User-Id}
+                header_up X-User-Email {http.request.header.X-User-Email}
+            }
         }
 
-        # All other routes go to the frontend
-        reverse_proxy frontend:80
+        # ────── PROTECTED FRONTEND ROUTES ──────
+        # All other requests go to your main application frontend
+        # This includes routes like /, /instruments, /transactions, etc.
+        handle {
+            reverse_proxy frontend:80 {
+                # Add cache headers for the main application
+                header_up Cache-Control "no-cache, no-store, must-revalidate"
+            }
+        }
     }
 }
