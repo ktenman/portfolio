@@ -82,13 +82,10 @@ torrents.fov.ee {
     }
 }
 
-# Transmission web interface subdomain
 transmission.fov.ee {
     encode gzip
 
-    # Reverse proxy to Transmission using IPv4 explicitly
-    reverse_proxy 127.0.0.1:9091 {
-        # Important headers for Transmission
+    reverse_proxy host.docker.internal:9091 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote_host}
         header_up X-Forwarded-For {remote_host}
