@@ -104,7 +104,7 @@ services:
       - caddy_config:/config
       - /srv/torrents:/srv/torrents:ro
     extra_hosts:
-      - "host.docker.internal:host-gateway"  # This line is crucial!
+      - "host.docker.internal:host-gateway"
     depends_on:
       - frontend
     restart: always
