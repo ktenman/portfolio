@@ -103,7 +103,7 @@ transmission.fov.ee {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         -Server
     }
-}}
+}
 
 # Main domain and www redirect
 www.fov.ee {
