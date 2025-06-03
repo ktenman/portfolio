@@ -112,9 +112,20 @@ torrents.fov.ee {
         respond "OK" 200
     }
 
+    # ────── LOGIN INFRASTRUCTURE ROUTES ──────
+    # Handle login redirects by sending users to the main domain
+    # This prevents redirect loops when users aren't authenticated
+    @login_routes {
+        path /login /login/* /oauth2/*
+    }
+    handle @login_routes {
+        # Redirect to main domain for authentication, then return to torrents
+        redir https://fov.ee{uri}?return_to=https://torrents.fov.ee/
+    }
+
     # All other routes require authentication using the same forward_auth pattern as main domain
     handle {
-        # ────── AUTHENTICATION GATEKEEPER (same as main domain) ──────
+        # ────── AUTHENTICATION GATEKEEPER (modified for cross-domain flow) ──────
         # Use the exact same authentication validation as your protected routes
         forward_auth auth:8083 {
             # Same validation endpoint as main domain
@@ -125,6 +136,8 @@ torrents.fov.ee {
             header_up Host {http.request.host}
             header_up X-Forwarded-Method {http.request.method}
             header_up X-Forwarded-Uri {http.request.uri}
+            # Add header to help auth service know where to redirect on failure
+            header_up X-Original-URL https://torrents.fov.ee{http.request.uri}
         }
 
         # ────── FILE SERVER (after successful authentication) ──────
