@@ -47,23 +47,29 @@ calculator.fov.ee {
     }
 }
 
-# Torrents subdomain - public access
+# Torrents subdomain - authenticated access
 torrents.fov.ee {
     encode gzip
 
-    # Add health check endpoint
+    # Health check endpoint remains public (no auth required)
     handle_path /healthz {
         respond "OK" 200
     }
 
-    # Serve files from /srv/torrents with directory browsing
-    root * /srv/torrents
-    file_server browse {
-        # Hide dotfiles for security
-        hide .*
+    # All other routes require authentication
+    handle {
+        basicauth {
+            estimol $2a$14$2k8vYEUEw8Fp/FaL1tEZSuAaCmCsrzFuciIDozOSYL53BjjbYzg/K
+        }
+
+        # Serve files from /srv/torrents with directory browsing
+        root * /srv/torrents
+        file_server browse {
+            # Hide dotfiles for security
+            hide .*
+        }
     }
 
-    # Optional: Rate limiting for public access
     @downloads {
         path *.torrent *.zip *.tar.gz *.iso
     }
