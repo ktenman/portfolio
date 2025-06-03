@@ -82,6 +82,38 @@ torrents.fov.ee {
     }
 }
 
+# Transmission web interface subdomain
+transmission.fov.ee {
+    encode gzip
+
+    # Reverse proxy to Transmission
+    reverse_proxy localhost:9091 {
+        # Transmission requires these headers for proper operation
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Port {server_port}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Handle Transmission's RPC endpoint
+    handle_path /transmission/rpc {
+        reverse_proxy localhost:9091
+    }
+
+    # Security headers
+    header {
+        # Prevent clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Enable XSS protection
+        X-XSS-Protection "1; mode=block"
+        # Only allow HTTPS connections
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+}
+
 # Main domain and www redirect
 www.fov.ee {
     redir https://fov.ee{uri}
