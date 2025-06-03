@@ -58,25 +58,27 @@ torrents.fov.ee {
 
     # All other routes require authentication
     handle {
+        # Basic authentication - make sure this is before any other directives in this block
         basicauth {
-            estimol $2a$14$2k8vYEUEw8Fp/FaL1tEZSuAaCmCsrzFuciIDozOSYL53BjjbYzg/K
+            estimol $2a$14$kOKsIHEC46WYCmjm.bujgeCWZRRxwmYUITSATqk7XKw9T6tKb1Dx6
         }
 
-        # Serve files from /srv/torrents with directory browsing
+        # After authentication, serve the files
         root * /srv/torrents
+
+        # Apply security headers to downloads
+        @downloads {
+            path *.torrent *.zip *.tar.gz *.iso
+        }
+        header @downloads {
+            X-Content-Type-Options "nosniff"
+            X-Frame-Options "DENY"
+        }
+
+        # Enable file browsing
         file_server browse {
-            # Hide dotfiles for security
             hide .*
         }
-    }
-
-    @downloads {
-        path *.torrent *.zip *.tar.gz *.iso
-    }
-    handle @downloads {
-        # Add rate limiting headers if needed
-        header X-Content-Type-Options "nosniff"
-        header X-Frame-Options "DENY"
     }
 }
 
