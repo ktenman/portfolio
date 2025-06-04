@@ -103,6 +103,8 @@ services:
       - caddy_data:/data
       - caddy_config:/config
       - /srv/torrents:/srv/torrents:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - frontend
     restart: always
