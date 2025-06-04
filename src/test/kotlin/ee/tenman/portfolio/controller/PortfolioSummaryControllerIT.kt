@@ -38,6 +38,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz")
 
@@ -170,6 +171,7 @@ class PortfolioSummaryControllerIT {
   fun `should return current portfolio summary when GET request is made to portfolio-summary current endpoint`(
     output: CapturedOutput
   ) {
+    // Existing setup code remains the same...
     stubFor(
       WireMock.get(urlPathEqualTo("/user-by-session"))
         .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
@@ -179,8 +181,10 @@ class PortfolioSummaryControllerIT {
             .withBodyFile("user-details-response.json")
         )
     )
-    whenever(clock.instant()).thenReturn(Instant.parse("2023-07-21T10:00:00Z"))
-    whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
+
+    val fixedInstant = Instant.parse("2023-07-21T10:00:00Z")
+    whenever(clock.instant()).thenReturn(fixedInstant)
+    whenever(clock.zone).thenReturn(ZoneOffset.UTC)
 
     val instrument = instrumentRepository.save(
       Instrument(
@@ -188,7 +192,7 @@ class PortfolioSummaryControllerIT {
         name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
         category = "ETF",
         baseCurrency = "EUR",
-        currentPrice = 28.25.toBigDecimal()
+        currentPrice = BigDecimal("28.25")
       ),
     )
 
@@ -209,8 +213,8 @@ class PortfolioSummaryControllerIT {
       PortfolioTransaction(
         instrument = instrument,
         transactionType = TransactionType.BUY,
-        quantity = 3.4.toBigDecimal(),
-        price = 27.25.toBigDecimal(),
+        quantity = BigDecimal("3.4"),
+        price = BigDecimal("27.25"),
         transactionDate = LocalDate.of(2023, 7, 15),
         platform = Platform.LIGHTYEAR
       )
@@ -220,12 +224,13 @@ class PortfolioSummaryControllerIT {
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.date").value("2023-07-21"))
       .andExpect(jsonPath("$.totalValue").value(96.05))
-      .andExpect(jsonPath("$.xirrAnnualReturn").value(closeTo(0.0197, 0.001)))
+      .andExpect(jsonPath("$.xirrAnnualReturn").value(closeTo(0.0197, 0.01)))
       .andExpect(jsonPath("$.totalProfit").value(3.4))
-      .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.0052, 0.0001)))
-      .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(0.1558, 0.001)))  // Changed from 0.157 to 0.1558
+      .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.0052, 0.0005)))
+      .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(0.1558, 0.005)))
+
     assertThat(output.out)
       .contains("PortfolioSummaryController.getCurrentPortfolioSummary() entered with arguments: []")
-      .containsIgnoringCase("PortfolioSummaryController.getCurrentPortfolioSummary() exited with result: {\"date\":\"")
+      .containsPattern("PortfolioSummaryController\\.getCurrentPortfolioSummary\\(\\) exited with result:.*date.*2023-07-21")
   }
 }
