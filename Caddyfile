@@ -47,8 +47,7 @@ calculator.fov.ee {
     }
 }
 
-# Torrents subdomain - authenticated access
-torrents.fov.ee {
+f.fov.ee {
     encode gzip
 
     # Health check endpoint remains public (no auth required)
@@ -82,7 +81,7 @@ torrents.fov.ee {
     }
 }
 
-transmission.fov.ee {
+t.fov.ee {
     encode gzip
 
     # Use the actual Docker bridge IP
