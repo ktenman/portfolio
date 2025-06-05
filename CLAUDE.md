@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a **Portfolio Management System** - a full-stack application for tracking investment portfolios with automated price updates and performance calculations.
 
 **Tech Stack:**
+
 - Backend: Kotlin 2.1.21, Spring Boot 3.4.6, Java 21
 - Frontend: Vue.js 3.5.16, TypeScript, Vite 6.3.5, Bootstrap 5.3.5
 - Database: PostgreSQL 17 with Flyway migrations
@@ -16,6 +17,7 @@ This is a **Portfolio Management System** - a full-stack application for trackin
 ## Essential Commands
 
 ### Backend Development
+
 ```bash
 # Build and test
 ./gradlew clean build        # Clean and build the project
@@ -30,6 +32,7 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 ```
 
 ### Frontend Development
+
 ```bash
 # Setup and run
 npm install                 # Install dependencies
@@ -44,6 +47,7 @@ npm run lint-format        # Lint and format together
 ```
 
 ### Docker Development
+
 ```bash
 # Local development stack
 docker-compose -f compose.yaml up -d                    # Start PostgreSQL & Redis only
@@ -82,6 +86,7 @@ The system follows a microservices architecture with these key components:
 ### Database Schema
 
 Key entities:
+
 - `Instrument` - Financial instruments (stocks, ETFs, crypto)
 - `PortfolioTransaction` - Buy/sell transactions
 - `DailyPrice` - Historical price data
