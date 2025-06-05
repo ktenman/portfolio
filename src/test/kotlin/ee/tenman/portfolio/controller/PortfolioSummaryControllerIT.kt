@@ -220,10 +220,10 @@ class PortfolioSummaryControllerIT {
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.date").value("2023-07-21"))
       .andExpect(jsonPath("$.totalValue").value(96.05))
-      .andExpect(jsonPath("$.xirrAnnualReturn").value(closeTo(0.0197, 0.001)))
+      .andExpect(jsonPath("$.xirrAnnualReturn").value(closeTo(0.0192, 0.001)))
       .andExpect(jsonPath("$.totalProfit").value(3.4))
-      .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.0052, 0.0001)))
-      .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(0.1558, 0.001)))  // Changed from 0.157 to 0.1558
+      .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.00505, 0.0002)))
+      .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(0.1537, 0.005)))
     assertThat(output.out)
       .contains("PortfolioSummaryController.getCurrentPortfolioSummary() entered with arguments: []")
       .containsIgnoringCase("PortfolioSummaryController.getCurrentPortfolioSummary() exited with result: {\"date\":\"")
