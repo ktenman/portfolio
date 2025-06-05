@@ -8,7 +8,10 @@ import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.TestExecutionListeners
 import org.springframework.test.context.jdbc.Sql
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener
+import org.springframework.test.context.support.DirtiesContextTestExecutionListener
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
@@ -21,6 +24,14 @@ import org.testcontainers.utility.DockerImageName
 @ActiveProfiles("test")
 @ContextConfiguration(initializers = [IntegrationTest.Initializer::class])
 @Sql(scripts = ["/clear_database.sql"], executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+@TestExecutionListeners(
+    listeners = [
+        DependencyInjectionTestExecutionListener::class,
+        DirtiesContextTestExecutionListener::class,
+        RedisCacheCleanupListener::class
+    ],
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
+)
 annotation class IntegrationTest {
   companion object {
     private val POSTGRES_DB_CONTAINER: PostgreSQLContainer<*> =
