@@ -189,64 +189,79 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 
 ## Database Design
 
-Here's a simplified representation of the primary database tables:
+Here's the complete representation of the database schema:
 
 ```
-+------------------+      +------------------------+      +-------------------+
-|    Instrument    |      |  PortfolioTransaction  |      |    DailyPrice     |
-+------------------+      +------------------------+      +-------------------+
-| id               |      | id                     |      | id                |
-| symbol           |      | instrument_id          |      | instrument_id     |
-| name             |      | transaction_type       |      | entry_date        |
-| category         |      | quantity               |      | provider_name     |
-| base_currency    |      | price                  |      | open_price        |
-| current_price    |      | transaction_date       |      | high_price        |
-| created_at       |      | created_at             |      | low_price         |
-| updated_at       |      | updated_at             |      | close_price       |
-+------------------+      +------------------------+      | volume            |
-                                                          | created_at        |
-                                                          | updated_at        |
-                                                          +-------------------+
-
-+------------------------+      +------------------------+
-| PortfolioDailySummary  |      |    JobExecution        |
-+------------------------+      +------------------------+
-| id                     |      | id                     |
-| entry_date             |      | job_name               |
-| total_value            |      | start_time             |
-| xirr_annual_return     |      | end_time               |
-| total_profit           |      | duration_in_millis     |
-| earnings_per_day       |      | status                 |
-| created_at             |      | message                |
-| updated_at             |      | created_at             |
-+------------------------+      | updated_at             |
-                                +------------------------+
-
-+------------------+
-|   UserAccount    |
-+------------------+
-| id               |
-| email            |
-| session_id       |
-| created_at       |
-| updated_at       |
-+------------------+
++------------------------+      +------------------------+      +------------------------+
+|      INSTRUMENT        |      | PORTFOLIO_TRANSACTION  |      |     DAILY_PRICE        |
++------------------------+      +------------------------+      +------------------------+
+| id (PK)                |<-----| id (PK)                |      | id (PK)                |
+| symbol                 |      | instrument_id (FK)     |      | instrument_id (FK)     |---+
+| name                   |      | transaction_type       |      | entry_date             |   |
+| instrument_category    |      | quantity               |      | provider_name          |   |
+| base_currency          |      | price                  |      | open_price             |   |
+| current_price          |      | transaction_date       |      | high_price             |   |
+| provider_name          |      | platform               |      | low_price              |   |
+| version                |      | realized_profit        |      | close_price            |   |
+| created_at             |      | unrealized_profit      |      | volume                 |   |
+| updated_at             |      | average_cost           |      | version                |   |
++------------------------+      | version                |      | created_at             |   |
+                                | created_at             |      | updated_at             |   |
+                                | updated_at             |      +------------------------+   |
+                                +------------------------+                                   |
+                                                                                            |
++------------------------+      +------------------------+      +------------------------+  |
+| PORTFOLIO_DAILY_SUMMARY|      |    JOB_EXECUTION       |      |    USER_ACCOUNT        |  |
++------------------------+      +------------------------+      +------------------------+  |
+| id (PK)                |      | id (PK)                |      | id (PK)                |  |
+| entry_date (UNIQUE)    |      | job_name               |      | email (UNIQUE)         |  |
+| total_value            |      | start_time             |      | session_id (UNIQUE)    |  |
+| xirr_annual_return     |      | end_time               |      | version                |  |
+| total_profit           |      | duration_in_millis     |      | created_at             |  |
+| earnings_per_day       |      | status                 |      | updated_at             |  |
+| version                |      | message                |      +------------------------+  |
+| created_at             |      | version                |                                   |
+| updated_at             |      | created_at             |                                   |
++------------------------+      | updated_at             |                                   |
+                                +------------------------+                                   |
+                                                                                            |
+                                         One-to-Many Relationships -------------------------+
 ```
 
-Key points:
+### Key Database Features:
 
-- All tables include `id,` `created_at,` and `updated_at` fields for tracking creation and modifications.
-- The `Instrument` table stores information about financial instruments.
-- `PortfolioTransaction` table records buy and sell transactions linked to instruments.
-- The `DailyPrice` table stores daily price data for instruments, including the data provider.
-- The `PortfolioDailySummary` table keeps track of daily portfolio performance metrics.
-- The `JobExecution` table logs the execution of scheduled jobs, including their status and duration.
+**Data Types & Constraints:**
 
-Relationships:
+- Primary keys: All tables use `BIGSERIAL` for auto-incrementing IDs
+- Numeric precision: Financial values use `NUMERIC(20,10)` for accuracy
+- Timestamps: All tables include `TIMESTAMP WITH TIME ZONE` for `created_at` and `updated_at`
+- Optimistic locking: All tables have a `version` column (BIGINT DEFAULT 0)
 
-- `PortfolioTransaction` and `DailyPrice` have a many-to-one relationship with `Instrument.`
-- `PortfolioDailySummary` is independent but calculated based on transactions and prices.
-- `JobExecution` is independent and used to monitor and audit system jobs.
+**Indexes for Performance:**
+
+- Text search: GIN indexes on `instrument.symbol` and `instrument.name` using pg_trgm
+- Foreign keys: B-tree indexes on all foreign key columns
+- Date-based queries: Indexes on `transaction_date`, `entry_date`, and `start_time`
+- Composite index: `(instrument_id, entry_date, provider_name)` on `daily_price`
+
+**Supported Values:**
+
+- **Providers**: ALPHA_VANTAGE (stocks/ETFs), BINANCE (crypto), FT (Financial Times)
+- **Platforms**: SWEDBANK, BINANCE, TRADING212, LIGHTYEAR
+- **Transaction Types**: BUY, SELL
+- **Job Status**: SUCCESS, FAILURE, IN_PROGRESS
+
+**Relationships:**
+
+- `instrument` → `portfolio_transaction`: One-to-Many (via instrument_id)
+- `instrument` → `daily_price`: One-to-Many (via instrument_id)
+- Other tables are independent but interact through business logic
+
+**Data Integrity:**
+
+- UNIQUE constraints on `instrument.symbol`, `daily_price.(instrument_id, entry_date, provider_name)`
+- CHECK constraints on `provider_name` and `transaction_type`
+- NOT NULL constraints on critical fields like prices, dates, and identifiers
 
 ## Deployment
 
