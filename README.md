@@ -146,10 +146,13 @@ details and portfolio summaries.
 ### Local Development Setup
 
 1. **Environment Variables**: Copy `.env.example` to `.env` and configure:
+
    ```bash
    cp .env.example .env
    ```
+
    Required variables:
+
    - `POSTGRES_USER` and `POSTGRES_PASSWORD`
    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (for OAuth)
    - `VISION_BASE64_ENCODED_KEY` (for Google Cloud Vision)
@@ -198,6 +201,7 @@ docker-compose -f docker-compose.local.yml up -d
 ```
 
 Once all services are running, access the application at:
+
 - Main application: http://localhost
 - Backend API: http://localhost:8081/api
 - Frontend dev server: http://localhost:61234
@@ -230,16 +234,19 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 ### Testing
 
 **Unit and Integration Tests:**
+
 ```bash
 ./gradlew test
 ```
 
 **Run Specific Test:**
+
 ```bash
 ./gradlew test --tests "PortfolioSummaryServiceTest"
 ```
 
 **Test Coverage Report:**
+
 ```bash
 ./gradlew jacocoTestReport
 # Report available at: build/reports/jacoco/test/html/index.html
@@ -251,7 +258,6 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 - Automated testing includes unit, integration, and E2E tests
 - Dependabot manages dependency updates
 - Docker images are built and pushed to Docker Hub on successful builds
-
 
 ## Database Design
 
