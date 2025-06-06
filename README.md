@@ -12,67 +12,89 @@ user-friendly interface for viewing and managing portfolio transactions, instrum
 
 ## Key Features
 
-- **Instrument Management**: Add, update, and delete financial instruments in your portfolio.
-- **Transaction Tracking**: Record buy and sell transactions for your portfolio.
-- **Performance Metrics**: Calculate and display portfolio performance metrics, including XIRR (Extended Internal Rate
-  of Return).
-- **Data Synchronization**: Automatically fetch and update financial data from Alpha Vantage API.
-- **Caching**: Utilize Redis caching for improved performance and reduced API calls.
-- **User Interface**: Provide a user-friendly interface for managing and viewing portfolio data.
-- **Authentication**: Secure user authentication using OAuth 2.0 with Google and GitHub.
-- **Stock Market Tracker**: Real-time price updates for portfolio instruments.
+- **Instrument Management**: Add, update, and delete financial instruments (stocks, ETFs, cryptocurrencies)
+- **Transaction Tracking**: Record buy and sell transactions across multiple trading platforms
+- **Performance Metrics**: Calculate portfolio performance with XIRR, daily earnings, and profit tracking
+- **Multi-Provider Data Sync**: Fetch data from Alpha Vantage (stocks/ETFs), Binance (crypto), and Financial Times
+- **Advanced Caching**: Redis-based caching with Spring Cache annotations for optimal performance
+- **Real-time Market Tracker**: Selenium-based price scraping with automatic captcha solving
+- **OAuth 2.0 Authentication**: Secure login via Google and GitHub with session management
+- **Responsive UI**: Vue.js 3 SPA with Bootstrap 5 for desktop and mobile
+- **Automated Jobs**: Scheduled tasks for price updates and portfolio calculations
+- **Telegram Bot Integration**: Notifications and alerts via Telegram
+- **Public Calculator**: Standalone XIRR calculator available at calculator.fov.ee
 
 ## Technical Stack
 
 ### Backend
 
-- Spring Boot v3.3
-- Kotlin v2
+- Spring Boot v3.5.0
+- Kotlin v2.1.21
 - Java v21
 
 ### Frontend
 
-- Vue.js v3.4
-- Bootstrap v5.3
-- Vite (Build Tool)
+- Vue.js v3.5.16
+- TypeScript v5.8.3
+- Bootstrap v5.3.5
+- Vite v6.3.5
+- Vue Router v4.5.1
+- Chart.js v4.4.9
 
 ### Database & Caching
 
-- PostgreSQL with Flyway for migrations
-- Redis for caching
+- PostgreSQL v17 with Flyway migrations
+- Redis v8 for caching
+- Spring Data JPA with Hibernate
 
 ### Testing
 
-- JUnit, Mockito, AssertJ, Selenide, and Testcontainers
+- JUnit 5 with Spring Boot Test
+- Mockito Kotlin v5.4.0
+- AssertJ for fluent assertions
+- Selenide v7.9.3 for E2E tests
+- Testcontainers for integration tests
+- WireMock for API mocking
 
 ### CI/CD & Containerization
 
-- GitHub Actions
-- Docker and Docker Compose
+- GitHub Actions for CI/CD pipeline
+- Docker with multi-stage builds
+- Docker Compose for orchestration
+- Caddy v2.10 as reverse proxy
+- Nginx for frontend serving
 
 ### API Integration
 
-- Alpha Vantage for financial data
+- Alpha Vantage API for stock/ETF data
+- Binance API for cryptocurrency prices
+- Financial Times API for market data
+- Google Cloud Vision API for OCR/captcha solving
+- Telegram Bot API for notifications
 
-### Stock Market Tracker
+### Market Price Tracker
 
-- Python
-- Selenium
-- Flask
+- Python with Flask
+- Selenium WebDriver for web scraping
+- Automated captcha solving integration
+- Scheduled price fetching every 3 minutes
+- Health monitoring and auto-restart
 
 ## Architecture 🏗️
 
 <img src="./screenshots/architecture.svg" width="600" alt="System Architecture">
 
-The system consists of:
+The system follows a microservices architecture with these components:
 
-- Vue.js frontend
-- Spring Boot backend
-- PostgreSQL database
-- Redis cache
-- Authentication service
-- Scheduled jobs for data retrieval and XIRR calculation
-- Stock market tracker for real-time price updates
+- **Frontend**: Vue.js 3 SPA served by Nginx
+- **Backend API**: Spring Boot REST API with comprehensive business logic
+- **Authentication Service**: OAuth 2.0 proxy handling Google/GitHub login
+- **Database**: PostgreSQL 17 with optimized indexes and constraints
+- **Cache**: Redis 8 for session storage and data caching
+- **Market Price Tracker**: Python service for real-time price updates
+- **Captcha Solver**: ML-based service for automated captcha resolution
+- **Reverse Proxy**: Caddy handling SSL, routing, and authentication
+- **Scheduled Jobs**: Background tasks for price updates and XIRR calculations
 
 ### Database 🗄️
 
@@ -84,14 +106,23 @@ CRUD operations using Spring Data JPA.
 Redis serves as a caching layer to improve data retrieval performance, storing frequently accessed data like instrument
 details and portfolio summaries.
 
-### Data Retrieval Jobs ⚙️
+### Scheduled Jobs ⚙️
 
-1. **Instrument Data Retrieval Job**: Fetches the latest price data for all instruments from the Alpha Vantage API.
-2. **Daily Portfolio XIRR Job**: Calculates the Extended Internal Rate of Return (XIRR) for the portfolio daily.
+1. **Alpha Vantage Data Retrieval**: Fetches stock/ETF prices with rate limiting
+2. **Binance Data Retrieval**: Updates cryptocurrency prices in real-time
+3. **FT Data Retrieval**: Syncs Financial Times market data
+4. **Daily Portfolio XIRR Job**: Calculates portfolio performance metrics
+5. **Market Price Tracker**: Continuous web scraping with 3-minute intervals
+6. **Cache Eviction**: Automatic cache cleanup for data consistency
 
-### Authentication 🔐
+### Authentication & Security 🔐
 
-The system uses OAuth 2.0 for authentication, integrating with Google's OAuth service.
+- OAuth 2.0 with Google and GitHub providers
+- Session-based authentication with Redis storage
+- Role-based access control with allowed email/login lists
+- Caddy-based forward authentication
+- HTTPS enforcement with automatic SSL certificates
+- Security headers (HSTS, X-Frame-Options, CSP)
 
 ### Interaction Flow 📊
 
@@ -107,22 +138,28 @@ The system uses OAuth 2.0 for authentication, integrating with Google's OAuth se
 
 ### Prerequisites
 
-- Kotlin v2
-- Java v21
-- Gradle v8.8
-- Node.js v20.11.1
-- npm v10.2.4
-- Docker v25.0.2
-- Docker Compose v2.24.3
+- Java v21 (required for backend)
+- Node.js v22+ and npm v10+ (required for frontend)
+- Docker and Docker Compose (for containerized services)
+- Gradle (included via wrapper)
 
 ### Local Development Setup
 
-Initialize necessary Docker containers with Docker Compose to ensure the database and Redis services are up before
-proceeding:
+1. **Environment Variables**: Copy `.env.example` to `.env` and configure:
+   ```bash
+   cp .env.example .env
+   ```
+   Required variables:
+   - `POSTGRES_USER` and `POSTGRES_PASSWORD`
+   - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (for OAuth)
+   - `VISION_BASE64_ENCODED_KEY` (for Google Cloud Vision)
+   - `TELEGRAM_BOT_TOKEN` (optional, for Telegram integration)
 
-```bash
-docker-compose -f compose.yaml up -d
-```
+2. **Start Infrastructure Services**:
+   ```bash
+   docker-compose -f compose.yaml up -d
+   ```
+   This starts PostgreSQL and Redis containers.
 
 ### Backend Setup
 
@@ -160,7 +197,24 @@ docker-compose -f docker-compose.local.yml build
 docker-compose -f docker-compose.local.yml up -d
 ```
 
-Once the application is up and running, you can access it in your web browser at http://localhost
+Once all services are running, access the application at:
+- Main application: http://localhost
+- Backend API: http://localhost:8081/api
+- Frontend dev server: http://localhost:61234
+
+### Production Deployment with Docker
+
+For a full production-like setup locally:
+
+```bash
+# Build all services
+docker-compose -f docker-compose.local.yml build
+
+# Start the complete stack
+docker-compose -f docker-compose.local.yml up -d
+```
+
+This includes all services: backend, frontend, auth, market tracker, and captcha solver.
 
 ### End-to-End Tests
 
@@ -173,19 +227,31 @@ docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d && sleep 30
 export E2E=true && ./gradlew test --info -Pheadless=true
 ```
 
-### Continuous Integration and Deployment
+### Testing
 
-- A CI pipeline via GitHub Actions in the `.github` folder automates unit and integration tests.
-- The Dependabot updates Gradle and GitHub Actions versions, automating dependency management.
+**Unit and Integration Tests:**
+```bash
+./gradlew test
+```
 
-## Key Features
+**Run Specific Test:**
+```bash
+./gradlew test --tests "PortfolioSummaryServiceTest"
+```
 
-- **Instrument Management**: Add, update, and delete financial instruments in your portfolio.
-- **Transaction Tracking**: Record buy and sell transactions for your portfolio.
-- **Performance Metrics**: Calculate and display portfolio performance metrics, including XIRR.
-- **Data Synchronization**: Automatically fetch and update financial data from Alpha Vantage API.
-- **Caching**: Utilize Redis caching for improved performance and reduced API calls.
-- **User Interface**: Provide a user-friendly interface for managing and viewing portfolio data.
+**Test Coverage Report:**
+```bash
+./gradlew jacocoTestReport
+# Report available at: build/reports/jacoco/test/html/index.html
+```
+
+### Continuous Integration
+
+- GitHub Actions workflow runs on every push and PR
+- Automated testing includes unit, integration, and E2E tests
+- Dependabot manages dependency updates
+- Docker images are built and pushed to Docker Hub on successful builds
+
 
 ## Database Design
 
@@ -291,18 +357,68 @@ Here's the complete representation of the database schema:
    ./deploy.sh
    ```
 
-### Example .env file needed for deployment
+### Environment Variables
+
+Create `.env` file with these required variables:
 
 ```bash
+# Database
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-GOOGLE_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXX.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=XXXXXXXXXXXXXXXXXXXXXXXX
-GITHUB_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXX
-GITHUB_CLIENT_SECRET=XXXXXXXX
+POSTGRES_PASSWORD=your_secure_password
+
+# OAuth Providers
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+
+# Google Cloud Vision (Base64 encoded service account key)
+VISION_BASE64_ENCODED_KEY=your_base64_encoded_key
+
+# Telegram Bot (optional)
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+
+# Allowed Users
+ALLOWED_EMAILS=user1@example.com,user2@example.com
+
+# Health Check URL (optional)
+HEALTHCHECK_URL=https://hc-ping.com/your-check-uuid
 ```
+
+### API Keys Setup
+
+1. **Alpha Vantage API**: Get free API key at https://www.alphavantage.co/support/#api-key
+2. **Google Cloud Vision**: Create service account at https://console.cloud.google.com/apis/credentials
+3. **OAuth Setup**: Configure OAuth apps in Google Cloud Console and GitHub settings
+
+## Monitoring & Observability
+
+- **Health Checks**: All services expose `/actuator/health` endpoints
+- **Metrics**: Prometheus metrics available at `/actuator/prometheus`
+- **Logging**: Centralized logging with correlation IDs
+- **Performance**: Redis caching with configurable TTL
+
+## Security Features
+
+- OAuth 2.0 authentication with session management
+- HTTPS enforcement in production
+- Security headers via Caddy
+- Input validation and sanitization
+- Rate limiting on API endpoints
+- Secure credential storage
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-This README provides a comprehensive guide for developers to set up, run, and understand the core functionalities and
-technical aspects of the Portfolio Management System.
+For more information or support, please open an issue on GitHub.
