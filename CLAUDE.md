@@ -39,11 +39,11 @@ npm install                 # Install dependencies
 npm run dev                 # Start dev server (port 61234)
 npm run build              # Production build
 
-# Code quality
-npm run lint               # Run ESLint
-npm run format             # Format with Prettier
-npm run format:check       # Check formatting
-npm run lint-format        # Lint and format together
+# Code quality (ALWAYS run before testing)
+npm run lint-format        # Type check, lint and format together (RECOMMENDED)
+npm run lint               # Run ESLint only
+npm run format             # Format with Prettier only
+npm run format:check       # Check formatting only
 ```
 
 ### Docker Development
@@ -131,6 +131,7 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 The `e2e-test.sh` script provides a bulletproof, one-command solution for running E2E tests:
 
 **Features:**
+
 - Automatically kills existing processes on ports 8081 and 61234
 - Starts PostgreSQL and Redis containers
 - Launches Spring Boot backend and Vue.js frontend
@@ -139,10 +140,11 @@ The `e2e-test.sh` script provides a bulletproof, one-command solution for runnin
 - Provides colored output and helpful status messages
 
 **Usage:**
+
 ```bash
 ./e2e-test.sh                     # Setup + run E2E tests (verbose + cleanup) - DEFAULT
 ./e2e-test.sh --silent            # Setup + run E2E tests (silent + cleanup)
-./e2e-test.sh --keep              # Setup + run E2E tests (verbose, no cleanup)  
+./e2e-test.sh --keep              # Setup + run E2E tests (verbose, no cleanup)
 ./e2e-test.sh --setup             # Setup only (no E2E test execution)
 ```
 

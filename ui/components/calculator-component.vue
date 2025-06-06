@@ -35,13 +35,22 @@
         </form>
       </div>
       <div class="col-md-8">
-        <div v-if="isLoading" class="d-flex justify-content-center align-items-center">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-        </div>
-        <canvas ref="chart"></canvas>
-        <canvas ref="resultChart" class="mt-4"></canvas>
+        <LoadingSpinner v-if="isLoading" />
+        <LineChart
+          v-if="!isLoading && portfolioData.length > 0"
+          :data="portfolioData"
+          title="Portfolio Growth Over Time"
+          x-axis-label="Year"
+          y-axis-label="Worth (€)"
+        />
+        <BarChart
+          v-if="!isLoading && calculationResult"
+          :data="calculationResult.xirrs"
+          title="XIRR Rolling Result (ASAP)"
+          x-axis-label="Date"
+          y-axis-label="XIRR (%)"
+          class="mt-4"
+        />
       </div>
     </div>
 
@@ -79,10 +88,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive, nextTick, toRaw } from 'vue'
-import Chart from 'chart.js/auto'
+import { ref, onMounted, watch } from 'vue'
 import { CalculationService } from '../services/calculation-service.ts'
 import { CalculationResult } from '../models/calculation-result.ts'
+import { useFormatters } from '../composables/use-formatters'
+import { useLocalStorage } from '../composables/use-local-storage'
+import LineChart from './charts/line-chart.vue'
+import BarChart from './charts/bar-chart.vue'
+import LoadingSpinner from './common/loading-spinner.vue'
 
 const defaultForm = {
   initialWorth: 2000,
@@ -94,7 +107,16 @@ const defaultForm = {
 
 const STORAGE_KEY = 'investment-calculator-form'
 
-const form = reactive({ ...defaultForm })
+const { formatCurrency } = useFormatters()
+const {
+  form,
+  isUpdatingForm,
+  loadFromLocalStorage,
+  saveToLocalStorage,
+  handleInput,
+  resetForm,
+  updateFormField,
+} = useLocalStorage(STORAGE_KEY, defaultForm)
 
 const labels = {
   initialWorth: 'Initial Worth (€)',
@@ -117,48 +139,9 @@ const tableHeaders = ['Year', 'Total Worth', "Year's Growth", 'Earnings Per Mont
 
 const calculationService = new CalculationService()
 
-const chart = ref<HTMLCanvasElement | null>(null)
-const resultChart = ref<HTMLCanvasElement | null>(null)
 const yearSummary = ref<Array<Record<string, number>>>([])
-let chartInstance: Chart | null = null
-let resultChartInstance: Chart | null = null
-
-const isUpdatingForm = ref(false)
-const formChanges = ref<Record<string, boolean>>({})
-
-const loadFromLocalStorage = () => {
-  try {
-    const savedForm = localStorage.getItem(STORAGE_KEY)
-    if (savedForm) {
-      const parsedForm = JSON.parse(savedForm)
-
-      // Apply saved values to form
-      Object.assign(form, parsedForm)
-
-      // Mark all fields loaded from localStorage as manually changed
-      Object.keys(parsedForm).forEach(key => {
-        formChanges.value[key] = true
-      })
-    }
-  } catch (error) {
-    console.error('Error loading form data from localStorage:', error)
-  }
-}
-
-const saveToLocalStorage = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toRaw(form)))
-  } catch (error) {
-    console.error('Error saving form data to localStorage:', error)
-  }
-}
-
-const handleInput = (field: string) => {
-  // Mark field as manually changed
-  formChanges.value[field] = true
-  // Save the entire form to localStorage
-  saveToLocalStorage()
-}
+const portfolioData = ref<number[]>([])
+const calculationResult = ref<CalculationResult | null>(null)
 
 const resetCalculator = () => {
   if (
@@ -166,12 +149,7 @@ const resetCalculator = () => {
       'Are you sure you want to reset the calculator? This will clear all your current values.'
     )
   ) {
-    Object.keys(form).forEach(key => {
-      form[key as keyof typeof form] = defaultForm[key as keyof typeof defaultForm]
-    })
-    // Clear all change flags when resetting
-    formChanges.value = {}
-    localStorage.removeItem(STORAGE_KEY)
+    resetForm()
     calculate()
   }
 }
@@ -182,27 +160,11 @@ const calculate = async () => {
   if (isUpdatingForm.value) return
 
   try {
-    const calculationResult = await fetchCalculationResult()
+    const result = await fetchCalculationResult()
 
-    try {
-      isUpdatingForm.value = true
-
-      // Only update fields that haven't been manually changed
-      if (!formChanges.value.annualReturnRate) {
-        form.annualReturnRate = Number(calculationResult.average.toFixed(3))
-      }
-
-      if (!formChanges.value.initialWorth) {
-        form.initialWorth = Number(calculationResult.total.toFixed(2))
-      }
-
-      // Always save the current state to localStorage
-      saveToLocalStorage()
-    } finally {
-      await nextTick(() => {
-        isUpdatingForm.value = false
-      })
-    }
+    // Only update fields that haven't been manually changed
+    await updateFormField('annualReturnRate', Number(result.average.toFixed(3)))
+    await updateFormField('initialWorth', Number(result.total.toFixed(2)))
 
     const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
     const values = []
@@ -228,123 +190,10 @@ const calculate = async () => {
       })
     }
 
-    renderChart(values)
-    renderResultChart(calculationResult)
+    portfolioData.value = values
+    calculationResult.value = result
   } finally {
     isLoading.value = false
-  }
-}
-
-const renderChart = (data: number[]) => {
-  if (chartInstance) chartInstance.destroy()
-  const ctx = chart.value?.getContext('2d')
-  if (ctx) {
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: Array.from({ length: data.length }, (_, i) => i + 1),
-        datasets: [
-          {
-            label: 'Portfolio Worth',
-            data,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2,
-            fill: false,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: { title: { display: true, text: 'Year' }, grid: { display: false } },
-          y: {
-            title: { display: true, text: 'Worth (€)' },
-            ticks: { callback: value => '€' + (value as number).toLocaleString() },
-          },
-        },
-        plugins: {
-          title: { display: true, text: 'Portfolio Growth Over Time', font: { size: 16 } },
-          legend: { display: false },
-        },
-      },
-    })
-  }
-}
-
-const applyASAP = (data: { date: string; amount: number }[], maxPoints: number) => {
-  if (data.length <= maxPoints) return data
-
-  const step = Math.floor(data.length / maxPoints)
-  const result = []
-
-  for (let i = 0; i < data.length; i += step) {
-    const chunk = data.slice(i, Math.min(i + step, data.length))
-    const avgAmount = chunk.reduce((sum, item) => sum + item.amount, 0) / chunk.length
-    result.push({ date: chunk[0].date, amount: avgAmount })
-  }
-
-  if (result[result.length - 1].date !== data[data.length - 1].date) {
-    result.push(data[data.length - 1])
-  }
-
-  return result
-}
-
-const renderResultChart = (result: CalculationResult) => {
-  if (resultChartInstance) resultChartInstance.destroy()
-  const ctx = resultChart.value?.getContext('2d')
-  if (ctx) {
-    const maxPoints = Math.max(Math.floor(ctx.canvas.width / 15), 26)
-    const asapData = applyASAP(result.xirrs, maxPoints)
-
-    resultChartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: asapData.map(x => x.date),
-        datasets: [
-          {
-            label: 'XIRR',
-            data: asapData.map(x => x.amount),
-            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            title: { display: true, text: 'Date' },
-            grid: { display: false },
-            ticks: {
-              maxTicksLimit: 10,
-              callback: function (val, index) {
-                return index % Math.ceil(asapData.length / 10) === 0
-                  ? this.getLabelForValue(val as number)
-                  : ''
-              },
-            },
-          },
-          y: {
-            title: { display: true, text: 'XIRR (%)' },
-            ticks: {
-              callback: value => (value as number).toFixed(2) + '%',
-              maxTicksLimit: 8,
-            },
-          },
-        },
-        plugins: {
-          title: { display: true, text: 'XIRR Rolling Result (ASAP)', font: { size: 16 } },
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: context => `XIRR: ${context.parsed.y.toFixed(2)}%`,
-            },
-          },
-        },
-      },
-    })
   }
 }
 
@@ -355,13 +204,6 @@ const fetchCalculationResult = async (): Promise<CalculationResult> => {
     isLoading.value = false
   }
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-  }).format(value)
 
 onMounted(() => {
   loadFromLocalStorage()
