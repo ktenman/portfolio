@@ -54,11 +54,20 @@ docker-compose -f compose.yaml up -d                    # Start PostgreSQL & Red
 docker-compose -f docker-compose.local.yml build        # Build all services
 docker-compose -f docker-compose.local.yml up -d        # Run full stack
 
-# E2E test environment
+# E2E test environment (RECOMMENDED)
+./e2e-test.sh                                          # Setup + run E2E tests (verbose + cleanup) - DEFAULT
+./e2e-test.sh --silent                                 # Setup + run E2E tests (silent + cleanup)
+./e2e-test.sh --keep                                   # Setup + run E2E tests (verbose, no cleanup)
+./e2e-test.sh --setup                                  # Setup only (no E2E test execution)
+
+# Manual E2E test environment (if needed)
 docker-compose -f docker-compose.yml -f docker-compose.e2e.yml down
 docker volume rm portfolio_postgres_data_e2e
 docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d && sleep 30
 export E2E=true && ./gradlew test --info -Pheadless=true
+
+# Stop all services
+pkill -f 'bootRun|vite' && docker-compose -f compose.yaml down
 ```
 
 ## Architecture Overview
@@ -117,6 +126,28 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 - Docker services: Multiple compose files for different environments
 - CI/CD: GitHub Actions workflows in `.github/workflows/`
 
+### E2E Test Runner
+
+The `e2e-test.sh` script provides a bulletproof, one-command solution for running E2E tests:
+
+**Features:**
+- Automatically kills existing processes on ports 8081 and 61234
+- Starts PostgreSQL and Redis containers
+- Launches Spring Boot backend and Vue.js frontend
+- Waits for all services to be ready
+- Runs unit tests and E2E tests to verify setup
+- Provides colored output and helpful status messages
+
+**Usage:**
+```bash
+./e2e-test.sh                     # Setup + run E2E tests (verbose + cleanup) - DEFAULT
+./e2e-test.sh --silent            # Setup + run E2E tests (silent + cleanup)
+./e2e-test.sh --keep              # Setup + run E2E tests (verbose, no cleanup)  
+./e2e-test.sh --setup             # Setup only (no E2E test execution)
+```
+
+**Output:** The script provides real-time status updates and completes with service URLs and helpful commands for monitoring and cleanup.
+
 ### Development Tips
 
 - Use `@IntegrationTest` annotation for tests requiring database/Redis
@@ -124,3 +155,4 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 - Redis cache keys are defined in `ui/constants/cache-keys.ts`
 - Scheduled jobs can be disabled with `scheduling.enabled=false`
 - E2E tests generate screenshots on failure (check build artifacts)
+- Use `./e2e-test.sh` for reliable E2E testing
