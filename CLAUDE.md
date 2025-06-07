@@ -27,7 +27,9 @@ This is a **Portfolio Management System** - a full-stack application for trackin
 # Run a single test
 ./gradlew test --tests "ClassName.methodName"
 
-# E2E tests (requires docker-compose.e2e.yml running)
+# E2E tests (use test runner for complete setup)
+./test-runner.sh --e2e        # Recommended: Full E2E setup + tests
+# OR manual E2E (requires environment setup first):
 export E2E=true && ./gradlew test --info -Pheadless=true
 ```
 
@@ -55,15 +57,15 @@ docker-compose -f docker-compose.local.yml build        # Build all services
 docker-compose -f docker-compose.local.yml up -d        # Run full stack
 
 # E2E test environment (RECOMMENDED)
-./e2e-test.sh                                          # Setup + run E2E tests (verbose + cleanup) - DEFAULT
-./e2e-test.sh --silent                                 # Setup + run E2E tests (silent + cleanup)
-./e2e-test.sh --keep                                   # Setup + run E2E tests (verbose, no cleanup)
-./e2e-test.sh --setup                                  # Setup only (no E2E test execution)
+./test-runner.sh --e2e                                 # Setup + run E2E tests (default output + cleanup)
+./test-runner.sh --e2e --verbose                       # Setup + run E2E tests (detailed output + cleanup)
+./test-runner.sh --e2e --silent                        # Setup + run E2E tests (minimal output + cleanup)
+./test-runner.sh --e2e --keep                          # Setup + run E2E tests (keep services running)
+./test-runner.sh --setup                               # Setup environment only (no test execution)
 
 # Manual E2E test environment (if needed)
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml down
-docker volume rm portfolio_postgres_data_e2e
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d && sleep 30
+docker-compose -f compose.yaml down
+./test-runner.sh --setup
 export E2E=true && ./gradlew test --info -Pheadless=true
 
 # Stop all services
@@ -126,29 +128,44 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 - Docker services: Multiple compose files for different environments
 - CI/CD: GitHub Actions workflows in `.github/workflows/`
 
-### E2E Test Runner
+### Test Runner Script
 
-The `e2e-test.sh` script provides a bulletproof, one-command solution for running E2E tests:
+#### Unified Test Runner (`test-runner.sh`)
+
+A comprehensive test runner that combines unit tests, E2E tests, and environment setup. This script replaces the previous separate `e2e-test.sh` and provides all testing functionality in one place.
 
 **Features:**
 
-- Automatically kills existing processes on ports 8081 and 61234
-- Starts PostgreSQL and Redis containers
-- Launches Spring Boot backend and Vue.js frontend
-- Waits for all services to be ready
-- Runs unit tests and E2E tests to verify setup
-- Provides colored output and helpful status messages
+- Runs unit tests and E2E tests separately or together
+- Automatically sets up the E2E environment when needed
+- Parses HTML test reports for accurate results
+- Shows formatted summary with colors and test statistics
+- Offers to clean up services after tests
+- Multiple modes for different testing scenarios
+- Combines functionality from both test-runner.sh and e2e-test.sh
 
 **Usage:**
 
 ```bash
-./e2e-test.sh                     # Setup + run E2E tests (verbose + cleanup) - DEFAULT
-./e2e-test.sh --silent            # Setup + run E2E tests (silent + cleanup)
-./e2e-test.sh --keep              # Setup + run E2E tests (verbose, no cleanup)
-./e2e-test.sh --setup             # Setup only (no E2E test execution)
+./test-runner.sh              # Run all tests with verbose output (default)
+./test-runner.sh --unit       # Run only unit tests
+./test-runner.sh --e2e        # Run only E2E tests with environment setup
+./test-runner.sh --summary    # Show summary of existing test results
+./test-runner.sh --setup      # Setup E2E environment only (no tests)
+./test-runner.sh --keep       # Keep services running after tests
+./test-runner.sh --silent     # Minimal output mode
+./test-runner.sh --verbose    # Show detailed output (explicit verbose)
+./test-runner.sh --parallel   # Run tests with optimized parallel execution
+./test-runner.sh --help       # Show help message
 ```
 
-**Output:** The script provides real-time status updates and completes with service URLs and helpful commands for monitoring and cleanup.
+**Output:** The script displays a comprehensive test summary with:
+- Separate E2E and Unit test statistics
+- Total tests, passed, failed, and ignored counts
+- Test duration and success rates
+- Specific failed test names when applicable
+- Overall execution time
+- Detailed E2E test class results when running E2E tests
 
 ### Development Tips
 
@@ -157,4 +174,4 @@ The `e2e-test.sh` script provides a bulletproof, one-command solution for runnin
 - Redis cache keys are defined in `ui/constants/cache-keys.ts`
 - Scheduled jobs can be disabled with `scheduling.enabled=false`
 - E2E tests generate screenshots on failure (check build artifacts)
-- Use `./e2e-test.sh` for reliable E2E testing
+- Use `./test-runner.sh --e2e` for reliable E2E testing

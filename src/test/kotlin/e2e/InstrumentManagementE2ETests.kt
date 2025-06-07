@@ -2,6 +2,8 @@ package e2e
 
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.visible
+import com.codeborne.selenide.Condition.value
+import com.codeborne.selenide.Condition.enabled
 import com.codeborne.selenide.Selenide.clearBrowserLocalStorage
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.Selenide.elements
@@ -10,6 +12,8 @@ import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
 import e2e.retry.RetryExtension
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatNoException
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,38 +47,77 @@ class InstrumentManagementE2ETests {
 
   @Test
   fun `should display success message when saving instrument with valid data`() {
-
-    id("addNewInstrument").click()
-    id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).value = DEFAULT_SYMBOL
-    id("name").shouldNotHave(text(DEFAULT_NAME)).value = DEFAULT_NAME
+    val addButton = id("addNewInstrument")
+    assertThat(addButton.isDisplayed).isTrue()
+    addButton.shouldBe(enabled).click()
+    
+    val symbolField = id("symbol")
+    assertThat(symbolField.isDisplayed).isTrue()
+    symbolField.shouldNotHave(text(DEFAULT_SYMBOL)).value = DEFAULT_SYMBOL
+    assertThat(symbolField.value).isEqualTo(DEFAULT_SYMBOL)
+    
+    val nameField = id("name")
+    nameField.shouldNotHave(text(DEFAULT_NAME)).value = DEFAULT_NAME
+    assertThat(nameField.value).isEqualTo(DEFAULT_NAME)
+    
     id("category").selectOption(DEFAULT_CATEGORY)
     id("providerName").selectOption("Binance")
     id("currency").selectOption(DEFAULT_CURRENCY)
 
-    elements(tagName("button")).filter(text("Save")).first().click()
+    val saveButton = elements(tagName("button")).filter(text("Save")).first()
+    assertThat(saveButton.isEnabled).isTrue()
+    saveButton.click()
 
-    element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(4))
-      .shouldHave(text("Instrument saved successfully."))
+    val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
+    successAlert.shouldHave(text("Instrument saved successfully."))
+      
+    elements(tagName("td")).findBy(text(DEFAULT_SYMBOL)).shouldBe(visible)
   }
 
   @Test
   fun `should display success message when editing instrument with valid data`() {
-
-    elements(tagName("button")).filter(text("Edit")).first().click()
-    id("symbol").shouldNotHave(text(DEFAULT_SYMBOL)).value = "GOOGL"
-    id("name").shouldNotHave(text(DEFAULT_NAME)).value = "Alphabet Inc."
+    id("addNewInstrument").click()
+    id("symbol").shouldNotHave(text("TSLA")).value = "TSLA"
+    id("name").shouldNotHave(text("Tesla Inc.")).value = "Tesla Inc."
+    id("category").selectOption("Stock")
+    id("providerName").selectOption("Alpha Vantage")
+    id("currency").selectOption("USD")
+    elements(tagName("button")).filter(text("Save")).first().click()
+    
+    element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
+    Thread.sleep(1000)
+    
+    val editButtons = elements(tagName("button")).filter(text("Edit"))
+    assertThat(editButtons.size()).isGreaterThan(0)
+    editButtons.first().click()
+    
+    val updatedSymbol = "GOOGL"
+    val updatedName = "Alphabet Inc."
+    
+    val symbolField = id("symbol")
+    symbolField.shouldBe(visible, Duration.ofSeconds(5))
+    symbolField.clear()
+    symbolField.value = updatedSymbol
+    symbolField.shouldHave(value(updatedSymbol))
+    
+    val nameField = id("name")
+    nameField.clear()
+    nameField.value = updatedName
+    nameField.shouldHave(value(updatedName))
+    
     id("category").selectOption("Stock")
     id("providerName").selectOption("Alpha Vantage")
     id("currency").selectOption("USD")
 
-    elements(tagName("button")).filter(text("Update")).first().click()
+    val updateButton = elements(tagName("button")).filter(text("Update")).first()
+    assertThat(updateButton.isEnabled).isTrue()
+    updateButton.click()
 
-    element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(4))
-      .shouldHave(text("Instrument updated successfully."))
+    val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
+    successAlert.shouldHave(text("Instrument updated successfully."))
+      
+    elements(tagName("td")).findBy(text(updatedSymbol)).shouldBe(visible)
   }
 
   private fun id(id: String): SelenideElement = element(By.id(id))
-
 }
