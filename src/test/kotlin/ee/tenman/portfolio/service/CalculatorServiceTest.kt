@@ -208,9 +208,9 @@ class CalculatorServiceTest {
     return dates.mapIndexed { index, date ->
       val ratio = index / 4.0
       val price = if (ascending) {
-        startPrice + (endPrice - startPrice) * ratio
+        startPrice + ((endPrice - startPrice) * ratio)
       } else {
-        endPrice + (startPrice - endPrice) * (1 - ratio)
+        endPrice + ((startPrice - endPrice) * (1 - ratio))
       }
       createDailyPrice(date, BigDecimal(price))
     }
