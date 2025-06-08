@@ -13,6 +13,5 @@ object BrowserConfig {
 //    Configuration.reportsFolder = "target/selenide-reports"
     Configuration.fastSetValue = true // Faster input for form fields
     Configuration.pageLoadTimeout = 30000
-    Configuration.browserTimeout = 30000
   }
 }
