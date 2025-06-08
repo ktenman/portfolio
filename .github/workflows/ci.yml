@@ -58,15 +58,40 @@ jobs:
           name: UI test coverage report
           path: coverage/
 
-  test:
-    name: 🧪 ${{ matrix.test-type }} Test
-    needs: [lint-and-format, ui-test]
+  backend-test:
+    name: 🧪 Backend Unit Tests
+    needs: lint-and-format
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        test-type: [ 'unit', 'e2e' ]
-      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4.7.1
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4.4.0
+      - name: Run backend unit tests
+        uses: Wandalen/wretry.action@v3.8.0
+        with:
+          command: |
+            ./gradlew test --info -x bootJar
+          attempt_limit: 3
+          attempt_delay: 30000
+      - uses: actions/upload-artifact@v4.6.2
+        if: always()
+        with:
+          name: Backend test reports
+          path: build/reports/tests
+
+  e2e-test:
+    name: 🧪 E2E Tests
+    needs: lint-and-format
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -79,37 +104,35 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4.4.0
       - name: Set up Docker Compose
-        if: matrix.test-type == 'e2e'
         uses: ndeloof/install-compose-action@v0.0.1
       - name: Start services with Docker Compose (for E2E tests)
-        if: matrix.test-type == 'e2e'
         env:
           VISION_BASE64_ENCODED_KEY: ${{ secrets.VISION_BASE64_ENCODED_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
           docker-compose -f docker-compose.local.yml -f docker-compose.e2e.yml up -d
-          sleep 10
+          sleep 30
           docker-compose logs
-      - name: Run ${{ matrix.test-type }} tests
+      - name: Run E2E tests
         uses: Wandalen/wretry.action@v3.8.0
         with:
           command: |
-            export E2E=${{ matrix.test-type == 'e2e' }}
-            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
+            export E2E=true
+            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true
           attempt_limit: 3
           attempt_delay: 30000
       - uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
-          name: ${{ format('Test reports and screenshots ({0})', matrix.test-type) }}
+          name: E2E test reports and screenshots
           path: |
             build/reports/tests
             build/reports/selenide
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
-    needs: test
-    if: always() && (needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]'
+    needs: [ui-test, backend-test, e2e-test]
+    if: always() && (needs.ui-test.result == 'success' && needs.backend-test.result == 'success' && needs.e2e-test.result == 'success' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -181,7 +204,7 @@ jobs:
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
-    needs: [ test ]
+    needs: [ui-test, backend-test, e2e-test]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
