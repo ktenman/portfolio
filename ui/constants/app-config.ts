@@ -1,0 +1,7 @@
+export const APP_CONFIG = {
+  CACHE_VALIDITY_MS: 60_000,
+  MAX_REDIRECT_COUNT: 3,
+  REDIRECT_COUNT_KEY: 'redirectCount',
+  YEAR_UPDATE_INTERVAL_MS: 365 * 24 * 60 * 60 * 1000,
+  BUILD_HASH_LENGTH: 7,
+} as const
