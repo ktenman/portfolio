@@ -7,53 +7,11 @@
       </button>
     </div>
 
-    <div v-if="isLoading" class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+    <LoadingSpinner v-if="isLoading" />
 
     <!-- Excel-like table for instruments -->
-    <div v-else-if="instruments.length > 0" class="table-responsive">
-      <table class="table table-striped table-hover">
-        <thead>
-          <tr>
-            <th>Symbol</th>
-            <th>Name</th>
-            <th>Currency</th>
-            <th class="d-none d-md-table-cell">Quantity</th>
-            <th class="d-none d-md-table-cell">Current Price</th>
-            <th>XIRR Annual Return</th>
-            <th>Invested</th>
-            <th>Current Value</th>
-            <th>Profit/Loss</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="instrument in instruments" :key="instrument.id">
-            <td data-label="Symbol">{{ instrument.symbol }}</td>
-            <td data-label="Name">{{ instrument.name }}</td>
-            <td data-label="Currency">{{ instrument.baseCurrency }}</td>
-            <td data-label="Quantity" class="d-none d-md-table-cell">
-              {{ formatNumber(instrument.quantity) }}
-            </td>
-            <td data-label="Current Price" class="d-none d-md-table-cell">
-              {{ formatCurrency(instrument.currentPrice) }}
-            </td>
-            <td data-label="XIRR Annual Return">{{ formatPercentage(instrument.xirr) }}</td>
-            <td data-label="Invested">{{ formatCurrency(instrument.totalInvestment) }}</td>
-            <td data-label="Current Value">{{ formatCurrency(instrument.currentValue) }}</td>
-            <td data-label="Profit/Loss" :class="amountClass(instrument)">
-              {{ formattedAmount(instrument) }}
-            </td>
-            <td data-label="Actions" class="text-end">
-              <button class="btn btn-sm btn-secondary" @click="editInstrument(instrument)">
-                <font-awesome-icon icon="pencil-alt" />
-                <span class="d-none d-md-inline ms-1">Edit</span>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else-if="instruments.length > 0">
+      <InstrumentTable :instruments="instruments" @edit="editInstrument" />
     </div>
 
     <div v-else class="alert alert-info" role="alert">
@@ -61,106 +19,20 @@
     </div>
 
     <!-- Modal for Add/Edit Instrument -->
-    <div
-      class="modal fade"
-      id="instrumentModal"
-      tabindex="-1"
-      aria-labelledby="instrumentModalLabel"
-      aria-hidden="true"
+    <ModalWrapper
+      modal-id="instrumentModal"
+      :title="isEditing ? 'Edit Instrument' : 'Add New Instrument'"
+      :save-button-text="isEditing ? 'Update Instrument' : 'Save Instrument'"
+      @save="saveInstrument"
     >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="instrumentModalLabel">
-              {{ isEditing ? 'Edit Instrument' : 'Add New Instrument' }}
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="saveInstrument">
-              <div class="mb-3">
-                <label for="symbol" class="form-label">Symbol</label>
-                <input
-                  v-model="currentInstrument.symbol"
-                  type="text"
-                  class="form-control"
-                  id="symbol"
-                  placeholder="Enter instrument symbol"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="name" class="form-label">Name</label>
-                <input
-                  v-model="currentInstrument.name"
-                  type="text"
-                  class="form-control"
-                  id="name"
-                  placeholder="Enter instrument name"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="providerName" class="form-label">Data Provider</label>
-                <select
-                  v-model="currentInstrument.providerName"
-                  id="providerName"
-                  class="form-select"
-                  required
-                >
-                  <option value="" disabled selected>Select Data Provider</option>
-                  <option v-for="provider in providerNames" :key="provider" :value="provider">
-                    {{ PROVIDER_NAME_DISPLAY[provider] }}
-                  </option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label for="category" class="form-label">Category</label>
-                <select
-                  v-model="currentInstrument.category"
-                  id="category"
-                  class="form-select"
-                  required
-                >
-                  <option value="" disabled selected>Select Instrument Category</option>
-                  <option value="STOCK">Stock</option>
-                  <option value="ETF">ETF</option>
-                  <option value="MUTUAL_FUND">Mutual Fund</option>
-                  <option value="BOND">Bond</option>
-                  <option value="CRYPTO">Cryptocurrency</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label for="currency" class="form-label">Currency</label>
-                <select
-                  v-model="currentInstrument.baseCurrency"
-                  id="currency"
-                  class="form-select"
-                  required
-                >
-                  <option value="" disabled selected>Select Currency</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <!-- Add more currency options as needed -->
-                </select>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="saveInstrument">
-              {{ isEditing ? 'Update' : 'Save' }} Instrument
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <template #body>
+        <InstrumentForm
+          :instrument="currentInstrument"
+          @update:instrument="currentInstrument = $event"
+          @submit="saveInstrument"
+        />
+      </template>
+    </ModalWrapper>
 
     <AlertMessageComponent
       :message="alertMessage"
@@ -173,52 +45,42 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
-import { Modal } from 'bootstrap'
 import { InstrumentService } from '../services/instrument-service'
 import { Instrument } from '../models/instrument'
-import { AlertType, getAlertBootstrapClass } from '../models/alert-type'
-import { ApiError } from '../models/api-error'
+import { getAlertBootstrapClass } from '../models/alert-type'
 import AlertMessageComponent from './alert-message-component.vue'
-import { PROVIDER_NAME_DISPLAY, ProviderName } from '../constants/provider-name.ts'
+import LoadingSpinner from './common/loading-spinner.vue'
+import ModalWrapper from './common/modal-wrapper.vue'
+import InstrumentForm from './forms/instrument-form.vue'
+import InstrumentTable from './tables/instrument-table.vue'
+import { useModal } from '../composables/use-modal'
+import { useApiErrorHandler } from '../composables/use-api-error-handler'
 
-const alertMessage = ref('')
-const debugMessage = ref('')
-const alertType = ref<AlertType | null>(null)
-const validationErrors = ref<Record<string, string>>({})
+const {
+  alertMessage,
+  debugMessage,
+  validationErrors,
+  alertType,
+  handleApiError,
+  clearError,
+  setSuccess,
+} = useApiErrorHandler()
+const { showModal, hideModal } = useModal('instrumentModal')
+
 const instrumentService = new InstrumentService()
 const instruments = ref<Instrument[]>([])
 const currentInstrument = ref<Partial<Instrument>>({})
 const isEditing = ref(false)
 const isLoading = ref(true)
-let instrumentModal: Modal | null = null
 
 onMounted(() => {
   fetchInstruments()
-  instrumentModal = new Modal(document.getElementById('instrumentModal')!)
 })
 
 const showAddInstrumentModal = () => {
   isEditing.value = false
   resetCurrentInstrument()
-  instrumentModal?.show()
-}
-
-const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
-
-const formatCurrency = (value: number): string => {
-  return `${Math.abs(value).toFixed(2)}`
-}
-
-const formattedAmount = (instrument: Instrument): string => {
-  if (instrument.profit === 0) {
-    return '0.00'
-  }
-  const formattedAmount = formatCurrency(instrument.profit)
-  return instrument.profit > 0 ? `+${formattedAmount}` : `-${formattedAmount}`
-}
-
-const amountClass = (instrument: Instrument): string => {
-  return instrument.profit >= 0 ? 'text-success' : 'text-danger'
+  showModal()
 }
 
 const saveInstrument = async () => {
@@ -243,12 +105,9 @@ const saveInstrument = async () => {
       )
       instruments.value.push(savedInstrument)
     }
-    instrumentModal?.hide()
+    hideModal()
     resetCurrentInstrument()
-    alertType.value = AlertType.SUCCESS
-    alertMessage.value = `Instrument ${isEditing.value ? 'updated' : 'saved'} successfully.`
-    debugMessage.value = ''
-    validationErrors.value = {}
+    setSuccess(`Instrument ${isEditing.value ? 'updated' : 'saved'} successfully.`)
   } catch (error) {
     handleApiError(error)
   }
@@ -258,9 +117,7 @@ const fetchInstruments = async () => {
   isLoading.value = true
   try {
     instruments.value = await instrumentService.getAllInstruments()
-    alertMessage.value = ''
-    debugMessage.value = ''
-    validationErrors.value = {}
+    clearError()
   } catch (error) {
     handleApiError(error)
   } finally {
@@ -268,39 +125,10 @@ const fetchInstruments = async () => {
   }
 }
 
-const handleApiError = (error: unknown) => {
-  alertType.value = AlertType.ERROR
-  if (error instanceof ApiError) {
-    alertMessage.value = error.message
-    debugMessage.value = error.debugMessage
-    validationErrors.value = error.validationErrors
-  } else {
-    alertMessage.value = 'An unexpected error occurred. Please try again.'
-    debugMessage.value = error instanceof Error ? error.message : 'Unknown error'
-    validationErrors.value = {}
-  }
-}
-
-const formatNumber = (value: number | undefined | null): string => {
-  if (value === undefined || value === null) return ''
-  if (value < 1 && value > 0) {
-    return value.toExponential(5).replace('e-', ' * 10^-')
-  }
-
-  const [integerPart] = value.toString().split('.')
-  const integerDigits = integerPart.length
-
-  if (integerDigits === 1) {
-    return value.toFixed(4)
-  } else {
-    return value.toFixed(2)
-  }
-}
-
 const editInstrument = (instrument: Instrument) => {
   currentInstrument.value = { ...instrument }
   isEditing.value = true
-  instrumentModal?.show()
+  showModal()
 }
 
 const resetCurrentInstrument = () => {
@@ -317,9 +145,6 @@ const isValidInstrument = (instrument: Partial<Instrument>): instrument is Instr
 }
 
 const alertClass = computed(() => getAlertBootstrapClass(alertType.value))
-
-// Get all provider names for the dropdown
-const providerNames = Object.values(ProviderName)
 </script>
 
 <style scoped>
@@ -378,3 +203,4 @@ const providerNames = Object.values(ProviderName)
   }
 }
 </style>
+

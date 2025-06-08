@@ -18,9 +18,7 @@
     </div>
 
     <!-- Loading indicator -->
-    <div v-if="isLoading" class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+    <LoadingSpinner v-if="isLoading" />
 
     <!-- Error message - show only if there's an error and not loading -->
     <div v-if="error && !isLoading" class="alert alert-danger" role="alert">
@@ -88,9 +86,7 @@
         </div>
 
         <div v-if="isFetching" class="text-center mt-3">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading more data...</span>
-          </div>
+          <LoadingSpinner />
         </div>
       </div>
     </div>
@@ -114,8 +110,12 @@ import {
 } from 'chart.js'
 import { SummaryService } from '../services/summary-service.ts'
 import { CACHE_KEYS } from '../constants/cache-keys.ts'
+import { useFormatters } from '../composables/use-formatters'
+import LoadingSpinner from './common/loading-spinner.vue'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
+
+const { formatDate, formatCurrency, formatPercentage } = useFormatters()
 
 const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
@@ -236,17 +236,6 @@ onUnmounted(() => {
 const reversedSummaryData = computed(() => {
   return [...summaryData.value].reverse()
 })
-
-const formatDate = (date: string): string => {
-  const dateObj = new Date(date)
-  const day = String(dateObj.getDate()).padStart(2, '0')
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-  const year = String(dateObj.getFullYear()).slice(-2)
-  return `${day}.${month}.${year}`
-}
-
-const formatCurrency = (value: number) => `€${value.toFixed(2)}`
-const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
 
 const modifiedAsap = (data: number[], maxPoints: number): number[] => {
   const step = Math.ceil(data.length / maxPoints)
