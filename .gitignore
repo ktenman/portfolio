@@ -38,5 +38,8 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Frontend ###
 node_modules
-node_modules
+coverage/
+*.log

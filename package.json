@@ -10,7 +10,11 @@
     "lint": "eslint ui --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
     "format:check": "vue-tsc --noEmit && prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\"",
-    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\""
+    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -23,18 +27,25 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/vue": "^8.1.0",
     "@types/bootstrap": "^5.2.10",
     "@types/node": "^22.15.30",
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.33.1",
-    "@vitejs/plugin-vue": "^5.2.3",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vitest/coverage-v8": "^3.2.2",
+    "@vitest/ui": "^3.2.2",
+    "@vue/test-utils": "^2.4.6",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.4.1",
     "eslint-plugin-vue": "^10.2.0",
+    "happy-dom": "^17.6.3",
     "prettier": "^3.5.3",
     "typescript": "5.8.3",
     "vite": "^6.3.5",
+    "vitest": "^3.2.2",
     "vue-tsc": "^2.2.10"
   }
 }
