@@ -42,4 +42,3 @@ export const useModal = (modalId: string) => {
     isModalOpen,
   }
 }
-

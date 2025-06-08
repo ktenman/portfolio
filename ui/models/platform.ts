@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 export enum Platform {
   AVIVA = 'AVIVA',
   BINANCE = 'BINANCE',
@@ -9,4 +8,3 @@ export enum Platform {
   TRADING212 = 'TRADING212',
   UNKNOWN = 'UNKNOWN',
 }
-/* eslint-enable no-unused-vars */

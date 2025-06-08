@@ -70,23 +70,5 @@ const getCellClass = (column: TableColumn, row: any): string => {
 </script>
 
 <style scoped>
-.table {
-  font-size: 0.9rem;
-}
-
-.table th,
-.table td {
-  vertical-align: middle;
-}
-
-@media (max-width: 767px) {
-  .table {
-    font-size: 2.8vw;
-  }
-
-  .btn-sm {
-    padding: 0.25rem 0.5rem;
-  }
-}
+/* Component-specific styles only - common styles are in common.css */
 </style>
-

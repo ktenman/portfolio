@@ -112,10 +112,12 @@ import { SummaryService } from '../services/summary-service.ts'
 import { CACHE_KEYS } from '../constants/cache-keys.ts'
 import { useFormatters } from '../composables/use-formatters'
 import LoadingSpinner from './common/loading-spinner.vue'
+import { useChartConfig } from '../composables/use-chart-config'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
 const { formatDate, formatCurrency, formatPercentage } = useFormatters()
+const { chartColors, getDualAxisChartOptions } = useChartConfig()
 
 const summaryData = ref<PortfolioSummary[]>([])
 const isLoading = ref(true)
@@ -271,19 +273,19 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Total Value',
-        borderColor: '#8884d8',
+        borderColor: chartColors.primary,
         data: data.totalValues,
         yAxisID: 'y',
       },
       {
         label: 'Total Profit',
-        borderColor: '#ffc658',
+        borderColor: chartColors.warning,
         data: data.profitValues,
         yAxisID: 'y',
       },
       {
         label: 'XIRR Annual Return',
-        borderColor: '#82ca9d',
+        borderColor: chartColors.secondary,
         data: data.xirrValues,
         yAxisID: 'y1',
       },
@@ -297,64 +299,25 @@ const chartData = computed(() => {
   }
 })
 
-const chartOptions: ChartOptions<'line'> = {
-  responsive: true,
-  animation: false,
-  interaction: {
-    mode: 'index',
-    intersect: false,
-  },
+const chartOptions = computed<ChartOptions<'line'>>(() => ({
+  ...getDualAxisChartOptions('Amount (€)', 'XIRR (%)'),
   scales: {
+    ...getDualAxisChartOptions('Amount (€)', 'XIRR (%)').scales,
     x: {
+      ...getDualAxisChartOptions('Amount (€)', 'XIRR (%)').scales?.x,
       ticks: {
         maxTicksLimit: 5,
       },
     },
-    y: {
-      type: 'linear' as const,
-      display: true,
-      position: 'left' as const,
-      title: {
-        display: true,
-        text: 'Amount (€)',
-      },
-      ticks: {
-        maxTicksLimit: 8,
-      },
-    },
-    y1: {
-      type: 'linear' as const,
-      display: true,
-      position: 'right' as const,
-      title: {
-        display: true,
-        text: 'XIRR (%)',
-      },
-      grid: {
-        drawOnChartArea: false,
-      },
-      ticks: {
-        maxTicksLimit: 8,
-      },
-    },
   },
-}
+}))
 </script>
 
 <style scoped>
+/* Component-specific styles only - common styles are in common.css */
 @media (max-width: 767px) {
   .table {
-    font-size: 12px;
-  }
-
-  .hide-on-mobile {
-    display: none;
-  }
-}
-
-@media (min-width: 1000px) {
-  .chart-container {
-    height: 400px;
+    font-size: 12px; /* Override common style for this specific table */
   }
 }
 </style>

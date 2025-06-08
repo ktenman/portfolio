@@ -50,4 +50,3 @@ withDefaults(defineProps<Props>(), {
 
 defineEmits<Emits>()
 </script>
-
