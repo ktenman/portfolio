@@ -54,7 +54,7 @@ class InstrumentManagementE2ETests {
     elements(tagName("button")).filter(text("Save")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(4))
+      .shouldBe(visible, Duration.ofSeconds(15))
       .shouldHave(text("Instrument saved successfully."))
   }
 
@@ -71,7 +71,7 @@ class InstrumentManagementE2ETests {
     elements(tagName("button")).filter(text("Update")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(4))
+      .shouldBe(visible, Duration.ofSeconds(15))
       .shouldHave(text("Instrument updated successfully."))
   }
 

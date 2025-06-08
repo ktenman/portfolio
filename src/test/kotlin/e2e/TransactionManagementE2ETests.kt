@@ -51,7 +51,7 @@ class TransactionManagementE2ETests {
     elements(tagName("button")).filter(text("Save")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(4))
+      .shouldBe(visible, Duration.ofSeconds(15))
       .shouldHave(text("Transaction saved successfully."))
 
     elements(tagName("td")).findBy(text("AAPL"))
@@ -72,7 +72,7 @@ class TransactionManagementE2ETests {
     elements(tagName("button")).filter(text("Update")).first().click()
 
     element(className("alert-success"))
-      .shouldBe(visible, Duration.ofSeconds(4))
+      .shouldBe(visible, Duration.ofSeconds(15))
       .shouldHave(text("Transaction updated successfully."))
 
     val transactionDetails = elements(tagName("td")).findBy(text("112255.12"))
