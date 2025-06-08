@@ -1,7 +1,3 @@
-/**
- * Shared formatting utilities used across components
- */
-
 export const useFormatters = () => {
   const formatCurrency = (value: number | undefined | null): string => {
     if (value === null || value === undefined) return '€0.00'
@@ -29,12 +25,12 @@ export const useFormatters = () => {
     return `${(value * 100).toFixed(2)}%`
   }
 
-  const formatDate = (dateString: string): string => {
+  const formatDate = (dateString: string, fullYear = false): string => {
     if (!dateString) return ''
     const dateObj = new Date(dateString)
     const day = String(dateObj.getDate()).padStart(2, '0')
     const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-    const year = String(dateObj.getFullYear()).slice(-2)
+    const year = fullYear ? String(dateObj.getFullYear()) : String(dateObj.getFullYear()).slice(-2)
     return `${day}.${month}.${year}`
   }
 

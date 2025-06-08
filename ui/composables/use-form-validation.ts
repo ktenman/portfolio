@@ -68,7 +68,7 @@ export const useFormValidation = <T extends Record<string, any>>(rules: Validati
     } else {
       const { [field]: omit, ...rest } = errors.value
       errors.value = rest
-      void omit // Suppress unused variable warning
+      void omit
     }
   }
 

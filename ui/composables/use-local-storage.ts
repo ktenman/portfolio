@@ -1,6 +1,3 @@
-/**
- * Composable for handling form persistence with localStorage
- */
 import { ref, reactive, toRaw, nextTick } from 'vue'
 
 export interface FormState {
@@ -18,10 +15,7 @@ export const useLocalStorage = <T extends FormState>(storageKey: string, default
       if (savedForm) {
         const parsedForm = JSON.parse(savedForm)
 
-        // Apply saved values to form
         Object.assign(form, parsedForm)
-
-        // Mark all fields loaded from localStorage as manually changed
         Object.keys(parsedForm).forEach(key => {
           formChanges.value[key] = true
         })
@@ -40,9 +34,7 @@ export const useLocalStorage = <T extends FormState>(storageKey: string, default
   }
 
   const handleInput = (field: string): void => {
-    // Mark field as manually changed
     formChanges.value[field] = true
-    // Save the entire form to localStorage
     saveToLocalStorage()
   }
 
@@ -50,7 +42,6 @@ export const useLocalStorage = <T extends FormState>(storageKey: string, default
     Object.keys(form).forEach(key => {
       ;(form as any)[key] = (defaultForm as any)[key]
     })
-    // Clear all change flags when resetting
     formChanges.value = {}
     localStorage.removeItem(storageKey)
   }

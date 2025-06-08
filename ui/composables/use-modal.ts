@@ -10,7 +10,6 @@ export const useModal = (modalId: string) => {
     if (modalElement) {
       modalInstance = new Modal(modalElement)
 
-      // Listen for modal show/hide events
       modalElement.addEventListener('show.bs.modal', () => {
         isModalOpen.value = true
       })

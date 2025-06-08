@@ -1,4 +1,5 @@
 import { CACHE_KEYS } from '../constants/cache-keys'
+import { APP_CONFIG } from '../constants/app-config'
 
 type CacheContent<T> = {
   timestamp: number
@@ -6,7 +7,7 @@ type CacheContent<T> = {
 }
 
 export class CacheService {
-  private readonly cacheValidity: number = 60_000 // 1 minute
+  private readonly cacheValidity: number = APP_CONFIG.CACHE_VALIDITY_MS
 
   setItem<T>(key: string, data: T): void {
     const cacheContent: CacheContent<T> = { timestamp: Date.now(), data }

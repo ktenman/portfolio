@@ -136,7 +136,6 @@ export const useChartConfig = () => {
     } as ChartOptions<'line'>
   }
 
-  // Data sampling for performance
   const sampleData = <T>(data: T[], maxPoints: number): T[] => {
     if (data.length <= maxPoints) return data
 

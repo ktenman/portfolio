@@ -15,16 +15,22 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 import NavBar from './components/nav-bar.vue'
+import { APP_CONFIG } from './constants/app-config'
 
 const currentYear = ref(new Date().getFullYear())
 
 onMounted(() => {
-  setInterval(
-    () => {
+  const now = new Date()
+  const nextYear = new Date(now.getFullYear() + 1, 0, 1)
+  const msUntilNextYear = nextYear.getTime() - now.getTime()
+
+  setTimeout(() => {
+    currentYear.value = new Date().getFullYear()
+
+    setInterval(() => {
       currentYear.value = new Date().getFullYear()
-    },
-    1000 * 60 * 60
-  )
+    }, APP_CONFIG.YEAR_UPDATE_INTERVAL_MS)
+  }, msUntilNextYear)
 })
 </script>
 

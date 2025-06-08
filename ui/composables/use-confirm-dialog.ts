@@ -54,8 +54,6 @@ export const useConfirmDialog = () => {
     handleCancel,
   }
 }
-
-// Helper function for common delete confirmation
 export const confirmDelete = (itemName = 'this item') => {
   const { confirm } = useConfirmDialog()
   return confirm({

@@ -128,7 +128,6 @@ const hasMoreData = ref(true)
 const error = ref<string | null>(null)
 const summaryService = new SummaryService()
 
-// New refs for recalculation functionality
 const isRecalculating = ref(false)
 const recalculationMessage = ref('')
 
@@ -162,7 +161,6 @@ async function recalculateSummaries() {
   recalculationMessage.value = ''
 
   try {
-    // Clear any cached data
     localStorage.removeItem(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
     localStorage.removeItem(CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL)
     localStorage.removeItem(CACHE_KEYS.INSTRUMENTS)
@@ -170,7 +168,6 @@ async function recalculateSummaries() {
     const response = await summaryService.recalculateAllSummaries()
     recalculationMessage.value = response.message
 
-    // Reset and refresh all data
     currentPage.value = 0
     summaryData.value = []
     hasMoreData.value = true
