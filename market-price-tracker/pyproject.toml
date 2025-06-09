@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 dependencies = [
   "selenium==4.16.0",
   "schedule==1.2.2",
-  "requests==2.32.3",
+  "requests==2.32.4",
   "Flask==3.1.1",
   "tenacity==9.1.2",
 ]
