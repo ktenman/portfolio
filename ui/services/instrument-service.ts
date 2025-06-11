@@ -13,9 +13,19 @@ export class InstrumentService {
     return ApiClient.get<Instrument[]>(this.apiUrl)
   }
 
+  // Alias for CRUD interface compatibility
+  async getAll(): Promise<Instrument[]> {
+    return this.getAllInstruments()
+  }
+
   @CachePut(CACHE_KEYS.INSTRUMENTS)
   async saveInstrument(instrument: Instrument): Promise<Instrument> {
     return ApiClient.post<Instrument>(this.apiUrl, instrument)
+  }
+
+  // Alias for CRUD interface compatibility
+  async create(instrument: Partial<Instrument>): Promise<Instrument> {
+    return this.saveInstrument(instrument as Instrument)
   }
 
   @CacheEvict(CACHE_KEYS.INSTRUMENTS)
@@ -23,8 +33,18 @@ export class InstrumentService {
     return ApiClient.put<Instrument>(`${this.apiUrl}/${id}`, instrument)
   }
 
+  // Alias for CRUD interface compatibility
+  async update(id: string | number, instrument: Partial<Instrument>): Promise<Instrument> {
+    return this.updateInstrument(Number(id), instrument as Instrument)
+  }
+
   @CacheEvict(CACHE_KEYS.INSTRUMENTS)
   async deleteInstrument(id: number): Promise<void> {
     await ApiClient.delete(`${this.apiUrl}/${id}`)
+  }
+
+  // Alias for CRUD interface compatibility
+  async delete(id: string | number): Promise<void> {
+    return this.deleteInstrument(Number(id))
   }
 }

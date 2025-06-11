@@ -13,9 +13,19 @@ export class TransactionService {
     return ApiClient.post<PortfolioTransaction>(this.baseUrl, transaction)
   }
 
+  // Alias for CRUD interface compatibility
+  async create(transaction: Partial<PortfolioTransaction>): Promise<PortfolioTransaction> {
+    return this.saveTransaction(transaction as PortfolioTransaction)
+  }
+
   @Cacheable(CACHE_KEYS.TRANSACTIONS)
   async getAllTransactions(): Promise<PortfolioTransaction[]> {
     return ApiClient.get<PortfolioTransaction[]>(this.baseUrl)
+  }
+
+  // Alias for CRUD interface compatibility
+  async getAll(): Promise<PortfolioTransaction[]> {
+    return this.getAllTransactions()
   }
 
   @CacheEvict(CACHE_KEYS.TRANSACTIONS)
@@ -26,8 +36,21 @@ export class TransactionService {
     return ApiClient.put<PortfolioTransaction>(`${this.baseUrl}/${id}`, transaction)
   }
 
+  // Alias for CRUD interface compatibility
+  async update(
+    id: string | number,
+    transaction: Partial<PortfolioTransaction>
+  ): Promise<PortfolioTransaction> {
+    return this.updateTransaction(Number(id), transaction as PortfolioTransaction)
+  }
+
   @CacheEvict(CACHE_KEYS.TRANSACTIONS)
   async deleteTransaction(id: number): Promise<void> {
     await ApiClient.delete(`${this.baseUrl}/${id}`)
+  }
+
+  // Alias for CRUD interface compatibility
+  async delete(id: string | number): Promise<void> {
+    return this.deleteTransaction(Number(id))
   }
 }
