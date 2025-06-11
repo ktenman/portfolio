@@ -24,11 +24,9 @@ interface UseCrudViewReturn<T> {
   ) => Promise<void>
 }
 
-export function useCrudView<T extends { id?: any }>(
-  modalElementId: string
-): UseCrudViewReturn<T> {
+export function useCrudView<T extends { id?: any }>(modalElementId: string): UseCrudViewReturn<T> {
   let modalInstance: Modal | null = null
-  
+
   const selectedItem = ref<Partial<T>>({}) as Ref<Partial<T>>
   const showAlert = ref(false)
   const alertType = ref<'success' | 'danger'>('success')
