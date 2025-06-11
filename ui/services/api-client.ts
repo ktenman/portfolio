@@ -14,7 +14,6 @@ export class ApiClient {
     // Check if this is a calculator endpoint
     const isCalculatorEndpoint = url.includes('/calculator')
 
-
     // Break infinite loops after a few redirects
     if (redirectCount > 3) {
       sessionStorage.removeItem('redirectCount')
@@ -36,7 +35,6 @@ export class ApiClient {
       ...options,
       redirect: 'manual',
     })
-
 
     if (response.type === 'opaqueredirect' || response.status === 302) {
       // Special handling for calculator endpoint

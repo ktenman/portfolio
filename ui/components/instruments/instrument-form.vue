@@ -11,7 +11,7 @@
         required
       />
     </div>
-    
+
     <div class="mb-3">
       <label for="name" class="form-label">Name</label>
       <input
@@ -23,34 +23,20 @@
         required
       />
     </div>
-    
+
     <div class="mb-3">
       <label for="providerName" class="form-label">Data Provider</label>
-      <select
-        v-model="formData.providerName"
-        id="providerName"
-        class="form-select"
-        required
-      >
+      <select v-model="formData.providerName" id="providerName" class="form-select" required>
         <option value="" disabled>Select Data Provider</option>
-        <option
-          v-for="(label, value) in ProviderName"
-          :key="value"
-          :value="value"
-        >
+        <option v-for="(label, value) in ProviderName" :key="value" :value="value">
           {{ label }}
         </option>
       </select>
     </div>
-    
+
     <div class="mb-3">
       <label for="category" class="form-label">Category</label>
-      <select
-        v-model="formData.category"
-        id="category"
-        class="form-select"
-        required
-      >
+      <select v-model="formData.category" id="category" class="form-select" required>
         <option value="" disabled>Select Instrument Category</option>
         <option value="STOCK">Stock</option>
         <option value="ETF">ETF</option>
@@ -59,15 +45,10 @@
         <option value="CRYPTO">Cryptocurrency</option>
       </select>
     </div>
-    
+
     <div class="mb-3">
       <label for="currency" class="form-label">Currency</label>
-      <select
-        v-model="formData.baseCurrency"
-        id="currency"
-        class="form-select"
-        required
-      >
+      <select v-model="formData.baseCurrency" id="currency" class="form-select" required>
         <option value="" disabled>Select Currency</option>
         <option value="USD">USD</option>
         <option value="EUR">EUR</option>
@@ -88,7 +69,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  initialData: () => ({})
+  initialData: () => ({}),
 })
 
 const emit = defineEmits<{
@@ -96,12 +77,16 @@ const emit = defineEmits<{
 }>()
 
 const formData = ref<Partial<Instrument>>({
-  ...props.initialData
+  ...props.initialData,
 })
 
-watch(() => props.initialData, (newData) => {
-  formData.value = { ...newData }
-}, { deep: true })
+watch(
+  () => props.initialData,
+  newData => {
+    formData.value = { ...newData }
+  },
+  { deep: true }
+)
 
 const handleSubmit = () => {
   if (isValidInstrument(formData.value)) {
@@ -109,9 +94,7 @@ const handleSubmit = () => {
   }
 }
 
-const isValidInstrument = (
-  instrument: Partial<Instrument>
-): boolean => {
+const isValidInstrument = (instrument: Partial<Instrument>): boolean => {
   return (
     !!instrument.symbol &&
     !!instrument.name &&
@@ -122,6 +105,6 @@ const isValidInstrument = (
 }
 
 defineExpose({
-  handleSubmit
+  handleSubmit,
 })
 </script>
