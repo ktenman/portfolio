@@ -5,8 +5,9 @@ import { CacheEvict } from '../decorators/cache-evict.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
 import { ApiClient } from './api-client'
 import { BaseService } from './base-service'
+import { ICrudService } from '../types/service-interfaces'
 
-export class InstrumentService extends BaseService {
+export class InstrumentService extends BaseService implements ICrudService<Instrument> {
   constructor() {
     super('/api/instruments')
   }

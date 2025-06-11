@@ -1,6 +1,7 @@
 import { Ref } from 'vue'
 import { useResourceCrud } from './use-resource-crud'
 import { useCrudView } from './use-crud-view'
+import { ICrudService } from '../types/service-interfaces'
 
 interface UseCrudPageReturn<T> {
   // From useResourceCrud
@@ -18,6 +19,14 @@ interface UseCrudPageReturn<T> {
   showAlert: Ref<boolean>
   alertType: Ref<'success' | 'danger'>
   alertMessage: Ref<string>
+  isConfirmOpen: Ref<boolean>
+  confirmOptions: Ref<{
+    title?: string
+    message?: string
+    confirmText?: string
+    cancelText?: string
+    confirmClass?: string
+  }>
   initModal: () => void
   openAddModal: (initialState?: Partial<T>) => void
   openEditModal: (item: T) => void
@@ -25,10 +34,13 @@ interface UseCrudPageReturn<T> {
   // Combined handlers
   handleSave: (item: Partial<T>) => Promise<void>
   handleDelete: (id: number | string) => Promise<void>
+  confirmAction: () => Promise<boolean>
+  handleConfirm: () => void
+  handleCancel: () => void
 }
 
 export function useCrudPage<T extends { id?: number | string }>(
-  service: any,
+  service: ICrudService<T>,
   modalId: string,
   initialState: Partial<T> = {}
 ): UseCrudPageReturn<T> {
@@ -48,7 +60,12 @@ export function useCrudPage<T extends { id?: number | string }>(
     await view.handleDelete(
       () => crud.remove(id),
       () => view.showSuccess('Deleted successfully'),
-      'Are you sure you want to delete this item?'
+      {
+        title: 'Delete Confirmation',
+        message: 'Are you sure you want to delete this item?',
+        confirmText: 'Delete',
+        confirmClass: 'btn-danger',
+      }
     )
   }
 
@@ -68,6 +85,8 @@ export function useCrudPage<T extends { id?: number | string }>(
     showAlert: view.showAlert,
     alertType: view.alertType,
     alertMessage: view.alertMessage,
+    isConfirmOpen: view.isConfirmOpen,
+    confirmOptions: view.confirmOptions,
     initModal: view.initModal,
     openAddModal: () => view.openAddModal(initialState),
     openEditModal: view.openEditModal,
@@ -75,5 +94,8 @@ export function useCrudPage<T extends { id?: number | string }>(
     // Combined handlers
     handleSave,
     handleDelete,
+    confirmAction: view.confirmAction,
+    handleConfirm: view.handleConfirm,
+    handleCancel: view.handleCancel,
   }
 }

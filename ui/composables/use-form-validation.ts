@@ -1,4 +1,4 @@
-import { ref, reactive, computed, watch, ComputedRef } from 'vue'
+import { ref, reactive, computed, ComputedRef, Ref } from 'vue'
 
 type ValidationRule<T> = (value: T) => string | true
 type ValidationRules<T> = {
@@ -6,20 +6,20 @@ type ValidationRules<T> = {
 }
 
 interface UseFormValidationReturn<T> {
-  formData: any
+  formData: Ref<T>
   errors: Record<string, string>
   isValid: ComputedRef<boolean>
   validate: () => boolean
   validateField: (field: keyof T) => boolean
   reset: () => void
-  setFieldValue: (field: keyof T, value: any) => void
+  setFieldValue: <K extends keyof T>(field: K, value: T[K]) => void
 }
 
 export function useFormValidation<T extends Record<string, any>>(
   initialData: T,
   rules: ValidationRules<T> = {}
 ): UseFormValidationReturn<T> {
-  const formData = ref<T>({ ...initialData })
+  const formData = ref<T>({ ...initialData }) as Ref<T>
   const errors = reactive<Record<string, string>>({})
 
   const isValid = computed(() => Object.keys(errors).length === 0)
@@ -57,7 +57,7 @@ export function useFormValidation<T extends Record<string, any>>(
     Object.keys(errors).forEach(key => delete errors[key])
   }
 
-  const setFieldValue = (field: keyof T, value: any) => {
+  const setFieldValue = <K extends keyof T>(field: K, value: T[K]) => {
     formData.value[field] = value
     // Validate the field when its value changes
     if (rules[field]) {
@@ -65,18 +65,7 @@ export function useFormValidation<T extends Record<string, any>>(
     }
   }
 
-  // Auto-validate fields on change if they have been validated before
-  watch(
-    formData,
-    newData => {
-      Object.keys(newData).forEach(field => {
-        if (errors[field] && rules[field as keyof T]) {
-          validateField(field as keyof T)
-        }
-      })
-    },
-    { deep: true }
-  )
+  // Note: Validation happens on setFieldValue calls instead of deep watching for better performance
 
   return {
     formData,
