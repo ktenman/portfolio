@@ -2,56 +2,33 @@
   <form @submit.prevent="handleSubmit">
     <div class="mb-3">
       <label for="instrumentId" class="form-label">Instrument</label>
-      <select
-        v-model.number="formData.instrumentId"
-        id="instrumentId"
-        class="form-select"
-        required
-      >
+      <select v-model.number="formData.instrumentId" id="instrumentId" class="form-select" required>
         <option value="" disabled>Select Instrument</option>
-        <option
-          v-for="instrument in instruments"
-          :key="instrument.id"
-          :value="instrument.id"
-        >
+        <option v-for="instrument in instruments" :key="instrument.id" :value="instrument.id">
           {{ instrument.symbol }} - {{ instrument.name }}
         </option>
       </select>
     </div>
-    
+
     <div class="mb-3">
       <label for="platform" class="form-label">Platform</label>
-      <select
-        v-model="formData.platform"
-        id="platform"
-        class="form-select"
-        required
-      >
+      <select v-model="formData.platform" id="platform" class="form-select" required>
         <option value="" disabled>Select Platform</option>
-        <option
-          v-for="platform in Object.values(Platform)"
-          :key="platform"
-          :value="platform"
-        >
+        <option v-for="platform in Object.values(Platform)" :key="platform" :value="platform">
           {{ platform }}
         </option>
       </select>
     </div>
-    
+
     <div class="mb-3">
       <label for="transactionType" class="form-label">Transaction Type</label>
-      <select
-        v-model="formData.transactionType"
-        id="transactionType"
-        class="form-select"
-        required
-      >
+      <select v-model="formData.transactionType" id="transactionType" class="form-select" required>
         <option value="" disabled>Select Transaction Type</option>
         <option value="BUY">Buy</option>
         <option value="SELL">Sell</option>
       </select>
     </div>
-    
+
     <div class="mb-3">
       <label for="quantity" class="form-label">Quantity</label>
       <input
@@ -64,7 +41,7 @@
         required
       />
     </div>
-    
+
     <div class="mb-3">
       <label for="price" class="form-label">Price</label>
       <input
@@ -77,7 +54,7 @@
         required
       />
     </div>
-    
+
     <div class="mb-3">
       <label for="transactionDate" class="form-label">Transaction Date</label>
       <input
@@ -104,8 +81,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   initialData: () => ({
-    transactionDate: new Date().toISOString().split('T')[0]
-  })
+    transactionDate: new Date().toISOString().split('T')[0],
+  }),
 })
 
 const emit = defineEmits<{
@@ -113,12 +90,16 @@ const emit = defineEmits<{
 }>()
 
 const formData = ref<Partial<PortfolioTransaction>>({
-  ...props.initialData
+  ...props.initialData,
 })
 
-watch(() => props.initialData, (newData) => {
-  formData.value = { ...newData }
-}, { deep: true })
+watch(
+  () => props.initialData,
+  newData => {
+    formData.value = { ...newData }
+  },
+  { deep: true }
+)
 
 const handleSubmit = () => {
   if (isValidTransaction(formData.value)) {
@@ -126,9 +107,7 @@ const handleSubmit = () => {
   }
 }
 
-const isValidTransaction = (
-  transaction: Partial<PortfolioTransaction>
-): boolean => {
+const isValidTransaction = (transaction: Partial<PortfolioTransaction>): boolean => {
   return (
     typeof transaction.instrumentId === 'number' &&
     (transaction.transactionType === 'BUY' || transaction.transactionType === 'SELL') &&
@@ -140,6 +119,6 @@ const isValidTransaction = (
 }
 
 defineExpose({
-  handleSubmit
+  handleSubmit,
 })
 </script>

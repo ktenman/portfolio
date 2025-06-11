@@ -20,16 +20,10 @@
           ></button>
         </div>
         <div class="modal-body">
-          <instrument-form
-            ref="formRef"
-            :initial-data="instrument"
-            @submit="handleSave"
-          />
+          <instrument-form ref="formRef" :initial-data="instrument" @submit="handleSave" />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            Cancel
-          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="button" class="btn btn-primary" @click="triggerSubmit">
             {{ isEditing ? 'Update' : 'Save' }} Instrument
           </button>
@@ -51,7 +45,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   modalId: 'instrumentModal',
-  instrument: () => ({})
+  instrument: () => ({}),
 })
 
 const emit = defineEmits<{

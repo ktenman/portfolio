@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.service.AsyncXirrCalculationService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.service.PortfolioSummaryService
 import ee.tenman.portfolio.service.PortfolioTransactionService
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -13,6 +15,7 @@ import java.time.LocalDate
 class DailyPortfolioXirrJob(
   private val portfolioTransactionService: PortfolioTransactionService,
   private val portfolioSummaryService: PortfolioSummaryService,
+  private val asyncXirrCalculationService: AsyncXirrCalculationService,
   private val clock: Clock,
   private val jobExecutionService: JobExecutionService
 ) : Job {
@@ -51,16 +54,19 @@ class DailyPortfolioXirrJob(
       }.filterNot { it in existingDates }
         .toList()
 
-      val summariesToSave = datesToProcess.map { currentDate ->
-        log.info("Calculating summary for date: $currentDate")
-        val summary = portfolioSummaryService.calculateSummaryForDate(currentDate)
-        log.info("Calculated summary for date: $currentDate. XIRR: ${summary.xirrAnnualReturn}")
-        summary
-      }
-
-      if (summariesToSave.isNotEmpty()) {
-        portfolioSummaryService.saveDailySummaries(summariesToSave)
-        log.info("Saved ${summariesToSave.size} new daily summaries.")
+      if (datesToProcess.isNotEmpty()) {
+        log.info("Processing ${datesToProcess.size} dates in parallel batches")
+        
+        val result = runBlocking {
+          asyncXirrCalculationService.calculateBatchXirrAsync(datesToProcess)
+        }
+        
+        log.info("Processed ${result.processedDates} dates in ${result.duration}ms")
+        if (result.failedCalculations.isNotEmpty()) {
+          log.warn("Failed calculations: ${result.failedCalculations}")
+        }
+      } else {
+        log.info("No new dates to process")
       }
 
     } catch (e: Exception) {

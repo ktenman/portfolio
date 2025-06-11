@@ -3,11 +3,11 @@
     <div v-if="isLoading" class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
-    
+
     <div v-else-if="!items || items.length === 0" class="alert alert-info" role="alert">
       {{ emptyMessage }}
     </div>
-    
+
     <div v-else class="table-responsive">
       <table class="table table-striped table-hover">
         <thead>
@@ -20,9 +20,9 @@
         </thead>
         <tbody>
           <tr v-for="(item, index) in items" :key="getItemKey(item, index)">
-            <td 
-              v-for="column in columns" 
-              :key="column.key" 
+            <td
+              v-for="column in columns"
+              :key="column.key"
               :class="column.class"
               :data-label="column.label"
             >
@@ -41,7 +41,6 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
-
 export interface ColumnDefinition {
   key: string
   label: string
@@ -60,7 +59,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
   emptyMessage: 'No data available',
-  keyField: 'id'
+  keyField: 'id',
 })
 
 const getItemKey = (item: T, index: number): string | number => {
@@ -73,25 +72,25 @@ const getItemKey = (item: T, index: number): string | number => {
 const getCellValue = (item: T, column: ColumnDefinition): any => {
   const keys = column.key.split('.')
   let value: any = item
-  
+
   for (const key of keys) {
     value = value?.[key]
   }
-  
+
   return value
 }
 
 const formatCellValue = (item: T, column: ColumnDefinition): string => {
   const value = getCellValue(item, column)
-  
+
   if (column.formatter) {
     return column.formatter(value, item)
   }
-  
+
   if (value === null || value === undefined) {
     return '-'
   }
-  
+
   return String(value)
 }
 </script>
@@ -113,23 +112,23 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
     width: 100%;
     overflow: hidden;
   }
-  
+
   .table thead {
     display: none;
   }
-  
+
   .table tbody,
   .table tr,
   .table td {
     display: block;
     width: 100%;
   }
-  
+
   .table tr {
     margin-bottom: 1rem;
     border-bottom: 1px solid #dee2e6;
   }
-  
+
   .table td {
     display: flex;
     justify-content: space-between;
@@ -138,7 +137,7 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
     font-size: 1rem;
     text-align: left;
   }
-  
+
   .table td[data-label]:before {
     content: attr(data-label);
     font-weight: bold;
@@ -147,11 +146,11 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
     width: 50%;
     flex-shrink: 0;
   }
-  
+
   .table td.text-end {
     justify-content: flex-end;
   }
-  
+
   .btn-sm {
     padding: 0.25rem 0.5rem;
   }

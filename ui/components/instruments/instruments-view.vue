@@ -2,32 +2,16 @@
   <div class="container mt-2">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Instruments</h4>
-      <button
-        class="btn btn-primary btn-sm"
-        id="addNewInstrument"
-        @click="openAddModal"
-      >
+      <button class="btn btn-primary btn-sm" id="addNewInstrument" @click="openAddModal">
         Add New Instrument
       </button>
     </div>
 
-    <instrument-table
-      :instruments="instruments"
-      :is-loading="isLoading"
-      @edit="openEditModal"
-    />
+    <instrument-table :instruments="instruments" :is-loading="isLoading" @edit="openEditModal" />
 
-    <instrument-modal
-      :instrument="selectedInstrument"
-      @save="handleSave"
-    />
+    <instrument-modal :instrument="selectedInstrument" @save="handleSave" />
 
-    <alert
-      v-model="showAlert"
-      :type="alertType"
-      :message="alertMessage"
-      :duration="5000"
-    />
+    <alert v-model="showAlert" :type="alertType" :message="alertMessage" :duration="5000" />
   </div>
 </template>
 
@@ -50,7 +34,7 @@ const {
   isLoading,
   fetchAll: fetchInstruments,
   create: createInstrument,
-  update: updateInstrument
+  update: updateInstrument,
 } = useResourceCrud<Instrument>(instrumentService)
 
 // Modal management
@@ -93,7 +77,6 @@ const handleSave = async (data: Partial<Instrument>) => {
   }
 }
 
-
 const showSuccess = (message: string) => {
   alertType.value = 'success'
   alertMessage.value = message
@@ -110,4 +93,3 @@ const showError = (error: unknown) => {
   showAlert.value = true
 }
 </script>
-

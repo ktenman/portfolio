@@ -10,7 +10,7 @@
         {{ formattedAmount(item) }}
       </span>
     </template>
-    
+
     <template #actions="{ item }">
       <button class="btn btn-sm btn-secondary" @click="$emit('edit', item)">
         <font-awesome-icon icon="pencil-alt" />
@@ -32,59 +32,60 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  isLoading: false
+  isLoading: false,
 })
 
 defineEmits<{
   edit: [instrument: Instrument]
 }>()
 
-const { formatCurrency, formatNumber, formatPercentage, formatProfitLoss, getProfitClass } = useFormatters()
+const { formatCurrency, formatNumber, formatPercentage, formatProfitLoss, getProfitClass } =
+  useFormatters()
 
 const columns = computed<ColumnDefinition[]>(() => [
   {
     key: 'symbol',
-    label: 'Symbol'
+    label: 'Symbol',
   },
   {
     key: 'name',
-    label: 'Name'
+    label: 'Name',
   },
   {
     key: 'baseCurrency',
-    label: 'Currency'
+    label: 'Currency',
   },
   {
     key: 'quantity',
     label: 'Quantity',
     class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value)
+    formatter: (value: number) => formatNumber(value),
   },
   {
     key: 'currentPrice',
     label: 'Current Price',
     class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatCurrency(value)
+    formatter: (value: number) => formatCurrency(value),
   },
   {
     key: 'xirr',
     label: 'XIRR Annual Return',
-    formatter: (value: number) => formatPercentage(value)
+    formatter: (value: number) => formatPercentage(value),
   },
   {
     key: 'totalInvestment',
     label: 'Invested',
-    formatter: (value: number) => formatCurrency(value)
+    formatter: (value: number) => formatCurrency(value),
   },
   {
     key: 'currentValue',
     label: 'Current Value',
-    formatter: (value: number) => formatCurrency(value)
+    formatter: (value: number) => formatCurrency(value),
   },
   {
     key: 'profit',
-    label: 'Profit/Loss'
-  }
+    label: 'Profit/Loss',
+  },
 ])
 
 const formattedAmount = (instrument: Instrument): string => {

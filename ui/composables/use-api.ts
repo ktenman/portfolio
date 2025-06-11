@@ -4,17 +4,17 @@ interface UseApiOptions {
   immediate?: boolean
 }
 
+// eslint-disable-next-line no-unused-vars
+type ApiFunction<T> = (...args: any[]) => Promise<T>
+
 interface UseApiReturn<T> {
   data: Ref<T | null>
   error: Ref<Error | null>
   isLoading: Ref<boolean>
-  execute: (...args: any[]) => Promise<T | null>
+  execute: ApiFunction<T | null>
 }
 
-export function useApi<T>(
-  apiCall: (...args: any[]) => Promise<T>,
-  options: UseApiOptions = {}
-): UseApiReturn<T> {
+export function useApi<T>(apiCall: ApiFunction<T>, options: UseApiOptions = {}): UseApiReturn<T> {
   const data = shallowRef<T | null>(null)
   const error = ref<Error | null>(null)
   const isLoading = ref(false)

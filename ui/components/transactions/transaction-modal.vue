@@ -28,9 +28,7 @@
           />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            Cancel
-          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="button" class="btn btn-primary" @click="triggerSubmit">
             {{ isEditing ? 'Update' : 'Save' }} Transaction
           </button>
@@ -55,8 +53,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   modalId: 'transactionModal',
   transaction: () => ({
-    transactionDate: new Date().toISOString().split('T')[0]
-  })
+    transactionDate: new Date().toISOString().split('T')[0],
+  }),
 })
 
 const emit = defineEmits<{

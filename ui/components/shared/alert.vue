@@ -1,9 +1,6 @@
 <template>
   <div v-if="visible" class="mt-3">
-    <div 
-      :class="['alert', `alert-${type}`, 'alert-dismissible']"
-      role="alert"
-    >
+    <div :class="['alert', `alert-${type}`, 'alert-dismissible']" role="alert">
       <strong v-if="message">{{ message }}</strong>
       <slot></slot>
     </div>
@@ -28,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
   message: '',
   dismissible: true,
   duration: 0,
-  modelValue: true
+  modelValue: true,
 })
 
 const emit = defineEmits<{
@@ -38,11 +35,14 @@ const emit = defineEmits<{
 
 const visible = ref(props.modelValue)
 
-watch(() => props.modelValue, (newValue) => {
-  visible.value = newValue
-})
+watch(
+  () => props.modelValue,
+  newValue => {
+    visible.value = newValue
+  }
+)
 
-watch(visible, (newValue) => {
+watch(visible, newValue => {
   if (newValue && props.duration > 0) {
     setTimeout(() => {
       visible.value = false

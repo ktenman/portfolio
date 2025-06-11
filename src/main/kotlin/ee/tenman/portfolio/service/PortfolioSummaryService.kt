@@ -430,6 +430,25 @@ class PortfolioSummaryService(
     portfolioDailySummaryRepository.saveAll(merged)
   }
 
+  @Transactional
+  @Caching(
+    evict = [
+      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
+      CacheEvict(value = [SUMMARY_CACHE], allEntries = true)
+    ]
+  )
+  fun saveDailySummary(summary: PortfolioDailySummary): PortfolioDailySummary {
+    val existing = portfolioDailySummaryRepository.findByEntryDate(summary.entryDate)
+    val toSave = existing?.apply {
+      totalValue = summary.totalValue
+      xirrAnnualReturn = summary.xirrAnnualReturn
+      totalProfit = summary.totalProfit
+      earningsPerDay = summary.earningsPerDay
+    } ?: summary
+    
+    return portfolioDailySummaryRepository.save(toSave)
+  }
+
   @Transactional(readOnly = true)
   fun getDailySummariesBetween(startDate: LocalDate, endDate: LocalDate) =
     portfolioDailySummaryRepository.findAllByEntryDateBetween(startDate, endDate)
