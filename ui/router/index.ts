@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import InstrumentsView from '../components/instruments/instruments-view.vue'
 import TransactionsView from '../components/transactions/transactions-view.vue'
-import PortfolioSummaryComponent from '../components/portfolio-summary-component.vue'
-import CalculatorComponent from '../components/calculator-component.vue'
+import PortfolioSummary from '../components/portfolio-summary.vue'
+import Calculator from '../components/calculator.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Portfolio Summary',
-    component: PortfolioSummaryComponent,
+    component: PortfolioSummary,
   },
   {
     path: '/transactions',
@@ -23,7 +23,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/calculator',
     name: 'Calculator',
-    component: CalculatorComponent,
+    component: Calculator,
   },
   {
     path: '/:pathMatch(.*)*',

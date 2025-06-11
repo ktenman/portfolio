@@ -28,7 +28,6 @@ import { ApiError } from '../../models/api-error'
 
 const instrumentService = new InstrumentService()
 
-// CRUD operations for instruments
 const {
   items: instruments,
   isLoading,
@@ -37,16 +36,13 @@ const {
   update: updateInstrument,
 } = useResourceCrud<Instrument>(instrumentService)
 
-// Modal management
 let instrumentModal: Modal | null = null
 
-// Local state
 const selectedInstrument = ref<Partial<Instrument>>({})
 const showAlert = ref(false)
 const alertType = ref<'success' | 'danger'>('success')
 const alertMessage = ref('')
 
-// Initialize data
 onMounted(async () => {
   await fetchInstruments()
   instrumentModal = new Modal(document.getElementById('instrumentModal')!)

@@ -95,7 +95,7 @@ import { useFormatters } from '../composables/use-formatters'
 import { useLocalStorage } from '../composables/use-local-storage'
 import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
-import LoadingSpinner from './common/loading-spinner.vue'
+import LoadingSpinner from './shared/loading-spinner.vue'
 
 const defaultForm = {
   initialWorth: 2000,
@@ -160,7 +160,7 @@ const calculate = async () => {
   if (isUpdatingForm.value) return
 
   try {
-    const result = await fetchCalculationResult()
+    const result = await getResult()
 
     // Only update fields that haven't been manually changed
     await updateFormField('annualReturnRate', Number(result.average.toFixed(3)))
@@ -197,9 +197,9 @@ const calculate = async () => {
   }
 }
 
-const fetchCalculationResult = async (): Promise<CalculationResult> => {
+const getResult = async (): Promise<CalculationResult> => {
   try {
-    return await calculationService.fetchCalculationResult()
+    return await calculationService.getResult()
   } finally {
     isLoading.value = false
   }

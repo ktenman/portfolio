@@ -1,7 +1,6 @@
 import { cacheService } from '../services/cache-service'
 
 export function CachePut(key: string) {
-
   return function (_target: object, _propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value
     descriptor.value = async function (...args: unknown[]) {

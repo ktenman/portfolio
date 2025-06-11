@@ -41,7 +41,6 @@ import { ApiError } from '../../models/api-error'
 const transactionService = new TransactionService()
 const instrumentService = new InstrumentService()
 
-// CRUD operations for transactions
 const {
   items: transactions,
   isLoading,
@@ -51,10 +50,8 @@ const {
   remove: deleteTransaction,
 } = useResourceCrud<PortfolioTransaction>(transactionService)
 
-// Modal management
 let transactionModal: Modal | null = null
 
-// Local state
 const instruments = ref<Instrument[]>([])
 const selectedTransaction = ref<Partial<PortfolioTransaction>>({
   transactionDate: new Date().toISOString().split('T')[0],
@@ -63,7 +60,6 @@ const showAlert = ref(false)
 const alertType = ref<'success' | 'danger'>('success')
 const alertMessage = ref('')
 
-// Initialize data
 onMounted(async () => {
   await fetchTransactions()
   await fetchInstruments()
@@ -72,7 +68,7 @@ onMounted(async () => {
 
 const fetchInstruments = async () => {
   try {
-    instruments.value = await instrumentService.getAllInstruments()
+    instruments.value = await instrumentService.getAll()
   } catch (error) {
     showError(error)
   }
