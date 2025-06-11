@@ -4,9 +4,12 @@ import { CachePut } from '../decorators/cache-put.decorator'
 import { CacheEvict } from '../decorators/cache-evict.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
 import { ApiClient } from './api-client'
+import { BaseService } from './base-service'
 
-export class TransactionService {
-  private readonly baseUrl = '/api/transactions'
+export class TransactionService extends BaseService {
+  constructor() {
+    super('/api/transactions')
+  }
 
   @Cacheable(CACHE_KEYS.TRANSACTIONS)
   async getAll(): Promise<PortfolioTransaction[]> {
