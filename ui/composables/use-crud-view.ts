@@ -3,7 +3,7 @@ import { Modal } from 'bootstrap'
 import { ApiError } from '../models/api-error'
 
 interface UseCrudViewReturn<T> {
-  selectedItem: Ref<Partial<T>>
+  selectedItem: Ref<Partial<T> | null>
   showAlert: Ref<boolean>
   alertType: Ref<'success' | 'danger'>
   alertMessage: Ref<string>
@@ -27,7 +27,7 @@ interface UseCrudViewReturn<T> {
 export function useCrudView<T extends { id?: any }>(modalElementId: string): UseCrudViewReturn<T> {
   let modalInstance: Modal | null = null
 
-  const selectedItem = ref<Partial<T>>({}) as Ref<Partial<T>>
+  const selectedItem = ref<Partial<T> | null>(null) as Ref<Partial<T> | null>
   const showAlert = ref(false)
   const alertType = ref<'success' | 'danger'>('success')
   const alertMessage = ref('')

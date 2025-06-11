@@ -6,10 +6,12 @@
         v-model="formData.symbol"
         type="text"
         class="form-control"
+        :class="{ 'is-invalid': errors.symbol }"
         id="symbol"
         placeholder="Enter instrument symbol"
         required
       />
+      <div v-if="errors.symbol" class="invalid-feedback">{{ errors.symbol }}</div>
     </div>
 
     <div class="mb-3">
@@ -60,9 +62,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
 import { Instrument } from '../../models/instrument'
 import { ProviderName } from '../../constants/provider-name'
+import { useFormValidation, validators } from '../../composables/use-form-validation'
 
 interface Props {
   initialData?: Partial<Instrument>
@@ -76,8 +79,12 @@ const emit = defineEmits<{
   submit: [data: Partial<Instrument>]
 }>()
 
-const formData = ref<Partial<Instrument>>({
-  ...props.initialData,
+const { formData, errors, validate } = useFormValidation<Partial<Instrument>>(props.initialData, {
+  symbol: validators.required('Symbol is required'),
+  name: validators.required('Name is required'),
+  providerName: validators.required('Data provider is required'),
+  category: validators.required('Category is required'),
+  baseCurrency: validators.required('Currency is required'),
 })
 
 watch(
@@ -89,19 +96,9 @@ watch(
 )
 
 const handleSubmit = () => {
-  if (isValidInstrument(formData.value)) {
+  if (validate()) {
     emit('submit', formData.value)
   }
-}
-
-const isValidInstrument = (instrument: Partial<Instrument>): boolean => {
-  return (
-    !!instrument.symbol &&
-    !!instrument.name &&
-    !!instrument.providerName &&
-    !!instrument.category &&
-    !!instrument.baseCurrency
-  )
 }
 
 defineExpose({

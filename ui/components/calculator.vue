@@ -6,7 +6,7 @@
 
     <div class="row">
       <div class="col-md-4">
-        <form @submit.prevent="calculate">
+        <form @submit.prevent>
           <div v-for="(label, key) in labels" :key="key" class="mb-3">
             <label :for="key" class="form-label">{{ label }}:</label>
             <input
@@ -27,9 +27,6 @@
               @click="resetCalculator"
             >
               Reset Calculator
-            </button>
-            <button type="button" class="btn btn-primary btn-sm" @click="calculate">
-              Calculate
             </button>
           </div>
         </form>
@@ -59,7 +56,6 @@
       <button type="button" class="btn btn-outline-secondary me-2" @click="resetCalculator">
         Reset Calculator
       </button>
-      <button type="button" class="btn btn-primary" @click="calculate">Calculate</button>
     </div>
 
     <div class="row mt-4">
@@ -76,7 +72,7 @@
               <tr v-for="summary in yearSummary" :key="summary.year">
                 <td>{{ summary.year }}</td>
                 <td v-for="key in ['totalWorth', 'yearGrowth', 'earningsPerMonth']" :key="key">
-                  {{ formatCurrency(summary[key]) }}
+                  {{ formatCurrency(summary[key as keyof typeof summary]) }}
                 </td>
               </tr>
             </tbody>
@@ -88,35 +84,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { CalculationService } from '../services/calculation-service.ts'
-import { CalculationResult } from '../models/calculation-result.ts'
+import { useCalculator } from '../composables/use-calculator'
 import { useFormatters } from '../composables/use-formatters'
-import { useLocalStorage } from '../composables/use-local-storage'
 import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 
-const defaultForm = {
-  initialWorth: 2000,
-  monthlyInvestment: 585,
-  yearlyGrowthRate: 5,
-  annualReturnRate: 21.672,
-  years: 28,
-}
-
-const STORAGE_KEY = 'investment-calculator-form'
-
-const { formatCurrency } = useFormatters()
 const {
   form,
-  isUpdatingForm,
-  loadFromLocalStorage,
-  saveToLocalStorage,
+  isLoading,
+  yearSummary,
+  portfolioData,
+  calculationResult,
   handleInput,
-  resetForm,
-  updateFormField,
-} = useLocalStorage(STORAGE_KEY, defaultForm)
+  resetCalculator,
+} = useCalculator()
+
+const { formatCurrency } = useFormatters()
 
 const labels = {
   initialWorth: 'Initial Worth (€)',
@@ -126,7 +110,6 @@ const labels = {
   years: 'Number of Years',
 }
 
-const isLoading = ref(true)
 const steps = {
   initialWorth: '0.01',
   monthlyInvestment: '0.01',
@@ -136,98 +119,6 @@ const steps = {
 }
 
 const tableHeaders = ['Year', 'Total Worth', "Year's Growth", 'Earnings Per Month']
-
-const calculationService = new CalculationService()
-
-const yearSummary = ref<Array<Record<string, number>>>([])
-const portfolioData = ref<number[]>([])
-const calculationResult = ref<CalculationResult | null>(null)
-
-const resetCalculator = () => {
-  if (
-    confirm(
-      'Are you sure you want to reset the calculator? This will clear all your current values.'
-    )
-  ) {
-    resetForm()
-    calculate()
-  }
-}
-
-const calculate = async () => {
-  isLoading.value = true
-
-  if (isUpdatingForm.value) return
-
-  try {
-    const result = await getResult()
-
-    // Only update fields that haven't been manually changed
-    await updateFormField('annualReturnRate', Number(result.average.toFixed(3)))
-    await updateFormField('initialWorth', Number(result.total.toFixed(2)))
-
-    const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
-    const values = []
-    let totalWorth = initialWorth
-    let currentMonthlyInvestment = monthlyInvestment
-
-    yearSummary.value = []
-
-    for (let year = 1; year <= years; year++) {
-      const yearStartWorth = totalWorth
-      for (let month = 1; month <= 12; month++) {
-        totalWorth += currentMonthlyInvestment
-        totalWorth *= 1 + annualReturnRate / 1200
-      }
-      currentMonthlyInvestment *= 1 + yearlyGrowthRate / 100
-      values.push(totalWorth)
-
-      yearSummary.value.push({
-        year,
-        totalWorth,
-        yearGrowth: totalWorth - yearStartWorth,
-        earningsPerMonth: (totalWorth * annualReturnRate) / 1200,
-      })
-    }
-
-    portfolioData.value = values
-    calculationResult.value = result
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const getResult = async (): Promise<CalculationResult> => {
-  try {
-    return await calculationService.getResult()
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(() => {
-  loadFromLocalStorage()
-  calculate()
-})
-
-let debounceTimer: number | null = null
-watch(
-  form,
-  () => {
-    if (isUpdatingForm.value) return
-
-    if (debounceTimer !== null) {
-      clearTimeout(debounceTimer)
-    }
-
-    debounceTimer = setTimeout(() => {
-      saveToLocalStorage()
-      calculate()
-      debounceTimer = null
-    }, 1000) as unknown as number
-  },
-  { deep: true }
-)
 </script>
 
 <style scoped>
