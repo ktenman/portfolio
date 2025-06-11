@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -14,5 +13,3 @@ export class ApiError extends Error {
     return error instanceof ApiError
   }
 }
-
-/* eslint-enable no-unused-vars */

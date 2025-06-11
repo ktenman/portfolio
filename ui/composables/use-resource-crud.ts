@@ -7,15 +7,14 @@ interface CrudOptions {
   pageSize?: number
 }
 
-// eslint-disable-next-line no-unused-vars
 type FetchPageFunction = (pageNumber: number, size?: number) => Promise<void>
-// eslint-disable-next-line no-unused-vars
+
 type CreateFunction<T> = (item: Partial<T>) => Promise<T | null>
-// eslint-disable-next-line no-unused-vars
+
 type UpdateFunction<T> = (id: string | number, item: Partial<T>) => Promise<T | null>
-// eslint-disable-next-line no-unused-vars
+
 type RemoveFunction = (id: string | number) => Promise<boolean>
-// eslint-disable-next-line no-unused-vars
+
 type SelectFunction<T> = (item: T | null) => void
 
 interface UseResourceCrudReturn<T> {
