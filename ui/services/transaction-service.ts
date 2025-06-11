@@ -5,8 +5,9 @@ import { CacheEvict } from '../decorators/cache-evict.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
 import { ApiClient } from './api-client'
 import { BaseService } from './base-service'
+import { ICrudService } from '../types/service-interfaces'
 
-export class TransactionService extends BaseService {
+export class TransactionService extends BaseService implements ICrudService<PortfolioTransaction> {
   constructor() {
     super('/api/transactions')
   }

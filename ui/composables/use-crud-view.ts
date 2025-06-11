@@ -7,6 +7,14 @@ interface UseCrudViewReturn<T> {
   showAlert: Ref<boolean>
   alertType: Ref<'success' | 'danger'>
   alertMessage: Ref<string>
+  isConfirmOpen: Ref<boolean>
+  confirmOptions: Ref<{
+    title?: string
+    message?: string
+    confirmText?: string
+    cancelText?: string
+    confirmClass?: string
+  }>
   initModal: () => void
   openAddModal: (initialState?: Partial<T>) => void
   openEditModal: (item: T) => void
@@ -20,8 +28,16 @@ interface UseCrudViewReturn<T> {
   handleDelete: (
     deleteFn: () => Promise<any>,
     onSuccess: () => void,
-    confirmMessage?: string
+    confirmOptions?: {
+      title?: string
+      message?: string
+      confirmText?: string
+      confirmClass?: string
+    }
   ) => Promise<void>
+  confirmAction: () => Promise<boolean>
+  handleConfirm: () => void
+  handleCancel: () => void
 }
 
 export function useCrudView<T extends { id?: any }>(modalElementId: string): UseCrudViewReturn<T> {
@@ -31,6 +47,17 @@ export function useCrudView<T extends { id?: any }>(modalElementId: string): Use
   const showAlert = ref(false)
   const alertType = ref<'success' | 'danger'>('success')
   const alertMessage = ref('')
+
+  // Confirm dialog state
+  const isConfirmOpen = ref(false)
+  const confirmOptions = ref<{
+    title?: string
+    message?: string
+    confirmText?: string
+    cancelText?: string
+    confirmClass?: string
+  }>({})
+  let confirmResolve: ((value: boolean) => void) | null = null
 
   const initModal = () => {
     const modalEl = document.getElementById(modalElementId)
@@ -81,12 +108,51 @@ export function useCrudView<T extends { id?: any }>(modalElementId: string): Use
     }
   }
 
+  const confirmAction = (): Promise<boolean> => {
+    return new Promise(resolve => {
+      confirmResolve = resolve
+      isConfirmOpen.value = true
+    })
+  }
+
+  const handleConfirm = () => {
+    if (confirmResolve) {
+      confirmResolve(true)
+      confirmResolve = null
+    }
+    isConfirmOpen.value = false
+  }
+
+  const handleCancel = () => {
+    if (confirmResolve) {
+      confirmResolve(false)
+      confirmResolve = null
+    }
+    isConfirmOpen.value = false
+  }
+
   const handleDelete = async (
     deleteFn: () => Promise<any>,
     onSuccess: () => void,
-    confirmMessage = 'Are you sure you want to delete this item?'
+    confirmOpts?: {
+      title?: string
+      message?: string
+      confirmText?: string
+      confirmClass?: string
+    }
   ) => {
-    if (confirm(confirmMessage)) {
+    confirmOptions.value = {
+      title: confirmOpts?.title || 'Delete Confirmation',
+      message: confirmOpts?.message || 'Are you sure you want to delete this item?',
+      confirmText: confirmOpts?.confirmText || 'Delete',
+      cancelText: 'Cancel',
+      confirmClass: confirmOpts?.confirmClass || 'btn-danger',
+      ...confirmOpts,
+    }
+
+    const shouldDelete = await confirmAction()
+
+    if (shouldDelete) {
       try {
         await deleteFn()
         onSuccess()
@@ -101,6 +167,8 @@ export function useCrudView<T extends { id?: any }>(modalElementId: string): Use
     showAlert,
     alertType,
     alertMessage,
+    isConfirmOpen,
+    confirmOptions,
     initModal,
     openAddModal,
     openEditModal,
@@ -108,5 +176,8 @@ export function useCrudView<T extends { id?: any }>(modalElementId: string): Use
     showError,
     handleSave,
     handleDelete,
+    confirmAction,
+    handleConfirm,
+    handleCancel,
   }
 }
