@@ -45,14 +45,30 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Dialog -->
+    <confirm-dialog
+      v-model="isConfirmOpen"
+      :title="confirmOptions.title"
+      :message="confirmOptions.message"
+      :confirm-text="confirmOptions.confirmText"
+      :cancel-text="confirmOptions.cancelText"
+      :confirm-class="confirmOptions.confirmClass"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
+import { onMounted, onUnmounted } from 'vue'
 import { usePortfolioSummary } from '../composables/use-portfolio-summary'
+import { usePortfolioChart } from '../composables/use-portfolio-chart'
+import { useConfirm } from '../composables/use-confirm'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import PortfolioChart from './portfolio/portfolio-chart.vue'
 import PortfolioTable from './portfolio/portfolio-table.vue'
+import ConfirmDialog from './shared/confirm-dialog.vue'
 
 const {
   summaries,
@@ -62,19 +78,44 @@ const {
   isFetching,
   error,
   recalculationMessage,
-  processedChartData,
   recalculate,
+  fetchSummaries,
+  fetchInitialData,
 } = usePortfolioSummary()
 
-const handleRecalculate = async () => {
-  if (
-    !confirm(
-      'This will delete all current summary data and recalculate it from scratch. This operation may take some time. Continue?'
-    )
-  ) {
-    return
-  }
+const { processedChartData } = usePortfolioChart(summaries)
 
-  await recalculate()
+// Confirm dialog setup
+const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
+
+// Scroll handling for infinite scroll
+const handleScroll = async () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+    await fetchSummaries()
+  }
+}
+
+onMounted(() => {
+  fetchInitialData()
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
+
+const handleRecalculate = async () => {
+  const shouldProceed = await confirm({
+    title: 'Recalculate Portfolio Data',
+    message:
+      'This will delete all current summary data and recalculate it from scratch. This operation may take some time. Continue?',
+    confirmText: 'Recalculate',
+    cancelText: 'Cancel',
+    confirmClass: 'btn-warning',
+  })
+
+  if (shouldProceed) {
+    await recalculate()
+  }
 }
 </script>

@@ -22,6 +22,18 @@
     />
 
     <alert v-model="showAlert" :type="alertType" :message="alertMessage" :duration="5000" />
+
+    <confirm-dialog
+      v-model="isConfirmOpen"
+      :title="confirmOptions.title"
+      :message="confirmOptions.message"
+      :confirm-text="confirmOptions.confirmText"
+      :cancel-text="confirmOptions.cancelText"
+      :confirm-class="confirmOptions.confirmClass"
+      modal-id="transactionConfirmModal"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </div>
 </template>
 
@@ -32,6 +44,7 @@ import { useResourceCrud } from '../../composables/use-resource-crud'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
 import Alert from '../shared/alert.vue'
+import ConfirmDialog from '../shared/confirm-dialog.vue'
 import { TransactionService } from '../../services/transaction-service'
 import { InstrumentService } from '../../services/instrument-service'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
@@ -47,11 +60,15 @@ const {
   showAlert,
   alertType,
   alertMessage,
+  isConfirmOpen,
+  confirmOptions,
   initModal,
   openAddModal,
   openEditModal,
   handleSave,
   handleDelete,
+  handleConfirm,
+  handleCancel,
 } = useCrudPage<PortfolioTransaction>(new TransactionService(), 'transactionModal', {
   transactionDate: new Date().toISOString().split('T')[0],
 })

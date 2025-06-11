@@ -1,11 +1,15 @@
 import { cacheService } from '../services/cache-service'
 
-export function CacheEvict(key: string) {
+export function CacheEvict(keys: string | string[]) {
   return function (_target: object, _propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value
     descriptor.value = async function (...args: unknown[]) {
       const result = await originalMethod.apply(this, args)
-      cacheService.setItem(key, null)
+
+      // Support both single key and array of keys
+      const keysToEvict = Array.isArray(keys) ? keys : [keys]
+      keysToEvict.forEach(key => cacheService.clearItem(key))
+
       return result
     }
     return descriptor

@@ -1,5 +1,6 @@
 import { PortfolioSummary } from '../models/portfolio-summary'
 import { Cacheable } from '../decorators/cacheable.decorator'
+import { CacheEvict } from '../decorators/cache-evict.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
 import { ApiClient } from './api-client'
 import { Page } from '../models/page'
@@ -13,6 +14,11 @@ export class PortfolioSummaryService {
     return await ApiClient.get<Page<PortfolioSummary>>(url)
   }
 
+  @CacheEvict([
+    CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT,
+    CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL,
+    CACHE_KEYS.INSTRUMENTS,
+  ])
   async recalculateAll(): Promise<any> {
     return ApiClient.post<any>('/api/portfolio-summary/recalculate', {})
   }

@@ -1,16 +1,6 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
 import { PortfolioSummaryService } from '../services/portfolio-summary-service'
-import { CACHE_KEYS } from '../constants/cache-keys'
-import { cacheService } from '../services/cache-service'
-
-interface ChartDataPoint {
-  labels: string[]
-  totalValues: number[]
-  profitValues: number[]
-  xirrValues: number[]
-  earningsValues: number[]
-}
 
 export function usePortfolioSummary() {
   const summaryService = new PortfolioSummaryService()
@@ -72,11 +62,6 @@ export function usePortfolioSummary() {
     recalculationMessage.value = ''
 
     try {
-      // Clear relevant caches - this should be handled by the service
-      cacheService.clearItem(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
-      cacheService.clearItem(CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL)
-      cacheService.clearItem(CACHE_KEYS.INSTRUMENTS)
-
       const response = await summaryService.recalculateAll()
       recalculationMessage.value = response.message
 
@@ -95,50 +80,8 @@ export function usePortfolioSummary() {
     }
   }
 
-  // Infinite scroll logic
-  const handleScroll = async () => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-      await fetchSummaries()
-    }
-  }
-
-  onMounted(() => {
-    fetchInitialData()
-    window.addEventListener('scroll', handleScroll)
-  })
-
-  onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll)
-  })
-
   // Computed properties
   const reversedSummaries = computed(() => [...summaries.value].reverse())
-
-  const modifiedAsap = (data: number[], maxPoints: number): number[] => {
-    const step = Math.ceil(data.length / maxPoints)
-    return Array.from({ length: maxPoints }, (_, i) => i * step).filter(i => i < data.length)
-  }
-
-  const processedChartData = computed<ChartDataPoint | null>(() => {
-    if (summaries.value.length === 0) return null
-
-    const labels = summaries.value.map(item => item.date)
-    const totalValues = summaries.value.map(item => item.totalValue)
-    const profitValues = summaries.value.map(item => item.totalProfit)
-    const xirrValues = summaries.value.map(item => item.xirrAnnualReturn * 100)
-    const earningsValues = summaries.value.map(item => item.earningsPerMonth)
-
-    const maxPoints = Math.min(window.innerWidth >= 1000 ? 31 : 15, labels.length)
-    const indices = modifiedAsap(totalValues, maxPoints)
-
-    return {
-      labels: indices.map(i => labels[i]),
-      totalValues: indices.map(i => totalValues[i]),
-      profitValues: indices.map(i => profitValues[i]),
-      xirrValues: indices.map(i => xirrValues[i]),
-      earningsValues: indices.map(i => earningsValues[i]),
-    }
-  })
 
   return {
     summaries,
@@ -148,8 +91,9 @@ export function usePortfolioSummary() {
     isFetching,
     error,
     recalculationMessage,
-    processedChartData,
+    hasMoreData,
     recalculate,
     fetchSummaries,
+    fetchInitialData,
   }
 }

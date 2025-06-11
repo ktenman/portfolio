@@ -1,6 +1,7 @@
 import { ref, Ref } from 'vue'
 import { useApi } from './use-api'
 import { Page } from '../models/page'
+import { ICrudService, IPageableService } from '../types/service-interfaces'
 
 interface CrudOptions {
   immediate?: boolean
@@ -36,7 +37,7 @@ interface UseResourceCrudReturn<T> {
 }
 
 export function useResourceCrud<T extends { id?: string | number }>(
-  apiService: any,
+  apiService: ICrudService<T> | IPageableService<T>,
   options: CrudOptions = {}
 ): UseResourceCrudReturn<T> {
   const items = ref<T[]>([]) as Ref<T[]>
@@ -62,7 +63,7 @@ export function useResourceCrud<T extends { id?: string | number }>(
   )
 
   const { execute: executeGetPage } = useApi((pageNumber: number, size: number) =>
-    apiService.getPage(pageNumber, size)
+    'getPage' in apiService ? apiService.getPage(pageNumber, size) : Promise.resolve(null)
   )
 
   const fetchAll = async () => {
