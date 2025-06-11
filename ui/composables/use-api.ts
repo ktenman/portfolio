@@ -4,7 +4,6 @@ interface UseApiOptions {
   immediate?: boolean
 }
 
-// eslint-disable-next-line no-unused-vars
 type ApiFunction<T> = (...args: any[]) => Promise<T>
 
 interface UseApiReturn<T> {
