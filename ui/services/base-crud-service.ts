@@ -1,0 +1,35 @@
+import { ApiClient } from './api-client'
+import { cacheService } from './cache-service'
+
+export abstract class BaseCrudService<T extends { id?: number | string }> {
+  constructor(
+    protected readonly baseUrl: string,
+    protected readonly cacheKey: string
+  ) {}
+
+  async getAll(): Promise<T[]> {
+    const cached = cacheService.getItem<T[]>(this.cacheKey)
+    if (cached) return cached
+
+    const result = await ApiClient.get<T[]>(this.baseUrl)
+    cacheService.setItem(this.cacheKey, result)
+    return result
+  }
+
+  async create(data: Partial<T>): Promise<T> {
+    const result = await ApiClient.post<T>(this.baseUrl, data)
+    cacheService.clearItem(this.cacheKey)
+    return result
+  }
+
+  async update(id: number | string, data: Partial<T>): Promise<T> {
+    const result = await ApiClient.put<T>(`${this.baseUrl}/${id}`, data)
+    cacheService.clearItem(this.cacheKey)
+    return result
+  }
+
+  async delete(id: number | string): Promise<void> {
+    await ApiClient.delete(`${this.baseUrl}/${id}`)
+    cacheService.clearItem(this.cacheKey)
+  }
+}

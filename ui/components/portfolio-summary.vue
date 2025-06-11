@@ -17,17 +17,14 @@
       </button>
     </div>
 
-    <!-- Loading indicator -->
     <div v-if="isLoading" class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
 
-    <!-- Error message - show only if there's an error and not loading -->
     <div v-if="error && !isLoading" class="alert alert-danger" role="alert">
       {{ error }}
     </div>
 
-    <!-- Recalculation message -->
     <div
       v-if="recalculationMessage && !error"
       class="alert alert-info alert-dismissible fade show mt-3"
@@ -42,14 +39,11 @@
       ></button>
     </div>
 
-    <!-- Only show content when not loading and no error -->
     <div v-if="!isLoading && !error">
-      <!-- No data message - only show when confirmed no data, not loading, and no error -->
       <div v-if="summaryData.length === 0" class="alert alert-info" role="alert">
         No portfolio summary data found.
       </div>
 
-      <!-- Regular content when we have data -->
       <div v-else>
         <div class="mb-3 chart-container" v-if="chartData">
           <Line :data="chartData" :options="chartOptions" />
@@ -77,11 +71,13 @@
                 }"
               >
                 <td>{{ formatDate(summary.date) }}</td>
-                <td>{{ formatPercentage(summary.xirrAnnualReturn) }}</td>
-                <td class="hide-on-mobile">{{ formatCurrency(summary.earningsPerDay) }}</td>
-                <td>{{ formatCurrency(summary.earningsPerMonth) }}</td>
-                <td>{{ formatCurrency(summary.totalProfit) }}</td>
-                <td>{{ formatCurrency(summary.totalValue) }}</td>
+                <td>{{ formatPercentageFromDecimal(summary.xirrAnnualReturn) }}</td>
+                <td class="hide-on-mobile">
+                  {{ formatCurrencyWithSymbol(summary.earningsPerDay) }}
+                </td>
+                <td>{{ formatCurrencyWithSymbol(summary.earningsPerMonth) }}</td>
+                <td>{{ formatCurrencyWithSymbol(summary.totalProfit) }}</td>
+                <td>{{ formatCurrencyWithSymbol(summary.totalValue) }}</td>
               </tr>
             </tbody>
           </table>
@@ -112,8 +108,9 @@ import {
   Title,
   Tooltip,
 } from 'chart.js'
-import { SummaryService } from '../services/summary-service.ts'
+import { PortfolioSummaryService } from '../services/portfolio-summary-service'
 import { CACHE_KEYS } from '../constants/cache-keys.ts'
+import { useFormatters } from '../composables/use-formatters'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
@@ -124,9 +121,8 @@ const currentPage = ref(0)
 const pageSize = 40
 const hasMoreData = ref(true)
 const error = ref<string | null>(null)
-const summaryService = new SummaryService()
+const summaryService = new PortfolioSummaryService()
 
-// New refs for recalculation functionality
 const isRecalculating = ref(false)
 const recalculationMessage = ref('')
 
@@ -135,7 +131,7 @@ async function fetchSummaries() {
   isFetching.value = true
   error.value = null
   try {
-    const response = await summaryService.fetchHistoricalSummary(currentPage.value, pageSize)
+    const response = await summaryService.getHistorical(currentPage.value, pageSize)
     summaryData.value = [...summaryData.value, ...response.content]
     currentPage.value++
     hasMoreData.value = currentPage.value < response.totalPages
@@ -160,12 +156,11 @@ async function recalculateSummaries() {
   recalculationMessage.value = ''
 
   try {
-    // Clear any cached data
     localStorage.removeItem(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
     localStorage.removeItem(CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL)
     localStorage.removeItem(CACHE_KEYS.INSTRUMENTS)
 
-    const response = await summaryService.recalculateAllSummaries()
+    const response = await summaryService.recalculateAll()
     recalculationMessage.value = response.message
 
     // Reset and refresh all data
@@ -175,7 +170,7 @@ async function recalculateSummaries() {
     await fetchSummaries()
 
     // Get fresh current summary
-    const currentSummary = await summaryService.fetchCurrentSummary()
+    const currentSummary = await summaryService.getCurrent()
 
     // Ensure it's in the display data
     const currentDate = currentSummary.date
@@ -206,7 +201,7 @@ const handleScroll = async () => {
 onMounted(async () => {
   try {
     await fetchSummaries()
-    const currentSummary = await summaryService.fetchCurrentSummary()
+    const currentSummary = await summaryService.getCurrent()
 
     // Always replace or add the current day's data
     const currentDate = currentSummary.date
@@ -237,16 +232,7 @@ const reversedSummaryData = computed(() => {
   return [...summaryData.value].reverse()
 })
 
-const formatDate = (date: string): string => {
-  const dateObj = new Date(date)
-  const day = String(dateObj.getDate()).padStart(2, '0')
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-  const year = String(dateObj.getFullYear()).slice(-2)
-  return `${day}.${month}.${year}`
-}
-
-const formatCurrency = (value: number) => `€${value.toFixed(2)}`
-const formatPercentage = (value: number) => `${(value * 100).toFixed(2)}%`
+const { formatDate, formatCurrencyWithSymbol, formatPercentageFromDecimal } = useFormatters()
 
 const modifiedAsap = (data: number[], maxPoints: number): number[] => {
   const step = Math.ceil(data.length / maxPoints)
