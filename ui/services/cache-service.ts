@@ -5,7 +5,7 @@ type CacheContent<T> = {
   data: T
 }
 
-export class CacheService {
+class CacheService {
   private readonly cacheValidity: number = 60_000 // 1 minute
 
   setItem<T>(key: string, data: T): void {
@@ -39,3 +39,5 @@ export class CacheService {
     summaryKeys.forEach(key => this.clearItem(key))
   }
 }
+
+export const cacheService = new CacheService()
