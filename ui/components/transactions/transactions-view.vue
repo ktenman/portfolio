@@ -2,11 +2,7 @@
   <div class="container mt-2">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Transactions</h4>
-      <button
-        class="btn btn-primary btn-sm"
-        id="addNewTransaction"
-        @click="openAddModal"
-      >
+      <button class="btn btn-primary btn-sm" id="addNewTransaction" @click="openAddModal">
         Add New Transaction
       </button>
     </div>
@@ -25,12 +21,7 @@
       @save="handleSave"
     />
 
-    <alert
-      v-model="showAlert"
-      :type="alertType"
-      :message="alertMessage"
-      :duration="5000"
-    />
+    <alert v-model="showAlert" :type="alertType" :message="alertMessage" :duration="5000" />
   </div>
 </template>
 
@@ -57,7 +48,7 @@ const {
   fetchAll: fetchTransactions,
   create: createTransaction,
   update: updateTransaction,
-  remove: deleteTransaction
+  remove: deleteTransaction,
 } = useResourceCrud<PortfolioTransaction>(transactionService)
 
 // Modal management
@@ -66,7 +57,7 @@ let transactionModal: Modal | null = null
 // Local state
 const instruments = ref<Instrument[]>([])
 const selectedTransaction = ref<Partial<PortfolioTransaction>>({
-  transactionDate: new Date().toISOString().split('T')[0]
+  transactionDate: new Date().toISOString().split('T')[0],
 })
 const showAlert = ref(false)
 const alertType = ref<'success' | 'danger'>('success')
@@ -89,7 +80,7 @@ const fetchInstruments = async () => {
 
 const openAddModal = () => {
   selectedTransaction.value = {
-    transactionDate: new Date().toISOString().split('T')[0]
+    transactionDate: new Date().toISOString().split('T')[0],
   }
   transactionModal?.show()
 }
@@ -143,4 +134,3 @@ const showError = (error: unknown) => {
   showAlert.value = true
 }
 </script>
-

@@ -8,17 +8,17 @@
     <template #cell-instrumentId="{ item }">
       {{ getInstrumentSymbol(item.instrumentId) }}
     </template>
-    
+
     <template #cell-amount="{ item }">
       <span :class="amountClass(item)">{{ formattedAmount(item) }}</span>
     </template>
-    
+
     <template #cell-profit="{ item }">
       <span :class="getProfitClass(getTransactionProfit(item))">
         {{ formatProfitLoss(getTransactionProfit(item)) }}
       </span>
     </template>
-    
+
     <template #actions="{ item }">
       <button class="btn btn-sm btn-secondary me-2" @click="$emit('edit', item)">
         <font-awesome-icon icon="pencil-alt" />
@@ -49,7 +49,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isLoading: false
+  isLoading: false,
 })
 
 defineEmits<{
@@ -57,44 +57,51 @@ defineEmits<{
   delete: [id: number]
 }>()
 
-const { formatDate, formatNumber, formatTransactionAmount, getAmountClass, formatProfitLoss, getProfitClass } = useFormatters()
+const {
+  formatDate,
+  formatNumber,
+  formatTransactionAmount,
+  getAmountClass,
+  formatProfitLoss,
+  getProfitClass,
+} = useFormatters()
 
 const columns = computed<ColumnDefinition[]>(() => [
   {
     key: 'transactionDate',
     label: 'Date',
-    formatter: (value: string) => formatDate(value)
+    formatter: (value: string) => formatDate(value),
   },
   {
     key: 'instrumentId',
-    label: 'Instrument'
+    label: 'Instrument',
   },
   {
     key: 'quantity',
     label: 'Quantity',
     class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value)
+    formatter: (value: number) => formatNumber(value),
   },
   {
     key: 'price',
     label: 'Price',
     class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value)
+    formatter: (value: number) => formatNumber(value),
   },
   {
     key: 'amount',
-    label: 'Amount'
+    label: 'Amount',
   },
   {
     key: 'profit',
-    label: 'Profit/Loss'
+    label: 'Profit/Loss',
   },
   {
     key: 'averageCost',
     label: 'Average Cost',
     class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value)
-  }
+    formatter: (value: number) => formatNumber(value),
+  },
 ])
 
 const getInstrumentSymbol = (instrumentId: number | undefined) => {
@@ -104,7 +111,11 @@ const getInstrumentSymbol = (instrumentId: number | undefined) => {
 }
 
 const formattedAmount = (transaction: PortfolioTransaction): string => {
-  return formatTransactionAmount(transaction.quantity, transaction.price, transaction.transactionType)
+  return formatTransactionAmount(
+    transaction.quantity,
+    transaction.price,
+    transaction.transactionType
+  )
 }
 
 const amountClass = (transaction: PortfolioTransaction): string => {
