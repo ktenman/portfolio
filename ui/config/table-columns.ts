@@ -1,5 +1,10 @@
 import type { ColumnDefinition } from '../components/shared/data-table.vue'
-import { formatCurrency, formatDate, formatPercentage, formatNumber } from '../utils/formatters'
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+  formatPercentageFromDecimal,
+} from '../utils/formatters'
 
 export const instrumentColumns: ColumnDefinition[] = [
   { key: 'symbol', label: 'Symbol' },
@@ -7,7 +12,7 @@ export const instrumentColumns: ColumnDefinition[] = [
   { key: 'baseCurrency', label: 'Currency' },
   { key: 'quantity', label: 'Quantity', formatter: formatNumber },
   { key: 'currentPrice', label: 'Current Price', formatter: formatCurrency },
-  { key: 'xirr', label: 'XIRR Annual Return', formatter: formatPercentage },
+  { key: 'xirr', label: 'XIRR Annual Return', formatter: formatPercentageFromDecimal },
   { key: 'totalInvestment', label: 'Invested', formatter: formatCurrency },
   { key: 'currentValue', label: 'Current Value', formatter: formatCurrency },
   { key: 'profit', label: 'Profit/Loss', formatter: formatCurrency },

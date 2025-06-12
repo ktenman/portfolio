@@ -40,6 +40,7 @@ import { watch, computed } from 'vue'
 import { Instrument } from '../../models/instrument'
 import { ProviderName } from '../../constants/provider-name'
 import { useFormValidation, validators } from '../../composables/use-form-validation'
+import { currencyOptions, categoryOptions } from '../../constants/form-options'
 import FormInput from '../shared/form-input.vue'
 
 interface Props {
@@ -65,20 +66,6 @@ const { formData, errors, validate } = useFormValidation<Partial<Instrument>>(pr
 const providerOptions = computed(() =>
   Object.entries(ProviderName).map(([value, text]) => ({ value, text }))
 )
-
-const categoryOptions = [
-  { value: 'STOCK', text: 'Stock' },
-  { value: 'ETF', text: 'ETF' },
-  { value: 'MUTUAL_FUND', text: 'Mutual Fund' },
-  { value: 'BOND', text: 'Bond' },
-  { value: 'CRYPTO', text: 'Cryptocurrency' },
-]
-
-const currencyOptions = [
-  { value: 'USD', text: 'USD' },
-  { value: 'EUR', text: 'EUR' },
-  { value: 'GBP', text: 'GBP' },
-]
 
 watch(
   () => props.initialData,

@@ -1,78 +1,80 @@
 <template>
   <form @submit.prevent="handleSubmit">
-    <div class="mb-3">
-      <label for="instrumentId" class="form-label">Instrument</label>
-      <select v-model.number="formData.instrumentId" id="instrumentId" class="form-select" required>
-        <option value="" disabled>Select Instrument</option>
-        <option v-for="instrument in instruments" :key="instrument.id" :value="instrument.id">
-          {{ instrument.symbol }} - {{ instrument.name }}
-        </option>
-      </select>
-    </div>
+    <FormInput
+      v-model="formData.instrumentId"
+      label="Instrument"
+      type="select"
+      :options="instrumentOptions"
+      :error="errors.instrumentId"
+      placeholder="Select Instrument"
+      required
+    />
 
-    <div class="mb-3">
-      <label for="platform" class="form-label">Platform</label>
-      <select v-model="formData.platform" id="platform" class="form-select" required>
-        <option value="" disabled>Select Platform</option>
-        <option v-for="platform in Object.values(Platform)" :key="platform" :value="platform">
-          {{ platform }}
-        </option>
-      </select>
-    </div>
+    <FormInput
+      v-model="formData.platform"
+      label="Platform"
+      type="select"
+      :options="platformOptions"
+      :error="errors.platform"
+      placeholder="Select Platform"
+      required
+    />
 
-    <div class="mb-3">
-      <label for="transactionType" class="form-label">Transaction Type</label>
-      <select v-model="formData.transactionType" id="transactionType" class="form-select" required>
-        <option value="" disabled>Select Transaction Type</option>
-        <option value="BUY">Buy</option>
-        <option value="SELL">Sell</option>
-      </select>
-    </div>
+    <FormInput
+      v-model="formData.transactionType"
+      label="Transaction Type"
+      type="select"
+      :options="transactionTypeOptions"
+      :error="errors.transactionType"
+      placeholder="Select Transaction Type"
+      required
+    />
 
-    <div class="mb-3">
-      <label for="quantity" class="form-label">Quantity</label>
-      <input
-        v-model.number="formData.quantity"
-        type="number"
-        step="0.00000001"
-        class="form-control"
-        id="quantity"
-        placeholder="Enter quantity"
-        required
-      />
-    </div>
+    <FormInput
+      v-model="formData.quantity"
+      label="Quantity"
+      type="number"
+      :error="errors.quantity"
+      placeholder="Enter quantity"
+      step="0.00000001"
+      min="0"
+      required
+    />
 
-    <div class="mb-3">
-      <label for="price" class="form-label">Price</label>
-      <input
-        v-model.number="formData.price"
-        type="number"
-        step="0.01"
-        class="form-control"
-        id="price"
-        placeholder="Enter price"
-        required
-      />
-    </div>
+    <FormInput
+      v-model="formData.price"
+      label="Price"
+      type="number"
+      :error="errors.price"
+      placeholder="Enter price"
+      step="0.01"
+      min="0"
+      required
+    />
 
-    <div class="mb-3">
-      <label for="transactionDate" class="form-label">Transaction Date</label>
-      <input
-        v-model="formData.transactionDate"
-        type="date"
-        class="form-control"
-        id="transactionDate"
-        required
-      />
+    <FormInput
+      v-model="formData.transactionDate"
+      label="Transaction Date"
+      type="date"
+      :error="errors.transactionDate"
+      required
+    />
+
+    <div v-if="totalValue" class="alert alert-info">
+      <strong>Total Value:</strong>
+      {{ formatCurrency(totalValue) }}
     </div>
   </form>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, watch } from 'vue'
+import { useFormValidation, validators } from '../../composables/use-form-validation'
+import FormInput from '../shared/form-input.vue'
+import { platformOptions, transactionTypeOptions } from '../../constants/form-options'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
-import { Platform } from '../../models/platform'
+import { formatCurrency } from '../../utils/formatters'
 
 interface Props {
   initialData?: Partial<PortfolioTransaction>
@@ -89,36 +91,60 @@ const emit = defineEmits<{
   submit: [data: Partial<PortfolioTransaction>]
 }>()
 
-const formData = ref<Partial<PortfolioTransaction>>({
-  ...props.initialData,
+const { formData, errors, validate } = useFormValidation<Partial<PortfolioTransaction>>(
+  props.initialData,
+  {
+    instrumentId: validators.required('Instrument is required'),
+    platform: validators.required('Platform is required'),
+    transactionType: validators.required('Transaction type is required'),
+    quantity: (value: any) => {
+      if (!value) return 'Quantity is required'
+      if (value < 0.00000001) return 'Quantity must be greater than 0'
+      return true
+    },
+    price: (value: any) => {
+      if (!value) return 'Price is required'
+      if (value < 0.01) return 'Price must be greater than 0'
+      return true
+    },
+    transactionDate: validators.required('Transaction date is required'),
+  }
+)
+
+const instrumentOptions = computed(() =>
+  props.instruments.map(instrument => ({
+    value: instrument.id!,
+    text: `${instrument.symbol} - ${instrument.name}`,
+  }))
+)
+
+const totalValue = computed(() => {
+  const quantity = formData.value.quantity || 0
+  const price = formData.value.price || 0
+  return quantity * price
 })
 
 watch(
-  () => props.initialData,
-  newData => {
-    formData.value = { ...newData }
-  },
-  { deep: true }
+  () => formData.value.instrumentId,
+  newInstrumentId => {
+    if (newInstrumentId) {
+      const instrument = props.instruments.find(inst => inst.id === newInstrumentId)
+      if (instrument && instrument.currentPrice && instrument.currentPrice > 0) {
+        formData.value.price = instrument.currentPrice
+      }
+    }
+  }
 )
 
-const handleSubmit = () => {
-  if (isValidTransaction(formData.value)) {
+if (!formData.value.transactionDate) {
+  formData.value.transactionDate = new Date().toISOString().split('T')[0]
+}
+
+const handleSubmit = async () => {
+  if (await validate()) {
     emit('submit', formData.value)
   }
 }
 
-const isValidTransaction = (transaction: Partial<PortfolioTransaction>): boolean => {
-  return (
-    typeof transaction.instrumentId === 'number' &&
-    (transaction.transactionType === 'BUY' || transaction.transactionType === 'SELL') &&
-    typeof transaction.quantity === 'number' &&
-    typeof transaction.price === 'number' &&
-    typeof transaction.transactionDate === 'string' &&
-    !!transaction.platform
-  )
-}
-
-defineExpose({
-  handleSubmit,
-})
+defineExpose({ handleSubmit })
 </script>

@@ -9,6 +9,7 @@ module.exports = {
     ecmaVersion: 2021,
     sourceType: 'module',
   },
+  plugins: ['no-comments'],
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
@@ -21,5 +22,8 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     'prettier/prettier': 'error',
+    'no-comments/disallowComments': ['error', {
+      allow: []
+    }],
   },
 }

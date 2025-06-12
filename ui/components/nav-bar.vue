@@ -11,7 +11,7 @@
               </router-link>
             </li>
           </ul>
-
+          <!-- Build info display -->
           <div class="build-info" v-if="buildInfo">
             <span class="text-muted build-info-text">
               {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
@@ -24,13 +24,9 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
-import { utilityService } from '../services'
-
-interface BuildInfo {
-  hash: string
-  time: string
-}
+import { ref } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
+import { utilityService } from '../services/utility-service'
 
 const routes = ref([
   { path: '/', name: 'Summary' },
@@ -39,14 +35,11 @@ const routes = ref([
   { path: '/transactions', name: 'Transactions' },
 ])
 
-const buildInfo = ref<BuildInfo | null>(null)
-
-onMounted(async () => {
-  try {
-    buildInfo.value = await utilityService.getBuildInfo()
-  } catch (error) {
-    console.error('Error fetching build info:', error)
-  }
+const { data: buildInfo } = useQuery({
+  queryKey: ['build-info'],
+  queryFn: utilityService.getBuildInfo,
+  staleTime: Infinity,
+  retry: false,
 })
 
 function formatDate(dateString: string): string {
@@ -72,6 +65,15 @@ function formatDate(dateString: string): string {
   -webkit-overflow-scrolling: touch;
   width: 100%;
   @include custom-scrollbar;
+
+  @include media-breakpoint-down(md) {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 .navbar-content {

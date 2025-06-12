@@ -24,15 +24,15 @@
 
     <template #actions="{ item }">
       <button class="btn btn-sm btn-secondary me-2" @click="$emit('edit', item)">
-        <font-awesome-icon icon="pencil-alt" />
-        <span class="d-none d-md-inline ms-1">Edit</span>
+        <base-icon name="pencil" :size="14" class="me-1" />
+        <span class="d-none d-md-inline">Edit</span>
       </button>
       <button
         class="btn btn-sm btn-danger d-none d-md-inline-block"
         @click="item.id && $emit('delete', item.id)"
       >
-        <font-awesome-icon icon="trash-alt" />
-        <span class="ms-1">Delete</span>
+        <base-icon name="trash" :size="14" class="me-1" />
+        <span>Delete</span>
       </button>
     </template>
   </data-table>
@@ -41,6 +41,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
+import BaseIcon from '../shared/base-icon.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
 import { transactionColumns } from '../../config/table-columns'
@@ -69,13 +70,23 @@ defineEmits<{
 
 const columns = transactionColumns
 
+const instrumentMap = computed(() => {
+  if (!props.instruments?.length) return new Map<number, Instrument>()
+
+  return new Map(props.instruments.map(instrument => [instrument.id!, instrument]))
+})
+
 const enrichedTransactions = computed(() => {
+  const instMap = instrumentMap.value
+
   return props.transactions.map(transaction => {
-    const instrument = props.instruments.find(i => i.id === transaction.instrumentId)
+    const instrument = instMap.get(transaction.instrumentId)
+
     return {
       ...transaction,
-      instrumentName: instrument?.name,
-      instrumentType: instrument?.type,
+      instrumentName: instrument?.name || 'Unknown',
+      instrumentType: instrument?.type || 'UNKNOWN',
+      symbol: instrument?.symbol || '-',
     }
   })
 })
