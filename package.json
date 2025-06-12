@@ -10,7 +10,7 @@
     "lint": "eslint ui --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
     "format:check": "vue-tsc --noEmit && prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\"",
-    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\" && knip --no-exit-code",
+    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\" && knip",
     "check-unused": "knip",
     "check-unused:fix": "knip --fix"
   },
