@@ -1,12 +1,15 @@
 <template>
   <data-table
-    :items="transactions"
+    :items="enrichedTransactions"
     :columns="columns"
     :is-loading="isLoading"
     empty-message="No transactions found. Add a new transaction to get started."
   >
     <template #cell-instrumentId="{ item }">
-      {{ item.symbol }}
+      <div>
+        <div>{{ item.symbol }}</div>
+        <small class="text-muted">{{ item.instrumentType }}</small>
+      </div>
     </template>
 
     <template #cell-amount="{ item }">
@@ -37,11 +40,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import DataTable, { ColumnDefinition } from '../shared/data-table.vue'
+import DataTable from '../shared/data-table.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
+import { Instrument } from '../../models/instrument'
+import { transactionColumns } from '../../config/table-columns'
 import {
-  formatDate,
-  formatNumber,
   formatProfitLoss,
   formatTransactionAmount,
   getAmountClass,
@@ -50,11 +53,13 @@ import {
 
 interface Props {
   transactions: PortfolioTransaction[]
+  instruments: Instrument[]
   isLoading?: boolean
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
+  instruments: () => [],
 })
 
 defineEmits<{
@@ -62,43 +67,18 @@ defineEmits<{
   delete: [id: number]
 }>()
 
-const columns = computed<ColumnDefinition[]>(() => [
-  {
-    key: 'transactionDate',
-    label: 'Date',
-    formatter: (value: string) => formatDate(value),
-  },
-  {
-    key: 'instrumentId',
-    label: 'Instrument',
-  },
-  {
-    key: 'quantity',
-    label: 'Quantity',
-    class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value),
-  },
-  {
-    key: 'price',
-    label: 'Price',
-    class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value),
-  },
-  {
-    key: 'amount',
-    label: 'Amount',
-  },
-  {
-    key: 'profit',
-    label: 'Profit/Loss',
-  },
-  {
-    key: 'averageCost',
-    label: 'Average Cost',
-    class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value),
-  },
-])
+const columns = transactionColumns
+
+const enrichedTransactions = computed(() => {
+  return props.transactions.map(transaction => {
+    const instrument = props.instruments.find(i => i.id === transaction.instrumentId)
+    return {
+      ...transaction,
+      instrumentName: instrument?.name,
+      instrumentType: instrument?.type,
+    }
+  })
+})
 
 const formattedAmount = (transaction: PortfolioTransaction): string => {
   return formatTransactionAmount(

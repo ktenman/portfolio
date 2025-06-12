@@ -31,14 +31,8 @@
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/list-group';
 @import 'bootstrap/scss/close';
-@import 'bootstrap/scss/toasts';
 @import 'bootstrap/scss/modal';
-@import 'bootstrap/scss/tooltip';
-@import 'bootstrap/scss/popover';
-@import 'bootstrap/scss/carousel';
 @import 'bootstrap/scss/spinners';
-@import 'bootstrap/scss/offcanvas';
-@import 'bootstrap/scss/placeholders';
 @import 'bootstrap/scss/helpers';
 @import 'bootstrap/scss/utilities/api';
 
@@ -61,6 +55,22 @@
 
 .modal {
   .modal-content {
+    background-color: $white;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    background-color: $white;
+  }
+
+  .form-control,
+  .form-select {
+    background-color: $white;
+
+    &:focus {
+      background-color: $white;
+    }
   }
 }
 
@@ -147,10 +157,13 @@
   --bs-btn-hover-color: #fff;
 }
 
-.form-control {
-  background-color: #ffffff;
+.form-control,
+.form-select {
+  background-color: $white !important;
 
   &:focus {
-    background-color: #ffffff;
+    background-color: $white !important;
+    border-color: $primary;
+    box-shadow: 0 0 0 0.25rem rgba($primary, 0.25);
   }
 }
