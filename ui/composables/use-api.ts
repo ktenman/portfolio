@@ -1,24 +1,27 @@
-import { ref, shallowRef, Ref } from 'vue'
+import { ref, Ref, shallowRef } from 'vue'
 
 interface UseApiOptions {
   immediate?: boolean
 }
 
-type ApiFunction<T> = (...args: any[]) => Promise<T>
+type ApiFunction<T, TArgs extends any[]> = (...args: TArgs) => Promise<T>
 
-interface UseApiReturn<T> {
+interface UseApiReturn<T, TArgs extends any[]> {
   data: Ref<T | null>
   error: Ref<Error | null>
   isLoading: Ref<boolean>
-  execute: ApiFunction<T | null>
+  execute: (...args: TArgs) => Promise<T | null>
 }
 
-export function useApi<T>(apiCall: ApiFunction<T>, options: UseApiOptions = {}): UseApiReturn<T> {
+export function useApi<T, TArgs extends any[] = any[]>(
+  apiCall: ApiFunction<T, TArgs>,
+  options: UseApiOptions = {}
+): UseApiReturn<T, TArgs> {
   const data = shallowRef<T | null>(null)
   const error = ref<Error | null>(null)
   const isLoading = ref(false)
 
-  const execute = async (...args: any[]): Promise<T | null> => {
+  const execute = async (...args: TArgs): Promise<T | null> => {
     isLoading.value = true
     error.value = null
 
@@ -37,7 +40,7 @@ export function useApi<T>(apiCall: ApiFunction<T>, options: UseApiOptions = {}):
   }
 
   if (options.immediate) {
-    execute()
+    execute(...([] as unknown as TArgs))
   }
 
   return {

@@ -1,4 +1,4 @@
-import { ref, reactive, computed, ComputedRef, Ref } from 'vue'
+import { computed, ComputedRef, reactive, ref, Ref } from 'vue'
 
 type ValidationRule<T> = (value: T) => string | true
 type ValidationRules<T> = {
@@ -15,7 +15,7 @@ interface UseFormValidationReturn<T> {
   setFieldValue: <K extends keyof T>(field: K, value: T[K]) => void
 }
 
-export function useFormValidation<T extends Record<string, any>>(
+export function useFormValidation<T extends Record<string, unknown>>(
   initialData: T,
   rules: ValidationRules<T> = {}
 ): UseFormValidationReturn<T> {
@@ -76,7 +76,7 @@ export function useFormValidation<T extends Record<string, any>>(
 export const validators = {
   required:
     (message = 'This field is required') =>
-    (value: any) =>
+    (value: unknown) =>
       (value !== null && value !== undefined && value !== '') || message,
 
   minLength: (min: number, message?: string) => (value: string) =>

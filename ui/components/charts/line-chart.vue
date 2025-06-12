@@ -3,9 +3,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import Chart from 'chart.js/auto'
-import { useFormatters } from '../../composables/use-formatters'
+import { formatCurrency } from '../../utils/formatters'
 
 interface ChartProps {
   data: number[]
@@ -23,8 +23,6 @@ const props = withDefaults(defineProps<ChartProps>(), {
   borderColor: 'rgba(75, 192, 192, 1)',
   backgroundColor: 'rgba(75, 192, 192, 0.2)',
 })
-
-const { formatCurrency } = useFormatters()
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 let chartInstance: Chart | null = null

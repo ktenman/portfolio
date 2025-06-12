@@ -1,4 +1,5 @@
 import { UtilityService } from './utility-service'
+import { PortfolioSummaryService } from './portfolio-summary-service'
 import { createCrudService } from './crud-service-factory'
 import { Instrument } from '../models/instrument'
 import { PortfolioTransaction } from '../models/portfolio-transaction'
@@ -12,5 +13,5 @@ export const transactionService = createCrudService<PortfolioTransaction>(
   '/api/transactions',
   CACHE_KEYS.TRANSACTIONS
 )
-
-export const getUtilityService = () => new UtilityService()
+export const utilityService = new UtilityService()
+export const portfolioSummaryService = new PortfolioSummaryService()

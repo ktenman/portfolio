@@ -1,9 +1,9 @@
-import { ref, watch, onMounted } from 'vue'
-import { getUtilityService } from '../services/service-registry'
+import { onMounted, ref, watch } from 'vue'
+import { utilityService } from '../services/service-registry'
 import { CalculationResult } from '../models/calculation-result'
 import { useLocalStorage } from './use-local-storage'
 
-interface CalculatorForm {
+interface CalculatorForm extends Record<string, unknown> {
   initialWorth: number
   monthlyInvestment: number
   yearlyGrowthRate: number
@@ -28,7 +28,6 @@ export function useCalculator() {
   }
 
   const STORAGE_KEY = 'investment-calculator-form'
-  const utilityService = getUtilityService()
 
   const {
     form,
@@ -56,7 +55,8 @@ export function useCalculator() {
       await updateFormField('annualReturnRate', Number(result.average.toFixed(3)))
       await updateFormField('initialWorth', Number(result.total.toFixed(2)))
 
-      const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } = form
+      const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } =
+        form as CalculatorForm
       const values = []
       let totalWorth = initialWorth
       let currentMonthlyInvestment = monthlyInvestment

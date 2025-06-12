@@ -2,7 +2,7 @@ import { PortfolioSummary } from '../models/portfolio-summary'
 import { Cacheable } from '../decorators/cacheable.decorator'
 import { CacheEvict } from '../decorators/cache-evict.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
-import { ApiClient } from './api-client'
+import { apiClient } from './api-client'
 import { Page } from '../models/page'
 
 export class PortfolioSummaryService {
@@ -11,7 +11,7 @@ export class PortfolioSummaryService {
 
   async getHistorical(page: number, size: number): Promise<Page<PortfolioSummary>> {
     const url = `${this.historicalApiUrl}?page=${page}&size=${size}`
-    return await ApiClient.get<Page<PortfolioSummary>>(url)
+    return await apiClient.get<Page<PortfolioSummary>>(url)
   }
 
   @CacheEvict([
@@ -20,11 +20,11 @@ export class PortfolioSummaryService {
     CACHE_KEYS.INSTRUMENTS,
   ])
   async recalculateAll(): Promise<any> {
-    return ApiClient.post<any>('/api/portfolio-summary/recalculate', {})
+    return apiClient.post<any>('/api/portfolio-summary/recalculate', {})
   }
 
   @Cacheable(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
   async getCurrent(): Promise<PortfolioSummary> {
-    return ApiClient.get<PortfolioSummary>(this.currentApiUrl)
+    return apiClient.get<PortfolioSummary>(this.currentApiUrl)
   }
 }

@@ -18,7 +18,7 @@ import {
   Title,
   Tooltip,
 } from 'chart.js'
-import { useFormatters } from '../../composables/use-formatters'
+import { formatDate } from '../../utils/formatters'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
 
@@ -33,8 +33,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-const { formatDate } = useFormatters()
 
 const chartData = computed(() => {
   if (!props.data) return null

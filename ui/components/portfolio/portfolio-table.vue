@@ -36,15 +36,17 @@
 
 <script setup lang="ts">
 import { PortfolioSummary } from '../../models/portfolio-summary'
-import { useFormatters } from '../../composables/use-formatters'
+import {
+  formatCurrencyWithSymbol,
+  formatDate,
+  formatPercentageFromDecimal,
+} from '../../utils/formatters'
 
 interface Props {
   summaries: PortfolioSummary[]
 }
 
 defineProps<Props>()
-
-const { formatDate, formatCurrencyWithSymbol, formatPercentageFromDecimal } = useFormatters()
 </script>
 
 <style scoped>
