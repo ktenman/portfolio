@@ -28,7 +28,12 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
-import { BuildInfoService, BuildInfo } from '../services/build-info-service'
+import { getUtilityService } from '../services/service-registry'
+
+interface BuildInfo {
+  hash: string
+  time: string
+}
 
 const routes = ref([
   { path: '/', name: 'Summary' },
@@ -38,11 +43,11 @@ const routes = ref([
 ])
 
 const buildInfo = ref<BuildInfo | null>(null)
-const buildInfoService = new BuildInfoService()
+const utilityService = getUtilityService()
 
 onMounted(async () => {
   try {
-    buildInfo.value = await buildInfoService.getBuildInfo()
+    buildInfo.value = await utilityService.getBuildInfo()
   } catch (error) {
     console.error('Error fetching build info:', error)
   }
