@@ -23,7 +23,7 @@ export class ApiClient {
     this.onUnauthorized = config.onUnauthorized
   }
 
-  async request<T>(url: string, options: RequestInit = {}): Promise<T> {
+  async request<T>(url: string, options: RequestInit = {}): Promise<T | void> {
     const fullUrl = `${this.baseUrl}${url}`
 
     const response = await fetch(fullUrl, {
@@ -41,7 +41,7 @@ export class ApiClient {
     }
 
     if (response.status === 204) {
-      return undefined as unknown as T
+      return
     }
 
     if (!response.ok) {
@@ -57,18 +57,18 @@ export class ApiClient {
     }
   }
 
-  get<T>(url: string): Promise<T> {
+  get<T>(url: string): Promise<T | void> {
     return this.request<T>(url)
   }
 
-  post<T>(url: string, data: unknown): Promise<T> {
+  post<T>(url: string, data: unknown): Promise<T | void> {
     return this.request<T>(url, {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
-  put<T>(url: string, data: unknown): Promise<T> {
+  put<T>(url: string, data: unknown): Promise<T | void> {
     return this.request<T>(url, {
       method: 'PUT',
       body: JSON.stringify(data),
