@@ -1,3 +1,5 @@
+import { ProviderName } from '../constants/provider-name'
+
 export interface Instrument {
   id?: number
   symbol: string
@@ -6,7 +8,7 @@ export interface Instrument {
   category?: string
   currency?: string
   baseCurrency?: string
-  providerName?: 'ALPHA_VANTAGE' | 'BINANCE' | 'FT'
+  providerName?: ProviderName
   xirr?: number
   totalInvestment?: number
   currentValue?: number
