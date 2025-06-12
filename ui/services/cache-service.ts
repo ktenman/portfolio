@@ -7,7 +7,7 @@ type CacheContent<T> = {
 
 class CacheService {
   private static instance: CacheService
-  private readonly cacheValidity: number = 60_000 // 1 minute
+  private readonly cacheValidity: number = 60_000
 
   static getInstance(): CacheService {
     if (!CacheService.instance) {
@@ -48,5 +48,4 @@ class CacheService {
   }
 }
 
-export { CacheService }
 export const cacheService = CacheService.getInstance()

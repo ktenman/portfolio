@@ -10,7 +10,9 @@
     "lint": "eslint ui --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
     "format:check": "vue-tsc --noEmit && prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\"",
-    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\""
+    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\" && knip --no-exit-code",
+    "check-unused": "knip",
+    "check-unused:fix": "knip --fix"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -31,7 +33,9 @@
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.4.1",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-plugin-vue": "^10.2.0",
+    "knip": "^5.61.0",
     "prettier": "^3.5.3",
     "typescript": "5.8.3",
     "vite": "^6.3.5",

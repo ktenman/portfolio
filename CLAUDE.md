@@ -183,4 +183,11 @@ Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.
-NEVER add comments to code unless explicitly requested by the User. Keep code clean without documentation comments.
+NEVER add comments to code. Follow clean code principles where code is self-documenting through clear naming and structure.
+AVOID all forms of code comments including:
+
+- Single-line comments (//)
+- Multi-line comments (/\* \*/)
+- Documentation comments (/\*\* \*/)
+- Inline comments
+  The only exception is TypeScript triple-slash directives (///) which are required for type definitions.
