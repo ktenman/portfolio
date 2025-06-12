@@ -7,28 +7,93 @@ interface ErrorResponse {
 }
 
 export class ApiClient {
+  private static readonly REDIRECT_COUNT_KEY = 'redirectCount'
+  private static readonly MAX_REDIRECT_ATTEMPTS = 3
+  private static readonly DEFAULT_LOGIN_URL = '/login'
+  private static readonly CALCULATOR_ENDPOINT_PATTERN = '/calculator'
+
+  private static getCurrentRedirectCount(): number {
+    return parseInt(sessionStorage.getItem(this.REDIRECT_COUNT_KEY) || '0')
+  }
+
+  private static incrementRedirectCount(): void {
+    const currentCount = this.getCurrentRedirectCount()
+    sessionStorage.setItem(this.REDIRECT_COUNT_KEY, (currentCount + 1).toString())
+  }
+
+  private static clearRedirectCount(): void {
+    sessionStorage.removeItem(this.REDIRECT_COUNT_KEY)
+  }
+
+  private static isRedirectLoopDetected(): boolean {
+    return this.getCurrentRedirectCount() > this.MAX_REDIRECT_ATTEMPTS
+  }
+
+  private static isCalculatorEndpoint(url: string): boolean {
+    return url.includes(this.CALCULATOR_ENDPOINT_PATTERN)
+  }
+
+  private static handleRedirectLoopForCalculator<T>(): T {
+    this.clearRedirectCount()
+    return {} as T
+  }
+
+  private static handleRedirectLoop(): never {
+    this.clearRedirectCount()
+    throw new ApiError(
+      401,
+      'Authentication error',
+      'Unable to authenticate after multiple attempts',
+      {}
+    )
+  }
+
+  private static handleRedirectResponse(response: Response): never {
+    this.incrementRedirectCount()
+    const redirectUrl = response.headers.get('Location') || this.DEFAULT_LOGIN_URL
+    window.location.replace(redirectUrl)
+    throw new Error('Redirecting to login')
+  }
+
+  private static isRedirectResponse(response: Response): boolean {
+    return response.type === 'opaqueredirect' || response.status === 302
+  }
+
+  private static async parseErrorResponse(response: Response): Promise<ErrorResponse> {
+    try {
+      return await response.json()
+    } catch {
+      return {}
+    }
+  }
+
+  private static createApiError(response: Response, errorData: ErrorResponse): ApiError {
+    return new ApiError(
+      response.status,
+      errorData.message ?? 'API request failed',
+      errorData.debugMessage ?? `HTTP error! status: ${response.status}`,
+      errorData.validationErrors ?? {}
+    )
+  }
+
+  private static isNoContentResponse(response: Response): boolean {
+    return response.status === 204
+  }
+
+  private static async parseJsonResponse<T>(response: Response): Promise<T> {
+    try {
+      return await response.json()
+    } catch (e) {
+      console.error('Error parsing JSON response:', e)
+      return {} as T
+    }
+  }
+
   static async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    // Add a redirect counter to detect loops
-    const redirectCount = parseInt(sessionStorage.getItem('redirectCount') || '0')
+    const isCalculator = this.isCalculatorEndpoint(url)
 
-    // Check if this is a calculator endpoint
-    const isCalculatorEndpoint = url.includes('/calculator')
-
-    // Break infinite loops after a few redirects
-    if (redirectCount > 3) {
-      sessionStorage.removeItem('redirectCount')
-
-      // For calculator endpoint, return empty data rather than redirecting
-      if (isCalculatorEndpoint) {
-        return {} as T
-      }
-
-      throw new ApiError(
-        401,
-        'Authentication error',
-        'Unable to authenticate after multiple attempts',
-        {}
-      )
+    if (this.isRedirectLoopDetected()) {
+      return isCalculator ? this.handleRedirectLoopForCalculator<T>() : this.handleRedirectLoop()
     }
 
     const response = await fetch(url, {
@@ -36,55 +101,27 @@ export class ApiClient {
       redirect: 'manual',
     })
 
-    if (response.type === 'opaqueredirect' || response.status === 302) {
-      // Special handling for calculator endpoint
-      if (isCalculatorEndpoint) {
-        return {} as T // Return empty result instead of redirecting
+    if (this.isRedirectResponse(response)) {
+      if (isCalculator) {
+        return {} as T
       }
-
-      // For other endpoints, increment redirect counter and redirect
-      sessionStorage.setItem('redirectCount', (redirectCount + 1).toString())
-      const redirectUrl = response.headers.get('Location') || '/login'
-
-      // Use replace instead of reload to avoid adding to browser history
-      window.location.replace(redirectUrl)
-      throw new Error('Redirecting to login')
+      this.handleRedirectResponse(response)
     }
 
-    // Reset redirect counter on successful requests
-    if (redirectCount > 0) {
-      sessionStorage.removeItem('redirectCount')
+    if (this.getCurrentRedirectCount() > 0) {
+      this.clearRedirectCount()
     }
 
-    // Handle non-successful responses
     if (!response.ok) {
-      let errorData: ErrorResponse = {}
-      try {
-        errorData = await response.json()
-      } catch {
-        // If parsing fails, use default error message
-      }
-
-      throw new ApiError(
-        response.status,
-        errorData.message ?? 'API request failed',
-        errorData.debugMessage ?? `HTTP error! status: ${response.status}`,
-        errorData.validationErrors ?? {}
-      )
+      const errorData = await this.parseErrorResponse(response)
+      throw this.createApiError(response, errorData)
     }
 
-    // Return void for 204 responses
-    if (response.status === 204) {
+    if (this.isNoContentResponse(response)) {
       return undefined as unknown as T
     }
 
-    // Parse JSON for other successful responses
-    try {
-      return await response.json()
-    } catch (e) {
-      console.error('Error parsing JSON response:', e)
-      return {} as T
-    }
+    return this.parseJsonResponse<T>(response)
   }
 
   static get<T>(url: string): Promise<T> {

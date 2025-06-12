@@ -6,7 +6,7 @@
     empty-message="No transactions found. Add a new transaction to get started."
   >
     <template #cell-instrumentId="{ item }">
-      {{ getInstrumentSymbol(item.instrumentId) }}
+      {{ item.symbol }}
     </template>
 
     <template #cell-amount="{ item }">
@@ -39,16 +39,14 @@
 import { computed } from 'vue'
 import DataTable, { ColumnDefinition } from '../shared/data-table.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
-import { Instrument } from '../../models/instrument'
 import { useFormatters } from '../../composables/use-formatters'
 
 interface Props {
   transactions: PortfolioTransaction[]
-  instruments: Instrument[]
   isLoading?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   isLoading: false,
 })
 
@@ -103,12 +101,6 @@ const columns = computed<ColumnDefinition[]>(() => [
     formatter: (value: number) => formatNumber(value),
   },
 ])
-
-const getInstrumentSymbol = (instrumentId: number | undefined) => {
-  if (instrumentId === undefined) return 'Unknown'
-  const instrument = props.instruments.find(i => i.id === instrumentId)
-  return instrument ? instrument.symbol : 'Unknown'
-}
 
 const formattedAmount = (transaction: PortfolioTransaction): string => {
   return formatTransactionAmount(

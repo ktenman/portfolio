@@ -46,7 +46,6 @@
       </div>
     </div>
 
-    <!-- Confirm Dialog -->
     <confirm-dialog
       v-model="isConfirmOpen"
       :title="confirmOptions.title"
@@ -85,10 +84,8 @@ const {
 
 const { processedChartData } = usePortfolioChart(summaries)
 
-// Confirm dialog setup
 const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
 
-// Scroll handling for infinite scroll
 const handleScroll = async () => {
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
     await fetchSummaries()
