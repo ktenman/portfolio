@@ -176,3 +176,11 @@ A comprehensive test runner that combines unit tests, E2E tests, and environment
 - Scheduled jobs can be disabled with `scheduling.enabled=false`
 - E2E tests generate screenshots on failure (check build artifacts)
 - Use `./test-runner.sh --e2e` for reliable E2E testing
+
+# important-instruction-reminders
+
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.
+NEVER add comments to code unless explicitly requested by the User. Keep code clean without documentation comments.

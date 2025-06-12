@@ -6,7 +6,15 @@ type CacheContent<T> = {
 }
 
 class CacheService {
+  private static instance: CacheService
   private readonly cacheValidity: number = 60_000 // 1 minute
+
+  static getInstance(): CacheService {
+    if (!CacheService.instance) {
+      CacheService.instance = new CacheService()
+    }
+    return CacheService.instance
+  }
 
   setItem<T>(key: string, data: T): void {
     const cacheContent: CacheContent<T> = { timestamp: Date.now(), data }
@@ -40,4 +48,5 @@ class CacheService {
   }
 }
 
-export const cacheService = new CacheService()
+export { CacheService }
+export const cacheService = CacheService.getInstance()

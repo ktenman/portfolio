@@ -1,11 +1,18 @@
 import { ApiClient } from './api-client'
 import { cacheService } from './cache-service'
+import { BaseService } from './base-service'
+import { ICrudService } from '../types/service-interfaces'
 
-export abstract class BaseCrudService<T extends { id?: number | string }> {
+export abstract class BaseCrudService<T extends { id?: number | string }>
+  extends BaseService
+  implements ICrudService<T>
+{
   constructor(
-    protected readonly baseUrl: string,
+    baseUrl: string,
     protected readonly cacheKey: string
-  ) {}
+  ) {
+    super(baseUrl)
+  }
 
   async getAll(): Promise<T[]> {
     const cached = cacheService.getItem<T[]>(this.cacheKey)
