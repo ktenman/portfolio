@@ -24,7 +24,13 @@
 import { computed } from 'vue'
 import DataTable, { ColumnDefinition } from '../shared/data-table.vue'
 import { Instrument } from '../../models/instrument'
-import { useFormatters } from '../../composables/use-formatters'
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercentage,
+  formatProfitLoss,
+  getProfitClass,
+} from '../../utils/formatters'
 
 interface Props {
   instruments: Instrument[]
@@ -38,9 +44,6 @@ withDefaults(defineProps<Props>(), {
 defineEmits<{
   edit: [instrument: Instrument]
 }>()
-
-const { formatCurrency, formatNumber, formatPercentage, formatProfitLoss, getProfitClass } =
-  useFormatters()
 
 const columns = computed<ColumnDefinition[]>(() => [
   {

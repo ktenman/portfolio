@@ -39,7 +39,14 @@
 import { computed } from 'vue'
 import DataTable, { ColumnDefinition } from '../shared/data-table.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
-import { useFormatters } from '../../composables/use-formatters'
+import {
+  formatDate,
+  formatNumber,
+  formatProfitLoss,
+  formatTransactionAmount,
+  getAmountClass,
+  getProfitClass,
+} from '../../utils/formatters'
 
 interface Props {
   transactions: PortfolioTransaction[]
@@ -54,15 +61,6 @@ defineEmits<{
   edit: [transaction: PortfolioTransaction]
   delete: [id: number]
 }>()
-
-const {
-  formatDate,
-  formatNumber,
-  formatTransactionAmount,
-  getAmountClass,
-  formatProfitLoss,
-  getProfitClass,
-} = useFormatters()
 
 const columns = computed<ColumnDefinition[]>(() => [
   {

@@ -1,26 +1,29 @@
 <template>
-  <div class="container mt-2">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Instruments</h4>
-      <button class="btn btn-primary btn-sm" id="addNewInstrument" @click="openAddModal">
-        Add New Instrument
-      </button>
-    </div>
+  <crud-layout
+    :alert-message="alertMessage"
+    :alert-type="alertType"
+    :show-alert="showAlert"
+    add-button-id="addNewInstrument"
+    add-button-text="Add New Instrument"
+    title="Instruments"
+    @add="openAddModal"
+  >
+    <template #content>
+      <instrument-table :instruments="instruments" :is-loading="isLoading" @edit="openEditModal" />
+    </template>
 
-    <instrument-table :instruments="instruments" :is-loading="isLoading" @edit="openEditModal" />
-
-    <instrument-modal :instrument="selectedItem || {}" @save="handleSave" />
-
-    <alert v-model="showAlert" :type="alertType" :message="alertMessage" :duration="5000" />
-  </div>
+    <template #modals>
+      <instrument-modal :instrument="selectedItem || {}" @save="handleSave" />
+    </template>
+  </crud-layout>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useCrudPage } from '../../composables/use-crud-page'
+import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
-import Alert from '../shared/alert.vue'
 import { instrumentService } from '../../services/service-registry'
 import { Instrument } from '../../models/instrument'
 

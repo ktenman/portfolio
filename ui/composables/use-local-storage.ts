@@ -1,7 +1,7 @@
-import { ref, reactive, toRaw } from 'vue'
+import { reactive, ref, toRaw } from 'vue'
 
 interface FormState {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export const useLocalStorage = <T extends FormState>(storageKey: string, defaultForm: T) => {
@@ -33,13 +33,13 @@ export const useLocalStorage = <T extends FormState>(storageKey: string, default
 
   const resetForm = (): void => {
     Object.keys(form).forEach(key => {
-      ;(form as any)[key] = (defaultForm as any)[key]
+      ;(form as FormState)[key] = (defaultForm as FormState)[key]
     })
     localStorage.removeItem(storageKey)
   }
 
-  const updateFormField = async (field: keyof T, value: any): Promise<void> => {
-    ;(form as any)[field] = value
+  const updateFormField = async (field: keyof T, value: T[keyof T]): Promise<void> => {
+    ;(form as FormState)[field as string] = value
     saveToLocalStorage()
   }
 

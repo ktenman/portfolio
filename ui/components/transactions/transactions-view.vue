@@ -1,52 +1,57 @@
 <template>
-  <div class="container mt-2">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Transactions</h4>
-      <button class="btn btn-primary btn-sm" @click="() => openAddModal()">
-        Add New Transaction
-      </button>
-    </div>
+  <crud-layout
+    :alert-message="alertMessage"
+    :alert-type="alertType"
+    :show-alert="showAlert"
+    add-button-id="addNewTransaction"
+    add-button-text="Add New Transaction"
+    title="Transactions"
+    @add="openAddModal"
+  >
+    <template #content>
+      <transaction-table
+        :is-loading="isLoading"
+        :transactions="transactions"
+        @delete="handleDelete"
+        @edit="openEditModal"
+      />
+    </template>
 
-    <transaction-table
-      :transactions="transactions"
-      :is-loading="isLoading"
-      @edit="openEditModal"
-      @delete="handleDelete"
-    />
+    <template #modals>
+      <transaction-modal
+        :instruments="instruments"
+        :transaction="selectedItem || {}"
+        @save="handleSave"
+      />
 
-    <transaction-modal
-      :transaction="selectedItem || {}"
-      :instruments="instruments"
-      @save="handleSave"
-    />
-
-    <alert v-model="showAlert" :type="alertType" :message="alertMessage" :duration="5000" />
-
-    <confirm-dialog
-      v-model="isConfirmOpen"
-      :title="confirmOptions.title"
-      :message="confirmOptions.message"
-      :confirm-text="confirmOptions.confirmText"
-      :cancel-text="confirmOptions.cancelText"
-      :confirm-class="confirmOptions.confirmClass"
-      modal-id="transactionConfirmModal"
-      @confirm="handleConfirm"
-      @cancel="handleCancel"
-    />
-  </div>
+      <confirm-dialog
+        v-model="isConfirmOpen"
+        :cancel-text="confirmOptions.cancelText"
+        :confirm-class="confirmOptions.confirmClass"
+        :confirm-text="confirmOptions.confirmText"
+        :message="confirmOptions.message"
+        :title="confirmOptions.title"
+        @cancel="handleCancel"
+        @confirm="handleConfirm"
+      />
+    </template>
+  </crud-layout>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useCrudPage } from '../../composables/use-crud-page'
-import { useResourceCrud } from '../../composables/use-resource-crud'
+import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
-import Alert from '../shared/alert.vue'
 import ConfirmDialog from '../shared/confirm-dialog.vue'
 import { instrumentService, transactionService } from '../../services/service-registry'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
+
+const transactionCrud = useCrudPage<PortfolioTransaction>(transactionService, 'transactionModal')
+
+const instrumentCrud = useCrudPage<Instrument>(instrumentService, '')
 
 const {
   items: transactions,
@@ -65,14 +70,12 @@ const {
   handleDelete,
   handleConfirm,
   handleCancel,
-} = useCrudPage<PortfolioTransaction>(transactionService, 'transactionModal', {
-  transactionDate: new Date().toISOString().split('T')[0],
-})
+} = transactionCrud
 
-const { items: instruments } = useResourceCrud<Instrument>(instrumentService, { immediate: true })
+const { items: instruments, fetchAll: fetchInstruments } = instrumentCrud
 
 onMounted(async () => {
-  await fetchAll()
+  await Promise.all([fetchAll(), fetchInstruments()])
   initModal()
 })
 </script>
