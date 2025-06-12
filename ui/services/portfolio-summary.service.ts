@@ -5,13 +5,17 @@ import { CACHE_KEYS } from '../constants/cache-keys'
 import { apiClient } from './api-client'
 import { Page } from '../models/page'
 
-export class PortfolioSummaryService {
-  private historicalApiUrl = '/api/portfolio-summary/historical'
-  private currentApiUrl = '/api/portfolio-summary/current'
+const API_ENDPOINTS = {
+  historical: '/api/portfolio-summary/historical',
+  current: '/api/portfolio-summary/current',
+  recalculate: '/api/portfolio-summary/recalculate',
+} as const
 
+class PortfolioSummaryService {
   async getHistorical(page: number, size: number): Promise<Page<PortfolioSummary>> {
-    const url = `${this.historicalApiUrl}?page=${page}&size=${size}`
-    return await apiClient.get<Page<PortfolioSummary>>(url)
+    return apiClient.get<Page<PortfolioSummary>>(
+      `${API_ENDPOINTS.historical}?page=${page}&size=${size}`
+    )
   }
 
   @CacheEvict([
@@ -19,13 +23,13 @@ export class PortfolioSummaryService {
     CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL,
     CACHE_KEYS.INSTRUMENTS,
   ])
-  async recalculateAll(): Promise<any> {
-    return apiClient.post<any>('/api/portfolio-summary/recalculate', {})
+  async recalculateAll(): Promise<{ message: string }> {
+    return apiClient.post(API_ENDPOINTS.recalculate, {})
   }
 
   @Cacheable(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
   async getCurrent(): Promise<PortfolioSummary> {
-    return apiClient.get<PortfolioSummary>(this.currentApiUrl)
+    return apiClient.get<PortfolioSummary>(API_ENDPOINTS.current)
   }
 }
 

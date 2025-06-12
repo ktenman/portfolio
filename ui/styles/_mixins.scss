@@ -1,3 +1,5 @@
+@use 'sass:map';
+
 @mixin flex-center {
   display: flex;
   align-items: center;
@@ -17,31 +19,46 @@
   }
 }
 
-@mixin responsive($breakpoint) {
-  @if $breakpoint == sm {
-    @media (max-width: #{$breakpoint-sm}) {
-      @content;
-    }
-  } @else if $breakpoint == md {
-    @media (max-width: #{$breakpoint-md}) {
-      @content;
-    }
-  } @else if $breakpoint == lg {
-    @media (max-width: #{$breakpoint-lg}) {
-      @content;
-    }
-  } @else if $breakpoint == xl {
-    @media (max-width: #{$breakpoint-xl}) {
-      @content;
-    }
-  }
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
-@mixin scrollbar-style {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+@mixin container-fluid {
+  width: 100%;
+  max-width: fluid-value(rem(1200px), rem(1400px), 1200px, 1920px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: fluid-spacing(16px, 32px);
+  padding-right: fluid-spacing(16px, 32px);
+}
+
+@mixin custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
 
   &::-webkit-scrollbar {
-    display: none;
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--text-muted);
+    border-radius: 0.25rem;
+
+    &:hover {
+      background-color: var(--text-color);
+    }
   }
 }

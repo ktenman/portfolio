@@ -1,22 +1,30 @@
-$primary-color: #007bff;
-$secondary-color: #6c757d;
-$success-color: #28a745;
-$danger-color: #dc3545;
-$warning-color: #ffc107;
-$info-color: #17a2b8;
+@use 'sass:map';
 
-$text-color: #333;
-$text-muted: #6c757d;
-$border-color: #dee2e6;
-$bg-light: #f8f9fa;
+$primary-color: #007bff !default;
+$secondary-color: #6c757d !default;
+$success-color: #28a745 !default;
+$danger-color: #dc3545 !default;
+$warning-color: #ffc107 !default;
+$info-color: #17a2b8 !default;
 
+$bg-light: #f8f9fa !default;
+$text-color: #212529 !default;
 $custom-font-family:
-  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !default;
 
-$breakpoint-sm: 576px;
-$breakpoint-md: 768px;
-$breakpoint-lg: 992px;
-$breakpoint-xl: 1200px;
+$grid-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px,
+) !default;
+
+$breakpoint-sm: map.get($grid-breakpoints, sm);
+$breakpoint-md: map.get($grid-breakpoints, md);
+$breakpoint-lg: map.get($grid-breakpoints, lg);
+$breakpoint-xl: map.get($grid-breakpoints, xl);
 
 $spacing-xs: 0.25rem;
 $spacing-sm: 0.5rem;

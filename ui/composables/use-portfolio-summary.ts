@@ -1,94 +1,115 @@
-import { computed, ref } from 'vue'
+import { computed, reactive, toRefs } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
 import { portfolioSummaryService } from '../services'
 
+type LoadingState = 'idle' | 'loading' | 'paginating' | 'recalculating' | 'error'
+
+interface PortfolioState {
+  summaries: PortfolioSummary[]
+  status: LoadingState
+  error: string | null
+  currentPage: number
+  hasMoreData: boolean
+  recalculationMessage: string
+}
+
 export function usePortfolioSummary() {
   const summaryService = portfolioSummaryService
-  const summaries = ref<PortfolioSummary[]>([])
-  const isLoading = ref(true)
-  const isRecalculating = ref(false)
-  const currentPage = ref(0)
   const pageSize = 40
-  const hasMoreData = ref(true)
-  const isFetching = ref(false)
-  const error = ref<string | null>(null)
-  const recalculationMessage = ref('')
+
+  const state = reactive<PortfolioState>({
+    summaries: [],
+    status: 'loading',
+    error: null,
+    currentPage: 0,
+    hasMoreData: true,
+    recalculationMessage: '',
+  })
+
+  const sortedSummaries = computed(() =>
+    [...state.summaries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  )
+
+  const reversedSummaries = computed(() => [...sortedSummaries.value].reverse())
+
+  const isLoading = computed(() => state.status === 'loading')
+  const isFetching = computed(() => state.status === 'paginating')
+  const isRecalculating = computed(() => state.status === 'recalculating')
 
   const fetchSummaries = async () => {
-    if (isFetching.value || !hasMoreData.value) return
+    if (state.status === 'paginating' || !state.hasMoreData) return
 
-    isFetching.value = true
-    error.value = null
+    state.status = state.currentPage === 0 ? 'loading' : 'paginating'
+    state.error = null
 
     try {
-      const response = await summaryService.getHistorical(currentPage.value, pageSize)
-      summaries.value = [...summaries.value, ...response.content]
-      currentPage.value++
-      hasMoreData.value = currentPage.value < response.totalPages
-      summaries.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      const response = await summaryService.getHistorical(state.currentPage, pageSize)
+      state.summaries.push(...response.content)
+      state.currentPage++
+      state.hasMoreData = state.currentPage < response.totalPages
+      state.status = 'idle'
     } catch (_err) {
-      error.value = 'Failed to fetch summary data. Please try again later.'
-    } finally {
-      isFetching.value = false
+      state.error = 'Failed to fetch summary data. Please try again later.'
+      state.status = 'error'
     }
   }
 
   const fetchInitialData = async () => {
-    isLoading.value = true
+    state.status = 'loading'
+    state.error = null
+
     try {
-      await fetchSummaries()
-      const currentSummary = await summaryService.getCurrent()
+      const [historicalResponse, currentSummary] = await Promise.all([
+        summaryService.getHistorical(0, pageSize),
+        summaryService.getCurrent(),
+      ])
 
-      const currentDate = currentSummary.date
-      const existingIndex = summaries.value.findIndex(item => item.date === currentDate)
+      state.summaries = historicalResponse.content
+      state.currentPage = 1
+      state.hasMoreData = state.currentPage < historicalResponse.totalPages
 
+      const existingIndex = state.summaries.findIndex(item => item.date === currentSummary.date)
       if (existingIndex >= 0) {
-        summaries.value[existingIndex] = currentSummary
+        state.summaries[existingIndex] = currentSummary
       } else {
-        summaries.value.push(currentSummary)
+        state.summaries.push(currentSummary)
       }
 
-      summaries.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      state.status = 'idle'
     } catch (_err) {
-      error.value = 'Failed to load initial data. Please refresh the page.'
-    } finally {
-      isLoading.value = false
+      state.error = 'Failed to load initial data. Please refresh the page.'
+      state.status = 'error'
     }
   }
 
   const recalculate = async () => {
-    isRecalculating.value = true
-    recalculationMessage.value = ''
+    state.status = 'recalculating'
+    state.recalculationMessage = ''
 
     try {
       const response = await summaryService.recalculateAll()
-      recalculationMessage.value = response.message
+      state.recalculationMessage = response.message
 
-      currentPage.value = 0
-      summaries.value = []
-      hasMoreData.value = true
+      state.currentPage = 0
+      state.summaries = []
+      state.hasMoreData = true
+
       await fetchInitialData()
-
       return response.message
     } catch (err) {
-      recalculationMessage.value = 'Failed to recalculate summaries. Please try again later.'
+      state.recalculationMessage = 'Failed to recalculate summaries. Please try again later.'
+      state.status = 'error'
       console.error('Error during recalculation:', err)
-    } finally {
-      isRecalculating.value = false
     }
   }
 
-  const reversedSummaries = computed(() => [...summaries.value].reverse())
-
   return {
-    summaries,
+    ...toRefs(state),
+    sortedSummaries,
     reversedSummaries,
     isLoading,
     isRecalculating,
     isFetching,
-    error,
-    recalculationMessage,
-    hasMoreData,
     recalculate,
     fetchSummaries,
     fetchInitialData,
