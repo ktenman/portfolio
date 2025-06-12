@@ -1,5 +1,5 @@
 import { ref, watch, onMounted } from 'vue'
-import { CalculationService } from '../services/calculation-service'
+import { getUtilityService } from '../services/service-registry'
 import { CalculationResult } from '../models/calculation-result'
 import { useLocalStorage } from './use-local-storage'
 
@@ -28,7 +28,7 @@ export function useCalculator() {
   }
 
   const STORAGE_KEY = 'investment-calculator-form'
-  const calculationService = new CalculationService()
+  const utilityService = getUtilityService()
 
   const {
     form,
@@ -90,7 +90,7 @@ export function useCalculator() {
 
   const getResult = async (): Promise<CalculationResult> => {
     try {
-      return await calculationService.getResult()
+      return await utilityService.getCalculationResult()
     } finally {
       isLoading.value = false
     }
