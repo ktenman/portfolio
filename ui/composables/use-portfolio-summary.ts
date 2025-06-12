@@ -26,7 +26,7 @@ export function usePortfolioSummary() {
       currentPage.value++
       hasMoreData.value = currentPage.value < response.totalPages
       summaries.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    } catch (err) {
+    } catch (_err) {
       error.value = 'Failed to fetch summary data. Please try again later.'
     } finally {
       isFetching.value = false
@@ -49,7 +49,7 @@ export function usePortfolioSummary() {
       }
 
       summaries.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    } catch (err) {
+    } catch (_err) {
       error.value = 'Failed to load initial data. Please refresh the page.'
     } finally {
       isLoading.value = false
