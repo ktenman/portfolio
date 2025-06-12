@@ -13,27 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
 import NavBar from './components/nav-bar.vue'
 
-const currentYear = ref(new Date().getFullYear())
-
-onMounted(() => {
-  setInterval(
-    () => {
-      currentYear.value = new Date().getFullYear()
-    },
-    1000 * 60 * 60
-  )
-})
+const currentYear = new Date().getFullYear()
 </script>
-
-<style>
-body {
-  background-color: #f8f9fa;
-}
-
-.container-fluid {
-  max-width: 1200px;
-}
-</style>

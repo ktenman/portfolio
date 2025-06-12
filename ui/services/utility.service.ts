@@ -1,7 +1,7 @@
 import { apiClient } from './api-client'
 import { CACHE_KEYS } from '../constants/cache-keys'
-import { Cacheable } from '../decorators/cacheable.decorator'
 import { CalculationResult } from '../models/calculation-result'
+import { withCache } from '../utils/cache-utils'
 
 interface BuildInfo {
   hash: string
@@ -11,14 +11,16 @@ interface BuildInfo {
 export class UtilityService {
   private readonly baseUrl = '/api'
 
-  @Cacheable(CACHE_KEYS.CALCULATION_RESULT)
   async getCalculationResult(): Promise<CalculationResult> {
-    return apiClient.get<CalculationResult>(`${this.baseUrl}/calculator`)
+    return withCache(CACHE_KEYS.CALCULATION_RESULT, () =>
+      apiClient.get<CalculationResult>(`${this.baseUrl}/calculator`)
+    )
   }
 
-  @Cacheable(CACHE_KEYS.BUILD_INFO)
   async getBuildInfo(): Promise<BuildInfo> {
-    return apiClient.get<BuildInfo>(`${this.baseUrl}/build-info`)
+    return withCache(CACHE_KEYS.BUILD_INFO, () =>
+      apiClient.get<BuildInfo>(`${this.baseUrl}/build-info`)
+    )
   }
 }
 

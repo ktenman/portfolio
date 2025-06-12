@@ -1,6 +1,7 @@
 import { apiClient } from './api-client'
 import { cacheService } from './cache-service'
 import { ICrudService } from '../types/service-interfaces'
+import { withCache } from '../utils/cache-utils'
 
 class GenericCrudService<T extends { id?: number | string }> implements ICrudService<T> {
   constructor(
@@ -9,23 +10,20 @@ class GenericCrudService<T extends { id?: number | string }> implements ICrudSer
   ) {}
 
   async getAll(): Promise<T[]> {
-    const cached = cacheService.getItem<T[]>(this.cacheKey)
-    if (cached) return cached
-
-    const result = await apiClient.get<T[]>(this.baseUrl)
-    cacheService.setItem(this.cacheKey, result)
-    return result
+    return withCache(this.cacheKey, () => apiClient.get<T[]>(this.baseUrl))
   }
 
   async create(data: Partial<T>): Promise<T> {
     const result = await apiClient.post<T>(this.baseUrl, data)
     cacheService.clearItem(this.cacheKey)
+    if (!result) throw new Error('No data returned from create')
     return result
   }
 
   async update(id: number | string, data: Partial<T>): Promise<T> {
     const result = await apiClient.put<T>(`${this.baseUrl}/${id}`, data)
     cacheService.clearItem(this.cacheKey)
+    if (!result) throw new Error('No data returned from update')
     return result
   }
 

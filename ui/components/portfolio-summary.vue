@@ -88,7 +88,10 @@ const { processedChartData } = usePortfolioChart(summaries)
 const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
 
 const handleScroll = async () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+  if (
+    !isFetching.value &&
+    window.innerHeight + window.scrollY >= document.body.offsetHeight - 100
+  ) {
     await fetchSummaries()
   }
 }
