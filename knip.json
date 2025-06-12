@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["ui/main.ts", "ui/router/index.ts"],
+  "project": ["ui/**/*.{ts,vue}"],
+  "ignore": ["ui/public/**", "ui/vite-env.d.ts"],
+  "ignoreDependencies": ["vue-eslint-parser", "espree"],
+  "ignoreExportsUsedInFile": true,
+  "vue": {
+    "compiler": "vue"
+  }
+}

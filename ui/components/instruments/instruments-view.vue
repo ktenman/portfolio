@@ -21,7 +21,7 @@ import { useCrudPage } from '../../composables/use-crud-page'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import Alert from '../shared/alert.vue'
-import { InstrumentService } from '../../services/instrument-service'
+import { instrumentService } from '../../services/service-registry'
 import { Instrument } from '../../models/instrument'
 
 const {
@@ -36,7 +36,7 @@ const {
   openAddModal,
   openEditModal,
   handleSave,
-} = useCrudPage<Instrument>(new InstrumentService(), 'instrumentModal')
+} = useCrudPage<Instrument>(instrumentService, 'instrumentModal')
 
 onMounted(async () => {
   await fetchAll()

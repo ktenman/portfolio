@@ -3,9 +3,3 @@ export enum ProviderName {
   BINANCE = 'BINANCE',
   FT = 'FT',
 }
-
-export const PROVIDER_NAME_DISPLAY: Record<ProviderName, string> = {
-  [ProviderName.ALPHA_VANTAGE]: 'Alpha Vantage',
-  [ProviderName.BINANCE]: 'Binance',
-  [ProviderName.FT]: 'Financial Times',
-}

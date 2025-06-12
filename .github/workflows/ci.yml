@@ -32,6 +32,8 @@ jobs:
         run: npm run lint
       - name: Check Prettier formatting
         run: npm run format:check
+      - name: Check unused exports and files
+        run: npm run check-unused
       - name: Check README links
         run: .github/workflows/check-readme-links.sh
 

@@ -2,9 +2,7 @@
   <nav class="navbar navbar-expand navbar-light bg-light">
     <div class="container-fluid">
       <div class="navbar-scroll-container">
-        <!-- Put everything inside the scrollable container -->
         <div class="navbar-content">
-          <!-- Navigation links on left -->
           <ul class="navbar-nav">
             <li class="nav-item" v-for="route in routes" :key="route.path">
               <router-link class="nav-link" :to="route.path" active-class="active">
@@ -14,7 +12,6 @@
             </li>
           </ul>
 
-          <!-- Build info on right (inside scrollable area) -->
           <div class="build-info" v-if="buildInfo">
             <span class="text-muted build-info-text">
               {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
@@ -59,10 +56,10 @@ function formatDate(dateString: string): string {
   try {
     const date = new Date(dateString)
     const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0') // Month is 0-indexed
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
     const year = date.getFullYear()
     return `${day}.${month}.${year}`
-  } catch (e) {
+  } catch (_e) {
     return dateString
   }
 }
@@ -72,23 +69,22 @@ function formatDate(dateString: string): string {
 .navbar-scroll-container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  width: 100%; /* Ensure the container takes full width */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  width: 100%;
 }
 
 .navbar-scroll-container::-webkit-scrollbar {
-  display: none; /* WebKit */
+  display: none;
 }
 
-/* New container for both nav links and build info */
 .navbar-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-width: 100%; /* At minimum take up full width */
-  width: max-content; /* But expand if content requires more space */
-  padding-right: 15px; /* Add some padding on right side */
+  min-width: 100%;
+  width: max-content;
+  padding-right: 15px;
 }
 
 .navbar-nav {
@@ -133,13 +129,12 @@ function formatDate(dateString: string): string {
   font-weight: bold;
 }
 
-/* Build info styles */
 .build-info {
   font-size: 0.75rem;
   padding: 0 10px;
   display: flex;
   align-items: center;
-  margin-left: 20px; /* Add space between nav items and build info */
+  margin-left: 20px;
   white-space: nowrap;
 }
 
@@ -157,12 +152,10 @@ function formatDate(dateString: string): string {
     gap: 0.5rem;
   }
 
-  /* Ensure build info doesn't wrap on mobile */
   .build-info-text {
     font-size: 0.7rem;
   }
 
-  /* Add more space so it's clear there's scrollable content */
   .build-info {
     margin-left: 30px;
   }

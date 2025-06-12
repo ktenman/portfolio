@@ -6,7 +6,6 @@ export function CacheEvict(keys: string | string[]) {
     descriptor.value = async function (...args: unknown[]) {
       const result = await originalMethod.apply(this, args)
 
-      // Support both single key and array of keys
       const keysToEvict = Array.isArray(keys) ? keys : [keys]
       keysToEvict.forEach(key => cacheService.clearItem(key))
 

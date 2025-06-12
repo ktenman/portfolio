@@ -74,7 +74,6 @@ onMounted(() => {
       keyboard: false,
     })
 
-    // Listen for Bootstrap modal events
     modalElement.addEventListener('hidden.bs.modal', () => {
       close()
     })

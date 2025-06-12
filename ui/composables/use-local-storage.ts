@@ -1,30 +1,18 @@
-/**
- * Composable for handling form persistence with localStorage
- */
-import { ref, reactive, toRaw, nextTick } from 'vue'
+import { ref, reactive, toRaw } from 'vue'
 
-export interface FormState {
+interface FormState {
   [key: string]: any
 }
 
 export const useLocalStorage = <T extends FormState>(storageKey: string, defaultForm: T) => {
   const form = reactive({ ...defaultForm })
   const isUpdatingForm = ref(false)
-  const formChanges = ref<Record<string, boolean>>({})
 
   const loadFromLocalStorage = (): void => {
     try {
       const savedForm = localStorage.getItem(storageKey)
       if (savedForm) {
-        const parsedForm = JSON.parse(savedForm)
-
-        // Apply saved values to form
-        Object.assign(form, parsedForm)
-
-        // Mark all fields loaded from localStorage as manually changed
-        Object.keys(parsedForm).forEach(key => {
-          formChanges.value[key] = true
-        })
+        Object.assign(form, JSON.parse(savedForm))
       }
     } catch (error) {
       console.error('Error loading form data from localStorage:', error)
@@ -39,10 +27,7 @@ export const useLocalStorage = <T extends FormState>(storageKey: string, default
     }
   }
 
-  const handleInput = (field: string): void => {
-    // Mark field as manually changed
-    formChanges.value[field] = true
-    // Save the entire form to localStorage
+  const handleInput = (_field: string): void => {
     saveToLocalStorage()
   }
 
@@ -50,29 +35,17 @@ export const useLocalStorage = <T extends FormState>(storageKey: string, default
     Object.keys(form).forEach(key => {
       ;(form as any)[key] = (defaultForm as any)[key]
     })
-    // Clear all change flags when resetting
-    formChanges.value = {}
     localStorage.removeItem(storageKey)
   }
 
   const updateFormField = async (field: keyof T, value: any): Promise<void> => {
-    if (formChanges.value[field as string]) return
-
-    try {
-      isUpdatingForm.value = true
-      ;(form as any)[field] = value
-      saveToLocalStorage()
-    } finally {
-      await nextTick(() => {
-        isUpdatingForm.value = false
-      })
-    }
+    ;(form as any)[field] = value
+    saveToLocalStorage()
   }
 
   return {
     form,
     isUpdatingForm,
-    formChanges,
     loadFromLocalStorage,
     saveToLocalStorage,
     handleInput,

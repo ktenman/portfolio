@@ -44,12 +44,9 @@ import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
 import Alert from '../shared/alert.vue'
 import ConfirmDialog from '../shared/confirm-dialog.vue'
-import { TransactionService } from '../../services/transaction-service'
-import { InstrumentService } from '../../services/instrument-service'
+import { instrumentService, transactionService } from '../../services/service-registry'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
-
-const instrumentService = new InstrumentService()
 
 const {
   items: transactions,
@@ -68,11 +65,10 @@ const {
   handleDelete,
   handleConfirm,
   handleCancel,
-} = useCrudPage<PortfolioTransaction>(new TransactionService(), 'transactionModal', {
+} = useCrudPage<PortfolioTransaction>(transactionService, 'transactionModal', {
   transactionDate: new Date().toISOString().split('T')[0],
 })
 
-// Separate composable for instruments since they're read-only
 const { items: instruments } = useResourceCrud<Instrument>(instrumentService, { immediate: true })
 
 onMounted(async () => {

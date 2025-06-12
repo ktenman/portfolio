@@ -3,7 +3,7 @@ import { cacheService } from './cache-service'
 import { BaseService } from './base-service'
 import { ICrudService } from '../types/service-interfaces'
 
-export abstract class BaseCrudService<T extends { id?: number | string }>
+class GenericCrudService<T extends { id?: number | string }>
   extends BaseService
   implements ICrudService<T>
 {
@@ -39,4 +39,11 @@ export abstract class BaseCrudService<T extends { id?: number | string }>
     await ApiClient.delete(`${this.baseUrl}/${id}`)
     cacheService.clearItem(this.cacheKey)
   }
+}
+
+export function createCrudService<T extends { id?: number | string }>(
+  baseUrl: string,
+  cacheKey: string
+): ICrudService<T> {
+  return new GenericCrudService<T>(baseUrl, cacheKey)
 }

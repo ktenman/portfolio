@@ -45,7 +45,6 @@ export function useResourceCrud<T extends { id?: string | number }>(
   const selectedItem = ref<T | null>(null) as Ref<T | null>
   const error = ref<Error | null>(null)
 
-  // Create separate API composables for each operation
   const { isLoading, execute: executeGet } = useApi(() => apiService.getAll(), {
     immediate: options.immediate,
   })
@@ -87,7 +86,7 @@ export function useResourceCrud<T extends { id?: string | number }>(
     error.value = null
     const result = await executeCreate(item)
     if (result) {
-      await fetchAll() // Refresh the list
+      await fetchAll()
       return result as T
     }
     return null
@@ -97,7 +96,7 @@ export function useResourceCrud<T extends { id?: string | number }>(
     error.value = null
     const result = await executeUpdate(id, item)
     if (result) {
-      await fetchAll() // Refresh the list
+      await fetchAll()
       return result as T
     }
     return null
@@ -107,7 +106,7 @@ export function useResourceCrud<T extends { id?: string | number }>(
     error.value = null
     const result = await executeDelete(id)
     if (result !== null) {
-      await fetchAll() // Refresh the list
+      await fetchAll()
       return true
     }
     return false

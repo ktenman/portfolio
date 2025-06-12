@@ -4,6 +4,7 @@ import vuePlugin from 'eslint-plugin-vue'
 import typescriptEslintParser from '@typescript-eslint/parser'
 import typescriptEslintPlugin from '@typescript-eslint/eslint-plugin'
 import prettierPlugin from 'eslint-plugin-prettier'
+import unusedImportsPlugin from 'eslint-plugin-unused-imports'
 import * as espree from 'espree'
 
 export default [
@@ -33,10 +34,24 @@ export default [
     },
     plugins: {
       vue: vuePlugin,
+      'unused-imports': unusedImportsPlugin,
     },
     rules: {
       // Example: disable the multi-word component names rule
       'vue/multi-word-component-names': 'off',
+      // Unused imports detection
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
       // Add more Vue rules as needed
     },
   },
@@ -49,20 +64,27 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
+        project: './tsconfig.json',
       },
     },
     plugins: {
       '@typescript-eslint': typescriptEslintPlugin,
       prettier: prettierPlugin,
+      'unused-imports': unusedImportsPlugin,
     },
     rules: {
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': [
+      '@typescript-eslint/no-unused-vars': 'off', // Using unused-imports plugin instead
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
         'warn',
         {
-          argsIgnorePattern: '^_',
+          vars: 'all',
           varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
           caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
         },
       ],
       '@typescript-eslint/no-explicit-any': 'off',
