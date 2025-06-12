@@ -41,6 +41,9 @@ interface Props {
   error?: string
   placeholder?: string
   options?: SelectOption[]
+  step?: string | number
+  min?: string | number
+  max?: string | number
 }
 
 withDefaults(defineProps<Props>(), {

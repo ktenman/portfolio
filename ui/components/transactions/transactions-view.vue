@@ -12,8 +12,8 @@
     <template #content>
       <transaction-table
         :is-loading="isLoading"
-        :transactions="transactions"
-        :instruments="instruments"
+        :transactions="transactions || []"
+        :instruments="instruments || []"
         @delete="handleDelete"
         @edit="openEditModal"
       />
@@ -21,7 +21,7 @@
 
     <template #modals>
       <transaction-modal
-        :instruments="instruments"
+        :instruments="instruments || []"
         :transaction="selectedItem || {}"
         @save="handleSave"
       />
@@ -41,70 +41,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Modal } from 'bootstrap'
-import { useCrud } from '../../composables/use-crud'
+import { ref } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
+import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
+import { useCrudOperations } from '../../composables/use-crud-operations'
 import { useConfirm } from '../../composables/use-confirm'
 import { useCrudAlerts } from '../../composables/use-crud-alerts'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
 import ConfirmDialog from '../shared/confirm-dialog.vue'
-import { instrumentService, transactionService } from '../../services'
+import { instrumentsService } from '../../services/instruments-service'
+import { transactionsService } from '../../services/transactions-service'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
-import { Instrument } from '../../models/instrument'
-import { MESSAGES } from '../../constants/ui-constants'
 
-const {
-  items: transactions,
-  isLoading,
-  error,
-  fetchAll,
-  create,
-  update,
-  remove,
-} = useCrud<PortfolioTransaction>(transactionService)
-
-const { items: instruments, fetchAll: fetchInstruments } = useCrud<Instrument>(instrumentService)
-const { showAlert, alertType, alertMessage, showSuccess, showError } = useCrudAlerts()
-
-const selectedItem = ref<Partial<PortfolioTransaction> | null>(null)
-let modalInstance: Modal | null = null
-
+const { showAlert, alertType, alertMessage } = useCrudAlerts()
+const selectedItem = ref<PortfolioTransaction | null>(null)
+const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
 const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
 
-onMounted(async () => {
-  await Promise.all([fetchAll(), fetchInstruments()])
-  const modalEl = document.getElementById('transactionModal')
-  if (modalEl) {
-    modalInstance = new Modal(modalEl)
-  }
+const { data: transactions, isLoading } = useQuery({
+  queryKey: ['transactions'],
+  queryFn: transactionsService.getAll,
 })
 
+const { data: instruments } = useQuery({
+  queryKey: ['instruments'],
+  queryFn: instrumentsService.getAll,
+})
+
+const { handleSave: saveTransaction, handleDelete: deleteTransaction } =
+  useCrudOperations<PortfolioTransaction>({
+    queryKey: ['transactions'],
+    createFn: transactionsService.create,
+    updateFn: transactionsService.update,
+    deleteFn: transactionsService.delete,
+    entityName: 'Transaction',
+  })
+
 const openAddModal = () => {
-  selectedItem.value = {}
-  modalInstance?.show()
+  selectedItem.value = null
+  showModal()
 }
 
 const openEditModal = (transaction: PortfolioTransaction) => {
   selectedItem.value = { ...transaction }
-  modalInstance?.show()
+  showModal()
 }
 
 const handleSave = async (transaction: Partial<PortfolioTransaction>) => {
-  try {
-    if (transaction.id) {
-      await update(transaction.id, transaction)
-      showSuccess(MESSAGES.UPDATE_SUCCESS)
-    } else {
-      await create(transaction)
-      showSuccess(MESSAGES.SAVE_SUCCESS)
-    }
-    modalInstance?.hide()
-    selectedItem.value = null
-  } catch (_err) {
-    showError(error.value?.message || MESSAGES.GENERIC_ERROR)
-  }
+  await saveTransaction(transaction, selectedItem)
+  hideModal()
 }
 
 const handleDelete = async (id: number | string) => {
@@ -117,12 +104,7 @@ const handleDelete = async (id: number | string) => {
   })
 
   if (shouldDelete) {
-    try {
-      await remove(id)
-      showSuccess(MESSAGES.DELETE_SUCCESS)
-    } catch (_err) {
-      showError(error.value?.message || MESSAGES.GENERIC_ERROR)
-    }
+    await deleteTransaction(id)
   }
 }
 </script>

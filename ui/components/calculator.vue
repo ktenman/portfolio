@@ -17,14 +17,14 @@
               :step="steps[key]"
               :min="key === 'years' ? 1 : undefined"
               required
-              @input="handleInput(key)"
+              @input="handleInput()"
             />
           </div>
           <div class="calculator-buttons-desktop">
             <button
               type="button"
               class="btn btn-outline-secondary me-2 btn-sm"
-              @click="resetCalculator"
+              @click="handleReset"
             >
               Reset Calculator
             </button>
@@ -52,7 +52,7 @@
     </div>
 
     <div class="calculator-buttons-mobile">
-      <button type="button" class="btn btn-outline-secondary me-2" @click="resetCalculator">
+      <button type="button" class="btn btn-outline-secondary me-2" @click="handleReset">
         Reset Calculator
       </button>
     </div>
@@ -88,6 +88,7 @@ import { formatCurrency } from '../utils/formatters'
 import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
+import { useConfirm } from '../composables/use-confirm'
 
 const {
   form,
@@ -98,6 +99,15 @@ const {
   handleInput,
   resetCalculator,
 } = useCalculator()
+
+const { confirm } = useConfirm()
+
+const handleReset = async () => {
+  const confirmed = await confirm({ message: 'Are you sure you want to reset the calculator?' })
+  if (!confirmed) return
+
+  resetCalculator()
+}
 
 const labels = {
   initialWorth: 'Initial Worth (€)',

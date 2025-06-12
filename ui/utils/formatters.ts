@@ -14,24 +14,20 @@ export const formatCurrency = (value: number | undefined | null): string => {
 
 export const formatNumber = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return ''
+  if (value === 0) return '0'
+  if (!isFinite(value)) return '0'
 
-  if (value < 1 && value > 0) {
-    return value.toExponential(3).replace('e-', ' * 10^-')
+  if (Math.abs(value) >= 1) {
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
   }
 
-  const [integerPart] = value.toString().split('.')
-  const integerDigits = integerPart.length
-
-  if (integerDigits === 1) {
-    return value.toFixed(3)
-  } else {
-    return value.toFixed(2)
-  }
-}
-
-export const formatPercentage = (value: number | undefined | null): string => {
-  if (value === null || value === undefined) return '0.00%'
-  return `${value.toFixed(2)}%`
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 8,
+  })
 }
 
 export const formatPercentageFromDecimal = (value: number | undefined | null): string => {

@@ -4,7 +4,7 @@
       <span class="visually-hidden">Loading...</span>
     </div>
 
-    <div v-else-if="!items || items.length === 0" class="alert alert-info" role="alert">
+    <div v-else-if="hasNoData" class="alert alert-info" role="alert">
       {{ emptyMessage }}
     </div>
 
@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
+import { computed } from 'vue'
 export interface ColumnDefinition {
   key: string
   label: string
@@ -61,6 +62,8 @@ const props = withDefaults(defineProps<Props>(), {
   emptyMessage: 'No data available',
   keyField: 'id',
 })
+
+const hasNoData = computed(() => !props.items || props.items.length === 0)
 
 const getItemKey = (item: T, index: number): string | number => {
   if (props.keyField && props.keyField in item) {

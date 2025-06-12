@@ -20,5 +20,3 @@ Chart.register(
   Tooltip,
   Legend
 )
-
-export default Chart

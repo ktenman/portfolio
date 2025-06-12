@@ -15,10 +15,7 @@
         <tr
           v-for="(summary, index) in summaries"
           :key="summary.date"
-          :class="{
-            'font-weight-bold':
-              index === 0 && summary.date === new Date().toISOString().split('T')[0],
-          }"
+          :class="getRowClass(summary, index)"
         >
           <td>{{ formatDate(summary.date) }}</td>
           <td>{{ formatPercentageFromDecimal(summary.xirrAnnualReturn) }}</td>
@@ -47,6 +44,14 @@ interface Props {
 }
 
 defineProps<Props>()
+
+const isToday = (dateString: string) => {
+  return dateString === new Date().toISOString().split('T')[0]
+}
+
+const getRowClass = (summary: PortfolioSummary, index: number) => ({
+  'font-weight-bold': index === 0 && isToday(summary.date),
+})
 </script>
 
 <style scoped>

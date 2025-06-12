@@ -177,6 +177,44 @@ A comprehensive test runner that combines unit tests, E2E tests, and environment
 - E2E tests generate screenshots on failure (check build artifacts)
 - Use `./test-runner.sh --e2e` for reliable E2E testing
 
+### Code Style Guidelines
+
+#### No Comments Policy
+
+This codebase enforces a **strict no-comments policy** using `eslint-plugin-no-comments`. Write self-documenting code with:
+
+- Clear, descriptive variable and function names
+- Small, focused functions that do one thing well
+- Meaningful type definitions and interfaces
+- Well-structured code that expresses intent clearly
+
+The only exception is TypeScript triple-slash directives (`///`) when required for type definitions.
+
+### Code Quality Tools
+
+#### Knip - Unused Code Detection
+
+The project uses [Knip](https://knip.dev/) to detect unused exports, dependencies, and files. Configuration is in `knip.json`.
+
+**Running Knip:**
+
+```bash
+npm run check-unused       # Check for unused code
+npm run check-unused:fix   # Auto-fix some issues
+```
+
+**Configuration Notes:**
+
+- Configured for Vue 3 + TypeScript with `vue-tsc` compiler
+- Automatically detects Vue and Vite plugins
+- Entry points: `ui/main.ts` and `ui/index.html`
+- Ignores backend code (`src/**`), build outputs, and infrastructure files
+
+**Known Limitations:**
+
+- May not detect unused object properties in service exports (e.g., individual methods in service objects)
+- For comprehensive unused code detection, consider manual review of service methods
+
 # important-instruction-reminders
 
 Do what has been asked; nothing more, nothing less.
@@ -191,3 +229,16 @@ AVOID all forms of code comments including:
 - Documentation comments (/\*\* \*/)
 - Inline comments
   The only exception is TypeScript triple-slash directives (///) which are required for type definitions.
+
+## File Naming Conventions
+
+ALWAYS follow the existing file naming patterns in the codebase:
+
+- Use kebab-case for all file names (e.g., `transaction-form.vue`, `use-crud-alerts.ts`)
+- NEVER add suffixes like `-improved`, `-new`, `-simple`, `-refactored` to file names
+- When updating a file, modify it in place rather than creating a new version
+- Component files: `[feature-name].vue` (e.g., `instrument-table.vue`)
+- Composables: `use-[feature].ts` (e.g., `use-form-validation.ts`)
+- Services: `[domain]-service.ts` (e.g., `instruments-service.ts`)
+- Models/Types: `[entity].ts` (e.g., `instrument.ts`)
+- Keep file names consistent with the existing patterns in each directory

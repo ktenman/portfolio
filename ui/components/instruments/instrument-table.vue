@@ -13,8 +13,8 @@
 
     <template #actions="{ item }">
       <button class="btn btn-sm btn-secondary" @click="$emit('edit', item)">
-        <font-awesome-icon icon="pencil-alt" />
-        <span class="d-none d-md-inline ms-1">Edit</span>
+        <base-icon name="pencil" :size="14" class="me-1" />
+        <span class="d-none d-md-inline">Edit</span>
       </button>
     </template>
   </data-table>
@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 import DataTable from '../shared/data-table.vue'
+import BaseIcon from '../shared/base-icon.vue'
 import { Instrument } from '../../models/instrument'
 import { instrumentColumns } from '../../config/table-columns'
 import { formatProfitLoss, getProfitClass } from '../../utils/formatters'
