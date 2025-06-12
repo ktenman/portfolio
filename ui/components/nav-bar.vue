@@ -24,8 +24,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
-import { getUtilityService } from '../services/service-registry'
+import { onMounted, ref } from 'vue'
+import { utilityService } from '../services/service-registry'
 
 interface BuildInfo {
   hash: string
@@ -40,7 +40,6 @@ const routes = ref([
 ])
 
 const buildInfo = ref<BuildInfo | null>(null)
-const utilityService = getUtilityService()
 
 onMounted(async () => {
   try {

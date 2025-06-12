@@ -6,4 +6,5 @@ export const CACHE_KEYS = {
   PRICES: 'prices',
   XIRR: 'xirr',
   CALCULATION_RESULT: 'calculation-result',
+  BUILD_INFO: 'build-info',
 }

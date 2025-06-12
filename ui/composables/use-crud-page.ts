@@ -2,6 +2,7 @@ import { Ref } from 'vue'
 import { useResourceCrud } from './use-resource-crud'
 import { useCrudView } from './use-crud-view'
 import { ICrudService } from '../types/service-interfaces'
+import { AlertType, MESSAGES } from '../constants/ui-constants'
 
 interface UseCrudPageReturn<T> {
   items: Ref<T[]>
@@ -15,7 +16,7 @@ interface UseCrudPageReturn<T> {
   select: (item: T | null) => void
 
   showAlert: Ref<boolean>
-  alertType: Ref<'success' | 'danger'>
+  alertType: Ref<AlertType>
   alertMessage: Ref<string>
   isConfirmOpen: Ref<boolean>
   confirmOptions: Ref<{
@@ -31,7 +32,7 @@ interface UseCrudPageReturn<T> {
 
   handleSave: (item: Partial<T>) => Promise<void>
   handleDelete: (id: number | string) => Promise<void>
-  confirmAction: () => Promise<boolean>
+  confirm: () => Promise<boolean>
   handleConfirm: () => void
   handleCancel: () => void
 }
@@ -46,20 +47,28 @@ export function useCrudPage<T extends { id?: number | string }>(
 
   const handleSave = async (item: Partial<T>) => {
     const isUpdate = !!item.id
-    const action = isUpdate ? () => crud.update(item.id!, item) : () => crud.create(item)
+    const action = isUpdate
+      ? async () => {
+          await crud.update(item.id!, item)
+        }
+      : async () => {
+          await crud.create(item)
+        }
 
     await view.handleSave(item, action, () =>
-      view.showSuccess(isUpdate ? 'Updated successfully' : 'Created successfully')
+      view.showSuccess(isUpdate ? MESSAGES.UPDATE_SUCCESS : MESSAGES.SAVE_SUCCESS)
     )
   }
 
   const handleDelete = async (id: number | string) => {
     await view.handleDelete(
-      () => crud.remove(id),
-      () => view.showSuccess('Deleted successfully'),
+      async () => {
+        await crud.remove(id)
+      },
+      () => view.showSuccess(MESSAGES.DELETE_SUCCESS),
       {
         title: 'Delete Confirmation',
-        message: 'Are you sure you want to delete this item?',
+        message: MESSAGES.DELETE_CONFIRMATION,
         confirmText: 'Delete',
         confirmClass: 'btn-danger',
       }
@@ -88,7 +97,7 @@ export function useCrudPage<T extends { id?: number | string }>(
 
     handleSave,
     handleDelete,
-    confirmAction: view.confirmAction,
+    confirm: view.confirm,
     handleConfirm: view.handleConfirm,
     handleCancel: view.handleCancel,
   }

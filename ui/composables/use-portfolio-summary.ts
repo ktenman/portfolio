@@ -1,9 +1,9 @@
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
-import { PortfolioSummaryService } from '../services/portfolio-summary-service'
+import { portfolioSummaryService } from '../services/service-registry'
 
 export function usePortfolioSummary() {
-  const summaryService = new PortfolioSummaryService()
+  const summaryService = portfolioSummaryService
   const summaries = ref<PortfolioSummary[]>([])
   const isLoading = ref(true)
   const isRecalculating = ref(false)

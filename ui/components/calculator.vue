@@ -85,7 +85,7 @@
 
 <script setup lang="ts">
 import { useCalculator } from '../composables/use-calculator'
-import { useFormatters } from '../composables/use-formatters'
+import { formatCurrency } from '../utils/formatters'
 import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
@@ -99,8 +99,6 @@ const {
   handleInput,
   resetCalculator,
 } = useCalculator()
-
-const { formatCurrency } = useFormatters()
 
 const labels = {
   initialWorth: 'Initial Worth (€)',
