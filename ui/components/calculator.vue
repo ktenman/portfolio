@@ -7,15 +7,15 @@
     <div class="row">
       <div class="col-md-4">
         <form @submit.prevent>
-          <div v-for="(label, key) in labels" :key="key" class="mb-3">
-            <label :for="key" class="form-label">{{ label }}:</label>
+          <div v-for="(field, key) in formFields" :key="key" class="mb-3">
+            <label :for="key" class="form-label">{{ field.label }}:</label>
             <input
               v-model.number="form[key as keyof typeof form]"
               :id="key"
-              :type="key === 'years' ? 'number' : 'text'"
+              :type="field.type || 'text'"
               class="form-control"
-              :step="steps[key]"
-              :min="key === 'years' ? 1 : undefined"
+              :step="field.step"
+              :min="field.min"
               required
               @input="handleInput()"
             />
@@ -60,23 +60,7 @@
     <div class="row mt-4">
       <div class="col-12">
         <h5>Year-by-Year Summary</h5>
-        <div class="table-responsive">
-          <table class="table table-striped table-hover">
-            <thead>
-              <tr>
-                <th v-for="header in tableHeaders" :key="header">{{ header }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="summary in yearSummary" :key="summary.year">
-                <td>{{ summary.year }}</td>
-                <td v-for="key in ['totalWorth', 'yearGrowth', 'earningsPerMonth']" :key="key">
-                  {{ formatCurrency(summary[key as keyof typeof summary]) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <data-table :items="yearSummary" :columns="summaryColumns" />
       </div>
     </div>
   </div>
@@ -88,6 +72,7 @@ import { formatCurrency } from '../utils/formatters'
 import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
+import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import { useConfirm } from '../composables/use-confirm'
 
 const {
@@ -109,23 +94,27 @@ const handleReset = async () => {
   resetCalculator()
 }
 
-const labels = {
-  initialWorth: 'Initial Worth (€)',
-  monthlyInvestment: 'Monthly Investment (€)',
-  yearlyGrowthRate: 'Yearly Growth Rate (%)',
-  annualReturnRate: 'Annual Return Rate (%)',
-  years: 'Number of Years',
+interface FormField {
+  label: string
+  step: string
+  type?: string
+  min?: number
 }
 
-const steps = {
-  initialWorth: '0.01',
-  monthlyInvestment: '0.01',
-  yearlyGrowthRate: '0.001',
-  annualReturnRate: '0.001',
-  years: '1',
+const formFields: Record<string, FormField> = {
+  initialWorth: { label: 'Initial Worth (€)', step: '0.01' },
+  monthlyInvestment: { label: 'Monthly Investment (€)', step: '0.01' },
+  yearlyGrowthRate: { label: 'Yearly Growth Rate (%)', step: '0.001' },
+  annualReturnRate: { label: 'Annual Return Rate (%)', step: '0.001' },
+  years: { label: 'Number of Years', step: '1', type: 'number', min: 1 },
 }
 
-const tableHeaders = ['Year', 'Total Worth', "Year's Growth", 'Earnings Per Month']
+const summaryColumns: ColumnDefinition[] = [
+  { key: 'year', label: 'Year' },
+  { key: 'totalWorth', label: 'Total Worth', formatter: formatCurrency },
+  { key: 'yearGrowth', label: "Year's Growth", formatter: formatCurrency },
+  { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrency },
+]
 </script>
 
 <style lang="scss" scoped>

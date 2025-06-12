@@ -19,7 +19,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) in items" :key="getItemKey(item, index)">
+          <tr
+            v-for="(item, index) in items"
+            :key="getItemKey(item, index)"
+            :class="rowClass?.(item, index)"
+          >
             <td
               v-for="column in columns"
               :key="column.key"
@@ -55,6 +59,7 @@ interface Props {
   isLoading?: boolean
   emptyMessage?: string
   keyField?: string
+  rowClass?: (item: T, index: number) => string | Record<string, boolean>
 }
 
 const props = withDefaults(defineProps<Props>(), {

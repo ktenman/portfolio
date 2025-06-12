@@ -13,7 +13,9 @@
     </template>
 
     <template #cell-amount="{ item }">
-      <span :class="amountClass(item)">{{ formattedAmount(item) }}</span>
+      <span :class="getAmountClass(item.transactionType)">
+        {{ formatTransactionAmount(item.quantity, item.price, item.transactionType) }}
+      </span>
     </template>
 
     <template #cell-profit="{ item }">
@@ -90,18 +92,6 @@ const enrichedTransactions = computed(() => {
     }
   })
 })
-
-const formattedAmount = (transaction: PortfolioTransaction): string => {
-  return formatTransactionAmount(
-    transaction.quantity,
-    transaction.price,
-    transaction.transactionType
-  )
-}
-
-const amountClass = (transaction: PortfolioTransaction): string => {
-  return getAmountClass(transaction.transactionType)
-}
 
 const getTransactionProfit = (transaction: PortfolioTransaction): number | null | undefined => {
   return transaction.transactionType === 'SELL'
