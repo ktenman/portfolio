@@ -25,7 +25,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
-import { utilityService } from '../services/service-registry'
+import { utilityService } from '../services'
 
 interface BuildInfo {
   hash: string
@@ -64,17 +64,15 @@ function formatDate(dateString: string): string {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '../styles/variables';
+@import '../styles/mixins';
+
 .navbar-scroll-container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
   width: 100%;
-}
-
-.navbar-scroll-container::-webkit-scrollbar {
-  display: none;
+  @include scrollbar-style;
 }
 
 .navbar-content {
@@ -100,11 +98,16 @@ function formatDate(dateString: string): string {
 
 .nav-link {
   position: relative;
-  transition: color 0.3s ease;
-}
+  @include transition(color);
 
-.nav-link:hover {
-  color: #007bff;
+  &:hover {
+    color: $primary-color;
+  }
+
+  &.active {
+    color: $primary-color;
+    font-weight: bold;
+  }
 }
 
 .nav-indicator {
@@ -113,19 +116,14 @@ function formatDate(dateString: string): string {
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: #007bff;
+  background-color: $primary-color;
   transform: scaleX(0);
-  transition: transform 0.3s ease;
+  @include transition(transform);
 }
 
 .nav-link:hover .nav-indicator,
 .nav-link.active .nav-indicator {
   transform: scaleX(1);
-}
-
-.nav-link.active {
-  color: #007bff;
-  font-weight: bold;
 }
 
 .build-info {
@@ -141,14 +139,14 @@ function formatDate(dateString: string): string {
   padding: 4px 8px;
 }
 
-@media (max-width: 768px) {
+@include responsive(md) {
   .navbar-content {
-    padding-right: 10px;
-    gap: 0.5rem;
+    padding-right: $spacing-sm * 2;
+    gap: $spacing-sm;
   }
 
   .navbar-nav {
-    gap: 0.5rem;
+    gap: $spacing-sm;
   }
 
   .build-info-text {
@@ -156,7 +154,7 @@ function formatDate(dateString: string): string {
   }
 
   .build-info {
-    margin-left: 30px;
+    margin-left: $spacing-lg * 2;
   }
 }
 </style>

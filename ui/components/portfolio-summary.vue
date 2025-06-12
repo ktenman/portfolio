@@ -60,14 +60,15 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { usePortfolioSummary } from '../composables/use-portfolio-summary'
 import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
-import PortfolioChart from './portfolio/portfolio-chart.vue'
 import PortfolioTable from './portfolio/portfolio-table.vue'
 import ConfirmDialog from './shared/confirm-dialog.vue'
+
+const PortfolioChart = defineAsyncComponent(() => import('./portfolio/portfolio-chart.vue'))
 
 const {
   summaries,

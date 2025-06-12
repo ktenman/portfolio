@@ -1,0 +1,63 @@
+@import 'bootstrap/scss/bootstrap';
+
+@import 'variables';
+@import 'mixins';
+
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: left;
+  color: #2c3e50;
+}
+
+.container {
+  max-width: 1200px;
+}
+
+.alert-dismissible {
+  @include transition(opacity, 0.3s);
+}
+
+.modal {
+  .modal-content {
+    @include hover-effect;
+  }
+}
+
+.btn {
+  @include transition(all, 0.2s);
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.table {
+  th {
+    font-weight: 600;
+    color: $text-color;
+    border-bottom-width: 2px;
+  }
+
+  tbody tr {
+    @include transition(background-color, 0.2s);
+
+    &:hover {
+      background-color: rgba($primary-color, 0.05);
+    }
+  }
+}
+
+.nav-link {
+  @include transition(color, 0.3s);
+
+  &:hover {
+    color: $primary-color;
+  }
+
+  &.active {
+    color: $primary-color;
+    font-weight: bold;
+  }
+}

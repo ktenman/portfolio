@@ -17,7 +17,13 @@
 
     <slot name="modals" />
 
-    <alert :model-value="showAlert" :type="alertType" :message="alertMessage" :duration="5000" @update:model-value="$emit('update:showAlert', $event)" />
+    <alert
+      :model-value="showAlert"
+      :type="alertType"
+      :message="alertMessage"
+      :duration="5000"
+      @update:model-value="$emit('update:showAlert', $event)"
+    />
   </div>
 </template>
 

@@ -21,3 +21,5 @@ export class UtilityService {
     return apiClient.get<BuildInfo>(`${this.baseUrl}/build-info`)
   }
 }
+
+export const utilityService = new UtilityService()
