@@ -7,6 +7,7 @@
     add-button-text="Add New Transaction"
     title="Transactions"
     @add="openAddModal"
+    @update:showAlert="showAlert = $event"
   >
     <template #content>
       <transaction-table
@@ -39,43 +40,38 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useCrudPage } from '../../composables/use-crud-page'
+import { useCrudController } from '../../composables/use-crud-controller'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
 import ConfirmDialog from '../shared/confirm-dialog.vue'
-import { instrumentService, transactionService } from '../../services/service-registry'
+import { instrumentService, transactionService } from '../../services'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
-
-const transactionCrud = useCrudPage<PortfolioTransaction>(transactionService, 'transactionModal')
-
-const instrumentCrud = useCrudPage<Instrument>(instrumentService, '')
 
 const {
   items: transactions,
   isLoading,
-  fetchAll,
   selectedItem,
   showAlert,
   alertType,
   alertMessage,
   isConfirmOpen,
   confirmOptions,
-  initModal,
   openAddModal,
   openEditModal,
   handleSave,
   handleDelete,
   handleConfirm,
   handleCancel,
-} = transactionCrud
-
-const { items: instruments, fetchAll: fetchInstruments } = instrumentCrud
-
-onMounted(async () => {
-  await Promise.all([fetchAll(), fetchInstruments()])
-  initModal()
+} = useCrudController<PortfolioTransaction>({
+  service: transactionService,
+  modalId: 'transactionModal',
 })
+
+const instrumentsController = useCrudController<Instrument>({
+  service: instrumentService,
+})
+
+const { items: instruments } = instrumentsController
 </script>

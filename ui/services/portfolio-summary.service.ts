@@ -28,3 +28,5 @@ export class PortfolioSummaryService {
     return apiClient.get<PortfolioSummary>(this.currentApiUrl)
   }
 }
+
+export const portfolioSummaryService = new PortfolioSummaryService()

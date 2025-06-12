@@ -7,9 +7,10 @@
     add-button-text="Add New Instrument"
     title="Instruments"
     @add="openAddModal"
+    @update:showAlert="showAlert = $event"
   >
     <template #content>
-      <instrument-table :instruments="instruments" :is-loading="isLoading" @edit="openEditModal" />
+      <instrument-table :instruments="items" :is-loading="isLoading" @edit="openEditModal" />
     </template>
 
     <template #modals>
@@ -19,30 +20,25 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useCrudPage } from '../../composables/use-crud-page'
+import { useCrudController } from '../../composables/use-crud-controller'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
-import { instrumentService } from '../../services/service-registry'
+import { instrumentService } from '../../services'
 import { Instrument } from '../../models/instrument'
 
 const {
-  items: instruments,
+  items,
   isLoading,
-  fetchAll,
   selectedItem,
   showAlert,
   alertType,
   alertMessage,
-  initModal,
   openAddModal,
   openEditModal,
   handleSave,
-} = useCrudPage<Instrument>(instrumentService, 'instrumentModal')
-
-onMounted(async () => {
-  await fetchAll()
-  initModal()
+} = useCrudController<Instrument>({
+  service: instrumentService,
+  modalId: 'instrumentModal',
 })
 </script>
