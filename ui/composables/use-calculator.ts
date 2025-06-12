@@ -53,7 +53,6 @@ export function useCalculator() {
     try {
       const result = await getResult()
 
-      // Only update fields that haven't been manually changed
       await updateFormField('annualReturnRate', Number(result.average.toFixed(3)))
       await updateFormField('initialWorth', Number(result.total.toFixed(2)))
 
@@ -107,7 +106,6 @@ export function useCalculator() {
     }
   }
 
-  // Setup debounced recalculation on form changes
   let debounceTimer: number | null = null
   watch(
     form,

@@ -4,7 +4,6 @@ import { useCrudView } from './use-crud-view'
 import { ICrudService } from '../types/service-interfaces'
 
 interface UseCrudPageReturn<T> {
-  // From useResourceCrud
   items: Ref<T[]>
   selectedItem: Ref<Partial<T> | null>
   isLoading: Ref<boolean>
@@ -15,7 +14,6 @@ interface UseCrudPageReturn<T> {
   fetchAll: () => Promise<void>
   select: (item: T | null) => void
 
-  // From useCrudView
   showAlert: Ref<boolean>
   alertType: Ref<'success' | 'danger'>
   alertMessage: Ref<string>
@@ -31,7 +29,6 @@ interface UseCrudPageReturn<T> {
   openAddModal: (initialState?: Partial<T>) => void
   openEditModal: (item: T) => void
 
-  // Combined handlers
   handleSave: (item: Partial<T>) => Promise<void>
   handleDelete: (id: number | string) => Promise<void>
   confirmAction: () => Promise<boolean>
@@ -70,7 +67,6 @@ export function useCrudPage<T extends { id?: number | string }>(
   }
 
   return {
-    // From useResourceCrud
     items: crud.items,
     selectedItem: view.selectedItem,
     isLoading: crud.isLoading,
@@ -81,7 +77,6 @@ export function useCrudPage<T extends { id?: number | string }>(
     fetchAll: crud.fetchAll,
     select: crud.select,
 
-    // From useCrudView
     showAlert: view.showAlert,
     alertType: view.alertType,
     alertMessage: view.alertMessage,
@@ -91,7 +86,6 @@ export function useCrudPage<T extends { id?: number | string }>(
     openAddModal: () => view.openAddModal(initialState),
     openEditModal: view.openEditModal,
 
-    // Combined handlers
     handleSave,
     handleDelete,
     confirmAction: view.confirmAction,

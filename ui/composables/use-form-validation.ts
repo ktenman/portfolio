@@ -39,10 +39,8 @@ export function useFormValidation<T extends Record<string, any>>(
   }
 
   const validate = (): boolean => {
-    // Clear all errors first
     Object.keys(errors).forEach(key => delete errors[key])
 
-    // Validate all fields
     let allValid = true
     Object.keys(rules).forEach(field => {
       const isFieldValid = validateField(field as keyof T)
@@ -59,13 +57,10 @@ export function useFormValidation<T extends Record<string, any>>(
 
   const setFieldValue = <K extends keyof T>(field: K, value: T[K]) => {
     formData.value[field] = value
-    // Validate the field when its value changes
     if (rules[field]) {
       validateField(field)
     }
   }
-
-  // Note: Validation happens on setFieldValue calls instead of deep watching for better performance
 
   return {
     formData,
@@ -78,7 +73,6 @@ export function useFormValidation<T extends Record<string, any>>(
   }
 }
 
-// Common validation rules
 export const validators = {
   required:
     (message = 'This field is required') =>
