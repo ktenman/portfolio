@@ -55,10 +55,10 @@ export function useCalculator() {
 
       for (let month = 1; month <= 12; month++) {
         totalWorth += currentMonthlyInvestment
-        totalWorth *= (1 + monthlyReturnRate)
+        totalWorth *= 1 + monthlyReturnRate
       }
-      
-      currentMonthlyInvestment *= (1 + monthlyGrowthRate)
+
+      currentMonthlyInvestment *= 1 + monthlyGrowthRate
       tempPortfolioData.push(totalWorth)
 
       const yearGrowth = totalWorth - yearStartWorth
