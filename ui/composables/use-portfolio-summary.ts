@@ -39,7 +39,6 @@ export function usePortfolioSummary() {
       await fetchSummaries()
       const currentSummary = await summaryService.getCurrent()
 
-      // Always replace or add the current day's data
       const currentDate = currentSummary.date
       const existingIndex = summaries.value.findIndex(item => item.date === currentDate)
 
@@ -65,7 +64,6 @@ export function usePortfolioSummary() {
       const response = await summaryService.recalculateAll()
       recalculationMessage.value = response.message
 
-      // Reset and refresh all data
       currentPage.value = 0
       summaries.value = []
       hasMoreData.value = true
@@ -80,7 +78,6 @@ export function usePortfolioSummary() {
     }
   }
 
-  // Computed properties
   const reversedSummaries = computed(() => [...summaries.value].reverse())
 
   return {

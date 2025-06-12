@@ -48,7 +48,6 @@ export function useCrudView<T extends { id?: any }>(modalElementId: string): Use
   const alertType = ref<'success' | 'danger'>('success')
   const alertMessage = ref('')
 
-  // Confirm dialog state
   const isConfirmOpen = ref(false)
   const confirmOptions = ref<{
     title?: string

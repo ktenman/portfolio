@@ -9,7 +9,6 @@
 
     <transaction-table
       :transactions="transactions"
-      :instruments="instruments"
       :is-loading="isLoading"
       @edit="openEditModal"
       @delete="handleDelete"
