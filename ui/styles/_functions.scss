@@ -1,0 +1,38 @@
+@use 'sass:math';
+
+@function strip-unit($number) {
+  @if type-of($number) == 'number' and not unitless($number) {
+    @return math.div($number, $number * 0 + 1);
+  }
+  @return $number;
+}
+
+@function rem($px) {
+  @return math.div($px, 16px) * 1rem;
+}
+
+@function em($px, $base: 16px) {
+  @return math.div($px, $base) * 1em;
+}
+
+@function fluid-value($min-size, $max-size, $min-vp: 320px, $max-vp: 1200px) {
+  $min-size-unitless: strip-unit($min-size);
+  $max-size-unitless: strip-unit($max-size);
+  $min-vp-unitless: strip-unit($min-vp);
+  $max-vp-unitless: strip-unit($max-vp);
+
+  $slope: math.div($max-size-unitless - $min-size-unitless, $max-vp-unitless - $min-vp-unitless);
+  $y-intercept: $min-size-unitless - $slope * $min-vp-unitless;
+
+  $preferred-value: calc(#{$y-intercept}rem + #{100 * $slope}vw);
+
+  @return clamp(#{$min-size}, #{$preferred-value}, #{$max-size});
+}
+
+@function fluid-font($min-px, $max-px, $min-vp: 320px, $max-vp: 1200px) {
+  @return fluid-value(rem($min-px), rem($max-px), $min-vp, $max-vp);
+}
+
+@function fluid-spacing($min-px, $max-px, $min-vp: 320px, $max-vp: 1200px) {
+  @return fluid-value(rem($min-px), rem($max-px), $min-vp, $max-vp);
+}
