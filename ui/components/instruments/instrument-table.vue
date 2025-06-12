@@ -21,16 +21,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import DataTable, { ColumnDefinition } from '../shared/data-table.vue'
+import DataTable from '../shared/data-table.vue'
 import { Instrument } from '../../models/instrument'
-import {
-  formatCurrency,
-  formatNumber,
-  formatPercentage,
-  formatProfitLoss,
-  getProfitClass,
-} from '../../utils/formatters'
+import { instrumentColumns } from '../../config/table-columns'
+import { formatProfitLoss, getProfitClass } from '../../utils/formatters'
 
 interface Props {
   instruments: Instrument[]
@@ -45,51 +39,7 @@ defineEmits<{
   edit: [instrument: Instrument]
 }>()
 
-const columns = computed<ColumnDefinition[]>(() => [
-  {
-    key: 'symbol',
-    label: 'Symbol',
-  },
-  {
-    key: 'name',
-    label: 'Name',
-  },
-  {
-    key: 'baseCurrency',
-    label: 'Currency',
-  },
-  {
-    key: 'quantity',
-    label: 'Quantity',
-    class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatNumber(value),
-  },
-  {
-    key: 'currentPrice',
-    label: 'Current Price',
-    class: 'd-none d-md-table-cell',
-    formatter: (value: number) => formatCurrency(value),
-  },
-  {
-    key: 'xirr',
-    label: 'XIRR Annual Return',
-    formatter: (value: number) => formatPercentage(value),
-  },
-  {
-    key: 'totalInvestment',
-    label: 'Invested',
-    formatter: (value: number) => formatCurrency(value),
-  },
-  {
-    key: 'currentValue',
-    label: 'Current Value',
-    formatter: (value: number) => formatCurrency(value),
-  },
-  {
-    key: 'profit',
-    label: 'Profit/Loss',
-  },
-])
+const columns = instrumentColumns
 
 const formattedAmount = (instrument: Instrument): string => {
   return formatProfitLoss(instrument.profit)

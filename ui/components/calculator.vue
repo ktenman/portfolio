@@ -51,7 +51,6 @@
       </div>
     </div>
 
-    <!-- Buttons for mobile view, fixed at bottom of screen -->
     <div class="calculator-buttons-mobile">
       <button type="button" class="btn btn-outline-secondary me-2" @click="resetCalculator">
         Reset Calculator
@@ -119,66 +118,62 @@ const steps = {
 const tableHeaders = ['Year', 'Total Worth', "Year's Growth", 'Earnings Per Month']
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use '../styles/config' as *;
+
 canvas {
   width: 100% !important;
   height: auto !important;
 }
 
 .table {
-  font-size: 0.9rem;
+  font-size: rem(14.4px);
 }
 
-/* Desktop button styling */
 .calculator-buttons-desktop {
   display: flex;
-  margin-top: 1rem;
-  margin-bottom: 1.5rem;
+  margin-top: $spacing-md;
+  margin-bottom: $spacing-lg;
 }
 
-/* Mobile button styling - hidden by default on desktop */
 .calculator-buttons-mobile {
   display: none;
 }
 
-@media (max-width: 767px) {
+@include media-breakpoint-down(md) {
   .table {
-    font-size: 0.8rem;
+    font-size: rem(12.8px);
   }
 
-  /* Hide desktop buttons on mobile */
   .calculator-buttons-desktop {
     display: none;
   }
 
-  /* Show and style mobile buttons */
   .calculator-buttons-mobile {
     display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: white;
-    padding: 10px 15px;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    background-color: $white;
+    padding: $spacing-sm $spacing-md;
+    box-shadow: 0 -2px $spacing-sm rgba($black, 0.1);
+    z-index: $zindex-dropdown;
     justify-content: space-between;
+
+    .btn {
+      flex: 1;
+      padding: $spacing-sm $spacing-sm;
+      font-size: $font-size-sm;
+
+      &:first-child {
+        margin-right: $spacing-sm;
+      }
+    }
   }
 
-  /* Make buttons equal width and larger */
-  .calculator-buttons-mobile .btn {
-    flex: 1;
-    padding: 10px 12px;
-    font-size: 14px;
-  }
-
-  .calculator-buttons-mobile .btn:first-child {
-    margin-right: 10px;
-  }
-
-  /* Add bottom padding to container to prevent content being hidden behind fixed buttons */
   .container {
-    padding-bottom: 60px;
+    padding-bottom: rem(60px);
   }
 }
 </style>

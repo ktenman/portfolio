@@ -13,6 +13,7 @@
       <transaction-table
         :is-loading="isLoading"
         :transactions="transactions"
+        :instruments="instruments"
         @delete="handleDelete"
         @edit="openEditModal"
       />
