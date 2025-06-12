@@ -50,7 +50,8 @@
   color: $body-color;
 }
 
-.container {
+.container,
+.container-fluid {
   max-width: 1200px;
 }
 
@@ -144,4 +145,12 @@
 .btn-info {
   --bs-btn-color: #fff;
   --bs-btn-hover-color: #fff;
+}
+
+.form-control {
+  background-color: #ffffff;
+
+  &:focus {
+    background-color: #ffffff;
+  }
 }

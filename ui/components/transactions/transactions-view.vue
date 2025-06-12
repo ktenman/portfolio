@@ -44,6 +44,7 @@ import { ref, onMounted } from 'vue'
 import { Modal } from 'bootstrap'
 import { useCrud } from '../../composables/use-crud'
 import { useConfirm } from '../../composables/use-confirm'
+import { useCrudAlerts } from '../../composables/use-crud-alerts'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
@@ -51,7 +52,7 @@ import ConfirmDialog from '../shared/confirm-dialog.vue'
 import { instrumentService, transactionService } from '../../services'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
-import { ALERT_TYPES, AlertType, MESSAGES } from '../../constants/ui-constants'
+import { MESSAGES } from '../../constants/ui-constants'
 
 const {
   items: transactions,
@@ -64,11 +65,9 @@ const {
 } = useCrud<PortfolioTransaction>(transactionService)
 
 const { items: instruments, fetchAll: fetchInstruments } = useCrud<Instrument>(instrumentService)
+const { showAlert, alertType, alertMessage, showSuccess, showError } = useCrudAlerts()
 
 const selectedItem = ref<Partial<PortfolioTransaction> | null>(null)
-const showAlert = ref(false)
-const alertType = ref<AlertType>(ALERT_TYPES.SUCCESS)
-const alertMessage = ref('')
 let modalInstance: Modal | null = null
 
 const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
@@ -95,19 +94,15 @@ const handleSave = async (transaction: Partial<PortfolioTransaction>) => {
   try {
     if (transaction.id) {
       await update(transaction.id, transaction)
-      alertMessage.value = MESSAGES.UPDATE_SUCCESS
+      showSuccess(MESSAGES.UPDATE_SUCCESS)
     } else {
       await create(transaction)
-      alertMessage.value = MESSAGES.SAVE_SUCCESS
+      showSuccess(MESSAGES.SAVE_SUCCESS)
     }
-    alertType.value = ALERT_TYPES.SUCCESS
-    showAlert.value = true
     modalInstance?.hide()
     selectedItem.value = null
   } catch (_err) {
-    alertType.value = ALERT_TYPES.DANGER
-    alertMessage.value = error.value?.message || MESSAGES.GENERIC_ERROR
-    showAlert.value = true
+    showError(error.value?.message || MESSAGES.GENERIC_ERROR)
   }
 }
 
@@ -123,13 +118,9 @@ const handleDelete = async (id: number | string) => {
   if (shouldDelete) {
     try {
       await remove(id)
-      alertMessage.value = MESSAGES.DELETE_SUCCESS
-      alertType.value = ALERT_TYPES.SUCCESS
-      showAlert.value = true
+      showSuccess(MESSAGES.DELETE_SUCCESS)
     } catch (_err) {
-      alertType.value = ALERT_TYPES.DANGER
-      alertMessage.value = error.value?.message || MESSAGES.GENERIC_ERROR
-      showAlert.value = true
+      showError(error.value?.message || MESSAGES.GENERIC_ERROR)
     }
   }
 }

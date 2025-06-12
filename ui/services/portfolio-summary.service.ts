@@ -1,9 +1,9 @@
 import { PortfolioSummary } from '../models/portfolio-summary'
-import { Cacheable } from '../decorators/cacheable.decorator'
-import { CacheEvict } from '../decorators/cache-evict.decorator'
 import { CACHE_KEYS } from '../constants/cache-keys'
 import { apiClient } from './api-client'
 import { Page } from '../models/page'
+import { withCache } from '../utils/cache-utils'
+import { cacheService } from './cache-service'
 
 const API_ENDPOINTS = {
   historical: '/api/portfolio-summary/historical',
@@ -13,23 +13,25 @@ const API_ENDPOINTS = {
 
 class PortfolioSummaryService {
   async getHistorical(page: number, size: number): Promise<Page<PortfolioSummary>> {
-    return apiClient.get<Page<PortfolioSummary>>(
+    const result = await apiClient.get<Page<PortfolioSummary>>(
       `${API_ENDPOINTS.historical}?page=${page}&size=${size}`
     )
+    if (!result) throw new Error('No data returned from getHistorical')
+    return result
   }
 
-  @CacheEvict([
-    CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT,
-    CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL,
-    CACHE_KEYS.INSTRUMENTS,
-  ])
   async recalculateAll(): Promise<{ message: string }> {
-    return apiClient.post(API_ENDPOINTS.recalculate, {})
+    const result = await apiClient.post<{ message: string }>(API_ENDPOINTS.recalculate, {})
+    cacheService.clearItem(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
+    cacheService.clearItem(CACHE_KEYS.PORTFOLIO_SUMMARY_HISTORICAL)
+    cacheService.clearItem(CACHE_KEYS.INSTRUMENTS)
+    return result || { message: 'Recalculation started' }
   }
 
-  @Cacheable(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT)
   async getCurrent(): Promise<PortfolioSummary> {
-    return apiClient.get<PortfolioSummary>(API_ENDPOINTS.current)
+    return withCache(CACHE_KEYS.PORTFOLIO_SUMMARY_CURRENT, () =>
+      apiClient.get<PortfolioSummary>(API_ENDPOINTS.current)
+    )
   }
 }
 
