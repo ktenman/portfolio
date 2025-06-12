@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand navbar-light bg-light">
+  <nav class="navbar navbar-expand navbar-light bg-white border-bottom navbar-sticky">
     <div class="container-fluid">
       <div class="navbar-scroll-container">
         <div class="navbar-content">
@@ -65,14 +65,13 @@ function formatDate(dateString: string): string {
 </script>
 
 <style lang="scss" scoped>
-@import '../styles/variables';
-@import '../styles/mixins';
+@use '../styles/config' as *;
 
 .navbar-scroll-container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   width: 100%;
-  @include scrollbar-style;
+  @include custom-scrollbar;
 }
 
 .navbar-content {
@@ -81,14 +80,14 @@ function formatDate(dateString: string): string {
   justify-content: space-between;
   min-width: 100%;
   width: max-content;
-  padding-right: 15px;
+  padding-right: 0.9375rem;
 }
 
 .navbar-nav {
   display: flex;
   flex-wrap: nowrap;
   gap: 1rem;
-  padding-bottom: 5px;
+  padding-bottom: 0.3125rem;
 }
 
 .nav-item {
@@ -112,10 +111,10 @@ function formatDate(dateString: string): string {
 
 .nav-indicator {
   position: absolute;
-  bottom: -2px;
+  bottom: -0.125rem;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 0.125rem;
   background-color: $primary-color;
   transform: scaleX(0);
   @include transition(transform);
@@ -128,18 +127,27 @@ function formatDate(dateString: string): string {
 
 .build-info {
   font-size: 0.75rem;
-  padding: 0 10px;
+  padding: 0 0.625rem;
   display: flex;
   align-items: center;
-  margin-left: 20px;
+  margin-left: 1.25rem;
   white-space: nowrap;
 }
 
 .build-info-text {
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
 }
 
-@include responsive(md) {
+.navbar-sticky {
+  @include media-breakpoint-up(lg) {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+}
+
+@include media-breakpoint-down(md) {
   .navbar-content {
     padding-right: $spacing-sm * 2;
     gap: $spacing-sm;

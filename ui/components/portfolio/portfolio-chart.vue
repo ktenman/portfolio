@@ -102,12 +102,11 @@ const chartOptions: ChartOptions<'line'> = {
 </script>
 
 <style lang="scss" scoped>
-@import '../../styles/variables';
-@import '../../styles/mixins';
+@use '../../styles/config' as *;
 
 .chart-container {
   @media (min-width: $breakpoint-lg) {
-    height: 400px;
+    height: 25rem;
   }
 }
 </style>
