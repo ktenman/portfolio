@@ -35,7 +35,12 @@
 
       <portfolio-chart :data="processedChartData" />
 
-      <portfolio-table :summaries="reversedSummaries" />
+      <data-table
+        :items="reversedSummaries"
+        :columns="summaryColumns"
+        :row-class="getSummaryRowClass"
+        class="mt-3"
+      />
 
       <div v-if="isFetching" class="text-center mt-3">
         <div class="spinner-border text-primary" role="status">
@@ -58,13 +63,19 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, defineAsyncComponent, computed } from 'vue'
+import { defineAsyncComponent, computed } from 'vue'
+import { useInfiniteScroll } from '@vueuse/core'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
 import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
-import PortfolioTable from './portfolio/portfolio-table.vue'
+import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import ConfirmDialog from './shared/confirm-dialog.vue'
+import {
+  formatCurrencyWithSymbol,
+  formatDate,
+  formatPercentageFromDecimal,
+} from '../utils/formatters'
 
 const PortfolioChart = defineAsyncComponent(() => import('./portfolio/portfolio-chart.vue'))
 
@@ -94,27 +105,35 @@ const viewState = computed<ViewState>(() => {
   return 'SUCCESS'
 })
 
-const showRecalculationMessage = computed(
-  () => recalculationMessage.value && viewState.value !== 'ERROR'
-)
+const showRecalculationMessage = computed(() => !!recalculationMessage.value)
 
-const handleScroll = async () => {
-  if (isFetching.value) return
-  if (!hasMoreData?.value) return
+const summaryColumns: ColumnDefinition[] = [
+  { key: 'date', label: 'Date', formatter: formatDate },
+  { key: 'xirrAnnualReturn', label: 'XIRR Annual Return', formatter: formatPercentageFromDecimal },
+  {
+    key: 'earningsPerDay',
+    label: 'Earnings Per Day',
+    formatter: formatCurrencyWithSymbol,
+    class: 'hide-on-mobile',
+  },
+  { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrencyWithSymbol },
+  { key: 'totalProfit', label: 'Total Profit', formatter: formatCurrencyWithSymbol },
+  { key: 'totalValue', label: 'Total Value', formatter: formatCurrencyWithSymbol },
+]
 
-  const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100
-  if (!scrolledToBottom) return
-
-  await fetchSummaries()
+const getSummaryRowClass = (summary: any, index: number) => {
+  const isToday = summary.date === new Date().toISOString().split('T')[0]
+  return { 'font-weight-bold': index === 0 && isToday }
 }
 
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-})
+useInfiniteScroll(
+  window,
+  async () => {
+    if (isFetching.value || !hasMoreData?.value) return
+    await fetchSummaries()
+  },
+  { distance: 100 }
+)
 
 const handleRecalculate = async () => {
   const shouldProceed = await confirm({
@@ -131,3 +150,15 @@ const handleRecalculate = async () => {
   }
 }
 </script>
+
+<style scoped>
+@media (max-width: 767px) {
+  :deep(.table) {
+    font-size: 12px;
+  }
+
+  :deep(.hide-on-mobile) {
+    display: none;
+  }
+}
+</style>
