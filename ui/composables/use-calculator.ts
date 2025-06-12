@@ -1,5 +1,5 @@
 import { onMounted, ref, watch } from 'vue'
-import { utilityService } from '../services/service-registry'
+import { utilityService } from '../services'
 import { CalculationResult } from '../models/calculation-result'
 import { useLocalStorage } from './use-local-storage'
 

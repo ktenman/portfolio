@@ -7,20 +7,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  ChartOptions,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-} from 'chart.js'
+import type { ChartOptions } from 'chart.js'
 import { formatDate } from '../../utils/formatters'
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Title, Legend)
+import '../../plugins/chart'
 
 interface Props {
   data: {
@@ -112,9 +101,12 @@ const chartOptions: ChartOptions<'line'> = {
 }
 </script>
 
-<style scoped>
-@media (min-width: 1000px) {
-  .chart-container {
+<style lang="scss" scoped>
+@import '../../styles/variables';
+@import '../../styles/mixins';
+
+.chart-container {
+  @media (min-width: $breakpoint-lg) {
     height: 400px;
   }
 }

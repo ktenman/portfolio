@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { PortfolioSummary } from '../models/portfolio-summary'
-import { portfolioSummaryService } from '../services/service-registry'
+import { portfolioSummaryService } from '../services'
 
 export function usePortfolioSummary() {
   const summaryService = portfolioSummaryService
