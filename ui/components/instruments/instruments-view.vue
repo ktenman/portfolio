@@ -10,64 +10,55 @@
     @update:showAlert="showAlert = $event"
   >
     <template #content>
-      <instrument-table :instruments="items" :is-loading="isLoading" @edit="openEditModal" />
+      <instrument-table :instruments="items || []" :is-loading="isLoading" @edit="openEditModal" />
     </template>
 
     <template #modals>
-      <instrument-modal :instrument="selectedItem || {}" @save="handleSave" />
+      <instrument-modal :instrument="selectedItem || {}" @save="onSave" />
     </template>
   </crud-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Modal } from 'bootstrap'
-import { useCrud } from '../../composables/use-crud'
+import { ref } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
+import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
+import { useCrudOperations } from '../../composables/use-crud-operations'
 import { useCrudAlerts } from '../../composables/use-crud-alerts'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
-import { instrumentService } from '../../services'
+import { instrumentsService } from '../../services/instruments-service'
 import { Instrument } from '../../models/instrument'
-import { MESSAGES } from '../../constants/ui-constants'
 
-const { items, isLoading, error, fetchAll, create, update } = useCrud<Instrument>(instrumentService)
-const { showAlert, alertType, alertMessage, showSuccess, showError } = useCrudAlerts()
+const { showAlert, alertType, alertMessage } = useCrudAlerts()
+const selectedItem = ref<Instrument | null>(null)
+const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 
-const selectedItem = ref<Partial<Instrument> | null>(null)
-let modalInstance: Modal | null = null
+const { data: items, isLoading } = useQuery({
+  queryKey: ['instruments'],
+  queryFn: instrumentsService.getAll,
+})
 
-onMounted(async () => {
-  await fetchAll()
-  const modalEl = document.getElementById('instrumentModal')
-  if (modalEl) {
-    modalInstance = new Modal(modalEl)
-  }
+const { handleSave } = useCrudOperations<Instrument>({
+  queryKey: ['instruments'],
+  createFn: instrumentsService.create,
+  updateFn: instrumentsService.update,
+  entityName: 'Instrument',
 })
 
 const openAddModal = () => {
-  selectedItem.value = {}
-  modalInstance?.show()
+  selectedItem.value = null
+  showModal()
 }
 
 const openEditModal = (instrument: Instrument) => {
   selectedItem.value = { ...instrument }
-  modalInstance?.show()
+  showModal()
 }
 
-const handleSave = async (instrument: Partial<Instrument>) => {
-  try {
-    if (instrument.id) {
-      await update(instrument.id, instrument)
-      showSuccess(MESSAGES.UPDATE_SUCCESS)
-    } else {
-      await create(instrument)
-      showSuccess(MESSAGES.SAVE_SUCCESS)
-    }
-    modalInstance?.hide()
-    selectedItem.value = null
-  } catch (_err) {
-    showError(error.value?.message || MESSAGES.GENERIC_ERROR)
-  }
+const onSave = async (instrument: Partial<Instrument>) => {
+  await handleSave(instrument, selectedItem)
+  hideModal()
 }
 </script>

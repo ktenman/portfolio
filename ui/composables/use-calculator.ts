@@ -1,9 +1,10 @@
-import { onMounted, ref, watch } from 'vue'
-import { utilityService } from '../services'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
+import { useLocalStorage, watchDebounced } from '@vueuse/core'
+import { utilityService } from '../services/utility-service'
 import { CalculationResult } from '../models/calculation-result'
-import { useLocalStorage } from './use-local-storage'
 
-interface CalculatorForm extends Record<string, unknown> {
+interface CalculatorForm {
   initialWorth: number
   monthlyInvestment: number
   yearlyGrowthRate: number
@@ -19,125 +20,108 @@ interface YearSummary {
 }
 
 export function useCalculator() {
-  const defaultForm: CalculatorForm = {
-    initialWorth: 2000,
-    monthlyInvestment: 585,
-    yearlyGrowthRate: 5,
-    annualReturnRate: 21.672,
-    years: 28,
-  }
+  const form = useLocalStorage<CalculatorForm>('calculator-form', {
+    initialWorth: 0,
+    monthlyInvestment: 0,
+    yearlyGrowthRate: 0,
+    annualReturnRate: 7,
+    years: 10,
+  })
 
-  const STORAGE_KEY = 'investment-calculator-form'
-
-  const {
-    form,
-    isUpdatingForm,
-    loadFromLocalStorage,
-    saveToLocalStorage,
-    handleInput,
-    resetForm,
-    updateFormField,
-  } = useLocalStorage(STORAGE_KEY, defaultForm)
-
-  const isLoading = ref(true)
   const yearSummary = ref<YearSummary[]>([])
   const portfolioData = ref<number[]>([])
-  const calculationResult = ref<CalculationResult | null>(null)
 
-  const calculate = async () => {
-    isLoading.value = true
+  const { data: calculationResult, isLoading } = useQuery<CalculationResult>({
+    queryKey: ['calculationResult'],
+    queryFn: utilityService.getCalculationResult,
+  })
 
-    if (isUpdatingForm.value) return
+  const calculate = () => {
+    const currentPortfolioWorth = calculationResult.value?.total || form.value.initialWorth
+    const avgReturn = calculationResult.value?.average || form.value.annualReturnRate
 
-    try {
-      const result = await getResult()
+    const monthlyGrowthRate = form.value.yearlyGrowthRate / 100 / 12
+    const monthlyReturnRate = avgReturn / 100 / 12
 
-      await updateFormField('annualReturnRate', Number(result.average.toFixed(3)))
-      await updateFormField('initialWorth', Number(result.total.toFixed(2)))
+    const tempYearSummary: YearSummary[] = []
+    const tempPortfolioData: number[] = []
 
-      const { initialWorth, monthlyInvestment, yearlyGrowthRate, annualReturnRate, years } =
-        form as CalculatorForm
-      const values = []
-      let totalWorth = initialWorth
-      let currentMonthlyInvestment = monthlyInvestment
+    let totalWorth = currentPortfolioWorth
+    tempPortfolioData.push(totalWorth)
 
-      yearSummary.value = []
+    for (let year = 1; year <= form.value.years; year++) {
+      const yearStartWorth = totalWorth
+      let currentMonthlyInvestment = form.value.monthlyInvestment
 
-      for (let year = 1; year <= years; year++) {
-        const yearStartWorth = totalWorth
-        for (let month = 1; month <= 12; month++) {
-          totalWorth += currentMonthlyInvestment
-          totalWorth *= 1 + annualReturnRate / 1200
-        }
-        currentMonthlyInvestment *= 1 + yearlyGrowthRate / 100
-        values.push(totalWorth)
-
-        yearSummary.value.push({
-          year,
-          totalWorth,
-          yearGrowth: totalWorth - yearStartWorth,
-          earningsPerMonth: (totalWorth * annualReturnRate) / 1200,
-        })
+      for (let month = 1; month <= 12; month++) {
+        totalWorth += currentMonthlyInvestment
+        totalWorth *= (1 + monthlyReturnRate)
       }
+      
+      currentMonthlyInvestment *= (1 + monthlyGrowthRate)
+      tempPortfolioData.push(totalWorth)
 
-      portfolioData.value = values
-      calculationResult.value = result
-    } finally {
-      isLoading.value = false
+      const yearGrowth = totalWorth - yearStartWorth
+      const earningsPerMonth = (totalWorth * avgReturn) / 1200
+
+      tempYearSummary.push({
+        year,
+        totalWorth,
+        yearGrowth,
+        earningsPerMonth,
+      })
     }
+
+    yearSummary.value = tempYearSummary
+    portfolioData.value = tempPortfolioData
   }
 
-  const getResult = async (): Promise<CalculationResult> => {
-    try {
-      return await utilityService.getCalculationResult()
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const resetCalculator = () => {
-    if (
-      confirm(
-        'Are you sure you want to reset the calculator? This will clear all your current values.'
-      )
-    ) {
-      resetForm()
-      calculate()
-    }
-  }
-
-  let debounceTimer: number | null = null
-  watch(
+  watchDebounced(
     form,
     () => {
-      if (isUpdatingForm.value) return
-
-      if (debounceTimer !== null) {
-        clearTimeout(debounceTimer)
-      }
-
-      debounceTimer = setTimeout(() => {
-        saveToLocalStorage()
-        calculate()
-        debounceTimer = null
-      }, 1000) as unknown as number
+      calculate()
     },
-    { deep: true }
+    { debounce: 300, deep: true }
   )
 
+  watch(calculationResult, () => {
+    if (calculationResult.value) {
+      if (form.value.initialWorth === 0) {
+        form.value.initialWorth = calculationResult.value.total
+      }
+      if (form.value.annualReturnRate === 7) {
+        form.value.annualReturnRate = calculationResult.value.average
+      }
+      calculate()
+    }
+  })
+
   onMounted(() => {
-    loadFromLocalStorage()
     calculate()
   })
 
+  const handleInput = () => {
+    calculate()
+  }
+
+  const resetCalculator = async () => {
+    form.value = {
+      initialWorth: calculationResult.value?.total || 0,
+      monthlyInvestment: 0,
+      yearlyGrowthRate: 0,
+      annualReturnRate: calculationResult.value?.average || 7,
+      years: 10,
+    }
+    calculate()
+  }
+
   return {
-    form,
+    form: computed(() => form.value),
     isLoading,
-    yearSummary,
-    portfolioData,
+    yearSummary: computed(() => yearSummary.value),
+    portfolioData: computed(() => portfolioData.value),
     calculationResult,
     handleInput,
     resetCalculator,
-    calculate,
   }
 }

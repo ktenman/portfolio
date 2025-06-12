@@ -6,45 +6,43 @@
       @recalculate="handleRecalculate"
     />
 
-    <div v-if="isLoading" class="spinner-border text-primary" role="status">
+    <div v-if="viewState === 'LOADING'" class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
 
-    <div v-if="error && !isLoading" class="alert alert-danger" role="alert">
+    <div v-else-if="viewState === 'ERROR'" class="alert alert-danger" role="alert">
       {{ error }}
     </div>
 
-    <div
-      v-if="recalculationMessage && !error"
-      class="alert alert-info alert-dismissible fade show mt-3"
-      role="alert"
-    >
-      {{ recalculationMessage }}
-      <button
-        type="button"
-        class="btn-close"
-        @click="recalculationMessage = ''"
-        aria-label="Close"
-      ></button>
+    <div v-else-if="viewState === 'EMPTY'" class="alert alert-info" role="alert">
+      No portfolio summary data found.
     </div>
 
-    <div v-if="!isLoading && !error">
-      <div v-if="summaries.length === 0" class="alert alert-info" role="alert">
-        No portfolio summary data found.
+    <template v-else>
+      <div
+        v-if="showRecalculationMessage"
+        class="alert alert-info alert-dismissible fade show mt-3"
+        role="alert"
+      >
+        {{ recalculationMessage }}
+        <button
+          type="button"
+          class="btn-close"
+          @click="recalculationMessage = ''"
+          aria-label="Close"
+        ></button>
       </div>
 
-      <div v-else>
-        <portfolio-chart :data="processedChartData" />
+      <portfolio-chart :data="processedChartData" />
 
-        <portfolio-table :summaries="reversedSummaries" />
+      <portfolio-table :summaries="reversedSummaries" />
 
-        <div v-if="isFetching" class="text-center mt-3">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading more data...</span>
-          </div>
+      <div v-if="isFetching" class="text-center mt-3">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading more data...</span>
         </div>
       </div>
-    </div>
+    </template>
 
     <confirm-dialog
       v-model="isConfirmOpen"
@@ -60,8 +58,8 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, defineAsyncComponent } from 'vue'
-import { usePortfolioSummary } from '../composables/use-portfolio-summary'
+import { onMounted, onUnmounted, defineAsyncComponent, computed } from 'vue'
+import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
 import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
@@ -69,6 +67,8 @@ import PortfolioTable from './portfolio/portfolio-table.vue'
 import ConfirmDialog from './shared/confirm-dialog.vue'
 
 const PortfolioChart = defineAsyncComponent(() => import('./portfolio/portfolio-chart.vue'))
+
+type ViewState = 'LOADING' | 'ERROR' | 'EMPTY' | 'SUCCESS'
 
 const {
   summaries,
@@ -80,24 +80,35 @@ const {
   recalculationMessage,
   recalculate,
   fetchSummaries,
-  fetchInitialData,
-} = usePortfolioSummary()
+  hasMoreData,
+} = usePortfolioSummaryQuery()
 
 const { processedChartData } = usePortfolioChart(summaries)
 
 const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
 
+const viewState = computed<ViewState>(() => {
+  if (isLoading.value) return 'LOADING'
+  if (error.value) return 'ERROR'
+  if (!summaries.value || summaries.value.length === 0) return 'EMPTY'
+  return 'SUCCESS'
+})
+
+const showRecalculationMessage = computed(
+  () => recalculationMessage.value && viewState.value !== 'ERROR'
+)
+
 const handleScroll = async () => {
-  if (
-    !isFetching.value &&
-    window.innerHeight + window.scrollY >= document.body.offsetHeight - 100
-  ) {
-    await fetchSummaries()
-  }
+  if (isFetching.value) return
+  if (!hasMoreData?.value) return
+
+  const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100
+  if (!scrolledToBottom) return
+
+  await fetchSummaries()
 }
 
 onMounted(() => {
-  fetchInitialData()
   window.addEventListener('scroll', handleScroll)
 })
 

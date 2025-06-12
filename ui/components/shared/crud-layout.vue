@@ -8,8 +8,7 @@
         class="btn btn-primary btn-sm"
         @click="$emit('add')"
       >
-        <font-awesome-icon icon="plus" />
-        <span class="d-none d-md-inline ms-1">{{ addButtonText }}</span>
+        {{ addButtonText }}
       </button>
     </div>
 
