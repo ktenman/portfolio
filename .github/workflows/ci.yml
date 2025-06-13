@@ -38,34 +38,40 @@ jobs:
         run: .github/workflows/check-readme-links.sh
 
   test:
-    name: 🧪 ${{ matrix.test-type }} Test
+    name: 🧪 ${{ matrix.test-name }}
     needs: lint-and-format
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-type: [ 'unit', 'e2e', 'frontend' ]
+        include:
+          - test-type: backend-unit
+            test-name: Backend Unit Tests
+          - test-type: e2e
+            test-name: E2E Tests
+          - test-type: frontend-unit
+            test-name: Frontend Unit Tests
       fail-fast: false
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
       - name: Set up JDK 21
-        if: matrix.test-type != 'frontend'
+        if: matrix.test-type != 'frontend-unit'
         uses: actions/setup-java@v4.7.1
         with:
           java-version: '21'
           distribution: 'temurin'
       - name: Setup Gradle
-        if: matrix.test-type != 'frontend'
+        if: matrix.test-type != 'frontend-unit'
         uses: gradle/actions/setup-gradle@v4.4.1
       - name: Use Node.js
-        if: matrix.test-type == 'frontend'
+        if: matrix.test-type == 'frontend-unit'
         uses: actions/setup-node@v4.4.0
         with:
           node-version: 'lts/iron'
       - name: Install frontend dependencies
-        if: matrix.test-type == 'frontend'
+        if: matrix.test-type == 'frontend-unit'
         run: npm ci
       - name: Set up Docker Compose
         if: matrix.test-type == 'e2e'
@@ -79,30 +85,33 @@ jobs:
           docker-compose -f docker-compose.local.yml -f docker-compose.e2e.yml up -d
           sleep 10
           docker-compose logs
-      - name: Run ${{ matrix.test-type }} tests
-        if: matrix.test-type != 'frontend'
+      - name: Run backend unit tests
+        if: matrix.test-type == 'backend-unit'
+        run: ./gradlew test --info -x bootJar
+      - name: Run E2E tests
+        if: matrix.test-type == 'e2e'
         uses: Wandalen/wretry.action@v3.8.0
         with:
           command: |
-            export E2E=${{ matrix.test-type == 'e2e' }}
-            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
+            export E2E=true
+            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true
           attempt_limit: 3
           attempt_delay: 30000
       - name: Run frontend unit tests
-        if: matrix.test-type == 'frontend'
+        if: matrix.test-type == 'frontend-unit'
         run: npm run test:run
       - name: Run frontend test coverage
-        if: matrix.test-type == 'frontend'
+        if: matrix.test-type == 'frontend-unit'
         run: npm run test:coverage
       - uses: actions/upload-artifact@v4.6.2
-        if: always() && matrix.test-type != 'frontend'
+        if: always() && matrix.test-type != 'frontend-unit'
         with:
-          name: ${{ format('Test reports and screenshots ({0})', matrix.test-type) }}
+          name: ${{ matrix.test-name }} Reports
           path: |
             build/reports/tests
             build/reports/selenide
       - uses: actions/upload-artifact@v4.6.2
-        if: always() && matrix.test-type == 'frontend'
+        if: always() && matrix.test-type == 'frontend-unit'
         with:
           name: Frontend Coverage Report
           path: |
