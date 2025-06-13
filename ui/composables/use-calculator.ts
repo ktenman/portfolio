@@ -19,19 +19,25 @@ interface YearSummary {
   earningsPerMonth: number
 }
 
+const getDefaultFormValues = (): CalculatorForm => ({
+  initialWorth: 0,
+  monthlyInvestment: 585,
+  yearlyGrowthRate: 5,
+  annualReturnRate: 7,
+  years: 30,
+})
+
 export function useCalculator() {
-  const form = useLocalStorage<CalculatorForm>('calculator-form', {
-    initialWorth: 0,
-    monthlyInvestment: 0,
-    yearlyGrowthRate: 0,
-    annualReturnRate: 7,
-    years: 10,
-  })
+  const form = useLocalStorage<CalculatorForm>('calculator-form', getDefaultFormValues())
 
   const yearSummary = ref<YearSummary[]>([])
   const portfolioData = ref<number[]>([])
 
-  const { data: calculationResult, isLoading } = useQuery<CalculationResult>({
+  const {
+    data: calculationResult,
+    isLoading,
+    refetch,
+  } = useQuery<CalculationResult>({
     queryKey: ['calculationResult'],
     queryFn: utilityService.getCalculationResult,
   })
@@ -92,7 +98,6 @@ export function useCalculator() {
       if (form.value.annualReturnRate === 7) {
         form.value.annualReturnRate = calculationResult.value.average
       }
-      calculate()
     }
   })
 
@@ -100,28 +105,30 @@ export function useCalculator() {
     calculate()
   })
 
-  const handleInput = () => {
-    calculate()
-  }
-
   const resetCalculator = async () => {
-    form.value = {
-      initialWorth: calculationResult.value?.total || 0,
-      monthlyInvestment: 0,
-      yearlyGrowthRate: 0,
-      annualReturnRate: calculationResult.value?.average || 7,
-      years: 10,
+    try {
+      const result = await refetch()
+      const freshData = result.data
+
+      form.value = {
+        initialWorth: freshData?.total || 0,
+        monthlyInvestment: 585,
+        yearlyGrowthRate: 5,
+        annualReturnRate: freshData?.average || 7,
+        years: 30,
+      }
+    } catch (error) {
+      console.error('Failed to fetch fresh data:', error)
+      form.value = getDefaultFormValues()
     }
-    calculate()
   }
 
   return {
-    form: computed(() => form.value),
+    form,
     isLoading,
     yearSummary: computed(() => yearSummary.value),
     portfolioData: computed(() => portfolioData.value),
     calculationResult,
-    handleInput,
     resetCalculator,
   }
 }
