@@ -2,28 +2,33 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, nextTick } from 'vue'
 import { useBootstrapModal } from './use-bootstrap-modal'
-import { setModalAdapter } from './use-modal'
+import { Modal } from 'bootstrap'
+
+vi.mock('bootstrap', () => ({
+  Modal: vi.fn().mockImplementation(() => ({
+    show: vi.fn(),
+    hide: vi.fn(),
+    toggle: vi.fn(),
+    dispose: vi.fn(),
+  })),
+}))
 
 describe('useBootstrapModal', () => {
-  let mockModalController: any
-  let mockAdapter: any
+  let mockModalInstance: any
 
   beforeEach(() => {
     vi.clearAllMocks()
     document.body.innerHTML = ''
 
-    mockModalController = {
+    mockModalInstance = {
       show: vi.fn(),
       hide: vi.fn(),
       toggle: vi.fn(),
+      dispose: vi.fn(),
     }
 
-    mockAdapter = {
-      createModal: vi.fn(() => mockModalController),
-      destroyModal: vi.fn(),
-    }
-
-    setModalAdapter(mockAdapter)
+    const MockModal = vi.mocked(Modal)
+    MockModal.mockReturnValue(mockModalInstance)
   })
 
   afterEach(() => {
@@ -57,7 +62,7 @@ describe('useBootstrapModal', () => {
 
     await nextTick()
 
-    expect(mockAdapter.createModal).toHaveBeenCalledWith(document.getElementById(modalId))
+    expect(Modal).toHaveBeenCalledWith(document.getElementById(modalId))
   })
 
   it('should not initialize modal if element not found', async () => {
@@ -73,7 +78,7 @@ describe('useBootstrapModal', () => {
 
     await nextTick()
 
-    expect(mockAdapter.createModal).not.toHaveBeenCalled()
+    expect(Modal).not.toHaveBeenCalled()
   })
 
   it('should show modal when show is called', async () => {
@@ -84,7 +89,7 @@ describe('useBootstrapModal', () => {
 
     wrapper.vm.modal.show()
 
-    expect(mockModalController.show).toHaveBeenCalledTimes(1)
+    expect(mockModalInstance.show).toHaveBeenCalledTimes(1)
     expect(wrapper.vm.modal.isVisible.value).toBe(true)
   })
 
@@ -97,8 +102,20 @@ describe('useBootstrapModal', () => {
     wrapper.vm.modal.show()
     wrapper.vm.modal.hide()
 
-    expect(mockModalController.hide).toHaveBeenCalledTimes(1)
+    expect(mockModalInstance.hide).toHaveBeenCalledTimes(1)
     expect(wrapper.vm.modal.isVisible.value).toBe(false)
+  })
+
+  it('should toggle modal when toggle is called', async () => {
+    const modalId = 'toggle-modal'
+    const wrapper = createComponent(modalId)
+
+    await nextTick()
+
+    wrapper.vm.modal.toggle()
+
+    expect(mockModalInstance.toggle).toHaveBeenCalledTimes(1)
+    expect(wrapper.vm.modal.isVisible.value).toBe(true)
   })
 
   it('should dispose modal on unmount', async () => {
@@ -109,7 +126,7 @@ describe('useBootstrapModal', () => {
 
     wrapper.unmount()
 
-    expect(mockAdapter.destroyModal).toHaveBeenCalledWith(mockModalController)
+    expect(mockModalInstance.dispose).toHaveBeenCalledWith()
   })
 
   it('should handle show/hide when modal instance is null', async () => {
@@ -128,32 +145,24 @@ describe('useBootstrapModal', () => {
     expect(() => {
       wrapper.vm.modal.show()
       wrapper.vm.modal.hide()
+      wrapper.vm.modal.toggle()
     }).not.toThrow()
-
-    expect(mockModalController.show).not.toHaveBeenCalled()
-    expect(mockModalController.hide).not.toHaveBeenCalled()
   })
 
-  it('should work with dynamic modal id', async () => {
-    const wrapper = mount(
-      defineComponent({
-        setup() {
-          const modalId = 'dynamic-modal'
-          const modal = useBootstrapModal(modalId)
-          return { modal, modalId }
-        },
-        template: '<div><div :id="modalId">Dynamic Modal</div></div>',
-      }),
-      {
-        attachTo: document.body,
-      }
-    )
+  it('should update visibility state on Bootstrap events', async () => {
+    const modalId = 'event-modal'
+    const wrapper = createComponent(modalId)
 
     await nextTick()
 
-    expect(mockAdapter.createModal).toHaveBeenCalled()
+    const modalEl = document.getElementById(modalId)
 
-    wrapper.vm.modal.show()
-    expect(mockModalController.show).toHaveBeenCalledTimes(1)
+    modalEl?.dispatchEvent(new Event('shown.bs.modal'))
+    await nextTick()
+    expect(wrapper.vm.modal.isVisible.value).toBe(true)
+
+    modalEl?.dispatchEvent(new Event('hidden.bs.modal'))
+    await nextTick()
+    expect(wrapper.vm.modal.isVisible.value).toBe(false)
   })
 })

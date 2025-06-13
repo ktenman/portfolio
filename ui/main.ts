@@ -6,10 +6,6 @@ import App from './app.vue'
 import './styles/main.scss'
 import 'bootstrap/js/dist/modal'
 import router from './router/index'
-import { setModalAdapter } from './composables/use-modal'
-import { bootstrapModalAdapter } from './adapters/bootstrap-modal-adapter'
-
-setModalAdapter(bootstrapModalAdapter)
 
 const app = createApp(App)
 

@@ -40,7 +40,7 @@ describe('portfolioSummaryService', () => {
 
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockPage,
-      } as any)
+      })
 
       const result = await portfolioSummaryService.getHistorical(0, 10)
 

@@ -1,9 +1,30 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { AxiosError } from 'axios'
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
+import { ApiError } from '../models/api-error'
 
 describe('httpClient', () => {
   let mockCreate: any
   let mockInterceptors: any
+
+  const createAxiosError = (
+    status: number,
+    data: any = {},
+    message = 'Error',
+    url = '/test'
+  ): AxiosError => ({
+    response: {
+      status,
+      data,
+      statusText: message,
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    },
+    message,
+    config: { url } as InternalAxiosRequestConfig,
+    isAxiosError: true,
+    toJSON: () => ({}),
+    name: 'AxiosError',
+  })
 
   beforeEach(async () => {
     vi.resetModules()
@@ -68,20 +89,21 @@ describe('httpClient', () => {
       const originalLocation = window.location
 
       beforeEach(() => {
-        delete (window as any).location
-        ;(window as any).location = { ...originalLocation, href: '' }
+        Object.defineProperty(window, 'location', {
+          value: { ...originalLocation, href: '' },
+          writable: true,
+        })
       })
 
       afterEach(() => {
-        ;(window as any).location = originalLocation
+        Object.defineProperty(window, 'location', {
+          value: originalLocation,
+          writable: true,
+        })
       })
 
       it('should redirect to login on 401 error', () => {
-        const error: Partial<AxiosError> = {
-          response: { status: 401, data: {} } as any,
-          message: 'Unauthorized',
-          config: { url: '/test' } as any,
-        }
+        const error = createAxiosError(401, {}, 'Unauthorized')
 
         expect(() => errorHandler(error)).toThrow()
         expect(window.location.href).toBe('/login')
@@ -94,81 +116,77 @@ describe('httpClient', () => {
           validationErrors: { field: 'Required' },
         }
 
-        const error: Partial<AxiosError> = {
-          response: {
-            status: 400,
-            data: errorData,
-          } as any,
-          message: 'Bad Request',
-          config: { url: '/test' } as any,
-        }
+        const error = createAxiosError(400, errorData, 'Bad Request')
 
         try {
           errorHandler(error)
-        } catch (e: any) {
-          expect(e.name).toBe('ApiError')
-          expect(e.status).toBe(400)
-          expect(e.message).toBe('Validation failed')
-          expect(e.debugMessage).toBe('Field X is required')
-          expect(e.validationErrors).toEqual({ field: 'Required' })
+        } catch (e) {
+          expect(e).toBeInstanceOf(Error)
+          const apiError = e as ApiError
+          expect(apiError.name).toBe('ApiError')
+          expect(apiError.status).toBe(400)
+          expect(apiError.message).toBe('Validation failed')
+          expect(apiError.debugMessage).toBe('Field X is required')
+          expect(apiError.validationErrors).toEqual({ field: 'Required' })
         }
       })
 
       it('should use fallback values when response data is missing', () => {
-        const error: Partial<AxiosError> = {
-          response: {
-            status: 500,
-            data: {},
-          } as any,
-          message: 'Internal Server Error',
-          config: { url: '/test-endpoint' } as any,
-        }
+        const error = createAxiosError(500, {}, 'Internal Server Error', '/test-endpoint')
 
         try {
           errorHandler(error)
-        } catch (e: any) {
-          expect(e.name).toBe('ApiError')
-          expect(e.status).toBe(500)
-          expect(e.message).toBe('Internal Server Error')
-          expect(e.debugMessage).toBe('Request failed: /test-endpoint')
-          expect(e.validationErrors).toEqual({})
+        } catch (e) {
+          expect(e).toBeInstanceOf(Error)
+          const apiError = e as ApiError
+          expect(apiError.name).toBe('ApiError')
+          expect(apiError.status).toBe(500)
+          expect(apiError.message).toBe('Internal Server Error')
+          expect(apiError.debugMessage).toBe('Request failed: /test-endpoint')
+          expect(apiError.validationErrors).toEqual({})
         }
       })
 
       it('should handle errors without response', () => {
-        const error: Partial<AxiosError> = {
+        const error: AxiosError = {
           message: 'Network Error',
-          config: { url: '/test' } as any,
+          config: { url: '/test' } as InternalAxiosRequestConfig,
+          isAxiosError: true,
+          toJSON: () => ({}),
+          name: 'AxiosError',
+          response: undefined,
         }
 
         try {
           errorHandler(error)
-        } catch (e: any) {
-          expect(e.name).toBe('ApiError')
-          expect(e.status).toBe(500)
-          expect(e.message).toBe('Network Error')
-          expect(e.debugMessage).toBe('Request failed: /test')
-          expect(e.validationErrors).toEqual({})
+        } catch (e) {
+          expect(e).toBeInstanceOf(Error)
+          const apiError = e as ApiError
+          expect(apiError.name).toBe('ApiError')
+          expect(apiError.status).toBe(500)
+          expect(apiError.message).toBe('Network Error')
+          expect(apiError.debugMessage).toBe('Request failed: /test')
+          expect(apiError.validationErrors).toEqual({})
         }
       })
 
       it('should handle 401 and still throw ApiError', () => {
-        const error: Partial<AxiosError> = {
-          response: {
-            status: 401,
-            data: { message: 'Session expired' },
-          } as any,
-          message: 'Unauthorized',
-          config: { url: '/protected' } as any,
-        }
+        const error = createAxiosError(
+          401,
+          { message: 'Session expired' },
+          'Unauthorized',
+          '/protected'
+        )
 
         try {
           errorHandler(error)
-        } catch (e: any) {
+        } catch (e) {
           expect(window.location.href).toBe('/login')
-          expect(e.name).toBe('ApiError')
-          expect(e.status).toBe(401)
-          expect(e.message).toBe('Session expired')
+          expect(e).toBeInstanceOf(Error)
+          const apiError = e as ApiError
+          expect(apiError.name).toBe('ApiError')
+          expect(apiError.status).toBe(401)
+          expect(apiError.message).toBe('Session expired')
         }
       })
     })

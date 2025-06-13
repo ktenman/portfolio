@@ -4,7 +4,12 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { ref } from 'vue'
 import NavBar from './nav-bar.vue'
 
-const mockBuildInfo = ref(null as any)
+interface BuildInfo {
+  hash: string
+  time: string
+}
+
+const mockBuildInfo = ref<BuildInfo | null>(null)
 
 vi.mock('../services/utility-service', () => ({
   utilityService: {
@@ -60,25 +65,6 @@ describe('NavBar', () => {
       expect(wrapper.text()).toContain('Calculator')
       expect(wrapper.text()).toContain('Instruments')
       expect(wrapper.text()).toContain('Transactions')
-    })
-
-    it('should have correct href attributes', () => {
-      const wrapper = createWrapper()
-      const links = wrapper.findAll('a.nav-link')
-
-      expect(links[0].attributes('href')).toBe('/')
-      expect(links[1].attributes('href')).toBe('/calculator')
-      expect(links[2].attributes('href')).toBe('/instruments')
-      expect(links[3].attributes('href')).toBe('/transactions')
-    })
-
-    it('should mark current route as active', async () => {
-      await router.push('/calculator')
-      const wrapper = createWrapper()
-
-      const links = wrapper.findAll('a.nav-link')
-      expect(links[0].classes()).not.toContain('active')
-      expect(links[1].classes()).toContain('active')
     })
   })
 

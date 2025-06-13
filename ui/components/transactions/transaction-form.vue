@@ -1,53 +1,68 @@
 <template>
-  <form id="transactionForm" @submit.prevent="handleSubmit">
+  <form id="transactionForm" novalidate @submit.prevent="handleSubmit">
     <FormInput
-      v-model="formData.instrumentId"
+      :model-value="formData.instrumentId"
       label="Instrument"
       type="select"
       :options="instrumentOptions"
       placeholder="Select Instrument"
-      required
+      :error="getFieldError('instrumentId')"
+      @update:model-value="updateField('instrumentId', Number($event))"
+      @blur="touchField('instrumentId')"
     />
 
     <FormInput
-      v-model="formData.platform"
+      :model-value="formData.platform"
       label="Platform"
       type="select"
       :options="platformOptions"
       placeholder="Select Platform"
-      required
+      :error="getFieldError('platform')"
+      @update:model-value="updateField('platform', $event)"
+      @blur="touchField('platform')"
     />
 
     <FormInput
-      v-model="formData.transactionType"
+      :model-value="formData.transactionType"
       label="Transaction Type"
       type="select"
       :options="transactionTypeOptions"
       placeholder="Select Transaction Type"
-      required
+      :error="getFieldError('transactionType')"
+      @update:model-value="updateField('transactionType', $event)"
+      @blur="touchField('transactionType')"
     />
 
     <FormInput
-      v-model="formData.quantity"
+      :model-value="formData.quantity"
       label="Quantity"
       type="number"
       placeholder="Enter quantity"
       step="0.00000001"
-      min="0.00000001"
-      required
+      :error="getFieldError('quantity')"
+      @update:model-value="updateField('quantity', Number($event))"
+      @blur="touchField('quantity')"
     />
 
     <FormInput
-      v-model="formData.price"
+      :model-value="formData.price"
       label="Price"
       type="number"
       placeholder="Enter price"
-      step="0.01"
-      min="0.01"
-      required
+      step="0.001"
+      :error="getFieldError('price')"
+      @update:model-value="updateField('price', Number($event))"
+      @blur="touchField('price')"
     />
 
-    <FormInput v-model="formData.transactionDate" label="Transaction Date" type="date" required />
+    <FormInput
+      :model-value="formData.transactionDate"
+      label="Transaction Date"
+      type="date"
+      :error="getFieldError('transactionDate')"
+      @update:model-value="updateField('transactionDate', $event)"
+      @blur="touchField('transactionDate')"
+    />
 
     <div v-if="totalValue" class="alert alert-info">
       <strong>Total Value:</strong>
@@ -57,12 +72,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, reactive } from 'vue'
+import { computed, watch, onMounted } from 'vue'
 import FormInput from '../shared/form-input.vue'
-import { platformOptions, transactionTypeOptions } from '../../config'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
 import { formatCurrency } from '../../utils/formatters'
+import { useFormValidation } from '../../composables/use-form-validation'
+import { transactionSchema } from '../../schemas/transaction-schema'
+import { useEnumValues } from '../../composables/use-enum-values'
 
 interface Props {
   initialData?: Partial<PortfolioTransaction>
@@ -79,7 +96,30 @@ const emit = defineEmits<{
   submit: [data: Partial<PortfolioTransaction>]
 }>()
 
-const formData = reactive<Partial<PortfolioTransaction>>({ ...props.initialData })
+const { formData, validateForm, updateField, touchField, getFieldError, resetForm } =
+  useFormValidation(transactionSchema, {
+    transactionDate: new Date().toISOString().split('T')[0],
+    ...props.initialData,
+  })
+
+watch(
+  () => props.initialData,
+  newData => {
+    if (newData) {
+      resetForm({
+        transactionDate: new Date().toISOString().split('T')[0],
+        ...newData,
+      })
+    }
+  },
+  { deep: true }
+)
+
+const { platformOptions, transactionTypeOptions, loadAll } = useEnumValues()
+
+onMounted(() => {
+  loadAll()
+})
 
 const instrumentOptions = computed(() =>
   props.instruments.map(instrument => ({
@@ -95,30 +135,24 @@ const totalValue = computed(() => {
 })
 
 watch(
-  () => props.initialData,
-  newData => {
-    Object.assign(formData, newData)
-  },
-  { deep: true }
-)
-
-watch(
   () => formData.instrumentId,
   newInstrumentId => {
     if (newInstrumentId) {
       const instrument = props.instruments.find(inst => inst.id === newInstrumentId)
       if (instrument && instrument.currentPrice && instrument.currentPrice > 0) {
-        formData.price = instrument.currentPrice
+        updateField('price', Number(instrument.currentPrice))
+      } else {
+        updateField('price', undefined)
       }
     }
   }
 )
 
-if (!formData.transactionDate) {
-  formData.transactionDate = new Date().toISOString().split('T')[0]
-}
-
 const handleSubmit = () => {
-  emit('submit', formData)
+  if (validateForm()) {
+    emit('submit', formData)
+  } else {
+    Object.keys(transactionSchema.shape).forEach(field => touchField(field))
+  }
 }
 </script>

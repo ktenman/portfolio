@@ -68,3 +68,19 @@ export const formatDate = (dateString: string): string => {
 
   return `${day}.${month}.${year}`
 }
+
+export const formatQuantity = (value: number | string | undefined | null): string => {
+  if (value === null || value === undefined) return '0.00'
+
+  const numValue = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(numValue) || !isFinite(numValue)) return '0.00'
+  if (numValue === 0) return '0.00'
+
+  if (Math.abs(numValue) < 0.01) {
+    const exponent = Math.floor(Math.log10(Math.abs(numValue)))
+    const mantissa = numValue / Math.pow(10, exponent)
+    return `${mantissa.toFixed(2)} × 10^${exponent}`
+  }
+
+  return numValue.toFixed(2)
+}
