@@ -1,11 +1,10 @@
 <template>
-  <form @submit.prevent="handleSubmit">
+  <form id="transactionForm" @submit.prevent="handleSubmit">
     <FormInput
       v-model="formData.instrumentId"
       label="Instrument"
       type="select"
       :options="instrumentOptions"
-      :error="errors.instrumentId"
       placeholder="Select Instrument"
       required
     />
@@ -15,7 +14,6 @@
       label="Platform"
       type="select"
       :options="platformOptions"
-      :error="errors.platform"
       placeholder="Select Platform"
       required
     />
@@ -25,7 +23,6 @@
       label="Transaction Type"
       type="select"
       :options="transactionTypeOptions"
-      :error="errors.transactionType"
       placeholder="Select Transaction Type"
       required
     />
@@ -34,10 +31,9 @@
       v-model="formData.quantity"
       label="Quantity"
       type="number"
-      :error="errors.quantity"
       placeholder="Enter quantity"
       step="0.00000001"
-      min="0"
+      min="0.00000001"
       required
     />
 
@@ -45,20 +41,13 @@
       v-model="formData.price"
       label="Price"
       type="number"
-      :error="errors.price"
       placeholder="Enter price"
       step="0.01"
-      min="0"
+      min="0.01"
       required
     />
 
-    <FormInput
-      v-model="formData.transactionDate"
-      label="Transaction Date"
-      type="date"
-      :error="errors.transactionDate"
-      required
-    />
+    <FormInput v-model="formData.transactionDate" label="Transaction Date" type="date" required />
 
     <div v-if="totalValue" class="alert alert-info">
       <strong>Total Value:</strong>
@@ -68,10 +57,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { useFormValidation, validators } from '../../composables/use-form-validation'
+import { computed, watch, reactive } from 'vue'
 import FormInput from '../shared/form-input.vue'
-import { platformOptions, transactionTypeOptions } from '../../constants/form-options'
+import { platformOptions, transactionTypeOptions } from '../../config/form-options'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
 import { formatCurrency } from '../../utils/formatters'
@@ -91,25 +79,7 @@ const emit = defineEmits<{
   submit: [data: Partial<PortfolioTransaction>]
 }>()
 
-const { formData, errors, validate } = useFormValidation<Partial<PortfolioTransaction>>(
-  props.initialData,
-  {
-    instrumentId: validators.required('Instrument is required'),
-    platform: validators.required('Platform is required'),
-    transactionType: validators.required('Transaction type is required'),
-    quantity: (value: any) => {
-      if (!value) return 'Quantity is required'
-      if (value < 0.00000001) return 'Quantity must be greater than 0'
-      return true
-    },
-    price: (value: any) => {
-      if (!value) return 'Price is required'
-      if (value < 0.01) return 'Price must be greater than 0'
-      return true
-    },
-    transactionDate: validators.required('Transaction date is required'),
-  }
-)
+const formData = reactive<Partial<PortfolioTransaction>>({ ...props.initialData })
 
 const instrumentOptions = computed(() =>
   props.instruments.map(instrument => ({
@@ -119,32 +89,36 @@ const instrumentOptions = computed(() =>
 )
 
 const totalValue = computed(() => {
-  const quantity = formData.value.quantity || 0
-  const price = formData.value.price || 0
+  const quantity = formData.quantity || 0
+  const price = formData.price || 0
   return quantity * price
 })
 
 watch(
-  () => formData.value.instrumentId,
+  () => props.initialData,
+  newData => {
+    Object.assign(formData, newData)
+  },
+  { deep: true }
+)
+
+watch(
+  () => formData.instrumentId,
   newInstrumentId => {
     if (newInstrumentId) {
       const instrument = props.instruments.find(inst => inst.id === newInstrumentId)
       if (instrument && instrument.currentPrice && instrument.currentPrice > 0) {
-        formData.value.price = instrument.currentPrice
+        formData.price = instrument.currentPrice
       }
     }
   }
 )
 
-if (!formData.value.transactionDate) {
-  formData.value.transactionDate = new Date().toISOString().split('T')[0]
+if (!formData.transactionDate) {
+  formData.transactionDate = new Date().toISOString().split('T')[0]
 }
 
-const handleSubmit = async () => {
-  if (await validate()) {
-    emit('submit', formData.value)
-  }
+const handleSubmit = () => {
+  emit('submit', formData)
 }
-
-defineExpose({ handleSubmit })
 </script>
