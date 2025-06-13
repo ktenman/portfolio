@@ -51,12 +51,11 @@
 
 <script setup lang="ts">
 import { watch, onMounted } from 'vue'
-import { z } from 'zod'
 import { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../models/provider-name'
 import FormInput from '../shared/form-input.vue'
 import { useFormValidation } from '../../composables/use-form-validation'
 import { useEnumValues } from '../../composables/use-enum-values'
+import { instrumentSchema } from '../../schemas/instrument-schema'
 
 interface Props {
   initialData?: Partial<Instrument>
@@ -70,15 +69,6 @@ const emit = defineEmits<{
   submit: [data: Partial<Instrument>]
 }>()
 
-const instrumentSchema = z.object({
-  symbol: z.string().min(1, 'Symbol is required').max(10, 'Symbol must be 10 characters or less'),
-  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
-  providerName: z.nativeEnum(ProviderName, {
-    errorMap: () => ({ message: 'Please select a data provider' }),
-  }),
-  category: z.string().min(1, 'Category is required'),
-  baseCurrency: z.string().min(1, 'Currency is required'),
-})
 
 const { formData, validateForm, updateField, touchField, getFieldError, resetForm } =
   useFormValidation(instrumentSchema, props.initialData)
@@ -101,7 +91,7 @@ onMounted(() => {
 
 const handleSubmit = () => {
   if (validateForm()) {
-    emit('submit', formData)
+    emit('submit', formData as Partial<Instrument>)
   } else {
     Object.keys(instrumentSchema.shape).forEach(field => touchField(field))
   }
