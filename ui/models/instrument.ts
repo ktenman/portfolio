@@ -1,4 +1,4 @@
-import { ProviderName } from '../constants/provider-name'
+import { ProviderName } from './provider-name'
 
 export interface Instrument {
   id?: number

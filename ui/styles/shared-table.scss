@@ -1,0 +1,9 @@
+.instrument-info {
+  max-width: 200px;
+}
+
+@media (min-width: 768px) {
+  .instrument-info {
+    max-width: 250px;
+  }
+}

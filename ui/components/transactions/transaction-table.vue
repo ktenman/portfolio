@@ -19,8 +19,18 @@
     </template>
 
     <template #cell-profit="{ item }">
-      <span :class="getProfitClass(getTransactionProfit(item))">
-        {{ formatProfitLoss(getTransactionProfit(item)) }}
+      <span
+        :class="
+          getProfitClass(
+            item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
+          )
+        "
+      >
+        {{
+          formatProfitLoss(
+            item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
+          )
+        }}
       </span>
     </template>
 
@@ -91,22 +101,8 @@ const enrichedTransactions = computed(() => {
     }
   })
 })
-
-const getTransactionProfit = (transaction: PortfolioTransaction): number | null | undefined => {
-  return transaction.transactionType === 'SELL'
-    ? transaction.realizedProfit
-    : transaction.unrealizedProfit
-}
 </script>
 
-<style scoped>
-.instrument-info {
-  max-width: 200px;
-}
-
-@media (min-width: 768px) {
-  .instrument-info {
-    max-width: 250px;
-  }
-}
+<style scoped lang="scss">
+@import '../../styles/shared-table.scss';
 </style>

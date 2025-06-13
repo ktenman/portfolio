@@ -1,9 +1,8 @@
 <template>
-  <form @submit.prevent="handleSubmit">
+  <form id="instrumentForm" @submit.prevent="handleSubmit">
     <FormInput
       v-model="formData.symbol"
       label="Symbol"
-      :error="errors.symbol"
       placeholder="Enter instrument symbol"
       required
     />
@@ -36,11 +35,10 @@
 </template>
 
 <script setup lang="ts">
-import { watch, computed } from 'vue'
+import { watch, computed, reactive } from 'vue'
 import { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../constants/provider-name'
-import { useFormValidation, validators } from '../../composables/use-form-validation'
-import { currencyOptions, categoryOptions } from '../../constants/form-options'
+import { ProviderName } from '../../models/provider-name'
+import { currencyOptions, categoryOptions } from '../../config/form-options'
 import FormInput from '../shared/form-input.vue'
 
 interface Props {
@@ -55,13 +53,7 @@ const emit = defineEmits<{
   submit: [data: Partial<Instrument>]
 }>()
 
-const { formData, errors, validate } = useFormValidation<Partial<Instrument>>(props.initialData, {
-  symbol: validators.required('Symbol is required'),
-  name: validators.required('Name is required'),
-  providerName: validators.required('Data provider is required'),
-  category: validators.required('Category is required'),
-  baseCurrency: validators.required('Currency is required'),
-})
+const formData = reactive<Partial<Instrument>>({ ...props.initialData })
 
 const providerOptions = computed(() =>
   Object.entries(ProviderName).map(([value, text]) => ({ value, text }))
@@ -70,18 +62,12 @@ const providerOptions = computed(() =>
 watch(
   () => props.initialData,
   newData => {
-    formData.value = { ...newData }
+    Object.assign(formData, newData)
   },
   { deep: true }
 )
 
 const handleSubmit = () => {
-  if (validate()) {
-    emit('submit', formData.value)
-  }
+  emit('submit', formData)
 }
-
-defineExpose({
-  handleSubmit,
-})
 </script>

@@ -17,8 +17,8 @@
     </template>
 
     <template #cell-profit="{ item }">
-      <span :class="amountClass(item)">
-        {{ formattedAmount(item) }}
+      <span :class="getProfitClass(item.profit)">
+        {{ formatProfitLoss(item.profit) }}
       </span>
     </template>
 
@@ -52,24 +52,8 @@ defineEmits<{
 }>()
 
 const columns = instrumentColumns
-
-const formattedAmount = (instrument: Instrument): string => {
-  return formatProfitLoss(instrument.profit)
-}
-
-const amountClass = (instrument: Instrument): string => {
-  return getProfitClass(instrument.profit)
-}
 </script>
 
-<style scoped>
-.instrument-info {
-  max-width: 200px;
-}
-
-@media (min-width: 768px) {
-  .instrument-info {
-    max-width: 250px;
-  }
-}
+<style scoped lang="scss">
+@import '../../styles/shared-table.scss';
 </style>

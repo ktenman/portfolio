@@ -20,11 +20,11 @@
           ></button>
         </div>
         <div class="modal-body">
-          <instrument-form ref="formRef" :initial-data="instrument" @submit="handleSave" />
+          <instrument-form :initial-data="instrument" @submit="handleSave" />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" @click="triggerSubmit">
+          <button type="submit" class="btn btn-primary" form="instrumentForm">
             {{ isEditing ? 'Update' : 'Save' }} Instrument
           </button>
         </div>
@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import InstrumentForm from './instrument-form.vue'
 import { Instrument } from '../../models/instrument'
 
@@ -52,15 +52,9 @@ const emit = defineEmits<{
   save: [data: Partial<Instrument>]
 }>()
 
-const formRef = ref<InstanceType<typeof InstrumentForm>>()
-
 const isEditing = computed(() => !!props.instrument?.id)
 
 const handleSave = (data: Partial<Instrument>) => {
   emit('save', data)
-}
-
-const triggerSubmit = () => {
-  formRef.value?.handleSubmit()
 }
 </script>

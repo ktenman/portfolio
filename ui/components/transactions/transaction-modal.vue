@@ -21,7 +21,6 @@
         </div>
         <div class="modal-body">
           <transaction-form
-            ref="formRef"
             :initial-data="transaction"
             :instruments="instruments"
             @submit="handleSave"
@@ -29,7 +28,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" @click="triggerSubmit">
+          <button type="submit" class="btn btn-primary" form="transactionForm">
             {{ isEditing ? 'Update' : 'Save' }} Transaction
           </button>
         </div>
@@ -39,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import TransactionForm from './transaction-form.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
@@ -61,15 +60,9 @@ const emit = defineEmits<{
   save: [data: Partial<PortfolioTransaction>]
 }>()
 
-const formRef = ref<InstanceType<typeof TransactionForm>>()
-
 const isEditing = computed(() => !!props.transaction?.id)
 
 const handleSave = (data: Partial<PortfolioTransaction>) => {
   emit('save', data)
-}
-
-const triggerSubmit = () => {
-  formRef.value?.handleSubmit()
 }
 </script>

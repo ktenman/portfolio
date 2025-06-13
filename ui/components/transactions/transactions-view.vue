@@ -27,9 +27,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useToast } from 'vue-toastification'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
-import { useCrudOperations } from '../../composables/use-crud-operations'
 import { useConfirm } from '../../composables/use-confirm'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
@@ -41,6 +41,8 @@ import { PortfolioTransaction } from '../../models/portfolio-transaction'
 const selectedItem = ref<PortfolioTransaction | null>(null)
 const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
 const { confirm } = useConfirm()
+const queryClient = useQueryClient()
+const toast = useToast()
 
 const { data: transactions, isLoading } = useQuery({
   queryKey: ['transactions'],
@@ -52,14 +54,34 @@ const { data: instruments } = useQuery({
   queryFn: instrumentsService.getAll,
 })
 
-const { handleSave: saveTransaction, handleDelete: deleteTransaction } =
-  useCrudOperations<PortfolioTransaction>({
-    queryKey: ['transactions'],
-    createFn: transactionsService.create,
-    updateFn: transactionsService.update,
-    deleteFn: transactionsService.delete,
-    entityName: 'Transaction',
-  })
+const saveMutation = useMutation({
+  mutationFn: (data: Partial<PortfolioTransaction>) => {
+    if (selectedItem.value?.id) {
+      return transactionsService.update(selectedItem.value.id, data)
+    }
+    return transactionsService.create(data)
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    toast.success(`Transaction ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
+    hideModal()
+    selectedItem.value = null
+  },
+  onError: (error: Error) => {
+    toast.error(`Failed to save transaction: ${error.message}`)
+  },
+})
+
+const deleteMutation = useMutation({
+  mutationFn: transactionsService.delete,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    toast.success('Transaction deleted successfully')
+  },
+  onError: (error: Error) => {
+    toast.error(`Failed to delete transaction: ${error.message}`)
+  },
+})
 
 const openAddModal = () => {
   selectedItem.value = null
@@ -71,9 +93,8 @@ const openEditModal = (transaction: PortfolioTransaction) => {
   showModal()
 }
 
-const handleSave = async (transaction: Partial<PortfolioTransaction>) => {
-  await saveTransaction(transaction, selectedItem)
-  hideModal()
+const handleSave = (transaction: Partial<PortfolioTransaction>) => {
+  saveMutation.mutate(transaction)
 }
 
 const handleDelete = async (id: number | string) => {
@@ -86,7 +107,7 @@ const handleDelete = async (id: number | string) => {
   })
 
   if (shouldDelete) {
-    await deleteTransaction(id)
+    deleteMutation.mutate(id)
   }
 }
 </script>

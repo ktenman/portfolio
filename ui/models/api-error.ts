@@ -8,8 +8,4 @@ export class ApiError extends Error {
     super(message)
     this.name = 'ApiError'
   }
-
-  static isApiError(error: unknown): error is ApiError {
-    return error instanceof ApiError
-  }
 }
