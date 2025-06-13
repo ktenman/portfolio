@@ -29,6 +29,7 @@ user-friendly interface for viewing and managing portfolio transactions, instrum
 ### Backend
 
 - Spring Boot v3.5.0
+- Spring Cloud v2025.0.0 (Northfields)
 - Kotlin v2.1.21
 - Java v21
 
