@@ -363,9 +363,9 @@ setup_e2e_environment() {
     # Step 4: Start Vue.js frontend
     print_info "Step 4: Starting Vue.js frontend..."
     if [ "$VERBOSE_MODE" = true ]; then
-        (cd ui && npm run dev) &
+        npm run dev &
     else
-        (cd ui && npm run dev > ../frontend.log 2>&1) &
+        npm run dev > frontend.log 2>&1 &
     fi
     FRONTEND_PID=$!
     
