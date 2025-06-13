@@ -36,6 +36,17 @@ jobs:
         run: npm run check-unused
       - name: Check README links
         run: .github/workflows/check-readme-links.sh
+      - name: Run frontend unit tests
+        run: npm run test:run
+      - name: Run frontend test coverage
+        run: npm run test:coverage
+      - name: Upload frontend coverage reports
+        uses: actions/upload-artifact@v4.6.2
+        if: always()
+        with:
+          name: Frontend Coverage Report
+          path: |
+            coverage/
 
   test:
     name: 🧪 ${{ matrix.test-type }} Test

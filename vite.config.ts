@@ -17,4 +17,21 @@ export default defineConfig({
     outDir: '../dist', // This will output the build artifacts to /app/dist when the root is /app/ui
     sourcemap: true,
   },
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+    setupFiles: './tests/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/main.ts',
+        '**/env.d.ts',
+      ],
+    },
+  },
 })

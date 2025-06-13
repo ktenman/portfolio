@@ -6,12 +6,14 @@
     "ui/public/**",
     "ui/vite-env.d.ts",
     "ui/**/*.d.ts",
+    "ui/tests/setup.ts",
     "src/**",
     "build/**",
     "dist/**",
     "k8s/**",
     "market-price-tracker/**"
   ],
+  "ignoreUnresolved": ["./tests/setup.ts"],
   "ignoreDependencies": ["vue-eslint-parser", "espree", "eslint-plugin-no-comments"],
   "ignoreExportsUsedInFile": false,
   "includeEntryExports": true,
@@ -20,6 +22,10 @@
   },
   "vite": {
     "config": ["vite.config.ts"]
+  },
+  "vitest": {
+    "config": ["vite.config.ts"],
+    "entry": ["ui/**/*.test.ts"]
   },
   "typescript": {
     "config": ["tsconfig.json", "tsconfig.node.json"]

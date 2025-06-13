@@ -21,29 +21,37 @@ interface UseConfirmReturn {
 
 const CONFIRM_KEY = Symbol('confirm')
 
-let resolvePromise: ((value: boolean) => void) | null = null
-
 export function provideConfirm(): ConfirmState {
   const isOpen = ref(false)
   const options = ref<ConfirmOptions>({})
 
-  const handleConfirm = () => {
-    if (resolvePromise) {
-      resolvePromise(true)
-      resolvePromise = null
-    }
+  let currentResolver: ((value: boolean) => void) | null = null
+
+  const cleanupResolver = () => {
+    currentResolver = null
     isOpen.value = false
+  }
+
+  const handleConfirm = () => {
+    if (currentResolver) {
+      currentResolver(true)
+      cleanupResolver()
+    }
   }
 
   const handleCancel = () => {
-    if (resolvePromise) {
-      resolvePromise(false)
-      resolvePromise = null
+    if (currentResolver) {
+      currentResolver(false)
+      cleanupResolver()
     }
-    isOpen.value = false
   }
 
   const confirm = (confirmOptions: ConfirmOptions = {}): Promise<boolean> => {
+    if (currentResolver) {
+      currentResolver(false)
+      currentResolver = null
+    }
+
     options.value = {
       title: 'Confirm',
       message: 'Are you sure?',
@@ -56,7 +64,7 @@ export function provideConfirm(): ConfirmState {
     isOpen.value = true
 
     return new Promise<boolean>(resolve => {
-      resolvePromise = resolve
+      currentResolver = resolve
     })
   }
 
