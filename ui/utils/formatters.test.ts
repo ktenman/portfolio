@@ -9,6 +9,7 @@ import {
   getProfitClass,
   getAmountClass,
   formatDate,
+  formatQuantity,
 } from './formatters'
 
 describe('formatCurrencyWithSymbol', () => {
@@ -224,5 +225,47 @@ describe('formatDate', () => {
     expect(formatDate('2023-01-15')).toBe('15.01.23')
     expect(formatDate('2099-12-31')).toBe('31.12.99')
     expect(formatDate('2100-01-01')).toBe('01.01.00')
+  })
+})
+
+describe('formatQuantity', () => {
+  it('should format regular quantities with 2 decimal places', () => {
+    expect(formatQuantity(100)).toBe('100.00')
+    expect(formatQuantity(5.25)).toBe('5.25')
+    expect(formatQuantity(0.01)).toBe('0.01')
+    expect(formatQuantity(0.99999)).toBe('1.00')
+  })
+
+  it('should format small quantities in scientific notation', () => {
+    expect(formatQuantity(0.00927072)).toBe('9.27 × 10^-3')
+    expect(formatQuantity(0.00001)).toBe('1.00 × 10^-5')
+    expect(formatQuantity(0.0000123456)).toBe('1.23 × 10^-5')
+    expect(formatQuantity(0.009)).toBe('9.00 × 10^-3')
+  })
+
+  it('should handle negative small quantities', () => {
+    expect(formatQuantity(-0.00927072)).toBe('-9.27 × 10^-3')
+    expect(formatQuantity(-0.00001)).toBe('-1.00 × 10^-5')
+  })
+
+  it('should handle edge cases at threshold', () => {
+    expect(formatQuantity(0.01)).toBe('0.01')
+    expect(formatQuantity(0.009999)).toBe('10.00 × 10^-3')
+    expect(formatQuantity(-0.01)).toBe('-0.01')
+    expect(formatQuantity(-0.009999)).toBe('-10.00 × 10^-3')
+  })
+
+  it('should handle null and undefined values', () => {
+    expect(formatQuantity(null)).toBe('0.00')
+    expect(formatQuantity(undefined)).toBe('0.00')
+  })
+
+  it('should handle zero value', () => {
+    expect(formatQuantity(0)).toBe('0.00')
+  })
+
+  it('should handle very small values correctly', () => {
+    expect(formatQuantity(0.000000001)).toBe('1.00 × 10^-9')
+    expect(formatQuantity(0.0000000001)).toBe('1.00 × 10^-10')
   })
 })

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { instrumentsService } from './instruments-service'
 import { httpClient } from '../utils/http-client'
 import type { Instrument } from '../models/instrument'
+import { ProviderName } from '../models/provider-name'
 
 vi.mock('../utils/http-client', () => ({
   httpClient: {
@@ -23,21 +24,21 @@ describe('instrumentsService', () => {
           id: 1,
           symbol: 'AAPL',
           name: 'Apple Inc.',
-          providerName: 'ALPHA_VANTAGE' as any,
+          providerName: ProviderName.ALPHA_VANTAGE,
           type: 'STOCK',
         },
         {
           id: 2,
           symbol: 'BTC',
           name: 'Bitcoin',
-          providerName: 'BINANCE' as any,
+          providerName: ProviderName.BINANCE,
           type: 'CRYPTO',
         },
       ]
 
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockInstruments,
-      } as any)
+      })
 
       const result = await instrumentsService.getAll()
 
@@ -174,7 +175,7 @@ describe('instrumentsService', () => {
       const fullUpdate: Partial<Instrument> = {
         symbol: 'MSFT',
         name: 'Microsoft Corporation',
-        providerName: 'FINANCIAL_TIMES' as any,
+        providerName: ProviderName.FT,
         type: 'STOCK',
       }
 

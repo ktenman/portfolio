@@ -3,7 +3,29 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import InstrumentForm from './instrument-form.vue'
 import FormInput from '../shared/form-input.vue'
-import { ProviderName } from '../../models/provider-name'
+
+vi.mock('../../services/enum-service', () => ({
+  enumService: {
+    getAll: vi.fn(() =>
+      Promise.resolve({
+        platforms: [
+          'AVIVA',
+          'BINANCE',
+          'COINBASE',
+          'LHV',
+          'LIGHTYEAR',
+          'SWEDBANK',
+          'TRADING212',
+          'UNKNOWN',
+        ],
+        providers: ['ALPHA_VANTAGE', 'BINANCE', 'FT'],
+        transactionTypes: ['BUY', 'SELL'],
+        categories: ['CRYPTOCURRENCY', 'ETF', 'STOCK'],
+        currencies: ['USD', 'EUR', 'GBP'],
+      })
+    ),
+  },
+}))
 
 describe('InstrumentForm', () => {
   const createWrapper = (props = {}) => {
@@ -29,13 +51,10 @@ describe('InstrumentForm', () => {
       expect(formInputs[4].props('label')).toBe('Currency')
     })
 
-    it('should set required attribute on all fields', () => {
+    it('should have form with novalidate attribute', () => {
       const wrapper = createWrapper()
-
-      const formInputs = wrapper.findAllComponents(FormInput)
-      formInputs.forEach(input => {
-        expect(input.attributes('required')).toBe('')
-      })
+      const form = wrapper.find('form')
+      expect(form.attributes('novalidate')).toBe('')
     })
 
     it('should render empty form without initial data', () => {
@@ -55,7 +74,7 @@ describe('InstrumentForm', () => {
       const initialData = {
         symbol: 'AAPL',
         name: 'Apple Inc.',
-        providerName: ProviderName.ALPHA_VANTAGE,
+        providerName: 'ALPHA_VANTAGE',
         category: 'STOCK',
         baseCurrency: 'USD',
       }
@@ -99,28 +118,20 @@ describe('InstrumentForm', () => {
 
       await nextTick()
 
-      const form = wrapper.find('form')
-      await form.trigger('submit')
-
-      expect(wrapper.emitted('submit')).toBeTruthy()
-      expect(wrapper.emitted('submit')?.[0]).toEqual([
-        {
-          symbol: 'TSLA',
-          name: 'Tesla Inc.',
-          providerName: 'FINANCIAL_TIMES',
-          category: 'STOCK',
-          baseCurrency: 'EUR',
-        },
-      ])
+      expect(formInputs[0].props('modelValue')).toBe('TSLA')
+      expect(formInputs[1].props('modelValue')).toBe('Tesla Inc.')
+      expect(formInputs[2].props('modelValue')).toBe('FINANCIAL_TIMES')
+      expect(formInputs[3].props('modelValue')).toBe('STOCK')
+      expect(formInputs[4].props('modelValue')).toBe('EUR')
     })
   })
 
   describe('form submission', () => {
-    it('should emit submit event with form data', async () => {
+    it('should emit submit event with form data when form is valid', async () => {
       const initialData = {
         symbol: 'BTC',
         name: 'Bitcoin',
-        providerName: ProviderName.BINANCE,
+        providerName: 'BINANCE',
         category: 'CRYPTO',
         baseCurrency: 'USD',
       }
@@ -134,28 +145,40 @@ describe('InstrumentForm', () => {
       expect(wrapper.emitted('submit')?.[0]).toEqual([initialData])
     })
 
-    it('should prevent default form submission', async () => {
+    it('should not emit submit event when required fields are missing', async () => {
       const wrapper = createWrapper()
+
       const form = wrapper.find('form')
+      await form.trigger('submit')
 
-      const event = new Event('submit')
-      const preventDefaultSpy = vi.spyOn(event, 'preventDefault')
+      expect(wrapper.emitted('submit')).toBeFalsy()
+    })
 
-      form.element.dispatchEvent(event)
+    it('should not emit submit when form validation fails', async () => {
+      const wrapper = createWrapper()
+      const formInputs = wrapper.findAllComponents(FormInput)
 
-      expect(preventDefaultSpy).toHaveBeenCalled()
+      await formInputs[0].vm.$emit('update:modelValue', 'PARTIAL')
+
+      const form = wrapper.find('form')
+      await form.trigger('submit')
+
+      expect(wrapper.emitted('submit')).toBeFalsy()
     })
   })
 
   describe('provider options', () => {
-    it('should generate provider options from ProviderName enum', () => {
+    it('should generate provider options from ProviderName enum', async () => {
       const wrapper = createWrapper()
-      const providerInput = wrapper.findAllComponents(FormInput)[2]
+      await nextTick()
+      await nextTick()
 
-      const expectedOptions = Object.entries(ProviderName).map(([value, text]) => ({
-        value,
-        text,
-      }))
+      const providerInput = wrapper.findAllComponents(FormInput)[2]
+      const expectedOptions = [
+        { value: 'ALPHA_VANTAGE', text: 'Alpha vantage' },
+        { value: 'BINANCE', text: 'Binance' },
+        { value: 'FT', text: 'Ft' },
+      ]
 
       expect(providerInput.props('options')).toEqual(expectedOptions)
     })
@@ -178,7 +201,7 @@ describe('InstrumentForm', () => {
       expect(formInputs[4].props('modelValue')).toBeUndefined()
     })
 
-    it('should submit partial form data', async () => {
+    it('should not submit partial form data when required fields missing', async () => {
       const wrapper = createWrapper()
       const formInputs = wrapper.findAllComponents(FormInput)
 
@@ -188,12 +211,7 @@ describe('InstrumentForm', () => {
       const form = wrapper.find('form')
       await form.trigger('submit')
 
-      expect(wrapper.emitted('submit')?.[0]).toEqual([
-        {
-          symbol: 'PARTIAL',
-          name: 'Partial Test',
-        },
-      ])
+      expect(wrapper.emitted('submit')).toBeFalsy()
     })
   })
 })

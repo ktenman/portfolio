@@ -123,6 +123,26 @@ describe('useConfirm', () => {
       const secondResult = await secondPromise
       expect(secondResult).toBe(false)
     })
+
+    it('should reject first promise when confirm called again before resolution', async () => {
+      const { confirmState, confirmFn } = createWrapper()
+
+      const firstPromise = confirmFn({ title: 'First' })
+      await nextTick()
+      expect(confirmState.options.value.title).toBe('First')
+
+      const secondPromise = confirmFn({ title: 'Second' })
+      await nextTick()
+
+      expect(confirmState.options.value.title).toBe('Second')
+
+      const firstResult = await firstPromise
+      expect(firstResult).toBe(false)
+
+      confirmState.handleConfirm()
+      const secondResult = await secondPromise
+      expect(secondResult).toBe(true)
+    })
   })
 
   describe('useConfirm without provider', () => {
@@ -176,7 +196,7 @@ describe('useConfirm', () => {
       await wrapper.find('button').trigger('click')
       await nextTick()
 
-      const state = (wrapper.vm as any).state
+      const state = wrapper.vm.state
       expect(state.isOpen.value).toBe(true)
       expect(state.options.value.title).toBe('Delete Record')
 

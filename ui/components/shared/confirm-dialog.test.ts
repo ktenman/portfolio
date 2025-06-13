@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
 import ConfirmDialog from './confirm-dialog.vue'
+import { Modal } from 'bootstrap'
 
 vi.mock('bootstrap', () => ({
   Modal: vi.fn().mockImplementation(() => ({
@@ -12,8 +12,17 @@ vi.mock('bootstrap', () => ({
 }))
 
 describe('ConfirmDialog', () => {
+  let mockModalInstance: any
+
   beforeEach(() => {
     vi.clearAllMocks()
+    mockModalInstance = {
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
+    }
+    const MockModal = vi.mocked(Modal)
+    MockModal.mockReturnValue(mockModalInstance)
   })
 
   const createWrapper = (props = {}) => {
@@ -26,44 +35,29 @@ describe('ConfirmDialog', () => {
     })
   }
 
-  describe('visibility control', () => {
-    it('should be hidden by default', () => {
+  describe('bootstrap modal integration', () => {
+    it('should call modal.show() when modelValue becomes true', async () => {
       const wrapper = createWrapper()
-      const modal = wrapper.find('.modal')
-
-      expect(modal.classes()).not.toContain('show')
-      expect((modal.element as HTMLElement).style.display).toBe('none')
-    })
-
-    it('should show when modelValue is true', async () => {
-      const wrapper = createWrapper({ modelValue: true })
-      await nextTick()
-
-      const modal = wrapper.find('.modal')
-      expect(modal.classes()).toContain('show')
-      expect((modal.element as HTMLElement).style.display).toBe('block')
-    })
-
-    it('should toggle visibility when modelValue changes', async () => {
-      const wrapper = createWrapper()
-      const modal = wrapper.find('.modal')
-
-      expect((modal.element as HTMLElement).style.display).toBe('none')
 
       await wrapper.setProps({ modelValue: true })
-      expect((modal.element as HTMLElement).style.display).toBe('block')
 
-      await wrapper.setProps({ modelValue: false })
-      expect((modal.element as HTMLElement).style.display).toBe('none')
+      expect(mockModalInstance.show).toHaveBeenCalled()
     })
 
-    it('should show backdrop when open', async () => {
+    it('should call modal.hide() when modelValue becomes false', async () => {
       const wrapper = createWrapper({ modelValue: true })
-      await nextTick()
 
-      const backdrop = wrapper.find('.modal-backdrop')
-      expect(backdrop.exists()).toBe(true)
-      expect(backdrop.classes()).toContain('show')
+      await wrapper.setProps({ modelValue: false })
+
+      expect(mockModalInstance.hide).toHaveBeenCalled()
+    })
+
+    it('should dispose modal instance on unmount', () => {
+      const wrapper = createWrapper()
+
+      wrapper.unmount()
+
+      expect(mockModalInstance.dispose).toHaveBeenCalled()
     })
   })
 
@@ -170,31 +164,12 @@ describe('ConfirmDialog', () => {
       expect(modal.attributes('aria-labelledby')).toBe('deleteConfirmModalLabel')
     })
 
-    it('should set correct aria attributes', async () => {
+    it('should set correct aria attributes', () => {
       const wrapper = createWrapper()
       const modal = wrapper.find('.modal')
 
       expect(modal.attributes('aria-hidden')).toBe('true')
       expect(modal.attributes('tabindex')).toBe('-1')
-
-      await wrapper.setProps({ modelValue: true })
-      expect(modal.attributes('aria-hidden')).toBe('false')
-    })
-
-    it('should clean up on unmount', () => {
-      const wrapper = createWrapper()
-      const disposeSpy = vi.fn()
-
-      const modalInstance = (wrapper.vm as any).modalInstance
-      if (modalInstance) {
-        modalInstance.dispose = disposeSpy
-      }
-
-      wrapper.unmount()
-
-      if (modalInstance) {
-        expect(disposeSpy).toHaveBeenCalled()
-      }
     })
   })
 })

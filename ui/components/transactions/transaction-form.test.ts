@@ -4,6 +4,7 @@ import { nextTick } from 'vue'
 import TransactionForm from './transaction-form.vue'
 import FormInput from '../shared/form-input.vue'
 import type { Instrument } from '../../models/instrument'
+import { ProviderName } from '../../models/provider-name'
 
 vi.mock('../../utils/formatters', async () => {
   const actual = await vi.importActual('../../utils/formatters')
@@ -13,6 +14,29 @@ vi.mock('../../utils/formatters', async () => {
   }
 })
 
+vi.mock('../../services/enum-service', () => ({
+  enumService: {
+    getAll: vi.fn(() =>
+      Promise.resolve({
+        platforms: [
+          'AVIVA',
+          'BINANCE',
+          'COINBASE',
+          'LHV',
+          'LIGHTYEAR',
+          'SWEDBANK',
+          'TRADING212',
+          'UNKNOWN',
+        ],
+        providers: ['ALPHA_VANTAGE', 'BINANCE', 'FT'],
+        transactionTypes: ['BUY', 'SELL'],
+        categories: ['CRYPTOCURRENCY', 'ETF', 'STOCK'],
+        currencies: ['USD', 'EUR', 'GBP'],
+      })
+    ),
+  },
+}))
+
 describe('TransactionForm', () => {
   const mockInstruments: Instrument[] = [
     {
@@ -20,7 +44,7 @@ describe('TransactionForm', () => {
       symbol: 'AAPL',
       name: 'Apple Inc.',
       currentPrice: 150.5,
-      providerName: 'ALPHA_VANTAGE' as any,
+      providerName: ProviderName.ALPHA_VANTAGE,
       type: 'STOCK',
     },
     {
@@ -28,7 +52,7 @@ describe('TransactionForm', () => {
       symbol: 'BTC',
       name: 'Bitcoin',
       currentPrice: 45000,
-      providerName: 'BINANCE' as any,
+      providerName: ProviderName.BINANCE,
       type: 'CRYPTO',
     },
     {
@@ -147,6 +171,19 @@ describe('TransactionForm', () => {
       await nextTick()
       expect(formInputs[4].props('modelValue')).toBe(45000)
     })
+
+    it('should clear price when switching from valid to invalid price instrument', async () => {
+      const wrapper = createWrapper()
+      const formInputs = wrapper.findAllComponents(FormInput)
+
+      await formInputs[0].vm.$emit('update:modelValue', 1)
+      await nextTick()
+      expect(formInputs[4].props('modelValue')).toBe(150.5)
+
+      await formInputs[0].vm.$emit('update:modelValue', 3)
+      await nextTick()
+      expect(formInputs[4].props('modelValue')).toBeUndefined()
+    })
   })
 
   describe('total value calculation', () => {
@@ -230,16 +267,13 @@ describe('TransactionForm', () => {
       ])
     })
 
-    it('should prevent default form submission', async () => {
+    it('should not emit submit when required fields are missing', async () => {
       const wrapper = createWrapper()
+
       const form = wrapper.find('form')
+      await form.trigger('submit')
 
-      const event = new Event('submit')
-      const preventDefaultSpy = vi.spyOn(event, 'preventDefault')
-
-      form.element.dispatchEvent(event)
-
-      expect(preventDefaultSpy).toHaveBeenCalled()
+      expect(wrapper.emitted('submit')).toBeFalsy()
     })
   })
 
@@ -302,12 +336,10 @@ describe('TransactionForm', () => {
       const quantityInput = formInputs[3]
       expect(quantityInput.props('type')).toBe('number')
       expect(quantityInput.props('step')).toBe('0.00000001')
-      expect(quantityInput.props('min')).toBe('0.00000001')
 
       const priceInput = formInputs[4]
       expect(priceInput.props('type')).toBe('number')
-      expect(priceInput.props('step')).toBe('0.01')
-      expect(priceInput.props('min')).toBe('0.01')
+      expect(priceInput.props('step')).toBe('0.001')
     })
 
     it('should show all form fields as rendered', () => {
@@ -331,11 +363,10 @@ describe('TransactionForm', () => {
       const quantityInput = formInputs[3]
 
       await quantityInput.vm.$emit('update:modelValue', -5)
+      await quantityInput.vm.$emit('blur')
       await nextTick()
 
-      const form = wrapper.find('form')
-      const formElement = form.element as HTMLFormElement
-      expect(formElement.checkValidity()).toBe(false)
+      expect(quantityInput.props('error')).toBeTruthy()
     })
 
     it('should validate price is positive', async () => {
@@ -344,11 +375,10 @@ describe('TransactionForm', () => {
       const priceInput = formInputs[4]
 
       await priceInput.vm.$emit('update:modelValue', -100)
+      await priceInput.vm.$emit('blur')
       await nextTick()
 
-      const form = wrapper.find('form')
-      const formElement = form.element as HTMLFormElement
-      expect(formElement.checkValidity()).toBe(false)
+      expect(priceInput.props('error')).toBeTruthy()
     })
 
     it('should handle form submission', async () => {
@@ -412,8 +442,11 @@ describe('TransactionForm', () => {
   })
 
   describe('platform options', () => {
-    it('should provide correct platform options', () => {
+    it('should provide correct platform options', async () => {
       const wrapper = createWrapper()
+      await nextTick()
+      await nextTick()
+
       const platformInput = wrapper.findAllComponents(FormInput)[1]
 
       const options = platformInput.props('options') as Array<{ value: string; text: string }>
@@ -431,8 +464,11 @@ describe('TransactionForm', () => {
   })
 
   describe('transaction type options', () => {
-    it('should provide correct transaction type options', () => {
+    it('should provide correct transaction type options', async () => {
       const wrapper = createWrapper()
+      await nextTick()
+      await nextTick()
+
       const typeInput = wrapper.findAllComponents(FormInput)[2]
 
       expect(typeInput.props('options')).toEqual([
