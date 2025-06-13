@@ -43,3 +43,6 @@ node_modules
 ### Coverage ###
 coverage/
 ui/coverage/
+
+### Test Results ###
+test-results/

@@ -21,13 +21,15 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: './tests/setup.ts',
-    reporters: ['default', 'junit'],
+    reporters: ['default', 'html', 'junit'],
     outputFile: {
       junit: '../test-results/junit.xml',
+      html: '../test-results/html/index.html',
     },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: '../coverage',
       exclude: [
         'node_modules/',
         'tests/',

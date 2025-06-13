@@ -110,6 +110,7 @@ jobs:
           path: |
             build/reports/tests/test/
             build/test-results/test/
+            build/reports/jacoco/test/html/
       - uses: actions/upload-artifact@v4.6.2
         if: always() && matrix.test-type == 'e2e'
         with:
@@ -118,13 +119,15 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
             build/reports/selenide/
+            build/reports/jacoco/test/html/
       - uses: actions/upload-artifact@v4.6.2
         if: always() && matrix.test-type == 'frontend-unit'
         with:
           name: Frontend Unit Test Reports
           path: |
             coverage/
-            test-results/
+            test-results/html/
+            test-results/junit.xml
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
