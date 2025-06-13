@@ -306,7 +306,7 @@ describe('useFormValidation', () => {
       })
 
       const { validateField, errors } = useFormValidation(nestedSchema, {
-        user: {},
+        user: { settings: { theme: '' } },
       })
 
       validateField('user.settings.theme', 'dark')
@@ -317,7 +317,7 @@ describe('useFormValidation', () => {
     it('should watch and update formData when initialData changes', async () => {
       const { nextTick } = await import('vue')
       const { reactive } = await import('vue')
-      
+
       const initialData = reactive({ name: 'Initial' })
       const { formData } = useFormValidation(testSchema, initialData)
 
@@ -358,10 +358,7 @@ describe('useFormValidation', () => {
     it('should handle field validation when no specific field error found', () => {
       const schema = z.object({
         field1: z.string(),
-        field2: z.string().refine(
-          (val) => val === 'specific',
-          { message: 'Must be specific' }
-        ),
+        field2: z.string().refine(val => val === 'specific', { message: 'Must be specific' }),
       })
 
       const { validateField, errors } = useFormValidation(schema)
