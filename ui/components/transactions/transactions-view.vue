@@ -29,7 +29,7 @@
 import { ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from 'vue-toastification'
-import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
+import { useModal } from '../../composables/use-modal'
 import { useConfirm } from '../../composables/use-confirm'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
@@ -39,7 +39,7 @@ import { transactionsService } from '../../services/transactions-service'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 
 const selectedItem = ref<PortfolioTransaction | null>(null)
-const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
+const { show: showModal, hide: hideModal } = useModal('transactionModal')
 const { confirm } = useConfirm()
 const queryClient = useQueryClient()
 const toast = useToast()
