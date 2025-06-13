@@ -26,7 +26,7 @@ export const transactionSchema = z.object({
     val => {
       if (val === '' || val === undefined || val === null) return undefined
       const num = Number(val)
-      return isNaN(num) ? val : num
+      return isNaN(num) || num === 0 ? undefined : num
     },
     z
       .number({
@@ -40,7 +40,7 @@ export const transactionSchema = z.object({
     val => {
       if (val === '' || val === undefined || val === null) return undefined
       const num = Number(val)
-      return isNaN(num) ? val : num
+      return isNaN(num) || num === 0 ? undefined : num
     },
     z
       .number({
