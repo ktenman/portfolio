@@ -17,7 +17,6 @@
               :step="field.step"
               :min="field.min"
               required
-              @input="handleInput()"
             />
           </div>
           <div class="calculator-buttons-desktop">
@@ -73,25 +72,12 @@ import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
-import { useConfirm } from '../composables/use-confirm'
 
-const {
-  form,
-  isLoading,
-  yearSummary,
-  portfolioData,
-  calculationResult,
-  handleInput,
-  resetCalculator,
-} = useCalculator()
-
-const { confirm } = useConfirm()
+const { form, isLoading, yearSummary, portfolioData, calculationResult, resetCalculator } =
+  useCalculator()
 
 const handleReset = async () => {
-  const confirmed = await confirm({ message: 'Are you sure you want to reset the calculator?' })
-  if (!confirmed) return
-
-  resetCalculator()
+  await resetCalculator()
 }
 
 interface FormField {
