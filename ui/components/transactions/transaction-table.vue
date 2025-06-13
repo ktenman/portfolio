@@ -6,9 +6,9 @@
     empty-message="No transactions found. Add a new transaction to get started."
   >
     <template #cell-instrumentId="{ item }">
-      <div>
-        <div>{{ item.symbol }}</div>
-        <small class="text-muted">{{ item.instrumentType }}</small>
+      <div class="instrument-info">
+        <div class="small text-truncate">{{ item.instrumentName }}</div>
+        <small class="text-muted">{{ item.symbol }}</small>
       </div>
     </template>
 
@@ -87,7 +87,6 @@ const enrichedTransactions = computed(() => {
     return {
       ...transaction,
       instrumentName: instrument?.name || 'Unknown',
-      instrumentType: instrument?.type || 'UNKNOWN',
       symbol: instrument?.symbol || '-',
     }
   })
@@ -99,3 +98,15 @@ const getTransactionProfit = (transaction: PortfolioTransaction): number | null 
     : transaction.unrealizedProfit
 }
 </script>
+
+<style scoped>
+.instrument-info {
+  max-width: 200px;
+}
+
+@media (min-width: 768px) {
+  .instrument-info {
+    max-width: 250px;
+  }
+}
+</style>
