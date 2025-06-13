@@ -48,17 +48,6 @@
         </div>
       </div>
     </template>
-
-    <confirm-dialog
-      v-model="isConfirmOpen"
-      :title="confirmOptions.title"
-      :message="confirmOptions.message"
-      :confirm-text="confirmOptions.confirmText"
-      :cancel-text="confirmOptions.cancelText"
-      :confirm-class="confirmOptions.confirmClass"
-      @confirm="handleConfirm"
-      @cancel="handleCancel"
-    />
   </div>
 </template>
 
@@ -70,7 +59,6 @@ import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
-import ConfirmDialog from './shared/confirm-dialog.vue'
 import {
   formatCurrencyWithSymbol,
   formatDate,
@@ -96,7 +84,7 @@ const {
 
 const { processedChartData } = usePortfolioChart(summaries)
 
-const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
+const { confirm } = useConfirm()
 
 const viewState = computed<ViewState>(() => {
   if (isLoading.value) return 'LOADING'

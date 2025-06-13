@@ -5,6 +5,17 @@
     :is-loading="isLoading"
     empty-message="No instruments found. Add a new instrument to get started."
   >
+    <template #cell-instrument="{ item }">
+      <div class="instrument-info">
+        <div class="small text-truncate">{{ item.name }}</div>
+        <small class="text-muted">{{ item.symbol }}</small>
+      </div>
+    </template>
+
+    <template #cell-type="{ item }">
+      {{ item.type || item.category || '-' }}
+    </template>
+
     <template #cell-profit="{ item }">
       <span :class="amountClass(item)">
         {{ formattedAmount(item) }}
@@ -50,3 +61,15 @@ const amountClass = (instrument: Instrument): string => {
   return getProfitClass(instrument.profit)
 }
 </script>
+
+<style scoped>
+.instrument-info {
+  max-width: 200px;
+}
+
+@media (min-width: 768px) {
+  .instrument-info {
+    max-width: 250px;
+  }
+}
+</style>
