@@ -8,7 +8,7 @@ This is a **Portfolio Management System** - a full-stack application for trackin
 
 **Tech Stack:**
 
-- Backend: Kotlin 2.1.21, Spring Boot 3.4.6, Java 21
+- Backend: Kotlin 2.1.21, Spring Boot 3.5.0, Java 21
 - Frontend: Vue.js 3.5.16, TypeScript, Vite 6.3.5, Bootstrap 5.3.5
 - Database: PostgreSQL 17 with Flyway migrations
 - Cache: Redis 8
