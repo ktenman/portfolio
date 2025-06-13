@@ -3,6 +3,8 @@
     :items="instruments"
     :columns="columns"
     :is-loading="isLoading"
+    :is-error="isError"
+    :error-message="errorMessage"
     empty-message="No instruments found. Add a new instrument to get started."
   >
     <template #cell-instrument="{ item }">
@@ -35,16 +37,19 @@
 import DataTable from '../shared/data-table.vue'
 import BaseIcon from '../shared/base-icon.vue'
 import { Instrument } from '../../models/instrument'
-import { instrumentColumns } from '../../config/table-columns'
+import { instrumentColumns } from '../../config'
 import { formatProfitLoss, getProfitClass } from '../../utils/formatters'
 
 interface Props {
   instruments: Instrument[]
   isLoading?: boolean
+  isError?: boolean
+  errorMessage?: string
 }
 
 withDefaults(defineProps<Props>(), {
   isLoading: false,
+  isError: false,
 })
 
 defineEmits<{

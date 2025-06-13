@@ -38,7 +38,7 @@
 import { watch, computed, reactive } from 'vue'
 import { Instrument } from '../../models/instrument'
 import { ProviderName } from '../../models/provider-name'
-import { currencyOptions, categoryOptions } from '../../config/form-options'
+import { currencyOptions, categoryOptions } from '../../config'
 import FormInput from '../shared/form-input.vue'
 
 interface Props {

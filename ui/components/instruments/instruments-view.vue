@@ -6,7 +6,13 @@
     @add="openAddModal"
   >
     <template #content>
-      <instrument-table :instruments="items || []" :is-loading="isLoading" @edit="openEditModal" />
+      <instrument-table
+        :instruments="items || []"
+        :is-loading="isLoading"
+        :is-error="isError"
+        :error-message="error?.message"
+        @edit="openEditModal"
+      />
     </template>
 
     <template #modals>
@@ -31,7 +37,12 @@ const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal'
 const queryClient = useQueryClient()
 const toast = useToast()
 
-const { data: items, isLoading } = useQuery({
+const {
+  data: items,
+  isLoading,
+  isError,
+  error,
+} = useQuery({
   queryKey: ['instruments'],
   queryFn: instrumentsService.getAll,
 })

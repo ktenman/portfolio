@@ -56,7 +56,7 @@ import DataTable from '../shared/data-table.vue'
 import BaseIcon from '../shared/base-icon.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
-import { transactionColumns } from '../../config/table-columns'
+import { transactionColumns } from '../../config'
 import {
   formatProfitLoss,
   formatTransactionAmount,
