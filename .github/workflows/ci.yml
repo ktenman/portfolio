@@ -104,18 +104,25 @@ jobs:
         if: matrix.test-type == 'frontend-unit'
         run: npm run test:coverage
       - uses: actions/upload-artifact@v4.6.2
-        if: always() && matrix.test-type != 'frontend-unit'
+        if: always() && matrix.test-type == 'backend-unit'
         with:
-          name: ${{ matrix.test-name }} Reports
+          name: Backend Unit Test Reports
+          path: |
+            build/reports/tests
+      - uses: actions/upload-artifact@v4.6.2
+        if: always() && matrix.test-type == 'e2e'
+        with:
+          name: E2E Test Reports and Screenshots
           path: |
             build/reports/tests
             build/reports/selenide
       - uses: actions/upload-artifact@v4.6.2
         if: always() && matrix.test-type == 'frontend-unit'
         with:
-          name: Frontend Coverage Report
+          name: Frontend Unit Test Reports
           path: |
             coverage/
+            test-results/
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
