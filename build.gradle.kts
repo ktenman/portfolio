@@ -68,6 +68,10 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.mockito.kotlin:mockito-kotlin:$mokitoKotlinVersion")
+  testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+  testImplementation("io.kotest:kotest-property:5.8.0")
+  testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+  testImplementation("com.tngtech.archunit:archunit-junit5:1.2.1")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
@@ -94,12 +98,14 @@ val test by tasks.getting(Test::class) {
     exclude("**/e2e/**")
   }
   finalizedBy(":jacocoTestReport")
-  
+
+  jvmArgs("-Xmx1g")
+
   reports {
     html.required = true
     junitXml.required = true
   }
-  
+
   testLogging {
     events("passed", "skipped", "failed")
     showExceptions = true

@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import { ApiError } from '../models/api-error'
+import { ApiErrorResponse } from '../models/api-error-response'
 
 export const httpClient = axios.create({
   baseURL: '/api',
@@ -16,12 +17,12 @@ httpClient.interceptors.response.use(
     }
     return response
   },
-  (error: AxiosError) => {
+  (error: AxiosError<ApiErrorResponse>) => {
     if (error.response?.status === 401) {
       window.location.href = '/login'
     }
 
-    const data = error.response?.data as any
+    const data = error.response?.data
     throw new ApiError(
       error.response?.status ?? 500,
       data?.message ?? error.message,
