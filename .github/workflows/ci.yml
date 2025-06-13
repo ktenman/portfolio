@@ -108,14 +108,16 @@ jobs:
         with:
           name: Backend Unit Test Reports
           path: |
-            build/reports/tests
+            build/reports/tests/test/
+            build/test-results/test/
       - uses: actions/upload-artifact@v4.6.2
         if: always() && matrix.test-type == 'e2e'
         with:
           name: E2E Test Reports and Screenshots
           path: |
-            build/reports/tests
-            build/reports/selenide
+            build/reports/tests/test/
+            build/test-results/test/
+            build/reports/selenide/
       - uses: actions/upload-artifact@v4.6.2
         if: always() && matrix.test-type == 'frontend-unit'
         with:

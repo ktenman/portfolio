@@ -22,35 +22,38 @@ export function useFormValidation<T extends Record<string, any>>(
     return flattened
   }
 
+  const setNestedValue = (obj: any, path: string, value: any): void => {
+    const keys = path.split('.')
+    const lastKey = keys.pop()
+
+    if (!lastKey || keys.some(k => k === '__proto__' || k === 'constructor' || k === 'prototype')) {
+      return
+    }
+
+    const target = keys.reduce((current, key) => {
+      if (!current[key]) current[key] = {}
+      return current[key]
+    }, obj)
+
+    target[lastKey] = value
+  }
+
   const validateField = (field: string, value: any) => {
     try {
-      if (field.includes('.')) {
-        const tempData = { ...formData }
-        const keys = field.split('.')
-        let current: any = tempData
-        for (let i = 0; i < keys.length - 1; i++) {
-          if (!current[keys[i]]) current[keys[i]] = {}
-          current = current[keys[i]]
-        }
-        current[keys[keys.length - 1]] = value
+      const tempData = { ...formData }
 
-        const result = schema.safeParse(tempData)
-        if (!result.success) {
-          const fieldError = result.error.errors.find(err => err.path.join('.') === field)
-          if (fieldError) {
-            errors.value[field] = fieldError.message
-          }
-        } else {
-          delete errors.value[field]
-        }
-        return
+      if (field.includes('.')) {
+        setNestedValue(tempData, field, value)
+      } else {
+        tempData[field] = value
       }
 
-      const tempData = { ...formData, [field]: value }
       const result = schema.safeParse(tempData)
 
       if (!result.success) {
-        const fieldError = result.error.errors.find(err => err.path[0] === field)
+        const fieldError = result.error.errors.find(
+          err => err.path.join('.') === field || err.path[0] === field
+        )
         if (fieldError) {
           errors.value[field] = fieldError.message
         } else {
