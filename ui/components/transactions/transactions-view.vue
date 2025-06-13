@@ -21,17 +21,6 @@
         :transaction="selectedItem || {}"
         @save="handleSave"
       />
-
-      <confirm-dialog
-        v-model="isConfirmOpen"
-        :cancel-text="confirmOptions.cancelText"
-        :confirm-class="confirmOptions.confirmClass"
-        :confirm-text="confirmOptions.confirmText"
-        :message="confirmOptions.message"
-        :title="confirmOptions.title"
-        @cancel="handleCancel"
-        @confirm="handleConfirm"
-      />
     </template>
   </crud-layout>
 </template>
@@ -45,14 +34,13 @@ import { useConfirm } from '../../composables/use-confirm'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
-import ConfirmDialog from '../shared/confirm-dialog.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { transactionsService } from '../../services/transactions-service'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 
 const selectedItem = ref<PortfolioTransaction | null>(null)
 const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
-const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
+const { confirm } = useConfirm()
 
 const { data: transactions, isLoading } = useQuery({
   queryKey: ['transactions'],

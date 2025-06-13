@@ -72,12 +72,25 @@ import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
+import { useConfirm } from '../composables/use-confirm'
 
 const { form, isLoading, yearSummary, portfolioData, calculationResult, resetCalculator } =
   useCalculator()
 
+const { confirm } = useConfirm()
+
 const handleReset = async () => {
-  await resetCalculator()
+  const confirmed = await confirm({
+    title: 'Reset Calculator',
+    message: 'Are you sure you want to reset the calculator to default values?',
+    confirmText: 'Reset',
+    cancelText: 'Cancel',
+    confirmClass: 'btn-warning',
+  })
+
+  if (confirmed) {
+    await resetCalculator()
+  }
 }
 
 interface FormField {

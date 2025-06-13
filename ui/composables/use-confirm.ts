@@ -1,4 +1,4 @@
-import { ref, Ref } from 'vue'
+import { ref, Ref, provide, inject } from 'vue'
 
 interface ConfirmOptions {
   title?: string
@@ -8,43 +8,31 @@ interface ConfirmOptions {
   confirmClass?: string
 }
 
-interface UseConfirmReturn {
-  isConfirmOpen: Ref<boolean>
-  confirmOptions: Ref<ConfirmOptions>
-  confirm: (options?: ConfirmOptions) => Promise<boolean>
+interface ConfirmState {
+  isOpen: Ref<boolean>
+  options: Ref<ConfirmOptions>
   handleConfirm: () => void
   handleCancel: () => void
 }
 
-export function useConfirm(): UseConfirmReturn {
-  const isConfirmOpen = ref(false)
-  const confirmOptions = ref<ConfirmOptions>({})
+interface UseConfirmReturn {
+  confirm: (options?: ConfirmOptions) => Promise<boolean>
+}
 
-  let resolvePromise: ((value: boolean) => void) | null = null
+const CONFIRM_KEY = Symbol('confirm')
 
-  const confirm = (options: ConfirmOptions = {}): Promise<boolean> => {
-    confirmOptions.value = {
-      title: 'Confirm',
-      message: 'Are you sure?',
-      confirmText: 'Confirm',
-      cancelText: 'Cancel',
-      confirmClass: 'btn-primary',
-      ...options,
-    }
+let resolvePromise: ((value: boolean) => void) | null = null
 
-    isConfirmOpen.value = true
-
-    return new Promise<boolean>(resolve => {
-      resolvePromise = resolve
-    })
-  }
+export function provideConfirm(): ConfirmState {
+  const isOpen = ref(false)
+  const options = ref<ConfirmOptions>({})
 
   const handleConfirm = () => {
     if (resolvePromise) {
       resolvePromise(true)
       resolvePromise = null
     }
-    isConfirmOpen.value = false
+    isOpen.value = false
   }
 
   const handleCancel = () => {
@@ -52,14 +40,46 @@ export function useConfirm(): UseConfirmReturn {
       resolvePromise(false)
       resolvePromise = null
     }
-    isConfirmOpen.value = false
+    isOpen.value = false
   }
 
-  return {
-    isConfirmOpen,
-    confirmOptions,
-    confirm,
+  const confirm = (confirmOptions: ConfirmOptions = {}): Promise<boolean> => {
+    options.value = {
+      title: 'Confirm',
+      message: 'Are you sure?',
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-primary',
+      ...confirmOptions,
+    }
+
+    isOpen.value = true
+
+    return new Promise<boolean>(resolve => {
+      resolvePromise = resolve
+    })
+  }
+
+  const state = {
+    isOpen,
+    options,
     handleConfirm,
     handleCancel,
   }
+
+  provide(CONFIRM_KEY, confirm)
+
+  return state
+}
+
+export function useConfirm(): UseConfirmReturn {
+  const confirm = inject<(options?: ConfirmOptions) => Promise<boolean>>(CONFIRM_KEY)
+
+  if (!confirm) {
+    throw new Error(
+      'useConfirm must be used within a component tree that has called provideConfirm'
+    )
+  }
+
+  return { confirm }
 }
