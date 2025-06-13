@@ -15,29 +15,15 @@
     <slot name="content" />
 
     <slot name="modals" />
-
-    <alert
-      :model-value="showAlert"
-      :type="alertType"
-      :message="alertMessage"
-      :duration="5000"
-      @update:model-value="$emit('update:showAlert', $event)"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import Alert from './alert.vue'
-import { AlertType } from '../../constants/ui-constants'
-
 interface Props {
   title: string
   addButtonText: string
   addButtonId?: string
   showAddButton?: boolean
-  showAlert: boolean
-  alertType: AlertType
-  alertMessage: string
 }
 
 withDefaults(defineProps<Props>(), {
@@ -47,6 +33,5 @@ withDefaults(defineProps<Props>(), {
 
 defineEmits<{
   add: []
-  'update:showAlert': [value: boolean]
 }>()
 </script>
