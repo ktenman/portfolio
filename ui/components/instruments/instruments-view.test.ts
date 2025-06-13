@@ -4,6 +4,7 @@ import InstrumentsView from './instruments-view.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { renderWithProviders } from '../../tests/test-utils'
 import type { Instrument } from '../../models/instrument'
+import { ProviderName } from '../../models/provider-name'
 
 vi.mock('../../services/instruments-service')
 vi.mock('vue-toastification', () => ({
@@ -25,14 +26,14 @@ describe('InstrumentsView', () => {
       id: 1,
       symbol: 'AAPL',
       name: 'Apple Inc.',
-      providerName: 'ALPHA_VANTAGE' as any,
+      providerName: ProviderName.ALPHA_VANTAGE,
       type: 'STOCK',
     },
     {
       id: 2,
       symbol: 'BTC',
       name: 'Bitcoin',
-      providerName: 'BINANCE' as any,
+      providerName: ProviderName.BINANCE,
       type: 'CRYPTO',
     },
   ]

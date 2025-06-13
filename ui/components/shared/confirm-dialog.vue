@@ -1,16 +1,14 @@
 <template>
   <div
     class="modal fade"
-    :class="{ show: isOpen }"
-    :style="{ display: isOpen ? 'block' : 'none' }"
     :id="modalId"
     tabindex="-1"
     :aria-labelledby="`${modalId}Label`"
-    :aria-hidden="!isOpen"
+    aria-hidden="true"
     @click.self="cancel"
   >
     <div class="modal-dialog">
-      <div class="modal-content">
+      <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h5 class="modal-title" :id="`${modalId}Label`">
             {{ title }}
@@ -31,11 +29,10 @@
       </div>
     </div>
   </div>
-  <div v-if="isOpen" class="modal-backdrop fade" :class="{ show: isOpen }"></div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { watch, onMounted, onUnmounted } from 'vue'
 import { Modal } from 'bootstrap'
 
 interface Props {
@@ -63,7 +60,6 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const isOpen = ref(props.modelValue)
 let modalInstance: Modal | null = null
 
 onMounted(() => {
@@ -75,7 +71,7 @@ onMounted(() => {
     })
 
     modalElement.addEventListener('hidden.bs.modal', () => {
-      close()
+      emit('update:modelValue', false)
     })
   }
 })
@@ -89,30 +85,23 @@ onUnmounted(() => {
 watch(
   () => props.modelValue,
   newValue => {
-    isOpen.value = newValue
-    if (newValue && modalInstance) {
-      modalInstance.show()
-    } else if (!newValue && modalInstance) {
-      modalInstance.hide()
+    if (modalInstance) {
+      if (newValue) {
+        modalInstance.show()
+      } else {
+        modalInstance.hide()
+      }
     }
   }
 )
 
 const confirm = () => {
   emit('confirm')
-  close()
+  emit('update:modelValue', false)
 }
 
 const cancel = () => {
   emit('cancel')
-  close()
-}
-
-const close = () => {
-  isOpen.value = false
   emit('update:modelValue', false)
-  if (modalInstance) {
-    modalInstance.hide()
-  }
 }
 </script>
