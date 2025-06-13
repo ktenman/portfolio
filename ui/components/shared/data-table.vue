@@ -165,9 +165,5 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
   .table td.text-end {
     justify-content: flex-end;
   }
-
-  .btn-sm {
-    padding: 0.25rem 0.5rem;
-  }
 }
 </style>
