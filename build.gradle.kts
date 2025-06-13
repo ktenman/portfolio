@@ -94,6 +94,19 @@ val test by tasks.getting(Test::class) {
     exclude("**/e2e/**")
   }
   finalizedBy(":jacocoTestReport")
+  
+  reports {
+    html.required = true
+    junitXml.required = true
+  }
+  
+  testLogging {
+    events("passed", "skipped", "failed")
+    showExceptions = true
+    showCauses = true
+    showStackTraces = true
+    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+  }
 }
 
 fun Test.configureE2ETestEnvironment() {
