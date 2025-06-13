@@ -1,8 +1,7 @@
 import { httpClient } from '../utils/http-client'
 import type { PortfolioTransaction } from '../models/portfolio-transaction'
-import type { CrudServiceWithDelete } from '../types/service-types'
 
-export const transactionsService: CrudServiceWithDelete<PortfolioTransaction> = {
+export const transactionsService = {
   getAll: () => httpClient.get<PortfolioTransaction[]>('/transactions').then(res => res.data),
 
   create: (data: Partial<PortfolioTransaction>) =>

@@ -1,13 +1,9 @@
 <template>
   <crud-layout
-    :alert-message="alertMessage"
-    :alert-type="alertType"
-    :show-alert="showAlert"
     add-button-id="addNewTransaction"
     add-button-text="Add New Transaction"
     title="Transactions"
     @add="openAddModal"
-    @update:showAlert="showAlert = $event"
   >
     <template #content>
       <transaction-table
@@ -46,7 +42,6 @@ import { useQuery } from '@tanstack/vue-query'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import { useCrudOperations } from '../../composables/use-crud-operations'
 import { useConfirm } from '../../composables/use-confirm'
-import { useCrudAlerts } from '../../composables/use-crud-alerts'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
@@ -55,7 +50,6 @@ import { instrumentsService } from '../../services/instruments-service'
 import { transactionsService } from '../../services/transactions-service'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 
-const { showAlert, alertType, alertMessage } = useCrudAlerts()
 const selectedItem = ref<PortfolioTransaction | null>(null)
 const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
 const { isConfirmOpen, confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm()
