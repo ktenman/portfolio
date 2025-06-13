@@ -36,17 +36,6 @@ jobs:
         run: npm run check-unused
       - name: Check README links
         run: .github/workflows/check-readme-links.sh
-      - name: Run frontend unit tests
-        run: npm run test:run
-      - name: Run frontend test coverage
-        run: npm run test:coverage
-      - name: Upload frontend coverage reports
-        uses: actions/upload-artifact@v4.6.2
-        if: always()
-        with:
-          name: Frontend Coverage Report
-          path: |
-            coverage/
 
   test:
     name: 🧪 ${{ matrix.test-type }} Test
@@ -55,19 +44,29 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-type: [ 'unit', 'e2e' ]
+        test-type: [ 'unit', 'e2e', 'frontend' ]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
       - name: Set up JDK 21
+        if: matrix.test-type != 'frontend'
         uses: actions/setup-java@v4.7.1
         with:
           java-version: '21'
           distribution: 'temurin'
       - name: Setup Gradle
+        if: matrix.test-type != 'frontend'
         uses: gradle/actions/setup-gradle@v4.4.1
+      - name: Use Node.js
+        if: matrix.test-type == 'frontend'
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 'lts/iron'
+      - name: Install frontend dependencies
+        if: matrix.test-type == 'frontend'
+        run: npm ci
       - name: Set up Docker Compose
         if: matrix.test-type == 'e2e'
         uses: ndeloof/install-compose-action@v0.0.1
@@ -81,6 +80,7 @@ jobs:
           sleep 10
           docker-compose logs
       - name: Run ${{ matrix.test-type }} tests
+        if: matrix.test-type != 'frontend'
         uses: Wandalen/wretry.action@v3.8.0
         with:
           command: |
@@ -88,13 +88,25 @@ jobs:
             ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide ${{ matrix.test-type == 'e2e' && '-Pheadless=true' || '' }}
           attempt_limit: 3
           attempt_delay: 30000
+      - name: Run frontend unit tests
+        if: matrix.test-type == 'frontend'
+        run: npm run test:run
+      - name: Run frontend test coverage
+        if: matrix.test-type == 'frontend'
+        run: npm run test:coverage
       - uses: actions/upload-artifact@v4.6.2
-        if: always()
+        if: always() && matrix.test-type != 'frontend'
         with:
           name: ${{ format('Test reports and screenshots ({0})', matrix.test-type) }}
           path: |
             build/reports/tests
             build/reports/selenide
+      - uses: actions/upload-artifact@v4.6.2
+        if: always() && matrix.test-type == 'frontend'
+        with:
+          name: Frontend Coverage Report
+          path: |
+            coverage/
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
