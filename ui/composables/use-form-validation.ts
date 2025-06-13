@@ -5,7 +5,7 @@ export function useFormValidation<T extends Record<string, any>>(
   schema: ZodSchema<T>,
   initialData: Partial<T> = {}
 ) {
-  const formData = reactive<Partial<T>>({ ...initialData })
+  const formData = reactive<Record<string, any>>({ ...initialData })
   const errors = ref<Record<string, string>>({})
   const touchedFields = ref<Set<string>>(new Set())
 
@@ -99,7 +99,7 @@ export function useFormValidation<T extends Record<string, any>>(
     validateField(field, value === undefined ? '' : value)
   }
 
-  const resetForm = (newData: Partial<T> = {}) => {
+  const resetForm = (newData: Record<string, any> = {}) => {
     Object.keys(formData).forEach(key => {
       delete (formData as any)[key]
     })

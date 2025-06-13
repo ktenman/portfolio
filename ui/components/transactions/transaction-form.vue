@@ -129,8 +129,8 @@ const instrumentOptions = computed(() =>
 )
 
 const totalValue = computed(() => {
-  const quantity = formData.quantity || 0
-  const price = formData.price || 0
+  const quantity = Number(formData.quantity) || 0
+  const price = Number(formData.price) || 0
   return quantity * price
 })
 
@@ -150,7 +150,7 @@ watch(
 
 const handleSubmit = () => {
   if (validateForm()) {
-    emit('submit', formData)
+    emit('submit', formData as Partial<PortfolioTransaction>)
   } else {
     Object.keys(transactionSchema.shape).forEach(field => touchField(field))
   }
