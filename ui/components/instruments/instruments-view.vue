@@ -1,13 +1,9 @@
 <template>
   <crud-layout
-    :alert-message="alertMessage"
-    :alert-type="alertType"
-    :show-alert="showAlert"
     add-button-id="addNewInstrument"
     add-button-text="Add New Instrument"
     title="Instruments"
     @add="openAddModal"
-    @update:showAlert="showAlert = $event"
   >
     <template #content>
       <instrument-table :instruments="items || []" :is-loading="isLoading" @edit="openEditModal" />
@@ -24,14 +20,12 @@ import { ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import { useCrudOperations } from '../../composables/use-crud-operations'
-import { useCrudAlerts } from '../../composables/use-crud-alerts'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { Instrument } from '../../models/instrument'
 
-const { showAlert, alertType, alertMessage } = useCrudAlerts()
 const selectedItem = ref<Instrument | null>(null)
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 

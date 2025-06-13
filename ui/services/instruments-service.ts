@@ -1,8 +1,7 @@
 import { httpClient } from '../utils/http-client'
 import type { Instrument } from '../models/instrument'
-import type { CrudService } from '../types/service-types'
 
-export const instrumentsService: Omit<CrudService<Instrument>, 'delete'> = {
+export const instrumentsService = {
   getAll: () => httpClient.get<Instrument[]>('/instruments').then(res => res.data),
 
   create: (data: Partial<Instrument>) =>

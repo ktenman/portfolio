@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Ref } from 'vue'
-import { useCrudAlerts } from './use-crud-alerts'
+import { useToast } from 'vue-toastification'
 
 interface CrudOptions<T> {
   queryKey: string[]
@@ -13,16 +13,16 @@ interface CrudOptions<T> {
 export function useCrudOperations<T extends { id?: number | string }>(options: CrudOptions<T>) {
   const { queryKey, createFn, updateFn, deleteFn, entityName } = options
   const queryClient = useQueryClient()
-  const { showError, showSuccess } = useCrudAlerts()
+  const toast = useToast()
 
   const createMutation = useMutation({
     mutationFn: createFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey })
-      showSuccess(`${entityName} created successfully`)
+      toast.success(`${entityName} created successfully`)
     },
     onError: (error: Error) => {
-      showError(`Failed to create ${entityName}: ${error.message}`)
+      toast.error(`Failed to create ${entityName}: ${error.message}`)
     },
   })
 
@@ -30,10 +30,10 @@ export function useCrudOperations<T extends { id?: number | string }>(options: C
     mutationFn: ({ id, data }: { id: number | string; data: Partial<T> }) => updateFn(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey })
-      showSuccess(`${entityName} updated successfully`)
+      toast.success(`${entityName} updated successfully`)
     },
     onError: (error: Error) => {
-      showError(`Failed to update ${entityName}: ${error.message}`)
+      toast.error(`Failed to update ${entityName}: ${error.message}`)
     },
   })
 
@@ -42,10 +42,10 @@ export function useCrudOperations<T extends { id?: number | string }>(options: C
         mutationFn: deleteFn,
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey })
-          showSuccess(`${entityName} deleted successfully`)
+          toast.success(`${entityName} deleted successfully`)
         },
         onError: (error: Error) => {
-          showError(`Failed to delete ${entityName}: ${error.message}`)
+          toast.error(`Failed to delete ${entityName}: ${error.message}`)
         },
       })
     : null

@@ -169,7 +169,7 @@ class PortfolioSummaryService(
   }
 
   @Transactional(readOnly = true)
-  public fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
+  fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
     val today = LocalDate.now(clock)
     val isToday = date.isEqual(today)
 
@@ -445,7 +445,7 @@ class PortfolioSummaryService(
       totalProfit = summary.totalProfit
       earningsPerDay = summary.earningsPerDay
     } ?: summary
-    
+
     return portfolioDailySummaryRepository.save(toSave)
   }
 

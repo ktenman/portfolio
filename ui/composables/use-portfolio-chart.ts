@@ -12,16 +12,23 @@ interface ChartDataPoint {
 function sampleDataPoints<T>(array: T[], maxPoints: number): T[] {
   if (array.length <= maxPoints) return array
 
-  const step = Math.ceil(array.length / maxPoints)
-  return Array.from({ length: maxPoints }, (_, i) => array[Math.min(i * step, array.length - 1)])
+  const step = (array.length - 1) / (maxPoints - 1)
+  return Array.from({ length: maxPoints }, (_, i) => {
+    const index = Math.round(i * step)
+    return array[index]
+  })
 }
 
 export function usePortfolioChart(summaries: Ref<PortfolioSummary[]>) {
   const processedChartData = computed<ChartDataPoint | null>(() => {
     if (summaries.value.length === 0) return null
 
-    const maxPoints = Math.min(window.innerWidth >= 1000 ? 31 : 15, summaries.value.length)
-    const sampledData = sampleDataPoints(summaries.value, maxPoints)
+    const chronologicalSummaries = [...summaries.value].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+
+    const maxPoints = Math.min(window.innerWidth >= 1000 ? 31 : 15, chronologicalSummaries.length)
+    const sampledData = sampleDataPoints(chronologicalSummaries, maxPoints)
 
     return {
       labels: sampledData.map(item => item.date),
