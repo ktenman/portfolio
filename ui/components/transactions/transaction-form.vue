@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { computed, watch, reactive } from 'vue'
 import FormInput from '../shared/form-input.vue'
-import { platformOptions, transactionTypeOptions } from '../../config/form-options'
+import { platformOptions, transactionTypeOptions } from '../../config'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
 import { formatCurrency } from '../../utils/formatters'

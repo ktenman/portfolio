@@ -4,6 +4,10 @@
       <span class="visually-hidden">Loading...</span>
     </div>
 
+    <div v-else-if="isError" class="alert alert-danger" role="alert">
+      {{ errorMessage || 'Failed to load data. Please try again.' }}
+    </div>
+
     <div v-else-if="hasNoData" class="alert alert-info" role="alert">
       {{ emptyMessage }}
     </div>
@@ -57,6 +61,8 @@ interface Props {
   items: T[]
   columns: ColumnDefinition[]
   isLoading?: boolean
+  isError?: boolean
+  errorMessage?: string
   emptyMessage?: string
   keyField?: string
   rowClass?: (item: T, index: number) => string | Record<string, boolean>
@@ -64,6 +70,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
+  isError: false,
   emptyMessage: 'No data available',
   keyField: 'id',
 })
