@@ -1,3 +1,5 @@
+import { styleClasses } from './style-classes'
+
 export const formatCurrencyWithSymbol = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '€0.00'
   return new Intl.NumberFormat('en-US', {
@@ -49,11 +51,11 @@ export const formatTransactionAmount = (quantity: number, price: number, type: s
 
 export const getProfitClass = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return ''
-  return value >= 0 ? 'text-success' : 'text-danger'
+  return value >= 0 ? styleClasses.text.success : styleClasses.text.danger
 }
 
 export const getAmountClass = (type: string): string => {
-  return type === 'BUY' ? 'text-success' : 'text-danger'
+  return type === 'BUY' ? styleClasses.text.success : styleClasses.text.danger
 }
 
 export const formatDate = (dateString: string): string => {

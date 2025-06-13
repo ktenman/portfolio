@@ -9,8 +9,8 @@
   >
     <template #cell-instrument="{ item }">
       <div class="instrument-info">
-        <div class="small text-truncate">{{ item.name }}</div>
-        <small class="text-muted">{{ item.symbol }}</small>
+        <div :class="cn('small', styles.utilities.textTruncate)">{{ item.name }}</div>
+        <small :class="styles.text.muted">{{ item.symbol }}</small>
       </div>
     </template>
 
@@ -25,9 +25,9 @@
     </template>
 
     <template #actions="{ item }">
-      <button class="btn btn-sm btn-secondary" @click="$emit('edit', item)">
-        <base-icon name="pencil" :size="14" class="me-1" />
-        <span class="d-none d-md-inline">Edit</span>
+      <button :class="cn(styles.buttons.secondary, styles.buttons.sm)" @click="$emit('edit', item)">
+        <base-icon name="pencil" :size="14" :class="styles.spacing.me(1)" />
+        <span :class="cn(styles.display.none, styles.display.mdInline)">Edit</span>
       </button>
     </template>
   </data-table>
@@ -39,6 +39,7 @@ import BaseIcon from '../shared/base-icon.vue'
 import { Instrument } from '../../models/instrument'
 import { instrumentColumns } from '../../config'
 import { formatProfitLoss, getProfitClass } from '../../utils/formatters'
+import { styleClasses as styles, cn } from '../../utils/style-classes'
 
 interface Props {
   instruments: Instrument[]

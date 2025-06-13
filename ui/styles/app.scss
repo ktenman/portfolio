@@ -1,0 +1,63 @@
+@use 'variables' as vars;
+@use 'mixins' as *;
+
+body {
+  background-color: #fafafa;
+}
+
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: left;
+  color: vars.$text-color;
+  min-height: 100vh;
+}
+
+.container,
+.container-fluid {
+  max-width: 1200px;
+}
+
+.alert-dismissible {
+  @include transition(opacity, 0.3s);
+}
+
+.table {
+  th {
+    font-weight: 600;
+    color: vars.$text-color;
+    border-bottom-width: 2px;
+  }
+
+  tbody tr {
+    @include transition(background-color, 0.2s);
+
+    &:hover {
+      background-color: rgba(vars.$primary-color, 0.05);
+    }
+  }
+}
+
+.nav-link {
+  @include transition(color, 0.3s);
+
+  &:hover {
+    color: vars.$primary-color;
+  }
+
+  &.active {
+    color: vars.$primary-color;
+    font-weight: bold;
+  }
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table {
+  background-color: #ffffff;
+}
