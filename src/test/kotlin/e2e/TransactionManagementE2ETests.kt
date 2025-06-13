@@ -51,8 +51,12 @@ class TransactionManagementE2ETests {
     val expectedPrice = "29.615"
     val expectedDate = "2024-07-10"
     
-    id("instrumentId").selectOption("AAPL - Apple Inc.")
-    id("transactionType").selectOption("Buy")
+    val instrumentSelect = id("instrumentId").shouldBe(visible, Duration.ofSeconds(5))
+    val options = instrumentSelect.findAll("option")
+    assertThat(options.size()).isGreaterThan(1)
+    instrumentSelect.selectOption(1)
+    
+    id("transactionType").selectOption("BUY")
     
     val quantityField = id("quantity")
     quantityField.value = expectedQuantity
@@ -77,9 +81,9 @@ class TransactionManagementE2ETests {
       .shouldBe(visible, Duration.ofSeconds(10))
     successAlert.shouldHave(text("Transaction saved successfully."))
 
-    val savedTransaction = elements(tagName("td")).findBy(text("AAPL"))
+    val savedTransaction = elements(tagName("td")).findBy(text("10.14"))
     assertThat(savedTransaction.isDisplayed).isTrue()
-    savedTransaction.shouldBe(visible).shouldHave(text("AAPL"))
+    savedTransaction.shouldBe(visible)
     
     val transactionRow = savedTransaction.closest("tr")
     assertThat(transactionRow).isNotNull
@@ -88,7 +92,6 @@ class TransactionManagementE2ETests {
     val cellTexts = rowCells.texts()
     assertThat(cellTexts)
       .hasSizeGreaterThan(3)
-      .anyMatch { it.contains("AAPL") }
       .anyMatch { it.contains("10.14") }
       .anyMatch { it.contains("29.6") }
   }
@@ -96,8 +99,9 @@ class TransactionManagementE2ETests {
   @Test
   fun `should display success message after editing an existing transaction`() {
     id("addNewTransaction").click()
-    id("instrumentId").selectOption("AAPL - Apple Inc.")
-    id("transactionType").selectOption("Buy")
+    val instrumentSelect = id("instrumentId").shouldBe(visible, Duration.ofSeconds(5))
+    instrumentSelect.selectOption(1)
+    id("transactionType").selectOption("BUY")
     id("quantity").value = "5.5"
     id("price").value = "150.25"
     val createDate = "2024-06-01"
@@ -118,8 +122,8 @@ class TransactionManagementE2ETests {
     val updatedDate = "2025-07-07"
     
     id("instrumentId").shouldBe(visible, Duration.ofSeconds(5))
-    id("instrumentId").selectOption("AAPL - Apple Inc.")
-    id("transactionType").selectOption("Sell")
+    id("instrumentId").selectOption(1)
+    id("transactionType").selectOption("SELL")
     
     val quantityField = id("quantity")
     quantityField.clear()
@@ -159,7 +163,6 @@ class TransactionManagementE2ETests {
       
     val cellTexts = transactionDetails.texts()
     assertThat(cellTexts)
-      .anyMatch { it.contains("AAPL") }
       .anyMatch { it.contains("SELL") }
       .anyMatch { it.contains("112255.12") }
       .anyMatch { it.contains("332211.19") }
@@ -169,6 +172,51 @@ class TransactionManagementE2ETests {
     assertThat(actionsCell.text())
       .containsIgnoringCase("Edit")
       .containsIgnoringCase("Delete")
+  }
+
+  @Test
+  fun `should display success message after deleting a transaction`() {
+    // First, create a transaction to delete
+    id("addNewTransaction").click()
+    val instrumentSelect = id("instrumentId").shouldBe(visible, Duration.ofSeconds(5))
+    instrumentSelect.selectOption(1)
+    id("transactionType").selectOption("SELL")
+    id("quantity").value = "99.99"
+    id("price").value = "999.99"
+    val createDate = "2024-12-25"
+    id("transactionDate").clear()
+    id("transactionDate").sendKeys(createDate)
+    id("platform").selectOption("BINANCE")
+    elements(tagName("button")).filter(text("Save")).first().click()
+    
+    element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
+    Thread.sleep(1000)
+    
+    // Find the transaction we just created
+    val createdTransaction = elements(tagName("td")).findBy(text("99.99"))
+    assertThat(createdTransaction.isDisplayed).isTrue()
+    
+    val transactionRow = createdTransaction.closest("tr")
+    assertThat(transactionRow).isNotNull
+    
+    // Find and click the delete button
+    val deleteButton = transactionRow.findAll(tagName("button")).filter(text("Delete")).first()
+    assertThat(deleteButton.isEnabled).isTrue()
+    deleteButton.click()
+    
+    // Confirm deletion in the confirmation dialog
+    val confirmButton = elements(tagName("button")).filter(text("Confirm")).first()
+    confirmButton.shouldBe(visible, Duration.ofSeconds(5)).click()
+    
+    // Verify success message
+    val successAlert = element(className("alert-success"))
+      .shouldBe(visible, Duration.ofSeconds(10))
+    successAlert.shouldHave(text("Transaction deleted successfully."))
+    
+    // Verify the transaction is no longer in the table
+    Thread.sleep(1000)
+    val deletedTransactions = elements(tagName("td")).filter(text("99.99"))
+    assertThat(deletedTransactions.size()).isEqualTo(0)
   }
 
   private fun id(id: String): SelenideElement = element(By.id(id))

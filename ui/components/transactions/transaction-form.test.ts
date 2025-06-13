@@ -381,6 +381,54 @@ describe('TransactionForm', () => {
       expect(priceInput.props('error')).toBeTruthy()
     })
 
+    it('should show user-friendly error for empty quantity', async () => {
+      const wrapper = createWrapper()
+      const formInputs = wrapper.findAllComponents(FormInput)
+      const quantityInput = formInputs[3]
+
+      await quantityInput.vm.$emit('update:modelValue', '')
+      await quantityInput.vm.$emit('blur')
+      await nextTick()
+
+      expect(quantityInput.props('error')).toBe('Quantity is required')
+    })
+
+    it('should show user-friendly error for empty price', async () => {
+      const wrapper = createWrapper()
+      const formInputs = wrapper.findAllComponents(FormInput)
+      const priceInput = formInputs[4]
+
+      await priceInput.vm.$emit('update:modelValue', '')
+      await priceInput.vm.$emit('blur')
+      await nextTick()
+
+      expect(priceInput.props('error')).toBe('Price is required')
+    })
+
+    it('should show user-friendly error for small quantity', async () => {
+      const wrapper = createWrapper()
+      const formInputs = wrapper.findAllComponents(FormInput)
+      const quantityInput = formInputs[3]
+
+      await quantityInput.vm.$emit('update:modelValue', 0.000000001)
+      await quantityInput.vm.$emit('blur')
+      await nextTick()
+
+      expect(quantityInput.props('error')).toBe('Quantity is too small')
+    })
+
+    it('should show user-friendly error for small price', async () => {
+      const wrapper = createWrapper()
+      const formInputs = wrapper.findAllComponents(FormInput)
+      const priceInput = formInputs[4]
+
+      await priceInput.vm.$emit('update:modelValue', 0.001)
+      await priceInput.vm.$emit('blur')
+      await nextTick()
+
+      expect(priceInput.props('error')).toBe('Price is too small')
+    })
+
     it('should handle form submission', async () => {
       const wrapper = createWrapper()
       const form = wrapper.find('form')

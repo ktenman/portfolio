@@ -27,8 +27,8 @@ import java.time.Duration
 private const val INSTRUMENTS_BASE_URL = "http://localhost:61234/instruments"
 private const val DEFAULT_SYMBOL = "AAPL"
 private const val DEFAULT_NAME = "Apple Inc."
-private const val DEFAULT_CATEGORY = "Stock"
-private const val DEFAULT_CURRENCY = "USD"
+private const val DEFAULT_CATEGORY = "ETF"
+private const val DEFAULT_CURRENCY = "EUR"
 
 @ExtendWith(RetryExtension::class)
 @Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])
@@ -51,8 +51,7 @@ class InstrumentManagementE2ETests {
     assertThat(addButton.isDisplayed).isTrue()
     addButton.shouldBe(enabled).click()
     
-    val symbolField = id("symbol")
-    assertThat(symbolField.isDisplayed).isTrue()
+    val symbolField = id("symbol").shouldBe(visible, Duration.ofSeconds(5))
     symbolField.shouldNotHave(text(DEFAULT_SYMBOL)).value = DEFAULT_SYMBOL
     assertThat(symbolField.value).isEqualTo(DEFAULT_SYMBOL)
     
@@ -79,9 +78,9 @@ class InstrumentManagementE2ETests {
     id("addNewInstrument").click()
     id("symbol").shouldNotHave(text("TSLA")).value = "TSLA"
     id("name").shouldNotHave(text("Tesla Inc.")).value = "Tesla Inc."
-    id("category").selectOption("Stock")
+    id("category").selectOption("ETF")
     id("providerName").selectOption("Alpha Vantage")
-    id("currency").selectOption("USD")
+    id("currency").selectOption("EUR")
     elements(tagName("button")).filter(text("Save")).first().click()
     
     element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
@@ -105,9 +104,9 @@ class InstrumentManagementE2ETests {
     nameField.value = updatedName
     nameField.shouldHave(value(updatedName))
     
-    id("category").selectOption("Stock")
+    id("category").selectOption("ETF")
     id("providerName").selectOption("Alpha Vantage")
-    id("currency").selectOption("USD")
+    id("currency").selectOption("EUR")
 
     val updateButton = elements(tagName("button")).filter(text("Update")).first()
     assertThat(updateButton.isEnabled).isTrue()
