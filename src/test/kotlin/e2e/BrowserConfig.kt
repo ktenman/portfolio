@@ -10,7 +10,6 @@ object BrowserConfig {
     Configuration.headless = true
     Configuration.screenshots = true
     Configuration.savePageSource = true
-//    Configuration.reportsFolder = "target/selenide-reports"
-    Configuration.fastSetValue = true // Faster input for form fields
+    Configuration.fastSetValue = true
   }
 }

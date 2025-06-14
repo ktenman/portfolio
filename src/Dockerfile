@@ -12,6 +12,7 @@ ENV BUILD_TIME=${BUILD_TIME}
 
 # Copy necessary files
 COPY build.gradle.kts settings.gradle.kts ./
+COPY .editorconfig ./
 COPY gradle ./gradle
 COPY src ./src
 
