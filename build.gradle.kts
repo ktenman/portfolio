@@ -144,7 +144,7 @@ tasks.withType<JacocoReport> {
 }
 
 configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-  version.set("1.6.0")
+  version.set("1.5.0")
   android.set(false)
   ignoreFailures.set(false)
   reporters {
