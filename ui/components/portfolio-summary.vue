@@ -33,9 +33,46 @@
         ></button>
       </div>
 
-      <portfolio-chart :data="processedChartData" />
+      <portfolio-chart :key="chartKey" :data="processedChartData" />
+
+      <div v-if="showListView" class="list-view mt-3">
+        <div
+          v-for="(summary, index) in reversedSummaries"
+          :key="summary.date"
+          class="list-item p-3 mb-2 border rounded"
+          :class="getSummaryRowClass(summary, index)"
+        >
+          <div class="row align-items-center">
+            <div class="col-md-2 col-6 mb-2 mb-md-0">
+              <small class="text-muted d-block">Date</small>
+              <strong>{{ formatDate(summary.date) }}</strong>
+            </div>
+            <div class="col-md-2 col-6 mb-2 mb-md-0">
+              <small class="text-muted d-block">XIRR Annual Return</small>
+              <strong>{{ formatPercentageFromDecimal(summary.xirrAnnualReturn) }}</strong>
+            </div>
+            <div class="col-md-2 col-6 mb-2 mb-md-0 d-none d-md-block">
+              <small class="text-muted d-block">Earnings Per Day</small>
+              <strong>{{ formatCurrencyWithSymbol(summary.earningsPerDay) }}</strong>
+            </div>
+            <div class="col-md-2 col-6 mb-2 mb-md-0">
+              <small class="text-muted d-block">Earnings Per Month</small>
+              <strong>{{ formatCurrencyWithSymbol(summary.earningsPerMonth) }}</strong>
+            </div>
+            <div class="col-md-2 col-6 mb-2 mb-md-0">
+              <small class="text-muted d-block">Total Profit</small>
+              <strong>{{ formatCurrencyWithSymbol(summary.totalProfit) }}</strong>
+            </div>
+            <div class="col-md-2 col-6 mb-2 mb-md-0">
+              <small class="text-muted d-block">Total Value</small>
+              <strong>{{ formatCurrencyWithSymbol(summary.totalValue) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <data-table
+        v-else
         :items="reversedSummaries"
         :columns="summaryColumns"
         :row-class="getSummaryRowClass"
@@ -52,8 +89,8 @@
 </template>
 
 <script lang="ts" setup>
-import { defineAsyncComponent, computed } from 'vue'
-import { useInfiniteScroll } from '@vueuse/core'
+import { defineAsyncComponent, computed, ref, watch } from 'vue'
+import { useInfiniteScroll, useScreenOrientation, useWindowSize } from '@vueuse/core'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
 import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
@@ -85,6 +122,20 @@ const {
 const { processedChartData } = usePortfolioChart(summaries)
 
 const { confirm } = useConfirm()
+
+const { orientation } = useScreenOrientation()
+const { width } = useWindowSize()
+const chartKey = ref(0)
+
+const isLandscape = computed(
+  () => orientation.value === 'landscape-primary' || orientation.value === 'landscape-secondary'
+)
+const isMobile = computed(() => width.value <= 666)
+const showListView = computed(() => isMobile.value && isLandscape.value)
+
+watch([orientation, width], () => {
+  chartKey.value++
+})
 
 const viewState = computed<ViewState>(() => {
   if (isLoading.value) return 'LOADING'
@@ -148,5 +199,28 @@ const handleRecalculate = async () => {
   :deep(.hide-on-mobile) {
     display: none;
   }
+}
+
+.list-view .list-item {
+  transition: all 0.2s;
+  background-color: var(--bs-body-bg);
+}
+
+.list-view .list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--bs-light);
+}
+
+.list-view .list-item.font-weight-bold {
+  border: 2px solid var(--bs-primary);
+  background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+.list-view small {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 </style>
