@@ -39,7 +39,6 @@ private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgx
 @ExtendWith(OutputCaptureExtension::class)
 @IntegrationTest
 class PortfolioTransactionControllerIT {
-
   @Resource
   private lateinit var mockMvc: MockMvc
 
@@ -52,50 +51,51 @@ class PortfolioTransactionControllerIT {
   @Resource
   private lateinit var objectMapper: ObjectMapper
 
-  private fun setupInstrument(): Instrument {
-    return instrumentRepository.save(
+  private fun setupInstrument(): Instrument =
+    instrumentRepository.save(
       Instrument(
         symbol = "QDVE",
         name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
         category = "ETF",
-        baseCurrency = "EUR"
-      )
+        baseCurrency = "EUR",
+      ),
     )
-  }
 
   @BeforeEach
   fun setup() {
     stubFor(
-      WireMock.get(urlPathEqualTo("/user-by-session"))
+      WireMock
+        .get(urlPathEqualTo("/user-by-session"))
         .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("user-details-response.json")
-        )
+            .withBodyFile("user-details-response.json"),
+        ),
     )
   }
 
   @Test
   fun `should create a new portfolio transaction`() {
     val instrument = setupInstrument()
-    val transactionDto = TransactionRequestDto(
-      id = null,
-      instrumentId = instrument.id,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("10"),
-      price = BigDecimal("100"),
-      transactionDate = LocalDate.now(),
-      platform = Platform.TRADING212
-    )
+    val transactionDto =
+      TransactionRequestDto(
+        id = null,
+        instrumentId = instrument.id,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.now(),
+        platform = Platform.TRADING212,
+      )
 
-    mockMvc.perform(
-      post("/api/transactions")
-        .contentType("application/json")
-        .content(objectMapper.writeValueAsString(transactionDto))
-        .cookie(DEFAULT_COOKIE)
-    )
-      .andExpect(status().isCreated)
+    mockMvc
+      .perform(
+        post("/api/transactions")
+          .contentType("application/json")
+          .content(objectMapper.writeValueAsString(transactionDto))
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isCreated)
       .andExpect(jsonPath("$.id").isNotEmpty)
       .andExpect(jsonPath("$.instrumentId").value(instrument.id))
       .andExpect(jsonPath("$.transactionType").value("BUY"))
@@ -111,36 +111,40 @@ class PortfolioTransactionControllerIT {
 
   @Test
   fun `should return all transactions in the correct order`() {
-    val instrument = instrumentRepository.save(
-      Instrument(
-        symbol = "QDVE",
-        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-        category = "ETF",
-        baseCurrency = "EUR",
-        currentPrice = BigDecimal("29.62")
+    val instrument =
+      instrumentRepository.save(
+        Instrument(
+          symbol = "QDVE",
+          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+          category = "ETF",
+          baseCurrency = "EUR",
+          currentPrice = BigDecimal("29.62"),
+        ),
       )
-    )
 
-    val transaction1 = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("3.37609300"),
-      price = BigDecimal("29.62"),
-      transactionDate = LocalDate.of(2024, 7, 1),
-      platform = Platform.SWEDBANK
-    )
-    val transaction2 = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.SELL,
-      quantity = BigDecimal("5"),
-      price = BigDecimal("150"),
-      transactionDate = LocalDate.of(2024, 7, 19),
-      platform = Platform.SWEDBANK
-    )
+    val transaction1 =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("3.37609300"),
+        price = BigDecimal("29.62"),
+        transactionDate = LocalDate.of(2024, 7, 1),
+        platform = Platform.SWEDBANK,
+      )
+    val transaction2 =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.SELL,
+        quantity = BigDecimal("5"),
+        price = BigDecimal("150"),
+        transactionDate = LocalDate.of(2024, 7, 19),
+        platform = Platform.SWEDBANK,
+      )
 
     portfolioTransactionRepository.saveAll(listOf(transaction1, transaction2))
 
-    mockMvc.perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
+    mockMvc
+      .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
       .andExpect(jsonPath("$[0].transactionDate").value("2024-07-19"))
@@ -160,26 +164,27 @@ class PortfolioTransactionControllerIT {
   @Test
   fun `should return a single transaction by ID`() {
     val instrument = setupInstrument()
-    val transaction = portfolioTransactionRepository.save(
-      PortfolioTransaction(
-        instrument = instrument,
-        transactionType = TransactionType.BUY,
-        quantity = BigDecimal("10"),
-        price = BigDecimal("100"),
-        transactionDate = LocalDate.of(2023, 7, 18),
-        platform = Platform.LHV,
-        unrealizedProfit = BigDecimal.ZERO,
-        realizedProfit = BigDecimal.ZERO,
-        averageCost = BigDecimal("100")
+    val transaction =
+      portfolioTransactionRepository.save(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = LocalDate.of(2023, 7, 18),
+          platform = Platform.LHV,
+          unrealizedProfit = BigDecimal.ZERO,
+          realizedProfit = BigDecimal.ZERO,
+          averageCost = BigDecimal("100"),
+        ),
       )
-    )
 
-    mockMvc.perform(
-      get("/api/transactions/${transaction.id}")
-        .cookie(DEFAULT_COOKIE)
-        .contentType(APPLICATION_JSON)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get("/api/transactions/${transaction.id}")
+          .cookie(DEFAULT_COOKIE)
+          .contentType(APPLICATION_JSON),
+      ).andExpect(status().isOk)
       .andExpect(jsonPath("$.id").value(transaction.id))
       .andExpect(jsonPath("$.instrumentId").value(instrument.id))
       .andExpect(jsonPath("$.symbol").value(instrument.symbol))
@@ -210,34 +215,36 @@ class PortfolioTransactionControllerIT {
   @Test
   fun `should update an existing transaction`() {
     val instrument = setupInstrument()
-    val transaction = portfolioTransactionRepository.save(
-      PortfolioTransaction(
-        instrument = instrument,
-        transactionType = TransactionType.BUY,
-        quantity = BigDecimal("10"),
-        price = BigDecimal("100"),
-        transactionDate = LocalDate.of(2023, 7, 18),
-        platform = Platform.LHV
+    val transaction =
+      portfolioTransactionRepository.save(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = LocalDate.of(2023, 7, 18),
+          platform = Platform.LHV,
+        ),
       )
-    )
 
-    val updatedDto = TransactionRequestDto(
-      id = transaction.id,
-      instrumentId = instrument.id,
-      transactionType = TransactionType.SELL,
-      quantity = BigDecimal("5"),
-      price = BigDecimal("150"),
-      transactionDate = LocalDate.of(2023, 7, 19),
-      platform = Platform.TRADING212
-    )
+    val updatedDto =
+      TransactionRequestDto(
+        id = transaction.id,
+        instrumentId = instrument.id,
+        transactionType = TransactionType.SELL,
+        quantity = BigDecimal("5"),
+        price = BigDecimal("150"),
+        transactionDate = LocalDate.of(2023, 7, 19),
+        platform = Platform.TRADING212,
+      )
 
-    mockMvc.perform(
-      put("/api/transactions/${transaction.id}")
-        .contentType("application/json")
-        .content(objectMapper.writeValueAsString(updatedDto))
-        .cookie(DEFAULT_COOKIE)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        put("/api/transactions/${transaction.id}")
+          .contentType("application/json")
+          .content(objectMapper.writeValueAsString(updatedDto))
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isOk)
       .andExpect(jsonPath("$.id").value(transaction.id))
       .andExpect(jsonPath("$.transactionType").value("SELL"))
       .andExpect(jsonPath("$.quantity").value(5))
@@ -253,18 +260,20 @@ class PortfolioTransactionControllerIT {
   @Test
   fun `should delete a transaction by ID`() {
     val instrument = setupInstrument()
-    val transaction = portfolioTransactionRepository.save(
-      PortfolioTransaction(
-        instrument = instrument,
-        transactionType = TransactionType.BUY,
-        quantity = BigDecimal("10"),
-        price = BigDecimal("100"),
-        transactionDate = LocalDate.of(2023, 7, 18),
-        platform = Platform.LHV
+    val transaction =
+      portfolioTransactionRepository.save(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = LocalDate.of(2023, 7, 18),
+          platform = Platform.LHV,
+        ),
       )
-    )
 
-    mockMvc.perform(delete("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
+    mockMvc
+      .perform(delete("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
       .andExpect(status().isNoContent)
 
     assertThat(portfolioTransactionRepository.findById(transaction.id)).isEmpty

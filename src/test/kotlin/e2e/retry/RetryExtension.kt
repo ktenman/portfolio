@@ -9,14 +9,18 @@ class RetryExtension : TestExecutionExceptionHandler {
   private val log = LoggerFactory.getLogger(javaClass)
   private val attemptsPerTest = mutableMapOf<String, AtomicInteger>()
 
-  override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
+  override fun handleTestExecutionException(
+    context: ExtensionContext,
+    throwable: Throwable,
+  ) {
     val testMethod = context.requiredTestMethod
     val testClass = context.requiredTestClass
 
     // Get the Retry annotation from the method or class
-    val retryAnnotation = testMethod.getAnnotation(Retry::class.java)
-      ?: testClass.getAnnotation(Retry::class.java)
-      ?: throw throwable
+    val retryAnnotation =
+      testMethod.getAnnotation(Retry::class.java)
+        ?: testClass.getAnnotation(Retry::class.java)
+        ?: throw throwable
 
     // Get the exceptions to retry on
     val allowedExceptions = retryAnnotation.onExceptions.toList()
@@ -30,7 +34,9 @@ class RetryExtension : TestExecutionExceptionHandler {
       if (currentAttempt <= retryAnnotation.times) {
         log.info(
           "Retrying test '{}' after failure (Attempt {}/{})",
-          testName, currentAttempt, retryAnnotation.times
+          testName,
+          currentAttempt,
+          retryAnnotation.times,
         )
         log.info("Failure was: {}: {}", throwable.javaClass.simpleName, throwable.message)
         return // Retry by not throwing

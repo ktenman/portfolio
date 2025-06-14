@@ -23,35 +23,40 @@ import java.math.BigDecimal
 @RequestMapping("/api/instruments")
 @Validated
 class InstrumentController(
-  private val instrumentService: InstrumentService
+  private val instrumentService: InstrumentService,
 ) {
-
   @PostMapping
   @Loggable
-  fun saveInstrument(@Valid @RequestBody instrumentDto: InstrumentDto): InstrumentDto {
+  fun saveInstrument(
+    @Valid @RequestBody instrumentDto: InstrumentDto,
+  ): InstrumentDto {
     val savedInstrument = instrumentService.saveInstrument(instrumentDto.toEntity())
     return InstrumentDto.fromEntity(savedInstrument)
   }
 
   @GetMapping
   @Loggable
-  fun getAllInstruments(): List<InstrumentDto> {
-    return instrumentService.getAllInstruments()
+  fun getAllInstruments(): List<InstrumentDto> =
+    instrumentService
+      .getAllInstruments()
       .sortedBy { it.id }
       .map { InstrumentDto.fromEntity(it) }
-  }
 
   @PutMapping("/{id}")
   @Loggable
-  fun updateInstrument(@PathVariable id: Long, @Valid @RequestBody instrumentDto: InstrumentDto): InstrumentDto {
+  fun updateInstrument(
+    @PathVariable id: Long,
+    @Valid @RequestBody instrumentDto: InstrumentDto,
+  ): InstrumentDto {
     val existingInstrument = instrumentService.getInstrumentById(id)
-    val updatedInstrument = existingInstrument.apply {
-      symbol = instrumentDto.symbol
-      name = instrumentDto.name
-      category = instrumentDto.category
-      baseCurrency = instrumentDto.baseCurrency
-      currentPrice = instrumentDto.currentPrice
-    }
+    val updatedInstrument =
+      existingInstrument.apply {
+        symbol = instrumentDto.symbol
+        name = instrumentDto.name
+        category = instrumentDto.category
+        baseCurrency = instrumentDto.baseCurrency
+        currentPrice = instrumentDto.currentPrice
+      }
 
     val savedInstrument = instrumentService.saveInstrument(updatedInstrument)
     return InstrumentDto.fromEntity(savedInstrument)
@@ -59,7 +64,9 @@ class InstrumentController(
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  fun deleteInstrument(@PathVariable id: Long) = instrumentService.deleteInstrument(id)
+  fun deleteInstrument(
+    @PathVariable id: Long,
+  ) = instrumentService.deleteInstrument(id)
 
   data class InstrumentDto(
     val id: Long? = null,
@@ -76,38 +83,40 @@ class InstrumentController(
     val totalInvestment: BigDecimal? = BigDecimal.ZERO,
     val currentValue: BigDecimal? = BigDecimal.ZERO,
     val profit: BigDecimal? = BigDecimal.ZERO,
-    val xirr: Double? = 0.0
+    val xirr: Double? = 0.0,
   ) {
-    fun toEntity() = Instrument(
-      symbol = symbol,
-      name = name,
-      category = category,
-      baseCurrency = baseCurrency,
-      currentPrice = currentPrice,
-      providerName = ProviderName.valueOf(providerName)
-    ).apply {
-      id.let { this.id = it }
-      totalInvestment = this@InstrumentDto.totalInvestment ?: BigDecimal.ZERO
-      currentValue = this@InstrumentDto.currentValue ?: BigDecimal.ZERO
-      profit = this@InstrumentDto.profit ?: BigDecimal.ZERO
-      xirr = this@InstrumentDto.xirr ?: 0.0
-    }
+    fun toEntity() =
+      Instrument(
+        symbol = symbol,
+        name = name,
+        category = category,
+        baseCurrency = baseCurrency,
+        currentPrice = currentPrice,
+        providerName = ProviderName.valueOf(providerName),
+      ).apply {
+        id.let { this.id = it }
+        totalInvestment = this@InstrumentDto.totalInvestment ?: BigDecimal.ZERO
+        currentValue = this@InstrumentDto.currentValue ?: BigDecimal.ZERO
+        profit = this@InstrumentDto.profit ?: BigDecimal.ZERO
+        xirr = this@InstrumentDto.xirr ?: 0.0
+      }
 
     companion object {
-      fun fromEntity(instrument: Instrument) = InstrumentDto(
-        id = instrument.id,
-        symbol = instrument.symbol,
-        name = instrument.name,
-        category = instrument.category,
-        baseCurrency = instrument.baseCurrency,
-        currentPrice = instrument.currentPrice,
-        quantity = instrument.quantity,
-        providerName = instrument.providerName.name,
-        totalInvestment = instrument.totalInvestment,
-        currentValue = instrument.currentValue,
-        profit = instrument.profit,
-        xirr = instrument.xirr
-      )
+      fun fromEntity(instrument: Instrument) =
+        InstrumentDto(
+          id = instrument.id,
+          symbol = instrument.symbol,
+          name = instrument.name,
+          category = instrument.category,
+          baseCurrency = instrument.baseCurrency,
+          currentPrice = instrument.currentPrice,
+          quantity = instrument.quantity,
+          providerName = instrument.providerName.name,
+          totalInvestment = instrument.totalInvestment,
+          currentValue = instrument.currentValue,
+          profit = instrument.profit,
+          xirr = instrument.xirr,
+        )
     }
   }
 }

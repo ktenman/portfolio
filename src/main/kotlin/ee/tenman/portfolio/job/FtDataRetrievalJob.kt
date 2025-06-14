@@ -14,9 +14,8 @@ class FtDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val historicalPricesService: HistoricalPricesService,
   private val dataProcessingUtil: DataProcessingUtil,
-  private val jobExecutionService: JobExecutionService
+  private val jobExecutionService: JobExecutionService,
 ) : Job {
-
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 0/10 * * * *")
@@ -28,8 +27,10 @@ class FtDataRetrievalJob(
 
   override fun execute() {
     log.info("Starting FT data retrieval execution")
-    val instruments = instrumentService.getAllInstruments()
-      .filter { it.providerName == ProviderName.FT }
+    val instruments =
+      instrumentService
+        .getAllInstruments()
+        .filter { it.providerName == ProviderName.FT }
 
     instruments.forEach { instrument ->
       log.info("Retrieving FT data for instrument: ${instrument.symbol}")

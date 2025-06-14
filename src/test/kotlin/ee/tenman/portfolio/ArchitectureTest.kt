@@ -15,63 +15,93 @@ import org.springframework.web.bind.annotation.RestController
 
 @AnalyzeClasses(packages = ["ee.tenman.portfolio"])
 class ArchitectureTest {
+  @ArchTest
+  val layeredArchitectureRule: ArchRule =
+    layeredArchitecture()
+      .consideringOnlyDependenciesInLayers()
+      .layer("Controller")
+      .definedBy("..controller..")
+      .layer("Service")
+      .definedBy("..service..")
+      .layer("Repository")
+      .definedBy("..repository..")
+      .layer("Domain")
+      .definedBy("..domain..")
+      .whereLayer("Controller")
+      .mayNotBeAccessedByAnyLayer()
+      .whereLayer("Service")
+      .mayOnlyBeAccessedByLayers("Controller", "Service")
+      .whereLayer("Repository")
+      .mayOnlyBeAccessedByLayers("Service")
+      .ignoreDependency(
+        DescribedPredicate.describe("test classes") { javaClass: JavaClass ->
+          javaClass.name.endsWith("IT") || javaClass.name.contains("Test")
+        },
+        DescribedPredicate.alwaysTrue(),
+      )
 
   @ArchTest
-  val layeredArchitectureRule: ArchRule = layeredArchitecture()
-    .consideringOnlyDependenciesInLayers()
-    .layer("Controller").definedBy("..controller..")
-    .layer("Service").definedBy("..service..")
-    .layer("Repository").definedBy("..repository..")
-    .layer("Domain").definedBy("..domain..")
-    .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
-    .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller", "Service")
-    .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service")
-    .ignoreDependency(
-      DescribedPredicate.describe("test classes") { javaClass: JavaClass ->
-        javaClass.name.endsWith("IT") || javaClass.name.contains("Test")
-      },
-      DescribedPredicate.alwaysTrue()
-    )
+  val servicesNamingRule: ArchRule =
+    classes()
+      .that()
+      .resideInAPackage("..service..")
+      .and()
+      .areAnnotatedWith(Service::class.java)
+      .should()
+      .haveSimpleNameEndingWith("Service")
 
   @ArchTest
-  val servicesNamingRule: ArchRule = classes()
-    .that().resideInAPackage("..service..")
-    .and().areAnnotatedWith(Service::class.java)
-    .should().haveSimpleNameEndingWith("Service")
+  val repositoriesNamingRule: ArchRule =
+    classes()
+      .that()
+      .resideInAPackage("..repository..")
+      .should()
+      .haveSimpleNameEndingWith("Repository")
 
   @ArchTest
-  val repositoriesNamingRule: ArchRule = classes()
-    .that().resideInAPackage("..repository..")
-    .should().haveSimpleNameEndingWith("Repository")
+  val controllersNamingRule: ArchRule =
+    classes()
+      .that()
+      .areAnnotatedWith(RestController::class.java)
+      .should()
+      .haveSimpleNameEndingWith("Controller")
+      .andShould()
+      .resideInAPackage("..controller..")
 
   @ArchTest
-  val controllersNamingRule: ArchRule = classes()
-    .that().areAnnotatedWith(RestController::class.java)
-    .should().haveSimpleNameEndingWith("Controller")
-    .andShould().resideInAPackage("..controller..")
+  val noFieldInjectionRule: ArchRule =
+    noFields()
+      .should()
+      .beAnnotatedWith("org.springframework.beans.factory.annotation.Autowired")
+      .because("Field injection is discouraged, use constructor injection instead")
 
   @ArchTest
-  val noFieldInjectionRule: ArchRule = noFields()
-    .should().beAnnotatedWith("org.springframework.beans.factory.annotation.Autowired")
-    .because("Field injection is discouraged, use constructor injection instead")
+  val servicesShouldBeAnnotatedRule: ArchRule =
+    classes()
+      .that()
+      .resideInAPackage("..service..")
+      .and()
+      .haveSimpleNameEndingWith("Service")
+      .should()
+      .beAnnotatedWith(Service::class.java)
 
   @ArchTest
-  val servicesShouldBeAnnotatedRule: ArchRule = classes()
-    .that().resideInAPackage("..service..")
-    .and().haveSimpleNameEndingWith("Service")
-    .should().beAnnotatedWith(Service::class.java)
-
-  @ArchTest
-  val repositoriesShouldBeInterfacesRule: ArchRule = classes()
-    .that().resideInAPackage("..repository..")
-    .and().haveSimpleNameEndingWith("Repository")
-    .should().beInterfaces()
+  val repositoriesShouldBeInterfacesRule: ArchRule =
+    classes()
+      .that()
+      .resideInAPackage("..repository..")
+      .and()
+      .haveSimpleNameEndingWith("Repository")
+      .should()
+      .beInterfaces()
 
   @ArchTest
   val noJavaUtilLoggingRule: ArchRule = GeneralCodingRules.NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING
 
   @ArchTest
-  val noSystemOutRule: ArchRule = noClasses()
-    .should().callMethod(System::class.java, "out")
-    .because("Use proper logging instead of System.out")
+  val noSystemOutRule: ArchRule =
+    noClasses()
+      .should()
+      .callMethod(System::class.java, "out")
+      .because("Use proper logging instead of System.out")
 }

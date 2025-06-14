@@ -28,60 +28,61 @@ private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgx
 
 @IntegrationTest
 class EnumControllerIT {
+  @Resource
+  private lateinit var mockMvc: MockMvc
 
-    @Resource
-    private lateinit var mockMvc: MockMvc
+  @Resource
+  private lateinit var objectMapper: ObjectMapper
 
-    @Resource
-    private lateinit var objectMapper: ObjectMapper
+  @BeforeEach
+  fun setup() {
+    stubFor(
+      WireMock
+        .get(urlPathEqualTo("/user-by-session"))
+        .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
+        .willReturn(
+          aResponse()
+            .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+            .withBody(
+              """
+              {
+                  "id": "3f71e9f4-fce0-441e-94fe-f1298e4daba4",
+                  "email": "test@example.com",
+                  "provider": "GOOGLE"
+              }
+              """.trimIndent(),
+            ),
+        ),
+    )
+  }
 
-    @BeforeEach
-    fun setup() {
-        stubFor(
-            WireMock.get(urlPathEqualTo("/user-by-session"))
-                .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
-                .willReturn(
-                    aResponse()
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-                        .withBody(
-                            """
-                            {
-                                "id": "3f71e9f4-fce0-441e-94fe-f1298e4daba4",
-                                "email": "test@example.com",
-                                "provider": "GOOGLE"
-                            }
-                            """.trimIndent()
-                        )
-                )
-        )
-    }
+  @Test
+  fun `should return all enums in one call`() {
+    val result =
+      mockMvc
+        .perform(get("/api/enums").cookie(DEFAULT_COOKIE))
+        .andExpect(status().isOk)
+        .andReturn()
 
+    val responseBody = result.response.contentAsString
+    val enumsMap = objectMapper.readValue(responseBody, object : TypeReference<Map<String, List<String>>>() {})
 
-    @Test
-    fun `should return all enums in one call`() {
-        val result = mockMvc.perform(get("/api/enums").cookie(DEFAULT_COOKIE))
-            .andExpect(status().isOk)
-            .andReturn()
-
-        val responseBody = result.response.contentAsString
-        val enumsMap = objectMapper.readValue(responseBody, object : TypeReference<Map<String, List<String>>>() {})
-
-        assertThat(enumsMap).containsKeys("platforms", "providers", "transactionTypes", "categories", "currencies")
-        assertThat(enumsMap["platforms"])
-            .hasSize(Platform.entries.size)
-            .isSortedAccordingTo(String::compareTo)
-            .contains(Platform.BINANCE.name, Platform.TRADING212.name)
-        assertThat(enumsMap["providers"])
-            .hasSize(ProviderName.entries.size)
-            .isSortedAccordingTo(String::compareTo)
-            .contains(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
-        assertThat(enumsMap["transactionTypes"])
-            .containsExactly(TransactionType.BUY.name, TransactionType.SELL.name)
-        assertThat(enumsMap["categories"])
-            .hasSize(InstrumentCategory.entries.size)
-            .isSortedAccordingTo(String::compareTo)
-            .contains(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
-        assertThat(enumsMap["currencies"])
-            .containsExactly(Currency.EUR.name)
-    }
+    assertThat(enumsMap).containsKeys("platforms", "providers", "transactionTypes", "categories", "currencies")
+    assertThat(enumsMap["platforms"])
+      .hasSize(Platform.entries.size)
+      .isSortedAccordingTo(String::compareTo)
+      .contains(Platform.BINANCE.name, Platform.TRADING212.name)
+    assertThat(enumsMap["providers"])
+      .hasSize(ProviderName.entries.size)
+      .isSortedAccordingTo(String::compareTo)
+      .contains(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
+    assertThat(enumsMap["transactionTypes"])
+      .containsExactly(TransactionType.BUY.name, TransactionType.SELL.name)
+    assertThat(enumsMap["categories"])
+      .hasSize(InstrumentCategory.entries.size)
+      .isSortedAccordingTo(String::compareTo)
+      .contains(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
+    assertThat(enumsMap["currencies"])
+      .containsExactly(Currency.EUR.name)
+  }
 }

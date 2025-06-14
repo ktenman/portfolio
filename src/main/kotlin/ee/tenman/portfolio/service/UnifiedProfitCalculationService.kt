@@ -22,7 +22,7 @@ class UnifiedProfitCalculationService {
   fun calculateProfit(
     holdings: BigDecimal,
     averageCost: BigDecimal,
-    currentPrice: BigDecimal
+    currentPrice: BigDecimal,
   ): BigDecimal {
     val currentValue = holdings.multiply(currentPrice)
     val investment = holdings.multiply(averageCost)
@@ -34,15 +34,13 @@ class UnifiedProfitCalculationService {
    */
   fun calculateCurrentValue(
     holdings: BigDecimal,
-    currentPrice: BigDecimal
-  ): BigDecimal {
-    return holdings.multiply(currentPrice)
-  }
+    currentPrice: BigDecimal,
+  ): BigDecimal = holdings.multiply(currentPrice)
 
   fun calculateAdjustedXirr(
     transactions: List<Transaction>,
     currentValue: BigDecimal,
-    calculationDate: LocalDate = LocalDate.now() // Default for backward compatibility
+    calculationDate: LocalDate = LocalDate.now(), // Default for backward compatibility
   ): Double {
     if (transactions.size < 2) {
       return 0.0
@@ -58,12 +56,13 @@ class UnifiedProfitCalculationService {
       }
 
       val totalInvestment = cashFlows.sumOf { -it.amount }
-      val weightedDays = cashFlows.sumOf { transaction ->
-        val weight = -transaction.amount / totalInvestment
-        // Use the provided calculation date instead of LocalDate.now()
-        val days = ChronoUnit.DAYS.between(transaction.date, calculationDate).toDouble()
-        days * weight
-      }
+      val weightedDays =
+        cashFlows.sumOf { transaction ->
+          val weight = -transaction.amount / totalInvestment
+          // Use the provided calculation date instead of LocalDate.now()
+          val days = ChronoUnit.DAYS.between(transaction.date, calculationDate).toDouble()
+          days * weight
+        }
 
       // Apply dampening for very recent investments
       val dampingFactor = min(1.0, weightedDays / 60.0)
@@ -102,11 +101,12 @@ class UnifiedProfitCalculationService {
       }
     }
 
-    val averageCost = if (quantity.compareTo(BigDecimal.ZERO) > 0) {
-      totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
-    } else {
-      BigDecimal.ZERO
-    }
+    val averageCost =
+      if (quantity.compareTo(BigDecimal.ZERO) > 0) {
+        totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
+      } else {
+        BigDecimal.ZERO
+      }
 
     return Pair(quantity, averageCost)
   }
@@ -116,15 +116,17 @@ class UnifiedProfitCalculationService {
    */
   fun buildXirrTransactions(
     transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal
+    currentValue: BigDecimal,
   ): List<Transaction> {
-    val cashflows = transactions.map { transaction ->
-      val amount = when (transaction.transactionType) {
-        TransactionType.BUY -> -(transaction.price * transaction.quantity)
-        TransactionType.SELL -> transaction.price * transaction.quantity
+    val cashflows =
+      transactions.map { transaction ->
+        val amount =
+          when (transaction.transactionType) {
+            TransactionType.BUY -> -(transaction.price * transaction.quantity)
+            TransactionType.SELL -> transaction.price * transaction.quantity
+          }
+        Transaction(amount.toDouble(), transaction.transactionDate)
       }
-      Transaction(amount.toDouble(), transaction.transactionDate)
-    }
 
     return if (currentValue > BigDecimal.ZERO) {
       cashflows + Transaction(currentValue.toDouble(), LocalDate.now())

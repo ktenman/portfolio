@@ -4,7 +4,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class CaptchaService(private val captchaClient: CaptchaClient) {
+class CaptchaService(
+  private val captchaClient: CaptchaClient,
+) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun predict(predictionRequest: PredictionRequest): PredictionResponse {

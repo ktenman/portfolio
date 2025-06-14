@@ -54,14 +54,15 @@ class DailyPortfolioXirrJobIT {
   fun `should not create duplicated rows when triggered multiple times with same data`() {
     whenever(clock.instant()).thenReturn(Instant.parse("2024-07-05T00:00:00Z"))
     whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
-    val instrument = Instrument(
-      "QDVE.DEX",
-      "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-      "ETF",
-      "EUR"
-    ).let {
-      instrumentRepository.save(it)
-    }
+    val instrument =
+      Instrument(
+        "QDVE.DEX",
+        "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+        "ETF",
+        "EUR",
+      ).let {
+        instrumentRepository.save(it)
+      }
 
     PortfolioTransaction(
       instrument = instrument,
@@ -69,7 +70,7 @@ class DailyPortfolioXirrJobIT {
       quantity = BigDecimal("3.37609300"),
       price = BigDecimal("29.62003713"),
       transactionDate = LocalDate.of(2024, 7, 1),
-      platform = Platform.SWEDBANK
+      platform = Platform.SWEDBANK,
     ).let {
       portfolioTransactionService.saveTransaction(it)
     }
@@ -81,8 +82,8 @@ class DailyPortfolioXirrJobIT {
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("symbol-search-response.json")
-        )
+            .withBodyFile("symbol-search-response.json"),
+        ),
     )
 
     stubFor(
@@ -93,8 +94,8 @@ class DailyPortfolioXirrJobIT {
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("alpha-vantage-response.json")
-        )
+            .withBodyFile("alpha-vantage-response.json"),
+        ),
     )
 
     alphaVantageDataRetrievalJob.execute()
@@ -114,6 +115,3 @@ class DailyPortfolioXirrJobIT {
     }
   }
 }
-
-
-

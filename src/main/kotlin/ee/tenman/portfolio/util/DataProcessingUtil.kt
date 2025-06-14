@@ -17,14 +17,14 @@ class DataProcessingUtil(
   private val dailyPriceService: DailyPriceService,
   private val instrumentService: InstrumentService,
   private val transactionRunner: TransactionRunner,
-  private val clock: Clock
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun processDailyData(
     instrument: Instrument,
     dailyData: Map<LocalDate, DailyPriceData>,
-    providerName: ProviderName
+    providerName: ProviderName,
   ) {
     transactionRunner.runInTransaction {
       dailyData.forEach { (date, data) ->
@@ -41,9 +41,9 @@ class DataProcessingUtil(
     instrument: Instrument,
     date: LocalDate,
     data: DailyPriceData,
-    providerName: ProviderName
-  ): DailyPrice {
-    return DailyPrice(
+    providerName: ProviderName,
+  ): DailyPrice =
+    DailyPrice(
       instrument = instrument,
       entryDate = date,
       providerName = providerName,
@@ -51,9 +51,8 @@ class DataProcessingUtil(
       highPrice = data.high,
       lowPrice = data.low,
       closePrice = data.close,
-      volume = data.volume
+      volume = data.volume,
     )
-  }
 
   private fun updateInstrumentPrice(instrument: Instrument) {
     val currentDate = LocalDate.now(clock)

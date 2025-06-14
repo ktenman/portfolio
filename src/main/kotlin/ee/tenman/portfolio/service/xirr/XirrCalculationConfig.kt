@@ -6,10 +6,9 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class XirrCalculationConfig {
-
   @Bean
-  fun calculationDispatcher() = Dispatchers.Default.limitedParallelism(
-    Runtime.getRuntime().availableProcessors()
-  )
+  fun calculationDispatcher() =
+    Dispatchers.Default.limitedParallelism(
+      Runtime.getRuntime().availableProcessors(),
+    )
 }
-

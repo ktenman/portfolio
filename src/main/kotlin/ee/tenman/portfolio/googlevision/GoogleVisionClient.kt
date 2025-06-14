@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody
 @FeignClient(
   name = GoogleVisionClient.CLIENT_NAME,
   url = GoogleVisionClient.CLIENT_URL,
-  configuration = [GoogleVisionClient.Configuration::class]
+  configuration = [GoogleVisionClient.Configuration::class],
 )
 interface GoogleVisionClient {
   companion object {
@@ -18,7 +18,9 @@ interface GoogleVisionClient {
   }
 
   @PostMapping("/images:annotate")
-  fun analyzeImage(@RequestBody requestBody: GoogleVisionApiRequest): GoogleVisionApiResponse
+  fun analyzeImage(
+    @RequestBody requestBody: GoogleVisionApiRequest,
+  ): GoogleVisionApiResponse
 
   class Configuration {
     @Bean

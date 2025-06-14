@@ -12,14 +12,14 @@ const val MAX_LENGTH = 300
 
 @Configuration
 class ObjectMapperConfig {
-
   companion object {
-    val OBJECT_MAPPER: ObjectMapper = ObjectMapper()
-      .registerModule(JavaTimeModule())
-      .registerKotlinModule()
-      .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-      .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    val OBJECT_MAPPER: ObjectMapper =
+      ObjectMapper()
+        .registerModule(JavaTimeModule())
+        .registerKotlinModule()
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     fun truncateJson(json: String): String {
       if (json.length <= MAX_LENGTH) {
@@ -35,8 +35,5 @@ class ObjectMapperConfig {
   }
 
   @Bean
-  fun objectMapper(): ObjectMapper {
-    return OBJECT_MAPPER
-  }
-
+  fun objectMapper(): ObjectMapper = OBJECT_MAPPER
 }

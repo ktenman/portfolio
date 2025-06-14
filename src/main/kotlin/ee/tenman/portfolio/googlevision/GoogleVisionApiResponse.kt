@@ -2,7 +2,7 @@ package ee.tenman.portfolio.googlevision
 
 data class GoogleVisionApiResponse(
   var labelAnnotations: List<EntityAnnotation>? = null,
-  var textAnnotations: List<EntityAnnotation>? = null
+  var textAnnotations: List<EntityAnnotation>? = null,
 ) {
   fun setResponses(responses: List<AnnotateImageResponse>) {
     if (responses.size == 1) {
@@ -17,11 +17,11 @@ data class GoogleVisionApiResponse(
 
   data class AnnotateImageResponse(
     val labelAnnotations: List<EntityAnnotation>?,
-    val textAnnotations: List<EntityAnnotation>?
+    val textAnnotations: List<EntityAnnotation>?,
   )
 
   data class EntityAnnotation(
     val description: String,
-    val score: Float
+    val score: Float,
   )
 }

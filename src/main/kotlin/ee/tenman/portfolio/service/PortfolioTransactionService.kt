@@ -17,35 +17,38 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PortfolioTransactionService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
-  private val profitCalculationService: ProfitCalculationService
+  private val profitCalculationService: ProfitCalculationService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
   fun getTransactionById(id: Long): PortfolioTransaction =
-    portfolioTransactionRepository.findById(id)
+    portfolioTransactionRepository
+      .findById(id)
       .orElseThrow { RuntimeException("Transaction not found with id: $id") }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   @Retryable(
     value = [ObjectOptimisticLockingFailureException::class],
     maxAttempts = 5,
-    backoff = Backoff(delay = 100)
+    backoff = Backoff(delay = 100),
   )
   @Caching(
     evict = [
       CacheEvict(value = [TRANSACTION_CACHE], key = "#transaction.id", condition = "#transaction.id != null"),
-      CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'")
-    ]
+      CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
+    ],
   )
   fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction {
     try {
       val saved = portfolioTransactionRepository.save(transaction)
-      val relatedTransactions = portfolioTransactionRepository
-        .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
+      val relatedTransactions =
+        portfolioTransactionRepository
+          .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
       profitCalculationService.calculateProfits(relatedTransactions)
-      return portfolioTransactionRepository.saveAll(relatedTransactions)
+      return portfolioTransactionRepository
+        .saveAll(relatedTransactions)
         .find { it.id == saved.id }!!
     } catch (e: ObjectOptimisticLockingFailureException) {
       log.warn("Optimistic locking failure while saving transaction. Will retry.", e)
@@ -57,13 +60,13 @@ class PortfolioTransactionService(
   @Retryable(
     value = [ObjectOptimisticLockingFailureException::class],
     maxAttempts = 5,
-    backoff = Backoff(delay = 100)
+    backoff = Backoff(delay = 100),
   )
   @Caching(
     evict = [
       CacheEvict(value = [TRANSACTION_CACHE], key = "#id"),
-      CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'")
-    ]
+      CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
+    ],
   )
   fun deleteTransaction(id: Long) {
     try {

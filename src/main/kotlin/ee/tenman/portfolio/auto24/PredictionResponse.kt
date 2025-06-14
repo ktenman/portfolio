@@ -4,5 +4,5 @@ data class PredictionResponse(
   val uuid: String,
   val prediction: String,
   val confidence: Double,
-  val processingTimeMs: Double
+  val processingTimeMs: Double,
 )

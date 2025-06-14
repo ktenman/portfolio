@@ -4,12 +4,11 @@ import ee.tenman.portfolio.configuration.IntegrationTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import java.util.*
+import java.util.UUID
 import javax.annotation.Resource
 
 @IntegrationTest
 class GoogleVisionServiceTest {
-
   @Resource
   private lateinit var googleVisionService: GoogleVisionService
 
@@ -21,5 +20,4 @@ class GoogleVisionServiceTest {
 
     assertThat(plateNumber["plateNumber"]).isEqualTo("116NVM")
   }
-
 }

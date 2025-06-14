@@ -44,7 +44,6 @@ private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgx
 @ExtendWith(OutputCaptureExtension::class)
 @IntegrationTest
 class PortfolioSummaryControllerIT {
-
   @Resource
   private lateinit var mockMvc: MockMvc
 
@@ -65,29 +64,31 @@ class PortfolioSummaryControllerIT {
 
   @Test
   fun `should return all portfolio summaries in the correct order when GET request is made to portfolio-summary endpoint`(
-    output: CapturedOutput
+    output: CapturedOutput,
   ) {
     stubFor(
-      WireMock.get(urlPathEqualTo("/user-by-session"))
+      WireMock
+        .get(urlPathEqualTo("/user-by-session"))
         .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("user-details-response.json")
-        )
+            .withBodyFile("user-details-response.json"),
+        ),
     )
     whenever(clock.instant()).thenReturn(Instant.parse("2023-07-21T10:00:00Z"))
     whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
 
-    val instrument = instrumentRepository.save(
-      Instrument(
-        symbol = "QDVE",
-        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-        category = "ETF",
-        baseCurrency = "EUR",
-        currentPrice = 28.25.toBigDecimal()
-      ),
-    )
+    val instrument =
+      instrumentRepository.save(
+        Instrument(
+          symbol = "QDVE",
+          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+          category = "ETF",
+          baseCurrency = "EUR",
+          currentPrice = 28.25.toBigDecimal(),
+        ),
+      )
 
     portfolioTransactionRepository.save(
       PortfolioTransaction(
@@ -96,8 +97,8 @@ class PortfolioSummaryControllerIT {
         quantity = 3.4.toBigDecimal(),
         price = 27.25.toBigDecimal(),
         transactionDate = LocalDate.of(2023, 7, 15),
-        platform = Platform.LIGHTYEAR
-      )
+        platform = Platform.LIGHTYEAR,
+      ),
     )
 
     portfolioSummaryRepository.saveAll(
@@ -107,32 +108,32 @@ class PortfolioSummaryControllerIT {
           totalValue = BigDecimal("10000.00"),
           xirrAnnualReturn = BigDecimal("0.05"),
           totalProfit = BigDecimal("500.00"),
-          earningsPerDay = BigDecimal("15.00")
+          earningsPerDay = BigDecimal("15.00"),
         ),
         PortfolioDailySummary(
           entryDate = LocalDate.of(2023, 7, 20),
           totalValue = BigDecimal("10500.00"),
           xirrAnnualReturn = BigDecimal("0.06"),
           totalProfit = BigDecimal("600.00"),
-          earningsPerDay = BigDecimal("20.00")
+          earningsPerDay = BigDecimal("20.00"),
         ),
         PortfolioDailySummary(
           entryDate = LocalDate.of(2023, 7, 18),
           totalValue = BigDecimal("9500.00"),
           xirrAnnualReturn = BigDecimal("0.04"),
           totalProfit = BigDecimal("400.00"),
-          earningsPerDay = BigDecimal("10.00")
-        )
-      )
+          earningsPerDay = BigDecimal("10.00"),
+        ),
+      ),
     )
 
-    mockMvc.perform(
-      get("/api/portfolio-summary/historical")
-        .param("page", "0")
-        .param("size", "3")
-        .cookie(DEFAULT_COOKIE)
-    )
-      .andExpect(status().isOk)
+    mockMvc
+      .perform(
+        get("/api/portfolio-summary/historical")
+          .param("page", "0")
+          .param("size", "3")
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isOk)
       .andExpect(jsonPath("$.content").isArray)
       .andExpect(jsonPath("$.content", hasSize<Any>(3)))
       .andExpect(jsonPath("$.content[0].date").value("2023-07-20"))
@@ -167,30 +168,30 @@ class PortfolioSummaryControllerIT {
   }
 
   @Test
-  fun `should return current portfolio summary when GET request is made to portfolio-summary current endpoint`(
-    output: CapturedOutput
-  ) {
+  fun `should return current portfolio summary when GET request is made to portfolio-summary current endpoint`(output: CapturedOutput) {
     stubFor(
-      WireMock.get(urlPathEqualTo("/user-by-session"))
+      WireMock
+        .get(urlPathEqualTo("/user-by-session"))
         .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("user-details-response.json")
-        )
+            .withBodyFile("user-details-response.json"),
+        ),
     )
     whenever(clock.instant()).thenReturn(Instant.parse("2023-07-21T10:00:00Z"))
     whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
 
-    val instrument = instrumentRepository.save(
-      Instrument(
-        symbol = "QDVE",
-        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-        category = "ETF",
-        baseCurrency = "EUR",
-        currentPrice = 28.25.toBigDecimal()
-      ),
-    )
+    val instrument =
+      instrumentRepository.save(
+        Instrument(
+          symbol = "QDVE",
+          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+          category = "ETF",
+          baseCurrency = "EUR",
+          currentPrice = 28.25.toBigDecimal(),
+        ),
+      )
 
     dailyPriceRepository.save(
       DailyPrice(
@@ -201,8 +202,8 @@ class PortfolioSummaryControllerIT {
         highPrice = BigDecimal("28.25"),
         lowPrice = BigDecimal("28.25"),
         closePrice = BigDecimal("28.25"),
-        volume = 1000
-      )
+        volume = 1000,
+      ),
     )
 
     portfolioTransactionRepository.save(
@@ -212,11 +213,12 @@ class PortfolioSummaryControllerIT {
         quantity = 3.4.toBigDecimal(),
         price = 27.25.toBigDecimal(),
         transactionDate = LocalDate.of(2023, 7, 15),
-        platform = Platform.LIGHTYEAR
-      )
+        platform = Platform.LIGHTYEAR,
+      ),
     )
 
-    mockMvc.perform(get("/api/portfolio-summary/current").cookie(DEFAULT_COOKIE))
+    mockMvc
+      .perform(get("/api/portfolio-summary/current").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.date").value("2023-07-21"))
       .andExpect(jsonPath("$.totalValue").value(96.05))

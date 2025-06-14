@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/calculator")
 @Validated
-class CalculatorController(private val calculatorService: CalculatorService) {
-
+class CalculatorController(
+  private val calculatorService: CalculatorService,
+) {
   @GetMapping
   fun calculate(): CalculationResult = calculatorService.getCalculationResult()
-
 }

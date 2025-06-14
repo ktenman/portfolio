@@ -20,7 +20,8 @@ class RedisConfiguration {
     cacheConfigurations[TRANSACTION_CACHE] =
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(3))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
-    return RedisCacheManager.builder(connectionFactory)
+    return RedisCacheManager
+      .builder(connectionFactory)
       .cacheDefaults(defaultConfig)
       .withInitialCacheConfigurations(cacheConfigurations)
       .build()

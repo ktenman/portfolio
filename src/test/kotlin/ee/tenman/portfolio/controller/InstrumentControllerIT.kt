@@ -30,7 +30,6 @@ private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgx
 
 @IntegrationTest
 class InstrumentControllerIT {
-
   @Resource
   private lateinit var mockMvc: MockMvc
 
@@ -43,37 +42,41 @@ class InstrumentControllerIT {
   @BeforeEach
   fun setup() {
     stubFor(
-      WireMock.get(urlPathEqualTo("/user-by-session"))
+      WireMock
+        .get(urlPathEqualTo("/user-by-session"))
         .withQueryParam("sessionId", equalTo("NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"))
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("user-details-response.json")
-        )
+            .withBodyFile("user-details-response.json"),
+        ),
     )
     cacheManager.cacheNames.forEach { cacheName -> cacheManager.getCache(cacheName)?.clear() }
   }
 
   @Test
   fun `should save instrument when POST request is made to instruments endpoint`() {
-
-    mockMvc.perform(
-      post("/api/instruments").contentType(APPLICATION_JSON)
-        .cookie(DEFAULT_COOKIE)
-        .content(
-          """
-        {
-          "symbol": "QDVE",
-          "name": "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-          "category": "ETF",
-          "baseCurrency": "EUR",
-          "providerName": "ALPHA_VANTAGE"
-        }
-      """.trimIndent()
-        )
-    ).andExpect(status().isOk).andExpect(jsonPath("$.symbol").value("QDVE"))
+    mockMvc
+      .perform(
+        post("/api/instruments")
+          .contentType(APPLICATION_JSON)
+          .cookie(DEFAULT_COOKIE)
+          .content(
+            """
+            {
+              "symbol": "QDVE",
+              "name": "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+              "category": "ETF",
+              "baseCurrency": "EUR",
+              "providerName": "ALPHA_VANTAGE"
+            }
+            """.trimIndent(),
+          ),
+      ).andExpect(status().isOk)
+      .andExpect(jsonPath("$.symbol").value("QDVE"))
       .andExpect(jsonPath("$.name").value("iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)"))
-      .andExpect(jsonPath("$.category").value("ETF")).andExpect(jsonPath("$.baseCurrency").value("EUR"))
+      .andExpect(jsonPath("$.category").value("ETF"))
+      .andExpect(jsonPath("$.baseCurrency").value("EUR"))
 
     assertThat(instrumentRepository.findAll()).singleElement().satisfies({ instrument ->
       assertThat(instrument.symbol).isEqualTo("QDVE")
@@ -91,18 +94,19 @@ class InstrumentControllerIT {
           symbol = "QDVE",
           name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
           category = "ETF",
-          baseCurrency = "EUR"
+          baseCurrency = "EUR",
         ),
         Instrument(
           symbol = "IUSA",
           name = "iShares Core S&P 500 UCITS ETF USD (Acc)",
           category = "ETF",
-          baseCurrency = "USD"
-        )
-      )
+          baseCurrency = "USD",
+        ),
+      ),
     )
 
-    mockMvc.perform(get("/api/instruments").cookie(DEFAULT_COOKIE))
+    mockMvc
+      .perform(get("/api/instruments").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
       .andExpect(jsonPath("$[0].symbol").value("QDVE"))
@@ -115,34 +119,39 @@ class InstrumentControllerIT {
       .andExpect(jsonPath("$[1].baseCurrency").value("USD"))
   }
 
-
   @Test
   fun `should update instrument when PUT request is made to instruments endpoint with valid id`() {
-    val savedInstrument = instrumentRepository.save(
-      Instrument(
-        symbol = "QDVE",
-        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-        category = "ETF",
-        baseCurrency = "EUR",
-        providerName = ProviderName.ALPHA_VANTAGE
+    val savedInstrument =
+      instrumentRepository.save(
+        Instrument(
+          symbol = "QDVE",
+          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+          category = "ETF",
+          baseCurrency = "EUR",
+          providerName = ProviderName.ALPHA_VANTAGE,
+        ),
       )
-    )
 
-    mockMvc.perform(
-      put("/api/instruments/{id}", savedInstrument.id).cookie(DEFAULT_COOKIE)
-        .contentType(APPLICATION_JSON).content(
-          """
-        {
-          "symbol": "QDVE",
-          "name": "Updated Instrument Name",
-          "category": "ETF",
-          "baseCurrency": "USD",
-          "providerName": "ALPHA_VANTAGE"
-        }
-      """.trimIndent()
-        )
-    ).andExpect(status().isOk).andExpect(jsonPath("$.symbol").value("QDVE"))
-      .andExpect(jsonPath("$.name").value("Updated Instrument Name")).andExpect(jsonPath("$.category").value("ETF"))
+    mockMvc
+      .perform(
+        put("/api/instruments/{id}", savedInstrument.id)
+          .cookie(DEFAULT_COOKIE)
+          .contentType(APPLICATION_JSON)
+          .content(
+            """
+            {
+              "symbol": "QDVE",
+              "name": "Updated Instrument Name",
+              "category": "ETF",
+              "baseCurrency": "USD",
+              "providerName": "ALPHA_VANTAGE"
+            }
+            """.trimIndent(),
+          ),
+      ).andExpect(status().isOk)
+      .andExpect(jsonPath("$.symbol").value("QDVE"))
+      .andExpect(jsonPath("$.name").value("Updated Instrument Name"))
+      .andExpect(jsonPath("$.category").value("ETF"))
       .andExpect(jsonPath("$.baseCurrency").value("USD"))
 
     val updatedInstrument = instrumentRepository.findById(savedInstrument.id).get()
@@ -152,16 +161,18 @@ class InstrumentControllerIT {
 
   @Test
   fun `should delete instrument when DELETE request is made to instruments endpoint with valid id`() {
-    val savedInstrument = instrumentRepository.save(
-      Instrument(
-        symbol = "QDVE",
-        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-        category = "ETF",
-        baseCurrency = "EUR"
+    val savedInstrument =
+      instrumentRepository.save(
+        Instrument(
+          symbol = "QDVE",
+          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+          category = "ETF",
+          baseCurrency = "EUR",
+        ),
       )
-    )
 
-    mockMvc.perform(delete("/api/instruments/{id}", savedInstrument.id).cookie(DEFAULT_COOKIE))
+    mockMvc
+      .perform(delete("/api/instruments/{id}", savedInstrument.id).cookie(DEFAULT_COOKIE))
       .andExpect(status().isNoContent)
 
     assertThat(instrumentRepository.findById(savedInstrument.id)).isEmpty

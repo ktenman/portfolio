@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.domain
 
 enum class TransactionType {
-  BUY, SELL
+  BUY,
+  SELL,
 }
