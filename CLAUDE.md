@@ -19,6 +19,9 @@ This is a **Portfolio Management System** - a full-stack application for trackin
 ### Backend Development
 
 ```bash
+# Suppress Java 21 warnings (run this once per terminal session)
+export GRADLE_OPTS="--enable-native-access=ALL-UNNAMED"
+
 # Build and test
 ./gradlew clean build        # Clean and build the project
 ./gradlew bootRun           # Run Spring Boot application (port 8081)
@@ -32,6 +35,16 @@ This is a **Portfolio Management System** - a full-stack application for trackin
 # OR manual E2E (requires environment setup first):
 export E2E=true && ./gradlew test --info -Pheadless=true
 ```
+
+#### Java 21 Native Access Warnings
+
+If you see warnings like "WARNING: A restricted method in java.lang.System has been called", set this environment variable:
+
+```bash
+export GRADLE_OPTS="--enable-native-access=ALL-UNNAMED"
+```
+
+Add this to your shell profile (~/.bashrc, ~/.zshrc) to make it permanent.
 
 ### Frontend Development
 

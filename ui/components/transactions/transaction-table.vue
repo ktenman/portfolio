@@ -36,15 +36,12 @@
 
     <template #actions="{ item }">
       <button class="btn btn-sm btn-secondary me-2" @click="$emit('edit', item)">
-        <base-icon name="pencil" :size="14" class="me-1" />
-        <span class="d-none d-md-inline">Edit</span>
+        <base-icon name="pencil" :size="14" />
+        <span class="d-none d-lg-inline ms-1">Edit</span>
       </button>
-      <button
-        class="btn btn-sm btn-danger d-none d-md-inline-block"
-        @click="item.id && $emit('delete', item.id)"
-      >
-        <base-icon name="trash" :size="14" class="me-1" />
-        <span>Delete</span>
+      <button class="btn btn-sm btn-danger" @click="item.id && $emit('delete', item.id)">
+        <base-icon name="trash" :size="14" />
+        <span class="d-none d-lg-inline ms-1">Delete</span>
       </button>
     </template>
   </data-table>
@@ -105,4 +102,13 @@ const enrichedTransactions = computed(() => {
 
 <style scoped lang="scss">
 @import '../../styles/shared-table.scss';
+
+@media (max-width: 992px) {
+  .instrument-info > div:first-child {
+    max-width: 20ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 </style>
