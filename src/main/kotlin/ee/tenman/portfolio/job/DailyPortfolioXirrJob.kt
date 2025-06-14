@@ -17,7 +17,7 @@ class DailyPortfolioXirrJob(
   private val portfolioSummaryService: PortfolioSummaryService,
   private val asyncXirrCalculationService: AsyncXirrCalculationService,
   private val clock: Clock,
-  private val jobExecutionService: JobExecutionService
+  private val jobExecutionService: JobExecutionService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -30,8 +30,10 @@ class DailyPortfolioXirrJob(
 
   override fun execute() {
     log.info("Starting daily portfolio XIRR calculation")
-    val allTransactions = portfolioTransactionService.getAllTransactions()
-      .sortedBy { it.transactionDate }
+    val allTransactions =
+      portfolioTransactionService
+        .getAllTransactions()
+        .sortedBy { it.transactionDate }
 
     if (allTransactions.isEmpty()) {
       log.info("No transactions found. Skipping XIRR calculation.")
@@ -44,23 +46,27 @@ class DailyPortfolioXirrJob(
     log.info("Calculating summaries from $firstTransactionDate to $yesterday")
 
     try {
-      val existingDates = portfolioSummaryService.getDailySummariesBetween(firstTransactionDate, yesterday)
-        .map { it.entryDate }
-        .toSet()
+      val existingDates =
+        portfolioSummaryService
+          .getDailySummariesBetween(firstTransactionDate, yesterday)
+          .map { it.entryDate }
+          .toSet()
 
-      val datesToProcess = generateSequence(firstTransactionDate) { date ->
-        val next = date.plusDays(1)
-        if (next.isAfter(yesterday)) null else next
-      }.filterNot { it in existingDates }
-        .toList()
+      val datesToProcess =
+        generateSequence(firstTransactionDate) { date ->
+          val next = date.plusDays(1)
+          if (next.isAfter(yesterday)) null else next
+        }.filterNot { it in existingDates }
+          .toList()
 
       if (datesToProcess.isNotEmpty()) {
         log.info("Processing ${datesToProcess.size} dates in parallel batches")
-        
-        val result = runBlocking {
-          asyncXirrCalculationService.calculateBatchXirrAsync(datesToProcess)
-        }
-        
+
+        val result =
+          runBlocking {
+            asyncXirrCalculationService.calculateBatchXirrAsync(datesToProcess)
+          }
+
         log.info("Processed ${result.processedDates} dates in ${result.duration}ms")
         if (result.failedCalculations.isNotEmpty()) {
           log.warn("Failed calculations: ${result.failedCalculations}")
@@ -68,7 +74,6 @@ class DailyPortfolioXirrJob(
       } else {
         log.info("No new dates to process")
       }
-
     } catch (e: Exception) {
       log.error("Error calculating XIRR", e)
       throw e

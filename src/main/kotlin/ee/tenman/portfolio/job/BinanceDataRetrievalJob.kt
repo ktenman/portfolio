@@ -14,7 +14,7 @@ class BinanceDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val jobExecutionService: JobExecutionService,
   private val binanceService: BinanceService,
-  private val dataProcessingUtil: DataProcessingUtil
+  private val dataProcessingUtil: DataProcessingUtil,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -35,7 +35,7 @@ class BinanceDataRetrievalJob(
       dataProcessingUtil.processDailyData(
         instrument = instrument,
         dailyData = dailyData,
-        providerName = ProviderName.BINANCE
+        providerName = ProviderName.BINANCE,
       )
     }
 

@@ -28,36 +28,40 @@ import java.time.LocalDate
 @Validated
 class PortfolioTransactionController(
   private val portfolioTransactionService: PortfolioTransactionService,
-  private val instrumentService: InstrumentService
+  private val instrumentService: InstrumentService,
 ) {
-
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  fun createTransaction(@Valid @RequestBody request: TransactionRequestDto): TransactionResponseDto {
+  fun createTransaction(
+    @Valid @RequestBody request: TransactionRequestDto,
+  ): TransactionResponseDto {
     val instrument = instrumentService.getInstrumentById(request.instrumentId)
-    val transaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = request.transactionType,
-      quantity = request.quantity,
-      price = request.price,
-      transactionDate = request.transactionDate,
-      platform = request.platform
-    )
+    val transaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = request.transactionType,
+        quantity = request.quantity,
+        price = request.price,
+        transactionDate = request.transactionDate,
+        platform = request.platform,
+      )
     val savedTransaction = portfolioTransactionService.saveTransaction(transaction)
     return TransactionResponseDto.fromEntity(savedTransaction)
   }
 
   @GetMapping
   @Loggable
-  fun getAllTransactions(): List<TransactionResponseDto> {
-    return portfolioTransactionService.getAllTransactions()
+  fun getAllTransactions(): List<TransactionResponseDto> =
+    portfolioTransactionService
+      .getAllTransactions()
       .sortedByDescending { it.transactionDate }
       .map { TransactionResponseDto.fromEntity(it) }
-  }
 
   @GetMapping("/{id}")
   @Loggable
-  fun getTransaction(@PathVariable id: Long): TransactionResponseDto {
+  fun getTransaction(
+    @PathVariable id: Long,
+  ): TransactionResponseDto {
     val transaction = portfolioTransactionService.getTransactionById(id)
     return TransactionResponseDto.fromEntity(transaction)
   }
@@ -66,7 +70,7 @@ class PortfolioTransactionController(
   @Loggable
   fun updateTransaction(
     @PathVariable id: Long,
-    @Valid @RequestBody request: TransactionRequestDto
+    @Valid @RequestBody request: TransactionRequestDto,
   ): TransactionResponseDto {
     val existingTransaction = portfolioTransactionService.getTransactionById(id)
 
@@ -87,7 +91,9 @@ class PortfolioTransactionController(
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  fun deleteTransaction(@PathVariable id: Long) = portfolioTransactionService.deleteTransaction(id)
+  fun deleteTransaction(
+    @PathVariable id: Long,
+  ) = portfolioTransactionService.deleteTransaction(id)
 
   data class TransactionRequestDto(
     val id: Long?,
@@ -104,7 +110,7 @@ class PortfolioTransactionController(
     @field:NotNull(message = "Transaction date is required")
     val transactionDate: LocalDate,
     @field:NotNull(message = "Platform is required")
-    val platform: Platform
+    val platform: Platform,
   )
 
   data class TransactionResponseDto(
@@ -117,23 +123,24 @@ class PortfolioTransactionController(
     val transactionDate: LocalDate,
     val platform: Platform,
     val realizedProfit: BigDecimal?,
-    val unrealizedProfit: BigDecimal = BigDecimal.ZERO,  // Default value
-    val averageCost: BigDecimal?
+    val unrealizedProfit: BigDecimal = BigDecimal.ZERO, // Default value
+    val averageCost: BigDecimal?,
   ) {
     companion object {
-      fun fromEntity(transaction: PortfolioTransaction) = TransactionResponseDto(
-        id = transaction.id,
-        instrumentId = transaction.instrument.id,
-        symbol = transaction.instrument.symbol,
-        transactionType = transaction.transactionType,
-        quantity = transaction.quantity,
-        price = transaction.price,
-        transactionDate = transaction.transactionDate,
-        platform = transaction.platform,
-        realizedProfit = transaction.realizedProfit,
-        unrealizedProfit = transaction.unrealizedProfit,
-        averageCost = transaction.averageCost
-      )
+      fun fromEntity(transaction: PortfolioTransaction) =
+        TransactionResponseDto(
+          id = transaction.id,
+          instrumentId = transaction.instrument.id,
+          symbol = transaction.instrument.symbol,
+          transactionType = transaction.transactionType,
+          quantity = transaction.quantity,
+          price = transaction.price,
+          transactionDate = transaction.transactionDate,
+          platform = transaction.platform,
+          realizedProfit = transaction.realizedProfit,
+          unrealizedProfit = transaction.unrealizedProfit,
+          averageCost = transaction.averageCost,
+        )
     }
   }
 }

@@ -5,6 +5,7 @@ plugins {
   kotlin("jvm") version "2.1.21"
   kotlin("plugin.spring") version "2.1.21"
   id("jacoco")
+  id("org.jlleitschuh.gradle.ktlint") version "13.0.0-rc.1"
 }
 
 group = "ee.tenman"
@@ -117,16 +118,16 @@ val test by tasks.getting(Test::class) {
 
 fun Test.configureE2ETestEnvironment() {
   include("**/e2e/**")
-  val properties = mutableMapOf(
-    "webdriver.chrome.logfile" to "build/reports/chromedriver.log",
-    "webdriver.chrome.verboseLogging" to "true"
-  )
+  val properties =
+    mutableMapOf(
+      "webdriver.chrome.logfile" to "build/reports/chromedriver.log",
+      "webdriver.chrome.verboseLogging" to "true",
+    )
   if (project.hasProperty("headless")) {
     properties["chromeoptions.args"] = "--headless,--no-sandbox,--disable-gpu"
   }
   systemProperties.putAll(properties)
 }
-
 
 val skipJacoco: Boolean = false
 val jacocoEnabled: Boolean = true
@@ -139,5 +140,19 @@ tasks.withType<JacocoReport> {
     xml.required = true
     html.required = true
     csv.required = false
+  }
+}
+
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+  version.set("1.6.0")
+  android.set(false)
+  ignoreFailures.set(false)
+  reporters {
+    reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.HTML)
+    reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+  }
+  filter {
+    exclude("**/generated/**")
+    include("**/kotlin/**")
   }
 }

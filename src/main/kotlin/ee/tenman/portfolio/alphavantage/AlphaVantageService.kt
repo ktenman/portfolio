@@ -26,18 +26,21 @@ class AlphaVantageService {
       adjustedSymbol = "QDVE.DEX"
     }
 
-    val ticker = getTicker(adjustedSymbol) ?: run {
-      log.error("Failed to get ticker for symbol: $adjustedSymbol")
-      return emptyMap()
-    }
+    val ticker =
+      getTicker(adjustedSymbol) ?: run {
+        log.error("Failed to get ticker for symbol: $adjustedSymbol")
+        return emptyMap()
+      }
 
     return try {
       val timeSeriesDaily = client.getTimeSeries("TIME_SERIES_DAILY", ticker)
       log.info("Retrieved daily ticker data for $ticker: ${truncateJson(OBJECT_MAPPER.writeValueAsString(timeSeriesDaily))}")
 
-      timeSeriesDaily.dailyTimeSeries?.asSequence()?.associate { (dateString, data) ->
-        LocalDate.parse(dateString, DATE_FORMATTER) to data
-      }?.toMap() ?: emptyMap()
+      timeSeriesDaily.dailyTimeSeries
+        ?.asSequence()
+        ?.associate { (dateString, data) ->
+          LocalDate.parse(dateString, DATE_FORMATTER) to data
+        }?.toMap() ?: emptyMap()
     } catch (e: Exception) {
       log.error("Error fetching daily data from Alpha Vantage for ticker $ticker", e)
       emptyMap()
@@ -49,4 +52,3 @@ class AlphaVantageService {
     return symbolSearch.bestMatches?.firstOrNull()?.symbol
   }
 }
-

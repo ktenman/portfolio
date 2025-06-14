@@ -14,9 +14,8 @@ class AlphaVantageDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val alphaVantageService: AlphaVantageService,
   private val dataProcessingUtil: DataProcessingUtil,
-  private val jobExecutionService: JobExecutionService
+  private val jobExecutionService: JobExecutionService,
 ) : Job {
-
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(cron = "0 0 0/2 * * *")
@@ -28,8 +27,10 @@ class AlphaVantageDataRetrievalJob(
 
   override fun execute() {
     log.info("Starting AlphaVantage data retrieval execution")
-    val instruments = instrumentService.getAllInstruments()
-      .filter { it.providerName == ProviderName.ALPHA_VANTAGE }
+    val instruments =
+      instrumentService
+        .getAllInstruments()
+        .filter { it.providerName == ProviderName.ALPHA_VANTAGE }
 
     instruments.forEach { instrument ->
       log.info("Retrieving data for instrument: ${instrument.symbol}")

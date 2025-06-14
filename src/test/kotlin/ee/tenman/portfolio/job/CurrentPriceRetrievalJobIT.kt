@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.job
 
-import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.get
@@ -13,7 +12,6 @@ import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -21,7 +19,6 @@ import java.math.BigDecimal
 
 @IntegrationTest
 class CurrentPriceRetrievalJobIT {
-
   @Resource
   private lateinit var alphaVantageDataRetrievalJob: AlphaVantageDataRetrievalJob
 
@@ -41,8 +38,8 @@ class CurrentPriceRetrievalJobIT {
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("symbol-search-response.json")
-        )
+            .withBodyFile("symbol-search-response.json"),
+        ),
     )
 
     stubFor(
@@ -53,14 +50,14 @@ class CurrentPriceRetrievalJobIT {
         .willReturn(
           aResponse()
             .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("alpha-vantage-response.json")
-        )
+            .withBodyFile("alpha-vantage-response.json"),
+        ),
     )
     Instrument(
       "QDVE.DEX",
       "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
       "ETF",
-      "EUR"
+      "EUR",
     ).let {
       instrumentRepository.save(it)
     }
@@ -68,8 +65,11 @@ class CurrentPriceRetrievalJobIT {
     alphaVantageDataRetrievalJob.execute()
     alphaVantageDataRetrievalJob.execute()
 
-    assertThat(dailyPriceRepository.findAll()).isNotEmpty.hasSize(100)
-      .first().satisfies({
+    assertThat(dailyPriceRepository.findAll())
+      .isNotEmpty
+      .hasSize(100)
+      .first()
+      .satisfies({
         assertThat(it.entryDate).isEqualTo("2024-02-12")
         assertThat(it.instrument.symbol).contains("QDVE")
         assertThat(it.openPrice).isEqualByComparingTo(BigDecimal("25.21"))

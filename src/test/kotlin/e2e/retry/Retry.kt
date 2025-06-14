@@ -6,5 +6,5 @@ import kotlin.reflect.KClass
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Retry(
   val times: Int = 3,
-  val onExceptions: Array<KClass<out Throwable>> = [Exception::class]
+  val onExceptions: Array<KClass<out Throwable>> = [Exception::class],
 )

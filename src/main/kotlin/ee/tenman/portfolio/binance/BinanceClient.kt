@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestParam
 
 @FeignClient(
   name = BinanceClient.CLIENT_NAME,
-  url = "\${binance.url}"
+  url = "\${binance.url}",
 )
 interface BinanceClient {
   companion object {
@@ -19,7 +19,6 @@ interface BinanceClient {
     @RequestParam interval: String,
     @RequestParam startTime: Long? = null,
     @RequestParam endTime: Long? = null,
-    @RequestParam limit: Int? = null
+    @RequestParam limit: Int? = null,
   ): List<List<String>>
-
 }

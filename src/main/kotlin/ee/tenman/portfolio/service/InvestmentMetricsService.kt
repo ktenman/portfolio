@@ -5,11 +5,11 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.math.RoundingMode  // Added import for RoundingMode
+import java.math.RoundingMode // Added import for RoundingMode
 
 @Service
 class InvestmentMetricsService(
-  private val unifiedProfitCalculationService: UnifiedProfitCalculationService
+  private val unifiedProfitCalculationService: UnifiedProfitCalculationService,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(InvestmentMetricsService::class.java)
@@ -20,7 +20,7 @@ class InvestmentMetricsService(
     val currentValue: BigDecimal,
     val profit: BigDecimal,
     val xirr: Double,
-    val quantity: BigDecimal
+    val quantity: BigDecimal,
   ) {
     override fun toString(): String =
       "InstrumentMetrics(totalInvestment=$totalInvestment, " +
@@ -29,19 +29,20 @@ class InvestmentMetricsService(
         "xirr=${String.format("%.2f%%", xirr * 100)})"
 
     companion object {
-      val EMPTY = InstrumentMetrics(
-        totalInvestment = BigDecimal.ZERO,
-        currentValue = BigDecimal.ZERO,
-        profit = BigDecimal.ZERO,
-        xirr = 0.0,
-        quantity = BigDecimal.ZERO
-      )
+      val EMPTY =
+        InstrumentMetrics(
+          totalInvestment = BigDecimal.ZERO,
+          currentValue = BigDecimal.ZERO,
+          profit = BigDecimal.ZERO,
+          xirr = 0.0,
+          quantity = BigDecimal.ZERO,
+        )
     }
   }
 
   fun calculateInstrumentMetrics(
     instrument: Instrument,
-    transactions: List<PortfolioTransaction>
+    transactions: List<PortfolioTransaction>,
   ): InstrumentMetrics {
     if (transactions.isEmpty()) {
       return InstrumentMetrics.EMPTY
@@ -84,7 +85,7 @@ class InvestmentMetricsService(
       currentValue = currentValue,
       profit = profit,
       xirr = xirr,
-      quantity = totalHoldings
+      quantity = totalHoldings,
     )
   }
 }

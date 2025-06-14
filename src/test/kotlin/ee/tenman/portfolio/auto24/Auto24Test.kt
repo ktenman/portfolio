@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 
 @IntegrationTest
 class Auto24Test {
-
   @Resource
   private lateinit var auto24Service: Auto24Service
 
@@ -19,5 +18,4 @@ class Auto24Test {
 
     assertThat(findCarPrice).isEqualTo("6200 € kuni 10000 €")
   }
-
 }

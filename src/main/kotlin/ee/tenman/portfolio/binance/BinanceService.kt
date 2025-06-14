@@ -8,17 +8,20 @@ import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.*
+import java.util.SortedMap
+import java.util.TreeMap
 
 @Service
-class BinanceService(private val binanceClient: BinanceClient) {
+class BinanceService(
+  private val binanceClient: BinanceClient,
+) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun getDailyPrices(
     symbol: String,
     startDate: LocalDate? = null,
-    endDate: LocalDate? = null
+    endDate: LocalDate? = null,
   ): SortedMap<LocalDate, DailyPriceData> {
     log.info("Getting daily prices for symbol: $symbol")
     val dailyPrices = TreeMap<LocalDate, DailyPriceData>()
@@ -27,26 +30,28 @@ class BinanceService(private val binanceClient: BinanceClient) {
       val endTime = endDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
 
       while (true) {
-        val klines = binanceClient.getKlines(
-          symbol = symbol,
-          interval = "1d",
-          startTime = currentStartTime,
-          endTime = endTime,
-          limit = 1000 // Binance API typically limits to 1000 entries per request
-        )
+        val klines =
+          binanceClient.getKlines(
+            symbol = symbol,
+            interval = "1d",
+            startTime = currentStartTime,
+            endTime = endTime,
+            limit = 1000, // Binance API typically limits to 1000 entries per request
+          )
 
         if (klines.isEmpty()) break
 
         for (kline in klines) {
           val timestamp = kline[0].toLong()
           val date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
-          dailyPrices[date] = BinanceDailyPriceData(
-            open = kline[1].toBigDecimal(),
-            high = kline[2].toBigDecimal(),
-            low = kline[3].toBigDecimal(),
-            close = kline[4].toBigDecimal(),
-            volume = kline[5].toBigDecimal().toLong()
-          )
+          dailyPrices[date] =
+            BinanceDailyPriceData(
+              open = kline[1].toBigDecimal(),
+              high = kline[2].toBigDecimal(),
+              low = kline[3].toBigDecimal(),
+              close = kline[4].toBigDecimal(),
+              volume = kline[5].toBigDecimal().toLong(),
+            )
         }
 
         // Prepare for the next iteration

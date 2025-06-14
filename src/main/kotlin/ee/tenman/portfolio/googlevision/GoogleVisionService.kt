@@ -8,11 +8,11 @@ import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.io.File
-import java.util.*
+import java.util.UUID
 
 @Service
 class GoogleVisionService(
-  @Value("\${vision.enabled:false}") private val visionEnabled: Boolean
+  @Value("\${vision.enabled:false}") private val visionEnabled: Boolean,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -39,7 +39,10 @@ class GoogleVisionService(
   }
 
   @Retryable(maxAttempts = 2, backoff = Backoff(delay = 1000))
-  fun getPlateNumber(base64EncodedImage: String, uuid: UUID): Map<String, String> {
+  fun getPlateNumber(
+    base64EncodedImage: String,
+    uuid: UUID,
+  ): Map<String, String> {
     if (isVisionDisabled()) {
       return VISION_DISABLED_RESPONSE
     }
@@ -50,10 +53,11 @@ class GoogleVisionService(
     return try {
       log.debug("Encoded image to base64")
 
-      val labelRequest = GoogleVisionApiRequest(
-        base64EncodedImage,
-        GoogleVisionApiRequest.FeatureType.LABEL_DETECTION
-      )
+      val labelRequest =
+        GoogleVisionApiRequest(
+          base64EncodedImage,
+          GoogleVisionApiRequest.FeatureType.LABEL_DETECTION,
+        )
       val labelResponse = googleVisionClient.analyzeImage(labelRequest)
       log.info("Received label detection response: {}", labelResponse)
 
@@ -65,17 +69,19 @@ class GoogleVisionService(
         return response
       }
 
-      val textRequest = GoogleVisionApiRequest(
-        base64EncodedImage,
-        GoogleVisionApiRequest.FeatureType.TEXT_DETECTION
-      )
+      val textRequest =
+        GoogleVisionApiRequest(
+          base64EncodedImage,
+          GoogleVisionApiRequest.FeatureType.TEXT_DETECTION,
+        )
       val textResponse = googleVisionClient.analyzeImage(textRequest)
-      val strings = textResponse.textAnnotations
-        ?.firstOrNull()
-        ?.description
-        ?.split("\n")
-        ?.toTypedArray()
-        ?: emptyArray()
+      val strings =
+        textResponse.textAnnotations
+          ?.firstOrNull()
+          ?.description
+          ?.split("\n")
+          ?.toTypedArray()
+          ?: emptyArray()
       log.info("Received text detection response: {}", textResponse)
 
       for (description in strings) {
@@ -96,13 +102,16 @@ class GoogleVisionService(
     }
   }
 
-  private fun isVisionDisabled(): Boolean = (!visionEnabled).also { disabled ->
-    log.info(if (disabled) VISION_DISABLED_MESSAGE else "Vision service is enabled.")
-  }
+  private fun isVisionDisabled(): Boolean =
+    (!visionEnabled).also { disabled ->
+      log.info(if (disabled) VISION_DISABLED_MESSAGE else "Vision service is enabled.")
+    }
 
   private fun detectVehicle(labelAnnotations: List<GoogleVisionApiResponse.EntityAnnotation>?) =
     labelAnnotations?.any { annotation ->
-      annotation.description.lowercase().split("\\s+".toRegex())
+      annotation.description
+        .lowercase()
+        .split("\\s+".toRegex())
         .any { it in VEHICLE_LABELS }
     } == true
 }

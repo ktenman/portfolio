@@ -16,6 +16,6 @@ interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, L
 
   fun findAllByInstrumentIdAndPlatformOrderByTransactionDate(
     instrumentId: Long,
-    platform: Platform
+    platform: Platform,
   ): List<PortfolioTransaction>
 }

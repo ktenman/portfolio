@@ -30,16 +30,15 @@ import java.nio.file.attribute.PosixFilePermission
 @Service
 @ConditionalOnProperty(
   name = ["telegram.bot.enabled"],
-  havingValue = "true"
+  havingValue = "true",
 )
 class CarTelegramBot(
   @Value("\${telegram.bot.token:}") private val botToken: String,
   @Value("\${telegram.bot.enabled:false}") private val botEnabled: Boolean,
   private val googleVisionService: GoogleVisionService,
   private val auto24Service: Auto24Service,
-  private val objectMapper: ObjectMapper
+  private val objectMapper: ObjectMapper,
 ) : TelegramLongPollingBot(botToken) {
-
   private val log = LoggerFactory.getLogger(javaClass)
   private val commandRegex = Regex("^(ark|car)\\s+([0-9]{3}[A-Za-z]{3})\\b", RegexOption.IGNORE_CASE)
   private val supportedImageTypes = setOf("image/jpeg", "image/png")
@@ -48,9 +47,10 @@ class CarTelegramBot(
     private const val BOT_DISABLED_MESSAGE = "Telegram bot is disabled. No token provided."
   }
 
-  private fun isBotDisabled() = (!botEnabled).also { disabled ->
-    log.info(if (disabled) BOT_DISABLED_MESSAGE else "Telegram bot is enabled.")
-  }
+  private fun isBotDisabled() =
+    (!botEnabled).also { disabled ->
+      log.info(if (disabled) BOT_DISABLED_MESSAGE else "Telegram bot is enabled.")
+    }
 
   @Deprecated("Deprecated in Java")
   override fun getBotToken(): String = botToken
@@ -72,28 +72,38 @@ class CarTelegramBot(
     }
   }
 
-  private fun processMessage(message: Message, startTime: Long) {
+  private fun processMessage(
+    message: Message,
+    startTime: Long,
+  ) {
     val chatId = message.chatId.toString()
     val messageId = message.messageId
 
     when {
-      message.hasPhoto() -> message.photo.maxByOrNull { it.fileSize }?.let { photo ->
-        processImageOrDocument(downloadTelegramFile(photo.fileId), chatId, messageId, startTime)
-      }
+      message.hasPhoto() ->
+        message.photo.maxByOrNull { it.fileSize }?.let { photo ->
+          processImageOrDocument(downloadTelegramFile(photo.fileId), chatId, messageId, startTime)
+        }
 
       message.hasDocument() && supportedImageTypes.contains(message.document?.mimeType) ->
         processImageOrDocument(downloadTelegramFile(message.document.fileId), chatId, messageId, startTime)
 
-      message.hasText() -> commandRegex.find(message.text)?.groupValues?.get(2)?.uppercase()?.let { plateNumber ->
-        log.info("Processing plate number: $plateNumber")
-        lookupAndSendCarPrice(plateNumber, chatId, messageId, startTime)
-      }
+      message.hasText() ->
+        commandRegex.find(message.text)?.groupValues?.get(2)?.uppercase()?.let { plateNumber ->
+          log.info("Processing plate number: $plateNumber")
+          lookupAndSendCarPrice(plateNumber, chatId, messageId, startTime)
+        }
 
       else -> sendMessage(chatId, "Unsupported message type. Send an image or use 'car XXX123' command.", messageId)
     }
   }
 
-  private fun processImageOrDocument(imageFile: File, chatId: String, replyToMessageId: Int, startTime: Long) = try {
+  private fun processImageOrDocument(
+    imageFile: File,
+    chatId: String,
+    replyToMessageId: Int,
+    startTime: Long,
+  ) = try {
     val visionResult = googleVisionService.getPlateNumber(imageFile)
     log.debug("Vision result: {}", objectMapper.writeValueAsString(visionResult))
 
@@ -106,13 +116,18 @@ class CarTelegramBot(
     imageFile.delete()
   }
 
-  private fun lookupAndSendCarPrice(plateNumber: String, chatId: String, replyToMessageId: Int, startTime: Long): Any? {
+  private fun lookupAndSendCarPrice(
+    plateNumber: String,
+    chatId: String,
+    replyToMessageId: Int,
+    startTime: Long,
+  ): Any? {
     val carPrice = auto24Service.findCarPrice(plateNumber).replace("kuni", "to")
     val duration = TimeUtility.durationInSeconds(startTime)
     return sendMessage(
       chatId,
       "Plate: $plateNumber\nEstimated price: $carPrice\nDuration: $duration seconds",
-      replyToMessageId
+      replyToMessageId,
     )
   }
 
@@ -123,13 +138,13 @@ class CarTelegramBot(
       val tempDir = Files.createTempDirectory("telegram_app_")
       Files.setPosixFilePermissions(
         tempDir,
-        setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE)
+        setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE),
       )
 
       val tempFile = Files.createTempFile(tempDir, "telegram_", "_file")
       Files.setPosixFilePermissions(
         tempFile,
-        setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+        setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
       )
 
       URI.create(fileUrl(fileInfo.filePath)).toURL().openStream().use { input ->
@@ -150,12 +165,18 @@ class CarTelegramBot(
 
   private fun fileUrl(filePath: String) = "https://api.telegram.org/file/bot${getBotToken()}/$filePath"
 
-  private fun sendMessage(chatId: String, text: String, replyToMessageId: Int? = null) = try {
-    execute(SendMessage().apply {
-      this.chatId = chatId
-      this.text = text
-      replyToMessageId?.let { this.replyToMessageId = it }
-    })
+  private fun sendMessage(
+    chatId: String,
+    text: String,
+    replyToMessageId: Int? = null,
+  ) = try {
+    execute(
+      SendMessage().apply {
+        this.chatId = chatId
+        this.text = text
+        replyToMessageId?.let { this.replyToMessageId = it }
+      },
+    )
   } catch (e: TelegramApiException) {
     log.error("Failed to send message: {}", text, e)
   }

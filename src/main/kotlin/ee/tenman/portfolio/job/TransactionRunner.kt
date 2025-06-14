@@ -6,7 +6,5 @@ import org.springframework.transaction.annotation.Transactional
 @Component
 class TransactionRunner {
   @Transactional
-  fun <T> runInTransaction(block: () -> T): T {
-    return block()
-  }
+  fun <T> runInTransaction(block: () -> T): T = block()
 }

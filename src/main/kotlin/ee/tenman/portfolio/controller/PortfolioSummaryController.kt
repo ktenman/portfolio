@@ -17,9 +17,8 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/portfolio-summary")
 class PortfolioSummaryController(
-  private val portfolioSummaryService: PortfolioSummaryService
+  private val portfolioSummaryService: PortfolioSummaryService,
 ) {
-
   private val log = LoggerFactory.getLogger(javaClass)
 
   @PostMapping("/recalculate")
@@ -34,7 +33,7 @@ class PortfolioSummaryController(
       "success" to true,
       "message" to "Successfully recalculated $count daily summaries",
       "count" to count,
-      "durationMs" to duration
+      "durationMs" to duration,
     )
   }
 
@@ -42,7 +41,7 @@ class PortfolioSummaryController(
   @Loggable
   fun getHistoricalPortfolioSummary(
     @RequestParam page: Int,
-    @RequestParam size: Int
+    @RequestParam size: Int,
   ): Page<PortfolioSummaryDto> {
     val historicalSummaries = portfolioSummaryService.getAllDailySummaries(page, size)
 
@@ -53,7 +52,7 @@ class PortfolioSummaryController(
         xirrAnnualReturn = summary.xirrAnnualReturn,
         totalProfit = summary.totalProfit,
         earningsPerDay = summary.earningsPerDay,
-        earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25 / 12))
+        earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25 / 12)),
       )
     }
   }
@@ -69,10 +68,9 @@ class PortfolioSummaryController(
       xirrAnnualReturn = currentDaySummary.xirrAnnualReturn,
       totalProfit = currentDaySummary.totalProfit,
       earningsPerDay = currentDaySummary.earningsPerDay,
-      earningsPerMonth = currentDaySummary.earningsPerDay.multiply(BigDecimal(365.25 / 12))
+      earningsPerMonth = currentDaySummary.earningsPerDay.multiply(BigDecimal(365.25 / 12)),
     )
   }
-
 
   data class PortfolioSummaryDto(
     val date: LocalDate,
@@ -80,6 +78,6 @@ class PortfolioSummaryController(
     val xirrAnnualReturn: BigDecimal,
     val totalProfit: BigDecimal,
     val earningsPerDay: BigDecimal,
-    val earningsPerMonth: BigDecimal
+    val earningsPerMonth: BigDecimal,
   )
 }

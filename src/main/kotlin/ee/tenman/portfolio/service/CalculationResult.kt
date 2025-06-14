@@ -8,5 +8,5 @@ data class CalculationResult(
   var xirrs: List<Transaction> = mutableListOf(),
   var median: Double = 0.0,
   var average: Double = 0.0,
-  var total: BigDecimal = BigDecimal.ZERO
+  var total: BigDecimal = BigDecimal.ZERO,
 ) : Serializable

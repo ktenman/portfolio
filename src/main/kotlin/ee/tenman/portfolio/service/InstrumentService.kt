@@ -13,9 +13,8 @@ import org.springframework.transaction.annotation.Transactional
 class InstrumentService(
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionService: PortfolioTransactionService,
-  private val investmentMetricsService: InvestmentMetricsService
+  private val investmentMetricsService: InvestmentMetricsService,
 ) {
-
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
   fun getInstrumentById(id: Long): Instrument =
@@ -23,23 +22,27 @@ class InstrumentService(
 
   @Transactional
   @Caching(
-    evict = [CacheEvict(
-      value = [INSTRUMENT_CACHE],
-      key = "#instrument.id",
-      condition = "#instrument.id != null"
-    ), CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"), CacheEvict(
-      value = [INSTRUMENT_CACHE],
-      key = "'allInstruments'"
-    )]
+    evict = [
+      CacheEvict(
+        value = [INSTRUMENT_CACHE],
+        key = "#instrument.id",
+        condition = "#instrument.id != null",
+      ), CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"), CacheEvict(
+        value = [INSTRUMENT_CACHE],
+        key = "'allInstruments'",
+      ),
+    ],
   )
   fun saveInstrument(instrument: Instrument): Instrument = instrumentRepository.save(instrument)
 
   @Transactional
   @Caching(
-    evict = [CacheEvict(value = [INSTRUMENT_CACHE], key = "#id"), CacheEvict(
-      value = [INSTRUMENT_CACHE],
-      key = "'allInstruments'"
-    )]
+    evict = [
+      CacheEvict(value = [INSTRUMENT_CACHE], key = "#id"), CacheEvict(
+        value = [INSTRUMENT_CACHE],
+        key = "'allInstruments'",
+      ),
+    ],
   )
   fun deleteInstrument(id: Long) = instrumentRepository.deleteById(id)
 
@@ -60,14 +63,11 @@ class InstrumentService(
     }
   }
 
-  fun findInstrument(id: Long): Instrument {
-    return getInstrumentById(id)
-  }
+  fun findInstrument(id: Long): Instrument = getInstrumentById(id)
 
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#symbol", unless = "#result == null")
-  fun getInstrument(symbol: String): Instrument {
-    return instrumentRepository.findBySymbol(symbol)
+  fun getInstrument(symbol: String): Instrument =
+    instrumentRepository
+      .findBySymbol(symbol)
       .orElseThrow { RuntimeException("Instrument not found with symbol: $symbol") }
-  }
-
 }

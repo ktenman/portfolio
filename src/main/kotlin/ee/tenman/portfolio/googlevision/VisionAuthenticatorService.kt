@@ -9,7 +9,7 @@ import java.io.ByteArrayInputStream
 @Service
 class VisionAuthenticatorService(
   @Value("\${vision.base64EncodedKey:}") private val base64EncodedKey: String,
-  @Value("\${vision.enabled:false}") private val visionEnabled: Boolean
+  @Value("\${vision.enabled:false}") private val visionEnabled: Boolean,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
   private val credentials: GoogleCredentials? = initializeCredentials()
@@ -30,14 +30,14 @@ class VisionAuthenticatorService(
     return try {
       val decodedJsonBytes = FileToBase64.decode(base64EncodedKey)
       ByteArrayInputStream(decodedJsonBytes).use { credentialsStream ->
-        GoogleCredentials.fromStream(credentialsStream)
+        GoogleCredentials
+          .fromStream(credentialsStream)
           .createScoped(
             listOf(
               "https://www.googleapis.com/auth/cloud-vision",
-              "https://www.googleapis.com/auth/cloud-platform"
-            )
-          )
-          .also { log.info("Google Vision credentials initialized successfully") }
+              "https://www.googleapis.com/auth/cloud-platform",
+            ),
+          ).also { log.info("Google Vision credentials initialized successfully") }
       }
     } catch (e: Exception) {
       log.error("Failed to initialize Google Vision credentials", e)
@@ -46,18 +46,19 @@ class VisionAuthenticatorService(
   }
 
   val accessToken: String
-    get() = try {
-      if (!visionEnabled) {
-        throw RuntimeException("Vision service is disabled")
-      } else {
-        log.info("Getting access token")
+    get() =
+      try {
+        if (!visionEnabled) {
+          throw RuntimeException("Vision service is disabled")
+        } else {
+          log.info("Getting access token")
+        }
+        credentials?.refreshIfExpired()
+        credentials?.accessToken?.tokenValue?.also {
+          log.info("Successfully authorized with Google Vision API")
+        } ?: throw RuntimeException("Google Vision credentials not initialized")
+      } catch (e: Exception) {
+        log.error("Failed to get access token", e)
+        throw e
       }
-      credentials?.refreshIfExpired()
-      credentials?.accessToken?.tokenValue?.also {
-        log.info("Successfully authorized with Google Vision API")
-      } ?: throw RuntimeException("Google Vision credentials not initialized")
-    } catch (e: Exception) {
-      log.error("Failed to get access token", e)
-      throw e
-    }
 }

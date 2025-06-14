@@ -12,13 +12,13 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
   fun findByInstrumentAndEntryDateAndProviderName(
     instrument: Instrument,
     entryDate: LocalDate,
-    providerName: ProviderName
+    providerName: ProviderName,
   ): DailyPrice?
 
   fun findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
     instrument: Instrument,
     startDate: LocalDate,
-    endDate: LocalDate
+    endDate: LocalDate,
   ): DailyPrice?
 
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice>
