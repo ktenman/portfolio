@@ -26,8 +26,8 @@
 
     <template #actions="{ item }">
       <button :class="cn(styles.buttons.secondary, styles.buttons.sm)" @click="$emit('edit', item)">
-        <base-icon name="pencil" :size="14" :class="styles.spacing.me(1)" />
-        <span :class="cn(styles.display.none, styles.display.mdInline)">Edit</span>
+        <base-icon name="pencil" :size="14" />
+        <span :class="cn('d-none', 'd-lg-inline', styles.spacing.ms(1))">Edit</span>
       </button>
     </template>
   </data-table>
@@ -62,4 +62,19 @@ const columns = instrumentColumns
 
 <style scoped lang="scss">
 @import '../../styles/shared-table.scss';
+
+@media (max-width: 992px) {
+  .instrument-info > div:first-child {
+    max-width: 20ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 992px) {
+  :deep(.hide-on-mobile) {
+    display: none !important;
+  }
+}
 </style>
