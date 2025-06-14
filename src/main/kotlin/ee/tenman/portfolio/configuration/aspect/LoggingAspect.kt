@@ -10,12 +10,11 @@ import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.UUID
 
 @Aspect
 @Component
 class LoggingAspect {
-
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Around("@annotation(Loggable)")
@@ -27,7 +26,7 @@ class LoggingAspect {
     if (method.returnType == Void.TYPE) {
       log.warn(
         "Loggable annotation should not be used on methods without return type: {}",
-        method.name
+        method.name,
       )
       return joinPoint.proceed()
     }
@@ -56,17 +55,22 @@ class LoggingAspect {
   }
 
   @Throws(Throwable::class)
-  private fun logExit(joinPoint: ProceedingJoinPoint, result: Any, startTime: Long) {
+  private fun logExit(
+    joinPoint: ProceedingJoinPoint,
+    result: Any,
+    startTime: Long,
+  ) {
     log.info(
       "{} exited with result: {} in {} seconds",
       joinPoint.signature.toShortString(),
       truncateJson(OBJECT_MAPPER.writeValueAsString(result)),
-      TimeUtility.durationInSeconds(startTime)
+      TimeUtility.durationInSeconds(startTime),
     )
   }
 
   companion object {
     private const val TRANSACTION_ID = "transactionId"
+
     private fun setTransactionId() {
       val uuid = UUID.randomUUID()
       MDC.put(TRANSACTION_ID, String.format("[%s] ", uuid))

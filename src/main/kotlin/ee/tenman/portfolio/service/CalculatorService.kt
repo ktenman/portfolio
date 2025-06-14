@@ -24,7 +24,7 @@ class CalculatorService(
   private val instrumentService: InstrumentService,
   private val calculationDispatcher: CoroutineDispatcher,
   private val portfolioSummaryService: PortfolioSummaryService,
-  private val clock: Clock
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -45,18 +45,22 @@ class CalculatorService(
     log.info("Calculating XIRR")
     val xirrs = calculateRollingXirr(TICKER).reversed()
 
-    val xirrsResults = runBlocking {
-      val deferredResults = xirrs.map { xirr ->
-        async(calculationDispatcher) {
-          val xirrValue = xirr.calculate()
-          // Only include positive or reasonable negative returns
-          if (xirrValue > -1.0) {
-            Transaction(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
-          } else null
-        }
+    val xirrsResults =
+      runBlocking {
+        val deferredResults =
+          xirrs.map { xirr ->
+            async(calculationDispatcher) {
+              val xirrValue = xirr.calculate()
+              // Only include positive or reasonable negative returns
+              if (xirrValue > -1.0) {
+                Transaction(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
+              } else {
+                null
+              }
+            }
+          }
+        deferredResults.awaitAll().filterNotNull()
       }
-      deferredResults.awaitAll().filterNotNull()
-    }
 
     val totalCurrentValue = portfolioSummaryService.getCurrentDaySummary().totalValue
 
@@ -64,14 +68,16 @@ class CalculatorService(
       median = if (xirrsResults.isEmpty()) 0.0 else calculateMedian(xirrsResults.map { it.amount }),
       average = if (xirrsResults.isEmpty()) 0.0 else xirrsResults.map { it.amount }.average(),
       xirrs = xirrsResults,
-      total = totalCurrentValue
+      total = totalCurrentValue,
     )
   }
 
   fun calculateRollingXirr(instrumentCode: String): List<Xirr> {
     val instrument = instrumentService.getInstrument(instrumentCode)
-    val allDailyPrices = dataRetrievalService.findAllByInstrument(instrument)
-      .sortedBy { it.entryDate }
+    val allDailyPrices =
+      dataRetrievalService
+        .findAllByInstrument(instrument)
+        .sortedBy { it.entryDate }
 
     if (allDailyPrices.size < 2) return emptyList()
 
@@ -90,8 +96,9 @@ class CalculatorService(
 
       // Process all prices up to current date
       for (price in dailyPrices) {
-        val sharesAmount = BigDecimal(AMOUNT_TO_SPEND)
-          .divide(price.closePrice, 8, RoundingMode.HALF_UP)
+        val sharesAmount =
+          BigDecimal(AMOUNT_TO_SPEND)
+            .divide(price.closePrice, 8, RoundingMode.HALF_UP)
         remainingShares += sharesAmount
 
         if (remainingShares > BigDecimal.ZERO) {

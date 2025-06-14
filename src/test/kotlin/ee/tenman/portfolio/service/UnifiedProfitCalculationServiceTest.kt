@@ -5,7 +5,6 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.xirr.Transaction
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -18,15 +17,14 @@ import java.time.LocalDate
 import java.util.stream.Stream
 
 class UnifiedProfitCalculationServiceTest {
-
   private lateinit var service: UnifiedProfitCalculationService
-  private val TODAY = LocalDate.now()
-  private val INSTRUMENT = mock(ee.tenman.portfolio.domain.Instrument::class.java)
+  private val today = LocalDate.now()
+  private val instrument = mock(ee.tenman.portfolio.domain.Instrument::class.java)
 
   @BeforeEach
   fun setUp() {
     service = UnifiedProfitCalculationService()
-    whenever(INSTRUMENT.id).thenReturn(1L)
+    whenever(instrument.id).thenReturn(1L)
   }
 
   @Test
@@ -63,77 +61,83 @@ class UnifiedProfitCalculationServiceTest {
 
   @Test
   fun `calculateAdjustedXirr should return zero when fewer than two transactions are provided`() {
-    val transactions = listOf(Transaction(-1000.0, TODAY.minusDays(30)))
+    val transactions = listOf(Transaction(-1000.0, today.minusDays(30)))
 
-    val result = service.calculateAdjustedXirr(transactions, BigDecimal("1000"), TODAY)
+    val result = service.calculateAdjustedXirr(transactions, BigDecimal("1000"), today)
 
     assertThat(result).isZero()
   }
 
   @Test
   fun `calculateAdjustedXirr should return zero when no cash outflows are present`() {
-    val transactions = listOf(
-      Transaction(500.0, TODAY.minusDays(30)),
-      Transaction(500.0, TODAY)
-    )
+    val transactions =
+      listOf(
+        Transaction(500.0, today.minusDays(30)),
+        Transaction(500.0, today),
+      )
 
-    val result = service.calculateAdjustedXirr(transactions, BigDecimal("1000"), TODAY)
+    val result = service.calculateAdjustedXirr(transactions, BigDecimal("1000"), today)
 
     assertThat(result).isZero()
   }
 
   @Test
   fun `calculateAdjustedXirr should apply dampening factor for recent investments`() {
-    val recentTransactions = listOf(
-      Transaction(-1000.0, TODAY.minusDays(1)),
-      Transaction(1010.0, TODAY)
-    )
+    val recentTransactions =
+      listOf(
+        Transaction(-1000.0, today.minusDays(1)),
+        Transaction(1010.0, today),
+      )
 
-    val result = service.calculateAdjustedXirr(recentTransactions, BigDecimal("1010"), TODAY)
+    val result = service.calculateAdjustedXirr(recentTransactions, BigDecimal("1010"), today)
 
     assertThat(result).isEqualTo(0.16666666666666666)
 
-    val olderTransactions = listOf(
-      Transaction(-1000.0, TODAY.minusDays(180)),
-      Transaction(1100.0, TODAY)
-    )
+    val olderTransactions =
+      listOf(
+        Transaction(-1000.0, today.minusDays(180)),
+        Transaction(1100.0, today),
+      )
 
-    val olderResult = service.calculateAdjustedXirr(olderTransactions, BigDecimal("1100"), TODAY)
+    val olderResult = service.calculateAdjustedXirr(olderTransactions, BigDecimal("1100"), today)
 
     assertThat(olderResult).isGreaterThan(0.15)
   }
 
   @Test
   fun `calculateAdjustedXirr should bound extreme values within reasonable limits`() {
-    val highReturnTransactions = listOf(
-      Transaction(-1000.0, TODAY.minusYears(1)),
-      Transaction(100000.0, TODAY)
-    )
+    val highReturnTransactions =
+      listOf(
+        Transaction(-1000.0, today.minusYears(1)),
+        Transaction(100000.0, today),
+      )
 
-    val result = service.calculateAdjustedXirr(highReturnTransactions, BigDecimal("100000"), TODAY)
+    val result = service.calculateAdjustedXirr(highReturnTransactions, BigDecimal("100000"), today)
 
     assertThat(result).isLessThanOrEqualTo(10.0)
 
-    val lowReturnTransactions = listOf(
-      Transaction(-10000.0, TODAY.minusYears(1)),
-      Transaction(10.0, TODAY)
-    )
+    val lowReturnTransactions =
+      listOf(
+        Transaction(-10000.0, today.minusYears(1)),
+        Transaction(10.0, today),
+      )
 
-    val lowResult = service.calculateAdjustedXirr(lowReturnTransactions, BigDecimal("10"), TODAY)
+    val lowResult = service.calculateAdjustedXirr(lowReturnTransactions, BigDecimal("10"), today)
 
     assertThat(lowResult).isGreaterThanOrEqualTo(-10.0)
   }
 
   @Test
   fun `calculateAdjustedXirr should handle multiple cash flows correctly`() {
-    val transactions = listOf(
-      Transaction(-1000.0, TODAY.minusYears(2)),
-      Transaction(-500.0, TODAY.minusYears(1)),
-      Transaction(-200.0, TODAY.minusMonths(6)),
-      Transaction(2000.0, TODAY)
-    )
+    val transactions =
+      listOf(
+        Transaction(-1000.0, today.minusYears(2)),
+        Transaction(-500.0, today.minusYears(1)),
+        Transaction(-200.0, today.minusMonths(6)),
+        Transaction(2000.0, today),
+      )
 
-    val result = service.calculateAdjustedXirr(transactions, BigDecimal("2000"), TODAY)
+    val result = service.calculateAdjustedXirr(transactions, BigDecimal("2000"), today)
 
     assertThat(result).isBetween(0.0, 0.3)
   }
@@ -143,23 +147,25 @@ class UnifiedProfitCalculationServiceTest {
   fun `calculateAdjustedXirr should reflect different market conditions correctly`(
     marketCondition: String,
     transactions: List<Transaction>,
-    expectedCondition: (Double) -> Boolean
+    expectedCondition: (Double) -> Boolean,
   ) {
-    val result = service.calculateAdjustedXirr(
-      transactions,
-      BigDecimal(transactions.last().amount.toString()),
-      TODAY
-    )
+    val result =
+      service.calculateAdjustedXirr(
+        transactions,
+        BigDecimal(transactions.last().amount.toString()),
+        today,
+      )
 
     assertThat(expectedCondition(result)).isTrue()
   }
 
   @Test
   fun `calculateCurrentHoldings should return correct values with buy transactions only`() {
-    val transactions = listOf(
-      createTransaction(BigDecimal("10"), BigDecimal("100"), TODAY.minusDays(30), TransactionType.BUY),
-      createTransaction(BigDecimal("5"), BigDecimal("120"), TODAY.minusDays(15), TransactionType.BUY)
-    )
+    val transactions =
+      listOf(
+        createTransaction(BigDecimal("10"), BigDecimal("100"), today.minusDays(30), TransactionType.BUY),
+        createTransaction(BigDecimal("5"), BigDecimal("120"), today.minusDays(15), TransactionType.BUY),
+      )
 
     val (quantity, averageCost) = service.calculateCurrentHoldings(transactions)
 
@@ -169,11 +175,12 @@ class UnifiedProfitCalculationServiceTest {
 
   @Test
   fun `calculateCurrentHoldings should handle mix of buy and sell transactions correctly`() {
-    val transactions = listOf(
-      createTransaction(BigDecimal("10"), BigDecimal("100"), TODAY.minusDays(30), TransactionType.BUY),
-      createTransaction(BigDecimal("5"), BigDecimal("120"), TODAY.minusDays(15), TransactionType.BUY),
-      createTransaction(BigDecimal("3"), BigDecimal("130"), TODAY.minusDays(5), TransactionType.SELL)
-    )
+    val transactions =
+      listOf(
+        createTransaction(BigDecimal("10"), BigDecimal("100"), today.minusDays(30), TransactionType.BUY),
+        createTransaction(BigDecimal("5"), BigDecimal("120"), today.minusDays(15), TransactionType.BUY),
+        createTransaction(BigDecimal("3"), BigDecimal("130"), today.minusDays(5), TransactionType.SELL),
+      )
 
     val (quantity, averageCost) = service.calculateCurrentHoldings(transactions)
 
@@ -191,10 +198,11 @@ class UnifiedProfitCalculationServiceTest {
 
   @Test
   fun `calculateCurrentHoldings should return zeros when all shares have been sold`() {
-    val transactions = listOf(
-      createTransaction(BigDecimal("10"), BigDecimal("100"), TODAY.minusDays(30), TransactionType.BUY),
-      createTransaction(BigDecimal("10"), BigDecimal("110"), TODAY.minusDays(15), TransactionType.SELL)
-    )
+    val transactions =
+      listOf(
+        createTransaction(BigDecimal("10"), BigDecimal("100"), today.minusDays(30), TransactionType.BUY),
+        createTransaction(BigDecimal("10"), BigDecimal("110"), today.minusDays(15), TransactionType.SELL),
+      )
 
     val (quantity, averageCost) = service.calculateCurrentHoldings(transactions)
 
@@ -204,10 +212,11 @@ class UnifiedProfitCalculationServiceTest {
 
   @Test
   fun `buildXirrTransactions should include current value transaction when value is positive`() {
-    val portfolioTransactions = listOf(
-      createTransaction(BigDecimal("10"), BigDecimal("100"), TODAY.minusDays(30), TransactionType.BUY),
-      createTransaction(BigDecimal("5"), BigDecimal("110"), TODAY.minusDays(15), TransactionType.SELL)
-    )
+    val portfolioTransactions =
+      listOf(
+        createTransaction(BigDecimal("10"), BigDecimal("100"), today.minusDays(30), TransactionType.BUY),
+        createTransaction(BigDecimal("5"), BigDecimal("110"), today.minusDays(15), TransactionType.SELL),
+      )
 
     val xirrTransactions = service.buildXirrTransactions(portfolioTransactions, BigDecimal("600"))
 
@@ -220,10 +229,11 @@ class UnifiedProfitCalculationServiceTest {
 
   @Test
   fun `buildXirrTransactions should not include current value transaction when value is zero`() {
-    val portfolioTransactions = listOf(
-      createTransaction(BigDecimal("10"), BigDecimal("100"), TODAY.minusDays(30), TransactionType.BUY),
-      createTransaction(BigDecimal("5"), BigDecimal("110"), TODAY.minusDays(15), TransactionType.SELL)
-    )
+    val portfolioTransactions =
+      listOf(
+        createTransaction(BigDecimal("10"), BigDecimal("100"), today.minusDays(30), TransactionType.BUY),
+        createTransaction(BigDecimal("5"), BigDecimal("110"), today.minusDays(15), TransactionType.SELL),
+      )
 
     val xirrTransactions = service.buildXirrTransactions(portfolioTransactions, BigDecimal.ZERO)
 
@@ -242,26 +252,26 @@ class UnifiedProfitCalculationServiceTest {
           "Rising market",
           listOf(
             Transaction(-1000.0, today.minusMonths(6)),
-            Transaction(1200.0, today)
+            Transaction(1200.0, today),
           ),
-          { xirr: Double -> xirr > 0.0 }
+          { xirr: Double -> xirr > 0.0 },
         ),
         Arguments.of(
           "Falling market",
           listOf(
             Transaction(-1000.0, today.minusMonths(6)),
-            Transaction(800.0, today)
+            Transaction(800.0, today),
           ),
-          { xirr: Double -> xirr < 0.0 }
+          { xirr: Double -> xirr < 0.0 },
         ),
         Arguments.of(
           "Stable market",
           listOf(
             Transaction(-1000.0, today.minusMonths(6)),
-            Transaction(1000.0, today)
+            Transaction(1000.0, today),
           ),
-          { xirr: Double -> Math.abs(xirr) < 0.01 }
-        )
+          { xirr: Double -> Math.abs(xirr) < 0.01 },
+        ),
       )
     }
   }
@@ -270,15 +280,14 @@ class UnifiedProfitCalculationServiceTest {
     quantity: BigDecimal,
     price: BigDecimal,
     date: LocalDate,
-    type: TransactionType
-  ): PortfolioTransaction {
-    return PortfolioTransaction(
-      instrument = INSTRUMENT,
+    type: TransactionType,
+  ): PortfolioTransaction =
+    PortfolioTransaction(
+      instrument = instrument,
       transactionType = type,
       quantity = quantity,
       price = price,
       transactionDate = date,
-      platform = Platform.TRADING212
+      platform = Platform.TRADING212,
     )
-  }
 }

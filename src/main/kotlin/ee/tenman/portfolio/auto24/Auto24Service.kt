@@ -9,12 +9,15 @@ import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
-import java.util.*
+import java.util.Base64
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 
 @Service
-class Auto24Service(private val captchaService: CaptchaService) {
+class Auto24Service(
+  private val captchaService: CaptchaService,
+) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
@@ -29,14 +32,15 @@ class Auto24Service(private val captchaService: CaptchaService) {
     mapOf(
       "browser.download.folderList" to 2,
       "browser.download.manager.showWhenStarting" to false,
-      "general.useragent.override" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0"
+      "general.useragent.override" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
     ).forEach { (key, value) ->
       options.addPreference(key, value)
     }
-    val arguments = listOf(
-      "--disable-blink-features=AutomationControlled",
-      "--no-sandbox"
-    )
+    val arguments =
+      listOf(
+        "--disable-blink-features=AutomationControlled",
+        "--no-sandbox",
+      )
     options.addArguments(arguments)
     Configuration.browser = "firefox"
     Configuration.browserCapabilities = options
@@ -58,8 +62,10 @@ class Auto24Service(private val captchaService: CaptchaService) {
     Selenide.open(AUTO24_URL)
     TimeUnit.MILLISECONDS.sleep(1500)
 
-    val acceptCookies = Selenide.elements(By.tagName("button"))
-      .find(Condition.text("Nõustun"))
+    val acceptCookies =
+      Selenide
+        .elements(By.tagName("button"))
+        .find(Condition.text("Nõustun"))
     if (acceptCookies.exists()) {
       acceptCookies.click()
     }
@@ -96,7 +102,7 @@ class Auto24Service(private val captchaService: CaptchaService) {
     log.info(
       "Captcha image details - Size: ${imageBytes.size} bytes, " +
         "Width: ${image.width}px, " +
-        "Height: ${image.height}px"
+        "Height: ${image.height}px",
     )
 
     val base64Image = Base64.getEncoder().encodeToString(imageBytes)
@@ -116,11 +122,13 @@ class Auto24Service(private val captchaService: CaptchaService) {
   private fun extractCarPrice(): String {
     TimeUnit.SECONDS.sleep(1)
     return try {
-      val priceElement = Selenide.element(By.className("result"))
-        .findAll(By.className("label"))
-        .last()
-        .parent()
-        .find(By.tagName("b"))
+      val priceElement =
+        Selenide
+          .element(By.className("result"))
+          .findAll(By.className("label"))
+          .last()
+          .parent()
+          .find(By.tagName("b"))
 
       if (priceElement.exists()) {
         priceElement.text

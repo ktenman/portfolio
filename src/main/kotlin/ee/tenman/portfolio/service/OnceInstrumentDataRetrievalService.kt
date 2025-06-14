@@ -16,25 +16,26 @@ class OnceInstrumentDataRetrievalService(
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
   private val dailyPortfolioXirrJob: DailyPortfolioXirrJob,
   private val jobExecutionService: JobExecutionService,
-  private val portfolioSummaryService: PortfolioSummaryService
+  private val portfolioSummaryService: PortfolioSummaryService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @PostConstruct
   fun retrieveData() {
-    CompletableFuture.runAsync {
-      log.info("Retrieving data for all instruments")
-      val allDailySummaries = portfolioSummaryService.getAllDailySummaries()
-      if (allDailySummaries.isEmpty()) {
-        log.info("No daily summaries found. Running instrument data retrieval job.")
-        jobExecutionService.executeJob(alphaVantageDataRetrievalJob)
-        jobExecutionService.executeJob(binanceDataRetrievalJob)
-      } else {
-        log.info("Daily summaries found. Skipping instrument data retrieval job.")
+    CompletableFuture
+      .runAsync {
+        log.info("Retrieving data for all instruments")
+        val allDailySummaries = portfolioSummaryService.getAllDailySummaries()
+        if (allDailySummaries.isEmpty()) {
+          log.info("No daily summaries found. Running instrument data retrieval job.")
+          jobExecutionService.executeJob(alphaVantageDataRetrievalJob)
+          jobExecutionService.executeJob(binanceDataRetrievalJob)
+        } else {
+          log.info("Daily summaries found. Skipping instrument data retrieval job.")
+        }
+      }.thenRun {
+        log.info("Running daily portfolio XIRR job")
+        jobExecutionService.executeJob(dailyPortfolioXirrJob)
       }
-    }.thenRun {
-      log.info("Running daily portfolio XIRR job")
-      jobExecutionService.executeJob(dailyPortfolioXirrJob)
-    }
   }
 }

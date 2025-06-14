@@ -16,7 +16,6 @@ import java.time.ZoneId
 
 @IntegrationTest
 class JobExecutionServiceIT {
-
   @Resource
   private lateinit var jobExecutionService: JobExecutionService
 
@@ -42,13 +41,14 @@ class JobExecutionServiceIT {
     whenever(clock.instant()).thenAnswer { fixedClock.instant() }
     whenever(clock.zone).thenReturn(fixedClock.zone)
 
-    val testJob = object : Job {
-      override fun execute() {
-        fixedClock = Clock.fixed(endInstant, ZoneId.of("UTC"))
-      }
+    val testJob =
+      object : Job {
+        override fun execute() {
+          fixedClock = Clock.fixed(endInstant, ZoneId.of("UTC"))
+        }
 
-      override fun getName(): String = "TestJob"
-    }
+        override fun getName(): String = "TestJob"
+      }
 
     jobExecutionService.executeJob(testJob)
 
@@ -70,14 +70,15 @@ class JobExecutionServiceIT {
     whenever(clock.instant()).thenAnswer { fixedClock.instant() }
     whenever(clock.zone).thenReturn(fixedClock.zone)
 
-    val failingJob = object : Job {
-      override fun execute() {
-        fixedClock = Clock.fixed(endInstant, ZoneId.of("UTC"))
-        throw TestJobException("Test exception")
-      }
+    val failingJob =
+      object : Job {
+        override fun execute() {
+          fixedClock = Clock.fixed(endInstant, ZoneId.of("UTC"))
+          throw TestJobException("Test exception")
+        }
 
-      override fun getName(): String = "FailingJob"
-    }
+        override fun getName(): String = "FailingJob"
+      }
 
     try {
       jobExecutionService.executeJob(failingJob)
@@ -95,5 +96,7 @@ class JobExecutionServiceIT {
     assertThat(savedExecution?.message).isEqualTo("Test exception")
   }
 
-  class TestJobException(message: String) : Exception(message)
+  class TestJobException(
+    message: String,
+  ) : Exception(message)
 }

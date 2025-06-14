@@ -10,7 +10,7 @@ import java.time.Instant
 @Service
 class JobExecutionService(
   private val jobTransactionService: JobTransactionService,
-  private val clock: Clock
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -30,13 +30,14 @@ class JobExecutionService(
       throw e
     } finally {
       val endTime = Instant.now(clock)
-      val savedJobExecution = jobTransactionService.saveJobExecution(
-        job = job,
-        startTime = startTime,
-        endTime = endTime,
-        status = status,
-        message = message
-      )
+      val savedJobExecution =
+        jobTransactionService.saveJobExecution(
+          job = job,
+          startTime = startTime,
+          endTime = endTime,
+          status = status,
+          message = message,
+        )
       log.info("Job execution record saved: ${savedJobExecution.id}")
     }
   }

@@ -25,12 +25,12 @@ import org.testcontainers.utility.DockerImageName
 @ContextConfiguration(initializers = [IntegrationTest.Initializer::class])
 @Sql(scripts = ["/clear_database.sql"], executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @TestExecutionListeners(
-    listeners = [
-        DependencyInjectionTestExecutionListener::class,
-        DirtiesContextTestExecutionListener::class,
-        RedisCacheCleanupListener::class
-    ],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
+  listeners = [
+    DependencyInjectionTestExecutionListener::class,
+    DirtiesContextTestExecutionListener::class,
+    RedisCacheCleanupListener::class,
+  ],
+  mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
 )
 annotation class IntegrationTest {
   companion object {
@@ -46,15 +46,14 @@ annotation class IntegrationTest {
 
   class Initializer : ApplicationContextInitializer<ConfigurableApplicationContext> {
     override fun initialize(applicationContext: ConfigurableApplicationContext) {
-      TestPropertyValues.of(
-        "spring.data.redis.host=" + REDIS_CONTAINER.host,
-        "spring.data.redis.port=" + REDIS_CONTAINER.firstMappedPort,
-
-        "spring.datasource.url=" + POSTGRES_DB_CONTAINER.jdbcUrl,
-        "spring.datasource.username=" + POSTGRES_DB_CONTAINER.username,
-        "spring.datasource.password=" + POSTGRES_DB_CONTAINER.password
-      ).applyTo(applicationContext.environment)
+      TestPropertyValues
+        .of(
+          "spring.data.redis.host=" + REDIS_CONTAINER.host,
+          "spring.data.redis.port=" + REDIS_CONTAINER.firstMappedPort,
+          "spring.datasource.url=" + POSTGRES_DB_CONTAINER.jdbcUrl,
+          "spring.datasource.username=" + POSTGRES_DB_CONTAINER.username,
+          "spring.datasource.password=" + POSTGRES_DB_CONTAINER.password,
+        ).applyTo(applicationContext.environment)
     }
   }
-
 }

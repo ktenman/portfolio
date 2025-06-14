@@ -12,7 +12,9 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.pow
 
-class Xirr(private val transactions: List<Transaction>) {
+class Xirr(
+  private val transactions: List<Transaction>,
+) {
   companion object {
     private const val MAX_ELEVATIONS = 1_000
   }
@@ -24,45 +26,46 @@ class Xirr(private val transactions: List<Transaction>) {
 
   fun getTransactions(): List<Transaction> = transactions
 
-  fun calculate(): Double = runBlocking {
-    log.info("Starting XIRR calculation with ${transactions.size} transactions")
-    log.info("Start date: $startDate, End date: $endDate")
+  fun calculate(): Double =
+    runBlocking {
+      log.info("Starting XIRR calculation with ${transactions.size} transactions")
+      log.info("Start date: $startDate, End date: $endDate")
 
-    require(transactions.size >= 2) { "Must have at least two transactions" }
-    require(transactions.any { it.amount > 0 } && transactions.any { it.amount < 0 }) {
-      "Need both positive and negative transactions"
+      require(transactions.size >= 2) { "Must have at least two transactions" }
+      require(transactions.any { it.amount > 0 } && transactions.any { it.amount < 0 }) {
+        "Need both positive and negative transactions"
+      }
+
+      if (startDate == endDate) {
+        log.info("All transactions are on the same day. Calculating simple return.")
+        return@runBlocking calculateSimpleReturn()
+      }
+      val guess = estimateInitialRate()
+      log.info("Initial guess for XIRR: $guess")
+
+      tryConcurrentCalculation(guess)
     }
 
-    if (startDate == endDate) {
-      log.info("All transactions are on the same day. Calculating simple return.")
-      return@runBlocking calculateSimpleReturn()
+  private suspend fun tryConcurrentCalculation(guess: Double): Double =
+    coroutineScope {
+      val newtonRaphsonDeferred = async { runCatching { calculateXirrWithNewtonRaphson(guess) } }
+      val bisectionDeferred = async { runCatching { calculateXirrWithBisection() } }
+
+      val newtonRaphsonResult = newtonRaphsonDeferred.await()
+      if (newtonRaphsonResult.isSuccess) {
+        log.info("Newton-Raphson method succeeded.")
+        return@coroutineScope newtonRaphsonResult.getOrThrow()
+      }
+
+      val bisectionResult = bisectionDeferred.await()
+      if (bisectionResult.isSuccess) {
+        log.info("Bisection method succeeded.")
+        return@coroutineScope bisectionResult.getOrThrow()
+      }
+
+      log.error("Both Newton-Raphson and Bisection methods failed.")
+      throw Exception("XIRR calculation failed using both Newton-Raphson and Bisection methods")
     }
-    val guess = estimateInitialRate()
-    log.info("Initial guess for XIRR: $guess")
-
-    tryConcurrentCalculation(guess)
-  }
-
-  private suspend fun tryConcurrentCalculation(guess: Double): Double = coroutineScope {
-    val newtonRaphsonDeferred = async { runCatching { calculateXirrWithNewtonRaphson(guess) } }
-    val bisectionDeferred = async { runCatching { calculateXirrWithBisection() } }
-
-    val newtonRaphsonResult = newtonRaphsonDeferred.await()
-    if (newtonRaphsonResult.isSuccess) {
-      log.info("Newton-Raphson method succeeded.")
-      return@coroutineScope newtonRaphsonResult.getOrThrow()
-    }
-
-    val bisectionResult = bisectionDeferred.await()
-    if (bisectionResult.isSuccess) {
-      log.info("Bisection method succeeded.")
-      return@coroutineScope bisectionResult.getOrThrow()
-    }
-
-    log.error("Both Newton-Raphson and Bisection methods failed.")
-    throw Exception("XIRR calculation failed using both Newton-Raphson and Bisection methods")
-  }
-
 
   private fun calculateXirrWithNewtonRaphson(guess: Double): Double {
     val solver = NewtonRaphsonSolver()
@@ -108,8 +111,7 @@ class Xirr(private val transactions: List<Transaction>) {
     }
   }
 
-  private fun netPresentValue(rate: Double): Double =
-    transactions.sumOf { it.amount * (1 + rate).pow(yearsToEnd(it.date)) }
+  private fun netPresentValue(rate: Double): Double = transactions.sumOf { it.amount * (1 + rate).pow(yearsToEnd(it.date)) }
 
   private fun netPresentValueDerivative(rate: Double): Double =
     transactions.sumOf {
@@ -120,11 +122,12 @@ class Xirr(private val transactions: List<Transaction>) {
     val totalAmount = transactions.sumOf { it.amount }
     val totalDeposits = transactions.filter { it.amount < 0 }.sumOf { -it.amount }
     val years = ChronoUnit.DAYS.between(startDate, endDate).toDouble() / 365.25
-    val estimatedRate = if (years > 0) {
-      (totalAmount / totalDeposits).pow(1 / years) - 1
-    } else {
-      0.0
-    }
+    val estimatedRate =
+      if (years > 0) {
+        (totalAmount / totalDeposits).pow(1 / years) - 1
+      } else {
+        0.0
+      }
     return estimatedRate.coerceIn(-0.9, 0.9)
   }
 }

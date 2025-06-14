@@ -38,7 +38,6 @@ import java.util.stream.Stream
 
 @ExtendWith(MockitoExtension::class)
 class PortfolioSummaryServiceTest {
-
   @Mock
   private lateinit var portfolioTransactionService: PortfolioTransactionService
 
@@ -81,27 +80,29 @@ class PortfolioSummaryServiceTest {
     lenient().whenever(clock.instant()).thenReturn(fixedInstant)
     lenient().whenever(clock.zone).thenReturn(ZoneId.systemDefault())
 
-    instrument = Instrument(
-      symbol = "QDVE:GER:EUR",
-      name = "iShares S&P 500 Information Technology Sector",
-      category = "ETF",
-      baseCurrency = "EUR",
-      currentPrice = BigDecimal("27.58")
-    ).apply {
-      id = 1L
-      currentValue = BigDecimal("21870.94")
-      totalInvestment = BigDecimal("23633.33")
-      profit = BigDecimal("-1762.39")
-    }
+    instrument =
+      Instrument(
+        symbol = "QDVE:GER:EUR",
+        name = "iShares S&P 500 Information Technology Sector",
+        category = "ETF",
+        baseCurrency = "EUR",
+        currentPrice = BigDecimal("27.58"),
+      ).apply {
+        id = 1L
+        currentValue = BigDecimal("21870.94")
+        totalInvestment = BigDecimal("23633.33")
+        profit = BigDecimal("-1762.39")
+      }
 
-    transaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("793.00"),
-      price = BigDecimal("29.81"),
-      transactionDate = testDate.minusDays(10),
-      platform = Platform.TRADING212
-    )
+    transaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("793.00"),
+        price = BigDecimal("29.81"),
+        transactionDate = testDate.minusDays(10),
+        platform = Platform.TRADING212,
+      )
   }
 
   @Test
@@ -109,13 +110,14 @@ class PortfolioSummaryServiceTest {
     val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
 
-    val todaySummary = PortfolioDailySummary(
-      entryDate = testDate,
-      totalValue = BigDecimal("21000.00"),
-      xirrAnnualReturn = BigDecimal("-0.1048"),
-      totalProfit = BigDecimal("-2500.00"),
-      earningsPerDay = BigDecimal("-6.0000000000")
-    )
+    val todaySummary =
+      PortfolioDailySummary(
+        entryDate = testDate,
+        totalValue = BigDecimal("21000.00"),
+        xirrAnnualReturn = BigDecimal("-0.1048"),
+        totalProfit = BigDecimal("-2500.00"),
+        earningsPerDay = BigDecimal("-6.0000000000"),
+      )
     whenever(portfolioDailySummaryRepository.findByEntryDate(testDate)).thenReturn(todaySummary)
 
     whenever(instrumentService.getAllInstruments()).thenReturn(
@@ -123,8 +125,8 @@ class PortfolioSummaryServiceTest {
         instrument.apply {
           profit = BigDecimal("-1762.39")
           totalInvestment = BigDecimal("23633.33")
-        }
-      )
+        },
+      ),
     )
 
     val summary = portfolioSummaryService.getCurrentDaySummary()
@@ -160,14 +162,15 @@ class PortfolioSummaryServiceTest {
     val price = BigDecimal("123.45")
     val quantity = BigDecimal("10")
     val originalPrice = BigDecimal("100")
-    val testTransaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = transaction.transactionType,
-      quantity = quantity,
-      price = originalPrice,
-      transactionDate = date.minusDays(10),
-      platform = transaction.platform
-    )
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = transaction.transactionType,
+        quantity = quantity,
+        price = originalPrice,
+        transactionDate = date.minusDays(10),
+        platform = transaction.platform,
+      )
 
     whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
     whenever(dailyPriceService.getPrice(eq(instrument), eq(date))).thenReturn(price)
@@ -179,9 +182,10 @@ class PortfolioSummaryServiceTest {
 
     val expectedTotal = price.multiply(quantity)
     val expectedProfit = expectedTotal.subtract(originalPrice.multiply(quantity))
-    val expectedEarningsPerDay = expectedTotal
-      .multiply(BigDecimal("0.05"))
-      .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
+    val expectedEarningsPerDay =
+      expectedTotal
+        .multiply(BigDecimal("0.05"))
+        .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
 
     assertThat(summary.totalValue)
       .isEqualByComparingTo(expectedTotal)
@@ -200,22 +204,23 @@ class PortfolioSummaryServiceTest {
 
   @Test
   fun `getAllDailySummaries should return all summaries`() {
-    val summaries = listOf(
-      PortfolioDailySummary(
-        LocalDate.of(2024, 7, 1),
-        BigDecimal("100"),
-        BigDecimal("0.05"),
-        BigDecimal("10"),
-        BigDecimal("0.01")
-      ),
-      PortfolioDailySummary(
-        LocalDate.of(2024, 7, 2),
-        BigDecimal("110"),
-        BigDecimal("0.06"),
-        BigDecimal("20"),
-        BigDecimal("0.02")
+    val summaries =
+      listOf(
+        PortfolioDailySummary(
+          LocalDate.of(2024, 7, 1),
+          BigDecimal("100"),
+          BigDecimal("0.05"),
+          BigDecimal("10"),
+          BigDecimal("0.01"),
+        ),
+        PortfolioDailySummary(
+          LocalDate.of(2024, 7, 2),
+          BigDecimal("110"),
+          BigDecimal("0.06"),
+          BigDecimal("20"),
+          BigDecimal("0.02"),
+        ),
       )
-    )
     whenever(portfolioDailySummaryRepository.findAll()).thenReturn(summaries)
 
     val result = portfolioSummaryService.getAllDailySummaries()
@@ -227,22 +232,23 @@ class PortfolioSummaryServiceTest {
 
   @Test
   fun `getAllDailySummaries with paging should return paged summaries`() {
-    val summaries = listOf(
-      PortfolioDailySummary(
-        LocalDate.of(2024, 7, 2),
-        BigDecimal("110"),
-        BigDecimal("0.06"),
-        BigDecimal("20"),
-        BigDecimal("0.02")
-      ),
-      PortfolioDailySummary(
-        LocalDate.of(2024, 7, 1),
-        BigDecimal("100"),
-        BigDecimal("0.05"),
-        BigDecimal("10"),
-        BigDecimal("0.01")
+    val summaries =
+      listOf(
+        PortfolioDailySummary(
+          LocalDate.of(2024, 7, 2),
+          BigDecimal("110"),
+          BigDecimal("0.06"),
+          BigDecimal("20"),
+          BigDecimal("0.02"),
+        ),
+        PortfolioDailySummary(
+          LocalDate.of(2024, 7, 1),
+          BigDecimal("100"),
+          BigDecimal("0.05"),
+          BigDecimal("10"),
+          BigDecimal("0.01"),
+        ),
       )
-    )
     whenever(portfolioDailySummaryRepository.findAll(any<PageRequest>())).thenReturn(PageImpl(summaries))
 
     val result = portfolioSummaryService.getAllDailySummaries(0, 10)
@@ -271,14 +277,15 @@ class PortfolioSummaryServiceTest {
     whenever(clock.instant()).thenReturn(instant)
     whenever(clock.zone).thenReturn(ZoneId.systemDefault())
 
-    val transaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("10"),
-      price = BigDecimal("100"),
-      transactionDate = LocalDate.of(2024, 7, 1),
-      platform = this.transaction.platform
-    )
+    val transaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.of(2024, 7, 1),
+        platform = this.transaction.platform,
+      )
 
     whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(transaction))
     whenever(dailyPriceService.getPrice(any(), any())).thenReturn(BigDecimal("110"))
@@ -303,9 +310,8 @@ class PortfolioSummaryServiceTest {
         LocalDate.of(2024, 7, 1),
         LocalDate.of(2024, 7, 2),
         LocalDate.of(2024, 7, 3),
-        LocalDate.of(2024, 7, 4)
-      )
-      .doesNotContain(today)
+        LocalDate.of(2024, 7, 4),
+      ).doesNotContain(today)
   }
 
   @Test
@@ -343,22 +349,23 @@ class PortfolioSummaryServiceTest {
   fun `getDailySummariesBetween should return summaries between dates`() {
     val start = LocalDate.of(2024, 7, 1)
     val end = LocalDate.of(2024, 7, 5)
-    val between = listOf(
-      PortfolioDailySummary(
-        LocalDate.of(2024, 7, 2),
-        BigDecimal("110"),
-        BigDecimal("0.06"),
-        BigDecimal("20"),
-        BigDecimal("0.02")
-      ),
-      PortfolioDailySummary(
-        LocalDate.of(2024, 7, 3),
-        BigDecimal("120"),
-        BigDecimal("0.07"),
-        BigDecimal("30"),
-        BigDecimal("0.03")
+    val between =
+      listOf(
+        PortfolioDailySummary(
+          LocalDate.of(2024, 7, 2),
+          BigDecimal("110"),
+          BigDecimal("0.06"),
+          BigDecimal("20"),
+          BigDecimal("0.02"),
+        ),
+        PortfolioDailySummary(
+          LocalDate.of(2024, 7, 3),
+          BigDecimal("120"),
+          BigDecimal("0.07"),
+          BigDecimal("30"),
+          BigDecimal("0.03"),
+        ),
       )
-    )
     whenever(portfolioDailySummaryRepository.findAllByEntryDateBetween(start, end)).thenReturn(between)
 
     val result = portfolioSummaryService.getDailySummariesBetween(start, end)
@@ -374,14 +381,15 @@ class PortfolioSummaryServiceTest {
     val price = BigDecimal("31.5448")
     val quantity = BigDecimal("793.00")
 
-    val testTransaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.BUY,
-      quantity = quantity,
-      price = BigDecimal("29.81"),
-      transactionDate = date.minusDays(10),
-      platform = Platform.TRADING212
-    )
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = quantity,
+        price = BigDecimal("29.81"),
+        transactionDate = date.minusDays(10),
+        platform = Platform.TRADING212,
+      )
 
     whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
     whenever(dailyPriceService.getPrice(eq(instrument), eq(date))).thenReturn(price)
@@ -396,9 +404,10 @@ class PortfolioSummaryServiceTest {
     assertThat(summary.totalProfit)
       .isEqualByComparingTo("0E-10")
 
-    val expectedEarningsPerDay = summary.totalValue
-      .multiply(summary.xirrAnnualReturn)
-      .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
+    val expectedEarningsPerDay =
+      summary.totalValue
+        .multiply(summary.xirrAnnualReturn)
+        .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
     assertThat(summary.earningsPerDay)
       .isEqualByComparingTo(expectedEarningsPerDay)
   }
@@ -408,11 +417,12 @@ class PortfolioSummaryServiceTest {
     val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
 
-    val instrumentWithXirr = instrument.apply {
-      currentValue = BigDecimal("600.00")
-      profit = BigDecimal("100.00")
-      xirr = 0.075
-    }
+    val instrumentWithXirr =
+      instrument.apply {
+        currentValue = BigDecimal("600.00")
+        profit = BigDecimal("100.00")
+        xirr = 0.075
+      }
 
     whenever(instrumentService.getAllInstruments()).thenReturn(listOf(instrumentWithXirr))
 
@@ -425,9 +435,10 @@ class PortfolioSummaryServiceTest {
     assertThat(summary.xirrAnnualReturn)
       .isEqualByComparingTo("0.07500000")
 
-    val expectedEarningsPerDay = summary.totalValue
-      .multiply(summary.xirrAnnualReturn)
-      .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
+    val expectedEarningsPerDay =
+      summary.totalValue
+        .multiply(summary.xirrAnnualReturn)
+        .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
     assertThat(summary.earningsPerDay)
       .isEqualByComparingTo(expectedEarningsPerDay)
   }
@@ -439,30 +450,33 @@ class PortfolioSummaryServiceTest {
     whenever(clock.instant()).thenReturn(instant)
     whenever(clock.zone).thenReturn(ZoneId.systemDefault())
 
-    val transaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("10"),
-      price = BigDecimal("100"),
-      transactionDate = today.minusDays(3),
-      platform = Platform.TRADING212
-    )
+    val transaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = today.minusDays(3),
+        platform = Platform.TRADING212,
+      )
 
-    val todaySummary = PortfolioDailySummary(
-      entryDate = today,
-      totalValue = BigDecimal("1500.00"),
-      xirrAnnualReturn = BigDecimal("0.08"),
-      totalProfit = BigDecimal("500.00"),
-      earningsPerDay = BigDecimal("0.33")
-    )
+    val todaySummary =
+      PortfolioDailySummary(
+        entryDate = today,
+        totalValue = BigDecimal("1500.00"),
+        xirrAnnualReturn = BigDecimal("0.08"),
+        totalProfit = BigDecimal("500.00"),
+        earningsPerDay = BigDecimal("0.33"),
+      )
 
-    val oldSummary = PortfolioDailySummary(
-      entryDate = today.minusDays(1),
-      totalValue = BigDecimal("1400.00"),
-      xirrAnnualReturn = BigDecimal("0.07"),
-      totalProfit = BigDecimal("400.00"),
-      earningsPerDay = BigDecimal("0.27")
-    )
+    val oldSummary =
+      PortfolioDailySummary(
+        entryDate = today.minusDays(1),
+        totalValue = BigDecimal("1400.00"),
+        xirrAnnualReturn = BigDecimal("0.07"),
+        totalProfit = BigDecimal("400.00"),
+        earningsPerDay = BigDecimal("0.27"),
+      )
 
     whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(transaction))
     whenever(portfolioDailySummaryRepository.findAll()).thenReturn(listOf(todaySummary, oldSummary))
@@ -492,27 +506,29 @@ class PortfolioSummaryServiceTest {
     price2: BigDecimal,
     expectedTotalValue: BigDecimal,
     expectedTotalProfit: BigDecimal,
-    xirrValue: Double
+    xirrValue: Double,
   ) {
     val date = LocalDate.of(2024, 7, 1)
 
-    val transaction1 = PortfolioTransaction(
-      instrument = instrument1,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("10"),
-      price = BigDecimal("100"),
-      transactionDate = date.minusDays(10),
-      platform = Platform.TRADING212
-    )
+    val transaction1 =
+      PortfolioTransaction(
+        instrument = instrument1,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = date.minusDays(10),
+        platform = Platform.TRADING212,
+      )
 
-    val transaction2 = PortfolioTransaction(
-      instrument = instrument2,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("5"),
-      price = BigDecimal("80"),
-      transactionDate = date.minusDays(5),
-      platform = Platform.TRADING212
-    )
+    val transaction2 =
+      PortfolioTransaction(
+        instrument = instrument2,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("5"),
+        price = BigDecimal("80"),
+        transactionDate = date.minusDays(5),
+        platform = Platform.TRADING212,
+      )
 
     whenever(portfolioTransactionService.getAllTransactions())
       .thenReturn(listOf(transaction1, transaction2))
@@ -544,23 +560,25 @@ class PortfolioSummaryServiceTest {
   fun `calculateSummaryForDate should handle SELL transactions`() {
     val date = LocalDate.of(2024, 7, 10)
 
-    val buyTransaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("20"),
-      price = BigDecimal("100"),
-      transactionDate = date.minusDays(15),
-      platform = Platform.TRADING212
-    )
+    val buyTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("20"),
+        price = BigDecimal("100"),
+        transactionDate = date.minusDays(15),
+        platform = Platform.TRADING212,
+      )
 
-    val sellTransaction = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.SELL,
-      quantity = BigDecimal("8"),
-      price = BigDecimal("120"),
-      transactionDate = date.minusDays(5),
-      platform = Platform.TRADING212
-    )
+    val sellTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.SELL,
+        quantity = BigDecimal("8"),
+        price = BigDecimal("120"),
+        transactionDate = date.minusDays(5),
+        platform = Platform.TRADING212,
+      )
 
     whenever(portfolioTransactionService.getAllTransactions())
       .thenReturn(listOf(buyTransaction, sellTransaction))
@@ -588,33 +606,36 @@ class PortfolioSummaryServiceTest {
   fun `calculateSummaryForDate should handle fallback for some instruments but not others`() {
     val date = LocalDate.of(2024, 7, 15)
 
-    val instrument2 = Instrument(
-      symbol = "IWDA:LON:USD",
-      name = "iShares Core MSCI World",
-      category = "ETF",
-      baseCurrency = "USD",
-      currentPrice = BigDecimal("75.50")
-    ).apply {
-      id = 2L
-    }
+    val instrument2 =
+      Instrument(
+        symbol = "IWDA:LON:USD",
+        name = "iShares Core MSCI World",
+        category = "ETF",
+        baseCurrency = "USD",
+        currentPrice = BigDecimal("75.50"),
+      ).apply {
+        id = 2L
+      }
 
-    val transaction1 = PortfolioTransaction(
-      instrument = instrument,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("10"),
-      price = BigDecimal("100"),
-      transactionDate = date.minusDays(10),
-      platform = Platform.TRADING212
-    )
+    val transaction1 =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = date.minusDays(10),
+        platform = Platform.TRADING212,
+      )
 
-    val transaction2 = PortfolioTransaction(
-      instrument = instrument2,
-      transactionType = TransactionType.BUY,
-      quantity = BigDecimal("15"),
-      price = BigDecimal("70"),
-      transactionDate = date.minusDays(8),
-      platform = Platform.TRADING212
-    )
+    val transaction2 =
+      PortfolioTransaction(
+        instrument = instrument2,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("15"),
+        price = BigDecimal("70"),
+        transactionDate = date.minusDays(8),
+        platform = Platform.TRADING212,
+      )
 
     whenever(portfolioTransactionService.getAllTransactions())
       .thenReturn(listOf(transaction1, transaction2))
@@ -644,48 +665,51 @@ class PortfolioSummaryServiceTest {
 
   companion object {
     @JvmStatic
-    fun earningsPerDayCalculationParams(): Stream<Arguments> = Stream.of(
-      Arguments.of(
-        BigDecimal("100.46"),
-        0.00455647,
-        BigDecimal.ZERO,
-        BigDecimal("100.4600000365")
-          .multiply(BigDecimal("0.00455647"))
-          .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
-      ),
-      Arguments.of(
-        BigDecimal("1000.00"),
-        0.05,
-        BigDecimal.ZERO,
-        BigDecimal("1000.00")
-          .multiply(BigDecimal("0.05"))
-          .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
-      ),
-      Arguments.of(
-        BigDecimal("500.00"),
-        0.0,
-        BigDecimal.ZERO,
-        BigDecimal.ZERO
+    fun earningsPerDayCalculationParams(): Stream<Arguments> =
+      Stream.of(
+        Arguments.of(
+          BigDecimal("100.46"),
+          0.00455647,
+          BigDecimal.ZERO,
+          BigDecimal("100.4600000365")
+            .multiply(BigDecimal("0.00455647"))
+            .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP),
+        ),
+        Arguments.of(
+          BigDecimal("1000.00"),
+          0.05,
+          BigDecimal.ZERO,
+          BigDecimal("1000.00")
+            .multiply(BigDecimal("0.05"))
+            .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP),
+        ),
+        Arguments.of(
+          BigDecimal("500.00"),
+          0.0,
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
+        ),
       )
-    )
 
     @JvmStatic
     fun multipleInstrumentsParams(): Stream<Arguments> {
-      val instrument1 = Instrument(
-        symbol = "QDVE:GER:EUR",
-        name = "iShares S&P 500 Information Technology Sector",
-        category = "ETF",
-        baseCurrency = "EUR",
-        currentPrice = BigDecimal("27.58")
-      ).apply { id = 1L }
+      val instrument1 =
+        Instrument(
+          symbol = "QDVE:GER:EUR",
+          name = "iShares S&P 500 Information Technology Sector",
+          category = "ETF",
+          baseCurrency = "EUR",
+          currentPrice = BigDecimal("27.58"),
+        ).apply { id = 1L }
 
-      val instrument2 = Instrument(
-        symbol = "VUSA:LON:GBP",
-        name = "Vanguard S&P 500 UCITS ETF",
-        category = "ETF",
-        baseCurrency = "GBP",
-        currentPrice = BigDecimal("85.76")
-      ).apply { id = 2L }
+      val instrument2 =
+        Instrument(
+          symbol = "VUSA:LON:GBP",
+          name = "Vanguard S&P 500 UCITS ETF",
+          category = "ETF",
+          baseCurrency = "GBP",
+          currentPrice = BigDecimal("85.76"),
+        ).apply { id = 2L }
 
       return Stream.of(
         Arguments.of(
@@ -695,7 +719,7 @@ class PortfolioSummaryServiceTest {
           BigDecimal("85"),
           BigDecimal("1525.00"),
           BigDecimal("125.00"),
-          0.06
+          0.06,
         ),
         Arguments.of(
           instrument1,
@@ -704,7 +728,7 @@ class PortfolioSummaryServiceTest {
           BigDecimal("90"),
           BigDecimal("1400.00"),
           BigDecimal("0.00"),
-          0.03
+          0.03,
         ),
         Arguments.of(
           instrument1,
@@ -713,8 +737,8 @@ class PortfolioSummaryServiceTest {
           BigDecimal("75"),
           BigDecimal("1575.00"),
           BigDecimal("175.00"),
-          0.08
-        )
+          0.08,
+        ),
       )
     }
   }

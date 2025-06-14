@@ -20,7 +20,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 
 @ExtendWith(MockitoExtension::class)
 class GlobalExceptionHandlerTest {
-
   @InjectMocks
   private lateinit var globalExceptionHandler: GlobalExceptionHandler
 
@@ -69,10 +68,11 @@ class GlobalExceptionHandlerTest {
 
   @Test
   fun `should return bad request response with validation errors when handling MethodArgumentNotValidException`() {
-    val fieldErrors = listOf(
-      FieldError("objectName", "field1", "Field 1 is invalid"),
-      FieldError("objectName", "field2", "Field 2 is invalid")
-    )
+    val fieldErrors =
+      listOf(
+        FieldError("objectName", "field1", "Field 1 is invalid"),
+        FieldError("objectName", "field2", "Field 2 is invalid"),
+      )
     whenever(bindingResult.fieldErrors).thenReturn(fieldErrors)
 
     val methodArgumentNotValidException = MethodArgumentNotValidException(methodParameter, bindingResult)
@@ -87,10 +87,11 @@ class GlobalExceptionHandlerTest {
 
   @Test
   fun `should extract errors and return bad request response when handling validation exceptions`() {
-    val fieldErrors = listOf(
-      FieldError("objectName", "field1", "Field 1 is invalid"),
-      FieldError("objectName", "field2", "Field 2 is invalid")
-    )
+    val fieldErrors =
+      listOf(
+        FieldError("objectName", "field1", "Field 1 is invalid"),
+        FieldError("objectName", "field2", "Field 2 is invalid"),
+      )
     whenever(bindingResult.fieldErrors).thenReturn(fieldErrors)
 
     val methodArgumentNotValidException = MethodArgumentNotValidException(methodParameter, bindingResult)

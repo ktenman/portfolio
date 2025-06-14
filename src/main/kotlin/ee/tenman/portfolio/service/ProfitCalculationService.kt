@@ -19,11 +19,12 @@ class ProfitCalculationService {
   @Retryable(
     value = [ObjectOptimisticLockingFailureException::class],
     maxAttempts = 5,
-    backoff = Backoff(delay = 100)
+    backoff = Backoff(delay = 100),
   )
   fun calculateProfits(transactions: List<PortfolioTransaction>) {
     try {
-      transactions.groupBy { it.platform to it.instrument.id }
+      transactions
+        .groupBy { it.platform to it.instrument.id }
         .forEach { (_, platformTransactions) ->
           calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate })
         }
@@ -44,20 +45,22 @@ class ProfitCalculationService {
           transaction.realizedProfit = BigDecimal.ZERO
 
           val currentPrice = transaction.instrument.currentPrice ?: BigDecimal.ZERO
-          transaction.unrealizedProfit = calculateProfit(
-            quantity = transaction.quantity,
-            buyPrice = buyPrice,
-            currentPrice = currentPrice
-          )
+          transaction.unrealizedProfit =
+            calculateProfit(
+              quantity = transaction.quantity,
+              buyPrice = buyPrice,
+              currentPrice = currentPrice,
+            )
         }
 
         TransactionType.SELL -> {
           transaction.averageCost = buyPrice
-          transaction.realizedProfit = calculateProfit(
-            quantity = transaction.quantity,
-            buyPrice = buyPrice,
-            currentPrice = transaction.price
-          )
+          transaction.realizedProfit =
+            calculateProfit(
+              quantity = transaction.quantity,
+              buyPrice = buyPrice,
+              currentPrice = transaction.price,
+            )
           transaction.unrealizedProfit = BigDecimal.ZERO
         }
       }
@@ -67,8 +70,6 @@ class ProfitCalculationService {
   private fun calculateProfit(
     quantity: BigDecimal,
     buyPrice: BigDecimal,
-    currentPrice: BigDecimal
-  ): BigDecimal {
-    return quantity.multiply(currentPrice.subtract(buyPrice))
-  }
+    currentPrice: BigDecimal,
+  ): BigDecimal = quantity.multiply(currentPrice.subtract(buyPrice))
 }

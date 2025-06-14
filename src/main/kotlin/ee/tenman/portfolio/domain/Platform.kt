@@ -8,5 +8,5 @@ enum class Platform {
   LIGHTYEAR,
   SWEDBANK,
   TRADING212,
-  UNKNOWN
+  UNKNOWN,
 }

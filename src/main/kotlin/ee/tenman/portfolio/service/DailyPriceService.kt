@@ -9,27 +9,33 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @Service
-class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) {
-
+class DailyPriceService(
+  private val dailyPriceRepository: DailyPriceRepository,
+) {
   @Transactional(readOnly = true)
-  fun getPrice(instrument: Instrument, date: LocalDate): BigDecimal {
-    val dailyPrice = dailyPriceRepository
-      .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
-        instrument,
-        date.minusYears(10),
-        date
-      )
-      ?: throw NoSuchElementException("No price found for ${instrument.symbol} on or before $date")
+  fun getPrice(
+    instrument: Instrument,
+    date: LocalDate,
+  ): BigDecimal {
+    val dailyPrice =
+      dailyPriceRepository
+        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+          instrument,
+          date.minusYears(10),
+          date,
+        )
+        ?: throw NoSuchElementException("No price found for ${instrument.symbol} on or before $date")
     return dailyPrice.closePrice
   }
 
   @Transactional
   fun saveDailyPrice(dailyPrice: DailyPrice): DailyPrice {
-    val existingPrice = dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
-      dailyPrice.instrument,
-      dailyPrice.entryDate,
-      dailyPrice.providerName
-    )
+    val existingPrice =
+      dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
+        dailyPrice.instrument,
+        dailyPrice.entryDate,
+        dailyPrice.providerName,
+      )
 
     return if (existingPrice != null) {
       existingPrice.apply {
@@ -46,19 +52,19 @@ class DailyPriceService(private val dailyPriceRepository: DailyPriceRepository) 
   }
 
   @Transactional(readOnly = true)
-  fun findLastDailyPrice(instrument: Instrument, latestDate: LocalDate): DailyPrice? {
+  fun findLastDailyPrice(
+    instrument: Instrument,
+    latestDate: LocalDate,
+  ): DailyPrice? {
     val earliestDate = latestDate.minusYears(10)
 
     return dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
       instrument,
       earliestDate,
-      latestDate
+      latestDate,
     )
   }
 
   @Transactional(readOnly = true)
-  fun findAllByInstrument(instrument: Instrument): List<DailyPrice> {
-    return dailyPriceRepository.findAllByInstrument(instrument)
-  }
-
+  fun findAllByInstrument(instrument: Instrument): List<DailyPrice> = dailyPriceRepository.findAllByInstrument(instrument)
 }

@@ -11,16 +11,12 @@ import java.time.LocalDate
 class PortfolioDailySummary(
   @Column(name = "entry_date", nullable = false, unique = true)
   var entryDate: LocalDate,
-
   @Column(name = "total_value", nullable = false)
   var totalValue: BigDecimal,
-
   @Column(name = "xirr_annual_return", nullable = false)
   var xirrAnnualReturn: BigDecimal,
-
   @Column(name = "total_profit", nullable = false)
   var totalProfit: BigDecimal,
-
   @Column(name = "earnings_per_day", nullable = false)
-  var earningsPerDay: BigDecimal
+  var earningsPerDay: BigDecimal,
 ) : BaseEntity()

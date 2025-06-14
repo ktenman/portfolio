@@ -8,9 +8,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/enums")
 class EnumController(
-    private val enumService: EnumService
+  private val enumService: EnumService,
 ) {
-
-    @GetMapping
-    fun getAllEnums(): Map<String, List<String>> = enumService.getAllEnums()
+  @GetMapping
+  fun getAllEnums(): Map<String, List<String>> = enumService.getAllEnums()
 }

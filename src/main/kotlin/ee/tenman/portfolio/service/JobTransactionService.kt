@@ -12,7 +12,7 @@ import java.time.Instant
 
 @Service
 class JobTransactionService(
-  private val jobExecutionRepository: JobExecutionRepository
+  private val jobExecutionRepository: JobExecutionRepository,
 ) {
   @Transactional
   fun executeJobInTransaction(job: Job) {
@@ -25,17 +25,18 @@ class JobTransactionService(
     startTime: Instant,
     endTime: Instant,
     status: JobStatus,
-    message: String?
+    message: String?,
   ): JobExecution {
     val duration = Duration.between(startTime, endTime)
-    val jobExecution = JobExecution(
-      jobName = job.getName(),
-      startTime = startTime,
-      endTime = endTime,
-      durationInMillis = duration.toMillis(),
-      status = status,
-      message = message
-    )
+    val jobExecution =
+      JobExecution(
+        jobName = job.getName(),
+        startTime = startTime,
+        endTime = endTime,
+        durationInMillis = duration.toMillis(),
+        status = status,
+        message = message,
+      )
     return jobExecutionRepository.save(jobExecution)
   }
 }
