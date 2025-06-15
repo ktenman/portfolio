@@ -120,7 +120,7 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
   vertical-align: middle;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 666px) {
   .table {
     font-size: 2.8vw;
     display: block;
@@ -164,6 +164,16 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
 
   .table td.text-end {
     justify-content: flex-end;
+  }
+
+  .table .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 667px) {
+  .table .hide-on-mobile {
+    display: none !important;
   }
 }
 </style>

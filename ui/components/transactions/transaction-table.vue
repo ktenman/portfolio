@@ -39,7 +39,10 @@
         <base-icon name="pencil" :size="14" />
         <span class="d-none d-lg-inline ms-1">Edit</span>
       </button>
-      <button class="btn btn-sm btn-danger" @click="item.id && $emit('delete', item.id)">
+      <button
+        class="btn btn-sm btn-danger hide-on-mobile"
+        @click="item.id && $emit('delete', item.id)"
+      >
         <base-icon name="trash" :size="14" />
         <span class="d-none d-lg-inline ms-1">Delete</span>
       </button>
@@ -109,6 +112,12 @@ const enrichedTransactions = computed(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 667px) {
+  .hide-on-mobile {
+    display: none !important;
   }
 }
 </style>
