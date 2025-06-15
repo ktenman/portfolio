@@ -24,6 +24,6 @@ export const transactionColumns: ColumnDefinition[] = [
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'price', label: 'Price', formatter: formatCurrency },
   { key: 'amount', label: 'Amount' },
-  { key: 'profit', label: 'Profit/Loss' },
-  { key: 'averageCost', label: 'Average Cost', formatter: formatCurrency },
+  { key: 'profit', label: 'Profit' },
+  { key: 'averageCost', label: 'Average Cost', formatter: formatCurrency, class: 'hide-on-mobile' },
 ]

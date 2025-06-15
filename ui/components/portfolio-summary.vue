@@ -191,7 +191,7 @@ const handleRecalculate = async () => {
 </script>
 
 <style scoped>
-@media (max-width: 767px) {
+@media (max-width: 666px) {
   :deep(.table) {
     font-size: 12px;
   }
