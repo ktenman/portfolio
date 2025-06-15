@@ -8,7 +8,7 @@ import {
 
 export const instrumentColumns: ColumnDefinition[] = [
   { key: 'instrument', label: 'Instrument' },
-  { key: 'type', label: 'Type' },
+  { key: 'type', label: 'Type', class: 'hide-on-mobile' },
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
