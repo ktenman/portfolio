@@ -115,7 +115,7 @@ const enrichedTransactions = computed(() => {
   }
 }
 
-@media (max-width: 667px) {
+@media (max-width: 794px) {
   .hide-on-mobile {
     display: none !important;
   }
