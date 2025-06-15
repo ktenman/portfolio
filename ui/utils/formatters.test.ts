@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   formatCurrencyWithSymbol,
   formatCurrency,
+  formatCurrencyWithSign,
+  getCurrencySymbol,
   formatNumber,
   formatPercentageFromDecimal,
   formatProfitLoss,
@@ -65,6 +67,82 @@ describe('formatCurrency', () => {
     expect(formatCurrency(100)).toBe('100.00')
     expect(formatCurrency(100.1)).toBe('100.10')
     expect(formatCurrency(100.999)).toBe('101.00')
+  })
+})
+
+describe('formatCurrencyWithSign', () => {
+  it('should format with EUR symbol by default', () => {
+    expect(formatCurrencyWithSign(1234.56)).toBe('€1234.56')
+    expect(formatCurrencyWithSign(1234.56, undefined)).toBe('€1234.56')
+    expect(formatCurrencyWithSign(1234.56, '')).toBe('€1234.56')
+  })
+
+  it('should format with EUR symbol for EUR currency', () => {
+    expect(formatCurrencyWithSign(1234.56, 'EUR')).toBe('€1234.56')
+    expect(formatCurrencyWithSign(1234.56, 'eur')).toBe('€1234.56')
+  })
+
+  it('should format with USD symbol for USD currency', () => {
+    expect(formatCurrencyWithSign(1234.56, 'USD')).toBe('$1234.56')
+    expect(formatCurrencyWithSign(1234.56, 'usd')).toBe('$1234.56')
+  })
+
+  it('should format with GBP symbol for GBP currency', () => {
+    expect(formatCurrencyWithSign(1234.56, 'GBP')).toBe('£1234.56')
+    expect(formatCurrencyWithSign(1234.56, 'gbp')).toBe('£1234.56')
+  })
+
+  it('should format negative numbers as absolute values', () => {
+    expect(formatCurrencyWithSign(-1234.56, 'EUR')).toBe('€1234.56')
+    expect(formatCurrencyWithSign(-1234.56, 'USD')).toBe('$1234.56')
+    expect(formatCurrencyWithSign(-1234.56, 'GBP')).toBe('£1234.56')
+  })
+
+  it('should handle null and undefined values', () => {
+    expect(formatCurrencyWithSign(null)).toBe('0.00')
+    expect(formatCurrencyWithSign(undefined)).toBe('0.00')
+    expect(formatCurrencyWithSign(null, 'USD')).toBe('0.00')
+  })
+
+  it('should handle zero value', () => {
+    expect(formatCurrencyWithSign(0, 'EUR')).toBe('€0.00')
+    expect(formatCurrencyWithSign(0, 'USD')).toBe('$0.00')
+  })
+
+  it('should always show 2 decimal places', () => {
+    expect(formatCurrencyWithSign(100, 'EUR')).toBe('€100.00')
+    expect(formatCurrencyWithSign(100.1, 'USD')).toBe('$100.10')
+    expect(formatCurrencyWithSign(100.999, 'GBP')).toBe('£101.00')
+  })
+
+  it('should default to EUR for unknown currencies', () => {
+    expect(formatCurrencyWithSign(100, 'JPY')).toBe('€100.00')
+    expect(formatCurrencyWithSign(100, 'UNKNOWN')).toBe('€100.00')
+  })
+})
+
+describe('getCurrencySymbol', () => {
+  it('should return EUR symbol for EUR', () => {
+    expect(getCurrencySymbol('EUR')).toBe('€')
+    expect(getCurrencySymbol('eur')).toBe('€')
+  })
+
+  it('should return USD symbol for USD', () => {
+    expect(getCurrencySymbol('USD')).toBe('$')
+    expect(getCurrencySymbol('usd')).toBe('$')
+  })
+
+  it('should return GBP symbol for GBP', () => {
+    expect(getCurrencySymbol('GBP')).toBe('£')
+    expect(getCurrencySymbol('gbp')).toBe('£')
+  })
+
+  it('should return EUR symbol by default', () => {
+    expect(getCurrencySymbol()).toBe('€')
+    expect(getCurrencySymbol(undefined)).toBe('€')
+    expect(getCurrencySymbol('')).toBe('€')
+    expect(getCurrencySymbol('UNKNOWN')).toBe('€')
+    expect(getCurrencySymbol('JPY')).toBe('€')
   })
 })
 

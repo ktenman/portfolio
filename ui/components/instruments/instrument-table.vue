@@ -18,9 +18,27 @@
       {{ item.type || item.category || '-' }}
     </template>
 
+    <template #cell-currentPrice="{ item }">
+      {{ formatCurrencyWithSign(item.currentPrice, item.baseCurrency) }}
+    </template>
+
+    <template #cell-totalInvestment="{ item }">
+      {{ formatCurrencyWithSign(item.totalInvestment, item.baseCurrency) }}
+    </template>
+
+    <template #cell-currentValue="{ item }">
+      {{ formatCurrencyWithSign(item.currentValue, item.baseCurrency) }}
+    </template>
+
     <template #cell-profit="{ item }">
       <span :class="getProfitClass(item.profit)">
-        {{ formatProfitLoss(item.profit) }}
+        {{
+          item.profit !== null && item.profit !== undefined
+            ? (item.profit >= 0 ? '+' : '') +
+              getCurrencySymbol(item.baseCurrency) +
+              Math.abs(item.profit).toFixed(2)
+            : getCurrencySymbol(item.baseCurrency) + '0.00'
+        }}
       </span>
     </template>
 
@@ -38,7 +56,7 @@ import DataTable from '../shared/data-table.vue'
 import BaseIcon from '../shared/base-icon.vue'
 import { Instrument } from '../../models/instrument'
 import { instrumentColumns } from '../../config'
-import { formatProfitLoss, getProfitClass } from '../../utils/formatters'
+import { getProfitClass, formatCurrencyWithSign, getCurrencySymbol } from '../../utils/formatters'
 import { styleClasses as styles, cn } from '../../utils/style-classes'
 
 interface Props {

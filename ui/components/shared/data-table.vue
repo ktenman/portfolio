@@ -171,7 +171,7 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
   }
 }
 
-@media (max-width: 667px) {
+@media (max-width: 794px) {
   .table .hide-on-mobile {
     display: none !important;
   }
