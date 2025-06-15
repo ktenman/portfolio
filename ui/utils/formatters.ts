@@ -14,6 +14,31 @@ export const formatCurrency = (value: number | undefined | null): string => {
   return Math.abs(value).toFixed(2)
 }
 
+export const formatCurrencyWithSign = (
+  value: number | undefined | null,
+  currency?: string
+): string => {
+  if (value === null || value === undefined) return '0.00'
+
+  const absValue = Math.abs(value).toFixed(2)
+  const currencySymbol = getCurrencySymbol(currency)
+
+  return `${currencySymbol}${absValue}`
+}
+
+export const getCurrencySymbol = (currency?: string): string => {
+  switch (currency?.toUpperCase()) {
+    case 'EUR':
+      return '€'
+    case 'USD':
+      return '$'
+    case 'GBP':
+      return '£'
+    default:
+      return '€'
+  }
+}
+
 export const formatNumber = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return ''
   if (value === 0) return '0'

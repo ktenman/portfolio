@@ -9,13 +9,12 @@ import {
 export const instrumentColumns: ColumnDefinition[] = [
   { key: 'instrument', label: 'Instrument' },
   { key: 'type', label: 'Type' },
-  { key: 'baseCurrency', label: 'Currency' },
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
   { key: 'totalInvestment', label: 'Invested', formatter: formatCurrency, class: 'hide-on-mobile' },
   { key: 'currentValue', label: 'Value', formatter: formatCurrency },
-  { key: 'profit', label: 'Profit/Loss', formatter: formatCurrency },
+  { key: 'profit', label: 'Profit', formatter: formatCurrency },
 ]
 
 export const transactionColumns: ColumnDefinition[] = [
