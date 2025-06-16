@@ -24,21 +24,21 @@
   "dependencies": {
     "@tanstack/vue-query": "^5.80.7",
     "@vueuse/core": "^13.3.0",
-    "axios": "^1.9.0",
+    "axios": "^1.10.0",
     "bootstrap": "^5.3.5",
-    "chart.js": "^4.4.9",
+    "chart.js": "^4.5.0",
     "vue": "^3.5.16",
     "vue-chartjs": "^5.3.2",
     "vue-router": "^4.5.1",
     "vue-toastification": "^2.0.0-rc.5",
-    "zod": "^3.25.64"
+    "zod": "^3.25.65"
   },
   "devDependencies": {
     "@testing-library/vue": "^8.1.0",
     "@types/bootstrap": "^5.2.10",
-    "@types/node": "^24.0.1",
-    "@typescript-eslint/eslint-plugin": "^8.34.0",
-    "@typescript-eslint/parser": "^8.33.1",
+    "@types/node": "^24.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
     "@vitejs/plugin-vue": "^5.2.3",
     "@vitest/coverage-v8": "^3.2.3",
     "@vitest/ui": "^3.2.3",
