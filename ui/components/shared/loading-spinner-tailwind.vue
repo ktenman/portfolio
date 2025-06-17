@@ -1,12 +1,5 @@
 <template>
-  <div v-if="!useTailwind" class="d-flex justify-content-center align-items-center" :class="containerClass">
-    <div class="spinner-border text-primary" :class="spinnerClass" role="status">
-      <span class="visually-hidden">{{ message }}</span>
-    </div>
-    <span v-if="showMessage" class="ms-2">{{ message }}</span>
-  </div>
-  
-  <div v-else class="flex justify-center items-center" :class="containerClass">
+  <div class="flex justify-center items-center" :class="containerClass">
     <div
       class="animate-spin rounded-full border-b-2"
       :class="spinnerClasses"
@@ -21,7 +14,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FEATURE_FLAGS } from '../../config/features'
 
 interface LoadingSpinnerProps {
   message?: string
@@ -35,17 +27,6 @@ const props = withDefaults(defineProps<LoadingSpinnerProps>(), {
   showMessage: false,
   size: 'md',
   containerClass: '',
-})
-
-const useTailwind = FEATURE_FLAGS.tailwindSpinners
-
-const spinnerClass = computed(() => {
-  const sizeMap = {
-    sm: 'spinner-border-sm',
-    md: '',
-    lg: '',
-  }
-  return sizeMap[props.size]
 })
 
 const spinnerClasses = computed(() => {

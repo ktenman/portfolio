@@ -1,0 +1,32 @@
+/* Tailwind CSS overrides for better specificity */
+
+/* Override Bootstrap button hover states */
+button.bg-blue-600:hover,
+button.bg-blue-700:hover,
+button.bg-red-600:hover,
+button.bg-red-700:hover,
+button.bg-gray-500:hover,
+button.bg-gray-600:hover,
+button.bg-green-600:hover,
+button.bg-green-700:hover,
+button.bg-yellow-500:hover,
+button.bg-yellow-600:hover,
+button.bg-cyan-600:hover,
+button.bg-cyan-700:hover {
+  color: #ffffff !important;
+}
+
+/* Outline button hover states */
+button.hover\:bg-blue-600:hover,
+button.hover\:bg-red-600:hover,
+button.hover\:bg-gray-500:hover,
+button.hover\:bg-green-600:hover,
+button.hover\:bg-yellow-500:hover,
+button.hover\:bg-cyan-600:hover {
+  color: #ffffff !important;
+}
+
+/* Ensure light button keeps dark text */
+button.bg-gray-100:hover {
+  color: #111827 !important;
+}

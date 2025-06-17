@@ -1,0 +1,90 @@
+/* Tailwind button styles with proper hover states */
+
+/* Primary button */
+.tw-btn-primary {
+  @apply px-4 py-2 bg-blue-600 text-white rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  color: #ffffff;
+}
+
+/* Secondary button */
+.tw-btn-secondary {
+  @apply px-4 py-2 bg-gray-500 text-white rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-secondary:hover:not(:disabled) {
+  background-color: #4b5563;
+  color: #ffffff;
+}
+
+/* Danger button */
+.tw-btn-danger {
+  @apply px-4 py-2 bg-red-600 text-white rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+  color: #ffffff;
+}
+
+/* Outline primary button */
+.tw-btn-outline-primary {
+  @apply px-4 py-2 border-2 border-blue-600 text-blue-600 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-outline-primary:hover:not(:disabled) {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Success button */
+.tw-btn-success {
+  @apply px-4 py-2 bg-green-600 text-white rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-success:hover:not(:disabled) {
+  background-color: #16a34a;
+  color: #ffffff;
+}
+
+/* Warning button */
+.tw-btn-warning {
+  @apply px-4 py-2 bg-yellow-500 text-white rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-warning:hover:not(:disabled) {
+  background-color: #ca8a04;
+  color: #ffffff;
+}
+
+/* Outline secondary button */
+.tw-btn-outline-secondary {
+  @apply px-4 py-2 border-2 border-gray-500 text-gray-600 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-outline-secondary:hover:not(:disabled) {
+  background-color: #6b7280;
+  color: #ffffff;
+}
+
+/* Outline danger button */
+.tw-btn-outline-danger {
+  @apply px-4 py-2 border-2 border-red-600 text-red-600 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.tw-btn-outline-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+/* Size variants */
+.tw-btn-sm {
+  @apply px-3 py-1 text-sm;
+}
+
+.tw-btn-lg {
+  @apply px-6 py-3 text-lg;
+}

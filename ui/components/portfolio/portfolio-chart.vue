@@ -1,5 +1,8 @@
 <template>
-  <div class="mb-3 chart-container" v-if="chartData">
+  <div 
+    v-if="chartData"
+    :class="useTailwind ? 'mb-3 lg:h-[25rem]' : 'mb-3 chart-container'"
+  >
     <Line :data="chartData" :options="chartOptions" />
   </div>
 </template>
@@ -9,6 +12,7 @@ import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
 import type { ChartOptions } from 'chart.js'
 import { formatDate } from '../../utils/formatters'
+import { FEATURE_FLAGS } from '../../config/features'
 import '../../plugins/chart'
 
 interface Props {
@@ -22,6 +26,8 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const useTailwind = FEATURE_FLAGS.tailwindCharts
 
 const chartData = computed(() => {
   if (!props.data) return null

@@ -35,12 +35,12 @@
     </template>
 
     <template #actions="{ item }">
-      <button class="btn btn-sm btn-secondary me-2" @click="$emit('edit', item)">
+      <button class="btn btn-sm btn-secondary me-2 d-inline-flex align-items-center" @click="$emit('edit', item)">
         <base-icon name="pencil" :size="14" />
         <span class="d-none d-lg-inline ms-1">Edit</span>
       </button>
       <button
-        class="btn btn-sm btn-danger hide-on-mobile"
+        class="btn btn-sm btn-danger hide-on-mobile d-inline-flex align-items-center"
         @click="item.id && $emit('delete', item.id)"
       >
         <base-icon name="trash" :size="14" />

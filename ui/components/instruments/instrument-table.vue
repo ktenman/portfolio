@@ -43,7 +43,7 @@
     </template>
 
     <template #actions="{ item }">
-      <button :class="cn(styles.buttons.secondary, styles.buttons.sm)" @click="$emit('edit', item)">
+      <button :class="cn(styles.buttons.secondary, styles.buttons.sm, 'd-inline-flex', 'align-items-center')" @click="$emit('edit', item)">
         <base-icon name="pencil" :size="14" />
         <span :class="cn('d-none', 'd-lg-inline', styles.spacing.ms(1))">Edit</span>
       </button>
