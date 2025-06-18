@@ -44,13 +44,13 @@ describe('formatCurrencyWithSymbol', () => {
 
 describe('formatCurrency', () => {
   it('should format positive numbers without symbol', () => {
-    expect(formatCurrency(1234.56)).toBe('1234.56')
+    expect(formatCurrency(1234.56)).toBe('1,234.56')
     expect(formatCurrency(0.99)).toBe('0.99')
-    expect(formatCurrency(1000000)).toBe('1000000.00')
+    expect(formatCurrency(1000000)).toBe('1,000,000.00')
   })
 
   it('should format negative numbers as absolute values', () => {
-    expect(formatCurrency(-1234.56)).toBe('1234.56')
+    expect(formatCurrency(-1234.56)).toBe('1,234.56')
     expect(formatCurrency(-0.99)).toBe('0.99')
   })
 
