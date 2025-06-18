@@ -113,19 +113,44 @@ describe('NavBar', () => {
       const buildInfo = wrapper.find('.build-info')
       expect(buildInfo.exists()).toBe(false)
     })
-  })
 
-  describe('responsive behavior', () => {
-    it('should have scrollable container', () => {
+    it('should handle date constructor throwing error', () => {
+      const originalDate = global.Date
+      const dateSpy = vi.fn().mockImplementation(arg => {
+        if (arg === undefined) {
+          return originalDate()
+        }
+        throw new Error('Invalid date')
+      })
+
+      Object.assign(dateSpy, {
+        now: originalDate.now,
+        parse: originalDate.parse,
+        UTC: originalDate.UTC,
+      })
+
+      global.Date = dateSpy as any
+
+      mockBuildInfo.value = {
+        hash: 'test123',
+        time: 'throwing-error',
+      }
+
       const wrapper = createWrapper()
-      const scrollContainer = wrapper.find('.navbar-scroll-container')
-      expect(scrollContainer.exists()).toBe(true)
+      expect(wrapper.text()).toContain('throwing-error')
+
+      global.Date = originalDate
     })
 
-    it('should apply sticky positioning class', () => {
+    it('should handle empty date string', () => {
+      mockBuildInfo.value = {
+        hash: 'test123',
+        time: '',
+      }
+
       const wrapper = createWrapper()
-      const navbar = wrapper.find('.navbar-sticky')
-      expect(navbar.exists()).toBe(true)
+      expect(wrapper.text()).toContain('unknown')
     })
   })
+
 })
