@@ -11,7 +11,10 @@ export const formatCurrencyWithSymbol = (value: number | undefined | null): stri
 
 export const formatCurrency = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '0.00'
-  return Math.abs(value).toFixed(2)
+  return Math.abs(value).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 export const formatCurrencyWithSign = (
