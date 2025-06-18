@@ -15,7 +15,7 @@ rm -f \
   combined_files.txt
 
 # 3) Regenerate our combined summary (code.py will only pick .kt/.py/.ts/etc.)
-python3 code.py
+python3 scripts/code.py
 
 # 4) (Re)install frontend deps for a clean state
 npm install
