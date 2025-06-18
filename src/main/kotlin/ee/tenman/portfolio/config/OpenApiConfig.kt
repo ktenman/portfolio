@@ -10,20 +10,24 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class OpenApiConfig {
-    
-    @Bean
-    fun customOpenAPI(): OpenAPI {
-        return OpenAPI()
-            .info(Info()
+  @Bean
+    fun customOpenAPI(): OpenAPI =
+      OpenAPI()
+            .info(
+              Info()
                 .title("Portfolio Management API")
                 .version("1.0")
-                .description("API for managing investment portfolios with automated price tracking"))
-            .addSecurityItem(SecurityRequirement().addList("bearerAuth"))
-            .components(Components()
-                .addSecuritySchemes("bearerAuth", SecurityScheme()
+                .description("API for managing investment portfolios with automated price tracking"),
+                ).addSecurityItem(SecurityRequirement().addList("bearerAuth"))
+            .components(
+              Components()
+                .addSecuritySchemes(
+                  "bearerAuth",
+                  SecurityScheme()
                     .name("bearerAuth")
                     .type(SecurityScheme.Type.HTTP)
                     .scheme("bearer")
-                    .bearerFormat("JWT")))
-    }
+                    .bearerFormat("JWT"),
+                    ),
+                )
 }

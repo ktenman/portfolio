@@ -40,7 +40,7 @@ class InstrumentController(
   @ApiResponses(
     ApiResponse(responseCode = "200", description = "Instrument created"),
     ApiResponse(responseCode = "400", description = "Invalid input", content = [Content()]),
-    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()])
+    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
   )
   fun saveInstrument(
     @Valid @RequestBody instrumentDto: InstrumentDto,
@@ -54,7 +54,7 @@ class InstrumentController(
   @Operation(summary = "Get all instruments")
   @ApiResponses(
     ApiResponse(responseCode = "200", description = "List of instruments"),
-    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()])
+    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
   )
   fun getAllInstruments(): List<InstrumentDto> =
     instrumentService
@@ -69,7 +69,7 @@ class InstrumentController(
     ApiResponse(responseCode = "200", description = "Instrument updated"),
     ApiResponse(responseCode = "400", description = "Invalid input", content = [Content()]),
     ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
-    ApiResponse(responseCode = "404", description = "Instrument not found", content = [Content()])
+    ApiResponse(responseCode = "404", description = "Instrument not found", content = [Content()]),
   )
   fun updateInstrument(
     @PathVariable id: Long,
@@ -95,7 +95,7 @@ class InstrumentController(
   @ApiResponses(
     ApiResponse(responseCode = "204", description = "Instrument deleted"),
     ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
-    ApiResponse(responseCode = "404", description = "Instrument not found", content = [Content()])
+    ApiResponse(responseCode = "404", description = "Instrument not found", content = [Content()]),
   )
   fun deleteInstrument(
     @PathVariable id: Long,
