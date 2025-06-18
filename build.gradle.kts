@@ -23,17 +23,25 @@ repositories {
   maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-extra["springCloudVersion"] = "2025.0.0"
-
+val springCloudVersion = "2025.0.0"
+val springDocVersion = "2.8.9"
+val ktlintVersion = "1.5.0"
 val selenideVersion = "7.9.3"
 val springRetryVersion = "2.0.12"
 val guavaVersion = "33.4.8-jre"
 val commonsMathVersion = "3.6.1"
-val mokitoKotlinVersion = "5.4.0"
-val coroutinesVersion = "1.10.2"
 val jsoupVersion = "1.20.1"
+val telegramBotsVersion = "6.9.7.1"
+val googleCloudVisionVersion = "3.62.0"
+val coroutinesVersion = "1.10.2"
+val mockitoKotlinVersion = "5.4.0"
+val kotestVersion = "5.9.1"
+val archUnitVersion = "1.4.1"
+
+extra["springCloudVersion"] = springCloudVersion
 
 dependencies {
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springDocVersion")
   implementation("org.jsoup:jsoup:$jsoupVersion")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -51,10 +59,10 @@ dependencies {
   implementation("com.google.guava:guava:$guavaVersion")
   implementation("org.apache.commons:commons-math3:$commonsMathVersion")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-  implementation("org.telegram:telegrambots:6.9.7.1")
-  implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
+  implementation("org.telegram:telegrambots:$telegramBotsVersion")
+  implementation("org.telegram:telegrambots-spring-boot-starter:$telegramBotsVersion")
 
-  implementation("com.google.cloud:google-cloud-vision:3.62.0") {
+  implementation("com.google.cloud:google-cloud-vision:$googleCloudVisionVersion") {
     exclude(group = "commons-logging", module = "commons-logging")
   }
 
@@ -68,11 +76,11 @@ dependencies {
   testImplementation("org.testcontainers:junit-jupiter")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:$mokitoKotlinVersion")
-  testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
-  testImplementation("io.kotest:kotest-property:5.9.1")
-  testImplementation("io.kotest:kotest-assertions-core:5.9.1")
-  testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
+  testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+  testImplementation("io.kotest:kotest-property:$kotestVersion")
+  testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+  testImplementation("com.tngtech.archunit:archunit-junit5:$archUnitVersion")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
@@ -144,7 +152,7 @@ tasks.withType<JacocoReport> {
 }
 
 configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-  version.set("1.5.0")
+  version.set(ktlintVersion)
   android.set(false)
   ignoreFailures.set(false)
   reporters {
