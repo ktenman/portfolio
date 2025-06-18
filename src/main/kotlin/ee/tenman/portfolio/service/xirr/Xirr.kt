@@ -1,8 +1,5 @@
 package ee.tenman.portfolio.service.xirr
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction
 import org.apache.commons.math3.analysis.solvers.BisectionSolver
@@ -26,45 +23,37 @@ class Xirr(
 
   fun getTransactions(): List<Transaction> = transactions
 
-  fun calculate(): Double =
-    runBlocking {
-      log.info("Starting XIRR calculation with ${transactions.size} transactions")
-      log.info("Start date: $startDate, End date: $endDate")
+  fun calculate(): Double {
+    log.info("Starting XIRR calculation with ${transactions.size} transactions")
+    log.info("Start date: $startDate, End date: $endDate")
 
-      require(transactions.size >= 2) { "Must have at least two transactions" }
-      require(transactions.any { it.amount > 0 } && transactions.any { it.amount < 0 }) {
-        "Need both positive and negative transactions"
-      }
-
-      if (startDate == endDate) {
-        log.info("All transactions are on the same day. Calculating simple return.")
-        return@runBlocking calculateSimpleReturn()
-      }
-      val guess = estimateInitialRate()
-      log.info("Initial guess for XIRR: $guess")
-
-      tryConcurrentCalculation(guess)
+    require(transactions.size >= 2) { "Must have at least two transactions" }
+    require(transactions.any { it.amount > 0 } && transactions.any { it.amount < 0 }) {
+      "Need both positive and negative transactions"
     }
 
-  private suspend fun tryConcurrentCalculation(guess: Double): Double =
-    coroutineScope {
-      val newtonRaphsonDeferred = async { runCatching { calculateXirrWithNewtonRaphson(guess) } }
-      val bisectionDeferred = async { runCatching { calculateXirrWithBisection() } }
+    if (startDate == endDate) {
+      log.info("All transactions are on the same day. Calculating simple return.")
+      return calculateSimpleReturn()
+    }
+    val guess = estimateInitialRate()
+    log.info("Initial guess for XIRR: $guess")
 
-      val newtonRaphsonResult = newtonRaphsonDeferred.await()
-      if (newtonRaphsonResult.isSuccess) {
-        log.info("Newton-Raphson method succeeded.")
-        return@coroutineScope newtonRaphsonResult.getOrThrow()
+    return trySequentialCalculation(guess)
+  }
+
+  private fun trySequentialCalculation(guess: Double): Double =
+    try {
+      log.info("Attempting XIRR calculation with Newton-Raphson solver.")
+      calculateXirrWithNewtonRaphson(guess)
+    } catch (e: Exception) {
+      log.warn("Newton-Raphson method failed: ${e.message}. Falling back to Bisection solver.")
+      try {
+        calculateXirrWithBisection()
+      } catch (bisectionError: Exception) {
+        log.error("Both Newton-Raphson and Bisection methods failed.")
+        throw Exception("XIRR calculation failed using both methods", bisectionError)
       }
-
-      val bisectionResult = bisectionDeferred.await()
-      if (bisectionResult.isSuccess) {
-        log.info("Bisection method succeeded.")
-        return@coroutineScope bisectionResult.getOrThrow()
-      }
-
-      log.error("Both Newton-Raphson and Bisection methods failed.")
-      throw Exception("XIRR calculation failed using both Newton-Raphson and Bisection methods")
     }
 
   private fun calculateXirrWithNewtonRaphson(guess: Double): Double {

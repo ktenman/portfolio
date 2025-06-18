@@ -56,6 +56,9 @@ user-friendly interface for viewing and managing portfolio transactions, instrum
 - Selenide v7.9.3 for E2E tests
 - Testcontainers for integration tests
 - WireMock for API mocking
+- Vitest v3.2.4 for Vue component testing
+- Vue Test Utils for component mounting
+- Comprehensive test coverage focusing on business logic
 
 ### CI/CD & Containerization
 
@@ -234,23 +237,39 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 
 ### Testing
 
-**Unit and Integration Tests:**
+**Backend Unit and Integration Tests:**
 
 ```bash
 ./gradlew test
 ```
 
-**Run Specific Test:**
+**Run Specific Backend Test:**
 
 ```bash
 ./gradlew test --tests "PortfolioSummaryServiceTest"
 ```
 
-**Test Coverage Report:**
+**Backend Test Coverage Report:**
 
 ```bash
 ./gradlew jacocoTestReport
 # Report available at: build/reports/jacoco/test/html/index.html
+```
+
+**Frontend Tests:**
+
+```bash
+npm test                    # Run all UI tests in watch mode
+npm test -- --run           # Run tests once (no watch mode)
+npm test -- --coverage      # Run tests with coverage report
+```
+
+**Unified Test Runner:**
+
+```bash
+./test-runner.sh            # Run all tests (unit + E2E)
+./test-runner.sh --unit     # Run only unit tests
+./test-runner.sh --e2e      # Run only E2E tests
 ```
 
 ### Continuous Integration
