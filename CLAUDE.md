@@ -59,6 +59,11 @@ npm run lint-format        # Type check, lint and format together (RECOMMENDED)
 npm run lint               # Run ESLint only
 npm run format             # Format with Prettier only
 npm run format:check       # Check formatting only
+
+# Testing
+npm test                   # Run all UI tests
+npm test -- --run          # Run tests once (no watch mode)
+npm test -- --coverage     # Run tests with coverage report
 ```
 
 ### Docker Development
@@ -133,6 +138,8 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 2. **Integration Tests**: Use `@IntegrationTest` annotation which starts PostgreSQL and Redis containers
 3. **E2E Tests**: Browser-based tests with Selenide, include retry mechanism for flaky tests
 4. **API Testing**: WireMock for external API mocking
+5. **Frontend Tests**: Vue Test Utils with Vitest, comprehensive coverage of business logic
+6. **Business Logic Focus**: Tests prioritize business logic over framework functionality
 
 ### Configuration
 
@@ -189,6 +196,8 @@ A comprehensive test runner that combines unit tests, E2E tests, and environment
 - Scheduled jobs can be disabled with `scheduling.enabled=false`
 - E2E tests generate screenshots on failure (check build artifacts)
 - Use `./test-runner.sh --e2e` for reliable E2E testing
+- Frontend tests focus on business logic with comprehensive coverage
+- Test files excluded from coverage: `.eslintrc.cjs` and `app.vue`
 
 ### Code Style Guidelines
 
