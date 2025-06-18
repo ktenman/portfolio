@@ -43,7 +43,6 @@ describe('InstrumentModal', () => {
   }
 
   describe('component rendering', () => {
-
     it('should set correct modal id', () => {
       const wrapper = createWrapper({ modalId: 'customModal' })
 
@@ -140,5 +139,4 @@ describe('InstrumentModal', () => {
       expect(wrapper.emitted('save')?.[0]).toEqual([updatedData])
     })
   })
-
 })

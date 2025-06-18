@@ -29,13 +29,14 @@ vi.mock('../../composables/use-bootstrap-modal', () => ({
 const CrudLayoutStub = {
   name: 'CrudLayout',
   emits: ['add'],
-  setup(props: any, { emit, slots }: any) {
+  setup(_props: any, { emit, slots }: any) {
     const handleAdd = () => emit('add')
-    return () => h('div', [
-      h('button', { onClick: handleAdd, id: 'stub-add-button' }, 'Add'),
-      slots.content?.(),
-      slots.modals?.(),
-    ])
+    return () =>
+      h('div', [
+        h('button', { onClick: handleAdd, id: 'stub-add-button' }, 'Add'),
+        slots.content?.(),
+        slots.modals?.(),
+      ])
   },
 }
 
@@ -45,9 +46,14 @@ const InstrumentTableStub = {
   emits: ['edit'],
   setup(props: any, { emit }: any) {
     const handleEdit = (item: any) => emit('edit', item)
-    return () => h('div', { id: 'stub-table' }, [
-      h('button', { onClick: () => handleEdit(props.instruments?.[0]), id: 'stub-edit-button' }, 'Edit'),
-    ])
+    return () =>
+      h('div', { id: 'stub-table' }, [
+        h(
+          'button',
+          { onClick: () => handleEdit(props.instruments?.[0]), id: 'stub-edit-button' },
+          'Edit'
+        ),
+      ])
   },
 }
 
@@ -57,15 +63,24 @@ const InstrumentModalStub = {
   emits: ['save'],
   setup(props: any, { emit }: any) {
     const handleSave = (data: any) => emit('save', data)
-    return () => h('div', { 
-      id: 'stub-modal',
-      'data-instrument': JSON.stringify(props.instrument || {})
-    }, [
-      h('button', { 
-        onClick: () => handleSave({ symbol: 'TEST', name: 'Test' }), 
-        id: 'stub-save-button' 
-      }, 'Save'),
-    ])
+    return () =>
+      h(
+        'div',
+        {
+          id: 'stub-modal',
+          'data-instrument': JSON.stringify(props.instrument || {}),
+        },
+        [
+          h(
+            'button',
+            {
+              onClick: () => handleSave({ symbol: 'TEST', name: 'Test' }),
+              id: 'stub-save-button',
+            },
+            'Save'
+          ),
+        ]
+      )
   },
 }
 
@@ -159,7 +174,11 @@ describe('InstrumentsView', () => {
     it('should create instrument when selectedItem has no id', async () => {
       const { wrapper, queryClient } = createWrapper()
       const newInstrumentData = { symbol: 'GOOGL', name: 'Alphabet Inc.' }
-      const createdInstrument = { id: 3, ...newInstrumentData, providerName: ProviderName.ALPHA_VANTAGE }
+      const createdInstrument = {
+        id: 3,
+        ...newInstrumentData,
+        providerName: ProviderName.ALPHA_VANTAGE,
+      }
       vi.mocked(instrumentsService.create).mockResolvedValue(createdInstrument)
 
       await flushPromises()
@@ -240,11 +259,11 @@ describe('InstrumentsView', () => {
   describe('mutation state management', () => {
     it('should clear selectedItem after successful create', async () => {
       const { wrapper } = createWrapper()
-      vi.mocked(instrumentsService.create).mockResolvedValue({ 
-        id: 4, 
-        symbol: 'NEW', 
-        name: 'New', 
-        providerName: ProviderName.ALPHA_VANTAGE 
+      vi.mocked(instrumentsService.create).mockResolvedValue({
+        id: 4,
+        symbol: 'NEW',
+        name: 'New',
+        providerName: ProviderName.ALPHA_VANTAGE,
       })
 
       await flushPromises()

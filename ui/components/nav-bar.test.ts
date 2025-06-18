@@ -152,5 +152,4 @@ describe('NavBar', () => {
       expect(wrapper.text()).toContain('unknown')
     })
   })
-
 })
