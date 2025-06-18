@@ -1,24 +1,97 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
 import { instrumentsService } from '../../services/instruments-service'
-import { renderWithProviders } from '../../tests/test-utils'
 import type { Instrument } from '../../models/instrument'
 import { ProviderName } from '../../models/provider-name'
+import { h } from 'vue'
+
+const mockShow = vi.fn()
+const mockHide = vi.fn()
+const mockToastSuccess = vi.fn()
+const mockToastError = vi.fn()
 
 vi.mock('../../services/instruments-service')
 vi.mock('vue-toastification', () => ({
   useToast: () => ({
-    success: vi.fn(),
-    error: vi.fn(),
+    success: mockToastSuccess,
+    error: mockToastError,
   }),
 }))
 vi.mock('../../composables/use-bootstrap-modal', () => ({
   useBootstrapModal: () => ({
-    show: vi.fn(),
-    hide: vi.fn(),
+    show: mockShow,
+    hide: mockHide,
   }),
 }))
+
+const CrudLayoutStub = {
+  name: 'CrudLayout',
+  emits: ['add'],
+  setup(props: any, { emit, slots }: any) {
+    const handleAdd = () => emit('add')
+    return () => h('div', [
+      h('button', { onClick: handleAdd, id: 'stub-add-button' }, 'Add'),
+      slots.content?.(),
+      slots.modals?.(),
+    ])
+  },
+}
+
+const InstrumentTableStub = {
+  name: 'InstrumentTable',
+  props: ['instruments'],
+  emits: ['edit'],
+  setup(props: any, { emit }: any) {
+    const handleEdit = (item: any) => emit('edit', item)
+    return () => h('div', { id: 'stub-table' }, [
+      h('button', { onClick: () => handleEdit(props.instruments?.[0]), id: 'stub-edit-button' }, 'Edit'),
+    ])
+  },
+}
+
+const InstrumentModalStub = {
+  name: 'InstrumentModal',
+  props: ['instrument'],
+  emits: ['save'],
+  setup(props: any, { emit }: any) {
+    const handleSave = (data: any) => emit('save', data)
+    return () => h('div', { 
+      id: 'stub-modal',
+      'data-instrument': JSON.stringify(props.instrument || {})
+    }, [
+      h('button', { 
+        onClick: () => handleSave({ symbol: 'TEST', name: 'Test' }), 
+        id: 'stub-save-button' 
+      }, 'Save'),
+    ])
+  },
+}
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+
+  const wrapper = mount(InstrumentsView, {
+    global: {
+      plugins: [[VueQueryPlugin, { queryClient }]],
+      stubs: {
+        CrudLayout: CrudLayoutStub,
+        InstrumentTable: InstrumentTableStub,
+        InstrumentModal: InstrumentModalStub,
+      },
+    },
+  })
+
+  vi.spyOn(queryClient, 'invalidateQueries')
+
+  return { wrapper, queryClient }
+}
 
 describe('InstrumentsView', () => {
   const mockInstruments: Instrument[] = [
@@ -43,118 +116,150 @@ describe('InstrumentsView', () => {
     vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstruments)
   })
 
-  describe('data display', () => {
-    it('should display instruments in table', async () => {
-      const { getByText } = renderWithProviders(InstrumentsView)
+  describe('query operations', () => {
+    it('should fetch instruments on mount', async () => {
+      createWrapper()
       await flushPromises()
 
-      expect(getByText('AAPL')).toBeTruthy()
-      expect(getByText('Apple Inc.')).toBeTruthy()
-      expect(getByText('BTC')).toBeTruthy()
-      expect(getByText('Bitcoin')).toBeTruthy()
-    })
-
-    it('should show loading state while fetching', async () => {
-      vi.mocked(instrumentsService.getAll).mockImplementation(() => new Promise(() => {}))
-
-      const { container } = renderWithProviders(InstrumentsView)
-
-      const table = container.querySelector('table')
-      const loadingIndicator =
-        container.querySelector('.spinner-border') ||
-        container.querySelector('[data-testid="loading"]')
-      expect(table || loadingIndicator).toBeTruthy()
-    })
-
-    it('should display error message on fetch failure', async () => {
-      const errorMessage = 'Failed to fetch instruments'
-      vi.mocked(instrumentsService.getAll).mockRejectedValue(new Error(errorMessage))
-
-      const { findByText } = renderWithProviders(InstrumentsView)
-      await flushPromises()
-
-      const errorElement = await findByText((content, element) => {
-        return (
-          content.includes('Failed to fetch') ||
-          content.includes('Error') ||
-          element?.className?.includes('alert-danger') ||
-          false
-        )
-      })
-      expect(errorElement).toBeTruthy()
+      expect(instrumentsService.getAll).toHaveBeenCalled()
     })
   })
 
-  describe('user interactions', () => {
-    it('should have add button available', async () => {
-      const { container } = renderWithProviders(InstrumentsView)
+  describe('modal operations', () => {
+    it('should clear selectedItem and show modal when opening add modal', async () => {
+      const { wrapper } = createWrapper()
       await flushPromises()
 
-      const addButton = container.querySelector('#addNewInstrument') as HTMLElement
-      expect(addButton).toBeTruthy()
-      expect(addButton.textContent).toContain('Add New Instrument')
+      const addButton = wrapper.find('#stub-add-button')
+      await addButton.trigger('click')
+      await flushPromises()
+
+      const modal = wrapper.find('#stub-modal')
+      const instrumentData = JSON.parse(modal.attributes('data-instrument') || '{}')
+      expect(instrumentData).toEqual({})
+      expect(mockShow).toHaveBeenCalled()
     })
 
-    it('should render instrument table with data', async () => {
-      const { container } = renderWithProviders(InstrumentsView)
+    it('should set selectedItem and show modal when opening edit modal', async () => {
+      const { wrapper } = createWrapper()
       await flushPromises()
 
-      const table = container.querySelector('table')
-      expect(table).toBeTruthy()
+      const editButton = wrapper.find('#stub-edit-button')
+      await editButton.trigger('click')
+      await flushPromises()
 
-      const rows = container.querySelectorAll('tbody tr')
-      expect(rows.length).toBe(2)
+      const modal = wrapper.find('#stub-modal')
+      const instrumentData = JSON.parse(modal.attributes('data-instrument') || '{}')
+      expect(instrumentData).toMatchObject(mockInstruments[0])
+      expect(mockShow).toHaveBeenCalled()
     })
   })
 
-  describe('save operations', () => {
-    it('should have add button with correct text', async () => {
-      const { container } = renderWithProviders(InstrumentsView)
+  describe('create mutation', () => {
+    it('should create instrument when selectedItem has no id', async () => {
+      const { wrapper, queryClient } = createWrapper()
+      const newInstrumentData = { symbol: 'GOOGL', name: 'Alphabet Inc.' }
+      const createdInstrument = { id: 3, ...newInstrumentData, providerName: ProviderName.ALPHA_VANTAGE }
+      vi.mocked(instrumentsService.create).mockResolvedValue(createdInstrument)
+
       await flushPromises()
 
-      const addButton = container.querySelector('#addNewInstrument')
-      expect(addButton).toBeTruthy()
-      expect(addButton?.textContent).toContain('Add New Instrument')
+      await wrapper.find('#stub-add-button').trigger('click')
+      await flushPromises()
+
+      const saveButton = wrapper.find('#stub-save-button')
+      await saveButton.trigger('click')
+      await flushPromises()
+
+      expect(instrumentsService.create).toHaveBeenCalled()
+      expect(instrumentsService.update).not.toHaveBeenCalled()
+      expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
+      expect(mockToastSuccess).toHaveBeenCalledWith('Instrument created successfully')
+      expect(mockHide).toHaveBeenCalled()
     })
 
-    it('should show error message on save failure', async () => {
+    it('should handle create error and show error message', async () => {
+      const { wrapper } = createWrapper()
       const error = new Error('Network error')
       vi.mocked(instrumentsService.create).mockRejectedValue(error)
 
-      const { container } = renderWithProviders(InstrumentsView)
       await flushPromises()
 
-      const component = container.querySelector('[title="Instruments"]')?.parentElement
-      const saveEvent = new CustomEvent('save', {
-        detail: { symbol: 'FAIL', name: 'Should Fail' },
-      })
-      component?.dispatchEvent(saveEvent)
+      await wrapper.find('#stub-add-button').trigger('click')
+      await flushPromises()
+
+      await wrapper.find('#stub-save-button').trigger('click')
+      await flushPromises()
+
+      expect(mockToastError).toHaveBeenCalledWith(`Failed to save instrument: ${error.message}`)
+      expect(mockHide).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('update mutation', () => {
+    it('should update instrument when selectedItem has id', async () => {
+      const { wrapper, queryClient } = createWrapper()
+      const instrumentToEdit = mockInstruments[0]
+      const updateData = { symbol: 'TEST', name: 'Test' }
+      const updatedInstrument = { ...instrumentToEdit, ...updateData }
+      vi.mocked(instrumentsService.update).mockResolvedValue(updatedInstrument)
 
       await flushPromises()
+
+      await wrapper.find('#stub-edit-button').trigger('click')
+      await flushPromises()
+
+      await wrapper.find('#stub-save-button').trigger('click')
+      await flushPromises()
+
+      expect(instrumentsService.update).toHaveBeenCalledWith(instrumentToEdit.id, updateData)
+      expect(instrumentsService.create).not.toHaveBeenCalled()
+      expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
+      expect(mockToastSuccess).toHaveBeenCalledWith('Instrument updated successfully')
+      expect(mockHide).toHaveBeenCalled()
     })
 
-    it('should refresh data after successful update', async () => {
-      const updatedInstrument = { ...mockInstruments[0], name: 'Apple Corporation' }
-      vi.mocked(instrumentsService.update).mockResolvedValue(updatedInstrument)
-      vi.mocked(instrumentsService.getAll)
-        .mockResolvedValueOnce(mockInstruments)
-        .mockResolvedValueOnce([updatedInstrument, mockInstruments[1]])
+    it('should handle update error and keep modal open', async () => {
+      const { wrapper } = createWrapper()
+      const error = new Error('Validation failed')
+      vi.mocked(instrumentsService.update).mockRejectedValue(error)
 
-      const { getByText } = renderWithProviders(InstrumentsView)
       await flushPromises()
 
-      await vi.waitFor(
-        async () => {
-          await flushPromises()
-          try {
-            getByText('Apple Corporation')
-          } catch {
-            return false
-          }
-          return true
-        },
-        { timeout: 2000 }
-      )
+      await wrapper.find('#stub-edit-button').trigger('click')
+      await flushPromises()
+
+      await wrapper.find('#stub-save-button').trigger('click')
+      await flushPromises()
+
+      expect(mockToastError).toHaveBeenCalledWith(`Failed to save instrument: ${error.message}`)
+      expect(mockHide).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('mutation state management', () => {
+    it('should clear selectedItem after successful create', async () => {
+      const { wrapper } = createWrapper()
+      vi.mocked(instrumentsService.create).mockResolvedValue({ 
+        id: 4, 
+        symbol: 'NEW', 
+        name: 'New', 
+        providerName: ProviderName.ALPHA_VANTAGE 
+      })
+
+      await flushPromises()
+
+      await wrapper.find('#stub-add-button').trigger('click')
+      await flushPromises()
+
+      const modalBeforeSave = wrapper.find('#stub-modal')
+      expect(JSON.parse(modalBeforeSave.attributes('data-instrument') || '{}')).toEqual({})
+
+      await wrapper.find('#stub-save-button').trigger('click')
+      await flushPromises()
+
+      const modalAfterSave = wrapper.find('#stub-modal')
+      expect(JSON.parse(modalAfterSave.attributes('data-instrument') || '{}')).toEqual({})
     })
   })
 })
