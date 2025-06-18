@@ -82,6 +82,13 @@ logging:
 server:
   port: ${SERVER_PORT:8081}
 
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
 alphavantage:
   url: https://www.alphavantage.co
 
