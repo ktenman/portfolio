@@ -1,20 +1,20 @@
 # Container Security Scan Report
 
-Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+Last updated: 2025-06-19 19:58:59 UTC
 
 ## Scan Status
 
-| Image                | Status     | Last Scan              |
-| -------------------- | ---------- | ---------------------- |
-| portfolio-be         | ✅ Scanned | $(date -u +'%Y-%m-%d') |
-| portfolio-fe         | ✅ Scanned | $(date -u +'%Y-%m-%d') |
-| market-price-tracker | ✅ Scanned | $(date -u +'%Y-%m-%d') |
+| Image | Status | Last Scan |
+|-------|--------|-----------|
+| portfolio-be | ✅ Scanned | 2025-06-19 |
+| portfolio-fe | ✅ Scanned | 2025-06-19 |
+| market-price-tracker | ✅ Scanned | 2025-06-19 |
 
 ## Actions
 
-- View detailed results in the [Security tab](../../security/code-scanning)
-- Check [workflow runs](../../actions/workflows/trivy-scan.yml)
-- Download [SBOM artifacts](../../actions/workflows/trivy-scan.yml) from the latest run
+- View detailed results in the [Security tab](https://github.com/ktenman/portfolio/security/code-scanning)
+- Check [workflow runs](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml)
+- Download [SBOM artifacts](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml) from the latest run
 
 ## Automated Scanning
 
@@ -22,3 +22,4 @@ Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
 - **Schedule:** Daily at 2 AM UTC
 - **Scope:** All production Docker images
 - **Severity Levels:** CRITICAL, HIGH, MEDIUM
+
