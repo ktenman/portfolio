@@ -160,24 +160,27 @@ jobs:
         run: |
           mkdir -p .github/security-reports
           
-          cat > .github/security-reports/container-scan-report.md << 'EOF'
+          SCAN_DATE=$(date -u +'%Y-%m-%d')
+          SCAN_TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          
+          cat > .github/security-reports/container-scan-report.md << EOF
           # Container Security Scan Report
           
-          Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          Last updated: ${SCAN_TIMESTAMP}
           
           ## Scan Status
           
           | Image | Status | Last Scan |
           |-------|--------|-----------|
-          | portfolio-be | ✅ Scanned | $(date -u +'%Y-%m-%d') |
-          | portfolio-fe | ✅ Scanned | $(date -u +'%Y-%m-%d') |
-          | market-price-tracker | ✅ Scanned | $(date -u +'%Y-%m-%d') |
+          | portfolio-be | ✅ Scanned | ${SCAN_DATE} |
+          | portfolio-fe | ✅ Scanned | ${SCAN_DATE} |
+          | market-price-tracker | ✅ Scanned | ${SCAN_DATE} |
           
           ## Actions
           
-          - View detailed results in the [Security tab](../../security/code-scanning)
-          - Check [workflow runs](../../actions/workflows/trivy-scan.yml)
-          - Download [SBOM artifacts](../../actions/workflows/trivy-scan.yml) from the latest run
+          - View detailed results in the [Security tab](https://github.com/ktenman/portfolio/security/code-scanning)
+          - Check [workflow runs](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml)
+          - Download [SBOM artifacts](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml) from the latest run
           
           ## Automated Scanning
           
