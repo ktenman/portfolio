@@ -1,6 +1,7 @@
 # Portfolio Management System
 
 [![Build & Test](https://github.com/ktenman/portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml)
 
 ## Introduction
 
@@ -278,6 +279,39 @@ npm test -- --coverage      # Run tests with coverage report
 - Automated testing includes unit, integration, and E2E tests
 - Dependabot manages dependency updates
 - Docker images are built and pushed to Docker Hub on successful builds
+- Trivy security scanning runs automatically after Docker image builds
+- Daily vulnerability scans to catch newly discovered CVEs
+
+### Security Scanning
+
+The project uses **Trivy** for automated container vulnerability scanning:
+
+**Automatic Scanning:**
+- Triggers after successful CI builds when images are pushed to DockerHub
+- Daily scans at 2 AM UTC to catch new vulnerabilities
+- Scans all three Docker images: backend, frontend, and market tracker
+
+**Security Features:**
+- Vulnerability detection for OS packages and application dependencies
+- Secret scanning to detect hardcoded credentials
+- SBOM (Software Bill of Materials) generation
+- Integration with GitHub Security tab for vulnerability tracking
+- Automatic issue creation for critical vulnerabilities
+
+**Manual Scanning:**
+```bash
+# Scan a specific image locally
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image ktenman/portfolio-be:latest
+
+# Generate SBOM
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --format spdx-json --output sbom.json ktenman/portfolio-be:latest
+```
+
+**Configuration:**
+- `.trivy.yaml` - Trivy configuration for scan settings
+- `.trivyignore` - Ignore specific CVEs if needed
 
 ## Database Design
 

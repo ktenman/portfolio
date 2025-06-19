@@ -1,0 +1,12 @@
+# Trivy Ignore File
+# Use this file to ignore specific vulnerabilities that are false positives or accepted risks
+# Format: CVE-YYYY-NNNN
+
+# Example: Ignore specific CVEs that don't affect your use case
+# CVE-2021-12345
+
+# Ignore vulnerabilities in test dependencies
+# These are not exposed in production containers
+
+# Ignore low-severity npm audit issues in frontend
+# that are only in dev dependencies
