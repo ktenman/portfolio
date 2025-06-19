@@ -1,7 +1,7 @@
 # Portfolio Management System
 
 [![Build & Test](https://github.com/ktenman/portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/ci.yml)
-[![Security Scan](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml)
+[![Security Scan](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml/badge.svg?branch=main)](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml)
 
 ## Introduction
 
@@ -287,11 +287,13 @@ npm test -- --coverage      # Run tests with coverage report
 The project uses **Trivy** for automated container vulnerability scanning:
 
 **Automatic Scanning:**
+
 - Triggers after successful CI builds when images are pushed to DockerHub
 - Daily scans at 2 AM UTC to catch new vulnerabilities
 - Scans all three Docker images: backend, frontend, and market tracker
 
 **Security Features:**
+
 - Vulnerability detection for OS packages and application dependencies
 - Secret scanning to detect hardcoded credentials
 - SBOM (Software Bill of Materials) generation
@@ -299,6 +301,7 @@ The project uses **Trivy** for automated container vulnerability scanning:
 - Automatic issue creation for critical vulnerabilities
 
 **Manual Scanning:**
+
 ```bash
 # Scan a specific image locally
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
@@ -310,6 +313,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 ```
 
 **Configuration:**
+
 - `.trivy.yaml` - Trivy configuration for scan settings
 - `.trivyignore` - Ignore specific CVEs if needed
 
