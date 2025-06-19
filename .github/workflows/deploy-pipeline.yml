@@ -1,5 +1,9 @@
 name: Deploy Pipeline
 
+permissions:
+  contents: read
+  deployments: write
+
 on:
   workflow_call:
     secrets:
@@ -28,9 +32,6 @@ on:
         required: true
         type: boolean
         default: true
-
-permissions:
-  contents: read
 
 jobs:
   deploy:
