@@ -1,7 +1,7 @@
 name: Trivy Container Scan
 
 permissions:
-  contents: read
+  contents: write
   security-events: write
   actions: read
 
@@ -160,6 +160,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate security report
         run: |

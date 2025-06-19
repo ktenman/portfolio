@@ -4,11 +4,11 @@ Last updated: 2025-06-19 19:58:59 UTC
 
 ## Scan Status
 
-| Image                | Status     | Last Scan  |
-| -------------------- | ---------- | ---------- |
-| portfolio-be         | ✅ Scanned | 2025-06-19 |
-| portfolio-fe         | ✅ Scanned | 2025-06-19 |
-| market-price-tracker | ✅ Scanned | 2025-06-19 |
+| Image                | Status     | Last Scan                   |
+| -------------------- | ---------- | --------------------------- |
+| portfolio-be         | ✅ Scanned | 2025-06-19 19:58:59 UTC |
+| portfolio-fe         | ✅ Scanned | 2025-06-19 19:58:59 UTC |
+| market-price-tracker | ✅ Scanned | 2025-06-19 19:58:59 UTC |
 
 ## Actions
 
