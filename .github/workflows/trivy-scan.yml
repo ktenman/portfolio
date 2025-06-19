@@ -203,10 +203,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Pull latest changes to avoid conflicts
-          git pull origin main --rebase
-          
           if [[ -n $(git status -s) ]]; then
+            # Stage the changes first
+            git add .github/security-reports/
+            
+            # Stash any changes, pull latest, then apply stash
+            git stash
+            git pull origin main --rebase
+            git stash pop || true
+            
+            # Commit and push
             git add .github/security-reports/
             git commit -m "chore: update container security scan report [skip ci]"
             git push
