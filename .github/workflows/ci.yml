@@ -1,5 +1,11 @@
 name: Build, Test, and Deploy
 
+permissions:
+  contents: read
+  packages: write
+  actions: read
+  pull-requests: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -10,10 +16,6 @@ on:
         default: true
   push:
   pull_request:
-
-permissions:
-  contents: read
-  pull-requests: read
 
 jobs:
   lint-and-format:
