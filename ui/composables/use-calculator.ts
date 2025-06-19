@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useLocalStorage, watchDebounced } from '@vueuse/core'
 import { utilityService } from '../services/utility-service'
@@ -46,6 +46,7 @@ export function useCalculator() {
     const currentPortfolioWorth = calculationResult.value?.total || form.value.initialWorth
     const avgReturn = calculationResult.value?.average || form.value.annualReturnRate
 
+    // Convert annual percentages to monthly rates for compound interest calculations
     const monthlyGrowthRate = form.value.yearlyGrowthRate / 100 / 12
     const monthlyReturnRate = avgReturn / 100 / 12
 
@@ -59,6 +60,8 @@ export function useCalculator() {
       const yearStartWorth = totalWorth
       let currentMonthlyInvestment = form.value.monthlyInvestment
 
+      // NOTE: Monthly compound interest calculation
+      // Each month: add investment first, then apply growth
       for (let month = 1; month <= 12; month++) {
         totalWorth += currentMonthlyInvestment
         totalWorth *= 1 + monthlyReturnRate
@@ -68,6 +71,8 @@ export function useCalculator() {
       tempPortfolioData.push(totalWorth)
 
       const yearGrowth = totalWorth - yearStartWorth
+      // Convert annual return rate (percentage) to monthly earnings
+      // Formula: (totalWorth * annualRate%) / (12 months * 100)
       const earningsPerMonth = (totalWorth * avgReturn) / 1200
 
       tempYearSummary.push({
@@ -92,9 +97,11 @@ export function useCalculator() {
 
   watch(calculationResult, () => {
     if (calculationResult.value) {
+      // Auto-populate form with actual portfolio data if using defaults
       if (form.value.initialWorth === 0) {
         form.value.initialWorth = calculationResult.value.total
       }
+      // Replace default 7% return with actual portfolio average
       if (form.value.annualReturnRate === 7) {
         form.value.annualReturnRate = calculationResult.value.average
       }

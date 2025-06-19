@@ -5,10 +5,6 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.InstrumentService
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.media.Content
-import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -37,11 +33,6 @@ class InstrumentController(
   @PostMapping
   @Loggable
   @Operation(summary = "Create a new instrument")
-  @ApiResponses(
-    ApiResponse(responseCode = "200", description = "Instrument created"),
-    ApiResponse(responseCode = "400", description = "Invalid input", content = [Content()]),
-    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
-  )
   fun saveInstrument(
     @Valid @RequestBody instrumentDto: InstrumentDto,
   ): InstrumentDto {
@@ -51,11 +42,6 @@ class InstrumentController(
 
   @GetMapping
   @Loggable
-  @Operation(summary = "Get all instruments")
-  @ApiResponses(
-    ApiResponse(responseCode = "200", description = "List of instruments"),
-    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
-  )
   fun getAllInstruments(): List<InstrumentDto> =
     instrumentService
       .getAllInstruments()
@@ -65,12 +51,6 @@ class InstrumentController(
   @PutMapping("/{id}")
   @Loggable
   @Operation(summary = "Update an existing instrument")
-  @ApiResponses(
-    ApiResponse(responseCode = "200", description = "Instrument updated"),
-    ApiResponse(responseCode = "400", description = "Invalid input", content = [Content()]),
-    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
-    ApiResponse(responseCode = "404", description = "Instrument not found", content = [Content()]),
-  )
   fun updateInstrument(
     @PathVariable id: Long,
     @Valid @RequestBody instrumentDto: InstrumentDto,
@@ -91,12 +71,6 @@ class InstrumentController(
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  @Operation(summary = "Delete an instrument")
-  @ApiResponses(
-    ApiResponse(responseCode = "204", description = "Instrument deleted"),
-    ApiResponse(responseCode = "401", description = "Unauthorized", content = [Content()]),
-    ApiResponse(responseCode = "404", description = "Instrument not found", content = [Content()]),
-  )
   fun deleteInstrument(
     @PathVariable id: Long,
   ) = instrumentService.deleteInstrument(id)
