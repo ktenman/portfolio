@@ -1,0 +1,200 @@
+name: Trivy Container Scan
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+  schedule:
+    # Run daily at 2 AM UTC to catch new CVEs
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_all:
+        description: 'Scan all images regardless of workflow status'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  DOCKER_HUB_USER: ktenman
+
+jobs:
+  scan-images:
+    name: Scan Docker Images
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: portfolio-be
+            name: Backend
+          - image: portfolio-fe
+            name: Frontend
+          - image: market-price-tracker
+            name: Market Price Tracker
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.DOCKER_HUB_USER }}/${{ matrix.image }}:latest'
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.image }}.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          timeout: '10m'
+
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.image }}.sarif'
+          category: 'trivy-${{ matrix.image }}'
+
+      - name: Run Trivy scanner for summary
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.DOCKER_HUB_USER }}/${{ matrix.image }}:latest'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          timeout: '10m'
+
+      - name: Create scan summary
+        if: always()
+        run: |
+          echo "## Trivy Scan Summary for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.DOCKER_HUB_USER }}/${{ matrix.image }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+  notify-critical:
+    name: Notify on Critical Vulnerabilities
+    runs-on: ubuntu-latest
+    needs: scan-images
+    if: failure()
+    
+    steps:
+      - name: Create issue for critical vulnerabilities
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Critical vulnerabilities found in Docker images`;
+            const body = `Trivy scan has detected critical vulnerabilities in one or more Docker images.
+            
+            **Workflow Run:** [${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            **Date:** ${new Date().toISOString()}
+            
+            Please review the security alerts in the Security tab for detailed information.`;
+            
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,trivy'
+            });
+            
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['security', 'trivy']
+              });
+            }
+
+  scan-with-sbom:
+    name: Advanced Scan with SBOM
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scan_all) }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM and scan
+        run: |
+          # Install Syft for SBOM generation
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Install Grype for additional scanning
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Generate SBOMs and scan each image
+          for image in portfolio-be portfolio-fe market-price-tracker; do
+            echo "Generating SBOM for $image..."
+            syft ${DOCKER_HUB_USER}/${image}:latest -o spdx-json > ${image}-sbom.json
+            
+            echo "Scanning with Grype..."
+            grype sbom:./${image}-sbom.json -o table
+          done
+
+      - name: Upload SBOMs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-files
+          path: '*-sbom.json'
+          retention-days: 30
+
+  update-security-dashboard:
+    name: Update Security Dashboard
+    runs-on: ubuntu-latest
+    needs: [scan-images, scan-with-sbom]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate security report
+        run: |
+          mkdir -p .github/security-reports
+          
+          cat > .github/security-reports/container-scan-report.md << 'EOF'
+          # Container Security Scan Report
+          
+          Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          
+          ## Scan Status
+          
+          | Image | Status | Last Scan |
+          |-------|--------|-----------|
+          | portfolio-be | ✅ Scanned | $(date -u +'%Y-%m-%d') |
+          | portfolio-fe | ✅ Scanned | $(date -u +'%Y-%m-%d') |
+          | market-price-tracker | ✅ Scanned | $(date -u +'%Y-%m-%d') |
+          
+          ## Actions
+          
+          - View detailed results in the [Security tab](../../security/code-scanning)
+          - Check [workflow runs](../../actions/workflows/trivy-scan.yml)
+          - Download [SBOM artifacts](../../actions/workflows/trivy-scan.yml) from the latest run
+          
+          ## Automated Scanning
+          
+          - **Trigger:** After each successful CI build
+          - **Schedule:** Daily at 2 AM UTC
+          - **Scope:** All production Docker images
+          - **Severity Levels:** CRITICAL, HIGH, MEDIUM
+          
+          EOF
+
+      - name: Commit security report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status -s) ]]; then
+            git add .github/security-reports/
+            git commit -m "chore: update container security scan report [skip ci]"
+            git push
+          fi

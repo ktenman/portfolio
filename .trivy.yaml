@@ -1,0 +1,59 @@
+# Trivy Configuration File
+
+# Global settings
+timeout: 10m
+cache-dir: /tmp/trivy-cache
+
+# Vulnerability database settings
+db:
+  no-progress: false
+  skip-update: false
+
+# Scan settings
+scan:
+  security-checks:
+    - vuln
+    - secret
+    - config
+  scanners:
+    - os
+    - library
+  skip-files:
+    - "usr/lib/python*/test/**"
+    - "usr/lib/node_modules/**/test/**"
+
+# Severity settings
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+# Vulnerability settings
+vulnerability:
+  # Ignore unfixed vulnerabilities
+  ignore-unfixed: false
+  
+  # Types of vulnerabilities to detect
+  type:
+    - os
+    - library
+
+# Secret scanning settings
+secret:
+  # Enable secret scanning
+  enabled: true
+
+# License scanning settings  
+license:
+  enabled: false
+
+# Report settings
+format: table
+dependency-tree: true
+
+# Exit codes
+exit-code: 1
+exit-on-eol: 0
+
+# Ignore specific vulnerabilities by ID
+ignorefile: .trivyignore
