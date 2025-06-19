@@ -22,8 +22,17 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     'prettier/prettier': 'error',
-    'no-comments/disallowComments': ['error', {
-      allow: []
+    // Allow strategic comments for complex logic and business rules
+    'no-comments/disallowComments': ['warn', {
+      allow: [
+        '///', // TypeScript triple-slash directives
+        '// TODO:', // Future improvements
+        '// FIXME:', // Known issues
+        '// HACK:', // Temporary workarounds
+        '// NOTE:', // Important explanations
+        '// WARNING:', // Critical information
+        '// @', // JSDoc annotations
+      ]
     }],
   },
 }
