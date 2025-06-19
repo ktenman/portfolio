@@ -23,7 +23,7 @@ env:
 
 jobs:
   scan-images:
-    name: Scan Docker Images
+    name: Scan ${{ matrix.name }}
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
     
@@ -32,11 +32,11 @@ jobs:
       matrix:
         include:
           - image: portfolio-be
-            name: Backend
+            name: portfolio-be
           - image: portfolio-fe
-            name: Frontend
+            name: portfolio-fe
           - image: market-price-tracker
-            name: Market Price Tracker
+            name: market-price-tracker
     
     steps:
       - name: Checkout code
