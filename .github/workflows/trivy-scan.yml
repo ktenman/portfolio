@@ -22,7 +22,7 @@ env:
   DOCKER_HUB_USER: ktenman
 
 jobs:
-  scan-images:
+  scan-docker-images:
     name: Scan ${{ matrix.name }}
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
@@ -79,7 +79,7 @@ jobs:
   notify-critical:
     name: Notify on Critical Vulnerabilities
     runs-on: ubuntu-latest
-    needs: scan-images
+    needs: scan-docker-images
     if: failure()
     
     steps:
@@ -149,7 +149,7 @@ jobs:
   update-security-dashboard:
     name: Update Security Dashboard
     runs-on: ubuntu-latest
-    needs: [scan-images, scan-with-sbom]
+    needs: [scan-docker-images, scan-with-sbom]
     if: always()
     
     steps:
