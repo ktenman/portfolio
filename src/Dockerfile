@@ -24,16 +24,16 @@ RUN gradle clean build -x test --no-daemon \
     -Dorg.gradle.configureondemand=true
 
 # Stage 2: Runtime
-FROM openjdk:25-ea-21-jdk-slim-bookworm
+FROM eclipse-temurin:21.0.7_6-jre
 WORKDIR /app
 
 # Install Firefox and dependencies with optimizations
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
-        firefox-esr \
+        firefox \
         fonts-liberation \
-        libasound2 \
+        libasound2t64 \
         libdbus-glib-1-2 \
         libfreetype6 \
         libgtk-3-0 \
