@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM gradle:jdk21-alpine AS build
+FROM gradle:jdk21-ubi AS build
 WORKDIR /app
 
 # src/Dockerfile - Add these near the top
@@ -24,7 +24,7 @@ RUN gradle clean build -x test --no-daemon \
     -Dorg.gradle.configureondemand=true
 
 # Stage 2: Runtime
-FROM openjdk:21-jdk-slim
+openjdk:25-ea-21-jdk-slim-bookworm
 WORKDIR /app
 
 # Install Firefox and dependencies with optimizations
