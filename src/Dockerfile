@@ -24,7 +24,7 @@ RUN gradle clean build -x test --no-daemon \
     -Dorg.gradle.configureondemand=true
 
 # Stage 2: Runtime
-openjdk:25-ea-21-jdk-slim-bookworm
+FROM openjdk:25-ea-21-jdk-slim-bookworm
 WORKDIR /app
 
 # Install Firefox and dependencies with optimizations
