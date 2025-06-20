@@ -4,10 +4,10 @@ Last updated: 2025-06-20 03:17:52 UTC
 
 ## Scan Status
 
-| Image | Status | Last Scan |
-|-------|--------|-----------|
-| portfolio-be | ✅ Scanned | 2025-06-20 03:17:52 UTC |
-| portfolio-fe | ✅ Scanned | 2025-06-20 03:17:52 UTC |
+| Image                | Status     | Last Scan               |
+| -------------------- | ---------- | ----------------------- |
+| portfolio-be         | ✅ Scanned | 2025-06-20 03:17:52 UTC |
+| portfolio-fe         | ✅ Scanned | 2025-06-20 03:17:52 UTC |
 | market-price-tracker | ✅ Scanned | 2025-06-20 03:17:52 UTC |
 
 ## Actions
@@ -22,4 +22,3 @@ Last updated: 2025-06-20 03:17:52 UTC
 - **Schedule:** Daily at 2 AM UTC
 - **Scope:** All production Docker images
 - **Severity Levels:** CRITICAL, HIGH, MEDIUM
-
