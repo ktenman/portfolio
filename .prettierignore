@@ -1,0 +1,22 @@
+# Auto-generated files
+.github/security-reports/container-scan-report.md
+
+# Build outputs
+build/
+dist/
+coverage/
+*.html
+
+# Dependencies
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

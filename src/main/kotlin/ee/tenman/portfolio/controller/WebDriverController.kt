@@ -1,5 +1,6 @@
-package ee.tenman.portfolio.webdriver
+package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.webdriver.FirefoxDriverService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
