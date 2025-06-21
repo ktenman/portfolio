@@ -1,14 +1,14 @@
 # Container Security Scan Report
 
-Last updated: 2025-06-20 10:10:41 UTC
+Last updated: 2025-06-21 03:16:36 UTC
 
 ## Scan Status
 
-| Image                | Status     | Last Scan               |
-| -------------------- | ---------- | ----------------------- |
-| portfolio-be         | ✅ Scanned | 2025-06-20 10:10:41 UTC |
-| portfolio-fe         | ✅ Scanned | 2025-06-20 10:10:41 UTC |
-| market-price-tracker | ✅ Scanned | 2025-06-20 10:10:41 UTC |
+| Image | Status | Last Scan |
+|-------|--------|-----------|
+| portfolio-be | ✅ Scanned | 2025-06-21 03:16:36 UTC |
+| portfolio-fe | ✅ Scanned | 2025-06-21 03:16:36 UTC |
+| market-price-tracker | ✅ Scanned | 2025-06-21 03:16:36 UTC |
 
 ## Actions
 
@@ -22,3 +22,4 @@ Last updated: 2025-06-20 10:10:41 UTC
 - **Schedule:** Daily at 2 AM UTC
 - **Scope:** All production Docker images
 - **Severity Levels:** CRITICAL, HIGH, MEDIUM
+
