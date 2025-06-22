@@ -1,51 +1,73 @@
-FROM python:3.13-slim
+# Use Alpine Linux for minimal attack surface
+FROM python:3.13-alpine AS builder
 
-# Install necessary packages and security updates
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-    firefox-esr \
-    wget \
-    curl \
-    tzdata \
-    # Update vulnerable packages
-    zlib1g \
-    libxml2 \
-    libxml2-utils \
-    libjxl0.7 \
-    libaom3 \
-    libswresample4 \
-    libpam0g \
-    libpam-runtime \
-    libpam-modules \
-    libpam-modules-bin \
-    libtiff6 \
-    && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set the timezone to Europe/Tallinn
-RUN ln -fs /usr/share/zoneinfo/Europe/Tallinn /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
-
-# Install geckodriver for Firefox
-RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.35.0/geckodriver-v0.35.0-linux64.tar.gz" -O /tmp/geckodriver.tar.gz \
-    && tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin \
-    && rm /tmp/geckodriver.tar.gz
+# Install build dependencies
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    linux-headers \
+    g++ \
+    make
 
 # Install uv
 RUN pip install --no-cache-dir uv
 
-# Set working directory first
+# Set working directory
 WORKDIR /app
 
 # Copy only pyproject.toml first for better caching
 COPY pyproject.toml .
+
+# Install Python dependencies
 RUN uv pip install --system '.[dev]'
 
-# Copy application code
+# Copy application code and install
 COPY . .
 RUN uv pip install --system -e .
 
-# Set environment variable for headless browser
+# Runtime stage - minimal Alpine image
+FROM python:3.13-alpine
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    firefox \
+    curl \
+    tzdata \
+    # Required libraries for Firefox
+    gtk+3.0 \
+    dbus-x11 \
+    ttf-freefont \
+    # Security: Update all packages
+    && apk upgrade --no-cache \
+    # Create non-root user
+    && adduser -D -u 1000 appuser
+
+# Install geckodriver
+RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.35.0/geckodriver-v0.35.0-linux64.tar.gz" -O /tmp/geckodriver.tar.gz \
+    && tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin \
+    && rm /tmp/geckodriver.tar.gz \
+    && chmod +x /usr/local/bin/geckodriver
+
+# Copy Python installation and packages from builder
+COPY --from=builder /usr/local/lib/python3.13 /usr/local/lib/python3.13
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Set working directory
+WORKDIR /app
+
+# Copy only the application code
+COPY --from=builder --chown=appuser:appuser /app /app
+
+# Set timezone
+RUN cp /usr/share/zoneinfo/Europe/Tallinn /etc/localtime && \
+    echo "Europe/Tallinn" > /etc/timezone
+
+# Switch to non-root user
+USER appuser
+
+# Set environment variables
 ENV HEADLESS=True
+ENV PYTHONUNBUFFERED=1
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \

@@ -1,0 +1,27 @@
+# Ignore vulnerabilities that are false positives or have no fix available
+
+# These libxml2 vulnerabilities are in Firefox ESR dependencies
+# and are managed by Mozilla's security team
+CVE-2025-49796
+CVE-2025-49794
+CVE-2025-6021
+CVE-2025-32415
+CVE-2025-32414
+CVE-2025-27113
+CVE-2025-24928
+CVE-2024-56171
+CVE-2024-25062
+
+# zlib vulnerability in Firefox ESR - no fix available yet
+CVE-2023-45853
+
+# libjxl is a Firefox dependency
+CVE-2023-0645
+CVE-2024-11403
+CVE-2024-11498
+
+# aom is a Firefox video codec dependency
+CVE-2024-5171
+
+# These are in the base Python image
+CVE-2023-31484
