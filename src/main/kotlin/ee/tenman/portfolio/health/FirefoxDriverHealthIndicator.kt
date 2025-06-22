@@ -114,7 +114,7 @@ class FirefoxDriverHealthIndicator : HealthIndicator {
     private fun getGeckodriverInfo(): Map<String, Any> =
       try {
             val process =
-              ProcessBuilder("geckodriver", "--version")
+              ProcessBuilder("/usr/bin/geckodriver", "--version")
                 .redirectErrorStream(true)
                 .start()
 
