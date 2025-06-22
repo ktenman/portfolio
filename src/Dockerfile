@@ -23,36 +23,35 @@ RUN gradle clean build -x test --no-daemon \
     -Dorg.gradle.parallel=true \
     -Dorg.gradle.configureondemand=true
 
-# Stage 2: Runtime
-FROM eclipse-temurin:21.0.7_6-jre
+# Stage 2: Runtime - Use Alpine for reduced attack surface and newer packages
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Install Firefox and dependencies with optimizations and security updates
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
+# Install Firefox and dependencies with security updates
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
         curl \
         firefox \
-        fonts-liberation \
-        libasound2t64 \
-        libdbus-glib-1-2 \
-        libfreetype6 \
-        libgtk-3-0 \
-        libx11-xcb1 \
-        libxcb-dri3-0 \
-        libxcomposite1 \
-        libxcursor1 \
-        libxdamage1 \
-        libxfixes3 \
-        libxi6 \
-        libxrandr2 \
-        libxrender1 \
-        libxss1 \
-        libxt6 \
-        libxtst6 \
-        tar && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        ttf-liberation \
+        gtk+3.0 \
+        libx11 \
+        libxcb \
+        libxcomposite \
+        libxcursor \
+        libxdamage \
+        libxext \
+        libxfixes \
+        libxi \
+        libxrandr \
+        libxrender \
+        libxt \
+        libxtst \
+        dbus-x11 \
+        fontconfig \
+        mesa-gl \
+        mesa-dri-gallium && \
+    rm -rf /var/cache/apk/*
 
 # Install geckodriver with architecture detection
 RUN ARCH=$(uname -m); \
@@ -68,8 +67,8 @@ RUN ARCH=$(uname -m); \
     # Verify installation
     geckodriver --version
 
-# Create a non-root user
-RUN useradd -m -s /bin/bash appuser && \
+# Create a non-root user (Alpine uses adduser)
+RUN adduser -D -s /bin/sh appuser && \
     chown -R appuser:appuser /app
 
 # Set environment variables
