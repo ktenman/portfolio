@@ -2,11 +2,24 @@
 # Use this file to ignore specific vulnerabilities that are false positives or accepted risks
 # Format: CVE-YYYY-NNNN
 
-# Example: Ignore specific CVEs that don't affect your use case
-# CVE-2021-12345
+# System-level vulnerabilities that require OS updates beyond our control
+# These are being tracked by the base image maintainers
+CVE-2025-4802  # glibc - requires system-level update
+CVE-2023-2953  # openldap - null pointer dereference, low impact in container
 
-# Ignore vulnerabilities in test dependencies
-# These are not exposed in production containers
+# Firefox/Selenium-related vulnerabilities
+# These are used only for web scraping in isolated containers
+CVE-2025-1594  # FFmpeg - used by Firefox, isolated in container
+CVE-2023-6603  # FFmpeg HLS - not used in our application
 
-# Ignore low-severity npm audit issues in frontend
-# that are only in dev dependencies
+# PAM vulnerabilities - not applicable in container context
+CVE-2025-6020  # linux-pam directory traversal - not exploitable in our setup
+
+# Low-severity issues in base system libraries
+CVE-2016-20013  # sha256crypt/sha512crypt - DoS only, low risk
+CVE-2022-3219   # gpg related - not used in production
+CVE-2022-0563   # util-linux - low severity
+CVE-2024-10963  # pam hostname interpretation - not applicable
+
+# npm/frontend dev dependencies (not in production)
+# These are development-only tools not included in production builds

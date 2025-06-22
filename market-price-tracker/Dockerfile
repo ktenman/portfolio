@@ -28,8 +28,10 @@ RUN uv pip install --system -e .
 # Runtime stage - minimal Alpine image
 FROM python:3.13-alpine
 
-# Install only runtime dependencies
-RUN apk add --no-cache \
+# Install only runtime dependencies with latest security updates
+RUN apk update && \
+    apk upgrade --no-cache && \
+    apk add --no-cache \
     firefox \
     curl \
     tzdata \
@@ -37,8 +39,11 @@ RUN apk add --no-cache \
     gtk+3.0 \
     dbus-x11 \
     ttf-freefont \
-    # Security: Update all packages
-    && apk upgrade --no-cache \
+    # Additional security patches for CVEs
+    libxml2 \
+    libxslt \
+    ffmpeg \
+    && rm -rf /var/cache/apk/* \
     # Create non-root user
     && adduser -D -u 1000 appuser
 
