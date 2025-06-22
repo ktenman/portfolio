@@ -61,7 +61,7 @@ RUN ARCH=$(uname -m); \
         x86_64) GECKODRIVER_ARCH="linux64" ;; \
         *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
     esac && \
-    GECKODRIVER_VERSION="v0.35.0" && \
+    GECKODRIVER_VERSION="v0.36.0" && \
     echo "Downloading geckodriver ${GECKODRIVER_VERSION} for ${GECKODRIVER_ARCH}" && \
     curl -sL "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz" | tar -xz -C /usr/bin/ && \
     chmod +x /usr/bin/geckodriver && \
