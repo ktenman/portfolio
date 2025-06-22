@@ -27,8 +27,9 @@ RUN gradle clean build -x test --no-daemon \
 FROM eclipse-temurin:21.0.7_6-jre
 WORKDIR /app
 
-# Install Firefox and dependencies with optimizations
+# Install Firefox and dependencies with optimizations and security updates
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         curl \
         firefox \
