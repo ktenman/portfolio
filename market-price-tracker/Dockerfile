@@ -1,11 +1,25 @@
-FROM python:3.9-slim
+FROM python:3.13-slim
 
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
+# Install necessary packages and security updates
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     firefox-esr \
     wget \
     curl \
     tzdata \
+    # Update vulnerable packages
+    zlib1g \
+    libxml2 \
+    libxml2-utils \
+    libjxl0.7 \
+    libaom3 \
+    libswresample4 \
+    libpam0g \
+    libpam-runtime \
+    libpam-modules \
+    libpam-modules-bin \
+    libtiff6 \
+    && apt-get autoremove -y \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the timezone to Europe/Tallinn
@@ -17,7 +31,7 @@ RUN wget -q "https://github.com/mozilla/geckodriver/releases/download/v0.35.0/ge
     && rm /tmp/geckodriver.tar.gz
 
 # Install uv
-RUN pip install uv
+RUN pip install --no-cache-dir uv
 
 # Set working directory first
 WORKDIR /app
