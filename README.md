@@ -157,7 +157,6 @@ details and portfolio summaries.
    ```
 
    Required variables:
-
    - `POSTGRES_USER` and `POSTGRES_PASSWORD`
    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (for OAuth)
    - `VISION_BASE64_ENCODED_KEY` (for Google Cloud Vision)
