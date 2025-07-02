@@ -268,4 +268,88 @@ describe('useCalculator', () => {
     expect(calculator.portfolioData.value[2]).toBe(5000)
     expect(calculator.portfolioData.value[3]).toBe(5000)
   })
+
+  it('should use user-modified annual return rate instead of calculated average', async () => {
+    await setupCalculator()
+
+    calculator.form.value.annualReturnRate = 50
+    await nextTick()
+
+    mockData.value = {
+      xirrs: [],
+      median: 11.5,
+      average: 12.5,
+      total: 10000,
+    } as any
+
+    await nextTick()
+
+    expect(calculator.form.value.annualReturnRate).toBe(50)
+
+    const yearOne = calculator.yearSummary.value[0]
+    expect(yearOne.year).toBe(1)
+
+    const expectedMonthlyRate = 50 / 100 / 12
+    let expectedTotal = 10000
+
+    for (let i = 0; i < 12; i++) {
+      expectedTotal += 585
+      expectedTotal *= 1 + expectedMonthlyRate
+    }
+
+    expect(yearOne.totalWorth).toBeCloseTo(expectedTotal, 0)
+    expect(yearOne.earningsPerMonth).toBeCloseTo((yearOne.totalWorth * 50) / 1200, 2)
+  })
+
+  it('should not overwrite user-modified annual return rate when calculation result updates', async () => {
+    await setupCalculator()
+
+    calculator.form.value.annualReturnRate = 25
+
+    await nextTick()
+
+    mockData.value = {
+      xirrs: [],
+      median: 11.5,
+      average: 15.5,
+      total: 60000,
+    } as any
+
+    await nextTick()
+
+    expect(calculator.form.value.annualReturnRate).toBe(25)
+    expect(calculator.form.value.initialWorth).toBe(60000)
+  })
+
+  it('should reset user-modified flag when resetCalculator is called', async () => {
+    mockRefetch = vi.fn().mockResolvedValue({
+      data: {
+        xirrs: [],
+        median: 15,
+        average: 18,
+        total: 75000,
+      },
+    })
+
+    await setupCalculator()
+
+    calculator.form.value.annualReturnRate = 35
+
+    await nextTick()
+
+    await calculator.resetCalculator()
+
+    expect(calculator.form.value.annualReturnRate).toBe(18)
+
+    mockData.value = {
+      xirrs: [],
+      median: 20,
+      average: 22,
+      total: 80000,
+    } as any
+
+    await nextTick()
+
+    expect(calculator.form.value.annualReturnRate).toBe(18)
+  })
 })
