@@ -1,0 +1,12 @@
+# Commit Message Template
+#
+# Format: Start with uppercase imperative verb
+# NO PREFIXES (no feat:, fix:, chore:, docs:, etc.)
+#
+# Good: "Add user authentication"
+# Bad:  "feat: add user authentication"
+#
+# Subject line (50 chars max):
+
+
+# Optional body (wrap at 72 chars):
