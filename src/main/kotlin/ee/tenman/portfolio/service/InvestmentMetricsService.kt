@@ -43,6 +43,7 @@ class InvestmentMetricsService(
   fun calculateInstrumentMetrics(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
+    calculationDate: java.time.LocalDate = java.time.LocalDate.now(),
   ): InstrumentMetrics {
     if (transactions.isEmpty()) {
       return InstrumentMetrics.EMPTY
@@ -77,8 +78,8 @@ class InvestmentMetricsService(
     val profit = unifiedProfitCalculationService.calculateProfit(totalHoldings, totalAverageWeightedCost, currentPrice)
 
     // Calculate XIRR using the unified service
-    val xirrTransactions = unifiedProfitCalculationService.buildXirrTransactions(transactions, currentValue)
-    val xirr = unifiedProfitCalculationService.calculateAdjustedXirr(xirrTransactions, currentValue)
+    val xirrTransactions = unifiedProfitCalculationService.buildXirrTransactions(transactions, currentValue, calculationDate)
+    val xirr = unifiedProfitCalculationService.calculateAdjustedXirr(xirrTransactions, currentValue, calculationDate)
 
     return InstrumentMetrics(
       totalInvestment = totalInvestment,
