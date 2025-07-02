@@ -29,6 +29,7 @@ const getDefaultFormValues = (): CalculatorForm => ({
 
 export function useCalculator() {
   const form = useLocalStorage<CalculatorForm>('calculator-form', getDefaultFormValues())
+  const hasUserModifiedAnnualReturn = ref(false)
 
   const yearSummary = ref<YearSummary[]>([])
   const portfolioData = ref<number[]>([])
@@ -44,7 +45,9 @@ export function useCalculator() {
 
   const calculate = () => {
     const currentPortfolioWorth = calculationResult.value?.total || form.value.initialWorth
-    const avgReturn = calculationResult.value?.average || form.value.annualReturnRate
+    const avgReturn = hasUserModifiedAnnualReturn.value
+      ? form.value.annualReturnRate
+      : (calculationResult.value?.average ?? form.value.annualReturnRate)
 
     // Convert annual percentages to monthly rates for compound interest calculations
     const monthlyGrowthRate = form.value.yearlyGrowthRate / 100 / 12
@@ -95,14 +98,21 @@ export function useCalculator() {
     { debounce: 300, deep: true }
   )
 
+  watch(
+    () => form.value.annualReturnRate,
+    () => {
+      hasUserModifiedAnnualReturn.value = true
+    }
+  )
+
   watch(calculationResult, () => {
     if (calculationResult.value) {
       // Auto-populate form with actual portfolio data if using defaults
       if (form.value.initialWorth === 0) {
         form.value.initialWorth = calculationResult.value.total
       }
-      // Replace default 7% return with actual portfolio average
-      if (form.value.annualReturnRate === 7) {
+      // Replace default 7% return with actual portfolio average only if user hasn't modified it
+      if (form.value.annualReturnRate === 7 && !hasUserModifiedAnnualReturn.value) {
         form.value.annualReturnRate = calculationResult.value.average
       }
     }
@@ -117,6 +127,7 @@ export function useCalculator() {
       const result = await refetch()
       const freshData = result.data
 
+      hasUserModifiedAnnualReturn.value = false
       form.value = {
         initialWorth: freshData?.total || 0,
         monthlyInvestment: 585,
@@ -126,6 +137,7 @@ export function useCalculator() {
       }
     } catch (error) {
       console.error('Failed to fetch fresh data:', error)
+      hasUserModifiedAnnualReturn.value = false
       form.value = getDefaultFormValues()
     }
   }
