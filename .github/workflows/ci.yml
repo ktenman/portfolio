@@ -1,4 +1,4 @@
-name: Build, Test, and Deploy
+name: Build, Test, and Deploy (Optimized)
 
 permissions:
   contents: read
@@ -19,8 +19,8 @@ on:
   pull_request:
 
 jobs:
-  lint-and-format:
-    name: 🧹 Lint and Format
+  lint-backend:
+    name: 🧹 Lint Backend
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -32,12 +32,22 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4.4.1
+        with:
+          gradle-home-cache-cleanup: true
       - name: Run ktlint check
         run: ./gradlew ktlintCheck
+
+  lint-frontend:
+    name: 🧹 Lint Frontend
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
       - name: Use Node.js
         uses: actions/setup-node@v4.4.0
         with:
           node-version: 'lts/iron'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Run ESLint
@@ -51,7 +61,7 @@ jobs:
 
   test:
     name: 🧪 ${{ matrix.test-name }}
-    needs: lint-and-format
+    needs: [lint-backend, lint-frontend]
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
@@ -67,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
         with:
-          fetch-depth: 0
+          fetch-depth: 1  # Changed from 0 for faster checkout
       - name: Set up JDK 21
         if: matrix.test-type != 'frontend-unit'
         uses: actions/setup-java@v4.7.1
@@ -77,17 +87,25 @@ jobs:
       - name: Setup Gradle
         if: matrix.test-type != 'frontend-unit'
         uses: gradle/actions/setup-gradle@v4.4.1
+        with:
+          gradle-home-cache-cleanup: true
       - name: Use Node.js
         if: matrix.test-type == 'frontend-unit'
         uses: actions/setup-node@v4.4.0
         with:
           node-version: 'lts/iron'
+          cache: 'npm'
       - name: Install frontend dependencies
         if: matrix.test-type == 'frontend-unit'
         run: npm ci
       - name: Set up Docker Compose
         if: matrix.test-type == 'e2e'
         uses: ndeloof/install-compose-action@v0.0.1
+      - name: Cache Docker images
+        if: matrix.test-type == 'e2e'
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.local.yml', 'docker-compose.e2e.yml') }}
       - name: Start services with Docker Compose (for E2E tests)
         if: matrix.test-type == 'e2e'
         env:
@@ -102,14 +120,14 @@ jobs:
           docker-compose -f docker-compose.local.yml -f docker-compose.e2e.yml ps
       - name: Run backend unit tests
         if: matrix.test-type == 'backend-unit'
-        run: ./gradlew test --info -x bootJar
+        run: ./gradlew test --info -x bootJar --build-cache
       - name: Run E2E tests
         if: matrix.test-type == 'e2e'
         uses: Wandalen/wretry.action@v3.8.0
         with:
           command: |
             export E2E=true
-            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true
+            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
           attempt_limit: 3
           attempt_delay: 30000
       - name: Run frontend unit tests
@@ -191,13 +209,14 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-          #          platforms: linux/amd64,linux/arm64/v8
           platforms: linux/amd64
           push: true
           tags: ${{ matrix.image }}:latest
           build-args: |
             BUILD_HASH=${{ env.COMMIT_HASH }}
             BUILD_TIME=${{ env.BUILD_TIME }}
+          cache-from: type=gha,scope=${{ github.workflow }}-${{ matrix.name }}
+          cache-to: type=gha,scope=${{ github.workflow }}-${{ matrix.name }},mode=max
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
