@@ -165,7 +165,7 @@ jobs:
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
     needs: test
-    if: always() && (needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    if: always() && (needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -219,7 +219,7 @@ jobs:
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
     needs: build-push
-    if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true')) && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
     permissions:
       contents: read
       deployments: write
