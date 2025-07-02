@@ -1,4 +1,4 @@
-name: Build, Test, and Deploy (Optimized)
+name: Build, Test, and Deploy
 
 permissions:
   contents: read
@@ -215,8 +215,6 @@ jobs:
           build-args: |
             BUILD_HASH=${{ env.COMMIT_HASH }}
             BUILD_TIME=${{ env.BUILD_TIME }}
-          cache-from: type=gha,scope=ci-${{ matrix.name }}
-          cache-to: type=gha,scope=ci-${{ matrix.name }},mode=max
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
