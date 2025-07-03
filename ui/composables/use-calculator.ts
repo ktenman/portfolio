@@ -59,9 +59,9 @@ export function useCalculator() {
     let totalWorth = currentPortfolioWorth
     tempPortfolioData.push(totalWorth)
 
+    let currentMonthlyInvestment = form.value.monthlyInvestment
     for (let year = 1; year <= form.value.years; year++) {
       const yearStartWorth = totalWorth
-      let currentMonthlyInvestment = form.value.monthlyInvestment
 
       // NOTE: Monthly compound interest calculation
       // Each month: add investment first, then apply growth
