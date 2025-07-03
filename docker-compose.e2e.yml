@@ -12,12 +12,21 @@ services:
       VISION_BASE64_ENCODED_KEY: ${VISION_BASE64_ENCODED_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
 
+  frontend:
+    image: alpine
+    command: echo "Frontend disabled for E2E tests"
+    deploy:
+      replicas: 0
+
   app:
     image: nginx:alpine
+    container_name: portfolio-app-e2e
     ports:
       - '61234:80'
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - portfolio-network
 
   auth:
     container_name: auth
