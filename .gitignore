@@ -46,3 +46,7 @@ ui/coverage/
 
 ### Test Results ###
 test-results/
+
+### Environment Variables ###
+.env
+.env.local
