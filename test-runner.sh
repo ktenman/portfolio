@@ -473,10 +473,16 @@ run_e2e_tests() {
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         
         # Extract test statistics
-        local tests_run=$(grep -oE "[0-9]+ tests?" "$test_output" | grep -oE "[0-9]+" | tail -1 || echo "0")
-        local tests_passed=$(grep -oE "[0-9]+ passed" "$test_output" | grep -oE "[0-9]+" | tail -1 || echo "0")
-        local tests_failed=$(grep -oE "[0-9]+ failed" "$test_output" | grep -oE "[0-9]+" | tail -1 || echo "0")
-        local tests_skipped=$(grep -oE "[0-9]+ skipped" "$test_output" | grep -oE "[0-9]+" | tail -1 || echo "0")
+        local tests_run=$(grep -oE "[0-9]+ tests?" "$test_output" | grep -oE "[0-9]+" | tail -1)
+        local tests_passed=$(grep -oE "[0-9]+ passed" "$test_output" | grep -oE "[0-9]+" | tail -1)
+        local tests_failed=$(grep -oE "[0-9]+ failed" "$test_output" | grep -oE "[0-9]+" | tail -1)
+        local tests_skipped=$(grep -oE "[0-9]+ skipped" "$test_output" | grep -oE "[0-9]+" | tail -1)
+        
+        # Ensure variables have numeric values
+        tests_run=${tests_run:-0}
+        tests_passed=${tests_passed:-0}
+        tests_failed=${tests_failed:-0}
+        tests_skipped=${tests_skipped:-0}
         
         # Show individual test class results
         if grep -q "InstrumentManagementE2ETests" "$test_output"; then
