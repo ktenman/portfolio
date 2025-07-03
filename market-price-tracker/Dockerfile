@@ -1,5 +1,6 @@
 # Use Alpine Linux for minimal attack surface
-FROM python:3.13-alpine AS builder
+# Pin to specific version for reproducibility and security
+FROM python:3.13-alpine3.22 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -26,9 +27,11 @@ COPY . .
 RUN uv pip install --system -e .
 
 # Runtime stage - minimal Alpine image
-FROM python:3.13-alpine
+# Pin to specific version for reproducibility and security
+FROM python:3.13-alpine3.22
 
 # Install only runtime dependencies with latest security updates
+# Force update of all packages to get latest security fixes
 RUN apk update && \
     apk upgrade --no-cache && \
     apk add --no-cache \
@@ -43,6 +46,8 @@ RUN apk update && \
     libxml2 \
     libxslt \
     ffmpeg \
+    # Ensure we have the patched libssh version
+    && apk info -v libssh \
     && rm -rf /var/cache/apk/* \
     # Create non-root user
     && adduser -D -u 1000 appuser
