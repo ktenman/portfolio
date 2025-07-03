@@ -50,3 +50,6 @@ test-results/
 ### Environment Variables ###
 .env
 .env.local
+
+### Keycloak ###
+keycloak-data/
