@@ -1,4 +1,3 @@
-
 This file provides instructions for Gemini to interact with the backend of the project.
 
 ## Backend Overview
