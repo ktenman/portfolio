@@ -104,7 +104,7 @@ ALLOWED_EXTENSIONS = {
 # Specific, important files to always include
 ALLOWED_FILENAMES = {
   'Dockerfile', 'Caddyfile',
-  'docker-compose.yml', 'compose.yaml', 'docker-compose.e2e.yml', 'docker-compose.local.yml',
+  'docker-compose.yml', 'compose.yaml', 'docker-compose.e2e-minimal.yml', 'docker-compose.local.yml',
   'build.gradle.kts', 'settings.gradle.kts',
   'README.md', 'package.json',
   'nginx.conf', 'eslint.config.js',
