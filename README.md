@@ -229,9 +229,9 @@ This includes all services: backend, frontend, auth, market tracker, and captcha
 To run end-to-end tests:
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml down
+docker-compose -f docker-compose.e2e-minimal.yml down
 docker volume rm portfolio_postgres_data_e2e
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d && sleep 30
+docker-compose -f docker-compose.e2e-minimal.yml up -d && sleep 30
 export E2E=true && ./gradlew test --info -Pheadless=true
 ```
 

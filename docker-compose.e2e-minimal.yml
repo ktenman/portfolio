@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:17.2-alpine
+    container_name: portfolio-postgres
+    environment:
+      POSTGRES_DB: portfolio
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "61240:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d portfolio" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    container_name: portfolio-redis
+    ports:
+      - "61241:6379"
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: src/Dockerfile
+    container_name: portfolio-backend
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/portfolio
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_FLYWAY_ENABLED=true
+      - SCHEDULING_ENABLED=false
+      - SERVER_PORT=8081
+      - VISION_BASE64_ENCODED_KEY=${VISION_BASE64_ENCODED_KEY:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1" ]
+      interval: 8s
+      timeout: 2s
+      retries: 15
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    container_name: portfolio-frontend-e2e
+    networks:
+      - portfolio-network
+    expose:
+      - "80"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:80 || exit 1" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    container_name: portfolio-nginx-e2e
+    ports:
+      - "61234:80"
+    volumes:
+      - ./nginx.e2e.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - portfolio-network
+    depends_on:
+      - backend
+      - frontend
+
+networks:
+  portfolio-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
