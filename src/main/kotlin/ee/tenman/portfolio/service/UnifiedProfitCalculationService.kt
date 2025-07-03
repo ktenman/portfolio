@@ -117,6 +117,7 @@ class UnifiedProfitCalculationService {
   fun buildXirrTransactions(
     transactions: List<PortfolioTransaction>,
     currentValue: BigDecimal,
+    calculationDate: LocalDate = LocalDate.now(),
   ): List<Transaction> {
     val cashflows =
       transactions.map { transaction ->
@@ -129,7 +130,7 @@ class UnifiedProfitCalculationService {
       }
 
     return if (currentValue > BigDecimal.ZERO) {
-      cashflows + Transaction(currentValue.toDouble(), LocalDate.now())
+      cashflows + Transaction(currentValue.toDouble(), calculationDate)
     } else {
       cashflows
     }
