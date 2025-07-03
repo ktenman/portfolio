@@ -12,6 +12,11 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - portfolio-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d portfolio" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
 
   redis:
     image: redis:8-alpine
@@ -20,6 +25,11 @@ services:
       - "61241:6379"
     networks:
       - portfolio-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
 
   auth:
     image: ktenman/auth:latest
@@ -38,6 +48,11 @@ services:
       - redis
     networks:
       - portfolio-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
+      interval: 6s
+      timeout: 2s
+      retries: 18
 
   backend:
     build:
@@ -61,6 +76,11 @@ services:
       - redis
     networks:
       - portfolio-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1" ]
+      interval: 8s
+      timeout: 2s
+      retries: 15
 
   frontend:
     image: node:23.5.0-alpine
