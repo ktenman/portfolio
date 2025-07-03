@@ -296,7 +296,7 @@ setup_e2e_environment() {
     if [ "$SILENT_MODE" = false ]; then
         print_info "Stopping Docker containers..."
     fi
-    docker-compose -f docker-compose.yml -f docker-compose.e2e.yml down 2>/dev/null || true
+    docker-compose -f docker-compose.e2e-minimal.yml down 2>/dev/null || true
     docker-compose -f docker-compose.local.yml down 2>/dev/null || true
     docker-compose -f compose.yaml down 2>/dev/null || true
     
