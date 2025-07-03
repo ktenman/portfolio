@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.81.5",
-    "@vueuse/core": "^13.4.0",
+    "@vueuse/core": "^13.5.0",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.7",
     "chart.js": "^4.5.0",
