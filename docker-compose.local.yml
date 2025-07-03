@@ -1,104 +1,112 @@
 services:
   postgres:
-    container_name: postgres
-    image: postgres:17-alpine
+    image: postgres:17.2-alpine
+    container_name: portfolio-postgres
     environment:
       POSTGRES_DB: portfolio
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data_v16_local:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d portfolio" ]
-      interval: 3s
-      timeout: 1s
-      retries: 5
-    restart: always
     ports:
-      - '5432:5432'
+      - "61240:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - portfolio-network
 
   redis:
-    container_name: redis
     image: redis:8-alpine
-    volumes:
-      - redis_data_local:/data
-    healthcheck:
-      test: [ 'CMD', 'redis-cli', 'ping' ]
-      interval: 3s
-      timeout: 1s
-      retries: 5
-    restart: always
+    container_name: portfolio-redis
+    ports:
+      - "61241:6379"
+    networks:
+      - portfolio-network
+
+  auth:
+    image: ktenman/auth:latest
+    container_name: portfolio-auth
+    ports:
+      - "8083:8083"
+    environment:
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - REDIRECT_URI=http://localhost/
+      - ALLOWED_EMAILS=${ALLOWED_EMAILS}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    command: ["sh", "-c", "java -Dserver.servlet.session.cookie.secure=false -Dspring.session.cookie.secure=false -Dserver.servlet.session.cookie.same-site=lax -jar /app/app.jar"]
+    depends_on:
+      - redis
+    networks:
+      - portfolio-network
 
   backend:
-    container_name: backend
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_PROFILES_ACTIVE: local
-      VISION_BASE64_ENCODED_KEY: ${VISION_BASE64_ENCODED_KEY}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     build:
       context: .
       dockerfile: src/Dockerfile
+    container_name: portfolio-backend
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/portfolio
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_FLYWAY_ENABLED=true
+      - SCHEDULING_ENABLED=false
+      - SERVER_PORT=8081
     depends_on:
       - postgres
       - redis
-    restart: always
-    mem_limit: 1024m
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
-      interval: 8s
-      timeout: 2s
-      retries: 15
+    networks:
+      - portfolio-network
 
   frontend:
-    container_name: frontend
-    build:
-      context: .
-      dockerfile: ui/Dockerfile
-    depends_on:
-      - backend
-    restart: always
-
-  app:
-    container_name: app
-    image: nginx:alpine
-    ports:
-      - '80:80'
+    image: node:23.5.0-alpine
+    container_name: portfolio-frontend
+    working_dir: /app
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - frontend
-    restart: always
-
-  captcha-solver:
-    container_name: captcha_solver
-    image: ktenman/captcha-solver:latest
+      - ./ui:/app/ui
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.app.json:/app/tsconfig.app.json
+      - ./tsconfig.node.json:/app/tsconfig.node.json
+      - ./index.html:/app/index.html
+      - ./vitest.config.ts:/app/vitest.config.ts
+      - ./.eslintrc.cjs:/app/.eslintrc.cjs
+    command: sh -c "npm install && npm run dev -- --host"
     ports:
-      - "8000:8000"
-    restart: always
-
-  market_price_tracker:
-    container_name: market_price_tracker
-    build:
-      context: ./market-price-tracker
-      dockerfile: Dockerfile
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: always
+      - "61234:61234"
     environment:
-      - BACKEND_URL=http://backend:8080/api/instruments
-      - FETCH_INTERVAL=15
-    mem_limit: 512m
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - NODE_ENV=development
+    networks:
+      - portfolio-network
+
+  caddy:
+    image: caddy:2.8.4-alpine
+    container_name: portfolio-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - auth
+      - backend
+      - frontend
+    networks:
+      - portfolio-network
+
+networks:
+  portfolio-network:
+    driver: bridge
 
 volumes:
-  postgres_data_v16_local:
-  redis_data_local:
+  postgres-data:
+  caddy-data:
+  caddy-config:
