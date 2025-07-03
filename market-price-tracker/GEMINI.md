@@ -1,4 +1,3 @@
-
 This file provides instructions for Gemini to interact with the market price tracker of the project.
 
 ## Market Price Tracker Overview
