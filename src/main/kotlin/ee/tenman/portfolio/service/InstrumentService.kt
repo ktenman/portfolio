@@ -14,6 +14,7 @@ class InstrumentService(
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionService: PortfolioTransactionService,
   private val investmentMetricsService: InvestmentMetricsService,
+  private val clock: java.time.Clock,
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
@@ -50,10 +51,11 @@ class InstrumentService(
   fun getAllInstruments(): List<Instrument> {
     val instruments = instrumentRepository.findAll()
     val transactions = portfolioTransactionService.getAllTransactions().groupBy { it.instrument.id }
+    val calculationDate = java.time.LocalDate.now(clock)
 
     return instruments.map { instrument ->
       instrument.apply {
-        val metrics = investmentMetricsService.calculateInstrumentMetrics(this, transactions[id] ?: emptyList())
+        val metrics = investmentMetricsService.calculateInstrumentMetrics(this, transactions[id] ?: emptyList(), calculationDate)
         totalInvestment = metrics.totalInvestment
         currentValue = metrics.currentValue
         profit = metrics.profit
