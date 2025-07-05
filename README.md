@@ -153,7 +153,7 @@ details and portfolio summaries.
 1. **Environment Variables**: Copy `.env.example` to `.env` and configure:
 
    ```bash
-   cp .env.example .env
+   cp .env.local.example .env
    ```
 
    Required variables:
