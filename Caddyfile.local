@@ -3,46 +3,50 @@
 }
 
 :80 {
-    @auth_routes {
-        path /login /login/* /oauth2/* /logout /logout/* /user /user/*
+    # Route Keycloak admin and authentication endpoints
+    handle /admin/* {
+        reverse_proxy keycloak:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
     }
-
-    @public_routes {
-        path /actuator/health /actuator/info /favicon.ico
+    
+    handle /realms/* {
+        reverse_proxy keycloak:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
     }
-
-    @static_assets {
-        path *.css *.js *.png *.jpg *.jpeg *.gif *.svg *.ico *.woff *.woff2
+    
+    handle /resources/* {
+        reverse_proxy keycloak:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
     }
-
-    handle @auth_routes {
-        reverse_proxy auth:8083
+    
+    handle /js/* {
+        reverse_proxy keycloak:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
     }
-
-    handle @public_routes {
-        reverse_proxy backend:8081
-    }
-
-    handle @static_assets {
-        reverse_proxy frontend:61234
-    }
-
+    
+    # OAuth2-Proxy handles main application authentication and routing
     handle {
-        forward_auth auth:8083 {
-            uri /validate
-            copy_headers X-User-Id
-        }
-        
-        @api {
-            path /api/*
-        }
-        
-        handle @api {
-            reverse_proxy backend:8081
-        }
-        
-        handle {
-            reverse_proxy frontend:61234
+        reverse_proxy oauth2-proxy:4180 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
         }
     }
 

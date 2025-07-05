@@ -12,6 +12,7 @@ This is a **Portfolio Management System** - a full-stack application for trackin
 - Frontend: Vue.js 3.5.16, TypeScript, Vite 6.3.5, Bootstrap 5.3.5
 - Database: PostgreSQL 17 with Flyway migrations
 - Cache: Redis 8
+- Authentication: Keycloak 25 + OAuth2-Proxy
 - Additional Services: Python-based market price tracker (Selenium), Caddy reverse proxy
 
 ## Essential Commands
@@ -94,8 +95,8 @@ pkill -f 'bootRun|vite' && docker-compose -f compose.yaml down
 
 The system follows a microservices architecture with these key components:
 
-1. **API Gateway (Caddy)** - Handles authentication and reverse proxy at `/`
-2. **Auth Service** - OAuth 2.0 with Google/GitHub providers
+1. **API Gateway (Caddy)** - Reverse proxy at `/`
+2. **Auth Service** - Keycloak with Google OAuth provider + OAuth2-Proxy for session management
 3. **Frontend (Vue.js SPA)** - User interface served at `/ui`
 4. **Backend API (Spring Boot)** - Business logic at `/api`
 5. **PostgreSQL** - Primary data store with Flyway migrations
