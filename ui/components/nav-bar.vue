@@ -65,20 +65,23 @@ function formatDate(dateString: string): string {
 
 async function handleLogout(event: Event) {
   event.preventDefault()
-  
+
   // Clear any client-side storage
   localStorage.clear()
   sessionStorage.clear()
-  
+
   // First, sign out from OAuth2-Proxy
-  const response = await fetch('/oauth2/sign_out', { 
+  await fetch('/oauth2/sign_out', {
     method: 'GET',
     credentials: 'same-origin',
-    redirect: 'manual'
+    redirect: 'manual',
   })
-  
+
   // Then redirect to Keycloak logout
-  window.location.href = 'http://localhost/realms/portfolio/protocol/openid-connect/logout?post_logout_redirect_uri=' + encodeURIComponent('http://localhost/') + '&client_id=portfolio-oauth2-proxy'
+  window.location.href =
+    'http://localhost/realms/portfolio/protocol/openid-connect/logout?post_logout_redirect_uri=' +
+    encodeURIComponent('http://localhost/') +
+    '&client_id=portfolio-oauth2-proxy'
 }
 </script>
 

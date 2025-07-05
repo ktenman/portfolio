@@ -55,15 +55,9 @@
         "description": "${role_default-roles}",
         "composite": true,
         "composites": {
-          "realm": [
-            "offline_access",
-            "uma_authorization"
-          ],
+          "realm": ["offline_access", "uma_authorization"],
           "client": {
-            "account": [
-              "manage-account",
-              "view-profile"
-            ]
+            "account": ["manage-account", "view-profile"]
           }
         },
         "clientRole": false,
@@ -188,9 +182,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "realm-management": [
-                "query-clients"
-              ]
+              "realm-management": ["query-clients"]
             }
           },
           "clientRole": true,
@@ -273,10 +265,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "realm-management": [
-                "query-groups",
-                "query-users"
-              ]
+              "realm-management": ["query-groups", "query-users"]
             }
           },
           "clientRole": true,
@@ -352,9 +341,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "account": [
-                "view-consent"
-              ]
+              "account": ["view-consent"]
             }
           },
           "clientRole": true,
@@ -386,9 +373,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "account": [
-                "manage-account-links"
-              ]
+              "account": ["manage-account-links"]
             }
           },
           "clientRole": true,
@@ -416,9 +401,7 @@
     "clientRole": false,
     "containerId": "ce2e716c-8f9a-4d7b-950d-54c0ed903e30"
   },
-  "requiredCredentials": [
-    "password"
-  ],
+  "requiredCredentials": ["password"],
   "otpPolicyType": "totp",
   "otpPolicyAlgorithm": "HmacSHA1",
   "otpPolicyInitialCounter": 0,
@@ -433,9 +416,7 @@
   ],
   "localizationTexts": {},
   "webAuthnPolicyRpEntityName": "keycloak",
-  "webAuthnPolicySignatureAlgorithms": [
-    "ES256"
-  ],
+  "webAuthnPolicySignatureAlgorithms": ["ES256"],
   "webAuthnPolicyRpId": "",
   "webAuthnPolicyAttestationConveyancePreference": "not specified",
   "webAuthnPolicyAuthenticatorAttachment": "not specified",
@@ -446,9 +427,7 @@
   "webAuthnPolicyAcceptableAaguids": [],
   "webAuthnPolicyExtraOrigins": [],
   "webAuthnPolicyPasswordlessRpEntityName": "keycloak",
-  "webAuthnPolicyPasswordlessSignatureAlgorithms": [
-    "ES256"
-  ],
+  "webAuthnPolicyPasswordlessSignatureAlgorithms": ["ES256"],
   "webAuthnPolicyPasswordlessRpId": "",
   "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
   "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
@@ -479,9 +458,7 @@
           "userName": "konstantin@tenman.ee"
         }
       ],
-      "realmRoles": [
-        "default-roles-portfolio"
-      ],
+      "realmRoles": ["default-roles-portfolio"],
       "notBefore": 0,
       "groups": []
     },
@@ -505,9 +482,7 @@
           "userName": "ktenman@gmail.com"
         }
       ],
-      "realmRoles": [
-        "default-roles-portfolio"
-      ],
+      "realmRoles": ["default-roles-portfolio"],
       "notBefore": 0,
       "groups": []
     }
@@ -515,19 +490,14 @@
   "scopeMappings": [
     {
       "clientScope": "offline_access",
-      "roles": [
-        "offline_access"
-      ]
+      "roles": ["offline_access"]
     }
   ],
   "clientScopeMappings": {
     "account": [
       {
         "client": "account-console",
-        "roles": [
-          "manage-account",
-          "view-groups"
-        ]
+        "roles": ["manage-account", "view-groups"]
       }
     ]
   },
@@ -542,9 +512,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/realms/portfolio/account/*"
-      ],
+      "redirectUris": ["/realms/portfolio/account/*"],
       "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
@@ -563,20 +531,8 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
       "nodeReRegistrationTimeout": 0,
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "roles",
-        "profile",
-        "basic",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     },
     {
       "id": "a7c4b2e8-5b86-4899-9ca1-babcfbb4ac18",
@@ -588,9 +544,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/realms/portfolio/account/*"
-      ],
+      "redirectUris": ["/realms/portfolio/account/*"],
       "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
@@ -620,20 +574,8 @@
           "config": {}
         }
       ],
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "roles",
-        "profile",
-        "basic",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     },
     {
       "id": "51c190a0-7618-4b0c-8143-35e0966694b3",
@@ -663,20 +605,8 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": 0,
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "roles",
-        "profile",
-        "basic",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     },
     {
       "id": "ec5c756e-4c04-4ffd-984d-760a62203194",
@@ -705,20 +635,8 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
       "nodeReRegistrationTimeout": 0,
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "roles",
-        "profile",
-        "basic",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     },
     {
       "id": "4979c0bf-d306-4bea-bd11-9881e7346158",
@@ -729,13 +647,8 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "${OAUTH2_PROXY_CLIENT_SECRET}",
-      "redirectUris": [
-        "http://127.0.0.1/oauth2/callback",
-        "http://localhost/oauth2/callback"
-      ],
-      "webOrigins": [
-        "http://localhost"
-      ],
+      "redirectUris": ["http://127.0.0.1/oauth2/callback", "http://localhost/oauth2/callback"],
+      "webOrigins": ["http://localhost"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -753,12 +666,7 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
-      "defaultClientScopes": [
-        "web-origins",
-        "profile",
-        "roles",
-        "email"
-      ],
+      "defaultClientScopes": ["web-origins", "profile", "roles", "email"],
       "optionalClientScopes": []
     },
     {
@@ -788,20 +696,8 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
       "nodeReRegistrationTimeout": 0,
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "roles",
-        "profile",
-        "basic",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     },
     {
       "id": "36a0cb1e-259a-46c8-b2ca-4058c55278ea",
@@ -813,12 +709,8 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/admin/portfolio/console/*"
-      ],
-      "webOrigins": [
-        "+"
-      ],
+      "redirectUris": ["/admin/portfolio/console/*"],
+      "webOrigins": ["+"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -856,20 +748,8 @@
           }
         }
       ],
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "roles",
-        "profile",
-        "basic",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     }
   ],
   "clientScopes": [
@@ -1520,12 +1400,7 @@
     "acr",
     "basic"
   ],
-  "defaultOptionalClientScopes": [
-    "offline_access",
-    "address",
-    "phone",
-    "microprofile-jwt"
-  ],
+  "defaultOptionalClientScopes": ["offline_access", "address", "phone", "microprofile-jwt"],
   "browserSecurityHeaders": {
     "contentSecurityPolicyReportOnly": "",
     "xContentTypeOptions": "nosniff",
@@ -1538,9 +1413,7 @@
   },
   "smtpServer": {},
   "eventsEnabled": false,
-  "eventsListeners": [
-    "jboss-logging"
-  ],
+  "eventsListeners": ["jboss-logging"],
   "enabledEventTypes": [],
   "adminEventsEnabled": false,
   "adminEventsDetailsEnabled": false,
@@ -1576,9 +1449,7 @@
         "subType": "authenticated",
         "subComponents": {},
         "config": {
-          "allow-default-scopes": [
-            "true"
-          ]
+          "allow-default-scopes": ["true"]
         }
       },
       {
@@ -1596,9 +1467,7 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "max-clients": [
-            "200"
-          ]
+          "max-clients": ["200"]
         }
       },
       {
@@ -1608,9 +1477,7 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "allow-default-scopes": [
-            "true"
-          ]
+          "allow-default-scopes": ["true"]
         }
       },
       {
@@ -1666,12 +1533,8 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "host-sending-registration-request-must-match": [
-            "true"
-          ],
-          "client-uris-must-match": [
-            "true"
-          ]
+          "host-sending-registration-request-must-match": ["true"],
+          "client-uris-must-match": ["true"]
         }
       }
     ],
@@ -1685,15 +1548,11 @@
           "privateKey": [
             "MIIEowIBAAKCAQEA2QdOhkNnuBjI172mLdgiPT+9e7dF8wWBNWt1B/TZrJdXon+DGXlQ1hHeVT56+zXklPeUaPahmC9mXRWx6H4e+E0EHxkqtVVv5Whp75DxgMKp+nPmwLGr2kB55BrTE/w1QzOeaUcqghKOaG89fKqo/wAaXdNCUD0mB/a2TdXX2uUWk4Ohcwi2wLGdwgAIIzT4A+c3GUYp7wD/YOCkzQggmPIEu1zsMSOeCIC9rEbCPRvDoH2K9Ozc5d8Nj1Yoz2g1u4vIJg/vxd2+Fj9T5kiGjQuk/b5CVRwMKWQ/EIOT0yfExVuB4xRMgXnfPIBd415Dmt7eftJlUa656npWPunA0wIDAQABAoH/Cb/KRz2/6wUyAH8EeAq9fwLeADC7c69Lnpq1JyZYoOgrh6EywnIwr20eD7Y+0AobupVklVJ+79cxQf03gLopqf3LsZnv0TWFUUjfeWOJdb9I43dRZlaU4bkDwLtzv/IUcnBfLVuFDVLIEujsWi1QaiQXCx/yWqhkjPcIOXbhu3N54kDbS0CPZvsvd7/sGmzJx7b5UPiaVvANsmMTkfRJ3GRBuaGNMbnkn41j0Hx1OVHVW6HMgcIOZiI8H1bCG0B/G80F3+Inw2/tj1l2eDbnlJu0E3qMjCybwX74uC/2rKAyhcisQq+p8MYOX6pGFVhq1HLnQW97OgIkGHomBBp9AoGBAO8hEcnHSBroX1p1E3o5BSAtbQrc7+KR1PcNwzEs57mUotK4u2FmMeshBRFyXSKaMnG0LzimAfi9l40wFOLMiUKf4IzZRD3ZT3rb9b/l+UVKLdgnlAuXZNNYG/3ycqHr/1RjNFPR/BeWsNXyZf0lVwksYJqmADB92/n4+rSW2/IPAoGBAOhXE3JxrZhoGKicSAufrLHhisde8+dnZhB11JX4fJenQXIxpoONHEbz1GxpMXmRmiFyo9/pei6TWsiVQ+4vKpIJ6xYA941DigCCBkodwVwWDyHG+ug+T5NqyMHi4Fkn86S7nUNXA6FmnJa0e0TzBzaHu9sfMRr1cYX5/8MzI/j9AoGBALZ1zzLdYgFWCVvmNURvOaAByVAeoNOKXqtbzvI4x19tMIgE+MUqyzAT8+AKGVKLwa3MxLM+yAZZ88eBRo5/bsRtZVNTfKSMqf6e03bnLTpXjX9/Q5FMpVw1wLYWRq2SezKSt5y1ftso2imFWZi84xpWyCd4PnDBuBWWiwU8jvq1AoGBAMldrp0hqTLOBZEc4dQxL5t7vqvMv9du5iad+QGBu3o0m6Q9I/Qf+MIF0bWj9h1G9C7JDP6jfCGh1KzDsXxdpKetsPIBJIxqXNDT4F+cKlmFRNghfJSMbKt3gUeJOqgK2D+N217hq2PXax+yjKPVfgrk2QuwnP6geyOC6Qhk6miBAoGBALgkhWgEeJ7NN1k4eGtipEROao3x05i+7LXdbA5LvgPNlajHVB7EHNzbCMCBGprkpjM77SGDRV8ya5kxAlqCC/2hmdQ0I7DlEailOjMFJ+x6JSfPGkLH4DXZNwvf61zvNY63+Dm0diFYJvtFLFFrQb9LHfVej8dmlGU5k9ORzUM9"
           ],
-          "keyUse": [
-            "SIG"
-          ],
+          "keyUse": ["SIG"],
           "certificate": [
             "MIICoTCCAYkCBgGX08vAODANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAlwb3J0Zm9saW8wHhcNMjUwNzA0MDQ1NTM1WhcNMzUwNzA0MDQ1NzE1WjAUMRIwEAYDVQQDDAlwb3J0Zm9saW8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDZB06GQ2e4GMjXvaYt2CI9P717t0XzBYE1a3UH9Nmsl1eif4MZeVDWEd5VPnr7NeSU95Ro9qGYL2ZdFbHofh74TQQfGSq1VW/laGnvkPGAwqn6c+bAsavaQHnkGtMT/DVDM55pRyqCEo5obz18qqj/ABpd00JQPSYH9rZN1dfa5RaTg6FzCLbAsZ3CAAgjNPgD5zcZRinvAP9g4KTNCCCY8gS7XOwxI54IgL2sRsI9G8OgfYr07Nzl3w2PVijPaDW7i8gmD+/F3b4WP1PmSIaNC6T9vkJVHAwpZD8Qg5PTJ8TFW4HjFEyBed88gF3jXkOa3t5+0mVRrrnqelY+6cDTAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAFM8asbTHebIV/rSaNta7nlOd3fMbRFBEMLeCKOpcUgNLfwixjMffrGOBw3xTA0360zWLxMXC91Lach8iDavTZvHyGtx8T6xrJgHUWCaphI8TAk01E1mwx9kpu6IL5L//Bo9Mb5cvQ9mOxdzBXReOfK32IPeOKHSwtoEIQRfrkDT6QrpQ/JzBU8tIu3CuFisHEU24FqsIMYGZk1zDb9MiNX8fHqmrvqHWiQAVb5dXKG89VIi7bNrLQTLyA35NGbibyiaV3bHfBlFm9otKPlkKw1F//vCpRC0Q5dIAgiWUEHTpggQ6sm02N4ZgTbn1rXzexyXF/NFAoAFcm2INvWfk8A="
           ],
-          "priority": [
-            "100"
-          ]
+          "priority": ["100"]
         }
       },
       {
@@ -1702,18 +1561,12 @@
         "providerId": "hmac-generated",
         "subComponents": {},
         "config": {
-          "kid": [
-            "d0300f4d-8548-41bf-bbc1-b3b8f140c39c"
-          ],
+          "kid": ["d0300f4d-8548-41bf-bbc1-b3b8f140c39c"],
           "secret": [
             "fdifbBYFn-xgS1-KK5eUTozsXkRch1s39jQIlI4tcyjbgaisZQECBbxCa6lt9iO7y_HGQrZ-OS5UuBi3v6cewO3o-KREj-z5w6HJhYN61nTWix-bZ3LJiYqAKR0dmG_R4wRtr3RTBh7uTOePb9wwf9oHZ3gdUwjpQ-7Fjrjkr2k"
           ],
-          "priority": [
-            "100"
-          ],
-          "algorithm": [
-            "HS512"
-          ]
+          "priority": ["100"],
+          "algorithm": ["HS512"]
         }
       },
       {
@@ -1722,15 +1575,9 @@
         "providerId": "aes-generated",
         "subComponents": {},
         "config": {
-          "kid": [
-            "98571825-37c1-495c-86dd-a53b93ec7004"
-          ],
-          "secret": [
-            "P_4eKdO2_8C0dmMgbuD8iw"
-          ],
-          "priority": [
-            "100"
-          ]
+          "kid": ["98571825-37c1-495c-86dd-a53b93ec7004"],
+          "secret": ["P_4eKdO2_8C0dmMgbuD8iw"],
+          "priority": ["100"]
         }
       },
       {
@@ -1742,18 +1589,12 @@
           "privateKey": [
             "MIIEowIBAAKCAQEA7s57xbaWGLmBrlc1ldji6Lda8taZyw3eJMDyGDta++Ynlqekn5vgUTvVpZOKKmm1z6EcTuU8Uz4xQUey9PTnwphkchdbemluzvv9rPhsqvEomFXx8qCT9Yep6lKWC2GD42dGDBcLcsoZa7McklaVb23icqDvLQW+0GGSGpqnqYQpbWRBV0sr8cyHyDVcm2HkBm5i8MiJJEaKIXwtF8d7HA5tncxEg46DL2FjzeeDXADutsTZgWoraKgvpM+cTcM0e6pSuZzh3ASpDr5+dUHLMo0y9ubp0TUfI19p7EuFxjSBANr5fuWlWkb5iz4sCvJlkpwY8ifBFVDls2rhPd2dxQIDAQABAoIBABKWpVvGfU3UuBtx/mHOTXCqlRHB/UapAFmsCywyXUADskvae3NRFteRPhgdW+vhPp24KhPvaWVcD0ly403d97cAqxDrxdseydlNaXmap3AcRXoAy/cu41WBXIs40np1pLvWwMUVe3amn0PwNTvO3DhIPWWJfBSXwI/yiFo5ykM6N9znnfznx8SBWUEnxur9D82gxVh93herQeIYLEKv1XhP2fSyQy8qnoP3LAgLtzObj0D4Mnt6MZCYOa1T9bssi8Ns5ihZgaILTzVYJd2m5bTsKpr/JlCfPF1wWvVf9qLKt9QZ3YRxJLiATpzXbB5qSwHA2z5076BCEdKeWimNuSECgYEA/qvbpupJc6k4c8b2ITU/TT1+co2BZTk2QPFA4a5xqagvmAb5Q6voAC6FE2rV3maJ/l6YxzFPuW8bOE1A5ZTzmLs1nlnWZMhjoBJa2s/Li0A5IlLNnQfCDS6BUigBks/IqANBO8ZKbUVBk3MlW6IigSR1KUYt+yATToEVbOY1iU8CgYEA8A1vs322aWGuSSPa3MhLQ65HLM/Hi8DXmgP3qeEq2ouOsgg6DTdPG+Xx3AB0k3ZUZzfQodo9Yx1TLNwGdsyAksmFwRdlGd7sUEehCTF3r+WnuhnF/1Ddm/WRQm+RNVVdzHh/TA7auc5g+hwTjABgnZHSgwsdEIDdZw2oc4tROqsCgYAJw+tDRj6UyctZXSq48ULBIneDyvtIN15mNRoIzVicac+RY8sRFjlqMF539SPISGRINbZkBPcKpEEF8qhnZUPF+n++17EJ4kk3rRyAwXELoOXP9B7gQ5jkSoE49kHBMGiAUMeilCLsd7hhAAxRrDDohM5dS8ydkYhL/VUl/NnWrwKBgC6sDhmxyXN3wHEL/ZOLhcak7cWyqDNtzP1u5Aotcy2GkLngi5jiNglQjdOeawv4p7Rhz7iIPAM3QmKobMFQRXdEozLFn6yGASAirRaifYi/d/rg4/Qd/thByHpIQs1BybjlfKqHANO7YnN+XfaMZDx+i5Va5c29oE5XA3djkOl9AoGBAKHCRC4VxdUFLa73B+3lM1btlLIsshPQLosXJTLmEbX7caTlCLj7hAfwC20vAGSwAl6MGHdEeKt68FR25vYhRKkUg9yzKi344bxQ42c5+ovVhGaSZxlO4XekhlgixAUGXdtmsM2cJW3aGdp0tD9AANVG3imP14CEeLrbL/tGc4/N"
           ],
-          "keyUse": [
-            "ENC"
-          ],
+          "keyUse": ["ENC"],
           "certificate": [
             "MIICoTCCAYkCBgGX08vAizANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAlwb3J0Zm9saW8wHhcNMjUwNzA0MDQ1NTM1WhcNMzUwNzA0MDQ1NzE1WjAUMRIwEAYDVQQDDAlwb3J0Zm9saW8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDuznvFtpYYuYGuVzWV2OLot1ry1pnLDd4kwPIYO1r75ieWp6Sfm+BRO9Wlk4oqabXPoRxO5TxTPjFBR7L09OfCmGRyF1t6aW7O+/2s+Gyq8SiYVfHyoJP1h6nqUpYLYYPjZ0YMFwtyyhlrsxySVpVvbeJyoO8tBb7QYZIamqephCltZEFXSyvxzIfINVybYeQGbmLwyIkkRoohfC0Xx3scDm2dzESDjoMvYWPN54NcAO62xNmBaitoqC+kz5xNwzR7qlK5nOHcBKkOvn51QcsyjTL25unRNR8jX2nsS4XGNIEA2vl+5aVaRvmLPiwK8mWSnBjyJ8EVUOWzauE93Z3FAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAOwyOQVcyJYTpDsHjOSLzYRGyNzs8KENQfQg9+K3mmcRJcCIqxipLAlpVArRGhSFEQAJWRMCG1zHXk1X4RtFbsQljxDzb9Qp1GWEf3IOrr3mRfxSxPM4oFLdK/JOmwFImvZYUym9950mfO+lbA4OAdrmVSDlvRR7E51PYkJET4r827cuG7k7ewWV++kJyj4y8agiRa8DFWAbpVGimfSE1eFhYgC8K597dF+bau2Tuf4xDm2lOAyTGrvdZssK0NniaDd17KGN+t3oXCcmFwGG5v9y185ZL13QYFBFekG1qo9f7DrWJIaR/I3fX0s9A9jNCh15jSVyrY55GO7Qv8XUO8Q="
           ],
-          "priority": [
-            "100"
-          ],
-          "algorithm": [
-            "RSA-OAEP"
-          ]
+          "priority": ["100"],
+          "algorithm": ["RSA-OAEP"]
         }
       }
     ]
