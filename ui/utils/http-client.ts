@@ -19,7 +19,7 @@ httpClient.interceptors.response.use(
   },
   (error: AxiosError<ApiErrorResponse>) => {
     if (error.response?.status === 401) {
-      window.location.href = '/login'
+      window.location.href = '/oauth2/start?rd=' + encodeURIComponent(window.location.pathname)
     }
 
     const data = error.response?.data
