@@ -44,14 +44,16 @@ export function useCalculator() {
   })
 
   const calculate = () => {
-    const currentPortfolioWorth = calculationResult.value?.total || form.value.initialWorth
+    const currentPortfolioWorth = form.value.initialWorth
     const avgReturn = hasUserModifiedAnnualReturn.value
       ? form.value.annualReturnRate
       : (calculationResult.value?.average ?? form.value.annualReturnRate)
 
     // Convert annual percentages to monthly rates for compound interest calculations
     const monthlyGrowthRate = form.value.yearlyGrowthRate / 100 / 12
-    const monthlyReturnRate = avgReturn / 100 / 12
+    // For compound interest, convert annual rate to monthly rate using (1 + annual)^(1/12) - 1
+    // This ensures the effective annual rate matches the input annual rate
+    const monthlyReturnRate = Math.pow(1 + avgReturn / 100, 1 / 12) - 1
 
     const tempYearSummary: YearSummary[] = []
     const tempPortfolioData: number[] = []

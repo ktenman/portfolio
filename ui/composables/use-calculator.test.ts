@@ -138,7 +138,7 @@ describe('useCalculator', () => {
     await nextTick()
 
     const yearOne = calculator.yearSummary.value[0]
-    const monthlyRate = 0.12 / 12
+    const monthlyRate = Math.pow(1.12, 1 / 12) - 1
     let total = 10000
 
     for (let i = 0; i < 12; i++) {
@@ -289,7 +289,7 @@ describe('useCalculator', () => {
     const yearOne = calculator.yearSummary.value[0]
     expect(yearOne.year).toBe(1)
 
-    const expectedMonthlyRate = 50 / 100 / 12
+    const expectedMonthlyRate = Math.pow(1.5, 1 / 12) - 1
     let expectedTotal = 10000
 
     for (let i = 0; i < 12; i++) {
