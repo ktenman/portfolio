@@ -43,10 +43,16 @@
     </template>
 
     <template #actions="{ item }">
-      <button class="btn btn-ghost btn-sm btn-secondary" @click="$emit('edit', item)">
-        <base-icon name="pencil" :size="14" />
-        <span class="ms-1">Edit</span>
-      </button>
+      <div class="action-buttons">
+        <button
+          class="btn btn-sm btn-ghost btn-secondary"
+          @click="$emit('edit', item)"
+          title="Edit"
+        >
+          <base-icon name="pencil" :size="14" />
+          <span class="ms-1 d-inline d-lg-none">Edit</span>
+        </button>
+      </div>
     </template>
   </data-table>
 </template>
