@@ -394,7 +394,9 @@ class PortfolioSummaryServiceTest {
     whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
     whenever(dailyPriceService.getPrice(eq(instrument), eq(date))).thenReturn(price)
     whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
-      .thenReturn(quantity to price)
+      .thenReturn(quantity to BigDecimal("29.81"))
+    whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
+      .thenReturn(BigDecimal.ZERO)
     whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date))).thenReturn(0.05)
 
     val summary = portfolioSummaryService.calculateSummaryForDate(date)
@@ -542,6 +544,16 @@ class PortfolioSummaryServiceTest {
       .thenReturn(BigDecimal("10") to BigDecimal("100"))
     whenever(unifiedProfitCalculationService.calculateCurrentHoldings(eq(listOf(transaction2))))
       .thenReturn(BigDecimal("5") to BigDecimal("80"))
+    
+    val profit1 = BigDecimal("10").multiply(price1.subtract(BigDecimal("100")))
+    lenient().whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
+      .thenReturn(BigDecimal.ZERO)
+    whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("10")), eq(BigDecimal("100")), eq(price1)))
+      .thenReturn(profit1)
+    
+    val profit2 = BigDecimal("5").multiply(price2.subtract(BigDecimal("80")))
+    whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("5")), eq(BigDecimal("80")), eq(price2)))
+      .thenReturn(profit2)
 
     whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date)))
       .thenReturn(xirrValue)
@@ -588,6 +600,8 @@ class PortfolioSummaryServiceTest {
 
     whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
       .thenReturn(BigDecimal("12") to BigDecimal("100"))
+    whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
+      .thenReturn(BigDecimal("360.00"))
 
     whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date)))
       .thenReturn(0.12)
@@ -649,6 +663,8 @@ class PortfolioSummaryServiceTest {
       .thenThrow(RuntimeException("Calculation failed"))
     whenever(unifiedProfitCalculationService.calculateCurrentHoldings(eq(listOf(transaction2))))
       .thenReturn(BigDecimal("15") to BigDecimal("70"))
+    whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("15")), eq(BigDecimal("70")), eq(BigDecimal("75"))))
+      .thenReturn(BigDecimal("75.00"))
 
     whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date)))
       .thenReturn(0.08)

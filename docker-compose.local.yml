@@ -188,6 +188,9 @@ services:
       - SPRING_FLYWAY_ENABLED=true
       - SCHEDULING_ENABLED=false
       - SERVER_PORT=8081
+      - SECURITY_ENABLED=false
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/portfolio
+      - KEYCLOAK_JWK_SET_URI=http://keycloak:8080/realms/portfolio/protocol/openid-connect/certs
     depends_on:
       - postgres
       - redis
