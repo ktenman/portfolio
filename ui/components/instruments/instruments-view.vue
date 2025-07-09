@@ -1,7 +1,7 @@
 <template>
   <crud-layout
     add-button-id="addNewInstrument"
-    add-button-text="Add New Instrument"
+    add-button-text="New Instrument"
     title="Instruments"
     @add="openAddModal"
   >

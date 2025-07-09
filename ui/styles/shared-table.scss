@@ -1,9 +1,19 @@
 .instrument-info {
   max-width: 200px;
+
+  > div:first-child {
+    font-weight: 500;
+    margin-bottom: 0.125rem;
+  }
+
+  small {
+    display: block;
+    opacity: 0.8;
+  }
 }
 
 @media (min-width: 768px) {
   .instrument-info {
-    max-width: 250px;
+    max-width: 300px;
   }
 }

@@ -67,6 +67,11 @@ export const styleClasses = {
       secondary: 'btn btn-outline-secondary',
       danger: 'btn btn-outline-danger',
     },
+    ghost: {
+      primary: 'btn btn-ghost btn-primary',
+      secondary: 'btn btn-ghost btn-secondary',
+      danger: 'btn btn-ghost btn-danger',
+    },
     sm: 'btn-sm',
     lg: 'btn-lg',
     close: 'btn-close',
@@ -150,7 +155,3 @@ export const styleClasses = {
     danger: 'badge bg-danger',
   },
 } as const
-
-export function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ')
-}

@@ -1,7 +1,7 @@
 <template>
   <crud-layout
     add-button-id="addNewTransaction"
-    add-button-text="Add New Transaction"
+    add-button-text="New Transaction"
     title="Transactions"
     @add="openAddModal"
   >

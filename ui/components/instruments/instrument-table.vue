@@ -8,10 +8,10 @@
     empty-message="No instruments found. Add a new instrument to get started."
   >
     <template #cell-instrument="{ item }">
-      <div class="instrument-info">
-        <div :class="cn('small', styles.utilities.textTruncate)">{{ item.name }}</div>
-        <small :class="styles.text.muted">{{ item.symbol }}</small>
-      </div>
+      <span class="instrument-info">
+        <span class="d-block">{{ item.name }}</span>
+        <small class="d-block text-muted">{{ item.symbol }}</small>
+      </span>
     </template>
 
     <template #cell-type="{ item }">
@@ -43,9 +43,9 @@
     </template>
 
     <template #actions="{ item }">
-      <button :class="cn(styles.buttons.secondary, styles.buttons.sm)" @click="$emit('edit', item)">
+      <button class="btn btn-ghost btn-sm btn-secondary" @click="$emit('edit', item)">
         <base-icon name="pencil" :size="14" />
-        <span :class="cn('d-none', 'd-lg-inline', styles.spacing.ms(1))">Edit</span>
+        <span class="ms-1">Edit</span>
       </button>
     </template>
   </data-table>
@@ -57,7 +57,6 @@ import BaseIcon from '../shared/base-icon.vue'
 import { Instrument } from '../../models/instrument'
 import { instrumentColumns } from '../../config'
 import { getProfitClass, formatCurrencyWithSign, getCurrencySymbol } from '../../utils/formatters'
-import { styleClasses as styles, cn } from '../../utils/style-classes'
 
 interface Props {
   instruments: Instrument[]
@@ -83,10 +82,8 @@ const columns = instrumentColumns
 
 @media (max-width: 992px) {
   .instrument-info > div:first-child {
-    max-width: 20ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    // Allow full instrument names to be visible
+    word-break: break-word;
   }
 }
 
