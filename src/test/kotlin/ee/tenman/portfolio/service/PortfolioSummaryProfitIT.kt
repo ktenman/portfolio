@@ -20,13 +20,12 @@ import java.time.LocalDate
 
 @IntegrationTest
 @Transactional
-class PortfolioSummaryProfitFixTest
-  @Autowired
+class PortfolioSummaryProfitIT
+@Autowired
   constructor(
   private val portfolioSummaryService: PortfolioSummaryService,
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
-  private val dailyPriceService: DailyPriceService,
   private val dailyPriceRepository: DailyPriceRepository,
 ) {
   private lateinit var instrument: Instrument
@@ -36,15 +35,15 @@ class PortfolioSummaryProfitFixTest
   fun setup() {
     instrument =
       instrumentRepository.save(
-        Instrument(
-          symbol = "TEST:NYSE:USD",
-          name = "Test Stock",
-          category = "Stock",
-          baseCurrency = "USD",
-          currentPrice = BigDecimal("100.00"),
-          providerName = ProviderName.FT,
-        ),
-      )
+      Instrument(
+        symbol = "TEST:NYSE:USD",
+        name = "Test Stock",
+        category = "Stock",
+        baseCurrency = "USD",
+        currentPrice = BigDecimal("100.00"),
+        providerName = ProviderName.FT,
+      ),
+    )
 
     // Create daily prices for the test periods
     val startDate = testDate.minusDays(30)
@@ -70,22 +69,19 @@ class PortfolioSummaryProfitFixTest
 
   @Test
   fun `profit calculation should be consistent between current and historical dates`() {
-    val buyTransaction =
-      portfolioTransactionRepository.save(
-        PortfolioTransaction(
-          instrument = instrument,
-          transactionType = TransactionType.BUY,
-          quantity = BigDecimal("10"),
-          price = BigDecimal("80.00"),
-          transactionDate = testDate.minusDays(10),
-          platform = Platform.TRADING212,
-        ),
-      )
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("80.00"),
+        transactionDate = testDate.minusDays(10),
+        platform = Platform.TRADING212,
+      ),
+    )
 
     val historicalDate = testDate.minusDays(1)
     val historicalSummary = portfolioSummaryService.calculateSummaryForDate(historicalDate)
-
-    val currentSummary = portfolioSummaryService.getCurrentDaySummary()
 
     assertThat(historicalSummary.totalProfit)
       .describedAs("Historical profit should match calculation logic")
@@ -118,7 +114,6 @@ class PortfolioSummaryProfitFixTest
 
     val summary = portfolioSummaryService.calculateSummaryForDate(testDate.minusDays(5))
 
-    val totalBuyValue = BigDecimal("20").multiply(BigDecimal("80.00"))
     val totalSellValue = BigDecimal("10").multiply(BigDecimal("90.00"))
     val realizedProfit = totalSellValue.subtract(BigDecimal("10").multiply(BigDecimal("80.00")))
 
