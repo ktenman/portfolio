@@ -221,7 +221,7 @@ class PortfolioSummaryService(
             entryDate = date,
             totalValue = summary.totalValue,
             xirrAnnualReturn = summary.xirrAnnualReturn,
-            totalProfit = previousSummary.totalProfit,
+            totalProfit = summary.totalProfit,
             earningsPerDay = summary.earningsPerDay,
           )
         }
@@ -229,21 +229,8 @@ class PortfolioSummaryService(
       }
     }
 
-    // Do full calculation with hardcoded override for known value
-    val calculatedSummary = calculateSummaryDetailsForDate(date)
-
-    // If this is our specific value we're having issues with
-    if (calculatedSummary.totalValue.compareTo(BigDecimal("25014.99")) == 0) {
-      calculatedSummary.totalProfit = BigDecimal("969.96")
-
-      // Recalculate earnings per day with the correct profit
-      calculatedSummary.earningsPerDay =
-        calculatedSummary.totalValue
-          .multiply(calculatedSummary.xirrAnnualReturn)
-          .divide(BigDecimal(365.25), 10, RoundingMode.HALF_UP)
-    }
-
-    return calculatedSummary
+    // Do full calculation
+    return calculateSummaryDetailsForDate(date)
   }
 
   private fun createCurrentDaySummary(date: LocalDate): PortfolioDailySummary {
@@ -331,8 +318,9 @@ class PortfolioSummaryService(
       )
     }
 
+    // For historical dates, we need to calculate the state of instruments as of that date
     var totalValue = BigDecimal.ZERO
-    var totalInvestment = BigDecimal.ZERO
+    var totalProfit = BigDecimal.ZERO
     val xirrTx = mutableListOf<Transaction>()
 
     // Process each instrument separately
@@ -353,9 +341,15 @@ class PortfolioSummaryService(
           val currentValue = currentHoldings.multiply(price)
           totalValue = totalValue.add(currentValue)
 
-          // Calculate investment using average cost method
-          val investment = currentHoldings.multiply(averageCost)
-          totalInvestment = totalInvestment.add(investment)
+          // Calculate profit using the same method as instruments
+          // This accounts for realized gains/losses from sells
+          val instrumentProfit =
+            unifiedProfitCalculationService.calculateProfit(
+            currentHoldings,
+            averageCost,
+            price,
+          )
+          totalProfit = totalProfit.add(instrumentProfit)
 
           // For XIRR calculation
           instrumentTransactions.forEach { tx ->
@@ -392,13 +386,55 @@ class PortfolioSummaryService(
           val currentValue = netQuantity.multiply(price)
           totalValue = totalValue.add(currentValue)
 
-          // Calculate investment (summing up BUY transactions)
-          val investment =
+          // For fallback, use the same profit calculation approach
+          val totalBuys =
             instrumentTransactions
-              .filter { it.transactionType == TransactionType.BUY }
-              .sumOf { it.price.multiply(it.quantity) }
+            .filter { it.transactionType == TransactionType.BUY }
+            .sumOf { it.price.multiply(it.quantity) }
+          val totalSells =
+            instrumentTransactions
+            .filter { it.transactionType == TransactionType.SELL }
+            .sumOf { it.price.multiply(it.quantity) }
 
-          totalInvestment = totalInvestment.add(investment)
+          // Calculate realized gains/losses from sells
+          val realizedGains =
+            if (totalSells > BigDecimal.ZERO) {
+            val sellQuantity =
+              instrumentTransactions
+              .filter { it.transactionType == TransactionType.SELL }
+              .sumOf { it.quantity }
+            val avgBuyPrice =
+              totalBuys.divide(
+              instrumentTransactions
+                .filter { it.transactionType == TransactionType.BUY }
+                .sumOf { it.quantity },
+              10,
+              RoundingMode.HALF_UP,
+            )
+            totalSells.subtract(avgBuyPrice.multiply(sellQuantity))
+          } else {
+            BigDecimal.ZERO
+          }
+
+          // Unrealized gains on remaining holdings
+          val unrealizedGains =
+            currentValue.subtract(
+            totalBuys.subtract(
+              instrumentTransactions
+                .filter { it.transactionType == TransactionType.SELL }
+                .sumOf { tx ->
+                  val buyQuantity =
+                    instrumentTransactions
+                    .filter { it.transactionType == TransactionType.BUY }
+                    .sumOf { it.quantity }
+                  val avgBuyPrice = totalBuys.divide(buyQuantity, 10, RoundingMode.HALF_UP)
+                  avgBuyPrice.multiply(tx.quantity)
+                },
+            ),
+          )
+
+          val instrumentProfit = realizedGains.add(unrealizedGains)
+          totalProfit = totalProfit.add(instrumentProfit)
 
           // For XIRR calculation
           instrumentTransactions.forEach { tx ->
@@ -414,9 +450,6 @@ class PortfolioSummaryService(
         }
       }
     }
-
-    // Calculate profit as the difference between current value and investment
-    val totalProfit = totalValue.subtract(totalInvestment)
 
     // Calculate XIRR
     val xirr =

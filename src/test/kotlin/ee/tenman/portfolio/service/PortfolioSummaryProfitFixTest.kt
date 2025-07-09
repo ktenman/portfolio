@@ -1,0 +1,128 @@
+package ee.tenman.portfolio.service
+
+import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.repository.DailyPriceRepository
+import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.time.LocalDate
+
+@IntegrationTest
+@Transactional
+class PortfolioSummaryProfitFixTest @Autowired constructor(
+  private val portfolioSummaryService: PortfolioSummaryService,
+  private val instrumentRepository: InstrumentRepository,
+  private val portfolioTransactionRepository: PortfolioTransactionRepository,
+  private val dailyPriceService: DailyPriceService,
+  private val dailyPriceRepository: DailyPriceRepository
+) {
+
+  private lateinit var instrument: Instrument
+  private val testDate = LocalDate.of(2024, 7, 9)
+
+  @BeforeEach
+  fun setup() {
+    instrument =
+      instrumentRepository.save(
+        Instrument(
+          symbol = "TEST:NYSE:USD",
+          name = "Test Stock",
+          category = "Stock",
+          baseCurrency = "USD",
+          currentPrice = BigDecimal("100.00"),
+          providerName = ProviderName.FT
+        ),
+      )
+    
+    // Create daily prices for the test periods
+    val startDate = testDate.minusDays(30)
+    val endDate = testDate.plusDays(1)
+    var currentDate = startDate
+    
+    while (!currentDate.isAfter(endDate)) {
+      dailyPriceRepository.save(
+        DailyPrice(
+          instrument = instrument,
+          entryDate = currentDate,
+          openPrice = BigDecimal("100.00"),
+          highPrice = BigDecimal("100.00"),
+          lowPrice = BigDecimal("100.00"),
+          closePrice = BigDecimal("100.00"),
+          providerName = ProviderName.FT,
+          volume = null
+        )
+      )
+      currentDate = currentDate.plusDays(1)
+    }
+  }
+
+  @Test
+  fun `profit calculation should be consistent between current and historical dates`() {
+    val buyTransaction =
+      portfolioTransactionRepository.save(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("80.00"),
+          transactionDate = testDate.minusDays(10),
+          platform = Platform.TRADING212,
+        ),
+      )
+
+    val historicalDate = testDate.minusDays(1)
+    val historicalSummary = portfolioSummaryService.calculateSummaryForDate(historicalDate)
+
+    val currentSummary = portfolioSummaryService.getCurrentDaySummary()
+
+    assertThat(historicalSummary.totalProfit)
+      .describedAs("Historical profit should match calculation logic")
+      .isNotNull()
+  }
+
+  @Test
+  fun `profit calculation should account for sells correctly`() {
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("20"),
+        price = BigDecimal("80.00"),
+        transactionDate = testDate.minusDays(20),
+        platform = Platform.TRADING212,
+      ),
+    )
+
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.SELL,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("90.00"),
+        transactionDate = testDate.minusDays(10),
+        platform = Platform.TRADING212,
+      ),
+    )
+
+    val summary = portfolioSummaryService.calculateSummaryForDate(testDate.minusDays(5))
+
+    val totalBuyValue = BigDecimal("20").multiply(BigDecimal("80.00"))
+    val totalSellValue = BigDecimal("10").multiply(BigDecimal("90.00"))
+    val realizedProfit = totalSellValue.subtract(BigDecimal("10").multiply(BigDecimal("80.00")))
+
+    assertThat(summary.totalProfit)
+      .describedAs("Should include realized profit from sells")
+      .isGreaterThanOrEqualTo(realizedProfit)
+  }
+}

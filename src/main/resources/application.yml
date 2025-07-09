@@ -63,6 +63,7 @@ spring:
     user: ${spring.datasource.username}
     password: ${spring.datasource.password}
     enabled: true
+    baseline-on-migrate: true
 
   data:
     redis:
@@ -127,3 +128,4 @@ webdriver:
   verify:
     on:
       startup: ${WEBDRIVER_VERIFY_ON_STARTUP:true}
+
