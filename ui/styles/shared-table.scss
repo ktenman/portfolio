@@ -12,6 +12,41 @@
   }
 }
 
+.action-buttons {
+  display: inline-flex;
+  align-items: center;
+
+  .btn {
+    border-radius: 0;
+    position: relative;
+    padding: 0.25rem 0.5rem;
+
+    &:first-child {
+      border-top-left-radius: var(--radius-sm);
+      border-bottom-left-radius: var(--radius-sm);
+    }
+
+    &:last-child {
+      border-top-right-radius: var(--radius-sm);
+      border-bottom-right-radius: var(--radius-sm);
+    }
+
+    &:not(:first-child) {
+      margin-left: -1px;
+    }
+
+    &:hover,
+    &:focus {
+      z-index: 1;
+    }
+
+    // Even more compact on desktop for icon-only
+    @media (min-width: 992px) {
+      padding: 0.25rem 0.375rem;
+    }
+  }
+}
+
 @media (min-width: 768px) {
   .instrument-info {
     max-width: 300px;
