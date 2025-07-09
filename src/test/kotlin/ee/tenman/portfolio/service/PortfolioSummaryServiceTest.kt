@@ -544,13 +544,14 @@ class PortfolioSummaryServiceTest {
       .thenReturn(BigDecimal("10") to BigDecimal("100"))
     whenever(unifiedProfitCalculationService.calculateCurrentHoldings(eq(listOf(transaction2))))
       .thenReturn(BigDecimal("5") to BigDecimal("80"))
-    
+
     val profit1 = BigDecimal("10").multiply(price1.subtract(BigDecimal("100")))
-    lenient().whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
+    lenient()
+      .whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
       .thenReturn(BigDecimal.ZERO)
     whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("10")), eq(BigDecimal("100")), eq(price1)))
       .thenReturn(profit1)
-    
+
     val profit2 = BigDecimal("5").multiply(price2.subtract(BigDecimal("80")))
     whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("5")), eq(BigDecimal("80")), eq(price2)))
       .thenReturn(profit2)
