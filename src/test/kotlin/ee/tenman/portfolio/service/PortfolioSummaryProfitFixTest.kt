@@ -20,14 +20,15 @@ import java.time.LocalDate
 
 @IntegrationTest
 @Transactional
-class PortfolioSummaryProfitFixTest @Autowired constructor(
+class PortfolioSummaryProfitFixTest
+  @Autowired
+  constructor(
   private val portfolioSummaryService: PortfolioSummaryService,
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val dailyPriceService: DailyPriceService,
-  private val dailyPriceRepository: DailyPriceRepository
+  private val dailyPriceRepository: DailyPriceRepository,
 ) {
-
   private lateinit var instrument: Instrument
   private val testDate = LocalDate.of(2024, 7, 9)
 
@@ -41,15 +42,15 @@ class PortfolioSummaryProfitFixTest @Autowired constructor(
           category = "Stock",
           baseCurrency = "USD",
           currentPrice = BigDecimal("100.00"),
-          providerName = ProviderName.FT
+          providerName = ProviderName.FT,
         ),
       )
-    
+
     // Create daily prices for the test periods
     val startDate = testDate.minusDays(30)
     val endDate = testDate.plusDays(1)
     var currentDate = startDate
-    
+
     while (!currentDate.isAfter(endDate)) {
       dailyPriceRepository.save(
         DailyPrice(
@@ -60,8 +61,8 @@ class PortfolioSummaryProfitFixTest @Autowired constructor(
           lowPrice = BigDecimal("100.00"),
           closePrice = BigDecimal("100.00"),
           providerName = ProviderName.FT,
-          volume = null
-        )
+          volume = null,
+        ),
       )
       currentDate = currentDate.plusDays(1)
     }
