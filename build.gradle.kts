@@ -72,7 +72,6 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
   testImplementation("org.springframework.cloud:spring-cloud-starter-contract-stub-runner")
-  testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.testcontainers:junit-jupiter")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.testcontainers:postgresql")

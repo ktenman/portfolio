@@ -6,7 +6,6 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.InstrumentService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -27,7 +26,6 @@ import java.math.BigDecimal
 @RequestMapping("/api/instruments")
 @Validated
 @Tag(name = "Instruments", description = "APIs for managing financial instruments")
-@SecurityRequirement(name = "bearerAuth")
 class InstrumentController(
   private val instrumentService: InstrumentService,
 ) {
