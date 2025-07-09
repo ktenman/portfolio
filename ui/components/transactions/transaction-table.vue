@@ -6,10 +6,10 @@
     empty-message="No transactions found. Add a new transaction to get started."
   >
     <template #cell-instrumentId="{ item }">
-      <div class="instrument-info">
-        <div class="small text-truncate">{{ item.instrumentName }}</div>
-        <small class="text-muted">{{ item.symbol }}</small>
-      </div>
+      <span class="instrument-info">
+        <span class="d-block">{{ item.instrumentName }}</span>
+        <small class="d-block text-muted">{{ item.symbol }}</small>
+      </span>
     </template>
 
     <template #cell-amount="{ item }">
@@ -35,16 +35,16 @@
     </template>
 
     <template #actions="{ item }">
-      <button class="btn btn-sm btn-secondary me-2" @click="$emit('edit', item)">
+      <button class="btn btn-ghost btn-sm btn-secondary" @click="$emit('edit', item)">
         <base-icon name="pencil" :size="14" />
-        <span class="d-none d-lg-inline ms-1">Edit</span>
+        <span class="ms-1 edit-text">Edit</span>
       </button>
       <button
-        class="btn btn-sm btn-danger hide-on-mobile"
+        class="btn btn-ghost btn-sm btn-danger d-none d-lg-inline-block"
         @click="item.id && $emit('delete', item.id)"
       >
         <base-icon name="trash" :size="14" />
-        <span class="d-none d-lg-inline ms-1">Delete</span>
+        <span class="ms-1">Delete</span>
       </button>
     </template>
   </data-table>
@@ -108,16 +108,8 @@ const enrichedTransactions = computed(() => {
 
 @media (max-width: 992px) {
   .instrument-info > div:first-child {
-    max-width: 20ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-@media (max-width: 794px) {
-  .hide-on-mobile {
-    display: none !important;
+    // Allow full instrument names to be visible
+    word-break: break-word;
   }
 }
 </style>
