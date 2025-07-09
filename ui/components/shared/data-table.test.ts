@@ -27,7 +27,7 @@ describe('DataTable', () => {
         },
       })
 
-      expect(wrapper.find('.spinner-border').exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'SkeletonLoader' }).exists()).toBe(true)
       expect(wrapper.find('.table').exists()).toBe(false)
     })
 
@@ -268,7 +268,8 @@ describe('DataTable', () => {
       })
 
       expect(wrapper.find('thead th:last-child').text()).toBe('Actions')
-      expect(wrapper.findAll('.btn-edit')).toHaveLength(3)
+      expect(wrapper.findAll('.d-none.d-md-block .btn-edit')).toHaveLength(3)
+      expect(wrapper.findAll('.d-block.d-md-none .btn-edit')).toHaveLength(3)
     })
 
     it('should render custom cell slot', () => {
@@ -282,9 +283,12 @@ describe('DataTable', () => {
         },
       })
 
-      const customCells = wrapper.findAll('.custom-name')
-      expect(customCells).toHaveLength(3)
-      expect(customCells[0].text()).toBe('Custom: Item 1')
+      const desktopCustomCells = wrapper.findAll('.d-none.d-md-block .custom-name')
+      const mobileCustomCells = wrapper.findAll('.d-block.d-md-none .custom-name')
+      expect(desktopCustomCells).toHaveLength(3)
+      expect(mobileCustomCells).toHaveLength(3)
+      expect(desktopCustomCells[0].text()).toBe('Custom: Item 1')
+      expect(mobileCustomCells[0].text()).toBe('Custom: Item 1')
     })
 
     it('should pass correct props to cell slot', () => {
