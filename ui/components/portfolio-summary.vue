@@ -1,13 +1,14 @@
 <template>
-  <div class="container mt-2">
+  <div class="container mt-3">
     <portfolio-actions
       :is-loading="isLoading"
       :is-recalculating="isRecalculating"
       @recalculate="handleRecalculate"
     />
 
-    <div v-if="viewState === 'LOADING'" class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
+    <div v-if="viewState === 'LOADING'">
+      <skeleton-loader type="card" class="mb-4" />
+      <skeleton-loader type="table" :rows="10" :columns="5" />
     </div>
 
     <div v-else-if="viewState === 'ERROR'" class="alert alert-danger" role="alert">
@@ -43,9 +44,7 @@
       />
 
       <div v-if="isFetching" class="text-center mt-3">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading more data...</span>
-        </div>
+        <skeleton-loader type="text" :lines="2" />
       </div>
     </template>
   </div>
@@ -59,6 +58,7 @@ import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
+import SkeletonLoader from './shared/skeleton-loader.vue'
 import {
   formatCurrencyWithSymbol,
   formatDate,

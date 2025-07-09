@@ -3,7 +3,11 @@
     <NavBar />
     <main class="flex-grow-1">
       <div class="container-fluid py-2">
-        <router-view></router-view>
+        <router-view v-slot="{ Component }">
+          <transition name="fade-slide" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </div>
     </main>
     <footer class="bg-light text-center py-2">

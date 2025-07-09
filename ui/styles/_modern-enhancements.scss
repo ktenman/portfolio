@@ -1,0 +1,859 @@
+// Modern Design System Enhancements
+// Progressively enhances the existing Bootstrap setup
+
+// ========================================
+// CSS Custom Properties for Modern Theming
+// ========================================
+:root {
+  // Enhanced color palette
+  --modern-primary: #4361ee;
+  --modern-primary-hover: #3651d4;
+  --modern-success: #21c55d;
+  --modern-danger: #dc3545;
+  --modern-danger-hover: #c82333;
+
+  // Modern shadows
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  // Modern transitions
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Modern border radius
+  --radius-sm: 0.375rem;
+  --radius-base: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+// Dark mode support
+[data-bs-theme='dark'] {
+  --modern-primary: #6366f1;
+  --modern-primary-hover: #5457e5;
+  --modern-success: #22c55e;
+  --modern-danger: #ef4444;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
+// ========================================
+// Modern Component Enhancements
+// ========================================
+
+// Enhanced cards with modern shadows and hover effects
+.card {
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base),
+    border-color var(--transition-base);
+
+  &:hover {
+    transform: translateY(-1px);
+    // Removed shadow on hover for cleaner look
+  }
+
+  .card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: transparent;
+    font-weight: 600;
+  }
+
+  .card-body {
+    padding: 1.25rem;
+  }
+}
+
+// Modern button styles
+.btn {
+  border-radius: var(--radius-base);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  position: relative;
+  border: 1px solid transparent;
+
+  // Icon spacing
+  i,
+  svg {
+    margin-right: 0.375rem;
+    vertical-align: -0.125em;
+  }
+
+  // Remove icon margin if it's the last child
+  i:last-child,
+  svg:last-child {
+    margin-right: 0;
+    margin-left: 0.375rem;
+  }
+
+  // Only icon, no text
+  &.btn-icon {
+    padding: 0.375rem 0.75rem;
+
+    i,
+    svg {
+      margin: 0;
+    }
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+  }
+
+  &:disabled,
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Enhanced primary button with subtle gradient
+.btn-primary {
+  background: linear-gradient(135deg, var(--modern-primary) 0%, var(--modern-primary-hover) 100%);
+  border-color: var(--modern-primary);
+  color: white;
+  // Removed base shadow for cleaner look
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--modern-primary-hover) 0%, var(--modern-primary) 100%);
+    border-color: var(--modern-primary-hover);
+    // Removed shadow for cleaner hover
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    // Removed shadow for cleaner active state
+  }
+}
+
+// Ghost button style for table actions (minimal by default, prominent on hover)
+.btn.btn-ghost {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  box-shadow: none !important;
+
+  // Add small margin between action buttons
+  & + .btn.btn-ghost {
+    margin-left: 0.375rem;
+  }
+
+  // Base styling for all ghost buttons
+  &.btn-sm {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  // Standard action (Edit) - uses gray/blue
+  &.btn-secondary {
+    color: var(--bs-gray-600);
+    background: transparent !important;
+    border-color: transparent !important;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(67, 97, 238, 0.08) !important;
+      border-color: transparent !important;
+      color: var(--modern-primary);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      background-color: rgba(67, 97, 238, 0.12) !important;
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--modern-primary);
+      outline-offset: 2px;
+      box-shadow: none !important;
+    }
+  }
+
+  // Destructive action (Delete) - same style as edit
+  &.btn-danger {
+    color: var(--bs-gray-600);
+    background: transparent !important;
+    border-color: transparent !important;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(67, 97, 238, 0.08) !important;
+      border-color: transparent !important;
+      color: var(--modern-primary);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      background-color: rgba(67, 97, 238, 0.12) !important;
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--modern-primary);
+      outline-offset: 2px;
+      box-shadow: none !important;
+    }
+  }
+
+  // Primary action
+  &.btn-primary {
+    color: var(--modern-primary);
+    background: transparent !important;
+    border-color: transparent !important;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(67, 97, 238, 0.1) !important;
+      border-color: transparent !important;
+      color: var(--modern-primary);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      background-color: rgba(67, 97, 238, 0.15) !important;
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--modern-primary);
+      outline-offset: 2px;
+      box-shadow: none !important;
+    }
+  }
+}
+
+// Keep existing filled button styles for non-table contexts
+.btn-secondary:not(.btn-ghost) {
+  background: var(--bs-secondary);
+  border-color: var(--bs-secondary);
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: var(--bs-gray-700);
+    border-color: var(--bs-gray-700);
+    transform: translateY(-1px);
+  }
+}
+
+// Success button with modern styling
+.btn-success {
+  background: linear-gradient(135deg, var(--modern-success) 0%, #1ea750 100%);
+  border-color: var(--modern-success);
+  // Removed base shadow for cleaner look
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #1ea750 0%, var(--modern-success) 100%);
+    border-color: #1ea750;
+    // Removed shadow for cleaner hover
+    transform: translateY(-1px);
+  }
+}
+
+// Danger button with modern styling
+.btn-danger {
+  background: linear-gradient(135deg, var(--modern-danger) 0%, var(--modern-danger-hover) 100%);
+  border-color: var(--modern-danger);
+  // Removed base shadow for cleaner look
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--modern-danger-hover) 0%, var(--modern-danger) 100%);
+    border-color: var(--modern-danger-hover);
+    // Removed shadow for cleaner hover
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    // Removed shadow for cleaner active state
+  }
+}
+
+// Button sizes
+.btn-sm {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+
+  &.btn-icon {
+    padding: 0.375rem 0.5rem;
+  }
+}
+
+.btn-lg {
+  padding: 0.625rem 1.25rem;
+  font-size: 1.125rem;
+  border-radius: var(--radius-lg);
+}
+
+// Loading state for buttons
+.btn-loading {
+  color: transparent !important;
+  position: relative;
+  pointer-events: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    top: 50%;
+    left: 50%;
+    margin-left: -0.5rem;
+    margin-top: -0.5rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+// Modern form controls
+.form-control,
+.form-select {
+  border-radius: var(--radius-base);
+  border-color: rgba(0, 0, 0, 0.1);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+
+  &:focus {
+    border-color: var(--modern-primary);
+    outline: 2px solid rgba(67, 97, 238, 0.2);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+
+// Enhanced tables with hover states
+.table {
+  thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--bs-gray-600);
+    border-bottom: 2px solid var(--bs-gray-200);
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
+  }
+
+  tbody tr {
+    transition: background-color var(--transition-fast);
+
+    &:hover {
+      background-color: rgba(67, 97, 238, 0.02);
+    }
+
+    td {
+      vertical-align: middle;
+      padding: 1rem 0.75rem;
+    }
+  }
+}
+
+// Table responsive wrapper
+.table-responsive {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  // Removed shadow for cleaner look
+
+  .table {
+    margin-bottom: 0;
+  }
+}
+
+// Modern navbar with glassmorphism
+.navbar {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+
+  .navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+  }
+
+  .nav-link {
+    font-weight: 500;
+    transition: color var(--transition-fast);
+    position: relative;
+
+    &:hover {
+      color: var(--modern-primary) !important;
+    }
+
+    &.active {
+      color: var(--modern-primary) !important;
+      font-weight: 600;
+    }
+  }
+}
+
+// ========================================
+// Loading States & Animations
+// ========================================
+
+// Skeleton loader
+@keyframes skeleton-pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.06) 25%,
+    rgba(0, 0, 0, 0.1) 50%,
+    rgba(0, 0, 0, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-base);
+
+  &.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &.skeleton-title {
+    height: 1.5rem;
+    width: 50%;
+    margin-bottom: 1rem;
+  }
+
+  &.skeleton-card {
+    height: 200px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+// Fade-in animation
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-slow) ease-out;
+}
+
+// Spin animation for loading
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+// ========================================
+// Responsive Button Optimizations
+// ========================================
+
+// Middle screen sizes (768px to 844px) - show only icons
+@media (min-width: 768px) and (max-width: 844px) {
+  .btn.btn-ghost {
+    &.btn-sm {
+      // Hide text on medium screens
+      .edit-text {
+        display: none !important;
+      }
+
+      // Make button more compact when icon-only
+      padding: 0.375rem 0.5rem;
+
+      // Center the icon
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+// ========================================
+// Mobile Optimizations
+// ========================================
+
+@media (max-width: 768px) {
+  // Card-based layout for mobile
+  .table-card-mobile {
+    @media (max-width: 767px) {
+      .table {
+        display: none;
+      }
+
+      .mobile-cards {
+        display: block;
+
+        .mobile-card {
+          background: var(--bs-white);
+          border: 1px solid var(--bs-gray-200);
+          border-radius: var(--radius-lg);
+          padding: 1rem;
+          margin-bottom: 0.75rem;
+          box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+
+          .mobile-card-header {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--modern-primary);
+          }
+
+          .mobile-card-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+
+            .label {
+              color: var(--bs-gray-600);
+              font-size: 0.875rem;
+            }
+
+            .value {
+              font-weight: 500;
+            }
+          }
+        }
+      }
+    }
+
+    @media (min-width: 768px) {
+      .mobile-cards {
+        display: none;
+      }
+    }
+  }
+
+  // Touch-friendly buttons on mobile only
+  .btn {
+    min-height: 44px;
+  }
+
+  // Mobile-specific card styling
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  // Bottom navigation bar
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bs-white);
+    border-top: 1px solid var(--bs-gray-200);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1030;
+
+    .nav {
+      height: 56px;
+
+      .nav-link {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+
+        i {
+          font-size: 1.25rem;
+          margin-bottom: 0.25rem;
+        }
+      }
+    }
+  }
+}
+
+// ========================================
+// Utility Classes
+// ========================================
+
+// Modern shadows - kept subtle
+.shadow-modern-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03) !important;
+}
+.shadow-modern {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05) !important;
+}
+.shadow-modern-md {
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.06) !important;
+}
+.shadow-modern-lg {
+  box-shadow: 0 4px 6px 0 rgb(0 0 0 / 0.07) !important;
+}
+
+// Modern border radius
+.rounded-modern-sm {
+  border-radius: var(--radius-sm) !important;
+}
+.rounded-modern {
+  border-radius: var(--radius-base) !important;
+}
+.rounded-modern-lg {
+  border-radius: var(--radius-lg) !important;
+}
+.rounded-modern-xl {
+  border-radius: var(--radius-xl) !important;
+}
+
+// Glassmorphism effect
+.glass {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+// Modern minimal Add New buttons - text-first approach
+.btn-add-new {
+  background: transparent;
+  border: none;
+  color: var(--bs-gray-700);
+  box-shadow: none;
+  font-weight: 400;
+  padding: 0.5rem 1rem;
+  position: relative;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-base);
+
+  // Add plus symbol before text
+  &::before {
+    content: '+';
+    margin-right: 0.5rem;
+    font-size: 1.1em;
+    font-weight: 300;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(67, 97, 238, 0.05);
+    color: var(--modern-primary);
+    transform: translateY(-1px);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    background: rgba(67, 97, 238, 0.08);
+  }
+
+  &:focus {
+    outline: 2px solid var(--modern-primary);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+
+// Removed unused btn-reset-calculator styles
+
+// Respect motion preferences
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// ========================================
+// Enhanced Mobile Card Styling
+// ========================================
+
+// Improved instrument info display in mobile cards
+.mobile-card .instrument-info {
+  display: inline-block;
+  padding: 0 0.5rem;
+
+  > span:first-child {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    line-height: 1.4;
+    color: var(--bs-gray-900) !important;
+    letter-spacing: -0.01em;
+    word-break: break-word;
+    margin-bottom: 0.125rem !important;
+  }
+
+  small {
+    font-size: 0.8125rem !important;
+    color: var(--bs-gray-600) !important;
+    opacity: 1 !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+  }
+
+  @media (min-width: 389px) and (max-width: 767px) {
+    padding: 0 0.375rem;
+
+    > span:first-child {
+      font-size: 0.875rem !important;
+      margin-bottom: 0.125rem !important;
+    }
+
+    small {
+      font-size: 0.75rem !important;
+    }
+  }
+}
+
+// Ensure instrument info never looks like links
+.instrument-info {
+  color: inherit !important;
+  text-decoration: none !important;
+
+  * {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
+
+// Enhanced mobile card layout
+.mobile-card {
+  background: var(--bs-white);
+  border: 1px solid var(--bs-gray-200);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 0.75rem;
+  margin-bottom: 0.875rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  transition: all var(--transition-fast);
+
+  // Special handling for narrow mobile screens
+  @media (min-width: 389px) and (max-width: 767px) {
+    padding: 0.75rem 0.5rem;
+
+    .mobile-card-body {
+      .mobile-card-item {
+        padding: 0.375rem 0;
+        gap: 0.25rem;
+
+        &:nth-child(2) {
+          padding-bottom: 0.625rem;
+        }
+
+        .label {
+          font-size: 0.7rem;
+          min-width: 75px;
+          letter-spacing: 0.03em;
+        }
+
+        .value {
+          font-size: 0.8125rem;
+        }
+      }
+    }
+
+    // Smaller actions section
+    .mobile-card-actions {
+      margin-top: 0.25rem;
+      padding-top: 0.25rem;
+
+      .btn {
+        padding: 0.1875rem 0.5rem;
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  &:hover {
+    // Removed shadow for cleaner hover
+    border-color: var(--bs-gray-300);
+  }
+
+  .mobile-card-body {
+    .mobile-card-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.875rem 0;
+      gap: 1rem;
+
+      // Visual separator for key information
+      &:nth-child(2) {
+        border-bottom: 1px solid var(--bs-gray-100);
+        padding-bottom: 1rem;
+        margin-bottom: 0.25rem;
+      }
+
+      &:not(:last-child):not(:nth-child(2)) {
+        border-bottom: 1px solid var(--bs-gray-50);
+      }
+
+      .label {
+        color: var(--bs-gray-700);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        flex: 0 0 auto;
+      }
+
+      .value {
+        font-weight: 600;
+        text-align: right;
+        flex: 1;
+        word-break: break-word;
+        margin-left: auto;
+
+        &.text-success {
+          color: var(--modern-success);
+          font-weight: 700;
+        }
+
+        &.text-danger {
+          color: var(--modern-danger);
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
+  .mobile-card-actions {
+    margin-top: 0.375rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid var(--bs-gray-100);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+
+    .btn {
+      flex: 0 0 auto;
+      font-weight: 600;
+
+      // Ensure text is visible on mobile
+      span {
+        display: inline !important;
+      }
+    }
+  }
+}

@@ -1,7 +1,11 @@
 <template>
   <div>
-    <div v-if="isLoading" class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
+    <div v-if="isLoading">
+      <skeleton-loader
+        type="table"
+        :rows="5"
+        :columns="columns.length + ($slots.actions ? 1 : 0)"
+      />
     </div>
 
     <div v-else-if="isError" class="alert alert-danger" role="alert">
@@ -12,44 +16,72 @@
       {{ emptyMessage }}
     </div>
 
-    <div v-else class="table-responsive">
-      <table class="table table-striped table-hover">
-        <thead>
-          <tr>
-            <th v-for="column in columns" :key="column.key" :class="column.class">
-              {{ column.label }}
-            </th>
-            <th v-if="$slots.actions" class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(item, index) in items"
-            :key="getItemKey(item, index)"
-            :class="rowClass?.(item, index)"
-          >
-            <td
-              v-for="column in columns"
-              :key="column.key"
-              :class="column.class"
-              :data-label="column.label"
+    <template v-else>
+      <!-- Mobile Card View -->
+      <div class="d-block d-md-none mobile-cards">
+        <div
+          v-for="(item, index) in items"
+          :key="getItemKey(item, index)"
+          class="mobile-card"
+          :class="rowClass?.(item, index)"
+        >
+          <div class="mobile-card-body">
+            <div v-for="column in columns" :key="column.key" class="mobile-card-item">
+              <span class="label">{{ column.label }}</span>
+              <span class="value" :class="column.class">
+                <slot :name="`cell-${column.key}`" :item="item" :value="getCellValue(item, column)">
+                  {{ formatCellValue(item, column) }}
+                </slot>
+              </span>
+            </div>
+          </div>
+          <div v-if="$slots.actions" class="mobile-card-actions">
+            <slot name="actions" :item="item" :index="index"></slot>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Table View -->
+      <div class="d-none d-md-block table-responsive">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th v-for="column in columns" :key="column.key" :class="column.class">
+                {{ column.label }}
+              </th>
+              <th v-if="$slots.actions" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(item, index) in items"
+              :key="getItemKey(item, index)"
+              :class="rowClass?.(item, index)"
             >
-              <slot :name="`cell-${column.key}`" :item="item" :value="getCellValue(item, column)">
-                {{ formatCellValue(item, column) }}
-              </slot>
-            </td>
-            <td v-if="$slots.actions" class="text-end" data-label="Actions">
-              <slot name="actions" :item="item" :index="index"></slot>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              <td
+                v-for="column in columns"
+                :key="column.key"
+                :class="column.class"
+                :data-label="column.label"
+              >
+                <slot :name="`cell-${column.key}`" :item="item" :value="getCellValue(item, column)">
+                  {{ formatCellValue(item, column) }}
+                </slot>
+              </td>
+              <td v-if="$slots.actions" class="text-end" data-label="Actions">
+                <slot name="actions" :item="item" :index="index"></slot>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { computed } from 'vue'
+import SkeletonLoader from './skeleton-loader.vue'
 export interface ColumnDefinition {
   key: string
   label: string
@@ -110,7 +142,99 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.mobile-cards {
+  .mobile-card {
+    background: var(--bs-white);
+    border: 1px solid var(--bs-gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1rem 0.75rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+
+    @media (min-width: 389px) and (max-width: 767px) {
+      padding: 0.75rem 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    &:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .mobile-card-body {
+      .mobile-card-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        gap: 0.5rem;
+
+        &:not(:last-child) {
+          border-bottom: 1px solid var(--bs-gray-100);
+        }
+
+        .label {
+          color: var(--bs-gray-600);
+          font-size: 0.875rem;
+          font-weight: 500;
+          flex: 0 0 auto;
+        }
+
+        .value {
+          font-weight: 600;
+          text-align: right;
+          flex: 1;
+          word-break: break-word;
+          margin-left: auto;
+
+          &.text-success {
+            color: var(--modern-success);
+          }
+
+          &.text-danger {
+            color: var(--modern-danger);
+          }
+
+          &.text-end {
+            text-align: right;
+          }
+
+          // Special styling for instrument info
+          .instrument-info {
+            > span:first-child {
+              font-weight: 600;
+              margin-bottom: 0.125rem;
+              font-size: 0.95rem;
+              color: var(--bs-gray-900) !important;
+            }
+
+            small {
+              opacity: 1;
+              font-weight: 500;
+              font-size: 0.8125rem;
+              color: var(--bs-gray-600) !important;
+            }
+          }
+        }
+      }
+    }
+
+    .mobile-card-actions {
+      margin-top: 0.25rem;
+      padding-top: 0.25rem;
+      border-top: 1px solid var(--bs-gray-200);
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+
+      .btn {
+        flex: 0 0 auto;
+      }
+    }
+  }
+}
 .table {
   font-size: 0.9rem;
 }

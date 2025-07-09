@@ -1,7 +1,7 @@
 <template>
-  <div class="container mt-2">
+  <div class="container mt-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4>Investment Calculator</h4>
+      <h2 class="mb-0">Investment Calculator</h2>
     </div>
 
     <div class="row">
@@ -20,11 +20,7 @@
             />
           </div>
           <div class="calculator-buttons-desktop">
-            <button
-              type="button"
-              class="btn btn-outline-secondary me-2 btn-sm"
-              @click="handleReset"
-            >
+            <button type="button" class="btn btn-ghost btn-sm btn-secondary" @click="handleReset">
               Reset Calculator
             </button>
           </div>
@@ -51,7 +47,7 @@
     </div>
 
     <div class="calculator-buttons-mobile">
-      <button type="button" class="btn btn-outline-secondary me-2" @click="handleReset">
+      <button type="button" class="btn btn-ghost btn-secondary me-2" @click="handleReset">
         Reset Calculator
       </button>
     </div>
@@ -166,6 +162,10 @@ canvas {
 
       &:first-child {
         margin-right: $spacing-sm;
+      }
+
+      &.btn-ghost {
+        padding: 0.25rem 0.5rem;
       }
     }
   }

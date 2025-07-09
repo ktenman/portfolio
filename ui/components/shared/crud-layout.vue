@@ -1,11 +1,11 @@
 <template>
-  <div class="container mt-2">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">{{ title }}</h4>
+  <div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">{{ title }}</h2>
       <button
         v-if="showAddButton"
         :id="addButtonId"
-        class="btn btn-primary btn-sm"
+        class="btn btn-primary btn-add-new"
         @click="$emit('add')"
       >
         {{ addButtonText }}
