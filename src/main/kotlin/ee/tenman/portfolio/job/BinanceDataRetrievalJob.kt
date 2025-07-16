@@ -6,10 +6,12 @@ import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.util.DataProcessingUtil
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 @Component
+@ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
 class BinanceDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val jobExecutionService: JobExecutionService,
@@ -18,7 +20,7 @@ class BinanceDataRetrievalJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 */1 * * * *")
+  @Scheduled(fixedDelayString = "\${scheduling.jobs.binance-interval:120000}")
   fun runJob() {
     log.info("Running Binance data retrieval job")
     jobExecutionService.executeJob(this)
