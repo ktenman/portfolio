@@ -42,7 +42,10 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 5
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
   jpa:
     hibernate:
       ddl-auto: none # Use 'update' for development
@@ -69,6 +72,17 @@ spring:
     redis:
       host: redis
       port: 6379
+  
+  task:
+    scheduling:
+      pool:
+        size: 10
+      thread-name-prefix: scheduled-
+    execution:
+      pool:
+        core-size: 10
+        max-size: 20
+        queue-capacity: 100
 
 logging:
   level:
@@ -128,4 +142,14 @@ webdriver:
   verify:
     on:
       startup: ${WEBDRIVER_VERIFY_ON_STARTUP:true}
+
+scheduling:
+  enabled: ${SCHEDULING_ENABLED:true}
+  jobs:
+    binance-interval: ${BINANCE_JOB_INTERVAL:120000}
+    ft-interval: ${FT_JOB_INTERVAL:120000}
+    alphavantage-interval: ${ALPHAVANTAGE_JOB_INTERVAL:120000}
+    xirr-interval: ${XIRR_JOB_INTERVAL:120000}
+    summary-interval: ${SUMMARY_JOB_INTERVAL:120000}
+
 

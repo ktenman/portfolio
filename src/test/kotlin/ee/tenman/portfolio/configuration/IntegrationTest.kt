@@ -6,6 +6,7 @@ import org.springframework.boot.test.util.TestPropertyValues
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestExecutionListeners
@@ -18,6 +19,7 @@ import org.testcontainers.utility.DockerImageName
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
+@Import(TestConfiguration::class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @AutoConfigureWireMock(port = 0)

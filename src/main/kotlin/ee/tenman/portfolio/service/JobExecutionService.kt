@@ -2,6 +2,9 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.job.Job
+import io.github.resilience4j.circuitbreaker.CircuitBreaker
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
+import io.github.resilience4j.retry.RetryRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Clock
@@ -11,22 +14,43 @@ import java.time.Instant
 class JobExecutionService(
   private val jobTransactionService: JobTransactionService,
   private val clock: Clock,
+  private val circuitBreakerRegistry: CircuitBreakerRegistry,
+  private val retryRegistry: RetryRegistry,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun executeJob(job: Job) {
+    val jobName = job.getName()
+    val circuitBreaker = circuitBreakerRegistry.circuitBreaker("job-execution")
+    val retry = retryRegistry.retry("job-execution")
+
     val startTime = Instant.now(clock)
     var status = JobStatus.SUCCESS
     var message: String? = null
 
     try {
-      log.info("Starting execution of job: ${job.getName()}")
-      jobTransactionService.executeJobInTransaction(job)
-      log.info("Job ${job.getName()} executed successfully")
+      log.info("Starting execution of job: $jobName")
+
+      // Check circuit breaker state
+      if (circuitBreaker.state == CircuitBreaker.State.OPEN) {
+        log.warn("Circuit breaker is OPEN for job execution. Skipping job: $jobName")
+        status = JobStatus.SKIPPED
+        message = "Circuit breaker is OPEN"
+        return
+      }
+
+      // Execute job with circuit breaker and retry
+      retry.executeSupplier {
+        circuitBreaker.executeSupplier {
+          jobTransactionService.executeJobInTransaction(job)
+        }
+      }
+
+      log.info("Job $jobName executed successfully")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
       message = e.message
-      log.error("Job ${job.getName()} failed with error: ${e.message}", e)
+      log.error("Job $jobName failed with error: ${e.message}", e)
       throw e
     } finally {
       val endTime = Instant.now(clock)

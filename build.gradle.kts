@@ -28,6 +28,8 @@ val springDocVersion = "2.8.9"
 val ktlintVersion = "1.5.0"
 val selenideVersion = "7.9.4"
 val springRetryVersion = "2.0.12"
+val resilience4jVersion = "2.3.0"
+val rxjava3Version = "3.1.9"
 val guavaVersion = "33.4.8-jre"
 val commonsMathVersion = "3.6.1"
 val jsoupVersion = "1.21.1"
@@ -50,12 +52,16 @@ dependencies {
   implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
+  implementation("org.springframework.boot:spring-boot-starter-aop")
   implementation("io.micrometer:micrometer-registry-prometheus")
   implementation("com.codeborne:selenide:$selenideVersion")
   implementation("org.flywaydb:flyway-core")
   implementation("org.flywaydb:flyway-database-postgresql")
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation("org.springframework.retry:spring-retry:$springRetryVersion")
+  implementation("io.github.resilience4j:resilience4j-circuitbreaker:$resilience4jVersion")
+  implementation("io.github.resilience4j:resilience4j-retry:$resilience4jVersion")
+  implementation("io.github.resilience4j:resilience4j-kotlin:$resilience4jVersion")
   implementation("com.google.guava:guava:$guavaVersion")
   implementation("org.apache.commons:commons-math3:$commonsMathVersion")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
