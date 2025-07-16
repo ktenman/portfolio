@@ -6,9 +6,11 @@ import io.github.resilience4j.retry.RetryConfig
 import io.github.resilience4j.retry.RetryRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import java.time.Duration
 
 @Configuration
+@Profile("!test")
 class Resilience4jConfiguration {
   @Bean
   fun circuitBreakerRegistry(): CircuitBreakerRegistry {
