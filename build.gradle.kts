@@ -36,7 +36,7 @@ val jsoupVersion = "1.21.1"
 val telegramBotsVersion = "6.9.7.1"
 val googleCloudVisionVersion = "3.66.0"
 val coroutinesVersion = "1.10.2"
-val mockitoKotlinVersion = "5.4.0"
+val mockitoKotlinVersion = "6.0.0"
 val kotestVersion = "5.9.1"
 val archUnitVersion = "1.4.1"
 
