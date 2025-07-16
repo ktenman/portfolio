@@ -7,9 +7,11 @@ import io.github.resilience4j.retry.RetryRegistry
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
 import java.time.Duration
 
 @TestConfiguration
+@Profile("test")
 class TestConfiguration {
   @Bean
   @Primary
