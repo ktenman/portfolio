@@ -5,6 +5,7 @@ import org.openqa.selenium.firefox.FirefoxOptions
 import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.LocalDateTime
@@ -12,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 @Component
+@ConditionalOnProperty(name = ["webdriver.health.enabled"], havingValue = "true", matchIfMissing = false)
 class FirefoxDriverHealthIndicator : HealthIndicator {
   private val logger = LoggerFactory.getLogger(javaClass)
   private val healthCache = ConcurrentHashMap<String, HealthStatus>()
