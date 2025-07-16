@@ -54,8 +54,8 @@ class HealthController(
   }
 
   @GetMapping("/circuit-breakers")
-  fun getCircuitBreakerInfo(): Map<String, Any> {
-    return circuitBreakerRegistry.allCircuitBreakers.associate { circuitBreaker ->
+  fun getCircuitBreakerInfo(): Map<String, Any> =
+    circuitBreakerRegistry.allCircuitBreakers.associate { circuitBreaker ->
       circuitBreaker.name to
         mapOf(
           "state" to circuitBreaker.state.toString(),
@@ -66,7 +66,6 @@ class HealthController(
           "numberOfNotPermittedCalls" to circuitBreaker.metrics.numberOfNotPermittedCalls,
         )
     }
-  }
 
   @GetMapping("/memory")
   fun getMemoryInfo(): Map<String, Any> {
