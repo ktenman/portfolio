@@ -5,7 +5,7 @@ import { useFormValidation } from './use-form-validation'
 describe('useFormValidation', () => {
   const testSchema = z.object({
     name: z.string().min(1, 'Name is required').max(50, 'Name too long'),
-    email: z.string().email('Invalid email format'),
+    email: z.email('Invalid email format'),
     age: z.number().min(18, 'Must be 18 or older').max(100, 'Must be 100 or younger'),
   })
 
@@ -112,7 +112,7 @@ describe('useFormValidation', () => {
       expect(isValid).toBe(false)
       expect(errors.value.name).toBe('Name is required')
       expect(errors.value.email).toBe('Invalid email format')
-      expect(errors.value.age).toBe('Required')
+      expect(errors.value.age).toBe('Invalid input: expected number, received undefined')
     })
 
     it('should validate entire form and return true when valid', () => {
@@ -216,7 +216,7 @@ describe('useFormValidation', () => {
       const complexSchema = z.object({
         user: z.object({
           name: z.string().min(1, 'Name required'),
-          email: z.string().email('Invalid email'),
+          email: z.email('Invalid email'),
         }),
       })
 
