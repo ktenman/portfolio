@@ -10,10 +10,11 @@ import java.time.Duration
 
 @Configuration
 class Resilience4jConfiguration {
-
   @Bean
   fun circuitBreakerRegistry(): CircuitBreakerRegistry {
-    val config = CircuitBreakerConfig.custom()
+    val config =
+      CircuitBreakerConfig
+        .custom()
       .failureRateThreshold(60f)
       .minimumNumberOfCalls(10)
       .slidingWindowSize(20)
@@ -27,7 +28,9 @@ class Resilience4jConfiguration {
 
   @Bean
   fun retryRegistry(): RetryRegistry {
-    val config = RetryConfig.custom<Any>()
+    val config =
+      RetryConfig
+        .custom<Any>()
       .maxAttempts(3)
       .waitDuration(Duration.ofSeconds(2))
       .retryExceptions(Exception::class.java)
