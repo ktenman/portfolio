@@ -5,12 +5,14 @@ import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.DailyPortfolioXirrJob
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import java.util.concurrent.CompletableFuture
 
 @Service
 @Profile("!test")
+@ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
 class OnceInstrumentDataRetrievalService(
   private val alphaVantageDataRetrievalJob: AlphaVantageDataRetrievalJob,
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
