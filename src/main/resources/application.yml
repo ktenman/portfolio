@@ -142,6 +142,8 @@ webdriver:
   verify:
     on:
       startup: ${WEBDRIVER_VERIFY_ON_STARTUP:true}
+  health:
+    enabled: ${WEBDRIVER_HEALTH_ENABLED:false}
 
 scheduling:
   enabled: ${SCHEDULING_ENABLED:true}
