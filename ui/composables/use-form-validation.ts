@@ -12,10 +12,10 @@ export function useFormValidation<T extends Record<string, any>>(
   const flattenErrors = (error: ZodError): Record<string, string> => {
     const flattened: Record<string, string> = {}
 
-    error.errors.forEach(err => {
-      const path = err.path.join('.')
+    error.issues.forEach(issue => {
+      const path = issue.path.join('.')
       if (path) {
-        flattened[path] = err.message
+        flattened[path] = issue.message
       }
     })
 
@@ -51,8 +51,8 @@ export function useFormValidation<T extends Record<string, any>>(
       const result = schema.safeParse(tempData)
 
       if (!result.success) {
-        const fieldError = result.error.errors.find(
-          err => err.path.join('.') === field || err.path[0] === field
+        const fieldError = result.error.issues.find(
+          issue => issue.path.join('.') === field || issue.path[0] === field
         )
         if (fieldError) {
           errors.value[field] = fieldError.message
@@ -73,7 +73,7 @@ export function useFormValidation<T extends Record<string, any>>(
       errors.value = {}
       return true
     } catch (error) {
-      if (error instanceof Error && 'errors' in error) {
+      if (error instanceof Error && 'issues' in error) {
         const zodError = error as ZodError
         errors.value = flattenErrors(zodError)
       }
