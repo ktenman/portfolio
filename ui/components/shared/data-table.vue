@@ -25,23 +25,29 @@
           class="mobile-card"
           :class="rowClass?.(item, index)"
         >
-          <div class="mobile-card-body">
-            <div
-              v-for="column in columns.filter(col => !col.class?.includes('d-none'))"
-              :key="column.key"
-              class="mobile-card-item"
-            >
-              <span class="label">{{ column.label }}</span>
-              <span class="value" :class="column.class">
-                <slot :name="`cell-${column.key}`" :item="item" :value="getCellValue(item, column)">
-                  {{ formatCellValue(item, column) }}
-                </slot>
-              </span>
+          <slot name="mobile-card" :item="item" :index="index" :columns="columns">
+            <div class="mobile-card-body">
+              <div
+                v-for="column in columns.filter(col => !col.class?.includes('d-none'))"
+                :key="column.key"
+                class="mobile-card-item"
+              >
+                <span class="label">{{ column.label }}</span>
+                <span class="value" :class="column.class">
+                  <slot
+                    :name="`cell-${column.key}`"
+                    :item="item"
+                    :value="getCellValue(item, column)"
+                  >
+                    {{ formatCellValue(item, column) }}
+                  </slot>
+                </span>
+              </div>
             </div>
-          </div>
-          <div v-if="$slots.actions" class="mobile-card-actions">
-            <slot name="actions" :item="item" :index="index"></slot>
-          </div>
+            <div v-if="$slots.actions" class="mobile-card-actions">
+              <slot name="actions" :item="item" :index="index"></slot>
+            </div>
+          </slot>
         </div>
       </div>
 
@@ -72,7 +78,7 @@
                   </span>
                 </span>
               </th>
-              <th v-if="$slots.actions" class="text-end">Actions</th>
+              <th v-if="$slots.actions" class="text-end d-none d-md-table-cell">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -91,7 +97,11 @@
                   {{ formatCellValue(item, column) }}
                 </slot>
               </td>
-              <td v-if="$slots.actions" class="text-end" data-label="Actions">
+              <td
+                v-if="$slots.actions"
+                class="text-end d-none d-md-table-cell"
+                data-label="Actions"
+              >
                 <slot name="actions" :item="item" :index="index"></slot>
               </td>
             </tr>
@@ -183,19 +193,13 @@ const handleSort = (column: ColumnDefinition) => {
   .mobile-card {
     background: var(--bs-white);
     border: 1px solid var(--bs-gray-200);
-    border-radius: var(--radius-lg);
-    padding: 1rem 0.75rem;
+    border-radius: 0.5rem;
     margin-bottom: 0.75rem;
-    box-shadow: var(--shadow-sm);
+    overflow: hidden;
     transition: all var(--transition-fast);
 
-    @media (min-width: 389px) and (max-width: 767px) {
-      padding: 0.75rem 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
     &:hover {
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     .mobile-card-body {
@@ -203,18 +207,27 @@ const handleSort = (column: ColumnDefinition) => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 0;
+        padding: 0.5rem 0;
         gap: 0.5rem;
 
         &:not(:last-child) {
           border-bottom: 1px solid var(--bs-gray-100);
         }
 
+        &:first-child {
+          padding-top: 0;
+        }
+
+        &:last-child {
+          padding-bottom: 0;
+        }
+
         .label {
           color: var(--bs-gray-600);
-          font-size: 0.875rem;
+          font-size: 0.8125rem;
           font-weight: 500;
           flex: 0 0 auto;
+          min-width: 80px;
         }
 
         .value {
