@@ -8,11 +8,16 @@ import {
 
 export const instrumentColumns: ColumnDefinition[] = [
   { key: 'instrument', label: 'Instrument' },
-  { key: 'type', label: 'Type', class: 'hide-on-mobile' },
+  { key: 'type', label: 'Type', class: 'd-none d-lg-table-cell' },
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
-  { key: 'totalInvestment', label: 'Invested', formatter: formatCurrency, class: 'hide-on-mobile' },
+  {
+    key: 'totalInvestment',
+    label: 'Invested',
+    formatter: formatCurrency,
+    class: 'd-none d-lg-table-cell',
+  },
   { key: 'currentValue', label: 'Value', formatter: formatCurrency },
   { key: 'profit', label: 'Profit', formatter: formatCurrency },
 ]
@@ -24,5 +29,10 @@ export const transactionColumns: ColumnDefinition[] = [
   { key: 'price', label: 'Price', formatter: formatCurrency },
   { key: 'amount', label: 'Amount' },
   { key: 'profit', label: 'Profit' },
-  { key: 'averageCost', label: 'Average Cost', formatter: formatCurrency, class: 'hide-on-mobile' },
+  {
+    key: 'averageCost',
+    label: 'Average Cost',
+    formatter: formatCurrency,
+    class: 'd-none d-lg-table-cell',
+  },
 ]
