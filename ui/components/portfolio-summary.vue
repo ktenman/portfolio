@@ -37,9 +37,12 @@
       <portfolio-chart :key="chartKey" :data="processedChartData" />
 
       <data-table
-        :items="reversedSummaries"
+        :items="sortedItems"
         :columns="summaryColumns"
         :row-class="getSummaryRowClass"
+        :sortable="true"
+        :sort-state="sortState"
+        :on-sort="toggleSort"
         class="mt-3"
       />
 
@@ -56,6 +59,7 @@ import { useInfiniteScroll, useWindowSize } from '@vueuse/core'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
 import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
+import { useSortableTable } from '../composables/use-sortable-table'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
@@ -81,6 +85,8 @@ const {
   fetchSummaries,
   hasMoreData,
 } = usePortfolioSummaryQuery()
+
+const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 
 const { processedChartData } = usePortfolioChart(summaries)
 
