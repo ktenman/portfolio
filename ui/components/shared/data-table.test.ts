@@ -268,8 +268,8 @@ describe('DataTable', () => {
       })
 
       expect(wrapper.find('thead th:last-child').text()).toBe('Actions')
-      expect(wrapper.findAll('.d-none.d-md-block .btn-edit')).toHaveLength(3)
-      expect(wrapper.findAll('.d-block.d-md-none .btn-edit')).toHaveLength(3)
+      expect(wrapper.findAll('.d-none.d-sm-block .btn-edit')).toHaveLength(3)
+      expect(wrapper.findAll('.d-block.d-sm-none .btn-edit')).toHaveLength(3)
     })
 
     it('should render custom cell slot', () => {
@@ -283,8 +283,8 @@ describe('DataTable', () => {
         },
       })
 
-      const desktopCustomCells = wrapper.findAll('.d-none.d-md-block .custom-name')
-      const mobileCustomCells = wrapper.findAll('.d-block.d-md-none .custom-name')
+      const desktopCustomCells = wrapper.findAll('.d-none.d-sm-block .custom-name')
+      const mobileCustomCells = wrapper.findAll('.d-block.d-sm-none .custom-name')
       expect(desktopCustomCells).toHaveLength(3)
       expect(mobileCustomCells).toHaveLength(3)
       expect(desktopCustomCells[0].text()).toBe('Custom: Item 1')
