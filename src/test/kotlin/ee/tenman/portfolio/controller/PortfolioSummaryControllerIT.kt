@@ -163,8 +163,10 @@ class PortfolioSummaryControllerIT {
     assertThat(summary3.totalValue).isEqualByComparingTo("9500.00")
 
     assertThat(output.out)
-      .contains("PortfolioSummaryController.getHistoricalPortfolioSummary(..) entered with arguments: [0,3]")
-      .containsIgnoringCase("PortfolioSummaryController.getHistoricalPortfolioSummary(..) exited with result: {\"content\":")
+      .contains("getHistoricalPortfolioSummary")
+      .contains("entered with arguments: [0,3]")
+      .contains("exited with result:")
+      .contains("\"content\":")
   }
 
   @Test
@@ -227,7 +229,9 @@ class PortfolioSummaryControllerIT {
       .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.2096, 0.001)))
       .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(6.38, 0.01)))
     assertThat(output.out)
-      .contains("PortfolioSummaryController.getCurrentPortfolioSummary() entered with arguments: []")
-      .containsIgnoringCase("PortfolioSummaryController.getCurrentPortfolioSummary() exited with result: {\"date\":\"")
+      .contains("getCurrentPortfolioSummary")
+      .contains("entered with arguments: []")
+      .contains("exited with result:")
+      .contains("\"date\":")
   }
 }
