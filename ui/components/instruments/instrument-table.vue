@@ -93,7 +93,7 @@ const columns = instrumentColumns
   }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 575px) {
   :deep(.hide-on-mobile) {
     display: none !important;
   }

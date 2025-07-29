@@ -26,7 +26,11 @@
           :class="rowClass?.(item, index)"
         >
           <div class="mobile-card-body">
-            <div v-for="column in columns" :key="column.key" class="mobile-card-item">
+            <div
+              v-for="column in columns.filter(col => !col.class?.includes('hide-on-mobile'))"
+              :key="column.key"
+              class="mobile-card-item"
+            >
               <span class="label">{{ column.label }}</span>
               <span class="value" :class="column.class">
                 <slot :name="`cell-${column.key}`" :item="item" :value="getCellValue(item, column)">
@@ -327,7 +331,7 @@ const handleSort = (column: ColumnDefinition) => {
   }
 }
 
-@media (max-width: 666px) {
+@media (max-width: 575px) {
   .table .hide-on-mobile {
     display: none !important;
   }
