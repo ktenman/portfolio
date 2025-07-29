@@ -115,7 +115,7 @@ const summaryColumns: ColumnDefinition[] = [
     key: 'earningsPerDay',
     label: 'Earnings Per Day',
     formatter: formatCurrencyWithSymbol,
-    class: 'hide-on-mobile',
+    class: 'd-none d-sm-table-cell',
   },
   { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrencyWithSymbol },
   { key: 'totalProfit', label: 'Total Profit', formatter: formatCurrencyWithSymbol },
