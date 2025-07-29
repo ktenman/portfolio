@@ -27,7 +27,7 @@
         >
           <div class="mobile-card-body">
             <div
-              v-for="column in columns.filter(col => !col.class?.includes('hide-on-mobile'))"
+              v-for="column in columns.filter(col => !col.class?.includes('d-none'))"
               :key="column.key"
               class="mobile-card-item"
             >
@@ -324,16 +324,6 @@ const handleSort = (column: ColumnDefinition) => {
 
   .table td.text-end {
     justify-content: flex-end;
-  }
-
-  .table .hide-on-mobile {
-    display: none !important;
-  }
-}
-
-@media (max-width: 575px) {
-  .table .hide-on-mobile {
-    display: none !important;
   }
 }
 

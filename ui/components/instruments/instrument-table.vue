@@ -92,10 +92,4 @@ const columns = instrumentColumns
     word-break: break-word;
   }
 }
-
-@media (max-width: 575px) {
-  :deep(.hide-on-mobile) {
-    display: none !important;
-  }
-}
 </style>
