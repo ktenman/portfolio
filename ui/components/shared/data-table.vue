@@ -18,7 +18,7 @@
 
     <template v-else>
       <!-- Mobile Card View -->
-      <div class="d-block d-md-none mobile-cards">
+      <div class="d-block d-sm-none mobile-cards">
         <div
           v-for="(item, index) in items"
           :key="getItemKey(item, index)"
@@ -42,7 +42,7 @@
       </div>
 
       <!-- Desktop Table View -->
-      <div class="d-none d-md-block table-responsive">
+      <div class="d-none d-sm-block table-responsive">
         <table class="table table-striped table-hover">
           <thead>
             <tr>
@@ -327,7 +327,7 @@ const handleSort = (column: ColumnDefinition) => {
   }
 }
 
-@media (max-width: 794px) {
+@media (max-width: 666px) {
   .table .hide-on-mobile {
     display: none !important;
   }
