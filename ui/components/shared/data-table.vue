@@ -46,8 +46,27 @@
         <table class="table table-striped table-hover">
           <thead>
             <tr>
-              <th v-for="column in columns" :key="column.key" :class="column.class">
-                {{ column.label }}
+              <th
+                v-for="column in columns"
+                :key="column.key"
+                :class="[column.class, { sortable: sortable && column.sortable !== false }]"
+                @click="handleSort(column)"
+              >
+                <span class="th-content">
+                  {{ column.label }}
+                  <span
+                    v-if="sortable && column.sortable !== false"
+                    class="sort-indicator"
+                    :class="{
+                      active: sortState?.key === column.key,
+                      asc: sortState?.key === column.key && sortState?.direction === 'asc',
+                      desc: sortState?.key === column.key && sortState?.direction === 'desc',
+                    }"
+                  >
+                    <i class="sort-arrow-up">▲</i>
+                    <i class="sort-arrow-down">▼</i>
+                  </span>
+                </span>
               </th>
               <th v-if="$slots.actions" class="text-end">Actions</th>
             </tr>
@@ -82,11 +101,14 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { computed } from 'vue'
 import SkeletonLoader from './skeleton-loader.vue'
+import type { SortState } from '../../composables/use-sortable-table'
+
 export interface ColumnDefinition {
   key: string
   label: string
   formatter?: (value: any, item?: any) => string
   class?: string
+  sortable?: boolean
 }
 
 interface Props {
@@ -98,6 +120,9 @@ interface Props {
   emptyMessage?: string
   keyField?: string
   rowClass?: (item: T, index: number) => string | Record<string, boolean>
+  sortable?: boolean
+  sortState?: SortState
+  onSort?: (key: string) => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -105,6 +130,7 @@ const props = withDefaults(defineProps<Props>(), {
   isError: false,
   emptyMessage: 'No data available',
   keyField: 'id',
+  sortable: false,
 })
 
 const hasNoData = computed(() => !props.items || props.items.length === 0)
@@ -139,6 +165,12 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
   }
 
   return String(value)
+}
+
+const handleSort = (column: ColumnDefinition) => {
+  if (props.sortable && column.sortable !== false && props.onSort) {
+    props.onSort(column.key)
+  }
 }
 </script>
 
@@ -298,6 +330,57 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
 @media (max-width: 794px) {
   .table .hide-on-mobile {
     display: none !important;
+  }
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sort-indicator {
+  display: inline-flex;
+  flex-direction: column;
+  font-size: 0.65rem;
+  line-height: 0.5;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+
+  &.active {
+    opacity: 1;
+  }
+
+  .sort-arrow-up,
+  .sort-arrow-down {
+    display: block;
+    height: 0.5rem;
+  }
+
+  &.asc .sort-arrow-up {
+    color: var(--bs-primary);
+  }
+
+  &.asc .sort-arrow-down {
+    opacity: 0.3;
+  }
+
+  &.desc .sort-arrow-down {
+    color: var(--bs-primary);
+  }
+
+  &.desc .sort-arrow-up {
+    opacity: 0.3;
   }
 }
 </style>
