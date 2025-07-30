@@ -46,6 +46,16 @@
       @update:model-value="updateField('baseCurrency', $event)"
       @blur="touchField('baseCurrency')"
     />
+    <FormInput
+      :model-value="formData.currentPrice"
+      label="Current Price"
+      type="number"
+      step="0.01"
+      placeholder="Enter current price (optional)"
+      :error="getFieldError('currentPrice')"
+      @update:model-value="updateField('currentPrice', $event)"
+      @blur="touchField('currentPrice')"
+    />
   </form>
 </template>
 

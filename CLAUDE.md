@@ -199,6 +199,8 @@ A comprehensive test runner that combines unit tests, E2E tests, and environment
 - Use `./test-runner.sh --e2e` for reliable E2E testing
 - Frontend tests focus on business logic with comprehensive coverage
 - Test files excluded from coverage: `.eslintrc.cjs` and `app.vue`
+- **ALWAYS run `npm run lint-format` after making changes to UI code** - This ensures type safety, linting, and code formatting
+- **ALWAYS run `npm test` after making changes to UI code** - This ensures all tests pass and functionality is not broken
 
 ### Code Style Guidelines
 
