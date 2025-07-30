@@ -17,7 +17,7 @@ export const transactionSchema = z.object({
       return isNaN(num) || num === 0 ? undefined : num
     },
     z
-      .number({ required_error: 'Quantity is required' })
+      .number({ message: 'Quantity is required' })
       .positive('Quantity must be greater than 0')
       .min(0.00000001, 'Quantity is too small')
   ),
@@ -28,7 +28,7 @@ export const transactionSchema = z.object({
       return isNaN(num) || num === 0 ? undefined : num
     },
     z
-      .number({ required_error: 'Price is required' })
+      .number({ message: 'Price is required' })
       .positive('Price must be greater than 0')
       .min(0.01, 'Price is too small')
   ),
