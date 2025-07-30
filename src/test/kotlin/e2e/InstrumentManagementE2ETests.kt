@@ -46,7 +46,7 @@ class InstrumentManagementE2ETests {
 
   @Test
   fun `should display success message when saving instrument with valid data`() {
-    val addButton = id("addNewInstrument")
+    val addButton = id("addNewInstrument").shouldBe(visible, Duration.ofSeconds(10))
     assertThat(addButton.isDisplayed).isTrue()
     addButton.shouldBe(enabled).click()
 
@@ -125,11 +125,11 @@ class InstrumentManagementE2ETests {
     id("category").selectOption("CRYPTOCURRENCY")
     id("providerName").selectOption("Binance")
     id("currency").selectOption("USD")
-    
+
     val priceField = id("currentPrice")
     priceField.shouldBe(visible)
     priceField.value = "45000.50"
-    
+
     elements(tagName("button")).filter(text("Save")).first().click()
 
     element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
@@ -142,7 +142,7 @@ class InstrumentManagementE2ETests {
     val currentPriceField = id("currentPrice")
     currentPriceField.shouldBe(visible, Duration.ofSeconds(5))
     currentPriceField.shouldHave(value("45000.5"))
-    
+
     currentPriceField.clear()
     currentPriceField.value = "48500.75"
 
@@ -158,25 +158,26 @@ class InstrumentManagementE2ETests {
   @Test
   fun `should validate symbol length requirements`() {
     id("addNewInstrument").click()
-    
+
     val symbolField = id("symbol")
     symbolField.shouldBe(visible, Duration.ofSeconds(5))
     symbolField.value = "A"
     symbolField.sendKeys(Keys.TAB)
-    
-    val symbolError = element(By.xpath("//div[contains(@class, 'invalid-feedback') and contains(text(), 'Symbol must be at least 2 characters')]"))
+
+    val symbolError =
+      element(By.xpath("//div[contains(@class, 'invalid-feedback') and contains(text(), 'Symbol must be at least 2 characters')]"))
     symbolError.shouldBe(visible)
-    
+
     symbolField.clear()
     symbolField.value = "AA"
     symbolField.sendKeys(Keys.TAB)
-    
+
     symbolError.shouldNotBe(visible)
-    
+
     symbolField.clear()
     symbolField.value = "VERYLONGSYMBOLNAME"
     symbolField.sendKeys(Keys.TAB)
-    
+
     symbolError.shouldNotBe(visible)
   }
 
