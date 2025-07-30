@@ -11,15 +11,18 @@ export const transactionSchema = z.object({
     },
     z
       .number({
-        error: 'Please select an instrument',
+        required_error: 'Please select an instrument',
+        invalid_type_error: 'Please select an instrument',
       })
       .positive('Please select an instrument')
   ),
   platform: z.nativeEnum(Platform, {
-    error: 'Platform is required',
+    required_error: 'Platform is required',
+    invalid_type_error: 'Platform is required',
   }),
   transactionType: z.enum(['BUY', 'SELL'], {
-    error: 'Transaction type is required',
+    required_error: 'Transaction type is required',
+    invalid_type_error: 'Transaction type is required',
   }),
   quantity: z.preprocess(
     val => {
@@ -29,7 +32,8 @@ export const transactionSchema = z.object({
     },
     z
       .number({
-        error: 'Quantity is required',
+        required_error: 'Quantity is required',
+        invalid_type_error: 'Quantity must be a number',
       })
       .positive('Quantity must be greater than 0')
       .min(0.00000001, 'Quantity is too small')
@@ -42,7 +46,8 @@ export const transactionSchema = z.object({
     },
     z
       .number({
-        error: 'Price is required',
+        required_error: 'Price is required',
+        invalid_type_error: 'Price must be a number',
       })
       .positive('Price must be greater than 0')
       .min(0.01, 'Price is too small')

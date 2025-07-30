@@ -136,7 +136,7 @@ describe('TransactionForm', () => {
       await formInputs[0].vm.$emit('update:modelValue', 1)
       await nextTick()
 
-      expect(formInputs[4].props('modelValue')).toBe(150.5)
+      expect(formInputs[4].props('modelValue')).toBe('150.5')
     })
 
     it('should not update price for instrument with zero price', async () => {
@@ -146,7 +146,7 @@ describe('TransactionForm', () => {
       await formInputs[0].vm.$emit('update:modelValue', 3)
       await nextTick()
 
-      expect(formInputs[4].props('modelValue')).toBeUndefined()
+      expect(formInputs[4].props('modelValue')).toBe('')
     })
 
     it('should not update price for non-existent instrument', async () => {
@@ -156,7 +156,7 @@ describe('TransactionForm', () => {
       await formInputs[0].vm.$emit('update:modelValue', 999)
       await nextTick()
 
-      expect(formInputs[4].props('modelValue')).toBeUndefined()
+      expect(formInputs[4].props('modelValue')).toBe('')
     })
 
     it('should update price when changing between instruments', async () => {
@@ -165,11 +165,11 @@ describe('TransactionForm', () => {
 
       await formInputs[0].vm.$emit('update:modelValue', 1)
       await nextTick()
-      expect(formInputs[4].props('modelValue')).toBe(150.5)
+      expect(formInputs[4].props('modelValue')).toBe('150.5')
 
       await formInputs[0].vm.$emit('update:modelValue', 2)
       await nextTick()
-      expect(formInputs[4].props('modelValue')).toBe(45000)
+      expect(formInputs[4].props('modelValue')).toBe('45000')
     })
 
     it('should clear price when switching from valid to invalid price instrument', async () => {
@@ -178,11 +178,11 @@ describe('TransactionForm', () => {
 
       await formInputs[0].vm.$emit('update:modelValue', 1)
       await nextTick()
-      expect(formInputs[4].props('modelValue')).toBe(150.5)
+      expect(formInputs[4].props('modelValue')).toBe('150.5')
 
       await formInputs[0].vm.$emit('update:modelValue', 3)
       await nextTick()
-      expect(formInputs[4].props('modelValue')).toBeUndefined()
+      expect(formInputs[4].props('modelValue')).toBe('')
     })
   })
 
@@ -294,8 +294,8 @@ describe('TransactionForm', () => {
       expect(formInputs[0].props('modelValue')).toBe(2)
       expect(formInputs[1].props('modelValue')).toBe('COINBASE')
       expect(formInputs[2].props('modelValue')).toBe('SELL')
-      expect(formInputs[3].props('modelValue')).toBe(0.5)
-      expect(formInputs[4].props('modelValue')).toBe(50000)
+      expect(formInputs[3].props('modelValue')).toBe('0.5')
+      expect(formInputs[4].props('modelValue')).toBe('50000')
       expect(formInputs[5].props('modelValue')).toBe('2023-01-15')
     })
 
@@ -309,7 +309,7 @@ describe('TransactionForm', () => {
       await nextTick()
 
       const priceInput = wrapper.findAllComponents(FormInput)[4]
-      expect(priceInput.props('modelValue')).toBe(200)
+      expect(priceInput.props('modelValue')).toBe('200')
     })
 
     it('should update form when initial data changes', async () => {
@@ -323,8 +323,8 @@ describe('TransactionForm', () => {
       await nextTick()
 
       const formInputs = wrapper.findAllComponents(FormInput)
-      expect(formInputs[3].props('modelValue')).toBe(10)
-      expect(formInputs[4].props('modelValue')).toBe(200)
+      expect(formInputs[3].props('modelValue')).toBe('10')
+      expect(formInputs[4].props('modelValue')).toBe('200')
     })
   })
 

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.openqa.selenium.By
 import org.openqa.selenium.By.className
 import org.openqa.selenium.By.tagName
+import org.openqa.selenium.Keys
 import org.openqa.selenium.TimeoutException
 import java.time.Duration
 
@@ -114,6 +115,69 @@ class InstrumentManagementE2ETests {
     successAlert.shouldHave(text("Instrument updated successfully."))
 
     elements(tagName("td")).findBy(text(updatedSymbol)).shouldBe(visible)
+  }
+
+  @Test
+  fun `should save and update instrument with current price`() {
+    id("addNewInstrument").click()
+    id("symbol").shouldNotHave(text("BTC")).value = "BTC"
+    id("name").shouldNotHave(text("Bitcoin")).value = "Bitcoin"
+    id("category").selectOption("CRYPTOCURRENCY")
+    id("providerName").selectOption("Binance")
+    id("currency").selectOption("USD")
+    
+    val priceField = id("currentPrice")
+    priceField.shouldBe(visible)
+    priceField.value = "45000.50"
+    
+    elements(tagName("button")).filter(text("Save")).first().click()
+
+    element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
+    Thread.sleep(1000)
+
+    val editButtons = elements(tagName("button")).filter(text("Edit"))
+    assertThat(editButtons.size()).isGreaterThan(0)
+    editButtons.last().click()
+
+    val currentPriceField = id("currentPrice")
+    currentPriceField.shouldBe(visible, Duration.ofSeconds(5))
+    currentPriceField.shouldHave(value("45000.5"))
+    
+    currentPriceField.clear()
+    currentPriceField.value = "48500.75"
+
+    val updateButton = elements(tagName("button")).filter(text("Update")).first()
+    updateButton.click()
+
+    val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
+    successAlert.shouldHave(text("Instrument updated successfully."))
+
+    elements(tagName("td")).findBy(text("$48,500.75")).shouldBe(visible)
+  }
+
+  @Test
+  fun `should validate symbol length requirements`() {
+    id("addNewInstrument").click()
+    
+    val symbolField = id("symbol")
+    symbolField.shouldBe(visible, Duration.ofSeconds(5))
+    symbolField.value = "A"
+    symbolField.sendKeys(Keys.TAB)
+    
+    val symbolError = element(By.xpath("//div[contains(@class, 'invalid-feedback') and contains(text(), 'Symbol must be at least 2 characters')]"))
+    symbolError.shouldBe(visible)
+    
+    symbolField.clear()
+    symbolField.value = "AA"
+    symbolField.sendKeys(Keys.TAB)
+    
+    symbolError.shouldNotBe(visible)
+    
+    symbolField.clear()
+    symbolField.value = "VERYLONGSYMBOLNAME"
+    symbolField.sendKeys(Keys.TAB)
+    
+    symbolError.shouldNotBe(visible)
   }
 
   private fun id(id: String): SelenideElement = element(By.id(id))

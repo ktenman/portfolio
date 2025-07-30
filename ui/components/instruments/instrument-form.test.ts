@@ -42,13 +42,14 @@ describe('InstrumentForm', () => {
       const wrapper = createWrapper()
 
       const formInputs = wrapper.findAllComponents(FormInput)
-      expect(formInputs).toHaveLength(5)
+      expect(formInputs).toHaveLength(6)
 
       expect(formInputs[0].props('label')).toBe('Symbol')
       expect(formInputs[1].props('label')).toBe('Name')
       expect(formInputs[2].props('label')).toBe('Data Provider')
       expect(formInputs[3].props('label')).toBe('Category')
       expect(formInputs[4].props('label')).toBe('Currency')
+      expect(formInputs[5].props('label')).toBe('Current Price')
     })
 
     it('should have form with novalidate attribute', () => {
@@ -66,6 +67,7 @@ describe('InstrumentForm', () => {
       expect(formInputs[2].props('modelValue')).toBeUndefined()
       expect(formInputs[3].props('modelValue')).toBeUndefined()
       expect(formInputs[4].props('modelValue')).toBeUndefined()
+      expect(formInputs[5].props('modelValue')).toBeUndefined()
     })
   })
 
@@ -87,6 +89,22 @@ describe('InstrumentForm', () => {
       expect(formInputs[2].props('modelValue')).toBe('ALPHA_VANTAGE')
       expect(formInputs[3].props('modelValue')).toBe('STOCK')
       expect(formInputs[4].props('modelValue')).toBe('USD')
+    })
+
+    it('should populate currentPrice when provided in initial data', () => {
+      const initialData = {
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        providerName: 'ALPHA_VANTAGE',
+        category: 'STOCK',
+        baseCurrency: 'USD',
+        currentPrice: 150.25,
+      }
+
+      const wrapper = createWrapper({ initialData })
+
+      const formInputs = wrapper.findAllComponents(FormInput)
+      expect(formInputs[5].props('modelValue')).toBe(150.25)
     })
 
     it('should update form when initial data changes', async () => {
@@ -115,6 +133,7 @@ describe('InstrumentForm', () => {
       await formInputs[2].vm.$emit('update:modelValue', 'FINANCIAL_TIMES')
       await formInputs[3].vm.$emit('update:modelValue', 'STOCK')
       await formInputs[4].vm.$emit('update:modelValue', 'EUR')
+      await formInputs[5].vm.$emit('update:modelValue', '650.50')
 
       await nextTick()
 
@@ -123,6 +142,7 @@ describe('InstrumentForm', () => {
       expect(formInputs[2].props('modelValue')).toBe('FINANCIAL_TIMES')
       expect(formInputs[3].props('modelValue')).toBe('STOCK')
       expect(formInputs[4].props('modelValue')).toBe('EUR')
+      expect(formInputs[5].props('modelValue')).toBe('650.50')
     })
   })
 
@@ -134,6 +154,25 @@ describe('InstrumentForm', () => {
         providerName: 'BINANCE',
         category: 'CRYPTO',
         baseCurrency: 'USD',
+      }
+
+      const wrapper = createWrapper({ initialData })
+
+      const form = wrapper.find('form')
+      await form.trigger('submit')
+
+      expect(wrapper.emitted('submit')).toBeTruthy()
+      expect(wrapper.emitted('submit')?.[0]).toEqual([initialData])
+    })
+
+    it('should emit submit event with currentPrice when provided', async () => {
+      const initialData = {
+        symbol: 'BTC',
+        name: 'Bitcoin',
+        providerName: 'BINANCE',
+        category: 'CRYPTO',
+        baseCurrency: 'USD',
+        currentPrice: 45000.5,
       }
 
       const wrapper = createWrapper({ initialData })
@@ -199,6 +238,7 @@ describe('InstrumentForm', () => {
       expect(formInputs[2].props('modelValue')).toBeUndefined()
       expect(formInputs[3].props('modelValue')).toBeUndefined()
       expect(formInputs[4].props('modelValue')).toBeUndefined()
+      expect(formInputs[5].props('modelValue')).toBeUndefined()
     })
 
     it('should not submit partial form data when required fields missing', async () => {
@@ -212,6 +252,97 @@ describe('InstrumentForm', () => {
       await form.trigger('submit')
 
       expect(wrapper.emitted('submit')).toBeFalsy()
+    })
+  })
+
+  describe('field validation', () => {
+    describe('symbol validation', () => {
+      it('should show error when symbol is less than 2 characters', async () => {
+        const wrapper = createWrapper()
+        const symbolInput = wrapper.findAllComponents(FormInput)[0]
+
+        await symbolInput.vm.$emit('update:modelValue', 'A')
+        await symbolInput.vm.$emit('blur')
+        await nextTick()
+
+        expect(symbolInput.props('error')).toBe('Symbol must be at least 2 characters')
+      })
+
+      it('should not show error for symbol with 2 or more characters', async () => {
+        const wrapper = createWrapper()
+        const symbolInput = wrapper.findAllComponents(FormInput)[0]
+
+        await symbolInput.vm.$emit('update:modelValue', 'AA')
+        await symbolInput.vm.$emit('blur')
+        await nextTick()
+
+        expect(symbolInput.props('error')).toBeUndefined()
+      })
+
+      it('should allow long symbols without maximum limit', async () => {
+        const wrapper = createWrapper()
+        const symbolInput = wrapper.findAllComponents(FormInput)[0]
+
+        await symbolInput.vm.$emit('update:modelValue', 'VERYLONGSYMBOLNAME')
+        await symbolInput.vm.$emit('blur')
+        await nextTick()
+
+        expect(symbolInput.props('error')).toBeUndefined()
+      })
+    })
+
+    describe('currentPrice validation', () => {
+      it('should accept valid positive price', async () => {
+        const wrapper = createWrapper()
+        const priceInput = wrapper.findAllComponents(FormInput)[5]
+
+        await priceInput.vm.$emit('update:modelValue', '100.50')
+        await priceInput.vm.$emit('blur')
+        await nextTick()
+
+        expect(priceInput.props('error')).toBeUndefined()
+      })
+
+      it('should show error for negative price', async () => {
+        const wrapper = createWrapper()
+        const priceInput = wrapper.findAllComponents(FormInput)[5]
+
+        await priceInput.vm.$emit('update:modelValue', '-10')
+        await priceInput.vm.$emit('blur')
+        await nextTick()
+
+        expect(priceInput.props('error')).toBe('Price must be a positive number')
+      })
+
+      it('should accept empty price as optional field', async () => {
+        const wrapper = createWrapper()
+        const priceInput = wrapper.findAllComponents(FormInput)[5]
+
+        await priceInput.vm.$emit('update:modelValue', '')
+        await priceInput.vm.$emit('blur')
+        await nextTick()
+
+        expect(priceInput.props('error')).toBeUndefined()
+      })
+
+      it('should accept price as string value', async () => {
+        const wrapper = createWrapper()
+        const formInputs = wrapper.findAllComponents(FormInput)
+
+        await formInputs[0].vm.$emit('update:modelValue', 'BTC')
+        await formInputs[1].vm.$emit('update:modelValue', 'Bitcoin')
+        await formInputs[2].vm.$emit('update:modelValue', 'BINANCE')
+        await formInputs[3].vm.$emit('update:modelValue', 'CRYPTO')
+        await formInputs[4].vm.$emit('update:modelValue', 'USD')
+        await formInputs[5].vm.$emit('update:modelValue', '50000.75')
+
+        const form = wrapper.find('form')
+        await form.trigger('submit')
+
+        expect(wrapper.emitted('submit')).toBeTruthy()
+        const emittedData = wrapper.emitted('submit')?.[0][0] as any
+        expect(emittedData.currentPrice).toBe('50000.75')
+      })
     })
   })
 })
