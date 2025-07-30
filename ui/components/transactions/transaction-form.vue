@@ -34,24 +34,22 @@
     />
 
     <FormInput
-      :model-value="formData.quantity"
+      v-model="quantityModel"
       label="Quantity"
       type="number"
       placeholder="Enter quantity"
       step="0.00000001"
       :error="getFieldError('quantity')"
-      @update:model-value="updateField('quantity', Number($event))"
       @blur="touchField('quantity')"
     />
 
     <FormInput
-      :model-value="formData.price"
+      v-model="priceModel"
       label="Price"
       type="number"
       placeholder="Enter price"
       step="0.001"
       :error="getFieldError('price')"
-      @update:model-value="updateField('price', Number($event))"
       @blur="touchField('price')"
     />
 
@@ -80,6 +78,7 @@ import { formatCurrency } from '../../utils/formatters'
 import { useFormValidation } from '../../composables/use-form-validation'
 import { transactionSchema } from '../../schemas/transaction-schema'
 import { useEnumValues } from '../../composables/use-enum-values'
+import { SafeNumber } from '../../utils/safe-number'
 
 interface Props {
   initialData?: Partial<PortfolioTransaction>
@@ -128,9 +127,27 @@ const instrumentOptions = computed(() =>
   }))
 )
 
+const quantityModel = computed({
+  get() {
+    return formData.quantity === undefined ? '' : String(formData.quantity)
+  },
+  set(value: string) {
+    formData.quantity = SafeNumber(value)
+  },
+})
+
+const priceModel = computed({
+  get() {
+    return formData.price === undefined ? '' : String(formData.price)
+  },
+  set(value: string) {
+    formData.price = SafeNumber(value)
+  },
+})
+
 const totalValue = computed(() => {
-  const quantity = Number(formData.quantity) || 0
-  const price = Number(formData.price) || 0
+  const quantity = formData.quantity || 0
+  const price = formData.price || 0
   return quantity * price
 })
 
@@ -140,9 +157,9 @@ watch(
     if (newInstrumentId) {
       const instrument = props.instruments.find(inst => inst.id === newInstrumentId)
       if (instrument && instrument.currentPrice && instrument.currentPrice > 0) {
-        updateField('price', Number(instrument.currentPrice))
+        priceModel.value = String(instrument.currentPrice)
       } else {
-        updateField('price', undefined)
+        priceModel.value = ''
       }
     }
   }
