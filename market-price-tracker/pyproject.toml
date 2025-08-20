@@ -7,7 +7,7 @@ dependencies = [
   "selenium==4.16.0",
   "schedule==1.2.2",
   "requests==2.32.5",
-  "Flask==3.1.1",
+  "Flask==3.1.2",
   "tenacity==9.1.2",
 ]
 
