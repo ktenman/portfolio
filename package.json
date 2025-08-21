@@ -50,7 +50,7 @@
     "eslint-plugin-unused-imports": "^4.2.0",
     "eslint-plugin-vue": "^10.4.0",
     "happy-dom": "^18.0.1",
-    "knip": "^5.62.0",
+    "knip": "^5.63.0",
     "prettier": "^3.6.2",
     "sass": "1.70.0",
     "typescript": "5.9.2",
