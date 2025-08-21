@@ -47,7 +47,10 @@
                 item.profit !== null && item.profit !== undefined
                   ? (item.profit >= 0 ? '+' : '') +
                     getCurrencySymbol(item.baseCurrency) +
-                    Math.abs(item.profit).toFixed(2)
+                    Math.abs(item.profit).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
                   : getCurrencySymbol(item.baseCurrency) + '0.00'
               }}
             </span>
@@ -84,7 +87,10 @@
           item.profit !== null && item.profit !== undefined
             ? (item.profit >= 0 ? '+' : '') +
               getCurrencySymbol(item.baseCurrency) +
-              Math.abs(item.profit).toFixed(2)
+              Math.abs(item.profit).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
             : getCurrencySymbol(item.baseCurrency) + '0.00'
         }}
       </span>

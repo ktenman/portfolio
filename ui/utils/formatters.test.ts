@@ -72,30 +72,30 @@ describe('formatCurrency', () => {
 
 describe('formatCurrencyWithSign', () => {
   it('should format with EUR symbol by default', () => {
-    expect(formatCurrencyWithSign(1234.56)).toBe('€1234.56')
-    expect(formatCurrencyWithSign(1234.56, undefined)).toBe('€1234.56')
-    expect(formatCurrencyWithSign(1234.56, '')).toBe('€1234.56')
+    expect(formatCurrencyWithSign(1234.56)).toBe('€1,234.56')
+    expect(formatCurrencyWithSign(1234.56, undefined)).toBe('€1,234.56')
+    expect(formatCurrencyWithSign(1234.56, '')).toBe('€1,234.56')
   })
 
   it('should format with EUR symbol for EUR currency', () => {
-    expect(formatCurrencyWithSign(1234.56, 'EUR')).toBe('€1234.56')
-    expect(formatCurrencyWithSign(1234.56, 'eur')).toBe('€1234.56')
+    expect(formatCurrencyWithSign(1234.56, 'EUR')).toBe('€1,234.56')
+    expect(formatCurrencyWithSign(1234.56, 'eur')).toBe('€1,234.56')
   })
 
   it('should format with USD symbol for USD currency', () => {
-    expect(formatCurrencyWithSign(1234.56, 'USD')).toBe('$1234.56')
-    expect(formatCurrencyWithSign(1234.56, 'usd')).toBe('$1234.56')
+    expect(formatCurrencyWithSign(1234.56, 'USD')).toBe('$1,234.56')
+    expect(formatCurrencyWithSign(1234.56, 'usd')).toBe('$1,234.56')
   })
 
   it('should format with GBP symbol for GBP currency', () => {
-    expect(formatCurrencyWithSign(1234.56, 'GBP')).toBe('£1234.56')
-    expect(formatCurrencyWithSign(1234.56, 'gbp')).toBe('£1234.56')
+    expect(formatCurrencyWithSign(1234.56, 'GBP')).toBe('£1,234.56')
+    expect(formatCurrencyWithSign(1234.56, 'gbp')).toBe('£1,234.56')
   })
 
   it('should format negative numbers as absolute values', () => {
-    expect(formatCurrencyWithSign(-1234.56, 'EUR')).toBe('€1234.56')
-    expect(formatCurrencyWithSign(-1234.56, 'USD')).toBe('$1234.56')
-    expect(formatCurrencyWithSign(-1234.56, 'GBP')).toBe('£1234.56')
+    expect(formatCurrencyWithSign(-1234.56, 'EUR')).toBe('€1,234.56')
+    expect(formatCurrencyWithSign(-1234.56, 'USD')).toBe('$1,234.56')
+    expect(formatCurrencyWithSign(-1234.56, 'GBP')).toBe('£1,234.56')
   })
 
   it('should handle null and undefined values', () => {
@@ -206,13 +206,13 @@ describe('formatPercentageFromDecimal', () => {
 describe('formatProfitLoss', () => {
   it('should format positive values with + sign', () => {
     expect(formatProfitLoss(100)).toBe('+100.00')
-    expect(formatProfitLoss(1234.56)).toBe('+1234.56')
+    expect(formatProfitLoss(1234.56)).toBe('+1,234.56')
     expect(formatProfitLoss(0.01)).toBe('+0.01')
   })
 
   it('should format negative values with - sign', () => {
     expect(formatProfitLoss(-100)).toBe('-100.00')
-    expect(formatProfitLoss(-1234.56)).toBe('-1234.56')
+    expect(formatProfitLoss(-1234.56)).toBe('-1,234.56')
     expect(formatProfitLoss(-0.01)).toBe('-0.01')
   })
 
@@ -228,13 +228,13 @@ describe('formatProfitLoss', () => {
 
 describe('formatTransactionAmount', () => {
   it('should format BUY transactions with + sign', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY')).toBe('+1000.00')
+    expect(formatTransactionAmount(10, 100, 'BUY')).toBe('+1,000.00')
     expect(formatTransactionAmount(5.5, 20.5, 'BUY')).toBe('+112.75')
     expect(formatTransactionAmount(1, 0.01, 'BUY')).toBe('+0.01')
   })
 
   it('should format SELL transactions with - sign', () => {
-    expect(formatTransactionAmount(10, 100, 'SELL')).toBe('-1000.00')
+    expect(formatTransactionAmount(10, 100, 'SELL')).toBe('-1,000.00')
     expect(formatTransactionAmount(5.5, 20.5, 'SELL')).toBe('-112.75')
     expect(formatTransactionAmount(1, 0.01, 'SELL')).toBe('-0.01')
   })

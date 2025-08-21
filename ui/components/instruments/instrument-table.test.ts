@@ -147,23 +147,23 @@ describe('InstrumentTable', () => {
       const rows = wrapper.findAll('tbody tr')
 
       expect(rows[0].text()).toContain('$150.50')
-      expect(rows[1].text()).toContain('€45000.00')
+      expect(rows[1].text()).toContain('€45,000.00')
     })
 
     it('should format total investment with currency', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
 
-      expect(rows[0].text()).toContain('$10000.00')
-      expect(rows[1].text()).toContain('€20000.00')
+      expect(rows[0].text()).toContain('$10,000.00')
+      expect(rows[1].text()).toContain('€20,000.00')
     })
 
     it('should format current value with currency', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
 
-      expect(rows[0].text()).toContain('$15050.00')
-      expect(rows[1].text()).toContain('€18000.00')
+      expect(rows[0].text()).toContain('$15,050.00')
+      expect(rows[1].text()).toContain('€18,000.00')
     })
   })
 
@@ -172,7 +172,7 @@ describe('InstrumentTable', () => {
       const wrapper = createWrapper()
       const profitCell = wrapper.find('.text-success')
 
-      expect(profitCell.text()).toBe('+$5050.00')
+      expect(profitCell.text()).toBe('+$5,050.00')
       expect(profitCell.classes()).toContain('text-success')
     })
 
@@ -182,7 +182,7 @@ describe('InstrumentTable', () => {
       const secondRow = rows[1]
       const profitCell = secondRow.find('.text-danger')
 
-      expect(profitCell.text()).toBe('€2000.00')
+      expect(profitCell.text()).toBe('€2,000.00')
       expect(profitCell.classes()).toContain('text-danger')
     })
 
