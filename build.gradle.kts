@@ -5,7 +5,7 @@ plugins {
   kotlin("jvm") version "2.2.10"
   kotlin("plugin.spring") version "2.2.10"
   id("jacoco")
-  id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
+  id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
 }
 
 group = "ee.tenman"
