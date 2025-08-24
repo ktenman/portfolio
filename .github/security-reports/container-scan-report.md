@@ -1,14 +1,14 @@
 # Container Security Scan Report
 
-Last updated: 2025-08-23 03:04:04 UTC
+Last updated: 2025-08-24 03:20:15 UTC
 
 ## Scan Status
 
 | Image | Status | Last Scan |
 |-------|--------|-----------|
-| portfolio-be | ✅ Scanned | 2025-08-23 03:04:04 UTC |
-| portfolio-fe | ✅ Scanned | 2025-08-23 03:04:04 UTC |
-| market-price-tracker | ✅ Scanned | 2025-08-23 03:04:04 UTC |
+| portfolio-be | ✅ Scanned | 2025-08-24 03:20:15 UTC |
+| portfolio-fe | ✅ Scanned | 2025-08-24 03:20:15 UTC |
+| market-price-tracker | ✅ Scanned | 2025-08-24 03:20:15 UTC |
 
 ## Actions
 
