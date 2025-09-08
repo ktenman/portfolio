@@ -37,7 +37,7 @@ val telegramBotsVersion = "6.9.7.1"
 val googleCloudVisionVersion = "3.71.0"
 val coroutinesVersion = "1.10.2"
 val mockitoKotlinVersion = "6.0.0"
-val kotestVersion = "6.0.2"
+val kotestVersion = "6.0.3"
 val archUnitVersion = "1.4.1"
 
 extra["springCloudVersion"] = springCloudVersion
