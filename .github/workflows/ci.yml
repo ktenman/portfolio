@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Use Node.js
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v5
         with:
           node-version: 'lts/iron'
           cache: 'npm'
@@ -91,7 +91,7 @@ jobs:
           gradle-home-cache-cleanup: true
       - name: Use Node.js
         if: matrix.test-type == 'frontend-unit'
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v5
         with:
           node-version: 'lts/iron'
           cache: 'npm'
