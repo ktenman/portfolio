@@ -137,7 +137,7 @@ class HistoricalPricesDataValidationTest {
 
     assertThat(result).hasSize(1)
     val data = result[LocalDate.of(2025, 1, 13)]
-    assertThat(data?.open).isEqualTo(BigDecimal("101.00"))
+    assertThat(data?.open).isEqualTo("101.00")
     assertThat(data?.volume).isEqualTo(6000L)
   }
 
