@@ -22,6 +22,7 @@ private val TICKERS: Map<String, String> =
   mapOf(
     "QDVE.DEX" to "93501088",
     "QDVE:GER:EUR" to "93500326",
+    "XAIX:GER:EUR" to "515873934",
   )
 
 private val REQUEST_DATE_FORMATTER: DateTimeFormatter =
