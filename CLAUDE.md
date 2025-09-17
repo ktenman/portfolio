@@ -4,16 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Portfolio Management System** - a full-stack application for tracking investment portfolios with automated price updates and performance calculations.
+This is a **Portfolio Management System** - a production-ready, full-stack application for tracking investment portfolios with automated price updates and sophisticated performance calculations.
 
 **Tech Stack:**
 
 - Backend: Kotlin 2.1.21, Spring Boot 3.5.0, Java 21
-- Frontend: Vue.js 3.5.16, TypeScript, Vite 6.3.5, Bootstrap 5.3.5
-- Database: PostgreSQL 17 with Flyway migrations
-- Cache: Redis 8
-- Authentication: Keycloak 25 + OAuth2-Proxy
-- Additional Services: Python-based market price tracker (Selenium), Caddy reverse proxy
+- Frontend: Vue.js 3.5.16, TypeScript 5.8.3, Vite 6.3.5, Bootstrap 5.3.5
+- Database: PostgreSQL 17 with Flyway migrations (V1-V30+)
+- Cache: Redis 8 (multi-level caching strategy)
+- Authentication: Keycloak 25 + OAuth2-Proxy (dev), Custom auth service (prod) ⚠️
+- Infrastructure: Docker, Kubernetes, Caddy reverse proxy
+- Additional Services: Python-based market price tracker (Selenium), Google Cloud Vision API
 
 ## Essential Commands
 
@@ -93,15 +94,15 @@ pkill -f 'bootRun|vite' && docker-compose -f compose.yaml down
 
 ## Architecture Overview
 
-The system follows a microservices architecture with these key components:
+The system follows a clean microservices architecture with strong separation of concerns:
 
-1. **API Gateway (Caddy)** - Reverse proxy at `/`
-2. **Auth Service** - Keycloak with Google OAuth provider + OAuth2-Proxy for session management
-3. **Frontend (Vue.js SPA)** - User interface served at `/ui`
-4. **Backend API (Spring Boot)** - Business logic at `/api`
-5. **PostgreSQL** - Primary data store with Flyway migrations
-6. **Redis** - Caching layer for performance
-7. **Market Price Tracker** - Python/Selenium service for web scraping
+1. **API Gateway (Caddy)** - Reverse proxy with SSL termination and routing
+2. **Auth Service** - OAuth 2.0 authentication (⚠️ Different in dev vs prod)
+3. **Frontend (Vue.js SPA)** - Responsive UI with Bootstrap 5
+4. **Backend API (Spring Boot)** - RESTful API with comprehensive business logic
+5. **PostgreSQL** - Primary data store with optimized indexes and constraints
+6. **Redis** - Multi-level caching reducing DB load by ~70%
+7. **Market Price Tracker** - Python service for real-time price updates (⚠️ Needs stabilization)
 
 ### Key Architectural Patterns
 
@@ -201,6 +202,48 @@ A comprehensive test runner that combines unit tests, E2E tests, and environment
 - Test files excluded from coverage: `.eslintrc.cjs` and `app.vue`
 - **ALWAYS run `npm run lint-format` after making changes to UI code** - This ensures type safety, linting, and code formatting
 - **ALWAYS run `npm test` after making changes to UI code** - This ensures all tests pass and functionality is not broken
+
+## ⚠️ Critical Issues & Workarounds
+
+### 🔴 Authentication Divergence
+
+**Issue**: Development uses Keycloak while production uses a custom auth service.
+**Impact**: Tests may pass locally but fail in production.
+**Workaround**: Test auth flows in both `docker-compose.local.yml` (Keycloak) and `docker-compose.yml` (custom auth) environments.
+
+### 🔴 Hardcoded API Keys
+
+**Issue**: Alpha Vantage API keys are hardcoded in `AlphaVantageClient.kt`.
+**Action Required**: Move these to environment variables immediately.
+**Location**: `src/main/kotlin/ee/tenman/portfolio/alphavantage/AlphaVantageClient.kt:45-55`
+
+### 🔴 Unstable Market Price Tracker
+
+**Issue**: Selenium-based scraper requires daily restarts (see `restart_scheduler` service).
+**Symptoms**: Missing price updates, high memory usage.
+**Workaround**: Monitor the `market_price_tracker` container logs for failures.
+
+## Performance Optimization Points
+
+### Caching Strategy
+
+- **Instrument Cache**: Frequently accessed instrument data
+- **Summary Cache**: Portfolio summary calculations
+- **Cache Eviction**: Automatic on data mutations
+- **TTL Configuration**: Adjustable per cache type
+
+### Batch Processing
+
+- Portfolio summaries processed in 30-item batches
+- XIRR calculations may slow down with 1000+ transactions
+- Consider pagination for large transaction histories
+
+### Database Performance
+
+- GIN indexes on text search columns
+- B-tree indexes on all foreign keys
+- Composite index on `(instrument_id, entry_date, provider_name)`
+- Optimistic locking prevents race conditions
 
 ### Code Style Guidelines
 

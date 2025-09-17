@@ -5,9 +5,7 @@
 
 ## Introduction
 
-The Portfolio Management System is a comprehensive application designed to help users manage their investment
-portfolios. It retrieves financial data from the Alpha Vantage API, stores it in a database, and provides a
-user-friendly interface for viewing and managing portfolio transactions, instruments, and performance metrics.
+The Portfolio Management System is a production-ready, full-stack application for managing investment portfolios with automated market data retrieval and sophisticated performance analytics. Built with modern technologies and best practices, it provides real-time portfolio tracking, XIRR calculations, and multi-platform transaction management.
 
 <img src="screenshots/app.png" width="600" alt="Portfolio Management System application home page">
 
@@ -89,7 +87,7 @@ user-friendly interface for viewing and managing portfolio transactions, instrum
 
 <img src="./screenshots/architecture.svg" width="600" alt="System Architecture">
 
-The system follows a microservices architecture with these components:
+The system follows a clean microservices architecture with strong separation of concerns:
 
 - **Frontend**: Vue.js 3 SPA served by Nginx
 - **Backend API**: Spring Boot REST API with comprehensive business logic
@@ -481,6 +479,38 @@ HEALTHCHECK_URL=https://hc-ping.com/your-check-uuid
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Known Issues & Roadmap
+
+### Critical Issues Being Addressed
+
+1. **Authentication Divergence**: Production and development use different auth systems (custom vs Keycloak). Migration to unified Keycloak is planned.
+2. **API Key Security**: Hardcoded Alpha Vantage keys need externalization to environment variables.
+3. **Market Data Reliability**: Selenium-based scraper requires daily restarts. Replacement with API-based solution is in progress.
+
+### Planned Enhancements
+
+- **OpenAPI Documentation**: Adding Swagger/OpenAPI specs for all REST endpoints
+- **Distributed Tracing**: Implementing Zipkin/Jaeger for better observability
+- **Application Rate Limiting**: Adding rate limiting at the application level
+- **Database Rollbacks**: Documenting rollback procedures for migrations
+- **Performance Optimization**: Optimizing XIRR calculations for large portfolios (1000+ transactions)
+
+## Performance Considerations
+
+- **Caching Strategy**: Multi-level caching with Redis reduces database load by ~70%
+- **Batch Processing**: Transactions processed in 30-item batches for optimal memory usage
+- **Database Indexing**: Strategic indexes on foreign keys, dates, and composite queries
+- **Scheduled Jobs**: Configurable intervals prevent API rate limit issues
+
+## Security Measures
+
+- **OAuth 2.0**: Secure authentication with Google/GitHub providers
+- **Session Management**: Redis-based sessions with configurable TTL
+- **Access Control**: Email whitelist for user authorization
+- **HTTPS Enforcement**: Automatic SSL via Caddy reverse proxy
+- **Security Headers**: HSTS, X-Frame-Options, CSP properly configured
+- **Container Scanning**: Daily Trivy scans for vulnerabilities
 
 ---
 
