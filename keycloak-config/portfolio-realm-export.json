@@ -439,6 +439,31 @@
   "webAuthnPolicyPasswordlessExtraOrigins": [],
   "users": [
     {
+      "id": "017d9ace-c2ba-4bf0-ac4b-56fe994d9464",
+      "username": "admin",
+      "firstName": "Konstantin",
+      "lastName": "Tenman",
+      "email": "admin@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "createdTimestamp": 1758133719625,
+      "totp": false,
+      "credentials": [
+        {
+          "id": "b8e99a1f-18a1-4543-b9f5-0e9ec008bd7b",
+          "type": "password",
+          "createdDate": 1758133721036,
+          "secretData": "{\"value\":\"UkLnboN2x9Ta49t+QRXJh8SKe/5h86l1IEz3ly4LVHc=\",\"salt\":\"Im3wxMc8XYNvuFa+jCq8jA==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+        }
+      ],
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": ["default-roles-portfolio"],
+      "notBefore": 0,
+      "groups": []
+    },
+    {
       "id": "a4300b62-6e5b-4bc4-8830-62ed98e05e01",
       "username": "konstantin@tenman.ee",
       "firstName": "Konstantin",
@@ -646,7 +671,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${OAUTH2_PROXY_CLIENT_SECRET}",
+      "secret": "VGvecj98pvD6GW1lz8BsSdWor7mraLhH",
       "redirectUris": ["http://127.0.0.1/oauth2/callback", "http://localhost/oauth2/callback"],
       "webOrigins": ["http://localhost"],
       "notBefore": 0,
@@ -1434,7 +1459,7 @@
       "config": {
         "syncMode": "FORCE",
         "clientSecret": "${GOOGLE_CLIENT_SECRET}",
-        "clientId": "652788940095-7ouefi8m0v9ggpm01janarckmo92543j.apps.googleusercontent.com",
+        "clientId": "${GOOGLE_CLIENT_ID}",
         "defaultScope": "openid email profile"
       }
     }
@@ -1496,14 +1521,14 @@
         "subComponents": {},
         "config": {
           "allowed-protocol-mapper-types": [
-            "oidc-usermodel-property-mapper",
-            "oidc-usermodel-attribute-mapper",
-            "saml-user-attribute-mapper",
-            "oidc-full-name-mapper",
             "saml-user-property-mapper",
-            "oidc-address-mapper",
+            "oidc-usermodel-property-mapper",
+            "oidc-full-name-mapper",
+            "oidc-sha256-pairwise-sub-mapper",
+            "saml-user-attribute-mapper",
+            "oidc-usermodel-attribute-mapper",
             "saml-role-list-mapper",
-            "oidc-sha256-pairwise-sub-mapper"
+            "oidc-address-mapper"
           ]
         }
       },
@@ -1515,14 +1540,14 @@
         "subComponents": {},
         "config": {
           "allowed-protocol-mapper-types": [
-            "oidc-sha256-pairwise-sub-mapper",
-            "oidc-address-mapper",
-            "saml-role-list-mapper",
-            "saml-user-attribute-mapper",
-            "oidc-full-name-mapper",
-            "oidc-usermodel-property-mapper",
             "oidc-usermodel-attribute-mapper",
-            "saml-user-property-mapper"
+            "saml-user-attribute-mapper",
+            "saml-user-property-mapper",
+            "oidc-address-mapper",
+            "oidc-sha256-pairwise-sub-mapper",
+            "oidc-full-name-mapper",
+            "saml-role-list-mapper",
+            "oidc-usermodel-property-mapper"
           ]
         }
       },
