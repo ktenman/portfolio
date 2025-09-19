@@ -10,6 +10,7 @@ import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -31,6 +32,7 @@ private val REQUEST_DATE_FORMATTER: DateTimeFormatter =
 @Service
 class HistoricalPricesService(
   private val historicalPricesClient: HistoricalPricesClient,
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -41,7 +43,7 @@ class HistoricalPricesService(
 
       // Prepare a list to hold all the one-year date ranges.
       val chunks = mutableListOf<Pair<String, String>>()
-      var currentEndDate = LocalDate.now()
+      var currentEndDate = LocalDate.now(clock)
       var currentStartDate = currentEndDate.minusYears(1)
 
       // Generate chunks until we reach a reasonable lower bound (e.g. year 2000).
