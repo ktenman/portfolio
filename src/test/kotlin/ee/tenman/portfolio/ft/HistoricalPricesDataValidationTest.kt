@@ -14,7 +14,9 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.stream.Stream
 
 @ExtendWith(MockitoExtension::class)
@@ -23,15 +25,22 @@ class HistoricalPricesDataValidationTest {
   private lateinit var historicalPricesClient: HistoricalPricesClient
 
   private lateinit var service: HistoricalPricesService
+  private lateinit var clock: Clock
 
   @BeforeEach
   fun setUp() {
-    service = HistoricalPricesService(historicalPricesClient)
+    // Set fixed clock to January 20, 2025
+    clock =
+      Clock.fixed(
+      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
+      ZoneId.of("UTC"),
+    )
+    service = HistoricalPricesService(historicalPricesClient, clock)
   }
 
   @Test
   fun `should filter out future dates`() {
-    val today = LocalDate.now()
+    val today = LocalDate.now(clock)
     val futureDate = today.plusMonths(8)
 
     val htmlWithFutureDates =
@@ -137,7 +146,7 @@ class HistoricalPricesDataValidationTest {
 
     assertThat(result).hasSize(1)
     val data = result[LocalDate.of(2025, 1, 13)]
-    assertThat(data?.open).isEqualTo("101.00")
+    assertThat(data?.open).isEqualTo(BigDecimal("101.00"))
     assertThat(data?.volume).isEqualTo(6000L)
   }
 

@@ -1,21 +1,53 @@
 package ee.tenman.portfolio.ft
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
+import com.github.tomakehurst.wiremock.client.WireMock.reset
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.verify
 import ee.tenman.portfolio.configuration.IntegrationTest
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoBean
+import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
+import java.time.ZoneId
 import javax.annotation.Resource
 
 @IntegrationTest
 class HistoricalPricesServiceIT {
   @Resource
   private lateinit var historicalPricesService: HistoricalPricesService
+
+  @MockitoBean
+  private lateinit var clock: Clock
+
+  @Resource
+  private lateinit var objectMapper: ObjectMapper
+
+  @BeforeEach
+  fun setup() {
+    // Reset WireMock before each test
+    reset()
+
+    // Set clock to January 20, 2025 to make date range include test data
+    val fixedClock =
+      Clock.fixed(
+      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
+      ZoneId.of("UTC"),
+    )
+    whenever(clock.instant()).thenReturn(fixedClock.instant())
+    whenever(clock.zone).thenReturn(fixedClock.zone)
+  }
 
   @Test
   fun `should fetch XAIX prices from FT API successfully`() {
@@ -61,31 +93,40 @@ class HistoricalPricesServiceIT {
           aResponse()
             .withStatus(HttpStatus.OK.value())
             .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-            .withBody("""{"html": "$xaixHtml"}"""),
+            .withBody(objectMapper.writeValueAsString(mapOf("html" to xaixHtml))),
         ),
     )
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).isNotEmpty
-    assertThat(result).containsKey(LocalDate.of(2025, 1, 17))
-    assertThat(result).containsKey(LocalDate.of(2025, 1, 16))
+    assertThat(result).hasSize(2)
 
     val jan17Data = result[LocalDate.of(2025, 1, 17)]
     assertThat(jan17Data).isNotNull
-    assertThat(jan17Data?.open).isEqualTo("137.40")
-    assertThat(jan17Data?.high).isEqualTo("139.60")
-    assertThat(jan17Data?.low).isEqualTo("137.30")
-    assertThat(jan17Data?.close).isEqualTo("138.80")
-    assertThat(jan17Data?.volume).isGreaterThan(0L)
+    assertThat(jan17Data?.open).isEqualTo(BigDecimal("137.40"))
+    assertThat(jan17Data?.high).isEqualTo(BigDecimal("139.60"))
+    assertThat(jan17Data?.low).isEqualTo(BigDecimal("137.30"))
+    assertThat(jan17Data?.close).isEqualTo(BigDecimal("138.80"))
+    assertThat(jan17Data?.volume).isEqualTo(22839L)
 
     val jan16Data = result[LocalDate.of(2025, 1, 16)]
     assertThat(jan16Data).isNotNull
-    assertThat(jan16Data?.open).isEqualTo("137.90")
-    assertThat(jan16Data?.high).isEqualTo("138.28")
-    assertThat(jan16Data?.low).isEqualTo("137.26")
-    assertThat(jan16Data?.close).isEqualTo("137.66")
-    assertThat(jan16Data?.volume).isGreaterThan(0L)
+    assertThat(jan16Data?.open).isEqualTo(BigDecimal("137.90"))
+    assertThat(jan16Data?.high).isEqualTo(BigDecimal("138.28"))
+    assertThat(jan16Data?.low).isEqualTo(BigDecimal("137.26"))
+    assertThat(jan16Data?.close).isEqualTo(BigDecimal("137.66"))
+    assertThat(jan16Data?.volume).isEqualTo(44583L)
+
+    verify(
+      com.github.tomakehurst.wiremock.client.WireMock
+        .getRequestedFor(
+        urlPathEqualTo("/data/equities/ajax/get-historical-prices"),
+      ).withQueryParam(
+        "symbol",
+        com.github.tomakehurst.wiremock.client.WireMock
+        .equalTo("515873934"),
+          ),
+    )
   }
 
   @Test
@@ -96,25 +137,17 @@ class HistoricalPricesServiceIT {
           "symbol",
           com.github.tomakehurst.wiremock.client.WireMock
           .equalTo("515873934"),
-            ).withQueryParam(
-          "startDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).withQueryParam(
-          "endDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).willReturn(
+            ).willReturn(
           aResponse()
             .withStatus(HttpStatus.OK.value())
             .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-            .withBody("""{"html": ""}"""),
+            .withBody(objectMapper.writeValueAsString(mapOf("html" to ""))),
         ),
     )
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).isNotNull
+    assertThat(result).isEmpty()
   }
 
   @Test
@@ -125,22 +158,15 @@ class HistoricalPricesServiceIT {
           "symbol",
           com.github.tomakehurst.wiremock.client.WireMock
           .equalTo("515873934"),
-            ).withQueryParam(
-          "startDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).withQueryParam(
-          "endDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).willReturn(
+            ).willReturn(
           aResponse()
             .withStatus(HttpStatus.NOT_FOUND.value()),
         ),
     )
 
-    val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
-    assertThat(result).isNotNull
+    assertThatThrownBy {
+      historicalPricesService.fetchPrices("XAIX:GER:EUR")
+    }.isInstanceOf(Exception::class.java)
   }
 
   @Test
@@ -151,22 +177,15 @@ class HistoricalPricesServiceIT {
           "symbol",
           com.github.tomakehurst.wiremock.client.WireMock
           .equalTo("515873934"),
-            ).withQueryParam(
-          "startDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).withQueryParam(
-          "endDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).willReturn(
+            ).willReturn(
           aResponse()
             .withStatus(HttpStatus.INTERNAL_SERVER_ERROR.value()),
         ),
     )
 
-    val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
-    assertThat(result).isNotNull
+    assertThatThrownBy {
+      historicalPricesService.fetchPrices("XAIX:GER:EUR")
+    }.isInstanceOf(Exception::class.java)
   }
 
   @Test
@@ -195,14 +214,13 @@ class HistoricalPricesServiceIT {
           aResponse()
             .withStatus(HttpStatus.OK.value())
             .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-            .withBody("""{"html": "$validHtml"}"""),
+            .withBody(objectMapper.writeValueAsString(mapOf("html" to validHtml))),
         ),
     )
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).isNotEmpty
-    assertThat(result).containsKey(LocalDate.of(2025, 1, 13))
+    assertThat(result).hasSize(1)
     val data = result[LocalDate.of(2025, 1, 13)]!!
 
     assertThat(data.low).isLessThanOrEqualTo(data.open)
@@ -235,28 +253,19 @@ class HistoricalPricesServiceIT {
           "symbol",
           com.github.tomakehurst.wiremock.client.WireMock
           .equalTo("515873934"),
-            ).withQueryParam(
-          "startDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).withQueryParam(
-          "endDate",
-          com.github.tomakehurst.wiremock.client.WireMock
-            .matching(".*"),
-        ).willReturn(
+            ).willReturn(
           aResponse()
             .withStatus(HttpStatus.OK.value())
             .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-            .withBody("""{"html": "$htmlWithKVolume"}"""),
+            .withBody(objectMapper.writeValueAsString(mapOf("html" to htmlWithKVolume))),
         ),
     )
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).isNotEmpty
-    assertThat(result).containsKey(LocalDate.of(2025, 1, 7))
+    assertThat(result).hasSize(1)
     val data = result[LocalDate.of(2025, 1, 7)]!!
-    assertThat(data.volume).isGreaterThan(0L)
+    assertThat(data.volume).isEqualTo(74640L)
   }
 
   @Test
@@ -272,27 +281,35 @@ class HistoricalPricesServiceIT {
       stubFor(
         get(urlPathEqualTo("/data/equities/ajax/get-historical-prices"))
           .withQueryParam(
+            "startDate",
+            com.github.tomakehurst.wiremock.client.WireMock
+            .matching(".*"),
+              ).withQueryParam(
+            "endDate",
+            com.github.tomakehurst.wiremock.client.WireMock
+            .matching(".*"),
+              ).withQueryParam(
             "symbol",
             com.github.tomakehurst.wiremock.client.WireMock
             .equalTo(expectedTickerId),
-              ).withQueryParam(
-            "startDate",
-            com.github.tomakehurst.wiremock.client.WireMock
-              .matching(".*"),
-          ).withQueryParam(
-            "endDate",
-            com.github.tomakehurst.wiremock.client.WireMock
-              .matching(".*"),
-          ).willReturn(
+              ).willReturn(
             aResponse()
               .withStatus(HttpStatus.OK.value())
               .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-              .withBody("""{"html": ""}"""),
+              .withBody(objectMapper.writeValueAsString(mapOf("html" to ""))),
           ),
       )
 
-      val result = historicalPricesService.fetchPrices(symbol)
-      assertThat(result).isNotNull
+      historicalPricesService.fetchPrices(symbol)
+
+      verify(
+        getRequestedFor(urlPathEqualTo("/data/equities/ajax/get-historical-prices"))
+          .withQueryParam(
+            "symbol",
+            com.github.tomakehurst.wiremock.client.WireMock
+            .equalTo(expectedTickerId),
+              ),
+      )
     }
   }
 }

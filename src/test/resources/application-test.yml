@@ -1,10 +1,2 @@
 scheduling:
   enabled: false
-
-spring:
-  cloud:
-    openfeign:
-      client:
-        config:
-          historicalPricesClient:
-            url: http://localhost:${wiremock.server.port}

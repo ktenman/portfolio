@@ -122,6 +122,9 @@ feign:
 captcha:
   url: http://captcha-solver:8000
 
+historicalPrices:
+  url: https://markets.ft.com
+
 vision:
   enabled: ${VISION_ENABLED:false}
   base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Service
 class ProfitCalculationService {
@@ -35,33 +36,57 @@ class ProfitCalculationService {
   }
 
   private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
-    var buyPrice = BigDecimal.ZERO
+    var totalQuantity = BigDecimal.ZERO
+    var totalCost = BigDecimal.ZERO
 
     transactions.forEach { transaction ->
       when (transaction.transactionType) {
         TransactionType.BUY -> {
-          buyPrice = transaction.price
-          transaction.averageCost = buyPrice
+          val cost = transaction.price.multiply(transaction.quantity)
+          totalCost = totalCost.add(cost)
+          totalQuantity = totalQuantity.add(transaction.quantity)
+
+          val averageCost =
+            if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
+            totalCost.divide(totalQuantity, 10, RoundingMode.HALF_UP)
+          } else {
+            BigDecimal.ZERO
+          }
+
+          transaction.averageCost = averageCost
           transaction.realizedProfit = BigDecimal.ZERO
 
           val currentPrice = transaction.instrument.currentPrice ?: BigDecimal.ZERO
           transaction.unrealizedProfit =
             calculateProfit(
-              quantity = transaction.quantity,
-              buyPrice = buyPrice,
+              quantity = totalQuantity,
+              buyPrice = averageCost,
               currentPrice = currentPrice,
             )
         }
 
         TransactionType.SELL -> {
-          transaction.averageCost = buyPrice
+          val averageCost =
+            if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
+            totalCost.divide(totalQuantity, 10, RoundingMode.HALF_UP)
+          } else {
+            BigDecimal.ZERO
+          }
+
+          transaction.averageCost = averageCost
           transaction.realizedProfit =
             calculateProfit(
               quantity = transaction.quantity,
-              buyPrice = buyPrice,
+              buyPrice = averageCost,
               currentPrice = transaction.price,
             )
           transaction.unrealizedProfit = BigDecimal.ZERO
+
+          if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
+            val sellRatio = transaction.quantity.divide(totalQuantity, 10, RoundingMode.HALF_UP)
+            totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
+            totalQuantity = totalQuantity.subtract(transaction.quantity)
+          }
         }
       }
     }

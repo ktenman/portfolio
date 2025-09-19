@@ -10,7 +10,10 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
+import java.time.ZoneId
 
 @ExtendWith(MockitoExtension::class)
 class HistoricalPricesServiceTest {
@@ -21,7 +24,12 @@ class HistoricalPricesServiceTest {
 
   @BeforeEach
   fun setUp() {
-    service = HistoricalPricesService(historicalPricesClient)
+    val clock =
+      Clock.fixed(
+      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
+      ZoneId.of("UTC"),
+    )
+    service = HistoricalPricesService(historicalPricesClient, clock)
   }
 
   @ParameterizedTest
@@ -130,16 +138,16 @@ class HistoricalPricesServiceTest {
 
     val jan17Data = result[LocalDate.of(2025, 1, 17)]
     assertThat(jan17Data).isNotNull
-    assertThat(jan17Data?.open).isEqualTo("137.40")
-    assertThat(jan17Data?.high).isEqualTo("139.60")
-    assertThat(jan17Data?.low).isEqualTo("137.30")
-    assertThat(jan17Data?.close).isEqualTo("138.80")
+    assertThat(jan17Data?.open).isEqualTo(BigDecimal("137.40"))
+    assertThat(jan17Data?.high).isEqualTo(BigDecimal("139.60"))
+    assertThat(jan17Data?.low).isEqualTo(BigDecimal("137.30"))
+    assertThat(jan17Data?.close).isEqualTo(BigDecimal("138.80"))
     assertThat(jan17Data?.volume).isEqualTo(22839L)
 
     val jan16Data = result[LocalDate.of(2025, 1, 16)]
     assertThat(jan16Data).isNotNull
-    assertThat(jan16Data?.open).isEqualTo("137.90")
-    assertThat(jan16Data?.close).isEqualTo("137.66")
+    assertThat(jan16Data?.open).isEqualTo(BigDecimal("137.90"))
+    assertThat(jan16Data?.close).isEqualTo(BigDecimal("137.66"))
     assertThat(jan16Data?.volume).isEqualTo(44583L)
   }
 
@@ -230,10 +238,10 @@ class HistoricalPricesServiceTest {
 
     val data = result[LocalDate.of(2025, 1, 15)]
     assertThat(data).isNotNull
-    assertThat(data?.open).isEqualTo("1234.56")
-    assertThat(data?.high).isEqualTo("1240.00")
-    assertThat(data?.low).isEqualTo("1230.00")
-    assertThat(data?.close).isEqualTo("1238.50")
+    assertThat(data?.open).isEqualTo(BigDecimal("1234.56"))
+    assertThat(data?.high).isEqualTo(BigDecimal("1240.00"))
+    assertThat(data?.low).isEqualTo(BigDecimal("1230.00"))
+    assertThat(data?.close).isEqualTo(BigDecimal("1238.50"))
     assertThat(data?.volume).isEqualTo(123456L)
   }
 
@@ -270,10 +278,10 @@ class HistoricalPricesServiceTest {
     assertThat(result).isNotEmpty
     val priceData = result[LocalDate.of(2025, 1, 17)]
     assertThat(priceData).isNotNull
-    assertThat(priceData?.open).isEqualTo("137.40")
-    assertThat(priceData?.high).isEqualTo("139.60")
-    assertThat(priceData?.low).isEqualTo("137.30")
-    assertThat(priceData?.close).isEqualTo("138.80")
+    assertThat(priceData?.open).isEqualTo(BigDecimal("137.40"))
+    assertThat(priceData?.high).isEqualTo(BigDecimal("139.60"))
+    assertThat(priceData?.low).isEqualTo(BigDecimal("137.30"))
+    assertThat(priceData?.close).isEqualTo(BigDecimal("138.80"))
     assertThat(priceData?.volume).isEqualTo(22839L)
   }
 }
