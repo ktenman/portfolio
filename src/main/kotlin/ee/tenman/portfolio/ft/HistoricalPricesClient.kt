@@ -4,7 +4,7 @@ import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 
-@FeignClient(name = "historicalPricesClient", url = "https://markets.ft.com")
+@FeignClient(name = "historicalPricesClient", url = "\${historicalPrices.url}")
 interface HistoricalPricesClient {
   @GetMapping("/data/equities/ajax/get-historical-prices")
   fun getHistoricalPrices(
