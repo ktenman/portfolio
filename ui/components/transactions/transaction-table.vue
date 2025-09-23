@@ -12,6 +12,18 @@
       </span>
     </template>
 
+    <template #cell-quantityInfo="{ item }">
+      <span>
+        <span class="d-block">{{ formatQuantity(item.quantity) }}</span>
+        <small
+          v-if="item.transactionType === 'BUY' && item.remainingQuantity !== undefined"
+          class="d-block text-muted"
+        >
+          Remaining: {{ formatQuantity(item.remainingQuantity) }}
+        </small>
+      </span>
+    </template>
+
     <template #cell-amount="{ item }">
       <span :class="getAmountClass(item.transactionType)">
         {{ formatTransactionAmount(item.quantity, item.price, item.transactionType) }}
@@ -67,6 +79,7 @@ import { transactionColumns } from '../../config'
 import {
   formatProfitLoss,
   formatTransactionAmount,
+  formatQuantity,
   getAmountClass,
   getProfitClass,
 } from '../../utils/formatters'
