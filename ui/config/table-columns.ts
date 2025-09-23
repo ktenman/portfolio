@@ -25,7 +25,7 @@ export const instrumentColumns: ColumnDefinition[] = [
 export const transactionColumns: ColumnDefinition[] = [
   { key: 'transactionDate', label: 'Date', formatter: formatDate },
   { key: 'instrumentId', label: 'Instrument' },
-  { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
+  { key: 'quantityInfo', label: 'Quantity' },
   { key: 'price', label: 'Price', formatter: formatCurrency },
   { key: 'amount', label: 'Amount' },
   { key: 'profit', label: 'Profit' },
