@@ -35,4 +35,6 @@ class PortfolioTransaction(
   var unrealizedProfit: BigDecimal = BigDecimal.ZERO, // Initialize with ZERO
   @Column(name = "average_cost")
   var averageCost: BigDecimal? = null,
+  @Column(name = "remaining_quantity")
+  var remainingQuantity: BigDecimal = BigDecimal.ZERO,
 ) : BaseEntity()

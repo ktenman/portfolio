@@ -6,6 +6,7 @@ export interface PortfolioTransaction {
   symbol: string
   transactionType: 'BUY' | 'SELL'
   quantity: number
+  remainingQuantity?: number
   price: number
   transactionDate: string
   realizedProfit?: number | null

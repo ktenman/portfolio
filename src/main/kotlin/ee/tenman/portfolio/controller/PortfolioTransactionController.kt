@@ -123,8 +123,9 @@ class PortfolioTransactionController(
     val transactionDate: LocalDate,
     val platform: Platform,
     val realizedProfit: BigDecimal?,
-    val unrealizedProfit: BigDecimal = BigDecimal.ZERO, // Default value
+    val unrealizedProfit: BigDecimal = BigDecimal.ZERO,
     val averageCost: BigDecimal?,
+    val remainingQuantity: BigDecimal = BigDecimal.ZERO,
   ) {
     companion object {
       fun fromEntity(transaction: PortfolioTransaction) =
@@ -140,6 +141,7 @@ class PortfolioTransactionController(
           realizedProfit = transaction.realizedProfit,
           unrealizedProfit = transaction.unrealizedProfit,
           averageCost = transaction.averageCost,
+          remainingQuantity = transaction.remainingQuantity,
         )
     }
   }
