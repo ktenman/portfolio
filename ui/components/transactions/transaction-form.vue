@@ -54,6 +54,28 @@
     />
 
     <FormInput
+      v-model="commissionModel"
+      label="Fee"
+      type="number"
+      placeholder="Enter fee (optional)"
+      step="0.01"
+      min="0"
+      :error="getFieldError('commission')"
+      @blur="touchField('commission')"
+    />
+
+    <FormInput
+      :model-value="formData.currency || 'EUR'"
+      label="Currency"
+      type="select"
+      :options="currencyOptions"
+      placeholder="Select Currency"
+      :error="getFieldError('currency')"
+      @update:model-value="updateField('currency', $event)"
+      @blur="touchField('currency')"
+    />
+
+    <FormInput
       :model-value="formData.transactionDate"
       label="Transaction Date"
       type="date"
@@ -62,9 +84,9 @@
       @blur="touchField('transactionDate')"
     />
 
-    <div v-if="totalValue" class="alert alert-info">
+    <div v-if="totalValueWithCommission" class="alert alert-info">
       <strong>Total Value:</strong>
-      {{ formatCurrency(totalValue) }}
+      {{ formatCurrencyWithSign(totalValueWithCommission, formData.currency) }}
     </div>
   </form>
 </template>
@@ -74,7 +96,7 @@ import { computed, watch, onMounted } from 'vue'
 import FormInput from '../shared/form-input.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
-import { formatCurrency } from '../../utils/formatters'
+import { formatCurrencyWithSign } from '../../utils/formatters'
 import { useFormValidation } from '../../composables/use-form-validation'
 import { transactionSchema } from '../../schemas/transaction-schema'
 import { useEnumValues } from '../../composables/use-enum-values'
@@ -98,6 +120,8 @@ const emit = defineEmits<{
 const { formData, validateForm, updateField, touchField, getFieldError, resetForm } =
   useFormValidation(transactionSchema, {
     transactionDate: new Date().toISOString().split('T')[0],
+    commission: 0,
+    currency: 'EUR',
     ...props.initialData,
   })
 
@@ -107,6 +131,8 @@ watch(
     if (newData) {
       resetForm({
         transactionDate: new Date().toISOString().split('T')[0],
+        commission: 0,
+        currency: 'EUR',
         ...newData,
       })
     }
@@ -114,7 +140,7 @@ watch(
   { deep: true }
 )
 
-const { platformOptions, transactionTypeOptions, loadAll } = useEnumValues()
+const { platformOptions, transactionTypeOptions, currencyOptions, loadAll } = useEnumValues()
 
 onMounted(() => {
   loadAll()
@@ -145,10 +171,32 @@ const priceModel = computed({
   },
 })
 
+const commissionModel = computed({
+  get() {
+    return formData.commission === undefined ? '' : String(formData.commission)
+  },
+  set(value: string) {
+    formData.commission = SafeNumber(value) || 0
+  },
+})
+
 const totalValue = computed(() => {
   const quantity = formData.quantity || 0
   const price = formData.price || 0
   return quantity * price
+})
+
+const totalValueWithCommission = computed(() => {
+  const baseValue = totalValue.value
+  const commission = formData.commission || 0
+  const transactionType = formData.transactionType
+
+  if (transactionType === 'BUY') {
+    return baseValue + commission
+  } else if (transactionType === 'SELL') {
+    return baseValue - commission
+  }
+  return baseValue
 })
 
 watch(

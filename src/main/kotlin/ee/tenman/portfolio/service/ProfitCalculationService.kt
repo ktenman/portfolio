@@ -44,7 +44,7 @@ class ProfitCalculationService {
     sortedTransactions.forEach { transaction ->
       when (transaction.transactionType) {
         TransactionType.BUY -> {
-          val cost = transaction.price.multiply(transaction.quantity)
+          val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
           totalCost = totalCost.add(cost)
           currentQuantity = currentQuantity.add(transaction.quantity)
           transaction.realizedProfit = BigDecimal.ZERO
@@ -58,12 +58,13 @@ class ProfitCalculationService {
           }
 
           transaction.averageCost = averageCost
-          transaction.realizedProfit =
+          val grossProfit =
             calculateProfit(
             quantity = transaction.quantity,
             buyPrice = averageCost,
             currentPrice = transaction.price,
           )
+          transaction.realizedProfit = grossProfit.subtract(transaction.commission)
           transaction.unrealizedProfit = BigDecimal.ZERO
           transaction.remainingQuantity = BigDecimal.ZERO
 

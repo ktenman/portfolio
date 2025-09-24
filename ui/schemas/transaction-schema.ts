@@ -32,5 +32,13 @@ export const transactionSchema = z.object({
       .positive('Price must be greater than 0')
       .min(0.01, 'Price is too small')
   ),
+  commission: z
+    .preprocess(val => {
+      if (val === '' || val === undefined || val === null) return 0
+      const num = Number(val)
+      return isNaN(num) ? 0 : num
+    }, z.number().min(0, 'Commission cannot be negative').default(0))
+    .optional(),
+  currency: z.string().default('EUR').optional(),
   transactionDate: z.string().min(1, 'Transaction date is required'),
 })

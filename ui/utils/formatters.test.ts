@@ -227,21 +227,37 @@ describe('formatProfitLoss', () => {
 })
 
 describe('formatTransactionAmount', () => {
-  it('should format BUY transactions with + sign', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY')).toBe('+1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'BUY')).toBe('+112.75')
-    expect(formatTransactionAmount(1, 0.01, 'BUY')).toBe('+0.01')
+  it('should format BUY transactions with + sign and default EUR currency', () => {
+    expect(formatTransactionAmount(10, 100, 'BUY')).toBe('+€1,000.00')
+    expect(formatTransactionAmount(5.5, 20.5, 'BUY')).toBe('+€112.75')
+    expect(formatTransactionAmount(1, 0.01, 'BUY')).toBe('+€0.01')
   })
 
-  it('should format SELL transactions with - sign', () => {
-    expect(formatTransactionAmount(10, 100, 'SELL')).toBe('-1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'SELL')).toBe('-112.75')
-    expect(formatTransactionAmount(1, 0.01, 'SELL')).toBe('-0.01')
+  it('should format SELL transactions with - sign and default EUR currency', () => {
+    expect(formatTransactionAmount(10, 100, 'SELL')).toBe('-€1,000.00')
+    expect(formatTransactionAmount(5.5, 20.5, 'SELL')).toBe('-€112.75')
+    expect(formatTransactionAmount(1, 0.01, 'SELL')).toBe('-€0.01')
   })
 
   it('should handle zero values', () => {
-    expect(formatTransactionAmount(0, 100, 'BUY')).toBe('+0.00')
-    expect(formatTransactionAmount(10, 0, 'SELL')).toBe('-0.00')
+    expect(formatTransactionAmount(0, 100, 'BUY')).toBe('+€0.00')
+    expect(formatTransactionAmount(10, 0, 'SELL')).toBe('-€0.00')
+  })
+
+  it('should format BUY transactions with commission', () => {
+    expect(formatTransactionAmount(10, 100, 'BUY', 5)).toBe('+€1,005.00')
+    expect(formatTransactionAmount(5.5, 20.5, 'BUY', 2.5)).toBe('+€115.25')
+  })
+
+  it('should format SELL transactions with commission', () => {
+    expect(formatTransactionAmount(10, 100, 'SELL', 5)).toBe('-€995.00')
+    expect(formatTransactionAmount(5.5, 20.5, 'SELL', 2.5)).toBe('-€110.25')
+  })
+
+  it('should format with different currencies', () => {
+    expect(formatTransactionAmount(10, 100, 'BUY', 0, 'USD')).toBe('+$1,000.00')
+    expect(formatTransactionAmount(10, 100, 'SELL', 0, 'GBP')).toBe('-£1,000.00')
+    expect(formatTransactionAmount(10, 100, 'BUY', 5, 'USD')).toBe('+$1,005.00')
   })
 })
 

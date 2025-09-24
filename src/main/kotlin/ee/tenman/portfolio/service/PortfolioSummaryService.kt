@@ -269,8 +269,8 @@ class PortfolioSummaryService(
         .map { tx ->
           val amount =
             when (tx.transactionType) {
-              TransactionType.BUY -> -(tx.price.multiply(tx.quantity))
-              TransactionType.SELL -> tx.price.multiply(tx.quantity)
+              TransactionType.BUY -> -(tx.price.multiply(tx.quantity).add(tx.commission))
+              TransactionType.SELL -> tx.price.multiply(tx.quantity).subtract(tx.commission)
             }
           Transaction(amount.toDouble(), tx.transactionDate)
         }.toMutableList()
@@ -355,8 +355,8 @@ class PortfolioSummaryService(
           instrumentTransactions.forEach { tx ->
             val amount =
               when (tx.transactionType) {
-                TransactionType.BUY -> -(tx.price.multiply(tx.quantity))
-                TransactionType.SELL -> tx.price.multiply(tx.quantity)
+                TransactionType.BUY -> -(tx.price.multiply(tx.quantity).add(tx.commission))
+                TransactionType.SELL -> tx.price.multiply(tx.quantity).subtract(tx.commission)
               }
             xirrTx.add(Transaction(amount.toDouble(), tx.transactionDate))
           }
@@ -390,11 +390,11 @@ class PortfolioSummaryService(
           val totalBuys =
             instrumentTransactions
             .filter { it.transactionType == TransactionType.BUY }
-            .sumOf { it.price.multiply(it.quantity) }
+            .sumOf { it.price.multiply(it.quantity).add(it.commission) }
           val totalSells =
             instrumentTransactions
             .filter { it.transactionType == TransactionType.SELL }
-            .sumOf { it.price.multiply(it.quantity) }
+            .sumOf { it.price.multiply(it.quantity).subtract(it.commission) }
 
           // Calculate realized gains/losses from sells
           val realizedGains =
@@ -440,8 +440,8 @@ class PortfolioSummaryService(
           instrumentTransactions.forEach { tx ->
             val amount =
               when (tx.transactionType) {
-                TransactionType.BUY -> -(tx.price.multiply(tx.quantity))
-                TransactionType.SELL -> tx.price.multiply(tx.quantity)
+                TransactionType.BUY -> -(tx.price.multiply(tx.quantity).add(tx.commission))
+                TransactionType.SELL -> tx.price.multiply(tx.quantity).subtract(tx.commission)
               }
             xirrTx.add(Transaction(amount.toDouble(), tx.transactionDate))
           }

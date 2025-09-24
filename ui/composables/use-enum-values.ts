@@ -56,9 +56,21 @@ export function useEnumValues() {
     enumCache.value ? toSelectOptions(enumCache.value.categories) : []
   )
 
-  const currencyOptions = computed(() =>
-    enumCache.value ? toSelectOptions(enumCache.value.currencies) : []
-  )
+  const currencyOptions = computed(() => {
+    if (enumCache.value && enumCache.value.currencies.length > 0) {
+      return toSelectOptions(enumCache.value.currencies)
+    }
+
+    return [
+      { value: 'EUR', text: 'EUR' },
+      { value: 'USD', text: 'USD' },
+      { value: 'GBP', text: 'GBP' },
+      { value: 'JPY', text: 'JPY' },
+      { value: 'CHF', text: 'CHF' },
+      { value: 'CAD', text: 'CAD' },
+      { value: 'AUD', text: 'AUD' },
+    ]
+  })
 
   return {
     loading,

@@ -84,20 +84,22 @@ describe('TransactionForm', () => {
       const wrapper = createWrapper()
 
       const formInputs = wrapper.findAllComponents(FormInput)
-      expect(formInputs).toHaveLength(6)
+      expect(formInputs).toHaveLength(8)
 
       expect(formInputs[0].props('label')).toBe('Instrument')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')
       expect(formInputs[4].props('label')).toBe('Price')
-      expect(formInputs[5].props('label')).toBe('Transaction Date')
+      expect(formInputs[5].props('label')).toBe('Fee')
+      expect(formInputs[6].props('label')).toBe('Currency')
+      expect(formInputs[7].props('label')).toBe('Transaction Date')
     })
 
     it('should set today as default transaction date', () => {
       const wrapper = createWrapper()
 
-      const dateInput = wrapper.findAllComponents(FormInput)[5]
+      const dateInput = wrapper.findAllComponents(FormInput)[7]
       expect(dateInput.props('modelValue')).toBe(getTodayDate())
     })
 
@@ -197,7 +199,7 @@ describe('TransactionForm', () => {
 
       const totalValueAlert = wrapper.find('.alert-info')
       expect(totalValueAlert.exists()).toBe(true)
-      expect(totalValueAlert.text()).toBe('Total Value: $1500.00')
+      expect(totalValueAlert.text()).toBe('Total Value: €1,500.00')
     })
 
     it('should update total value when quantity changes', async () => {
@@ -208,12 +210,12 @@ describe('TransactionForm', () => {
       await formInputs[4].vm.$emit('update:modelValue', 100)
       await nextTick()
 
-      expect(wrapper.find('.alert-info').text()).toBe('Total Value: $500.00')
+      expect(wrapper.find('.alert-info').text()).toBe('Total Value: €500.00')
 
       await formInputs[3].vm.$emit('update:modelValue', 15)
       await nextTick()
 
-      expect(wrapper.find('.alert-info').text()).toBe('Total Value: $1500.00')
+      expect(wrapper.find('.alert-info').text()).toBe('Total Value: €1,500.00')
     })
 
     it('should handle decimal values in calculation', async () => {
@@ -224,7 +226,7 @@ describe('TransactionForm', () => {
       await formInputs[4].vm.$emit('update:modelValue', 45000)
       await nextTick()
 
-      expect(wrapper.find('.alert-info').text()).toBe('Total Value: $22500.00')
+      expect(wrapper.find('.alert-info').text()).toBe('Total Value: €22,500.00')
     })
 
     it('should not show total value with zero quantity or price', async () => {
@@ -249,7 +251,9 @@ describe('TransactionForm', () => {
       await formInputs[2].vm.$emit('update:modelValue', 'BUY')
       await formInputs[3].vm.$emit('update:modelValue', 10)
       await formInputs[4].vm.$emit('update:modelValue', 150)
-      await formInputs[5].vm.$emit('update:modelValue', '2023-12-31')
+      await formInputs[5].vm.$emit('update:modelValue', 5)
+      await formInputs[6].vm.$emit('update:modelValue', 'USD')
+      await formInputs[7].vm.$emit('update:modelValue', '2023-12-31')
 
       const form = wrapper.find('form')
       await form.trigger('submit')
@@ -262,6 +266,8 @@ describe('TransactionForm', () => {
           transactionType: 'BUY',
           quantity: 10,
           price: 150,
+          commission: 5,
+          currency: 'USD',
           transactionDate: '2023-12-31',
         },
       ])
@@ -296,7 +302,7 @@ describe('TransactionForm', () => {
       expect(formInputs[2].props('modelValue')).toBe('SELL')
       expect(formInputs[3].props('modelValue')).toBe('0.5')
       expect(formInputs[4].props('modelValue')).toBe('50000')
-      expect(formInputs[5].props('modelValue')).toBe('2023-01-15')
+      expect(formInputs[7].props('modelValue')).toBe('2023-01-15')
     })
 
     it('should not override initial price with instrument price', async () => {
@@ -346,13 +352,15 @@ describe('TransactionForm', () => {
       const wrapper = createWrapper()
       const formInputs = wrapper.findAllComponents(FormInput)
 
-      expect(formInputs).toHaveLength(6)
+      expect(formInputs).toHaveLength(8)
       expect(formInputs[0].props('label')).toBe('Instrument')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')
       expect(formInputs[4].props('label')).toBe('Price')
-      expect(formInputs[5].props('label')).toBe('Transaction Date')
+      expect(formInputs[5].props('label')).toBe('Fee')
+      expect(formInputs[6].props('label')).toBe('Currency')
+      expect(formInputs[7].props('label')).toBe('Transaction Date')
     })
   })
 
@@ -456,7 +464,7 @@ describe('TransactionForm', () => {
 
       const totalValueAlert = wrapper.find('.alert-info')
       expect(totalValueAlert.exists()).toBe(true)
-      expect(totalValueAlert.text()).toBe('Total Value: $0.00')
+      expect(totalValueAlert.text()).toBe('Total Value: €0.00')
     })
 
     it('should handle very large values correctly', async () => {
@@ -468,14 +476,14 @@ describe('TransactionForm', () => {
       await nextTick()
 
       const totalValueAlert = wrapper.find('.alert-info')
-      expect(totalValueAlert.text()).toBe('Total Value: $999999990000.00')
+      expect(totalValueAlert.text()).toBe('Total Value: €999,999,990,000.00')
     })
   })
 
   describe('date validation', () => {
     it('should accept valid date formats', async () => {
       const wrapper = createWrapper()
-      const dateInput = wrapper.findAllComponents(FormInput)[5]
+      const dateInput = wrapper.findAllComponents(FormInput)[7]
 
       await dateInput.vm.$emit('update:modelValue', '2024-01-01')
       expect(dateInput.props('modelValue')).toBe('2024-01-01')
@@ -483,7 +491,7 @@ describe('TransactionForm', () => {
 
     it('should handle date input type properly', () => {
       const wrapper = createWrapper()
-      const dateInput = wrapper.findAllComponents(FormInput)[5]
+      const dateInput = wrapper.findAllComponents(FormInput)[7]
 
       expect(dateInput.props('type')).toBe('date')
     })
