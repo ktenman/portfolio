@@ -16,7 +16,11 @@
       <span>
         <span class="d-block">{{ formatQuantity(item.quantity) }}</span>
         <small
-          v-if="item.transactionType === 'BUY' && item.remainingQuantity !== undefined"
+          v-if="
+            item.transactionType === 'BUY' &&
+            item.remainingQuantity !== undefined &&
+            item.remainingQuantity !== item.quantity
+          "
           class="d-block text-muted"
         >
           Remaining: {{ formatQuantity(item.remainingQuantity) }}
