@@ -54,7 +54,7 @@ dependencies {
 
   // Security fixes for CVEs
   implementation("commons-fileupload:commons-fileupload:1.6.0")
-  implementation("org.apache.commons:commons-lang3:3.18.0")
+  implementation("org.apache.commons:commons-lang3:3.19.0")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("org.springframework.boot:spring-boot-starter-aop")
   implementation("io.micrometer:micrometer-registry-prometheus")
