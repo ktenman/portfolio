@@ -93,6 +93,15 @@ describe('usePortfolioSummaryQuery', () => {
 
       const { queryResult } = setupQuery()
       await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      await vi.waitFor(
+        () => {
+          const summaries = queryResult.summaries.value
+          return summaries.length > 0
+        },
+        { timeout: 5000 }
+      )
 
       const summaries = queryResult.summaries.value
       const dec31Summaries = summaries.filter(s => s.date === '2023-12-31')
@@ -230,6 +239,15 @@ describe('usePortfolioSummaryQuery', () => {
 
       const { queryResult } = setupQuery()
       await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      await vi.waitFor(
+        () => {
+          const summaries = queryResult.summaries.value
+          return summaries.length > 0
+        },
+        { timeout: 5000 }
+      )
 
       expect(queryResult.summaries.value).toHaveLength(1)
       expect(queryResult.summaries.value[0]).toEqual(mockCurrentSummary)
