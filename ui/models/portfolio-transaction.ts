@@ -8,6 +8,8 @@ export interface PortfolioTransaction {
   quantity: number
   remainingQuantity?: number
   price: number
+  commission?: number
+  currency?: string
   transactionDate: string
   realizedProfit?: number | null
   unrealizedProfit?: number | null

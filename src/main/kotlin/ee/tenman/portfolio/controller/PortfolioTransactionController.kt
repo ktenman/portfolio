@@ -44,6 +44,8 @@ class PortfolioTransactionController(
         price = request.price,
         transactionDate = request.transactionDate,
         platform = request.platform,
+        commission = request.commission,
+        currency = request.currency,
       )
     val savedTransaction = portfolioTransactionService.saveTransaction(transaction)
     return TransactionResponseDto.fromEntity(savedTransaction)
@@ -83,6 +85,8 @@ class PortfolioTransactionController(
       this.price = request.price
       this.transactionDate = request.transactionDate
       this.platform = request.platform
+      this.commission = request.commission
+      this.currency = request.currency
     }
 
     val updatedTransaction = portfolioTransactionService.saveTransaction(existingTransaction)
@@ -111,6 +115,9 @@ class PortfolioTransactionController(
     val transactionDate: LocalDate,
     @field:NotNull(message = "Platform is required")
     val platform: Platform,
+    val commission: BigDecimal = BigDecimal.ZERO,
+    @field:NotNull(message = "Currency is required")
+    val currency: String = "EUR",
   )
 
   data class TransactionResponseDto(
@@ -126,6 +133,8 @@ class PortfolioTransactionController(
     val unrealizedProfit: BigDecimal = BigDecimal.ZERO,
     val averageCost: BigDecimal?,
     val remainingQuantity: BigDecimal = BigDecimal.ZERO,
+    val commission: BigDecimal = BigDecimal.ZERO,
+    val currency: String = "EUR",
   ) {
     companion object {
       fun fromEntity(transaction: PortfolioTransaction) =
@@ -142,6 +151,8 @@ class PortfolioTransactionController(
           unrealizedProfit = transaction.unrealizedProfit,
           averageCost = transaction.averageCost,
           remainingQuantity = transaction.remainingQuantity,
+          commission = transaction.commission,
+          currency = transaction.currency,
         )
     }
   }

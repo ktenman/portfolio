@@ -86,7 +86,7 @@ class UnifiedProfitCalculationService {
     transactions.sortedBy { it.transactionDate }.forEach { transaction ->
       when (transaction.transactionType) {
         TransactionType.BUY -> {
-          val cost = transaction.price.multiply(transaction.quantity)
+          val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
           totalCost = totalCost.add(cost)
           quantity = quantity.add(transaction.quantity)
         }
@@ -123,8 +123,8 @@ class UnifiedProfitCalculationService {
       transactions.map { transaction ->
         val amount =
           when (transaction.transactionType) {
-            TransactionType.BUY -> -(transaction.price * transaction.quantity)
-            TransactionType.SELL -> transaction.price * transaction.quantity
+            TransactionType.BUY -> -(transaction.price * transaction.quantity + transaction.commission)
+            TransactionType.SELL -> transaction.price * transaction.quantity - transaction.commission
           }
         Transaction(amount.toDouble(), transaction.transactionDate)
       }

@@ -37,4 +37,8 @@ class PortfolioTransaction(
   var averageCost: BigDecimal? = null,
   @Column(name = "remaining_quantity")
   var remainingQuantity: BigDecimal = BigDecimal.ZERO,
+  @Column(name = "commission", nullable = false)
+  var commission: BigDecimal = BigDecimal.ZERO,
+  @Column(name = "currency", nullable = false)
+  var currency: String = "EUR",
 ) : BaseEntity()

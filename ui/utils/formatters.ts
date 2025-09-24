@@ -77,13 +77,26 @@ export const formatProfitLoss = (value: number | null | undefined): string => {
   return value >= 0 ? `+${formattedValue}` : `-${formattedValue}`
 }
 
-export const formatTransactionAmount = (quantity: number, price: number, type: string): string => {
-  const amount = quantity * price
-  const formattedAmount = amount.toLocaleString('en-US', {
+export const formatTransactionAmount = (
+  quantity: number,
+  price: number,
+  type: string,
+  commission?: number,
+  currency?: string
+): string => {
+  const baseAmount = quantity * price
+  const commissionValue = commission || 0
+  const totalAmount = type === 'BUY' ? baseAmount + commissionValue : baseAmount - commissionValue
+
+  const formattedAmount = totalAmount.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
-  return type === 'BUY' ? `+${formattedAmount}` : `-${formattedAmount}`
+
+  const currencySymbol = getCurrencySymbol(currency)
+  const sign = type === 'BUY' ? '+' : '-'
+
+  return `${sign}${currencySymbol}${formattedAmount}`
 }
 
 export const getProfitClass = (value: number | null | undefined): string => {
