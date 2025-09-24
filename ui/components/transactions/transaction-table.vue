@@ -24,9 +24,29 @@
       </span>
     </template>
 
+    <template #cell-price="{ item }">
+      <span>
+        <span class="d-block">{{ formatCurrencyWithSign(item.price, item.currency) }}</span>
+        <small v-if="item.currency && item.currency !== 'EUR'" class="d-block text-muted">
+          {{ item.currency }}
+        </small>
+      </span>
+    </template>
+
     <template #cell-amount="{ item }">
       <span :class="getAmountClass(item.transactionType)">
-        {{ formatTransactionAmount(item.quantity, item.price, item.transactionType) }}
+        {{
+          formatTransactionAmount(
+            item.quantity,
+            item.price,
+            item.transactionType,
+            item.commission,
+            item.currency
+          )
+        }}
+        <small v-if="item.commission && item.commission > 0" class="d-block text-muted">
+          Fee: {{ formatCurrencyWithSign(item.commission, item.currency) }}
+        </small>
       </span>
     </template>
 
@@ -82,6 +102,7 @@ import {
   formatQuantity,
   getAmountClass,
   getProfitClass,
+  formatCurrencyWithSign,
 } from '../../utils/formatters'
 
 interface Props {
