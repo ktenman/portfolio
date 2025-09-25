@@ -101,14 +101,21 @@ const formFields: Record<string, FormField> = {
   monthlyInvestment: { label: 'Monthly Investment (€)', step: '0.01' },
   yearlyGrowthRate: { label: 'Yearly Growth Rate (%)', step: '0.001' },
   annualReturnRate: { label: 'Annual Return Rate (%)', step: '0.001' },
+  taxRate: { label: 'Tax Rate (%)', step: '0.01' },
   years: { label: 'Number of Years', step: '1', type: 'number', min: 1 },
+}
+
+const formatTaxAmount = (value: number) => {
+  return value === 0 ? '' : formatCurrency(value)
 }
 
 const summaryColumns: ColumnDefinition[] = [
   { key: 'year', label: 'Year' },
+  { key: 'totalInvested', label: 'Total Invested', formatter: formatCurrency },
   { key: 'totalWorth', label: 'Total Worth', formatter: formatCurrency },
-  { key: 'yearGrowth', label: "Year's Growth", formatter: formatCurrency },
-  { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrency },
+  { key: 'grossProfit', label: 'Gross Profit', formatter: formatCurrency },
+  { key: 'taxAmount', label: 'Tax Amount', formatter: formatTaxAmount },
+  { key: 'netProfit', label: 'Net Profit', formatter: formatCurrency },
 ]
 </script>
 
