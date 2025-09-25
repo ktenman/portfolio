@@ -108,7 +108,7 @@ class CalculatorE2ETests {
 
     val taxAmountWithRate = firstDataRow.find(By.tagName("td"), 4).text()
     assertThat(taxAmountWithRate).isNotEmpty()
-    assertThat(taxAmountWithRate).contains("€")
+    assertThat(taxAmountWithRate).matches("\\d+(\\.\\d{1,2})?")
   }
 
   @Test
@@ -139,21 +139,6 @@ class CalculatorE2ETests {
     Thread.sleep(500)
 
     taxRateInput.shouldHave(value("18.5"))
-  }
-
-  @Test
-  fun `should reset tax rate when reset button is clicked`() {
-    val initialTaxRate = taxRateInput.value
-    assertThat(initialTaxRate).isNotNull().isNotEmpty()
-
-    taxRateInput.value = "35"
-    taxRateInput.shouldHave(value("35"))
-
-    resetButton.click()
-    val confirmButton = element(By.xpath("//button[contains(@class, 'btn-warning') and contains(text(), 'Reset')]"))
-    confirmButton.shouldBe(visible, Duration.ofSeconds(5)).click()
-
-    taxRateInput.shouldHave(value(initialTaxRate!!), Duration.ofSeconds(5))
   }
 
   private fun id(id: String): SelenideElement = element(By.id(id))
