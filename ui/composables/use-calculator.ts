@@ -10,13 +10,16 @@ interface CalculatorForm {
   yearlyGrowthRate: number
   annualReturnRate: number
   years: number
+  taxRate: number
 }
 
 interface YearSummary {
   year: number
+  totalInvested: number
   totalWorth: number
-  yearGrowth: number
-  earningsPerMonth: number
+  grossProfit: number
+  taxAmount: number
+  netProfit: number
 }
 
 const getDefaultFormValues = (): CalculatorForm => ({
@@ -25,6 +28,7 @@ const getDefaultFormValues = (): CalculatorForm => ({
   yearlyGrowthRate: 5,
   annualReturnRate: 7,
   years: 30,
+  taxRate: 22,
 })
 
 export function useCalculator() {
@@ -49,42 +53,43 @@ export function useCalculator() {
       ? form.value.annualReturnRate
       : (calculationResult.value?.average ?? form.value.annualReturnRate)
 
-    // Convert annual percentages to monthly rates for compound interest calculations
     const monthlyGrowthRate = form.value.yearlyGrowthRate / 100 / 12
-    // For compound interest, convert annual rate to monthly rate using (1 + annual)^(1/12) - 1
-    // This ensures the effective annual rate matches the input annual rate
     const monthlyReturnRate = Math.pow(1 + avgReturn / 100, 1 / 12) - 1
 
     const tempYearSummary: YearSummary[] = []
     const tempPortfolioData: number[] = []
 
     let totalWorth = currentPortfolioWorth
+    let totalInvested = currentPortfolioWorth
     tempPortfolioData.push(totalWorth)
 
     let currentMonthlyInvestment = form.value.monthlyInvestment
     for (let year = 1; year <= form.value.years; year++) {
-      const yearStartWorth = totalWorth
+      let yearlyInvestmentAmount = 0
 
-      // NOTE: Monthly compound interest calculation
-      // Each month: add investment first, then apply growth
       for (let month = 1; month <= 12; month++) {
+        yearlyInvestmentAmount += currentMonthlyInvestment
         totalWorth += currentMonthlyInvestment
         totalWorth *= 1 + monthlyReturnRate
       }
 
+      totalInvested += yearlyInvestmentAmount
       currentMonthlyInvestment *= 1 + monthlyGrowthRate
-      tempPortfolioData.push(totalWorth)
 
-      const yearGrowth = totalWorth - yearStartWorth
-      // Convert annual return rate (percentage) to monthly earnings
-      // Formula: (totalWorth * annualRate%) / (12 months * 100)
-      const earningsPerMonth = (totalWorth * avgReturn) / 1200
+      const grossProfit = totalWorth - totalInvested
+      const taxAmount = grossProfit * (form.value.taxRate / 100)
+      const netProfit = grossProfit - taxAmount
+      const actualTotalWorth = totalInvested + netProfit
+
+      tempPortfolioData.push(actualTotalWorth)
 
       tempYearSummary.push({
         year,
-        totalWorth,
-        yearGrowth,
-        earningsPerMonth,
+        totalInvested,
+        totalWorth: actualTotalWorth,
+        grossProfit,
+        taxAmount,
+        netProfit,
       })
     }
 
@@ -136,6 +141,7 @@ export function useCalculator() {
         yearlyGrowthRate: 5,
         annualReturnRate: freshData?.average || 7,
         years: 30,
+        taxRate: 22,
       }
     } catch (error) {
       console.error('Failed to fetch fresh data:', error)
