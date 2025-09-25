@@ -11,6 +11,7 @@ import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
 import e2e.retry.RetryExtension
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -25,6 +26,7 @@ private const val CALCULATOR_BASE_URL = "http://localhost:61234/calculator"
 @Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])
 class CalculatorE2ETests {
   private val annualReturnInput: SelenideElement by lazy { id("annualReturnRate") }
+  private val taxRateInput: SelenideElement by lazy { id("taxRate") }
   private val yearSummaryTable: SelenideElement by lazy { element(By.className("table")) }
   private val resetButton: SelenideElement by lazy { element(By.xpath("//button[contains(text(), 'Reset Calculator')]")) }
 
@@ -44,14 +46,14 @@ class CalculatorE2ETests {
   @Test
   fun `should recalculate when annual return rate is changed`() {
     val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
-    val initialTotalWorth = firstDataRow.find(By.tagName("td"), 1).text()
+    val initialTotalWorth = firstDataRow.find(By.tagName("td"), 2).text()
     assertThat(initialTotalWorth).isNotEmpty()
 
     annualReturnInput.value = "50"
 
-    firstDataRow.find(By.tagName("td"), 1).shouldNotHave(text(initialTotalWorth), Duration.ofSeconds(5))
+    firstDataRow.find(By.tagName("td"), 2).shouldNotHave(text(initialTotalWorth), Duration.ofSeconds(5))
 
-    val updatedTotalWorth = firstDataRow.find(By.tagName("td"), 1).text()
+    val updatedTotalWorth = firstDataRow.find(By.tagName("td"), 2).text()
     assertThat(updatedTotalWorth).isNotEqualTo(initialTotalWorth)
     assertThat(firstDataRow.find(By.tagName("td"), 3).text()).isNotEmpty()
   }
@@ -75,6 +77,83 @@ class CalculatorE2ETests {
     confirmButton.shouldBe(visible, Duration.ofSeconds(5)).click()
 
     annualReturnInput.shouldHave(value(initialValue!!), Duration.ofSeconds(5))
+  }
+
+  @Test
+  fun `should recalculate when tax rate is changed`() {
+    val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
+    val initialNetProfit = firstDataRow.find(By.tagName("td"), 5).text()
+    assertThat(initialNetProfit).isNotEmpty()
+
+    taxRateInput.value = "50"
+
+    firstDataRow.find(By.tagName("td"), 5).shouldNotHave(text(initialNetProfit), Duration.ofSeconds(5))
+
+    val updatedNetProfit = firstDataRow.find(By.tagName("td"), 5).text()
+    assertThat(updatedNetProfit).isNotEqualTo(initialNetProfit)
+  }
+
+  @Test
+  fun `should display tax amount column correctly`() {
+    val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
+
+    taxRateInput.value = "0"
+    Thread.sleep(500)
+
+    val taxAmountWithZeroRate = firstDataRow.find(By.tagName("td"), 4).text()
+    assertThat(taxAmountWithZeroRate).isEmpty()
+
+    taxRateInput.value = "25"
+    Thread.sleep(500)
+
+    val taxAmountWithRate = firstDataRow.find(By.tagName("td"), 4).text()
+    assertThat(taxAmountWithRate).isNotEmpty()
+    assertThat(taxAmountWithRate).contains("€")
+  }
+
+  @Test
+  fun `should calculate total worth as invested plus net profit`() {
+    val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
+
+    taxRateInput.value = "30"
+    Thread.sleep(500)
+
+    val totalInvestedText = firstDataRow.find(By.tagName("td"), 1).text().replace("[^0-9.]".toRegex(), "")
+    val totalWorthText = firstDataRow.find(By.tagName("td"), 2).text().replace("[^0-9.]".toRegex(), "")
+    val netProfitText = firstDataRow.find(By.tagName("td"), 5).text().replace("[^0-9.]".toRegex(), "")
+
+    val totalInvested = totalInvestedText.toDoubleOrNull() ?: 0.0
+    val totalWorth = totalWorthText.toDoubleOrNull() ?: 0.0
+    val netProfit = netProfitText.toDoubleOrNull() ?: 0.0
+
+    val expectedTotalWorth = totalInvested + netProfit
+    assertThat(totalWorth).isCloseTo(expectedTotalWorth, within(1.0))
+  }
+
+  @Test
+  fun `should preserve tax rate value`() {
+    taxRateInput.value = "18.5"
+    taxRateInput.shouldHave(value("18.5"))
+
+    annualReturnInput.value = "10"
+    Thread.sleep(500)
+
+    taxRateInput.shouldHave(value("18.5"))
+  }
+
+  @Test
+  fun `should reset tax rate when reset button is clicked`() {
+    val initialTaxRate = taxRateInput.value
+    assertThat(initialTaxRate).isNotNull().isNotEmpty()
+
+    taxRateInput.value = "35"
+    taxRateInput.shouldHave(value("35"))
+
+    resetButton.click()
+    val confirmButton = element(By.xpath("//button[contains(@class, 'btn-warning') and contains(text(), 'Reset')]"))
+    confirmButton.shouldBe(visible, Duration.ofSeconds(5)).click()
+
+    taxRateInput.shouldHave(value(initialTaxRate!!), Duration.ofSeconds(5))
   }
 
   private fun id(id: String): SelenideElement = element(By.id(id))
