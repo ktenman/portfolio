@@ -37,6 +37,7 @@ class HistoricalPricesServiceTest {
     "QDVE.DEX,93501088",
     "QDVE:GER:EUR,93500326",
     "XAIX:GER:EUR,515873934",
+    "VUAA:GER:EUR,573788032",
   )
   fun `should map ticker symbols correctly`(
     symbol: String,
@@ -178,6 +179,64 @@ class HistoricalPricesServiceTest {
     val data = result[LocalDate.of(2025, 1, 6)]
     assertThat(data).isNotNull
     assertThat(data?.volume).isEqualTo(71420L)
+  }
+
+  @Test
+  fun `should handle volume with m suffix`() {
+    val htmlWithMVolume =
+      """<tr>
+        <td class="mod-ui-table__cell--text">
+          <span class="mod-ui-hide-small-below">Tuesday, March 03, 2020</span>
+        </td>
+        <td>100.00</td>
+        <td>105.00</td>
+        <td>99.50</td>
+        <td>104.75</td>
+        <td>2.5m</td>
+      </tr>"""
+
+    whenever(
+      historicalPricesClient.getHistoricalPrices(
+        any(),
+        any(),
+        any(),
+      ),
+    ).thenReturn(HistoricalPricesResponse(html = htmlWithMVolume))
+
+    val result = service.fetchAndParsePrices("2020/03/03", "2020/03/03", "573788032")
+
+    val data = result[LocalDate.of(2020, 3, 3)]
+    assertThat(data).isNotNull
+    assertThat(data?.volume).isEqualTo(2_500_000L)
+  }
+
+  @Test
+  fun `should handle volume with b suffix`() {
+    val htmlWithBVolume =
+      """<tr>
+        <td class="mod-ui-table__cell--text">
+          <span class="mod-ui-hide-small-below">Wednesday, March 11, 2020</span>
+        </td>
+        <td>100.00</td>
+        <td>105.00</td>
+        <td>99.50</td>
+        <td>104.75</td>
+        <td>1.5b</td>
+      </tr>"""
+
+    whenever(
+      historicalPricesClient.getHistoricalPrices(
+        any(),
+        any(),
+        any(),
+      ),
+    ).thenReturn(HistoricalPricesResponse(html = htmlWithBVolume))
+
+    val result = service.fetchAndParsePrices("2020/03/11", "2020/03/11", "573788032")
+
+    val data = result[LocalDate.of(2020, 3, 11)]
+    assertThat(data).isNotNull
+    assertThat(data?.volume).isEqualTo(1_500_000_000L)
   }
 
   @Test

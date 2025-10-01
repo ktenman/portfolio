@@ -11,7 +11,7 @@ services:
       - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
-      interval: 3s
+      interval: 1s
       timeout: 1s
       retries: 5
 
@@ -23,137 +23,9 @@ services:
       - redis_data_dev:/data
     healthcheck:
       test: [ 'CMD', 'redis-cli', 'ping' ]
-      interval: 3s
+      interval: 1s
       timeout: 1s
       retries: 5
-
-  keycloak-db-dev:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: keycloak
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak
-    ports:
-      - '5433:5432'
-    volumes:
-      - keycloak_data_dev:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    labels:
-      - "org.springframework.boot.ignore=true"
-
-  keycloak-dev:
-    image: quay.io/keycloak/keycloak:26.3
-    volumes:
-      - ./keycloak-config/portfolio-realm-export.json:/opt/keycloak/data/import/portfolio-realm.json:ro
-    environment:
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://keycloak-db-dev:5432/keycloak
-      - KC_DB_USERNAME=keycloak
-      - KC_DB_PASSWORD=keycloak
-      - KC_HOSTNAME=localhost
-      - KC_HOSTNAME_PORT=8080
-      - KC_HOSTNAME_STRICT=false
-      - KC_HOSTNAME_STRICT_HTTPS=false
-      - KC_HTTP_ENABLED=true
-      - KC_HTTP_PORT=8080
-      - KC_HEALTH_ENABLED=true
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
-    command: ["start-dev", "--import-realm"]
-    ports:
-      - '8080:8080'
-    depends_on:
-      keycloak-db-dev:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
-
-  oauth2-proxy-dev:
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
-    ports:
-      - "4180:4180"
-    environment:
-      # Provider Configuration
-      - OAUTH2_PROXY_PROVIDER=keycloak-oidc
-      - OAUTH2_PROXY_PROVIDER_DISPLAY_NAME=Keycloak
-      - OAUTH2_PROXY_OIDC_ISSUER_URL=http://localhost:8080/realms/portfolio
-      - OAUTH2_PROXY_INSECURE_OIDC_SKIP_ISSUER_VERIFICATION=true
-      - OAUTH2_PROXY_SKIP_OIDC_DISCOVERY=true
-      - OAUTH2_PROXY_LOGIN_URL=http://localhost:8080/realms/portfolio/protocol/openid-connect/auth
-      - OAUTH2_PROXY_REDEEM_URL=http://keycloak-dev:8080/realms/portfolio/protocol/openid-connect/token
-      - OAUTH2_PROXY_VALIDATE_URL=http://keycloak-dev:8080/realms/portfolio/protocol/openid-connect/userinfo
-      - OAUTH2_PROXY_OIDC_JWKS_URL=http://keycloak-dev:8080/realms/portfolio/protocol/openid-connect/certs
-      - OAUTH2_PROXY_CLIENT_ID=portfolio-oauth2-proxy
-      - OAUTH2_PROXY_CLIENT_SECRET=dev-secret
-      - OAUTH2_PROXY_CODE_CHALLENGE_METHOD=S256
-      - OAUTH2_PROXY_OIDC_EXTRA_AUDIENCES=account
-      
-      # Session & Cookie Configuration
-      - OAUTH2_PROXY_COOKIE_SECRET=OQINaROshtE9TcZkNAm5Zs2Pv3xaWytBmc5W7sPX7ws=
-      - OAUTH2_PROXY_SESSION_STORE_TYPE=cookie
-      - OAUTH2_PROXY_COOKIE_EXPIRE=720h
-      - OAUTH2_PROXY_COOKIE_REFRESH=1h
-      - OAUTH2_PROXY_COOKIE_HTTPONLY=true
-      - OAUTH2_PROXY_COOKIE_SECURE=false
-      - OAUTH2_PROXY_COOKIE_SAMESITE=lax
-      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy_portfolio_dev
-      - OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST=false
-      - OAUTH2_PROXY_COOKIE_CSRF_EXPIRE=5m
-      
-      # Auth Configuration
-      - OAUTH2_PROXY_SKIP_JWT_BEARER_TOKENS=false
-      - OAUTH2_PROXY_PASS_ACCESS_TOKEN=true
-      - OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER=true
-      - OAUTH2_PROXY_SET_XAUTHREQUEST=false
-      - OAUTH2_PROXY_SET_AUTHORIZATION_HEADER=true
-      - OAUTH2_PROXY_PASS_BASIC_AUTH=false
-      - OAUTH2_PROXY_PASS_USER_HEADERS=false
-      - OAUTH2_PROXY_SKIP_AUTH_ROUTES=/actuator/health,/actuator/info
-      
-      # Routing & Security
-      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
-      - OAUTH2_PROXY_UPSTREAMS=http://host.docker.internal:61234/
-      - OAUTH2_PROXY_REDIRECT_URL=http://localhost:4180/oauth2/callback
-      - OAUTH2_PROXY_COOKIE_DOMAINS=.localhost
-      - OAUTH2_PROXY_EMAIL_DOMAINS=*
-      - OAUTH2_PROXY_INSECURE_OIDC_ALLOW_UNVERIFIED_EMAIL=true
-      - OAUTH2_PROXY_REVERSE_PROXY=true
-      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
-      - OAUTH2_PROXY_WHITELIST_DOMAINS=localhost
-      - OAUTH2_PROXY_SILENCE_PING_LOGGING=true
-      - OAUTH2_PROXY_OIDC_EMAIL_CLAIM=email
-      
-      # Logging
-      - OAUTH2_PROXY_LOGGING_FILENAME=
-      - OAUTH2_PROXY_STANDARD_LOGGING=true
-      - OAUTH2_PROXY_REQUEST_LOGGING=true
-      - OAUTH2_PROXY_AUTH_LOGGING=true
-    depends_on:
-      keycloak-dev:
-        condition: service_healthy
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-  keycloak-setup-dev:
-    image: alpine:latest
-    working_dir: /app
-    volumes:
-      - ./scripts/setup-local-env.sh:/app/setup-local-env.sh:ro
-      - ./emails.txt:/app/emails.txt
-    command: ["sh", "-c", "apk add --no-cache curl jq && sh /app/setup-local-env.sh"]
-    depends_on:
-      keycloak-dev:
-        condition: service_healthy
-    networks:
-      default:
 
 volumes:
   postgres_data_dev:

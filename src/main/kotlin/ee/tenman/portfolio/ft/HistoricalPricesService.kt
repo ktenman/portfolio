@@ -8,6 +8,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.Clock
@@ -24,6 +25,7 @@ private val TICKERS: Map<String, String> =
     "QDVE.DEX" to "93501088",
     "QDVE:GER:EUR" to "93500326",
     "XAIX:GER:EUR" to "515873934",
+    "VUAA:GER:EUR" to "573788032",
   )
 
 private val REQUEST_DATE_FORMATTER: DateTimeFormatter =
@@ -33,34 +35,28 @@ private val REQUEST_DATE_FORMATTER: DateTimeFormatter =
 class HistoricalPricesService(
   private val historicalPricesClient: HistoricalPricesClient,
   private val clock: Clock,
+  @Value("\${ft.parallel.threads:5}") private val parallelThreads: Int = 5,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+  private val dispatcher = Executors.newFixedThreadPool(parallelThreads).asCoroutineDispatcher()
 
   fun fetchPrices(symbol: String): Map<LocalDate, DailyPriceData> =
     runBlocking {
-      // Create a dispatcher for parallel fetching.
-      val dispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
-
-      // Prepare a list to hold all the one-year date ranges.
       val chunks = mutableListOf<Pair<String, String>>()
       var currentEndDate = LocalDate.now(clock)
       var currentStartDate = currentEndDate.minusYears(1)
 
-      // Generate chunks until we reach a reasonable lower bound (e.g. year 2000).
       while (true) {
         val formattedStart = currentStartDate.format(REQUEST_DATE_FORMATTER)
         val formattedEnd = currentEndDate.format(REQUEST_DATE_FORMATTER)
         chunks.add(formattedStart to formattedEnd)
 
-        // Terminate if we've reached or passed our lower bound.
         if (currentStartDate.year <= 2015) break
 
-        // Shift window one year back (subtract one day to avoid overlap)
         currentEndDate = currentStartDate.minusDays(1)
         currentStartDate = currentEndDate.minusYears(1)
       }
 
-      // Launch parallel fetches for each chunk.
       val ticker = TICKERS[symbol] ?: symbol
       val deferredResults =
         chunks.map { (startDate, endDate) ->
@@ -69,14 +65,11 @@ class HistoricalPricesService(
           }
         }
 
-      // Merge all results.
       val mergedResult = mutableMapOf<LocalDate, DailyPriceData>()
       deferredResults.awaitAll().forEach { partialResult ->
         mergedResult.putAll(partialResult)
       }
 
-      // Clean up the dispatcher.
-      dispatcher.close()
       mergedResult
     }
 
@@ -85,7 +78,6 @@ class HistoricalPricesService(
     endDate: String,
     symbol: String,
   ): Map<LocalDate, DailyPriceData> {
-    // Call the FT endpoint via Feign.
     val response = historicalPricesClient.getHistoricalPrices(startDate, endDate, symbol)
     val htmlContent = response.html.orEmpty()
     val wrappedHtml = "<table>$htmlContent</table>"
@@ -95,31 +87,43 @@ class HistoricalPricesService(
     val result = mutableMapOf<LocalDate, DailyPriceData>()
     rows.forEach { row ->
       val cells = row.select("td")
-      if (cells.size >= 6) {
-        val dateText = cells[0].select("span").first()?.text() ?: cells[0].text()
-        try {
-          val date = LocalDate.parse(dateText, DATE_FORMATTER)
-          val open = cells[1].text().replace(",", "").toBigDecimal()
-          val high = cells[2].text().replace(",", "").toBigDecimal()
-          val low = cells[3].text().replace(",", "").toBigDecimal()
-          val close = cells[4].text().replace(",", "").toBigDecimal()
+      if (cells.size < 6) return@forEach
 
-          val volumeStr = cells[5].text().replace(",", "").trim()
-          val volume =
-            if (volumeStr.endsWith("k", ignoreCase = true)) {
-              volumeStr
-                .dropLast(1)
-                .toBigDecimal()
-                .multiply(BigDecimal(1000))
-                .toLong()
-            } else {
-              BigDecimal(volumeStr).toLong()
-            }
+      val dateText = cells[0].select("span").first()?.text() ?: cells[0].text()
+      try {
+        val date = LocalDate.parse(dateText, DATE_FORMATTER)
+        val open = cells[1].text().replace(",", "").toBigDecimal()
+        val high = cells[2].text().replace(",", "").toBigDecimal()
+        val low = cells[3].text().replace(",", "").toBigDecimal()
+        val close = cells[4].text().replace(",", "").toBigDecimal()
 
-          result[date] = DailyPriceDataImpl(open, high, low, close, volume)
-        } catch (e: Exception) {
-          log.error("Error parsing row with date '$dateText': ${e.message}")
+        val volumeStr = cells[5].text().replace(",", "").trim()
+        val volume =
+          when {
+          volumeStr.endsWith("m", ignoreCase = true) ->
+            volumeStr
+              .dropLast(1)
+              .toBigDecimal()
+              .multiply(BigDecimal(1_000_000))
+              .toLong()
+          volumeStr.endsWith("k", ignoreCase = true) ->
+            volumeStr
+              .dropLast(1)
+              .toBigDecimal()
+              .multiply(BigDecimal(1_000))
+              .toLong()
+          volumeStr.endsWith("b", ignoreCase = true) ->
+            volumeStr
+              .dropLast(1)
+              .toBigDecimal()
+              .multiply(BigDecimal(1_000_000_000))
+              .toLong()
+          else -> BigDecimal(volumeStr).toLong()
         }
+
+        result[date] = DailyPriceDataImpl(open, high, low, close, volume)
+      } catch (e: Exception) {
+        log.error("Error parsing row with date '$dateText': ${e.message}")
       }
     }
     return result
