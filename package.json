@@ -49,7 +49,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unused-imports": "^4.2.0",
     "eslint-plugin-vue": "^10.5.0",
-    "happy-dom": "^18.0.1",
+    "happy-dom": "^19.0.2",
     "knip": "^5.64.1",
     "prettier": "^3.6.2",
     "sass": "1.70.0",
