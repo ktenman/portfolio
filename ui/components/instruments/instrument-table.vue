@@ -7,6 +7,23 @@
     :error-message="errorMessage"
     empty-message="No instruments found. Add a new instrument to get started."
   >
+    <template #footer>
+      <tr v-if="instruments.length > 0" class="table-footer-totals">
+        <td class="fw-bold">Total</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</td>
+        <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</td>
+        <td class="fw-bold text-nowrap">
+          <span :class="getProfitClass(totalProfit)">
+            {{ totalProfit >= 0 ? '+' : '' }}{{ formatCurrencyWithSign(totalProfit, 'EUR') }}
+          </span>
+        </td>
+        <td></td>
+      </tr>
+    </template>
     <template #mobile-card="{ item }">
       <div class="mobile-instrument-card">
         <div class="instrument-header">
@@ -112,6 +129,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
 import BaseIcon from '../shared/base-icon.vue'
 import { Instrument } from '../../models/instrument'
@@ -131,7 +149,7 @@ interface Props {
   errorMessage?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
   isError: false,
 })
@@ -141,10 +159,48 @@ defineEmits<{
 }>()
 
 const columns = instrumentColumns
+
+const totalInvested = computed(() => {
+  return props.instruments.reduce((sum, instrument) => {
+    return sum + (instrument.totalInvestment || 0)
+  }, 0)
+})
+
+const totalValue = computed(() => {
+  return props.instruments.reduce((sum, instrument) => {
+    return sum + (instrument.currentValue || 0)
+  }, 0)
+})
+
+const totalProfit = computed(() => {
+  return props.instruments.reduce((sum, instrument) => {
+    return sum + (instrument.profit || 0)
+  }, 0)
+})
 </script>
 
 <style scoped lang="scss">
 @import '../../styles/shared-table.scss';
+
+.table-footer-totals {
+  background-color: var(--bs-gray-100);
+  border-top: 2px solid var(--bs-border-color);
+
+  td {
+    padding: 1rem 0.75rem;
+    font-weight: 600;
+    color: var(--bs-gray-700);
+    vertical-align: middle;
+
+    &:first-child {
+      color: var(--bs-gray-800);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      letter-spacing: 0.025em;
+    }
+  }
+}
 
 // Mobile card styles
 .mobile-instrument-card {

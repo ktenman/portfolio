@@ -106,6 +106,9 @@
               </td>
             </tr>
           </tbody>
+          <tfoot v-if="$slots.footer">
+            <slot name="footer"></slot>
+          </tfoot>
         </table>
       </div>
     </template>

@@ -125,6 +125,13 @@ captcha:
 historicalPrices:
   url: https://markets.ft.com
 
+ft:
+  parallel:
+    threads: 5
+  instruments:
+    parallel:
+      threads: 5
+
 vision:
   enabled: ${VISION_ENABLED:false}
   base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}
