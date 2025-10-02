@@ -17,7 +17,7 @@ data class XirrCalculationResult(
 
 @Service
 class AsyncXirrCalculationService(
-  private val portfolioSummaryService: PortfolioSummaryService,
+  private val portfolioSummaryService: SummaryService,
   @Qualifier("calculationDispatcher") private val calculationDispatcher: CoroutineContext,
 ) {
   companion object {

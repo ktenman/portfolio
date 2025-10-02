@@ -70,19 +70,20 @@
     <template #mobile-footer>
       <div v-if="instruments.length > 0" class="mobile-totals-card">
         <div class="totals-header">
-          <h6 class="mb-0">Total Portfolio</h6>
+          <h6 class="totals-title">TOTAL</h6>
         </div>
+        <hr class="totals-divider" />
         <div class="totals-content">
           <div class="total-item">
-            <span class="total-label">Value</span>
+            <span class="total-label">VALUE</span>
             <span class="total-value">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</span>
           </div>
           <div class="total-item">
-            <span class="total-label">Invested</span>
+            <span class="total-label">INVESTED</span>
             <span class="total-value">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</span>
           </div>
           <div class="total-item">
-            <span class="total-label">Profit</span>
+            <span class="total-label">PROFIT</span>
             <span class="total-value" :class="getProfitClass(totalProfit)">
               {{ formatProfit(totalProfit, 'EUR') }}
             </span>
@@ -221,51 +222,66 @@ const formatProfit = (amount: number, currency: string | undefined): string => {
 
 // Mobile totals card
 .mobile-totals-card {
-  margin: 1rem 0.75rem;
+  margin-bottom: 0.75rem;
   padding: 1rem;
-  background: linear-gradient(135deg, var(--bs-gray-100) 0%, white 100%);
-  border: 1px solid var(--bs-gray-300);
+  background: white;
+  border: 1px solid var(--bs-gray-200);
   border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   .totals-header {
-    padding-bottom: 0.75rem;
-    margin-bottom: 0.75rem;
-    border-bottom: 2px solid var(--bs-gray-300);
+    text-align: center;
+    margin-bottom: 0.5rem;
 
-    h6 {
-      font-weight: 700;
-      text-transform: uppercase;
+    .totals-title {
+      margin: 0;
       font-size: 0.875rem;
-      letter-spacing: 0.025em;
+      font-weight: 700;
+      letter-spacing: 0.05em;
       color: var(--bs-gray-800);
     }
   }
 
+  .totals-divider {
+    margin: 0.75rem 0;
+    border: 0;
+    border-top: 1px solid var(--bs-gray-200);
+    opacity: 1;
+  }
+
   .totals-content {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     gap: 1rem;
 
     .total-item {
-      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
+      gap: 0.25rem;
 
       .total-label {
-        display: block;
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         font-weight: 500;
         color: var(--bs-gray-600);
         text-transform: uppercase;
-        letter-spacing: 0.025em;
-        margin-bottom: 0.25rem;
+        letter-spacing: 0.05em;
       }
 
       .total-value {
-        display: block;
         font-size: 1.125rem;
         font-weight: 700;
         color: var(--bs-gray-900);
+        line-height: 1.2;
+
+        &.text-success {
+          color: #22c55e;
+        }
+
+        &.text-danger {
+          color: #ef4444;
+        }
       }
     }
   }

@@ -18,7 +18,7 @@ class OnceInstrumentDataRetrievalService(
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
   private val dailyPortfolioXirrJob: DailyPortfolioXirrJob,
   private val jobExecutionService: JobExecutionService,
-  private val portfolioSummaryService: PortfolioSummaryService,
+  private val portfolioSummaryService: SummaryService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 

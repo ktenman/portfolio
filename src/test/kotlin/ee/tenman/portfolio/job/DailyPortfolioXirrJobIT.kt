@@ -14,7 +14,7 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
-import ee.tenman.portfolio.service.PortfolioTransactionService
+import ee.tenman.portfolio.service.TransactionService
 import jakarta.annotation.Resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -30,7 +30,7 @@ import java.time.LocalDate
 @IntegrationTest
 class DailyPortfolioXirrJobIT {
   @Resource
-  private lateinit var portfolioTransactionService: PortfolioTransactionService
+  private lateinit var transactionService: TransactionService
 
   @Resource
   private lateinit var alphaVantageDataRetrievalJob: AlphaVantageDataRetrievalJob
@@ -72,7 +72,7 @@ class DailyPortfolioXirrJobIT {
       transactionDate = LocalDate.of(2024, 7, 1),
       platform = Platform.SWEDBANK,
     ).let {
-      portfolioTransactionService.saveTransaction(it)
+      transactionService.saveTransaction(it)
     }
     assertThat(dailyPriceRepository.findAll()).isEmpty()
     stubFor(
