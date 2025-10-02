@@ -31,7 +31,11 @@
             <h6 class="instrument-name">{{ item.name }}</h6>
             <span class="instrument-symbol">{{ item.symbol }}</span>
           </div>
-          <button class="btn btn-sm btn-link p-0" @click="$emit('edit', item)" title="Edit">
+          <button
+            class="btn btn-sm btn-ghost btn-secondary btn-table-action"
+            @click="$emit('edit', item)"
+            title="Edit"
+          >
             <base-icon name="pencil" :size="16" />
           </button>
         </div>
@@ -124,7 +128,7 @@
     <template #actions="{ item }">
       <div class="action-buttons">
         <button
-          class="btn btn-sm btn-ghost btn-secondary"
+          class="btn btn-sm btn-ghost btn-secondary btn-table-action"
           @click="$emit('edit', item)"
           title="Edit"
         >
