@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
+import ee.tenman.portfolio.service.xirr.Transaction
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -37,15 +38,12 @@ import java.time.ZonedDateTime
 import java.util.stream.Stream
 
 @ExtendWith(MockitoExtension::class)
-class PortfolioSummaryServiceTest {
+class SummaryServiceTest {
   @Mock
-  private lateinit var portfolioTransactionService: PortfolioTransactionService
+  private lateinit var transactionService: TransactionService
 
   @Mock
   private lateinit var dailyPriceService: DailyPriceService
-
-  @Mock
-  private lateinit var unifiedProfitCalculationService: UnifiedProfitCalculationService
 
   @Mock
   private lateinit var portfolioDailySummaryRepository: PortfolioDailySummaryRepository
@@ -57,10 +55,13 @@ class PortfolioSummaryServiceTest {
   private lateinit var cacheManager: CacheManager
 
   @Mock
+  private lateinit var investmentMetricsService: InvestmentMetricsService
+
+  @Mock
   private lateinit var clock: Clock
 
   @InjectMocks
-  private lateinit var portfolioSummaryService: PortfolioSummaryService
+  private lateinit var summaryService: SummaryService
 
   @Captor
   private lateinit var summaryCaptor: ArgumentCaptor<PortfolioDailySummary>
@@ -79,6 +80,24 @@ class PortfolioSummaryServiceTest {
     val fixedInstant = ZonedDateTime.of(2025, 5, 10, 12, 0, 0, 0, ZoneId.systemDefault()).toInstant()
     lenient().whenever(clock.instant()).thenReturn(fixedInstant)
     lenient().whenever(clock.zone).thenReturn(ZoneId.systemDefault())
+
+    lenient()
+      .whenever(investmentMetricsService.calculatePortfolioMetrics(any(), any()))
+      .thenReturn(
+        InvestmentMetricsService.PortfolioMetrics(
+        totalValue = BigDecimal.ZERO,
+        totalProfit = BigDecimal.ZERO,
+        xirrTransactions = mutableListOf(),
+      ),
+          )
+
+    lenient()
+      .whenever(investmentMetricsService.buildXirrTransactions(any(), any(), any()))
+      .thenReturn(emptyList())
+
+    lenient()
+      .whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), any()))
+      .thenReturn(0.0)
 
     instrument =
       Instrument(
@@ -129,7 +148,7 @@ class PortfolioSummaryServiceTest {
       ),
     )
 
-    val summary = portfolioSummaryService.getCurrentDaySummary()
+    val summary = summaryService.getCurrentDaySummary()
 
     assertThat(summary.totalProfit)
       .isEqualByComparingTo("-1762.39")
@@ -140,9 +159,9 @@ class PortfolioSummaryServiceTest {
   @Test
   fun `calculateSummaryForDate should return zero values when no transactions exist`() {
     val date = LocalDate.of(2024, 7, 1)
-    whenever(portfolioTransactionService.getAllTransactions()).thenReturn(emptyList())
+    whenever(transactionService.getAllTransactions()).thenReturn(emptyList())
 
-    val summary = portfolioSummaryService.calculateSummaryForDate(date)
+    val summary = summaryService.calculateSummaryForDate(date)
 
     assertThat(summary.entryDate)
       .isEqualTo(date)
@@ -172,16 +191,30 @@ class PortfolioSummaryServiceTest {
         platform = transaction.platform,
       )
 
-    whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
-    whenever(dailyPriceService.getPrice(eq(instrument), eq(date))).thenReturn(price)
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
-      .thenThrow(RuntimeException("fail"))
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date))).thenReturn(0.05)
-
-    val summary = portfolioSummaryService.calculateSummaryForDate(date)
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date))).thenReturn(0.05)
 
     val expectedTotal = price.multiply(quantity)
     val expectedProfit = expectedTotal.subtract(originalPrice.multiply(quantity))
+
+    val xirrTransactions =
+      listOf(
+      Transaction(-1000.0, date.minusDays(10)),
+      Transaction(expectedTotal.toDouble(), date),
+    )
+
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(
+        InvestmentMetricsService
+          .PortfolioMetrics(
+        totalValue = expectedTotal,
+        totalProfit = expectedProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      },
+          )
+
+    val summary = summaryService.calculateSummaryForDate(date)
     val expectedEarningsPerDay =
       expectedTotal
         .multiply(BigDecimal("0.05"))
@@ -197,7 +230,7 @@ class PortfolioSummaryServiceTest {
 
   @Test
   fun `deleteAllDailySummaries should delete all summaries`() {
-    portfolioSummaryService.deleteAllDailySummaries()
+    summaryService.deleteAllDailySummaries()
 
     verify(portfolioDailySummaryRepository, times(1)).deleteAll()
   }
@@ -223,7 +256,7 @@ class PortfolioSummaryServiceTest {
       )
     whenever(portfolioDailySummaryRepository.findAll()).thenReturn(summaries)
 
-    val result = portfolioSummaryService.getAllDailySummaries()
+    val result = summaryService.getAllDailySummaries()
 
     assertThat(result)
       .hasSize(2)
@@ -251,7 +284,7 @@ class PortfolioSummaryServiceTest {
       )
     whenever(portfolioDailySummaryRepository.findAll(any<PageRequest>())).thenReturn(PageImpl(summaries))
 
-    val result = portfolioSummaryService.getAllDailySummaries(0, 10)
+    val result = summaryService.getAllDailySummaries(0, 10)
 
     assertThat(result.content)
       .hasSize(2)
@@ -260,9 +293,9 @@ class PortfolioSummaryServiceTest {
 
   @Test
   fun `recalculateAllDailySummaries should handle empty transactions`() {
-    whenever(portfolioTransactionService.getAllTransactions()).thenReturn(emptyList())
+    whenever(transactionService.getAllTransactions()).thenReturn(emptyList())
 
-    val count = portfolioSummaryService.recalculateAllDailySummaries()
+    val count = summaryService.recalculateAllDailySummaries()
 
     assertThat(count)
       .isZero()
@@ -287,17 +320,33 @@ class PortfolioSummaryServiceTest {
         platform = this.transaction.platform,
       )
 
-    whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(transaction))
-    whenever(dailyPriceService.getPrice(any(), any())).thenReturn(BigDecimal("110"))
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
-      .thenReturn(transaction.quantity to transaction.price)
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), any())).thenReturn(0.05)
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(transaction))
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), any())).thenReturn(0.05)
+
+    val totalValue = BigDecimal("110").multiply(transaction.quantity)
+    val totalProfit = totalValue.subtract(transaction.price.multiply(transaction.quantity))
+    val xirrTransactions =
+      listOf(
+      Transaction(-1000.0, LocalDate.of(2024, 7, 1)),
+      Transaction(totalValue.toDouble(), LocalDate.of(2024, 7, 5)),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), any()))
+      .thenReturn(
+        InvestmentMetricsService
+          .PortfolioMetrics(
+        totalValue = totalValue,
+        totalProfit = totalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      },
+          )
+
     whenever(portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()))
       .thenAnswer { invocation -> invocation.arguments[0] as List<*> }
     val emptyList = emptyList<PortfolioDailySummary>()
     whenever(portfolioDailySummaryRepository.findAll()).thenReturn(emptyList)
 
-    val count = portfolioSummaryService.recalculateAllDailySummaries()
+    val count = summaryService.recalculateAllDailySummaries()
 
     assertThat(count).isEqualTo(4)
     verify(portfolioDailySummaryRepository).findAll()
@@ -330,7 +379,7 @@ class PortfolioSummaryServiceTest {
     whenever(portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()))
       .thenAnswer { invocation -> invocation.arguments[0] as List<PortfolioDailySummary> }
 
-    portfolioSummaryService.saveDailySummaries(listOf(updatedSummary, newSummary))
+    summaryService.saveDailySummaries(listOf(updatedSummary, newSummary))
 
     verify(portfolioDailySummaryRepository).saveAll(summaryListCaptor.capture())
     val saved = summaryListCaptor.value
@@ -368,7 +417,7 @@ class PortfolioSummaryServiceTest {
       )
     whenever(portfolioDailySummaryRepository.findAllByEntryDateBetween(start, end)).thenReturn(between)
 
-    val result = portfolioSummaryService.getDailySummariesBetween(start, end)
+    val result = summaryService.getDailySummariesBetween(start, end)
 
     assertThat(result)
       .hasSize(2)
@@ -391,15 +440,27 @@ class PortfolioSummaryServiceTest {
         platform = Platform.TRADING212,
       )
 
-    whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
-    whenever(dailyPriceService.getPrice(eq(instrument), eq(date))).thenReturn(price)
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
-      .thenReturn(quantity to BigDecimal("29.81"))
-    whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
-      .thenReturn(BigDecimal.ZERO)
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date))).thenReturn(0.05)
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date))).thenReturn(0.05)
 
-    val summary = portfolioSummaryService.calculateSummaryForDate(date)
+    val expectedTotalValue = price.multiply(quantity)
+    val xirrTransactions =
+      listOf(
+      Transaction(-23639.33, date.minusDays(10)),
+      Transaction(expectedTotalValue.toDouble(), date),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(
+        InvestmentMetricsService
+          .PortfolioMetrics(
+        totalValue = expectedTotalValue,
+        totalProfit = BigDecimal.ZERO,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      },
+          )
+
+    val summary = summaryService.calculateSummaryForDate(date)
 
     assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
       .isEqualByComparingTo("25015.03")
@@ -428,7 +489,7 @@ class PortfolioSummaryServiceTest {
 
     whenever(instrumentService.getAllInstruments()).thenReturn(listOf(instrumentWithXirr))
 
-    val summary = portfolioSummaryService.getCurrentDaySummary()
+    val summary = summaryService.getCurrentDaySummary()
 
     assertThat(summary.totalValue)
       .isEqualByComparingTo("600.00")
@@ -480,16 +541,32 @@ class PortfolioSummaryServiceTest {
         earningsPerDay = BigDecimal("0.27"),
       )
 
-    whenever(portfolioTransactionService.getAllTransactions()).thenReturn(listOf(transaction))
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(transaction))
     whenever(portfolioDailySummaryRepository.findAll()).thenReturn(listOf(todaySummary, oldSummary))
-    whenever(dailyPriceService.getPrice(any(), any())).thenReturn(BigDecimal("110"))
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
-      .thenReturn(BigDecimal("10") to BigDecimal("110"))
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), any())).thenReturn(0.05)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), any())).thenReturn(0.05)
+
+    val totalValue = BigDecimal("110").multiply(BigDecimal("10"))
+    val totalProfit = totalValue.subtract(BigDecimal("100").multiply(BigDecimal("10")))
+    val xirrTransactions =
+      listOf(
+      Transaction(-1000.0, today.minusDays(3)),
+      Transaction(totalValue.toDouble(), today),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), any()))
+      .thenReturn(
+        InvestmentMetricsService
+          .PortfolioMetrics(
+        totalValue = totalValue,
+        totalProfit = totalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      },
+          )
+
     whenever(portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()))
       .thenAnswer { invocation -> invocation.arguments[0] as List<*> }
 
-    val count = portfolioSummaryService.recalculateAllDailySummaries()
+    val count = summaryService.recalculateAllDailySummaries()
 
     assertThat(count).isEqualTo(3)
     verify(portfolioDailySummaryRepository, never()).delete(todaySummary)
@@ -532,34 +609,29 @@ class PortfolioSummaryServiceTest {
         platform = Platform.TRADING212,
       )
 
-    whenever(portfolioTransactionService.getAllTransactions())
+    whenever(transactionService.getAllTransactions())
       .thenReturn(listOf(transaction1, transaction2))
 
-    whenever(dailyPriceService.getPrice(eq(instrument1), eq(date)))
-      .thenReturn(price1)
-    whenever(dailyPriceService.getPrice(eq(instrument2), eq(date)))
-      .thenReturn(price2)
-
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(eq(listOf(transaction1))))
-      .thenReturn(BigDecimal("10") to BigDecimal("100"))
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(eq(listOf(transaction2))))
-      .thenReturn(BigDecimal("5") to BigDecimal("80"))
-
-    val profit1 = BigDecimal("10").multiply(price1.subtract(BigDecimal("100")))
-    lenient()
-      .whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
-      .thenReturn(BigDecimal.ZERO)
-    whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("10")), eq(BigDecimal("100")), eq(price1)))
-      .thenReturn(profit1)
-
-    val profit2 = BigDecimal("5").multiply(price2.subtract(BigDecimal("80")))
-    whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("5")), eq(BigDecimal("80")), eq(price2)))
-      .thenReturn(profit2)
-
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date)))
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date)))
       .thenReturn(xirrValue)
 
-    val summary = portfolioSummaryService.calculateSummaryForDate(date)
+    val xirrTransactions =
+      listOf(
+      Transaction(-1400.0, date.minusDays(10)),
+      Transaction(expectedTotalValue.toDouble(), date),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(
+        InvestmentMetricsService
+          .PortfolioMetrics(
+        totalValue = expectedTotalValue,
+        totalProfit = expectedTotalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      },
+          )
+
+    val summary = summaryService.calculateSummaryForDate(date)
 
     assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
       .isEqualByComparingTo(expectedTotalValue)
@@ -593,21 +665,35 @@ class PortfolioSummaryServiceTest {
         platform = Platform.TRADING212,
       )
 
-    whenever(portfolioTransactionService.getAllTransactions())
+    whenever(transactionService.getAllTransactions())
       .thenReturn(listOf(buyTransaction, sellTransaction))
 
-    whenever(dailyPriceService.getPrice(eq(instrument), eq(date)))
-      .thenReturn(BigDecimal("130"))
-
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(any()))
-      .thenReturn(BigDecimal("12") to BigDecimal("100"))
-    whenever(unifiedProfitCalculationService.calculateProfit(any(), any(), any()))
-      .thenReturn(BigDecimal("360.00"))
-
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date)))
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date)))
       .thenReturn(0.12)
 
-    val summary = portfolioSummaryService.calculateSummaryForDate(date)
+    val remainingQuantity = BigDecimal("12")
+    val currentPrice = BigDecimal("130")
+    val totalValue = remainingQuantity.multiply(currentPrice)
+    val totalProfit = BigDecimal("360.00")
+
+    val xirrTransactions =
+      listOf(
+      Transaction(-2000.0, date.minusDays(15)),
+      Transaction(960.0, date.minusDays(5)),
+      Transaction(totalValue.toDouble(), date),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(
+        InvestmentMetricsService
+          .PortfolioMetrics(
+        totalValue = totalValue,
+        totalProfit = totalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      },
+          )
+
+    val summary = summaryService.calculateSummaryForDate(date)
 
     assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
       .isEqualByComparingTo("1560.00")
@@ -652,25 +738,29 @@ class PortfolioSummaryServiceTest {
         platform = Platform.TRADING212,
       )
 
-    whenever(portfolioTransactionService.getAllTransactions())
+    whenever(transactionService.getAllTransactions())
       .thenReturn(listOf(transaction1, transaction2))
 
-    whenever(dailyPriceService.getPrice(eq(instrument), eq(date)))
-      .thenReturn(BigDecimal("110"))
-    whenever(dailyPriceService.getPrice(eq(instrument2), eq(date)))
-      .thenReturn(BigDecimal("75"))
-
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(eq(listOf(transaction1))))
-      .thenThrow(RuntimeException("Calculation failed"))
-    whenever(unifiedProfitCalculationService.calculateCurrentHoldings(eq(listOf(transaction2))))
-      .thenReturn(BigDecimal("15") to BigDecimal("70"))
-    whenever(unifiedProfitCalculationService.calculateProfit(eq(BigDecimal("15")), eq(BigDecimal("70")), eq(BigDecimal("75"))))
-      .thenReturn(BigDecimal("75.00"))
-
-    whenever(unifiedProfitCalculationService.calculateAdjustedXirr(any(), any(), eq(date)))
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date)))
       .thenReturn(0.08)
 
-    val summary = portfolioSummaryService.calculateSummaryForDate(date)
+    val xirrTransactions =
+      listOf(
+      Transaction(-2050.0, date.minusDays(10)),
+      Transaction(2225.0, date),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(
+        InvestmentMetricsService
+          .PortfolioMetrics(
+        totalValue = BigDecimal("2225.00"),
+        totalProfit = BigDecimal("175.00"),
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      },
+          )
+
+    val summary = summaryService.calculateSummaryForDate(date)
 
     assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
       .isEqualByComparingTo("2225.00")

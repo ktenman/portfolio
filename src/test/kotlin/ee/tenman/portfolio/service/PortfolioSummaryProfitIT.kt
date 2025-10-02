@@ -23,7 +23,7 @@ import java.time.LocalDate
 class PortfolioSummaryProfitIT
 @Autowired
   constructor(
-  private val portfolioSummaryService: PortfolioSummaryService,
+  private val portfolioSummaryService: SummaryService,
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val dailyPriceRepository: DailyPriceRepository,
