@@ -24,7 +24,7 @@ class FtDataRetrievalJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(cron = "0 0/10 * * * *")
+  @Scheduled(cron = "0 * * * * *")
   fun runJob() {
     log.info("Running FT data retrieval job")
     jobExecutionService.executeJob(this)
