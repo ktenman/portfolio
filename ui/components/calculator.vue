@@ -47,7 +47,7 @@
     </div>
 
     <div class="calculator-buttons-mobile">
-      <button type="button" class="btn btn-ghost btn-secondary me-2" @click="handleReset">
+      <button type="button" class="btn btn-ghost btn-secondary" @click="handleReset">
         Reset Calculator
       </button>
     </div>
@@ -157,28 +157,25 @@ canvas {
     left: 0;
     right: 0;
     background-color: $white;
-    padding: $spacing-sm $spacing-md;
+    padding: $spacing-md;
     box-shadow: 0 -2px $spacing-sm rgba($black, 0.1);
-    z-index: $zindex-dropdown;
-    justify-content: space-between;
+    z-index: $zindex-sticky;
+    justify-content: center;
 
     .btn {
-      flex: 1;
-      padding: $spacing-sm $spacing-sm;
-      font-size: $font-size-sm;
-
-      &:first-child {
-        margin-right: $spacing-sm;
-      }
+      width: 100%;
+      max-width: 400px;
+      padding: $spacing-sm $spacing-lg;
+      font-size: $font-size-base;
 
       &.btn-ghost {
-        padding: 0.25rem 0.5rem;
+        padding: 0.625rem 1.5rem;
       }
     }
   }
 
   .container {
-    padding-bottom: rem(60px);
+    padding-bottom: rem(80px);
   }
 }
 </style>

@@ -28,6 +28,12 @@
   --radius-base: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+
+  // Button separation enhancements
+  --button-border-color: rgba(0, 0, 0, 0.1);
+  --button-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --button-bg-tint: rgba(0, 0, 0, 0.02);
+  --button-focus-ring: rgba(67, 97, 238, 0.4);
 }
 
 // Dark mode support
@@ -41,6 +47,12 @@
   --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+
+  // Dark mode button enhancements
+  --button-border-color: rgba(255, 255, 255, 0.12);
+  --button-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --button-bg-tint: rgba(255, 255, 255, 0.05);
+  --button-focus-ring: rgba(99, 102, 241, 0.5);
 }
 
 // ========================================
@@ -57,7 +69,6 @@
     border-color var(--transition-base);
 
   &:hover {
-    transform: translateY(-1px);
     // Removed shadow on hover for cleaner look
   }
 
@@ -78,7 +89,8 @@
   font-weight: 500;
   transition: all var(--transition-fast);
   position: relative;
-  border: 1px solid transparent;
+  border: 1px solid var(--button-border-color);
+  box-shadow: var(--button-shadow);
 
   // Icon spacing
   i,
@@ -104,8 +116,15 @@
     }
   }
 
-  &:focus {
-    box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+  &:focus-visible {
+    outline: 2px solid var(--button-focus-ring);
+    outline-offset: 2px;
+    box-shadow: var(--button-shadow);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 1px var(--button-shadow);
   }
 
   &:disabled,
@@ -118,15 +137,14 @@
 // Enhanced primary button with subtle gradient
 .btn-primary {
   background: linear-gradient(135deg, var(--modern-primary) 0%, var(--modern-primary-hover) 100%);
-  border-color: var(--modern-primary);
+  border-color: var(--button-border-color);
   color: white;
   // Removed base shadow for cleaner look
 
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, var(--modern-primary-hover) 0%, var(--modern-primary) 100%);
-    border-color: var(--modern-primary-hover);
+    border-color: var(--button-border-color);
     // Removed shadow for cleaner hover
-    transform: translateY(-1px);
   }
 
   &:active:not(:disabled) {
@@ -135,13 +153,13 @@
   }
 }
 
-// Ghost button style for table actions (minimal by default, prominent on hover)
+// Ghost button style - default visible style
 .btn.btn-ghost {
-  background: transparent !important;
-  border: 1px solid transparent !important;
+  background: var(--button-bg-tint) !important;
+  border: 1px solid var(--button-border-color) !important;
   transition: all var(--transition-fast);
   font-weight: 500;
-  box-shadow: none !important;
+  box-shadow: var(--button-shadow) !important;
 
   // Add small margin between action buttons
   & + .btn.btn-ghost {
@@ -154,22 +172,13 @@
     font-size: 0.875rem;
   }
 
-  // Standard action (Edit) - uses gray/blue
   &.btn-secondary {
     color: var(--bs-gray-600);
-    background: transparent !important;
-    border-color: transparent !important;
 
     &:hover:not(:disabled) {
       background-color: rgba(67, 97, 238, 0.08) !important;
-      border-color: transparent !important;
+      border-color: var(--button-border-color) !important;
       color: var(--modern-primary);
-      transform: translateY(-1px);
-    }
-
-    &:active:not(:disabled) {
-      background-color: rgba(67, 97, 238, 0.12) !important;
-      transform: translateY(0);
     }
 
     &:focus-visible {
@@ -178,96 +187,85 @@
       box-shadow: none !important;
     }
   }
+}
 
-  // Destructive action (Delete) - same style as edit
+// Special styling for table action buttons - completely transparent (override all ghost styles)
+.btn.btn-ghost.btn-table-action,
+.btn.btn-table-action {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  padding: 0.25rem 0.5rem !important;
+
+  &.btn-secondary,
   &.btn-danger {
     color: var(--bs-gray-600);
     background: transparent !important;
-    border-color: transparent !important;
-
-    &:hover:not(:disabled) {
-      background-color: rgba(67, 97, 238, 0.08) !important;
-      border-color: transparent !important;
-      color: var(--modern-primary);
-      transform: translateY(-1px);
-    }
-
-    &:active:not(:disabled) {
-      background-color: rgba(67, 97, 238, 0.12) !important;
-      transform: translateY(0);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--modern-primary);
-      outline-offset: 2px;
-      box-shadow: none !important;
-    }
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
   }
 
-  // Primary action
-  &.btn-primary {
-    color: var(--modern-primary);
-    background: transparent !important;
+  &:hover:not(:disabled) {
+    background-color: rgba(67, 97, 238, 0.08) !important;
     border-color: transparent !important;
+    color: var(--modern-primary);
+  }
 
-    &:hover:not(:disabled) {
-      background-color: rgba(67, 97, 238, 0.1) !important;
-      border-color: transparent !important;
-      color: var(--modern-primary);
-      transform: translateY(-1px);
-    }
+  &:active:not(:disabled) {
+    background-color: rgba(67, 97, 238, 0.12) !important;
+    border-color: transparent !important;
+  }
 
-    &:active:not(:disabled) {
-      background-color: rgba(67, 97, 238, 0.15) !important;
-      transform: translateY(0);
-    }
+  &:focus-visible {
+    outline: 2px solid var(--modern-primary);
+    outline-offset: 2px;
+    box-shadow: none !important;
+  }
+}
 
-    &:focus-visible {
-      outline: 2px solid var(--modern-primary);
-      outline-offset: 2px;
-      box-shadow: none !important;
-    }
+// Mobile specific adjustments
+@media (max-width: 767px) {
+  .mobile-instrument-card .btn-table-action {
+    padding: 0.25rem !important;
+    margin: 0 !important;
   }
 }
 
 // Keep existing filled button styles for non-table contexts
 .btn-secondary:not(.btn-ghost) {
   background: var(--bs-secondary);
-  border-color: var(--bs-secondary);
+  border-color: var(--button-border-color);
   color: white;
 
   &:hover:not(:disabled) {
     background: var(--bs-gray-700);
-    border-color: var(--bs-gray-700);
-    transform: translateY(-1px);
+    border-color: var(--button-border-color);
   }
 }
 
 // Success button with modern styling
 .btn-success {
   background: linear-gradient(135deg, var(--modern-success) 0%, #1ea750 100%);
-  border-color: var(--modern-success);
+  border-color: var(--button-border-color);
   // Removed base shadow for cleaner look
 
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, #1ea750 0%, var(--modern-success) 100%);
-    border-color: #1ea750;
+    border-color: var(--button-border-color);
     // Removed shadow for cleaner hover
-    transform: translateY(-1px);
   }
 }
 
 // Danger button with modern styling
-.btn-danger {
+.btn-danger:not(.btn-ghost) {
   background: linear-gradient(135deg, var(--modern-danger) 0%, var(--modern-danger-hover) 100%);
-  border-color: var(--modern-danger);
+  border-color: var(--button-border-color);
   // Removed base shadow for cleaner look
 
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, var(--modern-danger-hover) 0%, var(--modern-danger) 100%);
-    border-color: var(--modern-danger-hover);
+    border-color: var(--button-border-color);
     // Removed shadow for cleaner hover
-    transform: translateY(-1px);
   }
 
   &:active:not(:disabled) {
@@ -629,10 +627,10 @@
 
 // Modern minimal Add New buttons - text-first approach
 .btn-add-new {
-  background: transparent;
-  border: none;
+  background: var(--button-bg-tint);
+  border: 1px solid var(--button-border-color);
   color: var(--bs-gray-700);
-  box-shadow: none;
+  box-shadow: var(--button-shadow);
   font-weight: 400;
   padding: 0.5rem 1rem;
   position: relative;
@@ -652,7 +650,6 @@
   &:hover:not(:disabled) {
     background: rgba(67, 97, 238, 0.05);
     color: var(--modern-primary);
-    transform: translateY(-1px);
 
     &::before {
       opacity: 1;

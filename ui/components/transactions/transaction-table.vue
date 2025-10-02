@@ -73,7 +73,7 @@
     <template #actions="{ item }">
       <div class="action-buttons">
         <button
-          class="btn btn-sm btn-ghost btn-secondary"
+          class="btn btn-sm btn-ghost btn-secondary btn-table-action"
           @click="$emit('edit', item)"
           title="Edit"
         >
@@ -81,7 +81,7 @@
           <span class="ms-1 d-inline d-lg-none">Edit</span>
         </button>
         <button
-          class="btn btn-sm btn-ghost btn-danger"
+          class="btn btn-sm btn-ghost btn-danger btn-table-action"
           @click="item.id && $emit('delete', item.id)"
           title="Delete"
         >
