@@ -44,12 +44,13 @@ interface Props {
   step?: string | number
   min?: string | number
   max?: string | number
+  id?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   type: 'text',
 })
 
 const model = defineModel<string | number>()
-const inputId = computed(() => `input-${Math.random().toString(36).slice(2, 9)}`)
+const inputId = computed(() => props.id || `input-${Math.random().toString(36).slice(2, 9)}`)
 </script>

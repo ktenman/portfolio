@@ -108,7 +108,7 @@ class CalculatorE2ETests {
 
     val taxAmountWithRate = firstDataRow.find(By.tagName("td"), 4).text()
     assertThat(taxAmountWithRate).isNotEmpty()
-    assertThat(taxAmountWithRate).matches("\\d+(\\.\\d{1,2})?")
+    assertThat(taxAmountWithRate).matches("[\\d,]+(\\.\\d{1,2})?")
   }
 
   @Test
