@@ -1,35 +1,35 @@
 <template>
   <form id="transactionForm" novalidate @submit.prevent="handleSubmit">
     <FormInput
-      :model-value="formData.instrumentId"
+      v-model="instrumentIdModel"
       label="Instrument"
       type="select"
       :options="instrumentOptions"
       placeholder="Select Instrument"
       :error="getFieldError('instrumentId')"
-      @update:model-value="updateField('instrumentId', Number($event))"
+      id="instrumentId"
       @blur="touchField('instrumentId')"
     />
 
     <FormInput
-      :model-value="formData.platform"
+      v-model="formData.platform"
       label="Platform"
       type="select"
       :options="platformOptions"
       placeholder="Select Platform"
       :error="getFieldError('platform')"
-      @update:model-value="updateField('platform', $event)"
+      id="platform"
       @blur="touchField('platform')"
     />
 
     <FormInput
-      :model-value="formData.transactionType"
+      v-model="formData.transactionType"
       label="Transaction Type"
       type="select"
       :options="transactionTypeOptions"
       placeholder="Select Transaction Type"
       :error="getFieldError('transactionType')"
-      @update:model-value="updateField('transactionType', $event)"
+      id="transactionType"
       @blur="touchField('transactionType')"
     />
 
@@ -40,6 +40,7 @@
       placeholder="Enter quantity"
       step="0.00000001"
       :error="getFieldError('quantity')"
+      id="quantity"
       @blur="touchField('quantity')"
     />
 
@@ -50,6 +51,7 @@
       placeholder="Enter price"
       step="0.001"
       :error="getFieldError('price')"
+      id="price"
       @blur="touchField('price')"
     />
 
@@ -61,26 +63,27 @@
       step="0.01"
       min="0"
       :error="getFieldError('commission')"
+      id="commission"
       @blur="touchField('commission')"
     />
 
     <FormInput
-      :model-value="formData.currency || 'EUR'"
+      v-model="formData.currency"
       label="Currency"
       type="select"
       :options="currencyOptions"
       placeholder="Select Currency"
       :error="getFieldError('currency')"
-      @update:model-value="updateField('currency', $event)"
+      id="currency"
       @blur="touchField('currency')"
     />
 
     <FormInput
-      :model-value="formData.transactionDate"
+      v-model="formData.transactionDate"
       label="Transaction Date"
       type="date"
       :error="getFieldError('transactionDate')"
-      @update:model-value="updateField('transactionDate', $event)"
+      id="transactionDate"
       @blur="touchField('transactionDate')"
     />
 
@@ -117,13 +120,15 @@ const emit = defineEmits<{
   submit: [data: Partial<PortfolioTransaction>]
 }>()
 
-const { formData, validateForm, updateField, touchField, getFieldError, resetForm } =
-  useFormValidation(transactionSchema, {
+const { formData, validateForm, touchField, getFieldError, resetForm } = useFormValidation(
+  transactionSchema,
+  {
     transactionDate: new Date().toISOString().split('T')[0],
     commission: 0,
     currency: 'EUR',
     ...props.initialData,
-  })
+  }
+)
 
 watch(
   () => props.initialData,
@@ -152,6 +157,15 @@ const instrumentOptions = computed(() =>
     text: `${instrument.symbol} - ${instrument.name}`,
   }))
 )
+
+const instrumentIdModel = computed({
+  get() {
+    return formData.instrumentId
+  },
+  set(value: string | number) {
+    formData.instrumentId = Number(value)
+  },
+})
 
 const quantityModel = computed({
   get() {
