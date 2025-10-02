@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
-import ee.tenman.portfolio.service.PortfolioSummaryService
+import ee.tenman.portfolio.service.SummaryService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
@@ -17,7 +17,7 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/portfolio-summary")
 class PortfolioSummaryController(
-  private val portfolioSummaryService: PortfolioSummaryService,
+  private val portfolioSummaryService: SummaryService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
