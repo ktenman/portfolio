@@ -5,7 +5,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.InstrumentService
-import ee.tenman.portfolio.service.PortfolioTransactionService
+import ee.tenman.portfolio.service.TransactionService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
@@ -27,7 +27,7 @@ import java.time.LocalDate
 @RequestMapping("/api/transactions")
 @Validated
 class PortfolioTransactionController(
-  private val portfolioTransactionService: PortfolioTransactionService,
+  private val portfolioTransactionService: TransactionService,
   private val instrumentService: InstrumentService,
 ) {
   @PostMapping

@@ -247,16 +247,76 @@ A comprehensive test runner that combines unit tests, E2E tests, and environment
 
 ### Code Style Guidelines
 
-#### No Comments Policy
+#### Clean Code Principles
 
-This codebase enforces a **strict no-comments policy** using `eslint-plugin-no-comments`. Write self-documenting code with:
+This codebase follows **senior-level programming practices** focused on readability, maintainability, and professional standards:
 
-- Clear, descriptive variable and function names
-- Small, focused functions that do one thing well
-- Meaningful type definitions and interfaces
-- Well-structured code that expresses intent clearly
+##### No Comments Policy
+
+Write self-documenting code that doesn't need comments:
+
+- **Clear naming**: Use descriptive variable and function names that explain intent
+- **Small functions**: Each function should do one thing well (Single Responsibility Principle)
+- **Meaningful types**: Use type definitions and interfaces to express domain concepts
+- **Well-structured code**: Organize code to tell a story without needing explanation
 
 The only exception is TypeScript triple-slash directives (`///`) when required for type definitions.
+
+##### Method Design Principles
+
+- **Guard clauses**: Exit early from functions to reduce nesting and improve readability
+- **Single responsibility**: Each method should have one clear purpose
+- **Pure functions**: Prefer functions without side effects when possible
+- **Composition over complexity**: Break complex operations into smaller, composable functions
+- **Immutability**: Favor immutable data structures and avoid modifying parameters
+
+##### Example of Clean Code
+
+```kotlin
+// ❌ Poor: Long method with nested logic and comments
+fun processTransaction(tx: Transaction): Result {
+  // Check if transaction is valid
+  if (tx != null) {
+    if (tx.amount > 0) {
+      // Process buy transaction
+      if (tx.type == TransactionType.BUY) {
+        // Calculate cost...
+        val cost = tx.price * tx.quantity + tx.commission
+        // Update holdings...
+        // More nested logic...
+      }
+    }
+  }
+}
+
+// ✅ Good: Focused methods with guard clauses
+fun processTransaction(tx: Transaction): Result {
+  if (!isValidTransaction(tx)) return Result.Invalid
+
+  return when (tx.type) {
+    TransactionType.BUY -> processBuyTransaction(tx)
+    TransactionType.SELL -> processSellTransaction(tx)
+  }
+}
+
+private fun isValidTransaction(tx: Transaction?): Boolean =
+  tx != null && tx.amount > BigDecimal.ZERO
+
+private fun processBuyTransaction(tx: Transaction): Result {
+  val cost = calculateTransactionCost(tx)
+  return updateHoldings(tx, cost)
+}
+
+private fun calculateTransactionCost(tx: Transaction): BigDecimal =
+  tx.price.multiply(tx.quantity).add(tx.commission)
+```
+
+##### Backend Specific Guidelines
+
+- **Kotlin idioms**: Use Kotlin's expressive features (data classes, extension functions, scope functions)
+- **Spring best practices**: Proper use of `@Transactional`, dependency injection, and service layer patterns
+- **Error handling**: Use sealed classes or exceptions appropriately, never swallow errors
+- **BigDecimal for money**: Always use BigDecimal for financial calculations, never float/double
 
 ### Code Quality Tools
 
@@ -285,18 +345,75 @@ npm run check-unused:fix   # Auto-fix some issues
 
 # important-instruction-reminders
 
+## Core Development Philosophy
+
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.
-NEVER add comments to code. Follow clean code principles where code is self-documenting through clear naming and structure.
+
+## Clean Code Standards
+
+### No Comments - Write Self-Documenting Code
+
+NEVER add comments to code. Code should be self-documenting through:
+
+- Clear, descriptive naming that reveals intent
+- Small, focused functions with single responsibilities
+- Well-organized structure that tells a story
+- Meaningful abstractions and type definitions
+
 AVOID all forms of code comments including:
 
 - Single-line comments (//)
 - Multi-line comments (/\* \*/)
 - Documentation comments (/\*\* \*/)
 - Inline comments
-  The only exception is TypeScript triple-slash directives (///) which are required for type definitions.
+
+The only exception is TypeScript triple-slash directives (///) which are required for type definitions.
+
+### Method Design Principles
+
+ALWAYS write methods that:
+
+- Use guard clauses to exit early and reduce nesting
+- Have a single, clear responsibility
+- Are small enough to understand at a glance (typically < 20 lines)
+- Return early when conditions aren't met
+- Use descriptive names that explain what they do, not how
+
+### Code Quality Standards
+
+APPLY these senior-level practices:
+
+- **Extract complex logic** into well-named private methods
+- **Avoid deep nesting** - if you have more than 2 levels of indentation, refactor
+- **Make invalid states unrepresentable** through proper type design
+- **Prefer immutability** - use `val` in Kotlin, `const` in TypeScript
+- **Fail fast** - validate inputs early and throw meaningful exceptions
+- **Use domain-specific types** instead of primitives (e.g., `EmailAddress` instead of `string`)
+
+### File Size Guidelines
+
+Keep files small and focused:
+
+- **Ideal**: 100-200 lines per file
+- **Acceptable**: Up to 300 lines
+- **Too large**: Over 400 lines - refactor into separate services
+
+When a file exceeds 300 lines:
+
+1. Extract related functionality into separate services
+2. Create specialized services for specific domains (e.g., XirrService, MetricsService)
+3. Use composition - inject smaller services into larger ones
+4. Follow Single Responsibility Principle - each service should have one reason to change
+
+### Testing and Reliability
+
+- Write code that is easy to test by avoiding side effects
+- Prefer pure functions that always return the same output for the same input
+- Keep business logic separate from framework code
+- Design for failure - handle edge cases explicitly
 
 ## File Naming Conventions
 

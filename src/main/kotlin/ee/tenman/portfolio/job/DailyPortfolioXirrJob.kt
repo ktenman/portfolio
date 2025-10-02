@@ -2,8 +2,8 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.service.AsyncXirrCalculationService
 import ee.tenman.portfolio.service.JobExecutionService
-import ee.tenman.portfolio.service.PortfolioSummaryService
-import ee.tenman.portfolio.service.PortfolioTransactionService
+import ee.tenman.portfolio.service.SummaryService
+import ee.tenman.portfolio.service.TransactionService
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -13,8 +13,8 @@ import java.time.LocalDate
 
 @Component
 class DailyPortfolioXirrJob(
-  private val portfolioTransactionService: PortfolioTransactionService,
-  private val portfolioSummaryService: PortfolioSummaryService,
+  private val portfolioTransactionService: TransactionService,
+  private val portfolioSummaryService: SummaryService,
   private val asyncXirrCalculationService: AsyncXirrCalculationService,
   private val clock: Clock,
   private val jobExecutionService: JobExecutionService,

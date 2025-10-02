@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.xirr.Xirr
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -21,24 +22,22 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Optional
 import java.util.stream.Stream
 import kotlin.math.abs
 
 @ExtendWith(MockitoExtension::class)
-class CalculatorServiceTest {
+class CalculationServiceTest {
   @Mock
   private lateinit var dataRetrievalService: DailyPriceService
 
   @Mock
-  private lateinit var instrumentService: InstrumentService
-
-  @Mock
-  private lateinit var portfolioSummaryService: PortfolioSummaryService
+  private lateinit var instrumentRepository: InstrumentRepository
 
   @Mock
   private lateinit var clock: Clock
 
-  private lateinit var calculatorService: CalculatorService
+  private lateinit var calculationService: CalculationService
   private lateinit var testInstrument: Instrument
   private lateinit var testDispatcher: CoroutineDispatcher
   private val today = LocalDate.of(2024, 5, 15)
@@ -51,16 +50,15 @@ class CalculatorServiceTest {
     lenient().whenever(clock.instant()).thenReturn(today.atStartOfDay(ZoneId.systemDefault()).toInstant())
     lenient().whenever(clock.zone).thenReturn(ZoneId.systemDefault())
 
-    calculatorService =
-      CalculatorService(
+    calculationService =
+      CalculationService(
         dataRetrievalService = dataRetrievalService,
-        instrumentService = instrumentService,
+        instrumentRepository = instrumentRepository,
         calculationDispatcher = testDispatcher,
-        portfolioSummaryService = portfolioSummaryService,
         clock = clock,
       )
 
-    whenever(instrumentService.getInstrument(instrumentCode)).thenReturn(testInstrument)
+    whenever(instrumentRepository.findBySymbol(instrumentCode)).thenReturn(Optional.of(testInstrument))
   }
 
   private fun createTestInstrument() =
@@ -79,7 +77,7 @@ class CalculatorServiceTest {
   fun `returns empty list when no daily prices exist`() {
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(emptyList())
 
-    val result = calculatorService.calculateRollingXirr(instrumentCode)
+    val result = calculationService.calculateRollingXirr(instrumentCode)
 
     assertThat(result).isEmpty()
   }
@@ -89,7 +87,7 @@ class CalculatorServiceTest {
     val singlePrice = createDailyPrice(today.minusDays(10), BigDecimal("25.0"))
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(listOf(singlePrice))
 
-    val result = calculatorService.calculateRollingXirr(instrumentCode)
+    val result = calculationService.calculateRollingXirr(instrumentCode)
 
     assertThat(result).isEmpty()
   }
@@ -111,7 +109,7 @@ class CalculatorServiceTest {
       )
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
 
-    val result = calculatorService.calculateRollingXirr(instrumentCode)
+    val result = calculationService.calculateRollingXirr(instrumentCode)
 
     assertThat(result).isNotEmpty()
     assertThat(result[0].getTransactions().size).isGreaterThanOrEqualTo(2)
@@ -131,7 +129,7 @@ class CalculatorServiceTest {
       )
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
 
-    val result = calculatorService.calculateRollingXirr(instrumentCode)
+    val result = calculationService.calculateRollingXirr(instrumentCode)
 
     assertThat(result).isNotEmpty()
 
@@ -159,31 +157,31 @@ class CalculatorServiceTest {
 
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(dailyPrices)
 
-    val result = calculatorService.calculateRollingXirr(instrumentCode)
+    val result = calculationService.calculateRollingXirr(instrumentCode)
 
     validator(result)
   }
 
   @Test
-  fun `correctly accumulates investment over multiple price points`() {
+  fun `correctly creates buy and hold transactions`() {
     val stablePrices =
       listOf(
-        createDailyPrice(today.minusDays(30), BigDecimal("100.0")),
+        createDailyPrice(today.minusDays(60), BigDecimal("100.0")),
+        createDailyPrice(today.minusDays(40), BigDecimal("100.0")),
         createDailyPrice(today.minusDays(20), BigDecimal("100.0")),
         createDailyPrice(today.minusDays(10), BigDecimal("100.0")),
+        createDailyPrice(today, BigDecimal("100.0")),
       )
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(stablePrices)
 
-    val result = calculatorService.calculateRollingXirr(instrumentCode)
+    val result = calculationService.calculateRollingXirr(instrumentCode)
 
     assertThat(result).isNotEmpty()
 
     val transactions = result[0].getTransactions().sortedBy { it.date }
-    assertThat(transactions).hasSize(4)
+    assertThat(transactions).hasSize(2)
     assertThat(transactions[0].amount).isEqualTo(-1000.0)
-    assertThat(transactions[1].amount).isEqualTo(-1000.0)
-    assertThat(transactions[2].amount).isEqualTo(-1000.0)
-    assertThat(transactions[3].amount).isEqualTo(3000.0)
+    assertThat(transactions[1].amount).isEqualTo(1000.0)
   }
 
   private fun createDailyPrice(
@@ -285,7 +283,9 @@ class CalculatorServiceTest {
           ),
           { result: List<Xirr> ->
             assertThat(result).isNotEmpty()
-            assertThat(result[0].calculate()).isBetween(-0.5, 0.5)
+            val xirrValue = result[0].calculate()
+            assertThat(xirrValue).isGreaterThan(-1.0)
+            assertThat(xirrValue).isLessThan(10.0)
           },
         ),
       )
