@@ -18,7 +18,7 @@
 
     <template v-else>
       <!-- Mobile Card View -->
-      <div class="d-block d-sm-none mobile-cards">
+      <div class="d-block d-md-none mobile-cards">
         <div
           v-for="(item, index) in items"
           :key="getItemKey(item, index)"
@@ -49,10 +49,14 @@
             </div>
           </slot>
         </div>
+        <!-- Mobile Footer -->
+        <div v-if="$slots['mobile-footer']" class="mobile-footer d-block d-md-none">
+          <slot name="mobile-footer"></slot>
+        </div>
       </div>
 
       <!-- Desktop Table View -->
-      <div class="d-none d-sm-block table-responsive">
+      <div class="d-none d-md-block table-responsive">
         <table class="table table-striped table-hover">
           <thead>
             <tr>
