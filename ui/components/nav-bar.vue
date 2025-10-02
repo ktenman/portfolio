@@ -11,12 +11,12 @@
               </router-link>
             </li>
             <!-- Logout link -->
-            <li class="nav-item ms-auto me-3">
+            <!-- <li class="nav-item ms-auto me-3">
               <a @click="handleLogout" href="#" class="nav-link">
                 Logout
                 <span class="nav-indicator"></span>
               </a>
-            </li>
+            </li> -->
           </ul>
           <!-- Build info display -->
           <div class="build-info" v-if="buildInfo">
@@ -63,26 +63,27 @@ function formatDate(dateString: string): string {
   }
 }
 
-async function handleLogout(event: Event) {
-  event.preventDefault()
-
-  // Clear any client-side storage
-  localStorage.clear()
-  sessionStorage.clear()
-
-  // First, sign out from OAuth2-Proxy
-  await fetch('/oauth2/sign_out', {
-    method: 'GET',
-    credentials: 'same-origin',
-    redirect: 'manual',
-  })
-
-  // Then redirect to Keycloak logout
-  window.location.href =
-    'http://localhost/realms/portfolio/protocol/openid-connect/logout?post_logout_redirect_uri=' +
-    encodeURIComponent('http://localhost/') +
-    '&client_id=portfolio-oauth2-proxy'
-}
+// Commented out logout function - re-enable when logout is fixed
+// async function handleLogout(event: Event) {
+//   event.preventDefault()
+//
+//   // Clear any client-side storage
+//   localStorage.clear()
+//   sessionStorage.clear()
+//
+//   // First, sign out from OAuth2-Proxy
+//   await fetch('/oauth2/sign_out', {
+//     method: 'GET',
+//     credentials: 'same-origin',
+//     redirect: 'manual',
+//   })
+//
+//   // Then redirect to Keycloak logout
+//   window.location.href =
+//     'http://localhost/realms/portfolio/protocol/openid-connect/logout?post_logout_redirect_uri=' +
+//     encodeURIComponent('http://localhost/') +
+//     '&client_id=portfolio-oauth2-proxy'
+// }
 </script>
 
 <style lang="scss" scoped>
