@@ -166,9 +166,11 @@ class CalculationServiceTest {
   fun `correctly creates buy and hold transactions`() {
     val stablePrices =
       listOf(
-        createDailyPrice(today.minusDays(30), BigDecimal("100.0")),
+        createDailyPrice(today.minusDays(60), BigDecimal("100.0")),
+        createDailyPrice(today.minusDays(40), BigDecimal("100.0")),
         createDailyPrice(today.minusDays(20), BigDecimal("100.0")),
         createDailyPrice(today.minusDays(10), BigDecimal("100.0")),
+        createDailyPrice(today, BigDecimal("100.0")),
       )
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(stablePrices)
 
