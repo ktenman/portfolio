@@ -190,9 +190,9 @@ const getItemProfit = (item: Instrument): number => {
   return value - invested
 }
 
-const formatProfit = (amount: number, currency: string): string => {
+const formatProfit = (amount: number, currency: string | undefined): string => {
   const sign = amount >= 0 ? '+' : '-'
-  return sign + formatCurrencyWithSign(Math.abs(amount), currency)
+  return sign + formatCurrencyWithSign(Math.abs(amount), currency || 'EUR')
 }
 </script>
 
