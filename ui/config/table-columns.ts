@@ -12,13 +12,13 @@ export const instrumentColumns: ColumnDefinition[] = [
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
+  { key: 'currentValue', label: 'Value', formatter: formatCurrency },
   {
     key: 'totalInvestment',
     label: 'Invested',
     formatter: formatCurrency,
     class: 'd-none d-md-table-cell',
   },
-  { key: 'currentValue', label: 'Value', formatter: formatCurrency },
   { key: 'profit', label: 'Profit', formatter: formatCurrency },
 ]
 

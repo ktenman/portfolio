@@ -176,13 +176,13 @@ describe('InstrumentTable', () => {
       expect(profitCell.classes()).toContain('text-success')
     })
 
-    it('should display negative profit with red color', () => {
+    it('should display negative profit with minus sign and red color', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const secondRow = rows[1]
       const profitCell = secondRow.find('.text-danger')
 
-      expect(profitCell.text()).toBe('€2,000.00')
+      expect(profitCell.text()).toBe('-€2,000.00')
       expect(profitCell.classes()).toContain('text-danger')
     })
 
@@ -196,12 +196,12 @@ describe('InstrumentTable', () => {
       expect(profitCell.classes()).toContain('text-success')
     })
 
-    it('should display $0.00 when profit is undefined', () => {
+    it('should calculate profit as value minus invested when profit is undefined', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const lastRow = rows[3]
 
-      expect(lastRow.text()).toContain('$0.00')
+      expect(lastRow.text()).toContain('-$100.00')
     })
 
     it('should display $0.00 when profit is explicitly undefined', () => {

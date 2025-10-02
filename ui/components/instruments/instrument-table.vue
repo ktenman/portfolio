@@ -14,11 +14,11 @@
         <td></td>
         <td></td>
         <td></td>
-        <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</td>
         <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</td>
+        <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</td>
         <td class="fw-bold text-nowrap">
           <span :class="getProfitClass(totalProfit)">
-            {{ totalProfit >= 0 ? '+' : '' }}{{ formatCurrencyWithSign(totalProfit, 'EUR') }}
+            {{ formatProfit(totalProfit, 'EUR') }}
           </span>
         </td>
         <td></td>
@@ -59,17 +59,8 @@
             </span>
           </div>
           <div class="profit-info">
-            <span :class="getProfitClass(item.profit)">
-              {{
-                item.profit !== null && item.profit !== undefined
-                  ? (item.profit >= 0 ? '+' : '') +
-                    getCurrencySymbol(item.baseCurrency) +
-                    Math.abs(item.profit).toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })
-                  : getCurrencySymbol(item.baseCurrency) + '0.00'
-              }}
+            <span :class="getProfitClass(getItemProfit(item))">
+              {{ formatProfit(getItemProfit(item), item.baseCurrency) }}
             </span>
           </div>
         </div>
@@ -83,17 +74,17 @@
         </div>
         <div class="totals-content">
           <div class="total-item">
-            <span class="total-label">Invested</span>
-            <span class="total-value">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</span>
-          </div>
-          <div class="total-item">
             <span class="total-label">Value</span>
             <span class="total-value">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</span>
           </div>
           <div class="total-item">
+            <span class="total-label">Invested</span>
+            <span class="total-value">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</span>
+          </div>
+          <div class="total-item">
             <span class="total-label">Profit</span>
             <span class="total-value" :class="getProfitClass(totalProfit)">
-              {{ totalProfit >= 0 ? '+' : '' }}{{ formatCurrencyWithSign(totalProfit, 'EUR') }}
+              {{ formatProfit(totalProfit, 'EUR') }}
             </span>
           </div>
         </div>
@@ -124,17 +115,8 @@
     </template>
 
     <template #cell-profit="{ item }">
-      <span :class="getProfitClass(item.profit)" class="profit-display text-nowrap">
-        {{
-          item.profit !== null && item.profit !== undefined
-            ? (item.profit >= 0 ? '+' : '') +
-              getCurrencySymbol(item.baseCurrency) +
-              Math.abs(item.profit).toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })
-            : getCurrencySymbol(item.baseCurrency) + '0.00'
-        }}
+      <span :class="getProfitClass(getItemProfit(item))" class="profit-display text-nowrap">
+        {{ formatProfit(getItemProfit(item), item.baseCurrency) }}
       </span>
     </template>
 
@@ -162,7 +144,6 @@ import { instrumentColumns } from '../../config'
 import {
   getProfitClass,
   formatCurrencyWithSign,
-  getCurrencySymbol,
   formatQuantity,
   formatPercentageFromDecimal,
 } from '../../utils/formatters'
@@ -199,9 +180,20 @@ const totalValue = computed(() => {
 
 const totalProfit = computed(() => {
   return props.instruments.reduce((sum, instrument) => {
-    return sum + (instrument.profit || 0)
+    return sum + getItemProfit(instrument)
   }, 0)
 })
+
+const getItemProfit = (item: Instrument): number => {
+  const value = item.currentValue || 0
+  const invested = item.totalInvestment || 0
+  return value - invested
+}
+
+const formatProfit = (amount: number, currency: string): string => {
+  const sign = amount >= 0 ? '+' : '-'
+  return sign + formatCurrencyWithSign(Math.abs(amount), currency)
+}
 </script>
 
 <style scoped lang="scss">
