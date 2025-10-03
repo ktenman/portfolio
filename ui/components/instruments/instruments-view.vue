@@ -5,6 +5,29 @@
     title="Instruments"
     @add="openAddModal"
   >
+    <template #subtitle>
+      <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2">
+        <div class="platform-buttons">
+          <button
+            v-for="platform in availablePlatforms"
+            :key="platform"
+            class="platform-btn"
+            :class="{ active: isPlatformSelected(platform) }"
+            @click="togglePlatform(platform)"
+            type="button"
+          >
+            {{ formatPlatformName(platform) }}
+          </button>
+          <span class="platform-separator"></span>
+          <button class="platform-btn" @click="toggleAllPlatforms" type="button">
+            {{
+              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
+            }}
+          </button>
+        </div>
+      </div>
+    </template>
+
     <template #content>
       <instrument-table
         :instruments="items || []"
@@ -22,9 +45,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, watch, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from 'vue-toastification'
+import { useLocalStorage } from '@vueuse/core'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
@@ -33,9 +57,52 @@ import { instrumentsService } from '../../services/instruments-service'
 import { Instrument } from '../../models/instrument'
 
 const selectedItem = ref<Instrument | null>(null)
+const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_platforms', [])
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 const queryClient = useQueryClient()
 const toast = useToast()
+
+const { data: allInstruments } = useQuery({
+  queryKey: ['instruments-all'],
+  queryFn: () => instrumentsService.getAll(),
+})
+
+const availablePlatforms = computed(() => {
+  if (!allInstruments.value) return []
+
+  const platformSet = new Set<string>()
+  allInstruments.value.forEach(instrument => {
+    if (
+      instrument.platforms &&
+      instrument.platforms.length > 0 &&
+      ((instrument.totalInvestment && Number(instrument.totalInvestment) > 0) ||
+        (instrument.quantity && Number(instrument.quantity) > 0))
+    ) {
+      instrument.platforms.forEach(platform => {
+        platformSet.add(platform)
+      })
+    }
+  })
+
+  return Array.from(platformSet).sort()
+})
+
+watch(
+  availablePlatforms,
+  newPlatforms => {
+    if (newPlatforms.length > 0 && selectedPlatforms.value.length === 0) {
+      selectedPlatforms.value = [...newPlatforms]
+    } else if (newPlatforms.length > 0) {
+      const validPlatforms = selectedPlatforms.value.filter(p => newPlatforms.includes(p))
+      if (validPlatforms.length === 0) {
+        selectedPlatforms.value = [...newPlatforms]
+      } else if (validPlatforms.length !== selectedPlatforms.value.length) {
+        selectedPlatforms.value = validPlatforms
+      }
+    }
+  },
+  { immediate: true }
+)
 
 const {
   data: items,
@@ -43,8 +110,16 @@ const {
   isError,
   error,
 } = useQuery({
-  queryKey: ['instruments'],
-  queryFn: instrumentsService.getAll,
+  queryKey: computed(() => ['instruments', selectedPlatforms.value]),
+  queryFn: () => {
+    if (
+      selectedPlatforms.value.length === 0 ||
+      selectedPlatforms.value.length === availablePlatforms.value.length
+    ) {
+      return instrumentsService.getAll()
+    }
+    return instrumentsService.getAll(selectedPlatforms.value)
+  },
 })
 
 const saveMutation = useMutation({
@@ -65,6 +140,42 @@ const saveMutation = useMutation({
   },
 })
 
+const isPlatformSelected = (platform: string): boolean => {
+  return selectedPlatforms.value.includes(platform)
+}
+
+const togglePlatform = (platform: string) => {
+  const index = selectedPlatforms.value.indexOf(platform)
+  if (index > -1) {
+    selectedPlatforms.value = selectedPlatforms.value.filter(p => p !== platform)
+  } else {
+    selectedPlatforms.value = [...selectedPlatforms.value, platform]
+  }
+}
+
+const toggleAllPlatforms = () => {
+  if (selectedPlatforms.value.length === availablePlatforms.value.length) {
+    selectedPlatforms.value = []
+  } else {
+    selectedPlatforms.value = [...availablePlatforms.value]
+  }
+}
+
+const formatPlatformName = (platform: string): string => {
+  const platformMap: Record<string, string> = {
+    TRADING212: 'Trading 212',
+    LIGHTYEAR: 'Lightyear',
+    SWEDBANK: 'Swedbank',
+    BINANCE: 'Binance',
+    COINBASE: 'Coinbase',
+    LHV: 'LHV',
+    AVIVA: 'Aviva',
+    UNKNOWN: 'Unknown',
+  }
+
+  return platformMap[platform] || platform
+}
+
 const openAddModal = () => {
   selectedItem.value = null
   showModal()
@@ -79,3 +190,85 @@ const onSave = (instrument: Partial<Instrument>) => {
   saveMutation.mutate(instrument)
 }
 </script>
+
+<style scoped>
+.platform-filter-container {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+}
+
+.platform-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.platform-separator {
+  width: 1px;
+  height: 1.25rem;
+  background-color: #d1d5db;
+  display: inline-block;
+}
+
+.platform-btn {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #6b7280;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.platform-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #4b5563;
+}
+
+.platform-btn:active {
+  background: #f1f5f9;
+  transform: scale(0.98);
+}
+
+.platform-btn.active {
+  background: #4b5563;
+  color: white;
+  border-color: #4b5563;
+  font-weight: 500;
+}
+
+.platform-btn.active:hover {
+  background: #374151;
+  border-color: #374151;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .platform-filter-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+  }
+
+  .platform-buttons {
+    width: 100%;
+  }
+
+  .platform-separator {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .platform-filter-container {
+    align-items: center;
+  }
+}
+</style>
