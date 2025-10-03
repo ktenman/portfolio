@@ -84,6 +84,9 @@ class InstrumentService(
         }
 
         if (filteredTransactions.isEmpty()) {
+          if (targetPlatforms == null) {
+            return@mapNotNull instrument
+          }
           return@mapNotNull null
         }
 
@@ -96,6 +99,9 @@ class InstrumentService(
         this.platforms = filteredTransactions.map { it.platform }.toSet()
 
         if (quantity == BigDecimal.ZERO && totalInvestment == BigDecimal.ZERO) {
+          if (targetPlatforms == null) {
+            return@mapNotNull instrument
+          }
           return@mapNotNull null
         }
       }

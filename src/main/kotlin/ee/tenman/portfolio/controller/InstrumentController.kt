@@ -129,7 +129,7 @@ class InstrumentController(
           currentValue = instrument.currentValue,
           profit = instrument.profit,
           xirr = instrument.xirr,
-          platforms = instrument.platforms.map { it.name }.toSet(),
+          platforms = instrument.platforms?.map { it.name }?.toSet() ?: emptySet(),
         )
     }
   }
