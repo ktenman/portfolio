@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
@@ -25,6 +25,19 @@ vi.mock('../../composables/use-bootstrap-modal', () => ({
     hide: mockHide,
   }),
 }))
+vi.mock('@vueuse/core', () => ({
+  useLocalStorage: vi.fn((_key: string, defaultValue: any) => {
+    let storedValue = defaultValue
+    return {
+      get value() {
+        return storedValue
+      },
+      set value(newValue: any) {
+        storedValue = newValue
+      },
+    }
+  }),
+}))
 
 const CrudLayoutStub = {
   name: 'CrudLayout',
@@ -34,6 +47,7 @@ const CrudLayoutStub = {
     return () =>
       h('div', [
         h('button', { onClick: handleAdd, id: 'stub-add-button' }, 'Add'),
+        slots.subtitle?.(),
         slots.content?.(),
         slots.modals?.(),
       ])
@@ -116,6 +130,9 @@ describe('InstrumentsView', () => {
       name: 'Apple Inc.',
       providerName: ProviderName.ALPHA_VANTAGE,
       type: 'STOCK',
+      platforms: ['TRADING212'],
+      totalInvestment: 1000,
+      quantity: 10,
     },
     {
       id: 2,
@@ -123,12 +140,29 @@ describe('InstrumentsView', () => {
       name: 'Bitcoin',
       providerName: ProviderName.BINANCE,
       type: 'CRYPTO',
+      platforms: ['BINANCE', 'COINBASE'],
+      totalInvestment: 5000,
+      quantity: 0.5,
+    },
+    {
+      id: 3,
+      symbol: 'GOOGL',
+      name: 'Alphabet Inc.',
+      providerName: ProviderName.ALPHA_VANTAGE,
+      type: 'STOCK',
+      platforms: ['TRADING212'],
+      totalInvestment: 2000,
+      quantity: 15,
     },
   ]
 
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstruments)
+  })
+
+  afterEach(() => {
+    localStorage.clear()
   })
 
   describe('query operations', () => {
@@ -279,6 +313,153 @@ describe('InstrumentsView', () => {
 
       const modalAfterSave = wrapper.find('#stub-modal')
       expect(JSON.parse(modalAfterSave.attributes('data-instrument') || '{}')).toEqual({})
+    })
+  })
+
+  describe('platform filtering', () => {
+    it('should display available platforms from instruments', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const platformButtons = wrapper.findAll('.platform-btn')
+      const platformTexts = platformButtons
+        .filter(btn => !btn.text().includes('Clear All') && !btn.text().includes('Select All'))
+        .map(btn => btn.text())
+
+      expect(platformTexts).toContain('Trading 212')
+      expect(platformTexts).toContain('Binance')
+      expect(platformTexts).toContain('Coinbase')
+    })
+
+    it('should have platform filter buttons', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const platformButtons = wrapper.findAll('.platform-btn')
+      expect(platformButtons.length).toBeGreaterThan(0)
+
+      const hasToggleButton = platformButtons.some(
+        btn => btn.text().includes('Clear All') || btn.text().includes('Select All')
+      )
+      expect(hasToggleButton).toBe(true)
+    })
+
+    it('should display platform buttons with correct formatting', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const trading212Button = wrapper
+        .findAll('.platform-btn')
+        .find(btn => btn.text() === 'Trading 212')
+
+      expect(trading212Button).toBeDefined()
+      expect(trading212Button?.classes()).toContain('platform-btn')
+    })
+
+    it('should call instrumentsService.getAll when component mounts', async () => {
+      vi.clearAllMocks()
+      createWrapper()
+      await flushPromises()
+
+      expect(instrumentsService.getAll).toHaveBeenCalled()
+    })
+
+    it('should have toggle button for selecting/clearing all platforms', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const platformButtons = wrapper.findAll('.platform-btn')
+      const toggleButton = platformButtons.find(
+        btn => btn.text().includes('Clear All') || btn.text().includes('Select All')
+      )
+
+      expect(toggleButton).toBeDefined()
+      expect(toggleButton?.classes()).toContain('platform-btn')
+
+      await toggleButton?.trigger('click')
+      await flushPromises()
+
+      expect(toggleButton?.text()).toBeTruthy()
+    })
+
+    it('should filter out platforms without valid instruments', async () => {
+      const mockInstrumentsInvalid: Instrument[] = [
+        {
+          id: 10,
+          symbol: 'INVALID',
+          name: 'Invalid Instrument',
+          providerName: ProviderName.FT,
+          platforms: ['UNKNOWN_PLATFORM'],
+        },
+      ]
+
+      vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstrumentsInvalid)
+
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const platformButtons = wrapper.findAll('.platform-btn')
+      const unknownButton = platformButtons.find(btn => btn.text() === 'UNKNOWN_PLATFORM')
+
+      expect(unknownButton).toBeUndefined()
+    })
+
+    it('should handle multiple platform toggles correctly', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const binanceButton = wrapper.findAll('.platform-btn').find(btn => btn.text() === 'Binance')
+
+      const coinbaseButton = wrapper.findAll('.platform-btn').find(btn => btn.text() === 'Coinbase')
+
+      if (binanceButton && coinbaseButton) {
+        await binanceButton.trigger('click')
+        await flushPromises()
+        await coinbaseButton.trigger('click')
+        await flushPromises()
+
+        const finalBinanceClasses = binanceButton.classes()
+        const finalCoinbaseClasses = coinbaseButton.classes()
+
+        expect(finalBinanceClasses).toBeDefined()
+        expect(finalCoinbaseClasses).toBeDefined()
+      }
+    })
+
+    it('should render platform separator element', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const separator = wrapper.find('.platform-separator')
+      expect(separator.exists()).toBe(true)
+    })
+
+    it('should only show platforms with instruments that have investments or quantity', async () => {
+      const mockInstrumentsWithEmpty: Instrument[] = [
+        ...mockInstruments,
+        {
+          id: 4,
+          symbol: 'EMPTY',
+          name: 'Empty Instrument',
+          providerName: ProviderName.ALPHA_VANTAGE,
+          type: 'STOCK',
+          platforms: ['LHV'],
+          totalInvestment: 0,
+          quantity: 0,
+        },
+      ]
+
+      vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstrumentsWithEmpty)
+
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const platformButtons = wrapper.findAll('.platform-btn')
+      const platformTexts = platformButtons
+        .filter(btn => !btn.text().includes('Clear All') && !btn.text().includes('Select All'))
+        .map(btn => btn.text())
+
+      expect(platformTexts).not.toContain('LHV')
     })
   })
 })

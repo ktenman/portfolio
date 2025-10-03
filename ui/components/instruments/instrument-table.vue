@@ -30,6 +30,15 @@
           <div class="instrument-title">
             <h6 class="instrument-name">{{ item.name }}</h6>
             <span class="instrument-symbol">{{ item.symbol }}</span>
+            <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
+              <span
+                v-for="platform in item.platforms"
+                :key="platform"
+                class="badge bg-secondary me-1 text-white"
+              >
+                {{ formatPlatformName(platform) }}
+              </span>
+            </div>
           </div>
           <button
             class="btn btn-sm btn-ghost btn-secondary btn-table-action"
@@ -97,10 +106,21 @@
     </template>
 
     <template #cell-instrument="{ item }">
-      <span class="instrument-info">
-        <span class="d-block instrument-name">{{ item.name }}</span>
-        <small class="d-block text-muted instrument-symbol">{{ item.symbol }}</small>
-      </span>
+      <div class="instrument-info">
+        <div>
+          <span class="d-block instrument-name">{{ item.name }}</span>
+          <small class="d-block text-muted instrument-symbol">{{ item.symbol }}</small>
+        </div>
+        <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
+          <span
+            v-for="platform in item.platforms"
+            :key="platform"
+            class="badge bg-secondary me-1 text-white"
+          >
+            {{ formatPlatformName(platform) }}
+          </span>
+        </div>
+      </div>
     </template>
 
     <template #cell-type="{ item }">
@@ -199,10 +219,33 @@ const formatProfit = (amount: number, currency: string | undefined): string => {
   const sign = amount >= 0 ? '+' : '-'
   return sign + formatCurrencyWithSign(Math.abs(amount), currency || 'EUR')
 }
+
+const formatPlatformName = (platform: string): string => {
+  const platformMap: Record<string, string> = {
+    TRADING212: 'Trading 212',
+    LIGHTYEAR: 'Lightyear',
+    SWEDBANK: 'Swedbank',
+    BINANCE: 'Binance',
+    COINBASE: 'Coinbase',
+    LHV: 'LHV',
+    AVIVA: 'Aviva',
+    UNKNOWN: 'Unknown',
+  }
+
+  return platformMap[platform] || platform
+}
 </script>
 
 <style scoped lang="scss">
 @import '../../styles/shared-table.scss';
+
+.platform-tags {
+  .badge {
+    color: white !important;
+    background-color: #6b7280 !important;
+    font-weight: 500;
+  }
+}
 
 .table-footer-totals {
   background-color: var(--bs-gray-100);

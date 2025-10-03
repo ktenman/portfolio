@@ -42,7 +42,7 @@ describe('instrumentsService', () => {
 
       const result = await instrumentsService.getAll()
 
-      expect(httpClient.get).toHaveBeenCalledWith('/instruments')
+      expect(httpClient.get).toHaveBeenCalledWith('/instruments', { params: {} })
       expect(result).toEqual(mockInstruments)
     })
 
@@ -53,7 +53,7 @@ describe('instrumentsService', () => {
 
       const result = await instrumentsService.getAll()
 
-      expect(httpClient.get).toHaveBeenCalledWith('/instruments')
+      expect(httpClient.get).toHaveBeenCalledWith('/instruments', { params: {} })
       expect(result).toEqual([])
     })
 
@@ -62,6 +62,79 @@ describe('instrumentsService', () => {
       vi.mocked(httpClient.get).mockRejectedValueOnce(error)
 
       await expect(instrumentsService.getAll()).rejects.toThrow('Network error')
+    })
+
+    it('should fetch instruments with platform filter', async () => {
+      const mockInstruments: Instrument[] = [
+        {
+          id: 1,
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          providerName: ProviderName.ALPHA_VANTAGE,
+          type: 'STOCK',
+          platforms: ['TRADING212'],
+        },
+      ]
+
+      vi.mocked(httpClient.get).mockResolvedValueOnce({
+        data: mockInstruments,
+      })
+
+      const result = await instrumentsService.getAll(['TRADING212'])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
+        params: { platforms: ['TRADING212'] },
+      })
+      expect(result).toEqual(mockInstruments)
+    })
+
+    it('should handle undefined platform parameter', async () => {
+      const mockInstruments: Instrument[] = []
+
+      vi.mocked(httpClient.get).mockResolvedValueOnce({
+        data: mockInstruments,
+      })
+
+      const result = await instrumentsService.getAll(undefined)
+
+      expect(httpClient.get).toHaveBeenCalledWith('/instruments', { params: {} })
+      expect(result).toEqual(mockInstruments)
+    })
+
+    it('should fetch instruments with multiple platforms', async () => {
+      const mockInstruments: Instrument[] = [
+        {
+          id: 1,
+          symbol: 'MULTI',
+          name: 'Multi Platform',
+          providerName: ProviderName.FT,
+          platforms: ['TRADING212', 'BINANCE', 'COINBASE'],
+        },
+      ]
+
+      vi.mocked(httpClient.get).mockResolvedValueOnce({
+        data: mockInstruments,
+      })
+
+      const result = await instrumentsService.getAll(['TRADING212', 'BINANCE', 'COINBASE'])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
+        params: { platforms: ['TRADING212', 'BINANCE', 'COINBASE'] },
+      })
+      expect(result).toEqual(mockInstruments)
+    })
+
+    it('should handle empty array for platforms', async () => {
+      const mockInstruments: Instrument[] = []
+
+      vi.mocked(httpClient.get).mockResolvedValueOnce({
+        data: mockInstruments,
+      })
+
+      const result = await instrumentsService.getAll([])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/instruments', { params: {} })
+      expect(result).toEqual(mockInstruments)
     })
   })
 
@@ -144,6 +217,24 @@ describe('instrumentsService', () => {
       const result = await instrumentsService.update(1, updateData)
 
       expect(httpClient.put).toHaveBeenCalledWith('/instruments/1', updateData)
+      expect(result).toEqual(updatedInstrument)
+    })
+
+    it('should handle empty update data', async () => {
+      const updatedInstrument: Instrument = {
+        id: 15,
+        symbol: 'EMPTY',
+        name: 'Empty Update',
+        providerName: ProviderName.FT,
+      }
+
+      vi.mocked(httpClient.put).mockResolvedValueOnce({
+        data: updatedInstrument,
+      })
+
+      const result = await instrumentsService.update(15, {})
+
+      expect(httpClient.put).toHaveBeenCalledWith('/instruments/15', {})
       expect(result).toEqual(updatedInstrument)
     })
 

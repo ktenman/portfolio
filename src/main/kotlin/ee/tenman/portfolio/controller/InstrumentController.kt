@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
@@ -41,9 +42,11 @@ class InstrumentController(
 
   @GetMapping
   @Loggable
-  fun getAllInstruments(): List<InstrumentDto> =
+  fun getAllInstruments(
+    @RequestParam(required = false) platforms: List<String>?,
+  ): List<InstrumentDto> =
     instrumentService
-      .getAllInstruments()
+      .getAllInstruments(platforms)
       .sortedBy { it.id }
       .map { InstrumentDto.fromEntity(it) }
 
@@ -93,6 +96,7 @@ class InstrumentController(
     val currentValue: BigDecimal? = BigDecimal.ZERO,
     val profit: BigDecimal? = BigDecimal.ZERO,
     val xirr: Double? = 0.0,
+    val platforms: Set<String> = emptySet(),
   ) {
     fun toEntity() =
       Instrument(
@@ -125,6 +129,7 @@ class InstrumentController(
           currentValue = instrument.currentValue,
           profit = instrument.profit,
           xirr = instrument.xirr,
+          platforms = instrument.platforms.map { it.name }.toSet(),
         )
     }
   }

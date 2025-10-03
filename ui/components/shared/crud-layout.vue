@@ -1,15 +1,21 @@
 <template>
   <div class="container mt-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="mb-0">{{ title }}</h2>
-      <button
-        v-if="showAddButton"
-        :id="addButtonId"
-        class="btn btn-primary btn-add-new"
-        @click="$emit('add')"
-      >
-        {{ addButtonText }}
-      </button>
+      <div>
+        <h2 class="mb-0">{{ title }}</h2>
+        <slot name="subtitle" />
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <slot name="toolbar" />
+        <button
+          v-if="showAddButton"
+          :id="addButtonId"
+          class="btn btn-primary btn-add-new d-none d-md-block"
+          @click="$emit('add')"
+        >
+          {{ addButtonText }}
+        </button>
+      </div>
     </div>
 
     <slot name="content" />
