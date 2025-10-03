@@ -3,7 +3,9 @@
     add-button-id="addNewInstrument"
     add-button-text="New Instrument"
     title="Instruments"
+    :show-add-button="false"
     @add="openAddModal"
+    @title-click="handleTitleClick"
   >
     <template #subtitle>
       <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2">
@@ -188,6 +190,18 @@ const openEditModal = (instrument: Instrument) => {
 
 const onSave = (instrument: Partial<Instrument>) => {
   saveMutation.mutate(instrument)
+}
+
+const handleTitleClick = async () => {
+  try {
+    await instrumentsService.refreshPrices()
+    toast.success('Price refresh triggered! Data will update shortly.')
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['instruments'] })
+    }, 2000)
+  } catch {
+    toast.error('Failed to trigger price refresh')
+  }
 }
 </script>
 

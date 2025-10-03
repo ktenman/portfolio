@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.service.AsyncXirrCalculationService
+import ee.tenman.portfolio.service.CalculationService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.service.SummaryService
 import ee.tenman.portfolio.service.TransactionService
@@ -15,7 +15,7 @@ import java.time.LocalDate
 class DailyPortfolioXirrJob(
   private val portfolioTransactionService: TransactionService,
   private val portfolioSummaryService: SummaryService,
-  private val asyncXirrCalculationService: AsyncXirrCalculationService,
+  private val calculationService: CalculationService,
   private val clock: Clock,
   private val jobExecutionService: JobExecutionService,
 ) : Job {
@@ -64,7 +64,7 @@ class DailyPortfolioXirrJob(
 
         val result =
           runBlocking {
-            asyncXirrCalculationService.calculateBatchXirrAsync(datesToProcess)
+            calculationService.calculateBatchXirrAsync(datesToProcess)
           }
 
         log.info("Processed ${result.processedDates} dates in ${result.duration}ms")

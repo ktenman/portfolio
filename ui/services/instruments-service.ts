@@ -12,4 +12,7 @@ export const instrumentsService = {
 
   update: (id: number | string, data: Partial<Instrument>) =>
     httpClient.put<Instrument>(`/instruments/${id}`, data).then(res => res.data),
+
+  refreshPrices: () =>
+    httpClient.post<{ status: string }>('/instruments/refresh-prices').then(res => res.data),
 }

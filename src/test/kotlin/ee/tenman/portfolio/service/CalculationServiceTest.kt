@@ -2,11 +2,13 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.xirr.Xirr
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -17,6 +19,9 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mock
 import org.mockito.Mockito.lenient
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.time.Clock
@@ -37,6 +42,9 @@ class CalculationServiceTest {
   @Mock
   private lateinit var clock: Clock
 
+  @Mock
+  private lateinit var portfolioSummaryService: SummaryService
+
   private lateinit var calculationService: CalculationService
   private lateinit var testInstrument: Instrument
   private lateinit var testDispatcher: CoroutineDispatcher
@@ -56,6 +64,7 @@ class CalculationServiceTest {
         instrumentRepository = instrumentRepository,
         calculationDispatcher = testDispatcher,
         clock = clock,
+        portfolioSummaryService = portfolioSummaryService,
       )
 
     whenever(instrumentRepository.findBySymbol(instrumentCode)).thenReturn(Optional.of(testInstrument))
@@ -290,4 +299,84 @@ class CalculationServiceTest {
         ),
       )
   }
+
+  @Test
+  fun `calculateBatchXirrAsync processes single date successfully`() =
+    runBlocking {
+      val dates = listOf(today)
+      val summary = createTestSummary(today)
+
+      whenever(portfolioSummaryService.calculateSummaryForDate(today)).thenReturn(summary)
+
+      val result = calculationService.calculateBatchXirrAsync(dates)
+
+      assertThat(result.processedDates).isEqualTo(1)
+      assertThat(result.failedCalculations).isEmpty()
+      assertThat(result.duration).isGreaterThanOrEqualTo(0)
+      verify(portfolioSummaryService).calculateSummaryForDate(today)
+      verify(portfolioSummaryService).saveDailySummary(summary)
+    }
+
+  @Test
+  fun `calculateBatchXirrAsync processes multiple dates successfully`() =
+    runBlocking {
+      val dates =
+        listOf(
+          today,
+          today.plusDays(1),
+          today.plusDays(2),
+        )
+
+      dates.forEach { date ->
+        val summary = createTestSummary(date)
+        whenever(portfolioSummaryService.calculateSummaryForDate(date)).thenReturn(summary)
+      }
+
+      val result = calculationService.calculateBatchXirrAsync(dates)
+
+      assertThat(result.processedDates).isEqualTo(3)
+      assertThat(result.processedInstruments).isEqualTo(0)
+      assertThat(result.failedCalculations).isEmpty()
+      verify(portfolioSummaryService, times(3)).calculateSummaryForDate(any())
+      verify(portfolioSummaryService, times(3)).saveDailySummary(any())
+    }
+
+  @Test
+  fun `calculateBatchXirrAsync handles calculation failure`() =
+    runBlocking {
+      val successDate = today
+      val failDate = today.plusDays(1)
+      val dates = listOf(successDate, failDate)
+
+      val summary = createTestSummary(successDate)
+      whenever(portfolioSummaryService.calculateSummaryForDate(successDate)).thenReturn(summary)
+      whenever(portfolioSummaryService.calculateSummaryForDate(failDate)).thenThrow(
+        RuntimeException("Calculation failed"),
+      )
+
+      val result = calculationService.calculateBatchXirrAsync(dates)
+
+      assertThat(result.processedDates).isEqualTo(1)
+      assertThat(result.failedCalculations).hasSize(1)
+      assertThat(result.failedCalculations[0]).contains("Failed for date")
+    }
+
+  @Test
+  fun `calculateBatchXirrAsync handles empty date list`() =
+    runBlocking {
+      val result = calculationService.calculateBatchXirrAsync(emptyList())
+
+      assertThat(result.processedDates).isEqualTo(0)
+      assertThat(result.failedCalculations).isEmpty()
+      assertThat(result.duration).isGreaterThanOrEqualTo(0)
+    }
+
+  private fun createTestSummary(date: LocalDate): PortfolioDailySummary =
+    PortfolioDailySummary(
+      entryDate = date,
+      totalValue = BigDecimal("10000"),
+      xirrAnnualReturn = BigDecimal("0.15"),
+      totalProfit = BigDecimal("2000"),
+      earningsPerDay = BigDecimal("5.48"),
+    )
 }

@@ -35,4 +35,8 @@ class Instrument(
   var quantity: BigDecimal = BigDecimal.ZERO,
   @Transient
   var platforms: Set<Platform> = emptySet(),
+  @Transient
+  var priceChangeAmount: BigDecimal? = null,
+  @Transient
+  var priceChangePercent: Double? = null,
 ) : BaseEntity()
