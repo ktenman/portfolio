@@ -18,7 +18,7 @@
 
     <template v-else>
       <!-- Mobile Card View -->
-      <div class="d-block d-md-none mobile-cards">
+      <div class="mobile-cards-wrapper d-block d-md-none">
         <div
           v-for="(item, index) in items"
           :key="getItemKey(item, index)"
@@ -50,13 +50,13 @@
           </slot>
         </div>
         <!-- Mobile Footer -->
-        <div v-if="$slots['mobile-footer']" class="mobile-footer d-block d-md-none">
+        <div v-if="$slots['mobile-footer']" class="mobile-footer">
           <slot name="mobile-footer"></slot>
         </div>
       </div>
 
       <!-- Desktop Table View -->
-      <div class="d-none d-md-block table-responsive">
+      <div class="desktop-table-wrapper d-none d-md-block table-responsive">
         <table class="table table-striped table-hover">
           <thead>
             <tr>
@@ -395,6 +395,16 @@ const handleSort = (column: ColumnDefinition) => {
 
   &.desc .sort-arrow-up {
     opacity: 0.3;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 767px) {
+  .mobile-cards-wrapper {
+    display: none !important;
+  }
+
+  .desktop-table-wrapper {
+    display: block !important;
   }
 }
 </style>
