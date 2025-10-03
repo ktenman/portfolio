@@ -106,28 +106,15 @@ class SummaryService(
   @Transactional(readOnly = true)
   fun getCurrentDaySummary(): PortfolioDailySummary {
     val today = LocalDate.now(clock)
-    val instruments = instrumentService.getAllInstruments()
-
-    val totalValue = instruments.sumOf { it.currentValue }
-    val totalProfit = instruments.sumOf { it.profit }
-    val xirrValue = instruments.maxByOrNull { it.currentValue }?.xirr ?: 0.0
-
-    val xirrBigDecimal = BigDecimal(xirrValue).setScale(8, RoundingMode.HALF_UP)
-    val earningsPerDay = calculateEarningsPerDay(totalValue, xirrBigDecimal)
-
-    return createSummary(today, totalValue, xirrBigDecimal, totalProfit, earningsPerDay)
+    return calculateCurrentDaySummaryForDate(today)
   }
 
   @Transactional(readOnly = true)
   fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
-    if (isToday(date)) {
-      return calculateTodaySummary(date)
-    }
+    if (isToday(date)) return calculateTodaySummary(date)
 
     val existingSummary = portfolioDailySummaryRepository.findByEntryDate(date)
-    if (existingSummary != null) {
-      return existingSummary
-    }
+    if (existingSummary != null) return existingSummary
 
     return calculateHistoricalSummary(date)
   }
@@ -185,11 +172,12 @@ class SummaryService(
   ) = portfolioDailySummaryRepository.findAllByEntryDateBetween(startDate, endDate)
 
   private fun deleteHistoricalSummaries(today: LocalDate) {
-    portfolioDailySummaryRepository.findAll().forEach { summary ->
-      if (summary.entryDate != today) {
-        portfolioDailySummaryRepository.delete(summary)
-      }
-    }
+    val summariesToDelete =
+      portfolioDailySummaryRepository
+        .findAll()
+        .filterNot { it.entryDate == today }
+
+    portfolioDailySummaryRepository.deleteAll(summariesToDelete)
     portfolioDailySummaryRepository.flush()
   }
 
@@ -238,73 +226,31 @@ class SummaryService(
 
   private fun tryUsePreviousDaySummary(date: LocalDate): PortfolioDailySummary? {
     val previousDate = date.minusDays(1)
-    val previousSummary = portfolioDailySummaryRepository.findByEntryDate(previousDate)
+    val previousSummary = portfolioDailySummaryRepository.findByEntryDate(previousDate) ?: return null
 
-    if (previousSummary != null) {
-      val summary = calculateSummaryDetailsForDate(date)
-      if (summary.totalValue.compareTo(previousSummary.totalValue) == 0) {
-        return createSummary(
-          date,
-          summary.totalValue,
-          summary.xirrAnnualReturn,
-                           summary.totalProfit,
-          summary.earningsPerDay,
-        )
-      }
-      return summary
+    val summary = calculateSummaryDetailsForDate(date)
+    if (summary.totalValue.compareTo(previousSummary.totalValue) == 0) {
+      return createSummary(
+        date,
+        summary.totalValue,
+        summary.xirrAnnualReturn,
+        summary.totalProfit,
+        summary.earningsPerDay,
+      )
     }
-    return null
+    return summary
   }
+
+  private fun calculateCurrentDaySummaryForDate(date: LocalDate): PortfolioDailySummary = calculateSummaryDetailsForDate(date)
 
   private fun alignCurrentDaySummaryWithInstruments(summary: PortfolioDailySummary): PortfolioDailySummary {
-    val instruments = instrumentService.getAllInstruments()
-    val totalValue = instruments.sumOf { it.currentValue }
-    val totalProfit = instruments.sumOf { it.profit }
-    val earningsPerDay = calculateEarningsPerDay(totalValue, summary.xirrAnnualReturn)
-
-    val updatedSummary =
-      PortfolioDailySummary(
-      entryDate = summary.entryDate,
-      totalValue = totalValue,
-      xirrAnnualReturn = summary.xirrAnnualReturn,
-      totalProfit = totalProfit,
-      earningsPerDay = earningsPerDay,
-    )
-    updatedSummary.id = summary.id
-    updatedSummary.version = summary.version
-    return updatedSummary
+    val newSummary = calculateSummaryDetailsForDate(summary.entryDate)
+    newSummary.id = summary.id
+    newSummary.version = summary.version
+    return newSummary
   }
 
-  private fun createCurrentDaySummary(date: LocalDate): PortfolioDailySummary {
-    val instruments = instrumentService.getAllInstruments()
-    val totalValue = instruments.sumOf { it.currentValue }
-    val totalProfit = instruments.sumOf { it.profit }
-
-    val xirrTx = buildXirrTransactionsForDate(date)
-    val xirr =
-      if (xirrTx.size > 1) {
-      investmentMetricsService.calculateAdjustedXirr(xirrTx, totalValue, date)
-    } else {
-      0.0
-    }
-
-    val xirrBigDecimal = BigDecimal(xirr).setScale(8, RoundingMode.HALF_UP)
-    val earningsPerDay = calculateEarningsPerDay(totalValue, xirrBigDecimal)
-
-    return createSummary(date, totalValue, xirrBigDecimal, totalProfit, earningsPerDay)
-  }
-
-  private fun buildXirrTransactionsForDate(date: LocalDate): List<ee.tenman.portfolio.service.xirr.Transaction> {
-    val transactions =
-      transactionService
-      .getAllTransactions()
-      .filter { !it.transactionDate.isAfter(date) }
-
-    val instruments = instrumentService.getAllInstruments()
-    val totalValue = instruments.sumOf { it.currentValue }
-
-    return investmentMetricsService.buildXirrTransactions(transactions, totalValue, date)
-  }
+  private fun createCurrentDaySummary(date: LocalDate): PortfolioDailySummary = calculateSummaryDetailsForDate(date)
 
   private fun calculateSummaryDetailsForDate(date: LocalDate): PortfolioDailySummary {
     val transactions =
@@ -320,12 +266,7 @@ class SummaryService(
     val instrumentGroups = transactions.groupBy { it.instrument }
     val results = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, date)
 
-    val xirr =
-      if (results.xirrTransactions.size > 1) {
-      investmentMetricsService.calculateAdjustedXirr(results.xirrTransactions, results.totalValue, date)
-    } else {
-      0.0
-    }
+    val xirr = investmentMetricsService.calculateAdjustedXirr(results.xirrTransactions, results.totalValue, date)
     val earningsPerDay = calculateEarningsPerDay(results.totalValue, BigDecimal(xirr))
 
     return PortfolioDailySummary(

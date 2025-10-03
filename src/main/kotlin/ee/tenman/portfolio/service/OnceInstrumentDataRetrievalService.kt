@@ -28,13 +28,15 @@ class OnceInstrumentDataRetrievalService(
       .runAsync {
         log.info("Retrieving data for all instruments")
         val allDailySummaries = portfolioSummaryService.getAllDailySummaries()
-        if (allDailySummaries.isEmpty()) {
-          log.info("No daily summaries found. Running instrument data retrieval job.")
-          jobExecutionService.executeJob(alphaVantageDataRetrievalJob)
-          jobExecutionService.executeJob(binanceDataRetrievalJob)
-        } else {
+
+        if (allDailySummaries.isNotEmpty()) {
           log.info("Daily summaries found. Skipping instrument data retrieval job.")
+          return@runAsync
         }
+
+        log.info("No daily summaries found. Running instrument data retrieval job.")
+        jobExecutionService.executeJob(alphaVantageDataRetrievalJob)
+        jobExecutionService.executeJob(binanceDataRetrievalJob)
       }.thenRun {
         log.info("Running daily portfolio XIRR job")
         jobExecutionService.executeJob(dailyPortfolioXirrJob)

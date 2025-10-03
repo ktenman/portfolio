@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.springframework.cache.annotation.CacheEvict
@@ -17,6 +18,7 @@ class InstrumentService(
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val investmentMetricsService: InvestmentMetricsService,
+  private val dailyPriceService: DailyPriceService,
   private val clock: java.time.Clock,
 ) {
   @Transactional(readOnly = true)
@@ -56,13 +58,18 @@ class InstrumentService(
   @Transactional(readOnly = true)
   fun getAllInstruments(platforms: List<String>?): List<Instrument> {
     val instruments = instrumentRepository.findAll()
-    val allTransactions = portfolioTransactionRepository.findAllWithInstruments()
-    val transactions = allTransactions.groupBy { it.instrument.id }
+    val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val calculationDate = java.time.LocalDate.now(clock)
+    val targetPlatforms = parsePlatformFilters(platforms)
 
-    val targetPlatforms =
-      platforms
-        ?.mapNotNull { platformStr ->
+    return instruments.mapNotNull { instrument ->
+      enrichInstrumentWithMetrics(instrument, transactionsByInstrument, targetPlatforms, calculationDate)
+    }
+  }
+
+  private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? =
+    platforms
+      ?.mapNotNull { platformStr ->
       try {
         Platform.valueOf(platformStr.uppercase())
       } catch (e: IllegalArgumentException) {
@@ -70,41 +77,59 @@ class InstrumentService(
       }
     }?.toSet()
 
-    return instruments.mapNotNull { instrument ->
-      instrument.apply {
-        val allInstrumentTransactions = transactions[id] ?: emptyList()
+  private fun enrichInstrumentWithMetrics(
+    instrument: Instrument,
+    transactionsByInstrument: Map<Long, List<PortfolioTransaction>>,
+    targetPlatforms: Set<Platform>?,
+    calculationDate: java.time.LocalDate,
+  ): Instrument? {
+    val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
+    val filteredTransactions = filterTransactionsByPlatforms(allTransactions, targetPlatforms)
 
-        val filteredTransactions =
-          if (targetPlatforms != null) {
-          allInstrumentTransactions.filter { transaction ->
-            targetPlatforms.contains(transaction.platform)
-          }
-        } else {
-          allInstrumentTransactions
-        }
+    if (!shouldIncludeInstrument(filteredTransactions, targetPlatforms)) {
+      return if (targetPlatforms == null) instrument else null
+    }
 
-        if (filteredTransactions.isEmpty()) {
-          if (targetPlatforms == null) {
-            return@mapNotNull instrument
-          }
-          return@mapNotNull null
-        }
+    return applyInstrumentMetrics(instrument, filteredTransactions, calculationDate)
+  }
 
-        val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(this, filteredTransactions, calculationDate)
-        totalInvestment = metrics.totalInvestment
-        currentValue = metrics.currentValue
-        profit = metrics.profit
-        xirr = metrics.xirr
-        quantity = metrics.quantity
-        this.platforms = filteredTransactions.map { it.platform }.toSet()
+  private fun filterTransactionsByPlatforms(
+    transactions: List<PortfolioTransaction>,
+    targetPlatforms: Set<Platform>?,
+  ): List<PortfolioTransaction> =
+    if (targetPlatforms != null) {
+      transactions.filter { targetPlatforms.contains(it.platform) }
+    } else {
+      transactions
+    }
 
-        if (quantity == BigDecimal.ZERO && totalInvestment == BigDecimal.ZERO) {
-          if (targetPlatforms == null) {
-            return@mapNotNull instrument
-          }
-          return@mapNotNull null
-        }
-      }
+  private fun shouldIncludeInstrument(
+    filteredTransactions: List<PortfolioTransaction>,
+    targetPlatforms: Set<Platform>?,
+  ): Boolean = filteredTransactions.isNotEmpty()
+
+  private fun applyInstrumentMetrics(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    calculationDate: java.time.LocalDate,
+  ): Instrument? {
+    val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, calculationDate)
+
+    instrument.totalInvestment = metrics.totalInvestment
+    instrument.currentValue = metrics.currentValue
+    instrument.profit = metrics.profit
+    instrument.xirr = metrics.xirr
+    instrument.quantity = metrics.quantity
+    instrument.platforms = transactions.map { it.platform }.toSet()
+
+    val priceChange = dailyPriceService.getLastPriceChange(instrument)
+    instrument.priceChangeAmount = priceChange?.changeAmount?.multiply(metrics.quantity)
+    instrument.priceChangePercent = priceChange?.changePercent
+
+    return if (metrics.quantity == BigDecimal.ZERO && metrics.totalInvestment == BigDecimal.ZERO) {
+      null
+    } else {
+      instrument
     }
   }
 

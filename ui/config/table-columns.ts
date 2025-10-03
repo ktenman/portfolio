@@ -8,10 +8,8 @@ import {
 
 export const instrumentColumns: ColumnDefinition[] = [
   { key: 'instrument', label: 'Instrument' },
-  { key: 'type', label: 'Type', class: 'd-none d-md-table-cell' },
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
-  { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
   { key: 'currentValue', label: 'Value', formatter: formatCurrency },
   {
     key: 'totalInvestment',
@@ -20,12 +18,13 @@ export const instrumentColumns: ColumnDefinition[] = [
     class: 'd-none d-md-table-cell',
   },
   { key: 'profit', label: 'Profit', formatter: formatCurrency },
+  { key: 'priceChange', label: '24H', class: 'd-none d-lg-table-cell' },
+  { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
 ]
 
 export const transactionColumns: ColumnDefinition[] = [
   { key: 'transactionDate', label: 'Date', formatter: formatDate },
   { key: 'instrumentId', label: 'Instrument' },
-  { key: 'platform', label: 'Platform', class: 'd-none d-lg-table-cell' },
   { key: 'quantityInfo', label: 'Quantity' },
   { key: 'price', label: 'Price', formatter: formatCurrency },
   { key: 'amount', label: 'Amount' },

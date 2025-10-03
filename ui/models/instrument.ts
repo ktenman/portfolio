@@ -18,4 +18,6 @@ export interface Instrument {
   platform?: string
   priceChangePercent24h?: number
   platforms?: string[]
+  priceChangeAmount?: number
+  priceChangePercent?: number
 }

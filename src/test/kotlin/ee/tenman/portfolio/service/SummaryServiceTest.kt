@@ -129,24 +129,27 @@ class SummaryServiceTest {
     val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
 
-    val todaySummary =
-      PortfolioDailySummary(
-        entryDate = testDate,
-        totalValue = BigDecimal("21000.00"),
-        xirrAnnualReturn = BigDecimal("-0.1048"),
-        totalProfit = BigDecimal("-2500.00"),
-        earningsPerDay = BigDecimal("-6.0000000000"),
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("793.00"),
+        price = BigDecimal("29.81"),
+        transactionDate = testDate.minusDays(30),
+        platform = Platform.TRADING212,
       )
-    whenever(portfolioDailySummaryRepository.findByEntryDate(testDate)).thenReturn(todaySummary)
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
 
-    whenever(instrumentService.getAllInstruments()).thenReturn(
-      listOf(
-        instrument.apply {
-          profit = BigDecimal("-1762.39")
-          totalInvestment = BigDecimal("23633.33")
-        },
-      ),
+    val portfolioMetrics =
+      InvestmentMetricsService.PortfolioMetrics(
+      totalValue = BigDecimal("21870.94"),
+      totalProfit = BigDecimal("-1762.39"),
+      xirrTransactions = mutableListOf(),
     )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(testDate)))
+      .thenReturn(portfolioMetrics)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(testDate)))
+      .thenReturn(0.0)
 
     val summary = summaryService.getCurrentDaySummary()
 
@@ -480,14 +483,27 @@ class SummaryServiceTest {
     val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
 
-    val instrumentWithXirr =
-      instrument.apply {
-        currentValue = BigDecimal("600.00")
-        profit = BigDecimal("100.00")
-        xirr = 0.075
-      }
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("50.00"),
+        transactionDate = testDate.minusDays(30),
+        platform = Platform.TRADING212,
+      )
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
 
-    whenever(instrumentService.getAllInstruments()).thenReturn(listOf(instrumentWithXirr))
+    val portfolioMetrics =
+      InvestmentMetricsService.PortfolioMetrics(
+      totalValue = BigDecimal("600.00"),
+      totalProfit = BigDecimal("100.00"),
+      xirrTransactions = mutableListOf(),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(testDate)))
+      .thenReturn(portfolioMetrics)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(testDate)))
+      .thenReturn(0.075)
 
     val summary = summaryService.getCurrentDaySummary()
 

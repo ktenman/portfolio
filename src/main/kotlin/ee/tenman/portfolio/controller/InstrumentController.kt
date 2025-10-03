@@ -1,14 +1,23 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.job.BinanceDataRetrievalJob
+import ee.tenman.portfolio.job.FtDataRetrievalJob
 import ee.tenman.portfolio.service.InstrumentService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.springframework.cache.CacheManager
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -29,6 +38,9 @@ import java.math.BigDecimal
 @Tag(name = "Instruments", description = "APIs for managing financial instruments")
 class InstrumentController(
   private val instrumentService: InstrumentService,
+  private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
+  private val ftDataRetrievalJob: FtDataRetrievalJob,
+  private val cacheManager: CacheManager,
 ) {
   @PostMapping
   @Loggable
@@ -77,6 +89,25 @@ class InstrumentController(
     @PathVariable id: Long,
   ) = instrumentService.deleteInstrument(id)
 
+  @PostMapping("/refresh-prices")
+  @Loggable
+  @Operation(summary = "Refresh prices from Binance and FT providers")
+  fun refreshPrices(): Map<String, String> {
+    CoroutineScope(Dispatchers.Default).launch {
+      binanceDataRetrievalJob.execute()
+    }
+
+    CoroutineScope(Dispatchers.Default).launch {
+      ftDataRetrievalJob.execute()
+    }
+
+    listOf(INSTRUMENT_CACHE, SUMMARY_CACHE, TRANSACTION_CACHE).forEach { cacheName ->
+      cacheManager.getCache(cacheName)?.clear()
+    }
+
+    return mapOf("status" to "Jobs triggered and caches cleared")
+  }
+
   @Schema(description = "Financial instrument data transfer object")
   data class InstrumentDto(
     @field:Schema(description = "Unique identifier", example = "1")
@@ -97,6 +128,8 @@ class InstrumentController(
     val profit: BigDecimal? = BigDecimal.ZERO,
     val xirr: Double? = 0.0,
     val platforms: Set<String> = emptySet(),
+    val priceChangeAmount: BigDecimal? = null,
+    val priceChangePercent: Double? = null,
   ) {
     fun toEntity() =
       Instrument(
@@ -130,6 +163,8 @@ class InstrumentController(
           profit = instrument.profit,
           xirr = instrument.xirr,
           platforms = instrument.platforms?.map { it.name }?.toSet() ?: emptySet(),
+          priceChangeAmount = instrument.priceChangeAmount,
+          priceChangePercent = instrument.priceChangePercent,
         )
     }
   }

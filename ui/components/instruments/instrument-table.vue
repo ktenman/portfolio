@@ -12,8 +12,6 @@
         <td class="fw-bold">Total</td>
         <td></td>
         <td></td>
-        <td></td>
-        <td></td>
         <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</td>
         <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</td>
         <td class="fw-bold text-nowrap">
@@ -21,7 +19,13 @@
             {{ formatProfit(totalProfit, 'EUR') }}
           </span>
         </td>
-        <td></td>
+        <td class="fw-bold text-nowrap">
+          <span :class="getProfitClass(totalChangeAmount)">
+            {{ formatCurrencyWithSign(Math.abs(totalChangeAmount), 'EUR') }} /
+            {{ Math.abs(totalChangePercent).toFixed(2) }}%
+          </span>
+        </td>
+        <td class="fw-bold text-nowrap">{{ formatPercentageFromDecimal(totalXirr) }}</td>
       </tr>
     </template>
     <template #mobile-card="{ item }">
@@ -40,13 +44,13 @@
               </span>
             </div>
           </div>
-          <button
+          <!-- <button
             class="btn btn-sm btn-ghost btn-secondary btn-table-action"
             @click="$emit('edit', item)"
             title="Edit"
           >
             <base-icon name="pencil" :size="16" />
-          </button>
+          </button> -->
         </div>
         <div class="instrument-metrics">
           <div class="metric-group">
@@ -101,6 +105,17 @@
               {{ formatProfit(totalProfit, 'EUR') }}
             </span>
           </div>
+          <div class="total-item">
+            <span class="total-label">24H</span>
+            <span class="total-value" :class="getProfitClass(totalChangeAmount)">
+              {{ formatCurrencyWithSign(Math.abs(totalChangeAmount), 'EUR') }} /
+              {{ Math.abs(totalChangePercent).toFixed(2) }}%
+            </span>
+          </div>
+          <div class="total-item">
+            <span class="total-label">XIRR</span>
+            <span class="total-value">{{ formatPercentageFromDecimal(totalXirr) }}</span>
+          </div>
         </div>
       </div>
     </template>
@@ -131,6 +146,10 @@
       {{ formatCurrencyWithSign(item.currentPrice, item.baseCurrency) }}
     </template>
 
+    <template #cell-priceChange="{ item }">
+      <span v-html="formatPriceChange(item)"></span>
+    </template>
+
     <template #cell-totalInvestment="{ item }">
       {{ formatCurrencyWithSign(item.totalInvestment, item.baseCurrency) }}
     </template>
@@ -145,25 +164,23 @@
       </span>
     </template>
 
-    <template #actions="{ item }">
+    <!-- <template #actions="{ item }">
       <div class="action-buttons">
         <button
           class="btn btn-sm btn-ghost btn-secondary btn-table-action"
           @click="$emit('edit', item)"
           title="Edit"
         >
-          <base-icon name="pencil" :size="14" />
-          <span class="ms-1 d-inline d-lg-none">Edit</span>
+          Edit
         </button>
       </div>
-    </template>
+    </template> -->
   </data-table>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
-import BaseIcon from '../shared/base-icon.vue'
 import { Instrument } from '../../models/instrument'
 import { instrumentColumns } from '../../config'
 import {
@@ -171,6 +188,7 @@ import {
   formatCurrencyWithSign,
   formatQuantity,
   formatPercentageFromDecimal,
+  formatPriceChange,
 } from '../../utils/formatters'
 
 interface Props {
@@ -207,6 +225,27 @@ const totalProfit = computed(() => {
   return props.instruments.reduce((sum, instrument) => {
     return sum + getItemProfit(instrument)
   }, 0)
+})
+
+const totalXirr = computed(() => {
+  const weightedSum = props.instruments.reduce((sum, instrument) => {
+    const xirr = instrument.xirr || 0
+    const invested = instrument.totalInvestment || 0
+    return sum + xirr * invested
+  }, 0)
+
+  return totalInvested.value > 0 ? weightedSum / totalInvested.value : 0
+})
+
+const totalChangeAmount = computed(() => {
+  return props.instruments.reduce((sum, instrument) => {
+    return sum + (instrument.priceChangeAmount || 0)
+  }, 0)
+})
+
+const totalChangePercent = computed(() => {
+  if (totalValue.value === 0) return 0
+  return (totalChangeAmount.value / totalValue.value) * 100
 })
 
 const getItemProfit = (item: Instrument): number => {

@@ -105,15 +105,7 @@ class InvestmentMetricsService(
     currentValue: BigDecimal,
     calculationDate: LocalDate = LocalDate.now(),
   ): List<Transaction> {
-    val cashflows =
-      transactions.map { transaction ->
-        val amount =
-          when (transaction.transactionType) {
-            TransactionType.BUY -> -(transaction.price * transaction.quantity + transaction.commission)
-            TransactionType.SELL -> transaction.price * transaction.quantity - transaction.commission
-          }
-        Transaction(amount.toDouble(), transaction.transactionDate)
-      }
+    val cashflows = transactions.map { convertToXirrTransaction(it) }
 
     return if (currentValue > BigDecimal.ZERO) {
       cashflows + Transaction(currentValue.toDouble(), calculationDate)
@@ -210,34 +202,7 @@ class InvestmentMetricsService(
     }
 
     transactionService.calculateTransactionProfits(transactions)
-
-    val groupedByPlatform = transactions.groupBy { it.platform }
-
-    var totalInvestment = BigDecimal.ZERO
-    var totalHoldings = BigDecimal.ZERO
-
-    groupedByPlatform.forEach { (_, platformTransactions) ->
-      val (quantity, averageCost) = calculateCurrentHoldings(platformTransactions)
-      if (quantity > BigDecimal.ZERO) {
-        val investment = quantity.multiply(averageCost)
-        totalInvestment = totalInvestment.add(investment)
-        totalHoldings = totalHoldings.add(quantity)
-      }
-    }
-
-    val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
-    val currentValue = calculateCurrentValue(totalHoldings, currentPrice)
-    val profit = currentValue.subtract(totalInvestment)
-    val xirrTransactions = buildXirrTransactions(transactions, currentValue, calculationDate)
-    val xirr = calculateAdjustedXirr(xirrTransactions, currentValue, calculationDate)
-
-    return InstrumentMetrics(
-      totalInvestment = totalInvestment,
-      currentValue = currentValue,
-      profit = profit,
-      xirr = xirr,
-      quantity = totalHoldings,
-    )
+    return calculateInstrumentMetrics(instrument, transactions, calculationDate)
   }
 
   fun calculatePortfolioMetrics(

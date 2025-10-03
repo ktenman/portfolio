@@ -28,14 +28,6 @@ vi.mock('../shared/data-table.vue', () => ({
   },
 }))
 
-vi.mock('../shared/base-icon.vue', () => ({
-  default: {
-    name: 'BaseIcon',
-    props: ['name', 'size'],
-    template: '<i :class="`icon-${name}`" />',
-  },
-}))
-
 describe('InstrumentTable', () => {
   const mockInstruments: Instrument[] = [
     {
@@ -223,29 +215,6 @@ describe('InstrumentTable', () => {
 
       const row = wrapper.find('tbody tr')
       expect(row.text()).toContain('$0.00')
-    })
-  })
-
-  describe('actions', () => {
-    it('should render edit button for each instrument', () => {
-      const wrapper = createWrapper()
-      const editButtons = wrapper.findAll('button')
-
-      expect(editButtons).toHaveLength(4)
-      editButtons.forEach(button => {
-        expect(button.text()).toContain('Edit')
-        expect(button.find('.icon-pencil').exists()).toBe(true)
-      })
-    })
-
-    it('should emit edit event when edit button is clicked', async () => {
-      const wrapper = createWrapper()
-      const firstEditButton = wrapper.find('button')
-
-      await firstEditButton.trigger('click')
-
-      expect(wrapper.emitted('edit')).toBeTruthy()
-      expect(wrapper.emitted('edit')?.[0]).toEqual([mockInstruments[0]])
     })
   })
 
