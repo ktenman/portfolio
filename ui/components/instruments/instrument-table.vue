@@ -67,6 +67,15 @@
             <span class="metric-value">{{ formatPercentageFromDecimal(item.xirr) }}</span>
             <span class="metric-label">XIRR</span>
           </div>
+          <div
+            v-if="item.priceChangeAmount !== undefined && item.priceChangeAmount !== null"
+            class="metric-group"
+          >
+            <span class="metric-value" :class="getProfitClass(item.priceChangeAmount)">
+              {{ formatCurrencyWithSign(Math.abs(item.priceChangeAmount), item.baseCurrency) }}
+            </span>
+            <span class="metric-label">24H</span>
+          </div>
         </div>
         <div class="instrument-footer">
           <div class="value-info">
@@ -414,14 +423,17 @@ const formatPlatformName = (platform: string): string => {
 
   .instrument-metrics {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     margin-bottom: 0.75rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--bs-gray-200);
+    gap: 0.75rem 0.5rem;
 
     .metric-group {
       text-align: center;
       flex: 1;
+      min-width: 0;
 
       .metric-value {
         display: block;
@@ -429,6 +441,14 @@ const formatPlatformName = (platform: string): string => {
         font-weight: 600;
         color: var(--bs-gray-900);
         margin-bottom: 0.125rem;
+
+        &.text-success {
+          color: #22c55e;
+        }
+
+        &.text-danger {
+          color: #ef4444;
+        }
       }
 
       .metric-label {
