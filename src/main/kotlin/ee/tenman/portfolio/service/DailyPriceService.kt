@@ -6,7 +6,13 @@ import ee.tenman.portfolio.repository.DailyPriceRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
+
+data class PriceChange(
+  val changeAmount: BigDecimal,
+  val changePercent: Double,
+)
 
 @Service
 class DailyPriceService(
@@ -67,4 +73,26 @@ class DailyPriceService(
 
   @Transactional(readOnly = true)
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice> = dailyPriceRepository.findAllByInstrument(instrument)
+
+  @Transactional(readOnly = true)
+  fun getLastPriceChange(instrument: Instrument): PriceChange? {
+    val recentPrices = dailyPriceRepository.findTop2ByInstrumentOrderByEntryDateDesc(instrument)
+    if (recentPrices.size < 2) return null
+
+    val currentPrice = recentPrices[0].closePrice
+    val previousPrice = recentPrices[1].closePrice
+    val changeAmount = currentPrice.subtract(previousPrice)
+    val changePercent = calculateChangePercent(changeAmount, previousPrice)
+
+    return PriceChange(changeAmount, changePercent)
+  }
+
+  private fun calculateChangePercent(
+    changeAmount: BigDecimal,
+    previousPrice: BigDecimal,
+  ): Double =
+    changeAmount
+      .divide(previousPrice, 10, RoundingMode.HALF_UP)
+      .multiply(BigDecimal(100))
+      .toDouble()
 }

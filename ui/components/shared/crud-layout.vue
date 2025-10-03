@@ -2,7 +2,7 @@
   <div class="container mt-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="mb-0">{{ title }}</h2>
+        <h2 class="mb-0" @click="$emit('title-click')">{{ title }}</h2>
         <slot name="subtitle" />
       </div>
       <div class="d-flex align-items-center gap-3">
@@ -39,5 +39,6 @@ withDefaults(defineProps<Props>(), {
 
 defineEmits<{
   add: []
+  'title-click': []
 }>()
 </script>

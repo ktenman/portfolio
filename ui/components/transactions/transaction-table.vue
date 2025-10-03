@@ -6,10 +6,16 @@
     empty-message="No transactions found. Add a new transaction to get started."
   >
     <template #cell-instrumentId="{ item }">
-      <span class="instrument-info">
-        <span class="d-block">{{ item.instrumentName }}</span>
-        <small class="d-block text-muted">{{ item.symbol }}</small>
-      </span>
+      <div class="instrument-info">
+        <div>
+          <span class="d-block">{{ item.instrumentName }}</span>
+        </div>
+        <div v-if="item.platform" class="platform-tags mt-1">
+          <span class="badge bg-secondary text-white">
+            {{ formatPlatformName(item.platform) }}
+          </span>
+        </div>
+      </div>
     </template>
 
     <template #cell-quantityInfo="{ item }">
@@ -70,7 +76,7 @@
       </span>
     </template>
 
-    <template #actions="{ item }">
+    <!-- <template #actions="{ item }">
       <div class="action-buttons">
         <button
           class="btn btn-sm btn-ghost btn-secondary btn-table-action"
@@ -89,14 +95,13 @@
           <span class="ms-1 d-inline d-lg-none">Delete</span>
         </button>
       </div>
-    </template>
+    </template> -->
   </data-table>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
-import BaseIcon from '../shared/base-icon.vue'
 import { PortfolioTransaction } from '../../models/portfolio-transaction'
 import { Instrument } from '../../models/instrument'
 import { transactionColumns } from '../../config'
@@ -142,18 +147,39 @@ const enrichedTransactions = computed(() => {
     return {
       ...transaction,
       instrumentName: instrument?.name || 'Unknown',
-      symbol: instrument?.symbol || '-',
     }
   })
 })
+
+const formatPlatformName = (platform: string): string => {
+  const platformMap: Record<string, string> = {
+    TRADING212: 'Trading 212',
+    LIGHTYEAR: 'Lightyear',
+    SWEDBANK: 'Swedbank',
+    BINANCE: 'Binance',
+    COINBASE: 'Coinbase',
+    LHV: 'LHV',
+    AVIVA: 'Aviva',
+    UNKNOWN: 'Unknown',
+  }
+
+  return platformMap[platform] || platform
+}
 </script>
 
 <style scoped lang="scss">
 @import '../../styles/shared-table.scss';
 
+.platform-tags {
+  .badge {
+    color: white !important;
+    background-color: #6b7280 !important;
+    font-weight: 500;
+  }
+}
+
 @media (max-width: 992px) {
   .instrument-info > div:first-child {
-    // Allow full instrument names to be visible
     word-break: break-word;
   }
 }

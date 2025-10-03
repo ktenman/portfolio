@@ -1,4 +1,5 @@
 import { styleClasses } from './style-classes'
+import type { Instrument } from '../models/instrument'
 
 export const formatCurrencyWithSymbol = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '€0.00'
@@ -133,4 +134,22 @@ export const formatQuantity = (value: number | string | undefined | null): strin
   }
 
   return numValue.toFixed(2)
+}
+
+export const formatPriceChange = (item: Instrument): string => {
+  const amount = item.priceChangeAmount
+  const percent = item.priceChangePercent
+
+  if (amount === null || amount === undefined || percent === null || percent === undefined) {
+    return '-'
+  }
+
+  const currency = item.baseCurrency || 'EUR'
+  const isPositive = amount >= 0
+  const colorClass = isPositive ? styleClasses.text.success : styleClasses.text.danger
+
+  const formattedAmount = formatCurrencyWithSign(Math.abs(amount), currency)
+  const formattedPercent = Math.abs(percent).toFixed(2)
+
+  return `<span class="${colorClass}">${formattedAmount} / ${formattedPercent}%</span>`
 }

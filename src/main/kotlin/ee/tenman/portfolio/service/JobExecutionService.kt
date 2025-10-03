@@ -23,23 +23,26 @@ class JobExecutionService(
     val jobName = job.getName()
     val circuitBreaker = circuitBreakerRegistry.circuitBreaker("job-execution")
     val retry = retryRegistry.retry("job-execution")
-
     val startTime = Instant.now(clock)
+
+    if (circuitBreaker.state == CircuitBreaker.State.OPEN) {
+      log.warn("Circuit breaker is OPEN for job execution. Skipping job: $jobName")
+      jobTransactionService.saveJobExecution(
+        job = job,
+        startTime = startTime,
+        endTime = Instant.now(clock),
+        status = JobStatus.SKIPPED,
+        message = "Circuit breaker is OPEN",
+      )
+      return
+    }
+
     var status = JobStatus.SUCCESS
     var message: String? = null
 
     try {
       log.info("Starting execution of job: $jobName")
 
-      // Check circuit breaker state
-      if (circuitBreaker.state == CircuitBreaker.State.OPEN) {
-        log.warn("Circuit breaker is OPEN for job execution. Skipping job: $jobName")
-        status = JobStatus.SKIPPED
-        message = "Circuit breaker is OPEN"
-        return
-      }
-
-      // Execute job with circuit breaker and retry
       retry.executeSupplier {
         circuitBreaker.executeSupplier {
           jobTransactionService.executeJobInTransaction(job)

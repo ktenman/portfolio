@@ -1,9 +1,12 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.job.BinanceDataRetrievalJob
+import ee.tenman.portfolio.job.FtDataRetrievalJob
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import io.github.resilience4j.retry.RetryConfig
 import io.github.resilience4j.retry.RetryRegistry
+import org.mockito.Mockito.mock
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
@@ -13,6 +16,14 @@ import java.time.Duration
 @TestConfiguration
 @Profile("test")
 class TestConfiguration {
+  @Bean
+  @Primary
+  fun binanceDataRetrievalJob(): BinanceDataRetrievalJob = mock(BinanceDataRetrievalJob::class.java)
+
+  @Bean
+  @Primary
+  fun ftDataRetrievalJob(): FtDataRetrievalJob = mock(FtDataRetrievalJob::class.java)
+
   @Bean
   @Primary
   fun circuitBreakerRegistry(): CircuitBreakerRegistry {
