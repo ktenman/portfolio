@@ -60,6 +60,9 @@ describe('httpClient', () => {
       headers: {
         'Content-Type': 'application/json',
       },
+      paramsSerializer: {
+        indexes: null,
+      },
     })
   })
 
@@ -102,11 +105,11 @@ describe('httpClient', () => {
         })
       })
 
-      it.skip('should redirect to login on 401 error', () => {
+      it('should redirect to OAuth start on 401 error', () => {
         const error = createAxiosError(401, {}, 'Unauthorized')
 
         expect(() => errorHandler(error)).toThrow()
-        expect(window.location.href).toBe('/login')
+        expect(window.location.href).toContain('/oauth2/start?rd=')
       })
 
       it('should throw ApiError with response data', () => {
@@ -170,7 +173,7 @@ describe('httpClient', () => {
         }
       })
 
-      it.skip('should handle 401 and still throw ApiError', () => {
+      it('should handle 401 and still throw ApiError', () => {
         const error = createAxiosError(
           401,
           { message: 'Session expired' },
@@ -181,7 +184,7 @@ describe('httpClient', () => {
         try {
           errorHandler(error)
         } catch (e) {
-          expect(window.location.href).toBe('/login')
+          expect(window.location.href).toContain('/oauth2/start?rd=')
           expect(e).toBeInstanceOf(Error)
           const apiError = e as ApiError
           expect(apiError.name).toBe('ApiError')

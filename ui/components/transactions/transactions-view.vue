@@ -84,7 +84,7 @@ const { data: transactions, isLoading } = useQuery({
 
 const { data: instruments } = useQuery({
   queryKey: ['instruments'],
-  queryFn: instrumentsService.getAll,
+  queryFn: () => instrumentsService.getAll(),
 })
 
 const realizedProfitSum = computed(() => {

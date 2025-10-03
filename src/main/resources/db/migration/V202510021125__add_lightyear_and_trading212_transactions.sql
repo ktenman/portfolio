@@ -28,9 +28,6 @@ INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, pr
 VALUES ((SELECT id FROM instrument WHERE symbol = 'QDVE:GER:EUR'), 'BUY', 127, 35.38, '2025-10-02', 'LIGHTYEAR');
 
 INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, price, transaction_date, platform)
-VALUES ((SELECT id FROM instrument WHERE symbol = 'QDVE:GER:EUR'), 'BUY', 1, 35.43, '2025-10-02', 'LIGHTYEAR');
-
-INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, price, transaction_date, platform)
 VALUES ((SELECT id FROM instrument WHERE symbol = 'XAIX:GER:EUR'), 'BUY', 17, 150.70, '2025-10-02', 'LIGHTYEAR');
 
 INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, price, transaction_date, platform)

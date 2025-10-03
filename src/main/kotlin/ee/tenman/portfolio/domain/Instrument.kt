@@ -33,4 +33,6 @@ class Instrument(
   var xirr: Double = 0.0,
   @Transient
   var quantity: BigDecimal = BigDecimal.ZERO,
+  @Transient
+  var platforms: Set<Platform> = emptySet(),
 ) : BaseEntity()

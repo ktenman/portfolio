@@ -49,6 +49,7 @@ describe('InstrumentTable', () => {
       currentValue: 15050,
       profit: 5050,
       baseCurrency: 'USD',
+      platforms: ['TRADING212'],
     },
     {
       id: 2,
@@ -61,6 +62,7 @@ describe('InstrumentTable', () => {
       currentValue: 18000,
       profit: -2000,
       baseCurrency: 'EUR',
+      platforms: ['BINANCE', 'COINBASE'],
     },
     {
       id: 3,
@@ -72,6 +74,7 @@ describe('InstrumentTable', () => {
       currentValue: 5000,
       profit: 0,
       baseCurrency: 'USD',
+      platforms: ['BINANCE'],
     },
     {
       id: 4,
@@ -309,6 +312,206 @@ describe('InstrumentTable', () => {
       const rows = wrapper.findAll('tbody tr')
 
       expect(rows).toHaveLength(0)
+    })
+  })
+
+  describe('platform display', () => {
+    it('should display platform badges for instruments with platforms', () => {
+      const wrapper = createWrapper()
+      const firstRow = wrapper.find('tbody tr')
+
+      expect(firstRow.text()).toContain('Trading 212')
+
+      const badges = firstRow.findAll('.badge')
+      expect(badges.length).toBe(1)
+      expect(badges[0].classes()).toContain('bg-secondary')
+      expect(badges[0].classes()).toContain('text-white')
+    })
+
+    it('should display multiple platform badges', () => {
+      const wrapper = createWrapper()
+      const secondRow = wrapper.findAll('tbody tr')[1]
+
+      expect(secondRow.text()).toContain('Binance')
+      expect(secondRow.text()).toContain('Coinbase')
+
+      const badges = secondRow.findAll('.badge')
+      expect(badges.length).toBe(2)
+    })
+
+    it('should not display platform badges for instruments without platforms', () => {
+      const wrapper = createWrapper()
+      const lastRow = wrapper.findAll('tbody tr')[3]
+
+      const badges = lastRow.findAll('.badge')
+      expect(badges.length).toBe(0)
+    })
+
+    it('should format platform names correctly', () => {
+      const wrapper = createWrapper({
+        instruments: [
+          {
+            id: 8,
+            symbol: 'TEST',
+            name: 'Test Asset',
+            providerName: ProviderName.FT,
+            platforms: ['TRADING212', 'LIGHTYEAR', 'SWEDBANK', 'LHV', 'AVIVA'],
+          },
+        ],
+      })
+
+      const row = wrapper.find('tbody tr')
+      expect(row.text()).toContain('Trading 212')
+      expect(row.text()).toContain('Lightyear')
+      expect(row.text()).toContain('Swedbank')
+      expect(row.text()).toContain('LHV')
+      expect(row.text()).toContain('Aviva')
+    })
+
+    it('should display platform badges in mobile view', () => {
+      const wrapper = createWrapper()
+      const mobileCard = wrapper.find('.mobile-instrument-card')
+
+      if (mobileCard.exists()) {
+        const badges = mobileCard.findAll('.platform-tags .badge')
+        expect(badges.length).toBeGreaterThan(0)
+        expect(badges[0].classes()).toContain('bg-secondary')
+      }
+    })
+
+    it('should handle undefined platforms gracefully', () => {
+      const wrapper = createWrapper({
+        instruments: [
+          {
+            id: 9,
+            symbol: 'NO_PLATFORM',
+            name: 'No Platform Asset',
+            providerName: ProviderName.FT,
+            platforms: undefined,
+          },
+        ],
+      })
+
+      const row = wrapper.find('tbody tr')
+      const badges = row.findAll('.badge')
+      expect(badges.length).toBe(0)
+      expect(() => row.text()).not.toThrow()
+    })
+
+    it('should handle empty platforms array', () => {
+      const wrapper = createWrapper({
+        instruments: [
+          {
+            id: 10,
+            symbol: 'EMPTY_PLATFORM',
+            name: 'Empty Platform Asset',
+            providerName: ProviderName.FT,
+            platforms: [],
+          },
+        ],
+      })
+
+      const row = wrapper.find('tbody tr')
+      const badges = row.findAll('.badge')
+      expect(badges.length).toBe(0)
+    })
+
+    it('should handle unknown platform names', () => {
+      const wrapper = createWrapper({
+        instruments: [
+          {
+            id: 11,
+            symbol: 'UNKNOWN_PLATFORM',
+            name: 'Unknown Platform Asset',
+            providerName: ProviderName.FT,
+            platforms: ['NEW_PLATFORM', 'ANOTHER_PLATFORM'],
+          },
+        ],
+      })
+
+      const row = wrapper.find('tbody tr')
+      expect(row.text()).toContain('NEW_PLATFORM')
+      expect(row.text()).toContain('ANOTHER_PLATFORM')
+    })
+  })
+
+  describe('computed values', () => {
+    it('should calculate totals correctly', () => {
+      const wrapper = createWrapper()
+      const footerRow = wrapper.find('.table-footer-totals')
+
+      if (footerRow.exists()) {
+        expect(footerRow.text()).toContain('Total')
+        expect(footerRow.text()).toContain('€38,950.00')
+        expect(footerRow.text()).toContain('€36,000.00')
+        expect(footerRow.text()).toContain('+€2,950.00')
+      }
+    })
+
+    it('should handle zero profit correctly', () => {
+      const wrapper = createWrapper({
+        instruments: [
+          {
+            id: 12,
+            symbol: 'ZERO',
+            name: 'Zero Profit',
+            providerName: ProviderName.FT,
+            currentValue: 1000,
+            totalInvestment: 1000,
+            baseCurrency: 'USD',
+          },
+        ],
+      })
+
+      const row = wrapper.find('tbody tr')
+      expect(row.text()).toContain('+$0.00')
+    })
+
+    it('should format different currencies correctly', () => {
+      const wrapper = createWrapper({
+        instruments: [
+          {
+            id: 13,
+            symbol: 'GBP_TEST',
+            name: 'GBP Asset',
+            providerName: ProviderName.FT,
+            currentPrice: 100.5,
+            totalInvestment: 1000,
+            currentValue: 1500,
+            baseCurrency: 'GBP',
+          },
+        ],
+      })
+
+      const row = wrapper.find('tbody tr')
+      expect(row.text()).toContain('£')
+    })
+  })
+
+  describe('mobile view', () => {
+    it('should render mobile card structure', () => {
+      const wrapper = createWrapper()
+      const mobileCard = wrapper.find('.mobile-instrument-card')
+
+      if (mobileCard.exists()) {
+        expect(mobileCard.find('.instrument-header').exists()).toBe(true)
+        expect(mobileCard.find('.instrument-metrics').exists()).toBe(true)
+        expect(mobileCard.find('.instrument-footer').exists()).toBe(true)
+      }
+    })
+
+    it('should display mobile totals card', () => {
+      const wrapper = createWrapper()
+      const mobileTotals = wrapper.find('.mobile-totals-card')
+
+      if (mobileTotals.exists()) {
+        expect(mobileTotals.find('.totals-header').exists()).toBe(true)
+        expect(mobileTotals.find('.totals-content').exists()).toBe(true)
+        expect(mobileTotals.text()).toContain('TOTAL')
+        expect(mobileTotals.text()).toContain('VALUE')
+        expect(mobileTotals.text()).toContain('INVESTED')
+        expect(mobileTotals.text()).toContain('PROFIT')
+      }
     })
   })
 })
