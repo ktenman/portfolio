@@ -29,7 +29,6 @@ class HistoricalPricesDataValidationTest {
 
   @BeforeEach
   fun setUp() {
-    // Set fixed clock to January 20, 2025
     clock =
       Clock.fixed(
       LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),

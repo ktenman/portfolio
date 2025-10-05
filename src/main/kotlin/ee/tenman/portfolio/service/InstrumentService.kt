@@ -1,6 +1,9 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -36,10 +39,113 @@ class InstrumentService(
       ), CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"), CacheEvict(
         value = [INSTRUMENT_CACHE],
         key = "'allInstruments'",
-      ),
+      ), CacheEvict(value = [SUMMARY_CACHE], allEntries = true), CacheEvict(
+        value = [TRANSACTION_CACHE],
+        allEntries = true,
+      ), CacheEvict(value = [ONE_DAY_CACHE], allEntries = true),
     ],
   )
-  fun saveInstrument(instrument: Instrument): Instrument = instrumentRepository.save(instrument)
+  fun saveInstrument(instrument: Instrument): Instrument {
+    val saved = instrumentRepository.save(instrument)
+    recalculateTransactionProfitsForInstrument(saved.id)
+    return saved
+  }
+
+  private fun recalculateTransactionProfitsForInstrument(instrumentId: Long) {
+    val updatedInstrument = instrumentRepository.findById(instrumentId).orElse(null) ?: return
+    val transactions = portfolioTransactionRepository.findAllByInstrumentId(instrumentId)
+
+    if (transactions.isNotEmpty()) {
+      transactions.forEach { it.instrument = updatedInstrument }
+
+      transactions
+        .groupBy { it.platform }
+        .forEach { (platform, platformTransactions) ->
+          calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate })
+        }
+
+      portfolioTransactionRepository.saveAll(transactions)
+    }
+  }
+
+  private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
+    val sortedTransactions = transactions.sortedBy { it.transactionDate }
+    var currentQuantity = BigDecimal.ZERO
+    var totalCost = BigDecimal.ZERO
+
+    sortedTransactions.forEach { transaction ->
+      when (transaction.transactionType) {
+        ee.tenman.portfolio.domain.TransactionType.BUY -> {
+          val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
+          transaction.realizedProfit = BigDecimal.ZERO
+          totalCost = totalCost.add(cost)
+          currentQuantity = currentQuantity.add(transaction.quantity)
+        }
+        ee.tenman.portfolio.domain.TransactionType.SELL -> {
+          val averageCost =
+            if (currentQuantity > BigDecimal.ZERO) {
+              totalCost.divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
+            } else {
+              BigDecimal.ZERO
+            }
+          transaction.averageCost = averageCost
+
+          val grossProfit =
+            transaction.quantity.multiply(transaction.price.subtract(averageCost))
+
+          transaction.realizedProfit = grossProfit.subtract(transaction.commission)
+          transaction.unrealizedProfit = BigDecimal.ZERO
+          transaction.remainingQuantity = BigDecimal.ZERO
+
+          if (currentQuantity > BigDecimal.ZERO) {
+            val sellRatio = transaction.quantity.divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
+            totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
+            currentQuantity = currentQuantity.subtract(transaction.quantity)
+          }
+        }
+      }
+    }
+
+    val currentPrice = sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO
+    val averageCost =
+      if (currentQuantity > BigDecimal.ZERO) {
+        totalCost.divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
+      } else {
+        BigDecimal.ZERO
+      }
+    val totalUnrealizedProfit =
+      if (currentQuantity > BigDecimal.ZERO && currentPrice > BigDecimal.ZERO) {
+        currentQuantity.multiply(currentPrice.subtract(averageCost))
+      } else {
+        BigDecimal.ZERO
+      }
+
+    val buyTransactions = sortedTransactions.filter { it.transactionType == ee.tenman.portfolio.domain.TransactionType.BUY }
+
+    if (currentQuantity <= BigDecimal.ZERO) {
+      buyTransactions.forEach {
+        it.remainingQuantity = BigDecimal.ZERO
+        it.unrealizedProfit = BigDecimal.ZERO
+        it.averageCost = it.price
+      }
+    } else {
+      val totalBuyQuantity = buyTransactions.sumOf { it.quantity }
+
+      buyTransactions.forEach { buyTx ->
+        val proportionalQuantity =
+          buyTx.quantity
+            .multiply(currentQuantity)
+            .divide(totalBuyQuantity, 10, java.math.RoundingMode.HALF_UP)
+
+        buyTx.remainingQuantity = proportionalQuantity
+        buyTx.averageCost = averageCost
+        buyTx.unrealizedProfit =
+          totalUnrealizedProfit
+            .multiply(proportionalQuantity)
+            .divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
+      }
+    }
+  }
 
   @Transactional
   @Caching(
@@ -86,7 +192,7 @@ class InstrumentService(
     val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
     val filteredTransactions = filterTransactionsByPlatforms(allTransactions, targetPlatforms)
 
-    if (!shouldIncludeInstrument(filteredTransactions, targetPlatforms)) {
+    if (!shouldIncludeInstrument(filteredTransactions)) {
       return if (targetPlatforms == null) instrument else null
     }
 
@@ -103,10 +209,7 @@ class InstrumentService(
       transactions
     }
 
-  private fun shouldIncludeInstrument(
-    filteredTransactions: List<PortfolioTransaction>,
-    targetPlatforms: Set<Platform>?,
-  ): Boolean = filteredTransactions.isNotEmpty()
+  private fun shouldIncludeInstrument(filteredTransactions: List<PortfolioTransaction>): Boolean = filteredTransactions.isNotEmpty()
 
   private fun applyInstrumentMetrics(
     instrument: Instrument,
@@ -132,12 +235,4 @@ class InstrumentService(
       instrument
     }
   }
-
-  fun findInstrument(id: Long): Instrument = getInstrumentById(id)
-
-  @Cacheable(value = [INSTRUMENT_CACHE], key = "#symbol", unless = "#result == null")
-  fun getInstrument(symbol: String): Instrument =
-    instrumentRepository
-      .findBySymbol(symbol)
-      .orElseThrow { RuntimeException("Instrument not found with symbol: $symbol") }
 }

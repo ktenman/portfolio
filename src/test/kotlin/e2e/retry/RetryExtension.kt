@@ -16,16 +16,13 @@ class RetryExtension : TestExecutionExceptionHandler {
     val testMethod = context.requiredTestMethod
     val testClass = context.requiredTestClass
 
-    // Get the Retry annotation from the method or class
     val retryAnnotation =
       testMethod.getAnnotation(Retry::class.java)
         ?: testClass.getAnnotation(Retry::class.java)
         ?: throw throwable
 
-    // Get the exceptions to retry on
     val allowedExceptions = retryAnnotation.onExceptions.toList()
 
-    // Check if current exception should be retried
     if (allowedExceptions.isEmpty() || allowedExceptions.any { it.isInstance(throwable) }) {
       val testName = "${testClass.name}.${testMethod.name}"
       val attempts = attemptsPerTest.computeIfAbsent(testName) { AtomicInteger(0) }
@@ -39,12 +36,12 @@ class RetryExtension : TestExecutionExceptionHandler {
           retryAnnotation.times,
         )
         log.info("Failure was: {}: {}", throwable.javaClass.simpleName, throwable.message)
-        return // Retry by not throwing
+        return
       }
 
       log.error("Test '{}' failed after {} attempts", testName, retryAnnotation.times)
     }
 
-    throw throwable // Re-throw if no more retries or exception not in allowed list
+    throw throwable
   }
 }

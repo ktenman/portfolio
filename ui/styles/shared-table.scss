@@ -19,7 +19,13 @@
   .btn {
     border-radius: 0;
     position: relative;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem !important;
+    line-height: 1;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: auto;
+    width: auto;
 
     &:first-child {
       border-top-left-radius: var(--radius-sm);
@@ -40,9 +46,9 @@
       z-index: 1;
     }
 
-    // Even more compact on desktop for icon-only
-    @media (min-width: 992px) {
-      padding: 0.25rem 0.375rem;
+    svg {
+      display: block;
+      margin: 0;
     }
   }
 }

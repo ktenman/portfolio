@@ -76,11 +76,17 @@ class DailyPriceService(
 
   @Transactional(readOnly = true)
   fun getLastPriceChange(instrument: Instrument): PriceChange? {
-    val recentPrices = dailyPriceRepository.findTop2ByInstrumentOrderByEntryDateDesc(instrument)
-    if (recentPrices.size < 2) return null
+    val recentPrices = dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(instrument)
+    if (recentPrices.isEmpty()) return null
 
     val currentPrice = recentPrices[0].closePrice
-    val previousPrice = recentPrices[1].closePrice
+    val previousPrice =
+      recentPrices
+      .drop(1)
+      .firstOrNull { it.closePrice != currentPrice }
+      ?.closePrice
+      ?: return null
+
     val changeAmount = currentPrice.subtract(previousPrice)
     val changePercent = calculateChangePercent(changeAmount, previousPrice)
 

@@ -51,16 +51,21 @@ class InstrumentManagementE2ETests {
     addButton.shouldBe(enabled).click()
 
     val symbolField = id("symbol").shouldBe(visible, Duration.ofSeconds(5))
+    symbolField.shouldBe(enabled)
     symbolField.shouldNotHave(text(DEFAULT_SYMBOL)).value = DEFAULT_SYMBOL
     assertThat(symbolField.value).isEqualTo(DEFAULT_SYMBOL)
 
     val nameField = id("name")
+    nameField.shouldBe(enabled)
     nameField.shouldNotHave(text(DEFAULT_NAME)).value = DEFAULT_NAME
     assertThat(nameField.value).isEqualTo(DEFAULT_NAME)
 
-    id("category").selectOption(DEFAULT_CATEGORY)
-    id("providerName").selectOption("Binance")
-    id("currency").selectOption(DEFAULT_CURRENCY)
+    id("category").shouldBe(enabled).selectOption(DEFAULT_CATEGORY)
+    id("providerName").shouldBe(enabled).selectOption("Binance")
+
+    val currencyField = id("baseCurrency")
+    currencyField.shouldBe(visible)
+    currencyField.shouldHave(value("EUR"))
 
     val saveButton = elements(tagName("button")).filter(text("Save")).first()
     assertThat(saveButton.isEnabled).isTrue()
@@ -73,39 +78,51 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
-  fun `should display success message when editing instrument with valid data`() {
+  fun `should display success message when editing instrument name and price`() {
     id("addNewInstrument").click()
     id("symbol").shouldNotHave(text("TSLA")).value = "TSLA"
     id("name").shouldNotHave(text("Tesla Inc.")).value = "Tesla Inc."
     id("category").selectOption("ETF")
     id("providerName").selectOption("Alpha Vantage")
-    id("currency").selectOption("EUR")
+    val priceField = id("currentPrice")
+    priceField.shouldBe(visible)
+    priceField.value = "250.00"
     elements(tagName("button")).filter(text("Save")).first().click()
 
     element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
     Thread.sleep(1000)
 
-    val editButtons = elements(tagName("button")).filter(text("Edit"))
+    val editButtons = elements(By.cssSelector("button[title='Edit']"))
     assertThat(editButtons.size()).isGreaterThan(0)
     editButtons.first().click()
 
-    val updatedSymbol = "GOOGL"
-    val updatedName = "Alphabet Inc."
+    val updatedName = "Tesla Motors Inc."
+    val updatedPrice = "275.50"
 
     val symbolField = id("symbol")
     symbolField.shouldBe(visible, Duration.ofSeconds(5))
-    symbolField.clear()
-    symbolField.value = updatedSymbol
-    symbolField.shouldHave(value(updatedSymbol))
+    assertThat(symbolField.getAttribute("disabled")).isNotNull()
 
     val nameField = id("name")
+    nameField.shouldBe(enabled)
     nameField.clear()
     nameField.value = updatedName
     nameField.shouldHave(value(updatedName))
 
-    id("category").selectOption("ETF")
-    id("providerName").selectOption("Alpha Vantage")
-    id("currency").selectOption("EUR")
+    val currentPriceField = id("currentPrice")
+    currentPriceField.shouldBe(enabled)
+    currentPriceField.clear()
+    currentPriceField.value = updatedPrice
+    currentPriceField.shouldHave(value(updatedPrice))
+
+    val categoryField = id("category")
+    assertThat(categoryField.getAttribute("disabled")).isNotNull()
+
+    val providerField = id("providerName")
+    assertThat(providerField.getAttribute("disabled")).isNotNull()
+
+    val currencyField = id("baseCurrency")
+    assertThat(currencyField.getAttribute("disabled")).isNotNull()
 
     val updateButton = elements(tagName("button")).filter(text("Update")).first()
     assertThat(updateButton.isEnabled).isTrue()
@@ -114,7 +131,7 @@ class InstrumentManagementE2ETests {
     val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
     successAlert.shouldHave(text("Instrument updated successfully."))
 
-    elements(tagName("td")).findBy(text(updatedSymbol)).shouldBe(visible)
+    elements(tagName("td")).findBy(text(updatedName)).shouldBe(visible)
   }
 
   @Test
@@ -124,7 +141,6 @@ class InstrumentManagementE2ETests {
     id("name").shouldNotHave(text("Bitcoin")).value = "Bitcoin"
     id("category").selectOption("CRYPTOCURRENCY")
     id("providerName").selectOption("Binance")
-    id("currency").selectOption("USD")
 
     val priceField = id("currentPrice")
     priceField.shouldBe(visible)
@@ -135,16 +151,22 @@ class InstrumentManagementE2ETests {
     element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
     Thread.sleep(1000)
 
-    val editButtons = elements(tagName("button")).filter(text("Edit"))
+    val editButtons = elements(By.cssSelector("button[title='Edit']"))
     assertThat(editButtons.size()).isGreaterThan(0)
     editButtons.last().click()
 
     val currentPriceField = id("currentPrice")
     currentPriceField.shouldBe(visible, Duration.ofSeconds(5))
+    currentPriceField.shouldBe(enabled)
     currentPriceField.shouldHave(value("45000.5"))
 
     currentPriceField.clear()
     currentPriceField.value = "48500.75"
+
+    val nameField = id("name")
+    nameField.shouldBe(enabled)
+    nameField.clear()
+    nameField.value = "Bitcoin (Updated)"
 
     val updateButton = elements(tagName("button")).filter(text("Update")).first()
     updateButton.click()
@@ -152,7 +174,7 @@ class InstrumentManagementE2ETests {
     val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
     successAlert.shouldHave(text("Instrument updated successfully."))
 
-    elements(tagName("td")).findBy(text("$48,500.75")).shouldBe(visible)
+    elements(tagName("td")).findBy(text("€48,500.75")).shouldBe(visible)
   }
 
   @Test

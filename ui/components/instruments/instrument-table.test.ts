@@ -109,14 +109,14 @@ describe('InstrumentTable', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
 
-      expect(rows[0].text()).toContain('STOCK')
+      expect(rows[0].text()).toContain('Stock')
     })
 
     it('should display category when type is not available', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
 
-      expect(rows[1].text()).toContain('CRYPTO')
+      expect(rows[1].text()).toContain('Crypto')
     })
 
     it('should display dash when neither type nor category is available', () => {

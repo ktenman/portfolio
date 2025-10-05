@@ -36,10 +36,8 @@ class HistoricalPricesServiceIT {
 
   @BeforeEach
   fun setup() {
-    // Reset WireMock before each test
     reset()
 
-    // Set clock to January 20, 2025 to make date range include test data
     val fixedClock =
       Clock.fixed(
       LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),

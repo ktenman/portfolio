@@ -76,12 +76,16 @@ docker-compose -f compose.yaml up -d                    # Start PostgreSQL & Red
 docker-compose -f docker-compose.local.yml build        # Build all services
 docker-compose -f docker-compose.local.yml up -d        # Run full stack
 
-# E2E test environment (RECOMMENDED)
-./test-runner.sh --e2e                                 # Setup + run E2E tests (default output + cleanup)
-./test-runner.sh --e2e --verbose                       # Setup + run E2E tests (detailed output + cleanup)
-./test-runner.sh --e2e --silent                        # Setup + run E2E tests (minimal output + cleanup)
-./test-runner.sh --e2e --keep                          # Setup + run E2E tests (keep services running)
-./test-runner.sh --setup                               # Setup environment only (no test execution)
+# Test Runner (RECOMMENDED - runs all tests)
+./test-runner.sh                    # Run ALL tests: backend + frontend + E2E (default)
+./test-runner.sh --unit             # Run backend unit + frontend UI tests only
+./test-runner.sh --e2e              # Run only E2E tests (with environment setup)
+./test-runner.sh --e2e --keep       # Run E2E tests and keep services running
+./test-runner.sh --parallel         # Run all tests in parallel mode
+./test-runner.sh --setup            # Setup E2E environment only (no tests)
+./test-runner.sh --summary          # Show test results summary
+./test-runner.sh --silent           # Run with minimal output
+./test-runner.sh --help             # Show all options
 
 # Manual E2E test environment (if needed)
 docker-compose -f compose.yaml down
@@ -154,41 +158,78 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 
 #### Unified Test Runner (`test-runner.sh`)
 
-A comprehensive test runner that combines unit tests, E2E tests, and environment setup. This script replaces the previous separate `e2e-test.sh` and provides all testing functionality in one place.
+A comprehensive test runner that runs ALL tests across the entire stack: backend unit tests, frontend UI tests, and E2E integration tests.
+
+**Test Categories:**
+
+1. **Backend Unit Tests** - Kotlin/Spring Boot tests via Gradle (~261 tests)
+2. **Frontend UI Tests** - Vue/TypeScript component tests via npm/Vitest (~414 tests)
+3. **E2E Tests** - Browser-based integration tests via Selenide (~14 tests)
 
 **Features:**
 
-- Runs unit tests and E2E tests separately or together
-- Automatically sets up the E2E environment when needed
-- Parses HTML test reports for accurate results
-- Shows formatted summary with colors and test statistics
-- Offers to clean up services after tests
-- Multiple modes for different testing scenarios
-- Combines functionality from both test-runner.sh and e2e-test.sh
+- Runs all test suites with a single command
+- Automatically sets up E2E environment (Docker, backend, frontend)
+- Parses test reports and displays unified summary
+- Shows total test count across all categories
+- Color-coded output with success rates and durations
+- Parallel execution mode for faster testing
+- Automatic cleanup of services after tests
 
 **Usage:**
 
 ```bash
-./test-runner.sh              # Run all tests with verbose output (default)
-./test-runner.sh --unit       # Run only unit tests
+./test-runner.sh              # Run ALL tests: backend + frontend + E2E (default)
+./test-runner.sh --unit       # Run backend unit + frontend UI tests only
 ./test-runner.sh --e2e        # Run only E2E tests with environment setup
+./test-runner.sh --parallel   # Run all tests in parallel mode
 ./test-runner.sh --summary    # Show summary of existing test results
 ./test-runner.sh --setup      # Setup E2E environment only (no tests)
 ./test-runner.sh --keep       # Keep services running after tests
 ./test-runner.sh --silent     # Minimal output mode
-./test-runner.sh --verbose    # Show detailed output (explicit verbose)
-./test-runner.sh --parallel   # Run tests with optimized parallel execution
-./test-runner.sh --help       # Show help message
+./test-runner.sh --help       # Show all options
 ```
 
-**Output:** The script displays a comprehensive test summary with:
+**Output Example:**
 
-- Separate E2E and Unit test statistics
-- Total tests, passed, failed, and ignored counts
-- Test duration and success rates
-- Specific failed test names when applicable
-- Overall execution time
-- Detailed E2E test class results when running E2E tests
+The script displays a comprehensive summary:
+
+```
+Test Results Summary
+
+  Backend Unit Tests:
+  - Total tests: 261
+  - Passed: 259
+  - Failed: 0
+  - Success rate: 100%
+
+  Frontend UI Tests:
+  - Total tests: 414
+  - Passed: 414
+  - Failed: 0
+  - Success rate: 100%
+
+  E2E Tests:
+  - Total tests: 14
+  - Passed: 11
+  - Ignored: 3
+  - Success rate: 100%
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Total Across All Categories:
+  - Total tests: 689
+  - Passed: 684
+  - Failed: 0
+  - Ignored: 5
+  - Success rate: 99%
+```
+
+**Technical Notes:**
+
+- E2E environment uses `CI=true` to run Vite in non-interactive mode
+- Frontend starts on port 61234, backend on 8081
+- Docker services (PostgreSQL, Redis) start automatically
+- Services cleanup automatically unless `--keep` is specified
 
 ### Development Tips
 

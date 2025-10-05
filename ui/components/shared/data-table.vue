@@ -291,8 +291,16 @@ const handleSort = (column: ColumnDefinition) => {
     }
   }
 }
+.desktop-table-wrapper {
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
 .table {
   font-size: 0.9rem;
+  margin-bottom: 0;
 }
 
 .table th,

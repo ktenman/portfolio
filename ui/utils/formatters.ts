@@ -1,6 +1,40 @@
 import { styleClasses } from './style-classes'
 import type { Instrument } from '../models/instrument'
 
+const ACRONYMS = [
+  'ETF',
+  'FT',
+  'API',
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CHF',
+  'CAD',
+  'AUD',
+  'CEO',
+  'CFO',
+  'IT',
+  'AI',
+]
+
+export const formatAcronym = (value: string | undefined | null): string => {
+  if (!value) return '-'
+
+  if (ACRONYMS.includes(value.toUpperCase())) {
+    return value.toUpperCase()
+  }
+
+  const withSpaces = value.replace(/_/g, ' ')
+  return withSpaces
+    .split(' ')
+    .map(word => {
+      if (ACRONYMS.includes(word.toUpperCase())) return word.toUpperCase()
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
+    .join(' ')
+}
+
 export const formatCurrencyWithSymbol = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '€0.00'
   return new Intl.NumberFormat('en-US', {

@@ -41,6 +41,7 @@ class InstrumentController(
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
   private val ftDataRetrievalJob: FtDataRetrievalJob,
   private val cacheManager: CacheManager,
+  private val transactionService: ee.tenman.portfolio.service.TransactionService,
 ) {
   @PostMapping
   @Loggable
@@ -105,7 +106,12 @@ class InstrumentController(
       cacheManager.getCache(cacheName)?.clear()
     }
 
-    return mapOf("status" to "Jobs triggered and caches cleared")
+    CoroutineScope(Dispatchers.Default).launch {
+      val allTransactions = transactionService.getAllTransactions()
+      transactionService.calculateTransactionProfits(allTransactions)
+    }
+
+    return mapOf("status" to "Jobs triggered, caches cleared, and transaction profits recalculated")
   }
 
   @Schema(description = "Financial instrument data transfer object")

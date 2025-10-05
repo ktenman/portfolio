@@ -786,6 +786,303 @@ class SummaryServiceTest {
       .isEqualByComparingTo("0.08000000")
   }
 
+  @Test
+  fun `calculateSummaryForDate should return existing summary for historical date when found`() {
+    val historicalDate = LocalDate.of(2024, 6, 15)
+    val existingSummary =
+      PortfolioDailySummary(
+        entryDate = historicalDate,
+        totalValue = BigDecimal("5000.00"),
+        xirrAnnualReturn = BigDecimal("0.12"),
+        totalProfit = BigDecimal("500.00"),
+        earningsPerDay = BigDecimal("1.64"),
+      )
+
+    whenever(portfolioDailySummaryRepository.findByEntryDate(historicalDate))
+      .thenReturn(existingSummary)
+
+    val result = summaryService.calculateSummaryForDate(historicalDate)
+
+    assertThat(result).isEqualTo(existingSummary)
+    verify(transactionService, never()).getAllTransactions()
+  }
+
+  @Test
+  fun `calculateSummaryForDate should use today branch when date is today`() {
+    val today = testDate
+    val fixedInstant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
+    whenever(clock.instant()).thenReturn(fixedInstant)
+
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = today.minusDays(5),
+        platform = Platform.TRADING212,
+      )
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
+
+    val portfolioMetrics =
+      InvestmentMetricsService.PortfolioMetrics(
+      totalValue = BigDecimal("1200.00"),
+      totalProfit = BigDecimal("200.00"),
+      xirrTransactions = mutableListOf(),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(today)))
+      .thenReturn(portfolioMetrics)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(today)))
+      .thenReturn(0.08)
+
+    val result = summaryService.calculateSummaryForDate(today)
+
+    assertThat(result.entryDate).isEqualTo(today)
+    assertThat(result.totalValue).isEqualByComparingTo("1200.00")
+    verify(portfolioDailySummaryRepository).findByEntryDate(today)
+  }
+
+  @Test
+  fun `saveDailySummary should create new summary when none exists`() {
+    val newDate = LocalDate.of(2024, 8, 1)
+    val newSummary =
+      PortfolioDailySummary(
+        entryDate = newDate,
+        totalValue = BigDecimal("1000.00"),
+        xirrAnnualReturn = BigDecimal("0.05"),
+        totalProfit = BigDecimal("50.00"),
+        earningsPerDay = BigDecimal("0.14"),
+      )
+
+    whenever(portfolioDailySummaryRepository.findByEntryDate(newDate)).thenReturn(null)
+    whenever(portfolioDailySummaryRepository.save(any<PortfolioDailySummary>())).thenReturn(newSummary)
+
+    val result = summaryService.saveDailySummary(newSummary)
+
+    assertThat(result).isEqualTo(newSummary)
+    verify(portfolioDailySummaryRepository).save(summaryCaptor.capture())
+    assertThat(summaryCaptor.value).isEqualTo(newSummary)
+  }
+
+  @Test
+  fun `saveDailySummary should update existing summary when found`() {
+    val existingDate = LocalDate.of(2024, 8, 1)
+    val existing =
+      PortfolioDailySummary(
+        entryDate = existingDate,
+        totalValue = BigDecimal("1000.00"),
+        xirrAnnualReturn = BigDecimal("0.05"),
+        totalProfit = BigDecimal("50.00"),
+        earningsPerDay = BigDecimal("0.14"),
+      ).apply {
+        id = 123L
+        version = 1
+      }
+
+    val updated =
+      PortfolioDailySummary(
+        entryDate = existingDate,
+        totalValue = BigDecimal("1200.00"),
+        xirrAnnualReturn = BigDecimal("0.07"),
+        totalProfit = BigDecimal("100.00"),
+        earningsPerDay = BigDecimal("0.23"),
+      )
+
+    whenever(portfolioDailySummaryRepository.findByEntryDate(existingDate)).thenReturn(existing)
+    whenever(portfolioDailySummaryRepository.save(any<PortfolioDailySummary>())).thenReturn(existing)
+
+    val result = summaryService.saveDailySummary(updated)
+
+    verify(portfolioDailySummaryRepository).save(summaryCaptor.capture())
+    val saved = summaryCaptor.value
+    assertThat(saved.id).isEqualTo(123L)
+    assertThat(saved.version).isEqualTo(1)
+    assertThat(saved.totalValue).isEqualByComparingTo(BigDecimal("1200.00"))
+    assertThat(saved.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("0.07"))
+    assertThat(saved.totalProfit).isEqualByComparingTo(BigDecimal("100.00"))
+    assertThat(saved.earningsPerDay).isEqualByComparingTo(BigDecimal("0.23"))
+  }
+
+  @Test
+  fun `calculateSummaryForDate should align existing today summary with current instruments`() {
+    val today = testDate
+    val fixedInstant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
+    whenever(clock.instant()).thenReturn(fixedInstant)
+
+    val existingSummary =
+      PortfolioDailySummary(
+        entryDate = today,
+        totalValue = BigDecimal("1000.00"),
+        xirrAnnualReturn = BigDecimal("0.05"),
+        totalProfit = BigDecimal("50.00"),
+        earningsPerDay = BigDecimal("0.14"),
+      ).apply {
+        id = 456L
+        version = 2
+      }
+
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = today.minusDays(5),
+        platform = Platform.TRADING212,
+      )
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(testTransaction))
+    whenever(portfolioDailySummaryRepository.findByEntryDate(today)).thenReturn(existingSummary)
+
+    val portfolioMetrics =
+      InvestmentMetricsService.PortfolioMetrics(
+      totalValue = BigDecimal("1200.00"),
+      totalProfit = BigDecimal("200.00"),
+      xirrTransactions = mutableListOf(),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(today)))
+      .thenReturn(portfolioMetrics)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(today)))
+      .thenReturn(0.08)
+
+    val result = summaryService.calculateSummaryForDate(today)
+
+    assertThat(result.id).isEqualTo(456L)
+    assertThat(result.version).isEqualTo(2)
+    assertThat(result.totalValue).isEqualByComparingTo("1200.00")
+    assertThat(result.totalProfit).isEqualByComparingTo("200.00")
+  }
+
+  @Test
+  fun `calculateSummaryForDate should use previous day summary when no transactions on date and values match`() {
+    val date = LocalDate.of(2024, 7, 15)
+    val previousDate = date.minusDays(1)
+
+    val previousSummary =
+      PortfolioDailySummary(
+        entryDate = previousDate,
+        totalValue = BigDecimal("2000.00"),
+        xirrAnnualReturn = BigDecimal("0.06"),
+        totalProfit = BigDecimal("100.00"),
+        earningsPerDay = BigDecimal("0.33"),
+      )
+
+    val oldTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("20"),
+        price = BigDecimal("100"),
+        transactionDate = date.minusDays(5),
+        platform = Platform.TRADING212,
+      )
+
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(oldTransaction))
+    whenever(portfolioDailySummaryRepository.findByEntryDate(date)).thenReturn(null)
+    whenever(portfolioDailySummaryRepository.findByEntryDate(previousDate)).thenReturn(previousSummary)
+
+    val portfolioMetrics =
+      InvestmentMetricsService.PortfolioMetrics(
+      totalValue = BigDecimal("2000.00"),
+      totalProfit = BigDecimal("100.00"),
+      xirrTransactions = mutableListOf(),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(portfolioMetrics)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date)))
+      .thenReturn(0.06)
+
+    val result = summaryService.calculateSummaryForDate(date)
+
+    assertThat(result.entryDate).isEqualTo(date)
+    assertThat(result.totalValue).isEqualByComparingTo("2000.00")
+    verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
+  }
+
+  @Test
+  fun `calculateSummaryForDate should calculate new summary when no transactions on date and no previous summary`() {
+    val date = LocalDate.of(2024, 7, 15)
+    val previousDate = date.minusDays(1)
+
+    val oldTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("20"),
+        price = BigDecimal("100"),
+        transactionDate = date.minusDays(5),
+        platform = Platform.TRADING212,
+      )
+
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(oldTransaction))
+    whenever(portfolioDailySummaryRepository.findByEntryDate(date)).thenReturn(null)
+    whenever(portfolioDailySummaryRepository.findByEntryDate(previousDate)).thenReturn(null)
+
+    val portfolioMetrics =
+      InvestmentMetricsService.PortfolioMetrics(
+      totalValue = BigDecimal("2000.00"),
+      totalProfit = BigDecimal("100.00"),
+      xirrTransactions = mutableListOf(),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(portfolioMetrics)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date)))
+      .thenReturn(0.06)
+
+    val result = summaryService.calculateSummaryForDate(date)
+
+    assertThat(result.entryDate).isEqualTo(date)
+    assertThat(result.totalValue).isEqualByComparingTo("2000.00")
+    verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
+    verify(investmentMetricsService).calculatePortfolioMetrics(any(), eq(date))
+  }
+
+  @Test
+  fun `calculateSummaryForDate should calculate new summary when values differ from previous day`() {
+    val date = LocalDate.of(2024, 7, 15)
+    val previousDate = date.minusDays(1)
+
+    val previousSummary =
+      PortfolioDailySummary(
+        entryDate = previousDate,
+        totalValue = BigDecimal("2000.00"),
+        xirrAnnualReturn = BigDecimal("0.06"),
+        totalProfit = BigDecimal("100.00"),
+        earningsPerDay = BigDecimal("0.33"),
+      )
+
+    val oldTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("20"),
+        price = BigDecimal("100"),
+        transactionDate = date.minusDays(5),
+        platform = Platform.TRADING212,
+      )
+
+    whenever(transactionService.getAllTransactions()).thenReturn(listOf(oldTransaction))
+    whenever(portfolioDailySummaryRepository.findByEntryDate(date)).thenReturn(null)
+    whenever(portfolioDailySummaryRepository.findByEntryDate(previousDate)).thenReturn(previousSummary)
+
+    val portfolioMetrics =
+      InvestmentMetricsService.PortfolioMetrics(
+      totalValue = BigDecimal("2100.00"),
+      totalProfit = BigDecimal("150.00"),
+      xirrTransactions = mutableListOf(),
+    )
+    whenever(investmentMetricsService.calculatePortfolioMetrics(any(), eq(date)))
+      .thenReturn(portfolioMetrics)
+    whenever(investmentMetricsService.calculateAdjustedXirr(any(), any(), eq(date)))
+      .thenReturn(0.07)
+
+    val result = summaryService.calculateSummaryForDate(date)
+
+    assertThat(result.entryDate).isEqualTo(date)
+    assertThat(result.totalValue).isEqualByComparingTo("2100.00")
+    assertThat(result.totalProfit).isEqualByComparingTo("150.00")
+    verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
+  }
+
   companion object {
     @JvmStatic
     fun earningsPerDayCalculationParams(): Stream<Arguments> =

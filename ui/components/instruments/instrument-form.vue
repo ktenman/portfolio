@@ -5,6 +5,7 @@
       label="Symbol"
       placeholder="Enter instrument symbol"
       :error="getFieldError('symbol')"
+      :disabled="!!initialData?.id"
       @update:model-value="updateField('symbol', $event)"
       @blur="touchField('symbol')"
     />
@@ -23,6 +24,7 @@
       :options="providerOptions"
       placeholder="Select Data Provider"
       :error="getFieldError('providerName')"
+      :disabled="!!initialData?.id"
       @update:model-value="updateField('providerName', $event)"
       @blur="touchField('providerName')"
     />
@@ -33,18 +35,16 @@
       :options="categoryOptions"
       placeholder="Select Instrument Category"
       :error="getFieldError('category')"
+      :disabled="!!initialData?.id"
       @update:model-value="updateField('category', $event)"
       @blur="touchField('category')"
     />
     <FormInput
-      :model-value="formData.baseCurrency"
+      :model-value="formData.baseCurrency || 'EUR'"
       label="Currency"
-      type="select"
-      :options="currencyOptions"
-      placeholder="Select Currency"
-      :error="getFieldError('baseCurrency')"
-      @update:model-value="updateField('baseCurrency', $event)"
-      @blur="touchField('baseCurrency')"
+      type="text"
+      disabled
+      placeholder="EUR"
     />
     <FormInput
       :model-value="formData.currentPrice"
@@ -80,19 +80,25 @@ const emit = defineEmits<{
 }>()
 
 const { formData, validateForm, updateField, touchField, getFieldError, resetForm } =
-  useFormValidation(instrumentSchema, props.initialData)
+  useFormValidation(instrumentSchema, {
+    ...props.initialData,
+    baseCurrency: props.initialData.baseCurrency || 'EUR',
+  })
 
 watch(
   () => props.initialData,
   newData => {
     if (newData) {
-      resetForm(newData)
+      resetForm({
+        ...newData,
+        baseCurrency: newData.baseCurrency || 'EUR',
+      })
     }
   },
   { deep: true }
 )
 
-const { providerOptions, categoryOptions, currencyOptions, loadAll } = useEnumValues()
+const { providerOptions, categoryOptions, loadAll } = useEnumValues()
 
 onMounted(() => {
   loadAll()
@@ -100,7 +106,10 @@ onMounted(() => {
 
 const handleSubmit = () => {
   if (validateForm()) {
-    emit('submit', formData as Partial<Instrument>)
+    emit('submit', {
+      ...formData,
+      baseCurrency: 'EUR',
+    } as Partial<Instrument>)
   } else {
     Object.keys(instrumentSchema.shape).forEach(field => touchField(field))
   }
