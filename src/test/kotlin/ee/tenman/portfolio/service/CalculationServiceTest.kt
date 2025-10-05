@@ -301,7 +301,7 @@ class CalculationServiceTest {
   }
 
   @Test
-  fun `calculateBatchXirrAsync processes single date successfully`() =
+  fun `calculateBatchXirrAsync processes single date successfully`() {
     runBlocking {
       val dates = listOf(today)
       val summary = createTestSummary(today)
@@ -316,9 +316,10 @@ class CalculationServiceTest {
       verify(portfolioSummaryService).calculateSummaryForDate(today)
       verify(portfolioSummaryService).saveDailySummary(summary)
     }
+  }
 
   @Test
-  fun `calculateBatchXirrAsync processes multiple dates successfully`() =
+  fun `calculateBatchXirrAsync processes multiple dates successfully`() {
     runBlocking {
       val dates =
         listOf(
@@ -340,9 +341,10 @@ class CalculationServiceTest {
       verify(portfolioSummaryService, times(3)).calculateSummaryForDate(any())
       verify(portfolioSummaryService, times(3)).saveDailySummary(any())
     }
+  }
 
   @Test
-  fun `calculateBatchXirrAsync handles calculation failure`() =
+  fun `calculateBatchXirrAsync handles calculation failure`() {
     runBlocking {
       val successDate = today
       val failDate = today.plusDays(1)
@@ -360,9 +362,10 @@ class CalculationServiceTest {
       assertThat(result.failedCalculations).hasSize(1)
       assertThat(result.failedCalculations[0]).contains("Failed for date")
     }
+  }
 
   @Test
-  fun `calculateBatchXirrAsync handles empty date list`() =
+  fun `calculateBatchXirrAsync handles empty date list`() {
     runBlocking {
       val result = calculationService.calculateBatchXirrAsync(emptyList())
 
@@ -370,6 +373,7 @@ class CalculationServiceTest {
       assertThat(result.failedCalculations).isEmpty()
       assertThat(result.duration).isGreaterThanOrEqualTo(0)
     }
+  }
 
   private fun createTestSummary(date: LocalDate): PortfolioDailySummary =
     PortfolioDailySummary(
@@ -528,7 +532,7 @@ class CalculationServiceTest {
   }
 
   @Test
-  fun `calculateBatchXirrAsync handles all failures correctly`() =
+  fun `calculateBatchXirrAsync handles all failures correctly`() {
     runBlocking {
       val dates = listOf(today, today.plusDays(1), today.plusDays(2))
 
@@ -544,9 +548,10 @@ class CalculationServiceTest {
       assertThat(result.failedCalculations).allMatch { it.contains("Failed for date") }
       assertThat(result.duration).isGreaterThanOrEqualTo(0)
     }
+  }
 
   @Test
-  fun `calculateBatchXirrAsync calculates duration correctly`() =
+  fun `calculateBatchXirrAsync calculates duration correctly`() {
     runBlocking {
       val dates = listOf(today)
       val summary = createTestSummary(today)
@@ -559,9 +564,10 @@ class CalculationServiceTest {
       assertThat(result.duration).isGreaterThanOrEqualTo(0)
       assertThat(result.duration).isLessThanOrEqualTo(endTime - startTime + 100)
     }
+  }
 
   @Test
-  fun `calculateBatchXirrAsync processes mixed success and failure scenarios`() =
+  fun `calculateBatchXirrAsync processes mixed success and failure scenarios`() {
     runBlocking {
       val date1 = today
       val date2 = today.plusDays(1)
@@ -585,15 +591,16 @@ class CalculationServiceTest {
       verify(portfolioSummaryService).saveDailySummary(summary3)
     }
 
-  @Test
-  fun `calculateRollingXirr throws exception when instrument not found`() {
-    whenever(instrumentRepository.findBySymbol("UNKNOWN")).thenReturn(Optional.empty())
+    @Test
+    fun `calculateRollingXirr throws exception when instrument not found`() {
+      whenever(instrumentRepository.findBySymbol("UNKNOWN")).thenReturn(Optional.empty())
 
-    val exception =
-      org.junit.jupiter.api.assertThrows<RuntimeException> {
-        calculationService.calculateRollingXirr("UNKNOWN")
-      }
+      val exception =
+        org.junit.jupiter.api.assertThrows<RuntimeException> {
+          calculationService.calculateRollingXirr("UNKNOWN")
+        }
 
-    assertThat(exception.message).contains("Instrument not found with symbol: UNKNOWN")
+      assertThat(exception.message).contains("Instrument not found with symbol: UNKNOWN")
+    }
   }
 }
