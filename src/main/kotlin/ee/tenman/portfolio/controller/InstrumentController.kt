@@ -38,8 +38,8 @@ import java.math.BigDecimal
 @Tag(name = "Instruments", description = "APIs for managing financial instruments")
 class InstrumentController(
   private val instrumentService: InstrumentService,
-  private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
-  private val ftDataRetrievalJob: FtDataRetrievalJob,
+  private val binanceDataRetrievalJob: BinanceDataRetrievalJob?,
+  private val ftDataRetrievalJob: FtDataRetrievalJob?,
   private val cacheManager: CacheManager,
   private val transactionService: ee.tenman.portfolio.service.TransactionService,
 ) {
@@ -94,12 +94,16 @@ class InstrumentController(
   @Loggable
   @Operation(summary = "Refresh prices from Binance and FT providers")
   fun refreshPrices(): Map<String, String> {
-    CoroutineScope(Dispatchers.Default).launch {
-      binanceDataRetrievalJob.execute()
+    binanceDataRetrievalJob?.let { job ->
+      CoroutineScope(Dispatchers.Default).launch {
+        job.execute()
+      }
     }
 
-    CoroutineScope(Dispatchers.Default).launch {
-      ftDataRetrievalJob.execute()
+    ftDataRetrievalJob?.let { job ->
+      CoroutineScope(Dispatchers.Default).launch {
+        job.execute()
+      }
     }
 
     listOf(INSTRUMENT_CACHE, SUMMARY_CACHE, TRANSACTION_CACHE).forEach { cacheName ->
