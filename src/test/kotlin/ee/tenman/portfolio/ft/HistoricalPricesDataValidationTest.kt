@@ -144,7 +144,7 @@ class HistoricalPricesDataValidationTest {
 
     expect(result.size).toEqual(1)
     val data = result[LocalDate.of(2025, 1, 13)]
-    expect(data?.open).toEqual(BigDecimal("101.00"))
+    expect(data?.open).notToEqualNull().toEqualNumerically(BigDecimal("101.00"))
     expect(data?.volume).toEqual(6000L)
   }
 

@@ -60,8 +60,8 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
-    expect(quantity).toEqual(BigDecimal("10"))
-    expect(averageCost).toEqual(BigDecimal("100.50"))
+    expect(quantity).toEqualNumerically(BigDecimal("10"))
+    expect(averageCost).toEqualNumerically(BigDecimal("100.50"))
   }
 
   @Test
@@ -82,14 +82,14 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqual(BigDecimal("15"))
+    expect(quantity).toEqualNumerically(BigDecimal("15"))
     val expectedTotalCost =
       BigDecimal("10")
         .multiply(BigDecimal("100"))
         .add(BigDecimal("5"))
       .add(BigDecimal("5").multiply(BigDecimal("120")).add(BigDecimal("5")))
     val expectedAvgCost = expectedTotalCost.divide(BigDecimal("15"), 10, RoundingMode.HALF_UP)
-    expect(averageCost).toEqual(expectedAvgCost)
+    expect(averageCost).toEqualNumerically(expectedAvgCost)
   }
 
   @Test
@@ -102,7 +102,7 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqual(BigDecimal("60"))
+    expect(quantity).toEqualNumerically(BigDecimal("60"))
     expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -116,8 +116,8 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqual(BigDecimal.ZERO)
-    expect(averageCost).toEqual(BigDecimal.ZERO)
+    expect(quantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(averageCost).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -131,8 +131,8 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
-    expect(quantity).toEqual(BigDecimal("10"))
-    expect(averageCost).toEqual(BigDecimal("101"))
+    expect(quantity).toEqualNumerically(BigDecimal("10"))
+    expect(averageCost).toEqualNumerically(BigDecimal("101"))
   }
 
   @Test
@@ -142,14 +142,14 @@ class InvestmentMetricsServiceTest {
 
     val result = investmentMetricsService.calculateCurrentValue(holdings, currentPrice)
 
-    expect(result).toEqual(BigDecimal("15050.00"))
+    expect(result).toEqualNumerically(BigDecimal("15050.00"))
   }
 
   @Test
   fun `should calculateCurrentValue with zero holdings`() {
     val result = investmentMetricsService.calculateCurrentValue(BigDecimal.ZERO, BigDecimal("150"))
 
-    expect(result).toEqual(BigDecimal.ZERO)
+    expect(result).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -160,7 +160,7 @@ class InvestmentMetricsServiceTest {
 
     val profit = investmentMetricsService.calculateProfit(holdings, averageCost, currentPrice)
 
-    expect(profit).toEqual(BigDecimal("2500"))
+    expect(profit).toEqualNumerically(BigDecimal("2500"))
   }
 
   @Test
@@ -171,7 +171,7 @@ class InvestmentMetricsServiceTest {
 
     val profit = investmentMetricsService.calculateProfit(holdings, averageCost, currentPrice)
 
-    expect(profit).toEqual(BigDecimal("-2000"))
+    expect(profit).toEqualNumerically(BigDecimal("-2000"))
   }
 
   @Test
@@ -181,7 +181,7 @@ class InvestmentMetricsServiceTest {
 
     val profit = investmentMetricsService.calculateProfit(holdings, price, price)
 
-    expect(profit).toEqual(BigDecimal.ZERO)
+    expect(profit).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -306,7 +306,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
 
-    expect(metrics.quantity).toEqual(BigDecimal("10"))
+    expect(metrics.quantity).toEqualNumerically(BigDecimal("10"))
     expect(metrics.totalInvestment).toBeGreaterThan(BigDecimal.ZERO)
     expect(metrics.currentValue).toBeGreaterThan(BigDecimal.ZERO)
   }
@@ -329,7 +329,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
 
-    expect(metrics.quantity).toEqual(BigDecimal("25"))
+    expect(metrics.quantity).toEqualNumerically(BigDecimal("25"))
     expect(metrics.totalInvestment).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -340,7 +340,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
 
-    expect(metrics.currentValue).toEqual(BigDecimal.ZERO)
+    expect(metrics.currentValue).toEqualNumerically(BigDecimal.ZERO)
     expect(metrics.profit).toBeLessThan(BigDecimal.ZERO)
   }
 
@@ -350,7 +350,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, transactions, testDate)
 
-    expect(metrics.quantity).toEqual(BigDecimal("10"))
+    expect(metrics.quantity).toEqualNumerically(BigDecimal("10"))
     expect(metrics.totalInvestment).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -448,7 +448,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
-    expect(metrics.totalValue).toEqual(BigDecimal.ZERO)
+    expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
   }
 
   private fun createBuyTransaction(
@@ -534,8 +534,8 @@ class InvestmentMetricsServiceTest {
         testDate,
       )
 
-    expect(metrics.quantity).toEqual(BigDecimal.ZERO)
-    expect(metrics.totalInvestment).toEqual(BigDecimal.ZERO)
+    expect(metrics.quantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(metrics.totalInvestment).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -691,7 +691,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
-    expect(metrics.totalValue).toEqual(BigDecimal.ZERO)
+    expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -704,7 +704,7 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqual(BigDecimal("20"))
+    expect(quantity).toEqualNumerically(BigDecimal("20"))
     expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -718,7 +718,7 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqual(BigDecimal("75"))
+    expect(quantity).toEqualNumerically(BigDecimal("75"))
     expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -729,7 +729,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
 
-    expect(metrics.currentValue).toEqual(BigDecimal.ZERO)
+    expect(metrics.currentValue).toEqualNumerically(BigDecimal.ZERO)
     expect(metrics.profit).toBeLessThan(BigDecimal.ZERO)
   }
 
@@ -744,15 +744,15 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
 
-    expect(metrics.quantity).toEqual(BigDecimal("5"))
+    expect(metrics.quantity).toEqualNumerically(BigDecimal("5"))
   }
 
   @Test
   fun `should calculatePortfolioMetrics with empty instrument groups returns empty metrics`() {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(emptyMap(), testDate)
 
-    expect(metrics.totalValue).toEqual(BigDecimal.ZERO)
-    expect(metrics.totalProfit).toEqual(BigDecimal.ZERO)
+    expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
+    expect(metrics.totalProfit).toEqualNumerically(BigDecimal.ZERO)
     expect(metrics.xirrTransactions).toBeEmpty()
   }
 
@@ -837,7 +837,7 @@ class InvestmentMetricsServiceTest {
       }
     }
 
-    expect(netQuantity).toEqual(BigDecimal("25"))
+    expect(netQuantity).toEqualNumerically(BigDecimal("25"))
   }
 
   @Test
@@ -856,7 +856,7 @@ class InvestmentMetricsServiceTest {
       }
     }
 
-    expect(netQuantity).toEqual(BigDecimal("-8"))
+    expect(netQuantity).toEqualNumerically(BigDecimal("-8"))
   }
 
   @Test
@@ -877,7 +877,7 @@ class InvestmentMetricsServiceTest {
       }
     }
 
-    expect(netQuantity).toEqual(BigDecimal("50"))
+    expect(netQuantity).toEqualNumerically(BigDecimal("50"))
   }
 
   @Test
@@ -890,7 +890,7 @@ class InvestmentMetricsServiceTest {
       }
     }
 
-    expect(netQuantity).toEqual(BigDecimal.ZERO)
+    expect(netQuantity).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -958,7 +958,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
-    expect(metrics.totalValue).toEqual(BigDecimal.ZERO)
+    expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -972,7 +972,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
-    expect(metrics.totalValue).toEqual(BigDecimal.ZERO)
+    expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -1006,7 +1006,7 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqual(BigDecimal("25"))
+    expect(quantity).toEqualNumerically(BigDecimal("25"))
     expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -1021,8 +1021,8 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
-    expect(quantity).toEqual(BigDecimal("10"))
-    expect(averageCost).toEqual(BigDecimal("100"))
+    expect(quantity).toEqualNumerically(BigDecimal("10"))
+    expect(averageCost).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -1035,7 +1035,7 @@ class InvestmentMetricsServiceTest {
 
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqual(BigDecimal("0.0005"))
+    expect(quantity).toEqualNumerically(BigDecimal("0.0005"))
     expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -1051,7 +1051,7 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
 
-    expect(metrics.quantity).toEqual(BigDecimal("3"))
+    expect(metrics.quantity).toEqualNumerically(BigDecimal("3"))
     expect(metrics.totalInvestment).toBeGreaterThan(BigDecimal.ZERO)
   }
 
@@ -1142,8 +1142,8 @@ class InvestmentMetricsServiceTest {
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
-    expect(metrics.totalValue).toEqual(BigDecimal.ZERO)
-    expect(metrics.totalProfit).toEqual(BigDecimal.ZERO)
+    expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
+    expect(metrics.totalProfit).toEqualNumerically(BigDecimal.ZERO)
   }
 
   companion object {

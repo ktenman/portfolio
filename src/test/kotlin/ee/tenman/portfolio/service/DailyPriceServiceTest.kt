@@ -57,7 +57,7 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getPrice(testInstrument, testDate)
 
-    expect(result).toEqual(BigDecimal("150.50"))
+    expect(result).toEqualNumerically(BigDecimal("150.50"))
   }
 
   @Test
@@ -127,10 +127,10 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.saveDailyPrice(newPriceData)
 
-    expect(result.closePrice).toEqual(BigDecimal("110.00"))
-    expect(result.openPrice).toEqual(BigDecimal("105.00"))
-    expect(result.highPrice).toEqual(BigDecimal("115.00"))
-    expect(result.lowPrice).toEqual(BigDecimal("104.00"))
+    expect(result.closePrice).toEqualNumerically(BigDecimal("110.00"))
+    expect(result.openPrice).notToEqualNull().toEqualNumerically(BigDecimal("105.00"))
+    expect(result.highPrice).notToEqualNull().toEqualNumerically(BigDecimal("115.00"))
+    expect(result.lowPrice).notToEqualNull().toEqualNumerically(BigDecimal("104.00"))
     expect(result.volume).toEqual(1500000L)
     verify(dailyPriceRepository).save(existingPrice)
   }
@@ -176,7 +176,7 @@ class DailyPriceServiceTest {
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
     expect(result).notToEqualNull()
-    expect(result!!.changeAmount).toEqual(BigDecimal("10.00"))
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
     expect(result.changePercent).toEqual(10.0)
   }
 
@@ -194,7 +194,7 @@ class DailyPriceServiceTest {
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
     expect(result).notToEqualNull()
-    expect(result!!.changeAmount).toEqual(BigDecimal("-10.00"))
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("-10.00"))
     expect(result.changePercent).toEqual(-10.0)
   }
 
@@ -232,7 +232,7 @@ class DailyPriceServiceTest {
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
     expect(result).notToEqualNull()
-    expect(result!!.changeAmount).toEqual(BigDecimal("10.00"))
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
     expect(result.changePercent).toEqual(10.0)
   }
 
@@ -284,7 +284,7 @@ class DailyPriceServiceTest {
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
     expect(result).notToEqualNull()
-    expect(result!!.changeAmount).toEqual(BigDecimal("3.50"))
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("3.50"))
     expect(result.changePercent).toEqual(3.5)
   }
 

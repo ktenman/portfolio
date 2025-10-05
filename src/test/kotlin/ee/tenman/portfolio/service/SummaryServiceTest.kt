@@ -154,8 +154,8 @@ class SummaryServiceTest {
 
     val summary = summaryService.getCurrentDaySummary()
 
-    expect(summary.totalProfit).toEqual(BigDecimal("-1762.39"))
-    expect(summary.earningsPerDay).toEqual(BigDecimal("0E-10"))
+    expect(summary.totalProfit).toEqualNumerically(BigDecimal("-1762.39"))
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("0E-10"))
   }
 
   @Test
@@ -166,10 +166,10 @@ class SummaryServiceTest {
     val summary = summaryService.calculateSummaryForDate(date)
 
     expect(summary.entryDate).toEqual(date)
-    expect(summary.totalValue).toEqual(BigDecimal.ZERO)
-    expect(summary.xirrAnnualReturn).toEqual(BigDecimal.ZERO)
-    expect(summary.totalProfit).toEqual(BigDecimal.ZERO)
-    expect(summary.earningsPerDay).toEqual(BigDecimal.ZERO)
+    expect(summary.totalValue).toEqualNumerically(BigDecimal.ZERO)
+    expect(summary.xirrAnnualReturn).toEqualNumerically(BigDecimal.ZERO)
+    expect(summary.totalProfit).toEqualNumerically(BigDecimal.ZERO)
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -217,9 +217,9 @@ class SummaryServiceTest {
         .multiply(BigDecimal("0.05"))
         .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
 
-    expect(summary.totalValue).toEqual(expectedTotal)
-    expect(summary.totalProfit).toEqual(expectedProfit)
-    expect(summary.earningsPerDay).toEqual(expectedEarningsPerDay)
+    expect(summary.totalValue).toEqualNumerically(expectedTotal)
+    expect(summary.totalProfit).toEqualNumerically(expectedProfit)
+    expect(summary.earningsPerDay).toEqualNumerically(expectedEarningsPerDay)
   }
 
   @Test
@@ -376,10 +376,10 @@ class SummaryServiceTest {
     expect(saved).toHaveSize(2)
 
     val firstSaved = saved.first { it.entryDate == existingDate }
-    expect(firstSaved.totalValue).toEqual(BigDecimal("200"))
-    expect(firstSaved.xirrAnnualReturn).toEqual(BigDecimal("0.06"))
-    expect(firstSaved.totalProfit).toEqual(BigDecimal("20"))
-    expect(firstSaved.earningsPerDay).toEqual(BigDecimal("0.02"))
+    expect(firstSaved.totalValue).toEqualNumerically(BigDecimal("200"))
+    expect(firstSaved.xirrAnnualReturn).toEqualNumerically(BigDecimal("0.06"))
+    expect(firstSaved.totalProfit).toEqualNumerically(BigDecimal("20"))
+    expect(firstSaved.earningsPerDay).toEqualNumerically(BigDecimal("0.02"))
 
     expect(saved.first { it.entryDate == newDate }).toEqual(newSummary)
   }
@@ -451,14 +451,14 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("25015.03"))
-    expect(summary.totalProfit).toEqual(BigDecimal("0E-10"))
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(BigDecimal("25015.03"))
+    expect(summary.totalProfit).toEqualNumerically(BigDecimal("0E-10"))
 
     val expectedEarningsPerDay =
       summary.totalValue
         .multiply(summary.xirrAnnualReturn)
         .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
-    expect(summary.earningsPerDay).toEqual(expectedEarningsPerDay)
+    expect(summary.earningsPerDay).toEqualNumerically(expectedEarningsPerDay)
   }
 
   @Test
@@ -490,15 +490,15 @@ class SummaryServiceTest {
 
     val summary = summaryService.getCurrentDaySummary()
 
-    expect(summary.totalValue).toEqual(BigDecimal("600.00"))
-    expect(summary.totalProfit).toEqual(BigDecimal("100.00"))
-    expect(summary.xirrAnnualReturn).toEqual(BigDecimal("0.07500000"))
+    expect(summary.totalValue).toEqualNumerically(BigDecimal("600.00"))
+    expect(summary.totalProfit).toEqualNumerically(BigDecimal("100.00"))
+    expect(summary.xirrAnnualReturn).toEqualNumerically(BigDecimal("0.07500000"))
 
     val expectedEarningsPerDay =
       summary.totalValue
         .multiply(summary.xirrAnnualReturn)
         .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
-    expect(summary.earningsPerDay).toEqual(expectedEarningsPerDay)
+    expect(summary.earningsPerDay).toEqualNumerically(expectedEarningsPerDay)
   }
 
   @Test
@@ -628,9 +628,9 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(expectedTotalValue)
-    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqual(expectedTotalProfit)
-    expect(summary.xirrAnnualReturn).toEqual(BigDecimal(xirrValue).setScale(8, RoundingMode.HALF_UP))
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(expectedTotalValue)
+    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(expectedTotalProfit)
+    expect(summary.xirrAnnualReturn).toEqualNumerically(BigDecimal(xirrValue).setScale(8, RoundingMode.HALF_UP))
   }
 
   @Test
@@ -687,9 +687,9 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("1560.00"))
-    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("360.00"))
-    expect(summary.xirrAnnualReturn).toEqual(BigDecimal("0.12000000"))
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(BigDecimal("1560.00"))
+    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(BigDecimal("360.00"))
+    expect(summary.xirrAnnualReturn).toEqualNumerically(BigDecimal("0.12000000"))
   }
 
   @Test
@@ -751,9 +751,9 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("2225.00"))
-    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("175.00"))
-    expect(summary.xirrAnnualReturn).toEqual(BigDecimal("0.08000000"))
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(BigDecimal("2225.00"))
+    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(BigDecimal("175.00"))
+    expect(summary.xirrAnnualReturn).toEqualNumerically(BigDecimal("0.08000000"))
   }
 
   @Test
@@ -808,7 +808,7 @@ class SummaryServiceTest {
     val result = summaryService.calculateSummaryForDate(today)
 
     expect(result.entryDate).toEqual(today)
-    expect(result.totalValue).toEqual(BigDecimal("1200.00"))
+    expect(result.totalValue).toEqualNumerically(BigDecimal("1200.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(today)
   }
 
@@ -867,10 +867,10 @@ class SummaryServiceTest {
     val saved = summaryCaptor.value
     expect(saved.id).toEqual(123L)
     expect(saved.version).toEqual(1)
-    expect(saved.totalValue).toEqual(BigDecimal("1200.00"))
-    expect(saved.xirrAnnualReturn).toEqual(BigDecimal("0.07"))
-    expect(saved.totalProfit).toEqual(BigDecimal("100.00"))
-    expect(saved.earningsPerDay).toEqual(BigDecimal("0.23"))
+    expect(saved.totalValue).toEqualNumerically(BigDecimal("1200.00"))
+    expect(saved.xirrAnnualReturn).toEqualNumerically(BigDecimal("0.07"))
+    expect(saved.totalProfit).toEqualNumerically(BigDecimal("100.00"))
+    expect(saved.earningsPerDay).toEqualNumerically(BigDecimal("0.23"))
   }
 
   @Test
@@ -918,8 +918,8 @@ class SummaryServiceTest {
 
     expect(result.id).toEqual(456L)
     expect(result.version).toEqual(2)
-    expect(result.totalValue).toEqual(BigDecimal("1200.00"))
-    expect(result.totalProfit).toEqual(BigDecimal("200.00"))
+    expect(result.totalValue).toEqualNumerically(BigDecimal("1200.00"))
+    expect(result.totalProfit).toEqualNumerically(BigDecimal("200.00"))
   }
 
   @Test
@@ -964,7 +964,7 @@ class SummaryServiceTest {
     val result = summaryService.calculateSummaryForDate(date)
 
     expect(result.entryDate).toEqual(date)
-    expect(result.totalValue).toEqual(BigDecimal("2000.00"))
+    expect(result.totalValue).toEqualNumerically(BigDecimal("2000.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
   }
 
@@ -1001,7 +1001,7 @@ class SummaryServiceTest {
     val result = summaryService.calculateSummaryForDate(date)
 
     expect(result.entryDate).toEqual(date)
-    expect(result.totalValue).toEqual(BigDecimal("2000.00"))
+    expect(result.totalValue).toEqualNumerically(BigDecimal("2000.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
     verify(investmentMetricsService).calculatePortfolioMetrics(any(), eq(date))
   }
@@ -1048,8 +1048,8 @@ class SummaryServiceTest {
     val result = summaryService.calculateSummaryForDate(date)
 
     expect(result.entryDate).toEqual(date)
-    expect(result.totalValue).toEqual(BigDecimal("2100.00"))
-    expect(result.totalProfit).toEqual(BigDecimal("150.00"))
+    expect(result.totalValue).toEqualNumerically(BigDecimal("2100.00"))
+    expect(result.totalProfit).toEqualNumerically(BigDecimal("150.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
   }
 

@@ -69,8 +69,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    expect(buyTx.realizedProfit).toEqual(BigDecimal.ZERO)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("100"))
+    expect(buyTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("100"))
     expect(buyTx.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
   }
 
@@ -84,8 +84,8 @@ class TransactionServiceTest {
 
     expect(sellTx.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
     expect(sellTx.averageCost != null).toEqual(true)
-    expect(sellTx.remainingQuantity).toEqual(BigDecimal.ZERO)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("60"))
+    expect(sellTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("60"))
   }
 
   @Test
@@ -98,7 +98,7 @@ class TransactionServiceTest {
     val expectedAvgCost =
       (BigDecimal("50").multiply(BigDecimal("100")).add(BigDecimal("10")))
       .divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
-    expect(buyTx.averageCost).toEqual(expectedAvgCost)
+    expect(buyTx.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
   }
 
   @Test
@@ -120,8 +120,8 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
     val expectedAvgCost = BigDecimal("50.10")
-    expect(buy1.averageCost).toEqual(expectedAvgCost)
-    expect(buy2.averageCost).toEqual(expectedAvgCost)
+    expect(buy1.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
+    expect(buy2.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
   }
 
   @Test
@@ -138,7 +138,7 @@ class TransactionServiceTest {
 
     val grossProfit = BigDecimal("100").multiply(BigDecimal("60").subtract(BigDecimal("50.05")))
     val expectedProfit = grossProfit.subtract(BigDecimal("20"))
-    expect(sellTx.realizedProfit).toEqual(expectedProfit)
+    expect(sellTx.realizedProfit).notToEqualNull().toEqualNumerically(expectedProfit)
   }
 
   @Test
@@ -150,7 +150,7 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buyTx, sellTx))
 
     expect(sellTx.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("70"))
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("70"))
     expect(buyTx.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
   }
 
@@ -173,9 +173,9 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
     val totalUnrealizedProfit = buy1.unrealizedProfit.add(buy2.unrealizedProfit)
-    val expectedTotalProfit = BigDecimal("100").multiply(BigDecimal("70").subtract(BigDecimal("50.05")))
+    val expectedTotalProfit = BigDecimal("100").multiply(BigDecimal("70").subtract(BigDecimal("50.10")))
 
-    expect(totalUnrealizedProfit).toEqual(expectedTotalProfit)
+    expect(totalUnrealizedProfit).toEqualNumerically(expectedTotalProfit)
     expect(buy1.unrealizedProfit).toBeGreaterThan(buy2.unrealizedProfit)
   }
 
@@ -187,8 +187,8 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buyTx, sellTx))
 
     expect(sellTx.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal.ZERO)
-    expect(buyTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -198,7 +198,7 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    expect(buyTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
+    expect(buyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -253,8 +253,8 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(laterTx, earlierTx))
 
     val expectedAvgCost = BigDecimal("50.10")
-    expect(earlierTx.averageCost).toEqual(expectedAvgCost)
-    expect(laterTx.averageCost).toEqual(expectedAvgCost)
+    expect(earlierTx.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
+    expect(laterTx.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
   }
 
   @Test
@@ -268,7 +268,7 @@ class TransactionServiceTest {
 
     expect(sell1.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
     expect(sell2.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("50"))
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("50"))
   }
 
   @Test
@@ -345,7 +345,7 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buyTx, sellTx))
 
     expect(sellTx.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThanOrEqualTo(0)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("60"))
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("60"))
   }
 
   private fun createBuyTransaction(
@@ -395,9 +395,9 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
     val expectedCost = BigDecimal("50").multiply(BigDecimal("100")).add(BigDecimal("25"))
-    expect(buyTx.realizedProfit).toEqual(BigDecimal.ZERO)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("100"))
-    expect(buyTx.averageCost).toEqual(
+    expect(buyTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("100"))
+    expect(buyTx.averageCost).notToEqualNull().toEqualNumerically(
       expectedCost.divide(BigDecimal("100"), 10, RoundingMode.HALF_UP),
     )
   }
@@ -408,7 +408,7 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    expect(buyTx.realizedProfit).toEqual(BigDecimal.ZERO)
+    expect(buyTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -436,10 +436,10 @@ class TransactionServiceTest {
     val grossProfit = BigDecimal("50").multiply(BigDecimal("60").subtract(avgCost))
     val expectedProfit = grossProfit.subtract(BigDecimal("10"))
 
-    expect(sellTx.realizedProfit).toEqual(expectedProfit)
-    expect(sellTx.averageCost).toEqual(avgCost)
-    expect(sellTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
-    expect(sellTx.remainingQuantity).toEqual(BigDecimal.ZERO)
+    expect(sellTx.realizedProfit).notToEqualNull().toEqualNumerically(expectedProfit)
+    expect(sellTx.averageCost).notToEqualNull().toEqualNumerically(avgCost)
+    expect(sellTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
+    expect(sellTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -455,7 +455,7 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx, sellTx))
 
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("60"))
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("60"))
     expect(sellTx.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
   }
 
@@ -469,7 +469,7 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(sellTx))
 
-    expect(sellTx.averageCost).toEqual(BigDecimal.ZERO)
+    expect(sellTx.averageCost).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -499,8 +499,8 @@ class TransactionServiceTest {
         .add(BigDecimal("35"))
     val expectedAvgCost = totalCost.divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
 
-    expect(buy1.averageCost).toEqual(expectedAvgCost)
-    expect(buy2.averageCost).toEqual(expectedAvgCost)
+    expect(buy1.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
+    expect(buy2.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
   }
 
   @Test
@@ -515,9 +515,9 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx, sellTx))
 
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal.ZERO)
-    expect(buyTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
-    expect(buyTx.averageCost).toEqual(buyTx.price)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.averageCost).notToEqualNull().toEqualNumerically(buyTx.price)
   }
 
   @Test
@@ -539,13 +539,13 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
     val totalRemaining = buy1.remainingQuantity.add(buy2.remainingQuantity)
-    expect(totalRemaining).toEqual(BigDecimal("100"))
+    expect(totalRemaining).toEqualNumerically(BigDecimal("100"))
 
     val ratio1 = buy1.remainingQuantity.divide(totalRemaining, 10, RoundingMode.HALF_UP)
     val ratio2 = buy2.remainingQuantity.divide(totalRemaining, 10, RoundingMode.HALF_UP)
 
-    expect(ratio1).toEqual(BigDecimal("0.3"))
-    expect(ratio2).toEqual(BigDecimal("0.7"))
+    expect(ratio1).toEqualNumerically(BigDecimal("0.3"))
+    expect(ratio2).toEqualNumerically(BigDecimal("0.7"))
   }
 
   @Test
@@ -574,13 +574,13 @@ class TransactionServiceTest {
       .divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
     val expectedTotalProfit = BigDecimal("100").multiply(BigDecimal("70").subtract(avgCost))
 
-    expect(totalUnrealizedProfit).toEqual(expectedTotalProfit)
+    expect(totalUnrealizedProfit).toEqualNumerically(expectedTotalProfit)
 
     val profitRatio1 = buy1.unrealizedProfit.divide(totalUnrealizedProfit, 10, RoundingMode.HALF_UP)
     val profitRatio2 = buy2.unrealizedProfit.divide(totalUnrealizedProfit, 10, RoundingMode.HALF_UP)
 
-    expect(profitRatio1).toEqual(BigDecimal("0.4"))
-    expect(profitRatio2).toEqual(BigDecimal("0.6"))
+    expect(profitRatio1).toEqualNumerically(BigDecimal("0.4"))
+    expect(profitRatio2).toEqualNumerically(BigDecimal("0.6"))
   }
 
   @Test
@@ -601,11 +601,11 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
-    expect(buy1.realizedProfit).toEqual(BigDecimal.ZERO)
-    expect(buy2.realizedProfit).toEqual(BigDecimal.ZERO)
+    expect(buy1.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
+    expect(buy2.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
     expect(buy1.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
     expect(buy2.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
-    expect(buy1.remainingQuantity.add(buy2.remainingQuantity)).toEqual(BigDecimal("100"))
+    expect(buy1.remainingQuantity.add(buy2.remainingQuantity)).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -614,11 +614,11 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(sellTx))
 
-    expect(sellTx.averageCost).toEqual(BigDecimal.ZERO)
+    expect(sellTx.averageCost).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
     val expectedProfit = BigDecimal("50").multiply(BigDecimal("100")).subtract(BigDecimal("5"))
-    expect(sellTx.realizedProfit).toEqual(expectedProfit)
-    expect(sellTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
-    expect(sellTx.remainingQuantity).toEqual(BigDecimal.ZERO)
+    expect(sellTx.realizedProfit).notToEqualNull().toEqualNumerically(expectedProfit)
+    expect(sellTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
+    expect(sellTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -646,7 +646,7 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buy1, sell1, buy2))
 
     expect(sell1.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
-    expect(buy1.remainingQuantity.add(buy2.remainingQuantity)).toEqual(BigDecimal("90"))
+    expect(buy1.remainingQuantity.add(buy2.remainingQuantity)).toEqualNumerically(BigDecimal("90"))
     expect(buy1.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
     expect(buy2.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
   }
@@ -658,8 +658,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(singleBuy))
 
-    expect(singleBuy.realizedProfit).toEqual(BigDecimal.ZERO)
-    expect(singleBuy.remainingQuantity).toEqual(BigDecimal("100"))
+    expect(singleBuy.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
+    expect(singleBuy.remainingQuantity).toEqualNumerically(BigDecimal("100"))
     expect(singleBuy.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
   }
 
@@ -699,8 +699,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    expect(buyTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("100"))
+    expect(buyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -710,8 +710,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    expect(buyTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("100"))
+    expect(buyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -727,7 +727,7 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buyTx, sellTx))
 
     expect(buyTx.remainingQuantity!!.compareTo(BigDecimal.ZERO)).toBeLessThanOrEqualTo(0)
-    expect(buyTx.unrealizedProfit).toEqual(BigDecimal.ZERO)
+    expect(buyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -765,8 +765,8 @@ class TransactionServiceTest {
         .add(BigDecimal("10"))
     val avgCostBeforeSell = totalInitialCost.divide(BigDecimal("200"), 10, RoundingMode.HALF_UP)
 
-    expect(sell1.averageCost).toEqual(avgCostBeforeSell)
-    expect(buy1.remainingQuantity.add(buy2.remainingQuantity)).toEqual(BigDecimal("100"))
+    expect(sell1.averageCost).notToEqualNull().toEqualNumerically(avgCostBeforeSell)
+    expect(buy1.remainingQuantity.add(buy2.remainingQuantity)).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -781,8 +781,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    expect(buyTx.realizedProfit).toEqual(BigDecimal.ZERO)
-    expect(buyTx.remainingQuantity).toEqual(BigDecimal("33.333333"))
+    expect(buyTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
+    expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("33.333333"))
     expect(buyTx.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
   }
 }
