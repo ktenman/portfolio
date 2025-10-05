@@ -29,6 +29,12 @@ UNIT_IGNORED=0
 UNIT_DURATION="0s"
 UNIT_SUCCESS_RATE="N/A"
 
+UI_TOTAL=0
+UI_PASSED=0
+UI_FAILED=0
+UI_DURATION="0s"
+UI_SUCCESS_RATE="N/A"
+
 E2E_TOTAL=0
 E2E_PASSED=0
 E2E_FAILED=0
@@ -86,26 +92,36 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Usage: $0 [OPTIONS]"
             echo ""
-            echo "Options:"
-            echo "  --unit        Run only unit tests"
+            echo "Test Options:"
+            echo "  --unit        Run backend unit tests + frontend UI tests"
             echo "  --e2e         Run only E2E tests (includes environment setup)"
-            echo "  --all         Run all tests (default)"
+            echo "  --all         Run all tests: backend + frontend + E2E (default)"
+            echo ""
+            echo "Test Categories:"
+            echo "  Backend Unit Tests    Kotlin/Spring Boot tests via Gradle"
+            echo "  Frontend UI Tests     Vue/TypeScript tests via npm/Vitest"
+            echo "  E2E Tests            Browser-based integration tests via Selenide"
+            echo ""
+            echo "Execution Options:"
             echo "  --parallel    Run tests with optimized parallel execution"
+            echo "  --silent      Minimal output"
+            echo "  --verbose     Show detailed output (default)"
+            echo "  --keep        Keep services running after tests"
+            echo ""
+            echo "Utility Options:"
             echo "  --summary     Show summary of existing test results"
             echo "  --setup       Setup E2E environment only (no tests)"
-            echo "  --keep        Keep services running after tests"
-            echo "  --silent      Minimal output"
-            echo "  --verbose     Show detailed output (opposite of --silent)"
             echo "  --help        Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0                    # Run all tests with summary"
-            echo "  $0 --parallel         # Run tests with parallel optimization"
-            echo "  $0 --unit             # Run only unit tests"
-            echo "  $0 --e2e --keep       # Run E2E tests and keep services"
-            echo "  $0 --e2e --verbose    # Run E2E tests with detailed output"
-            echo "  $0 --setup            # Setup E2E environment only"
+            echo "  $0                    # Run all tests (backend + frontend + E2E)"
+            echo "  $0 --unit             # Run backend unit + frontend UI tests only"
+            echo "  $0 --e2e              # Run only E2E tests"
+            echo "  $0 --e2e --keep       # Run E2E tests and keep services running"
+            echo "  $0 --parallel         # Run all tests in parallel mode"
+            echo "  $0 --setup            # Setup E2E environment only (no tests)"
             echo "  $0 --summary          # Show test results summary only"
+            echo "  $0 --silent           # Run all tests with minimal output"
             exit 0
             ;;
         *)
@@ -218,7 +234,28 @@ parse_test_results() {
 display_test_summary() {
     echo ""
     echo -e "${RED}⏺${NC} ${GREEN}Test Results Summary${NC}"
-    
+
+    echo ""
+    echo -e "${BLUE}  Backend Unit Tests:${NC}"
+    echo "  - Total tests: $UNIT_TOTAL"
+    echo "  - Passed: $UNIT_PASSED"
+    echo "  - Failed: $UNIT_FAILED"
+    if [ "$UNIT_IGNORED" -gt 0 ] 2>/dev/null; then
+        echo "  - Ignored: $UNIT_IGNORED"
+    fi
+    echo "  - Duration: $UNIT_DURATION"
+    echo "  - Success rate: $UNIT_SUCCESS_RATE"
+
+    if [ "$UI_TOTAL" -gt 0 ]; then
+        echo ""
+        echo -e "${BLUE}  Frontend UI Tests:${NC}"
+        echo "  - Total tests: $UI_TOTAL"
+        echo "  - Passed: $UI_PASSED"
+        echo "  - Failed: $UI_FAILED"
+        echo "  - Duration: $UI_DURATION"
+        echo "  - Success rate: $UI_SUCCESS_RATE"
+    fi
+
     echo ""
     echo -e "${BLUE}  E2E Tests:${NC}"
     echo "  - Total tests: $E2E_TOTAL"
@@ -229,17 +266,26 @@ display_test_summary() {
     fi
     echo "  - Duration: $E2E_DURATION"
     echo "  - Success rate: $E2E_SUCCESS_RATE"
-    
-    echo ""
-    echo -e "${BLUE}  Unit Tests:${NC}"
-    echo "  - Total tests: $UNIT_TOTAL"
-    echo "  - Passed: $UNIT_PASSED"
-    echo "  - Failed: $UNIT_FAILED"
-    if [ "$UNIT_IGNORED" -gt 0 ] 2>/dev/null; then
-        echo "  - Ignored: $UNIT_IGNORED"
+
+    # Calculate and display totals
+    local total_tests=$((UNIT_TOTAL + UI_TOTAL + E2E_TOTAL))
+    local total_passed=$((UNIT_PASSED + UI_PASSED + E2E_PASSED))
+    local total_failed=$((UNIT_FAILED + UI_FAILED + E2E_FAILED))
+    local total_ignored=$((UNIT_IGNORED + E2E_IGNORED))
+
+    if [ $total_tests -gt 0 ]; then
+        echo ""
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE}  Total Across All Categories:${NC}"
+        echo "  - Total tests: $total_tests"
+        echo "  - Passed: $total_passed"
+        echo "  - Failed: $total_failed"
+        if [ $total_ignored -gt 0 ]; then
+            echo "  - Ignored: $total_ignored"
+        fi
+        local total_success_rate=$(awk "BEGIN {printf \"%.0f%%\", ($total_passed / $total_tests) * 100}")
+        echo "  - Success rate: $total_success_rate"
     fi
-    echo "  - Duration: $UNIT_DURATION"
-    echo "  - Success rate: $UNIT_SUCCESS_RATE"
     echo ""
 }
 
@@ -362,12 +408,20 @@ setup_e2e_environment() {
     
     # Step 4: Start Vue.js frontend
     print_info "Step 4: Starting Vue.js frontend..."
-    if [ "$VERBOSE_MODE" = true ]; then
-        npm run dev &
-    else
-        npm run dev > frontend.log 2>&1 &
-    fi
+    # Use daemon-style background with CI environment variable to prevent vite from expecting terminal
+    CI=true nohup npm run dev > frontend.log 2>&1 &
     FRONTEND_PID=$!
+
+    # Smart wait for vite to be ready (check every second for up to 15 seconds)
+    for i in {1..15}; do
+        if lsof -ti:61234 > /dev/null 2>&1; then
+            if [ "$SILENT_MODE" = false ]; then
+                print_success "Frontend process started on port 61234"
+            fi
+            break
+        fi
+        sleep 1
+    done
     
     # Step 5: Wait for services
     print_info "Step 5: Waiting for services to be ready..."
@@ -381,6 +435,12 @@ setup_e2e_environment() {
     # Wait for frontend
     wait_for_service "http://localhost:61234" "Frontend" 30 2
     if [ $? -ne 0 ]; then
+        print_error "Frontend logs:"
+        if [ -f frontend.log ]; then
+            tail -20 frontend.log
+        else
+            echo "No frontend.log file found"
+        fi
         return 1
     fi
     
@@ -399,40 +459,74 @@ setup_e2e_environment() {
 
 # Function to run unit tests
 run_unit_tests() {
-    print_info "Running unit tests..."
-    
+    print_info "Running backend and frontend unit tests..."
+
     # Clean unit test results
     rm -rf build/reports/tests/test
-    
+
     # Make sure E2E is not set
     unset E2E
-    
-    # Run all tests but E2E tests will be skipped without E2E environment variable
+
+    # Run backend unit tests
+    print_info "Running backend unit tests..."
     if [ "$SILENT_MODE" = false ]; then
         ./gradlew test
     else
         ./gradlew test > /dev/null 2>&1
     fi
-    
-    local status=$?
-    
-    if [ $status -eq 0 ]; then
-        print_success "Unit tests completed"
+
+    local backend_status=$?
+
+    if [ $backend_status -eq 0 ]; then
+        print_success "Backend unit tests completed"
     else
-        print_error "Unit tests failed"
+        print_error "Backend unit tests failed"
     fi
-    
-    # Copy unit test results to separate directory
+
+    # Copy backend unit test results to separate directory
     if [ -d "build/reports/tests/test" ]; then
         mkdir -p build/reports/tests/unit
         cp -r build/reports/tests/test/* build/reports/tests/unit/
     fi
-    
-    # Parse test results
+
+    # Parse backend test results
     local unit_test_report="build/reports/tests/unit/index.html"
     parse_test_results "$unit_test_report" "unit"
-    
-    return $status
+
+    # Run frontend UI tests
+    print_info "Running frontend UI tests..."
+    if [ "$SILENT_MODE" = false ]; then
+        npm test -- --run
+    else
+        npm test -- --run > /dev/null 2>&1
+    fi
+
+    local frontend_status=$?
+
+    if [ $frontend_status -eq 0 ]; then
+        print_success "Frontend UI tests completed"
+    else
+        print_error "Frontend UI tests failed"
+    fi
+
+    # Parse UI test results from junit.xml
+    if [ -f "test-results/junit.xml" ]; then
+        UI_TOTAL=$(grep -o 'tests="[0-9]*"' test-results/junit.xml | head -1 | grep -o '[0-9]*')
+        UI_FAILED=$(grep -o 'failures="[0-9]*"' test-results/junit.xml | head -1 | grep -o '[0-9]*')
+        UI_PASSED=$((UI_TOTAL - UI_FAILED))
+        local ui_time=$(grep -o 'time="[0-9.]*"' test-results/junit.xml | head -1 | grep -o '[0-9.]*')
+        UI_DURATION="${ui_time}s"
+        if [ "$UI_TOTAL" -gt 0 ]; then
+            UI_SUCCESS_RATE=$(awk "BEGIN {printf \"%.0f%%\", ($UI_PASSED / $UI_TOTAL) * 100}")
+        fi
+    fi
+
+    # Return failure if either backend or frontend tests failed
+    if [ $backend_status -ne 0 ] || [ $frontend_status -ne 0 ]; then
+        return 1
+    fi
+
+    return 0
 }
 
 # Function to run E2E tests
@@ -689,16 +783,16 @@ main() {
     
     # Check both exit codes and parsed failure counts
     local has_failures=false
-    if [ $unit_test_status -ne 0 ] || [ $e2e_test_status -ne 0 ] || [ "$UNIT_FAILED" -gt 0 ] 2>/dev/null || [ "$E2E_FAILED" -gt 0 ] 2>/dev/null; then
+    if [ $unit_test_status -ne 0 ] || [ $e2e_test_status -ne 0 ] || [ "$UNIT_FAILED" -gt 0 ] 2>/dev/null || [ "$UI_FAILED" -gt 0 ] 2>/dev/null || [ "$E2E_FAILED" -gt 0 ] 2>/dev/null; then
         has_failures=true
     fi
-    
+
     if [ "$has_failures" = false ]; then
         print_success "🎉 All tests passed!"
     else
         print_error "❌ Some tests failed"
         if [ $unit_test_status -ne 0 ] || [ "$UNIT_FAILED" -gt 0 ] 2>/dev/null; then
-            echo "  - Unit tests failed (exit code: $unit_test_status, failures: ${UNIT_FAILED:-0})"
+            echo "  - Backend unit tests failed (exit code: $unit_test_status, failures: ${UNIT_FAILED:-0})"
             # Show failed unit tests immediately
             local unit_failed=$(extract_failed_tests "build/reports/tests/unit/index.html")
             if [ -n "$unit_failed" ]; then
@@ -708,6 +802,9 @@ main() {
                     echo "      ❌ $test"
                 done
             fi
+        fi
+        if [ "$UI_FAILED" -gt 0 ] 2>/dev/null; then
+            echo "  - Frontend UI tests failed (failures: ${UI_FAILED})"
         fi
         if [ $e2e_test_status -ne 0 ] || [ "$E2E_FAILED" -gt 0 ] 2>/dev/null; then
             echo "  - E2E tests failed (exit code: $e2e_test_status, failures: ${E2E_FAILED:-0})"

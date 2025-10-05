@@ -37,7 +37,6 @@ val telegramBotsVersion = "6.9.7.1"
 val googleCloudVisionVersion = "3.73.0"
 val coroutinesVersion = "1.10.2"
 val mockitoKotlinVersion = "6.1.0"
-val kotestVersion = "6.0.3"
 val archUnitVersion = "1.4.1"
 
 extra["springCloudVersion"] = springCloudVersion
@@ -86,9 +85,6 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
-  testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-  testImplementation("io.kotest:kotest-property:$kotestVersion")
-  testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
   testImplementation("com.tngtech.archunit:archunit-junit5:$archUnitVersion")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

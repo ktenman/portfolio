@@ -7,8 +7,6 @@ import java.time.LocalDate
 
 @Repository
 interface PortfolioDailySummaryRepository : JpaRepository<PortfolioDailySummary, Long> {
-  // NOTE: save() is already provided by JpaRepository - removed redundant declaration
-
   fun findAllByEntryDateIn(dates: List<LocalDate>): List<PortfolioDailySummary>
 
   fun findAllByEntryDateBetween(

@@ -26,6 +26,7 @@
           </span>
         </td>
         <td class="fw-bold text-nowrap">{{ formatPercentageFromDecimal(totalXirr) }}</td>
+        <td></td>
       </tr>
     </template>
     <template #mobile-card="{ item }">
@@ -44,13 +45,13 @@
               </span>
             </div>
           </div>
-          <!-- <button
+          <button
             class="btn btn-sm btn-ghost btn-secondary btn-table-action"
             @click="$emit('edit', item)"
             title="Edit"
           >
-            <base-icon name="pencil" :size="16" />
-          </button> -->
+            <PenLine :size="16" />
+          </button>
         </div>
         <div class="instrument-metrics">
           <div class="metric-group">
@@ -148,7 +149,7 @@
     </template>
 
     <template #cell-type="{ item }">
-      {{ item.type || item.category || '-' }}
+      {{ formatAcronym(item.type || item.category) }}
     </template>
 
     <template #cell-currentPrice="{ item }">
@@ -173,22 +174,23 @@
       </span>
     </template>
 
-    <!-- <template #actions="{ item }">
+    <template #actions="{ item }">
       <div class="action-buttons">
         <button
           class="btn btn-sm btn-ghost btn-secondary btn-table-action"
           @click="$emit('edit', item)"
           title="Edit"
         >
-          Edit
+          <PenLine :size="16" />
         </button>
       </div>
-    </template> -->
+    </template>
   </data-table>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { PenLine } from 'lucide-vue-next'
 import DataTable from '../shared/data-table.vue'
 import { Instrument } from '../../models/instrument'
 import { instrumentColumns } from '../../config'
@@ -198,6 +200,7 @@ import {
   formatQuantity,
   formatPercentageFromDecimal,
   formatPriceChange,
+  formatAcronym,
 } from '../../utils/formatters'
 
 interface Props {
