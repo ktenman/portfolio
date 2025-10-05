@@ -66,7 +66,7 @@ describe('InstrumentForm', () => {
       expect(formInputs[1].props('modelValue')).toBeUndefined()
       expect(formInputs[2].props('modelValue')).toBeUndefined()
       expect(formInputs[3].props('modelValue')).toBeUndefined()
-      expect(formInputs[4].props('modelValue')).toBeUndefined()
+      expect(formInputs[4].props('modelValue')).toBe('EUR')
       expect(formInputs[5].props('modelValue')).toBeUndefined()
     })
   })
@@ -162,7 +162,7 @@ describe('InstrumentForm', () => {
       await form.trigger('submit')
 
       expect(wrapper.emitted('submit')).toBeTruthy()
-      expect(wrapper.emitted('submit')?.[0]).toEqual([initialData])
+      expect(wrapper.emitted('submit')?.[0]).toEqual([{ ...initialData, baseCurrency: 'EUR' }])
     })
 
     it('should emit submit event with currentPrice when provided', async () => {
@@ -181,7 +181,7 @@ describe('InstrumentForm', () => {
       await form.trigger('submit')
 
       expect(wrapper.emitted('submit')).toBeTruthy()
-      expect(wrapper.emitted('submit')?.[0]).toEqual([initialData])
+      expect(wrapper.emitted('submit')?.[0]).toEqual([{ ...initialData, baseCurrency: 'EUR' }])
     })
 
     it('should not emit submit event when required fields are missing', async () => {
@@ -214,9 +214,9 @@ describe('InstrumentForm', () => {
 
       const providerInput = wrapper.findAllComponents(FormInput)[2]
       const expectedOptions = [
-        { value: 'ALPHA_VANTAGE', text: 'Alpha vantage' },
+        { value: 'ALPHA_VANTAGE', text: 'Alpha Vantage' },
         { value: 'BINANCE', text: 'Binance' },
-        { value: 'FT', text: 'Ft' },
+        { value: 'FT', text: 'FT' },
       ]
 
       expect(providerInput.props('options')).toEqual(expectedOptions)
@@ -237,7 +237,7 @@ describe('InstrumentForm', () => {
       expect(formInputs[1].props('modelValue')).toBe('Ethereum')
       expect(formInputs[2].props('modelValue')).toBeUndefined()
       expect(formInputs[3].props('modelValue')).toBeUndefined()
-      expect(formInputs[4].props('modelValue')).toBeUndefined()
+      expect(formInputs[4].props('modelValue')).toBe('EUR')
       expect(formInputs[5].props('modelValue')).toBeUndefined()
     })
 

@@ -23,5 +23,5 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
 
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice>
 
-  fun findTop2ByInstrumentOrderByEntryDateDesc(instrument: Instrument): List<DailyPrice>
+  fun findTop10ByInstrumentOrderByEntryDateDesc(instrument: Instrument): List<DailyPrice>
 }

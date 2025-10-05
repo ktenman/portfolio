@@ -10,7 +10,6 @@ import java.time.temporal.ChronoUnit
 import kotlin.math.pow
 
 /**
- * Extended Internal Rate of Return (XIRR) calculator for irregular cash flows.
  * XIRR is the annualized return rate that makes the Net Present Value (NPV) of all cash flows equal to zero.
  * Used for calculating actual investment returns when transactions occur at irregular intervals.
  */
@@ -26,7 +25,6 @@ class Xirr(
   private val endDate = transactions.maxOf { it.date }
   private val startDate = transactions.minOf { it.date }
 
-  // Calculate years from transaction date to end date using 365.25 days/year (accounts for leap years)
   private val yearsToEnd = { date: LocalDate -> ChronoUnit.DAYS.between(date, endDate).toDouble() / 365.25 }
 
   fun getTransactions(): List<Transaction> = transactions
@@ -94,7 +92,6 @@ class Xirr(
 
   private fun createXirrFunction(): UnivariateDifferentiableFunction {
     return object : UnivariateDifferentiableFunction {
-      // Calculate NPV for a given rate - we're looking for the rate where NPV = 0
       override fun value(x: Double): Double {
         val npv = netPresentValue(x)
         log.debug("NPV for rate $x: $npv")

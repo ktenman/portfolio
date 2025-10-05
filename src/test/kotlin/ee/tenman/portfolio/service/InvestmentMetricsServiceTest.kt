@@ -485,6 +485,666 @@ class InvestmentMetricsServiceTest {
       commission = commission,
     )
 
+  @Test
+  fun `calculateInstrumentMetricsWithProfits with empty transactions returns empty metrics`() {
+    val metrics =
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        testInstrument,
+        emptyList(),
+        testDate,
+      )
+
+    assertThat(metrics).isEqualTo(InvestmentMetricsService.InstrumentMetrics.EMPTY)
+  }
+
+  @Test
+  fun `calculateInstrumentMetricsWithProfits with multiple platforms`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"), platform = Platform.LHV),
+        createBuyTransaction(quantity = BigDecimal("5"), price = BigDecimal("120"), platform = Platform.LIGHTYEAR),
+        createSellTransaction(quantity = BigDecimal("3"), price = BigDecimal("150"), platform = Platform.LHV),
+      )
+
+    val metrics =
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        testInstrument,
+        transactions,
+        testDate,
+      )
+
+    assertThat(metrics.quantity).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.totalInvestment).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.currentValue).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateInstrumentMetricsWithProfits with all positions sold`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+        createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("150")),
+      )
+
+    val metrics =
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        testInstrument,
+        transactions,
+        testDate,
+      )
+
+    assertThat(metrics.quantity).isEqualByComparingTo(BigDecimal.ZERO)
+    assertThat(metrics.totalInvestment).isEqualByComparingTo(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateAdjustedXirr with very short investment period applies damping`() {
+    val transactions =
+      listOf(
+        Transaction(-1000.0, testDate.minusDays(15)),
+        Transaction(1200.0, testDate),
+      )
+
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1200"), testDate)
+
+    assertThat(xirr).isLessThan(10.0)
+    assertThat(xirr).isGreaterThanOrEqualTo(0.0)
+  }
+
+  @Test
+  fun `calculateAdjustedXirr with investment period over 60 days has full damping`() {
+    val transactions =
+      listOf(
+        Transaction(-1000.0, testDate.minusDays(100)),
+        Transaction(1500.0, testDate),
+      )
+
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1500"), testDate)
+
+    assertThat(xirr).isBetween(-10.0, 10.0)
+  }
+
+  @Test
+  fun `calculateAdjustedXirr with exactly 60 days investment period`() {
+    val transactions =
+      listOf(
+        Transaction(-1000.0, testDate.minusDays(60)),
+        Transaction(1200.0, testDate),
+      )
+
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1200"), testDate)
+
+    assertThat(xirr).isBetween(-10.0, 10.0)
+  }
+
+  @Test
+  fun `calculateAdjustedXirr handles exception and returns zero`() {
+    val transactions =
+      listOf(
+        Transaction(-1000.0, testDate),
+        Transaction(1000.0, testDate),
+      )
+
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1000"), testDate)
+
+    assertThat(xirr).isEqualTo(0.0)
+  }
+
+  @Test
+  fun `buildXirrTransactions with negative current value omits final transaction`() {
+    val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
+
+    val xirrTransactions =
+      investmentMetricsService.buildXirrTransactions(
+        transactions,
+        BigDecimal("-100"),
+        testDate,
+      )
+
+    assertThat(xirrTransactions).hasSize(1)
+    assertThat(xirrTransactions[0].amount).isNegative()
+  }
+
+  @Test
+  fun `buildXirrTransactions with multiple buy and sell transactions`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("100"), price = BigDecimal("50"), date = testDate.minusDays(90)),
+        createBuyTransaction(quantity = BigDecimal("50"), price = BigDecimal("60"), date = testDate.minusDays(60)),
+        createSellTransaction(quantity = BigDecimal("30"), price = BigDecimal("70"), date = testDate.minusDays(30)),
+        createSellTransaction(quantity = BigDecimal("20"), price = BigDecimal("80"), date = testDate.minusDays(15)),
+      )
+    val currentValue = BigDecimal("10000")
+
+    val xirrTransactions = investmentMetricsService.buildXirrTransactions(transactions, currentValue, testDate)
+
+    assertThat(xirrTransactions).hasSize(5)
+    assertThat(xirrTransactions[0].amount).isNegative()
+    assertThat(xirrTransactions[1].amount).isNegative()
+    assertThat(xirrTransactions[2].amount).isPositive()
+    assertThat(xirrTransactions[3].amount).isPositive()
+    assertThat(xirrTransactions[4].amount).isEqualTo(10000.0)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics with fallback when unified calculation fails`() {
+    val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
+      .thenThrow(RuntimeException("Price not found"))
+      .thenReturn(BigDecimal("150"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.xirrTransactions).isNotEmpty()
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics aggregates multiple instruments with mixed transactions`() {
+    val instrument2 =
+      Instrument(
+        symbol = "TSLA",
+        name = "Tesla Inc.",
+        category = "Stock",
+        baseCurrency = "USD",
+        currentPrice = BigDecimal("700"),
+      ).apply { id = 2L }
+
+    val transactions1 =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+        createSellTransaction(quantity = BigDecimal("3"), price = BigDecimal("150")),
+      )
+
+    val transactions2 =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("5"), price = BigDecimal("600"), instrument = instrument2),
+      )
+
+    val instrumentGroups =
+      mapOf(
+        testInstrument to transactions1,
+        instrument2 to transactions2,
+      )
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any())).thenReturn(BigDecimal("150"))
+    whenever(dailyPriceService.getPrice(eq(instrument2), any())).thenReturn(BigDecimal("700"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.totalProfit).isNotNull()
+    assertThat(metrics.xirrTransactions).hasSizeGreaterThan(3)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics with negative holdings is excluded`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+        createSellTransaction(quantity = BigDecimal("15"), price = BigDecimal("120")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isEqualByComparingTo(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateCurrentHoldings with sell before buy returns zero`() {
+    val transactions =
+      listOf(
+        createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+        createBuyTransaction(quantity = BigDecimal("20"), price = BigDecimal("90")),
+      )
+
+    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+
+    assertThat(quantity).isEqualByComparingTo(BigDecimal("20"))
+    assertThat(averageCost).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateCurrentHoldings with partial sell reduces cost proportionally`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("100"), price = BigDecimal("50")),
+        createSellTransaction(quantity = BigDecimal("25"), price = BigDecimal("60")),
+      )
+
+    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+
+    assertThat(quantity).isEqualByComparingTo(BigDecimal("75"))
+    assertThat(averageCost).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateInstrumentMetrics with null current price uses zero`() {
+    testInstrument.currentPrice = null
+    val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
+
+    val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
+
+    assertThat(metrics.currentValue).isEqualByComparingTo(BigDecimal.ZERO)
+    assertThat(metrics.profit).isLessThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateInstrumentMetrics with platform having zero holdings is excluded`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"), platform = Platform.LHV),
+        createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("120"), platform = Platform.LHV),
+        createBuyTransaction(quantity = BigDecimal("5"), price = BigDecimal("110"), platform = Platform.LIGHTYEAR),
+      )
+
+    val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
+
+    assertThat(metrics.quantity).isEqualByComparingTo(BigDecimal("5"))
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics with empty instrument groups returns empty metrics`() {
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(emptyMap(), testDate)
+
+    assertThat(metrics.totalValue).isEqualByComparingTo(BigDecimal.ZERO)
+    assertThat(metrics.totalProfit).isEqualByComparingTo(BigDecimal.ZERO)
+    assertThat(metrics.xirrTransactions).isEmpty()
+  }
+
+  @Test
+  fun `convertToXirrTransaction for sell with commission reduces amount`() {
+    val sellTransaction =
+      createSellTransaction(
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        commission = BigDecimal("15"),
+      )
+
+    val xirrTx = investmentMetricsService.convertToXirrTransaction(sellTransaction)
+
+    assertThat(xirrTx.amount).isEqualTo(985.0)
+  }
+
+  @Test
+  fun `calculateAdjustedXirr with weighted investment age calculation`() {
+    val transactions =
+      listOf(
+        Transaction(-5000.0, testDate.minusDays(100)),
+        Transaction(-3000.0, testDate.minusDays(50)),
+        Transaction(-2000.0, testDate.minusDays(20)),
+        Transaction(12000.0, testDate),
+      )
+
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("12000"), testDate)
+
+    assertThat(xirr).isBetween(-10.0, 10.0)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics with single transaction per instrument`() {
+    val instrument2 =
+      Instrument(
+        symbol = "MSFT",
+        name = "Microsoft Corp.",
+        category = "Stock",
+        baseCurrency = "USD",
+        currentPrice = BigDecimal("300"),
+      ).apply { id = 3L }
+
+    val transactions1 = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
+    val transactions2 =
+      listOf(
+        createBuyTransaction(
+          quantity = BigDecimal("5"),
+          price = BigDecimal("280"),
+          instrument = instrument2,
+        ),
+      )
+
+    val instrumentGroups =
+      mapOf(
+        testInstrument to transactions1,
+        instrument2 to transactions2,
+      )
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any())).thenReturn(BigDecimal("150"))
+    whenever(dailyPriceService.getPrice(eq(instrument2), any())).thenReturn(BigDecimal("300"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.xirrTransactions).hasSize(4)
+  }
+
+  @Test
+  fun `calculateNetQuantity with only buy transactions`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+        createBuyTransaction(quantity = BigDecimal("15"), price = BigDecimal("110")),
+      )
+
+    val netQuantity =
+      transactions.fold(BigDecimal.ZERO) { acc, tx ->
+      when (tx.transactionType) {
+        TransactionType.BUY -> acc.add(tx.quantity)
+        TransactionType.SELL -> acc.subtract(tx.quantity)
+      }
+    }
+
+    assertThat(netQuantity).isEqualByComparingTo(BigDecimal("25"))
+  }
+
+  @Test
+  fun `calculateNetQuantity with only sell transactions`() {
+    val transactions =
+      listOf(
+        createSellTransaction(quantity = BigDecimal("5"), price = BigDecimal("120")),
+        createSellTransaction(quantity = BigDecimal("3"), price = BigDecimal("125")),
+      )
+
+    val netQuantity =
+      transactions.fold(BigDecimal.ZERO) { acc, tx ->
+      when (tx.transactionType) {
+        TransactionType.BUY -> acc.add(tx.quantity)
+        TransactionType.SELL -> acc.subtract(tx.quantity)
+      }
+    }
+
+    assertThat(netQuantity).isEqualByComparingTo(BigDecimal("-8"))
+  }
+
+  @Test
+  fun `calculateNetQuantity with mixed buy and sell transactions`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("100"), price = BigDecimal("50")),
+        createSellTransaction(quantity = BigDecimal("30"), price = BigDecimal("60")),
+        createBuyTransaction(quantity = BigDecimal("20"), price = BigDecimal("55")),
+        createSellTransaction(quantity = BigDecimal("40"), price = BigDecimal("65")),
+      )
+
+    val netQuantity =
+      transactions.fold(BigDecimal.ZERO) { acc, tx ->
+      when (tx.transactionType) {
+        TransactionType.BUY -> acc.add(tx.quantity)
+        TransactionType.SELL -> acc.subtract(tx.quantity)
+      }
+    }
+
+    assertThat(netQuantity).isEqualByComparingTo(BigDecimal("50"))
+  }
+
+  @Test
+  fun `calculateNetQuantity with empty transactions`() {
+    val netQuantity =
+      emptyList<PortfolioTransaction>().fold(BigDecimal.ZERO) { acc, tx ->
+      when (tx.transactionType) {
+        TransactionType.BUY -> acc.add(tx.quantity)
+        TransactionType.SELL -> acc.subtract(tx.quantity)
+      }
+    }
+
+    assertThat(netQuantity).isEqualByComparingTo(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics fallback with only buy transactions`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+        createBuyTransaction(quantity = BigDecimal("5"), price = BigDecimal("110")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
+      .thenThrow(RuntimeException("Unified calc failed"))
+      .thenReturn(BigDecimal("150"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.totalProfit).isNotNull()
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics fallback with buy and sell transactions`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("100"), price = BigDecimal("50")),
+        createSellTransaction(quantity = BigDecimal("40"), price = BigDecimal("70")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
+      .thenThrow(RuntimeException("Unified calc failed"))
+      .thenReturn(BigDecimal("80"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.totalProfit).isNotNull()
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics fallback with zero total sells`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("50"), price = BigDecimal("100")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
+      .thenThrow(RuntimeException("Unified calc failed"))
+      .thenReturn(BigDecimal("120"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics fallback with zero buy quantity`() {
+    val transactions =
+      listOf(
+        createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isEqualByComparingTo(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics fallback with complete sell-off`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("50"), price = BigDecimal("100")),
+        createSellTransaction(quantity = BigDecimal("50"), price = BigDecimal("150")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isEqualByComparingTo(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics fallback calculates realized gains correctly`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("100"), price = BigDecimal("50"), commission = BigDecimal("10")),
+        createBuyTransaction(quantity = BigDecimal("100"), price = BigDecimal("60"), commission = BigDecimal("10")),
+        createSellTransaction(quantity = BigDecimal("50"), price = BigDecimal("80"), commission = BigDecimal("5")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
+      .thenThrow(RuntimeException("Unified calc failed"))
+      .thenReturn(BigDecimal("90"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalProfit).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateCurrentHoldings with multiple consecutive sells`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("100"), price = BigDecimal("50")),
+        createSellTransaction(quantity = BigDecimal("25"), price = BigDecimal("60")),
+        createSellTransaction(quantity = BigDecimal("25"), price = BigDecimal("65")),
+        createSellTransaction(quantity = BigDecimal("25"), price = BigDecimal("70")),
+      )
+
+    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+
+    assertThat(quantity).isEqualByComparingTo(BigDecimal("25"))
+    assertThat(averageCost).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateCurrentHoldings with zero commission`() {
+    val transaction =
+      createBuyTransaction(
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        commission = BigDecimal.ZERO,
+      )
+
+    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
+
+    assertThat(quantity).isEqualByComparingTo(BigDecimal("10"))
+    assertThat(averageCost).isEqualByComparingTo(BigDecimal("100"))
+  }
+
+  @Test
+  fun `calculateCurrentHoldings with very small quantities`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("0.001"), price = BigDecimal("50000")),
+        createSellTransaction(quantity = BigDecimal("0.0005"), price = BigDecimal("55000")),
+      )
+
+    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+
+    assertThat(quantity).isEqualByComparingTo(BigDecimal("0.0005"))
+    assertThat(averageCost).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculateInstrumentMetrics with one platform having zero holdings after sell`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"), platform = Platform.LHV),
+        createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("120"), platform = Platform.LHV),
+        createBuyTransaction(quantity = BigDecimal("5"), price = BigDecimal("110"), platform = Platform.LIGHTYEAR),
+        createSellTransaction(quantity = BigDecimal("2"), price = BigDecimal("130"), platform = Platform.LIGHTYEAR),
+      )
+
+    val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
+
+    assertThat(metrics.quantity).isEqualByComparingTo(BigDecimal("3"))
+    assertThat(metrics.totalInvestment).isGreaterThan(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics fallback with high commission reduces profit`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"), commission = BigDecimal("50")),
+        createSellTransaction(quantity = BigDecimal("5"), price = BigDecimal("150"), commission = BigDecimal("30")),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
+      .thenThrow(RuntimeException("Unified calc failed"))
+      .thenReturn(BigDecimal("160"))
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isGreaterThan(BigDecimal.ZERO)
+    assertThat(metrics.totalProfit).isNotNull()
+  }
+
+  @Test
+  fun `calculateAdjustedXirr with multiple investments at different times has weighted damping`() {
+    val transactions =
+      listOf(
+        Transaction(-10000.0, testDate.minusDays(120)),
+        Transaction(-5000.0, testDate.minusDays(80)),
+        Transaction(-2000.0, testDate.minusDays(40)),
+        Transaction(-1000.0, testDate.minusDays(10)),
+        Transaction(20000.0, testDate),
+      )
+
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("20000"), testDate)
+
+    assertThat(xirr).isBetween(-10.0, 10.0)
+  }
+
+  @Test
+  fun `convertToXirrTransaction with very high commission for buy`() {
+    val buyTransaction =
+      createBuyTransaction(
+        quantity = BigDecimal("1"),
+        price = BigDecimal("1000"),
+        commission = BigDecimal("500"),
+      )
+
+    val xirrTx = investmentMetricsService.convertToXirrTransaction(buyTransaction)
+
+    assertThat(xirrTx.amount).isEqualTo(-1500.0)
+  }
+
+  @Test
+  fun `convertToXirrTransaction with zero commission for sell`() {
+    val sellTransaction =
+      createSellTransaction(
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        commission = BigDecimal.ZERO,
+      )
+
+    val xirrTx = investmentMetricsService.convertToXirrTransaction(sellTransaction)
+
+    assertThat(xirrTx.amount).isEqualTo(1000.0)
+  }
+
+  @Test
+  fun `calculateInstrumentMetrics with negative profit scenario`() {
+    testInstrument.currentPrice = BigDecimal("50")
+    val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
+
+    val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, transactions, testDate)
+
+    assertThat(metrics.profit).isLessThan(BigDecimal.ZERO)
+    assertThat(metrics.currentValue).isLessThan(metrics.totalInvestment)
+  }
+
+  @Test
+  fun `calculatePortfolioMetrics with all platforms having zero or negative holdings`() {
+    val transactions =
+      listOf(
+        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"), platform = Platform.LHV),
+        createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("120"), platform = Platform.LHV),
+        createBuyTransaction(quantity = BigDecimal("5"), price = BigDecimal("110"), platform = Platform.LIGHTYEAR),
+        createSellTransaction(quantity = BigDecimal("5"), price = BigDecimal("130"), platform = Platform.LIGHTYEAR),
+      )
+    val instrumentGroups = mapOf(testInstrument to transactions)
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    assertThat(metrics.totalValue).isEqualByComparingTo(BigDecimal.ZERO)
+    assertThat(metrics.totalProfit).isEqualByComparingTo(BigDecimal.ZERO)
+  }
+
   companion object {
     @JvmStatic
     fun provideXirrExtremeScenarios(): Stream<Arguments> =

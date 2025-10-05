@@ -111,6 +111,11 @@ class CalculationService(
       val firstPrice = dailyPrices.first()
       val lastPrice = dailyPrices.last()
 
+      if (firstPrice.closePrice <= BigDecimal.ZERO) {
+        endDate = endDate.minusWeeks(2)
+        continue
+      }
+
       val sharesAmount =
         BigDecimal(AMOUNT_TO_SPEND)
         .divide(firstPrice.closePrice, 8, RoundingMode.HALF_UP)

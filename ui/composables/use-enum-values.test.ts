@@ -76,8 +76,8 @@ describe('useEnumValues', () => {
 
       // NOTE: Business requirement - format underscored enum values for display
       expect(platformOptions.value).toEqual([
-        { value: 'TEST_PLATFORM_NAME', text: 'Test platform name' },
-        { value: 'ANOTHER_TEST', text: 'Another test' },
+        { value: 'TEST_PLATFORM_NAME', text: 'Test Platform Name' },
+        { value: 'ANOTHER_TEST', text: 'Another Test' },
       ])
     })
   })

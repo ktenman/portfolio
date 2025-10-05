@@ -17,10 +17,42 @@ const enumCache = ref<{
 const loading = ref(false)
 const error = ref<Error | null>(null)
 
+const ACRONYMS = [
+  'ETF',
+  'FT',
+  'API',
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CHF',
+  'CAD',
+  'AUD',
+  'CEO',
+  'CFO',
+  'IT',
+  'AI',
+]
+
+const formatEnumText = (value: string): string => {
+  if (ACRONYMS.includes(value)) {
+    return value
+  }
+
+  const withSpaces = value.replace(/_/g, ' ')
+  return withSpaces
+    .split(' ')
+    .map(word => {
+      if (ACRONYMS.includes(word)) return word
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
+    .join(' ')
+}
+
 const toSelectOptions = (values: string[]): SelectOption[] =>
   values.map(value => ({
     value,
-    text: value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, ' '),
+    text: formatEnumText(value),
   }))
 
 export function useEnumValues() {

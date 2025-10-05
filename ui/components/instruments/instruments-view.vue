@@ -133,6 +133,8 @@ const saveMutation = useMutation({
   },
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['instruments'] })
+    queryClient.invalidateQueries({ queryKey: ['summaries'] })
+    queryClient.invalidateQueries({ queryKey: ['transactions'] })
     toast.success(`Instrument ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
     hideModal()
     selectedItem.value = null
@@ -198,6 +200,8 @@ const handleTitleClick = async () => {
     toast.success('Price refresh triggered! Data will update shortly.')
     setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['instruments'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['summaries'] })
     }, 2000)
   } catch {
     toast.error('Failed to trigger price refresh')
