@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.ft
 
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -39,7 +40,7 @@ class HistoricalPricesServiceTest {
     "XAIX:GER:EUR,515873934",
     "VUAA:GER:EUR,573788032",
   )
-  fun `should map ticker symbols correctly`(
+  fun `should map ticker symbols correctly when given different symbol formats`(
     symbol: String,
     expectedTickerId: String,
   ) {
@@ -68,8 +69,8 @@ class HistoricalPricesServiceTest {
 
     val result = service.fetchPrices(symbol)
 
-    assertThat(result).isNotEmpty
-    assertThat(result).containsKey(LocalDate.of(2025, 1, 17))
+    expect(result).notToBeEmpty()
+    expect(result.keys).toContain(LocalDate.of(2025, 1, 17))
   }
 
   @Test
@@ -100,11 +101,11 @@ class HistoricalPricesServiceTest {
 
     val result = service.fetchPrices(unknownSymbol)
 
-    assertThat(result).isNotEmpty
+    expect(result).notToBeEmpty()
   }
 
   @Test
-  fun `should parse XAIX price data correctly`() {
+  fun `should parse XAIX price data correctly when fetching multiple days`() {
     val xaixHtml =
       """<tr>
         <td class="mod-ui-table__cell--text">
@@ -138,22 +139,22 @@ class HistoricalPricesServiceTest {
     val result = service.fetchAndParsePrices("2025/01/16", "2025/01/17", "515873934")
 
     val jan17Data = result[LocalDate.of(2025, 1, 17)]
-    assertThat(jan17Data).isNotNull
-    assertThat(jan17Data?.open).isEqualTo(BigDecimal("137.40"))
-    assertThat(jan17Data?.high).isEqualTo(BigDecimal("139.60"))
-    assertThat(jan17Data?.low).isEqualTo(BigDecimal("137.30"))
-    assertThat(jan17Data?.close).isEqualTo(BigDecimal("138.80"))
-    assertThat(jan17Data?.volume).isEqualTo(22839L)
+    expect(jan17Data).notToEqualNull()
+    expect(jan17Data?.open).toEqual(BigDecimal("137.40"))
+    expect(jan17Data?.high).toEqual(BigDecimal("139.60"))
+    expect(jan17Data?.low).toEqual(BigDecimal("137.30"))
+    expect(jan17Data?.close).toEqual(BigDecimal("138.80"))
+    expect(jan17Data?.volume).toEqual(22839L)
 
     val jan16Data = result[LocalDate.of(2025, 1, 16)]
-    assertThat(jan16Data).isNotNull
-    assertThat(jan16Data?.open).isEqualTo(BigDecimal("137.90"))
-    assertThat(jan16Data?.close).isEqualTo(BigDecimal("137.66"))
-    assertThat(jan16Data?.volume).isEqualTo(44583L)
+    expect(jan16Data).notToEqualNull()
+    expect(jan16Data?.open).toEqual(BigDecimal("137.90"))
+    expect(jan16Data?.close).toEqual(BigDecimal("137.66"))
+    expect(jan16Data?.volume).toEqual(44583L)
   }
 
   @Test
-  fun `should handle volume with k suffix`() {
+  fun `should handle volume with k suffix when parsing price data`() {
     val htmlWithKVolume =
       """<tr>
         <td class="mod-ui-table__cell--text">
@@ -177,12 +178,12 @@ class HistoricalPricesServiceTest {
     val result = service.fetchAndParsePrices("2025/01/06", "2025/01/06", "515873934")
 
     val data = result[LocalDate.of(2025, 1, 6)]
-    assertThat(data).isNotNull
-    assertThat(data?.volume).isEqualTo(71420L)
+    expect(data).notToEqualNull()
+    expect(data?.volume).toEqual(71420L)
   }
 
   @Test
-  fun `should handle volume with m suffix`() {
+  fun `should handle volume with m suffix when parsing price data`() {
     val htmlWithMVolume =
       """<tr>
         <td class="mod-ui-table__cell--text">
@@ -206,12 +207,12 @@ class HistoricalPricesServiceTest {
     val result = service.fetchAndParsePrices("2020/03/03", "2020/03/03", "573788032")
 
     val data = result[LocalDate.of(2020, 3, 3)]
-    assertThat(data).isNotNull
-    assertThat(data?.volume).isEqualTo(2_500_000L)
+    expect(data).notToEqualNull()
+    expect(data?.volume).toEqual(2_500_000L)
   }
 
   @Test
-  fun `should handle volume with b suffix`() {
+  fun `should handle volume with b suffix when parsing price data`() {
     val htmlWithBVolume =
       """<tr>
         <td class="mod-ui-table__cell--text">
@@ -235,12 +236,12 @@ class HistoricalPricesServiceTest {
     val result = service.fetchAndParsePrices("2020/03/11", "2020/03/11", "573788032")
 
     val data = result[LocalDate.of(2020, 3, 11)]
-    assertThat(data).isNotNull
-    assertThat(data?.volume).isEqualTo(1_500_000_000L)
+    expect(data).notToEqualNull()
+    expect(data?.volume).toEqual(1_500_000_000L)
   }
 
   @Test
-  fun `should handle empty response`() {
+  fun `should return empty map when response is empty`() {
     whenever(
       historicalPricesClient.getHistoricalPrices(
         any(),
@@ -251,11 +252,11 @@ class HistoricalPricesServiceTest {
 
     val result = service.fetchAndParsePrices("2025/01/01", "2025/01/31", "515873934")
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
-  fun `should handle malformed HTML gracefully`() {
+  fun `should handle malformed HTML gracefully when parsing prices`() {
     val malformedHtml = """<tr><td>Invalid</td></tr>"""
 
     whenever(
@@ -268,11 +269,11 @@ class HistoricalPricesServiceTest {
 
     val result = service.fetchAndParsePrices("2025/01/01", "2025/01/31", "515873934")
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
-  fun `should parse prices with comma separators`() {
+  fun `should parse prices with comma separators when fetching data`() {
     val htmlWithCommas =
       """<tr>
         <td class="mod-ui-table__cell--text">
@@ -296,16 +297,16 @@ class HistoricalPricesServiceTest {
     val result = service.fetchAndParsePrices("2025/01/15", "2025/01/15", "515873934")
 
     val data = result[LocalDate.of(2025, 1, 15)]
-    assertThat(data).isNotNull
-    assertThat(data?.open).isEqualTo(BigDecimal("1234.56"))
-    assertThat(data?.high).isEqualTo(BigDecimal("1240.00"))
-    assertThat(data?.low).isEqualTo(BigDecimal("1230.00"))
-    assertThat(data?.close).isEqualTo(BigDecimal("1238.50"))
-    assertThat(data?.volume).isEqualTo(123456L)
+    expect(data).notToEqualNull()
+    expect(data?.open).toEqual(BigDecimal("1234.56"))
+    expect(data?.high).toEqual(BigDecimal("1240.00"))
+    expect(data?.low).toEqual(BigDecimal("1230.00"))
+    expect(data?.close).toEqual(BigDecimal("1238.50"))
+    expect(data?.volume).toEqual(123456L)
   }
 
   @Test
-  fun `should validate XAIX ticker ID is correct`() {
+  fun `should validate XAIX ticker ID is correct when fetching prices`() {
     val xaixSymbol = "XAIX:GER:EUR"
     val expectedTickerId = "515873934"
 
@@ -334,13 +335,13 @@ class HistoricalPricesServiceTest {
 
     val result = service.fetchPrices(xaixSymbol)
 
-    assertThat(result).isNotEmpty
+    expect(result).notToBeEmpty()
     val priceData = result[LocalDate.of(2025, 1, 17)]
-    assertThat(priceData).isNotNull
-    assertThat(priceData?.open).isEqualTo(BigDecimal("137.40"))
-    assertThat(priceData?.high).isEqualTo(BigDecimal("139.60"))
-    assertThat(priceData?.low).isEqualTo(BigDecimal("137.30"))
-    assertThat(priceData?.close).isEqualTo(BigDecimal("138.80"))
-    assertThat(priceData?.volume).isEqualTo(22839L)
+    expect(priceData).notToEqualNull()
+    expect(priceData?.open).toEqual(BigDecimal("137.40"))
+    expect(priceData?.high).toEqual(BigDecimal("139.60"))
+    expect(priceData?.low).toEqual(BigDecimal("137.30"))
+    expect(priceData?.close).toEqual(BigDecimal("138.80"))
+    expect(priceData?.volume).toEqual(22839L)
   }
 }

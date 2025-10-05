@@ -4,8 +4,8 @@ import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -44,7 +44,7 @@ class DailyPriceServiceTest {
   }
 
   @Test
-  fun `getPrice returns closePrice when price is found`() {
+  fun `should getPrice returns closePrice when price is found`() {
     val dailyPrice = createDailyPrice(closePrice = BigDecimal("150.50"))
 
     whenever(
@@ -57,11 +57,11 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getPrice(testInstrument, testDate)
 
-    assertThat(result).isEqualByComparingTo(BigDecimal("150.50"))
+    expect(result).toEqual(BigDecimal("150.50"))
   }
 
   @Test
-  fun `getPrice throws NoSuchElementException when no price found`() {
+  fun `should getPrice throws NoSuchElementException when no price found`() {
     whenever(
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
@@ -70,14 +70,16 @@ class DailyPriceServiceTest {
       ),
     ).thenReturn(null)
 
-    assertThatThrownBy {
-      dailyPriceService.getPrice(testInstrument, testDate)
-    }.isInstanceOf(NoSuchElementException::class.java)
-      .hasMessageContaining("No price found for AAPL on or before $testDate")
+    val exception =
+      org.junit.jupiter.api.assertThrows<NoSuchElementException> {
+        dailyPriceService.getPrice(testInstrument, testDate)
+      }
+
+    expect(exception.message!!).toContain("No price found for AAPL on or before $testDate")
   }
 
   @Test
-  fun `saveDailyPrice saves new price when no existing price found`() {
+  fun `should saveDailyPrice saves new price when no existing price found`() {
     val newDailyPrice = createDailyPrice(closePrice = BigDecimal("100.00"))
 
     whenever(
@@ -91,12 +93,12 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.saveDailyPrice(newDailyPrice)
 
-    assertThat(result).isEqualTo(newDailyPrice)
+    expect(result).toEqual(newDailyPrice)
     verify(dailyPriceRepository).save(newDailyPrice)
   }
 
   @Test
-  fun `saveDailyPrice updates existing price when found`() {
+  fun `should saveDailyPrice updates existing price when found`() {
     val existingPrice =
       createDailyPrice(
         closePrice = BigDecimal("100.00"),
@@ -125,26 +127,26 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.saveDailyPrice(newPriceData)
 
-    assertThat(result.closePrice).isEqualByComparingTo(BigDecimal("110.00"))
-    assertThat(result.openPrice).isEqualByComparingTo(BigDecimal("105.00"))
-    assertThat(result.highPrice).isEqualByComparingTo(BigDecimal("115.00"))
-    assertThat(result.lowPrice).isEqualByComparingTo(BigDecimal("104.00"))
-    assertThat(result.volume).isEqualTo(1500000L)
+    expect(result.closePrice).toEqual(BigDecimal("110.00"))
+    expect(result.openPrice).toEqual(BigDecimal("105.00"))
+    expect(result.highPrice).toEqual(BigDecimal("115.00"))
+    expect(result.lowPrice).toEqual(BigDecimal("104.00"))
+    expect(result.volume).toEqual(1500000L)
     verify(dailyPriceRepository).save(existingPrice)
   }
 
   @Test
-  fun `getLastPriceChange returns null when recentPrices is empty`() {
+  fun `should getLastPriceChange returns null when recentPrices is empty`() {
     whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
       .thenReturn(emptyList())
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNull()
+    expect(result).toEqual(null)
   }
 
   @Test
-  fun `getLastPriceChange returns null when all prices are the same`() {
+  fun `should getLastPriceChange returns null when all prices are the same`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate),
@@ -157,11 +159,11 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNull()
+    expect(result).toEqual(null)
   }
 
   @Test
-  fun `getLastPriceChange returns PriceChange with positive change`() {
+  fun `should getLastPriceChange returns PriceChange with positive change`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("110.00"), date = testDate),
@@ -173,13 +175,13 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNotNull
-    assertThat(result!!.changeAmount).isEqualByComparingTo(BigDecimal("10.00"))
-    assertThat(result.changePercent).isEqualTo(10.0)
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqual(BigDecimal("10.00"))
+    expect(result.changePercent).toEqual(10.0)
   }
 
   @Test
-  fun `getLastPriceChange returns PriceChange with negative change`() {
+  fun `should getLastPriceChange returns PriceChange with negative change`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("90.00"), date = testDate),
@@ -191,13 +193,13 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNotNull
-    assertThat(result!!.changeAmount).isEqualByComparingTo(BigDecimal("-10.00"))
-    assertThat(result.changePercent).isEqualTo(-10.0)
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqual(BigDecimal("-10.00"))
+    expect(result.changePercent).toEqual(-10.0)
   }
 
   @Test
-  fun `getLastPriceChange returns PriceChange with zero change`() {
+  fun `should getLastPriceChange returns PriceChange with zero change`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate),
@@ -210,11 +212,11 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNull()
+    expect(result).toEqual(null)
   }
 
   @Test
-  fun `getLastPriceChange skips duplicate prices and finds first different price`() {
+  fun `should getLastPriceChange skips duplicate prices and finds first different price`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("110.00"), date = testDate),
@@ -229,13 +231,13 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNotNull
-    assertThat(result!!.changeAmount).isEqualByComparingTo(BigDecimal("10.00"))
-    assertThat(result.changePercent).isEqualTo(10.0)
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqual(BigDecimal("10.00"))
+    expect(result.changePercent).toEqual(10.0)
   }
 
   @Test
-  fun `calculateChangePercent with positive change returns correct percentage`() {
+  fun `should calculateChangePercent with positive change returns correct percentage`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("150.00"), date = testDate),
@@ -247,12 +249,12 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNotNull
-    assertThat(result!!.changePercent).isEqualTo(50.0)
+    expect(result).notToEqualNull()
+    expect(result!!.changePercent).toEqual(50.0)
   }
 
   @Test
-  fun `calculateChangePercent with negative change returns correct percentage`() {
+  fun `should calculateChangePercent with negative change returns correct percentage`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("75.00"), date = testDate),
@@ -264,12 +266,12 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNotNull
-    assertThat(result!!.changePercent).isEqualTo(-25.0)
+    expect(result).notToEqualNull()
+    expect(result!!.changePercent).toEqual(-25.0)
   }
 
   @Test
-  fun `calculateChangePercent with fractional change calculates precise percentage`() {
+  fun `should calculateChangePercent with fractional change calculates precise percentage`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("103.50"), date = testDate),
@@ -281,13 +283,13 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
-    assertThat(result).isNotNull
-    assertThat(result!!.changeAmount).isEqualByComparingTo(BigDecimal("3.50"))
-    assertThat(result.changePercent).isEqualTo(3.5)
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqual(BigDecimal("3.50"))
+    expect(result.changePercent).toEqual(3.5)
   }
 
   @Test
-  fun `findLastDailyPrice returns most recent price within date range`() {
+  fun `should findLastDailyPrice returns most recent price within date range`() {
     val dailyPrice = createDailyPrice(closePrice = BigDecimal("120.00"), date = testDate.minusDays(5))
 
     whenever(
@@ -300,11 +302,11 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.findLastDailyPrice(testInstrument, testDate)
 
-    assertThat(result).isEqualTo(dailyPrice)
+    expect(result).toEqual(dailyPrice)
   }
 
   @Test
-  fun `findLastDailyPrice returns null when no price found in range`() {
+  fun `should findLastDailyPrice returns null when no price found in range`() {
     whenever(
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
@@ -315,11 +317,11 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.findLastDailyPrice(testInstrument, testDate)
 
-    assertThat(result).isNull()
+    expect(result).toEqual(null)
   }
 
   @Test
-  fun `findAllByInstrument returns all prices for instrument`() {
+  fun `should findAllByInstrument returns all prices for instrument`() {
     val prices =
       listOf(
         createDailyPrice(closePrice = BigDecimal("100.00")),
@@ -331,8 +333,8 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.findAllByInstrument(testInstrument)
 
-    assertThat(result).hasSize(3)
-    assertThat(result).isEqualTo(prices)
+    expect(result).toHaveSize(3)
+    expect(result).toEqual(prices)
   }
 
   private fun createDailyPrice(

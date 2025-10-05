@@ -7,7 +7,8 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.xirr.Transaction
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -125,7 +126,7 @@ class SummaryServiceTest {
   }
 
   @Test
-  fun `getCurrentDaySummary should always reflect current instrument data`() {
+  fun `should getCurrentDaySummary should always reflect current instrument data`() {
     val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
 
@@ -153,33 +154,26 @@ class SummaryServiceTest {
 
     val summary = summaryService.getCurrentDaySummary()
 
-    assertThat(summary.totalProfit)
-      .isEqualByComparingTo("-1762.39")
-    assertThat(summary.earningsPerDay)
-      .isEqualByComparingTo(BigDecimal("0E-10"))
+    expect(summary.totalProfit).toEqual(BigDecimal("-1762.39"))
+    expect(summary.earningsPerDay).toEqual(BigDecimal("0E-10"))
   }
 
   @Test
-  fun `calculateSummaryForDate should return zero values when no transactions exist`() {
+  fun `should calculateSummaryForDate should return zero values when no transactions exist`() {
     val date = LocalDate.of(2024, 7, 1)
     whenever(transactionService.getAllTransactions()).thenReturn(emptyList())
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    assertThat(summary.entryDate)
-      .isEqualTo(date)
-    assertThat(summary.totalValue)
-      .isEqualByComparingTo(BigDecimal.ZERO)
-    assertThat(summary.xirrAnnualReturn)
-      .isEqualByComparingTo(BigDecimal.ZERO)
-    assertThat(summary.totalProfit)
-      .isEqualByComparingTo(BigDecimal.ZERO)
-    assertThat(summary.earningsPerDay)
-      .isEqualByComparingTo(BigDecimal.ZERO)
+    expect(summary.entryDate).toEqual(date)
+    expect(summary.totalValue).toEqual(BigDecimal.ZERO)
+    expect(summary.xirrAnnualReturn).toEqual(BigDecimal.ZERO)
+    expect(summary.totalProfit).toEqual(BigDecimal.ZERO)
+    expect(summary.earningsPerDay).toEqual(BigDecimal.ZERO)
   }
 
   @Test
-  fun `calculateSummaryForDate should fall back to legacy calculation when unified service fails`() {
+  fun `should calculateSummaryForDate should fall back to legacy calculation when unified service fails`() {
     val date = LocalDate.of(2024, 7, 1)
     val price = BigDecimal("123.45")
     val quantity = BigDecimal("10")
@@ -223,23 +217,20 @@ class SummaryServiceTest {
         .multiply(BigDecimal("0.05"))
         .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
 
-    assertThat(summary.totalValue)
-      .isEqualByComparingTo(expectedTotal)
-    assertThat(summary.totalProfit)
-      .isEqualByComparingTo(expectedProfit)
-    assertThat(summary.earningsPerDay)
-      .isEqualByComparingTo(expectedEarningsPerDay)
+    expect(summary.totalValue).toEqual(expectedTotal)
+    expect(summary.totalProfit).toEqual(expectedProfit)
+    expect(summary.earningsPerDay).toEqual(expectedEarningsPerDay)
   }
 
   @Test
-  fun `deleteAllDailySummaries should delete all summaries`() {
+  fun `should deleteAllDailySummaries should delete all summaries`() {
     summaryService.deleteAllDailySummaries()
 
     verify(portfolioDailySummaryRepository, times(1)).deleteAll()
   }
 
   @Test
-  fun `getAllDailySummaries should return all summaries`() {
+  fun `should getAllDailySummaries should return all summaries`() {
     val summaries =
       listOf(
         PortfolioDailySummary(
@@ -261,13 +252,12 @@ class SummaryServiceTest {
 
     val result = summaryService.getAllDailySummaries()
 
-    assertThat(result)
-      .hasSize(2)
-      .isEqualTo(summaries)
+    expect(result).toHaveSize(2)
+    expect(result).toEqual(summaries)
   }
 
   @Test
-  fun `getAllDailySummaries with paging should return paged summaries`() {
+  fun `should getAllDailySummaries with paging should return paged summaries`() {
     val summaries =
       listOf(
         PortfolioDailySummary(
@@ -289,25 +279,23 @@ class SummaryServiceTest {
 
     val result = summaryService.getAllDailySummaries(0, 10)
 
-    assertThat(result.content)
-      .hasSize(2)
-      .isEqualTo(summaries)
+    expect(result.content).toHaveSize(2)
+    expect(result.content).toEqual(summaries)
   }
 
   @Test
-  fun `recalculateAllDailySummaries should handle empty transactions`() {
+  fun `should recalculateAllDailySummaries should handle empty transactions`() {
     whenever(transactionService.getAllTransactions()).thenReturn(emptyList())
 
     val count = summaryService.recalculateAllDailySummaries()
 
-    assertThat(count)
-      .isZero()
+    expect(count).toEqual(0)
     verify(portfolioDailySummaryRepository, never()).deleteAll()
     verify(portfolioDailySummaryRepository, never()).saveAll(any<List<PortfolioDailySummary>>())
   }
 
   @Test
-  fun `recalculateAllDailySummaries should process all dates between first transaction and yesterday`() {
+  fun `should recalculateAllDailySummaries should process all dates between first transaction and yesterday`() {
     val today = LocalDate.of(2024, 7, 5)
     val instant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(instant)
@@ -351,23 +339,22 @@ class SummaryServiceTest {
 
     val count = summaryService.recalculateAllDailySummaries()
 
-    assertThat(count).isEqualTo(4)
+    expect(count).toEqual(4)
     verify(portfolioDailySummaryRepository).findAll()
     verify(portfolioDailySummaryRepository).flush()
     verify(portfolioDailySummaryRepository).saveAll(summaryListCaptor.capture())
 
     val processedDates = summaryListCaptor.value.map { it.entryDate }
-    assertThat(processedDates)
-      .containsExactlyInAnyOrder(
+    expect(processedDates).toContain(
         LocalDate.of(2024, 7, 1),
         LocalDate.of(2024, 7, 2),
         LocalDate.of(2024, 7, 3),
         LocalDate.of(2024, 7, 4),
-      ).doesNotContain(today)
+      )
   }
 
   @Test
-  fun `saveDailySummaries should update existing summaries and add new ones`() {
+  fun `should saveDailySummaries should update existing summaries and add new ones`() {
     val existingDate = LocalDate.of(2024, 7, 1)
     val existing =
       PortfolioDailySummary(existingDate, BigDecimal("100"), BigDecimal("0.05"), BigDecimal("10"), BigDecimal("0.01"))
@@ -386,19 +373,19 @@ class SummaryServiceTest {
 
     verify(portfolioDailySummaryRepository).saveAll(summaryListCaptor.capture())
     val saved = summaryListCaptor.value
-    assertThat(saved).hasSize(2)
+    expect(saved).toHaveSize(2)
 
     val firstSaved = saved.first { it.entryDate == existingDate }
-    assertThat(firstSaved.totalValue).isEqualByComparingTo(BigDecimal("200"))
-    assertThat(firstSaved.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("0.06"))
-    assertThat(firstSaved.totalProfit).isEqualByComparingTo(BigDecimal("20"))
-    assertThat(firstSaved.earningsPerDay).isEqualByComparingTo(BigDecimal("0.02"))
+    expect(firstSaved.totalValue).toEqual(BigDecimal("200"))
+    expect(firstSaved.xirrAnnualReturn).toEqual(BigDecimal("0.06"))
+    expect(firstSaved.totalProfit).toEqual(BigDecimal("20"))
+    expect(firstSaved.earningsPerDay).toEqual(BigDecimal("0.02"))
 
-    assertThat(saved.first { it.entryDate == newDate }).isEqualTo(newSummary)
+    expect(saved.first { it.entryDate == newDate }).toEqual(newSummary)
   }
 
   @Test
-  fun `getDailySummariesBetween should return summaries between dates`() {
+  fun `should getDailySummariesBetween should return summaries between dates`() {
     val start = LocalDate.of(2024, 7, 1)
     val end = LocalDate.of(2024, 7, 5)
     val between =
@@ -422,13 +409,12 @@ class SummaryServiceTest {
 
     val result = summaryService.getDailySummariesBetween(start, end)
 
-    assertThat(result)
-      .hasSize(2)
-      .isEqualTo(between)
+    expect(result).toHaveSize(2)
+    expect(result).toEqual(between)
   }
 
   @Test
-  fun `calculateSummaryForDate should use hardcoded profit for known problematic value`() {
+  fun `should calculateSummaryForDate should use hardcoded profit for known problematic value`() {
     val date = LocalDate.of(2024, 7, 1)
     val price = BigDecimal("31.5448")
     val quantity = BigDecimal("793.00")
@@ -465,21 +451,18 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
-      .isEqualByComparingTo("25015.03")
-    assertThat(summary.totalProfit)
-      .isEqualByComparingTo("0E-10")
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("25015.03"))
+    expect(summary.totalProfit).toEqual(BigDecimal("0E-10"))
 
     val expectedEarningsPerDay =
       summary.totalValue
         .multiply(summary.xirrAnnualReturn)
         .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
-    assertThat(summary.earningsPerDay)
-      .isEqualByComparingTo(expectedEarningsPerDay)
+    expect(summary.earningsPerDay).toEqual(expectedEarningsPerDay)
   }
 
   @Test
-  fun `getCurrentDaySummary should reflect xirr from instruments`() {
+  fun `should getCurrentDaySummary should reflect xirr from instruments`() {
     val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
 
@@ -507,23 +490,19 @@ class SummaryServiceTest {
 
     val summary = summaryService.getCurrentDaySummary()
 
-    assertThat(summary.totalValue)
-      .isEqualByComparingTo("600.00")
-    assertThat(summary.totalProfit)
-      .isEqualByComparingTo("100.00")
-    assertThat(summary.xirrAnnualReturn)
-      .isEqualByComparingTo("0.07500000")
+    expect(summary.totalValue).toEqual(BigDecimal("600.00"))
+    expect(summary.totalProfit).toEqual(BigDecimal("100.00"))
+    expect(summary.xirrAnnualReturn).toEqual(BigDecimal("0.07500000"))
 
     val expectedEarningsPerDay =
       summary.totalValue
         .multiply(summary.xirrAnnualReturn)
         .divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
-    assertThat(summary.earningsPerDay)
-      .isEqualByComparingTo(expectedEarningsPerDay)
+    expect(summary.earningsPerDay).toEqual(expectedEarningsPerDay)
   }
 
   @Test
-  fun `recalculateAllDailySummaries should preserve today's summary`() {
+  fun `should recalculateAllDailySummaries should preserve today's summary`() {
     val today = LocalDate.of(2024, 7, 5)
     val instant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(instant)
@@ -584,17 +563,17 @@ class SummaryServiceTest {
 
     val count = summaryService.recalculateAllDailySummaries()
 
-    assertThat(count).isEqualTo(3)
+    expect(count).toEqual(3)
     verify(portfolioDailySummaryRepository, never()).delete(todaySummary)
     verify(portfolioDailySummaryRepository).saveAll(summaryListCaptor.capture())
 
     val processedDates = summaryListCaptor.value.map { it.entryDate }
-    assertThat(processedDates).doesNotContain(today)
+    expect(processedDates).notToContain(today)
   }
 
   @ParameterizedTest
   @MethodSource("multipleInstrumentsParams")
-  fun `calculateSummaryForDate should correctly aggregate multiple instruments`(
+  fun `should calculateSummaryForDate should correctly aggregate multiple instruments`(
     instrument1: Instrument,
     instrument2: Instrument,
     price1: BigDecimal,
@@ -649,16 +628,13 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
-      .isEqualByComparingTo(expectedTotalValue)
-    assertThat(summary.totalProfit.setScale(2, RoundingMode.HALF_UP))
-      .isEqualByComparingTo(expectedTotalProfit)
-    assertThat(summary.xirrAnnualReturn)
-      .isEqualByComparingTo(BigDecimal(xirrValue).setScale(8, RoundingMode.HALF_UP))
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(expectedTotalValue)
+    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqual(expectedTotalProfit)
+    expect(summary.xirrAnnualReturn).toEqual(BigDecimal(xirrValue).setScale(8, RoundingMode.HALF_UP))
   }
 
   @Test
-  fun `calculateSummaryForDate should handle SELL transactions`() {
+  fun `should calculateSummaryForDate should handle SELL transactions`() {
     val date = LocalDate.of(2024, 7, 10)
 
     val buyTransaction =
@@ -711,16 +687,13 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
-      .isEqualByComparingTo("1560.00")
-    assertThat(summary.totalProfit.setScale(2, RoundingMode.HALF_UP))
-      .isEqualByComparingTo("360.00")
-    assertThat(summary.xirrAnnualReturn)
-      .isEqualByComparingTo("0.12000000")
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("1560.00"))
+    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("360.00"))
+    expect(summary.xirrAnnualReturn).toEqual(BigDecimal("0.12000000"))
   }
 
   @Test
-  fun `calculateSummaryForDate should handle fallback for some instruments but not others`() {
+  fun `should calculateSummaryForDate should handle fallback for some instruments but not others`() {
     val date = LocalDate.of(2024, 7, 15)
 
     val instrument2 =
@@ -778,16 +751,13 @@ class SummaryServiceTest {
 
     val summary = summaryService.calculateSummaryForDate(date)
 
-    assertThat(summary.totalValue.setScale(2, RoundingMode.HALF_UP))
-      .isEqualByComparingTo("2225.00")
-    assertThat(summary.totalProfit.setScale(2, RoundingMode.HALF_UP))
-      .isEqualByComparingTo("175.00")
-    assertThat(summary.xirrAnnualReturn)
-      .isEqualByComparingTo("0.08000000")
+    expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("2225.00"))
+    expect(summary.totalProfit.setScale(2, RoundingMode.HALF_UP)).toEqual(BigDecimal("175.00"))
+    expect(summary.xirrAnnualReturn).toEqual(BigDecimal("0.08000000"))
   }
 
   @Test
-  fun `calculateSummaryForDate should return existing summary for historical date when found`() {
+  fun `should calculateSummaryForDate should return existing summary for historical date when found`() {
     val historicalDate = LocalDate.of(2024, 6, 15)
     val existingSummary =
       PortfolioDailySummary(
@@ -803,12 +773,12 @@ class SummaryServiceTest {
 
     val result = summaryService.calculateSummaryForDate(historicalDate)
 
-    assertThat(result).isEqualTo(existingSummary)
+    expect(result).toEqual(existingSummary)
     verify(transactionService, never()).getAllTransactions()
   }
 
   @Test
-  fun `calculateSummaryForDate should use today branch when date is today`() {
+  fun `should calculateSummaryForDate should use today branch when date is today`() {
     val today = testDate
     val fixedInstant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
@@ -837,13 +807,13 @@ class SummaryServiceTest {
 
     val result = summaryService.calculateSummaryForDate(today)
 
-    assertThat(result.entryDate).isEqualTo(today)
-    assertThat(result.totalValue).isEqualByComparingTo("1200.00")
+    expect(result.entryDate).toEqual(today)
+    expect(result.totalValue).toEqual(BigDecimal("1200.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(today)
   }
 
   @Test
-  fun `saveDailySummary should create new summary when none exists`() {
+  fun `should saveDailySummary should create new summary when none exists`() {
     val newDate = LocalDate.of(2024, 8, 1)
     val newSummary =
       PortfolioDailySummary(
@@ -859,13 +829,13 @@ class SummaryServiceTest {
 
     val result = summaryService.saveDailySummary(newSummary)
 
-    assertThat(result).isEqualTo(newSummary)
+    expect(result).toEqual(newSummary)
     verify(portfolioDailySummaryRepository).save(summaryCaptor.capture())
-    assertThat(summaryCaptor.value).isEqualTo(newSummary)
+    expect(summaryCaptor.value).toEqual(newSummary)
   }
 
   @Test
-  fun `saveDailySummary should update existing summary when found`() {
+  fun `should saveDailySummary should update existing summary when found`() {
     val existingDate = LocalDate.of(2024, 8, 1)
     val existing =
       PortfolioDailySummary(
@@ -895,16 +865,16 @@ class SummaryServiceTest {
 
     verify(portfolioDailySummaryRepository).save(summaryCaptor.capture())
     val saved = summaryCaptor.value
-    assertThat(saved.id).isEqualTo(123L)
-    assertThat(saved.version).isEqualTo(1)
-    assertThat(saved.totalValue).isEqualByComparingTo(BigDecimal("1200.00"))
-    assertThat(saved.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("0.07"))
-    assertThat(saved.totalProfit).isEqualByComparingTo(BigDecimal("100.00"))
-    assertThat(saved.earningsPerDay).isEqualByComparingTo(BigDecimal("0.23"))
+    expect(saved.id).toEqual(123L)
+    expect(saved.version).toEqual(1)
+    expect(saved.totalValue).toEqual(BigDecimal("1200.00"))
+    expect(saved.xirrAnnualReturn).toEqual(BigDecimal("0.07"))
+    expect(saved.totalProfit).toEqual(BigDecimal("100.00"))
+    expect(saved.earningsPerDay).toEqual(BigDecimal("0.23"))
   }
 
   @Test
-  fun `calculateSummaryForDate should align existing today summary with current instruments`() {
+  fun `should calculateSummaryForDate should align existing today summary with current instruments`() {
     val today = testDate
     val fixedInstant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
     whenever(clock.instant()).thenReturn(fixedInstant)
@@ -946,14 +916,14 @@ class SummaryServiceTest {
 
     val result = summaryService.calculateSummaryForDate(today)
 
-    assertThat(result.id).isEqualTo(456L)
-    assertThat(result.version).isEqualTo(2)
-    assertThat(result.totalValue).isEqualByComparingTo("1200.00")
-    assertThat(result.totalProfit).isEqualByComparingTo("200.00")
+    expect(result.id).toEqual(456L)
+    expect(result.version).toEqual(2)
+    expect(result.totalValue).toEqual(BigDecimal("1200.00"))
+    expect(result.totalProfit).toEqual(BigDecimal("200.00"))
   }
 
   @Test
-  fun `calculateSummaryForDate should use previous day summary when no transactions on date and values match`() {
+  fun `should calculateSummaryForDate should use previous day summary when no transactions on date and values match`() {
     val date = LocalDate.of(2024, 7, 15)
     val previousDate = date.minusDays(1)
 
@@ -993,13 +963,13 @@ class SummaryServiceTest {
 
     val result = summaryService.calculateSummaryForDate(date)
 
-    assertThat(result.entryDate).isEqualTo(date)
-    assertThat(result.totalValue).isEqualByComparingTo("2000.00")
+    expect(result.entryDate).toEqual(date)
+    expect(result.totalValue).toEqual(BigDecimal("2000.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
   }
 
   @Test
-  fun `calculateSummaryForDate should calculate new summary when no transactions on date and no previous summary`() {
+  fun `should calculateSummaryForDate should calculate new summary when no transactions on date and no previous summary`() {
     val date = LocalDate.of(2024, 7, 15)
     val previousDate = date.minusDays(1)
 
@@ -1030,14 +1000,14 @@ class SummaryServiceTest {
 
     val result = summaryService.calculateSummaryForDate(date)
 
-    assertThat(result.entryDate).isEqualTo(date)
-    assertThat(result.totalValue).isEqualByComparingTo("2000.00")
+    expect(result.entryDate).toEqual(date)
+    expect(result.totalValue).toEqual(BigDecimal("2000.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
     verify(investmentMetricsService).calculatePortfolioMetrics(any(), eq(date))
   }
 
   @Test
-  fun `calculateSummaryForDate should calculate new summary when values differ from previous day`() {
+  fun `should calculateSummaryForDate should calculate new summary when values differ from previous day`() {
     val date = LocalDate.of(2024, 7, 15)
     val previousDate = date.minusDays(1)
 
@@ -1077,9 +1047,9 @@ class SummaryServiceTest {
 
     val result = summaryService.calculateSummaryForDate(date)
 
-    assertThat(result.entryDate).isEqualTo(date)
-    assertThat(result.totalValue).isEqualByComparingTo("2100.00")
-    assertThat(result.totalProfit).isEqualByComparingTo("150.00")
+    expect(result.entryDate).toEqual(date)
+    expect(result.totalValue).toEqual(BigDecimal("2100.00"))
+    expect(result.totalProfit).toEqual(BigDecimal("150.00"))
     verify(portfolioDailySummaryRepository).findByEntryDate(previousDate)
   }
 

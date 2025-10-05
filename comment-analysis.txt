@@ -1,0 +1,198 @@
+════════════════════════════════════════════════════════════════
+  COMMENT ANALYSIS REPORT
+  Generated: Sat Oct  4 07:08:31 EEST 2025
+════════════════════════════════════════════════════════════════
+
+Files analyzed: 114 Kotlin, 60 TypeScript, 22 Vue
+
+LEGEND:
+  [KEEP]    - Required/useful comments (copyright, suppression, directives)
+  [REVIEW]  - Potentially redundant comments to review
+  [REMOVE]  - Clear candidates for removal (violate clean code)
+
+════════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+KOTLIN FILES (.kt)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:10
+         /**
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:11
+          * Test execution listener that clears Redis cache and resets mocks before each test method
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:12
+          * to ensure test isolation
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:13
+          */
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:16
+             // Clear all Spring caches
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:22
+             // Clear Redis directly if available
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:29
+               // Redis template might not be available in all tests
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:32
+             // Reset clock mock if it exists
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/configuration/RedisCacheCleanupListener.kt:39
+               // Clock might not be mocked in all tests
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/service/JobExecutionServiceIT.kt:86
+               // Expected exception, do nothing
+
+[REVIEW] src/test/kotlin/ee/tenman/portfolio/service/PortfolioSummaryProfitIT.kt:48
+             // Create daily prices for the test periods
+
+[KEEP]   src/main/kotlin/ee/tenman/portfolio/repository/PortfolioDailySummaryRepository.kt:10
+           // NOTE: save() is already provided by JpaRepository - removed redundant declaration
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/googlevision/GoogleVisionClient.kt:31
+                 // Add x-goog-api-client header for better tracking
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/controller/BuildInfoController.kt:20
+             // If buildTime is empty, use current time
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:22
+         /**
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:23
+          * Telegram bot for processing car-related queries and images.
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:24
+          * Supports license plate detection from images and car price estimation.
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:25
+          * Commands
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:26
+          * - ark {plateNumber} : Look up car price by plate number
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:27
+          * - car {plateNumber} : Alternative command for price lookup
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:28
+          * Image processing: Supports JPEG and PNG formats
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/telegram/CarTelegramBot.kt:29
+          */
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:12
+         /**
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:13
+          * XIRR is the annualized return rate that makes the Net Present Value (NPV) of all cash flows equal to zero.
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:14
+          * Used for calculating actual investment returns when transactions occur at irregular intervals.
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:15
+          */
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:20
+             // Maximum iterations for numerical solvers to prevent infinite loops
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:69
+             // Solve for XIRR within reasonable bounds: -99% to +99% annual return
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:70
+             // These bounds prevent unrealistic returns while covering most real-world investment scenarios
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:101
+               // Provide both NPV and its derivative for Newton-Raphson solver (faster convergence)
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:112
+           // NPV formula: Σ(cashflow × (1 + rate)^years)
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:113
+           // For XIRR to be valid, we need to find the rate where NPV = 0
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:116
+           // Derivative of NPV with respect to rate: d/dr[Σ(amount × (1+r)^t)] = Σ(amount × t × (1+r)^(t-1))
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:117
+           // Used by Newton-Raphson method for faster convergence
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:123
+           // Estimate initial XIRR rate using simple compound interest formula
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:124
+           // This provides a better starting point for numerical solvers than arbitrary guesses
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:130
+             // Simple approximation: (final_value / initial_investment)^(1/years) - 1
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/service/xirr/Xirr.kt:138
+             // Constrain to reasonable bounds to ensure solver stability
+
+[REVIEW] src/main/kotlin/ee/tenman/portfolio/binance/BinanceService.kt:57
+                 // Prepare for the next iteration
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TYPESCRIPT FILES (.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[KEEP]   ui/composables/use-enum-values.test.ts:31
+               // NOTE: Testing the business logic of enum transformation
+
+[KEEP]   ui/composables/use-enum-values.test.ts:62
+               // NOTE: Important business logic - caching prevents unnecessary API calls
+
+[KEEP]   ui/composables/use-enum-values.test.ts:77
+               // NOTE: Business requirement - format underscored enum values for display
+
+[REVIEW] ui/composables/use-calculator.test.ts:126
+             // Total worth should be invested + net profit (after tax)
+
+[REVIEW] ui/composables/use-calculator.test.ts:153
+             // Total invested is initial + monthly investments
+
+[REVIEW] ui/composables/use-calculator.test.ts:181
+             // With 0% return, no profit, so totalWorth = invested
+
+[REVIEW] ui/composables/use-calculator.test.ts:245
+             // Verify the relationship: totalWorth = totalInvested + netProfit
+
+[REVIEW] ui/composables/use-calculator.test.ts:399
+             // Since it's a 1-year period, tax is applied in year 1
+
+[REVIEW] ui/composables/use-calculator.test.ts:445
+             // All years should have tax applied based on gross profit
+
+[REVIEW] ui/composables/use-calculator.test.ts:450
+             // Net profit should be gross profit minus tax
+
+[REVIEW] ui/composables/use-calculator.ts:117
+               // Auto-populate form with actual portfolio data if using defaults
+
+[REVIEW] ui/composables/use-calculator.ts:121
+               // Replace default 7% return with actual portfolio average only if user hasn't modified it
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VUE FILES (.vue)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+════════════════════════════════════════════════════════════════
+SUMMARY
+════════════════════════════════════════════════════════════════
+
+Total comments found:       51
+  [KEEP]   comments: 5
+  [REVIEW] comments: 48
+  [REMOVE] comments: 1
+
+Review the report in: comment-analysis.txt
+
+Next steps:
+  1. Review [REMOVE] comments - these clearly violate clean code
+  2. Review [REVIEW] comments - evaluate if they add value
+  3. Keep [KEEP] comments - these are necessary
+
