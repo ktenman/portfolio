@@ -75,7 +75,6 @@ RUN adduser -D -s /bin/sh appuser && \
 ENV JAVA_OPTS="-Xms1024m -Xmx3072m -XX:+UseG1GC -XX:+UseStringDeduplication -Duser.timezone=Europe/Tallinn" \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=85 -XX:+UseContainerSupport -XX:+ExitOnOutOfMemoryError" \
     PATH="/usr/bin/firefox:/usr/bin/geckodriver:${PATH}" \
-    SERVER_PORT=8080 \
     MOZ_HEADLESS=1 \
     MOZ_MEMORY_LIMIT=2048 \
     MOZ_DISABLE_CONTENT_SANDBOX=1 \
