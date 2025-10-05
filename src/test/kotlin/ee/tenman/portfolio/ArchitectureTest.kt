@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 @AnalyzeClasses(packages = ["ee.tenman.portfolio"])
 class ArchitectureTest {
   @ArchTest
-  val layeredArchitectureRule: ArchRule =
+  val `should enforce layered architecture`: ArchRule =
     layeredArchitecture()
       .consideringOnlyDependenciesInLayers()
       .layer("Controller")
@@ -41,7 +41,7 @@ class ArchitectureTest {
       )
 
   @ArchTest
-  val servicesNamingRule: ArchRule =
+  val `should have Service suffix for classes in service package annotated with Service`: ArchRule =
     classes()
       .that()
       .resideInAPackage("..service..")
@@ -51,7 +51,7 @@ class ArchitectureTest {
       .haveSimpleNameEndingWith("Service")
 
   @ArchTest
-  val repositoriesNamingRule: ArchRule =
+  val `should have Repository suffix for classes in repository package`: ArchRule =
     classes()
       .that()
       .resideInAPackage("..repository..")
@@ -59,7 +59,7 @@ class ArchitectureTest {
       .haveSimpleNameEndingWith("Repository")
 
   @ArchTest
-  val controllersNamingRule: ArchRule =
+  val `should have Controller suffix for classes annotated with RestController`: ArchRule =
     classes()
       .that()
       .areAnnotatedWith(RestController::class.java)
@@ -69,14 +69,14 @@ class ArchitectureTest {
       .resideInAPackage("..controller..")
 
   @ArchTest
-  val noFieldInjectionRule: ArchRule =
+  val `should not use field injection`: ArchRule =
     noFields()
       .should()
       .beAnnotatedWith("org.springframework.beans.factory.annotation.Autowired")
       .because("Field injection is discouraged, use constructor injection instead")
 
   @ArchTest
-  val servicesShouldBeAnnotatedRule: ArchRule =
+  val `should annotate service classes with Service annotation`: ArchRule =
     classes()
       .that()
       .resideInAPackage("..service..")
@@ -86,7 +86,7 @@ class ArchitectureTest {
       .beAnnotatedWith(Service::class.java)
 
   @ArchTest
-  val repositoriesShouldBeInterfacesRule: ArchRule =
+  val `should make repositories interfaces`: ArchRule =
     classes()
       .that()
       .resideInAPackage("..repository..")
@@ -96,10 +96,10 @@ class ArchitectureTest {
       .beInterfaces()
 
   @ArchTest
-  val noJavaUtilLoggingRule: ArchRule = GeneralCodingRules.NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING
+  val `should not use Java util logging`: ArchRule = GeneralCodingRules.NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING
 
   @ArchTest
-  val noSystemOutRule: ArchRule =
+  val `should not use System out`: ArchRule =
     noClasses()
       .should()
       .callMethod(System::class.java, "out")
