@@ -19,73 +19,107 @@ on:
   pull_request:
 
 jobs:
-  lint-and-test:
-    name: ${{ matrix.job-name }}
+  lint:
+    name: 🧹 ${{ matrix.lint-name }}
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - job-type: lint-backend
-            job-name: 🧹 Lint Backend
-          - job-type: lint-frontend
-            job-name: 🧹 Lint Frontend
-          - job-type: backend-unit
-            job-name: 🧪 Backend Unit Tests
-          - job-type: e2e
-            job-name: 🧪 E2E Tests
-          - job-type: frontend-unit
-            job-name: 🧪 Frontend Unit Tests
+          - lint-type: backend
+            lint-name: Lint Backend
+          - lint-type: frontend
+            lint-name: Lint Frontend
       fail-fast: false
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 1
       - name: Set up JDK 21
-        if: matrix.job-type == 'lint-backend' || matrix.job-type == 'backend-unit' || matrix.job-type == 'e2e'
+        if: matrix.lint-type == 'backend'
         uses: actions/setup-java@v5.0.0
         with:
           java-version: '21'
           distribution: 'temurin'
       - name: Setup Gradle
-        if: matrix.job-type == 'lint-backend' || matrix.job-type == 'backend-unit' || matrix.job-type == 'e2e'
+        if: matrix.lint-type == 'backend'
         uses: gradle/actions/setup-gradle@v5.0.0
         with:
           gradle-home-cache-cleanup: true
+      - name: Run ktlint check
+        if: matrix.lint-type == 'backend'
+        run: ./gradlew ktlintCheck
       - name: Use Node.js
-        if: matrix.job-type == 'lint-frontend' || matrix.job-type == 'frontend-unit'
+        if: matrix.lint-type == 'frontend'
         uses: actions/setup-node@v5
         with:
           node-version: 'lts/iron'
           cache: 'npm'
       - name: Install frontend dependencies
-        if: matrix.job-type == 'lint-frontend' || matrix.job-type == 'frontend-unit'
+        if: matrix.lint-type == 'frontend'
         run: npm ci
-      - name: Run ktlint check
-        if: matrix.job-type == 'lint-backend'
-        run: ./gradlew ktlintCheck
       - name: Run ESLint
-        if: matrix.job-type == 'lint-frontend'
+        if: matrix.lint-type == 'frontend'
         run: npm run lint
       - name: Check Prettier formatting
-        if: matrix.job-type == 'lint-frontend'
+        if: matrix.lint-type == 'frontend'
         run: npm run format:check
       - name: Check unused exports and files
-        if: matrix.job-type == 'lint-frontend'
+        if: matrix.lint-type == 'frontend'
         run: npm run check-unused
       - name: Check README links
-        if: matrix.job-type == 'lint-frontend'
+        if: matrix.lint-type == 'frontend'
         run: .github/workflows/check-readme-links.sh
+
+  test:
+    name: 🧪 ${{ matrix.test-name }}
+    needs: lint
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - test-type: backend-unit
+            test-name: Backend Unit Tests
+          - test-type: e2e
+            test-name: E2E Tests
+          - test-type: frontend-unit
+            test-name: Frontend Unit Tests
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+      - name: Set up JDK 21
+        if: matrix.test-type != 'frontend-unit'
+        uses: actions/setup-java@v5.0.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        if: matrix.test-type != 'frontend-unit'
+        uses: gradle/actions/setup-gradle@v5.0.0
+        with:
+          gradle-home-cache-cleanup: true
+      - name: Use Node.js
+        if: matrix.test-type == 'frontend-unit'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/iron'
+          cache: 'npm'
+      - name: Install frontend dependencies
+        if: matrix.test-type == 'frontend-unit'
+        run: npm ci
       - name: Set up Docker Compose
-        if: matrix.job-type == 'e2e'
+        if: matrix.test-type == 'e2e'
         uses: ndeloof/install-compose-action@v0.0.1
       - name: Cache Docker images
-        if: matrix.job-type == 'e2e'
+        if: matrix.test-type == 'e2e'
         uses: ScribeMD/docker-cache@0.5.0
         with:
           key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml') }}
       - name: Start services with Docker Compose (for E2E tests)
-        if: matrix.job-type == 'e2e'
+        if: matrix.test-type == 'e2e'
         env:
           VISION_BASE64_ENCODED_KEY: ${{ secrets.VISION_BASE64_ENCODED_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -97,10 +131,10 @@ jobs:
           echo "All services are healthy!"
           docker-compose -f docker-compose.e2e-minimal.yml ps
       - name: Run backend unit tests
-        if: matrix.job-type == 'backend-unit'
+        if: matrix.test-type == 'backend-unit'
         run: ./gradlew test --info -x bootJar --build-cache
       - name: Run E2E tests
-        if: matrix.job-type == 'e2e'
+        if: matrix.test-type == 'e2e'
         uses: Wandalen/wretry.action@v3.8.0
         with:
           command: |
@@ -109,13 +143,13 @@ jobs:
           attempt_limit: 3
           attempt_delay: 30000
       - name: Run frontend unit tests
-        if: matrix.job-type == 'frontend-unit'
+        if: matrix.test-type == 'frontend-unit'
         run: npm run test:run
       - name: Run frontend test coverage
-        if: matrix.job-type == 'frontend-unit'
+        if: matrix.test-type == 'frontend-unit'
         run: npm run test:coverage
       - uses: actions/upload-artifact@v4.6.2
-        if: always() && matrix.job-type == 'backend-unit'
+        if: always() && matrix.test-type == 'backend-unit'
         with:
           name: Backend Unit Test Reports
           path: |
@@ -123,7 +157,7 @@ jobs:
             build/test-results/test/
             build/reports/jacoco/test/html/
       - uses: actions/upload-artifact@v4.6.2
-        if: always() && matrix.job-type == 'e2e'
+        if: always() && matrix.test-type == 'e2e'
         with:
           name: E2E Test Reports and Screenshots
           path: |
@@ -132,7 +166,7 @@ jobs:
             build/reports/selenide/
             build/reports/jacoco/test/html/
       - uses: actions/upload-artifact@v4.6.2
-        if: always() && matrix.job-type == 'frontend-unit'
+        if: always() && matrix.test-type == 'frontend-unit'
         with:
           name: Frontend Unit Test Reports
           path: |
@@ -142,8 +176,8 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
-    needs: lint-and-test
-    if: always() && (needs.lint-and-test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    needs: test
+    if: always() && (needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -215,7 +249,7 @@ jobs:
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
-    needs: [ lint-and-test ]
+    needs: [ test ]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
