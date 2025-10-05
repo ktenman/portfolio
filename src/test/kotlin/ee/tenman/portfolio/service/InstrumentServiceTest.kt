@@ -140,12 +140,12 @@ class InstrumentServiceTest {
 
     expect(result).toHaveSize(1)
     val instrument = result[0]
-    expect(instrument.totalInvestment).toEqual(BigDecimal("1000"))
-    expect(instrument.currentValue).toEqual(BigDecimal("1500"))
-    expect(instrument.profit).toEqual(BigDecimal("500"))
+    expect(instrument.totalInvestment).toEqualNumerically(BigDecimal("1000"))
+    expect(instrument.currentValue).toEqualNumerically(BigDecimal("1500"))
+    expect(instrument.profit).toEqualNumerically(BigDecimal("500"))
     expect(instrument.xirr).toEqual(25.0)
-    expect(instrument.quantity).toEqual(BigDecimal("10"))
-    expect(instrument.priceChangeAmount).toEqual(BigDecimal("50.00"))
+    expect(instrument.quantity).toEqualNumerically(BigDecimal("10"))
+    expect(instrument.priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("50.00"))
     expect(instrument.priceChangePercent).toEqual(3.5)
   }
 
@@ -278,7 +278,7 @@ class InstrumentServiceTest {
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
     expect(result).toHaveSize(1)
-    expect(result[0].totalInvestment).toEqual(BigDecimal("1000"))
+    expect(result[0].totalInvestment).toEqualNumerically(BigDecimal("1000"))
   }
 
   @Test
@@ -341,7 +341,7 @@ class InstrumentServiceTest {
     val result = instrumentService.getAllInstruments()
 
     expect(result).toHaveSize(1)
-    expect(result[0].priceChangeAmount).toEqual(BigDecimal("50.00"))
+    expect(result[0].priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("50.00"))
     expect(result[0].priceChangePercent).toEqual(3.5)
   }
 

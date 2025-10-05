@@ -140,16 +140,16 @@ class HistoricalPricesServiceTest {
 
     val jan17Data = result[LocalDate.of(2025, 1, 17)]
     expect(jan17Data).notToEqualNull()
-    expect(jan17Data?.open).toEqual(BigDecimal("137.40"))
-    expect(jan17Data?.high).toEqual(BigDecimal("139.60"))
-    expect(jan17Data?.low).toEqual(BigDecimal("137.30"))
-    expect(jan17Data?.close).toEqual(BigDecimal("138.80"))
+    expect(jan17Data?.open).notToEqualNull().toEqualNumerically(BigDecimal("137.40"))
+    expect(jan17Data?.high).notToEqualNull().toEqualNumerically(BigDecimal("139.60"))
+    expect(jan17Data?.low).notToEqualNull().toEqualNumerically(BigDecimal("137.30"))
+    expect(jan17Data?.close).notToEqualNull().toEqualNumerically(BigDecimal("138.80"))
     expect(jan17Data?.volume).toEqual(22839L)
 
     val jan16Data = result[LocalDate.of(2025, 1, 16)]
     expect(jan16Data).notToEqualNull()
-    expect(jan16Data?.open).toEqual(BigDecimal("137.90"))
-    expect(jan16Data?.close).toEqual(BigDecimal("137.66"))
+    expect(jan16Data?.open).notToEqualNull().toEqualNumerically(BigDecimal("137.90"))
+    expect(jan16Data?.close).notToEqualNull().toEqualNumerically(BigDecimal("137.66"))
     expect(jan16Data?.volume).toEqual(44583L)
   }
 
@@ -298,10 +298,10 @@ class HistoricalPricesServiceTest {
 
     val data = result[LocalDate.of(2025, 1, 15)]
     expect(data).notToEqualNull()
-    expect(data?.open).toEqual(BigDecimal("1234.56"))
-    expect(data?.high).toEqual(BigDecimal("1240.00"))
-    expect(data?.low).toEqual(BigDecimal("1230.00"))
-    expect(data?.close).toEqual(BigDecimal("1238.50"))
+    expect(data?.open).notToEqualNull().toEqualNumerically(BigDecimal("1234.56"))
+    expect(data?.high).notToEqualNull().toEqualNumerically(BigDecimal("1240.00"))
+    expect(data?.low).notToEqualNull().toEqualNumerically(BigDecimal("1230.00"))
+    expect(data?.close).notToEqualNull().toEqualNumerically(BigDecimal("1238.50"))
     expect(data?.volume).toEqual(123456L)
   }
 
@@ -338,10 +338,10 @@ class HistoricalPricesServiceTest {
     expect(result).notToBeEmpty()
     val priceData = result[LocalDate.of(2025, 1, 17)]
     expect(priceData).notToEqualNull()
-    expect(priceData?.open).toEqual(BigDecimal("137.40"))
-    expect(priceData?.high).toEqual(BigDecimal("139.60"))
-    expect(priceData?.low).toEqual(BigDecimal("137.30"))
-    expect(priceData?.close).toEqual(BigDecimal("138.80"))
+    expect(priceData?.open).notToEqualNull().toEqualNumerically(BigDecimal("137.40"))
+    expect(priceData?.high).notToEqualNull().toEqualNumerically(BigDecimal("139.60"))
+    expect(priceData?.low).notToEqualNull().toEqualNumerically(BigDecimal("137.30"))
+    expect(priceData?.close).notToEqualNull().toEqualNumerically(BigDecimal("138.80"))
     expect(priceData?.volume).toEqual(22839L)
   }
 }
