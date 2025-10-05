@@ -73,7 +73,6 @@ jobs:
 
   test:
     name: 🧪 ${{ matrix.test-name }}
-    needs: lint
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
@@ -176,8 +175,8 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
-    needs: test
-    if: always() && (needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    needs: [lint, test]
+    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -249,7 +248,7 @@ jobs:
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
-    needs: [ test ]
+    needs: [lint, test]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
