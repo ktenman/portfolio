@@ -26,7 +26,7 @@ repositories {
 val springCloudVersion = "2025.0.0"
 val springDocVersion = "2.8.13"
 val ktlintVersion = "1.5.0"
-val selenideVersion = "7.10.1"
+val selenideVersion = "7.11.1"
 val springRetryVersion = "2.0.12"
 val resilience4jVersion = "2.3.0"
 val rxjava3Version = "3.1.9"
