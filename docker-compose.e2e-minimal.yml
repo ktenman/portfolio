@@ -51,8 +51,10 @@ services:
       - VISION_BASE64_ENCODED_KEY=${VISION_BASE64_ENCODED_KEY:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - portfolio-network
     healthcheck:
@@ -86,8 +88,10 @@ services:
     networks:
       - portfolio-network
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
 
 networks:
   portfolio-network:
