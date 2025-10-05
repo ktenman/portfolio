@@ -1,8 +1,9 @@
 package ee.tenman.portfolio.ft
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.common.DailyPriceDataImpl
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -38,7 +39,7 @@ class HistoricalPricesDataValidationTest {
   }
 
   @Test
-  fun `should filter out future dates`() {
+  fun `should filter out future dates when parsing historical prices`() {
     val today = LocalDate.now(clock)
     val futureDate = today.plusMonths(8)
 
@@ -76,14 +77,14 @@ class HistoricalPricesDataValidationTest {
 
     val result = service.fetchAndParsePrices("2025/01/01", "2025/09/30", "515873934")
 
-    assertThat(result).containsKey(LocalDate.of(2025, 1, 16))
-    assertThat(result).doesNotContainKey(futureDate)
-    assertThat(result.keys).allMatch { date -> date.isBefore(today) || date.isEqual(today) }
+    expect(result.keys).toContain(LocalDate.of(2025, 1, 16))
+    expect(result.keys).notToContain(futureDate)
+    expect(result.keys.all { date -> date.isBefore(today) || date.isEqual(today) }).toEqual(true)
   }
 
   @ParameterizedTest
   @MethodSource("invalidPriceDataProvider")
-  fun `should detect invalid price relationships`(
+  fun `should validate price relationships correctly when checking data consistency`(
     open: String,
     high: String,
     low: String,
@@ -102,13 +103,11 @@ class HistoricalPricesDataValidationTest {
 
     val isValid = validatePriceData(data)
 
-    assertThat(isValid)
-      .withFailMessage("Test case: $description - Expected valid=$expectedValid but got $isValid")
-      .isEqualTo(expectedValid)
+    expect(isValid).toEqual(expectedValid)
   }
 
   @Test
-  fun `should handle duplicate dates by keeping latest`() {
+  fun `should keep latest entry when duplicate dates exist`() {
     val duplicateHtml =
       """
       <tr>
@@ -143,14 +142,14 @@ class HistoricalPricesDataValidationTest {
 
     val result = service.fetchAndParsePrices("2025/01/13", "2025/01/13", "515873934")
 
-    assertThat(result).hasSize(1)
+    expect(result.size).toEqual(1)
     val data = result[LocalDate.of(2025, 1, 13)]
-    assertThat(data?.open).isEqualTo(BigDecimal("101.00"))
-    assertThat(data?.volume).isEqualTo(6000L)
+    expect(data?.open).toEqual(BigDecimal("101.00"))
+    expect(data?.volume).toEqual(6000L)
   }
 
   @Test
-  fun `should validate volume is positive`() {
+  fun `should filter out entries when volume is zero or negative`() {
     val priceData =
       mapOf(
         LocalDate.of(2025, 1, 17) to
@@ -173,12 +172,12 @@ class HistoricalPricesDataValidationTest {
 
     val validData = priceData.filter { (_, data) -> data.volume > 0 }
 
-    assertThat(validData).hasSize(1)
-    assertThat(validData).containsKey(LocalDate.of(2025, 1, 17))
+    expect(validData.size).toEqual(1)
+    expect(validData.keys).toContain(LocalDate.of(2025, 1, 17))
   }
 
   @Test
-  fun `should validate XAIX data consistency for real scenario`() {
+  fun `should validate XAIX data consistency when fetching real scenario data`() {
     val xaixRealDataHtml =
       """
       <tr>
@@ -203,19 +202,19 @@ class HistoricalPricesDataValidationTest {
 
     val result = service.fetchAndParsePrices("2025/08/29", "2025/08/29", "515873934")
 
-    assertThat(result).hasSize(1)
+    expect(result.size).toEqual(1)
     val data = result[LocalDate.of(2025, 8, 29)]!!
 
     val isValid = validatePriceData(data)
 
-    assertThat(isValid).isTrue()
-    assertThat(data.low).isLessThan(data.open)
-    assertThat(data.low).isLessThan(data.close)
-    assertThat(data.high).isGreaterThan(data.close)
+    expect(isValid).toEqual(true)
+    expect(data.low).toBeLessThan(data.open)
+    expect(data.low).toBeLessThan(data.close)
+    expect(data.high).toBeGreaterThan(data.close)
   }
 
   @Test
-  fun `should handle missing or null values gracefully`() {
+  fun `should return empty result when missing or null values exist`() {
     val incompleteHtml =
       """
       <tr>
@@ -240,7 +239,7 @@ class HistoricalPricesDataValidationTest {
 
     val result = service.fetchAndParsePrices("2025/01/13", "2025/01/13", "515873934")
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   private fun validatePriceData(data: DailyPriceData): Boolean =

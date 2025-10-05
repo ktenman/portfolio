@@ -1,10 +1,11 @@
 package ee.tenman.portfolio.configuration.exception
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.GlobalExceptionHandler
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Path
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -30,18 +31,18 @@ class GlobalExceptionHandlerTest {
   private lateinit var methodParameter: MethodParameter
 
   @Test
-  fun `should return internal server error when handling all exceptions`() {
+  fun `should return internal server error when handling general exceptions`() {
     val exception = Exception("Test exception")
 
     val response = globalExceptionHandler.handleAllExceptions(exception)
 
-    assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
-    assertThat(response.body?.message).isEqualTo("Test exception")
-    assertThat(response.body?.debugMessage).isEqualTo("An internal error occurred")
+    expect(response.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR)
+    expect(response.body?.message).toEqual("Test exception")
+    expect(response.body?.debugMessage).toEqual("An internal error occurred")
   }
 
   @Test
-  fun `should return bad request response with validation errors when handling ConstraintViolationException`() {
+  fun `should return bad request with validation errors when handling ConstraintViolationException`() {
     val mockPath1: Path = mock()
     whenever(mockPath1.toString()).thenReturn("field1")
     val mockViolation1: ConstraintViolation<*> = mock()
@@ -59,15 +60,15 @@ class GlobalExceptionHandlerTest {
 
     val response = globalExceptionHandler.handleConstraintViolationException(exception)
 
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body?.message).isEqualTo("Validation error")
-    assertThat(response.body?.debugMessage).isEqualTo("Constraint violation occurred")
-    assertThat(response.body?.validationErrors).containsEntry("field1", "Field 1 is invalid")
-    assertThat(response.body?.validationErrors).containsEntry("field2", "Field 2 is invalid")
+    expect(response.statusCode).toEqual(HttpStatus.BAD_REQUEST)
+    expect(response.body?.message).toEqual("Validation error")
+    expect(response.body?.debugMessage).toEqual("Constraint violation occurred")
+    expect(response.body?.validationErrors?.get("field1")).toEqual("Field 1 is invalid")
+    expect(response.body?.validationErrors?.get("field2")).toEqual("Field 2 is invalid")
   }
 
   @Test
-  fun `should return bad request response with validation errors when handling MethodArgumentNotValidException`() {
+  fun `should return bad request with field errors when handling MethodArgumentNotValidException`() {
     val fieldErrors =
       listOf(
         FieldError("objectName", "field1", "Field 1 is invalid"),
@@ -78,15 +79,15 @@ class GlobalExceptionHandlerTest {
     val methodArgumentNotValidException = MethodArgumentNotValidException(methodParameter, bindingResult)
     val response = globalExceptionHandler.handleValidationExceptions(methodArgumentNotValidException)
 
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body?.message).isEqualTo("Validation error")
-    assertThat(response.body?.debugMessage).isEqualTo("One or more fields have an error")
-    assertThat(response.body?.validationErrors).containsEntry("field1", "Field 1 is invalid")
-    assertThat(response.body?.validationErrors).containsEntry("field2", "Field 2 is invalid")
+    expect(response.statusCode).toEqual(HttpStatus.BAD_REQUEST)
+    expect(response.body?.message).toEqual("Validation error")
+    expect(response.body?.debugMessage).toEqual("One or more fields have an error")
+    expect(response.body?.validationErrors?.get("field1")).toEqual("Field 1 is invalid")
+    expect(response.body?.validationErrors?.get("field2")).toEqual("Field 2 is invalid")
   }
 
   @Test
-  fun `should extract errors and return bad request response when handling validation exceptions`() {
+  fun `should extract field errors when handling validation exceptions`() {
     val fieldErrors =
       listOf(
         FieldError("objectName", "field1", "Field 1 is invalid"),
@@ -97,10 +98,10 @@ class GlobalExceptionHandlerTest {
     val methodArgumentNotValidException = MethodArgumentNotValidException(methodParameter, bindingResult)
     val response = globalExceptionHandler.handleValidationException(methodArgumentNotValidException)
 
-    assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-    assertThat(response.body?.message).isEqualTo("Validation error")
-    assertThat(response.body?.debugMessage).isEqualTo("One or more fields have an error")
-    assertThat(response.body?.validationErrors).containsEntry("field1", "Field 1 is invalid")
-    assertThat(response.body?.validationErrors).containsEntry("field2", "Field 2 is invalid")
+    expect(response.statusCode).toEqual(HttpStatus.BAD_REQUEST)
+    expect(response.body?.message).toEqual("Validation error")
+    expect(response.body?.debugMessage).toEqual("One or more fields have an error")
+    expect(response.body?.validationErrors?.get("field1")).toEqual("Field 1 is invalid")
+    expect(response.body?.validationErrors?.get("field2")).toEqual("Field 2 is invalid")
   }
 }

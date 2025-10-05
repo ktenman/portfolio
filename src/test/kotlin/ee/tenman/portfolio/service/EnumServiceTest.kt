@@ -1,10 +1,11 @@
 package ee.tenman.portfolio.service
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -17,31 +18,40 @@ class EnumServiceTest {
   }
 
   @Test
-  fun `should return all enum values in sorted order`() {
+  fun `should return all enum values in sorted order when retrieving enums`() {
     val result = enumService.getAllEnums()
 
-    assertThat(result).containsKeys("platforms", "providers", "transactionTypes", "categories", "currencies")
-    assertThat(result["platforms"]).isSortedAccordingTo(String::compareTo)
-    assertThat(result["platforms"]).hasSize(Platform.entries.size)
-    assertThat(result["providers"]).isSortedAccordingTo(String::compareTo)
-    assertThat(result["providers"]).hasSize(ProviderName.entries.size)
-    assertThat(result["transactionTypes"]).containsExactly("BUY", "SELL")
-    assertThat(result["categories"]).isSortedAccordingTo(String::compareTo)
-    assertThat(result["categories"]).hasSize(InstrumentCategory.entries.size)
-    assertThat(result["currencies"]).isSortedAccordingTo(String::compareTo)
-    assertThat(result["currencies"]).hasSize(Currency.entries.size)
+    expect(result.keys).toContain("platforms", "providers", "transactionTypes", "categories", "currencies")
+
+    val platforms = result["platforms"]!!
+    expect(platforms).toEqual(platforms.sorted())
+    expect(platforms).toHaveSize(Platform.entries.size)
+
+    val providers = result["providers"]!!
+    expect(providers).toEqual(providers.sorted())
+    expect(providers).toHaveSize(ProviderName.entries.size)
+
+    expect(result["transactionTypes"]).notToEqualNull { toContainExactly("BUY", "SELL") }
+
+    val categories = result["categories"]!!
+    expect(categories).toEqual(categories.sorted())
+    expect(categories).toHaveSize(InstrumentCategory.entries.size)
+
+    val currencies = result["currencies"]!!
+    expect(currencies).toEqual(currencies.sorted())
+    expect(currencies).toHaveSize(Currency.entries.size)
   }
 
   @Test
-  fun `should return expected enum values`() {
+  fun `should return expected enum values when retrieving enums`() {
     val result = enumService.getAllEnums()
 
-    assertThat(
-      result["platforms"],
-    ).containsExactly("AVIVA", "BINANCE", "COINBASE", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
-    assertThat(result["providers"]).containsExactly("ALPHA_VANTAGE", "BINANCE", "FT")
-    assertThat(result["transactionTypes"]).containsExactly("BUY", "SELL")
-    assertThat(result["categories"]).containsExactly("CRYPTO", "ETF")
-    assertThat(result["currencies"]).containsExactly("EUR")
+    expect(result["platforms"]).notToEqualNull {
+      toContainExactly("AVIVA", "BINANCE", "COINBASE", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
+    }
+    expect(result["providers"]).notToEqualNull { toContainExactly("ALPHA_VANTAGE", "BINANCE", "FT") }
+    expect(result["transactionTypes"]).notToEqualNull { toContainExactly("BUY", "SELL") }
+    expect(result["categories"]).notToEqualNull { toContainExactly("CRYPTO", "ETF") }
+    expect(result["currencies"]).notToEqualNull { toContainExactly("EUR") }
   }
 }
