@@ -9,7 +9,8 @@ import ee.tenman.portfolio.service.xirr.Xirr
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -83,27 +84,27 @@ class CalculationServiceTest {
     }
 
   @Test
-  fun `returns empty list when no daily prices exist`() {
+  fun `should return empty list when no daily prices exist`() {
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(emptyList())
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
-  fun `returns empty list when only one daily price exists`() {
+  fun `should return empty list when only one daily price exists`() {
     val singlePrice = createDailyPrice(today.minusDays(10), BigDecimal("25.0"))
     whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(listOf(singlePrice))
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @ParameterizedTest(name = "Price trend: {0}")
   @MethodSource("providePriceTrends")
-  fun `calculates appropriate XIRR values for different price trends`(
+  fun `should calculates appropriate XIRR values for different price trends`(
     trendDescription: String,
     startPrice: Double,
     endPrice: Double,
@@ -120,16 +121,16 @@ class CalculationServiceTest {
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
-    assertThat(result).isNotEmpty()
-    assertThat(result[0].getTransactions().size).isGreaterThanOrEqualTo(2)
-    assertThat(result[0].getTransactions().last().amount).isGreaterThan(0.0)
+    expect(result).notToBeEmpty()
+    expect(result[0].getTransactions().size).toBeGreaterThanOrEqualTo(2)
+    expect(result[0].getTransactions().last().amount).toBeGreaterThan(0.0)
 
     val xirrValue = result[0].calculate()
-    assertThat(expectedXirrCondition(xirrValue)).isTrue()
+    expect(expectedXirrCondition(xirrValue)).toEqual(true)
   }
 
   @Test
-  fun `creates multiple time windows at two-week intervals`() {
+  fun `should creates multiple time windows at two-week intervals`() {
     val prices =
       createPriceHistory(
         startDate = today.minusMonths(6),
@@ -140,7 +141,7 @@ class CalculationServiceTest {
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
-    assertThat(result).isNotEmpty()
+    expect(result).notToBeEmpty()
 
     val endDates =
       result
@@ -148,13 +149,13 @@ class CalculationServiceTest {
         .distinct()
         .sorted()
 
-    assertThat(endDates.size).isGreaterThan(1)
-    assertThat(endDates[1].toEpochDay() - endDates[0].toEpochDay()).isEqualTo(15)
+    expect(endDates.size).toBeGreaterThan(1)
+    expect(endDates[1].toEpochDay() - endDates[0].toEpochDay()).toEqual(15)
   }
 
   @ParameterizedTest(name = "Price scenario: {0}")
   @MethodSource("providePriceScenarios")
-  fun `handles various price scenarios appropriately`(
+  fun `should handles various price scenarios appropriately`(
     scenarioName: String,
     prices: List<Pair<Int, Double>>,
     validator: (List<Xirr>) -> Unit,
@@ -172,7 +173,7 @@ class CalculationServiceTest {
   }
 
   @Test
-  fun `correctly creates buy and hold transactions`() {
+  fun `should correctly creates buy and hold transactions`() {
     val stablePrices =
       listOf(
         createDailyPrice(today.minusDays(60), BigDecimal("100.0")),
@@ -185,12 +186,12 @@ class CalculationServiceTest {
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
-    assertThat(result).isNotEmpty()
+    expect(result).notToBeEmpty()
 
     val transactions = result[0].getTransactions().sortedBy { it.date }
-    assertThat(transactions).hasSize(2)
-    assertThat(transactions[0].amount).isEqualTo(-1000.0)
-    assertThat(transactions[1].amount).isEqualTo(1000.0)
+    expect(transactions).toHaveSize(2)
+    expect(transactions[0].amount).toEqual(-1000.0)
+    expect(transactions[1].amount).toEqual(1000.0)
   }
 
   private fun createDailyPrice(
@@ -267,8 +268,8 @@ class CalculationServiceTest {
           listOf(Pair(30, 25.0), Pair(20, 1000000.0)),
           { result: List<Xirr> ->
             result.forEach { xirr ->
-              assertThat(xirr.calculate()).isGreaterThan(-1.0)
-              assertThat(xirr.getTransactions().last().amount).isGreaterThan(0.0)
+              expect(xirr.calculate()).toBeGreaterThan(-1.0)
+              expect(xirr.getTransactions().last().amount).toBeGreaterThan(0.0)
             }
           },
         ),
@@ -277,7 +278,7 @@ class CalculationServiceTest {
           listOf(Pair(30, 25.0), Pair(20, 20.0), Pair(10, 0.01)),
           { result: List<Xirr> ->
             result.forEach { xirr ->
-              assertThat(xirr.calculate()).isLessThanOrEqualTo(0.99)
+              expect(xirr.calculate()).toBeLessThanOrEqualTo(0.99)
             }
           },
         ),
@@ -291,17 +292,17 @@ class CalculationServiceTest {
             Pair(10, 103.80),
           ),
           { result: List<Xirr> ->
-            assertThat(result).isNotEmpty()
+            expect(result).notToBeEmpty()
             val xirrValue = result[0].calculate()
-            assertThat(xirrValue).isGreaterThan(-1.0)
-            assertThat(xirrValue).isLessThan(10.0)
+            expect(xirrValue).toBeGreaterThan(-1.0)
+            expect(xirrValue).toBeLessThan(10.0)
           },
         ),
       )
   }
 
   @Test
-  fun `calculateBatchXirrAsync processes single date successfully`() {
+  fun `should calculateBatchXirrAsync processes single date successfully`() {
     runBlocking {
       val dates = listOf(today)
       val summary = createTestSummary(today)
@@ -310,16 +311,16 @@ class CalculationServiceTest {
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
-      assertThat(result.processedDates).isEqualTo(1)
-      assertThat(result.failedCalculations).isEmpty()
-      assertThat(result.duration).isGreaterThanOrEqualTo(0)
+      expect(result.processedDates).toEqual(1)
+      expect(result.failedCalculations).toBeEmpty()
+      expect(result.duration).toBeGreaterThanOrEqualTo(0)
       verify(portfolioSummaryService).calculateSummaryForDate(today)
       verify(portfolioSummaryService).saveDailySummary(summary)
     }
   }
 
   @Test
-  fun `calculateBatchXirrAsync processes multiple dates successfully`() {
+  fun `should calculateBatchXirrAsync processes multiple dates successfully`() {
     runBlocking {
       val dates =
         listOf(
@@ -335,16 +336,16 @@ class CalculationServiceTest {
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
-      assertThat(result.processedDates).isEqualTo(3)
-      assertThat(result.processedInstruments).isEqualTo(0)
-      assertThat(result.failedCalculations).isEmpty()
+      expect(result.processedDates).toEqual(3)
+      expect(result.processedInstruments).toEqual(0)
+      expect(result.failedCalculations).toBeEmpty()
       verify(portfolioSummaryService, times(3)).calculateSummaryForDate(any())
       verify(portfolioSummaryService, times(3)).saveDailySummary(any())
     }
   }
 
   @Test
-  fun `calculateBatchXirrAsync handles calculation failure`() {
+  fun `should calculateBatchXirrAsync handles calculation failure`() {
     runBlocking {
       val successDate = today
       val failDate = today.plusDays(1)
@@ -358,20 +359,20 @@ class CalculationServiceTest {
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
-      assertThat(result.processedDates).isEqualTo(1)
-      assertThat(result.failedCalculations).hasSize(1)
-      assertThat(result.failedCalculations[0]).contains("Failed for date")
+      expect(result.processedDates).toEqual(1)
+      expect(result.failedCalculations).toHaveSize(1)
+      expect(result.failedCalculations[0]).toContain("Failed for date")
     }
   }
 
   @Test
-  fun `calculateBatchXirrAsync handles empty date list`() {
+  fun `should calculateBatchXirrAsync handles empty date list`() {
     runBlocking {
       val result = calculationService.calculateBatchXirrAsync(emptyList())
 
-      assertThat(result.processedDates).isEqualTo(0)
-      assertThat(result.failedCalculations).isEmpty()
-      assertThat(result.duration).isGreaterThanOrEqualTo(0)
+      expect(result.processedDates).toEqual(0)
+      expect(result.failedCalculations).toBeEmpty()
+      expect(result.duration).toBeGreaterThanOrEqualTo(0)
     }
   }
 
@@ -385,49 +386,49 @@ class CalculationServiceTest {
     )
 
   @Test
-  fun `calculateMedian returns 0 when list is empty`() {
+  fun `should calculateMedian returns 0 when list is empty`() {
     val result = calculationService.calculateMedian(emptyList())
 
-    assertThat(result).isEqualTo(0.0)
+    expect(result).toEqual(0.0)
   }
 
   @Test
-  fun `calculateMedian returns the only element when list has single element`() {
+  fun `should calculateMedian returns the only element when list has single element`() {
     val result = calculationService.calculateMedian(listOf(42.5))
 
-    assertThat(result).isEqualTo(42.5)
+    expect(result).toEqual(42.5)
   }
 
   @Test
-  fun `calculateMedian returns average of two middle elements when list has two elements`() {
+  fun `should calculateMedian returns average of two middle elements when list has two elements`() {
     val result = calculationService.calculateMedian(listOf(10.0, 20.0))
 
-    assertThat(result).isEqualTo(15.0)
+    expect(result).toEqual(15.0)
   }
 
   @Test
-  fun `calculateMedian returns middle element when list has odd number of elements`() {
+  fun `should calculateMedian returns middle element when list has odd number of elements`() {
     val result = calculationService.calculateMedian(listOf(5.0, 10.0, 15.0, 20.0, 25.0))
 
-    assertThat(result).isEqualTo(15.0)
+    expect(result).toEqual(15.0)
   }
 
   @Test
-  fun `calculateMedian returns average of two middle elements when list has even number of elements`() {
+  fun `should calculateMedian returns average of two middle elements when list has even number of elements`() {
     val result = calculationService.calculateMedian(listOf(5.0, 10.0, 20.0, 25.0))
 
-    assertThat(result).isEqualTo(15.0)
+    expect(result).toEqual(15.0)
   }
 
   @Test
-  fun `calculateMedian handles unsorted list correctly`() {
+  fun `should calculateMedian handles unsorted list correctly`() {
     val result = calculationService.calculateMedian(listOf(25.0, 5.0, 15.0, 10.0, 20.0))
 
-    assertThat(result).isEqualTo(15.0)
+    expect(result).toEqual(15.0)
   }
 
   @Test
-  fun `calculateRollingXirr breaks loop when filtering results in less than 2 prices`() {
+  fun `should calculateRollingXirr breaks loop when filtering results in less than 2 prices`() {
     val prices =
       listOf(
         createDailyPrice(today.minusMonths(3), BigDecimal("100.0")),
@@ -437,11 +438,11 @@ class CalculationServiceTest {
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
-    assertThat(result).isNotEmpty()
+    expect(result).notToBeEmpty()
   }
 
   @Test
-  fun `calculateRollingXirr excludes xirr when currentValue is zero`() {
+  fun `should calculateRollingXirr excludes xirr when currentValue is zero`() {
     val prices =
       listOf(
         createDailyPrice(today.minusDays(60), BigDecimal("100.0")),
@@ -454,12 +455,12 @@ class CalculationServiceTest {
 
     result.forEach { xirr ->
       val lastTransaction = xirr.getTransactions().last()
-      assertThat(lastTransaction.amount).isGreaterThan(0.0)
+      expect(lastTransaction.amount).toBeGreaterThan(0.0)
     }
   }
 
   @Test
-  fun `calculateRollingXirr filters out xirr calculations that throw exceptions`() {
+  fun `should calculateRollingXirr filters out xirr calculations that throw exceptions`() {
     val prices =
       listOf(
         createDailyPrice(today.minusDays(60), BigDecimal("0.0")),
@@ -471,12 +472,12 @@ class CalculationServiceTest {
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
     result.forEach { xirr ->
-      assertThat(xirr.calculate()).isGreaterThan(-1.0)
+      expect(xirr.calculate()).toBeGreaterThan(-1.0)
     }
   }
 
   @Test
-  fun `getCalculationResult returns zeros when no valid xirr results exist`() {
+  fun `should getCalculationResult returns zeros when no valid xirr results exist`() {
     val prices =
       listOf(
         createDailyPrice(today.minusDays(30), BigDecimal("100.0")),
@@ -486,13 +487,13 @@ class CalculationServiceTest {
 
     val result = calculationService.getCalculationResult()
 
-    assertThat(result.median).isEqualTo(0.0)
-    assertThat(result.average).isEqualTo(0.0)
-    assertThat(result.xirrs).isEmpty()
+    expect(result.median).toEqual(0.0)
+    expect(result.average).toEqual(0.0)
+    expect(result.xirrs).toBeEmpty()
   }
 
   @Test
-  fun `getCalculationResult filters out xirr values less than or equal to -1`() {
+  fun `should getCalculationResult filters out xirr values less than or equal to -1`() {
     val prices =
       listOf(
         createDailyPrice(today.minusDays(60), BigDecimal("1000.0")),
@@ -509,13 +510,13 @@ class CalculationServiceTest {
           .calculateRollingXirr(instrumentCode)
           .find { it.getTransactions().maxOf { tx -> tx.date } == transaction.date }
       if (correspondingXirr != null) {
-        assertThat(correspondingXirr.calculate()).isGreaterThan(-1.0)
+        expect(correspondingXirr.calculate()).toBeGreaterThan(-1.0)
       }
     }
   }
 
   @Test
-  fun `getCalculationResult uses calculation dispatcher for async operations`() {
+  fun `should getCalculationResult uses calculation dispatcher for async operations`() {
     val prices =
       createPriceHistory(
         startDate = today.minusDays(60),
@@ -526,13 +527,13 @@ class CalculationServiceTest {
 
     val result = calculationService.getCalculationResult()
 
-    assertThat(result.median).isGreaterThan(0.0)
-    assertThat(result.average).isGreaterThan(0.0)
-    assertThat(result.xirrs).isNotEmpty()
+    expect(result.median).toBeGreaterThan(0.0)
+    expect(result.average).toBeGreaterThan(0.0)
+    expect(result.xirrs).notToBeEmpty()
   }
 
   @Test
-  fun `calculateBatchXirrAsync handles all failures correctly`() {
+  fun `should calculateBatchXirrAsync handles all failures correctly`() {
     runBlocking {
       val dates = listOf(today, today.plusDays(1), today.plusDays(2))
 
@@ -543,15 +544,15 @@ class CalculationServiceTest {
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
-      assertThat(result.processedDates).isEqualTo(0)
-      assertThat(result.failedCalculations).hasSize(3)
-      assertThat(result.failedCalculations).allMatch { it.contains("Failed for date") }
-      assertThat(result.duration).isGreaterThanOrEqualTo(0)
+      expect(result.processedDates).toEqual(0)
+      expect(result.failedCalculations).toHaveSize(3)
+      result.failedCalculations.forEach { expect(it).toContain("Failed for date") }
+      expect(result.duration).toBeGreaterThanOrEqualTo(0)
     }
   }
 
   @Test
-  fun `calculateBatchXirrAsync calculates duration correctly`() {
+  fun `should calculateBatchXirrAsync calculates duration correctly`() {
     runBlocking {
       val dates = listOf(today)
       val summary = createTestSummary(today)
@@ -561,13 +562,13 @@ class CalculationServiceTest {
       val result = calculationService.calculateBatchXirrAsync(dates)
       val endTime = System.currentTimeMillis()
 
-      assertThat(result.duration).isGreaterThanOrEqualTo(0)
-      assertThat(result.duration).isLessThanOrEqualTo(endTime - startTime + 100)
+      expect(result.duration).toBeGreaterThanOrEqualTo(0)
+      expect(result.duration).toBeLessThanOrEqualTo(endTime - startTime + 100)
     }
   }
 
   @Test
-  fun `calculateBatchXirrAsync processes mixed success and failure scenarios`() {
+  fun `should calculateBatchXirrAsync processes mixed success and failure scenarios`() {
     runBlocking {
       val date1 = today
       val date2 = today.plusDays(1)
@@ -584,15 +585,15 @@ class CalculationServiceTest {
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
-      assertThat(result.processedDates).isEqualTo(2)
-      assertThat(result.failedCalculations).hasSize(1)
-      assertThat(result.failedCalculations[0]).contains("Failed for date $date2")
+      expect(result.processedDates).toEqual(2)
+      expect(result.failedCalculations).toHaveSize(1)
+      expect(result.failedCalculations[0]).toContain("Failed for date $date2")
       verify(portfolioSummaryService).saveDailySummary(summary1)
       verify(portfolioSummaryService).saveDailySummary(summary3)
     }
 
     @Test
-    fun `calculateRollingXirr throws exception when instrument not found`() {
+    fun `should calculateRollingXirr throws exception when instrument not found`() {
       whenever(instrumentRepository.findBySymbol("UNKNOWN")).thenReturn(Optional.empty())
 
       val exception =
@@ -600,7 +601,7 @@ class CalculationServiceTest {
           calculationService.calculateRollingXirr("UNKNOWN")
         }
 
-      assertThat(exception.message).contains("Instrument not found with symbol: UNKNOWN")
+      expect(exception.message!!).toContain("Instrument not found with symbol: UNKNOWN")
     }
   }
 }

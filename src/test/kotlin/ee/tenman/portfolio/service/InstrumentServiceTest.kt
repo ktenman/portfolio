@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -7,8 +9,6 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -70,44 +70,46 @@ class InstrumentServiceTest {
   }
 
   @Test
-  fun `getInstrumentById returns instrument when found`() {
+  fun `should return instrument when found by id`() {
     whenever(instrumentRepository.findById(1L)).thenReturn(Optional.of(testInstrument))
 
     val result = instrumentService.getInstrumentById(1L)
 
-    assertThat(result).isEqualTo(testInstrument)
-    assertThat(result.symbol).isEqualTo("AAPL")
+    expect(result).toEqual(testInstrument)
+    expect(result.symbol).toEqual("AAPL")
     verify(instrumentRepository).findById(1L)
   }
 
   @Test
-  fun `getInstrumentById throws exception when instrument not found`() {
+  fun `should throw exception when instrument not found by id`() {
     whenever(instrumentRepository.findById(999L)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { instrumentService.getInstrumentById(999L) }
-      .isInstanceOf(RuntimeException::class.java)
-      .hasMessage("Instrument not found with id: 999")
+    expect {
+      instrumentService.getInstrumentById(999L)
+    }.toThrow<RuntimeException> {
+      messageToContain("Instrument not found with id: 999")
+    }
   }
 
   @Test
-  fun `saveInstrument saves and returns instrument`() {
+  fun `should save and return instrument when saving`() {
     whenever(instrumentRepository.save(testInstrument)).thenReturn(testInstrument)
 
     val result = instrumentService.saveInstrument(testInstrument)
 
-    assertThat(result).isEqualTo(testInstrument)
+    expect(result).toEqual(testInstrument)
     verify(instrumentRepository).save(testInstrument)
   }
 
   @Test
-  fun `deleteInstrument calls repository delete`() {
+  fun `should call repository delete when deleting instrument`() {
     instrumentService.deleteInstrument(1L)
 
     verify(instrumentRepository).deleteById(1L)
   }
 
   @Test
-  fun `getAllInstruments without platforms returns all instruments with metrics`() {
+  fun `should return all instruments with metrics when no platform filter specified`() {
     val transactions =
       listOf(
         createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
@@ -136,19 +138,19 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments()
 
-    assertThat(result).hasSize(1)
+    expect(result).toHaveSize(1)
     val instrument = result[0]
-    assertThat(instrument.totalInvestment).isEqualByComparingTo(BigDecimal("1000"))
-    assertThat(instrument.currentValue).isEqualByComparingTo(BigDecimal("1500"))
-    assertThat(instrument.profit).isEqualByComparingTo(BigDecimal("500"))
-    assertThat(instrument.xirr).isEqualTo(25.0)
-    assertThat(instrument.quantity).isEqualByComparingTo(BigDecimal("10"))
-    assertThat(instrument.priceChangeAmount).isEqualByComparingTo(BigDecimal("50.00"))
-    assertThat(instrument.priceChangePercent).isEqualTo(3.5)
+    expect(instrument.totalInvestment).toEqual(BigDecimal("1000"))
+    expect(instrument.currentValue).toEqual(BigDecimal("1500"))
+    expect(instrument.profit).toEqual(BigDecimal("500"))
+    expect(instrument.xirr).toEqual(25.0)
+    expect(instrument.quantity).toEqual(BigDecimal("10"))
+    expect(instrument.priceChangeAmount).toEqual(BigDecimal("50.00"))
+    expect(instrument.priceChangePercent).toEqual(3.5)
   }
 
   @Test
-  fun `getAllInstruments with platform filter returns only matching instruments`() {
+  fun `should return only matching instruments when platform filter specified`() {
     val lhvTransaction =
       createBuyTransaction(
         quantity = BigDecimal("10"),
@@ -185,12 +187,12 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0].platforms).containsExactly(Platform.LHV)
+    expect(result).toHaveSize(1)
+    expect(result[0].platforms).toContainExactly(Platform.LHV)
   }
 
   @Test
-  fun `getAllInstruments with invalid platform filter ignores invalid platforms`() {
+  fun `should ignore invalid platforms when platform filter contains invalid values`() {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
@@ -216,11 +218,11 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("invalid_platform", "lhv"))
 
-    assertThat(result).hasSize(1)
+    expect(result).toHaveSize(1)
   }
 
   @Test
-  fun `getAllInstruments excludes instruments with zero quantity and zero investment when platform filter applied`() {
+  fun `should exclude instruments with zero quantity and zero investment when platform filter applied`() {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
@@ -245,11 +247,11 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
-  fun `getAllInstruments includes instruments with zero quantity but positive investment when platform filter applied`() {
+  fun `should include instruments with zero quantity but positive investment when platform filter applied`() {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
@@ -275,12 +277,12 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0].totalInvestment).isEqualByComparingTo(BigDecimal("1000"))
+    expect(result).toHaveSize(1)
+    expect(result[0].totalInvestment).toEqual(BigDecimal("1000"))
   }
 
   @Test
-  fun `getAllInstruments with no transactions for instrument returns empty when platform filter applied`() {
+  fun `should return empty when no transactions for instrument and platform filter applied`() {
     val anotherInstrument =
       Instrument(
         symbol = "GOOGL",
@@ -295,22 +297,22 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
-  fun `getAllInstruments with no transactions for instrument returns instrument when no platform filter`() {
+  fun `should return instrument when no transactions and no platform filter`() {
     whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
     whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(emptyList())
 
     val result = instrumentService.getAllInstruments()
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0]).isEqualTo(testInstrument)
+    expect(result).toHaveSize(1)
+    expect(result[0]).toEqual(testInstrument)
   }
 
   @Test
-  fun `getAllInstruments calculates price change correctly`() {
+  fun `should calculate price change correctly when price change available`() {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
@@ -338,13 +340,13 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments()
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0].priceChangeAmount).isEqualByComparingTo(BigDecimal("50.00"))
-    assertThat(result[0].priceChangePercent).isEqualTo(3.5)
+    expect(result).toHaveSize(1)
+    expect(result[0].priceChangeAmount).toEqual(BigDecimal("50.00"))
+    expect(result[0].priceChangePercent).toEqual(3.5)
   }
 
   @Test
-  fun `getAllInstruments handles null price change`() {
+  fun `should handle null price change when price change not available`() {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
@@ -370,13 +372,13 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments()
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0].priceChangeAmount).isNull()
-    assertThat(result[0].priceChangePercent).isNull()
+    expect(result).toHaveSize(1)
+    expect(result[0].priceChangeAmount).toEqual(null)
+    expect(result[0].priceChangePercent).toEqual(null)
   }
 
   @Test
-  fun `getAllInstruments with multiple platforms aggregates correctly`() {
+  fun `should aggregate correctly when multiple platforms exist`() {
     val lhvTx =
       createBuyTransaction(
         quantity = BigDecimal("10"),
@@ -413,12 +415,12 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments()
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0].platforms).containsExactlyInAnyOrder(Platform.LHV, Platform.LIGHTYEAR)
+    expect(result).toHaveSize(1)
+    expect(result[0].platforms.toSet()).toEqual(setOf(Platform.LHV, Platform.LIGHTYEAR))
   }
 
   @Test
-  fun `getAllInstruments with platform filter matching multiple platforms`() {
+  fun `should return instruments matching multiple platforms when filter includes multiple platforms`() {
     val lhvTx =
       createBuyTransaction(
         quantity = BigDecimal("10"),
@@ -455,12 +457,12 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("lhv", "lightyear"))
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0].platforms).containsExactlyInAnyOrder(Platform.LHV, Platform.LIGHTYEAR)
+    expect(result).toHaveSize(1)
+    expect(result[0].platforms.toSet()).toEqual(setOf(Platform.LHV, Platform.LIGHTYEAR))
   }
 
   @Test
-  fun `getAllInstruments with mixed case platform names`() {
+  fun `should handle mixed case platform names when filtering`() {
     val transaction =
       createBuyTransaction(
         quantity = BigDecimal("10"),
@@ -490,11 +492,11 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("Lhv", "LIGHTYEAR"))
 
-    assertThat(result).hasSize(1)
+    expect(result).toHaveSize(1)
   }
 
   @Test
-  fun `getAllInstruments with empty platform list filters out instruments with no transactions`() {
+  fun `should filter out instruments with no transactions when empty platform list provided`() {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
@@ -503,11 +505,11 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(emptyList())
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
-  fun `getAllInstruments filters out instruments with no matching platform transactions`() {
+  fun `should filter out instruments when no matching platform transactions exist`() {
     val lhvTransaction =
       createBuyTransaction(
         quantity = BigDecimal("10"),
@@ -520,11 +522,11 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("LIGHTYEAR"))
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
-  fun `getAllInstruments with multiple instruments some with matching platforms`() {
+  fun `should return only instruments with matching platforms when multiple instruments exist`() {
     val instrument2 =
       Instrument(
         symbol = "GOOGL",
@@ -570,12 +572,12 @@ class InstrumentServiceTest {
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
-    assertThat(result).hasSize(1)
-    assertThat(result[0].symbol).isEqualTo("AAPL")
+    expect(result).toHaveSize(1)
+    expect(result[0].symbol).toEqual("AAPL")
   }
 
   @Test
-  fun `getAllInstruments uses current date from clock`() {
+  fun `should use current date from clock when calculating metrics`() {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 

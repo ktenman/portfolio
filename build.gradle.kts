@@ -86,6 +86,7 @@ dependencies {
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
   testImplementation("com.tngtech.archunit:archunit-junit5:$archUnitVersion")
+  testImplementation("ch.tutteli.atrium:atrium-fluent:1.2.0")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
