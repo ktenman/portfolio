@@ -12,7 +12,8 @@ import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
 import e2e.retry.RetryExtension
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -44,7 +45,7 @@ class TransactionManagementE2ETests {
   @Test
   fun `should display success message after saving a new transaction`() {
     val addButton = id("addNewTransaction")
-    assertThat(addButton.isDisplayed).isTrue()
+    expect(addButton.isDisplayed).toEqual(true)
     addButton.shouldBe(enabled).click()
 
     val expectedQuantity = "10.144"
@@ -53,18 +54,18 @@ class TransactionManagementE2ETests {
 
     val instrumentSelect = id("instrumentId").shouldBe(visible, Duration.ofSeconds(5))
     val options = instrumentSelect.findAll("option")
-    assertThat(options.size()).isGreaterThan(1)
+    expect(options.size()).toBeGreaterThan(1)
     instrumentSelect.selectOption(1)
 
     id("transactionType").selectOption("BUY")
 
     val quantityField = id("quantity")
     quantityField.value = expectedQuantity
-    assertThat(quantityField.value).isEqualTo(expectedQuantity)
+    expect(quantityField.value).toEqual(expectedQuantity)
 
     val priceField = id("price")
     priceField.value = expectedPrice
-    assertThat(priceField.value).isEqualTo(expectedPrice)
+    expect(priceField.value).toEqual(expectedPrice)
 
     val dateField = id("transactionDate")
     dateField.clear()
@@ -74,7 +75,7 @@ class TransactionManagementE2ETests {
     id("platform").selectOption("TRADING212")
 
     val saveButton = elements(tagName("button")).filter(text("Save")).first()
-    assertThat(saveButton.isEnabled).isTrue()
+    expect(saveButton.isEnabled).toEqual(true)
     saveButton.click()
 
     val successAlert =
@@ -83,18 +84,16 @@ class TransactionManagementE2ETests {
     successAlert.shouldHave(text("Transaction saved successfully."))
 
     val savedTransaction = elements(tagName("td")).findBy(text("10.14"))
-    assertThat(savedTransaction.isDisplayed).isTrue()
+    expect(savedTransaction.isDisplayed).toEqual(true)
     savedTransaction.shouldBe(visible)
 
     val transactionRow = savedTransaction.closest("tr")
-    assertThat(transactionRow).isNotNull
     val rowCells = transactionRow.findAll(tagName("td"))
 
     val cellTexts = rowCells.texts()
-    assertThat(cellTexts)
-      .hasSizeGreaterThan(3)
-      .anyMatch { it.contains("10.14") }
-      .anyMatch { it.contains("29.6") }
+    expect(cellTexts.size).toBeGreaterThan(3)
+    expect(cellTexts.any { it.contains("10.14") }).toEqual(true)
+    expect(cellTexts.any { it.contains("29.6") }).toEqual(true)
   }
 
   @Disabled("Disabled due to hidden UI elements - Edit button")
@@ -116,7 +115,7 @@ class TransactionManagementE2ETests {
     Thread.sleep(1000)
 
     val editButtons = elements(tagName("button")).filter(text("Edit"))
-    assertThat(editButtons.size()).isGreaterThan(0)
+    expect(editButtons.size()).toBeGreaterThan(0)
     editButtons.first().click()
 
     val updatedQuantity = "112255.1211"
@@ -145,7 +144,7 @@ class TransactionManagementE2ETests {
     id("platform").selectOption("SWEDBANK")
 
     val updateButton = elements(tagName("button")).filter(text("Update")).first()
-    assertThat(updateButton.isEnabled).isTrue()
+    expect(updateButton.isEnabled).toEqual(true)
     updateButton.click()
 
     val successAlert =
@@ -154,27 +153,22 @@ class TransactionManagementE2ETests {
     successAlert.shouldHave(text("Transaction updated successfully."))
 
     val updatedQuantityCell = elements(tagName("td")).findBy(text("112255.12"))
-    assertThat(updatedQuantityCell.isDisplayed).isTrue()
+    expect(updatedQuantityCell.isDisplayed).toEqual(true)
 
     val transactionRow = updatedQuantityCell.closest("tr")
-    assertThat(transactionRow).isNotNull
-
     val transactionDetails = transactionRow.findAll(tagName("td"))
-    assertThat(transactionDetails)
-      .isNotEmpty
-      .hasSizeGreaterThan(5)
+    expect(transactionDetails.isEmpty()).toEqual(false)
+    expect(transactionDetails.size()).toBeGreaterThan(5)
 
     val cellTexts = transactionDetails.texts()
-    assertThat(cellTexts)
-      .anyMatch { it.contains("SELL") }
-      .anyMatch { it.contains("112255.12") }
-      .anyMatch { it.contains("332211.19") }
-      .anyMatch { it.contains("07.07.25") || it.contains("2025-07-07") }
+    expect(cellTexts.any { it.contains("SELL") }).toEqual(true)
+    expect(cellTexts.any { it.contains("112255.12") }).toEqual(true)
+    expect(cellTexts.any { it.contains("332211.19") }).toEqual(true)
+    expect(cellTexts.any { it.contains("07.07.25") || it.contains("2025-07-07") }).toEqual(true)
 
     val actionsCell = transactionDetails.last()
-    assertThat(actionsCell.text())
-      .containsIgnoringCase("Edit")
-      .containsIgnoringCase("Delete")
+    expect(actionsCell.text().lowercase()).toContain("edit")
+    expect(actionsCell.text().lowercase()).toContain("delete")
   }
 
   @Disabled("Disabled due to hidden UI elements - Delete button")
@@ -196,13 +190,11 @@ class TransactionManagementE2ETests {
     Thread.sleep(1000)
 
     val createdTransaction = elements(tagName("td")).findBy(text("99.99"))
-    assertThat(createdTransaction.isDisplayed).isTrue()
+    expect(createdTransaction.isDisplayed).toEqual(true)
 
     val transactionRow = createdTransaction.closest("tr")
-    assertThat(transactionRow).isNotNull
-
     val deleteButton = transactionRow.findAll(tagName("button")).filter(text("Delete")).first()
-    assertThat(deleteButton.isEnabled).isTrue()
+    expect(deleteButton.isEnabled).toEqual(true)
     deleteButton.click()
 
     val confirmButton = elements(tagName("button")).filter(text("Confirm")).first()
@@ -215,7 +207,7 @@ class TransactionManagementE2ETests {
 
     Thread.sleep(1000)
     val deletedTransactions = elements(tagName("td")).filter(text("99.99"))
-    assertThat(deletedTransactions.size()).isEqualTo(0)
+    expect(deletedTransactions.size()).toEqual(0)
   }
 
   private fun id(id: String): SelenideElement = element(By.id(id))

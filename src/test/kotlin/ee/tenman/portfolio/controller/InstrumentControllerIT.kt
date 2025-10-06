@@ -11,7 +11,8 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.cache.CacheManager
@@ -78,12 +79,13 @@ class InstrumentControllerIT {
       .andExpect(jsonPath("$.category").value("ETF"))
       .andExpect(jsonPath("$.baseCurrency").value("EUR"))
 
-    assertThat(instrumentRepository.findAll()).singleElement().satisfies({ instrument ->
-      assertThat(instrument.symbol).isEqualTo("QDVE")
-      assertThat(instrument.name).isEqualTo("iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)")
-      assertThat(instrument.category).isEqualTo("ETF")
-      assertThat(instrument.baseCurrency).isEqualTo("EUR")
-    })
+    val instruments = instrumentRepository.findAll()
+    expect(instruments).toHaveSize(1)
+    val instrument = instruments.first()
+    expect(instrument.symbol).toEqual("QDVE")
+    expect(instrument.name).toEqual("iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)")
+    expect(instrument.category).toEqual("ETF")
+    expect(instrument.baseCurrency).toEqual("EUR")
   }
 
   @Test
@@ -155,8 +157,8 @@ class InstrumentControllerIT {
       .andExpect(jsonPath("$.baseCurrency").value("USD"))
 
     val updatedInstrument = instrumentRepository.findById(savedInstrument.id).get()
-    assertThat(updatedInstrument.name).isEqualTo("Updated Instrument Name")
-    assertThat(updatedInstrument.baseCurrency).isEqualTo("USD")
+    expect(updatedInstrument.name).toEqual("Updated Instrument Name")
+    expect(updatedInstrument.baseCurrency).toEqual("USD")
   }
 
   @Test
@@ -175,6 +177,6 @@ class InstrumentControllerIT {
       .perform(delete("/api/instruments/{id}", savedInstrument.id).cookie(DEFAULT_COOKIE))
       .andExpect(status().isNoContent)
 
-    assertThat(instrumentRepository.findById(savedInstrument.id)).isEmpty
+    expect(instrumentRepository.findById(savedInstrument.id).isEmpty).toEqual(true)
   }
 }

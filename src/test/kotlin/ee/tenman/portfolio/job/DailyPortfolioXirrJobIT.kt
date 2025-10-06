@@ -16,7 +16,8 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.TransactionService
 import jakarta.annotation.Resource
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
@@ -74,7 +75,7 @@ class DailyPortfolioXirrJobIT {
     ).let {
       transactionService.saveTransaction(it)
     }
-    assertThat(dailyPriceRepository.findAll()).isEmpty()
+    expect(dailyPriceRepository.findAll()).toBeEmpty()
     stubFor(
       get(urlPathEqualTo("/query"))
         .withQueryParam("function", equalTo("SYMBOL_SEARCH"))
@@ -105,13 +106,12 @@ class DailyPortfolioXirrJobIT {
     dailyPortfolioXirrJob.execute()
 
     val summaries = portfolioDailySummaryRepository.findAll()
-    assertThat(summaries).hasSize(4)
-    summaries.minByOrNull { it.entryDate }!!.let {
-      assertThat(it.entryDate).isEqualTo("2024-07-01")
-      assertThat(it.totalValue).isEqualByComparingTo(BigDecimal("100.4556472150"))
-      assertThat(it.xirrAnnualReturn).isEqualByComparingTo(BigDecimal("0E-10"))
-      assertThat(it.totalProfit).isEqualByComparingTo(BigDecimal("0.4556472007"))
-      assertThat(it.earningsPerDay).isEqualByComparingTo(BigDecimal("0E-10"))
-    }
+    expect(summaries).toHaveSize(4)
+    val minSummary = summaries.minByOrNull { it.entryDate }!!
+    expect(minSummary.entryDate.toString()).toEqual("2024-07-01")
+    expect(minSummary.totalValue.compareTo(BigDecimal("100.4556472150"))).toEqual(0)
+    expect(minSummary.xirrAnnualReturn.compareTo(BigDecimal("0E-10"))).toEqual(0)
+    expect(minSummary.totalProfit.compareTo(BigDecimal("0.4556472007"))).toEqual(0)
+    expect(minSummary.earningsPerDay.compareTo(BigDecimal("0E-10"))).toEqual(0)
   }
 }

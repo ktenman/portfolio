@@ -12,6 +12,7 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 - Frontend: Vue.js 3.5.16, TypeScript 5.8.3, Vite 6.3.5, Bootstrap 5.3.5
 - Database: PostgreSQL 17 with Flyway migrations (V1-V30+)
 - Cache: Redis 8 (multi-level caching strategy)
+- Testing: Atrium 1.3.0-alpha-2 (Kotlin assertions), JUnit 5, Mockito, Selenide, Vitest
 - Authentication: Keycloak 25 + OAuth2-Proxy (dev), Custom auth service (prod) ⚠️
 - Infrastructure: Docker, Kubernetes, Caddy reverse proxy
 - Additional Services: Python-based market price tracker (Selenium), Google Cloud Vision API
@@ -146,6 +147,67 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 4. **API Testing**: WireMock for external API mocking
 5. **Frontend Tests**: Vue Test Utils with Vitest, comprehensive coverage of business logic
 6. **Business Logic Focus**: Tests prioritize business logic over framework functionality
+
+#### Assertion Library: Atrium
+
+The project uses **Atrium 1.3.0-alpha-2** (matching the klite reference project) for all Kotlin test assertions.
+
+**Standard Imports:**
+```kotlin
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
+```
+
+**Common Patterns:**
+
+Basic Assertions:
+```kotlin
+expect(value).toEqual(expected)              // Equality check
+expect(value).notToEqual(other)              // Inequality check
+expect(value).notToEqualNull()               // Null check
+```
+
+Collection/String Assertions:
+```kotlin
+expect(collection).toContain(element)        // Containment
+expect(collection).toContainExactly(...)     // Exact match
+expect(string).notToBeEmpty()                // Empty check
+expect(collection).toHaveSize(n)             // Size check
+```
+
+Numeric Comparisons:
+```kotlin
+expect(number).toBeGreaterThan(value)
+expect(number).toBeLessThan(value)
+expect(number).toBeGreaterThanOrEqualTo(value)
+expect(number).toBeLessThanOrEqualTo(value)
+```
+
+**BigDecimal Specific (IMPORTANT):**
+```kotlin
+// ✅ Correct: Use toEqualNumerically() for numerical comparison
+expect(bigDecimal).notToEqualNull().toEqualNumerically(expected)
+
+// ✅ Alternative: Use compareTo() for BigDecimal comparison
+expect(bigDecimal.compareTo(expected)).toEqual(0)
+
+// ❌ NEVER use toEqual() directly on BigDecimal (compares scale too)
+expect(bigDecimal).toEqual(expected)  // WRONG!
+```
+
+**Method Chaining (IMPORTANT):**
+```kotlin
+// ✅ Correct: Use dot notation for method chaining
+expect(value).notToEqualNull().toContainExactly("A", "B", "C")
+
+// ❌ WRONG: Do NOT use lambda/curly braces
+expect(value).notToEqualNull { toContainExactly("A", "B", "C") }
+```
+
+**Test Coverage:**
+- 25 test files using Atrium (267 total tests)
+- 169 BigDecimal assertions using `.toEqualNumerically()`
+- All tests use backtick naming: `` `should do something when condition`() ``
 
 ### Configuration
 

@@ -31,7 +31,7 @@ class EnumServiceTest {
     expect(providers).toEqual(providers.sorted())
     expect(providers).toHaveSize(ProviderName.entries.size)
 
-    expect(result["transactionTypes"]).notToEqualNull { toContainExactly("BUY", "SELL") }
+    expect(result["transactionTypes"]).notToEqualNull().toContainExactly("BUY", "SELL")
 
     val categories = result["categories"]!!
     expect(categories).toEqual(categories.sorted())
@@ -46,12 +46,11 @@ class EnumServiceTest {
   fun `should return expected enum values when retrieving enums`() {
     val result = enumService.getAllEnums()
 
-    expect(result["platforms"]).notToEqualNull {
-      toContainExactly("AVIVA", "BINANCE", "COINBASE", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
-    }
-    expect(result["providers"]).notToEqualNull { toContainExactly("ALPHA_VANTAGE", "BINANCE", "FT") }
-    expect(result["transactionTypes"]).notToEqualNull { toContainExactly("BUY", "SELL") }
-    expect(result["categories"]).notToEqualNull { toContainExactly("CRYPTO", "ETF") }
-    expect(result["currencies"]).notToEqualNull { toContainExactly("EUR") }
+    expect(result["platforms"]).notToEqualNull()
+      .toContainExactly("AVIVA", "BINANCE", "COINBASE", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
+    expect(result["providers"]).notToEqualNull().toContainExactly("ALPHA_VANTAGE", "BINANCE", "FT")
+    expect(result["transactionTypes"]).notToEqualNull().toContainExactly("BUY", "SELL")
+    expect(result["categories"]).notToEqualNull().toContainExactly("CRYPTO", "ETF")
+    expect(result["currencies"]).notToEqualNull().toContainExactly("EUR")
   }
 }
