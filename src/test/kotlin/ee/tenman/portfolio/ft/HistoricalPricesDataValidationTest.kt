@@ -4,25 +4,20 @@ import ch.tutteli.atrium.api.fluent.en_GB.*
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.common.DailyPriceDataImpl
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.stream.Stream
 
-@ExtendWith(MockitoExtension::class)
 class HistoricalPricesDataValidationTest {
-  @Mock
   private lateinit var historicalPricesClient: HistoricalPricesClient
 
   private lateinit var service: HistoricalPricesService
@@ -30,6 +25,7 @@ class HistoricalPricesDataValidationTest {
 
   @BeforeEach
   fun setUp() {
+    historicalPricesClient = mockk()
     clock =
       Clock.fixed(
       LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
@@ -67,13 +63,13 @@ class HistoricalPricesDataValidationTest {
       </tr>
       """.trimIndent()
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = htmlWithFutureDates))
+      )
+    } returns HistoricalPricesResponse(html = htmlWithFutureDates)
 
     val result = service.fetchAndParsePrices("2025/01/01", "2025/09/30", "515873934")
 
@@ -132,13 +128,13 @@ class HistoricalPricesDataValidationTest {
       </tr>
       """.trimIndent()
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = duplicateHtml))
+      )
+    } returns HistoricalPricesResponse(html = duplicateHtml)
 
     val result = service.fetchAndParsePrices("2025/01/13", "2025/01/13", "515873934")
 
@@ -192,13 +188,13 @@ class HistoricalPricesDataValidationTest {
       </tr>
       """.trimIndent()
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = xaixRealDataHtml))
+      )
+    } returns HistoricalPricesResponse(html = xaixRealDataHtml)
 
     val result = service.fetchAndParsePrices("2025/08/29", "2025/08/29", "515873934")
 
@@ -229,13 +225,13 @@ class HistoricalPricesDataValidationTest {
       </tr>
       """.trimIndent()
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = incompleteHtml))
+      )
+    } returns HistoricalPricesResponse(html = incompleteHtml)
 
     val result = service.fetchAndParsePrices("2025/01/13", "2025/01/13", "515873934")
 

@@ -11,12 +11,12 @@ import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
 import ee.tenman.portfolio.configuration.IntegrationTest
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.every
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
@@ -28,7 +28,7 @@ class HistoricalPricesServiceIT {
   @Resource
   private lateinit var historicalPricesService: HistoricalPricesService
 
-  @MockitoBean
+  @MockkBean
   private lateinit var clock: Clock
 
   @Resource
@@ -43,8 +43,8 @@ class HistoricalPricesServiceIT {
       LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
       ZoneId.of("UTC"),
     )
-    whenever(clock.instant()).thenReturn(fixedClock.instant())
-    whenever(clock.zone).thenReturn(fixedClock.zone)
+    every { clock.instant() } returns fixedClock.instant()
+    every { clock.zone } returns fixedClock.zone
   }
 
   @Test

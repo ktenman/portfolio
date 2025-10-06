@@ -8,22 +8,17 @@ import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.xirr.Xirr
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockito.Mock
-import org.mockito.Mockito.lenient
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
@@ -32,19 +27,11 @@ import java.util.Optional
 import java.util.stream.Stream
 import kotlin.math.abs
 
-@ExtendWith(MockitoExtension::class)
 class CalculationServiceTest {
-  @Mock
-  private lateinit var dataRetrievalService: DailyPriceService
-
-  @Mock
-  private lateinit var instrumentRepository: InstrumentRepository
-
-  @Mock
-  private lateinit var clock: Clock
-
-  @Mock
-  private lateinit var portfolioSummaryService: SummaryService
+  private val dataRetrievalService = mockk<DailyPriceService>()
+  private val instrumentRepository = mockk<InstrumentRepository>()
+  private val clock = mockk<Clock>()
+  private val portfolioSummaryService = mockk<SummaryService>()
 
   private lateinit var calculationService: CalculationService
   private lateinit var testInstrument: Instrument
@@ -56,8 +43,8 @@ class CalculationServiceTest {
   fun setUp() {
     testDispatcher = Dispatchers.Unconfined
     testInstrument = createTestInstrument()
-    lenient().whenever(clock.instant()).thenReturn(today.atStartOfDay(ZoneId.systemDefault()).toInstant())
-    lenient().whenever(clock.zone).thenReturn(ZoneId.systemDefault())
+    every { clock.instant() } returns today.atStartOfDay(ZoneId.systemDefault()).toInstant()
+    every { clock.zone } returns ZoneId.systemDefault()
 
     calculationService =
       CalculationService(
@@ -68,7 +55,7 @@ class CalculationServiceTest {
         portfolioSummaryService = portfolioSummaryService,
       )
 
-    lenient().whenever(instrumentRepository.findBySymbol(instrumentCode)).thenReturn(Optional.of(testInstrument))
+    every { instrumentRepository.findBySymbol(instrumentCode) } returns Optional.of(testInstrument)
   }
 
   private fun createTestInstrument() =
@@ -85,7 +72,7 @@ class CalculationServiceTest {
 
   @Test
   fun `should return empty list when no daily prices exist`() {
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(emptyList())
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns emptyList()
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -95,7 +82,7 @@ class CalculationServiceTest {
   @Test
   fun `should return empty list when only one daily price exists`() {
     val singlePrice = createDailyPrice(today.minusDays(10), BigDecimal("25.0"))
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(listOf(singlePrice))
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns listOf(singlePrice)
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -117,7 +104,7 @@ class CalculationServiceTest {
         endPrice = endPrice,
         ascending = endPrice > startPrice,
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -137,7 +124,7 @@ class CalculationServiceTest {
         startPrice = 20.0,
         endPrice = 35.0,
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -165,7 +152,7 @@ class CalculationServiceTest {
         createDailyPrice(today.minusDays(daysAgo.toLong()), BigDecimal(price.toString()))
       }
 
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(dailyPrices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns dailyPrices
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -182,7 +169,7 @@ class CalculationServiceTest {
         createDailyPrice(today.minusDays(10), BigDecimal("100.0")),
         createDailyPrice(today, BigDecimal("100.0")),
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(stablePrices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns stablePrices
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -307,15 +294,16 @@ class CalculationServiceTest {
       val dates = listOf(today)
       val summary = createTestSummary(today)
 
-      whenever(portfolioSummaryService.calculateSummaryForDate(today)).thenReturn(summary)
+      every { portfolioSummaryService.calculateSummaryForDate(today) } returns summary
+      every { portfolioSummaryService.saveDailySummary(summary) } returns summary
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
       expect(result.processedDates).toEqual(1)
       expect(result.failedCalculations).toBeEmpty()
       expect(result.duration).toBeGreaterThanOrEqualTo(0)
-      verify(portfolioSummaryService).calculateSummaryForDate(today)
-      verify(portfolioSummaryService).saveDailySummary(summary)
+      verify { portfolioSummaryService.calculateSummaryForDate(today) }
+      verify { portfolioSummaryService.saveDailySummary(summary) }
     }
   }
 
@@ -331,7 +319,8 @@ class CalculationServiceTest {
 
       dates.forEach { date ->
         val summary = createTestSummary(date)
-        whenever(portfolioSummaryService.calculateSummaryForDate(date)).thenReturn(summary)
+        every { portfolioSummaryService.calculateSummaryForDate(date) } returns summary
+        every { portfolioSummaryService.saveDailySummary(summary) } returns summary
       }
 
       val result = calculationService.calculateBatchXirrAsync(dates)
@@ -339,8 +328,8 @@ class CalculationServiceTest {
       expect(result.processedDates).toEqual(3)
       expect(result.processedInstruments).toEqual(0)
       expect(result.failedCalculations).toBeEmpty()
-      verify(portfolioSummaryService, times(3)).calculateSummaryForDate(any())
-      verify(portfolioSummaryService, times(3)).saveDailySummary(any())
+      verify(exactly = 3) { portfolioSummaryService.calculateSummaryForDate(any()) }
+      verify(exactly = 3) { portfolioSummaryService.saveDailySummary(any()) }
     }
   }
 
@@ -352,10 +341,9 @@ class CalculationServiceTest {
       val dates = listOf(successDate, failDate)
 
       val summary = createTestSummary(successDate)
-      whenever(portfolioSummaryService.calculateSummaryForDate(successDate)).thenReturn(summary)
-      whenever(portfolioSummaryService.calculateSummaryForDate(failDate)).thenThrow(
-        RuntimeException("Calculation failed"),
-      )
+      every { portfolioSummaryService.calculateSummaryForDate(successDate) } returns summary
+      every { portfolioSummaryService.saveDailySummary(summary) } returns summary
+      every { portfolioSummaryService.calculateSummaryForDate(failDate) } throws RuntimeException("Calculation failed")
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
@@ -434,7 +422,7 @@ class CalculationServiceTest {
         createDailyPrice(today.minusMonths(3), BigDecimal("100.0")),
         createDailyPrice(today.minusMonths(2), BigDecimal("110.0")),
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -449,7 +437,7 @@ class CalculationServiceTest {
         createDailyPrice(today.minusDays(40), BigDecimal("50.0")),
         createDailyPrice(today.minusDays(20), BigDecimal("0.0")),
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -467,7 +455,7 @@ class CalculationServiceTest {
         createDailyPrice(today.minusDays(40), BigDecimal("0.0")),
         createDailyPrice(today.minusDays(20), BigDecimal("100.0")),
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.calculateRollingXirr(instrumentCode)
 
@@ -483,7 +471,7 @@ class CalculationServiceTest {
         createDailyPrice(today.minusDays(30), BigDecimal("100.0")),
         createDailyPrice(today.minusDays(20), BigDecimal("0.0")),
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.getCalculationResult()
 
@@ -500,7 +488,7 @@ class CalculationServiceTest {
         createDailyPrice(today.minusDays(40), BigDecimal("500.0")),
         createDailyPrice(today.minusDays(20), BigDecimal("1.0")),
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.getCalculationResult()
 
@@ -523,7 +511,7 @@ class CalculationServiceTest {
         startPrice = 20.0,
         endPrice = 30.0,
       )
-    whenever(dataRetrievalService.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
 
     val result = calculationService.getCalculationResult()
 
@@ -538,8 +526,7 @@ class CalculationServiceTest {
       val dates = listOf(today, today.plusDays(1), today.plusDays(2))
 
       dates.forEach { date ->
-        whenever(portfolioSummaryService.calculateSummaryForDate(date))
-          .thenThrow(RuntimeException("Calculation failed for $date"))
+        every { portfolioSummaryService.calculateSummaryForDate(date) } throws RuntimeException("Calculation failed for $date")
       }
 
       val result = calculationService.calculateBatchXirrAsync(dates)
@@ -556,7 +543,8 @@ class CalculationServiceTest {
     runBlocking {
       val dates = listOf(today)
       val summary = createTestSummary(today)
-      whenever(portfolioSummaryService.calculateSummaryForDate(today)).thenReturn(summary)
+      every { portfolioSummaryService.calculateSummaryForDate(today) } returns summary
+      every { portfolioSummaryService.saveDailySummary(summary) } returns summary
 
       val startTime = System.currentTimeMillis()
       val result = calculationService.calculateBatchXirrAsync(dates)
@@ -578,30 +566,31 @@ class CalculationServiceTest {
       val summary1 = createTestSummary(date1)
       val summary3 = createTestSummary(date3)
 
-      whenever(portfolioSummaryService.calculateSummaryForDate(date1)).thenReturn(summary1)
-      whenever(portfolioSummaryService.calculateSummaryForDate(date2))
-        .thenThrow(RuntimeException("Failed for date2"))
-      whenever(portfolioSummaryService.calculateSummaryForDate(date3)).thenReturn(summary3)
+      every { portfolioSummaryService.calculateSummaryForDate(date1) } returns summary1
+      every { portfolioSummaryService.saveDailySummary(summary1) } returns summary1
+      every { portfolioSummaryService.calculateSummaryForDate(date2) } throws RuntimeException("Failed for date2")
+      every { portfolioSummaryService.calculateSummaryForDate(date3) } returns summary3
+      every { portfolioSummaryService.saveDailySummary(summary3) } returns summary3
 
       val result = calculationService.calculateBatchXirrAsync(dates)
 
       expect(result.processedDates).toEqual(2)
       expect(result.failedCalculations).toHaveSize(1)
       expect(result.failedCalculations[0]).toContain("Failed for date $date2")
-      verify(portfolioSummaryService).saveDailySummary(summary1)
-      verify(portfolioSummaryService).saveDailySummary(summary3)
+      verify { portfolioSummaryService.saveDailySummary(summary1) }
+      verify { portfolioSummaryService.saveDailySummary(summary3) }
     }
+  }
 
-    @Test
-    fun `should calculateRollingXirr throws exception when instrument not found`() {
-      whenever(instrumentRepository.findBySymbol("UNKNOWN")).thenReturn(Optional.empty())
+  @Test
+  fun `should calculateRollingXirr throws exception when instrument not found`() {
+    every { instrumentRepository.findBySymbol("UNKNOWN") } returns Optional.empty()
 
-      val exception =
-        org.junit.jupiter.api.assertThrows<RuntimeException> {
-          calculationService.calculateRollingXirr("UNKNOWN")
-        }
+    val exception =
+      org.junit.jupiter.api.assertThrows<RuntimeException> {
+        calculationService.calculateRollingXirr("UNKNOWN")
+      }
 
-      expect(exception.message!!).toContain("Instrument not found with symbol: UNKNOWN")
-    }
+    expect(exception.message!!).toContain("Instrument not found with symbol: UNKNOWN")
   }
 }

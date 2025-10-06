@@ -9,17 +9,11 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.Mockito.lenient
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
@@ -27,26 +21,14 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Optional
 
-@ExtendWith(MockitoExtension::class)
 class InstrumentServiceTest {
-  @Mock
-  private lateinit var instrumentRepository: InstrumentRepository
+  private val instrumentRepository = mockk<InstrumentRepository>()
+  private val portfolioTransactionRepository = mockk<PortfolioTransactionRepository>()
+  private val investmentMetricsService = mockk<InvestmentMetricsService>()
+  private val dailyPriceService = mockk<DailyPriceService>()
+  private val clock = mockk<Clock>()
 
-  @Mock
-  private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
-
-  @Mock
-  private lateinit var investmentMetricsService: InvestmentMetricsService
-
-  @Mock
-  private lateinit var dailyPriceService: DailyPriceService
-
-  @Mock
-  private lateinit var clock: Clock
-
-  @InjectMocks
   private lateinit var instrumentService: InstrumentService
-
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
   private val fixedInstant = Instant.parse("2024-01-15T10:00:00Z")
@@ -65,24 +47,33 @@ class InstrumentServiceTest {
         id = 1L
       }
 
-    lenient().whenever(clock.instant()).thenReturn(fixedInstant)
-    lenient().whenever(clock.zone).thenReturn(ZoneId.systemDefault())
+    every { clock.instant() } returns fixedInstant
+    every { clock.zone } returns ZoneId.systemDefault()
+
+    instrumentService =
+      InstrumentService(
+        instrumentRepository,
+        portfolioTransactionRepository,
+        investmentMetricsService,
+        dailyPriceService,
+        clock,
+      )
   }
 
   @Test
   fun `should return instrument when found by id`() {
-    whenever(instrumentRepository.findById(1L)).thenReturn(Optional.of(testInstrument))
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
 
     val result = instrumentService.getInstrumentById(1L)
 
     expect(result).toEqual(testInstrument)
     expect(result.symbol).toEqual("AAPL")
-    verify(instrumentRepository).findById(1L)
+    verify { instrumentRepository.findById(1L) }
   }
 
   @Test
   fun `should throw exception when instrument not found by id`() {
-    whenever(instrumentRepository.findById(999L)).thenReturn(Optional.empty())
+    every { instrumentRepository.findById(999L) } returns Optional.empty()
 
     expect {
       instrumentService.getInstrumentById(999L)
@@ -93,19 +84,23 @@ class InstrumentServiceTest {
 
   @Test
   fun `should save and return instrument when saving`() {
-    whenever(instrumentRepository.save(testInstrument)).thenReturn(testInstrument)
+    every { instrumentRepository.save(testInstrument) } returns testInstrument
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+    every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns emptyList()
 
     val result = instrumentService.saveInstrument(testInstrument)
 
     expect(result).toEqual(testInstrument)
-    verify(instrumentRepository).save(testInstrument)
+    verify { instrumentRepository.save(testInstrument) }
   }
 
   @Test
   fun `should call repository delete when deleting instrument`() {
+    every { instrumentRepository.deleteById(1L) } returns Unit
+
     instrumentService.deleteInstrument(1L)
 
-    verify(instrumentRepository).deleteById(1L)
+    verify { instrumentRepository.deleteById(1L) }
   }
 
   @Test
@@ -124,17 +119,17 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(transactions)
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns transactions
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
+        testInstrument,
         any(),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument))
-      .thenReturn(PriceChange(BigDecimal("5.00"), 3.5))
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns
+      PriceChange(BigDecimal("5.00"), 3.5)
 
     val result = instrumentService.getAllInstruments()
 
@@ -173,17 +168,17 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments())
-      .thenReturn(listOf(lhvTransaction, lightyearTransaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns
+      listOf(lhvTransaction, lightyearTransaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
-        eq(listOf(lhvTransaction)),
+        testInstrument,
+        listOf(lhvTransaction),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -205,16 +200,16 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
+        testInstrument,
         any(),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("invalid_platform", "lhv"))
 
@@ -235,15 +230,16 @@ class InstrumentServiceTest {
         quantity = BigDecimal.ZERO,
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
+        testInstrument,
         any(),
         any(),
-      ),
-    ).thenReturn(metrics)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -264,16 +260,16 @@ class InstrumentServiceTest {
         quantity = BigDecimal.ZERO,
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
-        eq(listOf(transaction)),
+        testInstrument,
+        listOf(transaction),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -292,8 +288,8 @@ class InstrumentServiceTest {
         currentPrice = BigDecimal("2800"),
       ).apply { id = 2L }
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument, anotherInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(emptyList())
+    every { instrumentRepository.findAll() } returns listOf(testInstrument, anotherInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns emptyList()
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -302,8 +298,8 @@ class InstrumentServiceTest {
 
   @Test
   fun `should return instrument when no transactions and no platform filter`() {
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(emptyList())
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns emptyList()
 
     val result = instrumentService.getAllInstruments()
 
@@ -327,16 +323,16 @@ class InstrumentServiceTest {
 
     val priceChange = PriceChange(BigDecimal("5.00"), 3.5)
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
+        testInstrument,
         any(),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(priceChange)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns priceChange
 
     val result = instrumentService.getAllInstruments()
 
@@ -359,16 +355,16 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
+        testInstrument,
         any(),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments()
 
@@ -401,17 +397,17 @@ class InstrumentServiceTest {
         quantity = BigDecimal("15"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments())
-      .thenReturn(listOf(lhvTx, lightyearTx))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns
+      listOf(lhvTx, lightyearTx)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
+        testInstrument,
         any(),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments()
 
@@ -443,17 +439,17 @@ class InstrumentServiceTest {
         quantity = BigDecimal("15"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments())
-      .thenReturn(listOf(lhvTx, lightyearTx))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns
+      listOf(lhvTx, lightyearTx)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
-        eq(listOf(lhvTx, lightyearTx)),
+        testInstrument,
+        listOf(lhvTx, lightyearTx),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv", "lightyear"))
 
@@ -479,16 +475,16 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
-        eq(listOf(transaction)),
+        testInstrument,
+        listOf(transaction),
         any(),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("Lhv", "LIGHTYEAR"))
 
@@ -500,8 +496,8 @@ class InstrumentServiceTest {
     val transaction =
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
 
     val result = instrumentService.getAllInstruments(emptyList())
 
@@ -517,8 +513,8 @@ class InstrumentServiceTest {
         platform = Platform.LHV,
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(lhvTransaction))
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(lhvTransaction)
 
     val result = instrumentService.getAllInstruments(listOf("LIGHTYEAR"))
 
@@ -559,16 +555,16 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument, instrument2))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(tx1, tx2))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument, instrument2)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(tx1, tx2)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
-        eq(listOf(tx1)),
+        testInstrument,
+        listOf(tx1),
         any(),
-      ),
-    ).thenReturn(metrics1)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+      )
+    } returns metrics1
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -590,24 +586,26 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    whenever(instrumentRepository.findAll()).thenReturn(listOf(testInstrument))
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(listOf(transaction))
-    whenever(
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
-        eq(testInstrument),
+        testInstrument,
         any(),
-        eq(testDate),
-      ),
-    ).thenReturn(metrics)
-    whenever(dailyPriceService.getLastPriceChange(testInstrument)).thenReturn(null)
+        testDate,
+      )
+    } returns metrics
+    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
 
     instrumentService.getAllInstruments()
 
-    verify(investmentMetricsService).calculateInstrumentMetricsWithProfits(
-      eq(testInstrument),
-      any(),
-      eq(testDate),
-    )
+    verify {
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        testInstrument,
+        any(),
+        testDate,
+      )
+    }
   }
 
   private fun createBuyTransaction(

@@ -6,24 +6,17 @@ import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.time.LocalDate
 
-@ExtendWith(MockitoExtension::class)
 class DailyPriceServiceTest {
-  @Mock
-  private lateinit var dailyPriceRepository: DailyPriceRepository
-
-  @InjectMocks
-  private lateinit var dailyPriceService: DailyPriceService
+  private val dailyPriceRepository = mockk<DailyPriceRepository>()
+  private val dailyPriceService = DailyPriceService(dailyPriceRepository)
 
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
@@ -47,13 +40,13 @@ class DailyPriceServiceTest {
   fun `should getPrice returns closePrice when price is found`() {
     val dailyPrice = createDailyPrice(closePrice = BigDecimal("150.50"))
 
-    whenever(
+    every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         testDate.minusYears(10),
         testDate,
-      ),
-    ).thenReturn(dailyPrice)
+      )
+    } returns dailyPrice
 
     val result = dailyPriceService.getPrice(testInstrument, testDate)
 
@@ -62,13 +55,13 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPrice throws NoSuchElementException when no price found`() {
-    whenever(
+    every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         testDate.minusYears(10),
         testDate,
-      ),
-    ).thenReturn(null)
+      )
+    } returns null
 
     val exception =
       org.junit.jupiter.api.assertThrows<NoSuchElementException> {
@@ -82,19 +75,19 @@ class DailyPriceServiceTest {
   fun `should saveDailyPrice saves new price when no existing price found`() {
     val newDailyPrice = createDailyPrice(closePrice = BigDecimal("100.00"))
 
-    whenever(
+    every {
       dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
         testInstrument,
         testDate,
         ProviderName.ALPHA_VANTAGE,
-      ),
-    ).thenReturn(null)
-    whenever(dailyPriceRepository.save(newDailyPrice)).thenReturn(newDailyPrice)
+      )
+    } returns null
+    every { dailyPriceRepository.save(newDailyPrice) } returns newDailyPrice
 
     val result = dailyPriceService.saveDailyPrice(newDailyPrice)
 
     expect(result).toEqual(newDailyPrice)
-    verify(dailyPriceRepository).save(newDailyPrice)
+    verify { dailyPriceRepository.save(newDailyPrice) }
   }
 
   @Test
@@ -116,14 +109,14 @@ class DailyPriceServiceTest {
         volume = 1500000L,
       )
 
-    whenever(
+    every {
       dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
         testInstrument,
         testDate,
         ProviderName.ALPHA_VANTAGE,
-      ),
-    ).thenReturn(existingPrice)
-    whenever(dailyPriceRepository.save(existingPrice)).thenReturn(existingPrice)
+      )
+    } returns existingPrice
+    every { dailyPriceRepository.save(existingPrice) } returns existingPrice
 
     val result = dailyPriceService.saveDailyPrice(newPriceData)
 
@@ -132,13 +125,14 @@ class DailyPriceServiceTest {
     expect(result.highPrice).notToEqualNull().toEqualNumerically(BigDecimal("115.00"))
     expect(result.lowPrice).notToEqualNull().toEqualNumerically(BigDecimal("104.00"))
     expect(result.volume).toEqual(1500000L)
-    verify(dailyPriceRepository).save(existingPrice)
+    verify { dailyPriceRepository.save(existingPrice) }
   }
 
   @Test
   fun `should getLastPriceChange returns null when recentPrices is empty`() {
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(emptyList())
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns emptyList()
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -154,8 +148,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(2)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -170,8 +165,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -188,8 +184,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -207,8 +204,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(2)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -226,8 +224,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("95.00"), date = testDate.minusDays(4)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -244,8 +243,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -261,8 +261,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -278,8 +279,9 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1)),
       )
 
-    whenever(dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument))
-      .thenReturn(prices)
+    every {
+      dailyPriceRepository.findTop10ByInstrumentOrderByEntryDateDesc(testInstrument)
+    } returns prices
 
     val result = dailyPriceService.getLastPriceChange(testInstrument)
 
@@ -292,13 +294,13 @@ class DailyPriceServiceTest {
   fun `should findLastDailyPrice returns most recent price within date range`() {
     val dailyPrice = createDailyPrice(closePrice = BigDecimal("120.00"), date = testDate.minusDays(5))
 
-    whenever(
+    every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         testDate.minusYears(10),
         testDate,
-      ),
-    ).thenReturn(dailyPrice)
+      )
+    } returns dailyPrice
 
     val result = dailyPriceService.findLastDailyPrice(testInstrument, testDate)
 
@@ -307,13 +309,13 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should findLastDailyPrice returns null when no price found in range`() {
-    whenever(
+    every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         testDate.minusYears(10),
         testDate,
-      ),
-    ).thenReturn(null)
+      )
+    } returns null
 
     val result = dailyPriceService.findLastDailyPrice(testInstrument, testDate)
 
@@ -329,7 +331,7 @@ class DailyPriceServiceTest {
         createDailyPrice(closePrice = BigDecimal("120.00")),
       )
 
-    whenever(dailyPriceRepository.findAllByInstrument(testInstrument)).thenReturn(prices)
+    every { dailyPriceRepository.findAllByInstrument(testInstrument) } returns prices
 
     val result = dailyPriceService.findAllByInstrument(testInstrument)
 

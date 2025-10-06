@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.domain.EnumsResponse
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
@@ -9,13 +10,13 @@ import org.springframework.stereotype.Service
 
 @Service
 class EnumService {
-  fun getAllEnums(): Map<String, List<String>> =
-    mapOf(
-      "platforms" to getPlatforms(),
-      "providers" to getProviders(),
-      "transactionTypes" to getTransactionTypes(),
-      "categories" to getCategories(),
-      "currencies" to getCurrencies(),
+  fun getAllEnums(): EnumsResponse =
+    EnumsResponse(
+      platforms = getPlatforms(),
+      providers = getProviders(),
+      transactionTypes = getTransactionTypes(),
+      categories = getCategories(),
+      currencies = getCurrencies(),
     )
 
   private fun getPlatforms(): List<String> = Platform.entries.map { it.name }.sorted()

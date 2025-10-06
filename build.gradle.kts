@@ -59,14 +59,23 @@ dependencies {
 
   developmentOnly(libs.spring.boot.docker.compose)
   runtimeOnly(libs.postgresql)
-  testImplementation(libs.spring.boot.starter.test)
+  testImplementation(libs.spring.boot.starter.test) {
+    exclude(group = "org.mockito", module = "mockito-core")
+    exclude(group = "org.mockito", module = "mockito-junit-jupiter")
+    exclude(group = "org.assertj", module = "assertj-core")
+  }
   testImplementation(libs.spring.boot.testcontainers)
   testImplementation(libs.kotlin.test.junit5)
-  testImplementation(libs.spring.cloud.starter.contract.stub.runner)
+  testImplementation(libs.spring.cloud.starter.contract.stub.runner) {
+    exclude(group = "org.mockito")
+    exclude(group = "org.assertj", module = "assertj-core")
+    exclude(group = "net.javacrumbs.json-unit", module = "json-unit-assertj")
+  }
   testImplementation(libs.testcontainers.junit.jupiter)
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.testcontainers.postgresql)
-  testImplementation(libs.mockito.kotlin)
+  testImplementation(libs.mockk)
+  testImplementation(libs.spring.mockk)
   testImplementation(libs.archunit.junit5)
   testImplementation(libs.atrium.fluent) {
     exclude("org.jetbrains.kotlin")
