@@ -434,7 +434,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit).notToEqualNull()
+    expect(metrics.totalProfit).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
   }
 
   @Test
@@ -676,7 +676,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit).notToEqualNull()
+    expect(metrics.totalProfit).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
     expect(metrics.xirrTransactions.size > 3).toEqual(true)
   }
 
@@ -909,7 +909,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit).notToEqualNull()
+    expect(metrics.totalProfit).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
   }
 
   @Test
@@ -928,7 +928,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit).notToEqualNull()
+    expect(metrics.totalProfit).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
   }
 
   @Test
@@ -946,6 +946,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
+    expect(metrics.totalProfit).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
   }
 
   @Test
@@ -1071,7 +1072,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit).notToEqualNull()
+    expect(metrics.totalProfit).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
   }
 
   @Test

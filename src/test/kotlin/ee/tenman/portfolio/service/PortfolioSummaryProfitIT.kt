@@ -84,7 +84,7 @@ class PortfolioSummaryProfitIT
     val historicalDate = testDate.minusDays(1)
     val historicalSummary = portfolioSummaryService.calculateSummaryForDate(historicalDate)
 
-    expect(historicalSummary.totalProfit).notToEqualNull()
+    expect(historicalSummary.totalProfit).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
   }
 
   @Test
