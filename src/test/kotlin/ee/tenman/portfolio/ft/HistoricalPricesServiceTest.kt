@@ -2,29 +2,25 @@ package ee.tenman.portfolio.ft
 
 import ch.tutteli.atrium.api.fluent.en_GB.*
 import ch.tutteli.atrium.api.verbs.expect
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
 
-@ExtendWith(MockitoExtension::class)
 class HistoricalPricesServiceTest {
-  @Mock
   private lateinit var historicalPricesClient: HistoricalPricesClient
 
   private lateinit var service: HistoricalPricesService
 
   @BeforeEach
   fun setUp() {
+    historicalPricesClient = mockk()
     val clock =
       Clock.fixed(
       LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
@@ -59,13 +55,13 @@ class HistoricalPricesServiceTest {
         </tr>""",
       )
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
-        org.mockito.kotlin.eq(expectedTickerId),
-      ),
-    ).thenReturn(mockResponse)
+        expectedTickerId,
+      )
+    } returns mockResponse
 
     val result = service.fetchPrices(symbol)
 
@@ -91,13 +87,13 @@ class HistoricalPricesServiceTest {
         </tr>""",
       )
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
-        org.mockito.kotlin.eq(unknownSymbol),
-      ),
-    ).thenReturn(mockResponse)
+        unknownSymbol,
+      )
+    } returns mockResponse
 
     val result = service.fetchPrices(unknownSymbol)
 
@@ -128,13 +124,13 @@ class HistoricalPricesServiceTest {
         <td>44,583</td>
       </tr>"""
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = xaixHtml))
+      )
+    } returns HistoricalPricesResponse(html = xaixHtml)
 
     val result = service.fetchAndParsePrices("2025/01/16", "2025/01/17", "515873934")
 
@@ -167,13 +163,13 @@ class HistoricalPricesServiceTest {
         <td>71.42k</td>
       </tr>"""
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = htmlWithKVolume))
+      )
+    } returns HistoricalPricesResponse(html = htmlWithKVolume)
 
     val result = service.fetchAndParsePrices("2025/01/06", "2025/01/06", "515873934")
 
@@ -196,13 +192,13 @@ class HistoricalPricesServiceTest {
         <td>2.5m</td>
       </tr>"""
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = htmlWithMVolume))
+      )
+    } returns HistoricalPricesResponse(html = htmlWithMVolume)
 
     val result = service.fetchAndParsePrices("2020/03/03", "2020/03/03", "573788032")
 
@@ -225,13 +221,13 @@ class HistoricalPricesServiceTest {
         <td>1.5b</td>
       </tr>"""
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = htmlWithBVolume))
+      )
+    } returns HistoricalPricesResponse(html = htmlWithBVolume)
 
     val result = service.fetchAndParsePrices("2020/03/11", "2020/03/11", "573788032")
 
@@ -242,13 +238,13 @@ class HistoricalPricesServiceTest {
 
   @Test
   fun `should return empty map when response is empty`() {
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = ""))
+      )
+    } returns HistoricalPricesResponse(html = "")
 
     val result = service.fetchAndParsePrices("2025/01/01", "2025/01/31", "515873934")
 
@@ -259,13 +255,13 @@ class HistoricalPricesServiceTest {
   fun `should handle malformed HTML gracefully when parsing prices`() {
     val malformedHtml = """<tr><td>Invalid</td></tr>"""
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = malformedHtml))
+      )
+    } returns HistoricalPricesResponse(html = malformedHtml)
 
     val result = service.fetchAndParsePrices("2025/01/01", "2025/01/31", "515873934")
 
@@ -286,13 +282,13 @@ class HistoricalPricesServiceTest {
         <td>123,456</td>
       </tr>"""
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
         any(),
-      ),
-    ).thenReturn(HistoricalPricesResponse(html = htmlWithCommas))
+      )
+    } returns HistoricalPricesResponse(html = htmlWithCommas)
 
     val result = service.fetchAndParsePrices("2025/01/15", "2025/01/15", "515873934")
 
@@ -325,13 +321,13 @@ class HistoricalPricesServiceTest {
         </tr>""",
       )
 
-    whenever(
+    every {
       historicalPricesClient.getHistoricalPrices(
         any(),
         any(),
-        org.mockito.kotlin.eq(expectedTickerId),
-      ),
-    ).thenReturn(mockResponse)
+        expectedTickerId,
+      )
+    } returns mockResponse
 
     val result = service.fetchPrices(xaixSymbol)
 

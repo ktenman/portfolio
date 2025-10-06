@@ -8,32 +8,21 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.xirr.Transaction
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.util.stream.Stream
 
-@ExtendWith(MockitoExtension::class)
 class InvestmentMetricsServiceTest {
-  @Mock
-  private lateinit var dailyPriceService: DailyPriceService
-
-  @Mock
-  private lateinit var transactionService: TransactionService
-
-  @InjectMocks
+  private val dailyPriceService = mockk<DailyPriceService>()
+  private val transactionService = mockk<TransactionService>()
   private lateinit var investmentMetricsService: InvestmentMetricsService
 
   private lateinit var testInstrument: Instrument
@@ -52,6 +41,7 @@ class InvestmentMetricsServiceTest {
       ).apply {
         id = 1L
       }
+    investmentMetricsService = InvestmentMetricsService(dailyPriceService, transactionService)
   }
 
   @Test
@@ -348,6 +338,8 @@ class InvestmentMetricsServiceTest {
   fun `should calculateInstrumentMetricsWithProfits calls transaction service`() {
     val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
 
+    every { transactionService.calculateTransactionProfits(any()) } returns Unit
+
     val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, transactions, testDate)
 
     expect(metrics.quantity).toEqualNumerically(BigDecimal("10"))
@@ -393,7 +385,7 @@ class InvestmentMetricsServiceTest {
     val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
     val instrumentGroups = mapOf(testInstrument to transactions)
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any())).thenReturn(BigDecimal("150"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("150")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -428,8 +420,8 @@ class InvestmentMetricsServiceTest {
         instrument2 to transactions2,
       )
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any())).thenReturn(BigDecimal("150"))
-    whenever(dailyPriceService.getPrice(eq(instrument2), any())).thenReturn(BigDecimal("2800"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("150")
+    every { dailyPriceService.getPrice(instrument2, any()) } returns BigDecimal("2800")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -507,6 +499,8 @@ class InvestmentMetricsServiceTest {
         createSellTransaction(quantity = BigDecimal("3"), price = BigDecimal("150"), platform = Platform.LHV),
       )
 
+    every { transactionService.calculateTransactionProfits(any()) } returns Unit
+
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
         testInstrument,
@@ -526,6 +520,8 @@ class InvestmentMetricsServiceTest {
         createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
         createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("150")),
       )
+
+    every { transactionService.calculateTransactionProfits(any()) } returns Unit
 
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
@@ -632,9 +628,7 @@ class InvestmentMetricsServiceTest {
     val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
     val instrumentGroups = mapOf(testInstrument to transactions)
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
-      .thenThrow(RuntimeException("Price not found"))
-      .thenReturn(BigDecimal("150"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } throws RuntimeException("Price not found") andThen BigDecimal("150")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -670,8 +664,8 @@ class InvestmentMetricsServiceTest {
         instrument2 to transactions2,
       )
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any())).thenReturn(BigDecimal("150"))
-    whenever(dailyPriceService.getPrice(eq(instrument2), any())).thenReturn(BigDecimal("700"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("150")
+    every { dailyPriceService.getPrice(instrument2, any()) } returns BigDecimal("700")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -812,8 +806,8 @@ class InvestmentMetricsServiceTest {
         instrument2 to transactions2,
       )
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any())).thenReturn(BigDecimal("150"))
-    whenever(dailyPriceService.getPrice(eq(instrument2), any())).thenReturn(BigDecimal("300"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("150")
+    every { dailyPriceService.getPrice(instrument2, any()) } returns BigDecimal("300")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -902,9 +896,7 @@ class InvestmentMetricsServiceTest {
       )
     val instrumentGroups = mapOf(testInstrument to transactions)
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
-      .thenThrow(RuntimeException("Unified calc failed"))
-      .thenReturn(BigDecimal("150"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } throws RuntimeException("Unified calc failed") andThen BigDecimal("150")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -921,9 +913,7 @@ class InvestmentMetricsServiceTest {
       )
     val instrumentGroups = mapOf(testInstrument to transactions)
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
-      .thenThrow(RuntimeException("Unified calc failed"))
-      .thenReturn(BigDecimal("80"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } throws RuntimeException("Unified calc failed") andThen BigDecimal("80")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -939,9 +929,7 @@ class InvestmentMetricsServiceTest {
       )
     val instrumentGroups = mapOf(testInstrument to transactions)
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
-      .thenThrow(RuntimeException("Unified calc failed"))
-      .thenReturn(BigDecimal("120"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } throws RuntimeException("Unified calc failed") andThen BigDecimal("120")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -986,9 +974,7 @@ class InvestmentMetricsServiceTest {
       )
     val instrumentGroups = mapOf(testInstrument to transactions)
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
-      .thenThrow(RuntimeException("Unified calc failed"))
-      .thenReturn(BigDecimal("90"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } throws RuntimeException("Unified calc failed") andThen BigDecimal("90")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
@@ -1065,9 +1051,7 @@ class InvestmentMetricsServiceTest {
       )
     val instrumentGroups = mapOf(testInstrument to transactions)
 
-    whenever(dailyPriceService.getPrice(eq(testInstrument), any()))
-      .thenThrow(RuntimeException("Unified calc failed"))
-      .thenReturn(BigDecimal("160"))
+    every { dailyPriceService.getPrice(testInstrument, any()) } throws RuntimeException("Unified calc failed") andThen BigDecimal("160")
 
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 

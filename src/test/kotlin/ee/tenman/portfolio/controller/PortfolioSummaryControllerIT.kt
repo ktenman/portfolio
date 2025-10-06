@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
@@ -19,18 +20,17 @@ import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import io.mockk.every
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.closeTo
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.kotlin.whenever
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -60,7 +60,7 @@ class PortfolioSummaryControllerIT {
   @Resource
   private lateinit var dailyPriceRepository: DailyPriceRepository
 
-  @MockitoBean
+  @MockkBean
   lateinit var clock: Clock
 
   @Test
@@ -77,8 +77,8 @@ class PortfolioSummaryControllerIT {
             .withBodyFile("user-details-response.json"),
         ),
     )
-    whenever(clock.instant()).thenReturn(Instant.parse("2023-07-21T10:00:00Z"))
-    whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
 
     val instrument =
       instrumentRepository.save(
@@ -181,8 +181,8 @@ class PortfolioSummaryControllerIT {
             .withBodyFile("user-details-response.json"),
         ),
     )
-    whenever(clock.instant()).thenReturn(Instant.parse("2023-07-21T10:00:00Z"))
-    whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
 
     val instrument =
       instrumentRepository.save(

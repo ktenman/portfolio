@@ -19,39 +19,40 @@ class EnumServiceTest {
 
   @Test
   fun `should return all enum values in sorted order when retrieving enums`() {
-    val result = enumService.getAllEnums()
+    val response = enumService.getAllEnums()
 
-    expect(result.keys).toContain("platforms", "providers", "transactionTypes", "categories", "currencies")
+    expect(response.platforms)
+      .toEqual(response.platforms.sorted())
+      .toHaveSize(Platform.entries.size)
 
-    val platforms = result["platforms"]!!
-    expect(platforms).toEqual(platforms.sorted())
-    expect(platforms).toHaveSize(Platform.entries.size)
+    expect(response.providers)
+      .toEqual(response.providers.sorted())
+      .toHaveSize(ProviderName.entries.size)
 
-    val providers = result["providers"]!!
-    expect(providers).toEqual(providers.sorted())
-    expect(providers).toHaveSize(ProviderName.entries.size)
+    expect(response.transactionTypes).toContainExactly("BUY", "SELL")
 
-    expect(result["transactionTypes"]).notToEqualNull().toContainExactly("BUY", "SELL")
+    expect(response.categories)
+      .toEqual(response.categories.sorted())
+      .toHaveSize(InstrumentCategory.entries.size)
 
-    val categories = result["categories"]!!
-    expect(categories).toEqual(categories.sorted())
-    expect(categories).toHaveSize(InstrumentCategory.entries.size)
-
-    val currencies = result["currencies"]!!
-    expect(currencies).toEqual(currencies.sorted())
-    expect(currencies).toHaveSize(Currency.entries.size)
+    expect(response.currencies)
+      .toEqual(response.currencies.sorted())
+      .toHaveSize(Currency.entries.size)
   }
 
   @Test
   fun `should return expected enum values when retrieving enums`() {
-    val result = enumService.getAllEnums()
+    val response = enumService.getAllEnums()
 
-    expect(result["platforms"])
-      .notToEqualNull()
+    expect(response.platforms)
       .toContainExactly("AVIVA", "BINANCE", "COINBASE", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
-    expect(result["providers"]).notToEqualNull().toContainExactly("ALPHA_VANTAGE", "BINANCE", "FT")
-    expect(result["transactionTypes"]).notToEqualNull().toContainExactly("BUY", "SELL")
-    expect(result["categories"]).notToEqualNull().toContainExactly("CRYPTO", "ETF")
-    expect(result["currencies"]).notToEqualNull().toContainExactly("EUR")
+
+    expect(response.providers).toContainExactly("ALPHA_VANTAGE", "BINANCE", "FT")
+
+    expect(response.transactionTypes).toContainExactly("BUY", "SELL")
+
+    expect(response.categories).toContainExactly("CRYPTO", "ETF")
+
+    expect(response.currencies).toContainExactly("EUR")
   }
 }
