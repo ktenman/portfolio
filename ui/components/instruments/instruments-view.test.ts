@@ -13,7 +13,7 @@ const mockToastSuccess = vi.fn()
 const mockToastError = vi.fn()
 
 vi.mock('../../services/instruments-service')
-vi.mock('vue-toastification', () => ({
+vi.mock('../../composables/use-toast', () => ({
   useToast: () => ({
     success: mockToastSuccess,
     error: mockToastError,
