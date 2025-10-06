@@ -6,7 +6,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import io.github.resilience4j.retry.RetryConfig
 import io.github.resilience4j.retry.RetryRegistry
-import org.mockito.Mockito.mock
+import io.mockk.mockk
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
@@ -18,11 +18,11 @@ import java.time.Duration
 class TestConfiguration {
   @Bean
   @Primary
-  fun binanceDataRetrievalJob(): BinanceDataRetrievalJob = mock(BinanceDataRetrievalJob::class.java)
+  fun binanceDataRetrievalJob(): BinanceDataRetrievalJob = mockk(relaxed = true)
 
   @Bean
   @Primary
-  fun ftDataRetrievalJob(): FtDataRetrievalJob = mock(FtDataRetrievalJob::class.java)
+  fun ftDataRetrievalJob(): FtDataRetrievalJob = mockk(relaxed = true)
 
   @Bean
   @Primary

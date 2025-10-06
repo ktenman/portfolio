@@ -2,7 +2,6 @@ package ee.tenman.portfolio.controller
 
 import ch.tutteli.atrium.api.fluent.en_GB.*
 import ch.tutteli.atrium.api.verbs.expect
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
@@ -11,6 +10,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.domain.EnumsResponse
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
@@ -65,25 +65,25 @@ class EnumControllerIT {
         .andExpect(status().isOk)
         .andReturn()
 
-    val responseBody = result.response.contentAsString
-    val enumsMap = objectMapper.readValue(responseBody, object : TypeReference<Map<String, List<String>>>() {})
+    val response = objectMapper.readValue(result.response.contentAsString, EnumsResponse::class.java)
 
-    expect(enumsMap.keys).toContain("platforms", "providers", "transactionTypes", "categories", "currencies")
-    expect(enumsMap["platforms"]).notToEqualNull()
-    expect(enumsMap["platforms"]!!).toHaveSize(Platform.entries.size)
-    expect(enumsMap["platforms"]!!).toContain(Platform.BINANCE.name, Platform.TRADING212.name)
-    expect(enumsMap["providers"]).notToEqualNull()
-    expect(enumsMap["providers"]!!).toHaveSize(ProviderName.entries.size)
-    expect(enumsMap["providers"]!!).toContain(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
-    expect(enumsMap["transactionTypes"]).notToEqualNull()
-    expect(enumsMap["transactionTypes"]!!)
+    expect(response.platforms)
+      .toHaveSize(Platform.entries.size)
+      .toContain(Platform.BINANCE.name, Platform.TRADING212.name)
+
+    expect(response.providers)
+      .toHaveSize(ProviderName.entries.size)
+      .toContain(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
+
+    expect(response.transactionTypes)
       .toContain.inOrder.only
       .values(TransactionType.BUY.name, TransactionType.SELL.name)
-    expect(enumsMap["categories"]).notToEqualNull()
-    expect(enumsMap["categories"]!!).toHaveSize(InstrumentCategory.entries.size)
-    expect(enumsMap["categories"]!!).toContain(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
-    expect(enumsMap["currencies"]).notToEqualNull()
-    expect(enumsMap["currencies"]!!)
+
+    expect(response.categories)
+      .toHaveSize(InstrumentCategory.entries.size)
+      .toContain(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
+
+    expect(response.currencies)
       .toContain.inOrder.only
       .values(Currency.EUR.name)
   }

@@ -8,28 +8,19 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.util.Optional
 
-@ExtendWith(MockitoExtension::class)
 class TransactionServiceTest {
-  @Mock
   private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
 
-  @InjectMocks
   private lateinit var transactionService: TransactionService
 
   private lateinit var testInstrument: Instrument
@@ -37,6 +28,9 @@ class TransactionServiceTest {
 
   @BeforeEach
   fun setUp() {
+    portfolioTransactionRepository = mockk()
+    transactionService = TransactionService(portfolioTransactionRepository)
+
     testInstrument =
       Instrument(
         symbol = "AAPL",
@@ -55,7 +49,7 @@ class TransactionServiceTest {
     val transaction = createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
     transaction.id = 1L
 
-    whenever(portfolioTransactionRepository.findById(1L)).thenReturn(Optional.of(transaction))
+    every { portfolioTransactionRepository.findById(1L) } returns Optional.of(transaction)
 
     val result = transactionService.getTransactionById(1L)
 
@@ -288,12 +282,12 @@ class TransactionServiceTest {
         createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
       )
 
-    whenever(portfolioTransactionRepository.findAllWithInstruments()).thenReturn(transactions)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns transactions
 
     val result = transactionService.getAllTransactions()
 
     expect(result).toHaveSize(1)
-    verify(portfolioTransactionRepository).findAllWithInstruments()
+    verify { portfolioTransactionRepository.findAllWithInstruments() }
   }
 
   @Test
@@ -312,27 +306,29 @@ class TransactionServiceTest {
         ),
       )
 
-    whenever(portfolioTransactionRepository.save(any())).thenReturn(savedTransaction)
-    whenever(
+    every { portfolioTransactionRepository.save(any()) } returns savedTransaction
+    every {
       portfolioTransactionRepository.findAllByInstrumentIdAndPlatformOrderByTransactionDate(
-        eq(1L),
+        1L,
         any(),
-      ),
-    ).thenReturn(relatedTransactions)
-    whenever(portfolioTransactionRepository.saveAll(any<List<PortfolioTransaction>>())).thenReturn(relatedTransactions)
+      )
+    } returns relatedTransactions
+    every { portfolioTransactionRepository.saveAll(any<List<PortfolioTransaction>>()) } returns relatedTransactions
 
     val result = transactionService.saveTransaction(newTransaction)
 
     expect(result.id).toEqual(1L)
-    verify(portfolioTransactionRepository).save(newTransaction)
-    verify(portfolioTransactionRepository).saveAll(argThat<List<PortfolioTransaction>> { size == 2 })
+    verify { portfolioTransactionRepository.save(newTransaction) }
+    verify { portfolioTransactionRepository.saveAll(match<List<PortfolioTransaction>> { it.size == 2 }) }
   }
 
   @Test
   fun `should deleteTransaction removes transaction from repository`() {
+    every { portfolioTransactionRepository.deleteById(1L) } returns Unit
+
     transactionService.deleteTransaction(1L)
 
-    verify(portfolioTransactionRepository).deleteById(1L)
+    verify { portfolioTransactionRepository.deleteById(1L) }
   }
 
   @Test

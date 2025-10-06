@@ -17,12 +17,12 @@ import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.TransactionService
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.every
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.whenever
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
@@ -48,13 +48,13 @@ class DailyPortfolioXirrJobIT {
   @Resource
   private lateinit var portfolioDailySummaryRepository: PortfolioDailySummaryRepository
 
-  @MockitoBean
+  @MockkBean
   private lateinit var clock: Clock
 
   @Test
   fun `should not create duplicated rows when triggered multiple times with same data`() {
-    whenever(clock.instant()).thenReturn(Instant.parse("2024-07-05T00:00:00Z"))
-    whenever(clock.zone).thenReturn(Clock.systemUTC().zone)
+    every { clock.instant() } returns Instant.parse("2024-07-05T00:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
     val instrument =
       Instrument(
         "QDVE.DEX",

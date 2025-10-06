@@ -6,11 +6,11 @@ import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.repository.JobExecutionRepository
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.every
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.whenever
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -23,7 +23,7 @@ class JobExecutionServiceIT {
   @Resource
   private lateinit var jobExecutionRepository: JobExecutionRepository
 
-  @MockitoBean
+  @MockkBean
   private lateinit var clock: Clock
 
   private lateinit var fixedClock: Clock
@@ -39,8 +39,8 @@ class JobExecutionServiceIT {
     val endInstant = startInstant.plusSeconds(2)
     fixedClock = Clock.fixed(startInstant, ZoneId.of("UTC"))
 
-    whenever(clock.instant()).thenAnswer { fixedClock.instant() }
-    whenever(clock.zone).thenReturn(fixedClock.zone)
+    every { clock.instant() } answers { fixedClock.instant() }
+    every { clock.zone } returns fixedClock.zone
 
     val testJob =
       object : Job {
@@ -68,8 +68,8 @@ class JobExecutionServiceIT {
     val endInstant = startInstant.plusSeconds(1)
     fixedClock = Clock.fixed(startInstant, ZoneId.of("UTC"))
 
-    whenever(clock.instant()).thenAnswer { fixedClock.instant() }
-    whenever(clock.zone).thenReturn(fixedClock.zone)
+    every { clock.instant() } answers { fixedClock.instant() }
+    every { clock.zone } returns fixedClock.zone
 
     val failingJob =
       object : Job {
