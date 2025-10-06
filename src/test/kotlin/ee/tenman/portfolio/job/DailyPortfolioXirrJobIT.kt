@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.matching
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
@@ -17,7 +18,6 @@ import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.TransactionService
-import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
