@@ -12,7 +12,8 @@ import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
 import e2e.retry.RetryExtension
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -47,18 +48,18 @@ class InstrumentManagementE2ETests {
   @Test
   fun `should display success message when saving instrument with valid data`() {
     val addButton = id("addNewInstrument").shouldBe(visible, Duration.ofSeconds(10))
-    assertThat(addButton.isDisplayed).isTrue()
+    expect(addButton.isDisplayed).toEqual(true)
     addButton.shouldBe(enabled).click()
 
     val symbolField = id("symbol").shouldBe(visible, Duration.ofSeconds(5))
     symbolField.shouldBe(enabled)
     symbolField.shouldNotHave(text(DEFAULT_SYMBOL)).value = DEFAULT_SYMBOL
-    assertThat(symbolField.value).isEqualTo(DEFAULT_SYMBOL)
+    expect(symbolField.value).toEqual(DEFAULT_SYMBOL)
 
     val nameField = id("name")
     nameField.shouldBe(enabled)
     nameField.shouldNotHave(text(DEFAULT_NAME)).value = DEFAULT_NAME
-    assertThat(nameField.value).isEqualTo(DEFAULT_NAME)
+    expect(nameField.value).toEqual(DEFAULT_NAME)
 
     id("category").shouldBe(enabled).selectOption(DEFAULT_CATEGORY)
     id("providerName").shouldBe(enabled).selectOption("Binance")
@@ -68,7 +69,7 @@ class InstrumentManagementE2ETests {
     currencyField.shouldHave(value("EUR"))
 
     val saveButton = elements(tagName("button")).filter(text("Save")).first()
-    assertThat(saveButton.isEnabled).isTrue()
+    expect(saveButton.isEnabled).toEqual(true)
     saveButton.click()
 
     val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
@@ -93,7 +94,7 @@ class InstrumentManagementE2ETests {
     Thread.sleep(1000)
 
     val editButtons = elements(By.cssSelector("button[title='Edit']"))
-    assertThat(editButtons.size()).isGreaterThan(0)
+    expect(editButtons.size()).toBeGreaterThan(0)
     editButtons.first().click()
 
     val updatedName = "Tesla Motors Inc."
@@ -101,7 +102,7 @@ class InstrumentManagementE2ETests {
 
     val symbolField = id("symbol")
     symbolField.shouldBe(visible, Duration.ofSeconds(5))
-    assertThat(symbolField.getAttribute("disabled")).isNotNull()
+    expect(symbolField.getAttribute("disabled")).notToEqualNull()
 
     val nameField = id("name")
     nameField.shouldBe(enabled)
@@ -116,16 +117,16 @@ class InstrumentManagementE2ETests {
     currentPriceField.shouldHave(value(updatedPrice))
 
     val categoryField = id("category")
-    assertThat(categoryField.getAttribute("disabled")).isNotNull()
+    expect(categoryField.getAttribute("disabled")).notToEqualNull()
 
     val providerField = id("providerName")
-    assertThat(providerField.getAttribute("disabled")).isNotNull()
+    expect(providerField.getAttribute("disabled")).notToEqualNull()
 
     val currencyField = id("baseCurrency")
-    assertThat(currencyField.getAttribute("disabled")).isNotNull()
+    expect(currencyField.getAttribute("disabled")).notToEqualNull()
 
     val updateButton = elements(tagName("button")).filter(text("Update")).first()
-    assertThat(updateButton.isEnabled).isTrue()
+    expect(updateButton.isEnabled).toEqual(true)
     updateButton.click()
 
     val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
@@ -152,7 +153,7 @@ class InstrumentManagementE2ETests {
     Thread.sleep(1000)
 
     val editButtons = elements(By.cssSelector("button[title='Edit']"))
-    assertThat(editButtons.size()).isGreaterThan(0)
+    expect(editButtons.size()).toBeGreaterThan(0)
     editButtons.last().click()
 
     val currentPriceField = id("currentPrice")

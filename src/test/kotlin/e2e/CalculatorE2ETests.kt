@@ -10,8 +10,8 @@ import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
 import e2e.retry.RetryExtension
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -47,15 +47,15 @@ class CalculatorE2ETests {
   fun `should recalculate when annual return rate is changed`() {
     val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
     val initialTotalWorth = firstDataRow.find(By.tagName("td"), 2).text()
-    assertThat(initialTotalWorth).isNotEmpty()
+    expect(initialTotalWorth).notToBeEmpty()
 
     annualReturnInput.value = "50"
 
     firstDataRow.find(By.tagName("td"), 2).shouldNotHave(text(initialTotalWorth), Duration.ofSeconds(5))
 
     val updatedTotalWorth = firstDataRow.find(By.tagName("td"), 2).text()
-    assertThat(updatedTotalWorth).isNotEqualTo(initialTotalWorth)
-    assertThat(firstDataRow.find(By.tagName("td"), 3).text()).isNotEmpty()
+    expect(updatedTotalWorth).notToEqual(initialTotalWorth)
+    expect(firstDataRow.find(By.tagName("td"), 3).text()).notToBeEmpty()
   }
 
   @Test
@@ -67,7 +67,7 @@ class CalculatorE2ETests {
   @Test
   fun `should reset annual return rate when reset button is clicked`() {
     val initialValue = annualReturnInput.value
-    assertThat(initialValue).isNotNull().isNotEmpty()
+    expect(initialValue).notToEqualNull().notToBeEmpty()
 
     annualReturnInput.value = "75"
     annualReturnInput.shouldHave(value("75"))
@@ -83,14 +83,14 @@ class CalculatorE2ETests {
   fun `should recalculate when tax rate is changed`() {
     val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
     val initialNetProfit = firstDataRow.find(By.tagName("td"), 5).text()
-    assertThat(initialNetProfit).isNotEmpty()
+    expect(initialNetProfit).notToBeEmpty()
 
     taxRateInput.value = "50"
 
     firstDataRow.find(By.tagName("td"), 5).shouldNotHave(text(initialNetProfit), Duration.ofSeconds(5))
 
     val updatedNetProfit = firstDataRow.find(By.tagName("td"), 5).text()
-    assertThat(updatedNetProfit).isNotEqualTo(initialNetProfit)
+    expect(updatedNetProfit).notToEqual(initialNetProfit)
   }
 
   @Test
@@ -101,14 +101,14 @@ class CalculatorE2ETests {
     Thread.sleep(500)
 
     val taxAmountWithZeroRate = firstDataRow.find(By.tagName("td"), 4).text()
-    assertThat(taxAmountWithZeroRate).isEmpty()
+    expect(taxAmountWithZeroRate).toBeEmpty()
 
     taxRateInput.value = "25"
     Thread.sleep(500)
 
     val taxAmountWithRate = firstDataRow.find(By.tagName("td"), 4).text()
-    assertThat(taxAmountWithRate).isNotEmpty()
-    assertThat(taxAmountWithRate).matches("[\\d,]+(\\.\\d{1,2})?")
+    expect(taxAmountWithRate).notToBeEmpty()
+    expect(taxAmountWithRate.matches(Regex("[\\d,]+(\\.\\d{1,2})?"))).toEqual(true)
   }
 
   @Test
@@ -127,7 +127,7 @@ class CalculatorE2ETests {
     val netProfit = netProfitText.toDoubleOrNull() ?: 0.0
 
     val expectedTotalWorth = totalInvested + netProfit
-    assertThat(totalWorth).isCloseTo(expectedTotalWorth, within(1.0))
+    expect(totalWorth).toBeGreaterThanOrEqualTo(expectedTotalWorth - 1.0).toBeLessThanOrEqualTo(expectedTotalWorth + 1.0)
   }
 
   @Test

@@ -19,7 +19,8 @@ import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.hamcrest.Matchers.closeTo
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
@@ -153,20 +154,19 @@ class PortfolioSummaryControllerIT {
       .andExpect(jsonPath("$.content[2].earningsPerDay").value(10.00))
 
     val summaries = portfolioSummaryRepository.findAll()
-    assertThat(summaries).hasSize(3)
+    expect(summaries).toHaveSize(3)
 
     val summary1 = summaries.first { it.entryDate == LocalDate.of(2023, 7, 20) }
     val summary2 = summaries.first { it.entryDate == LocalDate.of(2023, 7, 19) }
     val summary3 = summaries.first { it.entryDate == LocalDate.of(2023, 7, 18) }
-    assertThat(summary1.totalValue).isEqualByComparingTo("10500.00")
-    assertThat(summary2.totalValue).isEqualByComparingTo("10000.00")
-    assertThat(summary3.totalValue).isEqualByComparingTo("9500.00")
+    expect(summary1.totalValue.compareTo(BigDecimal("10500.00"))).toEqual(0)
+    expect(summary2.totalValue.compareTo(BigDecimal("10000.00"))).toEqual(0)
+    expect(summary3.totalValue.compareTo(BigDecimal("9500.00"))).toEqual(0)
 
-    assertThat(output.out)
-      .contains("getHistoricalPortfolioSummary")
-      .contains("entered with arguments: [0,3]")
-      .contains("exited with result:")
-      .contains("\"content\":")
+    expect(output.out).toContain("getHistoricalPortfolioSummary")
+    expect(output.out).toContain("entered with arguments: [0,3]")
+    expect(output.out).toContain("exited with result:")
+    expect(output.out).toContain("\"content\":")
   }
 
   @Test
@@ -228,10 +228,9 @@ class PortfolioSummaryControllerIT {
       .andExpect(jsonPath("$.totalProfit").value(3.4))
       .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.2096, 0.001)))
       .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(6.38, 0.01)))
-    assertThat(output.out)
-      .contains("getCurrentPortfolioSummary")
-      .contains("entered with arguments: []")
-      .contains("exited with result:")
-      .contains("\"date\":")
+    expect(output.out).toContain("getCurrentPortfolioSummary")
+    expect(output.out).toContain("entered with arguments: []")
+    expect(output.out).toContain("exited with result:")
+    expect(output.out).toContain("\"date\":")
   }
 }

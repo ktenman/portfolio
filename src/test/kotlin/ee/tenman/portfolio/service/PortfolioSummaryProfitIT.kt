@@ -10,7 +10,8 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -83,9 +84,7 @@ class PortfolioSummaryProfitIT
     val historicalDate = testDate.minusDays(1)
     val historicalSummary = portfolioSummaryService.calculateSummaryForDate(historicalDate)
 
-    assertThat(historicalSummary.totalProfit)
-      .describedAs("Historical profit should match calculation logic")
-      .isNotNull()
+    expect(historicalSummary.totalProfit != null).toEqual(true)
   }
 
   @Test
@@ -117,8 +116,6 @@ class PortfolioSummaryProfitIT
     val totalSellValue = BigDecimal("10").multiply(BigDecimal("90.00"))
     val realizedProfit = totalSellValue.subtract(BigDecimal("10").multiply(BigDecimal("80.00")))
 
-    assertThat(summary.totalProfit)
-      .describedAs("Should include realized profit from sells")
-      .isGreaterThanOrEqualTo(realizedProfit)
+    expect(summary.totalProfit.compareTo(realizedProfit) >= 0).toEqual(true)
   }
 }

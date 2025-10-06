@@ -5,7 +5,8 @@ import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.repository.JobExecutionRepository
 import jakarta.annotation.Resource
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
@@ -53,12 +54,12 @@ class JobExecutionServiceIT {
     jobExecutionService.executeJob(testJob)
 
     val savedExecution = jobExecutionRepository.findAll().firstOrNull()
-    assertThat(savedExecution).isNotNull
-    assertThat(savedExecution?.jobName).isEqualTo("TestJob")
-    assertThat(savedExecution?.startTime).isEqualTo(startInstant)
-    assertThat(savedExecution?.endTime).isEqualTo(endInstant)
-    assertThat(savedExecution?.durationInMillis).isEqualTo(2000)
-    assertThat(savedExecution?.status).isEqualTo(JobStatus.SUCCESS)
+    expect(savedExecution).notToEqualNull()
+    expect(savedExecution?.jobName).toEqual("TestJob")
+    expect(savedExecution?.startTime).toEqual(startInstant)
+    expect(savedExecution?.endTime).toEqual(endInstant)
+    expect(savedExecution?.durationInMillis).toEqual(2000)
+    expect(savedExecution?.status).toEqual(JobStatus.SUCCESS)
   }
 
   @Test
@@ -87,13 +88,13 @@ class JobExecutionServiceIT {
     }
 
     val savedExecution = jobExecutionRepository.findAll().firstOrNull()
-    assertThat(savedExecution).isNotNull
-    assertThat(savedExecution?.jobName).isEqualTo("FailingJob")
-    assertThat(savedExecution?.startTime).isEqualTo(startInstant)
-    assertThat(savedExecution?.endTime).isEqualTo(endInstant)
-    assertThat(savedExecution?.durationInMillis).isEqualTo(1000)
-    assertThat(savedExecution?.status).isEqualTo(JobStatus.FAILURE)
-    assertThat(savedExecution?.message).isEqualTo("Test exception")
+    expect(savedExecution).notToEqualNull()
+    expect(savedExecution?.jobName).toEqual("FailingJob")
+    expect(savedExecution?.startTime).toEqual(startInstant)
+    expect(savedExecution?.endTime).toEqual(endInstant)
+    expect(savedExecution?.durationInMillis).toEqual(1000)
+    expect(savedExecution?.status).toEqual(JobStatus.FAILURE)
+    expect(savedExecution?.message).toEqual("Test exception")
   }
 
   class TestJobException(

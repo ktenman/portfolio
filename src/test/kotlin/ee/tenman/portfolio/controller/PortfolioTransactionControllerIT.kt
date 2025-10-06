@@ -16,7 +16,8 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -105,8 +106,8 @@ class PortfolioTransactionControllerIT {
       .andExpect(jsonPath("$.platform").value("TRADING212"))
 
     val savedTransaction = portfolioTransactionRepository.findAll().first()
-    assertThat(savedTransaction.instrument.id).isEqualTo(instrument.id)
-    assertThat(savedTransaction.quantity).isEqualByComparingTo(BigDecimal("10"))
+    expect(savedTransaction.instrument.id).toEqual(instrument.id)
+    expect(savedTransaction.quantity.compareTo(BigDecimal("10"))).toEqual(0)
   }
 
   @Test
@@ -197,19 +198,17 @@ class PortfolioTransactionControllerIT {
       .andExpect(jsonPath("$.unrealizedProfit").value(0))
       .andExpect(jsonPath("$.averageCost").value(100))
 
-    assertThat(portfolioTransactionRepository.findAll().first())
-      .matches { actualTransaction ->
-        actualTransaction.id == transaction.id &&
-          actualTransaction.instrument.id == instrument.id &&
-          actualTransaction.transactionType == TransactionType.BUY &&
-          actualTransaction.quantity.compareTo(BigDecimal("10")) == 0 &&
-          actualTransaction.price.compareTo(BigDecimal("100")) == 0 &&
-          actualTransaction.transactionDate == LocalDate.of(2023, 7, 18) &&
-          actualTransaction.platform == Platform.LHV &&
-          actualTransaction.unrealizedProfit.compareTo(BigDecimal.ZERO) == 0 &&
-          actualTransaction.realizedProfit?.compareTo(BigDecimal.ZERO) == 0 &&
-          actualTransaction.averageCost?.compareTo(BigDecimal("100")) == 0
-      }
+    val actualTransaction = portfolioTransactionRepository.findAll().first()
+    expect(actualTransaction.id).toEqual(transaction.id)
+    expect(actualTransaction.instrument.id).toEqual(instrument.id)
+    expect(actualTransaction.transactionType).toEqual(TransactionType.BUY)
+    expect(actualTransaction.quantity.compareTo(BigDecimal("10"))).toEqual(0)
+    expect(actualTransaction.price.compareTo(BigDecimal("100"))).toEqual(0)
+    expect(actualTransaction.transactionDate).toEqual(LocalDate.of(2023, 7, 18))
+    expect(actualTransaction.platform).toEqual(Platform.LHV)
+    expect(actualTransaction.unrealizedProfit.compareTo(BigDecimal.ZERO)).toEqual(0)
+    expect(actualTransaction.realizedProfit?.compareTo(BigDecimal.ZERO)).toEqual(0)
+    expect(actualTransaction.averageCost?.compareTo(BigDecimal("100"))).toEqual(0)
   }
 
   @Test
@@ -253,8 +252,8 @@ class PortfolioTransactionControllerIT {
       .andExpect(jsonPath("$.platform").value("TRADING212"))
 
     val updatedTransaction = portfolioTransactionRepository.findById(transaction.id).get()
-    assertThat(updatedTransaction.transactionType).isEqualTo(TransactionType.SELL)
-    assertThat(updatedTransaction.quantity).isEqualByComparingTo(BigDecimal("5"))
+    expect(updatedTransaction.transactionType).toEqual(TransactionType.SELL)
+    expect(updatedTransaction.quantity.compareTo(BigDecimal("5"))).toEqual(0)
   }
 
   @Test
@@ -276,6 +275,6 @@ class PortfolioTransactionControllerIT {
       .perform(delete("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
       .andExpect(status().isNoContent)
 
-    assertThat(portfolioTransactionRepository.findById(transaction.id)).isEmpty
+    expect(portfolioTransactionRepository.findById(transaction.id).isEmpty).toEqual(true)
   }
 }
