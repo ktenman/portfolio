@@ -1,12 +1,12 @@
 package ee.tenman.portfolio.service
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.repository.JobExecutionRepository
 import jakarta.annotation.Resource
-import ch.tutteli.atrium.api.fluent.en_GB.*
-import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
