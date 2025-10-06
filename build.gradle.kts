@@ -1,11 +1,11 @@
 plugins {
-  id("org.springframework.boot") version "3.5.6"
-  id("io.spring.dependency-management") version "1.1.7"
-  kotlin("plugin.jpa") version "2.2.20"
-  kotlin("jvm") version "2.2.20"
-  kotlin("plugin.spring") version "2.2.20"
+  alias(libs.plugins.spring.boot)
+  alias(libs.plugins.spring.dependency.management)
+  alias(libs.plugins.kotlin.jpa)
+  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlin.spring)
   id("jacoco")
-  id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
+  alias(libs.plugins.ktlint)
 }
 
 group = "ee.tenman"
@@ -23,79 +23,65 @@ repositories {
   maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-val springCloudVersion = "2025.0.0"
-val springDocVersion = "2.8.13"
-val ktlintVersion = "1.5.0"
-val selenideVersion = "7.11.1"
-val springRetryVersion = "2.0.12"
-val resilience4jVersion = "2.3.0"
-val rxjava3Version = "3.1.9"
-val guavaVersion = "33.5.0-jre"
-val commonsMathVersion = "3.6.1"
-val jsoupVersion = "1.21.2"
-val telegramBotsVersion = "6.9.7.1"
-val googleCloudVisionVersion = "3.73.0"
-val coroutinesVersion = "1.10.2"
-val mockitoKotlinVersion = "6.1.0"
-val archUnitVersion = "1.4.1"
-
-extra["springCloudVersion"] = springCloudVersion
-
 dependencies {
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springDocVersion")
-  implementation("org.jsoup:jsoup:$jsoupVersion")
-  implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("org.springframework.boot:spring-boot-starter-validation")
-  implementation("org.springframework.boot:spring-boot-starter-data-redis")
-  implementation("org.springframework.boot:spring-boot-starter-web")
-  implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+  implementation(libs.springdoc.openapi.starter.webmvc.ui)
+  implementation(libs.jsoup)
+  implementation(libs.spring.boot.starter.data.jpa)
+  implementation(libs.spring.boot.starter.validation)
+  implementation(libs.spring.boot.starter.data.redis)
+  implementation(libs.spring.boot.starter.web)
+  implementation(libs.spring.cloud.starter.openfeign)
+  implementation(libs.jackson.module.kotlin)
 
   // Security fixes for CVEs
-  implementation("commons-fileupload:commons-fileupload:1.6.0")
-  implementation("org.apache.commons:commons-lang3:3.19.0")
-  implementation("org.springframework.boot:spring-boot-starter-actuator")
-  implementation("org.springframework.boot:spring-boot-starter-aop")
-  implementation("io.micrometer:micrometer-registry-prometheus")
-  implementation("com.codeborne:selenide:$selenideVersion")
-  implementation("org.flywaydb:flyway-core")
-  implementation("org.flywaydb:flyway-database-postgresql")
-  implementation("org.jetbrains.kotlin:kotlin-reflect")
-  implementation("org.springframework.retry:spring-retry:$springRetryVersion")
-  implementation("io.github.resilience4j:resilience4j-circuitbreaker:$resilience4jVersion")
-  implementation("io.github.resilience4j:resilience4j-retry:$resilience4jVersion")
-  implementation("io.github.resilience4j:resilience4j-kotlin:$resilience4jVersion")
-  implementation("com.google.guava:guava:$guavaVersion")
-  implementation("org.apache.commons:commons-math3:$commonsMathVersion")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-  implementation("org.telegram:telegrambots:$telegramBotsVersion")
-  implementation("org.telegram:telegrambots-spring-boot-starter:$telegramBotsVersion")
+  implementation(libs.commons.fileupload)
+  implementation(libs.commons.lang3)
+  implementation(libs.spring.boot.starter.actuator)
+  implementation(libs.spring.boot.starter.aop)
+  implementation(libs.micrometer.registry.prometheus)
+  implementation(libs.selenide)
+  implementation(libs.flyway.core)
+  implementation(libs.flyway.database.postgresql)
+  implementation(libs.kotlin.reflect)
+  implementation(libs.spring.retry)
+  implementation(libs.resilience4j.circuitbreaker)
+  implementation(libs.resilience4j.retry)
+  implementation(libs.resilience4j.kotlin)
+  implementation(libs.guava)
+  implementation(libs.commons.math3)
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.telegrambots)
+  implementation(libs.telegrambots.spring.boot.starter)
 
-  implementation("com.google.cloud:google-cloud-vision:$googleCloudVisionVersion") {
+  implementation(libs.google.cloud.vision) {
     exclude(group = "commons-logging", module = "commons-logging")
   }
 
-  developmentOnly("org.springframework.boot:spring-boot-docker-compose")
-  runtimeOnly("org.postgresql:postgresql:42.7.8")
-  testImplementation("org.springframework.boot:spring-boot-starter-test")
-  testImplementation("org.springframework.boot:spring-boot-testcontainers")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-  testImplementation("org.springframework.cloud:spring-cloud-starter-contract-stub-runner")
-  testImplementation("org.testcontainers:junit-jupiter")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
-  testImplementation("com.tngtech.archunit:archunit-junit5:$archUnitVersion")
-  testImplementation("ch.tutteli.atrium:atrium-fluent:1.3.0-alpha-2") {
+  developmentOnly(libs.spring.boot.docker.compose)
+  runtimeOnly(libs.postgresql)
+  testImplementation(libs.spring.boot.starter.test)
+  testImplementation(libs.spring.boot.testcontainers)
+  testImplementation(libs.kotlin.test.junit5)
+  testImplementation(libs.spring.cloud.starter.contract.stub.runner)
+  testImplementation(libs.testcontainers.junit.jupiter)
+  testImplementation(libs.junit.jupiter.api)
+  testImplementation(libs.testcontainers.postgresql)
+  testImplementation(libs.mockito.kotlin)
+  testImplementation(libs.archunit.junit5)
+  testImplementation(libs.atrium.fluent) {
     exclude("org.jetbrains.kotlin")
   }
-  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testRuntimeOnly(libs.junit.platform.launcher)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 dependencyManagement {
   imports {
-    mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+    mavenBom(
+      libs.spring.cloud.dependencies
+      .get()
+      .toString(),
+        )
   }
 }
 
@@ -160,7 +146,7 @@ tasks.withType<JacocoReport> {
 }
 
 configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-  version.set(ktlintVersion)
+  version.set(libs.versions.ktlint.get())
   android.set(false)
   ignoreFailures.set(false)
   reporters {

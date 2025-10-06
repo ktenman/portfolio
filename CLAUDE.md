@@ -8,11 +8,12 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 
 **Tech Stack:**
 
-- Backend: Kotlin 2.1.21, Spring Boot 3.5.0, Java 21
+- Backend: Kotlin 2.2.20, Spring Boot 3.5.6, Java 21
 - Frontend: Vue.js 3.5.16, TypeScript 5.8.3, Vite 6.3.5, Bootstrap 5.3.5
-- Database: PostgreSQL 17 with Flyway migrations (V1-V30+)
+- Database: PostgreSQL 42.7.8 with Flyway migrations (V1-V30+)
 - Cache: Redis 8 (multi-level caching strategy)
 - Testing: Atrium 1.3.0-alpha-2 (Kotlin assertions), JUnit 5, Mockito, Selenide, Vitest
+- Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
 - Authentication: Keycloak 25 + OAuth2-Proxy (dev), Custom auth service (prod) ⚠️
 - Infrastructure: Docker, Kubernetes, Caddy reverse proxy
 - Additional Services: Python-based market price tracker (Selenium), Google Cloud Vision API
@@ -96,6 +97,62 @@ export E2E=true && ./gradlew test --info -Pheadless=true
 # Stop all services
 pkill -f 'bootRun|vite' && docker-compose -f compose.yaml down
 ```
+
+### Gradle Version Catalogs
+
+The project uses **Gradle Version Catalogs** (`gradle/libs.versions.toml`) for centralized dependency management.
+
+**Benefits:**
+
+- Single source of truth for all dependency versions
+- Type-safe dependency accessors
+- Easier version updates across modules
+- Prevents version conflicts
+
+**Usage in build.gradle.kts:**
+
+```kotlin
+// Plugins
+plugins {
+  alias(libs.plugins.spring.boot)
+  alias(libs.plugins.kotlin.jvm)
+}
+
+// Dependencies
+dependencies {
+  implementation(libs.spring.boot.starter.web)
+  implementation(libs.kotlin.reflect)
+  testImplementation(libs.atrium.fluent)
+}
+
+// Version access
+configure<KtlintExtension> {
+  version.set(libs.versions.ktlint.get())
+}
+```
+
+**Version Catalog Structure (`gradle/libs.versions.toml`):**
+
+```toml
+[versions]
+kotlin = "2.2.20"
+springBoot = "3.5.6"
+atrium = "1.3.0-alpha-2"
+
+[libraries]
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+atrium-fluent = { module = "ch.tutteli.atrium:atrium-fluent", version.ref = "atrium" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+```
+
+**To add new dependencies:**
+
+1. Add version to `[versions]` section
+2. Define library in `[libraries]` section
+3. Use `alias(libs.library.name)` in build.gradle.kts
 
 ## Architecture Overview
 
