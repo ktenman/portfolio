@@ -9,8 +9,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
 import ee.tenman.portfolio.configuration.IntegrationTest
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
@@ -97,23 +97,23 @@ class HistoricalPricesServiceIT {
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).hasSize(2)
+    expect(result.size).toEqual(2)
 
     val jan17Data = result[LocalDate.of(2025, 1, 17)]
-    assertThat(jan17Data).isNotNull
-    assertThat(jan17Data?.open).isEqualTo(BigDecimal("137.40"))
-    assertThat(jan17Data?.high).isEqualTo(BigDecimal("139.60"))
-    assertThat(jan17Data?.low).isEqualTo(BigDecimal("137.30"))
-    assertThat(jan17Data?.close).isEqualTo(BigDecimal("138.80"))
-    assertThat(jan17Data?.volume).isEqualTo(22839L)
+    expect(jan17Data).notToEqualNull()
+    expect(jan17Data?.open?.compareTo(BigDecimal("137.40"))).toEqual(0)
+    expect(jan17Data?.high?.compareTo(BigDecimal("139.60"))).toEqual(0)
+    expect(jan17Data?.low?.compareTo(BigDecimal("137.30"))).toEqual(0)
+    expect(jan17Data?.close?.compareTo(BigDecimal("138.80"))).toEqual(0)
+    expect(jan17Data?.volume).toEqual(22839L)
 
     val jan16Data = result[LocalDate.of(2025, 1, 16)]
-    assertThat(jan16Data).isNotNull
-    assertThat(jan16Data?.open).isEqualTo(BigDecimal("137.90"))
-    assertThat(jan16Data?.high).isEqualTo(BigDecimal("138.28"))
-    assertThat(jan16Data?.low).isEqualTo(BigDecimal("137.26"))
-    assertThat(jan16Data?.close).isEqualTo(BigDecimal("137.66"))
-    assertThat(jan16Data?.volume).isEqualTo(44583L)
+    expect(jan16Data).notToEqualNull()
+    expect(jan16Data?.open?.compareTo(BigDecimal("137.90"))).toEqual(0)
+    expect(jan16Data?.high?.compareTo(BigDecimal("138.28"))).toEqual(0)
+    expect(jan16Data?.low?.compareTo(BigDecimal("137.26"))).toEqual(0)
+    expect(jan16Data?.close?.compareTo(BigDecimal("137.66"))).toEqual(0)
+    expect(jan16Data?.volume).toEqual(44583L)
 
     verify(
       com.github.tomakehurst.wiremock.client.WireMock
@@ -145,7 +145,7 @@ class HistoricalPricesServiceIT {
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).isEmpty()
+    expect(result).toBeEmpty()
   }
 
   @Test
@@ -162,9 +162,9 @@ class HistoricalPricesServiceIT {
         ),
     )
 
-    assertThatThrownBy {
+    expect {
       historicalPricesService.fetchPrices("XAIX:GER:EUR")
-    }.isInstanceOf(Exception::class.java)
+    }.toThrow<Exception>()
   }
 
   @Test
@@ -181,9 +181,9 @@ class HistoricalPricesServiceIT {
         ),
     )
 
-    assertThatThrownBy {
+    expect {
       historicalPricesService.fetchPrices("XAIX:GER:EUR")
-    }.isInstanceOf(Exception::class.java)
+    }.toThrow<Exception>()
   }
 
   @Test
@@ -218,15 +218,15 @@ class HistoricalPricesServiceIT {
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).hasSize(1)
+    expect(result.size).toEqual(1)
     val data = result[LocalDate.of(2025, 1, 13)]!!
 
-    assertThat(data.low).isLessThanOrEqualTo(data.open)
-    assertThat(data.low).isLessThanOrEqualTo(data.close)
-    assertThat(data.low).isLessThanOrEqualTo(data.high)
-    assertThat(data.high).isGreaterThanOrEqualTo(data.open)
-    assertThat(data.high).isGreaterThanOrEqualTo(data.close)
-    assertThat(data.high).isGreaterThanOrEqualTo(data.low)
+    expect(data.low).toBeLessThanOrEqualTo(data.open)
+    expect(data.low).toBeLessThanOrEqualTo(data.close)
+    expect(data.low).toBeLessThanOrEqualTo(data.high)
+    expect(data.high).toBeGreaterThanOrEqualTo(data.open)
+    expect(data.high).toBeGreaterThanOrEqualTo(data.close)
+    expect(data.high).toBeGreaterThanOrEqualTo(data.low)
   }
 
   @Test
@@ -261,9 +261,9 @@ class HistoricalPricesServiceIT {
 
     val result = historicalPricesService.fetchPrices("XAIX:GER:EUR")
 
-    assertThat(result).hasSize(1)
+    expect(result.size).toEqual(1)
     val data = result[LocalDate.of(2025, 1, 7)]!!
-    assertThat(data.volume).isEqualTo(74640L)
+    expect(data.volume).toEqual(74640L)
   }
 
   @Test

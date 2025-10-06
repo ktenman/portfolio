@@ -11,7 +11,8 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import jakarta.annotation.Resource
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -30,7 +31,7 @@ class CurrentPriceRetrievalJobIT {
 
   @Test
   fun `should not create duplicated rows when triggered multiple times with same data`() {
-    assertThat(dailyPriceRepository.findAll()).isEmpty()
+    expect(dailyPriceRepository.findAll()).toBeEmpty()
     stubFor(
       get(urlPathEqualTo("/query"))
         .withQueryParam("function", equalTo("SYMBOL_SEARCH"))
@@ -65,18 +66,16 @@ class CurrentPriceRetrievalJobIT {
     alphaVantageDataRetrievalJob.execute()
     alphaVantageDataRetrievalJob.execute()
 
-    assertThat(dailyPriceRepository.findAll())
-      .isNotEmpty
-      .hasSize(100)
-      .first()
-      .satisfies({
-        assertThat(it.entryDate).isEqualTo("2024-02-12")
-        assertThat(it.instrument.symbol).contains("QDVE")
-        assertThat(it.openPrice).isEqualByComparingTo(BigDecimal("25.21"))
-        assertThat(it.highPrice).isEqualByComparingTo(BigDecimal("25.335"))
-        assertThat(it.lowPrice).isEqualByComparingTo(BigDecimal("25.12500000"))
-        assertThat(it.closePrice).isEqualByComparingTo(BigDecimal("25.33000000"))
-        assertThat(it.volume).isEqualTo(776199)
-      })
+    val dailyPrices = dailyPriceRepository.findAll()
+    expect(dailyPrices.isEmpty()).toEqual(false)
+    expect(dailyPrices.size).toEqual(100)
+    val firstPrice = dailyPrices.first()
+    expect(firstPrice.entryDate.toString()).toEqual("2024-02-12")
+    expect(firstPrice.instrument.symbol).toContain("QDVE")
+    expect(firstPrice.openPrice?.compareTo(BigDecimal("25.21"))).toEqual(0)
+    expect(firstPrice.highPrice?.compareTo(BigDecimal("25.335"))).toEqual(0)
+    expect(firstPrice.lowPrice?.compareTo(BigDecimal("25.12500000"))).toEqual(0)
+    expect(firstPrice.closePrice.compareTo(BigDecimal("25.33000000"))).toEqual(0)
+    expect(firstPrice.volume).toEqual(776199)
   }
 }

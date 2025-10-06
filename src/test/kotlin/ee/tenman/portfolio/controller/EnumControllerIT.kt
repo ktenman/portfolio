@@ -15,7 +15,8 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
-import org.assertj.core.api.Assertions.assertThat
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
@@ -67,22 +68,19 @@ class EnumControllerIT {
     val responseBody = result.response.contentAsString
     val enumsMap = objectMapper.readValue(responseBody, object : TypeReference<Map<String, List<String>>>() {})
 
-    assertThat(enumsMap).containsKeys("platforms", "providers", "transactionTypes", "categories", "currencies")
-    assertThat(enumsMap["platforms"])
-      .hasSize(Platform.entries.size)
-      .isSortedAccordingTo(String::compareTo)
-      .contains(Platform.BINANCE.name, Platform.TRADING212.name)
-    assertThat(enumsMap["providers"])
-      .hasSize(ProviderName.entries.size)
-      .isSortedAccordingTo(String::compareTo)
-      .contains(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
-    assertThat(enumsMap["transactionTypes"])
-      .containsExactly(TransactionType.BUY.name, TransactionType.SELL.name)
-    assertThat(enumsMap["categories"])
-      .hasSize(InstrumentCategory.entries.size)
-      .isSortedAccordingTo(String::compareTo)
-      .contains(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
-    assertThat(enumsMap["currencies"])
-      .containsExactly(Currency.EUR.name)
+    expect(enumsMap.keys).toContain("platforms", "providers", "transactionTypes", "categories", "currencies")
+    expect(enumsMap["platforms"]).notToEqualNull()
+    expect(enumsMap["platforms"]!!).toHaveSize(Platform.entries.size)
+    expect(enumsMap["platforms"]!!).toContain(Platform.BINANCE.name, Platform.TRADING212.name)
+    expect(enumsMap["providers"]).notToEqualNull()
+    expect(enumsMap["providers"]!!).toHaveSize(ProviderName.entries.size)
+    expect(enumsMap["providers"]!!).toContain(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
+    expect(enumsMap["transactionTypes"]).notToEqualNull()
+    expect(enumsMap["transactionTypes"]!!).toContain.inOrder.only.values(TransactionType.BUY.name, TransactionType.SELL.name)
+    expect(enumsMap["categories"]).notToEqualNull()
+    expect(enumsMap["categories"]!!).toHaveSize(InstrumentCategory.entries.size)
+    expect(enumsMap["categories"]!!).toContain(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
+    expect(enumsMap["currencies"]).notToEqualNull()
+    expect(enumsMap["currencies"]!!).toContain.inOrder.only.values(Currency.EUR.name)
   }
 }
