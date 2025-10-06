@@ -10,8 +10,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.reset
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
-import ee.tenman.portfolio.configuration.IntegrationTest
 import com.ninjasquad.springmockk.MockkBean
+import ee.tenman.portfolio.configuration.IntegrationTest
 import io.mockk.every
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

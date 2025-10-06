@@ -2,11 +2,11 @@ package ee.tenman.portfolio.service
 
 import ch.tutteli.atrium.api.fluent.en_GB.*
 import ch.tutteli.atrium.api.verbs.expect
+import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.repository.JobExecutionRepository
-import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach

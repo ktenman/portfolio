@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.configuration
 
-import io.mockk.isMockKMock
 import io.mockk.clearMocks
+import io.mockk.isMockKMock
 import org.springframework.cache.CacheManager
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.test.context.TestContext
