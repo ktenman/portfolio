@@ -1,5 +1,7 @@
 package e2e
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.value
 import com.codeborne.selenide.Condition.visible
@@ -10,8 +12,6 @@ import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
 import e2e.retry.RetryExtension
-import ch.tutteli.atrium.api.fluent.en_GB.*
-import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

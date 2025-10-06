@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.controller
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -15,8 +17,6 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
-import ch.tutteli.atrium.api.fluent.en_GB.*
-import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
@@ -76,11 +76,15 @@ class EnumControllerIT {
     expect(enumsMap["providers"]!!).toHaveSize(ProviderName.entries.size)
     expect(enumsMap["providers"]!!).toContain(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
     expect(enumsMap["transactionTypes"]).notToEqualNull()
-    expect(enumsMap["transactionTypes"]!!).toContain.inOrder.only.values(TransactionType.BUY.name, TransactionType.SELL.name)
+    expect(enumsMap["transactionTypes"]!!)
+      .toContain.inOrder.only
+      .values(TransactionType.BUY.name, TransactionType.SELL.name)
     expect(enumsMap["categories"]).notToEqualNull()
     expect(enumsMap["categories"]!!).toHaveSize(InstrumentCategory.entries.size)
     expect(enumsMap["categories"]!!).toContain(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
     expect(enumsMap["currencies"]).notToEqualNull()
-    expect(enumsMap["currencies"]!!).toContain.inOrder.only.values(Currency.EUR.name)
+    expect(enumsMap["currencies"]!!)
+      .toContain.inOrder.only
+      .values(Currency.EUR.name)
   }
 }

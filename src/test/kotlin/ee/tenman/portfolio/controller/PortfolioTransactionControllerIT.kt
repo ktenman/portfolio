@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.controller
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
@@ -16,8 +18,6 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
-import ch.tutteli.atrium.api.fluent.en_GB.*
-import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith

@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
@@ -10,8 +12,6 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
-import ch.tutteli.atrium.api.fluent.en_GB.*
-import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -84,7 +84,7 @@ class PortfolioSummaryProfitIT
     val historicalDate = testDate.minusDays(1)
     val historicalSummary = portfolioSummaryService.calculateSummaryForDate(historicalDate)
 
-    expect(historicalSummary.totalProfit != null).toEqual(true)
+    expect(historicalSummary.totalProfit).notToEqualNull()
   }
 
   @Test

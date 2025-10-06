@@ -434,7 +434,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit != null).toEqual(true)
+    expect(metrics.totalProfit).notToEqualNull()
   }
 
   @Test
@@ -676,7 +676,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit != null).toEqual(true)
+    expect(metrics.totalProfit).notToEqualNull()
     expect(metrics.xirrTransactions.size > 3).toEqual(true)
   }
 
@@ -909,7 +909,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit != null).toEqual(true)
+    expect(metrics.totalProfit).notToEqualNull()
   }
 
   @Test
@@ -928,7 +928,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit != null).toEqual(true)
+    expect(metrics.totalProfit).notToEqualNull()
   }
 
   @Test
@@ -1071,7 +1071,7 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toBeGreaterThan(BigDecimal.ZERO)
-    expect(metrics.totalProfit != null).toEqual(true)
+    expect(metrics.totalProfit).notToEqualNull()
   }
 
   @Test

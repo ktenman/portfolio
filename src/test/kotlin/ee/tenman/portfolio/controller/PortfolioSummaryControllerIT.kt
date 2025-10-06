@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.controller
 
+import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.verbs.expect
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
@@ -19,8 +21,6 @@ import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
-import ch.tutteli.atrium.api.fluent.en_GB.*
-import ch.tutteli.atrium.api.verbs.expect
 import org.hamcrest.Matchers.closeTo
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test

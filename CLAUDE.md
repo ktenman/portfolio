@@ -153,6 +153,7 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 The project uses **Atrium 1.3.0-alpha-2** (matching the klite reference project) for all Kotlin test assertions.
 
 **Standard Imports:**
+
 ```kotlin
 import ch.tutteli.atrium.api.fluent.en_GB.*
 import ch.tutteli.atrium.api.verbs.expect
@@ -161,6 +162,7 @@ import ch.tutteli.atrium.api.verbs.expect
 **Common Patterns:**
 
 Basic Assertions:
+
 ```kotlin
 expect(value).toEqual(expected)              // Equality check
 expect(value).notToEqual(other)              // Inequality check
@@ -168,6 +170,7 @@ expect(value).notToEqualNull()               // Null check
 ```
 
 Collection/String Assertions:
+
 ```kotlin
 expect(collection).toContain(element)        // Containment
 expect(collection).toContainExactly(...)     // Exact match
@@ -176,6 +179,7 @@ expect(collection).toHaveSize(n)             // Size check
 ```
 
 Numeric Comparisons:
+
 ```kotlin
 expect(number).toBeGreaterThan(value)
 expect(number).toBeLessThan(value)
@@ -184,6 +188,7 @@ expect(number).toBeLessThanOrEqualTo(value)
 ```
 
 **BigDecimal Specific (IMPORTANT):**
+
 ```kotlin
 // ✅ Correct: Use toEqualNumerically() for numerical comparison
 expect(bigDecimal).notToEqualNull().toEqualNumerically(expected)
@@ -196,6 +201,7 @@ expect(bigDecimal).toEqual(expected)  // WRONG!
 ```
 
 **Method Chaining (IMPORTANT):**
+
 ```kotlin
 // ✅ Correct: Use dot notation for method chaining
 expect(value).notToEqualNull().toContainExactly("A", "B", "C")
@@ -204,7 +210,19 @@ expect(value).notToEqualNull().toContainExactly("A", "B", "C")
 expect(value).notToEqualNull { toContainExactly("A", "B", "C") }
 ```
 
+**Null Checks (IMPORTANT):**
+
+```kotlin
+// ✅ Correct: Use Atrium's notToEqualNull()
+expect(value).notToEqualNull()
+
+// ❌ WRONG: Verbose null comparison patterns
+expect(value != null).toEqual(true)   // Don't use this!
+expect(value == null).toEqual(false)  // Don't use this!
+```
+
 **Test Coverage:**
+
 - 25 test files using Atrium (267 total tests)
 - 169 BigDecimal assertions using `.toEqualNumerically()`
 - All tests use backtick naming: `` `should do something when condition`() ``
