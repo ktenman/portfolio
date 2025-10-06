@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import { useToast } from 'vue-toastification'
+import { useToast } from '../../composables/use-toast'
 import { useLocalStorage } from '@vueuse/core'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import CrudLayout from '../shared/crud-layout.vue'
