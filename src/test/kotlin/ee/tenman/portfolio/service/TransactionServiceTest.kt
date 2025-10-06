@@ -83,7 +83,7 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buyTx, sellTx))
 
     expect(sellTx.realizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
-    expect(sellTx.averageCost != null).toEqual(true)
+    expect(sellTx.averageCost).notToEqualNull()
     expect(sellTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
     expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("60"))
   }
@@ -234,9 +234,9 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(tx1, tx2, tx3))
 
-    expect(tx1.unrealizedProfit != null).toEqual(true)
-    expect(tx2.unrealizedProfit != null).toEqual(true)
-    expect(tx3.unrealizedProfit != null).toEqual(true)
+    expect(tx1.unrealizedProfit).notToEqualNull()
+    expect(tx2.unrealizedProfit).notToEqualNull()
+    expect(tx3.unrealizedProfit).notToEqualNull()
   }
 
   @Test
@@ -323,7 +323,7 @@ class TransactionServiceTest {
 
     val result = transactionService.saveTransaction(newTransaction)
 
-    expect(result != null).toEqual(true)
+    expect(result).notToEqualNull()
     expect(result.id).toEqual(1L)
     verify(portfolioTransactionRepository).save(newTransaction)
     verify(portfolioTransactionRepository).saveAll(argThat<List<PortfolioTransaction>> { size == 2 })

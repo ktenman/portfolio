@@ -46,7 +46,8 @@ class EnumServiceTest {
   fun `should return expected enum values when retrieving enums`() {
     val result = enumService.getAllEnums()
 
-    expect(result["platforms"]).notToEqualNull()
+    expect(result["platforms"])
+      .notToEqualNull()
       .toContainExactly("AVIVA", "BINANCE", "COINBASE", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
     expect(result["providers"]).notToEqualNull().toContainExactly("ALPHA_VANTAGE", "BINANCE", "FT")
     expect(result["transactionTypes"]).notToEqualNull().toContainExactly("BUY", "SELL")
