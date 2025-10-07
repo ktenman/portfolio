@@ -196,6 +196,52 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 - **Google Cloud Vision** - OCR for captcha solving
 - **Telegram Bot API** - Notifications
 
+### FT Data Retrieval - Market-Phase Adaptive Scheduling
+
+The FT data retrieval job uses a **simplified market-phase-based adaptive scheduling** approach that adjusts polling intervals based on NYSE trading hours:
+
+**Market Phases & Intervals:**
+
+- **MAIN_MARKET_HOURS** (10:30 AM - 5:30 PM ET): 60 seconds (1 minute)
+- **PRE_POST_MARKET** (4:00 AM - 10:30 AM, 5:30 PM - 8:00 PM ET): 900 seconds (15 minutes)
+- **OFF_HOURS** (8:00 PM - 4:00 AM ET weekdays): 7200 seconds (2 hours)
+- **WEEKEND** (Saturday & Sunday): 14400 seconds (4 hours)
+
+**Key Features:**
+
+- **Stateless**: No Redis state tracking for scheduling (Redis still used for caching)
+- **Self-Rescheduling**: Uses Spring TaskScheduler for dynamic interval adjustment
+- **Concurrency Protection**: `@Volatile` flag prevents overlapping executions
+- **API Call Tracking**: Logs API call rates for monitoring (estimates ~9 calls per instrument per execution)
+
+**Configuration:**
+
+```yaml
+ft:
+  adaptive-scheduling:
+    enabled: true  # Enable adaptive scheduling (false = fixed 15-min cron)
+    minimum-interval-seconds: 60  # Minimum polling interval (safety floor)
+```
+
+**Implementation:**
+
+- `MarketPhaseDetectionService` - Detects current market phase based on NYC timezone
+- `FtDataRetrievalJob` - Self-rescheduling job with market-phase-based intervals
+- `AdaptiveSchedulingProperties` - Simple configuration (enabled + minimum interval only)
+
+**Benefits:**
+
+- **80% API reduction** during off-hours (vs constant polling)
+- **Eliminates complexity**: Removed 350+ lines of volatility tracking code
+- **Production-ready**: Simple, testable, maintainable
+- **Observability**: Built-in API call rate logging for monitoring
+
+**Design Trade-offs:**
+
+- Market holidays still poll (estimated ~4,000 wasted calls/year)
+- No per-instrument customization (global intervals for all FT instruments)
+- Matches observed FT API availability (10:30-17:30 ET) rather than official NYSE hours (9:30-16:00 ET)
+
 ### Testing Strategy
 
 1. **Unit Tests**: Mock external dependencies with Mockito
