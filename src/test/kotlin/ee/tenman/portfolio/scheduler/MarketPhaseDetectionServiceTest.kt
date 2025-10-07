@@ -3,6 +3,8 @@ package ee.tenman.portfolio.scheduler
 import ch.tutteli.atrium.api.fluent.en_GB.*
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.Instant
@@ -132,6 +134,55 @@ class MarketPhaseDetectionServiceTest {
 
     expect(service.detectMarketPhase(justBefore)).toEqual(MarketPhase.PRE_POST_MARKET)
     expect(service.detectMarketPhase(atEightPm)).toEqual(MarketPhase.OFF_HOURS)
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "2025, 1, 1, New Year Day 2025",
+    "2025, 4, 18, Good Friday 2025",
+    "2025, 4, 21, Easter Monday 2025",
+    "2025, 5, 1, Labour Day 2025",
+    "2025, 12, 24, Christmas Eve 2025",
+    "2025, 12, 25, Christmas Day 2025",
+    "2025, 12, 26, Boxing Day 2025",
+    "2025, 12, 31, New Year Eve 2025",
+    "2026, 1, 1, New Year Day 2026",
+    "2026, 4, 3, Good Friday 2026",
+    "2026, 4, 6, Easter Monday 2026",
+    "2026, 5, 1, Labour Day 2026",
+    "2026, 12, 24, Christmas Eve 2026",
+    "2026, 12, 25, Christmas Day 2026",
+    "2026, 12, 26, Boxing Day 2026",
+    "2026, 12, 31, New Year Eve 2026",
+    "2027, 1, 1, New Year Day 2027",
+    "2027, 3, 26, Good Friday 2027",
+    "2027, 3, 29, Easter Monday 2027",
+    "2027, 5, 1, Labour Day 2027",
+    "2027, 12, 24, Christmas Eve 2027",
+    "2027, 12, 25, Christmas Day 2027",
+    "2027, 12, 26, Boxing Day 2027",
+    "2027, 12, 31, New Year Eve 2027",
+  )
+  fun `should detect WEEKEND on Xetra holidays`(
+    year: Int,
+    month: Int,
+    day: Int,
+    holidayName: String,
+  ) {
+    val holiday = createNyTime(year, month, day, 12, 0)
+
+    val result = service.detectMarketPhase(holiday)
+
+    expect(result).toEqual(MarketPhase.WEEKEND)
+  }
+
+  @Test
+  fun `should detect MAIN_MARKET_HOURS on regular weekday not a Xetra holiday`() {
+    val regularDay = createNyTime(2025, 3, 17, 12, 0)
+
+    val result = service.detectMarketPhase(regularDay)
+
+    expect(result).toEqual(MarketPhase.MAIN_MARKET_HOURS)
   }
 
   private fun createNyTime(
