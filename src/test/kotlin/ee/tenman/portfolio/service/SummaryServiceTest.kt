@@ -811,7 +811,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(existingDate) } returns existing
     every { portfolioDailySummaryRepository.save(any<PortfolioDailySummary>()) } returns existing
 
-    val result = summaryService.saveDailySummary(updated)
+    summaryService.saveDailySummary(updated)
 
     verify { portfolioDailySummaryRepository.save(capture(summaryCaptor)) }
     val saved = summaryCaptor.captured

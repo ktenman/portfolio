@@ -25,6 +25,7 @@ repositories {
 
 dependencies {
   implementation(libs.springdoc.openapi.starter.webmvc.ui)
+  implementation(libs.grpc.netty.shaded)
   implementation(libs.jsoup)
   implementation(libs.spring.boot.starter.data.jpa)
   implementation(libs.spring.boot.starter.validation)
