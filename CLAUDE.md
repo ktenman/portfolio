@@ -205,7 +205,7 @@ The FT data retrieval job uses a **simplified market-phase-based adaptive schedu
 - **MAIN_MARKET_HOURS** (10:30 AM - 5:30 PM ET): 60 seconds (1 minute)
 - **PRE_POST_MARKET** (4:00 AM - 10:30 AM, 5:30 PM - 8:00 PM ET): 900 seconds (15 minutes)
 - **OFF_HOURS** (8:00 PM - 4:00 AM ET weekdays): 7200 seconds (2 hours)
-- **WEEKEND** (Saturday & Sunday): 14400 seconds (4 hours)
+- **WEEKEND** (Saturday, Sunday & Xetra holidays): 14400 seconds (4 hours)
 
 **Key Features:**
 
@@ -219,13 +219,13 @@ The FT data retrieval job uses a **simplified market-phase-based adaptive schedu
 ```yaml
 ft:
   adaptive-scheduling:
-    enabled: true  # Enable adaptive scheduling (false = fixed 15-min cron)
-    minimum-interval-seconds: 60  # Minimum polling interval (safety floor)
+    enabled: true # Enable adaptive scheduling (false = fixed 15-min cron)
+    minimum-interval-seconds: 60 # Minimum polling interval (safety floor)
 ```
 
 **Implementation:**
 
-- `MarketPhaseDetectionService` - Detects current market phase based on NYC timezone
+- `MarketPhaseDetectionService` - Detects current market phase based on NYC timezone with Xetra holiday support (2025-2027)
 - `FtDataRetrievalJob` - Self-rescheduling job with market-phase-based intervals
 - `AdaptiveSchedulingProperties` - Simple configuration (enabled + minimum interval only)
 
@@ -238,7 +238,8 @@ ft:
 
 **Design Trade-offs:**
 
-- Market holidays still poll (estimated ~4,000 wasted calls/year)
+- **Xetra holidays**: Supported for 2025-2027 (24 holidays/year). Will need updates for 2028+
+- **NYSE holidays**: Not yet implemented (estimated ~10 holidays/year, ~2,400 wasted API calls/year)
 - No per-instrument customization (global intervals for all FT instruments)
 - Matches observed FT API availability (10:30-17:30 ET) rather than official NYSE hours (9:30-16:00 ET)
 
