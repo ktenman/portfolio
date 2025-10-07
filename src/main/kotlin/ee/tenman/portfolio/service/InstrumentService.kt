@@ -60,7 +60,7 @@ class InstrumentService(
 
       transactions
         .groupBy { it.platform }
-        .forEach { (platform, platformTransactions) ->
+        .forEach { (_, platformTransactions) ->
           calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate })
         }
 
