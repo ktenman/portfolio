@@ -104,7 +104,8 @@ class FtDataRetrievalJob(
       }
 
       val executionDuration = Duration.between(executionStartTime, Instant.now(clock))
-      val apiCallRate = if (executionDuration.seconds > 0) {
+      val apiCallRate =
+        if (executionDuration.seconds > 0) {
         apiCallCount.toDouble() / executionDuration.seconds
       } else {
         apiCallCount.toDouble()
@@ -114,7 +115,7 @@ class FtDataRetrievalJob(
         "Completed FT data retrieval execution. " +
           "Processed ${instruments.size} instruments, " +
           "Made $apiCallCount API calls in ${executionDuration.seconds}s " +
-          "(${String.format("%.2f", apiCallRate)} calls/sec)"
+          "(${String.format("%.2f", apiCallRate)} calls/sec)",
       )
 
       if (adaptiveSchedulingProperties.enabled) {
@@ -148,18 +149,20 @@ class FtDataRetrievalJob(
   }
 
   private fun scheduleNextExecution(customDelay: Duration? = null) {
-    val delay = customDelay ?: run {
+    val delay =
+      customDelay ?: run {
       val marketPhase = marketPhaseDetectionService.detectMarketPhase()
-      val nextInterval = maxOf(
+      val nextInterval =
+        maxOf(
         marketPhase.defaultIntervalSeconds,
-        adaptiveSchedulingProperties.minimumIntervalSeconds
+        adaptiveSchedulingProperties.minimumIntervalSeconds,
       )
       Duration.ofSeconds(nextInterval)
     }
 
     taskScheduler.schedule(
       { runAdaptiveJob() },
-      Instant.now(clock).plus(delay)
+      Instant.now(clock).plus(delay),
     )
 
     val marketPhase = marketPhaseDetectionService.detectMarketPhase()
@@ -167,7 +170,7 @@ class FtDataRetrievalJob(
       "Scheduled next execution in ${delay.seconds}s " +
         "(Market phase: $marketPhase, " +
         "Phase default: ${marketPhase.defaultIntervalSeconds}s, " +
-        "Configured minimum: ${adaptiveSchedulingProperties.minimumIntervalSeconds}s)"
+        "Configured minimum: ${adaptiveSchedulingProperties.minimumIntervalSeconds}s)",
     )
   }
 }
