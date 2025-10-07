@@ -16,6 +16,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+import java.util.concurrent.CountDownLatch
 
 class FtDataRetrievalJobConcurrencyTest {
   private val fixedClock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.systemDefault())
@@ -58,20 +59,18 @@ class FtDataRetrievalJobConcurrencyTest {
       emptyMap()
     }
 
-    var firstCallStarted = false
+    val firstCallStartedLatch = CountDownLatch(1)
     var secondCallSkipped = false
 
     val thread1 =
       Thread {
-        firstCallStarted = true
+        firstCallStartedLatch.countDown()
         job.execute()
       }
 
     val thread2 =
       Thread {
-        while (!firstCallStarted) {
-          Thread.sleep(10)
-        }
+        firstCallStartedLatch.await()
         job.execute()
         secondCallSkipped = true
       }
