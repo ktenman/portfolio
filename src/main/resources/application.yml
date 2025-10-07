@@ -131,6 +131,9 @@ ft:
   instruments:
     parallel:
       threads: 5
+  adaptive-scheduling:
+    enabled: ${FT_ADAPTIVE_SCHEDULING_ENABLED:true}
+    minimum-interval-seconds: 60
 
 vision:
   enabled: ${VISION_ENABLED:false}
