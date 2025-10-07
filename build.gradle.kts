@@ -85,6 +85,12 @@ dependencies {
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
+configurations.all {
+  resolutionStrategy {
+    force("io.grpc:grpc-netty-shaded:1.75.0")
+  }
+}
+
 dependencyManagement {
   imports {
     mavenBom(
