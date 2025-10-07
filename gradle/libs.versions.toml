@@ -21,7 +21,7 @@ mockk = "1.14.6"
 archUnit = "1.4.1"
 atrium = "1.3.0-alpha-2"
 postgresql = "42.7.8"
-grpcNettyShaded = "1.75.0"
+grpcNettyShaded = "1.76.0"
 
 [libraries]
 # Spring Boot
