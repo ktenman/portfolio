@@ -15,7 +15,8 @@ class MarketPhaseDetectionService(
 ) {
   private val nyseZone = ZoneId.of("America/New_York")
 
-  private val xetraHolidays = setOf(
+  private val xetraHolidays =
+    setOf(
     LocalDate.of(2025, 1, 1),
     LocalDate.of(2025, 4, 18),
     LocalDate.of(2025, 4, 21),
