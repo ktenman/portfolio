@@ -21,6 +21,7 @@ mockk = "1.14.6"
 archUnit = "1.4.1"
 atrium = "1.3.0-alpha-2"
 postgresql = "42.7.8"
+grpcNettyShaded = "1.75.0"
 
 [libraries]
 # Spring Boot
@@ -82,6 +83,7 @@ telegrambots-spring-boot-starter = { module = "org.telegram:telegrambots-spring-
 
 # Google Cloud
 google-cloud-vision = { module = "com.google.cloud:google-cloud-vision", version.ref = "googleCloudVision" }
+grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpcNettyShaded" }
 
 # Testing
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
