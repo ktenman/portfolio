@@ -143,7 +143,7 @@ class InstrumentControllerIT {
             """
             {
               "symbol": "QDVE",
-              "name": "Updated Instrument Name",
+              "name": "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
               "category": "ETF",
               "baseCurrency": "USD",
               "providerName": "ALPHA_VANTAGE"
@@ -152,12 +152,12 @@ class InstrumentControllerIT {
           ),
       ).andExpect(status().isOk)
       .andExpect(jsonPath("$.symbol").value("QDVE"))
-      .andExpect(jsonPath("$.name").value("Updated Instrument Name"))
+      .andExpect(jsonPath("$.name").value("iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)"))
       .andExpect(jsonPath("$.category").value("ETF"))
       .andExpect(jsonPath("$.baseCurrency").value("USD"))
 
     val updatedInstrument = instrumentRepository.findById(savedInstrument.id).get()
-    expect(updatedInstrument.name).toEqual("Updated Instrument Name")
+    expect(updatedInstrument.name).toEqual("iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)")
     expect(updatedInstrument.baseCurrency).toEqual("USD")
   }
 
