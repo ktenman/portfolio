@@ -72,7 +72,7 @@ spring:
     redis:
       host: redis
       port: 6379
-  
+
   task:
     scheduling:
       pool:
@@ -132,7 +132,7 @@ ft:
     parallel:
       threads: 5
   adaptive-scheduling:
-    enabled: ${FT_ADAPTIVE_SCHEDULING_ENABLED:true}
+    enabled: ${FT_ADAPTIVE_SCHEDULING_ENABLED:false}
     minimum-interval-seconds: 60
 
 vision:
