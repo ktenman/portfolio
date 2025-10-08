@@ -48,7 +48,7 @@ class FtDataRetrievalJob(
     }
   }
 
-  @Scheduled(cron = "0 0/15 * * * *")
+  @Scheduled(cron = "0 * * * * *")
   fun runJob() {
     if (!adaptiveSchedulingProperties.enabled) {
       log.info("Running FT data retrieval job (fixed schedule)")
