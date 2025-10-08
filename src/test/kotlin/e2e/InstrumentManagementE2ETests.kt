@@ -79,7 +79,7 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
-  fun `should display success message when editing instrument name and price`() {
+  fun `should display success message when editing instrument price`() {
     id("addNewInstrument").click()
     id("symbol").shouldNotHave(text("TSLA")).value = "TSLA"
     id("name").shouldNotHave(text("Tesla Inc.")).value = "Tesla Inc."
@@ -97,7 +97,6 @@ class InstrumentManagementE2ETests {
     expect(editButtons.size()).toBeGreaterThan(0)
     editButtons.first().click()
 
-    val updatedName = "Tesla Motors Inc."
     val updatedPrice = "275.50"
 
     val symbolField = id("symbol")
@@ -105,10 +104,8 @@ class InstrumentManagementE2ETests {
     expect(symbolField.getAttribute("disabled")).notToEqualNull()
 
     val nameField = id("name")
-    nameField.shouldBe(enabled)
-    nameField.clear()
-    nameField.value = updatedName
-    nameField.shouldHave(value(updatedName))
+    nameField.shouldBe(visible)
+    expect(nameField.getAttribute("disabled")).notToEqualNull()
 
     val currentPriceField = id("currentPrice")
     currentPriceField.shouldBe(enabled)
@@ -132,7 +129,7 @@ class InstrumentManagementE2ETests {
     val successAlert = element(className("alert-success")).shouldBe(visible, Duration.ofSeconds(10))
     successAlert.shouldHave(text("Instrument updated successfully."))
 
-    elements(tagName("td")).findBy(text(updatedName)).shouldBe(visible)
+    elements(tagName("td")).findBy(text("Tesla Inc.")).shouldBe(visible)
   }
 
   @Test
@@ -165,9 +162,8 @@ class InstrumentManagementE2ETests {
     currentPriceField.value = "48500.75"
 
     val nameField = id("name")
-    nameField.shouldBe(enabled)
-    nameField.clear()
-    nameField.value = "Bitcoin (Updated)"
+    nameField.shouldBe(visible)
+    expect(nameField.getAttribute("disabled")).notToEqualNull()
 
     val updateButton = elements(tagName("button")).filter(text("Update")).first()
     updateButton.click()

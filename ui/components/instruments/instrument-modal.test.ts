@@ -130,7 +130,7 @@ describe('InstrumentModal', () => {
         },
       })
 
-      const updatedData = { ...mockInstrument, name: 'Updated Apple Inc.' }
+      const updatedData = { ...mockInstrument, currentPrice: 150.25 }
       const form = wrapper.findComponent(InstrumentForm)
 
       await form.vm.$emit('submit', updatedData)

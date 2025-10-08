@@ -74,6 +74,7 @@ describe('InstrumentForm', () => {
   describe('with initial data', () => {
     it('should populate form fields with initial data', () => {
       const initialData = {
+        id: 1,
         symbol: 'AAPL',
         name: 'Apple Inc.',
         providerName: 'ALPHA_VANTAGE',
@@ -89,6 +90,27 @@ describe('InstrumentForm', () => {
       expect(formInputs[2].props('modelValue')).toBe('ALPHA_VANTAGE')
       expect(formInputs[3].props('modelValue')).toBe('STOCK')
       expect(formInputs[4].props('modelValue')).toBe('USD')
+    })
+
+    it('should disable symbol, name, provider, and category fields when editing existing instrument', () => {
+      const initialData = {
+        id: 1,
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        providerName: 'ALPHA_VANTAGE',
+        category: 'STOCK',
+        baseCurrency: 'USD',
+      }
+
+      const wrapper = createWrapper({ initialData })
+
+      const formInputs = wrapper.findAllComponents(FormInput)
+      expect(formInputs[0].attributes('disabled')).toBeDefined()
+      expect(formInputs[1].attributes('disabled')).toBeDefined()
+      expect(formInputs[2].attributes('disabled')).toBeDefined()
+      expect(formInputs[3].attributes('disabled')).toBeDefined()
+      expect(formInputs[4].attributes('disabled')).toBeDefined()
+      expect(formInputs[5].attributes('disabled')).toBeUndefined()
     })
 
     it('should populate currentPrice when provided in initial data', () => {
@@ -109,11 +131,11 @@ describe('InstrumentForm', () => {
 
     it('should update form when initial data changes', async () => {
       const wrapper = createWrapper({
-        initialData: { symbol: 'AAPL', name: 'Apple Inc.' },
+        initialData: { id: 1, symbol: 'AAPL', name: 'Apple Inc.' },
       })
 
       await wrapper.setProps({
-        initialData: { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+        initialData: { id: 1, symbol: 'GOOGL', name: 'Alphabet Inc.' },
       })
       await nextTick()
 
