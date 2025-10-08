@@ -12,6 +12,7 @@ vi.mock('../../services/enum-service', () => ({
           'AVIVA',
           'BINANCE',
           'COINBASE',
+          'IBKR',
           'LHV',
           'LIGHTYEAR',
           'SWEDBANK',

@@ -2,6 +2,7 @@ export enum Platform {
   AVIVA = 'AVIVA',
   BINANCE = 'BINANCE',
   COINBASE = 'COINBASE',
+  IBKR = 'IBKR',
   LHV = 'LHV',
   LIGHTYEAR = 'LIGHTYEAR',
   SWEDBANK = 'SWEDBANK',

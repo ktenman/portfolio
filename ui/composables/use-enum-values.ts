@@ -32,6 +32,7 @@ const ACRONYMS = [
   'CFO',
   'IT',
   'AI',
+  'IBKR',
 ]
 
 const formatEnumText = (value: string): string => {
