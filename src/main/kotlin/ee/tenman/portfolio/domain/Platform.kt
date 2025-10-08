@@ -4,6 +4,7 @@ enum class Platform {
   AVIVA,
   BINANCE,
   COINBASE,
+  IBKR,
   LHV,
   LIGHTYEAR,
   SWEDBANK,
