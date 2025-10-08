@@ -45,7 +45,7 @@ class EnumServiceTest {
     val response = enumService.getAllEnums()
 
     expect(response.platforms)
-      .toContainExactly("AVIVA", "BINANCE", "COINBASE", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
+      .toContainExactly("AVIVA", "BINANCE", "COINBASE", "IBKR", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
 
     expect(response.providers).toContainExactly("ALPHA_VANTAGE", "BINANCE", "FT")
 
