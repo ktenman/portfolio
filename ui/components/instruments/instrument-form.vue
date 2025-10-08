@@ -14,6 +14,7 @@
       label="Name"
       placeholder="Enter instrument name"
       :error="getFieldError('name')"
+      :disabled="!!initialData?.id"
       @update:model-value="updateField('name', $event)"
       @blur="touchField('name')"
     />
