@@ -240,8 +240,7 @@ describe('InstrumentForm', () => {
         { value: 'ALPHA_VANTAGE', text: 'Alpha Vantage' },
         { value: 'BINANCE', text: 'Binance' },
         { value: 'FT', text: 'FT' },
-      ]
-
+      ] as any
       expect(providerInput.props('options')).toEqual(expectedOptions)
     })
   })

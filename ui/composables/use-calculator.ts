@@ -20,6 +20,7 @@ interface YearSummary {
   grossProfit: number
   taxAmount: number
   netProfit: number
+  monthlyEarnings: number
 }
 
 const getDefaultFormValues = (): CalculatorForm => ({
@@ -34,6 +35,7 @@ const getDefaultFormValues = (): CalculatorForm => ({
 export function useCalculator() {
   const form = useLocalStorage<CalculatorForm>('calculator-form', getDefaultFormValues())
   const hasUserModifiedAnnualReturn = ref(false)
+  const initialFormState = ref<CalculatorForm | null>(null)
 
   const yearSummary = ref<YearSummary[]>([])
   const portfolioData = ref<number[]>([])
@@ -80,6 +82,7 @@ export function useCalculator() {
       const taxAmount = grossProfit * (form.value.taxRate / 100)
       const netProfit = grossProfit - taxAmount
       const actualTotalWorth = totalInvested + netProfit
+      const monthlyEarnings = netProfit / 12
 
       tempPortfolioData.push(actualTotalWorth)
 
@@ -90,6 +93,7 @@ export function useCalculator() {
         grossProfit,
         taxAmount,
         netProfit,
+        monthlyEarnings,
       })
     }
 
@@ -114,13 +118,15 @@ export function useCalculator() {
 
   watch(calculationResult, () => {
     if (calculationResult.value) {
-      // Auto-populate form with actual portfolio data if using defaults
       if (form.value.initialWorth === 0) {
         form.value.initialWorth = calculationResult.value.total
       }
-      // Replace default 7% return with actual portfolio average only if user hasn't modified it
       if (form.value.annualReturnRate === 7 && !hasUserModifiedAnnualReturn.value) {
         form.value.annualReturnRate = calculationResult.value.average
+      }
+
+      if (!initialFormState.value) {
+        initialFormState.value = { ...form.value }
       }
     }
   })
@@ -130,23 +136,27 @@ export function useCalculator() {
   })
 
   const resetCalculator = async () => {
-    try {
-      const result = await refetch()
-      const freshData = result.data
+    hasUserModifiedAnnualReturn.value = false
 
-      hasUserModifiedAnnualReturn.value = false
-      form.value = {
-        initialWorth: freshData?.total || 0,
-        monthlyInvestment: 585,
-        yearlyGrowthRate: 5,
-        annualReturnRate: freshData?.average || 7,
-        years: 30,
-        taxRate: 22,
+    if (initialFormState.value) {
+      Object.assign(form.value, initialFormState.value)
+    } else {
+      try {
+        const result = await refetch()
+        const freshData = result.data
+
+        Object.assign(form.value, {
+          initialWorth: freshData?.total || 0,
+          monthlyInvestment: 585,
+          yearlyGrowthRate: 5,
+          annualReturnRate: freshData?.average || 7,
+          years: 30,
+          taxRate: 22,
+        })
+      } catch (error) {
+        console.error('Failed to fetch fresh data:', error)
+        Object.assign(form.value, getDefaultFormValues())
       }
-    } catch (error) {
-      console.error('Failed to fetch fresh data:', error)
-      hasUserModifiedAnnualReturn.value = false
-      form.value = getDefaultFormValues()
     }
   }
 

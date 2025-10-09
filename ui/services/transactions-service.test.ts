@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { transactionsService } from './transactions-service'
 import { httpClient } from '../utils/http-client'
-import type { PortfolioTransaction } from '../models/portfolio-transaction'
+import { TransactionType, Platform } from '../models/generated/domain-models'
+import { createTransactionDto } from '../tests/fixtures'
 
 vi.mock('../utils/http-client', () => ({
   httpClient: {
@@ -19,32 +20,33 @@ describe('transactionsService', () => {
 
   describe('getAll', () => {
     it('should fetch all transactions', async () => {
-      const mockTransactions: PortfolioTransaction[] = [
-        {
+      const mockTransactions = [
+        createTransactionDto({
           id: 1,
           instrumentId: 1,
           symbol: 'AAPL',
           transactionDate: '2023-01-15',
-          transactionType: 'BUY',
+          transactionType: TransactionType.BUY,
           quantity: 10,
           price: 150.5,
-          platform: 'BINANCE' as any,
-        },
-        {
+          platform: Platform.BINANCE,
+          currency: 'EUR',
+        }),
+        createTransactionDto({
           id: 2,
           instrumentId: 2,
           symbol: 'BTC',
           transactionDate: '2023-02-20',
-          transactionType: 'SELL',
+          transactionType: TransactionType.SELL,
           quantity: 5,
           price: 45000,
-          platform: 'COINBASE' as any,
-        },
+          platform: Platform.COINBASE,
+          currency: 'EUR',
+        }),
       ]
-
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockTransactions,
-      } as any)
+      })
 
       const result = await transactionsService.getAll()
 
@@ -55,7 +57,7 @@ describe('transactionsService', () => {
     it('should handle empty transaction list', async () => {
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: [],
-      } as any)
+      })
 
       const result = await transactionsService.getAll()
 
@@ -73,24 +75,24 @@ describe('transactionsService', () => {
 
   describe('create', () => {
     it('should create a new transaction', async () => {
-      const newTransaction: Partial<PortfolioTransaction> = {
+      const newTransaction = {
         instrumentId: 3,
         symbol: 'GOOGL',
         transactionDate: '2023-03-10',
-        transactionType: 'BUY',
+        transactionType: TransactionType.BUY,
         quantity: 20,
         price: 250.75,
-        platform: 'REVOLUT' as any,
+        platform: Platform.AVIVA,
       }
 
-      const createdTransaction: PortfolioTransaction = {
+      const createdTransaction = createTransactionDto({
         id: 3,
         ...newTransaction,
-      } as PortfolioTransaction
+      })
 
       vi.mocked(httpClient.post).mockResolvedValueOnce({
         data: createdTransaction,
-      } as any)
+      })
 
       const result = await transactionsService.create(newTransaction)
 
@@ -99,24 +101,24 @@ describe('transactionsService', () => {
     })
 
     it('should handle partial transaction data', async () => {
-      const partialTransaction: Partial<PortfolioTransaction> = {
+      const partialTransaction = {
         instrumentId: 4,
         symbol: 'ETH',
-        transactionType: 'SELL',
+        transactionType: TransactionType.SELL,
         quantity: 15,
         price: 2000,
         transactionDate: '2023-03-15',
-        platform: 'BINANCE' as any,
+        platform: Platform.BINANCE,
       }
 
-      const createdTransaction: PortfolioTransaction = {
+      const createdTransaction = createTransactionDto({
         id: 4,
         ...partialTransaction,
-      } as PortfolioTransaction
+      })
 
       vi.mocked(httpClient.post).mockResolvedValueOnce({
         data: createdTransaction,
-      } as any)
+      })
 
       const result = await transactionsService.create(partialTransaction)
 
@@ -136,25 +138,26 @@ describe('transactionsService', () => {
 
   describe('update', () => {
     it('should update a transaction by numeric id', async () => {
-      const updateData: Partial<PortfolioTransaction> = {
+      const updateData = {
         quantity: 25,
         price: 155.5,
       }
 
-      const updatedTransaction: PortfolioTransaction = {
+      const updatedTransaction = createTransactionDto({
         id: 1,
         instrumentId: 1,
         symbol: 'AAPL',
         transactionDate: '2023-01-15',
-        transactionType: 'BUY',
+        transactionType: TransactionType.BUY,
         quantity: 25,
         price: 155.5,
-        platform: 'BINANCE' as any,
-      }
+        platform: Platform.BINANCE,
+        currency: 'EUR',
+      })
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
         data: updatedTransaction,
-      } as any)
+      })
 
       const result = await transactionsService.update(1, updateData)
 
@@ -163,24 +166,25 @@ describe('transactionsService', () => {
     })
 
     it('should update a transaction by string id', async () => {
-      const updateData: Partial<PortfolioTransaction> = {
+      const updateData = {
         transactionDate: '2023-01-20',
       }
 
-      const updatedTransaction: PortfolioTransaction = {
+      const updatedTransaction = createTransactionDto({
         id: 2,
         instrumentId: 2,
         symbol: 'BTC',
         transactionDate: '2023-01-20',
-        transactionType: 'SELL',
+        transactionType: TransactionType.SELL,
         quantity: 5,
         price: 45000,
-        platform: 'COINBASE' as any,
-      }
+        platform: Platform.COINBASE,
+        currency: 'EUR',
+      })
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
         data: updatedTransaction,
-      } as any)
+      })
 
       const result = await transactionsService.update('2', updateData)
 
@@ -189,24 +193,24 @@ describe('transactionsService', () => {
     })
 
     it('should handle full transaction update', async () => {
-      const fullUpdate: Partial<PortfolioTransaction> = {
+      const fullUpdate = {
         instrumentId: 5,
         symbol: 'MSFT',
         transactionDate: '2023-04-01',
-        transactionType: 'BUY',
+        transactionType: TransactionType.BUY,
         quantity: 100,
         price: 50.25,
-        platform: 'REVOLUT' as any,
+        platform: Platform.AVIVA,
       }
 
-      const updatedTransaction: PortfolioTransaction = {
+      const updatedTransaction = createTransactionDto({
         id: 5,
         ...fullUpdate,
-      } as PortfolioTransaction
+      })
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
         data: updatedTransaction,
-      } as any)
+      })
 
       const result = await transactionsService.update(5, fullUpdate)
 
@@ -228,7 +232,7 @@ describe('transactionsService', () => {
     it('should delete a transaction by numeric id', async () => {
       vi.mocked(httpClient.delete).mockResolvedValueOnce({
         data: undefined,
-      } as any)
+      })
 
       const result = await transactionsService.delete(1)
 
@@ -239,7 +243,7 @@ describe('transactionsService', () => {
     it('should delete a transaction by string id', async () => {
       vi.mocked(httpClient.delete).mockResolvedValueOnce({
         data: undefined,
-      } as any)
+      })
 
       const result = await transactionsService.delete('2')
 
@@ -251,7 +255,7 @@ describe('transactionsService', () => {
       vi.mocked(httpClient.delete).mockResolvedValueOnce({
         status: 204,
         data: null,
-      } as any)
+      })
 
       const result = await transactionsService.delete(3)
 

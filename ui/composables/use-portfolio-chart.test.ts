@@ -1,42 +1,42 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { usePortfolioChart } from './use-portfolio-chart'
-import type { PortfolioSummary } from '../models/portfolio-summary'
+import type { PortfolioSummaryDto } from '../models/generated/domain-models'
+import { createPortfolioSummaryDto } from '../tests/fixtures'
 
-const mockSummaries: PortfolioSummary[] = [
-  {
+const mockSummaries = [
+  createPortfolioSummaryDto({
     date: '2023-01-01',
     totalValue: 10000,
     totalProfit: 1000,
     xirrAnnualReturn: 0.12,
     earningsPerDay: 4,
     earningsPerMonth: 120,
-  },
-  {
+  }),
+  createPortfolioSummaryDto({
     date: '2023-01-02',
     totalValue: 10500,
     totalProfit: 1500,
     xirrAnnualReturn: 0.15,
     earningsPerDay: 5,
     earningsPerMonth: 150,
-  },
-  {
+  }),
+  createPortfolioSummaryDto({
     date: '2023-01-03',
     totalValue: 11000,
     totalProfit: 1500,
     xirrAnnualReturn: 0.14,
     earningsPerDay: 4.67,
     earningsPerMonth: 140,
-  },
+  }),
 ]
-
 describe('usePortfolioChart', () => {
   beforeEach(() => {
     vi.stubGlobal('window', { innerWidth: 1200 })
   })
 
   it('should return null when summaries are empty', () => {
-    const summaries = ref<PortfolioSummary[]>([])
+    const summaries = ref<PortfolioSummaryDto[]>([])
     const { processedChartData } = usePortfolioChart(summaries)
 
     expect(processedChartData.value).toBeNull()
@@ -142,10 +142,10 @@ describe('usePortfolioChart', () => {
 
   it('should handle XIRR percentage conversion', () => {
     const summaries = ref([
-      {
+      createPortfolioSummaryDto({
         ...mockSummaries[0],
         xirrAnnualReturn: 0.1234,
-      },
+      }),
     ])
     const { processedChartData } = usePortfolioChart(summaries)
 
@@ -155,9 +155,12 @@ describe('usePortfolioChart', () => {
   it('should handle missing or undefined values gracefully', () => {
     const summariesWithMissing = ref([
       {
-        ...mockSummaries[0],
-        xirrAnnualReturn: undefined as any,
-        earningsPerMonth: null as any,
+        date: '2023-01-01',
+        totalValue: 10000,
+        totalProfit: 1000,
+        xirrAnnualReturn: undefined as unknown as number,
+        earningsPerDay: 4,
+        earningsPerMonth: null as unknown as number,
       },
     ])
     const { processedChartData } = usePortfolioChart(summariesWithMissing)

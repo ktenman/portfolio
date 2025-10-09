@@ -1,5 +1,6 @@
 # Auto-generated files
 .github/security-reports/container-scan-report.md
+ui/models/generated/domain-models.ts
 
 # Build outputs
 build/

@@ -3,9 +3,10 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
 import { instrumentsService } from '../../services/instruments-service'
-import type { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../models/provider-name'
+import type { Platform } from '../../models/generated/domain-models'
+import { ProviderName } from '../../models/generated/domain-models'
 import { h } from 'vue'
+import { createInstrumentDto } from '../../tests/fixtures'
 
 const mockShow = vi.fn()
 const mockHide = vi.fn()
@@ -93,7 +94,7 @@ const InstrumentModalStub = {
             },
             'Save'
           ),
-        ]
+        ] as any
       )
   },
 }
@@ -123,39 +124,38 @@ const createWrapper = () => {
 }
 
 describe('InstrumentsView', () => {
-  const mockInstruments: Instrument[] = [
-    {
+  const mockInstruments = [
+    createInstrumentDto({
       id: 1,
       symbol: 'AAPL',
       name: 'Apple Inc.',
       providerName: ProviderName.ALPHA_VANTAGE,
-      type: 'STOCK',
+      category: 'STOCK',
       platforms: ['TRADING212'],
       totalInvestment: 1000,
       quantity: 10,
-    },
-    {
+    }),
+    createInstrumentDto({
       id: 2,
       symbol: 'BTC',
       name: 'Bitcoin',
       providerName: ProviderName.BINANCE,
-      type: 'CRYPTO',
+      category: 'CRYPTO',
       platforms: ['BINANCE', 'COINBASE'],
       totalInvestment: 5000,
       quantity: 0.5,
-    },
-    {
+    }),
+    createInstrumentDto({
       id: 3,
       symbol: 'GOOGL',
       name: 'Alphabet Inc.',
       providerName: ProviderName.ALPHA_VANTAGE,
-      type: 'STOCK',
+      category: 'STOCK',
       platforms: ['TRADING212'],
       totalInvestment: 2000,
       quantity: 15,
-    },
+    }),
   ]
-
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstruments)
@@ -208,11 +208,11 @@ describe('InstrumentsView', () => {
     it('should create instrument when selectedItem has no id', async () => {
       const { wrapper, queryClient } = createWrapper()
       const newInstrumentData = { symbol: 'GOOGL', name: 'Alphabet Inc.' }
-      const createdInstrument = {
+      const createdInstrument = createInstrumentDto({
         id: 3,
         ...newInstrumentData,
         providerName: ProviderName.ALPHA_VANTAGE,
-      }
+      })
       vi.mocked(instrumentsService.create).mockResolvedValue(createdInstrument)
 
       await flushPromises()
@@ -227,7 +227,7 @@ describe('InstrumentsView', () => {
       expect(instrumentsService.create).toHaveBeenCalled()
       expect(instrumentsService.update).not.toHaveBeenCalled()
       expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
-      expect(mockToastSuccess).toHaveBeenCalledWith('Instrument created successfully')
+      expect(mockToastSuccess).toHaveBeenCalledWith('InstrumentDto created successfully')
       expect(mockHide).toHaveBeenCalled()
     })
 
@@ -254,7 +254,7 @@ describe('InstrumentsView', () => {
       const { wrapper, queryClient } = createWrapper()
       const instrumentToEdit = mockInstruments[0]
       const updateData = { symbol: 'TEST', name: 'Test' }
-      const updatedInstrument = { ...instrumentToEdit, ...updateData }
+      const updatedInstrument = createInstrumentDto({ ...instrumentToEdit, ...updateData })
       vi.mocked(instrumentsService.update).mockResolvedValue(updatedInstrument)
 
       await flushPromises()
@@ -268,7 +268,7 @@ describe('InstrumentsView', () => {
       expect(instrumentsService.update).toHaveBeenCalledWith(instrumentToEdit.id, updateData)
       expect(instrumentsService.create).not.toHaveBeenCalled()
       expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
-      expect(mockToastSuccess).toHaveBeenCalledWith('Instrument updated successfully')
+      expect(mockToastSuccess).toHaveBeenCalledWith('InstrumentDto updated successfully')
       expect(mockHide).toHaveBeenCalled()
     })
 
@@ -293,12 +293,14 @@ describe('InstrumentsView', () => {
   describe('mutation state management', () => {
     it('should clear selectedItem after successful create', async () => {
       const { wrapper } = createWrapper()
-      vi.mocked(instrumentsService.create).mockResolvedValue({
-        id: 4,
-        symbol: 'NEW',
-        name: 'New',
-        providerName: ProviderName.ALPHA_VANTAGE,
-      })
+      vi.mocked(instrumentsService.create).mockResolvedValue(
+        createInstrumentDto({
+          id: 4,
+          symbol: 'NEW',
+          name: 'New',
+          providerName: ProviderName.ALPHA_VANTAGE,
+        })
+      )
 
       await flushPromises()
 
@@ -383,16 +385,15 @@ describe('InstrumentsView', () => {
     })
 
     it('should filter out platforms without valid instruments', async () => {
-      const mockInstrumentsInvalid: Instrument[] = [
-        {
+      const mockInstrumentsInvalid = [
+        createInstrumentDto({
           id: 10,
           symbol: 'INVALID',
-          name: 'Invalid Instrument',
+          name: 'Invalid InstrumentDto',
           providerName: ProviderName.FT,
-          platforms: ['UNKNOWN_PLATFORM'],
-        },
+          platforms: ['UNKNOWN' as Platform],
+        }),
       ]
-
       vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstrumentsInvalid)
 
       const { wrapper } = createWrapper()
@@ -435,20 +436,19 @@ describe('InstrumentsView', () => {
     })
 
     it('should only show platforms with instruments that have investments or quantity', async () => {
-      const mockInstrumentsWithEmpty: Instrument[] = [
+      const mockInstrumentsWithEmpty = [
         ...mockInstruments,
-        {
+        createInstrumentDto({
           id: 4,
           symbol: 'EMPTY',
-          name: 'Empty Instrument',
+          name: 'Empty InstrumentDto',
           providerName: ProviderName.ALPHA_VANTAGE,
-          type: 'STOCK',
+          category: 'STOCK',
           platforms: ['LHV'],
           totalInvestment: 0,
           quantity: 0,
-        },
+        }),
       ]
-
       vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstrumentsWithEmpty)
 
       const { wrapper } = createWrapper()

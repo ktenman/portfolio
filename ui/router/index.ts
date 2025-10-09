@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import InstrumentsView from '../components/instruments/instruments-view.vue'
 import TransactionsView from '../components/transactions/transactions-view.vue'
-import PortfolioSummary from '../components/portfolio-summary.vue'
+import PortfolioSummaryDto from '../components/portfolio-summary.vue'
 import Calculator from '../components/calculator.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Portfolio Summary',
-    component: PortfolioSummary,
+    component: PortfolioSummaryDto,
   },
   {
     path: '/transactions',

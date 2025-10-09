@@ -1,5 +1,5 @@
 import { styleClasses } from './style-classes'
-import type { Instrument } from '../models/instrument'
+import type { InstrumentDto } from '../models/generated/domain-models'
 
 const ACRONYMS = [
   'ETF',
@@ -170,7 +170,7 @@ export const formatQuantity = (value: number | string | undefined | null): strin
   return numValue.toFixed(2)
 }
 
-export const formatPriceChange = (item: Instrument): string => {
+export const formatPriceChange = (item: InstrumentDto): string => {
   const amount = item.priceChangeAmount
   const percent = item.priceChangePercent
 

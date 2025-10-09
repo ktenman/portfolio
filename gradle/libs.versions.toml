@@ -7,6 +7,7 @@ springDoc = "2.8.13"
 springRetry = "2.0.12"
 ktlint = "1.5.0"
 ktlintPlugin = "13.1.0"
+typescriptGenerator = "3.2.1263"
 selenide = "7.11.1"
 resilience4j = "2.3.0"
 guava = "33.5.0-jre"
@@ -103,3 +104,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
+typescript-generator = { id = "cz.habarta.typescript-generator", version.ref = "typescriptGenerator" }

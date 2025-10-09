@@ -116,6 +116,7 @@ const summaryColumns: ColumnDefinition[] = [
   { key: 'grossProfit', label: 'Gross Profit', formatter: formatCurrency },
   { key: 'taxAmount', label: 'Tax Amount', formatter: formatTaxAmount },
   { key: 'netProfit', label: 'Net Profit', formatter: formatCurrency },
+  { key: 'monthlyEarnings', label: 'Monthly Earnings', formatter: formatCurrency },
 ]
 </script>
 
