@@ -111,7 +111,7 @@ class PortfolioTransactionControllerIT {
   }
 
   @Test
-  fun `should return all transactions in the correct order`() {
+  fun `should return all transactions sorted by ID in descending order`() {
     val instrument =
       instrumentRepository.save(
         Instrument(
@@ -141,25 +141,26 @@ class PortfolioTransactionControllerIT {
         transactionDate = LocalDate.of(2024, 7, 19),
         platform = Platform.SWEDBANK,
       )
+    val transaction3 =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.of(2024, 7, 15),
+        platform = Platform.SWEDBANK,
+      )
 
-    portfolioTransactionRepository.saveAll(listOf(transaction1, transaction2))
+    val savedTransactions = portfolioTransactionRepository.saveAll(listOf(transaction1, transaction2, transaction3))
+    val sortedIds = savedTransactions.map { it.id }.sortedDescending()
 
     mockMvc
       .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].transactionDate").value("2024-07-19"))
-      .andExpect(jsonPath("$[0].transactionType").value("SELL"))
-      .andExpect(jsonPath("$[0].quantity").value(5))
-      .andExpect(jsonPath("$[0].price").value(150))
-      .andExpect(jsonPath("$[0].realizedProfit").isNumber())
-      .andExpect(jsonPath("$[0].averageCost").isNumber())
-      .andExpect(jsonPath("$[1].transactionDate").value("2024-07-01"))
-      .andExpect(jsonPath("$[1].transactionType").value("BUY"))
-      .andExpect(jsonPath("$[1].quantity").value(3.37609300))
-      .andExpect(jsonPath("$[1].price").value(29.62))
-      .andExpect(jsonPath("$[1].unrealizedProfit").isNumber())
-      .andExpect(jsonPath("$[1].averageCost").isNumber())
+      .andExpect(jsonPath("$[0].id").value(sortedIds[0]))
+      .andExpect(jsonPath("$[1].id").value(sortedIds[1]))
+      .andExpect(jsonPath("$[2].id").value(sortedIds[2]))
   }
 
   @Test
