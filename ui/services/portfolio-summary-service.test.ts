@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { portfolioSummaryService } from './portfolio-summary-service'
 import { httpClient } from '../utils/http-client'
-import type { PortfolioSummary } from '../models/portfolio-summary'
+import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 
 vi.mock('../utils/http-client', () => ({
@@ -16,7 +16,7 @@ describe('portfolioSummaryService', () => {
     vi.clearAllMocks()
   })
 
-  const mockPortfolioSummary: PortfolioSummary = {
+  const mockPortfolioSummary: PortfolioSummaryDto = {
     date: '2023-12-31',
     totalValue: 50000,
     totalProfit: 5000,
@@ -27,7 +27,7 @@ describe('portfolioSummaryService', () => {
 
   describe('getHistorical', () => {
     it('should fetch historical data with pagination', async () => {
-      const mockPage: Page<PortfolioSummary> = {
+      const mockPage: Page<PortfolioSummaryDto> = {
         content: [
           mockPortfolioSummary,
           { ...mockPortfolioSummary, date: '2023-12-30', totalValue: 49750 },
@@ -49,7 +49,7 @@ describe('portfolioSummaryService', () => {
     })
 
     it('should handle different page and size parameters', async () => {
-      const mockPage: Page<PortfolioSummary> = {
+      const mockPage: Page<PortfolioSummaryDto> = {
         content: [],
         totalElements: 0,
         totalPages: 0,

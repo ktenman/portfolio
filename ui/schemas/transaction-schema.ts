@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Platform } from '../models/platform'
+import { Platform } from '../models/generated/domain-models'
 
 export const transactionSchema = z.object({
   id: z.number().optional(),

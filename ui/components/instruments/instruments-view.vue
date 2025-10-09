@@ -1,7 +1,7 @@
 <template>
   <crud-layout
     add-button-id="addNewInstrument"
-    add-button-text="New Instrument"
+    add-button-text="New InstrumentDto"
     title="Instruments"
     :show-add-button="false"
     @add="openAddModal"
@@ -56,9 +56,9 @@ import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
-import { Instrument } from '../../models/instrument'
+import { InstrumentDto } from '../../models/generated/domain-models'
 
-const selectedItem = ref<Instrument | null>(null)
+const selectedItem = ref<InstrumentDto | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_platforms', [])
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 const queryClient = useQueryClient()
@@ -125,7 +125,7 @@ const {
 })
 
 const saveMutation = useMutation({
-  mutationFn: (data: Partial<Instrument>) => {
+  mutationFn: (data: Partial<InstrumentDto>) => {
     if (selectedItem.value?.id) {
       return instrumentsService.update(selectedItem.value.id, data)
     }
@@ -135,7 +135,7 @@ const saveMutation = useMutation({
     queryClient.invalidateQueries({ queryKey: ['instruments'] })
     queryClient.invalidateQueries({ queryKey: ['summaries'] })
     queryClient.invalidateQueries({ queryKey: ['transactions'] })
-    toast.success(`Instrument ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
+    toast.success(`InstrumentDto ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
     hideModal()
     selectedItem.value = null
   },
@@ -185,12 +185,12 @@ const openAddModal = () => {
   showModal()
 }
 
-const openEditModal = (instrument: Instrument) => {
+const openEditModal = (instrument: InstrumentDto) => {
   selectedItem.value = { ...instrument }
   showModal()
 }
 
-const onSave = (instrument: Partial<Instrument>) => {
+const onSave = (instrument: Partial<InstrumentDto>) => {
   saveMutation.mutate(instrument)
 }
 

@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.service.SummaryService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
-import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/portfolio-summary")
@@ -71,13 +71,4 @@ class PortfolioSummaryController(
       earningsPerMonth = currentDaySummary.earningsPerDay.multiply(BigDecimal(365.25 / 12)),
     )
   }
-
-  data class PortfolioSummaryDto(
-    val date: LocalDate,
-    val totalValue: BigDecimal,
-    val xirrAnnualReturn: BigDecimal,
-    val totalProfit: BigDecimal,
-    val earningsPerDay: BigDecimal,
-    val earningsPerMonth: BigDecimal,
-  )
 }

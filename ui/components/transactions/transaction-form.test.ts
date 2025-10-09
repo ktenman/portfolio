@@ -3,8 +3,8 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import TransactionForm from './transaction-form.vue'
 import FormInput from '../shared/form-input.vue'
-import type { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../models/provider-name'
+import { ProviderName } from '../../models/generated/domain-models'
+import { createInstrumentDto } from '../../tests/fixtures'
 
 vi.mock('../../utils/formatters', async () => {
   const actual = await vi.importActual('../../utils/formatters')
@@ -38,33 +38,32 @@ vi.mock('../../services/enum-service', () => ({
 }))
 
 describe('TransactionForm', () => {
-  const mockInstruments: Instrument[] = [
-    {
+  const mockInstruments = [
+    createInstrumentDto({
       id: 1,
       symbol: 'AAPL',
       name: 'Apple Inc.',
       currentPrice: 150.5,
       providerName: ProviderName.ALPHA_VANTAGE,
-      type: 'STOCK',
-    },
-    {
+      category: 'STOCK',
+    }),
+    createInstrumentDto({
       id: 2,
       symbol: 'BTC',
       name: 'Bitcoin',
       currentPrice: 45000,
       providerName: ProviderName.BINANCE,
-      type: 'CRYPTO',
-    },
-    {
+      category: 'CRYPTO',
+    }),
+    createInstrumentDto({
       id: 3,
       symbol: 'ETH',
       name: 'Ethereum',
       currentPrice: 0,
-      providerName: 'BINANCE' as any,
-      type: 'CRYPTO',
-    },
+      providerName: ProviderName.BINANCE,
+      category: 'CRYPTO',
+    }),
   ]
-
   const createWrapper = (props = {}) => {
     return mount(TransactionForm, {
       props: {
@@ -86,7 +85,7 @@ describe('TransactionForm', () => {
       const formInputs = wrapper.findAllComponents(FormInput)
       expect(formInputs).toHaveLength(8)
 
-      expect(formInputs[0].props('label')).toBe('Instrument')
+      expect(formInputs[0].props('label')).toBe('InstrumentDto')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')
@@ -353,7 +352,7 @@ describe('TransactionForm', () => {
       const formInputs = wrapper.findAllComponents(FormInput)
 
       expect(formInputs).toHaveLength(8)
-      expect(formInputs[0].props('label')).toBe('Instrument')
+      expect(formInputs[0].props('label')).toBe('InstrumentDto')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')
