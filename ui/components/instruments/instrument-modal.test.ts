@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import InstrumentModal from './instrument-modal.vue'
 import InstrumentForm from './instrument-form.vue'
-import { Instrument } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
+import { createInstrumentDto } from '../../tests/fixtures'
 
 vi.mock('./instrument-form.vue', () => ({
   default: {
@@ -13,20 +13,20 @@ vi.mock('./instrument-form.vue', () => ({
     template:
       '<form id="instrumentForm" @submit.prevent="$emit(\'submit\', formData)"><slot /></form>',
     setup() {
-      const formData = { symbol: 'TEST', name: 'Test Instrument' }
+      const formData = { symbol: 'TEST', name: 'Test InstrumentDto' }
       return { formData }
     },
   },
 }))
 
 describe('InstrumentModal', () => {
-  const mockInstrument: Instrument = {
+  const mockInstrument = createInstrumentDto({
     id: 1,
     symbol: 'AAPL',
     name: 'Apple Inc.',
-    type: 'STOCK',
+    category: 'STOCK',
     providerName: ProviderName.ALPHA_VANTAGE,
-  }
+  })
 
   const createWrapper = (props = {}) => {
     return mount(InstrumentModal, {
@@ -50,30 +50,30 @@ describe('InstrumentModal', () => {
       expect(wrapper.find('.modal-title').attributes('id')).toBe('customModalLabel')
     })
 
-    it('should display "Add New Instrument" title when creating new', () => {
+    it('should display "Add New InstrumentDto" title when creating new', () => {
       const wrapper = createWrapper()
 
-      expect(wrapper.find('.modal-title').text()).toBe('Add New Instrument')
+      expect(wrapper.find('.modal-title').text()).toBe('Add New InstrumentDto')
     })
 
-    it('should display "Edit Instrument" title when editing', () => {
+    it('should display "Edit InstrumentDto" title when editing', () => {
       const wrapper = createWrapper({ instrument: mockInstrument })
 
-      expect(wrapper.find('.modal-title').text()).toBe('Edit Instrument')
+      expect(wrapper.find('.modal-title').text()).toBe('Edit InstrumentDto')
     })
 
-    it('should show "Save Instrument" button when creating new', () => {
+    it('should show "Save InstrumentDto" button when creating new', () => {
       const wrapper = createWrapper()
 
       const submitButton = wrapper.find('.btn-primary')
-      expect(submitButton.text()).toBe('Save Instrument')
+      expect(submitButton.text()).toBe('Save InstrumentDto')
     })
 
-    it('should show "Update Instrument" button when editing', () => {
+    it('should show "Update InstrumentDto" button when editing', () => {
       const wrapper = createWrapper({ instrument: mockInstrument })
 
       const submitButton = wrapper.find('.btn-primary')
-      expect(submitButton.text()).toBe('Update Instrument')
+      expect(submitButton.text()).toBe('Update InstrumentDto')
     })
   })
 
@@ -113,7 +113,7 @@ describe('InstrumentModal', () => {
         },
       })
 
-      const formData = { symbol: 'NEW', name: 'New Instrument' }
+      const formData = { symbol: 'NEW', name: 'New InstrumentDto' }
       const form = wrapper.findComponent(InstrumentForm)
 
       await form.vm.$emit('submit', formData)

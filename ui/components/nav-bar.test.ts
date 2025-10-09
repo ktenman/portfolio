@@ -38,10 +38,12 @@ describe('NavBar', () => {
     { path: '/instruments', name: 'Instruments' },
     { path: '/transactions', name: 'Transactions' },
   ]
-
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: routes.map(r => ({ ...r, component: { template: '<div></div>' } })),
+    routes: routes.map((r: { path: string; name: string }) => ({
+      ...r,
+      component: { template: '<div></div>' },
+    })),
   })
 
   beforeEach(() => {

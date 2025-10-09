@@ -8,8 +8,7 @@ describe('useSortableTable', () => {
     { id: 2, name: 'Alice', age: 25, date: new Date('2021-01-01'), nested: { value: 5 } },
     { id: 3, name: 'Bob', age: 35, date: new Date('2019-01-01'), nested: { value: 15 } },
     { id: 4, name: null, age: null, date: null, nested: null },
-  ]
-
+  ] as any
   describe('initialization', () => {
     it('should initialize with default sort state when no defaults provided', () => {
       const items = ref(mockData)
@@ -224,8 +223,7 @@ describe('useSortableTable', () => {
       items.value = [
         { id: 5, name: 'Zack', age: 40, date: new Date(), nested: { value: 20 } },
         ...items.value,
-      ]
-
+      ] as any
       expect(sortedItems.value).toHaveLength(5)
       expect(sortedItems.value[0].name).toBe('Alice')
       expect(sortedItems.value[3].name).toBe('Zack')

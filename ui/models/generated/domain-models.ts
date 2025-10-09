@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 3.2.1263 on 2025-10-09 19:09:59.
+// Generated using typescript-generator version 3.2.1263 on 2025-10-09 19:52:50.
 
 /**
  * Financial instrument data transfer object
@@ -61,7 +61,7 @@ export interface PortfolioSummaryDto {
     earningsPerMonth: number;
 }
 
-export type DateAsString = string;
+type DateAsString = string;
 
 export enum Platform {
     AVIVA = "AVIVA",
@@ -84,13 +84,4 @@ export enum ProviderName {
 export enum TransactionType {
     BUY = "BUY",
     SELL = "SELL",
-}
-
-export enum Currency {
-    EUR = "EUR",
-}
-
-export enum InstrumentCategory {
-    CRYPTO = "CRYPTO",
-    ETF = "ETF",
 }

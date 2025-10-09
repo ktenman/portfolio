@@ -102,8 +102,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
-import { PortfolioTransaction } from '../../models/generated/domain-models'
-import { Instrument } from '../../models/generated/domain-models'
+import { TransactionResponseDto } from '../../models/generated/domain-models'
+import { InstrumentDto } from '../../models/generated/domain-models'
 import { transactionColumns } from '../../config'
 import {
   formatProfitLoss,
@@ -115,8 +115,8 @@ import {
 } from '../../utils/formatters'
 
 interface Props {
-  transactions: PortfolioTransaction[]
-  instruments: Instrument[]
+  transactions: TransactionResponseDto[]
+  instruments: InstrumentDto[]
   isLoading?: boolean
 }
 
@@ -126,14 +126,14 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
-  edit: [transaction: PortfolioTransaction]
+  edit: [transaction: TransactionResponseDto]
   delete: [id: number]
 }>()
 
 const columns = transactionColumns
 
 const instrumentMap = computed(() => {
-  if (!props.instruments?.length) return new Map<number, Instrument>()
+  if (!props.instruments?.length) return new Map<number, InstrumentDto>()
 
   return new Map(props.instruments.map(instrument => [instrument.id!, instrument]))
 })

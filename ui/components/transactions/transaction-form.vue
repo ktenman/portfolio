@@ -2,10 +2,10 @@
   <form id="transactionForm" novalidate @submit.prevent="handleSubmit">
     <FormInput
       v-model="instrumentIdModel"
-      label="Instrument"
+      label="InstrumentDto"
       type="select"
       :options="instrumentOptions"
-      placeholder="Select Instrument"
+      placeholder="Select InstrumentDto"
       :error="getFieldError('instrumentId')"
       id="instrumentId"
       @blur="touchField('instrumentId')"
@@ -97,8 +97,8 @@
 <script setup lang="ts">
 import { computed, watch, onMounted } from 'vue'
 import FormInput from '../shared/form-input.vue'
-import { PortfolioTransaction } from '../../models/generated/domain-models'
-import { Instrument } from '../../models/generated/domain-models'
+import { TransactionResponseDto } from '../../models/generated/domain-models'
+import { InstrumentDto } from '../../models/generated/domain-models'
 import { formatCurrencyWithSign } from '../../utils/formatters'
 import { useFormValidation } from '../../composables/use-form-validation'
 import { transactionSchema } from '../../schemas/transaction-schema'
@@ -106,8 +106,8 @@ import { useEnumValues } from '../../composables/use-enum-values'
 import { SafeNumber } from '../../utils/safe-number'
 
 interface Props {
-  initialData?: Partial<PortfolioTransaction>
-  instruments: Instrument[]
+  initialData?: Partial<TransactionResponseDto>
+  instruments: InstrumentDto[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -117,7 +117,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  submit: [data: Partial<PortfolioTransaction>]
+  submit: [data: Partial<TransactionResponseDto>]
 }>()
 
 const { formData, validateForm, touchField, getFieldError, resetForm } = useFormValidation(
@@ -127,7 +127,8 @@ const { formData, validateForm, touchField, getFieldError, resetForm } = useForm
     commission: 0,
     currency: 'EUR',
     ...props.initialData,
-  }
+    id: props.initialData.id ?? undefined,
+  } as Record<string, unknown>
 )
 
 watch(
@@ -229,7 +230,7 @@ watch(
 
 const handleSubmit = () => {
   if (validateForm()) {
-    emit('submit', formData as Partial<PortfolioTransaction>)
+    emit('submit', formData as Partial<TransactionResponseDto>)
   } else {
     Object.keys(transactionSchema.shape).forEach(field => touchField(field))
   }

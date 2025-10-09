@@ -40,13 +40,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import TransactionForm from './transaction-form.vue'
-import { PortfolioTransaction } from '../../models/generated/domain-models'
-import { Instrument } from '../../models/generated/domain-models'
+import { TransactionResponseDto } from '../../models/generated/domain-models'
+import { InstrumentDto } from '../../models/generated/domain-models'
 
 interface Props {
   modalId?: string
-  transaction?: Partial<PortfolioTransaction>
-  instruments: Instrument[]
+  transaction?: Partial<TransactionResponseDto>
+  instruments: InstrumentDto[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -57,12 +57,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  save: [data: Partial<PortfolioTransaction>]
+  save: [data: Partial<TransactionResponseDto>]
 }>()
 
 const isEditing = computed(() => !!props.transaction?.id)
 
-const handleSave = (data: Partial<PortfolioTransaction>) => {
+const handleSave = (data: Partial<TransactionResponseDto>) => {
   emit('save', data)
 }
 </script>

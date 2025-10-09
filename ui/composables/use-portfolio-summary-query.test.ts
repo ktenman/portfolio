@@ -3,34 +3,40 @@ import { flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
 import { renderWithProviders } from '../tests/test-utils'
-import type { PortfolioSummary } from '../models/generated/domain-models'
+import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
+import { createPortfolioSummaryDto } from '../tests/fixtures'
 
 vi.mock('../services/portfolio-summary-service')
 
-const mockCurrentSummary: PortfolioSummary = {
+const mockCurrentSummary: PortfolioSummaryDto = createPortfolioSummaryDto({
   date: '2023-12-31',
   totalValue: 50000,
   totalProfit: 5000,
   xirrAnnualReturn: 0.12,
   earningsPerDay: 100,
   earningsPerMonth: 3000,
-}
+})
 
-const mockHistoricalSummaries: PortfolioSummary[] = [
-  {
-    ...mockCurrentSummary,
+const mockHistoricalSummaries = [
+  createPortfolioSummaryDto({
     date: '2023-12-29',
     totalValue: 49500,
-  },
-  {
-    ...mockCurrentSummary,
+    totalProfit: 5000,
+    xirrAnnualReturn: 0.12,
+    earningsPerDay: 100,
+    earningsPerMonth: 3000,
+  }),
+  createPortfolioSummaryDto({
     date: '2023-12-30',
     totalValue: 49750,
-  },
+    totalProfit: 5000,
+    xirrAnnualReturn: 0.12,
+    earningsPerDay: 100,
+    earningsPerMonth: 3000,
+  }),
 ]
-
-const mockPage: Page<PortfolioSummary> = {
+const mockPage: Page<PortfolioSummaryDto> = {
   content: mockHistoricalSummaries,
   totalElements: 100,
   totalPages: 3,
@@ -79,13 +85,17 @@ describe('usePortfolioSummaryQuery', () => {
     })
 
     it('should replace existing summary when current matches historical date', async () => {
-      const duplicateSummary = { ...mockCurrentSummary, totalValue: 55000 }
+      const duplicateSummary = createPortfolioSummaryDto({
+        ...mockCurrentSummary,
+        totalValue: 55000,
+      })
       vi.mocked(portfolioSummaryService.getCurrent).mockResolvedValue(duplicateSummary)
 
       const historicalWithDuplicate = [
-        { ...mockCurrentSummary, totalValue: 48000 },
+        createPortfolioSummaryDto({ ...mockCurrentSummary, totalValue: 48000 }),
         ...mockHistoricalSummaries,
       ]
+
       vi.mocked(portfolioSummaryService.getHistorical).mockResolvedValue({
         ...mockPage,
         content: historicalWithDuplicate,

@@ -10,7 +10,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" :id="`${modalId}Label`">
-            {{ isEditing ? 'Edit Instrument' : 'Add New Instrument' }}
+            {{ isEditing ? 'Edit InstrumentDto' : 'Add New InstrumentDto' }}
           </h5>
           <button
             type="button"
@@ -25,7 +25,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary" form="instrumentForm">
-            {{ isEditing ? 'Update' : 'Save' }} Instrument
+            {{ isEditing ? 'Update' : 'Save' }} InstrumentDto
           </button>
         </div>
       </div>
@@ -36,11 +36,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InstrumentForm from './instrument-form.vue'
-import { Instrument } from '../../models/generated/domain-models'
+import { InstrumentDto } from '../../models/generated/domain-models'
 
 interface Props {
   modalId?: string
-  instrument?: Partial<Instrument>
+  instrument?: Partial<InstrumentDto>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -49,12 +49,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  save: [data: Partial<Instrument>]
+  save: [data: Partial<InstrumentDto>]
 }>()
 
 const isEditing = computed(() => !!props.instrument?.id)
 
-const handleSave = (data: Partial<Instrument>) => {
+const handleSave = (data: Partial<InstrumentDto>) => {
   emit('save', data)
 }
 </script>

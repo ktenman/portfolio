@@ -1,5 +1,5 @@
 import { computed, Ref } from 'vue'
-import { PortfolioSummary } from '../models/generated/domain-models'
+import { PortfolioSummaryDto } from '../models/generated/domain-models'
 
 interface ChartDataPoint {
   labels: string[]
@@ -19,7 +19,7 @@ function sampleDataPoints<T>(array: T[], maxPoints: number): T[] {
   })
 }
 
-export function usePortfolioChart(summaries: Ref<PortfolioSummary[]>) {
+export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
   const processedChartData = computed<ChartDataPoint | null>(() => {
     if (summaries.value.length === 0) return null
 

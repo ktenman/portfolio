@@ -33,7 +33,7 @@
       label="Category"
       type="select"
       :options="categoryOptions"
-      placeholder="Select Instrument Category"
+      placeholder="Select InstrumentDto Category"
       :error="getFieldError('category')"
       :disabled="!!initialData?.id"
       @update:model-value="updateField('category', $event)"
@@ -61,14 +61,14 @@
 
 <script setup lang="ts">
 import { watch, onMounted } from 'vue'
-import { Instrument } from '../../models/generated/domain-models'
+import { InstrumentDto } from '../../models/generated/domain-models'
 import FormInput from '../shared/form-input.vue'
 import { useFormValidation } from '../../composables/use-form-validation'
 import { useEnumValues } from '../../composables/use-enum-values'
 import { instrumentSchema } from '../../schemas/instrument-schema'
 
 interface Props {
-  initialData?: Partial<Instrument>
+  initialData?: Partial<InstrumentDto>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -76,14 +76,16 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  submit: [data: Partial<Instrument>]
+  submit: [data: Partial<InstrumentDto>]
 }>()
 
 const { formData, validateForm, updateField, touchField, getFieldError, resetForm } =
   useFormValidation(instrumentSchema, {
     ...props.initialData,
     baseCurrency: props.initialData.baseCurrency || 'EUR',
-  })
+    currentPrice: props.initialData.currentPrice ?? undefined,
+    id: props.initialData.id ?? undefined,
+  } as Record<string, unknown>)
 
 watch(
   () => props.initialData,
@@ -109,7 +111,7 @@ const handleSubmit = () => {
     emit('submit', {
       ...formData,
       baseCurrency: 'EUR',
-    } as Partial<Instrument>)
+    } as Partial<InstrumentDto>)
   } else {
     Object.keys(instrumentSchema.shape).forEach(field => touchField(field))
   }

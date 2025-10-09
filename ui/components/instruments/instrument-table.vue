@@ -149,7 +149,7 @@
     </template>
 
     <template #cell-type="{ item }">
-      {{ formatAcronym(item.type || item.category) }}
+      {{ formatAcronym(item.category) }}
     </template>
 
     <template #cell-currentPrice="{ item }">
@@ -192,7 +192,7 @@
 import { computed } from 'vue'
 import { PenLine } from 'lucide-vue-next'
 import DataTable from '../shared/data-table.vue'
-import { Instrument } from '../../models/generated/domain-models'
+import { InstrumentDto } from '../../models/generated/domain-models'
 import { instrumentColumns } from '../../config'
 import {
   getProfitClass,
@@ -204,7 +204,7 @@ import {
 } from '../../utils/formatters'
 
 interface Props {
-  instruments: Instrument[]
+  instruments: InstrumentDto[]
   isLoading?: boolean
   isError?: boolean
   errorMessage?: string
@@ -216,7 +216,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
-  edit: [instrument: Instrument]
+  edit: [instrument: InstrumentDto]
 }>()
 
 const columns = instrumentColumns
@@ -260,7 +260,7 @@ const totalChangePercent = computed(() => {
   return (totalChangeAmount.value / totalValue.value) * 100
 })
 
-const getItemProfit = (item: Instrument): number => {
+const getItemProfit = (item: InstrumentDto): number => {
   const value = item.currentValue || 0
   const invested = item.totalInvestment || 0
   return value - invested

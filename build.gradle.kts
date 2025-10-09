@@ -187,8 +187,6 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
       "ee.tenman.portfolio.domain.Platform",
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",
-      "ee.tenman.portfolio.domain.Currency",
-      "ee.tenman.portfolio.domain.InstrumentCategory",
     )
   outputKind = cz.habarta.typescript.generator.TypeScriptOutputKind.module
   outputFileType = cz.habarta.typescript.generator.TypeScriptFileType.implementationFile
@@ -200,4 +198,16 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
 
 tasks.named("compileKotlin") {
   finalizedBy("generateTypeScript")
+}
+
+tasks.named("generateTypeScript") {
+  doLast {
+    val generatedFile = file("ui/models/generated/domain-models.ts")
+    if (generatedFile.exists()) {
+      val content = generatedFile.readText()
+      val modifiedContent = content.replace("export type DateAsString = string", "type DateAsString = string")
+      generatedFile.writeText(modifiedContent)
+      println("Post-processed: Removed export from DateAsString")
+    }
+  }
 }

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import InstrumentTable from './instrument-table.vue'
-import { Instrument } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
+import { createInstrumentDto } from '../../tests/fixtures'
 
 vi.mock('../shared/data-table.vue', () => ({
   default: {
@@ -29,12 +29,12 @@ vi.mock('../shared/data-table.vue', () => ({
 }))
 
 describe('InstrumentTable', () => {
-  const mockInstruments: Instrument[] = [
-    {
+  const mockInstruments = [
+    createInstrumentDto({
       id: 1,
       symbol: 'AAPL',
       name: 'Apple Inc.',
-      type: 'STOCK',
+      category: 'STOCK',
       providerName: ProviderName.ALPHA_VANTAGE,
       currentPrice: 150.5,
       totalInvestment: 10000,
@@ -42,8 +42,8 @@ describe('InstrumentTable', () => {
       profit: 5050,
       baseCurrency: 'USD',
       platforms: ['TRADING212'],
-    },
-    {
+    }),
+    createInstrumentDto({
       id: 2,
       symbol: 'BTC',
       name: 'Bitcoin',
@@ -55,8 +55,8 @@ describe('InstrumentTable', () => {
       profit: -2000,
       baseCurrency: 'EUR',
       platforms: ['BINANCE', 'COINBASE'],
-    },
-    {
+    }),
+    createInstrumentDto({
       id: 3,
       symbol: 'ETH',
       name: 'Ethereum',
@@ -67,8 +67,8 @@ describe('InstrumentTable', () => {
       profit: 0,
       baseCurrency: 'USD',
       platforms: ['BINANCE'],
-    },
-    {
+    }),
+    createInstrumentDto({
       id: 4,
       symbol: 'UNKNOWN',
       name: 'Unknown Asset',
@@ -78,9 +78,8 @@ describe('InstrumentTable', () => {
       currentValue: 900,
       profit: undefined,
       baseCurrency: 'USD',
-    },
+    }),
   ]
-
   const createWrapper = (props = {}) => {
     return mount(InstrumentTable, {
       props: {
@@ -122,12 +121,13 @@ describe('InstrumentTable', () => {
     it('should display dash when neither type nor category is available', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 5,
             symbol: 'TEST',
             name: 'Test Asset',
             providerName: ProviderName.FT,
-          },
+            category: undefined as unknown as string,
+          }),
         ],
       })
 
@@ -202,14 +202,14 @@ describe('InstrumentTable', () => {
     it('should display $0.00 when profit is explicitly undefined', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 6,
             symbol: 'UNDEF',
             name: 'Undefined Profit',
             providerName: ProviderName.FT,
             profit: undefined,
             baseCurrency: 'USD',
-          },
+          }),
         ],
       })
 
@@ -263,12 +263,12 @@ describe('InstrumentTable', () => {
     it('should handle instruments without financial data', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 7,
             symbol: 'MINIMAL',
-            name: 'Minimal Instrument',
+            name: 'Minimal InstrumentDto',
             providerName: ProviderName.FT,
-          },
+          }),
         ],
       })
 
@@ -319,13 +319,13 @@ describe('InstrumentTable', () => {
     it('should format platform names correctly', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 8,
             symbol: 'TEST',
             name: 'Test Asset',
             providerName: ProviderName.FT,
             platforms: ['TRADING212', 'LIGHTYEAR', 'SWEDBANK', 'LHV', 'AVIVA'],
-          },
+          }),
         ],
       })
 
@@ -351,13 +351,13 @@ describe('InstrumentTable', () => {
     it('should handle undefined platforms gracefully', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 9,
             symbol: 'NO_PLATFORM',
             name: 'No Platform Asset',
             providerName: ProviderName.FT,
             platforms: undefined,
-          },
+          }),
         ],
       })
 
@@ -370,13 +370,13 @@ describe('InstrumentTable', () => {
     it('should handle empty platforms array', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 10,
             symbol: 'EMPTY_PLATFORM',
             name: 'Empty Platform Asset',
             providerName: ProviderName.FT,
             platforms: [],
-          },
+          }),
         ],
       })
 
@@ -388,13 +388,13 @@ describe('InstrumentTable', () => {
     it('should handle unknown platform names', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 11,
             symbol: 'UNKNOWN_PLATFORM',
             name: 'Unknown Platform Asset',
             providerName: ProviderName.FT,
             platforms: ['NEW_PLATFORM', 'ANOTHER_PLATFORM'],
-          },
+          }),
         ],
       })
 
@@ -420,7 +420,7 @@ describe('InstrumentTable', () => {
     it('should handle zero profit correctly', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 12,
             symbol: 'ZERO',
             name: 'Zero Profit',
@@ -428,7 +428,7 @@ describe('InstrumentTable', () => {
             currentValue: 1000,
             totalInvestment: 1000,
             baseCurrency: 'USD',
-          },
+          }),
         ],
       })
 
@@ -439,7 +439,7 @@ describe('InstrumentTable', () => {
     it('should format different currencies correctly', () => {
       const wrapper = createWrapper({
         instruments: [
-          {
+          createInstrumentDto({
             id: 13,
             symbol: 'GBP_TEST',
             name: 'GBP Asset',
@@ -448,7 +448,7 @@ describe('InstrumentTable', () => {
             totalInvestment: 1000,
             currentValue: 1500,
             baseCurrency: 'GBP',
-          },
+          }),
         ],
       })
 
