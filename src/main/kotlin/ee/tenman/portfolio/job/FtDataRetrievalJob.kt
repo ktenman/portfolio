@@ -39,18 +39,16 @@ class FtDataRetrievalJob(
 
   @Volatile
   private var isExecuting = false
-  private var executionStartTime: Instant? = null
-  private var apiCallCount = 0
 
   @PostConstruct
   fun initializeAdaptiveScheduling() {
     if (adaptiveSchedulingProperties.enabled) {
       log.info("Initializing adaptive scheduling for FT data retrieval")
-      scheduleNextExecution(Duration.ofSeconds(30))
+      scheduleNextExecution(Duration.ofSeconds(adaptiveSchedulingProperties.minimumIntervalSeconds))
     }
   }
 
-  @Scheduled(cron = "0 0/15 * * * *")
+  @Scheduled(cron = "0 * 10-18 * * MON-FRI", zone = "Europe/Tallinn")
   fun runJob() {
     if (!adaptiveSchedulingProperties.enabled) {
       log.info("Running FT data retrieval job (fixed schedule)")
@@ -72,8 +70,6 @@ class FtDataRetrievalJob(
     }
 
     isExecuting = true
-    executionStartTime = Instant.now(clock)
-    apiCallCount = 0
 
     try {
       log.info("Starting FT data retrieval execution")
@@ -103,20 +99,7 @@ class FtDataRetrievalJob(
           }.awaitAll()
       }
 
-      val executionDuration = Duration.between(executionStartTime, Instant.now(clock))
-      val apiCallRate =
-        if (executionDuration.seconds > 0) {
-        apiCallCount.toDouble() / executionDuration.seconds
-      } else {
-        apiCallCount.toDouble()
-      }
-
-      log.info(
-        "Completed FT data retrieval execution. " +
-          "Processed ${instruments.size} instruments, " +
-          "Made $apiCallCount API calls in ${executionDuration.seconds}s " +
-          "(${String.format("%.2f", apiCallRate)} calls/sec)",
-      )
+      log.info("Completed FT data retrieval execution. Processed ${instruments.size} instruments")
 
       if (adaptiveSchedulingProperties.enabled) {
         scheduleNextExecution()
@@ -130,7 +113,6 @@ class FtDataRetrievalJob(
     try {
       log.info("Retrieving FT data for instrument: ${instrument.symbol}")
       val ftData = historicalPricesService.fetchPrices(instrument.symbol)
-      apiCallCount += estimateApiCallsForSymbol(instrument.symbol)
 
       if (ftData.isEmpty()) {
         log.warn("No FT data found for instrument: ${instrument.symbol}")
@@ -141,11 +123,6 @@ class FtDataRetrievalJob(
     } catch (e: Exception) {
       log.error("Error processing instrument ${instrument.symbol}", e)
     }
-  }
-
-  private fun estimateApiCallsForSymbol(symbol: String): Int {
-    val currentYear = Instant.now(clock).atZone(java.time.ZoneId.systemDefault()).year
-    return maxOf(1, currentYear - 2015)
   }
 
   private fun scheduleNextExecution(customDelay: Duration? = null) {
