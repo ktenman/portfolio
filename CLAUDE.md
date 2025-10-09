@@ -154,6 +154,71 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 2. Define library in `[libraries]` section
 3. Use `alias(libs.library.name)` in build.gradle.kts
 
+### TypeScript Type Generation
+
+The project uses **automatic TypeScript type generation** from Kotlin DTOs to eliminate manual type duplication between backend and frontend.
+
+**Key Configuration (build.gradle.kts:179-213):**
+
+```kotlin
+tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeScript") {
+  jsonLibrary = cz.habarta.typescript.generator.JsonLibrary.jackson2
+  classes = listOf(
+    "ee.tenman.portfolio.dto.InstrumentDto",
+    "ee.tenman.portfolio.dto.TransactionRequestDto",
+    "ee.tenman.portfolio.dto.TransactionResponseDto",
+    "ee.tenman.portfolio.dto.PortfolioSummaryDto",
+    "ee.tenman.portfolio.domain.Platform",
+    "ee.tenman.portfolio.domain.ProviderName",
+    "ee.tenman.portfolio.domain.TransactionType",
+  )
+  outputKind = cz.habarta.typescript.generator.TypeScriptOutputKind.module
+  outputFile = "ui/models/generated/domain-models.ts"
+  mapEnum = cz.habarta.typescript.generator.EnumMapping.asEnum
+  mapDate = cz.habarta.typescript.generator.DateMapping.asString
+  nonConstEnums = true
+}
+
+// Auto-generate on every Kotlin compilation
+tasks.named("compileKotlin") {
+  finalizedBy("generateTypeScript")
+}
+
+// Post-process to fix DateAsString export issue
+tasks.named("generateTypeScript") {
+  doLast {
+    val generatedFile = file("ui/models/generated/domain-models.ts")
+    if (generatedFile.exists()) {
+      val content = generatedFile.readText()
+      val modifiedContent = content.replace("export type DateAsString = string", "type DateAsString = string")
+      generatedFile.writeText(modifiedContent)
+      println("Post-processed: Removed export from DateAsString")
+    }
+  }
+}
+```
+
+**Why Post-Processing?**
+
+The `mapDate = DateMapping.asString` configuration creates `export type DateAsString = string`, which is only used internally within the generated file for date field type annotations. This causes knip (unused code detector) to fail because `DateAsString` is never imported elsewhere. The post-processing step removes the `export` keyword, making it a file-scoped type alias.
+
+**Note:** The generated file is added to `.prettierignore` since it's auto-generated and doesn't need to match project formatting rules.
+
+**Important Rules:**
+
+- **NEVER manually edit** `ui/models/generated/domain-models.ts` - it's auto-generated
+- **Generate from DTOs, not JPA entities** - DTOs have flattened API structure
+- **Add new types** to the `classes` list in build.gradle.kts
+- **Run `./gradlew generateTypeScript`** to manually regenerate after Kotlin changes
+- Types auto-regenerate on `./gradlew compileKotlin` or `./gradlew build`
+
+**Generated Output:**
+
+- All DTO interfaces exported (InstrumentDto, TransactionRequestDto, etc.)
+- All enums exported as runtime constants (Platform, ProviderName, TransactionType)
+- DateAsString as internal type alias (not exported)
+- ES6 module format compatible with Vue/TypeScript
+
 ## Architecture Overview
 
 The system follows a clean microservices architecture with strong separation of concerns:

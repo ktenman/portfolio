@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 3.2.1263 on 2025-10-09 19:52:50.
+// Generated using typescript-generator version 3.2.1263 on 2025-10-09 20:11:32.
 
 /**
  * Financial instrument data transfer object
