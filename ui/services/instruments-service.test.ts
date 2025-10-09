@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { instrumentsService } from './instruments-service'
 import { httpClient } from '../utils/http-client'
-import type { Instrument } from '../models/instrument'
-import { ProviderName } from '../models/provider-name'
+import { ProviderName } from '../models/generated/domain-models'
+import { createInstrumentDto } from '../tests/fixtures'
 
 vi.mock('../utils/http-client', () => ({
   httpClient: {
@@ -19,23 +19,22 @@ describe('instrumentsService', () => {
 
   describe('getAll', () => {
     it('should fetch all instruments', async () => {
-      const mockInstruments: Instrument[] = [
-        {
+      const mockInstruments = [
+        createInstrumentDto({
           id: 1,
           symbol: 'AAPL',
           name: 'Apple Inc.',
           providerName: ProviderName.ALPHA_VANTAGE,
-          type: 'STOCK',
-        },
-        {
+          category: 'STOCK',
+        }),
+        createInstrumentDto({
           id: 2,
           symbol: 'BTC',
           name: 'Bitcoin',
           providerName: ProviderName.BINANCE,
-          type: 'CRYPTO',
-        },
+          category: 'CRYPTO',
+        }),
       ]
-
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockInstruments,
       })
@@ -49,7 +48,7 @@ describe('instrumentsService', () => {
     it('should handle empty response', async () => {
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: [],
-      } as any)
+      })
 
       const result = await instrumentsService.getAll()
 
@@ -65,17 +64,16 @@ describe('instrumentsService', () => {
     })
 
     it('should fetch instruments with platform filter', async () => {
-      const mockInstruments: Instrument[] = [
-        {
+      const mockInstruments = [
+        createInstrumentDto({
           id: 1,
           symbol: 'AAPL',
           name: 'Apple Inc.',
           providerName: ProviderName.ALPHA_VANTAGE,
-          type: 'STOCK',
+          category: 'STOCK',
           platforms: ['TRADING212'],
-        },
+        }),
       ]
-
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockInstruments,
       })
@@ -89,7 +87,7 @@ describe('instrumentsService', () => {
     })
 
     it('should handle undefined platform parameter', async () => {
-      const mockInstruments: Instrument[] = []
+      const mockInstruments: never[] = []
 
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockInstruments,
@@ -102,16 +100,15 @@ describe('instrumentsService', () => {
     })
 
     it('should fetch instruments with multiple platforms', async () => {
-      const mockInstruments: Instrument[] = [
-        {
+      const mockInstruments = [
+        createInstrumentDto({
           id: 1,
           symbol: 'MULTI',
           name: 'Multi Platform',
           providerName: ProviderName.FT,
           platforms: ['TRADING212', 'BINANCE', 'COINBASE'],
-        },
+        }),
       ]
-
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockInstruments,
       })
@@ -125,7 +122,7 @@ describe('instrumentsService', () => {
     })
 
     it('should handle empty array for platforms', async () => {
-      const mockInstruments: Instrument[] = []
+      const mockInstruments: never[] = []
 
       vi.mocked(httpClient.get).mockResolvedValueOnce({
         data: mockInstruments,
@@ -140,21 +137,21 @@ describe('instrumentsService', () => {
 
   describe('create', () => {
     it('should create a new instrument', async () => {
-      const newInstrument: Partial<Instrument> = {
+      const newInstrument = {
         symbol: 'GOOGL',
         name: 'Alphabet Inc.',
-        providerName: 'ALPHA_VANTAGE' as any,
-        type: 'STOCK',
+        providerName: ProviderName.ALPHA_VANTAGE,
+        category: 'STOCK',
       }
 
-      const createdInstrument: Instrument = {
+      const createdInstrument = createInstrumentDto({
         id: 3,
         ...newInstrument,
-      } as Instrument
+      })
 
       vi.mocked(httpClient.post).mockResolvedValueOnce({
         data: createdInstrument,
-      } as any)
+      })
 
       const result = await instrumentsService.create(newInstrument)
 
@@ -163,22 +160,22 @@ describe('instrumentsService', () => {
     })
 
     it('should handle partial instrument data', async () => {
-      const partialInstrument: Partial<Instrument> = {
+      const partialInstrument = {
         symbol: 'ETH',
         name: 'Ethereum',
       }
 
-      const createdInstrument: Instrument = {
+      const createdInstrument = createInstrumentDto({
         id: 4,
         symbol: 'ETH',
         name: 'Ethereum',
-        providerName: 'BINANCE' as any,
-        type: 'CRYPTO',
-      }
+        providerName: ProviderName.BINANCE,
+        category: 'CRYPTO',
+      })
 
       vi.mocked(httpClient.post).mockResolvedValueOnce({
         data: createdInstrument,
-      } as any)
+      })
 
       const result = await instrumentsService.create(partialInstrument)
 
@@ -198,21 +195,21 @@ describe('instrumentsService', () => {
 
   describe('update', () => {
     it('should update an instrument by numeric id', async () => {
-      const updateData: Partial<Instrument> = {
+      const updateData = {
         name: 'Updated Name',
       }
 
-      const updatedInstrument: Instrument = {
+      const updatedInstrument = createInstrumentDto({
         id: 1,
         symbol: 'AAPL',
         name: 'Updated Name',
-        providerName: 'ALPHA_VANTAGE' as any,
-        type: 'STOCK',
-      }
+        providerName: ProviderName.ALPHA_VANTAGE,
+        category: 'STOCK',
+      })
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
         data: updatedInstrument,
-      } as any)
+      })
 
       const result = await instrumentsService.update(1, updateData)
 
@@ -221,12 +218,12 @@ describe('instrumentsService', () => {
     })
 
     it('should handle empty update data', async () => {
-      const updatedInstrument: Instrument = {
+      const updatedInstrument = createInstrumentDto({
         id: 15,
         symbol: 'EMPTY',
         name: 'Empty Update',
         providerName: ProviderName.FT,
-      }
+      })
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
         data: updatedInstrument,
@@ -239,22 +236,22 @@ describe('instrumentsService', () => {
     })
 
     it('should update an instrument by string id', async () => {
-      const updateData: Partial<Instrument> = {
+      const updateData = {
         currentPrice: 45000,
       }
 
-      const updatedInstrument: Instrument = {
+      const updatedInstrument = createInstrumentDto({
         id: 2,
         symbol: 'BTC',
         name: 'Bitcoin',
-        providerName: 'BINANCE' as any,
-        type: 'CRYPTO',
+        providerName: ProviderName.BINANCE,
+        category: 'CRYPTO',
         currentPrice: 45000,
-      }
+      })
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
         data: updatedInstrument,
-      } as any)
+      })
 
       const result = await instrumentsService.update('2', updateData)
 
@@ -263,21 +260,21 @@ describe('instrumentsService', () => {
     })
 
     it('should handle full instrument update', async () => {
-      const fullUpdate: Partial<Instrument> = {
+      const fullUpdate = {
         symbol: 'MSFT',
         name: 'Microsoft Corporation',
         providerName: ProviderName.FT,
-        type: 'STOCK',
+        category: 'STOCK',
       }
 
-      const updatedInstrument: Instrument = {
+      const updatedInstrument = createInstrumentDto({
         id: 5,
         ...fullUpdate,
-      } as Instrument
+      })
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
         data: updatedInstrument,
-      } as any)
+      })
 
       const result = await instrumentsService.update(5, fullUpdate)
 
