@@ -184,15 +184,24 @@ tasks.named("compileKotlin") {
   finalizedBy("generateTypeScript")
 }
 
-// Post-process to fix DateAsString export issue
+// Post-processing to fix issues with generated code
 tasks.named("generateTypeScript") {
   doLast {
     val generatedFile = file("ui/models/generated/domain-models.ts")
     if (generatedFile.exists()) {
-      val content = generatedFile.readText()
-      val modifiedContent = content.replace("export type DateAsString = string", "type DateAsString = string")
-      generatedFile.writeText(modifiedContent)
-      println("Post-processed: Removed export from DateAsString")
+      var content = generatedFile.readText()
+
+      // Remove timestamp to prevent unnecessary git diffs
+      content = content.replace(
+        Regex("// Generated using typescript-generator version .+ on .+"),
+        "// Generated using typescript-generator (timestamp removed to prevent git churn)"
+      )
+
+      // Remove export from DateAsString (internal type)
+      content = content.replace("export type DateAsString = string", "type DateAsString = string")
+
+      generatedFile.writeText(content)
+      println("Post-processed: Removed timestamp and export from DateAsString")
     }
   }
 }
@@ -200,7 +209,9 @@ tasks.named("generateTypeScript") {
 
 **Why Post-Processing?**
 
-The `mapDate = DateMapping.asString` configuration creates `export type DateAsString = string`, which is only used internally within the generated file for date field type annotations. This causes knip (unused code detector) to fail because `DateAsString` is never imported elsewhere. The post-processing step removes the `export` keyword, making it a file-scoped type alias.
+1. **Timestamp Removal:** The generator adds a timestamp comment on every run, causing unnecessary git diffs even when nothing changed. We replace it with a static comment to prevent git churn.
+
+2. **DateAsString Export:** The `mapDate = DateMapping.asString` configuration creates `export type DateAsString = string`, which is only used internally within the generated file for date field type annotations. This causes knip (unused code detector) to fail because `DateAsString` is never imported elsewhere. We remove the `export` keyword, making it a file-scoped type alias.
 
 **Note:** The generated file is added to `.prettierignore` since it's auto-generated and doesn't need to match project formatting rules.
 

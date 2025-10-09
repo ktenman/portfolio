@@ -204,10 +204,19 @@ tasks.named("generateTypeScript") {
   doLast {
     val generatedFile = file("ui/models/generated/domain-models.ts")
     if (generatedFile.exists()) {
-      val content = generatedFile.readText()
-      val modifiedContent = content.replace("export type DateAsString = string", "type DateAsString = string")
-      generatedFile.writeText(modifiedContent)
-      println("Post-processed: Removed export from DateAsString")
+      var content = generatedFile.readText()
+
+      // Remove timestamp to prevent unnecessary git diffs
+      content = content.replace(
+        Regex("// Generated using typescript-generator version .+ on .+"),
+        "// Generated using typescript-generator (timestamp removed to prevent git churn)"
+      )
+
+      // Remove export from DateAsString (internal type)
+      content = content.replace("export type DateAsString = string", "type DateAsString = string")
+
+      generatedFile.writeText(content)
+      println("Post-processed: Removed timestamp and export from DateAsString")
     }
   }
 }
