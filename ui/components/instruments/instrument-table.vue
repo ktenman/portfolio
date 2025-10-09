@@ -192,7 +192,7 @@
 import { computed } from 'vue'
 import { PenLine } from 'lucide-vue-next'
 import DataTable from '../shared/data-table.vue'
-import { Instrument } from '../../models/instrument'
+import { Instrument } from '../../models/generated/domain-models'
 import { instrumentColumns } from '../../config'
 import {
   getProfitClass,

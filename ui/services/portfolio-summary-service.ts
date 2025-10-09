@@ -1,5 +1,5 @@
 import { httpClient } from '../utils/http-client'
-import type { PortfolioSummary } from '../models/portfolio-summary'
+import type { PortfolioSummary } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 
 export const portfolioSummaryService = {

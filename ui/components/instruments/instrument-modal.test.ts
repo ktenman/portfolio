@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import InstrumentModal from './instrument-modal.vue'
 import InstrumentForm from './instrument-form.vue'
-import { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../models/provider-name'
+import { Instrument } from '../../models/generated/domain-models'
+import { ProviderName } from '../../models/generated/domain-models'
 
 vi.mock('./instrument-form.vue', () => ({
   default: {

@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("jacoco")
   alias(libs.plugins.ktlint)
+  alias(libs.plugins.typescript.generator)
 }
 
 group = "ee.tenman"
@@ -173,4 +174,30 @@ configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
     exclude("**/generated/**")
     include("**/kotlin/**")
   }
+}
+
+tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeScript") {
+  jsonLibrary = cz.habarta.typescript.generator.JsonLibrary.jackson2
+  classes =
+    listOf(
+      "ee.tenman.portfolio.dto.InstrumentDto",
+      "ee.tenman.portfolio.dto.TransactionRequestDto",
+      "ee.tenman.portfolio.dto.TransactionResponseDto",
+      "ee.tenman.portfolio.dto.PortfolioSummaryDto",
+      "ee.tenman.portfolio.domain.Platform",
+      "ee.tenman.portfolio.domain.ProviderName",
+      "ee.tenman.portfolio.domain.TransactionType",
+      "ee.tenman.portfolio.domain.Currency",
+      "ee.tenman.portfolio.domain.InstrumentCategory",
+    )
+  outputKind = cz.habarta.typescript.generator.TypeScriptOutputKind.module
+  outputFileType = cz.habarta.typescript.generator.TypeScriptFileType.implementationFile
+  outputFile = "ui/models/generated/domain-models.ts"
+  mapEnum = cz.habarta.typescript.generator.EnumMapping.asEnum
+  mapDate = cz.habarta.typescript.generator.DateMapping.asString
+  nonConstEnums = true
+}
+
+tasks.named("compileKotlin") {
+  finalizedBy("generateTypeScript")
 }

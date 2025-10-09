@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { portfolioSummaryService } from './portfolio-summary-service'
 import { httpClient } from '../utils/http-client'
-import type { PortfolioSummary } from '../models/portfolio-summary'
+import type { PortfolioSummary } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 
 vi.mock('../utils/http-client', () => ({

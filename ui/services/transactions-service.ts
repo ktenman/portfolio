@@ -1,5 +1,5 @@
 import { httpClient } from '../utils/http-client'
-import type { PortfolioTransaction } from '../models/portfolio-transaction'
+import type { PortfolioTransaction } from '../models/generated/domain-models'
 
 export const transactionsService = {
   getAll: () => httpClient.get<PortfolioTransaction[]>('/transactions').then(res => res.data),

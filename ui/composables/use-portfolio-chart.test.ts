@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { usePortfolioChart } from './use-portfolio-chart'
-import type { PortfolioSummary } from '../models/portfolio-summary'
+import type { PortfolioSummary } from '../models/generated/domain-models'
 
 const mockSummaries: PortfolioSummary[] = [
   {

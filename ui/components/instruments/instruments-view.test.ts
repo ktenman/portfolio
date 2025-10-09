@@ -3,8 +3,8 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
 import { instrumentsService } from '../../services/instruments-service'
-import type { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../models/provider-name'
+import type { Instrument, Platform } from '../../models/generated/domain-models'
+import { ProviderName } from '../../models/generated/domain-models'
 import { h } from 'vue'
 
 const mockShow = vi.fn()
@@ -389,7 +389,7 @@ describe('InstrumentsView', () => {
           symbol: 'INVALID',
           name: 'Invalid Instrument',
           providerName: ProviderName.FT,
-          platforms: ['UNKNOWN_PLATFORM'],
+          platforms: ['UNKNOWN' as Platform],
         },
       ]
 

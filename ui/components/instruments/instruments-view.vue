@@ -56,7 +56,7 @@ import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
-import { Instrument } from '../../models/instrument'
+import { Instrument } from '../../models/generated/domain-models'
 
 const selectedItem = ref<Instrument | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_platforms', [])

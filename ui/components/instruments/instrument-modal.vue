@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InstrumentForm from './instrument-form.vue'
-import { Instrument } from '../../models/instrument'
+import { Instrument } from '../../models/generated/domain-models'
 
 interface Props {
   modalId?: string

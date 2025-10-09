@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 import { watch, onMounted } from 'vue'
-import { Instrument } from '../../models/instrument'
+import { Instrument } from '../../models/generated/domain-models'
 import FormInput from '../shared/form-input.vue'
 import { useFormValidation } from '../../composables/use-form-validation'
 import { useEnumValues } from '../../composables/use-enum-values'

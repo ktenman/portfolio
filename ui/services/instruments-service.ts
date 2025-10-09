@@ -1,5 +1,5 @@
 import { httpClient } from '../utils/http-client'
-import type { Instrument } from '../models/instrument'
+import type { Instrument } from '../models/generated/domain-models'
 
 export const instrumentsService = {
   getAll: (platforms?: string[]) => {

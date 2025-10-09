@@ -69,7 +69,7 @@ import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { transactionsService } from '../../services/transactions-service'
-import { PortfolioTransaction } from '../../models/portfolio-transaction'
+import { PortfolioTransaction } from '../../models/generated/domain-models'
 import { formatCurrency } from '../../utils/formatters'
 
 const selectedItem = ref<PortfolioTransaction | null>(null)

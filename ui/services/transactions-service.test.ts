@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { transactionsService } from './transactions-service'
 import { httpClient } from '../utils/http-client'
-import type { PortfolioTransaction } from '../models/portfolio-transaction'
+import type { PortfolioTransaction } from '../models/generated/domain-models'
+import { TransactionType } from '../models/generated/domain-models'
 
 vi.mock('../utils/http-client', () => ({
   httpClient: {
@@ -25,20 +26,32 @@ describe('transactionsService', () => {
           instrumentId: 1,
           symbol: 'AAPL',
           transactionDate: '2023-01-15',
-          transactionType: 'BUY',
+          transactionType: TransactionType.BUY,
           quantity: 10,
           price: 150.5,
           platform: 'BINANCE' as any,
+          currency: 'EUR',
+          realizedProfit: null,
+          unrealizedProfit: 0,
+          averageCost: null,
+          remainingQuantity: 0,
+          commission: 0,
         },
         {
           id: 2,
           instrumentId: 2,
           symbol: 'BTC',
           transactionDate: '2023-02-20',
-          transactionType: 'SELL',
+          transactionType: TransactionType.SELL,
           quantity: 5,
           price: 45000,
           platform: 'COINBASE' as any,
+          currency: 'EUR',
+          realizedProfit: null,
+          unrealizedProfit: 0,
+          averageCost: null,
+          remainingQuantity: 0,
+          commission: 0,
         },
       ]
 
@@ -77,7 +90,7 @@ describe('transactionsService', () => {
         instrumentId: 3,
         symbol: 'GOOGL',
         transactionDate: '2023-03-10',
-        transactionType: 'BUY',
+        transactionType: TransactionType.BUY,
         quantity: 20,
         price: 250.75,
         platform: 'REVOLUT' as any,
@@ -102,7 +115,7 @@ describe('transactionsService', () => {
       const partialTransaction: Partial<PortfolioTransaction> = {
         instrumentId: 4,
         symbol: 'ETH',
-        transactionType: 'SELL',
+        transactionType: TransactionType.SELL,
         quantity: 15,
         price: 2000,
         transactionDate: '2023-03-15',
@@ -146,10 +159,16 @@ describe('transactionsService', () => {
         instrumentId: 1,
         symbol: 'AAPL',
         transactionDate: '2023-01-15',
-        transactionType: 'BUY',
+        transactionType: TransactionType.BUY,
         quantity: 25,
         price: 155.5,
         platform: 'BINANCE' as any,
+        currency: 'EUR',
+        realizedProfit: null,
+        unrealizedProfit: 0,
+        averageCost: null,
+        remainingQuantity: 0,
+        commission: 0,
       }
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
@@ -172,10 +191,16 @@ describe('transactionsService', () => {
         instrumentId: 2,
         symbol: 'BTC',
         transactionDate: '2023-01-20',
-        transactionType: 'SELL',
+        transactionType: TransactionType.SELL,
         quantity: 5,
         price: 45000,
         platform: 'COINBASE' as any,
+        currency: 'EUR',
+        realizedProfit: null,
+        unrealizedProfit: 0,
+        averageCost: null,
+        remainingQuantity: 0,
+        commission: 0,
       }
 
       vi.mocked(httpClient.put).mockResolvedValueOnce({
@@ -193,7 +218,7 @@ describe('transactionsService', () => {
         instrumentId: 5,
         symbol: 'MSFT',
         transactionDate: '2023-04-01',
-        transactionType: 'BUY',
+        transactionType: TransactionType.BUY,
         quantity: 100,
         price: 50.25,
         platform: 'REVOLUT' as any,

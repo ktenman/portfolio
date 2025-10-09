@@ -3,7 +3,7 @@ import { flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
 import { renderWithProviders } from '../tests/test-utils'
-import type { PortfolioSummary } from '../models/portfolio-summary'
+import type { PortfolioSummary } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 
 vi.mock('../services/portfolio-summary-service')

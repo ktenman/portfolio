@@ -1,5 +1,5 @@
 import { computed, Ref } from 'vue'
-import { PortfolioSummary } from '../models/portfolio-summary'
+import { PortfolioSummary } from '../models/generated/domain-models'
 
 interface ChartDataPoint {
   labels: string[]

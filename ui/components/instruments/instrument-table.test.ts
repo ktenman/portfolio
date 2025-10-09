@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import InstrumentTable from './instrument-table.vue'
-import { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../models/provider-name'
+import { Instrument } from '../../models/generated/domain-models'
+import { ProviderName } from '../../models/generated/domain-models'
 
 vi.mock('../shared/data-table.vue', () => ({
   default: {

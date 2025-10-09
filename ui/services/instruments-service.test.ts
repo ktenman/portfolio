@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { instrumentsService } from './instruments-service'
 import { httpClient } from '../utils/http-client'
-import type { Instrument } from '../models/instrument'
-import { ProviderName } from '../models/provider-name'
+import type { Instrument } from '../models/generated/domain-models'
+import { ProviderName } from '../models/generated/domain-models'
 
 vi.mock('../utils/http-client', () => ({
   httpClient: {

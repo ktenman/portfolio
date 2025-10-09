@@ -3,8 +3,8 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import TransactionForm from './transaction-form.vue'
 import FormInput from '../shared/form-input.vue'
-import type { Instrument } from '../../models/instrument'
-import { ProviderName } from '../../models/provider-name'
+import type { Instrument } from '../../models/generated/domain-models'
+import { ProviderName } from '../../models/generated/domain-models'
 
 vi.mock('../../utils/formatters', async () => {
   const actual = await vi.importActual('../../utils/formatters')

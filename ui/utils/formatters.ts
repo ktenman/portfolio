@@ -1,5 +1,5 @@
 import { styleClasses } from './style-classes'
-import type { Instrument } from '../models/instrument'
+import type { Instrument } from '../models/generated/domain-models'
 
 const ACRONYMS = [
   'ETF',

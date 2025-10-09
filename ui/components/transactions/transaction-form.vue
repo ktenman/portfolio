@@ -97,8 +97,8 @@
 <script setup lang="ts">
 import { computed, watch, onMounted } from 'vue'
 import FormInput from '../shared/form-input.vue'
-import { PortfolioTransaction } from '../../models/portfolio-transaction'
-import { Instrument } from '../../models/instrument'
+import { PortfolioTransaction } from '../../models/generated/domain-models'
+import { Instrument } from '../../models/generated/domain-models'
 import { formatCurrencyWithSign } from '../../utils/formatters'
 import { useFormValidation } from '../../composables/use-form-validation'
 import { transactionSchema } from '../../schemas/transaction-schema'

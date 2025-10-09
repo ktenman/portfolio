@@ -40,8 +40,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import TransactionForm from './transaction-form.vue'
-import { PortfolioTransaction } from '../../models/portfolio-transaction'
-import { Instrument } from '../../models/instrument'
+import { PortfolioTransaction } from '../../models/generated/domain-models'
+import { Instrument } from '../../models/generated/domain-models'
 
 interface Props {
   modalId?: string
