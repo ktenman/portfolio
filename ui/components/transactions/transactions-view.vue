@@ -69,10 +69,10 @@ import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { transactionsService } from '../../services/transactions-service'
-import { PortfolioTransaction } from '../../models/portfolio-transaction'
+import { TransactionResponseDto } from '../../models/generated/domain-models'
 import { formatCurrency } from '../../utils/formatters'
 
-const selectedItem = ref<PortfolioTransaction | null>(null)
+const selectedItem = ref<TransactionResponseDto | null>(null)
 const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
 const { confirm } = useConfirm()
 const queryClient = useQueryClient()
@@ -103,7 +103,7 @@ const totalProfitSum = computed(() => {
 })
 
 const saveMutation = useMutation({
-  mutationFn: (data: Partial<PortfolioTransaction>) => {
+  mutationFn: (data: Partial<TransactionResponseDto>) => {
     if (selectedItem.value?.id) {
       return transactionsService.update(selectedItem.value.id, data)
     }
@@ -134,16 +134,16 @@ const deleteMutation = useMutation({
 const openAddModal = () => {
   selectedItem.value = {
     transactionDate: new Date().toISOString().split('T')[0],
-  } as PortfolioTransaction
+  } as TransactionResponseDto
   showModal()
 }
 
-const openEditModal = (transaction: PortfolioTransaction) => {
+const openEditModal = (transaction: TransactionResponseDto) => {
   selectedItem.value = { ...transaction }
   showModal()
 }
 
-const handleSave = (transaction: Partial<PortfolioTransaction>) => {
+const handleSave = (transaction: Partial<TransactionResponseDto>) => {
   saveMutation.mutate(transaction)
 }
 

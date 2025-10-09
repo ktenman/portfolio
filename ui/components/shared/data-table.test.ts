@@ -8,15 +8,13 @@ describe('DataTable', () => {
     { id: 1, name: 'Item 1', price: 100, category: { name: 'Electronics' } },
     { id: 2, name: 'Item 2', price: 200, category: { name: 'Books' } },
     { id: 3, name: 'Item 3', price: 300, category: { name: 'Clothing' } },
-  ]
-
+  ] as any
   const mockColumns: ColumnDefinition[] = [
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Name' },
-    { key: 'price', label: 'Price', formatter: value => `$${value}` },
+    { key: 'price', label: 'Price', formatter: (value: number) => `$${value}` },
     { key: 'category.name', label: 'Category' },
-  ]
-
+  ] as any
   describe('rendering states', () => {
     it('should render loading state', () => {
       const wrapper = mount(DataTable, {
@@ -146,8 +144,7 @@ describe('DataTable', () => {
       const columnsWithClass: ColumnDefinition[] = [
         { key: 'id', label: 'ID', class: 'text-center' },
         { key: 'price', label: 'Price', class: 'text-end' },
-      ]
-
+      ] as any
       const wrapper = mount(DataTable, {
         props: {
           items: mockItems,
@@ -166,8 +163,7 @@ describe('DataTable', () => {
       const itemsWithNulls = [
         { id: 1, name: null, price: undefined },
         { id: 2, name: 'Item 2', price: 200 },
-      ]
-
+      ] as any
       const wrapper = mount(DataTable, {
         props: {
           items: itemsWithNulls,
@@ -185,8 +181,7 @@ describe('DataTable', () => {
         { id: 1, name: 'Item 1' },
         { id: 2, name: 'Item 2', category: {} },
         { id: 3, name: 'Item 3', category: { name: 'Valid' } },
-      ]
-
+      ] as any
       const wrapper = mount(DataTable, {
         props: {
           items: itemsWithMissing,
@@ -227,8 +222,7 @@ describe('DataTable', () => {
       const itemsWithCustomKey = [
         { customId: 'a1', name: 'Item A' },
         { customId: 'b2', name: 'Item B' },
-      ]
-
+      ] as any
       const wrapper = mount(DataTable, {
         props: {
           items: itemsWithCustomKey,
