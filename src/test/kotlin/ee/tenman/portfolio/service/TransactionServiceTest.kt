@@ -1,6 +1,13 @@
 package ee.tenman.portfolio.service
 
-import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
@@ -16,7 +23,7 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 class TransactionServiceTest {
   private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
@@ -33,15 +40,15 @@ class TransactionServiceTest {
 
     testInstrument =
       Instrument(
-        symbol = "AAPL",
-        name = "Apple Inc.",
-        category = "Stock",
-        baseCurrency = "USD",
-        currentPrice = BigDecimal("150.00"),
-        providerName = ProviderName.ALPHA_VANTAGE,
-      ).apply {
-        id = 1L
-      }
+      symbol = "AAPL",
+      name = "Apple Inc.",
+      category = "Stock",
+      baseCurrency = "USD",
+      currentPrice = BigDecimal("150.00"),
+      providerName = ProviderName.ALPHA_VANTAGE,
+    ).apply {
+      id = 1L
+    }
   }
 
   @Test

@@ -8,7 +8,7 @@ import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.io.File
-import java.util.UUID
+import java.util.*
 
 @Service
 class GoogleVisionService(

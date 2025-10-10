@@ -21,6 +21,7 @@ coroutines = "1.10.2"
 mockk = "1.14.6"
 archUnit = "1.4.1"
 atrium = "1.3.0-alpha-2"
+datafaker = "2.4.2"
 postgresql = "42.7.8"
 grpcNettyShaded = "1.76.0"
 
@@ -96,6 +97,7 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 spring-mockk = { module = "com.ninja-squad:springmockk", version = "4.0.2" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archUnit" }
 atrium-fluent = { module = "ch.tutteli.atrium:atrium-fluent", version.ref = "atrium" }
+datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }

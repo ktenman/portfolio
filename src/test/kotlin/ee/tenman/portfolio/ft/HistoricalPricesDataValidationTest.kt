@@ -1,6 +1,13 @@
 package ee.tenman.portfolio.ft
 
-import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.fluent.en_GB.notToContain
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.common.DailyPriceDataImpl

@@ -1,6 +1,13 @@
 package ee.tenman.portfolio.service
 
-import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
@@ -19,7 +26,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Optional
+import java.util.*
 
 class InstrumentServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
@@ -37,15 +44,15 @@ class InstrumentServiceTest {
   fun setUp() {
     testInstrument =
       Instrument(
-        symbol = "AAPL",
-        name = "Apple Inc.",
-        category = "Stock",
-        baseCurrency = "USD",
-        currentPrice = BigDecimal("150.00"),
-        providerName = ProviderName.ALPHA_VANTAGE,
-      ).apply {
-        id = 1L
-      }
+      symbol = "AAPL",
+      name = "Apple Inc.",
+      category = "Stock",
+      baseCurrency = "USD",
+      currentPrice = BigDecimal("150.00"),
+      providerName = ProviderName.ALPHA_VANTAGE,
+    ).apply {
+      id = 1L
+    }
 
     every { clock.instant() } returns fixedInstant
     every { clock.zone } returns ZoneId.systemDefault()
