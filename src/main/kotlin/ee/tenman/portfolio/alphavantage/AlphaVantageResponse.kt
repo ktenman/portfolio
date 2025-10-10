@@ -3,7 +3,7 @@ package ee.tenman.portfolio.alphavantage
 import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.common.DailyPriceData
 import java.math.BigDecimal
-import java.util.TreeMap
+import java.util.*
 
 data class AlphaVantageResponse(
   @JsonProperty("Monthly Time Series")

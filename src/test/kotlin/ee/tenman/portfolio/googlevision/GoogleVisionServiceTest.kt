@@ -1,11 +1,11 @@
 package ee.tenman.portfolio.googlevision
 
-import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
 import javax.annotation.Resource
 
 @IntegrationTest
