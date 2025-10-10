@@ -82,6 +82,7 @@ dependencies {
   testImplementation(libs.atrium.fluent) {
     exclude("org.jetbrains.kotlin")
   }
+  testImplementation(libs.datafaker)
   testRuntimeOnly(libs.junit.platform.launcher)
   testRuntimeOnly(libs.junit.jupiter.engine)
 }

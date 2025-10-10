@@ -52,7 +52,6 @@ class PortfolioTransactionController(
   fun getAllTransactions(): List<TransactionResponseDto> =
     portfolioTransactionService
       .getAllTransactions()
-      .sortedByDescending { it.transactionDate }
       .map { TransactionResponseDto.fromEntity(it) }
 
   @GetMapping("/{id}")

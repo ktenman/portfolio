@@ -8,8 +8,7 @@ import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.SortedMap
-import java.util.TreeMap
+import java.util.*
 
 @Service
 class BinanceService(

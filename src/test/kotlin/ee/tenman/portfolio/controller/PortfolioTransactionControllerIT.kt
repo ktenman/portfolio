@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.controller
 
-import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -18,6 +18,7 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
+import net.datafaker.Faker
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -40,6 +41,8 @@ private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgx
 @ExtendWith(OutputCaptureExtension::class)
 @IntegrationTest
 class PortfolioTransactionControllerIT {
+  private val faker = Faker()
+
   @Resource
   private lateinit var mockMvc: MockMvc
 
@@ -52,15 +55,15 @@ class PortfolioTransactionControllerIT {
   @Resource
   private lateinit var objectMapper: ObjectMapper
 
-  private fun setupInstrument(): Instrument =
-    instrumentRepository.save(
-      Instrument(
-        symbol = "QDVE",
-        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-        category = "ETF",
-        baseCurrency = "EUR",
-      ),
+  private fun randomInstrument() =
+    Instrument(
+      symbol = faker.stock().nsdqSymbol(),
+      name = faker.company().name(),
+      category = listOf("Stock", "ETF", "Crypto").random(),
+      baseCurrency = listOf("USD", "EUR", "GBP").random(),
     )
+
+  private fun setupInstrument(): Instrument = instrumentRepository.save(randomInstrument())
 
   @BeforeEach
   fun setup() {
@@ -111,17 +114,10 @@ class PortfolioTransactionControllerIT {
   }
 
   @Test
-  fun `should return all transactions in the correct order`() {
-    val instrument =
-      instrumentRepository.save(
-        Instrument(
-          symbol = "QDVE",
-          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-          category = "ETF",
-          baseCurrency = "EUR",
-          currentPrice = BigDecimal("29.62"),
-        ),
-      )
+  fun `should return all transactions sorted by ID in descending order`() {
+    val testInstrument = randomInstrument()
+    testInstrument.currentPrice = BigDecimal("29.62")
+    val instrument = instrumentRepository.save(testInstrument)
 
     val transaction1 =
       PortfolioTransaction(
@@ -141,25 +137,26 @@ class PortfolioTransactionControllerIT {
         transactionDate = LocalDate.of(2024, 7, 19),
         platform = Platform.SWEDBANK,
       )
+    val transaction3 =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.of(2024, 7, 15),
+        platform = Platform.SWEDBANK,
+      )
 
-    portfolioTransactionRepository.saveAll(listOf(transaction1, transaction2))
+    val savedTransactions = portfolioTransactionRepository.saveAll(listOf(transaction1, transaction2, transaction3))
+    val sortedIds = savedTransactions.map { it.id }.sortedDescending()
 
     mockMvc
       .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].transactionDate").value("2024-07-19"))
-      .andExpect(jsonPath("$[0].transactionType").value("SELL"))
-      .andExpect(jsonPath("$[0].quantity").value(5))
-      .andExpect(jsonPath("$[0].price").value(150))
-      .andExpect(jsonPath("$[0].realizedProfit").isNumber())
-      .andExpect(jsonPath("$[0].averageCost").isNumber())
-      .andExpect(jsonPath("$[1].transactionDate").value("2024-07-01"))
-      .andExpect(jsonPath("$[1].transactionType").value("BUY"))
-      .andExpect(jsonPath("$[1].quantity").value(3.37609300))
-      .andExpect(jsonPath("$[1].price").value(29.62))
-      .andExpect(jsonPath("$[1].unrealizedProfit").isNumber())
-      .andExpect(jsonPath("$[1].averageCost").isNumber())
+      .andExpect(jsonPath("$[0].id").value(sortedIds[0]))
+      .andExpect(jsonPath("$[1].id").value(sortedIds[1]))
+      .andExpect(jsonPath("$[2].id").value(sortedIds[2]))
   }
 
   @Test

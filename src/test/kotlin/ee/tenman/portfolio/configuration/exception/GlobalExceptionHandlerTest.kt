@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.configuration.exception
 
-import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.GlobalExceptionHandler
 import io.mockk.every
