@@ -1,6 +1,10 @@
 package ee.tenman.portfolio.controller
 
-import ch.tutteli.atrium.api.fluent.en_GB.*
+import ch.tutteli.atrium.api.fluent.en_GB.inOrder
+import ch.tutteli.atrium.api.fluent.en_GB.only
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.values
 import ch.tutteli.atrium.api.verbs.expect
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock

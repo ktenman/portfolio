@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, Long> {
-  @Query("SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument")
+  @Query("SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument ORDER BY pt.id DESC")
   @Cacheable(value = [TRANSACTION_CACHE], key = "'transactions'", unless = "#result.isEmpty()")
   fun findAllWithInstruments(): List<PortfolioTransaction>
 

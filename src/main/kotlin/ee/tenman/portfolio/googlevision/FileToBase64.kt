@@ -3,7 +3,7 @@ package ee.tenman.portfolio.googlevision
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.Base64
+import java.util.*
 
 object FileToBase64 {
   private val log = LoggerFactory.getLogger(javaClass)
