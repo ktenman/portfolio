@@ -23,6 +23,7 @@ class InstrumentService(
   private val investmentMetricsService: InvestmentMetricsService,
   private val dailyPriceService: DailyPriceService,
   private val clock: java.time.Clock,
+  private val priceUpdateEventService: PriceUpdateEventService,
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
@@ -234,5 +235,31 @@ class InstrumentService(
     } else {
       instrument
     }
+  }
+
+  @Transactional
+  @Caching(
+    evict = [
+      CacheEvict(value = [INSTRUMENT_CACHE], allEntries = true),
+      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
+      CacheEvict(value = [TRANSACTION_CACHE], allEntries = true),
+      CacheEvict(value = [ONE_DAY_CACHE], allEntries = true),
+    ],
+  )
+  fun applyPriceCoefficient(coefficient: Double): Int {
+    val instruments = instrumentRepository.findAll()
+    val coefficientBigDecimal = BigDecimal.valueOf(coefficient)
+
+    instruments.forEach { instrument ->
+      instrument.currentPrice = instrument.currentPrice?.multiply(coefficientBigDecimal)
+    }
+
+    instrumentRepository.saveAll(instruments)
+
+    instruments.forEach { instrument ->
+      recalculateTransactionProfitsForInstrument(instrument.id)
+    }
+
+    return instruments.size
   }
 }

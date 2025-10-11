@@ -8,24 +8,76 @@
     @title-click="handleTitleClick"
   >
     <template #subtitle>
-      <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2">
-        <div class="platform-buttons">
-          <button
-            v-for="platform in availablePlatforms"
-            :key="platform"
-            class="platform-btn"
-            :class="{ active: isPlatformSelected(platform) }"
-            @click="togglePlatform(platform)"
-            type="button"
-          >
-            {{ formatPlatformName(platform) }}
-          </button>
-          <span class="platform-separator"></span>
-          <button class="platform-btn" @click="toggleAllPlatforms" type="button">
-            {{
-              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-            }}
-          </button>
+      <div class="subtitle-container mt-2">
+        <div v-if="availablePlatforms.length > 0" class="platform-filter-container">
+          <div class="platform-buttons">
+            <button
+              v-for="platform in availablePlatforms"
+              :key="platform"
+              class="platform-btn"
+              :class="{ active: isPlatformSelected(platform) }"
+              @click="togglePlatform(platform)"
+              type="button"
+            >
+              {{ formatPlatformName(platform) }}
+            </button>
+            <span class="platform-separator"></span>
+            <button class="platform-btn" @click="toggleAllPlatforms" type="button">
+              {{
+                selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
+              }}
+            </button>
+          </div>
+        </div>
+        <div class="scenario-tester-container">
+          <div class="scenario-header">
+            <span class="scenario-title">Scenario Tester</span>
+          </div>
+
+          <div class="scenario-presets">
+            <button
+              v-for="scenario in presetScenarios"
+              :key="scenario.id"
+              class="scenario-btn"
+              :disabled="isApplying"
+              @click="applyScenario(scenario.percentage)"
+            >
+              <span class="scenario-name">{{ scenario.name }}</span>
+              <span class="scenario-value">
+                {{ scenario.percentage > 0 ? '+' : '' }}{{ scenario.percentage }}%
+              </span>
+            </button>
+            <button class="scenario-btn custom" @click="showCustom = !showCustom">Custom</button>
+          </div>
+
+          <transition name="expand">
+            <div v-if="showCustom" class="custom-scenario">
+              <div class="input-row">
+                <input
+                  v-model.number="customPercentage"
+                  type="number"
+                  step="5"
+                  min="-90"
+                  max="300"
+                  placeholder="Enter %"
+                  class="percentage-input"
+                />
+                <button
+                  class="btn-apply-scenario"
+                  :disabled="!customPercentage || isApplying"
+                  @click="applyCustomScenario"
+                >
+                  {{ isApplying ? 'Applying...' : 'Apply' }}
+                </button>
+              </div>
+              <div v-if="customPercentage && totalValue" class="impact-text">
+                Impact:
+                <span :class="impactClass">
+                  {{ difference >= 0 ? '+' : '' }}{{ formatCurrency(Math.abs(difference)) }}
+                </span>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
     </template>
@@ -50,6 +102,7 @@
 import { computed, watch, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
+import { usePriceUpdates } from '../../composables/use-price-updates'
 import { useLocalStorage } from '@vueuse/core'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import CrudLayout from '../shared/crud-layout.vue'
@@ -60,9 +113,22 @@ import { InstrumentDto } from '../../models/generated/domain-models'
 
 const selectedItem = ref<InstrumentDto | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_platforms', [])
+const showCustom = ref(false)
+const customPercentage = ref<number | null>(null)
+const isApplying = ref(false)
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 const queryClient = useQueryClient()
 const toast = useToast()
+
+usePriceUpdates()
+
+const presetScenarios = [
+  { id: 1, name: 'Crash', percentage: -50, emoji: '📉', class: 'crash' },
+  { id: 2, name: 'Decline', percentage: -30, emoji: '📉', class: 'decline' },
+  { id: 3, name: 'Dip', percentage: -10, emoji: '📊', class: 'dip' },
+  { id: 4, name: 'Growth', percentage: 20, emoji: '📈', class: 'growth' },
+  { id: 5, name: 'Bull', percentage: 50, emoji: '📈', class: 'bull' },
+]
 
 const { data: allInstruments } = useQuery({
   queryKey: ['instruments-all'],
@@ -181,6 +247,34 @@ const formatPlatformName = (platform: string): string => {
   return platformMap[platform] || platform
 }
 
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+const totalValue = computed(() => {
+  if (!items.value) return 0
+  return items.value.reduce((sum, instrument) => {
+    return sum + (instrument.currentValue || 0)
+  }, 0)
+})
+
+const projectedTotal = computed(() => {
+  if (!customPercentage.value || !totalValue.value) return 0
+  return totalValue.value * (1 + customPercentage.value / 100)
+})
+
+const difference = computed(() => projectedTotal.value - totalValue.value)
+
+const impactClass = computed(() => ({
+  positive: customPercentage.value && customPercentage.value > 0,
+  negative: customPercentage.value && customPercentage.value < 0,
+}))
+
 const openAddModal = () => {
   selectedItem.value = null
   showModal()
@@ -195,15 +289,29 @@ const onSave = (instrument: Partial<InstrumentDto>) => {
   saveMutation.mutate(instrument)
 }
 
+const applyScenario = async (percentage: number) => {
+  const multiplier = 1 + percentage / 100
+  isApplying.value = true
+  try {
+    await instrumentsService.applyPriceCoefficient(multiplier)
+  } catch (error) {
+    toast.error(`Failed to apply scenario: ${(error as Error).message}`)
+  } finally {
+    isApplying.value = false
+  }
+}
+
+const applyCustomScenario = async () => {
+  if (customPercentage.value) {
+    await applyScenario(customPercentage.value)
+    customPercentage.value = null
+    showCustom.value = false
+  }
+}
+
 const handleTitleClick = async () => {
   try {
     await instrumentsService.refreshPrices()
-    toast.success('Price refresh triggered! Data will update shortly.')
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['instruments'] })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['summaries'] })
-    }, 2000)
   } catch {
     toast.error('Failed to trigger price refresh')
   }
@@ -211,11 +319,165 @@ const handleTitleClick = async () => {
 </script>
 
 <style scoped>
+.subtitle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .platform-filter-container {
   display: flex;
   align-items: center;
   padding: 0;
   background: transparent;
+}
+
+.scenario-tester-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scenario-header {
+  display: flex;
+  align-items: center;
+}
+
+.scenario-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.scenario-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.scenario-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.scenario-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #4b5563;
+}
+
+.scenario-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.scenario-name {
+  font-weight: 500;
+}
+
+.scenario-value {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.custom-scenario {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.input-row {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.percentage-input {
+  flex: 1;
+  padding: 0.3125rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  transition: border-color 0.2s;
+}
+
+.percentage-input:focus {
+  outline: none;
+  border-color: #cbd5e1;
+}
+
+.percentage-input::placeholder {
+  color: #94a3b8;
+}
+
+.btn-apply-scenario {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: white;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.btn-apply-scenario:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #4b5563;
+}
+
+.btn-apply-scenario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.impact-text {
+  font-size: 0.7rem;
+  color: #6b7280;
+  padding-left: 0.25rem;
+}
+
+.impact-text .positive {
+  color: #059669;
+  font-weight: 500;
+}
+
+.impact-text .negative {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 
 .platform-buttons {

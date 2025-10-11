@@ -34,6 +34,7 @@ class InstrumentServiceTest {
   private val investmentMetricsService = mockk<InvestmentMetricsService>()
   private val dailyPriceService = mockk<DailyPriceService>()
   private val clock = mockk<Clock>()
+  private val priceUpdateEventService = mockk<PriceUpdateEventService>(relaxed = true)
 
   private lateinit var instrumentService: InstrumentService
   private lateinit var testInstrument: Instrument
@@ -64,6 +65,7 @@ class InstrumentServiceTest {
         investmentMetricsService,
         dailyPriceService,
         clock,
+        priceUpdateEventService,
       )
   }
 

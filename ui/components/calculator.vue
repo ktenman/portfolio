@@ -35,13 +35,31 @@
           x-axis-label="Year"
           y-axis-label="Worth (€)"
         />
+        <div v-if="!isLoading && calculationResult" class="card mt-4 mb-3">
+          <div class="card-body">
+            <h6 class="card-title">Rolling XIRR Statistics</h6>
+            <div class="row">
+              <div class="col-6">
+                <div class="metric-label">Average XIRR</div>
+                <div class="metric-value metric-value-green">
+                  {{ formatPercentage(calculationResult.average) }}
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="metric-label">Median XIRR</div>
+                <div class="metric-value metric-value-green">
+                  {{ formatPercentage(calculationResult.median) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <BarChart
           v-if="!isLoading && calculationResult"
           :data="calculationResult.xirrs"
           title="XIRR Rolling Result (ASAP)"
           x-axis-label="Date"
           y-axis-label="XIRR (%)"
-          class="mt-4"
         />
       </div>
     </div>
@@ -69,6 +87,11 @@ import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import { useConfirm } from '../composables/use-confirm'
+
+const formatPercentage = (value: number): string => {
+  if (value === 0) return '0.00%'
+  return `${value.toFixed(2)}%`
+}
 
 const { form, isLoading, yearSummary, portfolioData, calculationResult, resetCalculator } =
   useCalculator()
@@ -130,6 +153,23 @@ canvas {
 
 .table {
   font-size: rem(14.4px);
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: $text-muted;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: $primary-color;
+}
+
+.metric-value-green {
+  color: rgb(75, 192, 192);
 }
 
 .calculator-buttons-desktop {

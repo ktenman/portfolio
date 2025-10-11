@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -59,6 +59,13 @@ export interface PortfolioSummaryDto {
     totalProfit: number;
     earningsPerDay: number;
     earningsPerMonth: number;
+}
+
+export interface PriceUpdateEvent {
+    type: string;
+    message: string;
+    updatedCount: number;
+    timestamp: number;
 }
 
 type DateAsString = string;
