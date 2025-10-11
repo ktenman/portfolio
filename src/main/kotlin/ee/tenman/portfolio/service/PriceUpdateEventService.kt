@@ -55,7 +55,7 @@ class PriceUpdateEventService(
             .name("price-update")
             .data(eventData),
         )
-        log.debug("Sent price update event to client: $message")
+        log.debug("Sent price update event to client: {}", message)
       } catch (e: IOException) {
         log.warn("Failed to send SSE event, marking emitter for removal", e)
         deadEmitters.add(emitter)
@@ -67,6 +67,6 @@ class PriceUpdateEventService(
 
     deadEmitters.forEach { removeEmitter(it) }
 
-    log.info("Broadcasted price update to ${emitters.size} clients: $message")
+    log.info("Broadcasted price update to {} clients: {}", emitters.size, message)
   }
 }
