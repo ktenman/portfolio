@@ -61,6 +61,13 @@ export interface PortfolioSummaryDto {
     earningsPerMonth: number;
 }
 
+export interface PriceUpdateEvent {
+    type: string;
+    message: string;
+    updatedCount: number;
+    timestamp: number;
+}
+
 type DateAsString = string;
 
 export enum Platform {

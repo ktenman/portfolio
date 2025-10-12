@@ -185,6 +185,7 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
       "ee.tenman.portfolio.dto.TransactionRequestDto",
       "ee.tenman.portfolio.dto.TransactionResponseDto",
       "ee.tenman.portfolio.dto.PortfolioSummaryDto",
+      "ee.tenman.portfolio.dto.PriceUpdateEvent",
       "ee.tenman.portfolio.domain.Platform",
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",

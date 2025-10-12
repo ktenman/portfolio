@@ -47,7 +47,7 @@ class CalculationService(
     private const val TICKER = "QDVE:GER:EUR"
   }
 
-  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr-v3'")
+  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr-v5'")
   fun getCalculationResult(): CalculationResult {
     log.info("Calculating XIRR")
     val xirrs = calculateRollingXirr(TICKER).reversed()
@@ -70,10 +70,32 @@ class CalculationService(
 
     return CalculationResult(
       median = if (xirrsResults.isEmpty()) 0.0 else calculateMedian(xirrsResults.map { it.amount }),
-      average = if (xirrsResults.isEmpty()) 0.0 else xirrsResults.map { it.amount }.average(),
+      average = if (xirrsResults.isEmpty()) 0.0 else calculateTimeWeightedAverage(xirrsResults),
       xirrs = xirrsResults,
       total = BigDecimal.ZERO,
     )
+  }
+
+  fun calculateTimeWeightedAverage(xirrsResults: List<Transaction>): Double {
+    if (xirrsResults.isEmpty()) return 0.0
+
+    val startDate = xirrsResults.firstOrNull()?.date ?: return 0.0
+    var totalWeighted = 0.0
+    var totalWeight = 0.0
+
+    xirrsResults.forEach { transaction ->
+      val monthsElapsed =
+        java.time.Period
+        .between(startDate, transaction.date)
+        .toTotalMonths()
+
+      val weight = (monthsElapsed.toDouble() / 12.0).coerceAtMost(1.0)
+
+      totalWeighted += transaction.amount * weight
+      totalWeight += weight
+    }
+
+    return if (totalWeight > 0) totalWeighted / totalWeight else 0.0
   }
 
   fun calculateMedian(xirrs: List<Double>): Double {
@@ -112,7 +134,7 @@ class CalculationService(
       val lastPrice = dailyPrices.last()
 
       if (firstPrice.closePrice <= BigDecimal.ZERO) {
-        endDate = endDate.minusWeeks(2)
+        endDate = endDate.minusWeeks(4)
         continue
       }
 
@@ -132,7 +154,7 @@ class CalculationService(
         xirrs.add(Xirr(transactions))
       }
 
-      endDate = endDate.minusWeeks(2)
+      endDate = endDate.minusWeeks(4)
     }
 
     return xirrs.filter { xirr ->

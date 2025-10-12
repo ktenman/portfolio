@@ -38,6 +38,7 @@ class InstrumentController(
   private val ftDataRetrievalJob: FtDataRetrievalJob?,
   private val cacheManager: CacheManager,
   private val transactionService: ee.tenman.portfolio.service.TransactionService,
+  private val priceUpdateEventService: ee.tenman.portfolio.service.PriceUpdateEventService,
 ) {
   @PostMapping
   @Loggable
@@ -46,6 +47,13 @@ class InstrumentController(
     @Valid @RequestBody instrumentDto: InstrumentDto,
   ): InstrumentDto {
     val savedInstrument = instrumentService.saveInstrument(instrumentDto.toEntity())
+
+    priceUpdateEventService.broadcastPriceUpdate(
+      type = "update",
+      message = "Instrument ${savedInstrument.symbol} created",
+      updatedCount = 1,
+    )
+
     return InstrumentDto.fromEntity(savedInstrument)
   }
 
@@ -77,6 +85,13 @@ class InstrumentController(
       }
 
     val savedInstrument = instrumentService.saveInstrument(updatedInstrument)
+
+    priceUpdateEventService.broadcastPriceUpdate(
+      type = "update",
+      message = "Instrument ${savedInstrument.symbol} updated",
+      updatedCount = 1,
+    )
+
     return InstrumentDto.fromEntity(savedInstrument)
   }
 
@@ -111,6 +126,44 @@ class InstrumentController(
       transactionService.calculateTransactionProfits(allTransactions)
     }
 
+    priceUpdateEventService.broadcastPriceUpdate(
+      type = "refresh",
+      message = "Market prices refreshed from external APIs",
+      updatedCount = instrumentService.getAllInstruments().size,
+    )
+
     return mapOf("status" to "Jobs triggered, caches cleared, and transaction profits recalculated")
+  }
+
+  @PostMapping("/apply-price-coefficient")
+  @Loggable
+  @Operation(summary = "Apply a coefficient multiplier to all instrument prices")
+  fun applyPriceCoefficient(
+    @RequestBody request: Map<String, Double>,
+  ): Map<String, String> {
+    val coefficient = request["coefficient"] ?: throw IllegalArgumentException("Coefficient is required")
+
+    if (coefficient <= 0) {
+      throw IllegalArgumentException("Coefficient must be greater than 0")
+    }
+
+    val updatedCount = instrumentService.applyPriceCoefficient(coefficient)
+
+    listOf(INSTRUMENT_CACHE, SUMMARY_CACHE, TRANSACTION_CACHE).forEach { cacheName ->
+      cacheManager.getCache(cacheName)?.clear()
+    }
+
+    CoroutineScope(Dispatchers.Default).launch {
+      val allTransactions = transactionService.getAllTransactions()
+      transactionService.calculateTransactionProfits(allTransactions)
+    }
+
+    priceUpdateEventService.broadcastPriceUpdate(
+      type = "coefficient",
+      message = "Price multiplier ${coefficient}x applied to all instruments",
+      updatedCount = updatedCount,
+    )
+
+    return mapOf("message" to "Applied coefficient $coefficient to $updatedCount instruments")
   }
 }

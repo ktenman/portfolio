@@ -15,4 +15,9 @@ export const instrumentsService = {
 
   refreshPrices: () =>
     httpClient.post<{ status: string }>('/instruments/refresh-prices').then(res => res.data),
+
+  applyPriceCoefficient: (coefficient: number) =>
+    httpClient
+      .post<{ message: string }>('/instruments/apply-price-coefficient', { coefficient })
+      .then(res => res.data),
 }

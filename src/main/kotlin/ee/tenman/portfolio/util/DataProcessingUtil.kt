@@ -18,6 +18,7 @@ class DataProcessingUtil(
   private val instrumentService: InstrumentService,
   private val transactionRunner: TransactionRunner,
   private val clock: Clock,
+  private val priceUpdateEventService: ee.tenman.portfolio.service.PriceUpdateEventService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -59,5 +60,11 @@ class DataProcessingUtil(
     val dailyPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)
     instrument.currentPrice = dailyPrice?.closePrice
     instrumentService.saveInstrument(instrument)
+
+    priceUpdateEventService.broadcastPriceUpdate(
+      type = "price-fetch",
+      message = "Price updated for ${instrument.symbol}",
+      updatedCount = 1,
+    )
   }
 }

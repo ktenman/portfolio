@@ -504,7 +504,7 @@ class CalculationServiceTest {
       val correspondingXirr =
         calculationService
           .calculateRollingXirr(instrumentCode)
-          .find { it.getTransactions().maxOf { tx -> tx.date } == transaction.date }
+          .find { it.getTransactions().maxOf { tx -> tx.date }.isEqual(transaction.date) }
       if (correspondingXirr != null) {
         expect(correspondingXirr.calculate()).toBeGreaterThan(-1.0)
       }
