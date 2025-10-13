@@ -101,7 +101,7 @@ describe('useCalculator', () => {
     await nextTick()
 
     expect(calculator.form.value.initialWorth).toBe(50000)
-    expect(calculator.form.value.annualReturnRate).toBe(12.5)
+    expect(calculator.form.value.annualReturnRate).toBe(11.5)
   })
 
   it('should calculate year summaries correctly', async () => {
@@ -200,7 +200,7 @@ describe('useCalculator', () => {
       initialWorth: 75000,
       monthlyInvestment: 585,
       yearlyGrowthRate: 5,
-      annualReturnRate: 18,
+      annualReturnRate: 15,
       years: 30,
       taxRate: 22,
     })
@@ -367,7 +367,7 @@ describe('useCalculator', () => {
 
     await calculator.resetCalculator()
 
-    expect(calculator.form.value.annualReturnRate).toBe(18)
+    expect(calculator.form.value.annualReturnRate).toBe(15)
 
     mockData.value = {
       xirrs: [],
@@ -378,7 +378,7 @@ describe('useCalculator', () => {
 
     await nextTick()
 
-    expect(calculator.form.value.annualReturnRate).toBe(18)
+    expect(calculator.form.value.annualReturnRate).toBe(15)
   })
 
   it('should calculate tax correctly', async () => {

@@ -35,13 +35,27 @@
           x-axis-label="Year"
           y-axis-label="Worth (€)"
         />
+        <div v-if="!isLoading && calculationResult" class="card mt-3 xirr-stats-card">
+          <div class="card-body py-2">
+            <div class="row text-center">
+              <div class="col-6">
+                <div class="stat-label">Median XIRR</div>
+                <div class="stat-value">{{ formatPercentage(calculationResult.median) }}</div>
+              </div>
+              <div class="col-6">
+                <div class="stat-label">Average XIRR</div>
+                <div class="stat-value">{{ formatPercentage(calculationResult.average) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
         <BarChart
           v-if="!isLoading && calculationResult"
           :data="calculationResult.xirrs"
           title="XIRR Rolling Result (ASAP)"
           x-axis-label="Date"
           y-axis-label="XIRR (%)"
-          class="mt-4"
+          class="mt-3"
         />
       </div>
     </div>
@@ -74,6 +88,10 @@ const { form, isLoading, yearSummary, portfolioData, calculationResult, resetCal
   useCalculator()
 
 const { confirm } = useConfirm()
+
+const formatPercentage = (value: number) => {
+  return `${value.toFixed(2)}%`
+}
 
 const handleReset = async () => {
   const confirmed = await confirm({
@@ -130,6 +148,29 @@ canvas {
 
 .table {
   font-size: rem(14.4px);
+}
+
+.xirr-stats-card {
+  box-shadow: 0 1px 3px rgba($black, 0.1);
+
+  .card-body {
+    padding: 0.75rem 1rem;
+  }
+
+  .stat-label {
+    font-size: rem(12px);
+    color: $gray-600;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-value {
+    font-size: rem(20px);
+    font-weight: 600;
+    color: rgb(75, 192, 192);
+  }
 }
 
 .calculator-buttons-desktop {
