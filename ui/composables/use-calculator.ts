@@ -53,7 +53,7 @@ export function useCalculator() {
     const currentPortfolioWorth = form.value.initialWorth
     const avgReturn = hasUserModifiedAnnualReturn.value
       ? form.value.annualReturnRate
-      : (calculationResult.value?.average ?? form.value.annualReturnRate)
+      : (calculationResult.value?.median ?? form.value.annualReturnRate)
 
     const monthlyGrowthRate = form.value.yearlyGrowthRate / 100 / 12
     const monthlyReturnRate = Math.pow(1 + avgReturn / 100, 1 / 12) - 1
@@ -122,7 +122,7 @@ export function useCalculator() {
         form.value.initialWorth = calculationResult.value.total
       }
       if (form.value.annualReturnRate === 7 && !hasUserModifiedAnnualReturn.value) {
-        form.value.annualReturnRate = calculationResult.value.average
+        form.value.annualReturnRate = calculationResult.value.median
       }
 
       if (!initialFormState.value) {
@@ -149,7 +149,7 @@ export function useCalculator() {
           initialWorth: freshData?.total || 0,
           monthlyInvestment: 585,
           yearlyGrowthRate: 5,
-          annualReturnRate: freshData?.average || 7,
+          annualReturnRate: freshData?.median || 7,
           years: 30,
           taxRate: 22,
         })

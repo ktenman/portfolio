@@ -112,7 +112,7 @@ class CalculationService(
       val lastPrice = dailyPrices.last()
 
       if (firstPrice.closePrice <= BigDecimal.ZERO) {
-        endDate = endDate.minusWeeks(2)
+        endDate = endDate.minusWeeks(4)
         continue
       }
 
@@ -132,7 +132,7 @@ class CalculationService(
         xirrs.add(Xirr(transactions))
       }
 
-      endDate = endDate.minusWeeks(2)
+      endDate = endDate.minusWeeks(4)
     }
 
     return xirrs.filter { xirr ->
