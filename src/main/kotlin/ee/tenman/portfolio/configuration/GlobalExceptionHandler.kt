@@ -13,6 +13,7 @@ import org.springframework.web.bind.support.WebExchangeBindException
 @ControllerAdvice
 class GlobalExceptionHandler {
   private val log = LoggerFactory.getLogger(javaClass)
+
   @ExceptionHandler(WebExchangeBindException::class, MethodArgumentNotValidException::class)
   fun handleValidationExceptions(exception: Exception): ResponseEntity<ApiError> = handleValidationException(exception)
 
