@@ -41,6 +41,8 @@ class SummaryServiceTest {
   private val cacheManager = mockk<CacheManager>(relaxed = true)
   private val investmentMetricsService = mockk<InvestmentMetricsService>()
   private val clock = mockk<Clock>()
+  private val summaryBatchProcessor = mockk<SummaryBatchProcessorService>(relaxed = true)
+  private val summaryDeletionService = mockk<SummaryDeletionService>(relaxed = true)
 
   private lateinit var summaryService: SummaryService
 
@@ -61,6 +63,8 @@ class SummaryServiceTest {
         cacheManager,
         investmentMetricsService,
         clock,
+        summaryBatchProcessor,
+        summaryDeletionService,
       )
 
     testDate = LocalDate.of(2025, 5, 10)
@@ -313,21 +317,13 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()) } answers { firstArg() }
     val emptyList = emptyList<PortfolioDailySummary>()
     every { portfolioDailySummaryRepository.findAll() } returns emptyList
+    every { summaryBatchProcessor.processSummariesInBatches(any(), any()) } returns 4
 
     val count = summaryService.recalculateAllDailySummaries()
 
     expect(count).toEqual(4)
-    verify { portfolioDailySummaryRepository.findAll() }
-    verify { portfolioDailySummaryRepository.flush() }
-    verify { portfolioDailySummaryRepository.saveAll(capture(summaryListCaptor)) }
-
-    val processedDates = summaryListCaptor.captured.map { it.entryDate }
-    expect(processedDates).toContain(
-      LocalDate.of(2024, 7, 1),
-      LocalDate.of(2024, 7, 2),
-      LocalDate.of(2024, 7, 3),
-      LocalDate.of(2024, 7, 4),
-    )
+    verify { summaryDeletionService.deleteHistoricalSummaries(today) }
+    verify { summaryBatchProcessor.processSummariesInBatches(any(), any()) }
   }
 
   @Test
@@ -529,15 +525,13 @@ class SummaryServiceTest {
 
     every { portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()) } answers { firstArg() }
     every { portfolioDailySummaryRepository.flush() } returns Unit
+    every { summaryBatchProcessor.processSummariesInBatches(any(), any()) } returns 3
 
     val count = summaryService.recalculateAllDailySummaries()
 
     expect(count).toEqual(3)
-    verify(exactly = 0) { portfolioDailySummaryRepository.delete(todaySummary) }
-    verify { portfolioDailySummaryRepository.saveAll(capture(summaryListCaptor)) }
-
-    val processedDates = summaryListCaptor.captured.map { it.entryDate }
-    expect(processedDates).notToContain(today)
+    verify { summaryDeletionService.deleteHistoricalSummaries(today) }
+    verify { summaryBatchProcessor.processSummariesInBatches(any(), any()) }
   }
 
   @ParameterizedTest

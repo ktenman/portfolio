@@ -252,12 +252,16 @@ class InvestmentMetricsService(
     val netQuantity = calculateNetQuantity(transactions)
     if (netQuantity <= BigDecimal.ZERO) return
 
-    val price = dailyPriceService.getPrice(instrument, date)
-    val currentValue = netQuantity.multiply(price)
-    val instrumentProfit = calculateFallbackProfit(transactions, currentValue)
+    try {
+      val price = dailyPriceService.getPrice(instrument, date)
+      val currentValue = netQuantity.multiply(price)
+      val instrumentProfit = calculateFallbackProfit(transactions, currentValue)
 
-    updateMetrics(metrics, currentValue, instrumentProfit)
-    addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
+      updateMetrics(metrics, currentValue, instrumentProfit)
+      addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
+    } catch (e: NoSuchElementException) {
+      log.warn("Skipping ${instrument.symbol} on $date: ${e.message}")
+    }
   }
 
   private fun calculateNetQuantity(transactions: List<PortfolioTransaction>): BigDecimal =

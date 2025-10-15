@@ -27,6 +27,8 @@ class SummaryService(
   private val cacheManager: CacheManager,
   private val investmentMetricsService: InvestmentMetricsService,
   private val clock: Clock,
+  private val summaryBatchProcessor: SummaryBatchProcessorService,
+  private val summaryDeletionService: SummaryDeletionService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -50,7 +52,6 @@ class SummaryService(
     portfolioDailySummaryRepository.deleteAll()
   }
 
-  @Transactional
   @Caching(
     evict = [
       CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
@@ -76,10 +77,10 @@ class SummaryService(
     val yesterday = today.minusDays(1)
     log.info("Recalculating summaries from $firstTransactionDate to $yesterday (excluding current day)")
 
-    deleteHistoricalSummaries(today)
+    summaryDeletionService.deleteHistoricalSummaries(today)
 
     val datesToProcess = generateDateRange(firstTransactionDate, yesterday)
-    val summariesSaved = processSummariesInBatches(datesToProcess)
+    val summariesSaved = summaryBatchProcessor.processSummariesInBatches(datesToProcess, ::calculateSummaryForDate)
 
     log.info("Successfully recalculated and saved $summariesSaved daily summaries (excluding current day)")
     return summariesSaved
@@ -109,7 +110,6 @@ class SummaryService(
     return calculateCurrentDaySummaryForDate(today)
   }
 
-  @Transactional(readOnly = true)
   fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
     if (isToday(date)) return calculateTodaySummary(date)
 
@@ -171,16 +171,6 @@ class SummaryService(
     endDate: LocalDate,
   ) = portfolioDailySummaryRepository.findAllByEntryDateBetween(startDate, endDate)
 
-  private fun deleteHistoricalSummaries(today: LocalDate) {
-    val summariesToDelete =
-      portfolioDailySummaryRepository
-        .findAll()
-        .filterNot { it.entryDate == today }
-
-    portfolioDailySummaryRepository.deleteAll(summariesToDelete)
-    portfolioDailySummaryRepository.flush()
-  }
-
   private fun generateDateRange(
     start: LocalDate,
     end: LocalDate,
@@ -188,16 +178,6 @@ class SummaryService(
     generateSequence(start) { d ->
       d.plusDays(1).takeIf { !it.isAfter(end) }
     }.toList()
-
-  private fun processSummariesInBatches(
-    dates: List<LocalDate>,
-    batchSize: Int = 30,
-  ): Int =
-    dates.chunked(batchSize).sumOf { batch ->
-      val summaries = batch.map { calculateSummaryForDate(it) }
-      portfolioDailySummaryRepository.saveAll(summaries)
-      summaries.size
-    }
 
   private fun isToday(date: LocalDate): Boolean = date.isEqual(LocalDate.now(clock))
 
