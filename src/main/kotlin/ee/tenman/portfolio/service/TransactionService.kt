@@ -80,11 +80,7 @@ class TransactionService(
   }
 
   @Transactional(readOnly = true)
-  fun getAllTransactions(): List<PortfolioTransaction> {
-    val transactions = portfolioTransactionRepository.findAllWithInstruments()
-    calculateTransactionProfits(transactions)
-    return transactions
-  }
+  fun getAllTransactions(): List<PortfolioTransaction> = portfolioTransactionRepository.findAllWithInstruments()
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   @Retryable(

@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.configuration
 
 import jakarta.validation.ConstraintViolationException
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.BindingResult
@@ -11,11 +12,13 @@ import org.springframework.web.bind.support.WebExchangeBindException
 
 @ControllerAdvice
 class GlobalExceptionHandler {
+  private val log = LoggerFactory.getLogger(javaClass)
   @ExceptionHandler(WebExchangeBindException::class, MethodArgumentNotValidException::class)
   fun handleValidationExceptions(exception: Exception): ResponseEntity<ApiError> = handleValidationException(exception)
 
   @ExceptionHandler(Exception::class)
   fun handleAllExceptions(exception: Exception): ResponseEntity<ApiError> {
+    log.error("Unhandled exception: ${exception.message}", exception)
     val apiError =
       ApiError(
         status = HttpStatus.INTERNAL_SERVER_ERROR,
