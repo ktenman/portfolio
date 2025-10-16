@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, Long> {
-  @Query("SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument ORDER BY pt.id DESC")
+  @Query("SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument ORDER BY pt.transactionDate DESC, pt.id DESC")
   @Cacheable(value = [TRANSACTION_CACHE], key = "'transactions'", unless = "#result.isEmpty()")
   fun findAllWithInstruments(): List<PortfolioTransaction>
 
@@ -19,6 +19,8 @@ interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, L
     platform: Platform,
   ): List<PortfolioTransaction>
 
-  @Query("SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument WHERE pt.instrument.id = :instrumentId")
+  @Query(
+    "SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument WHERE pt.instrument.id = :instrumentId ORDER BY pt.transactionDate DESC, pt.id DESC",
+  )
   fun findAllByInstrumentId(instrumentId: Long): List<PortfolioTransaction>
 }
