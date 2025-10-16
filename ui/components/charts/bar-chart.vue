@@ -105,7 +105,7 @@ const createChart = () => {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: context => `${props.yAxisLabel}: ${context.parsed.y.toFixed(2)}%`,
+            label: context => `${props.yAxisLabel}: ${context.parsed.y?.toFixed(2) ?? '0.00'}%`,
           },
         },
       },
