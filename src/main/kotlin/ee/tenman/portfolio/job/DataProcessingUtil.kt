@@ -1,10 +1,9 @@
-package ee.tenman.portfolio.util
+package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.job.TransactionRunner
 import ee.tenman.portfolio.service.DailyPriceService
 import ee.tenman.portfolio.service.InstrumentService
 import org.slf4j.LoggerFactory

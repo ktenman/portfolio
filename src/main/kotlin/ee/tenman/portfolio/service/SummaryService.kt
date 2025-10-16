@@ -23,7 +23,6 @@ import java.time.LocalDate
 class SummaryService(
   private val portfolioDailySummaryRepository: PortfolioDailySummaryRepository,
   private val transactionService: TransactionService,
-  private val instrumentService: InstrumentService,
   private val cacheManager: CacheManager,
   private val investmentMetricsService: InvestmentMetricsService,
   private val clock: Clock,
@@ -246,13 +245,13 @@ class SummaryService(
     val instrumentGroups = transactions.groupBy { it.instrument }
     val results = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, date)
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(results.xirrTransactions, results.totalValue, date)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(results.xirrTransactions, date)
     val earningsPerDay = calculateEarningsPerDay(results.totalValue, BigDecimal(xirr))
 
     return PortfolioDailySummary(
       entryDate = date,
       totalValue = results.totalValue.setScale(10, RoundingMode.HALF_UP),
-      xirrAnnualReturn = BigDecimal(xirr).setScale(8, RoundingMode.HALF_UP),
+      xirrAnnualReturn = BigDecimal(xirr).setScale(10, RoundingMode.HALF_UP),
       totalProfit = results.totalProfit.setScale(10, RoundingMode.HALF_UP),
       earningsPerDay = earningsPerDay.setScale(10, RoundingMode.HALF_UP),
     )

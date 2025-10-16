@@ -1,5 +1,6 @@
-package ee.tenman.portfolio.telegram
+package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.telegram.CarTelegramBot
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

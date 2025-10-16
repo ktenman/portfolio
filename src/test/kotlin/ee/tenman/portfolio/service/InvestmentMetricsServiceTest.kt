@@ -237,7 +237,7 @@ class InvestmentMetricsServiceTest {
         Transaction(2000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("2000"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -246,7 +246,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateAdjustedXirr with fewer than 2 transactions returns zero`() {
     val transactions = listOf(Transaction(-1000.0, testDate))
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1000"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toEqual(0.0)
   }
@@ -260,7 +260,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1500.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1500"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeLessThan(10.0)
   }
@@ -273,7 +273,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1500"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toEqual(0.0)
   }
@@ -284,7 +284,7 @@ class InvestmentMetricsServiceTest {
     transactions: List<Transaction>,
     expectedBehavior: (Double) -> Boolean,
   ) {
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("10000"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(expectedBehavior(xirr)).toEqual(true)
   }
@@ -551,7 +551,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1200.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1200"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeLessThan(10.0)
     expect(xirr).toBeGreaterThanOrEqualTo(0.0)
@@ -565,7 +565,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1500.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1500"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -578,7 +578,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1200.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1200"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -591,7 +591,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("1000"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toEqual(0.0)
   }
@@ -783,7 +783,7 @@ class InvestmentMetricsServiceTest {
         Transaction(12000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("12000"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -1079,7 +1079,7 @@ class InvestmentMetricsServiceTest {
         Transaction(20000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, BigDecimal("20000"), testDate)
+    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }

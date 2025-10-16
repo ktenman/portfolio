@@ -167,7 +167,7 @@ class MarketPhaseDetectionServiceTest {
     year: Int,
     month: Int,
     day: Int,
-    holidayName: String,
+    @Suppress("UNUSED_PARAMETER") _holidayName: String,
   ) {
     val holiday = createNyTime(year, month, day, 12, 0)
 

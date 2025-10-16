@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("jacoco")
   alias(libs.plugins.ktlint)
+  alias(libs.plugins.detekt)
   alias(libs.plugins.typescript.generator)
 }
 
@@ -85,6 +86,8 @@ dependencies {
   testImplementation(libs.datafaker)
   testRuntimeOnly(libs.junit.platform.launcher)
   testRuntimeOnly(libs.junit.jupiter.engine)
+
+  detektPlugins(libs.detekt.formatting)
 }
 
 configurations.all {
@@ -220,5 +223,21 @@ tasks.named("generateTypeScript") {
       generatedFile.writeText(content)
       println("Post-processed: Removed timestamp and export from DateAsString")
     }
+  }
+}
+
+detekt {
+  buildUponDefaultConfig = true
+  allRules = false
+  config.setFrom(files("$projectDir/detekt.yml"))
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+  reports {
+    html.required.set(true)
+    xml.required.set(true)
+    txt.required.set(false)
+    sarif.required.set(false)
+    md.required.set(false)
   }
 }

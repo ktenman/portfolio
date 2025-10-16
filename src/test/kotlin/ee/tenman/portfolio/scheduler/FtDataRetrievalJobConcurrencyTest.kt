@@ -4,10 +4,10 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
+import ee.tenman.portfolio.job.DataProcessingUtil
 import ee.tenman.portfolio.job.FtDataRetrievalJob
 import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
-import ee.tenman.portfolio.util.DataProcessingUtil
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
