@@ -33,9 +33,7 @@ import java.util.stream.Stream
 
 class SummaryServiceTest {
   private val transactionService = mockk<TransactionService>()
-  private val dailyPriceService = mockk<DailyPriceService>()
   private val portfolioDailySummaryRepository = mockk<PortfolioDailySummaryRepository>(relaxUnitFun = true)
-  private val instrumentService = mockk<InstrumentService>()
   private val cacheManager = mockk<CacheManager>(relaxed = true)
   private val investmentMetricsService = mockk<InvestmentMetricsService>()
   private val clock = mockk<Clock>()
@@ -57,7 +55,6 @@ class SummaryServiceTest {
       SummaryService(
         portfolioDailySummaryRepository,
         transactionService,
-        instrumentService,
         cacheManager,
         investmentMetricsService,
         clock,
@@ -82,7 +79,7 @@ class SummaryServiceTest {
 
     every { investmentMetricsService.buildXirrTransactions(any(), any(), any()) } returns emptyList()
 
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), any()) } returns 0.0
+    every { investmentMetricsService.calculateAdjustedXirr(any(), any()) } returns 0.0
 
     instrument =
       Instrument(
@@ -132,7 +129,7 @@ class SummaryServiceTest {
         xirrTransactions = mutableListOf(),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), testDate) } returns portfolioMetrics
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), testDate) } returns 0.0
+    every { investmentMetricsService.calculateAdjustedXirr(any(), testDate) } returns 0.0
 
     val summary = summaryService.getCurrentDaySummary()
 
@@ -171,7 +168,7 @@ class SummaryServiceTest {
       )
 
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns 0.05
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns 0.05
 
     val expectedTotal = price.multiply(quantity)
     val expectedProfit = expectedTotal.subtract(originalPrice.multiply(quantity))
@@ -294,7 +291,7 @@ class SummaryServiceTest {
       )
 
     every { transactionService.getAllTransactions() } returns listOf(transaction)
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), any()) } returns 0.05
+    every { investmentMetricsService.calculateAdjustedXirr(any(), any()) } returns 0.05
 
     val totalValue = BigDecimal("110").multiply(transaction.quantity)
     val totalProfit = totalValue.subtract(transaction.price.multiply(transaction.quantity))
@@ -399,7 +396,7 @@ class SummaryServiceTest {
       )
 
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns 0.05
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns 0.05
 
     val expectedTotalValue = price.multiply(quantity)
     val xirrTransactions =
@@ -451,7 +448,7 @@ class SummaryServiceTest {
         xirrTransactions = mutableListOf(),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), testDate) } returns portfolioMetrics
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), testDate) } returns 0.075
+    every { investmentMetricsService.calculateAdjustedXirr(any(), testDate) } returns 0.075
 
     val summary = summaryService.getCurrentDaySummary()
 
@@ -503,7 +500,7 @@ class SummaryServiceTest {
 
     every { transactionService.getAllTransactions() } returns listOf(transaction)
     every { portfolioDailySummaryRepository.findAll() } returns listOf(todaySummary, oldSummary)
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), any()) } returns 0.05
+    every { investmentMetricsService.calculateAdjustedXirr(any(), any()) } returns 0.05
 
     val totalValue = BigDecimal("110").multiply(BigDecimal("10"))
     val totalProfit = totalValue.subtract(BigDecimal("100").multiply(BigDecimal("10")))
@@ -537,8 +534,8 @@ class SummaryServiceTest {
   fun `should calculateSummaryForDate should correctly aggregate multiple instruments`(
     instrument1: Instrument,
     instrument2: Instrument,
-    price1: BigDecimal,
-    price2: BigDecimal,
+    @Suppress("UNUSED_PARAMETER") _price1: BigDecimal,
+    @Suppress("UNUSED_PARAMETER") _price2: BigDecimal,
     expectedTotalValue: BigDecimal,
     expectedTotalProfit: BigDecimal,
     xirrValue: Double,
@@ -567,7 +564,7 @@ class SummaryServiceTest {
 
     every { transactionService.getAllTransactions() } returns listOf(transaction1, transaction2)
 
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns xirrValue
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns xirrValue
 
     val xirrTransactions =
       listOf(
@@ -616,7 +613,7 @@ class SummaryServiceTest {
 
     every { transactionService.getAllTransactions() } returns listOf(buyTransaction, sellTransaction)
 
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns 0.12
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns 0.12
 
     val remainingQuantity = BigDecimal("12")
     val currentPrice = BigDecimal("130")
@@ -682,7 +679,7 @@ class SummaryServiceTest {
 
     every { transactionService.getAllTransactions() } returns listOf(transaction1, transaction2)
 
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns 0.08
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns 0.08
 
     val xirrTransactions =
       listOf(
@@ -749,7 +746,7 @@ class SummaryServiceTest {
         xirrTransactions = mutableListOf(),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), today) } returns portfolioMetrics
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), today) } returns 0.08
+    every { investmentMetricsService.calculateAdjustedXirr(any(), today) } returns 0.08
 
     val result = summaryService.calculateSummaryForDate(today)
 
@@ -856,7 +853,7 @@ class SummaryServiceTest {
         xirrTransactions = mutableListOf(),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), today) } returns portfolioMetrics
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), today) } returns 0.08
+    every { investmentMetricsService.calculateAdjustedXirr(any(), today) } returns 0.08
 
     val result = summaryService.calculateSummaryForDate(today)
 
@@ -901,7 +898,7 @@ class SummaryServiceTest {
         xirrTransactions = mutableListOf(),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns portfolioMetrics
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns 0.06
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns 0.06
 
     val result = summaryService.calculateSummaryForDate(date)
 
@@ -936,7 +933,7 @@ class SummaryServiceTest {
         xirrTransactions = mutableListOf(),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns portfolioMetrics
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns 0.06
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns 0.06
 
     val result = summaryService.calculateSummaryForDate(date)
 
@@ -981,7 +978,7 @@ class SummaryServiceTest {
         xirrTransactions = mutableListOf(),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns portfolioMetrics
-    every { investmentMetricsService.calculateAdjustedXirr(any(), any(), date) } returns 0.07
+    every { investmentMetricsService.calculateAdjustedXirr(any(), date) } returns 0.07
 
     val result = summaryService.calculateSummaryForDate(date)
 

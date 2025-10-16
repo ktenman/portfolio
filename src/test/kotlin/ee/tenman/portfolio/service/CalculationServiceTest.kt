@@ -100,7 +100,7 @@ class CalculationServiceTest {
   @ParameterizedTest(name = "Price trend: {0}")
   @MethodSource("providePriceTrends")
   fun `should calculates appropriate XIRR values for different price trends`(
-    trendDescription: String,
+    @Suppress("UNUSED_PARAMETER") _trendDescription: String,
     startPrice: Double,
     endPrice: Double,
     expectedXirrCondition: (Double) -> Boolean,
@@ -151,7 +151,7 @@ class CalculationServiceTest {
   @ParameterizedTest(name = "Price scenario: {0}")
   @MethodSource("providePriceScenarios")
   fun `should handles various price scenarios appropriately`(
-    scenarioName: String,
+    @Suppress("UNUSED_PARAMETER") _scenarioName: String,
     prices: List<Pair<Int, Double>>,
     validator: (List<Xirr>) -> Unit,
   ) {

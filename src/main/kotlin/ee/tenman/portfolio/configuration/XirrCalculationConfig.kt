@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.service.xirr
+package ee.tenman.portfolio.configuration
 
 import kotlinx.coroutines.Dispatchers
 import org.springframework.context.annotation.Bean

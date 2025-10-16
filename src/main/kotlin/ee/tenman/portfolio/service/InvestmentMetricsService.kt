@@ -116,26 +116,22 @@ class InvestmentMetricsService(
 
   fun calculateAdjustedXirr(
     transactions: List<Transaction>,
-    currentValue: BigDecimal,
     calculationDate: LocalDate = LocalDate.now(),
   ): Double {
-    if (transactions.size < 2) {
-      return 0.0
-    }
+    if (transactions.size < 2) return 0.0
 
     return try {
       val xirrResult = Xirr(transactions).calculate()
       val cashFlows = transactions.filter { it.amount < 0 }
 
       if (cashFlows.isEmpty()) {
-        return 0.0
+        0.0
+      } else {
+        val weightedDays = calculateWeightedInvestmentAge(cashFlows, calculationDate)
+        val dampingFactor = min(1.0, weightedDays / 60.0)
+        val boundedXirr = xirrResult.coerceIn(-10.0, 10.0)
+        boundedXirr * dampingFactor
       }
-
-      val weightedDays = calculateWeightedInvestmentAge(cashFlows, calculationDate)
-      val dampingFactor = min(1.0, weightedDays / 60.0)
-      val boundedXirr = xirrResult.coerceIn(-10.0, 10.0)
-
-      boundedXirr * dampingFactor
     } catch (e: Exception) {
       log.error("Error calculating adjusted XIRR", e)
       0.0
@@ -181,7 +177,7 @@ class InvestmentMetricsService(
     val currentValue = calculateCurrentValue(totalHoldings, currentPrice)
     val profit = currentValue.subtract(totalInvestment)
     val xirrTransactions = buildXirrTransactions(transactions, currentValue, calculationDate)
-    val xirr = calculateAdjustedXirr(xirrTransactions, currentValue, calculationDate)
+    val xirr = calculateAdjustedXirr(xirrTransactions, calculationDate)
 
     return InstrumentMetrics(
       totalInvestment = totalInvestment,
@@ -298,8 +294,6 @@ class InvestmentMetricsService(
     totalBuys: BigDecimal,
     totalSells: BigDecimal,
   ): BigDecimal {
-    if (totalSells <= BigDecimal.ZERO) return BigDecimal.ZERO
-
     val sellQuantity =
       transactions
       .filter { it.transactionType == TransactionType.SELL }
@@ -310,10 +304,12 @@ class InvestmentMetricsService(
       .filter { it.transactionType == TransactionType.BUY }
       .sumOf { it.quantity }
 
-    if (buyQuantity <= BigDecimal.ZERO) return BigDecimal.ZERO
-
-    val avgBuyPrice = totalBuys.divide(buyQuantity, 10, RoundingMode.HALF_UP)
-    return totalSells.subtract(avgBuyPrice.multiply(sellQuantity))
+    return if (totalSells <= BigDecimal.ZERO || totalBuys <= BigDecimal.ZERO || buyQuantity <= BigDecimal.ZERO) {
+      BigDecimal.ZERO
+    } else {
+      val avgBuyPrice = totalBuys.divide(buyQuantity, 10, RoundingMode.HALF_UP)
+      totalSells.subtract(avgBuyPrice.multiply(sellQuantity))
+    }
   }
 
   private fun calculateUnrealizedGains(

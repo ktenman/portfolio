@@ -49,6 +49,16 @@ jobs:
       - name: Run ktlint check
         if: matrix.lint-type == 'backend'
         run: ./gradlew ktlintCheck
+      - name: Run Detekt static analysis
+        if: matrix.lint-type == 'backend'
+        run: ./gradlew detekt
+      - name: Upload Detekt reports
+        if: always() && matrix.lint-type == 'backend'
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: Detekt Reports
+          path: |
+            build/reports/detekt/
       - name: Use Node.js
         if: matrix.lint-type == 'frontend'
         uses: actions/setup-node@v6

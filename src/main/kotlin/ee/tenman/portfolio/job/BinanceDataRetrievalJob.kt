@@ -4,7 +4,6 @@ import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
-import ee.tenman.portfolio.util.DataProcessingUtil
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled

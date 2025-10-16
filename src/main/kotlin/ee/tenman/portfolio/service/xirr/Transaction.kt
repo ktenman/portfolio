@@ -6,4 +6,8 @@ import java.time.LocalDate
 data class Transaction(
   val amount: Double,
   val date: LocalDate,
-) : Serializable
+) : Serializable {
+  companion object {
+    private const val serialVersionUID: Long = 1L
+  }
+}

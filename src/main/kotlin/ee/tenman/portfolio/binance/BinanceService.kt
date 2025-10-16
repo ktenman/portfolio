@@ -28,7 +28,8 @@ class BinanceService(
       var currentStartTime = startDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
       val endTime = endDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
 
-      while (true) {
+      var shouldContinue = true
+      while (shouldContinue) {
         val klines =
           binanceClient.getKlines(
             symbol = symbol,
@@ -38,24 +39,25 @@ class BinanceService(
             limit = 1000, // Binance API typically limits to 1000 entries per request
           )
 
-        if (klines.isEmpty()) break
+        if (klines.isNotEmpty()) {
+          for (kline in klines) {
+            val timestamp = kline[0].toLong()
+            val date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+            dailyPrices[date] =
+              BinanceDailyPriceData(
+                open = kline[1].toBigDecimal(),
+                high = kline[2].toBigDecimal(),
+                low = kline[3].toBigDecimal(),
+                close = kline[4].toBigDecimal(),
+                volume = kline[5].toBigDecimal().toLong(),
+              )
+          }
 
-        for (kline in klines) {
-          val timestamp = kline[0].toLong()
-          val date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
-          dailyPrices[date] =
-            BinanceDailyPriceData(
-              open = kline[1].toBigDecimal(),
-              high = kline[2].toBigDecimal(),
-              low = kline[3].toBigDecimal(),
-              close = kline[4].toBigDecimal(),
-              volume = kline[5].toBigDecimal().toLong(),
-            )
+          currentStartTime = klines.last()[0].toLong() + 1
+          shouldContinue = currentStartTime < (endTime ?: Long.MAX_VALUE)
+        } else {
+          shouldContinue = false
         }
-
-        // Prepare for the next iteration
-        currentStartTime = klines.last()[0].toLong() + 1
-        if (currentStartTime >= (endTime ?: Long.MAX_VALUE)) break
       }
     } catch (e: Exception) {
       log.error("Error getting daily prices for symbol: $symbol", e)

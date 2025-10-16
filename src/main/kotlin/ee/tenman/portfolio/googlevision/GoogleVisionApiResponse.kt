@@ -5,13 +5,10 @@ data class GoogleVisionApiResponse(
   var textAnnotations: List<EntityAnnotation>? = null,
 ) {
   fun setResponses(responses: List<AnnotateImageResponse>) {
-    if (responses.size == 1) {
-      responses.first().let {
-        this.labelAnnotations = it.labelAnnotations
-        this.textAnnotations = it.textAnnotations
-      }
-    } else {
-      throw IllegalArgumentException("Expected exactly one response")
+    require(responses.size == 1) { "Expected exactly one response" }
+    responses.first().let {
+      this.labelAnnotations = it.labelAnnotations
+      this.textAnnotations = it.textAnnotations
     }
   }
 

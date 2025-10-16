@@ -58,7 +58,8 @@ class Xirr(
         calculateXirrWithBisection()
       } catch (bisectionError: Exception) {
         log.error("Both Newton-Raphson and Bisection methods failed.")
-        throw Exception("XIRR calculation failed using both methods", bisectionError)
+        throw ee.tenman.portfolio.exception
+          .XirrCalculationException("XIRR calculation failed using both methods", bisectionError)
       }
     }
 

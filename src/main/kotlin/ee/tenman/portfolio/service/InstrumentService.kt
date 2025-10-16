@@ -27,7 +27,13 @@ class InstrumentService(
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
   fun getInstrumentById(id: Long): Instrument =
-    instrumentRepository.findById(id).orElseThrow { RuntimeException("Instrument not found with id: $id") }
+    instrumentRepository
+      .findById(
+      id,
+    ).orElseThrow {
+      ee.tenman.portfolio.exception
+      .EntityNotFoundException("Instrument not found with id: $id")
+    }
 
   @Transactional
   @Caching(
@@ -159,6 +165,7 @@ class InstrumentService(
   fun deleteInstrument(id: Long) = instrumentRepository.deleteById(id)
 
   @Transactional(readOnly = true)
+  @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
   fun getAllInstruments(): List<Instrument> = getAllInstruments(null)
 
   @Transactional(readOnly = true)
