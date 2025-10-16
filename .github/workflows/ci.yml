@@ -51,7 +51,7 @@ jobs:
         run: ./gradlew ktlintCheck
       - name: Use Node.js
         if: matrix.lint-type == 'frontend'
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 'lts/iron'
           cache: 'npm'
@@ -102,7 +102,7 @@ jobs:
           gradle-home-cache-cleanup: true
       - name: Use Node.js
         if: matrix.test-type == 'frontend-unit'
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 'lts/iron'
           cache: 'npm'
