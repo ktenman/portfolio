@@ -87,7 +87,8 @@ class Auto24Service(
         TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS)
       }
     }
-    throw RuntimeException("Failed to solve CAPTCHA after $MAX_ATTEMPTS attempts")
+    throw ee.tenman.portfolio.exception
+      .CaptchaException("Failed to solve CAPTCHA after $MAX_ATTEMPTS attempts")
   }
 
   private fun processCaptchaAttempt(): Boolean {

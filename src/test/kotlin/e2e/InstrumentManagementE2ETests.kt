@@ -68,7 +68,7 @@ class InstrumentManagementE2ETests {
 
     val currencyField = id("baseCurrency")
     currencyField.shouldBe(visible)
-    currencyField.shouldHave(value("EUR"))
+    currencyField.shouldHave(value(DEFAULT_CURRENCY))
 
     val saveButton = elements(tagName("button")).filter(text("Save")).first()
     expect(saveButton.isEnabled).toEqual(true)

@@ -93,7 +93,7 @@ class HistoricalPricesDataValidationTest {
     low: String,
     close: String,
     expectedValid: Boolean,
-    description: String,
+    @Suppress("UNUSED_PARAMETER") _description: String,
   ) {
     val data =
       DailyPriceDataImpl(

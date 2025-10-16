@@ -23,7 +23,11 @@ data class CalculationResult(
   var median: Double = 0.0,
   var average: Double = 0.0,
   var total: BigDecimal = BigDecimal.ZERO,
-) : Serializable
+) : Serializable {
+  companion object {
+    private const val serialVersionUID: Long = 1L
+  }
+}
 
 data class XirrCalculationResult(
   val processedDates: Int,
@@ -92,7 +96,10 @@ class CalculationService(
     val instrument =
       instrumentRepository
         .findBySymbol(instrumentCode)
-      .orElseThrow { RuntimeException("Instrument not found with symbol: $instrumentCode") }
+      .orElseThrow {
+        ee.tenman.portfolio.exception
+        .EntityNotFoundException("Instrument not found with symbol: $instrumentCode")
+      }
     val allDailyPrices =
       dataRetrievalService
         .findAllByInstrument(instrument)
@@ -106,30 +113,27 @@ class CalculationService(
 
     while (endDate.isAfter(startDate.plusMonths(1))) {
       val dailyPrices = allDailyPrices.filter { it.entryDate <= endDate }
-      if (dailyPrices.size < 2) break
+      if (dailyPrices.size >= 2) {
+        val firstPrice = dailyPrices.first()
+        val lastPrice = dailyPrices.last()
 
-      val firstPrice = dailyPrices.first()
-      val lastPrice = dailyPrices.last()
+        if (firstPrice.closePrice > BigDecimal.ZERO) {
+          val sharesAmount =
+            BigDecimal(AMOUNT_TO_SPEND)
+            .divide(firstPrice.closePrice, 8, RoundingMode.HALF_UP)
 
-      if (firstPrice.closePrice <= BigDecimal.ZERO) {
-        endDate = endDate.minusWeeks(4)
-        continue
-      }
+          val currentValue = sharesAmount.multiply(lastPrice.closePrice)
 
-      val sharesAmount =
-        BigDecimal(AMOUNT_TO_SPEND)
-        .divide(firstPrice.closePrice, 8, RoundingMode.HALF_UP)
+          val transactions =
+            listOf(
+              Transaction(-AMOUNT_TO_SPEND, firstPrice.entryDate),
+              Transaction(currentValue.toDouble(), lastPrice.entryDate),
+            )
 
-      val currentValue = sharesAmount.multiply(lastPrice.closePrice)
-
-      val transactions =
-        listOf(
-          Transaction(-AMOUNT_TO_SPEND, firstPrice.entryDate),
-          Transaction(currentValue.toDouble(), lastPrice.entryDate),
-        )
-
-      if (currentValue > BigDecimal.ZERO) {
-        xirrs.add(Xirr(transactions))
+          if (currentValue > BigDecimal.ZERO) {
+            xirrs.add(Xirr(transactions))
+          }
+        }
       }
 
       endDate = endDate.minusWeeks(4)
