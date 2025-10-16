@@ -141,14 +141,21 @@ const instrumentMap = computed(() => {
 const enrichedTransactions = computed(() => {
   const instMap = instrumentMap.value
 
-  return props.transactions.map(transaction => {
-    const instrument = instMap.get(transaction.instrumentId)
+  return props.transactions
+    .map(transaction => {
+      const instrument = instMap.get(transaction.instrumentId)
 
-    return {
-      ...transaction,
-      instrumentName: instrument?.name || 'Unknown',
-    }
-  })
+      return {
+        ...transaction,
+        instrumentName: instrument?.name || 'Unknown',
+      }
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.transactionDate).getTime()
+      const dateB = new Date(b.transactionDate).getTime()
+      if (dateA !== dateB) return dateB - dateA
+      return (b.id || 0) - (a.id || 0)
+    })
 })
 
 const formatPlatformName = (platform: string): string => {

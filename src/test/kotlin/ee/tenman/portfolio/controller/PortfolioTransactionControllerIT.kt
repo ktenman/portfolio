@@ -114,7 +114,7 @@ class PortfolioTransactionControllerIT {
   }
 
   @Test
-  fun `should return all transactions sorted by ID in descending order`() {
+  fun `should return all transactions sorted by transaction date descending then by ID descending`() {
     val testInstrument = randomInstrument()
     testInstrument.currentPrice = BigDecimal("29.62")
     val instrument = instrumentRepository.save(testInstrument)
@@ -148,15 +148,19 @@ class PortfolioTransactionControllerIT {
       )
 
     val savedTransactions = portfolioTransactionRepository.saveAll(listOf(transaction1, transaction2, transaction3))
-    val sortedIds = savedTransactions.map { it.id }.sortedDescending()
+    val sortedTransactions =
+      savedTransactions.sortedWith(
+      compareByDescending<PortfolioTransaction> { it.transactionDate }
+        .thenByDescending { it.id },
+    )
 
     mockMvc
       .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].id").value(sortedIds[0]))
-      .andExpect(jsonPath("$[1].id").value(sortedIds[1]))
-      .andExpect(jsonPath("$[2].id").value(sortedIds[2]))
+      .andExpect(jsonPath("$[0].id").value(sortedTransactions[0].id))
+      .andExpect(jsonPath("$[1].id").value(sortedTransactions[1].id))
+      .andExpect(jsonPath("$[2].id").value(sortedTransactions[2].id))
   }
 
   @Test
