@@ -76,7 +76,7 @@ jobs:
       # For JavaScript/TypeScript: Set up Node.js
       - name: Set up Node.js
         if: matrix.language == 'javascript-typescript'
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
