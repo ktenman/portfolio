@@ -149,6 +149,31 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Function to ensure npm dependencies are installed
+ensure_npm_dependencies() {
+    if [ ! -f "package.json" ]; then
+        print_error "package.json not found in current directory"
+        return 1
+    fi
+
+    if [ ! -d "node_modules" ]; then
+        print_info "Node modules not found. Running npm install..."
+        if [ "$SILENT_MODE" = false ]; then
+            npm install
+        else
+            npm install > /dev/null 2>&1
+        fi
+
+        if [ $? -eq 0 ]; then
+            print_success "NPM dependencies installed successfully"
+        else
+            print_error "Failed to install NPM dependencies"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # Function to kill process on port
 kill_port() {
     local port=$1
@@ -408,6 +433,14 @@ setup_e2e_environment() {
     
     # Step 4: Start Vue.js frontend
     print_info "Step 4: Starting Vue.js frontend..."
+
+    # Check for npm dependencies before starting frontend
+    ensure_npm_dependencies
+    if [ $? -ne 0 ]; then
+        print_error "Failed to ensure NPM dependencies"
+        return 1
+    fi
+
     # Use daemon-style background with CI environment variable to prevent vite from expecting terminal
     CI=true nohup npm run dev > frontend.log 2>&1 &
     FRONTEND_PID=$!
@@ -492,6 +525,13 @@ run_unit_tests() {
     # Parse backend test results
     local unit_test_report="build/reports/tests/unit/index.html"
     parse_test_results "$unit_test_report" "unit"
+
+    # Check for npm dependencies before running frontend tests
+    ensure_npm_dependencies
+    if [ $? -ne 0 ]; then
+        print_error "Failed to ensure NPM dependencies"
+        return 1
+    fi
 
     # Run frontend UI tests
     print_info "Running frontend UI tests..."

@@ -35,7 +35,6 @@ const getDefaultFormValues = (): CalculatorForm => ({
 export function useCalculator() {
   const form = useLocalStorage<CalculatorForm>('calculator-form', getDefaultFormValues())
   const hasUserModifiedAnnualReturn = ref(false)
-  const initialFormState = ref<CalculatorForm | null>(null)
 
   const yearSummary = ref<YearSummary[]>([])
   const portfolioData = ref<number[]>([])
@@ -124,10 +123,6 @@ export function useCalculator() {
       if (form.value.annualReturnRate === 7 && !hasUserModifiedAnnualReturn.value) {
         form.value.annualReturnRate = calculationResult.value.median
       }
-
-      if (!initialFormState.value) {
-        initialFormState.value = { ...form.value }
-      }
     }
   })
 
@@ -138,25 +133,21 @@ export function useCalculator() {
   const resetCalculator = async () => {
     hasUserModifiedAnnualReturn.value = false
 
-    if (initialFormState.value) {
-      Object.assign(form.value, initialFormState.value)
-    } else {
-      try {
-        const result = await refetch()
-        const freshData = result.data
+    try {
+      const result = await refetch()
+      const freshData = result.data
 
-        Object.assign(form.value, {
-          initialWorth: freshData?.total || 0,
-          monthlyInvestment: 585,
-          yearlyGrowthRate: 5,
-          annualReturnRate: freshData?.median || 7,
-          years: 30,
-          taxRate: 22,
-        })
-      } catch (error) {
-        console.error('Failed to fetch fresh data:', error)
-        Object.assign(form.value, getDefaultFormValues())
-      }
+      Object.assign(form.value, {
+        initialWorth: freshData?.total || 0,
+        monthlyInvestment: 585,
+        yearlyGrowthRate: 5,
+        annualReturnRate: freshData?.median || 7,
+        years: 30,
+        taxRate: 22,
+      })
+    } catch (error) {
+      console.error('Failed to fetch fresh data:', error)
+      Object.assign(form.value, getDefaultFormValues())
     }
   }
 
