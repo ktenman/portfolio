@@ -212,5 +212,76 @@ class TransactionManagementE2ETests {
     expect(deletedTransactions.size()).toEqual(0)
   }
 
+  @Disabled("Platform filter UI testing needs additional setup")
+  @Test
+  fun `should display platform filter buttons on transactions page`() {
+    val platformButtons = elements(className("platform-btn"))
+    expect(platformButtons.size()).toBeGreaterThan(0)
+    platformButtons.forEach { button ->
+      expect(button.isDisplayed).toEqual(true)
+    }
+  }
+
+  @Disabled("Platform filter UI testing needs additional setup")
+  @Test
+  fun `should filter transactions by platform using filter buttons`() {
+    val platformButtons = elements(className("platform-btn"))
+    expect(platformButtons.size()).toBeGreaterThan(1)
+
+    val firstPlatformButton = platformButtons.first()
+    val initialButtonText = firstPlatformButton.text
+    expect(initialButtonText.isEmpty()).toEqual(false)
+
+    firstPlatformButton.click()
+    Thread.sleep(500)
+
+    val activeButtons = elements(className("platform-btn active"))
+    expect(activeButtons.size()).toBeGreaterThan(0)
+
+    val selectedButtonsActive = activeButtons.any { it.text.contains(initialButtonText) }
+    expect(selectedButtonsActive).toEqual(true)
+  }
+
+  @Disabled("Platform filter UI testing needs additional setup")
+  @Test
+  fun `should have select all and clear all buttons in platform filter`() {
+    val platformButtons = elements(className("platform-btn"))
+    expect(platformButtons.size()).toBeGreaterThan(2)
+
+    val selectAllButton = platformButtons.findBy(text("Select All"))
+    expect(selectAllButton.isDisplayed).toEqual(true)
+
+    selectAllButton.click()
+    Thread.sleep(500)
+
+    val activeButtons = elements(className("platform-btn active"))
+    val selectAllOrClearAllButtons =
+      activeButtons.filter {
+        it.text.contains("Select All") || it.text.contains("Clear All")
+      }
+    expect(selectAllOrClearAllButtons.size).toBeGreaterThan(0)
+  }
+
+  @Disabled("Platform filter UI testing needs additional setup")
+  @Test
+  fun `should maintain platform filter selection after page reload`() {
+    val platformButtons = elements(className("platform-btn"))
+    expect(platformButtons.size()).toBeGreaterThan(1)
+
+    val firstPlatformButton = platformButtons.first()
+    firstPlatformButton.click()
+    Thread.sleep(500)
+
+    val activeButtonsBefore = elements(className("platform-btn active"))
+    val activeCountBefore = activeButtonsBefore.size()
+    expect(activeCountBefore).toBeGreaterThan(0)
+
+    open(TRANSACTIONS_BASE_URL)
+    Thread.sleep(1000)
+
+    val activeButtonsAfter = elements(className("platform-btn active"))
+    expect(activeButtonsAfter.size()).toEqual(activeCountBefore)
+  }
+
   private fun id(id: String): SelenideElement = element(By.id(id))
 }

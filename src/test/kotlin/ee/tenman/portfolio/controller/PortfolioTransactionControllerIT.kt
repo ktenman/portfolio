@@ -258,6 +258,163 @@ class PortfolioTransactionControllerIT {
   }
 
   @Test
+  fun `should filter transactions by single platform`() {
+    val instrument = setupInstrument()
+
+    portfolioTransactionRepository.saveAll(
+      listOf(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.BINANCE,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("20"),
+          price = BigDecimal("200"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.TRADING212,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.SELL,
+          quantity = BigDecimal("5"),
+          price = BigDecimal("150"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.BINANCE,
+        ),
+      ),
+    )
+
+    mockMvc
+      .perform(get("/api/transactions?platforms=BINANCE").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$").isArray)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[0].platform").value("BINANCE"))
+      .andExpect(jsonPath("$[1].platform").value("BINANCE"))
+  }
+
+  @Test
+  fun `should filter transactions by multiple platforms`() {
+    val instrument = setupInstrument()
+
+    portfolioTransactionRepository.saveAll(
+      listOf(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.BINANCE,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("20"),
+          price = BigDecimal("200"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.TRADING212,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.SELL,
+          quantity = BigDecimal("30"),
+          price = BigDecimal("300"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.LIGHTYEAR,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("40"),
+          price = BigDecimal("400"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.SWEDBANK,
+        ),
+      ),
+    )
+
+    mockMvc
+      .perform(get("/api/transactions?platforms=BINANCE&platforms=TRADING212").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$").isArray)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[?(@.platform == 'BINANCE')]").exists())
+      .andExpect(jsonPath("$[?(@.platform == 'TRADING212')]").exists())
+      .andExpect(jsonPath("$[?(@.platform == 'LIGHTYEAR')]").doesNotExist())
+      .andExpect(jsonPath("$[?(@.platform == 'SWEDBANK')]").doesNotExist())
+  }
+
+  @Test
+  fun `should return empty list for invalid platform`() {
+    val instrument = setupInstrument()
+
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.now(),
+        platform = Platform.BINANCE,
+      ),
+    )
+
+    mockMvc
+      .perform(get("/api/transactions?platforms=INVALID_PLATFORM").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$").isArray)
+      .andExpect(jsonPath("$.length()").value(0))
+  }
+
+  @Test
+  fun `should return all transactions when no platform filter provided`() {
+    val instrument = setupInstrument()
+
+    val transactions =
+      portfolioTransactionRepository.saveAll(
+      listOf(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.BINANCE,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("20"),
+          price = BigDecimal("200"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.TRADING212,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.SELL,
+          quantity = BigDecimal("30"),
+          price = BigDecimal("300"),
+          transactionDate = LocalDate.now(),
+          platform = Platform.LIGHTYEAR,
+        ),
+      ),
+    )
+
+    mockMvc
+      .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$").isArray)
+      .andExpect(jsonPath("$.length()").value(transactions.size))
+  }
+
+  @Test
   fun `should delete a transaction by ID`() {
     val instrument = setupInstrument()
     val transaction =
