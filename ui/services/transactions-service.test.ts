@@ -50,7 +50,7 @@ describe('transactionsService', () => {
 
       const result = await transactionsService.getAll()
 
-      expect(httpClient.get).toHaveBeenCalledWith('/transactions')
+      expect(httpClient.get).toHaveBeenCalledWith('/transactions', { params: {} })
       expect(result).toEqual(mockTransactions)
     })
 
@@ -61,7 +61,7 @@ describe('transactionsService', () => {
 
       const result = await transactionsService.getAll()
 
-      expect(httpClient.get).toHaveBeenCalledWith('/transactions')
+      expect(httpClient.get).toHaveBeenCalledWith('/transactions', { params: {} })
       expect(result).toEqual([])
     })
 
@@ -70,6 +70,37 @@ describe('transactionsService', () => {
       vi.mocked(httpClient.get).mockRejectedValueOnce(error)
 
       await expect(transactionsService.getAll()).rejects.toThrow('Server error')
+    })
+
+    it('should fetch transactions with platform filter', async () => {
+      const mockTransactions = [
+        createTransactionDto({
+          id: 1,
+          platform: Platform.BINANCE,
+        }),
+      ]
+      vi.mocked(httpClient.get).mockResolvedValueOnce({
+        data: mockTransactions,
+      })
+
+      const result = await transactionsService.getAll(['BINANCE', 'COINBASE'])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/transactions', {
+        params: { platforms: ['BINANCE', 'COINBASE'] },
+      })
+      expect(result).toEqual(mockTransactions)
+    })
+
+    it('should handle empty platform filter as no filter', async () => {
+      const mockTransactions = [createTransactionDto({ id: 1 })]
+      vi.mocked(httpClient.get).mockResolvedValueOnce({
+        data: mockTransactions,
+      })
+
+      const result = await transactionsService.getAll([])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/transactions', { params: {} })
+      expect(result).toEqual(mockTransactions)
     })
   })
 

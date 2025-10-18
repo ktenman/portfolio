@@ -57,6 +57,7 @@ import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { InstrumentDto } from '../../models/generated/domain-models'
+import { formatPlatformName } from '../../utils/platform-utils'
 
 const selectedItem = ref<InstrumentDto | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_platforms', [])
@@ -164,21 +165,6 @@ const toggleAllPlatforms = () => {
   } else {
     selectedPlatforms.value = [...availablePlatforms.value]
   }
-}
-
-const formatPlatformName = (platform: string): string => {
-  const platformMap: Record<string, string> = {
-    TRADING212: 'Trading 212',
-    LIGHTYEAR: 'Lightyear',
-    SWEDBANK: 'Swedbank',
-    BINANCE: 'Binance',
-    COINBASE: 'Coinbase',
-    LHV: 'LHV',
-    AVIVA: 'Aviva',
-    UNKNOWN: 'Unknown',
-  }
-
-  return platformMap[platform] || platform
 }
 
 const openAddModal = () => {

@@ -48,6 +48,7 @@ class FtDataRetrievalJob(
   }
 
   @Scheduled(cron = "0 * 10-18 * * MON-FRI", zone = "Europe/Tallinn")
+//  @Scheduled(cron = "0 * * * * *")
   fun runJob() {
     if (!adaptiveSchedulingProperties.enabled) {
       log.info("Running FT data retrieval job (fixed schedule)")

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -49,9 +50,11 @@ class PortfolioTransactionController(
 
   @GetMapping
   @Loggable
-  fun getAllTransactions(): List<TransactionResponseDto> =
+  fun getAllTransactions(
+    @RequestParam(required = false) platforms: List<String>?,
+  ): List<TransactionResponseDto> =
     portfolioTransactionService
-      .getAllTransactions()
+      .getAllTransactions(platforms)
       .map { TransactionResponseDto.fromEntity(it) }
 
   @GetMapping("/{id}")

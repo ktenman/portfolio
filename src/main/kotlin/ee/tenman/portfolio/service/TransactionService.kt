@@ -86,6 +86,30 @@ class TransactionService(
   @Cacheable(value = [TRANSACTION_CACHE], key = "'transactions'", unless = "#result.isEmpty()")
   fun getAllTransactions(): List<PortfolioTransaction> = portfolioTransactionRepository.findAllWithInstruments()
 
+  @Transactional(readOnly = true)
+  fun getAllTransactions(platforms: List<String>?): List<PortfolioTransaction> {
+    if (platforms.isNullOrEmpty()) {
+      return portfolioTransactionRepository.findAllWithInstruments()
+    }
+
+    val platformEnums =
+      platforms.mapNotNull { platformName ->
+        try {
+          ee.tenman.portfolio.domain.Platform
+            .valueOf(platformName)
+        } catch (e: IllegalArgumentException) {
+          log.warn("Invalid platform name: $platformName")
+          null
+        }
+      }
+
+    if (platformEnums.isEmpty()) {
+      return emptyList()
+    }
+
+    return portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
+  }
+
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   @Retryable(
     value = [ObjectOptimisticLockingFailureException::class],
