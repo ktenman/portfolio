@@ -5,7 +5,12 @@ import type {
 } from '../models/generated/domain-models'
 
 export const transactionsService = {
-  getAll: () => httpClient.get<TransactionResponseDto[]>('/transactions').then(res => res.data),
+  getAll: (platforms?: string[]) => {
+    const params = platforms && platforms.length > 0 ? { platforms } : {}
+    return httpClient
+      .get<TransactionResponseDto[]>('/transactions', { params })
+      .then(res => res.data)
+  },
 
   create: (data: Partial<TransactionRequestDto>) =>
     httpClient.post<TransactionResponseDto>('/transactions', data).then(res => res.data),

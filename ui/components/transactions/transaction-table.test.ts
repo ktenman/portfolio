@@ -2,22 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import TransactionTable from './transaction-table.vue'
 import { TransactionType, Platform } from '../../models/generated/domain-models'
-import { createTransactionDto, createInstrumentDto } from '../../tests/fixtures'
+import { createTransactionDto } from '../../tests/fixtures'
 
 describe('TransactionTable', () => {
-  const mockInstruments = [
-    createInstrumentDto({
-      id: 1,
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-    }),
-    createInstrumentDto({
-      id: 2,
-      symbol: 'GOOGL',
-      name: 'Alphabet Inc.',
-    }),
-  ]
-
   describe('transaction sorting', () => {
     it('should sort transactions by transaction date descending then by ID descending', () => {
       const transactions = [
@@ -56,7 +43,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions,
-          instruments: mockInstruments,
         },
       })
 
@@ -109,7 +95,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions,
-          instruments: mockInstruments,
         },
       })
 
@@ -170,7 +155,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions,
-          instruments: mockInstruments,
         },
       })
 
@@ -194,6 +178,7 @@ describe('TransactionTable', () => {
           id: 1,
           instrumentId: 1,
           symbol: 'AAPL',
+          name: 'Apple Inc.',
           transactionDate: '2024-07-01',
           transactionType: TransactionType.BUY,
           quantity: 10,
@@ -204,6 +189,7 @@ describe('TransactionTable', () => {
           id: 2,
           instrumentId: 2,
           symbol: 'GOOGL',
+          name: 'Alphabet Inc.',
           transactionDate: '2024-07-02',
           transactionType: TransactionType.BUY,
           quantity: 5,
@@ -215,7 +201,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions,
-          instruments: mockInstruments,
         },
       })
 
@@ -230,7 +215,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions: [],
-          instruments: mockInstruments,
         },
       })
 
@@ -267,7 +251,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions,
-          instruments: mockInstruments,
         },
       })
 
@@ -298,7 +281,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions,
-          instruments: mockInstruments,
           isLoading: true,
         },
       })
@@ -318,6 +300,7 @@ describe('TransactionTable', () => {
           id: 1,
           instrumentId: 999,
           symbol: 'UNKNOWN',
+          name: 'Unknown',
           transactionDate: '2024-07-01',
           transactionType: TransactionType.BUY,
           quantity: 10,
@@ -329,7 +312,6 @@ describe('TransactionTable', () => {
       const wrapper = mount(TransactionTable, {
         props: {
           transactions,
-          instruments: mockInstruments,
         },
       })
 

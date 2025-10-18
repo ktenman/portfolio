@@ -39,6 +39,7 @@ export interface TransactionResponseDto {
     id: number | null;
     instrumentId: number;
     symbol: string;
+    name: string;
     transactionType: TransactionType;
     quantity: number;
     price: number;

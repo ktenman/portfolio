@@ -32,6 +32,7 @@ export const createTransactionDto = (
   id: 1,
   instrumentId: 1,
   symbol: 'TEST',
+  name: 'Test Instrument',
   transactionType: TransactionType.BUY,
   quantity: 10,
   price: 100,

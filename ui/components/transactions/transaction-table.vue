@@ -103,7 +103,6 @@
 import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
 import { TransactionResponseDto } from '../../models/generated/domain-models'
-import { InstrumentDto } from '../../models/generated/domain-models'
 import { transactionColumns } from '../../config'
 import {
   formatProfitLoss,
@@ -116,13 +115,11 @@ import {
 
 interface Props {
   transactions: TransactionResponseDto[]
-  instruments: InstrumentDto[]
   isLoading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
-  instruments: () => [],
 })
 
 defineEmits<{
@@ -132,24 +129,12 @@ defineEmits<{
 
 const columns = transactionColumns
 
-const instrumentMap = computed(() => {
-  if (!props.instruments?.length) return new Map<number, InstrumentDto>()
-
-  return new Map(props.instruments.map(instrument => [instrument.id!, instrument]))
-})
-
 const enrichedTransactions = computed(() => {
-  const instMap = instrumentMap.value
-
   return props.transactions
-    .map(transaction => {
-      const instrument = instMap.get(transaction.instrumentId)
-
-      return {
-        ...transaction,
-        instrumentName: instrument?.name || 'Unknown',
-      }
-    })
+    .map(transaction => ({
+      ...transaction,
+      instrumentName: transaction.name,
+    }))
     .sort((a, b) => {
       const dateA = new Date(a.transactionDate).getTime()
       const dateB = new Date(b.transactionDate).getTime()

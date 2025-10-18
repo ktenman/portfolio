@@ -7,7 +7,7 @@ import {
 } from '../utils/formatters'
 
 export const instrumentColumns: ColumnDefinition[] = [
-  { key: 'instrument', label: 'InstrumentDto' },
+  { key: 'instrument', label: 'Instrument' },
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
   { key: 'currentValue', label: 'Value', formatter: formatCurrency },
@@ -24,7 +24,7 @@ export const instrumentColumns: ColumnDefinition[] = [
 
 export const transactionColumns: ColumnDefinition[] = [
   { key: 'transactionDate', label: 'Date', formatter: formatDate },
-  { key: 'instrumentId', label: 'InstrumentDto' },
+  { key: 'instrumentId', label: 'Instrument' },
   { key: 'quantityInfo', label: 'Quantity' },
   { key: 'price', label: 'Price', formatter: formatCurrency },
   { key: 'amount', label: 'Amount' },
