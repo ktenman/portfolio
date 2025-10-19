@@ -15,6 +15,7 @@ import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @Service
 class InstrumentService(
@@ -165,14 +166,17 @@ class InstrumentService(
   fun deleteInstrument(id: Long) = instrumentRepository.deleteById(id)
 
   @Transactional(readOnly = true)
+  fun getAllInstrumentsWithoutFiltering(): List<Instrument> = instrumentRepository.findAll()
+
+  @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
   fun getAllInstruments(): List<Instrument> = getAllInstruments(null)
 
   @Transactional(readOnly = true)
   fun getAllInstruments(platforms: List<String>?): List<Instrument> {
-    val instruments = instrumentRepository.findAll()
+    val instruments = getAllInstrumentsWithoutFiltering()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
-    val calculationDate = java.time.LocalDate.now(clock)
+    val calculationDate = LocalDate.now(clock)
     val targetPlatforms = parsePlatformFilters(platforms)
 
     return instruments.mapNotNull { instrument ->
@@ -194,7 +198,7 @@ class InstrumentService(
     instrument: Instrument,
     transactionsByInstrument: Map<Long, List<PortfolioTransaction>>,
     targetPlatforms: Set<Platform>?,
-    calculationDate: java.time.LocalDate,
+    calculationDate: LocalDate,
   ): Instrument? {
     val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
     val filteredTransactions = filterTransactionsByPlatforms(allTransactions, targetPlatforms)
@@ -221,7 +225,7 @@ class InstrumentService(
   private fun applyInstrumentMetrics(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
-    calculationDate: java.time.LocalDate,
+    calculationDate: LocalDate,
   ): Instrument? {
     val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, calculationDate)
 
