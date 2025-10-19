@@ -19,10 +19,21 @@
           <p>{{ message }}</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="cancel">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            @click="cancel"
+            data-testid="confirmDialogCancelButton"
+          >
             {{ cancelText }}
           </button>
-          <button type="button" class="btn" :class="confirmClass" @click="confirm">
+          <button
+            type="button"
+            class="btn"
+            :class="confirmClass"
+            @click="confirm"
+            data-testid="confirmDialogConfirmButton"
+          >
             {{ confirmText }}
           </button>
         </div>

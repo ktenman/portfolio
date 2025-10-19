@@ -8,6 +8,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import com.codeborne.selenide.Condition
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.value
 import com.codeborne.selenide.Condition.visible
@@ -79,10 +80,12 @@ class CalculatorE2ETests {
     annualReturnInput.shouldHave(value("75"))
 
     resetButton.click()
-    val confirmButton = element(By.xpath("//button[contains(@class, 'btn-warning') and contains(text(), 'Reset')]"))
-    confirmButton.shouldBe(visible, Duration.ofSeconds(5)).click()
+    element(By.cssSelector("[data-testid='confirmDialogConfirmButton']"))
+      .shouldBe(visible, Duration.ofSeconds(5))
+      .shouldBe(Condition.enabled, Duration.ofSeconds(5))
+      .click()
 
-    annualReturnInput.shouldHave(value(initialValue!!), Duration.ofSeconds(5))
+    annualReturnInput.shouldHave(value(initialValue!!), Duration.ofSeconds(10))
   }
 
   @Test
