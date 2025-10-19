@@ -30,14 +30,27 @@ class BinanceDataRetrievalJob(
     log.info("Starting Binance data retrieval job")
     val instruments = instrumentService.getAllInstruments().filter { it.providerName == ProviderName.BINANCE }
 
+    if (instruments.isEmpty()) {
+      log.info("No Binance instruments found to process")
+      return
+    }
+
     instruments.forEach { instrument ->
-      log.info("Retrieving data for instrument: ${instrument.symbol}")
-      val dailyData = binanceService.getDailyPrices(instrument.symbol)
-      dataProcessingUtil.processDailyData(
-        instrument = instrument,
-        dailyData = dailyData,
-        providerName = ProviderName.BINANCE,
-      )
+      try {
+        log.info("Retrieving data for instrument: ${instrument.symbol} (async yearly chunks)")
+        val dailyData = binanceService.getDailyPricesAsync(instrument.symbol)
+        if (dailyData.isNotEmpty()) {
+          dataProcessingUtil.processDailyData(
+            instrument = instrument,
+            dailyData = dailyData,
+            providerName = ProviderName.BINANCE,
+          )
+        } else {
+          log.warn("No daily data found for instrument: ${instrument.symbol}")
+        }
+      } catch (e: Exception) {
+        log.error("Error retrieving data for instrument ${instrument.symbol}", e)
+      }
     }
 
     log.info("Completed Binance data retrieval job. Processed ${instruments.size} instruments.")
