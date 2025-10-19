@@ -113,7 +113,7 @@ class DailyPortfolioXirrJobIT {
     expect(minSummary.entryDate.toString()).toEqual("2024-07-01")
     expect(minSummary.totalValue.compareTo(BigDecimal("100.4556472150"))).toEqual(0)
     expect(minSummary.xirrAnnualReturn.compareTo(BigDecimal("0E-10"))).toEqual(0)
-    expect(minSummary.totalProfit.compareTo(BigDecimal("0.4556472007"))).toEqual(0)
+    expect(minSummary.totalProfit.compareTo(BigDecimal("1.8398453307"))).toEqual(0)
     expect(minSummary.earningsPerDay.compareTo(BigDecimal("0E-10"))).toEqual(0)
   }
 }

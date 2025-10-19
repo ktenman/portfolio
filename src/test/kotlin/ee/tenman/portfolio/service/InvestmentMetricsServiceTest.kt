@@ -51,6 +51,14 @@ class InvestmentMetricsServiceTest {
       id = 1L
     }
     investmentMetricsService = InvestmentMetricsService(dailyPriceService, transactionService)
+
+    every { transactionService.calculateTransactionProfits(any()) } answers {
+      val transactions = firstArg<List<PortfolioTransaction>>()
+      transactions.forEach {
+        it.unrealizedProfit = BigDecimal.ZERO
+        it.realizedProfit = BigDecimal.ZERO
+      }
+    }
   }
 
   @Test

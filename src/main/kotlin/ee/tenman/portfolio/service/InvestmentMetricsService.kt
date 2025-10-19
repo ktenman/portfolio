@@ -207,6 +207,9 @@ class InvestmentMetricsService(
   ): PortfolioMetrics {
     val metrics = PortfolioMetrics()
 
+    val allTransactions = instrumentGroups.values.flatten()
+    transactionService.calculateTransactionProfits(allTransactions)
+
     instrumentGroups.forEach { (instrument, instrumentTransactions) ->
       try {
         processInstrumentWithUnifiedCalculation(instrument, instrumentTransactions, date, metrics)
@@ -233,9 +236,10 @@ class InvestmentMetricsService(
 
     val price = dailyPriceService.getPrice(instrument, date)
     val currentValue = currentHoldings.multiply(price)
-    val instrumentProfit = calculateProfit(currentHoldings, averageCost, price)
 
-    updateMetrics(metrics, currentValue, instrumentProfit)
+    val unrealizedProfit = transactions.sumOf { it.unrealizedProfit }
+
+    updateMetrics(metrics, currentValue, unrealizedProfit)
     addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
   }
 
