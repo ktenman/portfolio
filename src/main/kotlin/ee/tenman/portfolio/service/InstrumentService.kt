@@ -30,11 +30,11 @@ class InstrumentService(
   fun getInstrumentById(id: Long): Instrument =
     instrumentRepository
       .findById(
-      id,
-    ).orElseThrow {
-      ee.tenman.portfolio.exception
-      .EntityNotFoundException("Instrument not found with id: $id")
-    }
+        id,
+      ).orElseThrow {
+        ee.tenman.portfolio.exception
+          .EntityNotFoundException("Instrument not found with id: $id")
+      }
 
   @Transactional
   @Caching(
@@ -43,13 +43,18 @@ class InstrumentService(
         value = [INSTRUMENT_CACHE],
         key = "#instrument.id",
         condition = "#instrument.id != null",
-      ), CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"), CacheEvict(
+      ),
+      CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"),
+      CacheEvict(
         value = [INSTRUMENT_CACHE],
         key = "'allInstruments'",
-      ), CacheEvict(value = [SUMMARY_CACHE], allEntries = true), CacheEvict(
+      ),
+      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
+      CacheEvict(
         value = [TRANSACTION_CACHE],
         allEntries = true,
-      ), CacheEvict(value = [ONE_DAY_CACHE], allEntries = true),
+      ),
+      CacheEvict(value = [ONE_DAY_CACHE], allEntries = true),
     ],
   )
   fun saveInstrument(instrument: Instrument): Instrument {
@@ -88,6 +93,7 @@ class InstrumentService(
           totalCost = totalCost.add(cost)
           currentQuantity = currentQuantity.add(transaction.quantity)
         }
+
         ee.tenman.portfolio.domain.TransactionType.SELL -> {
           val averageCost =
             if (currentQuantity > BigDecimal.ZERO) {
@@ -127,7 +133,8 @@ class InstrumentService(
         BigDecimal.ZERO
       }
 
-    val buyTransactions = sortedTransactions.filter { it.transactionType == ee.tenman.portfolio.domain.TransactionType.BUY }
+    val buyTransactions =
+      sortedTransactions.filter { it.transactionType == ee.tenman.portfolio.domain.TransactionType.BUY }
 
     if (currentQuantity <= BigDecimal.ZERO) {
       buyTransactions.forEach {
@@ -157,7 +164,8 @@ class InstrumentService(
   @Transactional
   @Caching(
     evict = [
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "#id"), CacheEvict(
+      CacheEvict(value = [INSTRUMENT_CACHE], key = "#id"),
+      CacheEvict(
         value = [INSTRUMENT_CACHE],
         key = "'allInstruments'",
       ),
@@ -174,7 +182,7 @@ class InstrumentService(
 
   @Transactional(readOnly = true)
   fun getAllInstruments(platforms: List<String>?): List<Instrument> {
-    val instruments = getAllInstrumentsWithoutFiltering()
+    val instruments = getAllInstrumentsWithoutFiltering().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val calculationDate = LocalDate.now(clock)
     val targetPlatforms = parsePlatformFilters(platforms)
@@ -187,12 +195,12 @@ class InstrumentService(
   private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? =
     platforms
       ?.mapNotNull { platformStr ->
-      try {
-        Platform.valueOf(platformStr.uppercase())
-      } catch (e: IllegalArgumentException) {
-        null
-      }
-    }?.toSet()
+        try {
+          Platform.valueOf(platformStr.uppercase())
+        } catch (e: IllegalArgumentException) {
+          null
+        }
+      }?.toSet()
 
   private fun enrichInstrumentWithMetrics(
     instrument: Instrument,
@@ -227,7 +235,8 @@ class InstrumentService(
     transactions: List<PortfolioTransaction>,
     calculationDate: LocalDate,
   ): Instrument? {
-    val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, calculationDate)
+    val metrics =
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, calculationDate)
 
     instrument.totalInvestment = metrics.totalInvestment
     instrument.currentValue = metrics.currentValue
