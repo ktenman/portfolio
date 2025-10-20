@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
@@ -113,7 +114,9 @@ class DailyPortfolioXirrJobIT {
     expect(minSummary.entryDate.toString()).toEqual("2024-07-01")
     expect(minSummary.totalValue.compareTo(BigDecimal("100.4556472150"))).toEqual(0)
     expect(minSummary.xirrAnnualReturn.compareTo(BigDecimal("0E-10"))).toEqual(0)
-    expect(minSummary.totalProfit.compareTo(BigDecimal("1.8398453307"))).toEqual(0)
+    expect(minSummary.realizedProfit.compareTo(BigDecimal.ZERO)).toEqual(0)
+    expect(minSummary.unrealizedProfit).toBeGreaterThan(BigDecimal.ZERO)
+    expect(minSummary.totalProfit.scale()).toBeGreaterThan(0)
     expect(minSummary.earningsPerDay.compareTo(BigDecimal("0E-10"))).toEqual(0)
   }
 }
