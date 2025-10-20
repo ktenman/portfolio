@@ -11,7 +11,7 @@
     "lint": "eslint ui --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
     "format:check": "vue-tsc --noEmit && prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\"",
-    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\" && knip && ./gradlew ktlintFormat detekt",
+    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\" && knip && GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew ktlintFormat detekt",
     "ktlint": "./gradlew ktlintCheck",
     "ktlint:fix": "./gradlew ktlintFormat",
     "detekt": "./gradlew detekt",
@@ -32,7 +32,7 @@
       "prettier --write"
     ],
     "**/*.{kt,kts}": [
-      "./gradlew ktlintFormat detekt"
+      "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew ktlintFormat detekt"
     ]
   },
   "dependencies": {
