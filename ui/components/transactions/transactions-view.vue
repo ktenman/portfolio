@@ -3,7 +3,7 @@
     add-button-id="addNewTransaction"
     add-button-text="New Transaction"
     title="Transactions"
-    :show-add-button="true"
+    :show-add-button="false"
     @add="openAddModal"
   >
     <template #subtitle>
@@ -81,29 +81,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import { useToast } from '../../composables/use-toast'
-import { useLocalStorage } from '@vueuse/core'
-import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
-import { useConfirm } from '../../composables/use-confirm'
+import {ref, computed, watch} from 'vue'
+import {useQuery, useMutation, useQueryClient} from '@tanstack/vue-query'
+import {useToast} from '../../composables/use-toast'
+import {useLocalStorage} from '@vueuse/core'
+import {useBootstrapModal} from '../../composables/use-bootstrap-modal'
+import {useConfirm} from '../../composables/use-confirm'
 import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
 import TransactionModal from './transaction-modal.vue'
-import { instrumentsService } from '../../services/instruments-service'
-import { transactionsService } from '../../services/transactions-service'
-import { TransactionResponseDto } from '../../models/generated/domain-models'
-import { formatCurrency } from '../../utils/formatters'
-import { formatPlatformName } from '../../utils/platform-utils'
+import {instrumentsService} from '../../services/instruments-service'
+import {transactionsService} from '../../services/transactions-service'
+import {TransactionResponseDto} from '../../models/generated/domain-models'
+import {formatCurrency} from '../../utils/formatters'
+import {formatPlatformName} from '../../utils/platform-utils'
 
 const selectedItem = ref<TransactionResponseDto | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_transaction_platforms', [])
-const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
-const { confirm } = useConfirm()
+const {show: showModal, hide: hideModal} = useBootstrapModal('transactionModal')
+const {confirm} = useConfirm()
 const queryClient = useQueryClient()
 const toast = useToast()
 
-const { data: allTransactions } = useQuery({
+const {data: allTransactions} = useQuery({
   queryKey: ['transactions-all'],
   queryFn: () => transactionsService.getAll(),
 })
@@ -135,10 +135,10 @@ watch(
       }
     }
   },
-  { immediate: true }
+  {immediate: true}
 )
 
-const { data: transactions, isLoading } = useQuery({
+const {data: transactions, isLoading} = useQuery({
   queryKey: computed(() => ['transactions', selectedPlatforms.value]),
   queryFn: () => {
     if (
@@ -151,7 +151,7 @@ const { data: transactions, isLoading } = useQuery({
   },
 })
 
-const { data: instruments } = useQuery({
+const {data: instruments} = useQuery({
   queryKey: ['instruments'],
   queryFn: () => instrumentsService.getAll(),
 })
@@ -199,7 +199,7 @@ const saveMutation = useMutation({
     return transactionsService.create(data)
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    queryClient.invalidateQueries({queryKey: ['transactions']})
     toast.success(`Transaction ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
     hideModal()
     selectedItem.value = null
@@ -212,7 +212,7 @@ const saveMutation = useMutation({
 const deleteMutation = useMutation({
   mutationFn: transactionsService.delete,
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    queryClient.invalidateQueries({queryKey: ['transactions']})
     toast.success('Transaction deleted successfully')
   },
   onError: (error: Error) => {
@@ -228,7 +228,7 @@ const openAddModal = () => {
 }
 
 const openEditModal = (transaction: TransactionResponseDto) => {
-  selectedItem.value = { ...transaction }
+  selectedItem.value = {...transaction}
   showModal()
 }
 

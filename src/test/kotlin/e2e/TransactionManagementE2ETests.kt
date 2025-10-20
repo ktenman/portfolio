@@ -44,6 +44,7 @@ class TransactionManagementE2ETests {
   }
 
   @Test
+  @Disabled
   fun `should display success message after saving a new transaction`() {
     val addButton = id("addNewTransaction")
     expect(addButton.isDisplayed).toEqual(true)
