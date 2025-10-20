@@ -43,7 +43,6 @@ class TransactionManagementE2ETests {
     clearBrowserLocalStorage()
   }
 
-  @Disabled("Disabled due to hidden UI elements - Add New Transaction button")
   @Test
   fun `should display success message after saving a new transaction`() {
     val addButton = id("addNewTransaction")
@@ -98,7 +97,6 @@ class TransactionManagementE2ETests {
     expect(cellTexts.any { it.contains("29.6") }).toEqual(true)
   }
 
-  @Disabled("Disabled due to hidden UI elements - Edit button")
   @Test
   fun `should display success message after editing an existing transaction`() {
     id("addNewTransaction").click()
@@ -173,7 +171,6 @@ class TransactionManagementE2ETests {
     expect(actionsCell.text().lowercase()).toContain("delete")
   }
 
-  @Disabled("Disabled due to hidden UI elements - Delete button")
   @Test
   fun `should display success message after deleting a transaction`() {
     id("addNewTransaction").click()

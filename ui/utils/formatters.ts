@@ -116,14 +116,12 @@ export const formatTransactionAmount = (
   quantity: number,
   price: number,
   type: string,
-  commission?: number,
+  _commission?: number,
   currency?: string
 ): string => {
-  const baseAmount = quantity * price
-  const commissionValue = commission || 0
-  const totalAmount = type === 'BUY' ? baseAmount + commissionValue : baseAmount - commissionValue
+  const amount = quantity * price
 
-  const formattedAmount = totalAmount.toLocaleString('en-US', {
+  const formattedAmount = amount.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })

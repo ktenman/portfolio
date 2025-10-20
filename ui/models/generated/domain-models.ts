@@ -57,6 +57,8 @@ export interface PortfolioSummaryDto {
     date: DateAsString;
     totalValue: number;
     xirrAnnualReturn: number;
+    realizedProfit: number;
+    unrealizedProfit: number;
     totalProfit: number;
     earningsPerDay: number;
     earningsPerMonth: number;

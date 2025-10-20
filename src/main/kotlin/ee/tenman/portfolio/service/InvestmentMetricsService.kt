@@ -49,6 +49,8 @@ class InvestmentMetricsService(
 
   data class PortfolioMetrics(
     var totalValue: BigDecimal = BigDecimal.ZERO,
+    var realizedProfit: BigDecimal = BigDecimal.ZERO,
+    var unrealizedProfit: BigDecimal = BigDecimal.ZERO,
     var totalProfit: BigDecimal = BigDecimal.ZERO,
     val xirrTransactions: MutableList<Transaction> = mutableListOf(),
   )
@@ -232,15 +234,29 @@ class InvestmentMetricsService(
     val currentHoldings = holdingsResult.first
     val averageCost = holdingsResult.second
 
-    if (currentHoldings <= BigDecimal.ZERO) return
+    val realizedProfit =
+      transactions
+      .filter { it.transactionType == TransactionType.SELL }
+      .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
+    val unrealizedProfit =
+      if (currentHoldings > BigDecimal.ZERO) {
+      transactions.sumOf { it.unrealizedProfit }
+    } else {
+      BigDecimal.ZERO
+    }
 
-    val price = dailyPriceService.getPrice(instrument, date)
-    val currentValue = currentHoldings.multiply(price)
+    val currentValue =
+      if (currentHoldings > BigDecimal.ZERO) {
+      val price = dailyPriceService.getPrice(instrument, date)
+      currentHoldings.multiply(price)
+    } else {
+      BigDecimal.ZERO
+    }
 
-    val unrealizedProfit = transactions.sumOf { it.unrealizedProfit }
-
-    updateMetrics(metrics, currentValue, unrealizedProfit)
-    addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
+    if (currentValue > BigDecimal.ZERO || realizedProfit > BigDecimal.ZERO) {
+      updateMetricsWithSeparateProfits(metrics, currentValue, realizedProfit, unrealizedProfit)
+      addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
+    }
   }
 
   private fun processInstrumentWithFallback(
@@ -250,17 +266,25 @@ class InvestmentMetricsService(
     metrics: PortfolioMetrics,
   ) {
     val netQuantity = calculateNetQuantity(transactions)
-    if (netQuantity <= BigDecimal.ZERO) return
 
-    try {
-      val price = dailyPriceService.getPrice(instrument, date)
-      val currentValue = netQuantity.multiply(price)
-      val instrumentProfit = calculateFallbackProfit(transactions, currentValue)
+    val currentValue =
+      if (netQuantity > BigDecimal.ZERO) {
+      try {
+        val price = dailyPriceService.getPrice(instrument, date)
+        netQuantity.multiply(price)
+      } catch (e: NoSuchElementException) {
+        log.warn("Skipping ${instrument.symbol} on $date: ${e.message}")
+        return
+      }
+    } else {
+      BigDecimal.ZERO
+    }
 
-      updateMetrics(metrics, currentValue, instrumentProfit)
+    val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, currentValue)
+
+    if (currentValue > BigDecimal.ZERO || realizedProfit > BigDecimal.ZERO) {
+      updateMetricsWithSeparateProfits(metrics, currentValue, realizedProfit, unrealizedProfit)
       addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
-    } catch (e: NoSuchElementException) {
-      log.warn("Skipping ${instrument.symbol} on $date: ${e.message}")
     }
   }
 
@@ -272,15 +296,15 @@ class InvestmentMetricsService(
       }
     }
 
-  private fun calculateFallbackProfit(
+  private fun calculateFallbackProfits(
     transactions: List<PortfolioTransaction>,
     currentValue: BigDecimal,
-  ): BigDecimal {
+  ): Pair<BigDecimal, BigDecimal> {
     val totalBuys = calculateTotalBuys(transactions)
     val totalSells = calculateTotalSells(transactions)
     val realizedGains = calculateRealizedGains(transactions, totalBuys, totalSells)
     val unrealizedGains = calculateUnrealizedGains(transactions, currentValue, totalBuys)
-    return realizedGains.add(unrealizedGains)
+    return Pair(realizedGains, unrealizedGains)
   }
 
   private fun calculateTotalBuys(transactions: List<PortfolioTransaction>): BigDecimal =
@@ -343,13 +367,16 @@ class InvestmentMetricsService(
       .sumOf { avgBuyPrice.multiply(it.quantity) }
   }
 
-  private fun updateMetrics(
+  private fun updateMetricsWithSeparateProfits(
     metrics: PortfolioMetrics,
     value: BigDecimal,
-    profit: BigDecimal,
+    realizedProfit: BigDecimal,
+    unrealizedProfit: BigDecimal,
   ) {
     metrics.totalValue = metrics.totalValue.add(value)
-    metrics.totalProfit = metrics.totalProfit.add(profit)
+    metrics.realizedProfit = metrics.realizedProfit.add(realizedProfit)
+    metrics.unrealizedProfit = metrics.unrealizedProfit.add(unrealizedProfit)
+    metrics.totalProfit = metrics.totalProfit.add(realizedProfit).add(unrealizedProfit)
   }
 
   private fun addXirrTransactions(

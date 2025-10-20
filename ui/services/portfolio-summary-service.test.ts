@@ -19,6 +19,8 @@ describe('portfolioSummaryService', () => {
   const mockPortfolioSummary: PortfolioSummaryDto = {
     date: '2023-12-31',
     totalValue: 50000,
+    realizedProfit: 0,
+    unrealizedProfit: 5000,
     totalProfit: 5000,
     xirrAnnualReturn: 0.12,
     earningsPerDay: 100,

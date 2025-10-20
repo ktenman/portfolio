@@ -53,6 +53,8 @@ export const createPortfolioSummaryDto = (
   date: '2023-01-01',
   totalValue: 10000,
   xirrAnnualReturn: 0.1,
+  realizedProfit: 0,
+  unrealizedProfit: 1000,
   totalProfit: 1000,
   earningsPerDay: 10,
   earningsPerMonth: 300,

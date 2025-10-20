@@ -35,6 +35,7 @@ const getDefaultFormValues = (): CalculatorForm => ({
 export function useCalculator() {
   const form = useLocalStorage<CalculatorForm>('calculator-form', getDefaultFormValues())
   const hasUserModifiedAnnualReturn = ref(false)
+  const initialAnnualReturnRate = ref<number | null>(null)
 
   const yearSummary = ref<YearSummary[]>([])
   const portfolioData = ref<number[]>([])
@@ -117,6 +118,9 @@ export function useCalculator() {
 
   watch(calculationResult, () => {
     if (calculationResult.value) {
+      if (initialAnnualReturnRate.value === null) {
+        initialAnnualReturnRate.value = calculationResult.value.median
+      }
       if (form.value.initialWorth === 0) {
         form.value.initialWorth = calculationResult.value.total
       }
@@ -141,7 +145,7 @@ export function useCalculator() {
         initialWorth: freshData?.total || 0,
         monthlyInvestment: 585,
         yearlyGrowthRate: 5,
-        annualReturnRate: freshData?.median || 7,
+        annualReturnRate: initialAnnualReturnRate.value || freshData?.median || 7,
         years: 30,
         taxRate: 22,
       })

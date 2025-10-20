@@ -216,6 +216,8 @@ class SummaryServiceTest {
           LocalDate.of(2024, 7, 1),
           BigDecimal("100"),
           BigDecimal("0.05"),
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
           BigDecimal("10"),
           BigDecimal("0.01"),
         ),
@@ -223,6 +225,8 @@ class SummaryServiceTest {
           LocalDate.of(2024, 7, 2),
           BigDecimal("110"),
           BigDecimal("0.06"),
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
           BigDecimal("20"),
           BigDecimal("0.02"),
         ),
@@ -243,6 +247,8 @@ class SummaryServiceTest {
           LocalDate.of(2024, 7, 2),
           BigDecimal("110"),
           BigDecimal("0.06"),
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
           BigDecimal("20"),
           BigDecimal("0.02"),
         ),
@@ -250,6 +256,8 @@ class SummaryServiceTest {
           LocalDate.of(2024, 7, 1),
           BigDecimal("100"),
           BigDecimal("0.05"),
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
           BigDecimal("10"),
           BigDecimal("0.01"),
         ),
@@ -325,12 +333,36 @@ class SummaryServiceTest {
   fun `should saveDailySummaries should update existing summaries and add new ones`() {
     val existingDate = LocalDate.of(2024, 7, 1)
     val existing =
-      PortfolioDailySummary(existingDate, BigDecimal("100"), BigDecimal("0.05"), BigDecimal("10"), BigDecimal("0.01"))
+      PortfolioDailySummary(
+        existingDate,
+        BigDecimal("100"),
+        BigDecimal("0.05"),
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        BigDecimal("10"),
+        BigDecimal("0.01"),
+      )
     val updatedSummary =
-      PortfolioDailySummary(existingDate, BigDecimal("200"), BigDecimal("0.06"), BigDecimal("20"), BigDecimal("0.02"))
+      PortfolioDailySummary(
+        existingDate,
+        BigDecimal("200"),
+        BigDecimal("0.06"),
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        BigDecimal("20"),
+        BigDecimal("0.02"),
+      )
     val newDate = LocalDate.of(2024, 7, 2)
     val newSummary =
-      PortfolioDailySummary(newDate, BigDecimal("300"), BigDecimal("0.07"), BigDecimal("30"), BigDecimal("0.03"))
+      PortfolioDailySummary(
+        newDate,
+        BigDecimal("300"),
+        BigDecimal("0.07"),
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        BigDecimal("30"),
+        BigDecimal("0.03"),
+      )
 
     every { portfolioDailySummaryRepository.findAllByEntryDateIn(listOf(existingDate, newDate)) } returns listOf(existing)
     every { portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()) } answers { firstArg() }
@@ -360,6 +392,8 @@ class SummaryServiceTest {
           LocalDate.of(2024, 7, 2),
           BigDecimal("110"),
           BigDecimal("0.06"),
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
           BigDecimal("20"),
           BigDecimal("0.02"),
         ),
@@ -367,6 +401,8 @@ class SummaryServiceTest {
           LocalDate.of(2024, 7, 3),
           BigDecimal("120"),
           BigDecimal("0.07"),
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
           BigDecimal("30"),
           BigDecimal("0.03"),
         ),
