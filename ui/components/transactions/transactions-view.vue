@@ -3,7 +3,7 @@
     add-button-id="addNewTransaction"
     add-button-text="New Transaction"
     title="Transactions"
-    :show-add-button="false"
+    :show-add-button="true"
     @add="openAddModal"
   >
     <template #subtitle>

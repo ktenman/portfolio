@@ -76,7 +76,7 @@
       </span>
     </template>
 
-    <!-- <template #actions="{ item }">
+    <template #actions="{ item }">
       <div class="action-buttons">
         <button
           class="btn btn-sm btn-ghost btn-secondary btn-table-action"
@@ -95,7 +95,7 @@
           <span class="ms-1 d-inline d-lg-none">Delete</span>
         </button>
       </div>
-    </template> -->
+    </template>
   </data-table>
 </template>
 

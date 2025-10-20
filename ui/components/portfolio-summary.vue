@@ -118,6 +118,7 @@ const summaryColumns: ColumnDefinition[] = [
     class: 'd-none d-sm-table-cell',
   },
   { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrencyWithSymbol },
+  { key: 'unrealizedProfit', label: 'Unrealized Profit', formatter: formatCurrencyWithSymbol },
   { key: 'totalProfit', label: 'Total Profit', formatter: formatCurrencyWithSymbol },
   { key: 'totalValue', label: 'Total Value', formatter: formatCurrencyWithSymbol },
 ]
