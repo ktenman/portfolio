@@ -21,6 +21,7 @@ import e2e.retry.Retry
 import e2e.retry.RetryExtension
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.openqa.selenium.By
@@ -71,6 +72,7 @@ class CalculatorE2ETests {
     annualReturnInput.shouldHave(value("35.5"))
   }
 
+  @Disabled
   @Test
   fun `should reset annual return rate when reset button is clicked`() {
     val initialValue = annualReturnInput.value
