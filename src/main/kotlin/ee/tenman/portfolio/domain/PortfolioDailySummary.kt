@@ -15,6 +15,10 @@ class PortfolioDailySummary(
   var totalValue: BigDecimal,
   @Column(name = "xirr_annual_return", nullable = false)
   var xirrAnnualReturn: BigDecimal,
+  @Column(name = "realized_profit", nullable = false)
+  var realizedProfit: BigDecimal = BigDecimal.ZERO,
+  @Column(name = "unrealized_profit", nullable = false)
+  var unrealizedProfit: BigDecimal = BigDecimal.ZERO,
   @Column(name = "total_profit", nullable = false)
   var totalProfit: BigDecimal,
   @Column(name = "earnings_per_day", nullable = false)

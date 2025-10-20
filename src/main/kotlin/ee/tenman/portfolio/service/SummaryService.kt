@@ -131,6 +131,8 @@ class SummaryService(
       existing?.apply {
       totalValue = summary.totalValue
       xirrAnnualReturn = summary.xirrAnnualReturn
+      realizedProfit = summary.realizedProfit
+      unrealizedProfit = summary.unrealizedProfit
       totalProfit = summary.totalProfit
       earningsPerDay = summary.earningsPerDay
     } ?: summary
@@ -156,6 +158,8 @@ class SummaryService(
       existing[s.entryDate]?.apply {
         totalValue = s.totalValue
         xirrAnnualReturn = s.xirrAnnualReturn
+        realizedProfit = s.realizedProfit
+        unrealizedProfit = s.unrealizedProfit
         totalProfit = s.totalProfit
         earningsPerDay = s.earningsPerDay
       } ?: s
@@ -213,6 +217,8 @@ class SummaryService(
         date,
         summary.totalValue,
         summary.xirrAnnualReturn,
+        summary.realizedProfit,
+        summary.unrealizedProfit,
         summary.totalProfit,
         summary.earningsPerDay,
       )
@@ -252,6 +258,8 @@ class SummaryService(
       entryDate = date,
       totalValue = results.totalValue.setScale(10, RoundingMode.HALF_UP),
       xirrAnnualReturn = BigDecimal(xirr).setScale(10, RoundingMode.HALF_UP),
+      realizedProfit = results.realizedProfit.setScale(10, RoundingMode.HALF_UP),
+      unrealizedProfit = results.unrealizedProfit.setScale(10, RoundingMode.HALF_UP),
       totalProfit = results.totalProfit.setScale(10, RoundingMode.HALF_UP),
       earningsPerDay = earningsPerDay.setScale(10, RoundingMode.HALF_UP),
     )
@@ -261,6 +269,8 @@ class SummaryService(
     date: LocalDate,
     totalValue: BigDecimal,
     xirrAnnualReturn: BigDecimal,
+    realizedProfit: BigDecimal,
+    unrealizedProfit: BigDecimal,
     totalProfit: BigDecimal,
     earningsPerDay: BigDecimal,
   ): PortfolioDailySummary {
@@ -270,6 +280,8 @@ class SummaryService(
       entryDate = date,
       totalValue = totalValue,
       xirrAnnualReturn = xirrAnnualReturn,
+      realizedProfit = realizedProfit,
+      unrealizedProfit = unrealizedProfit,
       totalProfit = totalProfit,
       earningsPerDay = earningsPerDay,
     )
@@ -287,6 +299,8 @@ class SummaryService(
       entryDate = date,
       totalValue = BigDecimal.ZERO,
       xirrAnnualReturn = BigDecimal.ZERO,
+      realizedProfit = BigDecimal.ZERO,
+      unrealizedProfit = BigDecimal.ZERO,
       totalProfit = BigDecimal.ZERO,
       earningsPerDay = BigDecimal.ZERO,
     )
