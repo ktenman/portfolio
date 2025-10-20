@@ -238,13 +238,8 @@ class InvestmentMetricsService(
       transactions
       .filter { it.transactionType == TransactionType.SELL }
       .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
-    val unrealizedProfit =
-      if (currentHoldings > BigDecimal.ZERO) {
-      transactions.sumOf { it.unrealizedProfit }
-    } else {
-      BigDecimal.ZERO
-    }
 
+    val investment = currentHoldings.multiply(averageCost)
     val currentValue =
       if (currentHoldings > BigDecimal.ZERO) {
       val price = dailyPriceService.getPrice(instrument, date)
@@ -252,6 +247,7 @@ class InvestmentMetricsService(
     } else {
       BigDecimal.ZERO
     }
+    val unrealizedProfit = currentValue.subtract(investment)
 
     if (currentValue > BigDecimal.ZERO || realizedProfit > BigDecimal.ZERO) {
       updateMetricsWithSeparateProfits(metrics, currentValue, realizedProfit, unrealizedProfit)
