@@ -14,7 +14,7 @@
     "market-price-tracker/**"
   ],
   "ignoreUnresolved": ["./tests/setup.ts"],
-  "ignoreDependencies": ["vue-eslint-parser", "espree", "eslint-plugin-no-comments"],
+  "ignoreDependencies": ["vue-eslint-parser", "espree", "eslint-plugin-no-comments", "husky"],
   "ignoreExportsUsedInFile": false,
   "includeEntryExports": true,
   "vue": {

@@ -51,6 +51,7 @@
     "eslint-plugin-unused-imports": "^4.2.0",
     "eslint-plugin-vue": "^10.5.1",
     "happy-dom": "^20.0.5",
+    "husky": "^9.1.7",
     "knip": "^5.66.0",
     "prettier": "^3.6.2",
     "sass": "1.70.0",
