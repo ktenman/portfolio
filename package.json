@@ -65,7 +65,7 @@
     "eslint-plugin-vue": "^10.5.1",
     "happy-dom": "^20.0.7",
     "husky": "^9.1.7",
-    "knip": "^5.66.0",
+    "knip": "^5.66.2",
     "lint-staged": "^16.2.5",
     "prettier": "^3.6.2",
     "sass": "1.70.0",
