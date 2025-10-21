@@ -29,6 +29,22 @@ services:
       retries: 5
     restart: always
 
+  db-migrate:
+    container_name: db-migrate
+    image: flyway/flyway:11-alpine
+    environment:
+      FLYWAY_USER: ${POSTGRES_USER}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/portfolio
+      FLYWAY_LOCATIONS: filesystem:/migrations
+    volumes:
+      - ./src/main/resources/db/migration:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: migrate
+    restart: "no"
+
   backend:
     container_name: backend
     environment:
@@ -36,6 +52,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_PROFILES_ACTIVE: default
+      SPRING_FLYWAY_ENABLED: "false"
       VISION_BASE64_ENCODED_KEY: ${VISION_BASE64_ENCODED_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       VISION_ENABLED: true
