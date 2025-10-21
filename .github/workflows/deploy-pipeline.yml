@@ -65,6 +65,7 @@ jobs:
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
+          scp -r src/main/resources/db/migration githubuser@fov.ee:~/
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
