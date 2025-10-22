@@ -19,6 +19,8 @@ export const createInstrumentDto = (overrides?: Partial<InstrumentDto>): Instrum
   totalInvestment: 1000,
   currentValue: 1000,
   profit: 0,
+  realizedProfit: 0,
+  unrealizedProfit: 0,
   xirr: 0,
   platforms: [],
   priceChangeAmount: 0,
