@@ -4,7 +4,6 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "prepare": "husky install",
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -22,18 +21,6 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh"
-  },
-  "lint-staged": {
-    "**/*.{js,ts,vue}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "**/*.{json,css,scss,md}": [
-      "prettier --write"
-    ],
-    "**/*.{kt,kts}": [
-      "./gradlew ktlintFormat detekt"
-    ]
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.90.5",
