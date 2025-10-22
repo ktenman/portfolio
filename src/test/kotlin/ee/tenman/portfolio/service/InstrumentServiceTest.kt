@@ -122,6 +122,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -171,6 +173,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -203,6 +207,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -233,6 +239,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal.ZERO,
         currentValue = BigDecimal.ZERO,
         profit = BigDecimal.ZERO,
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal.ZERO,
         xirr = 0.0,
         quantity = BigDecimal.ZERO,
       )
@@ -263,6 +271,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal.ZERO,
         profit = BigDecimal("-1000"),
+        realizedProfit = BigDecimal("-1000"),
+        unrealizedProfit = BigDecimal.ZERO,
         xirr = -100.0,
         quantity = BigDecimal.ZERO,
       )
@@ -324,6 +334,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -358,6 +370,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -400,6 +414,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1550"),
         currentValue = BigDecimal("2250"),
         profit = BigDecimal("700"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("700"),
         xirr = 30.0,
         quantity = BigDecimal("15"),
       )
@@ -442,6 +458,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1550"),
         currentValue = BigDecimal("2250"),
         profit = BigDecimal("700"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("700"),
         xirr = 30.0,
         quantity = BigDecimal("15"),
       )
@@ -478,6 +496,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -558,6 +578,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal("200"),
+        unrealizedProfit = BigDecimal("300"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -589,6 +611,8 @@ class InstrumentServiceTest {
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
