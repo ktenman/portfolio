@@ -4,14 +4,13 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "prepare": "husky install",
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint ui --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\"",
     "format:check": "vue-tsc --noEmit && prettier --check \"**/*.{js,ts,vue,json,css,scss,md}\"",
-    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\" && knip && GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew ktlintFormat detekt",
+    "lint-format": "vue-tsc --noEmit && eslint ui --fix && prettier --write \"**/*.{js,ts,vue,json,css,scss,md}\" && knip && ./gradlew ktlintFormat detekt",
     "ktlint": "./gradlew ktlintCheck",
     "ktlint:fix": "./gradlew ktlintFormat",
     "detekt": "./gradlew detekt",
@@ -22,18 +21,6 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh"
-  },
-  "lint-staged": {
-    "**/*.{js,ts,vue}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "**/*.{json,css,scss,md}": [
-      "prettier --write"
-    ],
-    "**/*.{kt,kts}": [
-      "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew ktlintFormat detekt"
-    ]
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.90.5",
@@ -64,9 +51,7 @@
     "eslint-plugin-unused-imports": "^4.3.0",
     "eslint-plugin-vue": "^10.5.1",
     "happy-dom": "^20.0.7",
-    "husky": "^9.1.7",
     "knip": "^5.66.2",
-    "lint-staged": "^16.2.5",
     "prettier": "^3.6.2",
     "sass": "1.70.0",
     "typescript": "5.9.3",
