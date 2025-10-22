@@ -52,7 +52,7 @@ class InvestmentMetricsServiceTest {
     }
     investmentMetricsService = InvestmentMetricsService(dailyPriceService, transactionService)
 
-    every { transactionService.calculateTransactionProfits(any()) } answers {
+    every { transactionService.calculateTransactionProfits(any(), any()) } answers {
       val transactions = firstArg<List<PortfolioTransaction>>()
       transactions.forEach {
         it.unrealizedProfit = BigDecimal.ZERO
@@ -355,7 +355,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateInstrumentMetricsWithProfits calls transaction service`() {
     val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
 
-    every { transactionService.calculateTransactionProfits(any()) } returns Unit
+    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
 
     val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, transactions, testDate)
 
@@ -516,7 +516,7 @@ class InvestmentMetricsServiceTest {
         createSellTransaction(quantity = BigDecimal("3"), price = BigDecimal("150"), platform = Platform.LHV),
       )
 
-    every { transactionService.calculateTransactionProfits(any()) } returns Unit
+    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
 
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
@@ -538,7 +538,7 @@ class InvestmentMetricsServiceTest {
         createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("150")),
       )
 
-    every { transactionService.calculateTransactionProfits(any()) } returns Unit
+    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
 
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(

@@ -20,6 +20,11 @@
           </span>
         </td>
         <td class="fw-bold text-nowrap">
+          <span :class="getProfitClass(totalUnrealizedProfit)">
+            {{ formatProfit(totalUnrealizedProfit, 'EUR') }}
+          </span>
+        </td>
+        <td class="fw-bold text-nowrap">
           <span :class="getProfitClass(totalChangeAmount)">
             {{ formatCurrencyWithSign(Math.abs(totalChangeAmount), 'EUR') }} /
             {{ Math.abs(totalChangePercent).toFixed(2) }}%
@@ -86,8 +91,8 @@
             </span>
           </div>
           <div class="profit-info">
-            <span :class="getProfitClass(getItemProfit(item))">
-              {{ formatProfit(getItemProfit(item), item.baseCurrency) }}
+            <span :class="getProfitClass(item.profit || 0)">
+              {{ formatProfit(item.profit || 0, item.baseCurrency) }}
             </span>
           </div>
         </div>
@@ -113,6 +118,12 @@
             <span class="total-label">PROFIT</span>
             <span class="total-value" :class="getProfitClass(totalProfit)">
               {{ formatProfit(totalProfit, 'EUR') }}
+            </span>
+          </div>
+          <div class="total-item">
+            <span class="total-label">UNREALIZED</span>
+            <span class="total-value" :class="getProfitClass(totalUnrealizedProfit)">
+              {{ formatProfit(totalUnrealizedProfit, 'EUR') }}
             </span>
           </div>
           <div class="total-item">
@@ -169,8 +180,14 @@
     </template>
 
     <template #cell-profit="{ item }">
-      <span :class="getProfitClass(getItemProfit(item))" class="profit-display text-nowrap">
-        {{ formatProfit(getItemProfit(item), item.baseCurrency) }}
+      <span :class="getProfitClass(item.profit || 0)" class="profit-display text-nowrap">
+        {{ formatProfit(item.profit || 0, item.baseCurrency) }}
+      </span>
+    </template>
+
+    <template #cell-unrealizedProfit="{ item }">
+      <span :class="getProfitClass(item.unrealizedProfit || 0)" class="profit-display text-nowrap">
+        {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
       </span>
     </template>
 
@@ -235,7 +252,13 @@ const totalValue = computed(() => {
 
 const totalProfit = computed(() => {
   return props.instruments.reduce((sum, instrument) => {
-    return sum + getItemProfit(instrument)
+    return sum + (instrument.profit || 0)
+  }, 0)
+})
+
+const totalUnrealizedProfit = computed(() => {
+  return props.instruments.reduce((sum, instrument) => {
+    return sum + (instrument.unrealizedProfit || 0)
   }, 0)
 })
 
@@ -260,14 +283,8 @@ const totalChangePercent = computed(() => {
   return (totalChangeAmount.value / totalValue.value) * 100
 })
 
-const getItemProfit = (item: InstrumentDto): number => {
-  const value = item.currentValue || 0
-  const invested = item.totalInvestment || 0
-  return value - invested
-}
-
 const formatProfit = (amount: number, currency: string | undefined): string => {
-  const sign = amount >= 0 ? '+' : '-'
+  const sign = amount >= 0 ? '' : '-'
   return sign + formatCurrencyWithSign(Math.abs(amount), currency || 'EUR')
 }
 

@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "prepare": "husky install",
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -22,6 +23,18 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh"
   },
+  "lint-staged": {
+    "**/*.{js,ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,css,scss,md}": [
+      "prettier --write"
+    ],
+    "**/*.{kt,kts}": [
+      "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew ktlintFormat detekt"
+    ]
+  },
   "dependencies": {
     "@tanstack/vue-query": "^5.90.5",
     "@vueuse/core": "^13.9.0",
@@ -37,7 +50,7 @@
   "devDependencies": {
     "@testing-library/vue": "^8.1.0",
     "@types/bootstrap": "^5.2.10",
-    "@types/node": "^24.9.1",
+    "@types/node": "^24.9.0",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "@vitejs/plugin-vue": "^6.0.1",

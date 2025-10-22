@@ -116,12 +116,15 @@ class TransactionService(
     maxAttempts = 5,
     backoff = Backoff(delay = 100),
   )
-  fun calculateTransactionProfits(transactions: List<PortfolioTransaction>) {
+  fun calculateTransactionProfits(
+    transactions: List<PortfolioTransaction>,
+    currentPrice: BigDecimal = BigDecimal.ZERO,
+  ) {
     try {
       transactions
         .groupBy { it.platform to it.instrument.id }
         .forEach { (_, platformTransactions) ->
-          calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate })
+          calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate }, currentPrice)
         }
     } catch (e: ObjectOptimisticLockingFailureException) {
       log.warn("Optimistic locking failure while calculating profits. Will retry.", e)
@@ -129,7 +132,10 @@ class TransactionService(
     }
   }
 
-  private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
+  private fun calculateProfitsForPlatform(
+    transactions: List<PortfolioTransaction>,
+    passedPrice: BigDecimal = BigDecimal.ZERO,
+  ) {
     val sortedTransactions = transactions.sortedBy { it.transactionDate }
     var currentQuantity = BigDecimal.ZERO
     var totalCost = BigDecimal.ZERO
@@ -149,7 +155,14 @@ class TransactionService(
       }
     }
 
-    val currentPrice = sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO
+    val currentPrice =
+      if (passedPrice >
+      BigDecimal.ZERO
+      ) {
+        passedPrice
+      } else {
+        (sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO)
+      }
     val averageCost = calculateAverageCost(totalCost, currentQuantity)
     val totalUnrealizedProfit = calculateTotalUnrealizedProfit(currentQuantity, currentPrice, averageCost)
 

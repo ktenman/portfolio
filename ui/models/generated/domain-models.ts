@@ -1,5 +1,5 @@
 /* tslint:disable */
- 
+/* eslint-disable */
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -17,6 +17,8 @@ export interface InstrumentDto {
     totalInvestment: number | null;
     currentValue: number | null;
     profit: number | null;
+    realizedProfit: number | null;
+    unrealizedProfit: number | null;
     xirr: number | null;
     platforms: string[];
     priceChangeAmount: number | null;
