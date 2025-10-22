@@ -24,6 +24,8 @@ data class InstrumentDto(
   val totalInvestment: BigDecimal? = BigDecimal.ZERO,
   val currentValue: BigDecimal? = BigDecimal.ZERO,
   val profit: BigDecimal? = BigDecimal.ZERO,
+  val realizedProfit: BigDecimal? = BigDecimal.ZERO,
+  val unrealizedProfit: BigDecimal? = BigDecimal.ZERO,
   val xirr: Double? = 0.0,
   val platforms: Set<String> = emptySet(),
   val priceChangeAmount: BigDecimal? = null,
@@ -42,6 +44,8 @@ data class InstrumentDto(
       totalInvestment = this@InstrumentDto.totalInvestment ?: BigDecimal.ZERO
       currentValue = this@InstrumentDto.currentValue ?: BigDecimal.ZERO
       profit = this@InstrumentDto.profit ?: BigDecimal.ZERO
+      realizedProfit = this@InstrumentDto.realizedProfit ?: BigDecimal.ZERO
+      unrealizedProfit = this@InstrumentDto.unrealizedProfit ?: BigDecimal.ZERO
       xirr = this@InstrumentDto.xirr ?: 0.0
     }
 
@@ -59,6 +63,8 @@ data class InstrumentDto(
         totalInvestment = instrument.totalInvestment,
         currentValue = instrument.currentValue,
         profit = instrument.profit,
+        realizedProfit = instrument.realizedProfit,
+        unrealizedProfit = instrument.unrealizedProfit,
         xirr = instrument.xirr,
         platforms = instrument.platforms?.map { it.name }?.toSet() ?: emptySet(),
         priceChangeAmount = instrument.priceChangeAmount,
