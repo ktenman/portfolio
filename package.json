@@ -32,7 +32,7 @@
       "prettier --write"
     ],
     "**/*.{kt,kts}": [
-      "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew ktlintFormat detekt"
+      "./gradlew ktlintFormat detekt"
     ]
   },
   "dependencies": {
