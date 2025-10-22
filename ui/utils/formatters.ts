@@ -104,12 +104,12 @@ export const formatPercentageFromDecimal = (value: number | undefined | null): s
 }
 
 export const formatProfitLoss = (value: number | null | undefined): string => {
-  if (value === null || value === undefined) return '0.00'
+  if (value === null || value === undefined) return '€0.00'
   const formattedValue = Math.abs(value).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
-  return value >= 0 ? `+${formattedValue}` : `-${formattedValue}`
+  return `€${formattedValue}`
 }
 
 export const formatTransactionAmount = (
