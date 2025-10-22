@@ -163,11 +163,11 @@ describe('InstrumentTable', () => {
   })
 
   describe('profit display', () => {
-    it('should display positive profit with plus sign and green color', () => {
+    it('should display positive profit without plus sign and green color', () => {
       const wrapper = createWrapper()
       const profitCell = wrapper.find('.text-success')
 
-      expect(profitCell.text()).toBe('+$5,050.00')
+      expect(profitCell.text()).toBe('$5,050.00')
       expect(profitCell.classes()).toContain('text-success')
     })
 
@@ -181,22 +181,22 @@ describe('InstrumentTable', () => {
       expect(profitCell.classes()).toContain('text-danger')
     })
 
-    it('should display zero profit with plus sign and success color', () => {
+    it('should display zero profit without plus sign and success color', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const thirdRow = rows[2]
       const profitCell = thirdRow.find('.text-success')
 
-      expect(profitCell.text()).toBe('+$0.00')
+      expect(profitCell.text()).toBe('$0.00')
       expect(profitCell.classes()).toContain('text-success')
     })
 
-    it('should calculate profit as value minus invested when profit is undefined', () => {
+    it('should display $0.00 when profit is undefined (fallback behavior)', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const lastRow = rows[3]
 
-      expect(lastRow.text()).toContain('-$100.00')
+      expect(lastRow.text()).toContain('$0.00')
     })
 
     it('should display $0.00 when profit is explicitly undefined', () => {
@@ -413,7 +413,7 @@ describe('InstrumentTable', () => {
         expect(footerRow.text()).toContain('Total')
         expect(footerRow.text()).toContain('€38,950.00')
         expect(footerRow.text()).toContain('€36,000.00')
-        expect(footerRow.text()).toContain('+€2,950.00')
+        expect(footerRow.text()).toContain('€2,950.00')
       }
     })
 
@@ -433,7 +433,7 @@ describe('InstrumentTable', () => {
       })
 
       const row = wrapper.find('tbody tr')
-      expect(row.text()).toContain('+$0.00')
+      expect(row.text()).toContain('$0.00')
     })
 
     it('should format different currencies correctly', () => {

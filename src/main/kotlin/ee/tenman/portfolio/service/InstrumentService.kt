@@ -187,9 +187,11 @@ class InstrumentService(
     val calculationDate = LocalDate.now(clock)
     val targetPlatforms = parsePlatformFilters(platforms)
 
-    return instruments.mapNotNull { instrument ->
+    val result =
+      instruments.mapNotNull { instrument ->
       enrichInstrumentWithMetrics(instrument, transactionsByInstrument, targetPlatforms, calculationDate)
     }
+    return result
   }
 
   private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? =
@@ -241,6 +243,8 @@ class InstrumentService(
     instrument.totalInvestment = metrics.totalInvestment
     instrument.currentValue = metrics.currentValue
     instrument.profit = metrics.profit
+    instrument.realizedProfit = metrics.realizedProfit
+    instrument.unrealizedProfit = metrics.unrealizedProfit ?: BigDecimal.ZERO
     instrument.xirr = metrics.xirr
     instrument.quantity = metrics.quantity
     instrument.platforms = transactions.map { it.platform }.toSet()

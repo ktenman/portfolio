@@ -26,6 +26,8 @@ class InvestmentMetricsService(
     val totalInvestment: BigDecimal,
     val currentValue: BigDecimal,
     val profit: BigDecimal,
+    val realizedProfit: BigDecimal,
+    val unrealizedProfit: BigDecimal,
     val xirr: Double,
     val quantity: BigDecimal,
   ) {
@@ -33,6 +35,8 @@ class InvestmentMetricsService(
       "InstrumentMetrics(totalInvestment=$totalInvestment, " +
         "currentValue=$currentValue, " +
         "profit=$profit, " +
+        "realizedProfit=$realizedProfit, " +
+        "unrealizedProfit=$unrealizedProfit, " +
         "xirr=${String.format("%.2f%%", xirr * 100)})"
 
     companion object {
@@ -41,6 +45,8 @@ class InvestmentMetricsService(
           totalInvestment = BigDecimal.ZERO,
           currentValue = BigDecimal.ZERO,
           profit = BigDecimal.ZERO,
+          realizedProfit = BigDecimal.ZERO,
+          unrealizedProfit = BigDecimal.ZERO,
           xirr = 0.0,
           quantity = BigDecimal.ZERO,
         )
@@ -177,7 +183,24 @@ class InvestmentMetricsService(
 
     val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
     val currentValue = calculateCurrentValue(totalHoldings, currentPrice)
-    val profit = currentValue.subtract(totalInvestment)
+
+    val realizedProfit =
+      transactions
+        .filter { it.transactionType == TransactionType.SELL }
+        .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
+
+    val unrealizedProfit =
+      transactions
+        .filter { it.remainingQuantity > BigDecimal.ZERO }
+        .sumOf { it.unrealizedProfit ?: BigDecimal.ZERO }
+
+    val profit =
+      if (unrealizedProfit != BigDecimal.ZERO || realizedProfit != BigDecimal.ZERO) {
+        realizedProfit.add(unrealizedProfit)
+      } else {
+        currentValue.subtract(totalInvestment)
+      }
+
     val xirrTransactions = buildXirrTransactions(transactions, currentValue, calculationDate)
     val xirr = calculateAdjustedXirr(xirrTransactions, calculationDate)
 
@@ -185,6 +208,8 @@ class InvestmentMetricsService(
       totalInvestment = totalInvestment,
       currentValue = currentValue,
       profit = profit,
+      realizedProfit = realizedProfit,
+      unrealizedProfit = unrealizedProfit,
       xirr = xirr,
       quantity = totalHoldings,
     )
@@ -199,7 +224,8 @@ class InvestmentMetricsService(
       return InstrumentMetrics.EMPTY
     }
 
-    transactionService.calculateTransactionProfits(transactions)
+    val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
+    transactionService.calculateTransactionProfits(transactions, currentPrice)
     return calculateInstrumentMetrics(instrument, transactions, calculationDate)
   }
 
