@@ -60,7 +60,8 @@ class LightyearDataFetchJob(
     open(LIGHTYEAR_URL)
     log.info("Opened Lightyear ETF holdings page")
 
-    val tableRows = elements(className("table-row"))
+    val tableRows =
+      elements(className("table-row"))
       .filter { it.text.contains("%") }
       .take(5)
 
