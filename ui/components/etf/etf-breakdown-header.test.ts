@@ -4,17 +4,99 @@ import EtfBreakdownHeader from './etf-breakdown-header.vue'
 
 describe('EtfBreakdownHeader', () => {
   describe('header content', () => {
-    it('should render title and subtitle', () => {
+    it('should show all ETFs description when all are selected', () => {
       const wrapper = mount(EtfBreakdownHeader, {
         props: {
           totalValue: 10000,
           uniqueHoldings: 50,
+          selectedEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR'],
+          availableEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR'],
         },
       })
 
-      expect(wrapper.find('.page-title').text()).toBe('ETF Holdings Breakdown')
-      expect(wrapper.find('.page-subtitle').text()).toContain(
-        'Aggregated view of your underlying holdings across all ETF positions'
+      expect(wrapper.find('.page-subtitle').text()).toBe(
+        'Aggregated view of underlying holdings across all two ETF positions'
+      )
+    })
+
+    it('should show single ETF description when one is selected', () => {
+      const wrapper = mount(EtfBreakdownHeader, {
+        props: {
+          totalValue: 10000,
+          uniqueHoldings: 50,
+          selectedEtfs: ['QDVE:GER:EUR'],
+          availableEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR'],
+        },
+      })
+
+      expect(wrapper.find('.page-subtitle').text()).toBe(
+        'Aggregated view of underlying holdings from QDVE'
+      )
+    })
+
+    it('should show two ETFs description when two are selected', () => {
+      const wrapper = mount(EtfBreakdownHeader, {
+        props: {
+          totalValue: 10000,
+          uniqueHoldings: 50,
+          selectedEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR'],
+          availableEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR', 'XAIX:GER:EUR'],
+        },
+      })
+
+      expect(wrapper.find('.page-subtitle').text()).toBe(
+        'Aggregated view of underlying holdings from QDVE and VUAA'
+      )
+    })
+
+    it('should show three ETFs with Oxford comma', () => {
+      const wrapper = mount(EtfBreakdownHeader, {
+        props: {
+          totalValue: 10000,
+          uniqueHoldings: 50,
+          selectedEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR', 'XAIX:GER:EUR'],
+          availableEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR', 'XAIX:GER:EUR', 'IITU:GER:EUR'],
+        },
+      })
+
+      expect(wrapper.find('.page-subtitle').text()).toBe(
+        'Aggregated view of underlying holdings from QDVE, VUAA, and XAIX'
+      )
+    })
+
+    it('should show count for more than three ETFs', () => {
+      const wrapper = mount(EtfBreakdownHeader, {
+        props: {
+          totalValue: 10000,
+          uniqueHoldings: 50,
+          selectedEtfs: ['QDVE:GER:EUR', 'VUAA:GER:EUR', 'XAIX:GER:EUR', 'IITU:GER:EUR'],
+          availableEtfs: [
+            'QDVE:GER:EUR',
+            'VUAA:GER:EUR',
+            'XAIX:GER:EUR',
+            'IITU:GER:EUR',
+            'VWCE:GER:EUR',
+          ],
+        },
+      })
+
+      expect(wrapper.find('.page-subtitle').text()).toBe(
+        'Aggregated view of underlying holdings from four selected ETF positions'
+      )
+    })
+
+    it('should handle singular ETF in all selected state', () => {
+      const wrapper = mount(EtfBreakdownHeader, {
+        props: {
+          totalValue: 10000,
+          uniqueHoldings: 50,
+          selectedEtfs: ['QDVE:GER:EUR'],
+          availableEtfs: ['QDVE:GER:EUR'],
+        },
+      })
+
+      expect(wrapper.find('.page-subtitle').text()).toBe(
+        'Aggregated view of underlying holdings across all one ETF position'
       )
     })
   })
@@ -25,6 +107,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 10000,
           uniqueHoldings: 50,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -37,6 +121,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 0,
           uniqueHoldings: 0,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -48,6 +134,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 12345.67,
           uniqueHoldings: 50,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -60,6 +148,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 10000,
           uniqueHoldings: 42,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -72,6 +162,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 10000,
           uniqueHoldings: 50,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -87,6 +179,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 1234567.89,
           uniqueHoldings: 100,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -99,6 +193,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 0.99,
           uniqueHoldings: 1,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -111,6 +207,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 1000,
           uniqueHoldings: 5,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -125,6 +223,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: -500,
           uniqueHoldings: 10,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 
@@ -136,6 +236,8 @@ describe('EtfBreakdownHeader', () => {
         props: {
           totalValue: 1000,
           uniqueHoldings: 0,
+          selectedEtfs: [],
+          availableEtfs: [],
         },
       })
 

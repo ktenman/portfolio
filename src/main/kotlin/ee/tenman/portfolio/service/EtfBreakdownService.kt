@@ -34,10 +34,14 @@ class EtfBreakdownService(
     val etfSymbols: MutableSet<String>,
   )
 
-  @Cacheable("etf:breakdown", unless = "#result.isEmpty()")
-  fun getHoldingsBreakdown(): List<EtfHoldingBreakdownDto> {
-    log.info("Starting ETF holdings breakdown calculation (not from cache)")
-    val lightyearEtfs = getLightyearEtfs()
+  @Cacheable(
+    "etf:breakdown",
+    key = "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all'",
+    unless = "#result.isEmpty()",
+  )
+  fun getHoldingsBreakdown(etfSymbols: List<String>? = null): List<EtfHoldingBreakdownDto> {
+    log.info("Starting ETF holdings breakdown calculation (not from cache) with filter: $etfSymbols")
+    val lightyearEtfs = getLightyearEtfs(etfSymbols)
     log.info("Found ${lightyearEtfs.size} ETFs: ${lightyearEtfs.map { it.symbol }}")
 
     if (lightyearEtfs.isEmpty()) {
@@ -61,13 +65,19 @@ class EtfBreakdownService(
     log.info("Evicting ETF breakdown cache")
   }
 
-  private fun getLightyearEtfs(): List<Instrument> {
+  private fun getLightyearEtfs(etfSymbols: List<String>? = null): List<Instrument> {
     val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
     val ftInstruments = instrumentRepository.findByProviderName(ProviderName.FT)
 
     log.info("Found ${lightyearInstruments.size} LIGHTYEAR instruments and ${ftInstruments.size} FT instruments")
 
-    val allInstruments = lightyearInstruments + ftInstruments
+    var allInstruments = lightyearInstruments + ftInstruments
+
+    if (!etfSymbols.isNullOrEmpty()) {
+      allInstruments = allInstruments.filter { it.symbol in etfSymbols }
+      log.info("Filtered to ${allInstruments.size} instruments matching symbols: $etfSymbols")
+    }
+
     val withHoldings = allInstruments.filter { hasEtfHoldings(it.id) }
     log.info("${withHoldings.size} instruments have ETF holdings data: ${withHoldings.map { it.symbol }}")
 
