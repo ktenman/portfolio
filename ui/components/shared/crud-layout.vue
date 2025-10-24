@@ -27,7 +27,7 @@
 <script setup lang="ts">
 interface Props {
   title: string
-  addButtonText: string
+  addButtonText?: string
   addButtonId?: string
   showAddButton?: boolean
 }
@@ -35,6 +35,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   showAddButton: true,
   addButtonId: 'addNewItem',
+  addButtonText: '',
 })
 
 defineEmits<{
