@@ -1,48 +1,20 @@
 package ee.tenman.portfolio.repository
 
 import ee.tenman.portfolio.domain.EtfPosition
-import ee.tenman.portfolio.domain.EtfPositionId
+import ee.tenman.portfolio.domain.Instrument
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
-interface EtfPositionRepository : JpaRepository<EtfPosition, EtfPositionId> {
-  @Modifying
-  @Query(
-    nativeQuery = true,
-    value = """
-      INSERT INTO etf_positions (
-        etf_instrument_id, holding_id, snapshot_date, weight_percentage,
-        position_rank, market_cap, price, day_change
-      )
-      VALUES (
-        :etfInstrumentId, :holdingId, :snapshotDate, :weightPercentage,
-        :positionRank, :marketCap, :price, :dayChange
-      )
-      ON CONFLICT (etf_instrument_id, holding_id, snapshot_date)
-      DO UPDATE SET
-        weight_percentage = EXCLUDED.weight_percentage,
-        position_rank = EXCLUDED.position_rank,
-        market_cap = EXCLUDED.market_cap,
-        price = EXCLUDED.price,
-        day_change = EXCLUDED.day_change
-    """,
-  )
-  fun upsertPosition(
-    @Param("etfInstrumentId") etfInstrumentId: Long,
-    @Param("holdingId") holdingId: Long,
-    @Param("snapshotDate") snapshotDate: LocalDate,
-    @Param("weightPercentage") weightPercentage: BigDecimal,
-    @Param("positionRank") positionRank: Int?,
-    @Param("marketCap") marketCap: String?,
-    @Param("price") price: String?,
-    @Param("dayChange") dayChange: String?,
-  )
+interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
+  fun findByEtfInstrumentAndHoldingIdAndSnapshotDate(
+    etfInstrument: Instrument,
+    holdingId: Long,
+    snapshotDate: LocalDate,
+  ): EtfPosition?
 
   @Query(
     """

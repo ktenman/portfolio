@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
@@ -45,16 +46,34 @@ class EtfHoldingsService(
     holdings.forEach { holdingData ->
       val holding = findOrCreateHolding(holdingData)
 
-      etfPositionRepository.upsertPosition(
-        etfInstrumentId = etf.id,
+      val existingPosition =
+        etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
+        etfInstrument = etf,
         holdingId = holding.id,
         snapshotDate = date,
-        weightPercentage = holdingData.weight,
-        positionRank = holdingData.rank,
-        marketCap = holdingData.marketCap,
-        price = holdingData.price,
-        dayChange = holdingData.dayChange,
       )
+
+      val position =
+        existingPosition ?: EtfPosition(
+          etfInstrument = etf,
+          holding = holding,
+          snapshotDate = date,
+          weightPercentage = holdingData.weight,
+          positionRank = holdingData.rank,
+          marketCap = holdingData.marketCap,
+          price = holdingData.price,
+          dayChange = holdingData.dayChange,
+        )
+
+      if (existingPosition != null) {
+        position.weightPercentage = holdingData.weight
+        position.positionRank = holdingData.rank
+        position.marketCap = holdingData.marketCap
+        position.price = holdingData.price
+        position.dayChange = holdingData.dayChange
+      }
+
+      etfPositionRepository.save(position)
     }
 
     log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
