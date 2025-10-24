@@ -20,6 +20,20 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 
 ## Essential Commands
 
+### Quick Start
+
+Run backend and frontend together in separate terminal windows:
+
+```bash
+./run.sh                    # Opens 2 terminals: backend (8081) + frontend (61234)
+```
+
+The script automatically:
+
+- Starts Spring Boot backend on http://localhost:8081
+- Starts Vite frontend dev server on http://localhost:61234
+- Works on macOS, Linux (gnome-terminal/xterm), and Windows
+
 ### Backend Development
 
 ```bash
