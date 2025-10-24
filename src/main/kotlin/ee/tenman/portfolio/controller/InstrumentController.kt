@@ -102,7 +102,7 @@ class InstrumentController(
       }
     }
 
-    listOf(INSTRUMENT_CACHE, SUMMARY_CACHE, TRANSACTION_CACHE).forEach { cacheName ->
+    listOf(INSTRUMENT_CACHE, SUMMARY_CACHE, TRANSACTION_CACHE, "etf:breakdown").forEach { cacheName ->
       cacheManager.getCache(cacheName)?.clear()
     }
 
