@@ -196,12 +196,12 @@ const handleSort = (column: ColumnDefinition) => {
 </script>
 
 <style scoped lang="scss">
-.mobile-cards {
+.mobile-cards-wrapper {
   .mobile-card {
     background: var(--bs-white);
     border: 1px solid var(--bs-gray-200);
     border-radius: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     overflow: hidden;
     transition: all var(--transition-fast);
 
@@ -210,6 +210,8 @@ const handleSort = (column: ColumnDefinition) => {
     }
 
     .mobile-card-body {
+      padding: 1rem;
+
       .mobile-card-item {
         display: flex;
         justify-content: space-between;
@@ -278,7 +280,7 @@ const handleSort = (column: ColumnDefinition) => {
 
     .mobile-card-actions {
       margin-top: 0.25rem;
-      padding-top: 0.25rem;
+      padding: 0.25rem 1rem 1rem;
       border-top: 1px solid var(--bs-gray-200);
       display: flex;
       gap: 0.75rem;
