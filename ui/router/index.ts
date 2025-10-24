@@ -3,6 +3,7 @@ import InstrumentsView from '../components/instruments/instruments-view.vue'
 import TransactionsView from '../components/transactions/transactions-view.vue'
 import PortfolioSummaryDto from '../components/portfolio-summary.vue'
 import Calculator from '../components/calculator.vue'
+import EtfBreakdown from '../components/etf-breakdown.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -19,6 +20,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/instruments',
     name: 'Instruments',
     component: InstrumentsView,
+  },
+  {
+    path: '/etf-breakdown',
+    name: 'ETF Breakdown',
+    component: EtfBreakdown,
   },
   {
     path: '/calculator',

@@ -7,6 +7,7 @@
     "ui/vite-env.d.ts",
     "ui/**/*.d.ts",
     "ui/tests/setup.ts",
+    "ui/models/generated/**",
     "src/**",
     "build/**",
     "dist/**",

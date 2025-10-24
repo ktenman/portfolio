@@ -89,6 +89,8 @@ logging:
     root: INFO
     org.springframework: INFO
     org.hibernate: INFO
+    ee.tenman.portfolio.service.EtfHoldingsService: DEBUG
+    ee.tenman.portfolio.service.HoldingParser: DEBUG
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{transactionId}- %msg%n'
 #    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg %X{traceId}%n'
@@ -166,5 +168,30 @@ scheduling:
     alphavantage-interval: ${ALPHAVANTAGE_JOB_INTERVAL:120000}
     xirr-interval: ${XIRR_JOB_INTERVAL:120000}
     summary-interval: ${SUMMARY_JOB_INTERVAL:120000}
+
+scraping:
+  lightyear:
+    base-url: "https://lightyear.com/en/etf"
+    max-pages: 5
+    page-delay-ms: 2000
+    selectors:
+      holdings-table: "table-row"
+      row-filter: "%"
+      cells:
+        name: "> div:nth-child(1)"
+        ticker: "> div:nth-child(2)"
+        sector: "> div:nth-child(3)"
+        weight: "> div:nth-child(2)"
+        market-cap: "> div:nth-child(3)"
+    etfs:
+      - symbol: "VUAA"
+        path: "VUAA:XETRA"
+        expected-pages: 3
+      - symbol: "QDVE"
+        path: "QDVE:XETRA"
+        expected-pages: 2
+      - symbol: "XAIX"
+        path: "XAIX:XETRA"
+        expected-pages: 2
 
 

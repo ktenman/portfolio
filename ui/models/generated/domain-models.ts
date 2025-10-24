@@ -66,6 +66,19 @@ export interface PortfolioSummaryDto {
     earningsPerMonth: number;
 }
 
+export interface EtfHoldingBreakdownDto extends Serializable {
+    holdingTicker: string | null;
+    holdingName: string;
+    percentageOfTotal: number;
+    totalValueEur: number;
+    holdingSector: string | null;
+    inEtfs: string;
+    numEtfs: number;
+}
+
+export interface Serializable {
+}
+
 type DateAsString = string;
 
 export enum Platform {
@@ -84,6 +97,7 @@ export enum ProviderName {
     ALPHA_VANTAGE = "ALPHA_VANTAGE",
     BINANCE = "BINANCE",
     FT = "FT",
+    LIGHTYEAR = "LIGHTYEAR",
 }
 
 export enum TransactionType {

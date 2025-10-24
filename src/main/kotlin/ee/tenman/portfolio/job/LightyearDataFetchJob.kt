@@ -1,35 +1,40 @@
 package ee.tenman.portfolio.job
 
 import com.codeborne.selenide.Configuration
-import com.codeborne.selenide.Selenide.elements
-import com.codeborne.selenide.Selenide.open
+import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.JobStatus
+import ee.tenman.portfolio.service.EtfHoldingsService
 import ee.tenman.portfolio.service.JobTransactionService
-import org.openqa.selenium.By.className
+import ee.tenman.portfolio.service.LightyearScraperService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Instant
-
-private const val LIGHTYEAR_URL = "https://lightyear.com/en/etf/VUAA:XETRA/holdings/1"
+import java.time.LocalDate
 
 @Component
 @ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
 class LightyearDataFetchJob(
   private val jobTransactionService: JobTransactionService,
+  private val properties: LightyearScrapingProperties,
+  private val scraperService: LightyearScraperService,
+  private val etfHoldingsService: EtfHoldingsService,
+  private val etfBreakdownService: ee.tenman.portfolio.service.EtfBreakdownService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 30000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(initialDelay = 15000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(cron = "0 50 23 * * ?")
   fun runJob() {
-    log.info("Running Lightyear data fetch job (30 seconds after startup)")
+    log.info("Running Lightyear data fetch job for ${properties.etfs.size} ETFs")
     val startTime = Instant.now()
     var status = JobStatus.SUCCESS
     var message: String? = null
 
     try {
-      message = fetchData()
+      message = fetchAllEtfs()
+      etfBreakdownService.evictBreakdownCache()
       log.info("Completed Lightyear data fetch job successfully")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
@@ -48,32 +53,48 @@ class LightyearDataFetchJob(
   }
 
   override fun execute() {
-    fetchData()
+    fetchAllEtfs()
   }
 
-  private fun fetchData(): String {
-    log.info("Starting Lightyear data fetch job")
+  private fun fetchAllEtfs(): String {
     configureBrowser()
+    val today = LocalDate.now()
+    val results = mutableListOf<String>()
 
-    val fetchedData = mutableListOf<String>()
+    properties.etfs.forEach { etfConfig ->
+      try {
+        if (etfHoldingsService.hasHoldingsForDate(etfConfig.symbol, today)) {
+          val msg = "Holdings for ${etfConfig.symbol} already exist for $today, skipping"
+          log.info(msg)
+          results.add(msg)
+          return@forEach
+        }
 
-    open(LIGHTYEAR_URL)
-    log.info("Opened Lightyear ETF holdings page")
+        log.info("Fetching holdings for ETF: ${etfConfig.symbol}")
+        val holdings = scraperService.fetchEtfHoldings(etfConfig)
 
-    val tableRows =
-      elements(className("table-row"))
-      .filter { it.text.contains("%") }
-      .take(5)
-
-    tableRows.forEach { row ->
-      val rowText = row.text()
-      fetchedData.add(rowText)
-      log.info("Fetched holding: $rowText")
+        if (holdings.isNotEmpty()) {
+          etfHoldingsService.saveHoldings(
+            etfSymbol = etfConfig.symbol,
+            date = today,
+            holdings = holdings,
+          )
+          val msg = "Successfully fetched and saved ${holdings.size} holdings for ${etfConfig.symbol}"
+          log.info(msg)
+          results.add(msg)
+        } else {
+          val msg = "No holdings found for ${etfConfig.symbol}"
+          log.warn(msg)
+          results.add(msg)
+        }
+      } catch (e: Exception) {
+        val msg = "Failed to process ${etfConfig.symbol}: ${e.message}"
+        log.error(msg, e)
+        results.add(msg)
+      }
     }
 
-    val resultMessage = "Successfully fetched ${fetchedData.size} holdings:\n${fetchedData.joinToString("\n")}"
-    log.info(resultMessage)
-    return resultMessage
+    return results.joinToString("\n")
   }
 
   private fun configureBrowser() {
