@@ -1,12 +1,7 @@
 <template>
-  <crud-layout
-    add-button-id="addNewTransaction"
-    add-button-text="New Transaction"
-    title="Transactions"
-    :show-add-button="false"
-    @add="openAddModal"
-  >
-    <template #subtitle>
+  <div class="container mt-3">
+    <div class="mb-4">
+      <h2 class="mb-0">Transactions</h2>
       <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2">
         <div class="platform-buttons">
           <button
@@ -27,81 +22,55 @@
           </button>
         </div>
       </div>
-    </template>
+    </div>
 
-    <template #content>
-      <div v-if="transactions?.length" class="row mb-3">
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-subtitle mb-2 text-muted">Total Realized Profit</h6>
-              <h4 :class="realizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
-                {{ formatCurrency(realizedProfitSum) }}
-              </h4>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-subtitle mb-2 text-muted">Total Unrealized Profit</h6>
-              <h4 :class="unrealizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
-                {{ formatCurrency(unrealizedProfitSum) }}
-              </h4>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-subtitle mb-2 text-muted">Total Profit</h6>
-              <h4 class="fw-bold" :class="totalProfitSum >= 0 ? 'text-success' : 'text-danger'">
-                {{ formatCurrency(totalProfitSum) }}
-              </h4>
-            </div>
+    <div v-if="transactions?.length" class="row mb-3">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-subtitle mb-2 text-muted">Total Realized Profit</h6>
+            <h4 :class="realizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
+              {{ formatCurrency(realizedProfitSum) }}
+            </h4>
           </div>
         </div>
       </div>
-      <transaction-table
-        :is-loading="isLoading"
-        :transactions="transactions || []"
-        @delete="handleDelete"
-        @edit="openEditModal"
-      />
-    </template>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-subtitle mb-2 text-muted">Total Unrealized Profit</h6>
+            <h4 :class="unrealizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
+              {{ formatCurrency(unrealizedProfitSum) }}
+            </h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-subtitle mb-2 text-muted">Total Profit</h6>
+            <h4 class="fw-bold" :class="totalProfitSum >= 0 ? 'text-success' : 'text-danger'">
+              {{ formatCurrency(totalProfitSum) }}
+            </h4>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <template #modals>
-      <transaction-modal
-        :instruments="instruments || []"
-        :transaction="selectedItem || {}"
-        @save="handleSave"
-      />
-    </template>
-  </crud-layout>
+    <transaction-table :is-loading="isLoading" :transactions="transactions || []" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import { useToast } from '../../composables/use-toast'
+import { computed, watch } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { useLocalStorage } from '@vueuse/core'
-import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
-import { useConfirm } from '../../composables/use-confirm'
-import CrudLayout from '../shared/crud-layout.vue'
 import TransactionTable from './transaction-table.vue'
-import TransactionModal from './transaction-modal.vue'
-import { instrumentsService } from '../../services/instruments-service'
 import { transactionsService } from '../../services/transactions-service'
-import { TransactionResponseDto } from '../../models/generated/domain-models'
 import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 
-const selectedItem = ref<TransactionResponseDto | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_transaction_platforms', [])
-const { show: showModal, hide: hideModal } = useBootstrapModal('transactionModal')
-const { confirm } = useConfirm()
-const queryClient = useQueryClient()
-const toast = useToast()
 
 const { data: allTransactions } = useQuery({
   queryKey: ['transactions-all'],
@@ -151,11 +120,6 @@ const { data: transactions, isLoading } = useQuery({
   },
 })
 
-const { data: instruments } = useQuery({
-  queryKey: ['instruments'],
-  queryFn: () => instrumentsService.getAll(),
-})
-
 const realizedProfitSum = computed(() => {
   if (!transactions.value) return 0
   return transactions.value.reduce((sum, t) => sum + (t.realizedProfit || 0), 0)
@@ -188,65 +152,6 @@ const toggleAllPlatforms = () => {
     selectedPlatforms.value = []
   } else {
     selectedPlatforms.value = [...availablePlatforms.value]
-  }
-}
-
-const saveMutation = useMutation({
-  mutationFn: (data: Partial<TransactionResponseDto>) => {
-    if (selectedItem.value?.id) {
-      return transactionsService.update(selectedItem.value.id, data)
-    }
-    return transactionsService.create(data)
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['transactions'] })
-    toast.success(`Transaction ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
-    hideModal()
-    selectedItem.value = null
-  },
-  onError: (error: Error) => {
-    toast.error(`Failed to save transaction: ${error.message}`)
-  },
-})
-
-const deleteMutation = useMutation({
-  mutationFn: transactionsService.delete,
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['transactions'] })
-    toast.success('Transaction deleted successfully')
-  },
-  onError: (error: Error) => {
-    toast.error(`Failed to delete transaction: ${error.message}`)
-  },
-})
-
-const openAddModal = () => {
-  selectedItem.value = {
-    transactionDate: new Date().toISOString().split('T')[0],
-  } as TransactionResponseDto
-  showModal()
-}
-
-const openEditModal = (transaction: TransactionResponseDto) => {
-  selectedItem.value = { ...transaction }
-  showModal()
-}
-
-const handleSave = (transaction: Partial<TransactionResponseDto>) => {
-  saveMutation.mutate(transaction)
-}
-
-const handleDelete = async (id: number | string) => {
-  const shouldDelete = await confirm({
-    title: 'Delete Transaction',
-    message: 'Are you sure you want to delete this transaction?',
-    confirmText: 'Delete',
-    cancelText: 'Cancel',
-    confirmClass: 'btn-danger',
-  })
-
-  if (shouldDelete) {
-    deleteMutation.mutate(id)
   }
 }
 </script>
