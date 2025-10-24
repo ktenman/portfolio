@@ -75,27 +75,6 @@
         }}
       </span>
     </template>
-
-    <template #actions="{ item }">
-      <div class="action-buttons">
-        <button
-          class="btn btn-sm btn-ghost btn-secondary btn-table-action"
-          @click="$emit('edit', item)"
-          title="Edit"
-        >
-          <base-icon name="pencil" :size="14" />
-          <span class="ms-1 d-inline d-lg-none">Edit</span>
-        </button>
-        <button
-          class="btn btn-sm btn-ghost btn-danger btn-table-action"
-          @click="item.id && $emit('delete', item.id)"
-          title="Delete"
-        >
-          <base-icon name="trash" :size="14" />
-          <span class="ms-1 d-inline d-lg-none">Delete</span>
-        </button>
-      </div>
-    </template>
   </data-table>
 </template>
 
@@ -121,11 +100,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
 })
-
-defineEmits<{
-  edit: [transaction: TransactionResponseDto]
-  delete: [id: number]
-}>()
 
 const columns = transactionColumns
 
