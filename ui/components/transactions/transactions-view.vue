@@ -331,4 +331,10 @@ const handleDelete = async (id: number | string) => {
     align-items: center;
   }
 }
+
+@media (max-width: 768px) {
+  :deep(.mobile-card-actions) {
+    display: none !important;
+  }
+}
 </style>
