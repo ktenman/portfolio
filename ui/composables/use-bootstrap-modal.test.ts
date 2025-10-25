@@ -5,12 +5,14 @@ import { useBootstrapModal } from './use-bootstrap-modal'
 import { Modal } from 'bootstrap'
 
 vi.mock('bootstrap', () => ({
-  Modal: vi.fn().mockImplementation(() => ({
-    show: vi.fn(),
-    hide: vi.fn(),
-    toggle: vi.fn(),
-    dispose: vi.fn(),
-  })),
+  Modal: vi.fn().mockImplementation(function () {
+    return {
+      show: vi.fn(),
+      hide: vi.fn(),
+      toggle: vi.fn(),
+      dispose: vi.fn(),
+    }
+  }),
 }))
 
 describe('useBootstrapModal', () => {
@@ -28,7 +30,9 @@ describe('useBootstrapModal', () => {
     }
 
     const MockModal = vi.mocked(Modal)
-    MockModal.mockReturnValue(mockModalInstance)
+    MockModal.mockImplementation(function () {
+      return mockModalInstance
+    })
   })
 
   afterEach(() => {
