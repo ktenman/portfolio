@@ -30,10 +30,4 @@ class EtfPosition(
   var weightPercentage: BigDecimal,
   @Column(name = "position_rank")
   var positionRank: Int? = null,
-  @Column(name = "market_cap", length = 50)
-  var marketCap: String? = null,
-  @Column(length = 50)
-  var price: String? = null,
-  @Column(name = "day_change", length = 50)
-  var dayChange: String? = null,
 ) : BaseEntity()

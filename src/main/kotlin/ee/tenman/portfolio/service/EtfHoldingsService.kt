@@ -60,17 +60,11 @@ class EtfHoldingsService(
           snapshotDate = date,
           weightPercentage = holdingData.weight,
           positionRank = holdingData.rank,
-          marketCap = holdingData.marketCap,
-          price = holdingData.price,
-          dayChange = holdingData.dayChange,
         )
 
       if (existingPosition != null) {
         position.weightPercentage = holdingData.weight
         position.positionRank = holdingData.rank
-        position.marketCap = holdingData.marketCap
-        position.price = holdingData.price
-        position.dayChange = holdingData.dayChange
       }
 
       etfPositionRepository.save(position)
