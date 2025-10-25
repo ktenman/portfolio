@@ -14,11 +14,13 @@ vi.mock('@tanstack/vue-query', () => ({
     isLoading: ref(false),
     refetch: mockRefetch,
   })),
-  QueryClient: vi.fn().mockImplementation(() => ({
-    setQueryData: vi.fn(),
-    getQueryData: vi.fn(),
-    invalidateQueries: vi.fn(),
-  })),
+  QueryClient: vi.fn().mockImplementation(function () {
+    return {
+      setQueryData: vi.fn(),
+      getQueryData: vi.fn(),
+      invalidateQueries: vi.fn(),
+    }
+  }),
   VueQueryPlugin: {
     install: vi.fn(),
   },

@@ -4,11 +4,13 @@ import ConfirmDialog from './confirm-dialog.vue'
 import { Modal } from 'bootstrap'
 
 vi.mock('bootstrap', () => ({
-  Modal: vi.fn().mockImplementation(() => ({
-    show: vi.fn(),
-    hide: vi.fn(),
-    dispose: vi.fn(),
-  })),
+  Modal: vi.fn().mockImplementation(function () {
+    return {
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
+    }
+  }),
 }))
 
 describe('ConfirmDialog', () => {
@@ -22,7 +24,9 @@ describe('ConfirmDialog', () => {
       dispose: vi.fn(),
     }
     const MockModal = vi.mocked(Modal)
-    MockModal.mockReturnValue(mockModalInstance)
+    MockModal.mockImplementation(function () {
+      return mockModalInstance
+    })
   })
 
   const createWrapper = (props = {}) => {

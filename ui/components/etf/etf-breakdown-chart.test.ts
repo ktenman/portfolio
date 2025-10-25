@@ -4,10 +4,12 @@ import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import type { ChartDataItem } from './etf-breakdown-chart.vue'
 
 vi.mock('chart.js', () => {
-  const mockChart: any = vi.fn().mockImplementation(() => ({
-    destroy: vi.fn(),
-    update: vi.fn(),
-  }))
+  const mockChart: any = vi.fn().mockImplementation(function () {
+    return {
+      destroy: vi.fn(),
+      update: vi.fn(),
+    }
+  })
   mockChart.register = vi.fn()
 
   return {
