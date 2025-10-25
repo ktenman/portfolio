@@ -37,17 +37,26 @@
     <template #mobile-card="{ item }">
       <div class="mobile-instrument-card">
         <div class="instrument-header">
-          <div class="instrument-title">
-            <h6 class="instrument-name">{{ item.name }}</h6>
-            <span class="instrument-symbol">{{ item.symbol }}</span>
-            <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
-              <span
-                v-for="platform in item.platforms"
-                :key="platform"
-                class="badge bg-secondary me-1 text-white"
-              >
-                {{ formatPlatformName(platform) }}
-              </span>
+          <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <img
+              v-if="item.logoUrl"
+              :src="item.logoUrl"
+              :alt="`${item.symbol} logo`"
+              class="company-logo"
+              @error="handleLogoError"
+            />
+            <div class="instrument-title">
+              <h6 class="instrument-name">{{ item.name }}</h6>
+              <span class="instrument-symbol">{{ item.symbol }}</span>
+              <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
+                <span
+                  v-for="platform in item.platforms"
+                  :key="platform"
+                  class="badge bg-secondary me-1 text-white"
+                >
+                  {{ formatPlatformName(platform) }}
+                </span>
+              </div>
             </div>
           </div>
           <button
@@ -143,9 +152,18 @@
 
     <template #cell-instrument="{ item }">
       <div class="instrument-info">
-        <div>
-          <span class="d-block instrument-name">{{ item.name }}</span>
-          <small class="d-block text-muted instrument-symbol">{{ item.symbol }}</small>
+        <div class="d-flex align-items-center gap-2">
+          <img
+            v-if="item.logoUrl"
+            :src="item.logoUrl"
+            :alt="`${item.symbol} logo`"
+            class="company-logo"
+            @error="handleLogoError"
+          />
+          <div>
+            <span class="d-block instrument-name">{{ item.name }}</span>
+            <small class="d-block text-muted instrument-symbol">{{ item.symbol }}</small>
+          </div>
         </div>
         <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
           <span
@@ -302,10 +320,26 @@ const formatPlatformName = (platform: string): string => {
 
   return platformMap[platform] || platform
 }
+
+const handleLogoError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  target.style.display = 'none'
+}
 </script>
 
 <style scoped lang="scss">
 @import '../../styles/shared-table.scss';
+
+.company-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.25rem;
+  object-fit: contain;
+  background: white;
+  border: 1px solid var(--bs-gray-200);
+  padding: 2px;
+  flex-shrink: 0;
+}
 
 .platform-tags {
   .badge {

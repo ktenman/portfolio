@@ -23,6 +23,7 @@ class InstrumentService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val investmentMetricsService: InvestmentMetricsService,
   private val dailyPriceService: DailyPriceService,
+  private val logoUrlService: LogoUrlService,
   private val clock: java.time.Clock,
 ) {
   @Transactional(readOnly = true)
@@ -58,6 +59,9 @@ class InstrumentService(
     ],
   )
   fun saveInstrument(instrument: Instrument): Instrument {
+    if (instrument.logoUrl == null) {
+      instrument.logoUrl = logoUrlService.generateLogoUrl(instrument)
+    }
     val saved = instrumentRepository.save(instrument)
     recalculateTransactionProfitsForInstrument(saved.id)
     return saved

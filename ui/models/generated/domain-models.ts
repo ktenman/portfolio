@@ -23,6 +23,7 @@ export interface InstrumentDto {
     platforms: string[];
     priceChangeAmount: number | null;
     priceChangePercent: number | null;
+    logoUrl: string | null;
 }
 
 export interface TransactionRequestDto {

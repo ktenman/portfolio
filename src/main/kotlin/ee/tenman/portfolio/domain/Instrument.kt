@@ -24,6 +24,8 @@ class Instrument(
   @Enumerated(EnumType.STRING)
   @Column(name = "provider_name", nullable = true)
   var providerName: ProviderName = ProviderName.ALPHA_VANTAGE,
+  @Column(name = "logo_url", length = 500, nullable = true)
+  var logoUrl: String? = null,
   @Transient
   var totalInvestment: BigDecimal = BigDecimal.ZERO,
   @Transient

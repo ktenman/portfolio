@@ -30,6 +30,7 @@ data class InstrumentDto(
   val platforms: Set<String> = emptySet(),
   val priceChangeAmount: BigDecimal? = null,
   val priceChangePercent: Double? = null,
+  val logoUrl: String? = null,
 ) {
   fun toEntity() =
     Instrument(
@@ -39,6 +40,7 @@ data class InstrumentDto(
       baseCurrency = baseCurrency,
       currentPrice = currentPrice,
       providerName = ProviderName.valueOf(providerName),
+      logoUrl = logoUrl,
     ).apply {
       id.let { this.id = it }
       totalInvestment = this@InstrumentDto.totalInvestment ?: BigDecimal.ZERO
@@ -69,6 +71,7 @@ data class InstrumentDto(
         platforms = instrument.platforms?.map { it.name }?.toSet() ?: emptySet(),
         priceChangeAmount = instrument.priceChangeAmount,
         priceChangePercent = instrument.priceChangePercent,
+        logoUrl = instrument.logoUrl,
       )
   }
 }
