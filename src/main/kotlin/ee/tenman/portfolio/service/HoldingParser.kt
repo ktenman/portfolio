@@ -46,9 +46,6 @@ class HoldingParser {
         ticker = ticker,
         sector = sector,
         weight = weight,
-        marketCap = null,
-        price = null,
-        dayChange = null,
         rank = rank,
       )
     }

@@ -1,0 +1,4 @@
+ALTER TABLE etf_position
+DROP COLUMN IF EXISTS market_cap,
+DROP COLUMN IF EXISTS price,
+DROP COLUMN IF EXISTS day_change;
