@@ -54,7 +54,7 @@ jobs:
         run: ./gradlew detekt
       - name: Upload Detekt reports
         if: always() && matrix.lint-type == 'backend'
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: Detekt Reports
           path: |
@@ -160,7 +160,7 @@ jobs:
       - name: Run frontend test coverage
         if: matrix.test-type == 'frontend-unit'
         run: npm run test:coverage
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@v5
         if: always() && matrix.test-type == 'backend-unit'
         with:
           name: Backend Unit Test Reports
@@ -168,7 +168,7 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
             build/reports/jacoco/test/html/
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@v5
         if: always() && matrix.test-type == 'e2e'
         with:
           name: E2E Test Reports and Screenshots
@@ -177,7 +177,7 @@ jobs:
             build/test-results/test/
             build/reports/selenide/
             build/reports/jacoco/test/html/
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@v5
         if: always() && matrix.test-type == 'frontend-unit'
         with:
           name: Frontend Unit Test Reports
