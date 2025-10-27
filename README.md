@@ -94,6 +94,7 @@ The system follows a clean microservices architecture with strong separation of 
 - **Authentication Service**: OAuth 2.0 proxy handling Google/GitHub login
 - **Database**: PostgreSQL 17 with optimized indexes and constraints
 - **Cache**: Redis 8 for session storage and data caching
+- **Object Storage**: MinIO for ETF/stock logo storage with Redis caching
 - **Market Price Tracker**: Python service for real-time price updates
 - **Captcha Solver**: ML-based service for automated captcha resolution
 - **Reverse Proxy**: Caddy handling SSL, routing, and authentication
@@ -156,6 +157,7 @@ details and portfolio summaries.
 
    Required variables:
    - `POSTGRES_USER` and `POSTGRES_PASSWORD`
+   - `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` (for logo storage)
    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (for OAuth)
    - `VISION_BASE64_ENCODED_KEY` (for Google Cloud Vision)
    - `TELEGRAM_BOT_TOKEN` (optional, for Telegram integration)
@@ -164,7 +166,7 @@ details and portfolio summaries.
    ```bash
    docker-compose -f compose.yaml up -d
    ```
-   This starts PostgreSQL and Redis containers.
+   This starts PostgreSQL, Redis, and MinIO containers.
 
 ### Backend Setup
 
@@ -426,6 +428,11 @@ Create `.env` file with these required variables:
 # Database
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_secure_password
+
+# MinIO Object Storage (for logo storage)
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=your_secure_minio_password
+MINIO_BUCKET_NAME=portfolio-logos
 
 # OAuth Providers
 GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com

@@ -27,7 +27,25 @@ services:
       timeout: 1s
       retries: 5
 
+  minio-dev:
+    image: minio/minio:latest
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data_dev:/data
+    healthcheck:
+      test: [ 'CMD', 'mc', 'ready', 'local' ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data_dev:
   redis_data_dev:
   keycloak_data_dev:
+  minio_data_dev:

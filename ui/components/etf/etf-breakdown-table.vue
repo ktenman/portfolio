@@ -18,6 +18,18 @@
         :is-error="false"
         empty-message="No holdings data available"
       >
+        <template #cell-holdingTicker="{ item }">
+          <div class="ticker-cell">
+            <img
+              v-if="item.holdingTicker"
+              :src="utilityService.getLogoUrl(item.holdingTicker)"
+              :alt="item.holdingName"
+              class="company-logo"
+              @error="handleImageError"
+            />
+            <span class="ticker-symbol">{{ item.holdingTicker || '-' }}</span>
+          </div>
+        </template>
         <template #footer>
           <tr v-if="holdings.length > 0" class="table-footer-totals">
             <td class="fw-bold ps-3">Total</td>
@@ -38,6 +50,7 @@ import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-model
 import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
+import { utilityService } from '../../services/utility-service'
 
 const props = defineProps<{
   holdings: EtfHoldingBreakdownDto[]
@@ -63,12 +76,16 @@ const formatPercentage = (value: number | null) => {
   return `${value.toFixed(4)}%`
 }
 
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+}
+
 const columns: ColumnDefinition[] = [
   {
     key: 'holdingTicker',
     label: 'Ticker',
     sortable: true,
-    formatter: (value: string | null) => value || '-',
     class: 'fw-semibold',
   },
   {
@@ -113,6 +130,23 @@ const columns: ColumnDefinition[] = [
 </script>
 
 <style scoped>
+.ticker-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.company-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.ticker-symbol {
+  font-weight: 600;
+}
+
 .card {
   border-radius: 0.5rem;
   overflow: hidden;
