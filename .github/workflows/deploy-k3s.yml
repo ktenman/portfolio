@@ -25,6 +25,12 @@ on:
         required: true
       HEALTHCHECK_URL:
         required: false
+      MINIO_ROOT_USER:
+        required: true
+      MINIO_ROOT_PASSWORD:
+        required: true
+      MINIO_BUCKET_NAME:
+        required: false
   workflow_dispatch:
     inputs:
       deploy:
@@ -73,6 +79,9 @@ jobs:
             export VISION_BASE64_ENCODED_KEY='${{ secrets.VISION_BASE64_ENCODED_KEY }}'
             export TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
             export HEALTHCHECK_URL='${{ secrets.HEALTHCHECK_URL }}'
+            export MINIO_ROOT_USER='${{ secrets.MINIO_ROOT_USER }}'
+            export MINIO_ROOT_PASSWORD='${{ secrets.MINIO_ROOT_PASSWORD }}'
+            export MINIO_BUCKET_NAME='${{ secrets.MINIO_BUCKET_NAME || 'portfolio-logos' }}'
 
             # NEW: Set up build information - this is the key fix for the missing git hash
             export BUILD_HASH=\$(git -C ~/k8s-deploy rev-parse --short HEAD 2>/dev/null || echo 'unknown')

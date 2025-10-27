@@ -46,7 +46,9 @@ describe('portfolioSummaryService', () => {
 
       const result = await portfolioSummaryService.getHistorical(0, 10)
 
-      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/historical?page=0&size=10')
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/historical', {
+        params: { page: 0, size: 10 },
+      })
       expect(result).toEqual(mockPage)
     })
 
@@ -65,7 +67,9 @@ describe('portfolioSummaryService', () => {
 
       const result = await portfolioSummaryService.getHistorical(5, 20)
 
-      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/historical?page=5&size=20')
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/historical', {
+        params: { page: 5, size: 20 },
+      })
       expect(result).toEqual(mockPage)
     })
 
@@ -111,11 +115,11 @@ describe('portfolioSummaryService', () => {
 
       const result = await portfolioSummaryService.recalculate()
 
-      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate', {})
+      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate')
       expect(result).toEqual(mockResponse)
     })
 
-    it('should send empty object as request body', async () => {
+    it('should call recalculate without request body', async () => {
       const mockResponse = { message: 'Recalculation in progress' }
 
       vi.mocked(httpClient.post).mockResolvedValueOnce({
@@ -124,8 +128,8 @@ describe('portfolioSummaryService', () => {
 
       await portfolioSummaryService.recalculate()
 
-      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate', {})
-      expect(vi.mocked(httpClient.post).mock.calls[0][1]).toEqual({})
+      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate')
+      expect(vi.mocked(httpClient.post).mock.calls[0].length).toBe(1)
     })
 
     it('should propagate errors on recalculate', async () => {

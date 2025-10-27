@@ -31,6 +31,26 @@ services:
       timeout: 1s
       retries: 5
 
+  minio:
+    image: minio/minio:latest
+    container_name: portfolio-minio
+    ports:
+      - "61242:9000"
+      - "61243:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   keycloak-db:
     image: postgres:17-alpine
     container_name: portfolio-keycloak-db
@@ -191,9 +211,14 @@ services:
       - SECURITY_ENABLED=false
       - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/portfolio
       - KEYCLOAK_JWK_SET_URI=http://keycloak:8080/realms/portfolio/protocol/openid-connect/certs
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
     depends_on:
       - postgres
       - redis
+      - minio
     networks:
       - portfolio-network
     healthcheck:
@@ -267,3 +292,4 @@ volumes:
   caddy-config:
   keycloak_data:
     driver: local
+  minio-data:

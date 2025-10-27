@@ -59,6 +59,7 @@ dependencies {
   implementation(libs.google.cloud.vision) {
     exclude(group = "commons-logging", module = "commons-logging")
   }
+  implementation(libs.minio)
 
   developmentOnly(libs.spring.boot.docker.compose)
   runtimeOnly(libs.postgresql)
@@ -77,6 +78,7 @@ dependencies {
   testImplementation(libs.testcontainers.junit.jupiter)
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.testcontainers.postgresql)
+  testImplementation(libs.testcontainers.minio)
   testImplementation(libs.mockk)
   testImplementation(libs.spring.mockk)
   testImplementation(libs.archunit.junit5)

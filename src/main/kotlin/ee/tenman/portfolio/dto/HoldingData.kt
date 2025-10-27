@@ -8,4 +8,5 @@ data class HoldingData(
   val sector: String?,
   val weight: BigDecimal,
   val rank: Int,
+  val logoUrl: String? = null,
 )

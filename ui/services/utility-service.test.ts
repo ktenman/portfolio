@@ -126,4 +126,24 @@ describe('utilityService', () => {
       await expect(utilityService.getBuildInfo()).rejects.toThrow('Build info not available')
     })
   })
+
+  describe('getLogoUrl', () => {
+    it('should return correct logo URL for ticker', () => {
+      const ticker = 'AAPL'
+      const result = utilityService.getLogoUrl(ticker)
+
+      expect(result).toBe('/api/logos/AAPL')
+    })
+
+    it('should handle different ticker symbols', () => {
+      expect(utilityService.getLogoUrl('MSFT')).toBe('/api/logos/MSFT')
+      expect(utilityService.getLogoUrl('GOOGL')).toBe('/api/logos/GOOGL')
+      expect(utilityService.getLogoUrl('TSLA')).toBe('/api/logos/TSLA')
+    })
+
+    it('should preserve ticker case', () => {
+      expect(utilityService.getLogoUrl('aapl')).toBe('/api/logos/aapl')
+      expect(utilityService.getLogoUrl('Aapl')).toBe('/api/logos/Aapl')
+    })
+  })
 })

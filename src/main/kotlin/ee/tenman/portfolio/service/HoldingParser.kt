@@ -38,8 +38,9 @@ class HoldingParser {
       val ticker = nameParts.getOrNull(1)?.removePrefix("$")?.trim()
       val sector = nameParts.getOrNull(2)
       val weight = extractWeightFromAllDivs(allDivs)
+      val logoUrl = extractLogoUrl(element)
 
-      log.debug("Extracted - Name: '$name', Ticker: '$ticker', Sector: '$sector', Weight: $weight")
+      log.debug("Extracted - Name: '$name', Ticker: '$ticker', Sector: '$sector', Weight: $weight, Logo: '$logoUrl'")
 
       HoldingData(
         name = name,
@@ -47,8 +48,48 @@ class HoldingParser {
         sector = sector,
         weight = weight,
         rank = rank,
+        logoUrl = logoUrl,
       )
     }
+  }
+
+  private fun extractLogoUrl(element: SelenideElement): String? {
+    val logoUrl =
+      try {
+        val imgSrc =
+          element
+            .findAll("img")
+            .firstOrNull()
+            ?.getAttribute("src")
+            ?.takeIf { it.isNotEmpty() }
+
+        imgSrc ?: extractBackgroundImageUrl(element)
+      } catch (e: Exception) {
+        log.debug("Failed to extract logo URL: ${e.message}")
+        null
+      }
+
+    logoUrl?.let { log.debug("Found logo URL: $it") }
+      ?: log.debug("No logo found in element")
+
+    return logoUrl
+  }
+
+  private fun extractBackgroundImageUrl(element: SelenideElement): String? {
+    val divs = element.findAll("div")
+
+    for (div in divs) {
+      val style = div.getAttribute("style") ?: continue
+      if (style.contains("background-image")) {
+        val urlPattern = Regex("""url\(['"]?([^'"()]+)['"]?\)""")
+        val match = urlPattern.find(style)
+        if (match != null) {
+          return match.groupValues[1]
+        }
+      }
+    }
+
+    return null
   }
 
   private fun extractWeightFromAllDivs(allDivs: List<String>): BigDecimal {
