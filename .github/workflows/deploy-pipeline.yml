@@ -25,6 +25,12 @@ on:
         required: true
       TELEGRAM_BOT_TOKEN:
         required: true
+      MINIO_ROOT_USER:
+        required: true
+      MINIO_ROOT_PASSWORD:
+        required: true
+      MINIO_BUCKET_NAME:
+        required: false
   workflow_dispatch:
     inputs:
       deploy:
@@ -60,6 +66,9 @@ jobs:
           echo "ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}" >> .env
           echo "VISION_BASE64_ENCODED_KEY=${{ secrets.VISION_BASE64_ENCODED_KEY }}" >> .env
           echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}" >> .env
+          echo "MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}" >> .env
+          echo "MINIO_BUCKET_NAME=${{ secrets.MINIO_BUCKET_NAME || 'portfolio-logos' }}" >> .env
           echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> .env
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> .env
       - name: Copy files to server

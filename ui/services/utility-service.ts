@@ -11,4 +11,6 @@ export const utilityService = {
     httpClient.get<CalculationResult>('/calculator').then(res => res.data),
 
   getBuildInfo: () => httpClient.get<BuildInfo>('/build-info').then(res => res.data),
+
+  getLogoUrl: (ticker: string): string => `/api/logos/${ticker}`,
 }

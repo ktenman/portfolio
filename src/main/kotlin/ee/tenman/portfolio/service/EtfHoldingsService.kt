@@ -18,6 +18,7 @@ class EtfHoldingsService(
   private val instrumentRepository: InstrumentRepository,
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
+  private val minioService: MinioService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -89,21 +90,54 @@ class EtfHoldingsService(
     return containingMatches.first()
   }
 
-  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding =
-    etfHoldingRepository
-      .findByNameAndTicker(holdingData.name, holdingData.ticker)
-      .orElseGet {
-        log.debug(
-          "Creating new holding - Name: '${holdingData.name}' (length: ${holdingData.name.length}), " +
-            "Ticker: '${holdingData.ticker}' (length: ${holdingData.ticker?.length ?: 0}), " +
-            "Sector: '${holdingData.sector}' (length: ${holdingData.sector?.length ?: 0})",
-        )
-        val newHolding =
-          EtfHolding(
-            name = holdingData.name,
-            ticker = holdingData.ticker,
-            sector = holdingData.sector,
-          )
-        etfHoldingRepository.save(newHolding)
+  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding {
+    val existingHolding = etfHoldingRepository.findByNameAndTicker(holdingData.name, holdingData.ticker)
+
+    return if (existingHolding.isPresent) {
+      val holding = existingHolding.get()
+      if (holdingData.logoUrl != null) {
+        uploadLogoToMinio(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
       }
+      holding
+    } else {
+      log.debug(
+        "Creating new holding - Name: '${holdingData.name}' (length: ${holdingData.name.length}), " +
+          "Ticker: '${holdingData.ticker}' (length: ${holdingData.ticker?.length ?: 0}), " +
+          "Sector: '${holdingData.sector}' (length: ${holdingData.sector?.length ?: 0}), " +
+          "Logo URL: '${holdingData.logoUrl}'",
+      )
+
+      if (holdingData.logoUrl != null) {
+        uploadLogoToMinio(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
+      }
+
+      val newHolding =
+        EtfHolding(
+          name = holdingData.name,
+          ticker = holdingData.ticker,
+          sector = holdingData.sector,
+        )
+      etfHoldingRepository.save(newHolding)
+    }
+  }
+
+  private fun uploadLogoToMinio(
+    symbol: String,
+    logoUrl: String,
+  ) {
+    try {
+      val imageData = downloadImage(logoUrl)
+      minioService.uploadLogo(symbol, imageData)
+      log.debug("Uploaded logo to MinIO for symbol: {}", symbol)
+    } catch (e: Exception) {
+      log.warn("Failed to upload logo to MinIO for symbol: {}", symbol, e)
+    }
+  }
+
+  private fun downloadImage(url: String): ByteArray {
+    val connection = java.net.URL(url).openConnection()
+    connection.connectTimeout = 5000
+    connection.readTimeout = 5000
+    return connection.getInputStream().use { it.readBytes() }
+  }
 }
