@@ -137,10 +137,13 @@ const columns: ColumnDefinition[] = [
 }
 
 .company-logo {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
   flex-shrink: 0;
+  border-radius: 50%;
+  background-color: #f8f9fa;
+  padding: 2px;
 }
 
 .ticker-symbol {

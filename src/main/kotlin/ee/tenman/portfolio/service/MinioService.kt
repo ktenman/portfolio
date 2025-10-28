@@ -17,6 +17,22 @@ class MinioService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  fun logoExists(symbol: String): Boolean =
+    try {
+      val objectName = "logos/${symbol.uppercase()}.png"
+      minioClient
+        .statObject(
+          io.minio.StatObjectArgs
+            .builder()
+            .bucket(minioProperties.bucketName)
+            .`object`(objectName)
+            .build(),
+        )
+      true
+    } catch (e: Exception) {
+      false
+    }
+
   fun uploadLogo(
     symbol: String,
     logoData: ByteArray,
