@@ -96,7 +96,7 @@ class EtfHoldingsService(
     return if (existingHolding.isPresent) {
       val holding = existingHolding.get()
       if (holdingData.logoUrl != null) {
-        uploadLogoToMinio(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
+        uploadLogoToMinioIfNeeded(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
       }
       holding
     } else {
@@ -108,7 +108,7 @@ class EtfHoldingsService(
       )
 
       if (holdingData.logoUrl != null) {
-        uploadLogoToMinio(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
+        uploadLogoToMinioIfNeeded(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
       }
 
       val newHolding =
@@ -121,10 +121,15 @@ class EtfHoldingsService(
     }
   }
 
-  private fun uploadLogoToMinio(
+  private fun uploadLogoToMinioIfNeeded(
     symbol: String,
     logoUrl: String,
   ) {
+    if (minioService.logoExists(symbol)) {
+      log.debug("Logo already exists in MinIO for symbol: {}, skipping upload", symbol)
+      return
+    }
+
     try {
       val imageData = downloadImage(logoUrl)
       minioService.uploadLogo(symbol, imageData)
