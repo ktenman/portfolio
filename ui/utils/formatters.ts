@@ -103,12 +103,16 @@ export const formatPercentageFromDecimal = (value: number | undefined | null): s
   return `${(value * 100).toFixed(2)}%`
 }
 
-export const formatProfitLoss = (value: number | null | undefined): string => {
+export const formatProfitLoss = (
+  value: number | null | undefined,
+  includeSign: boolean = true
+): string => {
   if (value === null || value === undefined) return '0.00'
   const formattedValue = Math.abs(value).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
+  if (!includeSign) return formattedValue
   const sign = value >= 0 ? '+' : '-'
   return `${sign}${formattedValue}`
 }
@@ -118,7 +122,8 @@ export const formatTransactionAmount = (
   price: number,
   type: string,
   _commission?: number,
-  currency?: string
+  currency?: string,
+  includeSign: boolean = true
 ): string => {
   const amount = quantity * price
 
@@ -128,8 +133,12 @@ export const formatTransactionAmount = (
   })
 
   const currencySymbol = getCurrencySymbol(currency)
-  const sign = type === 'BUY' ? '+' : '-'
 
+  if (!includeSign) {
+    return `${currencySymbol}${formattedAmount}`
+  }
+
+  const sign = type === 'BUY' ? '+' : '-'
   return `${sign}${currencySymbol}${formattedAmount}`
 }
 
