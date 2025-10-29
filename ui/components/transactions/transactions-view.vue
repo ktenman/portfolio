@@ -24,35 +24,23 @@
       </div>
     </div>
 
-    <div v-if="transactions?.length" class="row mb-3">
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-body">
-            <h6 class="card-subtitle mb-2 text-muted">Total Realized Profit</h6>
-            <h4 :class="realizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
-              {{ formatCurrency(realizedProfitSum) }}
-            </h4>
-          </div>
+    <div v-if="transactions?.length" class="stats-container mb-4">
+      <div class="stat-card">
+        <div class="stat-label">Total Realized Profit</div>
+        <div class="stat-value" :class="realizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
+          {{ formatCurrency(realizedProfitSum) }}
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-body">
-            <h6 class="card-subtitle mb-2 text-muted">Total Unrealized Profit</h6>
-            <h4 :class="unrealizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
-              {{ formatCurrency(unrealizedProfitSum) }}
-            </h4>
-          </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Unrealized Profit</div>
+        <div class="stat-value" :class="unrealizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
+          {{ formatCurrency(unrealizedProfitSum) }}
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-body">
-            <h6 class="card-subtitle mb-2 text-muted">Total Profit</h6>
-            <h4 class="fw-bold" :class="totalProfitSum >= 0 ? 'text-success' : 'text-danger'">
-              {{ formatCurrency(totalProfitSum) }}
-            </h4>
-          </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Profit</div>
+        <div class="stat-value" :class="totalProfitSum >= 0 ? 'text-success' : 'text-danger'">
+          {{ formatCurrency(totalProfitSum) }}
         </div>
       </div>
     </div>
@@ -157,6 +145,39 @@ const toggleAllPlatforms = () => {
 </script>
 
 <style scoped>
+.stats-container {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 200px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1a1a1a;
+}
+
 .platform-filter-container {
   display: flex;
   align-items: center;
@@ -216,6 +237,19 @@ const toggleAllPlatforms = () => {
 }
 
 @media (max-width: 768px) {
+  .stats-container {
+    flex-direction: column;
+  }
+
+  .stat-card {
+    padding: 0.75rem 1rem;
+    min-width: unset;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
   .platform-filter-container {
     flex-direction: column;
     align-items: flex-start;
@@ -234,6 +268,26 @@ const toggleAllPlatforms = () => {
 @media (min-width: 769px) {
   .platform-filter-container {
     align-items: center;
+  }
+}
+
+@media (max-width: 926px) and (orientation: landscape) {
+  .stats-container {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .stat-card {
+    padding: 1.25rem 2rem;
+    min-width: 200px;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
   }
 }
 
