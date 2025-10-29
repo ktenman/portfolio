@@ -50,30 +50,30 @@ describe('InstrumentModal', () => {
       expect(wrapper.find('.modal-title').attributes('id')).toBe('customModalLabel')
     })
 
-    it('should display "Add New InstrumentDto" title when creating new', () => {
+    it('should display "Add New Instrument" title when creating new', () => {
       const wrapper = createWrapper()
 
-      expect(wrapper.find('.modal-title').text()).toBe('Add New InstrumentDto')
+      expect(wrapper.find('.modal-title').text()).toBe('Add New Instrument')
     })
 
-    it('should display "Edit InstrumentDto" title when editing', () => {
+    it('should display "Edit Instrument" title when editing', () => {
       const wrapper = createWrapper({ instrument: mockInstrument })
 
-      expect(wrapper.find('.modal-title').text()).toBe('Edit InstrumentDto')
+      expect(wrapper.find('.modal-title').text()).toBe('Edit Instrument')
     })
 
-    it('should show "Save InstrumentDto" button when creating new', () => {
+    it('should show "Save Instrument" button when creating new', () => {
       const wrapper = createWrapper()
 
       const submitButton = wrapper.find('.btn-primary')
-      expect(submitButton.text()).toBe('Save InstrumentDto')
+      expect(submitButton.text()).toBe('Save Instrument')
     })
 
-    it('should show "Update InstrumentDto" button when editing', () => {
+    it('should show "Update Instrument" button when editing', () => {
       const wrapper = createWrapper({ instrument: mockInstrument })
 
       const submitButton = wrapper.find('.btn-primary')
-      expect(submitButton.text()).toBe('Update InstrumentDto')
+      expect(submitButton.text()).toBe('Update Instrument')
     })
   })
 
