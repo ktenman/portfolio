@@ -60,5 +60,6 @@ export const createPortfolioSummaryDto = (
   totalProfit: 1000,
   earningsPerDay: 10,
   earningsPerMonth: 300,
+  totalProfitChange24h: null,
   ...overrides,
 })

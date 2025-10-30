@@ -24,8 +24,13 @@ export function useSortableTable<T extends Record<string, any>>(
 
     const sorted = [...items.value].sort((a, b) => {
       const key = sortState.value.key!
-      const aValue = getNestedValue(a, key)
-      const bValue = getNestedValue(b, key)
+      let aValue = getNestedValue(a, key)
+      let bValue = getNestedValue(b, key)
+
+      if (key === 'totalProfitChange24h') {
+        if (aValue === 0 || Math.abs(aValue) <= 0.01) aValue = null
+        if (bValue === 0 || Math.abs(bValue) <= 0.01) bValue = null
+      }
 
       if (aValue === null || aValue === undefined) return 1
       if (bValue === null || bValue === undefined) return -1
