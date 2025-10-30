@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -86,6 +87,36 @@ class DailyPriceService(
       .firstOrNull { it.closePrice != currentPrice }
       ?.closePrice
       ?: return null
+
+    val changeAmount = currentPrice.subtract(previousPrice)
+    val changePercent = calculateChangePercent(changeAmount, previousPrice)
+
+    return PriceChange(changeAmount, changePercent)
+  }
+
+  @Transactional(readOnly = true)
+  fun getPriceChange(
+    instrument: Instrument,
+    period: PriceChangePeriod = PriceChangePeriod.P24H,
+  ): PriceChange? {
+    val currentDate = LocalDate.now()
+    val targetDate = currentDate.minusDays(period.days.toLong())
+
+    val currentPrice =
+      dailyPriceRepository
+        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+          instrument,
+          currentDate.minusDays(1),
+          currentDate,
+        )?.closePrice ?: return null
+
+    val previousPrice =
+      dailyPriceRepository
+        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+          instrument,
+          targetDate.minusDays(5),
+          targetDate,
+        )?.closePrice ?: return null
 
     val changeAmount = currentPrice.subtract(previousPrice)
     val changePercent = calculateChangePercent(changeAmount, previousPrice)

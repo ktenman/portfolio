@@ -14,17 +14,17 @@
         <td></td>
         <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</td>
         <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</td>
-        <td class="fw-bold text-nowrap">
+        <td class="fw-bold text-nowrap profit-column">
           <span :class="getProfitClass(totalProfit)">
             {{ formatProfit(totalProfit, 'EUR') }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap">
+        <td class="fw-bold text-nowrap unrealized-column">
           <span :class="getProfitClass(totalUnrealizedProfit)">
             {{ formatProfit(totalUnrealizedProfit, 'EUR') }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap">
+        <td class="fw-bold text-nowrap price-change-column">
           <span :class="getProfitClass(totalChangeAmount)">
             {{ formatCurrencyWithSign(Math.abs(totalChangeAmount), 'EUR') }} /
             {{ Math.abs(totalChangePercent).toFixed(2) }}%
@@ -80,7 +80,7 @@
             <span class="metric-value" :class="getProfitClass(item.priceChangeAmount)">
               {{ formatCurrencyWithSign(Math.abs(item.priceChangeAmount), item.baseCurrency) }}
             </span>
-            <span class="metric-label">24H</span>
+            <span class="metric-label">{{ selectedPeriod.toUpperCase() }}</span>
           </div>
         </div>
         <div class="instrument-footer">
@@ -88,11 +88,6 @@
             <span class="value-label">Value</span>
             <span class="value-amount">
               {{ formatCurrencyWithSign(item.currentValue, item.baseCurrency) }}
-            </span>
-          </div>
-          <div class="profit-info">
-            <span :class="getProfitClass(item.profit || 0)">
-              {{ formatProfit(item.profit || 0, item.baseCurrency) }}
             </span>
           </div>
         </div>
@@ -114,20 +109,20 @@
             <span class="total-label">INVESTED</span>
             <span class="total-value">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</span>
           </div>
-          <div class="total-item">
+          <div class="total-item total-profit-item">
             <span class="total-label">PROFIT</span>
             <span class="total-value" :class="getProfitClass(totalProfit)">
               {{ formatProfit(totalProfit, 'EUR') }}
             </span>
           </div>
-          <div class="total-item">
+          <div class="total-item total-unrealized-item">
             <span class="total-label">UNREALIZED</span>
             <span class="total-value" :class="getProfitClass(totalUnrealizedProfit)">
               {{ formatProfit(totalUnrealizedProfit, 'EUR') }}
             </span>
           </div>
-          <div class="total-item">
-            <span class="total-label">24H</span>
+          <div class="total-item total-price-change-item">
+            <span class="total-label">{{ selectedPeriod.toUpperCase() }}</span>
             <span class="total-value" :class="getProfitClass(totalChangeAmount)">
               {{ formatCurrencyWithSign(Math.abs(totalChangeAmount), 'EUR') }} /
               {{ Math.abs(totalChangePercent).toFixed(2) }}%
@@ -225,18 +220,24 @@ interface Props {
   isLoading?: boolean
   isError?: boolean
   errorMessage?: string
+  selectedPeriod: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
   isError: false,
+  selectedPeriod: '24h',
 })
 
 defineEmits<{
   edit: [instrument: InstrumentDto]
 }>()
 
-const columns = instrumentColumns
+const columns = computed(() =>
+  instrumentColumns.map(col =>
+    col.key === 'priceChange' ? { ...col, label: props.selectedPeriod.toUpperCase() } : col
+  )
+)
 
 const totalInvested = computed(() => {
   return props.instruments.reduce((sum, instrument) => {
@@ -483,7 +484,7 @@ const formatPlatformName = (platform: string): string => {
 
   .instrument-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
 
     .value-info {
@@ -499,11 +500,6 @@ const formatPlatformName = (platform: string): string => {
         color: var(--bs-gray-900);
       }
     }
-
-    .profit-info {
-      font-size: 1rem;
-      font-weight: 700;
-    }
   }
 }
 
@@ -511,6 +507,36 @@ const formatPlatformName = (platform: string): string => {
 @media (max-width: 992px) {
   .instrument-info > div:first-child {
     word-break: break-word;
+  }
+}
+
+// Mobile landscape: hide profit and price change columns from desktop table
+@media (max-width: 992px) and (orientation: landscape) {
+  :deep(.profit-column),
+  :deep(.price-change-column) {
+    display: none !important;
+  }
+
+  .mobile-totals-card {
+    .total-profit-item,
+    .total-price-change-item {
+      display: none !important;
+    }
+  }
+}
+
+// Also hide on short screens (likely landscape mobile)
+@media (max-height: 500px) {
+  :deep(.profit-column),
+  :deep(.price-change-column) {
+    display: none !important;
+  }
+
+  .mobile-totals-card {
+    .total-profit-item,
+    .total-price-change-item {
+      display: none !important;
+    }
   }
 }
 </style>
