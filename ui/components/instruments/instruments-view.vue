@@ -27,6 +27,14 @@
             }}
           </button>
         </div>
+        <div class="period-selector-container">
+          <label class="period-label d-none d-md-inline">Period:</label>
+          <select v-model="selectedPeriod" class="period-select">
+            <option v-for="p in periods" :key="p.value" :value="p.value">
+              {{ p.label }}
+            </option>
+          </select>
+        </div>
       </div>
     </template>
 
@@ -36,6 +44,7 @@
         :is-loading="isLoading"
         :is-error="isError"
         :error-message="error?.message"
+        :selected-period="selectedPeriod"
         @edit="openEditModal"
       />
     </template>
@@ -52,6 +61,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
 import { useLocalStorage } from '@vueuse/core'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
+import { usePriceChangePeriod } from '../../composables/use-price-change-period'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
@@ -62,6 +72,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 const selectedItem = ref<InstrumentDto | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_platforms', [])
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
+const { selectedPeriod, periods } = usePriceChangePeriod()
 const queryClient = useQueryClient()
 const toast = useToast()
 
@@ -113,15 +124,15 @@ const {
   isError,
   error,
 } = useQuery({
-  queryKey: computed(() => ['instruments', selectedPlatforms.value]),
+  queryKey: computed(() => ['instruments', selectedPlatforms.value, selectedPeriod.value]),
   queryFn: () => {
     if (
       selectedPlatforms.value.length === 0 ||
       selectedPlatforms.value.length === availablePlatforms.value.length
     ) {
-      return instrumentsService.getAll()
+      return instrumentsService.getAll(undefined, selectedPeriod.value)
     }
-    return instrumentsService.getAll(selectedPlatforms.value)
+    return instrumentsService.getAll(selectedPlatforms.value, selectedPeriod.value)
   },
   refetchInterval: 30000,
 })
@@ -200,8 +211,10 @@ const handleTitleClick = async () => {
 .platform-filter-container {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0;
   background: transparent;
+  gap: 1rem;
 }
 
 .platform-buttons {
@@ -255,11 +268,48 @@ const handleTitleClick = async () => {
   color: white;
 }
 
+.period-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.period-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0;
+}
+
+.period-select {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #4b5563;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  min-width: 4rem;
+}
+
+.period-select:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.period-select:focus {
+  outline: none;
+  border-color: #4b5563;
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.1);
+}
+
 @media (max-width: 768px) {
   .platform-filter-container {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.375rem;
+    gap: 0.75rem;
   }
 
   .platform-buttons {
@@ -269,11 +319,31 @@ const handleTitleClick = async () => {
   .platform-separator {
     display: none;
   }
+
+  .period-selector-container {
+    width: 100%;
+  }
+
+  .period-select {
+    flex: 1;
+  }
 }
 
 @media (min-width: 769px) {
   .platform-filter-container {
     align-items: center;
+  }
+}
+
+@media (max-width: 992px) and (orientation: landscape) {
+  .period-selector-container {
+    display: none !important;
+  }
+}
+
+@media (max-height: 500px) {
+  .period-selector-container {
+    display: none !important;
   }
 }
 </style>

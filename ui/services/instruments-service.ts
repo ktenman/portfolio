@@ -1,9 +1,12 @@
 import { httpClient } from '../utils/http-client'
-import type { InstrumentDto } from '../models/generated/domain-models'
+import { type InstrumentDto, PriceChangePeriod } from '../models/generated/domain-models'
 
 export const instrumentsService = {
-  getAll: (platforms?: string[]) => {
-    const params = platforms && platforms.length > 0 ? { platforms } : {}
+  getAll: (platforms?: string[], period: PriceChangePeriod = PriceChangePeriod.P24H) => {
+    const params: Record<string, any> = { period }
+    if (platforms && platforms.length > 0) {
+      params.platforms = platforms
+    }
     return httpClient.get<InstrumentDto[]>('/instruments', { params }).then(res => res.data)
   },
 

@@ -17,9 +17,14 @@ export const instrumentColumns: ColumnDefinition[] = [
     formatter: formatCurrency,
     class: 'd-none d-md-table-cell',
   },
-  { key: 'profit', label: 'Profit', formatter: formatCurrency },
-  { key: 'unrealizedProfit', label: 'Unrealized', formatter: formatCurrency },
-  { key: 'priceChange', label: '24H', class: 'd-none d-lg-table-cell' },
+  { key: 'profit', label: 'Profit', formatter: formatCurrency, class: 'profit-column' },
+  {
+    key: 'unrealizedProfit',
+    label: 'Unrealized',
+    formatter: formatCurrency,
+    class: 'unrealized-column',
+  },
+  { key: 'priceChange', label: '24H', class: 'd-none d-lg-table-cell price-change-column' },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
 ]
 
