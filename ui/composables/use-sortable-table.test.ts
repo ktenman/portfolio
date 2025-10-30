@@ -230,4 +230,79 @@ describe('useSortableTable', () => {
       expect(sortedItems.value[4].name).toBe(null)
     })
   })
+
+  describe('totalProfitChange24h special handling', () => {
+    const profitChangeData = [
+      { id: 1, totalProfitChange24h: 100.5 },
+      { id: 2, totalProfitChange24h: -50.25 },
+      { id: 3, totalProfitChange24h: 0 },
+      { id: 4, totalProfitChange24h: 0.005 },
+      { id: 5, totalProfitChange24h: null },
+      { id: 6, totalProfitChange24h: 200.75 },
+      { id: 7, totalProfitChange24h: -100.0 },
+    ]
+
+    it('should treat zero values as null when sorting totalProfitChange24h ascending', () => {
+      const items = ref(profitChangeData)
+      const { toggleSort, sortedItems } = useSortableTable(items)
+
+      toggleSort('totalProfitChange24h')
+
+      expect(sortedItems.value[0].totalProfitChange24h).toBe(-100.0)
+      expect(sortedItems.value[1].totalProfitChange24h).toBe(-50.25)
+      expect(sortedItems.value[2].totalProfitChange24h).toBe(100.5)
+      expect(sortedItems.value[3].totalProfitChange24h).toBe(200.75)
+      expect([0, 0.005, null]).toContain(sortedItems.value[4].totalProfitChange24h)
+      expect([0, 0.005, null]).toContain(sortedItems.value[5].totalProfitChange24h)
+      expect([0, 0.005, null]).toContain(sortedItems.value[6].totalProfitChange24h)
+    })
+
+    it('should treat zero values as null when sorting totalProfitChange24h descending', () => {
+      const items = ref(profitChangeData)
+      const { toggleSort, sortedItems } = useSortableTable(items)
+
+      toggleSort('totalProfitChange24h')
+      toggleSort('totalProfitChange24h')
+
+      expect(sortedItems.value[0].totalProfitChange24h).toBe(200.75)
+      expect(sortedItems.value[1].totalProfitChange24h).toBe(100.5)
+      expect(sortedItems.value[2].totalProfitChange24h).toBe(-50.25)
+      expect(sortedItems.value[3].totalProfitChange24h).toBe(-100.0)
+      expect([0, 0.005, null]).toContain(sortedItems.value[4].totalProfitChange24h)
+      expect([0, 0.005, null]).toContain(sortedItems.value[5].totalProfitChange24h)
+      expect([0, 0.005, null]).toContain(sortedItems.value[6].totalProfitChange24h)
+    })
+
+    it('should treat near-zero values (< 0.01) as null when sorting totalProfitChange24h', () => {
+      const items = ref([
+        { id: 1, totalProfitChange24h: 50 },
+        { id: 2, totalProfitChange24h: 0.009 },
+        { id: 3, totalProfitChange24h: -0.005 },
+        { id: 4, totalProfitChange24h: 100 },
+      ])
+      const { toggleSort, sortedItems } = useSortableTable(items)
+
+      toggleSort('totalProfitChange24h')
+
+      expect(sortedItems.value[0].totalProfitChange24h).toBe(50)
+      expect(sortedItems.value[1].totalProfitChange24h).toBe(100)
+      expect(sortedItems.value[2].totalProfitChange24h).toBe(0.009)
+      expect(sortedItems.value[3].totalProfitChange24h).toBe(-0.005)
+    })
+
+    it('should not apply special handling to other numeric columns', () => {
+      const items = ref([
+        { id: 1, value: 0 },
+        { id: 2, value: 100 },
+        { id: 3, value: -50 },
+      ])
+      const { toggleSort, sortedItems } = useSortableTable(items)
+
+      toggleSort('value')
+
+      expect(sortedItems.value[0].value).toBe(-50)
+      expect(sortedItems.value[1].value).toBe(0)
+      expect(sortedItems.value[2].value).toBe(100)
+    })
+  })
 })

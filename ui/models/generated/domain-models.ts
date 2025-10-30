@@ -64,6 +64,7 @@ export interface PortfolioSummaryDto {
     totalProfit: number;
     earningsPerDay: number;
     earningsPerMonth: number;
+    totalProfitChange24h: number | null;
 }
 
 export interface EtfHoldingBreakdownDto extends Serializable {

@@ -12,4 +12,5 @@ data class PortfolioSummaryDto(
   val totalProfit: BigDecimal,
   val earningsPerDay: BigDecimal,
   val earningsPerMonth: BigDecimal,
+  val totalProfitChange24h: BigDecimal? = null,
 )

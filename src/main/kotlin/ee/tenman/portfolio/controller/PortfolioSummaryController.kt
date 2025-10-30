@@ -46,6 +46,8 @@ class PortfolioSummaryController(
     val historicalSummaries = portfolioSummaryService.getAllDailySummaries(page, size)
 
     return historicalSummaries.map { summary ->
+      val profitChange24h = portfolioSummaryService.calculate24hProfitChange(summary)
+
       PortfolioSummaryDto(
         date = summary.entryDate,
         totalValue = summary.totalValue,
@@ -55,6 +57,7 @@ class PortfolioSummaryController(
         totalProfit = summary.totalProfit,
         earningsPerDay = summary.earningsPerDay,
         earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25 / 12)),
+        totalProfitChange24h = profitChange24h,
       )
     }
   }
@@ -63,6 +66,7 @@ class PortfolioSummaryController(
   @Loggable
   fun getCurrentPortfolioSummary(): PortfolioSummaryDto {
     val currentDaySummary = portfolioSummaryService.getCurrentDaySummary()
+    val profitChange24h = portfolioSummaryService.calculate24hProfitChange(currentDaySummary)
 
     return PortfolioSummaryDto(
       date = currentDaySummary.entryDate,
@@ -73,6 +77,7 @@ class PortfolioSummaryController(
       totalProfit = currentDaySummary.totalProfit,
       earningsPerDay = currentDaySummary.earningsPerDay,
       earningsPerMonth = currentDaySummary.earningsPerDay.multiply(BigDecimal(365.25 / 12)),
+      totalProfitChange24h = profitChange24h,
     )
   }
 }

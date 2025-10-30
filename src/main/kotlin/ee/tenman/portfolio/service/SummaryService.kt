@@ -109,6 +109,14 @@ class SummaryService(
     return calculateCurrentDaySummaryForDate(today)
   }
 
+  @Transactional(readOnly = true)
+  fun calculate24hProfitChange(currentSummary: PortfolioDailySummary): BigDecimal? {
+    val yesterday = currentSummary.entryDate.minusDays(1)
+    val yesterdaySummary = portfolioDailySummaryRepository.findByEntryDate(yesterday) ?: return null
+
+    return currentSummary.totalProfit.subtract(yesterdaySummary.totalProfit)
+  }
+
   fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
     if (isToday(date)) return calculateTodaySummary(date)
 

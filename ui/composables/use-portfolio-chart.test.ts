@@ -163,6 +163,7 @@ describe('usePortfolioChart', () => {
         xirrAnnualReturn: undefined as unknown as number,
         earningsPerDay: 4,
         earningsPerMonth: null as unknown as number,
+        totalProfitChange24h: null,
       },
     ])
     const { processedChartData } = usePortfolioChart(summariesWithMissing)

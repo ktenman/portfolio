@@ -25,6 +25,7 @@ describe('portfolioSummaryService', () => {
     xirrAnnualReturn: 0.12,
     earningsPerDay: 100,
     earningsPerMonth: 3000,
+    totalProfitChange24h: null,
   }
 
   describe('getHistorical', () => {

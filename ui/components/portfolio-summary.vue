@@ -44,7 +44,13 @@
         :sort-state="sortState"
         :on-sort="toggleSort"
         class="mt-3"
-      />
+      >
+        <template #cell-totalProfitChange24h="{ value, item }">
+          <span v-if="value && Math.abs(value) > 0.01" :class="getProfitChangeClass(value)">
+            {{ format24hChange(item.totalProfitChange24h) }}
+          </span>
+        </template>
+      </data-table>
 
       <div v-if="isFetching" class="text-center mt-3">
         <skeleton-loader type="text" :lines="2" />
@@ -108,6 +114,13 @@ const viewState = computed<ViewState>(() => {
 
 const showRecalculationMessage = computed(() => !!recalculationMessage.value)
 
+const format24hChange = (value: number | null) => {
+  if (value === null || value === 0 || Math.abs(value) <= 0.01) {
+    return ''
+  }
+  return formatCurrencyWithSymbol(value)
+}
+
 const summaryColumns: ColumnDefinition[] = [
   { key: 'date', label: 'Date', formatter: formatDate },
   { key: 'xirrAnnualReturn', label: 'XIRR Annual Return', formatter: formatPercentageFromDecimal },
@@ -120,12 +133,24 @@ const summaryColumns: ColumnDefinition[] = [
   { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrencyWithSymbol },
   { key: 'unrealizedProfit', label: 'Unrealized Profit', formatter: formatCurrencyWithSymbol },
   { key: 'totalProfit', label: 'Total Profit', formatter: formatCurrencyWithSymbol },
+  {
+    key: 'totalProfitChange24h',
+    label: '24h Change',
+    formatter: format24hChange,
+    class: 'd-none d-md-table-cell',
+  },
   { key: 'totalValue', label: 'Total Value', formatter: formatCurrencyWithSymbol },
 ]
 
 const getSummaryRowClass = (summary: any, index: number) => {
   const isToday = summary.date === new Date().toISOString().split('T')[0]
   return { 'font-weight-bold': index === 0 && isToday }
+}
+
+const getProfitChangeClass = (value: number) => {
+  if (value > 0) return 'text-success'
+  if (value < 0) return 'text-danger'
+  return ''
 }
 
 useInfiniteScroll(
