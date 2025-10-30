@@ -8,6 +8,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import io.mockk.every
@@ -341,6 +342,165 @@ class DailyPriceServiceTest {
 
     expect(result).toHaveSize(3)
     expect(result).toEqual(prices)
+  }
+
+  @Test
+  fun `should getPriceChange with 24h period returns correct change`() {
+    val currentDate = LocalDate.now()
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = currentDate)
+    val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(1))
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(1),
+        currentDate,
+      )
+    } returns currentPrice
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(6),
+        currentDate.minusDays(1),
+      )
+    } returns yesterdayPrice
+
+    val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
+    expect(result.changePercent).toEqual(10.0)
+  }
+
+  @Test
+  fun `should getPriceChange with 7d period returns correct change`() {
+    val currentDate = LocalDate.now()
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("120.00"), date = currentDate)
+    val weekAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(7))
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(1),
+        currentDate,
+      )
+    } returns currentPrice
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(12),
+        currentDate.minusDays(7),
+      )
+    } returns weekAgoPrice
+
+    val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P7D)
+
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("20.00"))
+    expect(result.changePercent).toEqual(20.0)
+  }
+
+  @Test
+  fun `should getPriceChange with 30d period returns correct change`() {
+    val currentDate = LocalDate.now()
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("150.00"), date = currentDate)
+    val monthAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(30))
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(1),
+        currentDate,
+      )
+    } returns currentPrice
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(35),
+        currentDate.minusDays(30),
+      )
+    } returns monthAgoPrice
+
+    val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P30D)
+
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("50.00"))
+    expect(result.changePercent).toEqual(50.0)
+  }
+
+  @Test
+  fun `should getPriceChange returns null when current price not found`() {
+    val currentDate = LocalDate.now()
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(1),
+        currentDate,
+      )
+    } returns null
+
+    val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+
+    expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should getPriceChange returns null when historical price not found`() {
+    val currentDate = LocalDate.now()
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = currentDate)
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(1),
+        currentDate,
+      )
+    } returns currentPrice
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(6),
+        currentDate.minusDays(1),
+      )
+    } returns null
+
+    val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+
+    expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should getPriceChange with negative change returns correct percentage`() {
+    val currentDate = LocalDate.now()
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("80.00"), date = currentDate)
+    val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(1))
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(1),
+        currentDate,
+      )
+    } returns currentPrice
+
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+        testInstrument,
+        currentDate.minusDays(6),
+        currentDate.minusDays(1),
+      )
+    } returns yesterdayPrice
+
+    val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("-20.00"))
+    expect(result.changePercent).toEqual(-20.0)
   }
 
   private fun createDailyPrice(

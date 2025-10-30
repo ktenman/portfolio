@@ -7,6 +7,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTIO
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.springframework.cache.annotation.CacheEvict
@@ -15,7 +16,14 @@ import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
+
+data class InstrumentEnrichmentContext(
+  val calculationDate: LocalDate,
+  val priceChangePeriod: PriceChangePeriod,
+  val targetPlatforms: Set<Platform>?,
+)
 
 @Service
 class InstrumentService(
@@ -23,7 +31,7 @@ class InstrumentService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val investmentMetricsService: InvestmentMetricsService,
   private val dailyPriceService: DailyPriceService,
-  private val clock: java.time.Clock,
+  private val clock: Clock,
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
@@ -178,20 +186,28 @@ class InstrumentService(
 
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
-  fun getAllInstruments(): List<Instrument> = getAllInstruments(null)
+  fun getAllInstruments(): List<Instrument> = getAllInstruments(null, null)
 
   @Transactional(readOnly = true)
-  fun getAllInstruments(platforms: List<String>?): List<Instrument> {
+  fun getAllInstruments(platforms: List<String>?): List<Instrument> = getAllInstruments(platforms, null)
+
+  @Transactional(readOnly = true)
+  fun getAllInstruments(
+    platforms: List<String>?,
+    period: String?,
+  ): List<Instrument> {
     val instruments = getAllInstrumentsWithoutFiltering().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
-    val calculationDate = LocalDate.now(clock)
-    val targetPlatforms = parsePlatformFilters(platforms)
+    val context =
+      InstrumentEnrichmentContext(
+        calculationDate = LocalDate.now(clock),
+        priceChangePeriod = period?.let { PriceChangePeriod.fromString(it) } ?: PriceChangePeriod.P24H,
+        targetPlatforms = parsePlatformFilters(platforms),
+      )
 
-    val result =
-      instruments.mapNotNull { instrument ->
-      enrichInstrumentWithMetrics(instrument, transactionsByInstrument, targetPlatforms, calculationDate)
+    return instruments.mapNotNull { instrument ->
+      enrichInstrumentWithMetrics(instrument, transactionsByInstrument, context)
     }
-    return result
   }
 
   private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? =
@@ -207,17 +223,16 @@ class InstrumentService(
   private fun enrichInstrumentWithMetrics(
     instrument: Instrument,
     transactionsByInstrument: Map<Long, List<PortfolioTransaction>>,
-    targetPlatforms: Set<Platform>?,
-    calculationDate: LocalDate,
+    context: InstrumentEnrichmentContext,
   ): Instrument? {
     val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
-    val filteredTransactions = filterTransactionsByPlatforms(allTransactions, targetPlatforms)
+    val filteredTransactions = filterTransactionsByPlatforms(allTransactions, context.targetPlatforms)
 
     if (!shouldIncludeInstrument(filteredTransactions)) {
-      return if (targetPlatforms == null) instrument else null
+      return if (context.targetPlatforms == null) instrument else null
     }
 
-    return applyInstrumentMetrics(instrument, filteredTransactions, calculationDate)
+    return applyInstrumentMetrics(instrument, filteredTransactions, context)
   }
 
   private fun filterTransactionsByPlatforms(
@@ -235,10 +250,10 @@ class InstrumentService(
   private fun applyInstrumentMetrics(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate,
+    context: InstrumentEnrichmentContext,
   ): Instrument? {
     val metrics =
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, calculationDate)
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, context.calculationDate)
 
     instrument.totalInvestment = metrics.totalInvestment
     instrument.currentValue = metrics.currentValue
@@ -249,7 +264,7 @@ class InstrumentService(
     instrument.quantity = metrics.quantity
     instrument.platforms = transactions.map { it.platform }.toSet()
 
-    val priceChange = dailyPriceService.getLastPriceChange(instrument)
+    val priceChange = dailyPriceService.getPriceChange(instrument, context.priceChangePeriod)
     instrument.priceChangeAmount = priceChange?.changeAmount?.multiply(metrics.quantity)
     instrument.priceChangePercent = priceChange?.changePercent
 

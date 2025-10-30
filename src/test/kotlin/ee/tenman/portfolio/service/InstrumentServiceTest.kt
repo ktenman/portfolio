@@ -137,7 +137,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns
       PriceChange(BigDecimal("5.00"), 3.5)
 
     val result = instrumentService.getAllInstruments()
@@ -189,7 +189,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -222,7 +222,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("invalid_platform", "lhv"))
 
@@ -254,7 +254,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -286,7 +286,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -351,7 +351,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns priceChange
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns priceChange
 
     val result = instrumentService.getAllInstruments()
 
@@ -385,7 +385,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments()
 
@@ -430,7 +430,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments()
 
@@ -474,7 +474,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv", "lightyear"))
 
@@ -511,7 +511,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("Lhv", "LIGHTYEAR"))
 
@@ -593,7 +593,7 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics1
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentService.getAllInstruments(listOf("lhv"))
 
@@ -626,7 +626,7 @@ class InstrumentServiceTest {
         testDate,
       )
     } returns metrics
-    every { dailyPriceService.getLastPriceChange(testInstrument) } returns null
+    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
     instrumentService.getAllInstruments()
 

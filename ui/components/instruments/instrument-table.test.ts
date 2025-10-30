@@ -84,6 +84,7 @@ describe('InstrumentTable', () => {
     return mount(InstrumentTable, {
       props: {
         instruments: mockInstruments,
+        selectedPeriod: '24h',
         ...props,
       },
     })
@@ -241,6 +242,7 @@ describe('InstrumentTable', () => {
       const wrapper = mount(InstrumentTable, {
         props: {
           instruments: [],
+          selectedPeriod: '24h',
         },
       })
       const dataTable = wrapper.findComponent({ name: 'DataTable' })
@@ -481,6 +483,70 @@ describe('InstrumentTable', () => {
         expect(mobileTotals.text()).toContain('INVESTED')
         expect(mobileTotals.text()).toContain('PROFIT')
       }
+    })
+  })
+
+  describe('period label', () => {
+    it('should update column header label based on selected period', () => {
+      const wrapper = createWrapper({ selectedPeriod: '7d' })
+      const dataTable = wrapper.findComponent({ name: 'DataTable' })
+      const columns = dataTable.props('columns')
+      const priceChangeColumn = columns.find((col: { key: string }) => col.key === 'priceChange')
+
+      expect(priceChangeColumn.label).toBe('7D')
+    })
+
+    it('should display selected period in mobile card metric label', () => {
+      const wrapper = createWrapper({
+        selectedPeriod: '30d',
+        instruments: [
+          createInstrumentDto({
+            id: 14,
+            symbol: 'TEST',
+            name: 'Test Asset',
+            providerName: ProviderName.FT,
+            priceChangeAmount: 100,
+            baseCurrency: 'USD',
+          }),
+        ],
+      })
+      const mobileCard = wrapper.find('.mobile-instrument-card')
+
+      if (mobileCard.exists()) {
+        const metricLabels = mobileCard.findAll('.metric-label')
+        const periodLabel = metricLabels.find(label => label.text() === '30D')
+        expect(periodLabel).toBeDefined()
+      }
+    })
+
+    it('should display selected period in mobile totals card', () => {
+      const wrapper = createWrapper({ selectedPeriod: '1y' })
+      const mobileTotals = wrapper.find('.mobile-totals-card')
+
+      if (mobileTotals.exists()) {
+        const totalLabels = mobileTotals.findAll('.total-label')
+        const periodLabel = totalLabels.find(label => label.text() === '1Y')
+        expect(periodLabel).toBeDefined()
+      }
+    })
+
+    it('should use default period when set to 24h', () => {
+      const wrapper = createWrapper({ selectedPeriod: '24h' })
+      const dataTable = wrapper.findComponent({ name: 'DataTable' })
+      const columns = dataTable.props('columns')
+      const priceChangeColumn = columns.find((col: { key: string }) => col.key === 'priceChange')
+
+      expect(priceChangeColumn.label).toBe('24H')
+    })
+
+    it('should uppercase period label in all locations', () => {
+      const wrapper = createWrapper({ selectedPeriod: '3d' })
+      const dataTable = wrapper.findComponent({ name: 'DataTable' })
+      const columns = dataTable.props('columns')
+      const priceChangeColumn = columns.find((col: { key: string }) => col.key === 'priceChange')
+
+      expect(priceChangeColumn.label).toBe('3D')
+      expect(priceChangeColumn.label).not.toBe('3d')
     })
   })
 })

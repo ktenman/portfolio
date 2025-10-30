@@ -1,5 +1,5 @@
 /* tslint:disable */
- 
+/* eslint-disable */
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -104,4 +104,13 @@ export enum ProviderName {
 export enum TransactionType {
     BUY = "BUY",
     SELL = "SELL",
+}
+
+export enum PriceChangePeriod {
+    P24H = "P24H",
+    P48H = "P48H",
+    P3D = "P3D",
+    P7D = "P7D",
+    P30D = "P30D",
+    P1Y = "P1Y",
 }

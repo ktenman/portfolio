@@ -53,9 +53,10 @@ class InstrumentController(
   @Loggable
   fun getAllInstruments(
     @RequestParam(required = false) platforms: List<String>?,
+    @RequestParam(defaultValue = "24h") period: String,
   ): List<InstrumentDto> =
     instrumentService
-      .getAllInstruments(platforms)
+      .getAllInstruments(platforms, period)
       .sortedBy { it.id }
       .map { InstrumentDto.fromEntity(it) }
 
