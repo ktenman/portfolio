@@ -40,7 +40,6 @@ class EtfBreakdownService(
     unless = "#result.isEmpty()",
   )
   fun getHoldingsBreakdown(etfSymbols: List<String>? = null): List<EtfHoldingBreakdownDto> {
-    log.info("Starting ETF holdings breakdown calculation (not from cache) with filter: $etfSymbols")
     val lightyearEtfs = getLightyearEtfs(etfSymbols)
     log.info("Found ${lightyearEtfs.size} ETFs: ${lightyearEtfs.map { it.symbol }}")
 
