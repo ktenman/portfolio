@@ -19,7 +19,7 @@ interface YearSummary {
   totalWorth: number
   grossProfit: number
   taxAmount: number
-  netProfit: number
+  netWorth: number
   monthlyEarnings: number
 }
 
@@ -81,18 +81,19 @@ export function useCalculator() {
       const grossProfit = totalWorth - totalInvested
       const taxAmount = grossProfit * (form.value.taxRate / 100)
       const netProfit = grossProfit - taxAmount
-      const actualTotalWorth = totalInvested + netProfit
+      const grossTotalWorth = totalInvested + grossProfit
+      const netWorth = grossTotalWorth - taxAmount
       const monthlyEarnings = netProfit / 12
 
-      tempPortfolioData.push(actualTotalWorth)
+      tempPortfolioData.push(grossTotalWorth)
 
       tempYearSummary.push({
         year,
         totalInvested,
-        totalWorth: actualTotalWorth,
+        totalWorth: grossTotalWorth,
         grossProfit,
         taxAmount,
-        netProfit,
+        netWorth,
         monthlyEarnings,
       })
     }

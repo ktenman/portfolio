@@ -124,6 +124,40 @@ class DailyPriceService(
     return PriceChange(changeAmount, changePercent)
   }
 
+  @Transactional(readOnly = true)
+  fun getPriceChangeSinceDate(
+    instrument: Instrument,
+    startDate: LocalDate,
+  ): PriceChange? {
+    val currentDate = LocalDate.now()
+
+    val currentPrice =
+      dailyPriceRepository
+        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+          instrument,
+          currentDate.minusDays(1),
+          currentDate,
+        )?.closePrice ?: return null
+
+    val startPrice = findPriceClosestToDate(instrument, startDate) ?: return null
+
+    val changeAmount = currentPrice.subtract(startPrice)
+    val changePercent = calculateChangePercent(changeAmount, startPrice)
+
+    return PriceChange(changeAmount, changePercent)
+  }
+
+  private fun findPriceClosestToDate(
+    instrument: Instrument,
+    targetDate: LocalDate,
+  ): BigDecimal? =
+    dailyPriceRepository
+      .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateAsc(
+        instrument,
+        targetDate.minusDays(2),
+        targetDate.plusDays(2),
+      )?.closePrice
+
   private fun calculateChangePercent(
     changeAmount: BigDecimal,
     previousPrice: BigDecimal,

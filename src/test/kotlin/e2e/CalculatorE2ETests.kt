@@ -130,14 +130,14 @@ class CalculatorE2ETests {
     Thread.sleep(500)
 
     val totalInvestedText = firstDataRow.find(By.tagName("td"), 1).text().replace("[^0-9.]".toRegex(), "")
-    val totalWorthText = firstDataRow.find(By.tagName("td"), 2).text().replace("[^0-9.]".toRegex(), "")
-    val netProfitText = firstDataRow.find(By.tagName("td"), 5).text().replace("[^0-9.]".toRegex(), "")
+    val grossProfitText = firstDataRow.find(By.tagName("td"), 2).text().replace("[^0-9.]".toRegex(), "")
+    val totalWorthText = firstDataRow.find(By.tagName("td"), 3).text().replace("[^0-9.]".toRegex(), "")
 
     val totalInvested = totalInvestedText.toDoubleOrNull() ?: 0.0
+    val grossProfit = grossProfitText.toDoubleOrNull() ?: 0.0
     val totalWorth = totalWorthText.toDoubleOrNull() ?: 0.0
-    val netProfit = netProfitText.toDoubleOrNull() ?: 0.0
 
-    val expectedTotalWorth = totalInvested + netProfit
+    val expectedTotalWorth = totalInvested + grossProfit
     expect(totalWorth).toBeGreaterThanOrEqualTo(expectedTotalWorth - 1.0).toBeLessThanOrEqualTo(expectedTotalWorth + 1.0)
   }
 

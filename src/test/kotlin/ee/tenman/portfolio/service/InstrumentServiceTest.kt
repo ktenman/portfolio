@@ -56,6 +56,7 @@ class InstrumentServiceTest {
 
     every { clock.instant() } returns fixedInstant
     every { clock.zone } returns ZoneId.systemDefault()
+    every { dailyPriceService.getPriceChangeSinceDate(any(), any()) } returns null
 
     instrumentService =
       InstrumentService(
@@ -114,7 +115,11 @@ class InstrumentServiceTest {
   fun `should return all instruments with metrics when no platform filter specified`() {
     val transactions =
       listOf(
-        createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
+        createBuyTransaction(
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          date = testDate.minusDays(2),
+        ),
       )
 
     val metrics =
@@ -327,7 +332,11 @@ class InstrumentServiceTest {
   @Test
   fun `should calculate price change correctly when price change available`() {
     val transaction =
-      createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
+      createBuyTransaction(
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        date = testDate.minusDays(2),
+      )
 
     val metrics =
       InvestmentMetricsService.InstrumentMetrics(
@@ -363,7 +372,11 @@ class InstrumentServiceTest {
   @Test
   fun `should handle null price change when price change not available`() {
     val transaction =
-      createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
+      createBuyTransaction(
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        date = testDate.minusDays(2),
+      )
 
     val metrics =
       InvestmentMetricsService.InstrumentMetrics(
@@ -392,6 +405,47 @@ class InstrumentServiceTest {
     expect(result).toHaveSize(1)
     expect(result[0].priceChangeAmount).toEqual(null)
     expect(result[0].priceChangePercent).toEqual(null)
+  }
+
+  @Test
+  fun `should show all-time earnings when holding period is insufficient for selected period`() {
+    val transactionDate = testDate
+    val transaction =
+      createBuyTransaction(
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        date = transactionDate,
+      )
+
+    val metrics =
+      InvestmentMetricsService.InstrumentMetrics(
+        totalInvestment = BigDecimal("1000"),
+        currentValue = BigDecimal("1500"),
+        profit = BigDecimal("500"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("500"),
+        xirr = 25.0,
+        quantity = BigDecimal("10"),
+      )
+
+    val allTimePriceChange = PriceChange(BigDecimal("10.00"), 7.5)
+
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        testInstrument,
+        any(),
+        any(),
+      )
+    } returns metrics
+    every { dailyPriceService.getPriceChangeSinceDate(testInstrument, transactionDate) } returns allTimePriceChange
+
+    val result = instrumentService.getAllInstruments()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("100.00"))
+    expect(result[0].priceChangePercent).toEqual(7.5)
   }
 
   @Test
