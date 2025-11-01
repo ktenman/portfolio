@@ -130,10 +130,10 @@ const formatTaxAmount = (value: number) => {
 const summaryColumns: ColumnDefinition[] = [
   { key: 'year', label: 'Year' },
   { key: 'totalInvested', label: 'Total Invested', formatter: formatCurrency },
-  { key: 'totalWorth', label: 'Total Worth', formatter: formatCurrency },
   { key: 'grossProfit', label: 'Gross Profit', formatter: formatCurrency },
+  { key: 'totalWorth', label: 'Total Worth', formatter: formatCurrency },
   { key: 'taxAmount', label: 'Tax Amount', formatter: formatTaxAmount },
-  { key: 'netProfit', label: 'Net Profit', formatter: formatCurrency },
+  { key: 'netWorth', label: 'Net Worth', formatter: formatCurrency },
   { key: 'monthlyEarnings', label: 'Monthly Earnings', formatter: formatCurrency },
 ]
 </script>

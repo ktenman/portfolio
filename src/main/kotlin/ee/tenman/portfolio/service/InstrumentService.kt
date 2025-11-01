@@ -264,7 +264,7 @@ class InstrumentService(
     instrument.quantity = metrics.quantity
     instrument.platforms = transactions.map { it.platform }.toSet()
 
-    val priceChange = dailyPriceService.getPriceChange(instrument, context.priceChangePeriod)
+    val priceChange = calculatePriceChange(instrument, transactions, context)
     instrument.priceChangeAmount = priceChange?.changeAmount?.multiply(metrics.quantity)
     instrument.priceChangePercent = priceChange?.changePercent
 
@@ -272,6 +272,25 @@ class InstrumentService(
       null
     } else {
       instrument
+    }
+  }
+
+  private fun calculatePriceChange(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    context: InstrumentEnrichmentContext,
+  ): PriceChange? {
+    if (transactions.isEmpty()) return null
+
+    val earliestTransaction = transactions.minByOrNull { it.transactionDate } ?: return null
+    val holdingPeriodDays =
+      java.time.temporal.ChronoUnit.DAYS
+      .between(earliestTransaction.transactionDate, context.calculationDate)
+
+    return if (holdingPeriodDays >= context.priceChangePeriod.days) {
+      dailyPriceService.getPriceChange(instrument, context.priceChangePeriod)
+    } else {
+      dailyPriceService.getPriceChangeSinceDate(instrument, earliestTransaction.transactionDate)
     }
   }
 }

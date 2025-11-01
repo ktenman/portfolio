@@ -125,8 +125,8 @@ describe('useCalculator', () => {
     const yearOne = calculator.yearSummary.value[0]
     expect(yearOne.year).toBe(1)
     expect(yearOne.totalInvested).toBe(11200)
-    // Total worth should be invested + net profit (after tax)
-    expect(yearOne.totalWorth).toBe(yearOne.totalInvested + yearOne.netProfit)
+    // Total worth should be invested + gross profit (before tax)
+    expect(yearOne.totalWorth).toBe(yearOne.totalInvested + yearOne.grossProfit)
   })
 
   it('should calculate compound interest correctly', async () => {
@@ -155,9 +155,7 @@ describe('useCalculator', () => {
     // Total invested is initial + monthly investments
     const totalInvested = 10000 + 500 * 12
     const grossProfit = total - totalInvested
-    const tax = grossProfit * 0.22
-    const netProfit = grossProfit - tax
-    const expectedTotalWorth = totalInvested + netProfit
+    const expectedTotalWorth = totalInvested + grossProfit
 
     expect(yearOne.totalWorth).toBeCloseTo(expectedTotalWorth, 0)
   })
@@ -244,10 +242,13 @@ describe('useCalculator', () => {
 
     const yearOne = calculator.yearSummary.value[0]
     expect(yearOne.totalInvested).toBe(11200)
-    // Verify the relationship: totalWorth = totalInvested + netProfit
-    expect(yearOne.totalWorth).toBeCloseTo(yearOne.totalInvested + yearOne.netProfit, 2)
+    // Verify the relationship: totalWorth = totalInvested + grossProfit
+    expect(yearOne.totalWorth).toBeCloseTo(yearOne.totalInvested + yearOne.grossProfit, 2)
     expect(yearOne.taxAmount).toBeCloseTo(yearOne.grossProfit * 0.22, 2)
-    expect(yearOne.netProfit).toBeCloseTo(yearOne.grossProfit - yearOne.taxAmount, 2)
+    expect(yearOne.netWorth).toBeCloseTo(
+      yearOne.grossProfit - yearOne.taxAmount + yearOne.totalInvested,
+      2
+    )
   })
 
   it('should handle zero values gracefully', async () => {
@@ -268,7 +269,7 @@ describe('useCalculator', () => {
     calculator.yearSummary.value.forEach(year => {
       expect(year.totalWorth).toBe(0)
       expect(year.grossProfit).toBe(0)
-      expect(year.netProfit).toBe(0)
+      expect(year.netWorth).toBe(0)
     })
   })
 
@@ -323,8 +324,7 @@ describe('useCalculator', () => {
     const totalInvested = 10000 + 585 * 12
     const grossProfit = expectedTotal - totalInvested
     const tax = grossProfit * 0.22
-    const netProfit = grossProfit - tax
-    const expectedTotalWorth = totalInvested + netProfit
+    const expectedTotalWorth = totalInvested + grossProfit
 
     expect(yearOne.totalWorth).toBeCloseTo(expectedTotalWorth, 0)
     expect(yearOne.taxAmount).toBeCloseTo(tax, 2)
@@ -400,11 +400,11 @@ describe('useCalculator', () => {
     const yearOne = calculator.yearSummary.value[0]
     // Since it's a 1-year period, tax is applied in year 1
     const expectedTax = yearOne.grossProfit * 0.25
-    const expectedNetProfit = yearOne.grossProfit - expectedTax
+    const expectedNetWorth = yearOne.totalInvested + yearOne.grossProfit - expectedTax
 
     expect(yearOne.taxAmount).toBeCloseTo(expectedTax, 2)
-    expect(yearOne.netProfit).toBeCloseTo(expectedNetProfit, 2)
-    expect(yearOne.totalWorth).toBeCloseTo(yearOne.totalInvested + yearOne.netProfit, 2)
+    expect(yearOne.netWorth).toBeCloseTo(expectedNetWorth, 2)
+    expect(yearOne.totalWorth).toBeCloseTo(yearOne.totalInvested + yearOne.grossProfit, 2)
   })
 
   it('should handle zero tax rate correctly', async () => {
@@ -423,7 +423,7 @@ describe('useCalculator', () => {
 
     const yearOne = calculator.yearSummary.value[0]
     expect(yearOne.taxAmount).toBe(0)
-    expect(yearOne.netProfit).toBe(yearOne.grossProfit)
+    expect(yearOne.netWorth).toBe(yearOne.totalWorth)
   })
 
   it('should apply tax to gross profit for each year', async () => {
@@ -449,9 +449,9 @@ describe('useCalculator', () => {
     expect(yearTwo.taxAmount).toBeCloseTo(yearTwo.grossProfit * 0.22, 2)
     expect(yearThree.taxAmount).toBeCloseTo(yearThree.grossProfit * 0.22, 2)
 
-    // Net profit should be gross profit minus tax
-    expect(yearOne.netProfit).toBeCloseTo(yearOne.grossProfit - yearOne.taxAmount, 2)
-    expect(yearTwo.netProfit).toBeCloseTo(yearTwo.grossProfit - yearTwo.taxAmount, 2)
-    expect(yearThree.netProfit).toBeCloseTo(yearThree.grossProfit - yearThree.taxAmount, 2)
+    // Net worth should be total worth minus tax
+    expect(yearOne.netWorth).toBeCloseTo(yearOne.totalWorth - yearOne.taxAmount, 2)
+    expect(yearTwo.netWorth).toBeCloseTo(yearTwo.totalWorth - yearTwo.taxAmount, 2)
+    expect(yearThree.netWorth).toBeCloseTo(yearThree.totalWorth - yearThree.taxAmount, 2)
   })
 })
