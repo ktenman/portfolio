@@ -353,7 +353,7 @@ class DailyPriceServiceTest {
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(1),
+        currentDate.minusYears(10),
         currentDate,
       )
     } returns currentPrice
@@ -382,7 +382,7 @@ class DailyPriceServiceTest {
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(1),
+        currentDate.minusYears(10),
         currentDate,
       )
     } returns currentPrice
@@ -411,7 +411,7 @@ class DailyPriceServiceTest {
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(1),
+        currentDate.minusYears(10),
         currentDate,
       )
     } returns currentPrice
@@ -438,7 +438,7 @@ class DailyPriceServiceTest {
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(1),
+        currentDate.minusYears(10),
         currentDate,
       )
     } returns null
@@ -456,7 +456,7 @@ class DailyPriceServiceTest {
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(1),
+        currentDate.minusYears(10),
         currentDate,
       )
     } returns currentPrice
@@ -483,7 +483,7 @@ class DailyPriceServiceTest {
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(1),
+        currentDate.minusYears(10),
         currentDate,
       )
     } returns currentPrice
