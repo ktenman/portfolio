@@ -102,13 +102,7 @@ class DailyPriceService(
     val currentDate = LocalDate.now()
     val targetDate = currentDate.minusDays(period.days.toLong())
 
-    val currentPrice =
-      dailyPriceRepository
-        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
-          instrument,
-          currentDate.minusDays(1),
-          currentDate,
-        )?.closePrice ?: return null
+    val currentPrice = findLastDailyPrice(instrument, currentDate)?.closePrice ?: return null
 
     val previousPrice =
       dailyPriceRepository
@@ -131,13 +125,7 @@ class DailyPriceService(
   ): PriceChange? {
     val currentDate = LocalDate.now()
 
-    val currentPrice =
-      dailyPriceRepository
-        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
-          instrument,
-          currentDate.minusDays(1),
-          currentDate,
-        )?.closePrice ?: return null
+    val currentPrice = findLastDailyPrice(instrument, currentDate)?.closePrice ?: return null
 
     val startPrice = findPriceClosestToDate(instrument, startDate) ?: return null
 
