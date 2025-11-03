@@ -52,10 +52,11 @@ class PortfolioTransactionController(
   @Loggable
   fun getAllTransactions(
     @RequestParam(required = false) platforms: List<String>?,
-  ): List<TransactionResponseDto> =
-    portfolioTransactionService
-      .getAllTransactions(platforms)
-      .map { TransactionResponseDto.fromEntity(it) }
+  ): List<TransactionResponseDto> {
+    val transactions = portfolioTransactionService.getAllTransactions(platforms)
+    portfolioTransactionService.calculateTransactionProfits(transactions)
+    return transactions.map { TransactionResponseDto.fromEntity(it) }
+  }
 
   @GetMapping("/{id}")
   @Loggable
@@ -63,6 +64,7 @@ class PortfolioTransactionController(
     @PathVariable id: Long,
   ): TransactionResponseDto {
     val transaction = portfolioTransactionService.getTransactionById(id)
+    portfolioTransactionService.calculateTransactionProfits(listOf(transaction))
     return TransactionResponseDto.fromEntity(transaction)
   }
 
