@@ -163,10 +163,8 @@ class TransactionService(
       } else {
         (sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO)
       }
-    val averageCost = calculateAverageCost(totalCost, currentQuantity)
-    val totalUnrealizedProfit = calculateTotalUnrealizedProfit(currentQuantity, currentPrice, averageCost)
 
-    distributeUnrealizedProfits(sortedTransactions, currentQuantity, averageCost, totalUnrealizedProfit)
+    distributeUnrealizedProfits(sortedTransactions, currentQuantity, currentPrice)
   }
 
   private fun processBuyTransaction(
@@ -223,26 +221,10 @@ class TransactionService(
       BigDecimal.ZERO
     }
 
-  private fun calculateTotalUnrealizedProfit(
-    currentQuantity: BigDecimal,
-    currentPrice: BigDecimal,
-    averageCost: BigDecimal,
-  ): BigDecimal =
-    if (currentQuantity > BigDecimal.ZERO && currentPrice > BigDecimal.ZERO) {
-      calculateSimpleProfit(
-        quantity = currentQuantity,
-        buyPrice = averageCost,
-        currentPrice = currentPrice,
-      )
-    } else {
-      BigDecimal.ZERO
-    }
-
   private fun distributeUnrealizedProfits(
     transactions: List<PortfolioTransaction>,
     currentQuantity: BigDecimal,
-    averageCost: BigDecimal,
-    totalUnrealizedProfit: BigDecimal,
+    currentPrice: BigDecimal,
   ) {
     val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
 
@@ -260,11 +242,17 @@ class TransactionService(
           .divide(totalBuyQuantity, 10, RoundingMode.HALF_UP)
 
       buyTx.remainingQuantity = proportionalQuantity
-      buyTx.averageCost = averageCost
+      buyTx.averageCost = buyTx.price
       buyTx.unrealizedProfit =
-        totalUnrealizedProfit
-          .multiply(proportionalQuantity)
-          .divide(currentQuantity, 10, RoundingMode.HALF_UP)
+        if (currentPrice <= BigDecimal.ZERO) {
+          BigDecimal.ZERO
+        } else {
+          calculateSimpleProfit(
+            quantity = proportionalQuantity,
+            buyPrice = buyTx.price,
+            currentPrice = currentPrice,
+          )
+        }
     }
   }
 

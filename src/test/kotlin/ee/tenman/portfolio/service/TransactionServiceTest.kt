@@ -96,10 +96,7 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    val expectedAvgCost =
-      (BigDecimal("50").multiply(BigDecimal("100")).add(BigDecimal("10")))
-      .divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
-    expect(buyTx.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
+    expect(buyTx.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("50"))
   }
 
   @Test
@@ -120,9 +117,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
-    val expectedAvgCost = BigDecimal("50.10")
-    expect(buy1.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
-    expect(buy2.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
+    expect(buy1.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("40"))
+    expect(buy2.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("60"))
   }
 
   @Test
@@ -174,7 +170,7 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
     val totalUnrealizedProfit = buy1.unrealizedProfit.add(buy2.unrealizedProfit)
-    val expectedTotalProfit = BigDecimal("100").multiply(BigDecimal("70").subtract(BigDecimal("50.10")))
+    val expectedTotalProfit = BigDecimal("100").multiply(BigDecimal("70").subtract(BigDecimal("50")))
 
     expect(totalUnrealizedProfit).toEqualNumerically(expectedTotalProfit)
     expect(buy1.unrealizedProfit).toBeGreaterThan(buy2.unrealizedProfit)
@@ -253,9 +249,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(laterTx, earlierTx))
 
-    val expectedAvgCost = BigDecimal("50.10")
-    expect(earlierTx.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
-    expect(laterTx.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
+    expect(earlierTx.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("40"))
+    expect(laterTx.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("60"))
   }
 
   @Test
@@ -396,12 +391,9 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buyTx))
 
-    val expectedCost = BigDecimal("50").multiply(BigDecimal("100")).add(BigDecimal("25"))
     expect(buyTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal.ZERO)
     expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("100"))
-    expect(buyTx.averageCost).notToEqualNull().toEqualNumerically(
-      expectedCost.divide(BigDecimal("100"), 10, RoundingMode.HALF_UP),
-    )
+    expect(buyTx.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("50"))
   }
 
   @Test
@@ -493,16 +485,8 @@ class TransactionServiceTest {
 
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
-    val totalCost =
-      BigDecimal("100")
-        .multiply(BigDecimal("30"))
-        .add(BigDecimal("15"))
-      .add(BigDecimal("120").multiply(BigDecimal("70")))
-        .add(BigDecimal("35"))
-    val expectedAvgCost = totalCost.divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
-
-    expect(buy1.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
-    expect(buy2.averageCost).notToEqualNull().toEqualNumerically(expectedAvgCost)
+    expect(buy1.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("100"))
+    expect(buy2.averageCost).notToEqualNull().toEqualNumerically(BigDecimal("120"))
   }
 
   @Test
@@ -569,12 +553,7 @@ class TransactionServiceTest {
     transactionService.calculateTransactionProfits(listOf(buy1, buy2))
 
     val totalUnrealizedProfit = buy1.unrealizedProfit.add(buy2.unrealizedProfit)
-    val avgCost =
-      BigDecimal("50")
-        .multiply(BigDecimal("100"))
-        .add(BigDecimal("10"))
-      .divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
-    val expectedTotalProfit = BigDecimal("100").multiply(BigDecimal("70").subtract(avgCost))
+    val expectedTotalProfit = BigDecimal("100").multiply(BigDecimal("70").subtract(BigDecimal("50")))
 
     expect(totalUnrealizedProfit).toEqualNumerically(expectedTotalProfit)
 
