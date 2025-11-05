@@ -199,5 +199,8 @@ scraping:
       - symbol: "XAIX"
         path: "XAIX:XETRA"
         expected-pages: 2
+      - symbol: "SPYL"
+        path: "SPYL:XETRA"
+        expected-pages: 3
 
 
