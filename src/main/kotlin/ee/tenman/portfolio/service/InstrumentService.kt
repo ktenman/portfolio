@@ -290,7 +290,38 @@ class InstrumentService(
     return if (holdingPeriodDays >= context.priceChangePeriod.days) {
       dailyPriceService.getPriceChange(instrument, context.priceChangePeriod)
     } else {
-      dailyPriceService.getPriceChangeSinceDate(instrument, earliestTransaction.transactionDate)
+      calculatePriceChangeSincePurchase(instrument, transactions, context.calculationDate)
     }
+  }
+
+  private fun calculatePriceChangeSincePurchase(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    calculationDate: LocalDate,
+  ): PriceChange? {
+    val currentPrice = instrument.currentPrice ?: return null
+
+    val buyTransactions = transactions.filter { it.transactionType == ee.tenman.portfolio.domain.TransactionType.BUY }
+    if (buyTransactions.isEmpty()) return null
+
+    val totalQuantity = buyTransactions.sumOf { it.quantity }
+    if (totalQuantity <= BigDecimal.ZERO) return null
+
+    val totalCost =
+      buyTransactions.sumOf { transaction ->
+        transaction.price.multiply(transaction.quantity).add(transaction.commission)
+      }
+
+    val weightedAveragePurchasePrice =
+      totalCost.divide(totalQuantity, 10, java.math.RoundingMode.HALF_UP)
+
+    val changeAmount = currentPrice.subtract(weightedAveragePurchasePrice)
+    val changePercent =
+      changeAmount
+        .divide(weightedAveragePurchasePrice, 10, java.math.RoundingMode.HALF_UP)
+        .multiply(BigDecimal(100))
+        .toDouble()
+
+    return PriceChange(changeAmount, changePercent)
   }
 }
