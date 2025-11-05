@@ -110,7 +110,7 @@ class TransactionService(
     return portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
   }
 
-  @Transactional(isolation = Isolation.REPEATABLE_READ)
+  @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
   @Retryable(
     value = [ObjectOptimisticLockingFailureException::class],
     maxAttempts = 5,
