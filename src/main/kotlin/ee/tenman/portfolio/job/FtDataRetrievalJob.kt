@@ -7,11 +7,7 @@ import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
 import jakarta.annotation.PostConstruct
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.annotation.Scheduled
@@ -19,7 +15,6 @@ import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import kotlin.math.ceil
 
 @Component
 @ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
@@ -31,7 +26,6 @@ class FtDataRetrievalJob(
   private val taskScheduler: TaskScheduler,
   private val adaptiveSchedulingProperties: AdaptiveSchedulingProperties,
   private val marketPhaseDetectionService: MarketPhaseDetectionService,
-  @Value("\${ft.instruments.parallel.threads:5}") private val instrumentParallelThreads: Int = 5,
   private val clock: Clock = Clock.systemDefaultZone(),
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -86,17 +80,8 @@ class FtDataRetrievalJob(
         return
       }
 
-      runBlocking {
-        val chunkSize = ceil(instruments.size.toDouble() / instrumentParallelThreads).toInt()
-        instruments
-          .chunked(chunkSize)
-          .map { chunk ->
-            async {
-              chunk.forEach { instrument ->
-                processInstrument(instrument)
-              }
-            }
-          }.awaitAll()
+      instruments.forEach { instrument ->
+        processInstrument(instrument)
       }
 
       log.info("Completed FT data retrieval execution. Processed ${instruments.size} instruments")

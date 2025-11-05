@@ -46,7 +46,6 @@ class FtDataRetrievalJobConcurrencyTest {
         taskScheduler,
         adaptiveSchedulingProperties,
         marketPhaseDetectionService,
-        instrumentParallelThreads = 5,
         clock = fixedClock,
       )
   }
