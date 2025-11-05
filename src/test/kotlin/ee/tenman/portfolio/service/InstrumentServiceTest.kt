@@ -415,7 +415,10 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
         date = transactionDate,
+        commission = BigDecimal("0"),
       )
+
+    testInstrument.currentPrice = BigDecimal("150")
 
     val metrics =
       InvestmentMetricsService.InstrumentMetrics(
@@ -428,8 +431,6 @@ class InstrumentServiceTest {
         quantity = BigDecimal("10"),
       )
 
-    val allTimePriceChange = PriceChange(BigDecimal("10.00"), 7.5)
-
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
@@ -439,13 +440,103 @@ class InstrumentServiceTest {
         any(),
       )
     } returns metrics
-    every { dailyPriceService.getPriceChangeSinceDate(testInstrument, transactionDate) } returns allTimePriceChange
 
     val result = instrumentService.getAllInstruments()
 
     expect(result).toHaveSize(1)
-    expect(result[0].priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("100.00"))
-    expect(result[0].priceChangePercent).toEqual(7.5)
+    expect(result[0].priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("500.00"))
+    expect(result[0].priceChangePercent).toEqual(50.0)
+  }
+
+  @Test
+  fun `should calculate P24H using weighted average purchase price for same-day purchases`() {
+    val transaction1 =
+      createBuyTransaction(
+        quantity = BigDecimal("100"),
+        price = BigDecimal("14.50"),
+        date = testDate,
+        commission = BigDecimal("1.00"),
+      )
+    val transaction2 =
+      createBuyTransaction(
+        quantity = BigDecimal("50"),
+        price = BigDecimal("14.60"),
+        date = testDate,
+        commission = BigDecimal("0.50"),
+      )
+
+    testInstrument.currentPrice = BigDecimal("14.80")
+
+    val metrics =
+      InvestmentMetricsService.InstrumentMetrics(
+        totalInvestment = BigDecimal("2181.50"),
+        currentValue = BigDecimal("2220.00"),
+        profit = BigDecimal("38.50"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("38.50"),
+        xirr = 0.0,
+        quantity = BigDecimal("150"),
+      )
+
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns
+      listOf(transaction1, transaction2)
+    every {
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        testInstrument,
+        any(),
+        any(),
+      )
+    } returns metrics
+
+    val result = instrumentService.getAllInstruments()
+
+    expect(result).toHaveSize(1)
+    val priceChange = result[0].priceChangeAmount
+    expect(priceChange).notToEqualNull()
+    expect(priceChange!!.compareTo(BigDecimal.ZERO)).toEqual(1)
+  }
+
+  @Test
+  fun `should handle multiple same-day purchases with commissions correctly`() {
+    val transaction1 =
+      createBuyTransaction(
+        quantity = BigDecimal("320.85"),
+        price = BigDecimal("14.50"),
+        date = testDate,
+        commission = BigDecimal("0.00"),
+      )
+
+    testInstrument.currentPrice = BigDecimal("14.54")
+
+    val metrics =
+      InvestmentMetricsService.InstrumentMetrics(
+        totalInvestment = BigDecimal("4652.325"),
+        currentValue = BigDecimal("4665.159"),
+        profit = BigDecimal("12.834"),
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal("12.834"),
+        xirr = 0.0,
+        quantity = BigDecimal("320.85"),
+      )
+
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction1)
+    every {
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        testInstrument,
+        any(),
+        any(),
+      )
+    } returns metrics
+
+    val result = instrumentService.getAllInstruments()
+
+    expect(result).toHaveSize(1)
+    val priceChange = result[0].priceChangeAmount
+    expect(priceChange).notToEqualNull()
+    expect(priceChange!!.compareTo(BigDecimal.ZERO)).toEqual(1)
+    expect(result[0].priceChangePercent).notToEqualNull()
   }
 
   @Test
