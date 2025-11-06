@@ -116,7 +116,9 @@ describe('portfolioSummaryService', () => {
 
       const result = await portfolioSummaryService.recalculate()
 
-      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate')
+      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate', undefined, {
+        timeout: 60000,
+      })
       expect(result).toEqual(mockResponse)
     })
 
@@ -129,8 +131,10 @@ describe('portfolioSummaryService', () => {
 
       await portfolioSummaryService.recalculate()
 
-      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate')
-      expect(vi.mocked(httpClient.post).mock.calls[0].length).toBe(1)
+      expect(httpClient.post).toHaveBeenCalledWith('/portfolio-summary/recalculate', undefined, {
+        timeout: 60000,
+      })
+      expect(vi.mocked(httpClient.post).mock.calls[0].length).toBe(3)
     })
 
     it('should propagate errors on recalculate', async () => {

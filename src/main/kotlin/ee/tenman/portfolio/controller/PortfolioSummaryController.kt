@@ -23,6 +23,7 @@ class PortfolioSummaryController(
 
   @PostMapping("/recalculate")
   @ResponseStatus(HttpStatus.OK)
+  @Loggable
   fun recalculatePortfolioSummaries(): Map<String, Any> {
     log.info("Received request to recalculate all portfolio summaries")
     val startTime = System.currentTimeMillis()

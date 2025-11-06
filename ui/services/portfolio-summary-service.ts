@@ -14,5 +14,9 @@ export const portfolioSummaryService = {
     httpClient.get<PortfolioSummaryDto>('/portfolio-summary/current').then(res => res.data),
 
   recalculate: () =>
-    httpClient.post<{ message: string }>('/portfolio-summary/recalculate').then(res => res.data),
+    httpClient
+      .post<{ message: string }>('/portfolio-summary/recalculate', undefined, {
+        timeout: 60000,
+      })
+      .then(res => res.data),
 }
