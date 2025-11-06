@@ -23,7 +23,7 @@
     "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh"
   },
   "dependencies": {
-    "@tanstack/vue-query": "^5.90.6",
+    "@tanstack/vue-query": "^5.90.7",
     "@vueuse/core": "^14.0.0",
     "axios": "^1.13.1",
     "bootstrap": "^5.3.8",
