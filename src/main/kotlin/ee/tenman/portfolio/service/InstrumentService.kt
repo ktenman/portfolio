@@ -290,14 +290,13 @@ class InstrumentService(
     return if (holdingPeriodDays >= context.priceChangePeriod.days) {
       dailyPriceService.getPriceChange(instrument, context.priceChangePeriod)
     } else {
-      calculatePriceChangeSincePurchase(instrument, transactions, context.calculationDate)
+      calculatePriceChangeSincePurchase(instrument, transactions)
     }
   }
 
   private fun calculatePriceChangeSincePurchase(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate,
   ): PriceChange? {
     val currentPrice = instrument.currentPrice ?: return null
 
