@@ -87,9 +87,14 @@ class TransactionService(
   fun getAllTransactions(): List<PortfolioTransaction> = portfolioTransactionRepository.findAllWithInstruments()
 
   @Transactional(readOnly = true)
+  @Cacheable(
+    value = [TRANSACTION_CACHE],
+    key = "#platforms == null or #platforms.isEmpty() ? 'transactions' : 'transactions:' + #platforms",
+    unless = "#result.isEmpty()",
+  )
   fun getAllTransactions(platforms: List<String>?): List<PortfolioTransaction> {
     if (platforms.isNullOrEmpty()) {
-      return portfolioTransactionRepository.findAllWithInstruments()
+      return getAllTransactions()
     }
 
     val platformEnums =

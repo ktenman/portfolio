@@ -51,9 +51,10 @@ class PortfolioTransactionController(
   @GetMapping
   @Loggable
   fun getAllTransactions(
-    @RequestParam(required = false) platforms: List<String>?,
+    @RequestParam(required = false) platforms: String?,
   ): List<TransactionResponseDto> {
-    val transactions = portfolioTransactionService.getAllTransactions(platforms)
+    val platformList = platforms?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+    val transactions = portfolioTransactionService.getAllTransactions(platformList)
     portfolioTransactionService.calculateTransactionProfits(transactions)
     return transactions.map { TransactionResponseDto.fromEntity(it) }
   }
