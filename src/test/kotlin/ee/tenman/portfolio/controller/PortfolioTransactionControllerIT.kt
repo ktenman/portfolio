@@ -341,7 +341,7 @@ class PortfolioTransactionControllerIT {
     )
 
     mockMvc
-      .perform(get("/api/transactions?platforms=BINANCE&platforms=TRADING212").cookie(DEFAULT_COOKIE))
+      .perform(get("/api/transactions?platforms=BINANCE,TRADING212").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$").isArray)
       .andExpect(jsonPath("$.length()").value(2))

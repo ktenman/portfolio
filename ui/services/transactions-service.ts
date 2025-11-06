@@ -6,7 +6,7 @@ import type {
 
 export const transactionsService = {
   getAll: (platforms?: string[]) => {
-    const params = platforms && platforms.length > 0 ? { platforms } : {}
+    const params = platforms && platforms.length > 0 ? { platforms: platforms.join(',') } : {}
     return httpClient
       .get<TransactionResponseDto[]>('/transactions', { params })
       .then(res => res.data)

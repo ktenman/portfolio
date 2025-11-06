@@ -60,8 +60,8 @@ import { formatPlatformName } from '../../utils/platform-utils'
 
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_transaction_platforms', [])
 
-const { data: allTransactions } = useQuery({
-  queryKey: ['transactions-all'],
+const { data: allTransactions, isLoading } = useQuery({
+  queryKey: ['transactions'],
   queryFn: () => transactionsService.getAll(),
 })
 
@@ -95,17 +95,12 @@ watch(
   { immediate: true }
 )
 
-const { data: transactions, isLoading } = useQuery({
-  queryKey: computed(() => ['transactions', selectedPlatforms.value]),
-  queryFn: () => {
-    if (
-      selectedPlatforms.value.length === 0 ||
-      selectedPlatforms.value.length === availablePlatforms.value.length
-    ) {
-      return transactionsService.getAll()
-    }
-    return transactionsService.getAll(selectedPlatforms.value)
-  },
+const transactions = computed(() => {
+  if (!allTransactions.value) return []
+  if (selectedPlatforms.value.length === 0) return allTransactions.value
+  return allTransactions.value.filter(
+    t => t.platform && selectedPlatforms.value.includes(t.platform)
+  )
 })
 
 const realizedProfitSum = computed(() => {
