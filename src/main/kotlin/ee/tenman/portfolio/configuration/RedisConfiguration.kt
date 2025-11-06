@@ -18,7 +18,7 @@ class RedisConfiguration {
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(1))
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(3))
     cacheConfigurations[TRANSACTION_CACHE] =
-      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(3))
+      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(1))
     cacheConfigurations[ETF_LOGOS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(7))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
