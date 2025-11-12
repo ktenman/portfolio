@@ -3,8 +3,6 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.domain.PortfolioDailySummary
-import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
@@ -258,10 +256,6 @@ class SummaryService(
       return createEmptySummary(date)
     }
 
-    if (isToday(date)) {
-      return calculateCurrentDaySummaryUsingTransactions(date, transactions)
-    }
-
     val instrumentGroups = transactions.groupBy { it.instrument }
     val results = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, date)
 
@@ -275,55 +269,6 @@ class SummaryService(
       realizedProfit = results.realizedProfit.setScale(10, RoundingMode.HALF_UP),
       unrealizedProfit = results.unrealizedProfit.setScale(10, RoundingMode.HALF_UP),
       totalProfit = results.totalProfit.setScale(10, RoundingMode.HALF_UP),
-      earningsPerDay = earningsPerDay.setScale(10, RoundingMode.HALF_UP),
-    )
-  }
-
-  private fun calculateCurrentDaySummaryUsingTransactions(
-    date: LocalDate,
-    transactions: List<PortfolioTransaction>,
-  ): PortfolioDailySummary {
-    transactionService.calculateTransactionProfits(transactions)
-
-    val realizedProfit =
-      transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
-
-    val unrealizedProfit =
-      transactions
-      .filter { it.remainingQuantity > BigDecimal.ZERO }
-      .sumOf { it.unrealizedProfit ?: BigDecimal.ZERO }
-
-    val totalProfit = realizedProfit.add(unrealizedProfit)
-
-    val totalValue =
-      transactions
-      .groupBy { it.instrument }
-      .map { (instrument, txs) ->
-        val netQuantity =
-          txs.fold(BigDecimal.ZERO) { acc, tx ->
-          when (tx.transactionType) {
-            TransactionType.BUY -> acc.add(tx.quantity)
-            TransactionType.SELL -> acc.subtract(tx.quantity)
-          }
-        }
-        val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
-        netQuantity.multiply(currentPrice)
-      }.fold(BigDecimal.ZERO) { acc, value -> acc.add(value) }
-
-    val instrumentGroups = transactions.groupBy { it.instrument }
-    val results = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, date)
-    val xirr = investmentMetricsService.calculateAdjustedXirr(results.xirrTransactions, date)
-    val earningsPerDay = calculateEarningsPerDay(totalValue, BigDecimal(xirr))
-
-    return PortfolioDailySummary(
-      entryDate = date,
-      totalValue = totalValue.setScale(10, RoundingMode.HALF_UP),
-      xirrAnnualReturn = BigDecimal(xirr).setScale(10, RoundingMode.HALF_UP),
-      realizedProfit = realizedProfit.setScale(10, RoundingMode.HALF_UP),
-      unrealizedProfit = unrealizedProfit.setScale(10, RoundingMode.HALF_UP),
-      totalProfit = totalProfit.setScale(10, RoundingMode.HALF_UP),
       earningsPerDay = earningsPerDay.setScale(10, RoundingMode.HALF_UP),
     )
   }
