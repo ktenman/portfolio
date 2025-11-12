@@ -119,9 +119,9 @@ const sectorChartData = computed<ChartDataItem[]>(() => {
       percentage: value.toFixed(2),
     }))
 
-  const threshold = 2
-  const mainSectors = sortedSectors.filter(s => s.value >= threshold)
-  const smallSectors = sortedSectors.filter(s => s.value < threshold)
+  const topSectorsCount = 20
+  const mainSectors = sortedSectors.slice(0, topSectorsCount)
+  const smallSectors = sortedSectors.slice(topSectorsCount)
 
   const result = [...mainSectors]
 
