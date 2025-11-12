@@ -112,9 +112,7 @@ class EtfBreakdownService(
       val etfQuantity = calculateNetQuantity(etf.id)
       val etfPrice = getCurrentPrice(etf)
 
-      positions
-        .filter { position -> position.holding.ticker != null }
-        .forEach { position ->
+      positions.forEach { position ->
           val holdingValue = calculateHoldingValue(position, etfQuantity, etfPrice)
           val key =
             HoldingKey(
@@ -192,6 +190,7 @@ class EtfBreakdownService(
           inEtfs = value.etfSymbols.sorted().joinToString(", "),
           numEtfs = value.etfSymbols.size,
         )
-      }.sortedByDescending { it.totalValueEur }
+      }.filter { it.totalValueEur > BigDecimal.ZERO }
+      .sortedByDescending { it.totalValueEur }
   }
 }
