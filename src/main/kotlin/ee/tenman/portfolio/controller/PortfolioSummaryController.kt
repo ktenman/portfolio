@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/portfolio-summary")
@@ -45,19 +46,27 @@ class PortfolioSummaryController(
     @RequestParam size: Int,
   ): Page<PortfolioSummaryDto> {
     val historicalSummaries = portfolioSummaryService.getAllDailySummaries(page, size)
+    val today = LocalDate.now()
 
     return historicalSummaries.map { summary ->
-      val profitChange24h = portfolioSummaryService.calculate24hProfitChange(summary)
+      val actualSummary =
+        if (summary.entryDate.isEqual(today)) {
+        portfolioSummaryService.getCurrentDaySummary()
+      } else {
+        summary
+      }
+
+      val profitChange24h = portfolioSummaryService.calculate24hProfitChange(actualSummary)
 
       PortfolioSummaryDto(
-        date = summary.entryDate,
-        totalValue = summary.totalValue,
-        xirrAnnualReturn = summary.xirrAnnualReturn,
-        realizedProfit = summary.realizedProfit,
-        unrealizedProfit = summary.unrealizedProfit,
-        totalProfit = summary.totalProfit,
-        earningsPerDay = summary.earningsPerDay,
-        earningsPerMonth = summary.earningsPerDay.multiply(BigDecimal(365.25 / 12)),
+        date = actualSummary.entryDate,
+        totalValue = actualSummary.totalValue,
+        xirrAnnualReturn = actualSummary.xirrAnnualReturn,
+        realizedProfit = actualSummary.realizedProfit,
+        unrealizedProfit = actualSummary.unrealizedProfit,
+        totalProfit = actualSummary.totalProfit,
+        earningsPerDay = actualSummary.earningsPerDay,
+        earningsPerMonth = actualSummary.earningsPerDay.multiply(BigDecimal(365.25 / 12)),
         totalProfitChange24h = profitChange24h,
       )
     }
