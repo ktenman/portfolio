@@ -40,6 +40,7 @@ class HistoricalPricesServiceTest {
     "QDVE:GER:EUR,93500326",
     "XAIX:GER:EUR,515873934",
     "VUAA:GER:EUR,573788032",
+    "WTAI:MIL:EUR,505821605",
   )
   fun `should map ticker symbols correctly when given different symbol formats`(
     symbol: String,
