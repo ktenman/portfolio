@@ -268,12 +268,7 @@ class InvestmentMetricsService(
     val investment = currentHoldings.multiply(averageCost)
     val currentValue =
       if (currentHoldings > BigDecimal.ZERO) {
-      val price =
-        if (date.isEqual(LocalDate.now())) {
-        instrument.currentPrice ?: BigDecimal.ZERO
-      } else {
-        dailyPriceService.getPrice(instrument, date)
-      }
+      val price = dailyPriceService.getPrice(instrument, date)
       currentHoldings.multiply(price)
     } else {
       BigDecimal.ZERO
@@ -297,12 +292,7 @@ class InvestmentMetricsService(
     val currentValue =
       if (netQuantity > BigDecimal.ZERO) {
       try {
-        val price =
-          if (date.isEqual(LocalDate.now())) {
-          instrument.currentPrice ?: BigDecimal.ZERO
-        } else {
-          dailyPriceService.getPrice(instrument, date)
-        }
+        val price = dailyPriceService.getPrice(instrument, date)
         netQuantity.multiply(price)
       } catch (e: NoSuchElementException) {
         log.warn("Skipping ${instrument.symbol} on $date: ${e.message}")
