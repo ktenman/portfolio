@@ -202,5 +202,8 @@ scraping:
       - symbol: "SPYL"
         path: "SPYL:XETRA"
         expected-pages: 3
+      - symbol: "WTAI"
+        path: "WTAI:XMIL"
+        expected-pages: 3
 
 
