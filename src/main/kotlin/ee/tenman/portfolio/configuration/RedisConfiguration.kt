@@ -29,11 +29,11 @@ class RedisConfiguration {
   }
 
   companion object {
-    const val INSTRUMENT_CACHE = "instrument-cache-v1"
-    const val SUMMARY_CACHE = "summary-cache-v1"
-    const val TRANSACTION_CACHE = "transaction-cache-v1"
-    const val ONE_DAY_CACHE: String = "one-day-cache-v1"
-    const val ETF_LOGOS_CACHE: String = "etf-logos-v1"
+    const val INSTRUMENT_CACHE = "instrument-cache-v2"
+    const val SUMMARY_CACHE = "summary-cache-v2"
+    const val TRANSACTION_CACHE = "transaction-cache-v2"
+    const val ONE_DAY_CACHE: String = "one-day-cache-v2"
+    const val ETF_LOGOS_CACHE: String = "etf-logos-v2"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }

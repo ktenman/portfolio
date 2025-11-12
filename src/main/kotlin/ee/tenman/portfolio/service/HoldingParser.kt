@@ -15,6 +15,7 @@ class HoldingParser {
     rank: Int,
   ): HoldingData? =
     try {
+      log.debug("Parsing Holding data from row: {}", element.text())
       extractHoldingData(element, rank)
     } catch (e: Exception) {
       log.warn("Failed to parse holding row: ${element.text()}", e)
@@ -26,21 +27,41 @@ class HoldingParser {
     rank: Int,
   ): HoldingData? {
     val rowText = element.text()
-    if (rowText.contains("Instrument is not available")) return null
-
-    val allDivs = element.findAll("div").texts()
-    log.debug("Row has ${allDivs.size} divs. Extracting data from: $rowText")
+    val allDivs: List<String> = element.findAll("div").texts().toList()
+    log.debug("Row has {} divs. Extracting data from: {}", allDivs.size, rowText)
 
     val nameCell = allDivs.firstOrNull() ?: return null
     val nameParts = nameCell.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
 
+    val isNotAvailable = rowText.contains("Instrument is not available")
+
     return nameParts.getOrNull(0)?.let { name ->
-      val ticker = nameParts.getOrNull(1)?.removePrefix("$")?.trim()
-      val sector = nameParts.getOrNull(2)
+      val ticker =
+        nameParts
+        .getOrNull(1)
+        ?.removePrefix("$")
+        ?.trim()
+        .takeUnless { isNotAvailable }
+      val sector = nameParts.getOrNull(2).takeUnless { isNotAvailable }
+
       val weight = extractWeightFromAllDivs(allDivs)
+
+      if (weight == BigDecimal.ZERO) {
+        log.debug("Skipping holding with zero weight: {}", name)
+        return null
+      }
+
       val logoUrl = extractLogoUrl(element)
 
-      log.debug("Extracted - Name: '$name', Ticker: '$ticker', Sector: '$sector', Weight: $weight, Logo: '$logoUrl'")
+      log.debug(
+        "Extracted - Name: {}, Ticker: {}, Sector: {}, Weight: {}, Logo: {}, NotAvailable: {}",
+        name,
+        ticker,
+        sector,
+        weight,
+        logoUrl,
+        isNotAvailable,
+      )
 
       HoldingData(
         name = name,
