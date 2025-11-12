@@ -31,6 +31,7 @@
           </span>
         </td>
         <td class="fw-bold text-nowrap">{{ formatPercentageFromDecimal(totalXirr) }}</td>
+        <td class="fw-bold text-nowrap">100.00%</td>
         <td></td>
       </tr>
     </template>
@@ -89,6 +90,10 @@
             <span class="value-amount">
               {{ formatCurrencyWithSign(item.currentValue, item.baseCurrency) }}
             </span>
+          </div>
+          <div class="value-info">
+            <span class="value-label">Weight</span>
+            <span class="value-amount">{{ calculatePortfolioWeight(item) }}</span>
           </div>
         </div>
       </div>
@@ -184,6 +189,10 @@
       <span :class="getProfitClass(item.unrealizedProfit || 0)" class="profit-display text-nowrap">
         {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
       </span>
+    </template>
+
+    <template #cell-portfolioWeight="{ item }">
+      <span class="text-nowrap">{{ calculatePortfolioWeight(item) }}</span>
     </template>
 
     <template #actions="{ item }">
@@ -303,6 +312,12 @@ const formatPlatformName = (platform: string): string => {
   }
 
   return platformMap[platform] || platform
+}
+
+const calculatePortfolioWeight = (instrument: InstrumentDto): string => {
+  if (totalValue.value === 0) return '0.00%'
+  const weight = ((instrument.currentValue || 0) / totalValue.value) * 100
+  return `${weight.toFixed(2)}%`
 }
 </script>
 
@@ -485,14 +500,18 @@ const formatPlatformName = (platform: string): string => {
 
   .instrument-footer {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
+    gap: 1rem;
 
     .value-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
       .value-label {
         font-size: 0.75rem;
         color: var(--bs-gray-600);
-        margin-right: 0.5rem;
       }
 
       .value-amount {
