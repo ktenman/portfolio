@@ -16,6 +16,7 @@ class LightyearScraperService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun fetchEtfHoldings(etfConfig: LightyearScrapingProperties.EtfConfig): List<HoldingData> {
+    holdingParser.resetState()
     val allHoldings = mutableListOf<HoldingData>()
     var rank = 1
 

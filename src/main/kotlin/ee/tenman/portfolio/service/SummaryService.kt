@@ -64,7 +64,7 @@ class SummaryService(
     val transactions =
       transactionService
       .getAllTransactions()
-      .sortedBy { it.transactionDate }
+      .sortedWith(compareBy({ it.transactionDate }, { it.id }))
 
     if (transactions.isEmpty()) {
       log.info("No transactions found. Nothing to recalculate.")
@@ -250,7 +250,7 @@ class SummaryService(
       transactionService
       .getAllTransactions()
       .filter { !it.transactionDate.isAfter(date) }
-      .sortedBy { it.transactionDate }
+      .sortedWith(compareBy({ it.transactionDate }, { it.id }))
 
     if (transactions.isEmpty()) {
       return createEmptySummary(date)

@@ -33,7 +33,7 @@ class DailyPortfolioXirrJob(
     val allTransactions =
       portfolioTransactionService
         .getAllTransactions()
-        .sortedBy { it.transactionDate }
+        .sortedWith(compareBy({ it.transactionDate }, { it.id }))
 
     if (allTransactions.isEmpty()) {
       log.info("No transactions found. Skipping XIRR calculation.")

@@ -65,7 +65,7 @@ class InvestmentMetricsService(
     var quantity = BigDecimal.ZERO
     var totalCost = BigDecimal.ZERO
 
-    transactions.sortedBy { it.transactionDate }.forEach { transaction ->
+    transactions.sortedWith(compareBy({ it.transactionDate }, { it.id })).forEach { transaction ->
       when (transaction.transactionType) {
         TransactionType.BUY -> {
           val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)

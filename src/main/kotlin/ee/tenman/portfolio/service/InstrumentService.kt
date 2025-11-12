@@ -81,7 +81,7 @@ class InstrumentService(
       transactions
         .groupBy { it.platform }
         .forEach { (_, platformTransactions) ->
-          calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate })
+          calculateProfitsForPlatform(platformTransactions.sortedWith(compareBy({ it.transactionDate }, { it.id })))
         }
 
       portfolioTransactionRepository.saveAll(transactions)
@@ -89,7 +89,7 @@ class InstrumentService(
   }
 
   private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
-    val sortedTransactions = transactions.sortedBy { it.transactionDate }
+    val sortedTransactions = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
     var currentQuantity = BigDecimal.ZERO
     var totalCost = BigDecimal.ZERO
 

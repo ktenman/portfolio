@@ -129,7 +129,7 @@ class TransactionService(
       transactions
         .groupBy { it.platform to it.instrument.id }
         .forEach { (_, platformTransactions) ->
-          calculateProfitsForPlatform(platformTransactions.sortedBy { it.transactionDate }, currentPrice)
+          calculateProfitsForPlatform(platformTransactions.sortedWith(compareBy({ it.transactionDate }, { it.id })), currentPrice)
         }
     } catch (e: ObjectOptimisticLockingFailureException) {
       log.warn("Optimistic locking failure while calculating profits. Will retry.", e)
@@ -141,7 +141,7 @@ class TransactionService(
     transactions: List<PortfolioTransaction>,
     passedPrice: BigDecimal = BigDecimal.ZERO,
   ) {
-    val sortedTransactions = transactions.sortedBy { it.transactionDate }
+    val sortedTransactions = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
     var currentQuantity = BigDecimal.ZERO
     var totalCost = BigDecimal.ZERO
 
