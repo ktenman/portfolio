@@ -14,11 +14,13 @@ docker run -d -p 3000:3000 --platform linux/amd64 trading212-proxy
 ## API Endpoints
 
 ### Fetch Prices
+
 ```bash
 curl "http://localhost:3000/prices?tickers=WTAIm_EQ,SPYLa_EQ,QDVEd_EQ"
 ```
 
 **Response:**
+
 ```json
 {
   "data": {
@@ -37,17 +39,20 @@ curl "http://localhost:3000/prices?tickers=WTAIm_EQ,SPYLa_EQ,QDVEd_EQ"
 ```
 
 ### Health Check
+
 ```bash
 curl http://localhost:3000/health
 # {"status":"healthy"}
 ```
 
 ### Metrics
+
 ```bash
 curl http://localhost:3000/metrics
 ```
 
 **Response:**
+
 ```json
 {
   "requests_total": 142,
@@ -58,9 +63,9 @@ curl http://localhost:3000/metrics
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3000` | Server port |
+| Variable      | Default                     | Description                  |
+| ------------- | --------------------------- | ---------------------------- |
+| `PORT`        | `3000`                      | Server port                  |
 | `CURL_BINARY` | `/usr/local/bin/curl_ff117` | curl-impersonate binary path |
 
 ## Local Development
@@ -79,6 +84,7 @@ Backend (Kotlin/Feign) → HTTP → Trading212 Proxy → curl-impersonate-ff117 
 ```
 
 The proxy service:
+
 1. Receives HTTP request with ticker symbols
 2. Executes `curl_ff117` (Firefox 117 TLS fingerprint)
 3. Bypasses Cloudflare protection

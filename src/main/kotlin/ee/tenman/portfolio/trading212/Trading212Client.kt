@@ -10,5 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam
 )
 interface Trading212Client {
   @GetMapping("/prices")
-  fun getPrices(@RequestParam tickers: String): Trading212Response
+  fun getPrices(
+    @RequestParam tickers: String,
+  ): Trading212Response
 }
