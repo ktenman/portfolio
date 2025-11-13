@@ -4,6 +4,5 @@ enum class ProviderName {
   ALPHA_VANTAGE,
   BINANCE,
   FT,
-  LIGHTYEAR,
-  TRADING212,
+  LIGHTYEAR
 }
