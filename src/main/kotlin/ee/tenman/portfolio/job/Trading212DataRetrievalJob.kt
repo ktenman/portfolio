@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.trading212.Trading212Service
 import org.slf4j.LoggerFactory
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component
 class Trading212DataRetrievalJob(
   private val jobExecutionService: JobExecutionService,
   private val trading212Service: Trading212Service,
+  private val instrumentService: InstrumentService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -29,7 +31,25 @@ class Trading212DataRetrievalJob(
   override fun execute() {
     log.info("Starting Trading212 price update execution")
     try {
-      trading212Service.updateCurrentPrices()
+      val prices = trading212Service.fetchCurrentPrices()
+
+      val allInstruments = instrumentService.getAllInstrumentsWithoutFiltering()
+      val instrumentsBySymbol = allInstruments.associateBy { it.symbol }
+
+      var updatedCount = 0
+      prices.forEach { (symbol, price) ->
+        val instrument = instrumentsBySymbol[symbol]
+        if (instrument != null) {
+          instrument.currentPrice = price
+          instrumentService.saveInstrument(instrument)
+          log.debug("Updated price for {}: {}", symbol, price)
+          updatedCount++
+        } else {
+          log.warn("Instrument not found for symbol: $symbol")
+        }
+      }
+
+      log.info("Successfully updated prices for $updatedCount/${prices.size} instruments")
     } catch (e: Exception) {
       log.error("Failed to update Trading212 prices", e)
       throw e
