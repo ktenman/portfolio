@@ -30,4 +30,10 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice>
 
   fun findTop10ByInstrumentOrderByEntryDateDesc(instrument: Instrument): List<DailyPrice>
+
+  fun findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+    instrument: Instrument,
+    startDate: LocalDate,
+    endDate: LocalDate,
+  ): List<DailyPrice>
 }
