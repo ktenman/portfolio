@@ -60,5 +60,4 @@ class Trading212Service(
       throw e
     }
   }
-
 }
