@@ -74,6 +74,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
+      - TRADING212_ENABLED=false
     depends_on:
       postgres:
         condition: service_healthy

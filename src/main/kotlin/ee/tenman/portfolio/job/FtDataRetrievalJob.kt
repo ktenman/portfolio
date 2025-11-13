@@ -2,8 +2,6 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
-import ee.tenman.portfolio.scheduler.AdaptiveSchedulingProperties
-import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
 import jakarta.annotation.PostConstruct
@@ -24,8 +22,6 @@ class FtDataRetrievalJob(
   private val dataProcessingUtil: DataProcessingUtil,
   private val jobExecutionService: JobExecutionService,
   private val taskScheduler: TaskScheduler,
-  private val adaptiveSchedulingProperties: AdaptiveSchedulingProperties,
-  private val marketPhaseDetectionService: MarketPhaseDetectionService,
   private val clock: Clock = Clock.systemDefaultZone(),
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -34,25 +30,21 @@ class FtDataRetrievalJob(
   private var isExecuting = false
 
   @PostConstruct
-  fun initializeAdaptiveScheduling() {
-    if (adaptiveSchedulingProperties.enabled) {
-      log.info("Initializing adaptive scheduling for FT data retrieval")
-      scheduleNextExecution(Duration.ofSeconds(adaptiveSchedulingProperties.minimumIntervalSeconds))
-    }
+  fun scheduleInitialRun() {
+    log.info("Scheduling initial FT data retrieval job to run in 10 seconds")
+    taskScheduler.schedule(
+      { runScheduledJob() },
+      Instant.now(clock).plus(Duration.ofSeconds(10)),
+    )
   }
 
-//  @Scheduled(cron = "0 * 10-18 * * MON-FRI", zone = "Europe/Tallinn")
-  @Scheduled(cron = "0 * * * * *")
-  fun runJob() {
-    if (!adaptiveSchedulingProperties.enabled) {
-      log.info("Running FT data retrieval job (fixed schedule)")
-      jobExecutionService.executeJob(this)
-      log.info("Completed FT data retrieval job")
-    }
+  @Scheduled(cron = "0 0 5 * * *")
+  fun runDailyJob() {
+    log.info("Running daily FT data retrieval job at 05:00")
+    runScheduledJob()
   }
 
-  fun runAdaptiveJob() {
-    log.info("Running FT data retrieval job (adaptive schedule)")
+  private fun runScheduledJob() {
     jobExecutionService.executeJob(this)
     log.info("Completed FT data retrieval job")
   }
@@ -74,9 +66,6 @@ class FtDataRetrievalJob(
 
       if (instruments.isEmpty()) {
         log.info("No FT instruments found to process")
-        if (adaptiveSchedulingProperties.enabled) {
-          scheduleNextExecution(Duration.ofMinutes(5))
-        }
         return
       }
 
@@ -85,10 +74,6 @@ class FtDataRetrievalJob(
       }
 
       log.info("Completed FT data retrieval execution. Processed ${instruments.size} instruments")
-
-      if (adaptiveSchedulingProperties.enabled) {
-        scheduleNextExecution()
-      }
     } finally {
       isExecuting = false
     }
@@ -108,31 +93,5 @@ class FtDataRetrievalJob(
     } catch (e: Exception) {
       log.error("Error processing instrument ${instrument.symbol}", e)
     }
-  }
-
-  private fun scheduleNextExecution(customDelay: Duration? = null) {
-    val delay =
-      customDelay ?: run {
-      val marketPhase = marketPhaseDetectionService.detectMarketPhase()
-      val nextInterval =
-        maxOf(
-        marketPhase.defaultIntervalSeconds,
-        adaptiveSchedulingProperties.minimumIntervalSeconds,
-      )
-      Duration.ofSeconds(nextInterval)
-    }
-
-    taskScheduler.schedule(
-      { runAdaptiveJob() },
-      Instant.now(clock).plus(delay),
-    )
-
-    val marketPhase = marketPhaseDetectionService.detectMarketPhase()
-    log.info(
-      "Scheduled next execution in ${delay.seconds}s " +
-        "(Market phase: $marketPhase, " +
-        "Phase default: ${marketPhase.defaultIntervalSeconds}s, " +
-        "Configured minimum: ${adaptiveSchedulingProperties.minimumIntervalSeconds}s)",
-    )
   }
 }
