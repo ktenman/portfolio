@@ -5,4 +5,5 @@ enum class ProviderName {
   BINANCE,
   FT,
   LIGHTYEAR,
+  TRADING212,
 }

@@ -44,6 +44,9 @@ class InstrumentService(
           .EntityNotFoundException("Instrument not found with id: $id")
       }
 
+  @Transactional(readOnly = true)
+  fun findBySymbol(symbol: String): Instrument? = instrumentRepository.findBySymbol(symbol).orElse(null)
+
   @Transactional
   @Caching(
     evict = [
