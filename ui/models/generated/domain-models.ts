@@ -99,6 +99,7 @@ export enum ProviderName {
     BINANCE = "BINANCE",
     FT = "FT",
     LIGHTYEAR = "LIGHTYEAR",
+    TRADING212 = "TRADING212",
 }
 
 export enum TransactionType {
