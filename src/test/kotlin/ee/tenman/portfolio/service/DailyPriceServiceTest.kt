@@ -300,12 +300,12 @@ class DailyPriceServiceTest {
     val dailyPrice = createDailyPrice(closePrice = BigDecimal("120.00"), date = testDate.minusDays(5))
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         testDate.minusYears(10),
         testDate,
       )
-    } returns listOf(dailyPrice)
+    } returns dailyPrice
 
     val result = dailyPriceService.findLastDailyPrice(testInstrument, testDate)
 
@@ -315,12 +315,12 @@ class DailyPriceServiceTest {
   @Test
   fun `should findLastDailyPrice returns null when no price found in range`() {
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         testDate.minusYears(10),
         testDate,
       )
-    } returns emptyList()
+    } returns null
 
     val result = dailyPriceService.findLastDailyPrice(testInstrument, testDate)
 
@@ -351,20 +351,20 @@ class DailyPriceServiceTest {
     val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(1))
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusYears(10),
         currentDate,
       )
-    } returns listOf(currentPrice)
+    } returns currentPrice
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusDays(6),
         currentDate.minusDays(1),
       )
-    } returns listOf(yesterdayPrice)
+    } returns yesterdayPrice
 
     val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
 
@@ -380,20 +380,20 @@ class DailyPriceServiceTest {
     val weekAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(7))
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusYears(10),
         currentDate,
       )
-    } returns listOf(currentPrice)
+    } returns currentPrice
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusDays(12),
         currentDate.minusDays(7),
       )
-    } returns listOf(weekAgoPrice)
+    } returns weekAgoPrice
 
     val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P7D)
 
@@ -409,20 +409,20 @@ class DailyPriceServiceTest {
     val monthAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(30))
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusYears(10),
         currentDate,
       )
-    } returns listOf(currentPrice)
+    } returns currentPrice
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusDays(35),
         currentDate.minusDays(30),
       )
-    } returns listOf(monthAgoPrice)
+    } returns monthAgoPrice
 
     val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P30D)
 
@@ -436,12 +436,12 @@ class DailyPriceServiceTest {
     val currentDate = LocalDate.now()
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusYears(10),
         currentDate,
       )
-    } returns emptyList()
+    } returns null
 
     val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
 
@@ -454,20 +454,20 @@ class DailyPriceServiceTest {
     val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = currentDate)
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusYears(10),
         currentDate,
       )
-    } returns listOf(currentPrice)
+    } returns currentPrice
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusDays(6),
         currentDate.minusDays(1),
       )
-    } returns emptyList()
+    } returns null
 
     val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
 
@@ -481,20 +481,20 @@ class DailyPriceServiceTest {
     val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(1))
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusYears(10),
         currentDate,
       )
-    } returns listOf(currentPrice)
+    } returns currentPrice
 
     every {
-      dailyPriceRepository.findAllByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
         currentDate.minusDays(6),
         currentDate.minusDays(1),
       )
-    } returns listOf(yesterdayPrice)
+    } returns yesterdayPrice
 
     val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
 
