@@ -27,16 +27,11 @@ class FtDataRetrievalJobConcurrencyTest {
   private val dataProcessingUtil = mockk<DataProcessingUtil>()
   private val jobExecutionService = mockk<JobExecutionService>()
   private val taskScheduler = mockk<TaskScheduler>()
-  private val adaptiveSchedulingProperties = mockk<AdaptiveSchedulingProperties>()
-  private val marketPhaseDetectionService = MarketPhaseDetectionService(fixedClock)
 
   private lateinit var job: FtDataRetrievalJob
 
   @BeforeEach
   fun setUp() {
-    every { adaptiveSchedulingProperties.enabled } returns false
-    every { adaptiveSchedulingProperties.minimumIntervalSeconds } returns 60
-
     job =
       FtDataRetrievalJob(
         instrumentService,
@@ -44,9 +39,7 @@ class FtDataRetrievalJobConcurrencyTest {
         dataProcessingUtil,
         jobExecutionService,
         taskScheduler,
-        adaptiveSchedulingProperties,
-        marketPhaseDetectionService,
-        clock = fixedClock,
+        fixedClock,
       )
   }
 
@@ -116,8 +109,6 @@ class FtDataRetrievalJobConcurrencyTest {
   @Test
   fun `should handle empty instruments list`() {
     every { instrumentService.getAllInstruments() } returns emptyList()
-    every { adaptiveSchedulingProperties.enabled } returns true
-    every { taskScheduler.schedule(any(), any<java.time.Instant>()) } returns mockk()
 
     job.execute()
 

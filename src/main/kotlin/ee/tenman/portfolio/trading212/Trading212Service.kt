@@ -1,20 +1,19 @@
 package ee.tenman.portfolio.trading212
 
-import ee.tenman.portfolio.service.InstrumentService
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 
 @Service
 class Trading212Service(
   private val trading212Client: Trading212Client,
-  private val instrumentService: InstrumentService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val TRADING212_TICKERS =
+    val TRADING212_TICKERS =
       mapOf(
         "WTAI:MIL:EUR" to "WTAIm_EQ",
         "VUAA:GER:EUR" to "VUAAm_EQ",
@@ -25,36 +24,27 @@ class Trading212Service(
   }
 
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
-  fun updateCurrentPrices() {
+  fun fetchCurrentPrices(): Map<String, BigDecimal> {
     val tickers = TRADING212_TICKERS.values.joinToString(",")
 
     log.info("Fetching prices for Trading212 tickers: $tickers")
 
-    try {
+    return try {
       val response = trading212Client.getPrices(tickers)
 
-      val allInstruments = instrumentService.getAllInstrumentsWithoutFiltering()
-      val instrumentsBySymbol = allInstruments.associateBy { it.symbol }
-
-      var updatedCount = 0
+      val prices = mutableMapOf<String, BigDecimal>()
       TRADING212_TICKERS.forEach { (symbol, ticker) ->
         val priceData = response.data[ticker]
         if (priceData != null) {
-          val instrument = instrumentsBySymbol[symbol]
-          if (instrument != null) {
-            instrument.currentPrice = priceData.bid
-            instrumentService.saveInstrument(instrument)
-            log.debug("Updated price for {}: {}", symbol, priceData.bid)
-            updatedCount++
-          } else {
-            log.warn("Instrument not found for symbol: $symbol")
-          }
+          prices[symbol] = priceData.bid
+          log.debug("Fetched price for {}: {}", symbol, priceData.bid)
         } else {
           log.warn("No price data found for ticker: $ticker (symbol: $symbol)")
         }
       }
 
-      log.info("Successfully updated prices for $updatedCount/${TRADING212_TICKERS.size} instruments")
+      log.info("Successfully fetched prices for ${prices.size}/${TRADING212_TICKERS.size} instruments")
+      prices
     } catch (e: Exception) {
       log.error("Failed to fetch prices from Trading212", e)
       throw e
