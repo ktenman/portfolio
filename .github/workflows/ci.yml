@@ -209,6 +209,10 @@ jobs:
             dockerfile: ./market-price-tracker/Dockerfile
             image: ktenman/market-price-tracker
             context: ./market-price-tracker
+          - name: trading212-proxy
+            dockerfile: ./trading212-proxy/Dockerfile
+            image: ktenman/trading212-proxy
+            context: ./trading212-proxy
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v5

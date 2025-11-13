@@ -51,6 +51,25 @@ services:
       timeout: 5s
       retries: 5
 
+  trading212-proxy:
+    container_name: trading212-proxy-local
+    build:
+      context: ./trading212-proxy
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: [ 'CMD-SHELL', 'node -e "require(\"http\").get(\"http://localhost:3000/health\", (res) => process.exit(res.statusCode === 200 ? 0 : 1))"' ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    mem_limit: 256m
+    environment:
+      NODE_ENV: development
+
   keycloak-db:
     image: postgres:17-alpine
     container_name: portfolio-keycloak-db
@@ -215,10 +234,13 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
+      - TRADING212_PROXY_URL=http://trading212-proxy:3000
+      - TRADING212_ENABLED=true
     depends_on:
       - postgres
       - redis
       - minio
+      - trading212-proxy
     networks:
       - portfolio-network
     healthcheck:

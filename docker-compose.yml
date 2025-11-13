@@ -66,6 +66,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-portfolio-logos}
+      TRADING212_ENABLED: true
+      TRADING212_PROXY_URL: http://trading212-proxy:3000
     image: ktenman/portfolio-be:latest
     ports:
       - '8080:8080'
@@ -75,6 +77,8 @@ services:
       redis:
         condition: service_started
       minio:
+        condition: service_healthy
+      trading212-proxy:
         condition: service_healthy
     restart: always
     mem_limit: 2048m
@@ -161,6 +165,22 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"  # Enable Watchtower for this container
 
+  trading212-proxy:
+    container_name: trading212-proxy
+    image: ktenman/trading212-proxy:latest
+    ports:
+      - '3000:3000'
+    restart: always
+    healthcheck:
+      test: [ 'CMD-SHELL', 'node -e "require(\"http\").get(\"http://localhost:3000/health\", (res) => process.exit(res.statusCode === 200 ? 0 : 1))"' ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    mem_limit: 256m
+    environment:
+      NODE_ENV: production
+
   captcha-solver:
     container_name: captcha_solver
     image: ktenman/captcha-solver:latest
@@ -200,6 +220,8 @@ services:
       app:
         condition: service_healthy
       market_price_tracker:
+        condition: service_healthy
+      trading212-proxy:
         condition: service_healthy
     environment:
       - HEALTHCHECK_URL=${HEALTHCHECK_URL}
