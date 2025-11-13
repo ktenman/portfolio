@@ -8,6 +8,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.PriceChangePeriod
+import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.springframework.cache.annotation.CacheEvict
@@ -45,7 +46,10 @@ class InstrumentService(
       }
 
   @Transactional(readOnly = true)
-  fun findBySymbol(symbol: String): Instrument? = instrumentRepository.findBySymbol(symbol).orElse(null)
+  fun findBySymbol(symbol: String): Instrument? =
+    instrumentRepository.findBySymbol(symbol).orElseThrow {
+    EntityNotFoundException("Instrument not found with symbol: $symbol")
+  }
 
   @Transactional
   @Caching(
@@ -288,7 +292,7 @@ class InstrumentService(
     val earliestTransaction = transactions.minByOrNull { it.transactionDate } ?: return null
     val holdingPeriodDays =
       java.time.temporal.ChronoUnit.DAYS
-      .between(earliestTransaction.transactionDate, context.calculationDate)
+        .between(earliestTransaction.transactionDate, context.calculationDate)
 
     return if (holdingPeriodDays >= context.priceChangePeriod.days) {
       dailyPriceService.getPriceChange(instrument, context.priceChangePeriod)
