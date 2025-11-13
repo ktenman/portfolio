@@ -58,4 +58,16 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
   fun findLatestPositionsByEtfId(
     @Param("etfInstrumentId") etfInstrumentId: Long,
   ): List<EtfPosition>
+
+  @Query(
+    """
+    SELECT ep FROM EtfPosition ep
+    WHERE ep.etfInstrument.id = :etfInstrumentId
+    AND ep.snapshotDate = :snapshotDate
+  """,
+  )
+  fun findByEtfInstrumentIdAndSnapshotDate(
+    @Param("etfInstrumentId") etfInstrumentId: Long,
+    @Param("snapshotDate") snapshotDate: LocalDate,
+  ): List<EtfPosition>
 }

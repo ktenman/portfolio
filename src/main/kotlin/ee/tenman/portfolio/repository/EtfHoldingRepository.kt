@@ -11,4 +11,8 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     name: String,
     ticker: String?,
   ): Optional<EtfHolding>
+
+  fun findByTicker(ticker: String): Optional<EtfHolding>
+
+  fun findByName(name: String): Optional<EtfHolding>
 }
