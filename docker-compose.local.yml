@@ -236,6 +236,7 @@ services:
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
       - TRADING212_PROXY_URL=http://trading212-proxy:3000
       - TRADING212_ENABLED=true
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     depends_on:
       - postgres
       - redis
