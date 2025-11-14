@@ -39,6 +39,7 @@ out/
 ### Kotlin ###
 .kotlin
 node_modules
+dist/
 
 ### Coverage ###
 coverage/

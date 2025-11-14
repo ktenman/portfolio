@@ -94,6 +94,8 @@ jobs:
             test-name: E2E Tests
           - test-type: frontend-unit
             test-name: Frontend Unit Tests
+          - test-type: cloudflare-bypass-proxy
+            test-name: Cloudflare Bypass Proxy Tests
       fail-fast: false
     steps:
       - uses: actions/checkout@v5
@@ -160,6 +162,25 @@ jobs:
       - name: Run frontend test coverage
         if: matrix.test-type == 'frontend-unit'
         run: npm run test:coverage
+      - name: Use Node.js for cloudflare-bypass-proxy
+        if: matrix.test-type == 'cloudflare-bypass-proxy'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/iron'
+          cache: 'npm'
+          cache-dependency-path: cloudflare-bypass-proxy/package-lock.json
+      - name: Install cloudflare-bypass-proxy dependencies
+        if: matrix.test-type == 'cloudflare-bypass-proxy'
+        working-directory: cloudflare-bypass-proxy
+        run: npm ci
+      - name: Run cloudflare-bypass-proxy tests
+        if: matrix.test-type == 'cloudflare-bypass-proxy'
+        working-directory: cloudflare-bypass-proxy
+        run: npm test
+      - name: Run cloudflare-bypass-proxy test coverage
+        if: matrix.test-type == 'cloudflare-bypass-proxy'
+        working-directory: cloudflare-bypass-proxy
+        run: npm run test:coverage
       - uses: actions/upload-artifact@v5
         if: always() && matrix.test-type == 'backend-unit'
         with:
@@ -185,6 +206,12 @@ jobs:
             coverage/
             test-results/html/
             test-results/junit.xml
+      - uses: actions/upload-artifact@v5
+        if: always() && matrix.test-type == 'cloudflare-bypass-proxy'
+        with:
+          name: Cloudflare Bypass Proxy Test Reports
+          path: |
+            cloudflare-bypass-proxy/coverage/
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
@@ -209,10 +236,10 @@ jobs:
             dockerfile: ./market-price-tracker/Dockerfile
             image: ktenman/market-price-tracker
             context: ./market-price-tracker
-          - name: trading212-proxy
-            dockerfile: ./trading212-proxy/Dockerfile
-            image: ktenman/trading212-proxy
-            context: ./trading212-proxy
+          - name: cloudflare-bypass-proxy
+            dockerfile: ./cloudflare-bypass-proxy/Dockerfile
+            image: ktenman/cloudflare-bypass-proxy
+            context: ./cloudflare-bypass-proxy
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v5
