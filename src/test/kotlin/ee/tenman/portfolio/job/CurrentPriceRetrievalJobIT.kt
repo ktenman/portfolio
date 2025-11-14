@@ -18,9 +18,11 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
+import org.springframework.test.context.TestPropertySource
 import java.math.BigDecimal
 
 @IntegrationTest
+@TestPropertySource(properties = ["scheduling.enabled=true"])
 class CurrentPriceRetrievalJobIT {
   @Resource
   private lateinit var alphaVantageDataRetrievalJob: AlphaVantageDataRetrievalJob
