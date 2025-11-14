@@ -1,6 +1,7 @@
 const express = require('express')
 const { execFile } = require('child_process')
 const { promisify } = require('util')
+const rateLimit = require('express-rate-limit')
 
 const execFileAsync = promisify(execFile)
 const app = express()
@@ -10,9 +11,30 @@ const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
 const TRADING212_URL = 'https://live.services.trading212.com/public-instrument-cache/v1/prices'
 const WISDOMTREE_BASE_URL = 'https://www.wisdomtree.eu/en-gb/global/etf-details/modals/all-holdings'
 
+const sanitizeLogInput = (input) => {
+  if (!input) return 'null'
+  return String(input).replace(/[\n\r\t]/g, '_')
+}
+
+const pricesLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+const wisdomTreeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
 app.get('/health', (req, res) => res.json({ status: 'healthy' }))
 
-app.get('/prices', async (req, res) => {
+app.get('/prices', pricesLimiter, async (req, res) => {
   const { tickers } = req.query
 
   if (!tickers) return res.status(400).json({ error: 'Missing tickers parameter' })
@@ -33,7 +55,7 @@ app.get('/prices', async (req, res) => {
   }
 })
 
-app.get('/wisdomtree/holdings/:etfId', async (req, res) => {
+app.get('/wisdomtree/holdings/:etfId', wisdomTreeLimiter, async (req, res) => {
   const { etfId } = req.params
 
   if (!etfId) return res.status(400).json({ error: 'Missing etfId parameter' })
@@ -46,7 +68,7 @@ app.get('/wisdomtree/holdings/:etfId', async (req, res) => {
       maxBuffer: 2 * 1024 * 1024,
     })
     console.log(
-      `[${new Date().toISOString()}] Fetched WisdomTree holdings for ${etfId} in ${Date.now() - start}ms`
+      `[${new Date().toISOString()}] Fetched WisdomTree holdings for ${sanitizeLogInput(etfId)} in ${Date.now() - start}ms`
     )
     res.type('html').send(stdout)
   } catch (error) {

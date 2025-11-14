@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.openrouter.OpenRouterClient
+import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -14,7 +15,7 @@ class IndustryClassificationService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun classifyCompany(companyName: String): IndustrySector? {
-    log.info("Classifying company: {}", companyName)
+    log.info("Classifying company: {}", LogSanitizerUtil.sanitize(companyName))
     if (!properties.enabled || companyName.isBlank()) {
       log.warn("Classification disabled or blank company name")
       return null
@@ -23,12 +24,12 @@ class IndustryClassificationService(
     val prompt = buildPrompt(companyName)
     val response = openRouterClient.classify(prompt)
     if (response == null) {
-      log.warn("No response from OpenRouter for company: {}", companyName)
+      log.warn("No response from OpenRouter for company: {}", LogSanitizerUtil.sanitize(companyName))
       return null
     }
 
     val sector = IndustrySector.fromDisplayName(response)
-    log.info("Classified {} as {}", companyName, sector?.displayName ?: "UNKNOWN")
+    log.info("Classified {} as {}", LogSanitizerUtil.sanitize(companyName), sector?.displayName ?: "UNKNOWN")
     return sector
   }
 
