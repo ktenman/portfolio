@@ -6,12 +6,14 @@ import ee.tenman.portfolio.service.SummaryService
 import ee.tenman.portfolio.service.TransactionService
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.LocalDate
 
 @Component
+@ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
 class DailyPortfolioXirrJob(
   private val portfolioTransactionService: TransactionService,
   private val portfolioSummaryService: SummaryService,
