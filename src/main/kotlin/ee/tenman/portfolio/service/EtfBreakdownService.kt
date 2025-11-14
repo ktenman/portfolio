@@ -7,6 +7,7 @@ import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -74,7 +75,7 @@ class EtfBreakdownService(
 
     if (!etfSymbols.isNullOrEmpty()) {
       allInstruments = allInstruments.filter { it.symbol in etfSymbols }
-      log.info("Filtered to ${allInstruments.size} instruments matching symbols: $etfSymbols")
+      log.info("Filtered to ${allInstruments.size} instruments matching symbols: {}", LogSanitizerUtil.sanitize(etfSymbols))
     }
 
     val withHoldings = allInstruments.filter { hasEtfHoldings(it.id) }
