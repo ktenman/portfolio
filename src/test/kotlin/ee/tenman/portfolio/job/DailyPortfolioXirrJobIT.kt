@@ -26,12 +26,14 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
+import org.springframework.test.context.TestPropertySource
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 
 @IntegrationTest
+@TestPropertySource(properties = ["scheduling.enabled=true"])
 class DailyPortfolioXirrJobIT {
   @Resource
   private lateinit var transactionService: TransactionService
