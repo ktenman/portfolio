@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.MinioProperties
+import ee.tenman.portfolio.util.LogSanitizerUtil
 import io.minio.GetObjectArgs
 import io.minio.MinioClient
 import io.minio.PutObjectArgs
@@ -66,7 +67,7 @@ class MinioService(
       stream.readBytes()
     }
   } catch (e: Exception) {
-    log.warn("Failed to download logo for symbol: {}", symbol, e)
+    log.warn("Failed to download logo for symbol: {}", LogSanitizerUtil.sanitize(symbol), e)
     null
   }
 }
