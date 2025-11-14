@@ -67,7 +67,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-portfolio-logos}
       TRADING212_ENABLED: true
-      TRADING212_PROXY_URL: http://trading212-proxy:3000
+      CLOUDFLARE_BYPASS_PROXY_URL: http://cloudflare-bypass-proxy:3000
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     image: ktenman/portfolio-be:latest
     ports:
@@ -79,7 +79,7 @@ services:
         condition: service_started
       minio:
         condition: service_healthy
-      trading212-proxy:
+      cloudflare-bypass-proxy:
         condition: service_healthy
     restart: always
     mem_limit: 2048m
@@ -166,10 +166,10 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"  # Enable Watchtower for this container
 
-  trading212-proxy:
-    container_name: trading212-proxy
+  cloudflare-bypass-proxy:
+    container_name: cloudflare-bypass-proxy
     platform: linux/amd64
-    image: ktenman/trading212-proxy:latest
+    image: ktenman/cloudflare-bypass-proxy:latest
     ports:
       - '3000:3000'
     restart: always
@@ -223,7 +223,7 @@ services:
         condition: service_healthy
       market_price_tracker:
         condition: service_healthy
-      trading212-proxy:
+      cloudflare-bypass-proxy:
         condition: service_healthy
     environment:
       - HEALTHCHECK_URL=${HEALTHCHECK_URL}

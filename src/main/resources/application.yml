@@ -212,9 +212,12 @@ scraping:
         expected-pages: 3
         skip-holdings: true
 
+cloudflare-bypass-proxy:
+  url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}
+
 trading212:
   proxy:
-    url: ${TRADING212_PROXY_URL:http://localhost:3000}
+    url: ${TRADING212_PROXY_URL:${cloudflare-bypass-proxy.url}}
   batch-size: ${TRADING212_BATCH_SIZE:15}
 
 

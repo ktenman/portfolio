@@ -90,27 +90,25 @@ class WisdomTreeUpdateService(
     name: String,
     ticker: String?,
   ): EtfHolding {
+    val exactMatch = etfHoldingRepository.findByNameAndTicker(name, ticker)
+    if (exactMatch.isPresent) {
+      log.debug("Found exact match: name=$name, ticker=$ticker")
+      return exactMatch.get()
+    }
+
     if (ticker != null) {
-      val byTicker = etfHoldingRepository.findByTicker(ticker)
-      if (byTicker.isPresent) {
-        log.debug("Found existing holding by ticker: $ticker")
-        return byTicker.get()
+      try {
+        val byTicker = etfHoldingRepository.findByTicker(ticker)
+        if (byTicker.isPresent) {
+          log.debug("Found existing holding by ticker: $ticker (name may differ)")
+          return byTicker.get()
+        }
+      } catch (e: Exception) {
+        log.warn("Multiple holdings found for ticker $ticker, creating new entry for name=$name")
       }
     }
 
-    val byName = etfHoldingRepository.findByName(name)
-    if (byName.isPresent) {
-      log.debug("Found existing holding by name: $name")
-      return byName.get()
-    }
-
     log.info("Creating new holding: name=$name, ticker=$ticker")
-    val newHolding =
-      EtfHolding(
-        ticker = ticker,
-        name = name,
-        sector = null,
-      )
-    return etfHoldingRepository.save(newHolding)
+    return etfHoldingRepository.save(EtfHolding(ticker = ticker, name = name, sector = null))
   }
 }

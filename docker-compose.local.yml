@@ -51,11 +51,11 @@ services:
       timeout: 5s
       retries: 5
 
-  trading212-proxy:
-    container_name: trading212-proxy-local
+  cloudflare-bypass-proxy:
+    container_name: cloudflare-bypass-proxy-local
     platform: linux/amd64
     build:
-      context: ./trading212-proxy
+      context: ./cloudflare-bypass-proxy
       dockerfile: Dockerfile
     ports:
       - '3000:3000'
@@ -235,14 +235,14 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
-      - TRADING212_PROXY_URL=http://trading212-proxy:3000
+      - CLOUDFLARE_BYPASS_PROXY_URL=http://cloudflare-bypass-proxy:3000
       - TRADING212_ENABLED=true
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     depends_on:
       - postgres
       - redis
       - minio
-      - trading212-proxy
+      - cloudflare-bypass-proxy
     networks:
       - portfolio-network
     healthcheck:
