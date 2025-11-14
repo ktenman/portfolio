@@ -256,6 +256,62 @@ The system follows a clean microservices architecture with strong separation of 
 6. **Redis** - Multi-level caching reducing DB load by ~70%
 7. **Market Price Tracker** - Python service for real-time price updates (⚠️ Needs stabilization)
 
+### Architecture Documentation
+
+Comprehensive PlantUML diagrams are available in `docs/architecture/`:
+
+- **system-context.puml** - C4 Context diagram showing external systems and integrations (10 external APIs)
+- **container-diagram.puml** - Internal containers: Web App, API, Database, Cache, Storage
+- **component-diagram.puml** - Detailed API components: Controllers (10), Services (21), Repositories
+- **database-erd.puml** - Database schema with 7 core entities and relationships
+- **price-update-sequence.puml** - Scheduled job execution flow with upsert idempotency
+- **xirr-calculation-sequence.puml** - Parallel XIRR calculation with Kotlin Coroutines
+- **frontend-architecture.puml** - Vue.js component hierarchy and state management
+
+Additional diagrams in `screenshots/`:
+- **architecture.puml** - Full system deployment architecture with authentication flow
+
+### PlantUML Setup in IntelliJ
+
+**Plugin Installation:**
+
+1. Open IntelliJ IDEA
+2. Go to Settings/Preferences → Plugins
+3. Search for "PlantUML Integration"
+4. Install the official PlantUML plugin by Eugene Steinberg
+5. Restart IntelliJ
+
+**Usage:**
+
+- Open any `.puml` file in `docs/architecture/` or `screenshots/`
+- IntelliJ will automatically render the diagram preview in a split view
+- Edit the PlantUML code on the left, see live preview on the right
+- Right-click the diagram → "Copy diagram to clipboard" to export
+
+**Generating SVG Files:**
+
+```bash
+./scripts/generate-diagrams.sh                    # Generate all SVG diagrams
+./scripts/generate-diagrams.sh screenshots/architecture.puml  # Generate specific diagram
+```
+
+The script automatically:
+- Downloads PlantUML JAR if not present
+- Generates SVG files in the same directory as source `.puml` files
+- Supports batch processing of all diagrams
+
+**File Locations:**
+
+- Architecture diagrams: `docs/architecture/*.puml` + generated `*.svg`
+- Deployment diagrams: `screenshots/*.puml` + generated `*.svg`
+- PlantUML JAR: `plantuml-*.jar` (auto-downloaded, git-ignored)
+
+**Important:**
+
+- Always edit `.puml` source files, not `.svg` outputs
+- SVG files are committed to git for documentation purposes
+- Run `./scripts/generate-diagrams.sh` after editing to update SVG exports
+
 ### Key Architectural Patterns
 
 - **Repository Pattern**: Data access through Spring Data JPA repositories
@@ -266,25 +322,74 @@ The system follows a clean microservices architecture with strong separation of 
 - **Integration Testing**: Uses Testcontainers for PostgreSQL and Redis
 - **E2E Testing**: Selenide-based browser tests with retry mechanism
 
+### Component Inventory
+
+**Controllers (10 REST endpoints):**
+- InstrumentController, PortfolioTransactionController, PortfolioSummaryController - Core CRUD
+- EtfBreakdownController, WisdomTreeController - ETF analytics
+- CalculatorController - XIRR calculations
+- BuildInfoController, HealthController, EnumController, HomeController - Utilities
+
+**Services (21 business logic services):**
+- Core: InstrumentService, TransactionService, SummaryService, DailyPriceService
+- Analytics: InvestmentMetricsService, CalculationService, EtfBreakdownService
+- ETF: EtfHoldingsService, LightyearScraperService, WisdomTreeUpdateService
+- Integration: Trading212PriceUpdateService, IndustryClassificationService
+- Infrastructure: JobExecutionService, MinioService, SummaryBatchProcessorService
+
+**Background Jobs (9 scheduled tasks):**
+- AlphaVantageDataRetrievalJob, BinanceDataRetrievalJob, FtDataRetrievalJob - Price updates
+- Trading212DataRetrievalJob - Trading platform sync
+- DailyPortfolioXirrJob - XIRR calculations (parallel with coroutines)
+- LightyearDataFetchJob, WisdomTreeDataUpdateJob - ETF holdings scraping
+- EtfHoldingsClassificationJob - AI-powered sector classification (OpenRouter)
+
+**Domain Entities (16 JPA entities):**
+- Core: Instrument, PortfolioTransaction, DailyPrice, PortfolioDailySummary
+- ETF: EtfHolding, EtfPosition
+- Infrastructure: JobExecution, UserAccount
+- Enums: Platform, ProviderName, TransactionType, InstrumentCategory, Currency, IndustrySector, JobStatus, PriceChangePeriod
+
+**External Integrations (10 systems):**
+- Market Data: AlphaVantage (stocks/ETFs), Binance (crypto), FT (historical prices)
+- Trading Platforms: Trading212, WisdomTree, Lightyear
+- AI Services: OpenRouter (Claude Haiku for classification), Google Vision (OCR)
+- Other: Telegram (notifications), MinIO (logo storage)
+
 ### Database Schema
 
-Key entities:
+Key entities with relationships:
 
-- `Instrument` - Financial instruments (stocks, ETFs, crypto)
-- `PortfolioTransaction` - Buy/sell transactions
-- `DailyPrice` - Historical price data
-- `PortfolioDailySummary` - Daily performance snapshots
-- `JobExecution` - Background job tracking
+- `Instrument` - Financial instruments (stocks, ETFs, crypto) - One-to-Many → transactions, prices, ETF positions
+- `PortfolioTransaction` - Buy/sell transactions with realized/unrealized profit tracking
+- `DailyPrice` - Historical OHLCV price data - UNIQUE(instrument_id, entry_date, provider_name)
+- `PortfolioDailySummary` - Daily performance snapshots - UNIQUE(entry_date)
+- `EtfHolding` - Individual holdings within ETFs with sector classification
+- `EtfPosition` - Links instruments to their ETF holdings
+- `JobExecution` - Background job execution tracking with status and error handling
 
-Migrations are in `src/main/resources/db/migration/` using Flyway naming convention.
+Migrations are in `src/main/resources/db/migration/` using Flyway naming convention (V1-V60+).
 
 ### External Integrations
 
-- **Alpha Vantage API** - Stock/ETF price data (requires API key)
-- **Binance API** - Cryptocurrency prices
-- **Financial Times API** - Additional market data
-- **Google Cloud Vision** - OCR for captcha solving
-- **Telegram Bot API** - Notifications
+**Market Data APIs:**
+- **Alpha Vantage API** - Stock/ETF price data via JSON API (requires API key)
+- **Binance API** - Cryptocurrency prices via JSON API
+- **FT Markets** - Historical prices via HTML scraping (Jsoup parsing of AJAX endpoint)
+
+**Trading Platforms (Web Scraping):**
+- **Trading212** - Price data via Trading212 Proxy (curl-impersonate for Cloudflare bypass)
+- **WisdomTree** - ETF holdings via Trading212 Proxy → HTML scraping with Jsoup
+- **Lightyear** - ETF holdings via direct Selenide browser automation
+
+**AI & Cloud Services:**
+- **OpenRouter API** - AI classification using Claude Haiku for ETF sector categorization
+- **Google Cloud Vision** - OCR service for captcha solving
+- **Telegram Bot API** - Push notifications
+
+**Infrastructure:**
+- **Trading212 Proxy** - Node.js service using curl-impersonate for TLS fingerprint spoofing to bypass Cloudflare protection
+- **MinIO** - S3-compatible object storage for company logos
 
 ### FT Data Retrieval - Market-Phase Adaptive Scheduling
 

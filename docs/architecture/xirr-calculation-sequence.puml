@@ -1,0 +1,110 @@
+@startuml xirr-calculation-sequence
+!theme plain
+title XIRR Calculation Flow - Daily Portfolio Summary
+
+participant "Scheduler" as scheduler
+participant "DailyPortfolioXirrJob" as job
+participant "TransactionService" as txn_svc
+participant "SummaryService" as summary_svc
+participant "CalculationService" as calc_svc
+participant "Coroutine Pool" as coroutines
+participant "Database" as db
+participant "Redis Cache" as cache
+
+activate scheduler
+scheduler -> job: @Scheduled trigger\n(daily at 6:30 AM)
+activate job
+
+job -> txn_svc: getAllTransactions()
+activate txn_svc
+txn_svc -> db: SELECT * FROM portfolio_transaction\nORDER BY transaction_date, id
+db --> txn_svc: transactions
+deactivate txn_svc
+
+alt no transactions
+    job -> job: log "No transactions" & return
+else has transactions
+    job -> summary_svc: getDailySummariesBetween(firstDate, yesterday)
+    activate summary_svc
+    summary_svc -> db: SELECT * FROM portfolio_daily_summary\nWHERE entry_date BETWEEN ? AND ?
+    db --> summary_svc: existing summaries
+    deactivate summary_svc
+
+    job -> job: Generate date sequence\n(firstTransactionDate to yesterday)
+    job -> job: Filter out existing dates
+
+    alt has dates to process
+        job -> calc_svc: calculateBatchXirrAsync(datesToProcess)
+        activate calc_svc
+
+        calc_svc -> coroutines: Launch parallel calculations
+        activate coroutines
+
+        loop for each date (in parallel batches)
+            coroutines -> summary_svc: calculateSummaryForDate(date)
+            activate summary_svc
+
+            summary_svc -> txn_svc: Get transactions up to date
+            summary_svc -> summary_svc: Calculate total value, profit
+
+            summary_svc -> calc_svc: Build XIRR transactions
+            summary_svc -> calc_svc: Calculate XIRR
+            calc_svc --> summary_svc: XIRR value
+
+            summary_svc -> summary_svc: Create PortfolioDailySummary
+            summary_svc -> db: Check if summary exists for date
+
+            alt summary exists
+                summary_svc -> db: UPDATE portfolio_daily_summary
+            else no summary
+                summary_svc -> db: INSERT portfolio_daily_summary
+            end
+
+            summary_svc -> cache: EVICT summary cache
+            deactivate summary_svc
+        end
+
+        coroutines --> calc_svc: XirrCalculationResult\n(processedDates, failures, duration)
+        deactivate coroutines
+
+        calc_svc --> job: result
+        deactivate calc_svc
+
+        job -> job: Log: "Processed X dates in Y ms"
+
+        alt has failures
+            job -> job: Log warnings for failed calculations
+        end
+    else no new dates
+        job -> job: log "No new dates to process"
+    end
+end
+
+deactivate job
+
+note right of calc_svc
+  Parallel execution with Kotlin Coroutines:
+  - Dispatcher with configurable parallelism
+  - Batch processing for efficiency
+  - Error handling per calculation
+  - Returns success/failure summary
+end note
+
+note right of summary_svc
+  XIRR Calculation:
+  1. Collect all cash flows (buy = negative, sell = positive)
+  2. Add current portfolio value as final cash flow
+  3. Calculate IRR using Newton-Raphson method
+  4. Annualize the result
+  5. Dampen extreme values (>1000% or <-100%)
+end note
+
+note right of db
+  Idempotency via upsert:
+  - Check if summary exists for date
+  - Update if exists, insert if new
+  - UNIQUE constraint on entry_date prevents duplicates
+  - Safe to run job multiple times
+end note
+
+@enduml

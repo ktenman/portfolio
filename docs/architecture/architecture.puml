@@ -1,4 +1,3 @@
-```plantuml
 @startuml
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 ' Include material icons
@@ -28,12 +27,20 @@ System_Boundary(portfolio_system, "Portfolio Management System") {
   ContainerDb(database, "Database", "PostgreSQL", "Stores portfolio and financial data", $sprite="postgresql")
   ContainerDb(cache, "Cache", "Redis", "Caches session data and portfolio summaries", $sprite="redis")
   Container(market_price_tracker, "Market Price Tracker", "Python, Selenium", "Tracks and updates market prices using web scraping", $sprite="python")
+  Container(trading212_proxy, "Trading212 Proxy", "Node.js, curl-impersonate", "Bypasses Cloudflare protection with TLS fingerprint spoofing")
+  ContainerDb(minio, "MinIO", "Object Storage", "S3-compatible storage for company logos")
   Container(email_whitelist, "emails.txt", "Text File", "List of authorized email addresses")
 }
 
 System_Ext(alphavantage, "Alpha Vantage API", "Provides financial market data", $sprite="cloud")
 System_Ext(binance, "Binance API", "Provides cryptocurrency prices", $sprite="cloud")
-System_Ext(ft_api, "Financial Times API", "Provides market data", $sprite="cloud")
+System_Ext(ft_markets, "FT Markets", "AJAX endpoint returning HTML fragments (parsed with Jsoup)", $sprite="cloud")
+System_Ext(trading212_platform, "Trading212 Platform", "External trading platform for price data", $sprite="cloud")
+System_Ext(lightyear, "Lightyear Website", "ETF holdings data via web scraping", $sprite="cloud")
+System_Ext(wisdomtree, "WisdomTree Website", "ETF holdings HTML (parsed with Jsoup)", $sprite="cloud")
+System_Ext(openrouter, "OpenRouter API", "AI service for ETF sector classification (Claude Haiku)", $sprite="cloud")
+System_Ext(google_vision, "Google Cloud Vision", "OCR service for captcha solving", $sprite="cloud")
+System_Ext(telegram, "Telegram Bot API", "Notification service", $sprite="cloud")
 System_Ext(google_oauth, "Google OAuth", "External identity provider", $sprite="cloud")
 
 Container_Ext(browser, "Browser", "Chrome, LocalStorage, Cookies", "Stores OAuth2-Proxy session cookies", $sprite="chrome")
@@ -52,10 +59,18 @@ Rel(app_internal, frontend, "Routes UI requests", "HTTP :61234")
 Rel(frontend, backend, "API calls", "via proxy")
 Rel(backend, database, "Reads/writes data", "JDBC")
 Rel(backend, cache, "Caches data", "Redis protocol")
-Rel(backend, alphavantage, "Fetches stock prices", "HTTPS")
-Rel(backend, binance, "Fetches crypto prices", "HTTPS")
-Rel(backend, ft_api, "Fetches market data", "HTTPS")
+Rel(backend, alphavantage, "Fetches stock prices", "HTTPS/JSON")
+Rel(backend, binance, "Fetches crypto prices", "HTTPS/JSON")
+Rel(backend, ft_markets, "Fetches HTML fragments", "HTTPS/Jsoup")
+Rel(backend, trading212_proxy, "Requests prices", "HTTP :3000")
+Rel(trading212_proxy, trading212_platform, "Fetches price data", "HTTPS")
+Rel(backend, trading212_proxy, "Requests ETF holdings", "HTTP :3000/wisdomtree")
+Rel(trading212_proxy, wisdomtree, "Fetches HTML", "HTTPS")
+Rel(backend, lightyear, "Scrapes ETF holdings", "Selenide")
+Rel(backend, minio, "Stores/retrieves logos", "S3 API")
+Rel(backend, openrouter, "AI classification", "HTTPS")
+Rel(backend, google_vision, "OCR captcha solving", "HTTPS")
+Rel(backend, telegram, "Sends notifications", "HTTPS")
 Rel(market_price_tracker, backend, "Pushes scraped prices", "HTTP")
 
 @enduml
-```
