@@ -265,6 +265,7 @@ jobs:
       MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
       MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
       MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR

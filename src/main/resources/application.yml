@@ -176,6 +176,9 @@ scheduling:
     summary-interval: ${SUMMARY_JOB_INTERVAL:120000}
     trading212-enabled: ${TRADING212_ENABLED:true}
     trading212-interval: ${TRADING212_JOB_INTERVAL:60000}
+    industry-classification: ${INDUSTRY_CLASSIFICATION_CRON:0 0 2 * * *}
+    etf-holdings-classification-enabled: ${ETF_HOLDINGS_CLASSIFICATION_ENABLED:true}
+    etf-holdings-classification-cron: ${ETF_HOLDINGS_CLASSIFICATION_CRON:0 0 3 * * *}
 
 scraping:
   lightyear:
@@ -204,9 +207,10 @@ scraping:
       - symbol: "SPYL"
         path: "SPYL:XETRA"
         expected-pages: 3
-      - symbol: "WTAI"
+      - symbol: "WTAI"   # Holdings handled by WisdomTreeDataUpdateJob (skip-holdings: true keeps WTAI for logo updates only)
         path: "WTAI:XMIL"
         expected-pages: 3
+        skip-holdings: true
 
 trading212:
   proxy:
@@ -214,3 +218,10 @@ trading212:
   batch-size: ${TRADING212_BATCH_SIZE:15}
 
 
+
+openrouter:
+  api-key: ${OPENROUTER_API_KEY}
+  model: anthropic/claude-3-haiku
+
+industry-classification:
+  enabled: true

@@ -63,6 +63,13 @@ class LightyearDataFetchJob(
 
     properties.etfs.forEach { etfConfig ->
       try {
+        if (etfConfig.skipHoldings) {
+          val msg = "Holdings scraping disabled for ${etfConfig.symbol} (using WisdomTree job instead)"
+          log.info(msg)
+          results.add(msg)
+          return@forEach
+        }
+
         if (etfHoldingsService.hasHoldingsForDate(etfConfig.symbol, today)) {
           val msg = "Holdings for ${etfConfig.symbol} already exist for $today, skipping"
           log.info(msg)
