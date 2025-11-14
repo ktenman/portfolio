@@ -12,7 +12,8 @@
     "build/**",
     "dist/**",
     "k8s/**",
-    "market-price-tracker/**"
+    "market-price-tracker/**",
+    "cloudflare-bypass-proxy/**"
   ],
   "ignoreUnresolved": ["./tests/setup.ts"],
   "ignoreDependencies": ["vue-eslint-parser", "espree", "eslint-plugin-no-comments"],
