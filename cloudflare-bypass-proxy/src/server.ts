@@ -14,7 +14,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'healthy' })
 })
 
-adapters.forEach((adapter) => {
+adapters.forEach(adapter => {
   const method = adapter.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete' | 'patch'
   logger.info(`Registering route: ${adapter.method} ${adapter.path}`, 'Server')
 
@@ -31,5 +31,5 @@ adapters.forEach((adapter) => {
 app.listen(PORT, () => {
   logger.info(`Cloudflare Bypass Proxy listening on port ${PORT}`, 'Server')
   logger.info(`Registered ${adapters.length} adapters`, 'Server')
-  adapters.forEach((a) => logger.info(`  - ${a.method} ${a.path}`, 'Server'))
+  adapters.forEach(a => logger.info(`  - ${a.method} ${a.path}`, 'Server'))
 })
