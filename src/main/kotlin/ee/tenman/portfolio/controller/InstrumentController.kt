@@ -6,7 +6,9 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTIO
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.dto.InstrumentDto
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
+import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.FtDataRetrievalJob
+import ee.tenman.portfolio.service.IndustryClassificationService
 import ee.tenman.portfolio.service.InstrumentService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -38,6 +40,9 @@ class InstrumentController(
   private val ftDataRetrievalJob: FtDataRetrievalJob?,
   private val cacheManager: CacheManager,
   private val transactionService: ee.tenman.portfolio.service.TransactionService,
+  private val industryClassificationService: IndustryClassificationService,
+  private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob?,
+  private val wisdomTreeDataUpdateJob: ee.tenman.portfolio.job.WisdomTreeDataUpdateJob?,
 ) {
   @PostMapping
   @Loggable
@@ -113,5 +118,42 @@ class InstrumentController(
     }
 
     return mapOf("status" to "Jobs triggered, caches cleared, and transaction profits recalculated")
+  }
+
+  @GetMapping("/classify-industry")
+  @Operation(summary = "Test industry classification for a company")
+  fun classifyCompanyIndustry(
+    @RequestParam companyName: String,
+  ): Map<String, String?> {
+    val sector = industryClassificationService.classifyCompany(companyName)
+    return mapOf(
+      "companyName" to companyName,
+      "industrySector" to sector?.displayName,
+      "sectorCode" to sector?.name,
+    )
+  }
+
+  @PostMapping("/classify-etf-holdings")
+  @Operation(summary = "Trigger ETF holdings classification job")
+  fun triggerEtfHoldingsClassification(): Map<String, String> {
+    etfHoldingsClassificationJob?.let { job ->
+      CoroutineScope(Dispatchers.Default).launch {
+        job.execute()
+      }
+      return mapOf("status" to "ETF holdings classification job triggered")
+    }
+    return mapOf("status" to "ETF holdings classification job not available")
+  }
+
+  @PostMapping("/update-wisdomtree-data")
+  @Operation(summary = "Trigger WisdomTree data update job")
+  fun triggerWisdomTreeDataUpdate(): Map<String, String> {
+    wisdomTreeDataUpdateJob?.let { job ->
+      CoroutineScope(Dispatchers.Default).launch {
+        job.execute()
+      }
+      return mapOf("status" to "WisdomTree data update job triggered")
+    }
+    return mapOf("status" to "WisdomTree data update job not available")
   }
 }

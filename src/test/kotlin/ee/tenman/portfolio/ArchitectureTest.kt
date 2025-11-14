@@ -39,7 +39,7 @@ class ArchitectureTest {
       .layer("Domain")
       .definedBy("..domain..")
       .layer("Infrastructure")
-      .definedBy("..repository..", "..alphavantage..", "..binance..", "..ft..", "..googlevision..", "..telegram..")
+      .definedBy("..repository..", "..alphavantage..", "..binance..", "..ft..", "..googlevision..", "..telegram..", "..openrouter..")
       .layer("Configuration")
       .definedBy("..configuration..")
       .layer("Jobs")

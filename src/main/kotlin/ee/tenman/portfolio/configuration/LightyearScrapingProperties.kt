@@ -30,5 +30,6 @@ data class LightyearScrapingProperties(
     var symbol: String = "",
     var path: String = "",
     var expectedPages: Int = 1,
+    var skipHoldings: Boolean = false,
   )
 }

@@ -15,4 +15,6 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   fun findByTicker(ticker: String): Optional<EtfHolding>
 
   fun findByName(name: String): Optional<EtfHolding>
+
+  fun findBySectorIsNullOrSectorEquals(sector: String): List<EtfHolding>
 }
