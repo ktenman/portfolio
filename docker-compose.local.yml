@@ -53,6 +53,7 @@ services:
 
   trading212-proxy:
     container_name: trading212-proxy-local
+    platform: linux/amd64
     build:
       context: ./trading212-proxy
       dockerfile: Dockerfile
