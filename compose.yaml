@@ -44,11 +44,11 @@ services:
       timeout: 5s
       retries: 5
 
-  trading212-proxy:
-    container_name: trading212-proxy
+  cloudflare-bypass-proxy:
+    container_name: cloudflare-bypass-proxy
     platform: linux/amd64
     build:
-      context: ./trading212-proxy
+      context: ./cloudflare-bypass-proxy
       dockerfile: Dockerfile
       platforms:
         - linux/amd64

@@ -125,9 +125,9 @@ The system follows a clean microservices architecture with strong separation of 
 
 **Key Integration Technologies:**
 
-- **Trading212 Proxy**: Node.js service with curl-impersonate for Cloudflare bypass (TLS fingerprint spoofing)
+- **Cloudflare Bypass Proxy**: Node.js/TypeScript service with curl-impersonate for Cloudflare bypass (TLS fingerprint spoofing)
 - **Market Data**: Alpha Vantage & Binance APIs (JSON), FT Markets (HTML scraping with Jsoup)
-- **ETF Holdings**: WisdomTree (via Trading212 Proxy + Jsoup), Lightyear (Selenide browser automation)
+- **ETF Holdings**: WisdomTree (via Cloudflare Bypass Proxy + Jsoup), Lightyear (Selenide browser automation)
 - **AI Services**: OpenRouter (Claude Haiku for sector classification), Google Cloud Vision (OCR)
 - **Storage**: MinIO (S3-compatible) for company logos
 

@@ -1,19 +1,19 @@
-# Trading212 Proxy Service
+# Cloudflare Bypass Proxy
 
-Lightweight REST API wrapper around `curl-impersonate` to fetch Trading212 instrument prices while bypassing Cloudflare protection.
+Generic TypeScript proxy service with adapter pattern for bypassing Cloudflare protection using `curl-impersonate`.
 
-**45 lines of code. One file. Zero dependencies beyond Express.**
+**Modular architecture with pluggable adapters for different services.**
 
 ## Quick Start
 
 ```bash
-docker build --platform linux/amd64 -t trading212-proxy .
-docker run -d -p 3000:3000 --platform linux/amd64 trading212-proxy
+docker build --platform linux/amd64 -t cloudflare-bypass-proxy .
+docker run -d -p 3000:3000 --platform linux/amd64 cloudflare-bypass-proxy
 ```
 
 ## API Endpoints
 
-### Fetch Prices
+### Trading212 Adapter - Fetch Prices
 
 ```bash
 curl "http://localhost:3000/prices?tickers=WTAIm_EQ,SPYLa_EQ,QDVEd_EQ"
@@ -37,6 +37,14 @@ curl "http://localhost:3000/prices?tickers=WTAIm_EQ,SPYLa_EQ,QDVEd_EQ"
   }
 }
 ```
+
+### WisdomTree Adapter - Fetch ETF Holdings
+
+```bash
+curl "http://localhost:3000/wisdomtree/holdings/WTAI"
+```
+
+**Response:** HTML content containing ETF holdings data
 
 ### Health Check
 
@@ -80,24 +88,33 @@ CURL_BINARY=/usr/bin/curl node server.js
 ## Architecture
 
 ```
-Backend (Kotlin/Feign) → HTTP → Trading212 Proxy → curl-impersonate-ff117 → Trading212 API
+Backend (Kotlin/Feign) → HTTP → Cloudflare Bypass Proxy → curl-impersonate-ff117 → Protected Service
 ```
 
 The proxy service:
 
-1. Receives HTTP request with ticker symbols
-2. Executes `curl_ff117` (Firefox 117 TLS fingerprint)
-3. Bypasses Cloudflare protection
-4. Returns JSON response
+1. Uses adapter pattern for pluggable service integrations
+2. Each adapter defines routes, handlers, and response types
+3. Executes `curl_ff117` (Firefox 117 TLS fingerprint)
+4. Bypasses Cloudflare protection
+5. Returns JSON or HTML based on adapter configuration
+
+### Available Adapters
+
+- **Trading212**: Fetches instrument prices (JSON response)
+- **WisdomTree**: Fetches ETF holdings (HTML response)
 
 ## Logs
 
 Simple, clean logs with ISO timestamps:
 
 ```
-[2025-11-13T12:06:04.019Z] Trading212 proxy listening on port 3000
-[2025-11-13T12:06:13.946Z] Fetched 3 tickers in 221ms
-[2025-11-13T12:06:20.123Z] Error: Command failed: timeout
+[2025-11-14T15:41:53.594Z] Cloudflare Bypass Proxy listening on port 3000
+Registered 2 adapters:
+  - GET /prices
+  - GET /wisdomtree/holdings/:etfId
+[2025-11-14T15:42:13.946Z] [Trading212] Request completed in 221ms
+[2025-11-14T15:42:20.123Z] [WisdomTree] Error: Command failed: timeout
 ```
 
 ## Performance

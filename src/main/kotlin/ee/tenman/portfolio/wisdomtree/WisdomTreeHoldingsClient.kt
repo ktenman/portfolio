@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable
 
 @FeignClient(
   name = "wisdomTreeHoldingsClient",
-  url = "\${trading212.proxy.url:http://localhost:3000}",
+  url = "\${cloudflare-bypass-proxy.url:http://localhost:3000}",
 )
 interface WisdomTreeHoldingsClient {
   @GetMapping("/wisdomtree/holdings/{etfId}")

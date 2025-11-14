@@ -387,8 +387,8 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 
 **Trading Platforms (Web Scraping):**
 
-- **Trading212** - Price data via Trading212 Proxy (curl-impersonate for Cloudflare bypass)
-- **WisdomTree** - ETF holdings via Trading212 Proxy → HTML scraping with Jsoup
+- **Trading212** - Price data via Cloudflare Bypass Proxy (curl-impersonate for Cloudflare bypass)
+- **WisdomTree** - ETF holdings via Cloudflare Bypass Proxy → HTML scraping with Jsoup
 - **Lightyear** - ETF holdings via direct Selenide browser automation
 
 **AI & Cloud Services:**
@@ -399,7 +399,7 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 
 **Infrastructure:**
 
-- **Trading212 Proxy** - Node.js service using curl-impersonate for TLS fingerprint spoofing to bypass Cloudflare protection
+- **Cloudflare Bypass Proxy** - Node.js/TypeScript service using curl-impersonate for TLS fingerprint spoofing to bypass Cloudflare protection
 - **MinIO** - S3-compatible object storage for company logos
 
 ### FT Data Retrieval - Market-Phase Adaptive Scheduling
