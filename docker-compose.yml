@@ -68,6 +68,7 @@ services:
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-portfolio-logos}
       TRADING212_ENABLED: true
       TRADING212_PROXY_URL: http://trading212-proxy:3000
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     image: ktenman/portfolio-be:latest
     ports:
       - '8080:8080'
