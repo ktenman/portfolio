@@ -18,7 +18,6 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
     jest.clearAllMocks()
   })
 
-
   describe('Base64 Encoding', () => {
     it('should correctly encode path to base64 without padding', async () => {
       executeCurl.mockResolvedValue({
@@ -30,10 +29,13 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
       await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
 
       const callArgs = executeCurl.mock.calls[0][0]
-      const expectedEncoded = 'L3YxL21hcmtldC1kYXRhLzFlZjI3ZjlhLWJkZTYtNmRkYS1hODczLTM5NDZjYTg2YmQ1Yy9wcmljZQ'
+      const expectedEncoded =
+        'L3YxL21hcmtldC1kYXRhLzFlZjI3ZjlhLWJkZTYtNmRkYS1hODczLTM5NDZjYTg2YmQ1Yy9wcmljZQ'
 
       expect(callArgs.url).toContain(`path=${expectedEncoded}`)
-      expect(callArgs.url).not.toContain('path=L3YxL21hcmtldC1kYXRhLzFlZjI3ZjlhLWJkZTYtNmRkYS1hODczLTM5NDZjYTg2YmQ1Yy9wcmljZQ==')
+      expect(callArgs.url).not.toContain(
+        'path=L3YxL21hcmtldC1kYXRhLzFlZjI3ZjlhLWJkZTYtNmRkYS1hODczLTM5NDZjYTg2YmQ1Yy9wcmljZQ=='
+      )
     })
 
     it('should handle query parameters in path encoding', async () => {
@@ -88,7 +90,9 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
       })
 
       const longPath = '/v1/' + 'a'.repeat(1000)
-      const response = await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(longPath)}`)
+      const response = await request(app).get(
+        `/lightyear/fetch?path=${encodeURIComponent(longPath)}`
+      )
 
       expect(response.status).toBeLessThan(500)
     })
@@ -100,7 +104,9 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
       })
 
       const unicodePath = '/v1/测试/🚀'
-      const response = await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(unicodePath)}`)
+      const response = await request(app).get(
+        `/lightyear/fetch?path=${encodeURIComponent(unicodePath)}`
+      )
 
       expect([200, 400]).toContain(response.status)
     })
@@ -121,8 +127,8 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
         maxBuffer: 1024 * 1024,
         headers: {
           'user-agent': expect.any(String),
-          'referer': 'https://lightyear.com/',
-          'accept': '*/*',
+          referer: 'https://lightyear.com/',
+          accept: '*/*',
           'accept-language': 'en-US,en;q=0.9',
         },
       })
@@ -151,9 +157,9 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
         duration: 10,
       })
 
-      const concurrentRequests = Array(10).fill(null).map((_, i) =>
-        request(app).get(`/lightyear/fetch?path=/v1/test${i}`)
-      )
+      const concurrentRequests = Array(10)
+        .fill(null)
+        .map((_, i) => request(app).get(`/lightyear/fetch?path=/v1/test${i}`))
 
       const responses = await Promise.all(concurrentRequests)
 

@@ -57,7 +57,7 @@ describe('Curl Executor', () => {
       url: 'https://example.com',
       headers: {
         'user-agent': 'test-agent',
-        'accept': 'application/json',
+        accept: 'application/json',
       },
     })
 
@@ -65,8 +65,10 @@ describe('Curl Executor', () => {
       expect.any(String),
       [
         '-s',
-        '-H', 'user-agent: test-agent',
-        '-H', 'accept: application/json',
+        '-H',
+        'user-agent: test-agent',
+        '-H',
+        'accept: application/json',
         'https://example.com',
       ],
       expect.any(Object),
@@ -97,9 +99,9 @@ describe('Curl Executor', () => {
       callback(new Error('Network timeout'), null)
     })
 
-    await expect(
-      executeCurl({ url: 'https://example.com' })
-    ).rejects.toThrow('curl execution failed: Network timeout')
+    await expect(executeCurl({ url: 'https://example.com' })).rejects.toThrow(
+      'curl execution failed: Network timeout'
+    )
   })
 
   it('should measure execution duration', async () => {

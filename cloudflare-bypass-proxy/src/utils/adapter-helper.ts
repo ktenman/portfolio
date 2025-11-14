@@ -15,7 +15,11 @@ interface AdapterConfig {
   headers?: Record<string, string>
 }
 
-export async function handleProxyRequest(req: Request, res: Response, config: AdapterConfig): Promise<void> {
+export async function handleProxyRequest(
+  req: Request,
+  res: Response,
+  config: AdapterConfig
+): Promise<void> {
   try {
     const start = Date.now()
     const { stdout } = await executeCurl({
@@ -43,7 +47,12 @@ export async function handleProxyRequest(req: Request, res: Response, config: Ad
   }
 }
 
-export function validateParam(req: Request, res: Response, paramName: string, paramType: 'query' | 'params'): string | null {
+export function validateParam(
+  req: Request,
+  res: Response,
+  paramName: string,
+  paramType: 'query' | 'params'
+): string | null {
   const value = paramType === 'query' ? req.query[paramName] : req.params[paramName]
 
   if (!value || (paramType === 'query' && typeof value !== 'string')) {

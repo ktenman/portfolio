@@ -22,7 +22,8 @@ async function handler(req: Request, res: Response): Promise<void> {
     maxBuffer: 1024 * 1024,
     responseType: ResponseType.JSON,
     headers: {
-      'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+      'user-agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
       referer: 'https://lightyear.com/',
       accept: '*/*',
       'accept-language': 'en-US,en;q=0.9',

@@ -29,7 +29,13 @@ class Logger {
     return `[${timestamp}] [${level}] ${servicePrefix}${requestIdPrefix}${message}${dataString}`
   }
 
-  private log(level: LogLevel, message: string, service?: string, requestId?: string, data?: unknown): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    service?: string,
+    requestId?: string,
+    data?: unknown
+  ): void {
     const store = requestContext.getStore()
     const contextRequestId = store?.requestId
     const contextService = store?.service
@@ -60,27 +66,50 @@ class Logger {
     }
   }
 
-  info(message: string, service?: string, requestIdOrData?: string | unknown, data?: unknown): void {
+  info(
+    message: string,
+    service?: string,
+    requestIdOrData?: string | unknown,
+    data?: unknown
+  ): void {
     const [requestId, finalData] = this.parseParams(requestIdOrData, data)
     this.log(LogLevel.INFO, message, service, requestId, finalData)
   }
 
-  warn(message: string, service?: string, requestIdOrData?: string | unknown, data?: unknown): void {
+  warn(
+    message: string,
+    service?: string,
+    requestIdOrData?: string | unknown,
+    data?: unknown
+  ): void {
     const [requestId, finalData] = this.parseParams(requestIdOrData, data)
     this.log(LogLevel.WARN, message, service, requestId, finalData)
   }
 
-  error(message: string, service?: string, requestIdOrData?: string | unknown, data?: unknown): void {
+  error(
+    message: string,
+    service?: string,
+    requestIdOrData?: string | unknown,
+    data?: unknown
+  ): void {
     const [requestId, finalData] = this.parseParams(requestIdOrData, data)
     this.log(LogLevel.ERROR, message, service, requestId, finalData)
   }
 
-  debug(message: string, service?: string, requestIdOrData?: string | unknown, data?: unknown): void {
+  debug(
+    message: string,
+    service?: string,
+    requestIdOrData?: string | unknown,
+    data?: unknown
+  ): void {
     const [requestId, finalData] = this.parseParams(requestIdOrData, data)
     this.log(LogLevel.DEBUG, message, service, requestId, finalData)
   }
 
-  private parseParams(requestIdOrData?: string | unknown, data?: unknown): [string | undefined, unknown] {
+  private parseParams(
+    requestIdOrData?: string | unknown,
+    data?: unknown
+  ): [string | undefined, unknown] {
     if (typeof requestIdOrData === 'string') {
       return [requestIdOrData, data]
     }
