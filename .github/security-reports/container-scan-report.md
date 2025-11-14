@@ -1,14 +1,24 @@
 # Container Security Scan Report
 
+<<<<<<< Updated upstream
 Last updated: 2025-11-14 15:22:18 UTC
+=======
+Last updated: 2025-11-14 15:22:28 UTC
+>>>>>>> Stashed changes
 
 ## Scan Status
 
 | Image | Status | Last Scan |
 |-------|--------|-----------|
+<<<<<<< Updated upstream
 | portfolio-be | ✅ Scanned | 2025-11-14 15:22:18 UTC |
 | portfolio-fe | ✅ Scanned | 2025-11-14 15:22:18 UTC |
 | market-price-tracker | ✅ Scanned | 2025-11-14 15:22:18 UTC |
+=======
+| portfolio-be | ✅ Scanned | 2025-11-14 15:22:28 UTC |
+| portfolio-fe | ✅ Scanned | 2025-11-14 15:22:28 UTC |
+| market-price-tracker | ✅ Scanned | 2025-11-14 15:22:28 UTC |
+>>>>>>> Stashed changes
 
 ## Actions
 
