@@ -269,6 +269,7 @@ Comprehensive PlantUML diagrams are available in `docs/architecture/`:
 - **frontend-architecture.puml** - Vue.js component hierarchy and state management
 
 Additional diagrams in `screenshots/`:
+
 - **architecture.puml** - Full system deployment architecture with authentication flow
 
 ### PlantUML Setup in IntelliJ
@@ -296,6 +297,7 @@ Additional diagrams in `screenshots/`:
 ```
 
 The script automatically:
+
 - Downloads PlantUML JAR if not present
 - Generates SVG files in the same directory as source `.puml` files
 - Supports batch processing of all diagrams
@@ -325,12 +327,14 @@ The script automatically:
 ### Component Inventory
 
 **Controllers (10 REST endpoints):**
+
 - InstrumentController, PortfolioTransactionController, PortfolioSummaryController - Core CRUD
 - EtfBreakdownController, WisdomTreeController - ETF analytics
 - CalculatorController - XIRR calculations
 - BuildInfoController, HealthController, EnumController, HomeController - Utilities
 
 **Services (21 business logic services):**
+
 - Core: InstrumentService, TransactionService, SummaryService, DailyPriceService
 - Analytics: InvestmentMetricsService, CalculationService, EtfBreakdownService
 - ETF: EtfHoldingsService, LightyearScraperService, WisdomTreeUpdateService
@@ -338,6 +342,7 @@ The script automatically:
 - Infrastructure: JobExecutionService, MinioService, SummaryBatchProcessorService
 
 **Background Jobs (9 scheduled tasks):**
+
 - AlphaVantageDataRetrievalJob, BinanceDataRetrievalJob, FtDataRetrievalJob - Price updates
 - Trading212DataRetrievalJob - Trading platform sync
 - DailyPortfolioXirrJob - XIRR calculations (parallel with coroutines)
@@ -345,12 +350,14 @@ The script automatically:
 - EtfHoldingsClassificationJob - AI-powered sector classification (OpenRouter)
 
 **Domain Entities (16 JPA entities):**
+
 - Core: Instrument, PortfolioTransaction, DailyPrice, PortfolioDailySummary
 - ETF: EtfHolding, EtfPosition
 - Infrastructure: JobExecution, UserAccount
 - Enums: Platform, ProviderName, TransactionType, InstrumentCategory, Currency, IndustrySector, JobStatus, PriceChangePeriod
 
 **External Integrations (10 systems):**
+
 - Market Data: AlphaVantage (stocks/ETFs), Binance (crypto), FT (historical prices)
 - Trading Platforms: Trading212, WisdomTree, Lightyear
 - AI Services: OpenRouter (Claude Haiku for classification), Google Vision (OCR)
@@ -373,21 +380,25 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 ### External Integrations
 
 **Market Data APIs:**
+
 - **Alpha Vantage API** - Stock/ETF price data via JSON API (requires API key)
 - **Binance API** - Cryptocurrency prices via JSON API
 - **FT Markets** - Historical prices via HTML scraping (Jsoup parsing of AJAX endpoint)
 
 **Trading Platforms (Web Scraping):**
+
 - **Trading212** - Price data via Trading212 Proxy (curl-impersonate for Cloudflare bypass)
 - **WisdomTree** - ETF holdings via Trading212 Proxy → HTML scraping with Jsoup
 - **Lightyear** - ETF holdings via direct Selenide browser automation
 
 **AI & Cloud Services:**
+
 - **OpenRouter API** - AI classification using Claude Haiku for ETF sector categorization
 - **Google Cloud Vision** - OCR service for captcha solving
 - **Telegram Bot API** - Push notifications
 
 **Infrastructure:**
+
 - **Trading212 Proxy** - Node.js service using curl-impersonate for TLS fingerprint spoofing to bypass Cloudflare protection
 - **MinIO** - S3-compatible object storage for company logos
 
