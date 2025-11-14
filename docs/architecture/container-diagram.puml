@@ -1,0 +1,37 @@
+@startuml container-diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram - Portfolio Management System
+
+Person(user, "Portfolio User", "Investor")
+
+System_Boundary(portfolio, "Portfolio Management System") {
+    Container(web_app, "Web Application", "Vue.js 3, TypeScript, Vite", "SPA providing portfolio management UI")
+    Container(api_app, "API Application", "Spring Boot 3.5, Kotlin 2.2", "REST API, business logic, scheduled jobs")
+    ContainerDb(database, "Database", "PostgreSQL 17", "Stores instruments, transactions, prices, summaries, ETF holdings")
+    ContainerDb(cache, "Cache", "Redis 8", "Caches instrument data, summaries, prices")
+    ContainerDb(storage, "Object Storage", "MinIO", "Stores ETF company logos")
+    Container(jobs, "Background Jobs", "Spring Scheduler", "Price updates, XIRR calc, ETF scraping")
+}
+
+System_Ext(market_apis, "Market Data APIs", "AlphaVantage, Binance, FT")
+System_Ext(platform_apis, "Trading Platforms", "Trading212, WisdomTree, Lightyear")
+System_Ext(ai_services, "AI Services", "OpenRouter, Google Vision")
+System_Ext(notification, "Notifications", "Telegram")
+
+Rel(user, web_app, "Uses", "HTTPS")
+Rel(web_app, api_app, "Makes API calls", "JSON/HTTPS")
+
+Rel(api_app, database, "Reads/writes", "JDBC/PostgreSQL")
+Rel(api_app, cache, "Reads/writes", "Redis Protocol")
+Rel(api_app, storage, "Stores/retrieves logos", "S3 API")
+
+Rel(jobs, database, "Reads/writes", "JDBC")
+Rel(jobs, market_apis, "Fetches prices", "HTTPS")
+Rel(jobs, platform_apis, "Scrapes data", "HTTPS")
+Rel(jobs, ai_services, "AI classification", "HTTPS")
+Rel(api_app, notification, "Sends alerts", "HTTPS")
+
+@enduml

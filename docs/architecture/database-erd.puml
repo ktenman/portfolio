@@ -1,0 +1,139 @@
+@startuml database-erd
+!define Table(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define primary_key(x) <b>x</b>
+!define foreign_key(x) <i>x</i>
+
+hide methods
+hide stereotypes
+
+title Database ERD - Portfolio Management System
+
+entity "instrument" as instrument {
+  primary_key(id): BIGINT
+  --
+  symbol: VARCHAR(20) UNIQUE
+  name: VARCHAR(255)
+  instrument_category: VARCHAR(50)
+  base_currency: VARCHAR(3)
+  provider_name: VARCHAR(255)
+  current_price: NUMERIC(20,10)
+  version: INT
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+entity "portfolio_transaction" as transaction {
+  primary_key(id): BIGINT
+  --
+  foreign_key(instrument_id): BIGINT
+  transaction_type: VARCHAR(10)
+  platform: VARCHAR(50)
+  quantity: NUMERIC(20,10)
+  price: NUMERIC(20,10)
+  commission: NUMERIC(20,10)
+  transaction_date: DATE
+  remaining_quantity: NUMERIC(20,10)
+  realized_profit: NUMERIC(20,10)
+  unrealized_profit: NUMERIC(20,10)
+  average_cost: NUMERIC(20,10)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+entity "daily_price" as price {
+  primary_key(id): BIGINT
+  --
+  foreign_key(instrument_id): BIGINT
+  entry_date: DATE
+  provider_name: VARCHAR(255)
+  open_price: NUMERIC(20,10)
+  high_price: NUMERIC(20,10)
+  low_price: NUMERIC(20,10)
+  close_price: NUMERIC(20,10)
+  volume: BIGINT
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+  --
+  UNIQUE(instrument_id, entry_date, provider_name)
+}
+
+entity "portfolio_daily_summary" as summary {
+  primary_key(id): BIGINT
+  --
+  entry_date: DATE UNIQUE
+  total_value: NUMERIC(20,10)
+  xirr_annual_return: NUMERIC(20,10)
+  total_profit: NUMERIC(20,10)
+  realized_profit: NUMERIC(20,10)
+  unrealized_profit: NUMERIC(20,10)
+  earnings_per_day: NUMERIC(20,10)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+entity "etf_holding" as etf_holding {
+  primary_key(id): BIGINT
+  --
+  foreign_key(etf_position_id): BIGINT
+  ticker: VARCHAR(20)
+  company_name: VARCHAR(255)
+  sector: VARCHAR(100)
+  industry: VARCHAR(100)
+  weight: NUMERIC(10,4)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+entity "etf_position" as etf_position {
+  primary_key(id): BIGINT
+  --
+  foreign_key(instrument_id): BIGINT
+  etf_symbol: VARCHAR(20)
+  last_updated: TIMESTAMP
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+entity "job_execution" as job {
+  primary_key(id): BIGINT
+  --
+  job_name: VARCHAR(255)
+  status: VARCHAR(50)
+  start_time: TIMESTAMP
+  end_time: TIMESTAMP
+  error_message: TEXT
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+transaction ||--|| instrument : "instrument_id"
+price ||--|| instrument : "instrument_id"
+etf_position ||--|| instrument : "instrument_id"
+etf_holding }|--|| etf_position : "etf_position_id"
+
+note right of instrument
+  Core entity: financial instruments
+  (stocks, ETFs, crypto)
+end note
+
+note right of transaction
+  Tracks buy/sell transactions
+  with realized/unrealized profit
+end note
+
+note right of price
+  Daily OHLCV price data
+  from multiple providers
+end note
+
+note right of summary
+  Daily portfolio performance
+  snapshot with XIRR
+end note
+
+note right of etf_holding
+  Individual holdings within
+  an ETF with sector classification
+end note
+
+@enduml

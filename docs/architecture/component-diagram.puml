@@ -1,0 +1,79 @@
+@startuml component-diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram - API Application
+
+Container(web_app, "Web Application", "Vue.js SPA")
+
+Container_Boundary(api, "API Application") {
+    Component(instrument_ctrl, "InstrumentController", "REST Controller", "CRUD for instruments")
+    Component(transaction_ctrl, "TransactionController", "REST Controller", "CRUD for transactions")
+    Component(summary_ctrl, "SummaryController", "REST Controller", "Portfolio summaries")
+    Component(etf_ctrl, "ETFBreakdownController", "REST Controller", "ETF analytics")
+    Component(calc_ctrl, "CalculatorController", "REST Controller", "XIRR calculations")
+
+    Component(instrument_svc, "InstrumentService", "Service", "Instrument business logic")
+    Component(transaction_svc, "TransactionService", "Service", "Transaction processing, profit calc")
+    Component(summary_svc, "SummaryService", "Service", "Portfolio summary generation")
+    Component(calc_svc, "CalculationService", "Service", "XIRR & metrics calculations")
+    Component(etf_svc, "EtfHoldingsService", "Service", "ETF holdings management")
+    Component(metrics_svc, "InvestmentMetricsService", "Service", "Investment metrics")
+    Component(price_svc, "DailyPriceService", "Service", "Price data management")
+
+    Component(instrument_repo, "InstrumentRepository", "JPA Repository", "Instrument data access")
+    Component(transaction_repo, "TransactionRepository", "JPA Repository", "Transaction data access")
+    Component(price_repo, "DailyPriceRepository", "JPA Repository", "Price data access")
+    Component(summary_repo, "SummaryRepository", "JPA Repository", "Summary data access")
+    Component(etf_repo, "EtfHoldingRepository", "JPA Repository", "ETF data access")
+
+    Component(alphavantage, "AlphaVantageService", "Integration", "Stock/ETF prices")
+    Component(binance, "BinanceService", "Integration", "Crypto prices")
+    Component(ft, "HistoricalPricesService", "Integration", "FT market data")
+    Component(openrouter, "OpenRouterService", "Integration", "AI classification")
+
+    Component(jobs, "Scheduled Jobs", "Background Jobs", "Price updates, XIRR calc, ETF scraping")
+}
+
+ContainerDb(database, "Database", "PostgreSQL")
+ContainerDb(cache, "Cache", "Redis")
+
+Rel(web_app, instrument_ctrl, "Uses", "HTTPS/JSON")
+Rel(web_app, transaction_ctrl, "Uses", "HTTPS/JSON")
+Rel(web_app, summary_ctrl, "Uses", "HTTPS/JSON")
+Rel(web_app, etf_ctrl, "Uses", "HTTPS/JSON")
+Rel(web_app, calc_ctrl, "Uses", "HTTPS/JSON")
+
+Rel(instrument_ctrl, instrument_svc, "Uses")
+Rel(transaction_ctrl, transaction_svc, "Uses")
+Rel(summary_ctrl, summary_svc, "Uses")
+Rel(etf_ctrl, etf_svc, "Uses")
+Rel(calc_ctrl, calc_svc, "Uses")
+
+Rel(instrument_svc, instrument_repo, "Uses")
+Rel(instrument_svc, metrics_svc, "Uses")
+Rel(transaction_svc, transaction_repo, "Uses")
+Rel(summary_svc, summary_repo, "Uses")
+Rel(summary_svc, calc_svc, "Uses")
+Rel(calc_svc, price_repo, "Uses")
+Rel(etf_svc, etf_repo, "Uses")
+Rel(price_svc, price_repo, "Uses")
+
+Rel(jobs, alphavantage, "Uses")
+Rel(jobs, binance, "Uses")
+Rel(jobs, ft, "Uses")
+Rel(jobs, openrouter, "Uses")
+Rel(jobs, price_svc, "Updates prices")
+Rel(jobs, summary_svc, "Generates summaries")
+
+Rel(instrument_repo, database, "Reads/Writes", "JDBC")
+Rel(transaction_repo, database, "Reads/Writes", "JDBC")
+Rel(price_repo, database, "Reads/Writes", "JDBC")
+Rel(summary_repo, database, "Reads/Writes", "JDBC")
+Rel(etf_repo, database, "Reads/Writes", "JDBC")
+
+Rel(instrument_svc, cache, "Reads/Writes", "Redis")
+Rel(summary_svc, cache, "Reads/Writes", "Redis")
+
+@enduml

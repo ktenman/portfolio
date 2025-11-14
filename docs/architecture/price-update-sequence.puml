@@ -1,0 +1,84 @@
+@startuml price-update-sequence
+!theme plain
+title Price Update Flow - Scheduled Job Execution
+
+participant "Scheduler" as scheduler
+participant "AlphaVantageJob" as job
+participant "JobExecutionService" as job_svc
+participant "AlphaVantageService" as av_svc
+participant "DataProcessingUtil" as processor
+participant "DailyPriceService" as price_svc
+participant "InstrumentService" as inst_svc
+participant "Database" as db
+participant "Redis Cache" as cache
+participant "Alpha Vantage API" as api
+
+activate scheduler
+scheduler -> job: @Scheduled trigger\n(every 2 hours)
+activate job
+
+job -> job_svc: executeJob(this)
+activate job_svc
+
+job_svc -> db: Create JobExecution record\n(status: RUNNING)
+job_svc -> job: execute()
+
+job -> inst_svc: getAllInstruments()
+activate inst_svc
+inst_svc -> db: SELECT * FROM instrument
+db --> inst_svc: instruments
+deactivate inst_svc
+
+loop for each ALPHA_VANTAGE instrument
+    job -> av_svc: getDailyTimeSeriesForLastWeek(symbol)
+    activate av_svc
+    av_svc -> api: GET /query?function=TIME_SERIES_DAILY
+    api --> av_svc: JSON price data
+    av_svc --> job: Map<LocalDate, DailyPriceData>
+    deactivate av_svc
+
+    job -> processor: processDailyData(instrument, dailyData, ALPHA_VANTAGE)
+    activate processor
+
+    loop for each date in dailyData
+        processor -> price_svc: saveDailyPrice(dailyPrice)
+        activate price_svc
+
+        price_svc -> db: Find existing price by\n(instrument_id, date, provider)
+        alt existing price found
+            price_svc -> db: UPDATE daily_price
+        else no existing price
+            price_svc -> db: INSERT daily_price
+        end
+        deactivate price_svc
+    end
+
+    processor -> inst_svc: Update instrument.currentPrice
+    activate inst_svc
+    inst_svc -> db: UPDATE instrument SET current_price
+    inst_svc -> cache: EVICT instrument cache
+    deactivate inst_svc
+
+    deactivate processor
+end
+
+job --> job_svc: execution complete
+job_svc -> db: Update JobExecution\n(status: SUCCESS, end_time)
+deactivate job_svc
+deactivate job
+
+note right of processor
+  Upsert logic prevents duplicates:
+  - Check if price exists for (instrument, date, provider)
+  - Update if exists, insert if not
+  - Database UNIQUE constraint as safety net
+end note
+
+note right of cache
+  Cache eviction ensures fresh data:
+  - Instrument cache cleared on update
+  - Summary cache cleared on calculation
+  - TTL-based expiration for stale data
+end note
+
+@enduml
