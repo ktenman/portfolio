@@ -28,7 +28,7 @@ describe('Trading212 Adapter', () => {
   it('should successfully fetch prices for valid tickers', async () => {
     const mockResponse = {
       AAPL: { price: 150.25, currency: 'USD' },
-      GOOGL: { price: 2800.50, currency: 'USD' },
+      GOOGL: { price: 2800.5, currency: 'USD' },
     }
 
     executeCurl.mockResolvedValue({
