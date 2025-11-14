@@ -1,2 +1,5 @@
 scheduling:
   enabled: false
+  jobs:
+    etf-holdings-classification-enabled: false
+    trading212-enabled: false
