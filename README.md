@@ -51,6 +51,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 ### Testing
 
 **Backend (367 tests):**
+
 - JUnit 5 with Spring Boot Test
 - Atrium v1.3.0-alpha-2 for fluent assertions (Kotlin-native)
 - Mockito Kotlin v5.4.0
@@ -59,16 +60,19 @@ The Portfolio Management System is a production-ready, full-stack application fo
 - WireMock for API mocking
 
 **Frontend (414 tests):**
+
 - Vitest v3.2.4 for component testing
 - Vue Test Utils for component mounting
 - Comprehensive test coverage focusing on business logic
 
 **E2E (14 tests):**
+
 - Selenide-based browser automation
 - Retry mechanism for flaky tests
 - Screenshot capture on failure
 
 **Unified Test Runner:**
+
 - `test-runner.sh` - Runs all 689 tests across backend, frontend, and E2E
 - Automatic environment setup for E2E tests
 - Parallel execution support
@@ -120,6 +124,7 @@ The system follows a clean microservices architecture with strong separation of 
 ![System Architecture](docs/architecture/architecture.svg)
 
 **Key Integration Technologies:**
+
 - **Trading212 Proxy**: Node.js service with curl-impersonate for Cloudflare bypass (TLS fingerprint spoofing)
 - **Market Data**: Alpha Vantage & Binance APIs (JSON), FT Markets (HTML scraping with Jsoup)
 - **ETF Holdings**: WisdomTree (via Trading212 Proxy + Jsoup), Lightyear (Selenide browser automation)
