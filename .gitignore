@@ -54,3 +54,6 @@ test-results/
 ### Keycloak ###
 keycloak-data/
 .aider*
+
+### PlantUML ###
+plantuml*.jar

@@ -1,0 +1,147 @@
+@startuml frontend-architecture
+!theme plain
+title Frontend Architecture - Vue.js 3 SPA
+
+package "Vue.js Application" {
+    component "App.vue" as app
+    component "Router" as router
+
+    package "Pages/Views" {
+        component "Home" as home
+        component "Instruments" as instruments_view
+        component "Transactions" as transactions_view
+        component "Portfolio Summary" as summary_view
+        component "ETF Breakdown" as etf_view
+    }
+
+    package "Components" {
+        package "Instruments" {
+            component "InstrumentTable" as inst_table
+            component "InstrumentForm" as inst_form
+        }
+
+        package "Transactions" {
+            component "TransactionTable" as txn_table
+            component "TransactionForm" as txn_form
+        }
+
+        package "Portfolio" {
+            component "SummaryCard" as summary_card
+            component "MetricsCard" as metrics_card
+        }
+
+        package "ETF" {
+            component "EtfHoldingsTable" as etf_table
+            component "SectorChart" as sector_chart
+        }
+
+        package "Charts" {
+            component "PerformanceChart" as perf_chart
+            component "AllocationChart" as alloc_chart
+        }
+
+        package "Shared" {
+            component "LoadingSpinner" as spinner
+            component "ErrorAlert" as error
+            component "ConfirmDialog" as confirm
+        }
+    }
+
+    package "Composables" {
+        component "useCrudAlerts" as crud_alerts
+        component "useFormValidation" as form_validation
+        component "useInstruments" as use_instruments
+        component "useTransactions" as use_transactions
+    }
+
+    package "Services" {
+        component "instruments-service" as inst_svc
+        component "transactions-service" as txn_svc
+        component "summary-service" as summary_svc
+        component "etf-service" as etf_svc
+        component "api-client" as api
+    }
+
+    package "Stores (Pinia)" {
+        component "instrumentStore" as inst_store
+        component "transactionStore" as txn_store
+        component "summaryStore" as summary_store
+    }
+
+    package "Models" {
+        component "Generated Types" as types <<TypeScript>>
+        note right of types
+            Auto-generated from Kotlin DTOs:
+            - InstrumentDto
+            - TransactionRequestDto
+            - PortfolioSummaryDto
+            - Enums (Platform, TransactionType)
+        end note
+    }
+}
+
+cloud "Backend API" as backend {
+    component "REST API" as rest
+    component "WebSocket" as ws
+}
+
+app --> router
+router --> home
+router --> instruments_view
+router --> transactions_view
+router --> summary_view
+router --> etf_view
+
+instruments_view --> inst_table
+instruments_view --> inst_form
+transactions_view --> txn_table
+transactions_view --> txn_form
+summary_view --> summary_card
+summary_view --> metrics_card
+summary_view --> perf_chart
+etf_view --> etf_table
+etf_view --> sector_chart
+
+inst_table --> spinner
+inst_form --> form_validation
+txn_form --> crud_alerts
+
+use_instruments --> inst_svc
+use_transactions --> txn_svc
+inst_svc --> api
+txn_svc --> api
+summary_svc --> api
+etf_svc --> api
+
+inst_store --> inst_svc
+txn_store --> txn_svc
+summary_store --> summary_svc
+
+api --> rest : HTTPS/JSON
+api --> types : Type-safe calls
+
+note right of api
+    Axios-based HTTP client:
+    - Request/response interceptors
+    - Error handling
+    - Loading state management
+    - Token refresh logic
+end note
+
+note right of crud_alerts
+    Composables for reusable logic:
+    - CRUD alerts & notifications
+    - Form validation
+    - Data fetching
+    - State management
+end note
+
+note left of inst_store
+    Pinia stores for state:
+    - Centralized state management
+    - Computed getters
+    - Actions for mutations
+    - DevTools integration
+end note
+
+@enduml

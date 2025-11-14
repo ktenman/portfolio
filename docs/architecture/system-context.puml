@@ -1,0 +1,38 @@
+@startuml system-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram - Portfolio Management System
+
+Person(user, "Portfolio User", "Investor tracking portfolio performance")
+
+System(portfolio, "Portfolio Management System", "Tracks investments, calculates returns (XIRR), analyzes ETF holdings, monitors performance")
+
+System_Ext(alphavantage, "Alpha Vantage API", "Stock & ETF price data")
+System_Ext(binance, "Binance API", "Cryptocurrency prices")
+System_Ext(ft, "Financial Times API", "Market data & historical prices")
+System_Ext(trading212, "Trading212", "Trading platform integration")
+System_Ext(wisdomtree, "WisdomTree", "ETF holdings data")
+System_Ext(lightyear, "Lightyear", "ETF holdings scraper")
+
+System_Ext(openrouter, "OpenRouter AI", "Industry classification (Claude Haiku)")
+System_Ext(googlevision, "Google Cloud Vision", "OCR for captcha solving")
+System_Ext(telegram, "Telegram Bot", "Notifications")
+System_Ext(minio, "MinIO", "Object storage for logos")
+
+Rel(user, portfolio, "Manages portfolio, views analytics", "HTTPS")
+
+Rel(portfolio, alphavantage, "Fetches stock/ETF prices", "REST/JSON")
+Rel(portfolio, binance, "Fetches crypto prices", "REST/JSON")
+Rel(portfolio, ft, "Fetches historical prices", "HTTP/HTML")
+Rel(portfolio, trading212, "Fetches portfolio data", "REST/JSON")
+Rel(portfolio, wisdomtree, "Scrapes ETF holdings", "HTTP/HTML")
+Rel(portfolio, lightyear, "Scrapes ETF holdings", "HTTP/HTML")
+
+Rel(portfolio, openrouter, "Classifies holdings by sector", "REST/JSON")
+Rel(portfolio, googlevision, "Solves captchas", "REST/JSON")
+Rel(portfolio, telegram, "Sends notifications", "REST/JSON")
+Rel(portfolio, minio, "Stores/retrieves logos", "S3 API")
+
+@enduml

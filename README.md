@@ -27,10 +27,11 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 ### Backend
 
-- Spring Boot v3.5.0
-- Spring Cloud v2025.0.0 (Northfields)
-- Kotlin v2.1.21
+- Spring Boot v3.5.6
+- Kotlin v2.2.20
 - Java v21
+- Gradle v8.8 with Version Catalogs
+- Atrium v1.3.0-alpha-2 (Kotlin test assertions)
 
 ### Frontend
 
@@ -49,15 +50,29 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 ### Testing
 
+**Backend (367 tests):**
 - JUnit 5 with Spring Boot Test
+- Atrium v1.3.0-alpha-2 for fluent assertions (Kotlin-native)
 - Mockito Kotlin v5.4.0
-- AssertJ for fluent assertions
 - Selenide v7.9.3 for E2E tests
-- Testcontainers for integration tests
+- Testcontainers for integration tests (PostgreSQL, Redis, MinIO)
 - WireMock for API mocking
-- Vitest v3.2.4 for Vue component testing
+
+**Frontend (414 tests):**
+- Vitest v3.2.4 for component testing
 - Vue Test Utils for component mounting
 - Comprehensive test coverage focusing on business logic
+
+**E2E (14 tests):**
+- Selenide-based browser automation
+- Retry mechanism for flaky tests
+- Screenshot capture on failure
+
+**Unified Test Runner:**
+- `test-runner.sh` - Runs all 689 tests across backend, frontend, and E2E
+- Automatic environment setup for E2E tests
+- Parallel execution support
+- Comprehensive test result summary
 
 ### CI/CD & Containerization
 
@@ -85,7 +100,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 ## Architecture 🏗️
 
-<img src="./screenshots/architecture.svg" width="600" alt="System Architecture">
+### Overview
 
 The system follows a clean microservices architecture with strong separation of concerns:
 
@@ -99,6 +114,31 @@ The system follows a clean microservices architecture with strong separation of 
 - **Captcha Solver**: ML-based service for automated captcha resolution
 - **Reverse Proxy**: Caddy handling SSL, routing, and authentication
 - **Scheduled Jobs**: Background tasks for price updates and XIRR calculations
+
+### System Architecture
+
+![System Architecture](docs/architecture/architecture.svg)
+
+**Key Integration Technologies:**
+- **Trading212 Proxy**: Node.js service with curl-impersonate for Cloudflare bypass (TLS fingerprint spoofing)
+- **Market Data**: Alpha Vantage & Binance APIs (JSON), FT Markets (HTML scraping with Jsoup)
+- **ETF Holdings**: WisdomTree (via Trading212 Proxy + Jsoup), Lightyear (Selenide browser automation)
+- **AI Services**: OpenRouter (Claude Haiku for sector classification), Google Cloud Vision (OCR)
+- **Storage**: MinIO (S3-compatible) for company logos
+
+### Architecture Diagrams
+
+Comprehensive PlantUML diagrams are available in the `docs/architecture/` directory:
+
+1. **[System Context](docs/architecture/system-context.puml)** - High-level view of external systems and integrations
+2. **[Container Diagram](docs/architecture/container-diagram.puml)** - Internal containers and their interactions
+3. **[Component Diagram](docs/architecture/component-diagram.puml)** - Detailed component structure of the API application
+4. **[Database ERD](docs/architecture/database-erd.puml)** - Entity relationship diagram with constraints
+5. **[Price Update Sequence](docs/architecture/price-update-sequence.puml)** - Flow of scheduled price updates
+6. **[XIRR Calculation Sequence](docs/architecture/xirr-calculation-sequence.puml)** - Portfolio performance calculation flow
+7. **[Frontend Architecture](docs/architecture/frontend-architecture.puml)** - Vue.js component structure
+
+To view these diagrams, use any PlantUML viewer or IDE plugin (VS Code, IntelliJ IDEA).
 
 ### Database 🗄️
 
