@@ -168,6 +168,7 @@ services:
 
   trading212-proxy:
     container_name: trading212-proxy
+    platform: linux/amd64
     image: ktenman/trading212-proxy:latest
     ports:
       - '3000:3000'

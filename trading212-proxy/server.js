@@ -11,7 +11,7 @@ const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
 const TRADING212_URL = 'https://live.services.trading212.com/public-instrument-cache/v1/prices'
 const WISDOMTREE_BASE_URL = 'https://www.wisdomtree.eu/en-gb/global/etf-details/modals/all-holdings'
 
-const sanitizeLogInput = (input) => {
+const sanitizeLogInput = input => {
   if (!input) return 'null'
   return String(input).replace(/[\n\r\t]/g, '_')
 }
