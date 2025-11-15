@@ -1,18 +1,16 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.lightyear.LightyearPriceService
-import ee.tenman.portfolio.scheduler.MarketPhase
-import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.JobExecutionService
 import ee.tenman.portfolio.service.LightyearPriceUpdateService
-import ee.tenman.portfolio.service.LightyearPriceUpdateService.ProcessResult
+import ee.tenman.portfolio.service.PriceUpdateProcessor
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.DayOfWeek
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -27,17 +25,19 @@ class LightyearPriceRetrievalJob(
   private val jobExecutionService: JobExecutionService,
   private val lightyearPriceService: LightyearPriceService,
   private val lightyearPriceUpdateService: LightyearPriceUpdateService,
-  private val marketPhaseDetectionService: MarketPhaseDetectionService,
+  private val priceUpdateProcessor: PriceUpdateProcessor,
   private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
   private val estonianZone = ZoneId.of("Europe/Tallinn")
 
-  @Scheduled(cron = "*/5 * 8-22 * * MON-FRI", zone = "Europe/Tallinn")
+//  @Scheduled(cron = "*/5 * 8-22 * * MON-FRI", zone = "Europe/Tallinn")
+  // runs every minute to check if it should run based on more complex logic
+  @Scheduled(cron = "0 * * * * *")
   fun runJob() {
-    if (!shouldRun()) {
-      return
-    }
+//    if (!shouldRun()) {
+//      return
+//    }
 
     log.info("Running Lightyear price update job")
     jobExecutionService.executeJob(this)
@@ -69,40 +69,11 @@ class LightyearPriceRetrievalJob(
   }
 
   override fun execute() {
-    log.info("Starting Lightyear price update execution")
-    val marketPhase = marketPhaseDetectionService.detectMarketPhase()
-    val isWeekend = marketPhase == MarketPhase.WEEKEND
-
-    if (isWeekend) {
-      log.info("Skipping daily price save - weekend detected")
-    }
-
-    val prices = lightyearPriceService.fetchCurrentPrices()
-    val today = LocalDate.now(clock)
-
-    var updatedCount = 0
-    var dailyPricesSaved = 0
-    var failedCount = 0
-
-    prices.forEach { (symbol, price) ->
-      val result = lightyearPriceUpdateService.processSymbol(symbol, price, isWeekend, today)
-      when (result) {
-        ProcessResult.SUCCESS_WITH_DAILY_PRICE -> {
-          updatedCount++
-          dailyPricesSaved++
-        }
-        ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE -> updatedCount++
-        ProcessResult.FAILED -> failedCount++
-      }
-    }
-
-    val successMessage =
-      "Updated current prices for $updatedCount/${prices.size} instruments" +
-        if (!isWeekend) ", saved $dailyPricesSaved Lightyear daily prices" else ""
-
-    when {
-      failedCount > 0 -> log.warn("$successMessage, $failedCount failed")
-      else -> log.info("Successfully $successMessage")
-    }
+    priceUpdateProcessor.processPriceUpdates(
+      platform = Platform.LIGHTYEAR,
+      log = log,
+      fetchPrices = { lightyearPriceService.fetchCurrentPrices() },
+      processSymbol = lightyearPriceUpdateService::processSymbol,
+    )
   }
 }
