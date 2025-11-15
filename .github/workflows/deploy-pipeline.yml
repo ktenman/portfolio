@@ -80,8 +80,12 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
+            echo 'Stopping existing containers...' && \
+            docker-compose down --remove-orphans || true && \
+            echo 'Pulling latest images...' && \
             docker-compose pull && \
-            docker-compose up -d --build && \
+            echo 'Starting containers...' && \
+            docker-compose up -d --build --force-recreate --remove-orphans && \
             echo 'Pruning unused Docker images...' && \
             docker image prune -af"
       - name: Cleanup on runner
