@@ -31,13 +31,11 @@ class LightyearPriceRetrievalJob(
   private val log = LoggerFactory.getLogger(javaClass)
   private val estonianZone = ZoneId.of("Europe/Tallinn")
 
-//  @Scheduled(cron = "*/5 * 8-22 * * MON-FRI", zone = "Europe/Tallinn")
-  // runs every minute to check if it should run based on more complex logic
-  @Scheduled(cron = "0 * * * * *")
+  @Scheduled(cron = "*/5 * 8-22 * * MON-FRI", zone = "Europe/Tallinn")
   fun runJob() {
-//    if (!shouldRun()) {
-//      return
-//    }
+    if (!shouldRun()) {
+      return
+    }
 
     log.info("Running Lightyear price update job")
     jobExecutionService.executeJob(this)
