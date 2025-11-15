@@ -389,7 +389,7 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 
 - **Trading212** - Price data via Cloudflare Bypass Proxy (curl-impersonate for Cloudflare bypass)
 - **WisdomTree** - ETF holdings via Cloudflare Bypass Proxy → HTML scraping with Jsoup
-- **Lightyear** - ETF holdings via direct Selenide browser automation
+- **Lightyear** - Price data via Cloudflare Bypass Proxy (curl-impersonate) + ETF holdings via Selenide browser automation
 
 **AI & Cloud Services:**
 
