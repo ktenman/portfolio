@@ -24,7 +24,7 @@ class EtfHoldingsClassificationJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 120000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(initialDelay = 180000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * *}")
   fun runJob() {
     log.info("Running ETF holdings classification job")
