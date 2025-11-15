@@ -88,6 +88,7 @@ services:
       interval: 8s
       timeout: 2s
       retries: 15
+      start_period: 60s
 
   frontend:
     container_name: frontend
@@ -124,6 +125,7 @@ services:
       interval: 6s
       timeout: 2s
       retries: 18
+      start_period: 40s
 
   app:
     container_name: app
