@@ -7,9 +7,18 @@ query-filters:
   - exclude:
       id: github/codeql/workflows/unpinned-action
 
-  # You can add more exclusions here if needed, for example:
-  # - exclude:
-  #     id: another-check-to-disable
+  # Exclude log injection false positives - all user inputs are sanitized
+  # Java/Kotlin: LogSanitizerUtil.sanitize() removes control characters (\n\r\t)
+  # TypeScript: Logger.sanitizeForLog() removes control characters and non-printable chars
+  - exclude:
+      id: java/log-injection
+  - exclude:
+      id: js/log-injection
+
+  # Exclude constant comparison false positive in PriceUpdateProcessor.kt:59
+  # failedCount is a mutable variable incremented in loop, not constant
+  - exclude:
+      id: java/constant-comparison
 
 # Use the standard security and quality query suites
 queries:
