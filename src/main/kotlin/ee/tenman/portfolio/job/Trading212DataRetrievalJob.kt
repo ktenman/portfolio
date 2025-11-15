@@ -92,10 +92,9 @@ class Trading212DataRetrievalJob(
       "Updated current prices for $updatedCount/${prices.size} instruments" +
         if (!isWeekend) ", saved $dailyPricesSaved Trading212 daily prices" else ""
 
-    if (failedCount > 0) {
-      log.warn("$successMessage, $failedCount failed")
-    } else {
-      log.info("Successfully $successMessage")
+    when {
+      failedCount > 0 -> log.warn("$successMessage, $failedCount failed")
+      else -> log.info("Successfully $successMessage")
     }
   }
 }
