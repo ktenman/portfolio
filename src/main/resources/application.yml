@@ -176,6 +176,7 @@ scheduling:
     summary-interval: ${SUMMARY_JOB_INTERVAL:120000}
     trading212-enabled: ${TRADING212_ENABLED:true}
     trading212-interval: ${TRADING212_JOB_INTERVAL:60000}
+    lightyear-price-enabled: ${LIGHTYEAR_PRICE_ENABLED:true}
     industry-classification: ${INDUSTRY_CLASSIFICATION_CRON:0 0 2 * * *}
     etf-holdings-classification-enabled: ${ETF_HOLDINGS_CLASSIFICATION_ENABLED:true}
     etf-holdings-classification-cron: ${ETF_HOLDINGS_CLASSIFICATION_CRON:0 0 3 * * *}

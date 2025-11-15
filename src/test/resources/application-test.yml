@@ -3,3 +3,4 @@ scheduling:
   jobs:
     etf-holdings-classification-enabled: false
     trading212-enabled: false
+    lightyear-price-enabled: false
