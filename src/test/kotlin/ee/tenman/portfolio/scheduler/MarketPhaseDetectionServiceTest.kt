@@ -185,6 +185,36 @@ class MarketPhaseDetectionServiceTest {
     expect(result).toEqual(MarketPhase.MAIN_MARKET_HOURS)
   }
 
+  @Test
+  fun `isWeekendPhase should return true on Saturday`() {
+    val saturday = createNyTime(2024, 1, 13, 12, 0)
+    val serviceWithSaturday = MarketPhaseDetectionService(Clock.fixed(saturday, nyZone))
+
+    val result = serviceWithSaturday.isWeekendPhase()
+
+    expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `isWeekendPhase should return true on Xetra holiday`() {
+    val christmasDay = createNyTime(2025, 12, 25, 12, 0)
+    val serviceWithHoliday = MarketPhaseDetectionService(Clock.fixed(christmasDay, nyZone))
+
+    val result = serviceWithHoliday.isWeekendPhase()
+
+    expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `isWeekendPhase should return false on weekday`() {
+    val weekday = createNyTime(2024, 1, 15, 12, 0)
+    val serviceWithWeekday = MarketPhaseDetectionService(Clock.fixed(weekday, nyZone))
+
+    val result = serviceWithWeekday.isWeekendPhase()
+
+    expect(result).toEqual(false)
+  }
+
   private fun createNyTime(
     year: Int,
     month: Int,

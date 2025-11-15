@@ -59,6 +59,8 @@ class MarketPhaseDetectionService(
     }
   }
 
+  fun isWeekendPhase(): Boolean = detectMarketPhase() == MarketPhase.WEEKEND
+
   private fun isWeekend(dateTime: ZonedDateTime): Boolean =
     dateTime.dayOfWeek == DayOfWeek.SATURDAY || dateTime.dayOfWeek == DayOfWeek.SUNDAY
 
