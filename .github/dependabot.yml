@@ -21,6 +21,12 @@ updates:
       - dependency-name: "sass"
         versions: [ ">1.70.0" ]
 
+  - package-ecosystem: 'npm'
+    directory: '/cloudflare-bypass-proxy'
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 30
+
   - package-ecosystem: 'pip'
     directory: '/market-price-tracker'
     schedule:
