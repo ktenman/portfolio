@@ -21,12 +21,17 @@ class Logger {
     return Math.random().toString(36).substring(2, 9)
   }
 
+  private sanitizeForLog(value: string): string {
+    return value.replace(/[\n\r\t]/g, ' ').replace(/[^\x20-\x7E]/g, '')
+  }
+
   private formatLogEntry(entry: LogEntry): string {
     const { timestamp, level, service, requestId, message, data } = entry
     const servicePrefix = service ? `[${service}] ` : ''
     const requestIdPrefix = requestId ? `[${requestId}] ` : ''
+    const sanitizedMessage = this.sanitizeForLog(message)
     const dataString = data ? ` ${JSON.stringify(data)}` : ''
-    return `[${timestamp}] [${level}] ${servicePrefix}${requestIdPrefix}${message}${dataString}`
+    return `[${timestamp}] [${level}] ${servicePrefix}${requestIdPrefix}${sanitizedMessage}${dataString}`
   }
 
   private log(

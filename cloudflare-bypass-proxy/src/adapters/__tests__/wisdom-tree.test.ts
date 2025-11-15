@@ -14,7 +14,11 @@ describe('WisdomTree Adapter', () => {
   beforeEach(() => {
     app = express()
     app.use(express.json())
-    app.get(wisdomTreeAdapter.path, wisdomTreeAdapter.handler)
+    app.get(
+      wisdomTreeAdapter.path,
+      ...(wisdomTreeAdapter.middleware || []),
+      wisdomTreeAdapter.handler
+    )
     jest.clearAllMocks()
   })
 

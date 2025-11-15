@@ -140,7 +140,11 @@ class EtfHoldingsService(
   }
 
   private fun downloadImage(url: String): ByteArray {
-    val connection = java.net.URL(url).openConnection()
+    val connection =
+      java.net
+      .URI(url)
+      .toURL()
+      .openConnection()
     connection.connectTimeout = 5000
     connection.readTimeout = 5000
     return connection.getInputStream().use { it.readBytes() }

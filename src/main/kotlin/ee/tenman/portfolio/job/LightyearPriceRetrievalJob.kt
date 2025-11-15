@@ -100,10 +100,9 @@ class LightyearPriceRetrievalJob(
       "Updated current prices for $updatedCount/${prices.size} instruments" +
         if (!isWeekend) ", saved $dailyPricesSaved Lightyear daily prices" else ""
 
-    if (failedCount > 0) {
-      log.warn("$successMessage, $failedCount failed")
-    } else {
-      log.info("Successfully $successMessage")
+    when {
+      failedCount > 0 -> log.warn("$successMessage, $failedCount failed")
+      else -> log.info("Successfully $successMessage")
     }
   }
 }
