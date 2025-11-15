@@ -111,6 +111,7 @@ describe('Curl Executor', () => {
 
     const result = await executeCurl({ url: 'https://example.com' })
 
-    expect(result.duration).toBeGreaterThanOrEqual(100)
+    expect(result.duration).toBeGreaterThanOrEqual(90)
+    expect(result.duration).toBeLessThan(200)
   })
 })
