@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.service.ProcessResult
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -56,10 +57,4 @@ class LightyearPriceUpdateService(
       log.warn("Failed to update price for symbol $symbol: ${e.message}")
       ProcessResult.FAILED
     }
-
-  enum class ProcessResult {
-    SUCCESS_WITH_DAILY_PRICE,
-    SUCCESS_WITHOUT_DAILY_PRICE,
-    FAILED,
-  }
 }
