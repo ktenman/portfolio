@@ -8,6 +8,7 @@ import ee.tenman.portfolio.dto.InstrumentDto
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.FtDataRetrievalJob
+import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
 import ee.tenman.portfolio.service.IndustryClassificationService
 import ee.tenman.portfolio.service.InstrumentService
 import io.swagger.v3.oas.annotations.Operation
@@ -43,6 +44,7 @@ class InstrumentController(
   private val industryClassificationService: IndustryClassificationService,
   private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob?,
   private val wisdomTreeDataUpdateJob: ee.tenman.portfolio.job.WisdomTreeDataUpdateJob?,
+  private val lightyearPriceRetrievalJob: LightyearPriceRetrievalJob?,
 ) {
   @PostMapping
   @Loggable
@@ -94,7 +96,7 @@ class InstrumentController(
 
   @PostMapping("/refresh-prices")
   @Loggable
-  @Operation(summary = "Refresh prices from Binance and FT providers")
+  @Operation(summary = "Refresh prices from Binance, FT, and Lightyear providers")
   fun refreshPrices(): Map<String, String> {
     binanceDataRetrievalJob?.let { job ->
       CoroutineScope(Dispatchers.Default).launch {
@@ -103,6 +105,12 @@ class InstrumentController(
     }
 
     ftDataRetrievalJob?.let { job ->
+      CoroutineScope(Dispatchers.Default).launch {
+        job.execute()
+      }
+    }
+
+    lightyearPriceRetrievalJob?.let { job ->
       CoroutineScope(Dispatchers.Default).launch {
         job.execute()
       }
