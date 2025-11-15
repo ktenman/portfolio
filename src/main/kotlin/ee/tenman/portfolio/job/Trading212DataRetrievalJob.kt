@@ -11,7 +11,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @Component
 @ConditionalOnProperty(
@@ -27,12 +31,33 @@ class Trading212DataRetrievalJob(
   private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
+  private val estonianZone = ZoneId.of("Europe/Tallinn")
 
-  @Scheduled(fixedDelayString = "\${scheduling.jobs.trading212-interval:30000}")
+  @Scheduled(cron = "0/10 * 10-18 * * MON-FRI", zone = "Europe/Tallinn")
   fun runJob() {
+    if (!isWithinTradingHours()) {
+      log.debug("Skipping Trading212 job - outside trading hours (10:00-18:30 EET/EEST on workdays)")
+      return
+    }
+
     log.info("Running Trading212 price update job")
     jobExecutionService.executeJob(this)
     log.info("Completed Trading212 price update job")
+  }
+
+  private fun isWithinTradingHours(): Boolean {
+    val estonianTime = ZonedDateTime.now(clock.withZone(estonianZone))
+    val dayOfWeek = estonianTime.dayOfWeek
+    val currentTime = estonianTime.toLocalTime()
+
+    if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
+      return false
+    }
+
+    val startTime = LocalTime.of(10, 0)
+    val endTime = LocalTime.of(18, 30)
+
+    return !currentTime.isBefore(startTime) && !currentTime.isAfter(endTime)
   }
 
   override fun execute() {
