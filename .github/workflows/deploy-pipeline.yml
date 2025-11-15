@@ -82,6 +82,8 @@ jobs:
           ssh githubuser@fov.ee "\
             echo 'Stopping existing containers...' && \
             docker-compose down --remove-orphans || true && \
+            echo 'Removing any conflicting containers...' && \
+            docker rm -f postgres redis minio backend frontend app auth captcha-solver cloudflare-bypass-proxy market_price_tracker restart_scheduler healthcheck 2>/dev/null || true && \
             echo 'Pulling latest images...' && \
             docker-compose pull && \
             echo 'Starting containers...' && \
