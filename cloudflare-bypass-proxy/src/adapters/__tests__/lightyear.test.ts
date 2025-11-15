@@ -14,7 +14,7 @@ describe('Lightyear Adapter', () => {
   beforeEach(() => {
     app = express()
     app.use(express.json())
-    app.get(lightyearAdapter.path, lightyearAdapter.handler)
+    app.get(lightyearAdapter.path, ...(lightyearAdapter.middleware || []), lightyearAdapter.handler)
     jest.clearAllMocks()
   })
 
