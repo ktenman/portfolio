@@ -17,7 +17,7 @@ class WisdomTreeDataUpdateJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 60000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(initialDelay = 180000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "0 55 23 * * ?")
   fun runJob() {
     execute()
