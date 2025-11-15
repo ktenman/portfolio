@@ -348,23 +348,52 @@ def build_matcher(base_dir: Path):
     return patterns
 
 
+def is_safe_path(path: Path, base_dir: Path) -> bool:
+  """
+  Verify that a file path is safe to access and within the project directory.
+  Protects against path traversal attacks and symlink exploits.
+  """
+  try:
+    resolved_path = path.resolve(strict=False)
+    resolved_base = base_dir.resolve(strict=True)
+
+    if not str(resolved_path).startswith(str(resolved_base)):
+      print(f"Security: Path escapes project directory: {path}")
+      return False
+
+    if path.is_symlink():
+      symlink_target = resolved_path
+      if not str(symlink_target).startswith(str(resolved_base)):
+        print(f"Security: Symlink points outside project directory: {path} -> {symlink_target}")
+        return False
+
+    parts = path.parts
+    if '..' in parts or '.' in parts[1:]:
+      print(f"Security: Path contains suspicious components: {path}")
+      return False
+
+    return True
+  except (OSError, ValueError, RuntimeError) as e:
+    print(f"Security: Error validating path {path}: {e}")
+    return False
+
+
 def is_binary_file(path: Path) -> bool:
   """Determine if a file is likely binary."""
-  # Check extension first
   if path.suffix.lower() in BINARY_EXTENSIONS:
     return True
 
-  # Check mimetype
   mimetype, _ = mimetypes.guess_type(str(path))
   if mimetype and not mimetype.startswith('text/') and not mimetype.startswith('application/json'):
     return True
 
-  # Final check: try to read as text
   try:
-    with open(path, 'r', encoding='utf-8') as f:
-      f.read(1024)
+    with open(path, 'r', encoding='utf-8', errors='strict') as f:
+      chunk = f.read(1024)
+      if '\0' in chunk:
+        return True
     return False
-  except (UnicodeDecodeError, IOError):
+  except (UnicodeDecodeError, IOError, PermissionError):
     return True
 
 
@@ -550,12 +579,16 @@ def combine_files(base_dir: str = '.', output_file: str = 'combined_files.txt'):
     if not path.is_file():
       continue
 
+    # Security: Validate path is safe before processing
+    if not is_safe_path(path, base):
+      continue
+
     rel_path = str(path.relative_to(base))
 
     # Special case for .github directory - always include
     if rel_path.startswith('.github/'):
       try:
-        content = path.read_text(encoding='utf-8')
+        content = path.read_text(encoding='utf-8', errors='strict')
         # Store GitHub files separately for inclusion and sorting
         github_files.append((path, content))
         print(f"Including GitHub file: {rel_path}")
@@ -576,8 +609,8 @@ def combine_files(base_dir: str = '.', output_file: str = 'combined_files.txt'):
       continue
 
     try:
-      # Just check if we can read the file
-      content = path.read_text(encoding='utf-8')
+      # Security: Use strict error handling to detect encoding issues
+      content = path.read_text(encoding='utf-8', errors='strict')
 
       # Separate test files from main code for better organization
       if is_test_file(rel_path) or is_important_test_file(rel_path):

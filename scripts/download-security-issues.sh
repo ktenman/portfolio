@@ -1,42 +1,69 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
+IFS=$'\n\t'
 
-OUTPUT_FILE="security-issues-report.md"
-CSV_FILE="security-issues.csv"
-PRIORITY_FILE="top-50-fixes.md"
-JSON_FILE="alerts.json"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly OUTPUT_FILE="${SCRIPT_DIR}/security-issues-report.md"
+readonly CSV_FILE="${SCRIPT_DIR}/security-issues.csv"
+readonly PRIORITY_FILE="${SCRIPT_DIR}/top-50-fixes.md"
+readonly JSON_FILE="${SCRIPT_DIR}/alerts.json"
+readonly GITHUB_REPO=${GITHUB_REPO:-"ktenman/portfolio"}
+
+validate_repo_name() {
+  local repo="$1"
+  if [[ ! "$repo" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]]; then
+    echo "Error: Invalid repository format. Expected: owner/repo" >&2
+    exit 1
+  fi
+}
+
+check_dependencies() {
+  local missing=()
+
+  if ! command -v gh &> /dev/null; then
+    missing+=("gh (GitHub CLI)")
+  fi
+
+  if ! command -v jq &> /dev/null; then
+    missing+=("jq")
+  fi
+
+  if [ ${#missing[@]} -gt 0 ]; then
+    echo "Error: Missing required dependencies: ${missing[*]}" >&2
+    echo "" >&2
+    echo "Installation:" >&2
+    echo "  macOS: brew install ${missing[*]}" >&2
+    echo "  Linux: apt install ${missing[*]} or yum install ${missing[*]}" >&2
+    exit 1
+  fi
+}
+
+validate_repo_name "$GITHUB_REPO"
+check_dependencies
 
 echo "Checking GitHub CLI authentication..."
 
-if ! command -v gh &> /dev/null; then
-    echo "❌ GitHub CLI (gh) is not installed."
-    echo ""
-    echo "Please install it first:"
-    echo "  macOS: brew install gh"
-    echo "  Linux: See https://github.com/cli/cli#installation"
-    echo ""
-    echo "Then authenticate with: gh auth login"
-    exit 1
-fi
-
 if ! gh auth status &> /dev/null; then
-    echo "❌ Not authenticated with GitHub CLI."
-    echo ""
-    echo "Please run: gh auth login"
-    echo "And follow the prompts to authenticate."
+    echo "Error: Not authenticated with GitHub CLI" >&2
+    echo "" >&2
+    echo "Please run: gh auth login" >&2
+    echo "And follow the prompts to authenticate." >&2
     exit 1
 fi
 
 echo "✅ GitHub CLI is authenticated"
-echo ""
-echo "Fetching code scanning alerts..."
+echo "Fetching code scanning alerts for $GITHUB_REPO..."
 
-ALERTS=$(gh api \
+if ! ALERTS=$(gh api \
   -H "Accept: application/vnd.github+json" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "/repos/ktenman/portfolio/code-scanning/alerts?state=open&per_page=100" \
-  --paginate)
+  "/repos/${GITHUB_REPO}/code-scanning/alerts?state=open&per_page=100" \
+  --paginate 2>&1); then
+  echo "Error: Failed to fetch alerts from GitHub API" >&2
+  echo "Response: $ALERTS" >&2
+  exit 1
+fi
 
 if [ -z "$ALERTS" ] || [ "$ALERTS" = "[]" ]; then
     echo "No code scanning alerts found."
