@@ -201,10 +201,10 @@ scraping:
         expected-pages: 3
       - symbol: "QDVE"
         path: "QDVE:XETRA"
-        expected-pages: 2
+        expected-pages: 1
       - symbol: "XAIX"
         path: "XAIX:XETRA"
-        expected-pages: 2
+        expected-pages: 1
       - symbol: "SPYL"
         path: "SPYL:XETRA"
         expected-pages: 3

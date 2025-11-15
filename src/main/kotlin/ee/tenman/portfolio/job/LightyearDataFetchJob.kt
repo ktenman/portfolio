@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.job
 
-import com.codeborne.selenide.Configuration
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.service.EtfHoldingsService
@@ -57,7 +56,6 @@ class LightyearDataFetchJob(
   }
 
   private fun fetchAllEtfs(): String {
-    configureBrowser()
     val today = LocalDate.now()
     val results = mutableListOf<String>()
 
@@ -102,15 +100,5 @@ class LightyearDataFetchJob(
     }
 
     return results.joinToString("\n")
-  }
-
-  private fun configureBrowser() {
-    Configuration.browser = "firefox"
-    Configuration.browserSize = "1920x1080"
-    Configuration.timeout = 10000
-    Configuration.headless = true
-    Configuration.screenshots = true
-    Configuration.savePageSource = true
-    Configuration.fastSetValue = true
   }
 }
