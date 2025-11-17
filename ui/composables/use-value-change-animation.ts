@@ -8,7 +8,13 @@ type FieldName =
   | 'profit'
   | 'unrealizedProfit'
   | 'priceChangeAmount'
-type TotalsFieldName = 'totalValue' | 'totalProfit' | 'totalUnrealizedProfit' | 'totalChangeAmount'
+  | 'xirr'
+type TotalsFieldName =
+  | 'totalValue'
+  | 'totalProfit'
+  | 'totalUnrealizedProfit'
+  | 'totalChangeAmount'
+  | 'totalXirr'
 
 interface ChangeState {
   [key: string]: {
@@ -23,6 +29,7 @@ interface TotalsValues {
   totalProfit: number
   totalUnrealizedProfit: number
   totalChangeAmount: number
+  totalXirr: number
 }
 
 export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
@@ -49,6 +56,7 @@ export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
             profit: instrument.profit ?? null,
             unrealizedProfit: instrument.unrealizedProfit ?? null,
             priceChangeAmount: instrument.priceChangeAmount ?? null,
+            xirr: instrument.xirr ?? null,
           })
           return
         }
@@ -60,13 +68,15 @@ export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
           'profit',
           'unrealizedProfit',
           'priceChangeAmount',
+          'xirr',
         ]
 
         fields.forEach(field => {
           const oldValue = prev[field] ?? 0
           const newValue = instrument[field] ?? 0
+          const threshold = field === 'xirr' ? 0.00001 : 0.001
 
-          if (oldValue !== newValue && Math.abs(newValue - oldValue) > 0.001) {
+          if (oldValue !== newValue && Math.abs(newValue - oldValue) > threshold) {
             changes[field] = newValue > oldValue ? 'increase' : 'decrease'
 
             setTimeout(() => {
@@ -94,6 +104,7 @@ export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
           profit: instrument.profit ?? null,
           unrealizedProfit: instrument.unrealizedProfit ?? null,
           priceChangeAmount: instrument.priceChangeAmount ?? null,
+          xirr: instrument.xirr ?? null,
         })
       })
     },
@@ -115,6 +126,7 @@ export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
       'totalProfit',
       'totalUnrealizedProfit',
       'totalChangeAmount',
+      'totalXirr',
     ]
 
     const changes: Partial<Record<TotalsFieldName, ChangeDirection>> = {}
@@ -122,8 +134,9 @@ export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
     fields.forEach(field => {
       const oldValue = previousTotals.value[field] ?? 0
       const newValue = totals[field] ?? 0
+      const threshold = field === 'totalXirr' ? 0.00001 : 0.001
 
-      if (oldValue !== newValue && Math.abs(newValue - oldValue) > 0.001) {
+      if (oldValue !== newValue && Math.abs(newValue - oldValue) > threshold) {
         changes[field] = newValue > oldValue ? 'increase' : 'decrease'
 
         setTimeout(() => {
