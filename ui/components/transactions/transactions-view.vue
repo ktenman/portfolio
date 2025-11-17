@@ -4,27 +4,30 @@
       <h2 class="mb-0">Transactions</h2>
       <div class="filters-container mt-2">
         <div class="date-filters">
-          <div class="date-input-group">
-            <label for="fromDate" class="date-label">From</label>
-            <input
-              id="fromDate"
-              v-model="fromDate"
-              type="date"
-              class="form-control form-control-sm"
-            />
+          <div class="date-inputs-row">
+            <div class="date-input-group">
+              <label for="fromDate" class="date-label">From</label>
+              <input
+                id="fromDate"
+                v-model="fromDate"
+                type="date"
+                class="form-control form-control-sm"
+              />
+            </div>
+            <div class="date-input-group">
+              <label for="untilDate" class="date-label">Until</label>
+              <input
+                id="untilDate"
+                v-model="untilDate"
+                type="date"
+                class="form-control form-control-sm"
+              />
+            </div>
           </div>
-          <div class="date-input-group">
-            <label for="untilDate" class="date-label">Until</label>
-            <input
-              id="untilDate"
-              v-model="untilDate"
-              type="date"
-              class="form-control form-control-sm"
-            />
-          </div>
-          <div class="date-actions">
+          <div class="date-actions-row">
             <div class="dropdown">
               <button
+                ref="quickDateDropdown"
                 class="platform-btn dropdown-toggle"
                 :class="{ active: selectedQuickDate }"
                 type="button"
@@ -104,9 +107,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useLocalStorage } from '@vueuse/core'
+import { Dropdown } from 'bootstrap'
 import TransactionTable from './transaction-table.vue'
 import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
@@ -116,14 +120,21 @@ const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_transact
 const fromDate = useLocalStorage<string>('portfolio_transactions_from_date', '')
 const untilDate = useLocalStorage<string>('portfolio_transactions_until_date', '')
 const selectedQuickDate = useLocalStorage<string>('portfolio_selected_quick_date', '')
+const quickDateDropdown = ref<HTMLElement | null>(null)
 
 let manualDateChange = false
+
+const closeDropdown = () => {
+  if (quickDateDropdown.value) {
+    const dropdownInstance = Dropdown.getInstance(quickDateDropdown.value)
+    dropdownInstance?.hide()
+  }
+}
 
 watch([fromDate, untilDate], () => {
   if (!manualDateChange) {
     selectedQuickDate.value = ''
   }
-  manualDateChange = false
 })
 
 const { data: allTransactions } = useQuery({
@@ -208,6 +219,10 @@ const setToday = () => {
   fromDate.value = formatDate(today)
   untilDate.value = formatDate(today)
   selectedQuickDate.value = 'Today'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setLast7Days = () => {
@@ -218,6 +233,10 @@ const setLast7Days = () => {
   fromDate.value = formatDate(sevenDaysAgo)
   untilDate.value = formatDate(today)
   selectedQuickDate.value = 'Last 7 Days'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setThisWeek = () => {
@@ -231,6 +250,10 @@ const setThisWeek = () => {
   fromDate.value = formatDate(monday)
   untilDate.value = formatDate(sunday)
   selectedQuickDate.value = 'This Week'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setLastWeek = () => {
@@ -244,6 +267,10 @@ const setLastWeek = () => {
   fromDate.value = formatDate(lastMonday)
   untilDate.value = formatDate(lastSunday)
   selectedQuickDate.value = 'Last Week'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setLast30Days = () => {
@@ -254,6 +281,10 @@ const setLast30Days = () => {
   fromDate.value = formatDate(thirtyDaysAgo)
   untilDate.value = formatDate(today)
   selectedQuickDate.value = 'Last 30 Days'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setThisMonth = () => {
@@ -264,6 +295,10 @@ const setThisMonth = () => {
   fromDate.value = formatDate(firstDay)
   untilDate.value = formatDate(lastDay)
   selectedQuickDate.value = 'This Month'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setLastMonth = () => {
@@ -274,6 +309,10 @@ const setLastMonth = () => {
   fromDate.value = formatDate(firstDay)
   untilDate.value = formatDate(lastDay)
   selectedQuickDate.value = 'Last Month'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setThisYear = () => {
@@ -284,6 +323,10 @@ const setThisYear = () => {
   fromDate.value = formatDate(firstDay)
   untilDate.value = formatDate(lastDay)
   selectedQuickDate.value = 'This Year'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 
 const setLastYear = () => {
@@ -294,6 +337,10 @@ const setLastYear = () => {
   fromDate.value = formatDate(firstDay)
   untilDate.value = formatDate(lastDay)
   selectedQuickDate.value = 'Last Year'
+  closeDropdown()
+  nextTick(() => {
+    manualDateChange = false
+  })
 }
 </script>
 
@@ -305,10 +352,18 @@ const setLastYear = () => {
 }
 
 .date-filters {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: max-content max-content max-content max-content;
+  gap: 0.375rem 0.75rem;
+  align-items: end;
+}
+
+.date-inputs-row {
+  display: contents;
+}
+
+.date-actions-row {
+  display: contents;
 }
 
 .date-input-group {
@@ -324,8 +379,12 @@ const setLastYear = () => {
   margin-bottom: 0;
 }
 
+.date-input-group {
+  width: 110px;
+}
+
 .date-input-group .form-control {
-  width: 150px;
+  width: 100%;
 }
 
 .stats-container {
@@ -425,6 +484,15 @@ const setLastYear = () => {
   align-items: center;
 }
 
+.date-actions-row .platform-btn,
+.date-actions-row .dropdown {
+  width: 110px;
+}
+
+.date-actions-row .dropdown-toggle {
+  width: 100%;
+}
+
 .dropdown-item {
   cursor: pointer;
   font-size: 0.875rem;
@@ -449,11 +517,37 @@ const setLastYear = () => {
   }
 
   .date-filters {
-    width: 100%;
+    grid-template-columns: max-content max-content;
+    gap: 0.375rem 0.5rem;
+  }
+
+  .date-input-group {
+    width: 110px;
+  }
+
+  .date-label {
+    font-size: 0.75rem;
   }
 
   .date-input-group .form-control {
     width: 100%;
+    font-size: 0.875rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .platform-btn {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .dropdown-toggle {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .date-actions-row .platform-btn,
+  .date-actions-row .dropdown {
+    width: 110px;
   }
 
   .platform-filter-container {
