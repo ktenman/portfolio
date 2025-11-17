@@ -174,7 +174,7 @@ scheduling:
     alphavantage-interval: ${ALPHAVANTAGE_JOB_INTERVAL:120000}
     xirr-interval: ${XIRR_JOB_INTERVAL:120000}
     summary-interval: ${SUMMARY_JOB_INTERVAL:120000}
-    trading212-enabled: ${TRADING212_ENABLED:true}
+    trading212-enabled: ${TRADING212_ENABLED:false}
     trading212-interval: ${TRADING212_JOB_INTERVAL:60000}
     lightyear-price-enabled: ${LIGHTYEAR_PRICE_ENABLED:true}
     industry-classification: ${INDUSTRY_CLASSIFICATION_CRON:0 0 2 * * *}
