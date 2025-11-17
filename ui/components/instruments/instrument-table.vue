@@ -38,10 +38,14 @@
             :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
           >
             {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
-            {{ Math.abs(totalChangePercent).toFixed(2) }}%
+            {{ Math.abs(animatedTotalChangePercent).toFixed(2) }}%
           </span>
         </td>
-        <td class="fw-bold text-nowrap">{{ formatPercentageFromDecimal(totalXirr) }}</td>
+        <td class="fw-bold text-nowrap">
+          <span :class="getTotalsChangeClass('totalXirr')">
+            {{ formatPercentageFromDecimal(animatedTotalXirr) }}
+          </span>
+        </td>
         <td class="fw-bold text-nowrap">100.00%</td>
         <td></td>
       </tr>
@@ -158,12 +162,14 @@
               ]"
             >
               {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
-              {{ Math.abs(totalChangePercent).toFixed(2) }}%
+              {{ Math.abs(animatedTotalChangePercent).toFixed(2) }}%
             </span>
           </div>
           <div class="total-item">
             <span class="total-label">XIRR</span>
-            <span class="total-value">{{ formatPercentageFromDecimal(totalXirr) }}</span>
+            <span class="total-value" :class="getTotalsChangeClass('totalXirr')">
+              {{ formatPercentageFromDecimal(animatedTotalXirr) }}
+            </span>
           </div>
         </div>
       </div>
@@ -237,6 +243,12 @@
         ]"
       >
         {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
+      </span>
+    </template>
+
+    <template #cell-xirr="{ item }">
+      <span :class="getChangeClass(item.id, 'xirr')">
+        {{ formatPercentageFromDecimal(item.xirr) }}
       </span>
     </template>
 
@@ -350,13 +362,14 @@ const totalChangePercent = computed(() => {
 })
 
 watch(
-  [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount],
+  [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount, totalXirr],
   () => {
     trackTotalsChange({
       totalValue: totalValue.value,
       totalProfit: totalProfit.value,
       totalUnrealizedProfit: totalUnrealizedProfit.value,
       totalChangeAmount: totalChangeAmount.value,
+      totalXirr: totalXirr.value,
     })
   },
   { deep: true }
@@ -366,6 +379,8 @@ const animatedTotalValue = useNumberTransition(totalValue)
 const animatedTotalProfit = useNumberTransition(totalProfit)
 const animatedTotalUnrealizedProfit = useNumberTransition(totalUnrealizedProfit)
 const animatedTotalChangeAmount = useNumberTransition(totalChangeAmount)
+const animatedTotalXirr = useNumberTransition(totalXirr)
+const animatedTotalChangePercent = useNumberTransition(totalChangePercent)
 
 const formatProfit = (amount: number, currency: string | undefined): string => {
   const sign = amount >= 0 ? '' : '-'
