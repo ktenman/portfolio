@@ -134,7 +134,7 @@ const {
     }
     return instrumentsService.getAll(selectedPlatforms.value, selectedPeriod.value)
   },
-  refetchInterval: 30000,
+  refetchInterval: 2000,
 })
 
 const saveMutation = useMutation({

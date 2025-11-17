@@ -2,24 +2,78 @@
   <div class="container mt-3">
     <div class="mb-4">
       <h2 class="mb-0">Transactions</h2>
-      <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2">
-        <div class="platform-buttons">
-          <button
-            v-for="platform in availablePlatforms"
-            :key="platform"
-            class="platform-btn"
-            :class="{ active: isPlatformSelected(platform) }"
-            @click="togglePlatform(platform)"
-            type="button"
-          >
-            {{ formatPlatformName(platform) }}
-          </button>
-          <span class="platform-separator"></span>
-          <button class="platform-btn" @click="toggleAllPlatforms" type="button">
-            {{
-              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-            }}
-          </button>
+      <div class="filters-container mt-2">
+        <div class="date-filters">
+          <div class="date-input-group">
+            <label for="fromDate" class="date-label">From</label>
+            <input
+              id="fromDate"
+              v-model="fromDate"
+              type="date"
+              class="form-control form-control-sm"
+            />
+          </div>
+          <div class="date-input-group">
+            <label for="untilDate" class="date-label">Until</label>
+            <input
+              id="untilDate"
+              v-model="untilDate"
+              type="date"
+              class="form-control form-control-sm"
+            />
+          </div>
+          <div class="date-actions">
+            <div class="dropdown">
+              <button
+                class="platform-btn dropdown-toggle"
+                :class="{ active: selectedQuickDate }"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                {{ selectedQuickDate || 'Quick Dates' }}
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @click="setToday">Today</a></li>
+                <li><a class="dropdown-item" @click="setLast7Days">Last 7 Days</a></li>
+                <li><a class="dropdown-item" @click="setThisWeek">This Week</a></li>
+                <li><a class="dropdown-item" @click="setLastWeek">Last Week</a></li>
+                <li><a class="dropdown-item" @click="setLast30Days">Last 30 Days</a></li>
+                <li><a class="dropdown-item" @click="setThisMonth">This Month</a></li>
+                <li><a class="dropdown-item" @click="setLastMonth">Last Month</a></li>
+                <li><a class="dropdown-item" @click="setThisYear">This Year</a></li>
+                <li><a class="dropdown-item" @click="setLastYear">Last Year</a></li>
+              </ul>
+            </div>
+            <button
+              v-if="fromDate || untilDate"
+              class="platform-btn"
+              @click="clearDates"
+              type="button"
+            >
+              Clear Dates
+            </button>
+          </div>
+        </div>
+        <div v-if="availablePlatforms.length > 0" class="platform-filter-container">
+          <div class="platform-buttons">
+            <button
+              v-for="platform in availablePlatforms"
+              :key="platform"
+              class="platform-btn"
+              :class="{ active: isPlatformSelected(platform) }"
+              @click="togglePlatform(platform)"
+              type="button"
+            >
+              {{ formatPlatformName(platform) }}
+            </button>
+            <span class="platform-separator"></span>
+            <button class="platform-btn" @click="toggleAllPlatforms" type="button">
+              {{
+                selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
+              }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -59,10 +113,32 @@ import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_transaction_platforms', [])
+const fromDate = useLocalStorage<string>('portfolio_transactions_from_date', '')
+const untilDate = useLocalStorage<string>('portfolio_transactions_until_date', '')
+const selectedQuickDate = useLocalStorage<string>('portfolio_selected_quick_date', '')
 
-const { data: allTransactions, isLoading } = useQuery({
+let manualDateChange = false
+
+watch([fromDate, untilDate], () => {
+  if (!manualDateChange) {
+    selectedQuickDate.value = ''
+  }
+  manualDateChange = false
+})
+
+const { data: allTransactions } = useQuery({
   queryKey: ['transactions'],
   queryFn: () => transactionsService.getAll(),
+})
+
+const { data: transactions, isLoading } = useQuery({
+  queryKey: ['transactions', selectedPlatforms, fromDate, untilDate],
+  queryFn: () =>
+    transactionsService.getAll(
+      selectedPlatforms.value.length > 0 ? selectedPlatforms.value : undefined,
+      fromDate.value || undefined,
+      untilDate.value || undefined
+    ),
 })
 
 const availablePlatforms = computed(() => {
@@ -76,31 +152,6 @@ const availablePlatforms = computed(() => {
   })
 
   return Array.from(platformSet).sort()
-})
-
-watch(
-  availablePlatforms,
-  newPlatforms => {
-    if (newPlatforms.length > 0 && selectedPlatforms.value.length === 0) {
-      selectedPlatforms.value = [...newPlatforms]
-    } else if (newPlatforms.length > 0) {
-      const validPlatforms = selectedPlatforms.value.filter(p => newPlatforms.includes(p))
-      if (validPlatforms.length === 0) {
-        selectedPlatforms.value = [...newPlatforms]
-      } else if (validPlatforms.length !== selectedPlatforms.value.length) {
-        selectedPlatforms.value = validPlatforms
-      }
-    }
-  },
-  { immediate: true }
-)
-
-const transactions = computed(() => {
-  if (!allTransactions.value) return []
-  if (selectedPlatforms.value.length === 0) return allTransactions.value
-  return allTransactions.value.filter(
-    t => t.platform && selectedPlatforms.value.includes(t.platform)
-  )
 })
 
 const realizedProfitSum = computed(() => {
@@ -137,9 +188,146 @@ const toggleAllPlatforms = () => {
     selectedPlatforms.value = [...availablePlatforms.value]
   }
 }
+
+const clearDates = () => {
+  fromDate.value = ''
+  untilDate.value = ''
+  selectedQuickDate.value = ''
+}
+
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const setToday = () => {
+  manualDateChange = true
+  const today = new Date()
+  fromDate.value = formatDate(today)
+  untilDate.value = formatDate(today)
+  selectedQuickDate.value = 'Today'
+}
+
+const setLast7Days = () => {
+  manualDateChange = true
+  const today = new Date()
+  const sevenDaysAgo = new Date(today)
+  sevenDaysAgo.setDate(today.getDate() - 6)
+  fromDate.value = formatDate(sevenDaysAgo)
+  untilDate.value = formatDate(today)
+  selectedQuickDate.value = 'Last 7 Days'
+}
+
+const setThisWeek = () => {
+  manualDateChange = true
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  fromDate.value = formatDate(monday)
+  untilDate.value = formatDate(sunday)
+  selectedQuickDate.value = 'This Week'
+}
+
+const setLastWeek = () => {
+  manualDateChange = true
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+  const lastMonday = new Date(today)
+  lastMonday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - 7)
+  const lastSunday = new Date(lastMonday)
+  lastSunday.setDate(lastMonday.getDate() + 6)
+  fromDate.value = formatDate(lastMonday)
+  untilDate.value = formatDate(lastSunday)
+  selectedQuickDate.value = 'Last Week'
+}
+
+const setLast30Days = () => {
+  manualDateChange = true
+  const today = new Date()
+  const thirtyDaysAgo = new Date(today)
+  thirtyDaysAgo.setDate(today.getDate() - 29)
+  fromDate.value = formatDate(thirtyDaysAgo)
+  untilDate.value = formatDate(today)
+  selectedQuickDate.value = 'Last 30 Days'
+}
+
+const setThisMonth = () => {
+  manualDateChange = true
+  const today = new Date()
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  fromDate.value = formatDate(firstDay)
+  untilDate.value = formatDate(lastDay)
+  selectedQuickDate.value = 'This Month'
+}
+
+const setLastMonth = () => {
+  manualDateChange = true
+  const today = new Date()
+  const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const lastDay = new Date(today.getFullYear(), today.getMonth(), 0)
+  fromDate.value = formatDate(firstDay)
+  untilDate.value = formatDate(lastDay)
+  selectedQuickDate.value = 'Last Month'
+}
+
+const setThisYear = () => {
+  manualDateChange = true
+  const today = new Date()
+  const firstDay = new Date(today.getFullYear(), 0, 1)
+  const lastDay = new Date(today.getFullYear(), 11, 31)
+  fromDate.value = formatDate(firstDay)
+  untilDate.value = formatDate(lastDay)
+  selectedQuickDate.value = 'This Year'
+}
+
+const setLastYear = () => {
+  manualDateChange = true
+  const today = new Date()
+  const firstDay = new Date(today.getFullYear() - 1, 0, 1)
+  const lastDay = new Date(today.getFullYear() - 1, 11, 31)
+  fromDate.value = formatDate(firstDay)
+  untilDate.value = formatDate(lastDay)
+  selectedQuickDate.value = 'Last Year'
+}
 </script>
 
 <style scoped>
+.filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.date-filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0;
+}
+
+.date-input-group .form-control {
+  width: 150px;
+}
+
 .stats-container {
   display: flex;
   flex-direction: row;
@@ -231,6 +419,21 @@ const toggleAllPlatforms = () => {
   color: white;
 }
 
+.date-actions {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.dropdown-item {
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.dropdown-item:active {
+  background-color: #4b5563;
+}
+
 @media (max-width: 768px) {
   .stats-container {
     flex-direction: column;
@@ -243,6 +446,14 @@ const toggleAllPlatforms = () => {
 
   .stat-value {
     font-size: 1.25rem;
+  }
+
+  .date-filters {
+    width: 100%;
+  }
+
+  .date-input-group .form-control {
+    width: 100%;
   }
 
   .platform-filter-container {

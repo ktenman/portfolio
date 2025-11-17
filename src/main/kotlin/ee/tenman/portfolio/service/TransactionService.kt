@@ -115,6 +115,60 @@ class TransactionService(
     return portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
   }
 
+  @Transactional(readOnly = true)
+  @Cacheable(
+    value = [TRANSACTION_CACHE],
+    key =
+      "'transactions:' + (#platforms?.toString() ?: 'all') + ':' + " +
+        "(#fromDate?.toString() ?: 'null') + ':' + (#untilDate?.toString() ?: 'null')",
+    unless = "#result.isEmpty()",
+  )
+  fun getAllTransactions(
+    platforms: List<String>?,
+    fromDate: java.time.LocalDate?,
+    untilDate: java.time.LocalDate?,
+  ): List<PortfolioTransaction> {
+    val hasPlatforms = !platforms.isNullOrEmpty()
+    val hasDates = fromDate != null || untilDate != null
+
+    if (!hasPlatforms && !hasDates) {
+      return getAllTransactions()
+    }
+
+    val platformEnums =
+      platforms?.mapNotNull { platformName ->
+        try {
+          ee.tenman.portfolio.domain.Platform
+            .valueOf(platformName)
+        } catch (e: IllegalArgumentException) {
+          log.warn("Invalid platform name: $platformName")
+          null
+        }
+      }
+
+    if (hasPlatforms && platformEnums.isNullOrEmpty()) {
+      return emptyList()
+    }
+
+    val effectiveFromDate = fromDate ?: java.time.LocalDate.of(2000, 1, 1)
+    val effectiveUntilDate =
+      untilDate ?: java.time.LocalDate
+      .now()
+      .plusYears(100)
+
+    return when {
+      !platformEnums.isNullOrEmpty() && hasDates ->
+        portfolioTransactionRepository
+          .findAllByPlatformsAndDateRangeWithInstruments(platformEnums, effectiveFromDate, effectiveUntilDate)
+      !platformEnums.isNullOrEmpty() ->
+        portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
+      hasDates ->
+        portfolioTransactionRepository.findAllByDateRangeWithInstruments(effectiveFromDate, effectiveUntilDate)
+      else ->
+        getAllTransactions()
+    }
+  }
+
   @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
   @Retryable(
     value = [ObjectOptimisticLockingFailureException::class],

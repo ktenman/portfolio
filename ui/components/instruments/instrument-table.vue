@@ -12,21 +12,32 @@
         <td class="fw-bold">Total</td>
         <td></td>
         <td></td>
-        <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</td>
+        <td class="fw-bold text-nowrap">
+          <span :class="getTotalsChangeClass('totalValue')">
+            {{ formatCurrencyWithSign(animatedTotalValue, 'EUR') }}
+          </span>
+        </td>
         <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</td>
         <td class="fw-bold text-nowrap profit-column">
-          <span :class="getProfitClass(totalProfit)">
-            {{ formatProfit(totalProfit, 'EUR') }}
+          <span :class="[getProfitClass(totalProfit), getTotalsChangeClass('totalProfit')]">
+            {{ formatProfit(animatedTotalProfit, 'EUR') }}
           </span>
         </td>
         <td class="fw-bold text-nowrap unrealized-column">
-          <span :class="getProfitClass(totalUnrealizedProfit)">
-            {{ formatProfit(totalUnrealizedProfit, 'EUR') }}
+          <span
+            :class="[
+              getProfitClass(totalUnrealizedProfit),
+              getTotalsChangeClass('totalUnrealizedProfit'),
+            ]"
+          >
+            {{ formatProfit(animatedTotalUnrealizedProfit, 'EUR') }}
           </span>
         </td>
         <td class="fw-bold text-nowrap price-change-column">
-          <span :class="getProfitClass(totalChangeAmount)">
-            {{ formatCurrencyWithSign(Math.abs(totalChangeAmount), 'EUR') }} /
+          <span
+            :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
+          >
+            {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
             {{ Math.abs(totalChangePercent).toFixed(2) }}%
           </span>
         </td>
@@ -108,7 +119,9 @@
         <div class="totals-content">
           <div class="total-item">
             <span class="total-label">VALUE</span>
-            <span class="total-value">{{ formatCurrencyWithSign(totalValue, 'EUR') }}</span>
+            <span class="total-value" :class="getTotalsChangeClass('totalValue')">
+              {{ formatCurrencyWithSign(animatedTotalValue, 'EUR') }}
+            </span>
           </div>
           <div class="total-item">
             <span class="total-label">INVESTED</span>
@@ -116,20 +129,35 @@
           </div>
           <div class="total-item total-profit-item">
             <span class="total-label">PROFIT</span>
-            <span class="total-value" :class="getProfitClass(totalProfit)">
-              {{ formatProfit(totalProfit, 'EUR') }}
+            <span
+              class="total-value"
+              :class="[getProfitClass(totalProfit), getTotalsChangeClass('totalProfit')]"
+            >
+              {{ formatProfit(animatedTotalProfit, 'EUR') }}
             </span>
           </div>
           <div class="total-item total-unrealized-item">
             <span class="total-label">UNREALIZED</span>
-            <span class="total-value" :class="getProfitClass(totalUnrealizedProfit)">
-              {{ formatProfit(totalUnrealizedProfit, 'EUR') }}
+            <span
+              class="total-value"
+              :class="[
+                getProfitClass(totalUnrealizedProfit),
+                getTotalsChangeClass('totalUnrealizedProfit'),
+              ]"
+            >
+              {{ formatProfit(animatedTotalUnrealizedProfit, 'EUR') }}
             </span>
           </div>
           <div class="total-item total-price-change-item">
             <span class="total-label">{{ selectedPeriod.toUpperCase() }}</span>
-            <span class="total-value" :class="getProfitClass(totalChangeAmount)">
-              {{ formatCurrencyWithSign(Math.abs(totalChangeAmount), 'EUR') }} /
+            <span
+              class="total-value"
+              :class="[
+                getProfitClass(totalChangeAmount),
+                getTotalsChangeClass('totalChangeAmount'),
+              ]"
+            >
+              {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
               {{ Math.abs(totalChangePercent).toFixed(2) }}%
             </span>
           </div>
@@ -164,11 +192,16 @@
     </template>
 
     <template #cell-currentPrice="{ item }">
-      {{ formatCurrencyWithSign(item.currentPrice, item.baseCurrency) }}
+      <span :class="getChangeClass(item.id, 'currentPrice')">
+        {{ formatCurrencyWithSign(item.currentPrice, item.baseCurrency) }}
+      </span>
     </template>
 
     <template #cell-priceChange="{ item }">
-      <span v-html="formatPriceChange(item)"></span>
+      <span
+        :class="getChangeClass(item.id, 'priceChangeAmount')"
+        v-html="formatPriceChange(item)"
+      ></span>
     </template>
 
     <template #cell-totalInvestment="{ item }">
@@ -176,17 +209,33 @@
     </template>
 
     <template #cell-currentValue="{ item }">
-      {{ formatCurrencyWithSign(item.currentValue, item.baseCurrency) }}
+      <span :class="getChangeClass(item.id, 'currentValue')">
+        {{ formatCurrencyWithSign(item.currentValue, item.baseCurrency) }}
+      </span>
     </template>
 
     <template #cell-profit="{ item }">
-      <span :class="getProfitClass(item.profit || 0)" class="profit-display text-nowrap">
+      <span
+        :class="[
+          getProfitClass(item.profit || 0),
+          getChangeClass(item.id, 'profit'),
+          'profit-display',
+          'text-nowrap',
+        ]"
+      >
         {{ formatProfit(item.profit || 0, item.baseCurrency) }}
       </span>
     </template>
 
     <template #cell-unrealizedProfit="{ item }">
-      <span :class="getProfitClass(item.unrealizedProfit || 0)" class="profit-display text-nowrap">
+      <span
+        :class="[
+          getProfitClass(item.unrealizedProfit || 0),
+          getChangeClass(item.id, 'unrealizedProfit'),
+          'profit-display',
+          'text-nowrap',
+        ]"
+      >
         {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
       </span>
     </template>
@@ -210,7 +259,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import { PenLine } from 'lucide-vue-next'
 import DataTable from '../shared/data-table.vue'
 import { InstrumentDto } from '../../models/generated/domain-models'
@@ -223,6 +272,8 @@ import {
   formatPriceChange,
   formatAcronym,
 } from '../../utils/formatters'
+import { useValueChangeAnimation } from '../../composables/use-value-change-animation'
+import { useNumberTransition } from '../../composables/use-number-transition'
 
 interface Props {
   instruments: InstrumentDto[]
@@ -241,6 +292,10 @@ const props = withDefaults(defineProps<Props>(), {
 defineEmits<{
   edit: [instrument: InstrumentDto]
 }>()
+
+const instrumentsRef = toRef(props, 'instruments')
+const { getChangeClass, trackTotalsChange, getTotalsChangeClass } =
+  useValueChangeAnimation(instrumentsRef)
 
 const columns = computed(() =>
   instrumentColumns.map(col =>
@@ -293,6 +348,24 @@ const totalChangePercent = computed(() => {
   if (previousTotalValue === 0) return 0
   return (totalChangeAmount.value / previousTotalValue) * 100
 })
+
+watch(
+  [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount],
+  () => {
+    trackTotalsChange({
+      totalValue: totalValue.value,
+      totalProfit: totalProfit.value,
+      totalUnrealizedProfit: totalUnrealizedProfit.value,
+      totalChangeAmount: totalChangeAmount.value,
+    })
+  },
+  { deep: true }
+)
+
+const animatedTotalValue = useNumberTransition(totalValue)
+const animatedTotalProfit = useNumberTransition(totalProfit)
+const animatedTotalUnrealizedProfit = useNumberTransition(totalUnrealizedProfit)
+const animatedTotalChangeAmount = useNumberTransition(totalChangeAmount)
 
 const formatProfit = (amount: number, currency: string | undefined): string => {
   const sign = amount >= 0 ? '' : '-'
@@ -558,5 +631,39 @@ const calculatePortfolioWeight = (instrument: InstrumentDto): string => {
       display: none !important;
     }
   }
+}
+
+@keyframes pulse-increase {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(34, 197, 94, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes pulse-decrease {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.value-increase {
+  animation: pulse-increase 3s ease-in-out;
+  transition: background-color 3s ease-in-out;
+}
+
+.value-decrease {
+  animation: pulse-decrease 3s ease-in-out;
+  transition: background-color 3s ease-in-out;
 }
 </style>

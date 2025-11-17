@@ -5,8 +5,17 @@ import type {
 } from '../models/generated/domain-models'
 
 export const transactionsService = {
-  getAll: (platforms?: string[]) => {
-    const params = platforms && platforms.length > 0 ? { platforms: platforms.join(',') } : {}
+  getAll: (platforms?: string[], fromDate?: string, untilDate?: string) => {
+    const params: Record<string, string> = {}
+    if (platforms && platforms.length > 0) {
+      params.platforms = platforms.join(',')
+    }
+    if (fromDate) {
+      params.fromDate = fromDate
+    }
+    if (untilDate) {
+      params.untilDate = untilDate
+    }
     return httpClient
       .get<TransactionResponseDto[]>('/transactions', { params })
       .then(res => res.data)

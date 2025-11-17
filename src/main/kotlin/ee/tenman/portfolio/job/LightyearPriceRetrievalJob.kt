@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.DayOfWeek
-import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -31,7 +30,7 @@ class LightyearPriceRetrievalJob(
   private val log = LoggerFactory.getLogger(javaClass)
   private val estonianZone = ZoneId.of("Europe/Tallinn")
 
-  @Scheduled(cron = "*/5 * 8-22 * * MON-FRI", zone = "Europe/Tallinn")
+  @Scheduled(cron = "0/3 * 8-22 * * MON-FRI", zone = "Europe/Tallinn", fixedDelay = 240000)
   fun runJob() {
     if (!shouldRun()) {
       return
@@ -45,25 +44,12 @@ class LightyearPriceRetrievalJob(
   private fun shouldRun(): Boolean {
     val estonianTime = ZonedDateTime.now(clock.withZone(estonianZone))
     val dayOfWeek = estonianTime.dayOfWeek
-    val currentTime = estonianTime.toLocalTime()
-    val currentSecond = currentTime.second
 
     if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
       return false
     }
 
-    val preMarketStart = LocalTime.of(8, 30)
-    val mainMarketStart = LocalTime.of(10, 0)
-    val mainMarketEnd = LocalTime.of(18, 30)
-    val postMarketEnd = LocalTime.of(23, 0)
-
-    return when {
-      currentTime.isBefore(preMarketStart) -> false
-      !currentTime.isBefore(postMarketEnd) -> false
-      currentTime.isBefore(mainMarketStart) -> true
-      currentTime.isBefore(mainMarketEnd) -> currentSecond in listOf(5, 15, 25, 35, 45, 55)
-      else -> true
-    }
+    return true
   }
 
   override fun execute() {
