@@ -192,7 +192,6 @@ class InstrumentService(
   fun getAllInstrumentsWithoutFiltering(): List<Instrument> = instrumentRepository.findAll()
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [INSTRUMENT_CACHE], key = "'allInstruments'")
   fun getAllInstruments(): List<Instrument> = getAllInstruments(null, null)
 
   @Transactional(readOnly = true)
