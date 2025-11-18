@@ -35,6 +35,6 @@ export const lightyearAdapter: ServiceAdapter = {
   path: '/lightyear/fetch',
   method: 'GET',
   serviceName: 'Lightyear',
-  middleware: [createRateLimiter({ max: 120 })],
+  middleware: [createRateLimiter({ max: 240 })],
   handler,
 }
