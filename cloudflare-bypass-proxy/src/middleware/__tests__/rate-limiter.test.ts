@@ -9,7 +9,7 @@ describe('Rate Limiter', () => {
     app = express()
   })
 
-  it('should use default rate limit configuration (60 requests per minute)', async () => {
+  it('should use default rate limit configuration (120 requests per minute)', async () => {
     app.get('/test', createRateLimiter(), (req, res) => {
       res.json({ success: true })
     })
@@ -17,7 +17,7 @@ describe('Rate Limiter', () => {
     const response = await request(app).get('/test')
 
     expect(response.status).toBe(200)
-    expect(response.headers['ratelimit-limit']).toBe('60')
+    expect(response.headers['ratelimit-limit']).toBe('120')
     expect(response.headers['ratelimit-remaining']).toBeDefined()
   })
 
