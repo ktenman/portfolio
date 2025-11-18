@@ -6,55 +6,22 @@ A lightweight TypeScript proxy service that enables programmatic access to Cloud
 
 ## The Problem
 
-Investment platforms like **Trading212**, **WisdomTree**, and **Lightyear** don't provide public APIs for:
-
-- Real-time stock/ETF prices
-- Portfolio holdings data
-- ETF composition and holdings breakdowns
-
-Without this data, portfolio management systems cannot:
-
-- Calculate accurate portfolio valuations
-- Track performance metrics (XIRR, returns)
-- Analyze ETF exposures
-- Generate daily portfolio summaries
-
-**Simple web scraping doesn't work** because these platforms use Cloudflare protection that detects and blocks automated requests through sophisticated TLS fingerprinting.
-
-### Why Direct HTTP Requests Fail
-
-When a typical backend (Java, Python, Node.js) tries to scrape these sites:
+Investment platforms like **Trading212**, **WisdomTree**, and **Lightyear** don't provide public APIs. Direct web scraping fails because Cloudflare detects and blocks automated requests through TLS fingerprinting:
 
 ```bash
 curl https://trading212.com/prices/...
-# Result: 403 Forbidden or Cloudflare challenge page
+# Result: 403 Forbidden
 ```
-
-**Cloudflare detects bots by analyzing:**
-
-1. **TLS Fingerprint** - Unique cipher suites, extensions, and handshake patterns
-2. **HTTP/2 Frame Order** - Different from real browsers
-3. **Missing Browser Behaviors** - No JavaScript execution, suspicious headers
-4. **User Agent Mismatches** - Easy to fake headers, but TLS stack reveals truth
 
 ## The Solution
 
-This proxy uses **`curl-impersonate`** to clone a real browser's TLS stack:
+This proxy uses **`curl-impersonate`** to clone Firefox 117's TLS stack, bypassing Cloudflare:
 
 ```
-Portfolio Backend → Cloudflare Bypass Proxy → curl-impersonate (Firefox 117 TLS) → ✅ Cloudflare → Website
+Portfolio Backend → Proxy → curl-impersonate (Firefox 117 TLS) → ✅ Cloudflare → Website
 ```
 
-**How it works:**
-
-1. Backend sends HTTP request to proxy (port 3000)
-2. Proxy executes `curl_ff117` with Firefox 117's exact TLS fingerprint
-3. Cloudflare sees a "legitimate" Firefox browser and allows the request
-4. Proxy returns scraped HTML/JSON data to backend
-
-**Result:** Reliable, automated access to financial data without detection.
-
-📊 **See detailed flow diagram:** [`docs/cloudflare-bypass-flow.puml`](docs/cloudflare-bypass-flow.puml)
+📊 **See detailed flow:** [`docs/cloudflare-bypass-flow.puml`](docs/cloudflare-bypass-flow.puml)
 
 ## Quick Start
 
@@ -195,35 +162,12 @@ Each adapter handles a specific platform with custom parsing logic:
 
 ## Why This Approach?
 
-### Comparison with Alternatives
-
 | Approach                    | Memory  | Reliability   | Speed  | Complexity |
 | --------------------------- | ------- | ------------- | ------ | ---------- |
 | **curl-impersonate (this)** | 30-50MB | ✅ High       | ~220ms | Low        |
 | **Selenium/Puppeteer**      | 500MB+  | ⚠️ Flaky      | ~3-5s  | High       |
 | **Third-party APIs**        | N/A     | ⚠️ Dependency | Varies | Medium     |
 | **Direct HTTP requests**    | 10MB    | ❌ Blocked    | N/A    | Low        |
-
-**Why not Selenium/Puppeteer?**
-
-- Requires full browser (Chrome/Firefox) with GUI rendering
-- High memory footprint (500MB+ per instance)
-- Unreliable in production (requires daily restarts in this project)
-- Slow due to browser startup and page rendering overhead
-
-**Why not third-party scraping APIs?**
-
-- Expensive for frequent requests ($0.001-0.01 per request)
-- Rate limits and quotas
-- External dependency and vendor lock-in
-- Privacy concerns with financial data
-
-**Why curl-impersonate wins:**
-
-- Lightweight (comparable to standard HTTP client)
-- Reliable (no browser crashes or memory leaks)
-- Fast (direct HTTP request with TLS spoofing)
-- Self-hosted (no external dependencies)
 
 ## Real-World Impact
 
