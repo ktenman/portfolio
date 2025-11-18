@@ -1,0 +1,148 @@
+@startuml cloudflare-bypass-flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ActorBorderColor #333333
+skinparam ParticipantBorderColor #2C3E50
+skinparam ParticipantBackgroundColor #ECF0F1
+skinparam SequenceLifeLineBorderColor #2C3E50
+skinparam NoteBackgroundColor #FEF5E7
+skinparam NoteBorderColor #F39C12
+
+title Cloudflare Bypass Proxy - Request Flow\n
+
+actor "Portfolio\nBackend\n(Spring Boot)" as Backend
+participant "Cloudflare Bypass\nProxy\n(Node.js + Express)" as Proxy
+participant "curl-impersonate\n(curl_ff117)" as Curl
+participant "Cloudflare\nProtection" as Cloudflare
+participant "Protected Website\n(Trading212/WisdomTree/\nLightyear)" as Website
+
+note over Backend, Website
+  **Purpose:** Bypass Cloudflare bot detection by mimicking legitimate browser TLS fingerprints
+  **Problem:** Direct HTTP requests from backend are detected as bots and blocked
+  **Solution:** Use curl-impersonate with Firefox 117 TLS fingerprint to appear as real browser
+end note
+
+== Successful Request Flow with Proxy ==
+
+Backend -> Proxy: HTTP GET /prices?tickers=WTAI,SPYL\n(Spring Boot HTTP Client)
+activate Proxy
+
+note right of Proxy
+  **Adapter Pattern**
+  Routes request to appropriate adapter:
+  - Trading212: /prices (JSON)
+  - WisdomTree: /wisdomtree/holdings/:id (HTML)
+  - Lightyear: /lightyear/* (JSON/HTML)
+end note
+
+Proxy -> Curl: execFile('/usr/local/bin/curl_ff117', [args])
+activate Curl
+
+note right of Curl
+  **curl-impersonate-ff117**
+  Creates TLS fingerprint matching:
+  - Firefox 117 browser
+  - Realistic cipher suites
+  - Browser-like TLS extensions
+  - HTTP/2 connection
+end note
+
+Curl -> Cloudflare: HTTPS Request with Firefox 117 TLS fingerprint
+activate Cloudflare
+
+note right of Cloudflare
+  **Cloudflare Security Checks**
+  1. TLS fingerprint analysis ✓
+  2. HTTP headers validation ✓
+  3. Browser fingerprinting ✓
+  4. Challenge detection (bypassed)
+
+  **Result:** Appears as legitimate browser
+end note
+
+Cloudflare -> Website: Forward request (passed security)
+activate Website
+
+Website --> Cloudflare: HTTP Response\n(HTML or JSON)
+deactivate Website
+
+Cloudflare --> Curl: Response data
+deactivate Cloudflare
+
+Curl --> Proxy: stdout (raw response)
+deactivate Curl
+
+note left of Proxy
+  **Response Processing**
+  - Trading212: Parse JSON prices
+  - WisdomTree: Return raw HTML
+  - Lightyear: Parse JSON/HTML
+
+  **Metrics:** Track requests, errors, duration
+end note
+
+Proxy --> Backend: JSON Response\n{"data": {"WTAI": {"b": 74.47}}}
+deactivate Proxy
+
+== Failed Request Flow without Proxy (Comparison) ==
+
+Backend -> Cloudflare: Direct HTTPS Request\n(Standard Java HTTP Client)
+activate Cloudflare
+
+note right of Cloudflare
+  **Detection Points**
+  ❌ TLS fingerprint: Java/Kotlin client
+  ❌ Missing browser headers
+  ❌ No JavaScript execution
+  ❌ Suspicious user agent
+
+  **Result:** Blocked as bot
+end note
+
+Cloudflare --> Backend: HTTP 403 Forbidden\nor Challenge page
+deactivate Cloudflare
+
+note over Backend
+  **Typical Error Responses:**
+  - 403 Forbidden
+  - 503 Service Unavailable
+  - JavaScript challenge page
+  - CAPTCHA challenge
+end note
+
+== Technical Details ==
+
+note over Proxy
+  **Configuration**
+  PORT: 3000 (default)
+  CURL_BINARY: /usr/local/bin/curl_ff117
+  Timeout: 10 seconds
+  Max Buffer: 1MB
+
+  **Performance**
+  Response Time: ~220ms (warm)
+  Memory Usage: 30-50MB
+  Concurrent Requests: Supported (async/await)
+end note
+
+note over Curl
+  **TLS Fingerprinting**
+  curl-impersonate clones browser TLS stacks:
+  - Firefox: curl_ff117 (Firefox 117)
+  - Chrome: curl_chrome116 (Chrome 116)
+
+  **Why it works:**
+  Cloudflare detects bots by analyzing:
+  1. TLS cipher suites order
+  2. TLS extensions (SNI, ALPN, etc.)
+  3. HTTP/2 frame order
+  4. Header patterns
+
+  curl-impersonate replicates exact browser behavior
+end note
+
+@enduml
