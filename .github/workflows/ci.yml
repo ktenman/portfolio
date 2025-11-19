@@ -121,9 +121,6 @@ jobs:
       - name: Install frontend dependencies
         if: matrix.test-type == 'frontend-unit'
         run: npm ci
-      - name: Set up Docker Compose
-        if: matrix.test-type == 'e2e'
-        uses: ndeloof/install-compose-action@v0.0.1
       - name: Cache Docker images
         if: matrix.test-type == 'e2e'
         uses: ScribeMD/docker-cache@0.5.0
