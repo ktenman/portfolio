@@ -26,6 +26,7 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 import java.util.stream.Stream
 
@@ -50,7 +51,7 @@ class InvestmentMetricsServiceTest {
     ).apply {
       id = 1L
     }
-    investmentMetricsService = InvestmentMetricsService(dailyPriceService, transactionService)
+    investmentMetricsService = InvestmentMetricsService(dailyPriceService, transactionService, Clock.systemDefaultZone())
 
     every { transactionService.calculateTransactionProfits(any(), any()) } answers {
       val transactions = firstArg<List<PortfolioTransaction>>()

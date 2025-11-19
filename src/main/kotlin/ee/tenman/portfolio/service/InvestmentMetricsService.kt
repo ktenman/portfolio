@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.min
@@ -17,6 +18,7 @@ import kotlin.math.min
 class InvestmentMetricsService(
   private val dailyPriceService: DailyPriceService,
   private val transactionService: TransactionService,
+  private val clock: Clock,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(InvestmentMetricsService::class.java)
@@ -60,6 +62,8 @@ class InvestmentMetricsService(
     var totalProfit: BigDecimal = BigDecimal.ZERO,
     val xirrTransactions: MutableList<Transaction> = mutableListOf(),
   )
+
+  private fun isToday(date: LocalDate): Boolean = date.isEqual(LocalDate.now(clock))
 
   fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> {
     var quantity = BigDecimal.ZERO
@@ -189,17 +193,8 @@ class InvestmentMetricsService(
         .filter { it.transactionType == TransactionType.SELL }
         .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
 
-    val unrealizedProfit =
-      transactions
-        .filter { it.remainingQuantity > BigDecimal.ZERO }
-        .sumOf { it.unrealizedProfit ?: BigDecimal.ZERO }
-
-    val profit =
-      if (unrealizedProfit != BigDecimal.ZERO || realizedProfit != BigDecimal.ZERO) {
-        realizedProfit.add(unrealizedProfit)
-      } else {
-        currentValue.subtract(totalInvestment)
-      }
+    val unrealizedProfit = currentValue.subtract(totalInvestment)
+    val profit = realizedProfit.add(unrealizedProfit)
 
     val xirrTransactions = buildXirrTransactions(transactions, currentValue, calculationDate)
     val xirr = calculateAdjustedXirr(xirrTransactions, calculationDate)
@@ -266,13 +261,14 @@ class InvestmentMetricsService(
       .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
 
     val investment = currentHoldings.multiply(averageCost)
+
     val currentValue =
-      if (currentHoldings > BigDecimal.ZERO) {
-      val price = dailyPriceService.getPrice(instrument, date)
-      currentHoldings.multiply(price)
-    } else {
-      BigDecimal.ZERO
+      when {
+      currentHoldings <= BigDecimal.ZERO -> BigDecimal.ZERO
+      isToday(date) -> currentHoldings.multiply(instrument.currentPrice ?: BigDecimal.ZERO)
+      else -> currentHoldings.multiply(dailyPriceService.getPrice(instrument, date))
     }
+
     val unrealizedProfit = currentValue.subtract(investment)
 
     if (currentValue > BigDecimal.ZERO || realizedProfit > BigDecimal.ZERO) {
@@ -289,19 +285,24 @@ class InvestmentMetricsService(
   ) {
     val netQuantity = calculateNetQuantity(transactions)
 
-    val currentValue =
-      if (netQuantity > BigDecimal.ZERO) {
-      try {
-        val price = dailyPriceService.getPrice(instrument, date)
-        netQuantity.multiply(price)
-      } catch (e: NoSuchElementException) {
-        log.warn("Skipping ${instrument.symbol} on $date: ${e.message}")
-        return
+    if (netQuantity <= BigDecimal.ZERO) {
+      val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, BigDecimal.ZERO)
+      if (realizedProfit > BigDecimal.ZERO) {
+        updateMetricsWithSeparateProfits(metrics, BigDecimal.ZERO, realizedProfit, unrealizedProfit)
+        addXirrTransactions(metrics.xirrTransactions, transactions, BigDecimal.ZERO, date)
       }
-    } else {
-      BigDecimal.ZERO
+      return
     }
 
+    val price =
+      try {
+      dailyPriceService.getPrice(instrument, date)
+    } catch (e: NoSuchElementException) {
+      log.warn("Skipping ${instrument.symbol} on $date: ${e.message}")
+      return
+    }
+
+    val currentValue = netQuantity.multiply(price)
     val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, currentValue)
 
     if (currentValue > BigDecimal.ZERO || realizedProfit > BigDecimal.ZERO) {
