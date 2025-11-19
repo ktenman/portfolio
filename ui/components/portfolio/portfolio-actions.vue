@@ -12,7 +12,7 @@
         role="status"
         aria-hidden="true"
       ></span>
-      {{ isRecalculating ? 'Recalculating...' : 'Recalculate All Data' }}
+      {{ isRecalculating ? 'Recalculating...' : 'Recalculate Data' }}
     </button>
   </div>
 </template>
