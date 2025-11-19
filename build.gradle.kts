@@ -189,6 +189,8 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
       "ee.tenman.portfolio.dto.InstrumentDto",
       "ee.tenman.portfolio.dto.TransactionRequestDto",
       "ee.tenman.portfolio.dto.TransactionResponseDto",
+      "ee.tenman.portfolio.dto.TransactionSummaryDto",
+      "ee.tenman.portfolio.dto.TransactionsWithSummaryDto",
       "ee.tenman.portfolio.dto.PortfolioSummaryDto",
       "ee.tenman.portfolio.dto.EtfHoldingBreakdownDto",
       "ee.tenman.portfolio.domain.Platform",

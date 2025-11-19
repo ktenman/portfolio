@@ -157,10 +157,14 @@ class PortfolioTransactionControllerIT {
     mockMvc
       .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].id").value(sortedTransactions[0].id))
-      .andExpect(jsonPath("$[1].id").value(sortedTransactions[1].id))
-      .andExpect(jsonPath("$[2].id").value(sortedTransactions[2].id))
+      .andExpect(jsonPath("$.transactions").isArray)
+      .andExpect(jsonPath("$.transactions[0].id").value(sortedTransactions[0].id))
+      .andExpect(jsonPath("$.transactions[1].id").value(sortedTransactions[1].id))
+      .andExpect(jsonPath("$.transactions[2].id").value(sortedTransactions[2].id))
+      .andExpect(jsonPath("$.summary").exists())
+      .andExpect(jsonPath("$.summary.totalRealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalUnrealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalProfit").exists())
   }
 
   @Test
@@ -293,10 +297,14 @@ class PortfolioTransactionControllerIT {
     mockMvc
       .perform(get("/api/transactions?platforms=BINANCE").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$.length()").value(2))
-      .andExpect(jsonPath("$[0].platform").value("BINANCE"))
-      .andExpect(jsonPath("$[1].platform").value("BINANCE"))
+      .andExpect(jsonPath("$.transactions").isArray)
+      .andExpect(jsonPath("$.transactions.length()").value(2))
+      .andExpect(jsonPath("$.transactions[0].platform").value("BINANCE"))
+      .andExpect(jsonPath("$.transactions[1].platform").value("BINANCE"))
+      .andExpect(jsonPath("$.summary").exists())
+      .andExpect(jsonPath("$.summary.totalRealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalUnrealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalProfit").exists())
   }
 
   @Test
@@ -343,12 +351,16 @@ class PortfolioTransactionControllerIT {
     mockMvc
       .perform(get("/api/transactions?platforms=BINANCE,TRADING212").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$.length()").value(2))
-      .andExpect(jsonPath("$[?(@.platform == 'BINANCE')]").exists())
-      .andExpect(jsonPath("$[?(@.platform == 'TRADING212')]").exists())
-      .andExpect(jsonPath("$[?(@.platform == 'LIGHTYEAR')]").doesNotExist())
-      .andExpect(jsonPath("$[?(@.platform == 'SWEDBANK')]").doesNotExist())
+      .andExpect(jsonPath("$.transactions").isArray)
+      .andExpect(jsonPath("$.transactions.length()").value(2))
+      .andExpect(jsonPath("$.transactions[?(@.platform == 'BINANCE')]").exists())
+      .andExpect(jsonPath("$.transactions[?(@.platform == 'TRADING212')]").exists())
+      .andExpect(jsonPath("$.transactions[?(@.platform == 'LIGHTYEAR')]").doesNotExist())
+      .andExpect(jsonPath("$.transactions[?(@.platform == 'SWEDBANK')]").doesNotExist())
+      .andExpect(jsonPath("$.summary").exists())
+      .andExpect(jsonPath("$.summary.totalRealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalUnrealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalProfit").exists())
   }
 
   @Test
@@ -369,8 +381,12 @@ class PortfolioTransactionControllerIT {
     mockMvc
       .perform(get("/api/transactions?platforms=INVALID_PLATFORM").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$.length()").value(0))
+      .andExpect(jsonPath("$.transactions").isArray)
+      .andExpect(jsonPath("$.transactions.length()").value(0))
+      .andExpect(jsonPath("$.summary").exists())
+      .andExpect(jsonPath("$.summary.totalRealizedProfit").value(0))
+      .andExpect(jsonPath("$.summary.totalUnrealizedProfit").value(0))
+      .andExpect(jsonPath("$.summary.totalProfit").value(0))
   }
 
   @Test
@@ -410,8 +426,12 @@ class PortfolioTransactionControllerIT {
     mockMvc
       .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$.length()").value(transactions.size))
+      .andExpect(jsonPath("$.transactions").isArray)
+      .andExpect(jsonPath("$.transactions.length()").value(transactions.size))
+      .andExpect(jsonPath("$.summary").exists())
+      .andExpect(jsonPath("$.summary.totalRealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalUnrealizedProfit").exists())
+      .andExpect(jsonPath("$.summary.totalProfit").exists())
   }
 
   @Test

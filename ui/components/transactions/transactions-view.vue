@@ -113,7 +113,6 @@ import { useLocalStorage } from '@vueuse/core'
 import { Dropdown } from 'bootstrap'
 import TransactionTable from './transaction-table.vue'
 import { transactionsService } from '../../services/transactions-service'
-import { instrumentsService } from '../../services/instruments-service'
 import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 
@@ -138,12 +137,12 @@ watch([fromDate, untilDate], () => {
   }
 })
 
-const { data: allTransactions } = useQuery({
+const { data: allTransactionsResponse } = useQuery({
   queryKey: ['transactions'],
   queryFn: () => transactionsService.getAll(),
 })
 
-const { data: transactions, isLoading } = useQuery({
+const { data: transactionsResponse, isLoading } = useQuery({
   queryKey: ['transactions', selectedPlatforms, fromDate, untilDate],
   queryFn: () =>
     transactionsService.getAll(
@@ -153,19 +152,13 @@ const { data: transactions, isLoading } = useQuery({
     ),
 })
 
-const { data: instruments } = useQuery({
-  queryKey: ['instruments', selectedPlatforms],
-  queryFn: () =>
-    instrumentsService.getAll(
-      selectedPlatforms.value.length > 0 ? selectedPlatforms.value : undefined
-    ),
-})
+const transactions = computed(() => transactionsResponse.value?.transactions)
 
 const availablePlatforms = computed(() => {
-  if (!allTransactions.value) return []
+  if (!allTransactionsResponse.value) return []
 
   const platformSet = new Set<string>()
-  allTransactions.value.forEach(transaction => {
+  allTransactionsResponse.value.transactions.forEach(transaction => {
     if (transaction.platform) {
       platformSet.add(transaction.platform)
     }
@@ -175,17 +168,15 @@ const availablePlatforms = computed(() => {
 })
 
 const realizedProfitSum = computed(() => {
-  if (!transactions.value) return 0
-  return transactions.value.reduce((sum, t) => sum + (t.realizedProfit || 0), 0)
+  return transactionsResponse.value?.summary.totalRealizedProfit || 0
 })
 
 const unrealizedProfitSum = computed(() => {
-  if (!instruments.value) return 0
-  return instruments.value.reduce((sum, instrument) => sum + (instrument.unrealizedProfit || 0), 0)
+  return transactionsResponse.value?.summary.totalUnrealizedProfit || 0
 })
 
 const totalProfitSum = computed(() => {
-  return realizedProfitSum.value + unrealizedProfitSum.value
+  return transactionsResponse.value?.summary.totalProfit || 0
 })
 
 const isPlatformSelected = (platform: string): boolean => {

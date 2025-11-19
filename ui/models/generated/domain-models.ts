@@ -1,5 +1,5 @@
 /* tslint:disable */
- 
+/* eslint-disable */
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -53,6 +53,17 @@ export interface TransactionResponseDto {
     remainingQuantity: number;
     commission: number;
     currency: string;
+}
+
+export interface TransactionSummaryDto {
+    totalRealizedProfit: number;
+    totalUnrealizedProfit: number;
+    totalProfit: number;
+}
+
+export interface TransactionsWithSummaryDto {
+    transactions: TransactionResponseDto[];
+    summary: TransactionSummaryDto;
 }
 
 export interface PortfolioSummaryDto {
