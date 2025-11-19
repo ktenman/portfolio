@@ -81,13 +81,13 @@ jobs:
         run: |
           ssh githubuser@fov.ee "\
             echo 'Stopping existing containers...' && \
-            docker-compose down --remove-orphans || true && \
+            docker compose down --remove-orphans || true && \
             echo 'Removing any conflicting containers...' && \
             docker rm -f postgres redis minio backend frontend app auth captcha-solver cloudflare-bypass-proxy market_price_tracker restart_scheduler healthcheck 2>/dev/null || true && \
             echo 'Pulling latest images...' && \
-            docker-compose pull && \
+            docker compose pull && \
             echo 'Starting containers...' && \
-            docker-compose up -d --build --force-recreate --remove-orphans && \
+            docker compose up -d --build --force-recreate --remove-orphans && \
             echo 'Pruning unused Docker images...' && \
             docker image prune -af"
       - name: Cleanup on runner
