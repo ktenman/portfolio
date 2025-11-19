@@ -146,14 +146,24 @@ jobs:
           docker-compose -f docker-compose.e2e-minimal.yml ps
       - name: Run backend unit tests
         if: matrix.test-type == 'backend-unit'
-        run: ./gradlew test --info -x bootJar --build-cache
+        run: ./gradlew test --info -x bootJar --build-cache --configuration-cache
+      - name: Build JAR artifact
+        if: matrix.test-type == 'backend-unit'
+        run: ./gradlew bootJar --build-cache --configuration-cache
+      - name: Upload backend JAR
+        if: matrix.test-type == 'backend-unit'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: build/libs/*.jar
+          retention-days: 1
       - name: Run E2E tests
         if: matrix.test-type == 'e2e'
         uses: Wandalen/wretry.action@v3.8.0
         with:
           command: |
             export E2E=true
-            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
+            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache --configuration-cache
           attempt_limit: 3
           attempt_delay: 30000
       - name: Run frontend unit tests
@@ -215,8 +225,8 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
-    needs: [lint, test]
-    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    needs: [lint]
+    if: always() && (needs.lint.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -225,7 +235,7 @@ jobs:
       matrix:
         include:
           - name: backend
-            dockerfile: ./src/Dockerfile
+            dockerfile: ./src/Dockerfile.ci
             image: ktenman/portfolio-be
             context: .
           - name: frontend
@@ -245,6 +255,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
+      - name: Download backend JAR
+        if: matrix.name == 'backend'
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: build/libs/
       - name: Set build info
         id: build_info
         run: |
@@ -267,14 +283,16 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ matrix.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
           build-args: |
             BUILD_HASH=${{ env.COMMIT_HASH }}
             BUILD_TIME=${{ env.BUILD_TIME }}
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
-    needs: build-push
-    if: always() && (needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
+    needs: [test, build-push]
+    if: always() && (needs.test.result == 'success' && needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true'))
     permissions:
       contents: read
       deployments: write
