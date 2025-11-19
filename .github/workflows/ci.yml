@@ -225,8 +225,8 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
-    needs: [lint]
-    if: always() && (needs.lint.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex-ci-improvements' || github.ref == 'refs/heads/gemini-ci-improvements') || github.event_name == 'workflow_dispatch')
+    needs: [lint, test]
+    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex-ci-improvements' || github.ref == 'refs/heads/gemini-ci-improvements') || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -292,7 +292,7 @@ jobs:
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
     needs: [test, build-push]
-    if: always() && (needs.test.result == 'success' && needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main')
+    if: always() && (needs.test.result == 'success' && needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex-ci-improvements' || github.ref == 'refs/heads/gemini-ci-improvements'))
     permissions:
       contents: read
       deployments: write
