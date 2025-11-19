@@ -2,6 +2,7 @@ import { httpClient } from '../utils/http-client'
 import type {
   TransactionResponseDto,
   TransactionRequestDto,
+  TransactionsWithSummaryDto,
 } from '../models/generated/domain-models'
 
 export const transactionsService = {
@@ -17,7 +18,7 @@ export const transactionsService = {
       params.untilDate = untilDate
     }
     return httpClient
-      .get<TransactionResponseDto[]>('/transactions', { params })
+      .get<TransactionsWithSummaryDto>('/transactions', { params })
       .then(res => res.data)
   },
 
