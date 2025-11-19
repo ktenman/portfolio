@@ -146,10 +146,10 @@ jobs:
           docker-compose -f docker-compose.e2e-minimal.yml ps
       - name: Run backend unit tests
         if: matrix.test-type == 'backend-unit'
-        run: ./gradlew test --info -x bootJar --build-cache --configuration-cache
+        run: ./gradlew test --info -x bootJar --build-cache
       - name: Build JAR artifact
         if: matrix.test-type == 'backend-unit'
-        run: ./gradlew bootJar --build-cache --configuration-cache
+        run: ./gradlew bootJar --build-cache
       - name: Upload backend JAR
         if: matrix.test-type == 'backend-unit'
         uses: actions/upload-artifact@v4
@@ -163,7 +163,7 @@ jobs:
         with:
           command: |
             export E2E=true
-            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache --configuration-cache
+            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
           attempt_limit: 3
           attempt_delay: 30000
       - name: Run frontend unit tests
