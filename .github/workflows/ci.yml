@@ -288,24 +288,60 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha,format=long
-      - name: Build and push ${{ matrix.name }} image (with retry)
-        uses: Wandalen/wretry.action@v3.8.0
+      - name: Build and push ${{ matrix.name }} image
+        id: docker_build
+        uses: docker/build-push-action@v6.18.0
+        continue-on-error: true
         with:
-          attempt_limit: 3
-          attempt_delay: 15000
-          action: docker/build-push-action@v6.18.0
-          with: |
-            context: ${{ matrix.context }}
-            file: ${{ matrix.dockerfile }}
-            platforms: linux/amd64
-            push: true
-            tags: ${{ steps.meta.outputs.tags }}
-            labels: ${{ steps.meta.outputs.labels }}
-            cache-from: type=gha,scope=${{ matrix.name }}
-            cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-            build-args: |
-              BUILD_HASH=${{ env.COMMIT_HASH }}
-              BUILD_TIME=${{ env.BUILD_TIME }}
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          build-args: |
+            BUILD_HASH=${{ env.COMMIT_HASH }}
+            BUILD_TIME=${{ env.BUILD_TIME }}
+      - name: Wait before retry
+        if: steps.docker_build.outcome == 'failure'
+        run: sleep 15
+      - name: Retry build and push ${{ matrix.name }} image (attempt 2)
+        if: steps.docker_build.outcome == 'failure'
+        id: docker_build_retry_1
+        uses: docker/build-push-action@v6.18.0
+        continue-on-error: true
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          build-args: |
+            BUILD_HASH=${{ env.COMMIT_HASH }}
+            BUILD_TIME=${{ env.BUILD_TIME }}
+      - name: Wait before final retry
+        if: steps.docker_build.outcome == 'failure' && steps.docker_build_retry_1.outcome == 'failure'
+        run: sleep 15
+      - name: Retry build and push ${{ matrix.name }} image (attempt 3 - final)
+        if: steps.docker_build.outcome == 'failure' && steps.docker_build_retry_1.outcome == 'failure'
+        uses: docker/build-push-action@v6.18.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          build-args: |
+            BUILD_HASH=${{ env.COMMIT_HASH }}
+            BUILD_TIME=${{ env.BUILD_TIME }}
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
