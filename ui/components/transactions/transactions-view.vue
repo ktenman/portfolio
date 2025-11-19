@@ -113,6 +113,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { Dropdown } from 'bootstrap'
 import TransactionTable from './transaction-table.vue'
 import { transactionsService } from '../../services/transactions-service'
+import { instrumentsService } from '../../services/instruments-service'
 import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 
@@ -152,6 +153,14 @@ const { data: transactions, isLoading } = useQuery({
     ),
 })
 
+const { data: instruments } = useQuery({
+  queryKey: ['instruments', selectedPlatforms],
+  queryFn: () =>
+    instrumentsService.getAll(
+      selectedPlatforms.value.length > 0 ? selectedPlatforms.value : undefined
+    ),
+})
+
 const availablePlatforms = computed(() => {
   if (!allTransactions.value) return []
 
@@ -171,8 +180,8 @@ const realizedProfitSum = computed(() => {
 })
 
 const unrealizedProfitSum = computed(() => {
-  if (!transactions.value) return 0
-  return transactions.value.reduce((sum, t) => sum + (t.unrealizedProfit || 0), 0)
+  if (!instruments.value) return 0
+  return instruments.value.reduce((sum, instrument) => sum + (instrument.unrealizedProfit || 0), 0)
 })
 
 const totalProfitSum = computed(() => {
