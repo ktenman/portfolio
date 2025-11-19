@@ -59,6 +59,7 @@ class PortfolioTransactionController(
   ): List<TransactionResponseDto> {
     val platformList = platforms?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
     val transactions = portfolioTransactionService.getAllTransactions(platformList, fromDate, untilDate)
+    portfolioTransactionService.calculateTransactionProfits(transactions)
     return transactions.map { TransactionResponseDto.fromEntity(it) }
   }
 
