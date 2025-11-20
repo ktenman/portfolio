@@ -100,6 +100,12 @@
           {{ formatCurrency(totalProfitSum) }}
         </div>
       </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Invested</div>
+        <div class="stat-value">
+          {{ formatCurrency(totalInvested) }}
+        </div>
+      </div>
     </div>
 
     <transaction-table :is-loading="isLoading" :transactions="transactions || []" />
@@ -177,6 +183,10 @@ const unrealizedProfitSum = computed(() => {
 
 const totalProfitSum = computed(() => {
   return transactionsResponse.value?.summary.totalProfit || 0
+})
+
+const totalInvested = computed(() => {
+  return transactionsResponse.value?.summary.totalInvested || 0
 })
 
 const isPlatformSelected = (platform: string): boolean => {
