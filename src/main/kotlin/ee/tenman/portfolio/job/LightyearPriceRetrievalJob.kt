@@ -39,7 +39,7 @@ class LightyearPriceRetrievalJob(
     log.info("LightyearPriceRetrievalJob initialized. Will start polling after 4 minutes.")
   }
 
-  @Scheduled(cron = "0/1 * 8-22 * * MON-FRI", zone = "Europe/Tallinn")
+  @Scheduled(cron = "0/5 * 7-23 * * MON-FRI", zone = "Europe/Tallinn")
   fun runJob() {
     if (!shouldRun()) {
       return
