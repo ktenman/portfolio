@@ -79,11 +79,22 @@ class PortfolioTransactionController(
         .filter { it.transactionType == TransactionType.SELL }
         .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
 
+    val totalInvested =
+      transactions.sumOf { transaction ->
+        val transactionCost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
+        if (transaction.transactionType == TransactionType.BUY) {
+          transactionCost
+        } else {
+          transactionCost.negate()
+        }
+      }
+
     val summary =
       TransactionSummaryDto(
         totalRealizedProfit = totalRealizedProfit,
         totalUnrealizedProfit = totalUnrealizedProfit,
         totalProfit = totalRealizedProfit + totalUnrealizedProfit,
+        totalInvested = totalInvested,
       )
 
     return TransactionsWithSummaryDto(
