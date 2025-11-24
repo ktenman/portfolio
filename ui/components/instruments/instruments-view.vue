@@ -119,7 +119,7 @@ watch(
 )
 
 const {
-  data: items,
+  data: rawItems,
   isLoading,
   isError,
   error,
@@ -135,6 +135,18 @@ const {
     return instrumentsService.getAll(selectedPlatforms.value, selectedPeriod.value)
   },
   refetchInterval: 2000,
+})
+
+const items = computed(() => {
+  if (!rawItems.value) return []
+
+  const sorted = [...rawItems.value].sort((a, b) => {
+    const valueA = a.currentValue || 0
+    const valueB = b.currentValue || 0
+    return valueB - valueA
+  })
+
+  return sorted
 })
 
 const saveMutation = useMutation({

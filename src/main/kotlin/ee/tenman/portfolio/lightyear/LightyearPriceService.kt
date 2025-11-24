@@ -20,6 +20,9 @@ class LightyearPriceService(
         "WTAI:MIL:EUR" to "1f02fdcc-38f9-67b8-ad1b-a71ae2564bd4",
         "SPYL:GER:EUR" to "1ef66aa4-5a18-65da-ab3f-c9f7567377e0",
         "XAIX:GER:EUR" to "1ef66ace-af0a-6d81-ab3f-c9f7567377e0",
+        "CSX5:AEX:EUR" to "1ecf2dbe-e840-6165-8df4-d975f6a704cf",
+        "VNRT:AEX:EUR" to "1ecf2da3-e426-68b7-a268-3d0ec5cf88ad",
+        "WBIT:GER:EUR" to "1ef3aa4c-5f26-6cf0-8eba-bb4404220dad",
       )
   }
 

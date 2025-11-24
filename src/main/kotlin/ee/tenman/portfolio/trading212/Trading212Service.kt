@@ -20,6 +20,7 @@ class Trading212Service(
         "SPYL:GER:EUR" to "SPYLa_EQ",
         "QDVE:GER:EUR" to "QDVEd_EQ",
         "XAIX:GER:EUR" to "XAIXd_EQ",
+        "CSX5:AEX:EUR" to "CSX5a_EQ",
       )
   }
 
