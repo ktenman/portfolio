@@ -107,7 +107,7 @@ onBeforeUnmount(() => {
 
 .chart-container {
   position: relative;
-  height: 350px;
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,7 +124,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
 }
 

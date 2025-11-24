@@ -128,6 +128,8 @@ historicalPrices:
   url: https://markets.ft.com
 
 ft:
+  job:
+    enabled: true
   parallel:
     threads: 5
   instruments:
@@ -180,6 +182,7 @@ scheduling:
     industry-classification: ${INDUSTRY_CLASSIFICATION_CRON:0 0 2 * * *}
     etf-holdings-classification-enabled: ${ETF_HOLDINGS_CLASSIFICATION_ENABLED:true}
     etf-holdings-classification-cron: ${ETF_HOLDINGS_CLASSIFICATION_CRON:0 0 3 * * *}
+    ecb-cron: ${ECB_JOB_CRON:0 0 9 * * *}
 
 scraping:
   lightyear:
@@ -212,6 +215,12 @@ scraping:
         path: "WTAI:XMIL"
         expected-pages: 3
         skip-holdings: true
+      - symbol: "CSX5"
+        path: "CSX5:AEX"
+        expected-pages: 3
+      - symbol: "VNRT"
+        path: "VNRT:AEX"
+        expected-pages: 3
 
 cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}
@@ -229,3 +238,8 @@ openrouter:
 
 industry-classification:
   enabled: true
+
+ecb:
+  url: https://data-api.ecb.europa.eu
+
+
