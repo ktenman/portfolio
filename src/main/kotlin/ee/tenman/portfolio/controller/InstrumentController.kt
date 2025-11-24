@@ -7,7 +7,7 @@ import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.dto.InstrumentDto
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
-import ee.tenman.portfolio.job.FtDataRetrievalJob
+import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
 import ee.tenman.portfolio.service.IndustryClassificationService
 import ee.tenman.portfolio.service.InstrumentService
@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController
 class InstrumentController(
   private val instrumentService: InstrumentService,
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob?,
-  private val ftDataRetrievalJob: FtDataRetrievalJob?,
+  private val lightyearHistoricalDataRetrievalJob: LightyearHistoricalDataRetrievalJob?,
   private val cacheManager: CacheManager,
   private val transactionService: ee.tenman.portfolio.service.TransactionService,
   private val industryClassificationService: IndustryClassificationService,
@@ -96,7 +96,7 @@ class InstrumentController(
 
   @PostMapping("/refresh-prices")
   @Loggable
-  @Operation(summary = "Refresh prices from Binance, FT, and Lightyear providers")
+  @Operation(summary = "Refresh prices from Binance and Lightyear providers")
   fun refreshPrices(): Map<String, String> {
     binanceDataRetrievalJob?.let { job ->
       CoroutineScope(Dispatchers.Default).launch {
@@ -104,7 +104,7 @@ class InstrumentController(
       }
     }
 
-    ftDataRetrievalJob?.let { job ->
+    lightyearHistoricalDataRetrievalJob?.let { job ->
       CoroutineScope(Dispatchers.Default).launch {
         job.execute()
       }

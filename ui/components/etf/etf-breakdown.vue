@@ -33,10 +33,10 @@
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-4">
       <div class="row g-3">
         <div class="col-md-6">
-          <etf-breakdown-chart title="Top Companies" :chart-data="companyChartData" />
+          <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
         </div>
         <div class="col-md-6">
-          <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
+          <etf-breakdown-chart title="Top Companies" :chart-data="companyChartData" />
         </div>
       </div>
     </div>
@@ -158,7 +158,7 @@ const companyChartData = computed<ChartDataItem[]>(() => {
     (a, b) => b.percentageOfTotal - a.percentageOfTotal
   )
 
-  const threshold = 2
+  const threshold = 1.5
   const mainHoldings = sortedHoldings.filter(h => h.percentageOfTotal >= threshold)
   const smallHoldings = sortedHoldings.filter(h => h.percentageOfTotal < threshold)
 

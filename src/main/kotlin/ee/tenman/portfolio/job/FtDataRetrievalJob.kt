@@ -15,7 +15,7 @@ import java.time.Duration
 import java.time.Instant
 
 @Component
-@ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["ft.job.enabled"], havingValue = "true", matchIfMissing = false)
 class FtDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val historicalPricesService: HistoricalPricesService,

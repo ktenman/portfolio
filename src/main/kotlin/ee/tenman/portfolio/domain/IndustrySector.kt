@@ -16,6 +16,7 @@ enum class IndustrySector(
   ENERGY("Energy"),
   UTILITIES("Utilities"),
   FINANCE("Finance"),
+  CRYPTOCURRENCY("Cryptocurrency"),
   ;
 
   companion object {

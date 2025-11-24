@@ -13,4 +13,9 @@ interface LightyearPriceClient {
   fun getPrice(
     @RequestParam path: String,
   ): LightyearPriceResponse
+
+  @GetMapping("/lightyear/fetch")
+  fun getChartData(
+    @RequestParam path: String,
+  ): List<LightyearChartDataPoint>
 }
