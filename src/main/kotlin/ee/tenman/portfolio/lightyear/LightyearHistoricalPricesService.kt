@@ -70,6 +70,5 @@ class LightyearHistoricalPricesService(
   private fun isValidDataPoint(dataPoint: LightyearChartDataPoint): Boolean =
     dataPoint.high > BigDecimal.ZERO && dataPoint.low > BigDecimal.ZERO
 
-  private fun parseTimestamp(timestamp: String): LocalDate =
-    ZonedDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME).toLocalDate()
+  private fun parseTimestamp(timestamp: String): LocalDate = ZonedDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME).toLocalDate()
 }
