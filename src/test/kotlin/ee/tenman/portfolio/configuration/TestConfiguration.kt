@@ -2,6 +2,7 @@ package ee.tenman.portfolio.configuration
 
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.FtDataRetrievalJob
+import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import io.github.resilience4j.retry.RetryConfig
@@ -23,6 +24,10 @@ class TestConfiguration {
   @Bean
   @Primary
   fun ftDataRetrievalJob(): FtDataRetrievalJob = mockk(relaxed = true)
+
+  @Bean
+  @Primary
+  fun lightyearHistoricalDataRetrievalJob(): LightyearHistoricalDataRetrievalJob = mockk(relaxed = true)
 
   @Bean
   @Primary
