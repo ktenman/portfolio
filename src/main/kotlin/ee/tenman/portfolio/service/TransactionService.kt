@@ -326,4 +326,30 @@ class TransactionService(
     buyPrice: BigDecimal,
     currentPrice: BigDecimal,
   ): BigDecimal = quantity.multiply(currentPrice.subtract(buyPrice))
+
+  @Transactional(readOnly = true)
+  fun getFullTransactionHistoryForProfitCalculation(
+    filteredTransactions: List<PortfolioTransaction>,
+    platforms: List<String>?,
+  ): List<PortfolioTransaction> {
+    if (filteredTransactions.isEmpty()) return emptyList()
+
+    val instrumentIds = filteredTransactions.map { it.instrument.id }.distinct()
+
+    val platformEnums =
+      platforms?.mapNotNull { platformName ->
+        try {
+          ee.tenman.portfolio.domain.Platform
+            .valueOf(platformName)
+        } catch (e: IllegalArgumentException) {
+          null
+        }
+      }
+
+    return if (!platformEnums.isNullOrEmpty()) {
+      portfolioTransactionRepository.findAllByPlatformsAndInstrumentIds(platformEnums, instrumentIds)
+    } else {
+      portfolioTransactionRepository.findAllByInstrumentIds(instrumentIds)
+    }
+  }
 }

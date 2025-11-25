@@ -64,4 +64,27 @@ interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, L
     fromDate: LocalDate,
     untilDate: LocalDate,
   ): List<PortfolioTransaction>
+
+  @Query(
+    """
+    SELECT pt FROM PortfolioTransaction pt
+    JOIN FETCH pt.instrument
+    WHERE pt.platform IN :platforms AND pt.instrument.id IN :instrumentIds
+    ORDER BY pt.transactionDate ASC, pt.id ASC
+    """,
+  )
+  fun findAllByPlatformsAndInstrumentIds(
+    platforms: List<Platform>,
+    instrumentIds: List<Long>,
+  ): List<PortfolioTransaction>
+
+  @Query(
+    """
+    SELECT pt FROM PortfolioTransaction pt
+    JOIN FETCH pt.instrument
+    WHERE pt.instrument.id IN :instrumentIds
+    ORDER BY pt.transactionDate ASC, pt.id ASC
+    """,
+  )
+  fun findAllByInstrumentIds(instrumentIds: List<Long>): List<PortfolioTransaction>
 }
