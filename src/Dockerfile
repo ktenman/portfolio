@@ -29,8 +29,9 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Install Firefox and dependencies with security updates
+# Explicitly upgrade busybox packages to fix CVE-2024-58251 and CVE-2025-46394
 RUN apk update && \
-    apk upgrade && \
+    apk upgrade --no-cache busybox busybox-binsh ssl_client && \
     apk add --no-cache \
         curl \
         firefox \

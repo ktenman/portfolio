@@ -32,8 +32,9 @@ FROM python:3.13-alpine3.22
 
 # Install only runtime dependencies with latest security updates
 # Force update of all packages to get latest security fixes
+# Explicitly upgrade busybox packages to fix CVE-2024-58251 and CVE-2025-46394
 RUN apk update && \
-    apk upgrade --no-cache && \
+    apk upgrade --no-cache busybox busybox-binsh ssl_client && \
     apk add --no-cache \
     firefox \
     curl \
