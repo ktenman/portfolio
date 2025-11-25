@@ -65,7 +65,25 @@ class PortfolioTransactionController(
   ): TransactionsWithSummaryDto {
     val platformList = platforms?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
     val transactions = portfolioTransactionService.getAllTransactions(platformList, fromDate, untilDate)
-    portfolioTransactionService.calculateTransactionProfits(transactions)
+
+    val isDateFiltered = fromDate != null || untilDate != null
+    if (isDateFiltered && transactions.isNotEmpty()) {
+      val fullHistory =
+        portfolioTransactionService.getFullTransactionHistoryForProfitCalculation(transactions, platformList)
+      portfolioTransactionService.calculateTransactionProfits(fullHistory)
+
+      val profitMap = fullHistory.associateBy { it.id }
+      transactions.forEach { tx ->
+        profitMap[tx.id]?.let { calculated ->
+          tx.realizedProfit = calculated.realizedProfit
+          tx.unrealizedProfit = calculated.unrealizedProfit
+          tx.remainingQuantity = calculated.remainingQuantity
+          tx.averageCost = calculated.averageCost
+        }
+      }
+    } else {
+      portfolioTransactionService.calculateTransactionProfits(transactions)
+    }
 
     val groupedByInstrument = transactions.groupBy { it.instrument }
     val totalUnrealizedProfit =
