@@ -8,4 +8,6 @@ import router from './router/index'
 const app = createApp(App)
 
 app.use(VueQueryPlugin)
-app.use(router).mount('#app')
+app.use(router)
+
+router.isReady().then(() => app.mount('#app'))
