@@ -20,9 +20,9 @@ RUN ls -la /app/dist/
 
 FROM nginx:stable-alpine-slim
 
-# Update packages and install curl
+# Update packages including busybox to fix CVE-2024-58251 and CVE-2025-46394
 RUN apk update && \
-    apk upgrade --no-cache && \
+    apk upgrade --no-cache busybox busybox-binsh ssl_client && \
     apk add --no-cache curl && \
     rm -rf /var/cache/apk/*
 
