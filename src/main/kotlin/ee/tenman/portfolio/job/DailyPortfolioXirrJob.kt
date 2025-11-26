@@ -43,12 +43,19 @@ class DailyPortfolioXirrJob(
     log.info("Calculating summaries from $start to $yesterday")
 
     runCatching { process(start, yesterday) }
-      .onFailure { log.error("Error calculating XIRR", it); throw it }
+      .onFailure {
+        log.error("Error calculating XIRR", it)
+        throw it
+      }
   }
 
-  private fun process(start: LocalDate, end: LocalDate) {
+  private fun process(
+    start: LocalDate,
+    end: LocalDate,
+  ) {
     val existing = summaryService.getDailySummariesBetween(start, end).map { it.entryDate }.toSet()
-    val dates = generateSequence(start) { it.plusDays(1).takeIf { d -> !d.isAfter(end) } }
+    val dates =
+      generateSequence(start) { it.plusDays(1).takeIf { d -> !d.isAfter(end) } }
       .filterNot { it in existing }
       .toList()
 

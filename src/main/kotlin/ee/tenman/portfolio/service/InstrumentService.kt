@@ -87,19 +87,28 @@ class InstrumentService(
     distribute(sorted.filter { it.transactionType == TransactionType.BUY }, state.quantity, average, unrealized)
   }
 
-  private fun process(tx: PortfolioTransaction, state: ProfitState): ProfitState =
+  private fun process(
+    tx: PortfolioTransaction,
+    state: ProfitState,
+  ): ProfitState =
     when (tx.transactionType) {
       TransactionType.BUY -> buy(tx, state)
       TransactionType.SELL -> sell(tx, state)
     }
 
-  private fun buy(tx: PortfolioTransaction, state: ProfitState): ProfitState {
+  private fun buy(
+    tx: PortfolioTransaction,
+    state: ProfitState,
+  ): ProfitState {
     val cost = tx.price.multiply(tx.quantity).add(tx.commission)
     tx.realizedProfit = BigDecimal.ZERO
     return ProfitState(state.quantity.add(tx.quantity), state.cost.add(cost))
   }
 
-  private fun sell(tx: PortfolioTransaction, state: ProfitState): ProfitState {
+  private fun sell(
+    tx: PortfolioTransaction,
+    state: ProfitState,
+  ): ProfitState {
     val average = divide(state.cost, state.quantity)
     tx.averageCost = average
     tx.realizedProfit = tx.quantity.multiply(tx.price.subtract(average)).subtract(tx.commission)
@@ -110,9 +119,18 @@ class InstrumentService(
     return ProfitState(state.quantity.subtract(tx.quantity), state.cost.multiply(BigDecimal.ONE.subtract(ratio)))
   }
 
-  private fun distribute(buys: List<PortfolioTransaction>, quantity: BigDecimal, average: BigDecimal, unrealized: BigDecimal) {
+  private fun distribute(
+    buys: List<PortfolioTransaction>,
+    quantity: BigDecimal,
+    average: BigDecimal,
+    unrealized: BigDecimal,
+  ) {
     if (quantity <= BigDecimal.ZERO) {
-      buys.forEach { it.remainingQuantity = BigDecimal.ZERO; it.unrealizedProfit = BigDecimal.ZERO; it.averageCost = it.price }
+      buys.forEach {
+        it.remainingQuantity = BigDecimal.ZERO
+        it.unrealizedProfit = BigDecimal.ZERO
+        it.averageCost = it.price
+      }
       return
     }
     val total = buys.sumOf { it.quantity }
@@ -124,11 +142,16 @@ class InstrumentService(
     }
   }
 
-  private fun divide(numerator: BigDecimal, denominator: BigDecimal): BigDecimal =
+  private fun divide(
+    numerator: BigDecimal,
+    denominator: BigDecimal,
+  ): BigDecimal =
     if (denominator > BigDecimal.ZERO) numerator.divide(denominator, CALCULATION_SCALE, RoundingMode.HALF_UP) else BigDecimal.ZERO
 
-  private fun multiply(a: BigDecimal, b: BigDecimal): BigDecimal =
-    if (a > BigDecimal.ZERO && b != BigDecimal.ZERO) a.multiply(b) else BigDecimal.ZERO
+  private fun multiply(
+    a: BigDecimal,
+    b: BigDecimal,
+  ): BigDecimal = if (a > BigDecimal.ZERO && b != BigDecimal.ZERO) a.multiply(b) else BigDecimal.ZERO
 
   @Transactional
   @Caching(
@@ -149,10 +172,14 @@ class InstrumentService(
   fun getAllInstruments(platforms: List<String>?): List<Instrument> = getAllInstruments(platforms, null)
 
   @Transactional(readOnly = true)
-  fun getAllInstruments(platforms: List<String>?, period: String?): List<Instrument> {
+  fun getAllInstruments(
+    platforms: List<String>?,
+    period: String?,
+  ): List<Instrument> {
     val all = findAll()
     val grouped = transactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
-    val context = InstrumentEnrichmentContext(
+    val context =
+      InstrumentEnrichmentContext(
       date = LocalDate.now(clock),
       period = period?.let { PriceChangePeriod.fromString(it) } ?: PriceChangePeriod.P24H,
       platforms = parse(platforms),
@@ -163,14 +190,22 @@ class InstrumentService(
   private fun parse(platforms: List<String>?): Set<Platform>? =
     platforms?.mapNotNull { runCatching { Platform.valueOf(it.uppercase()) }.getOrNull() }?.toSet()
 
-  private fun enrich(instrument: Instrument, grouped: Map<Long, List<PortfolioTransaction>>, context: InstrumentEnrichmentContext): Instrument? {
+  private fun enrich(
+    instrument: Instrument,
+    grouped: Map<Long, List<PortfolioTransaction>>,
+    context: InstrumentEnrichmentContext,
+  ): Instrument? {
     val all = grouped[instrument.id] ?: emptyList()
     val filtered = context.platforms?.let { p -> all.filter { p.contains(it.platform) } } ?: all
     if (filtered.isEmpty()) return if (context.platforms == null) instrument else null
     return apply(instrument, filtered, context)
   }
 
-  private fun apply(instrument: Instrument, transactions: List<PortfolioTransaction>, context: InstrumentEnrichmentContext): Instrument? {
+  private fun apply(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    context: InstrumentEnrichmentContext,
+  ): Instrument? {
     val result = investmentMetricsService.metricsWithProfits(instrument, transactions, context.date)
     instrument.totalInvestment = result.investment
     instrument.currentValue = result.value
@@ -186,14 +221,29 @@ class InstrumentService(
     return if (result.quantity == BigDecimal.ZERO && result.investment == BigDecimal.ZERO) null else instrument
   }
 
-  private fun change(instrument: Instrument, transactions: List<PortfolioTransaction>, context: InstrumentEnrichmentContext): PriceChange? {
+  private fun change(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    context: InstrumentEnrichmentContext,
+  ): PriceChange? {
     if (transactions.isEmpty()) return null
     val earliest = transactions.minByOrNull { it.transactionDate } ?: return null
-    val days = java.time.temporal.ChronoUnit.DAYS.between(earliest.transactionDate, context.date)
-    return if (days >= context.period.days) dailyPriceService.getPriceChange(instrument, context.period) else sincePurchase(instrument, transactions)
+    val days =
+      java.time.temporal.ChronoUnit.DAYS
+      .between(earliest.transactionDate, context.date)
+    return if (days >=
+      context.period.days
+    ) {
+        dailyPriceService.getPriceChange(instrument, context.period)
+      } else {
+        sincePurchase(instrument, transactions)
+      }
   }
 
-  private fun sincePurchase(instrument: Instrument, transactions: List<PortfolioTransaction>): PriceChange? {
+  private fun sincePurchase(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+  ): PriceChange? {
     val price = instrument.currentPrice ?: return null
     val buys = transactions.filter { it.transactionType == TransactionType.BUY }
     if (buys.isEmpty()) return null

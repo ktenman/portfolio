@@ -18,7 +18,12 @@ class LightyearPriceUpdateService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processSymbol(symbol: String, price: BigDecimal, isWeekend: Boolean, today: LocalDate): ProcessResult =
+  fun processSymbol(
+    symbol: String,
+    price: BigDecimal,
+    isWeekend: Boolean,
+    today: LocalDate,
+  ): ProcessResult =
     runCatching { updateInstrumentPrice(symbol, price, isWeekend, today) }
       .onFailure { log.warn("Failed to update price for symbol $symbol: ${it.message}") }
       .getOrDefault(ProcessResult.FAILED)
@@ -43,14 +48,24 @@ class LightyearPriceUpdateService(
     return ProcessResult.SUCCESS_WITH_DAILY_PRICE
   }
 
-  private fun saveCurrentPrice(instrument: Instrument, price: BigDecimal, symbol: String) {
+  private fun saveCurrentPrice(
+    instrument: Instrument,
+    price: BigDecimal,
+    symbol: String,
+  ) {
     instrument.currentPrice = price
     instrumentService.save(instrument)
     log.debug("Updated current price for {}: {}", symbol, price)
   }
 
-  private fun saveDailyPrice(instrument: Instrument, price: BigDecimal, today: LocalDate, symbol: String) {
-    val dailyPrice = DailyPrice(
+  private fun saveDailyPrice(
+    instrument: Instrument,
+    price: BigDecimal,
+    today: LocalDate,
+    symbol: String,
+  ) {
+    val dailyPrice =
+      DailyPrice(
       instrument = instrument,
       entryDate = today,
       providerName = ProviderName.LIGHTYEAR,

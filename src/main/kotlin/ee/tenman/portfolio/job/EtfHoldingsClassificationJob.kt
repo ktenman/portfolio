@@ -10,7 +10,11 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
-data class ClassificationResult(val success: Int = 0, val failure: Int = 0, val skipped: Int = 0)
+data class ClassificationResult(
+  val success: Int = 0,
+  val failure: Int = 0,
+  val skipped: Int = 0,
+)
 
 @Component
 @ConditionalOnProperty(
@@ -45,7 +49,9 @@ class EtfHoldingsClassificationJob(
 
     log.info("Found ${holdings.size} holdings without sector classification")
     val result = holdings.fold(ClassificationResult()) { acc, holding -> acc + classify(holding) }
-    log.info("Classification complete. Success: ${result.success}, Failed: ${result.failure}, Skipped: ${result.skipped}, Total: ${holdings.size}")
+    log.info(
+      "Classification complete. Success: ${result.success}, Failed: ${result.failure}, Skipped: ${result.skipped}, Total: ${holdings.size}",
+    )
   }
 
   private fun classify(holding: EtfHolding): ClassificationResult {

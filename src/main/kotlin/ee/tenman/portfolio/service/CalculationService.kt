@@ -55,13 +55,16 @@ class CalculationService(
   fun result(): CalculationResult {
     log.info("Calculating XIRR")
     val xirrs = rolling(TICKER).reversed()
-    val results = runBlocking {
-      xirrs.map { xirr ->
+    val results =
+      runBlocking {
+      xirrs
+        .map { xirr ->
         async(dispatcher) {
           val value = xirr.calculate()
           if (value > -1.0) Transaction(value * 100.0, xirr.getTransactions().maxOf { it.date }) else null
         }
-      }.awaitAll().filterNotNull()
+      }.awaitAll()
+        .filterNotNull()
     }
     return CalculationResult(
       median = if (results.isEmpty()) 0.0 else median(results.map { it.amount }),
@@ -79,7 +82,11 @@ class CalculationService(
   }
 
   fun rolling(code: String): List<Xirr> {
-    val instrument = instrumentRepository.findBySymbol(code).orElseThrow { EntityNotFoundException("Instrument not found with symbol: $code") }
+    val instrument =
+      instrumentRepository
+      .findBySymbol(
+      code,
+    ).orElseThrow { EntityNotFoundException("Instrument not found with symbol: $code") }
     val all = dailyPriceService.findAllByInstrument(instrument).sortedBy { it.entryDate }
     if (all.size < 2) return emptyList()
     val start = all.first().entryDate
@@ -95,14 +102,19 @@ class CalculationService(
         val value = shares.multiply(last.closePrice)
         if (value <= BigDecimal.ZERO) return@mapNotNull null
         Xirr(listOf(Transaction(-AMOUNT, first.entryDate), Transaction(value.toDouble(), last.entryDate)))
-      }
-      .filter { xirr -> runCatching { xirr.calculate() > -1.0 }.onFailure { log.error("Error calculating XIRR", it) }.getOrDefault(false) }
-      .toList()
+      }.filter { xirr ->
+        runCatching { xirr.calculate() > -1.0 }
+          .onFailure { log.error("Error calculating XIRR", it) }
+          .getOrDefault(false)
+      }.toList()
   }
 
-  suspend fun batch(dates: List<LocalDate>): XirrCalculationResult = coroutineScope {
+  suspend fun batch(dates: List<LocalDate>): XirrCalculationResult =
+    coroutineScope {
     val start = System.currentTimeMillis()
-    val results = dates.map { date ->
+    val results =
+      dates
+        .map { date ->
       async(dispatcher) {
         runCatching {
           val summary = summaryService.calculateSummaryForDate(date)

@@ -31,10 +31,22 @@ class EtfBreakdownService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  data class HoldingKey(val ticker: String?, val name: String, val sector: String?)
-  data class HoldingValue(val total: BigDecimal, val etfs: MutableSet<String>)
+  data class HoldingKey(
+    val ticker: String?,
+    val name: String,
+    val sector: String?,
+  )
 
-  @Cacheable("etf:breakdown", key = "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all'", unless = "#result.isEmpty()")
+  data class HoldingValue(
+    val total: BigDecimal,
+    val etfs: MutableSet<String>,
+  )
+
+  @Cacheable(
+    "etf:breakdown",
+    key = "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all'",
+    unless = "#result.isEmpty()",
+  )
   fun breakdown(symbols: List<String>? = null): List<EtfHoldingBreakdownDto> {
     val etfs = etfs(symbols)
     log.info("Found ${etfs.size} ETFs: ${etfs.map { it.symbol }}")
@@ -113,7 +125,11 @@ class EtfBreakdownService(
       .getOrDefault(BigDecimal.ZERO)
   }
 
-  private fun value(position: EtfPosition, quantity: BigDecimal, price: BigDecimal): BigDecimal {
+  private fun value(
+    position: EtfPosition,
+    quantity: BigDecimal,
+    price: BigDecimal,
+  ): BigDecimal {
     val etfValue = quantity.multiply(price)
     val weight = position.weightPercentage.divide(HUNDRED, SCALE, RoundingMode.HALF_UP)
     return etfValue.multiply(weight)
@@ -122,14 +138,18 @@ class EtfBreakdownService(
   private fun total(etfs: List<Instrument>): BigDecimal =
     etfs.fold(BigDecimal.ZERO) { acc, etf -> acc.add(quantity(etf.id).multiply(price(etf))) }
 
-  private fun aggregate(holdings: Map<HoldingKey, HoldingValue>, total: BigDecimal): List<EtfHoldingBreakdownDto> {
+  private fun aggregate(
+    holdings: Map<HoldingKey, HoldingValue>,
+    total: BigDecimal,
+  ): List<EtfHoldingBreakdownDto> {
     if (total == BigDecimal.ZERO) {
       log.warn("Portfolio total is zero, cannot calculate percentages")
       return emptyList()
     }
     val sum = holdings.values.fold(BigDecimal.ZERO) { acc, v -> acc.add(v.total) }
     val factor = total.divide(sum, SCALE, RoundingMode.HALF_UP)
-    return holdings.map { (key, value) ->
+    return holdings
+      .map { (key, value) ->
       val scaled = value.total.multiply(factor)
       val percent = scaled.multiply(HUNDRED).divide(total, PERCENT_SCALE, RoundingMode.HALF_UP)
       EtfHoldingBreakdownDto(
@@ -141,6 +161,7 @@ class EtfBreakdownService(
         inEtfs = value.etfs.sorted().joinToString(", "),
         numEtfs = value.etfs.size,
       )
-    }.filter { it.totalValueEur > BigDecimal.ZERO }.sortedByDescending { it.totalValueEur }
+    }.filter { it.totalValueEur > BigDecimal.ZERO }
+      .sortedByDescending { it.totalValueEur }
   }
 }

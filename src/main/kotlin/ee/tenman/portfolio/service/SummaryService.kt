@@ -67,8 +67,10 @@ class SummaryService(
 
   @Transactional(readOnly = true)
   @Cacheable(value = [SUMMARY_CACHE], key = "'summaries-page-' + #page + '-size-' + #size", unless = "#result.isEmpty()")
-  fun getAllDailySummaries(page: Int, size: Int): Page<PortfolioDailySummary> =
-    summaryRepository.findAll(PageRequest.of(page, size, Sort.by("entryDate").descending()))
+  fun getAllDailySummaries(
+    page: Int,
+    size: Int,
+  ): Page<PortfolioDailySummary> = summaryRepository.findAll(PageRequest.of(page, size, Sort.by("entryDate").descending()))
 
   @Transactional(readOnly = true)
   fun getCurrentDaySummary(): PortfolioDailySummary = calculateDetails(LocalDate.now(clock))
@@ -90,7 +92,8 @@ class SummaryService(
   @Caching(evict = [CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"), CacheEvict(value = [SUMMARY_CACHE], allEntries = true)])
   fun saveDailySummary(summary: PortfolioDailySummary): PortfolioDailySummary {
     val existing = summaryRepository.findByEntryDate(summary.entryDate)
-    val target = existing?.apply {
+    val target =
+      existing?.apply {
       totalValue = summary.totalValue
       xirrAnnualReturn = summary.xirrAnnualReturn
       realizedProfit = summary.realizedProfit
@@ -105,7 +108,8 @@ class SummaryService(
   @Caching(evict = [CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"), CacheEvict(value = [SUMMARY_CACHE], allEntries = true)])
   fun saveDailySummaries(summaries: List<PortfolioDailySummary>) {
     val existing = summaryRepository.findAllByEntryDateIn(summaries.map { it.entryDate }).associateBy { it.entryDate }
-    val merged = summaries.map { s ->
+    val merged =
+      summaries.map { s ->
       existing[s.entryDate]?.apply {
         totalValue = s.totalValue
         xirrAnnualReturn = s.xirrAnnualReturn
@@ -119,11 +123,15 @@ class SummaryService(
   }
 
   @Transactional(readOnly = true)
-  fun getDailySummariesBetween(startDate: LocalDate, endDate: LocalDate): List<PortfolioDailySummary> =
-    summaryRepository.findAllByEntryDateBetween(startDate, endDate)
+  fun getDailySummariesBetween(
+    startDate: LocalDate,
+    endDate: LocalDate,
+  ): List<PortfolioDailySummary> = summaryRepository.findAllByEntryDateBetween(startDate, endDate)
 
-  private fun generateDateRange(start: LocalDate, end: LocalDate): List<LocalDate> =
-    generateSequence(start) { it.plusDays(1).takeIf { d -> !d.isAfter(end) } }.toList()
+  private fun generateDateRange(
+    start: LocalDate,
+    end: LocalDate,
+  ): List<LocalDate> = generateSequence(start) { it.plusDays(1).takeIf { d -> !d.isAfter(end) } }.toList()
 
   private fun isToday(date: LocalDate): Boolean = date.isEqual(LocalDate.now(clock))
 
@@ -152,7 +160,9 @@ class SummaryService(
   }
 
   private fun calculateDetails(date: LocalDate): PortfolioDailySummary {
-    val filtered = transactionService.getAllTransactions()
+    val filtered =
+      transactionService
+        .getAllTransactions()
       .filter { !it.transactionDate.isAfter(date) }
       .sortedWith(compareBy({ it.transactionDate }, { it.id }))
     if (filtered.isEmpty()) return createEmptySummary(date)
@@ -171,9 +181,13 @@ class SummaryService(
     )
   }
 
-  private fun mergeSummary(date: LocalDate, summary: PortfolioDailySummary): PortfolioDailySummary {
+  private fun mergeSummary(
+    date: LocalDate,
+    summary: PortfolioDailySummary,
+  ): PortfolioDailySummary {
     val existing = summaryRepository.findByEntryDate(date)
-    val result = PortfolioDailySummary(
+    val result =
+      PortfolioDailySummary(
       entryDate = date,
       totalValue = summary.totalValue,
       xirrAnnualReturn = summary.xirrAnnualReturn,
@@ -189,7 +203,8 @@ class SummaryService(
     return result
   }
 
-  private fun createEmptySummary(date: LocalDate): PortfolioDailySummary = PortfolioDailySummary(
+  private fun createEmptySummary(date: LocalDate): PortfolioDailySummary =
+    PortfolioDailySummary(
     entryDate = date,
     totalValue = BigDecimal.ZERO,
     xirrAnnualReturn = BigDecimal.ZERO,

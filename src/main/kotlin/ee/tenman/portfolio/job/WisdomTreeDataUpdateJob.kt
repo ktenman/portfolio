@@ -26,7 +26,8 @@ class WisdomTreeDataUpdateJob(
   override fun execute() {
     log.info("Executing WisdomTree data update job for WTAI")
     val start = Instant.now()
-    val result = runCatching {
+    val result =
+      runCatching {
       val data = wisdomTreeUpdateService.updateWtaiHoldings()
       val msg = "Successfully updated WTAI holdings: deleted=${data["deleted"]}, created=${data["created"]}"
       log.info(msg)

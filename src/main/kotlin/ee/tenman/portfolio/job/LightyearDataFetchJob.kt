@@ -30,7 +30,8 @@ class LightyearDataFetchJob(
   fun runJob() {
     log.info("Running Lightyear data fetch job for ${lightyearScrapingProperties.etfs.size} ETFs")
     val start = Instant.now()
-    val result = runCatching {
+    val result =
+      runCatching {
       val message = fetchAll()
       etfBreakdownService.evict()
       log.info("Completed Lightyear data fetch job successfully")
@@ -56,7 +57,11 @@ class LightyearDataFetchJob(
     return lightyearScrapingProperties.etfs.map { fetch(it, today) }.joinToString("\n")
   }
 
-  private fun fetch(config: EtfConfig, date: LocalDate): String = runCatching {
+  private fun fetch(
+    config: EtfConfig,
+    date: LocalDate,
+  ): String =
+    runCatching {
     if (config.skipHoldings) {
       val msg = "Holdings scraping disabled for ${config.symbol} (using WisdomTree job instead)"
       log.info(msg)

@@ -54,7 +54,11 @@ class LightyearPriceRetrievalJob(
   private fun shouldRun(): Boolean {
     val minutesSinceStartup = Duration.between(startupTime, Instant.now(clock)).toMinutes()
     if (minutesSinceStartup < STARTUP_DELAY_MINUTES) {
-      log.debug("Skipping job execution. Only {} minutes since startup. Waiting for {} minutes.", minutesSinceStartup, STARTUP_DELAY_MINUTES)
+      log.debug(
+        "Skipping job execution. Only {} minutes since startup. Waiting for {} minutes.",
+        minutesSinceStartup,
+        STARTUP_DELAY_MINUTES,
+      )
       return false
     }
 

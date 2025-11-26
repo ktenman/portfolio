@@ -79,10 +79,15 @@ class TransactionService(
   @Transactional(readOnly = true)
   @Cacheable(
     value = [TRANSACTION_CACHE],
-    key = "'transactions:' + (#platforms?.toString() ?: 'all') + ':' + (#fromDate?.toString() ?: 'null') + ':' + (#untilDate?.toString() ?: 'null')",
+    key = "'transactions:' + (#platforms?.toString() ?: 'all') + ':' + " +
+      "(#fromDate?.toString() ?: 'null') + ':' + (#untilDate?.toString() ?: 'null')",
     unless = "#result.isEmpty()",
   )
-  fun getAllTransactions(platforms: List<String>?, fromDate: LocalDate?, untilDate: LocalDate?): List<PortfolioTransaction> {
+  fun getAllTransactions(
+    platforms: List<String>?,
+    fromDate: LocalDate?,
+    untilDate: LocalDate?,
+  ): List<PortfolioTransaction> {
     val hasPlatforms = !platforms.isNullOrEmpty()
     val hasDates = fromDate != null || untilDate != null
     if (!hasPlatforms && !hasDates) return getAllTransactions()
@@ -99,7 +104,10 @@ class TransactionService(
   }
 
   @Transactional(readOnly = true)
-  fun getTransactionHistory(filtered: List<PortfolioTransaction>, platforms: List<String>?): List<PortfolioTransaction> {
+  fun getTransactionHistory(
+    filtered: List<PortfolioTransaction>,
+    platforms: List<String>?,
+  ): List<PortfolioTransaction> {
     if (filtered.isEmpty()) return emptyList()
     val ids = filtered.map { it.instrument.id }.distinct()
     val enums = platforms?.let { parse(it) }
@@ -108,7 +116,10 @@ class TransactionService(
 
   @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
   @Retryable(value = [ObjectOptimisticLockingFailureException::class], maxAttempts = 5, backoff = Backoff(delay = 100))
-  fun calculateProfits(transactions: List<PortfolioTransaction>, price: BigDecimal = BigDecimal.ZERO) {
+  fun calculateProfits(
+    transactions: List<PortfolioTransaction>,
+    price: BigDecimal = BigDecimal.ZERO,
+  ) {
     transactions.groupBy { it.platform to it.instrument.id }.values.forEach { group ->
       profit(group.sortedWith(compareBy({ it.transactionDate }, { it.id })), price)
     }
@@ -121,26 +132,38 @@ class TransactionService(
         .getOrNull()
     }
 
-  private fun profit(transactions: List<PortfolioTransaction>, passed: BigDecimal = BigDecimal.ZERO) {
+  private fun profit(
+    transactions: List<PortfolioTransaction>,
+    passed: BigDecimal = BigDecimal.ZERO,
+  ) {
     val sorted = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
     val state = sorted.fold(ProfitAccumulator()) { acc, tx -> process(tx, acc) }
     val price = if (passed > BigDecimal.ZERO) passed else sorted.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO
     distribute(sorted.filter { it.transactionType == TransactionType.BUY }, state.quantity, price)
   }
 
-  private fun process(tx: PortfolioTransaction, state: ProfitAccumulator): ProfitAccumulator =
+  private fun process(
+    tx: PortfolioTransaction,
+    state: ProfitAccumulator,
+  ): ProfitAccumulator =
     when (tx.transactionType) {
       TransactionType.BUY -> buy(tx, state)
       TransactionType.SELL -> sell(tx, state)
     }
 
-  private fun buy(tx: PortfolioTransaction, state: ProfitAccumulator): ProfitAccumulator {
+  private fun buy(
+    tx: PortfolioTransaction,
+    state: ProfitAccumulator,
+  ): ProfitAccumulator {
     val cost = tx.price.multiply(tx.quantity).add(tx.commission)
     tx.realizedProfit = BigDecimal.ZERO
     return ProfitAccumulator(state.quantity.add(tx.quantity), state.cost.add(cost))
   }
 
-  private fun sell(tx: PortfolioTransaction, state: ProfitAccumulator): ProfitAccumulator {
+  private fun sell(
+    tx: PortfolioTransaction,
+    state: ProfitAccumulator,
+  ): ProfitAccumulator {
     val average = divide(state.cost, state.quantity)
     tx.averageCost = average
     tx.realizedProfit = tx.quantity.multiply(tx.price.subtract(average)).subtract(tx.commission)
@@ -151,9 +174,17 @@ class TransactionService(
     return ProfitAccumulator(state.quantity.subtract(tx.quantity), state.cost.multiply(BigDecimal.ONE.subtract(ratio)))
   }
 
-  private fun distribute(buys: List<PortfolioTransaction>, quantity: BigDecimal, price: BigDecimal) {
+  private fun distribute(
+    buys: List<PortfolioTransaction>,
+    quantity: BigDecimal,
+    price: BigDecimal,
+  ) {
     if (quantity <= BigDecimal.ZERO) {
-      buys.forEach { it.remainingQuantity = BigDecimal.ZERO; it.unrealizedProfit = BigDecimal.ZERO; it.averageCost = it.price }
+      buys.forEach {
+        it.remainingQuantity = BigDecimal.ZERO
+        it.unrealizedProfit = BigDecimal.ZERO
+        it.averageCost = it.price
+      }
       return
     }
     val total = buys.sumOf { it.quantity }
@@ -165,6 +196,8 @@ class TransactionService(
     }
   }
 
-  private fun divide(numerator: BigDecimal, denominator: BigDecimal): BigDecimal =
-    if (denominator > BigDecimal.ZERO) numerator.divide(denominator, SCALE, RoundingMode.HALF_UP) else BigDecimal.ZERO
+  private fun divide(
+    numerator: BigDecimal,
+    denominator: BigDecimal,
+  ): BigDecimal = if (denominator > BigDecimal.ZERO) numerator.divide(denominator, SCALE, RoundingMode.HALF_UP) else BigDecimal.ZERO
 }

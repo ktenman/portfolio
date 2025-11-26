@@ -75,7 +75,8 @@ class LightyearHistoricalDataRetrievalJob(
   }
 
   private fun fetch(instrument: Instrument) {
-    val uuid = requireNotNull(LIGHTYEAR_INSTRUMENTS[instrument.symbol]) {
+    val uuid =
+      requireNotNull(LIGHTYEAR_INSTRUMENTS[instrument.symbol]) {
       "No UUID mapping found for LIGHTYEAR instrument: ${instrument.symbol}. Add it to LIGHTYEAR_INSTRUMENTS map."
     }
 
