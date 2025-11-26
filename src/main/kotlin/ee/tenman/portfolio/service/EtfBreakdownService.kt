@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -14,6 +15,12 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.LocalDate
+
+private const val SCALE = 10
+private const val DISPLAY_SCALE = 2
+private const val PERCENT_SCALE = 4
+private val HUNDRED = BigDecimal(100)
 
 @Service
 class EtfBreakdownService(
@@ -24,174 +31,124 @@ class EtfBreakdownService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  data class HoldingKey(
-    val ticker: String?,
-    val name: String,
-    val sector: String?,
-  )
+  data class HoldingKey(val ticker: String?, val name: String, val sector: String?)
+  data class HoldingValue(val total: BigDecimal, val etfs: MutableSet<String>)
 
-  data class HoldingValue(
-    val totalValue: BigDecimal,
-    val etfSymbols: MutableSet<String>,
-  )
-
-  @Cacheable(
-    "etf:breakdown",
-    key = "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all'",
-    unless = "#result.isEmpty()",
-  )
-  fun getHoldingsBreakdown(etfSymbols: List<String>? = null): List<EtfHoldingBreakdownDto> {
-    val lightyearEtfs = getLightyearEtfs(etfSymbols)
-    log.info("Found ${lightyearEtfs.size} ETFs: ${lightyearEtfs.map { it.symbol }}")
-
-    if (lightyearEtfs.isEmpty()) {
+  @Cacheable("etf:breakdown", key = "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all'", unless = "#result.isEmpty()")
+  fun breakdown(symbols: List<String>? = null): List<EtfHoldingBreakdownDto> {
+    val etfs = etfs(symbols)
+    log.info("Found ${etfs.size} ETFs: ${etfs.map { it.symbol }}")
+    if (etfs.isEmpty()) {
       log.warn("No Lightyear ETFs found")
       return emptyList()
     }
-
-    val actualPortfolioTotal = calculateActualPortfolioTotal(lightyearEtfs)
-    log.info("Actual portfolio total value from transactions: $actualPortfolioTotal")
-
-    val holdingsMap = buildHoldingsMap(lightyearEtfs)
-    log.info("Built holdings map with ${holdingsMap.size} unique holdings")
-
-    val result = aggregateByHolding(holdingsMap, actualPortfolioTotal)
+    val total = total(etfs)
+    log.info("Actual portfolio total value from transactions: $total")
+    val holdings = holdings(etfs)
+    log.info("Built holdings map with ${holdings.size} unique holdings")
+    val result = aggregate(holdings, total)
     log.info("Returning ${result.size} holdings in breakdown")
     return result
   }
 
+  @Cacheable("etf:breakdown", key = "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all'", unless = "#result.isEmpty()")
+  @Deprecated("Use breakdown(symbols) instead", ReplaceWith("breakdown(symbols)"))
+  fun getHoldingsBreakdown(etfSymbols: List<String>? = null): List<EtfHoldingBreakdownDto> = breakdown(etfSymbols)
+
   @CacheEvict("etf:breakdown", allEntries = true)
-  fun evictBreakdownCache() {
+  fun evict() {
     log.info("Evicting ETF breakdown cache")
   }
 
-  private fun getLightyearEtfs(etfSymbols: List<String>? = null): List<Instrument> {
-    val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
-    val ftInstruments = instrumentRepository.findByProviderName(ProviderName.FT)
+  @CacheEvict("etf:breakdown", allEntries = true)
+  @Deprecated("Use evict() instead", ReplaceWith("evict()"))
+  fun evictBreakdownCache() = evict()
 
-    log.info("Found ${lightyearInstruments.size} LIGHTYEAR instruments and ${ftInstruments.size} FT instruments")
-
-    var allInstruments = lightyearInstruments + ftInstruments
-
-    if (!etfSymbols.isNullOrEmpty()) {
-      allInstruments = allInstruments.filter { it.symbol in etfSymbols }
-      log.info("Filtered to ${allInstruments.size} instruments matching symbols: {}", LogSanitizerUtil.sanitize(etfSymbols))
+  private fun etfs(symbols: List<String>? = null): List<Instrument> {
+    val lightyear = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
+    val ft = instrumentRepository.findByProviderName(ProviderName.FT)
+    log.info("Found ${lightyear.size} LIGHTYEAR instruments and ${ft.size} FT instruments")
+    var all = lightyear + ft
+    if (!symbols.isNullOrEmpty()) {
+      all = all.filter { it.symbol in symbols }
+      log.info("Filtered to ${all.size} instruments matching symbols: {}", LogSanitizerUtil.sanitize(symbols))
     }
-
-    val withHoldings = allInstruments.filter { hasEtfHoldings(it.id) }
+    val withHoldings = all.filter { hasHoldings(it.id) }
     log.info("${withHoldings.size} instruments have ETF holdings data: ${withHoldings.map { it.symbol }}")
-
-    val withActivePositions = withHoldings.filter { hasActiveHoldings(it.id) }
-    log.info("${withActivePositions.size} instruments have active positions: ${withActivePositions.map { it.symbol }}")
-
-    return withActivePositions
+    val active = withHoldings.filter { isActive(it.id) }
+    log.info("${active.size} instruments have active positions: ${active.map { it.symbol }}")
+    return active
   }
 
-  private fun hasEtfHoldings(instrumentId: Long): Boolean = etfPositionRepository.findLatestPositionsByEtfId(instrumentId).isNotEmpty()
+  private fun hasHoldings(id: Long): Boolean = etfPositionRepository.findLatestPositionsByEtfId(id).isNotEmpty()
 
-  private fun hasActiveHoldings(instrumentId: Long): Boolean {
-    val netQuantity = calculateNetQuantity(instrumentId)
-    log.debug("Instrument $instrumentId has net quantity: $netQuantity")
-    return netQuantity > BigDecimal.ZERO
+  private fun isActive(id: Long): Boolean {
+    val net = quantity(id)
+    log.debug("Instrument $id has net quantity: $net")
+    return net > BigDecimal.ZERO
   }
 
-  private fun calculateNetQuantity(instrumentId: Long): BigDecimal {
-    val transactions = transactionRepository.findAllByInstrumentId(instrumentId)
-    return transactions.fold(BigDecimal.ZERO) { acc, tx ->
+  private fun quantity(id: Long): BigDecimal =
+    transactionRepository.findAllByInstrumentId(id).fold(BigDecimal.ZERO) { acc, tx ->
       when (tx.transactionType) {
-        ee.tenman.portfolio.domain.TransactionType.BUY -> acc.add(tx.quantity)
-        ee.tenman.portfolio.domain.TransactionType.SELL -> acc.subtract(tx.quantity)
+        TransactionType.BUY -> acc.add(tx.quantity)
+        TransactionType.SELL -> acc.subtract(tx.quantity)
       }
     }
-  }
 
-  private fun buildHoldingsMap(etfs: List<Instrument>): Map<HoldingKey, HoldingValue> {
-    val holdingsMap = mutableMapOf<HoldingKey, HoldingValue>()
-
+  private fun holdings(etfs: List<Instrument>): Map<HoldingKey, HoldingValue> {
+    val map = mutableMapOf<HoldingKey, HoldingValue>()
     etfs.forEach { etf ->
-      val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
-      val etfQuantity = calculateNetQuantity(etf.id)
-      val etfPrice = getCurrentPrice(etf)
-
-      positions.forEach { position ->
-          val holdingValue = calculateHoldingValue(position, etfQuantity, etfPrice)
-          val key =
-            HoldingKey(
-              ticker = position.holding.ticker,
-              name = position.holding.name,
-              sector = position.holding.sector,
-            )
-
-          holdingsMap.merge(key, HoldingValue(holdingValue, mutableSetOf(etf.symbol))) { existing, new ->
-            HoldingValue(
-              totalValue = existing.totalValue.add(new.totalValue),
-              etfSymbols = existing.etfSymbols.apply { addAll(new.etfSymbols) },
-            )
-          }
+      val etfPositions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
+      val qty = quantity(etf.id)
+      val price = price(etf)
+      etfPositions.forEach { position ->
+        val value = value(position, qty, price)
+        val key = HoldingKey(position.holding.ticker, position.holding.name, position.holding.sector)
+        map.merge(key, HoldingValue(value, mutableSetOf(etf.symbol))) { existing, new ->
+          HoldingValue(existing.total.add(new.total), existing.etfs.apply { addAll(new.etfs) })
         }
+      }
     }
-
-    return holdingsMap
+    return map
   }
 
-  private fun getCurrentPrice(instrument: Instrument): BigDecimal {
-    val currentPrice = instrument.currentPrice
-    if (currentPrice != null && currentPrice > BigDecimal.ZERO) {
-      return currentPrice
-    }
-
-    return try {
-      dailyPriceService.getPrice(instrument, java.time.LocalDate.now())
-    } catch (e: NoSuchElementException) {
-      log.warn("No price found for ${instrument.symbol}, using zero")
-      BigDecimal.ZERO
-    }
+  private fun price(instrument: Instrument): BigDecimal {
+    val current = instrument.currentPrice
+    if (current != null && current > BigDecimal.ZERO) return current
+    return runCatching { dailyPriceService.getPrice(instrument, LocalDate.now()) }
+      .onFailure { log.warn("No price found for ${instrument.symbol}, using zero") }
+      .getOrDefault(BigDecimal.ZERO)
   }
 
-  private fun calculateHoldingValue(
-    position: EtfPosition,
-    etfQuantity: BigDecimal,
-    etfPrice: BigDecimal,
-  ): BigDecimal {
-    val etfValue = etfQuantity.multiply(etfPrice)
-    val weightDecimal = position.weightPercentage.divide(BigDecimal(100), 10, RoundingMode.HALF_UP)
-    return etfValue.multiply(weightDecimal)
+  private fun value(position: EtfPosition, quantity: BigDecimal, price: BigDecimal): BigDecimal {
+    val etfValue = quantity.multiply(price)
+    val weight = position.weightPercentage.divide(HUNDRED, SCALE, RoundingMode.HALF_UP)
+    return etfValue.multiply(weight)
   }
 
-  private fun calculateActualPortfolioTotal(etfs: List<Instrument>): BigDecimal =
-    etfs.fold(BigDecimal.ZERO) { acc, etf ->
-      val quantity = calculateNetQuantity(etf.id)
-      val price = getCurrentPrice(etf)
-      acc.add(quantity.multiply(price))
-    }
+  private fun total(etfs: List<Instrument>): BigDecimal =
+    etfs.fold(BigDecimal.ZERO) { acc, etf -> acc.add(quantity(etf.id).multiply(price(etf))) }
 
-  private fun aggregateByHolding(
-    holdingsMap: Map<HoldingKey, HoldingValue>,
-    portfolioTotal: BigDecimal,
-  ): List<EtfHoldingBreakdownDto> {
-    if (portfolioTotal == BigDecimal.ZERO) {
+  private fun aggregate(holdings: Map<HoldingKey, HoldingValue>, total: BigDecimal): List<EtfHoldingBreakdownDto> {
+    if (total == BigDecimal.ZERO) {
       log.warn("Portfolio total is zero, cannot calculate percentages")
       return emptyList()
     }
-
-    val holdingsTotal = holdingsMap.values.fold(BigDecimal.ZERO) { acc, value -> acc.add(value.totalValue) }
-    val scaleFactor = portfolioTotal.divide(holdingsTotal, 10, RoundingMode.HALF_UP)
-
-    return holdingsMap
-      .map { (key, value) ->
-        val scaledValue = value.totalValue.multiply(scaleFactor)
-        val percentage = scaledValue.multiply(BigDecimal(100)).divide(portfolioTotal, 4, RoundingMode.HALF_UP)
-
-        EtfHoldingBreakdownDto(
-          holdingTicker = key.ticker,
-          holdingName = key.name,
-          percentageOfTotal = percentage,
-          totalValueEur = scaledValue.setScale(2, RoundingMode.HALF_UP),
-          holdingSector = key.sector,
-          inEtfs = value.etfSymbols.sorted().joinToString(", "),
-          numEtfs = value.etfSymbols.size,
-        )
-      }.filter { it.totalValueEur > BigDecimal.ZERO }
-      .sortedByDescending { it.totalValueEur }
+    val sum = holdings.values.fold(BigDecimal.ZERO) { acc, v -> acc.add(v.total) }
+    val factor = total.divide(sum, SCALE, RoundingMode.HALF_UP)
+    return holdings.map { (key, value) ->
+      val scaled = value.total.multiply(factor)
+      val percent = scaled.multiply(HUNDRED).divide(total, PERCENT_SCALE, RoundingMode.HALF_UP)
+      EtfHoldingBreakdownDto(
+        holdingTicker = key.ticker,
+        holdingName = key.name,
+        percentageOfTotal = percent,
+        totalValueEur = scaled.setScale(DISPLAY_SCALE, RoundingMode.HALF_UP),
+        holdingSector = key.sector,
+        inEtfs = value.etfs.sorted().joinToString(", "),
+        numEtfs = value.etfs.size,
+      )
+    }.filter { it.totalValueEur > BigDecimal.ZERO }.sortedByDescending { it.totalValueEur }
   }
 }

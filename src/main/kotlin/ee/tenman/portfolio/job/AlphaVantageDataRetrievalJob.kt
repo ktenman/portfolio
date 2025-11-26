@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.alphavantage.AlphaVantageService
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
@@ -28,21 +29,18 @@ class AlphaVantageDataRetrievalJob(
 
   override fun execute() {
     log.info("Starting AlphaVantage data retrieval execution")
-    val instruments =
-      instrumentService
-        .getAllInstruments()
-        .filter { it.providerName == ProviderName.ALPHA_VANTAGE }
-
-    instruments.forEach { instrument ->
-      log.info("Retrieving data for instrument: ${instrument.symbol}")
-      val dailyData = alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
-      if (dailyData.isNotEmpty()) {
-        dataProcessingUtil.processDailyData(instrument, dailyData, ProviderName.ALPHA_VANTAGE)
-      } else {
-        log.warn("No daily data found for instrument: ${instrument.symbol}")
-      }
-    }
-
+    val instruments = instrumentService.findAll().filter { it.providerName == ProviderName.ALPHA_VANTAGE }
+    instruments.forEach { fetch(it) }
     log.info("Completed AlphaVantage data retrieval execution. Processed ${instruments.size} instruments.")
+  }
+
+  private fun fetch(instrument: Instrument) {
+    log.info("Retrieving data for instrument: ${instrument.symbol}")
+    val data = alphaVantageService.getDailyTimeSeriesForLastWeek(instrument.symbol)
+    if (data.isEmpty()) {
+      log.warn("No daily data found for instrument: ${instrument.symbol}")
+      return
+    }
+    dataProcessingUtil.processDailyData(instrument, data, ProviderName.ALPHA_VANTAGE)
   }
 }

@@ -12,9 +12,12 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
+
+private const val STARTUP_DELAY_MINUTES = 4L
 
 @Component
 @ConditionalOnProperty(
@@ -36,14 +39,12 @@ class LightyearPriceRetrievalJob(
   @PostConstruct
   fun init() {
     startupTime = Instant.now(clock)
-    log.info("LightyearPriceRetrievalJob initialized. Will start polling after 4 minutes.")
+    log.info("LightyearPriceRetrievalJob initialized. Will start polling after $STARTUP_DELAY_MINUTES minutes.")
   }
 
   @Scheduled(cron = "0/5 * 7-23 * * MON-FRI", zone = "Europe/Tallinn")
   fun runJob() {
-    if (!shouldRun()) {
-      return
-    }
+    if (!shouldRun()) return
 
     log.info("Running Lightyear price update job")
     jobExecutionService.executeJob(this)
@@ -51,28 +52,14 @@ class LightyearPriceRetrievalJob(
   }
 
   private fun shouldRun(): Boolean {
-    val now = Instant.now(clock)
-    val minutesSinceStartup =
-      java.time.Duration
-      .between(startupTime, now)
-      .toMinutes()
-
-    if (minutesSinceStartup < 4) {
-      log.debug(
-        "Skipping job execution. Only {} minutes since startup. Waiting for 4 minutes.",
-        minutesSinceStartup,
-      )
+    val minutesSinceStartup = Duration.between(startupTime, Instant.now(clock)).toMinutes()
+    if (minutesSinceStartup < STARTUP_DELAY_MINUTES) {
+      log.debug("Skipping job execution. Only {} minutes since startup. Waiting for {} minutes.", minutesSinceStartup, STARTUP_DELAY_MINUTES)
       return false
     }
 
-    val estonianTime = ZonedDateTime.now(clock.withZone(estonianZone))
-    val dayOfWeek = estonianTime.dayOfWeek
-
-    if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
-      return false
-    }
-
-    return true
+    val dayOfWeek = ZonedDateTime.now(clock.withZone(estonianZone)).dayOfWeek
+    return dayOfWeek != DayOfWeek.SATURDAY && dayOfWeek != DayOfWeek.SUNDAY
   }
 
   override fun execute() {

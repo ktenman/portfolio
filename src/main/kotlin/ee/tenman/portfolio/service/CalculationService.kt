@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
+import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
@@ -18,6 +19,10 @@ import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
 
+private const val AMOUNT = 1000.0
+private const val TICKER = "QDVE:GER:EUR"
+private const val SCALE = 8
+
 data class CalculationResult(
   var xirrs: List<Transaction> = mutableListOf(),
   var median: Double = 0.0,
@@ -30,152 +35,104 @@ data class CalculationResult(
 }
 
 data class XirrCalculationResult(
-  val processedDates: Int,
-  val processedInstruments: Int,
-  val failedCalculations: List<String> = emptyList(),
+  val dates: Int,
+  val instruments: Int,
+  val failures: List<String> = emptyList(),
   val duration: Long,
-)
+) {
+  @Deprecated("Use dates instead", ReplaceWith("dates"))
+  val processedDates: Int get() = dates
+  @Deprecated("Use instruments instead", ReplaceWith("instruments"))
+  val processedInstruments: Int get() = instruments
+  @Deprecated("Use failures instead", ReplaceWith("failures"))
+  val failedCalculations: List<String> get() = failures
+}
 
 @Service
 class CalculationService(
-  private val dataRetrievalService: DailyPriceService,
+  private val dailyPriceService: DailyPriceService,
   private val instrumentRepository: InstrumentRepository,
-  private val calculationDispatcher: CoroutineDispatcher,
+  private val dispatcher: CoroutineDispatcher,
   private val clock: Clock,
-  private val portfolioSummaryService: SummaryService,
+  private val summaryService: SummaryService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  companion object {
-    private const val AMOUNT_TO_SPEND = 1000.0
-    private const val TICKER = "QDVE:GER:EUR"
-  }
-
   @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr-v3'")
-  fun getCalculationResult(): CalculationResult {
+  fun result(): CalculationResult {
     log.info("Calculating XIRR")
-    val xirrs = calculateRollingXirr(TICKER).reversed()
-
-    val xirrsResults =
-      runBlocking {
-        val deferredResults =
-          xirrs.map { xirr ->
-            async(calculationDispatcher) {
-              val xirrValue = xirr.calculate()
-              if (xirrValue > -1.0) {
-                Transaction(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
-              } else {
-                null
-              }
-            }
-          }
-        deferredResults.awaitAll().filterNotNull()
-      }
-
+    val xirrs = rolling(TICKER).reversed()
+    val results = runBlocking {
+      xirrs.map { xirr ->
+        async(dispatcher) {
+          val value = xirr.calculate()
+          if (value > -1.0) Transaction(value * 100.0, xirr.getTransactions().maxOf { it.date }) else null
+        }
+      }.awaitAll().filterNotNull()
+    }
     return CalculationResult(
-      median = if (xirrsResults.isEmpty()) 0.0 else calculateMedian(xirrsResults.map { it.amount }),
-      average = if (xirrsResults.isEmpty()) 0.0 else xirrsResults.map { it.amount }.average(),
-      xirrs = xirrsResults,
+      median = if (results.isEmpty()) 0.0 else median(results.map { it.amount }),
+      average = if (results.isEmpty()) 0.0 else results.map { it.amount }.average(),
+      xirrs = results,
       total = BigDecimal.ZERO,
     )
   }
 
-  fun calculateMedian(xirrs: List<Double>): Double {
-    if (xirrs.isEmpty()) return 0.0
+  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr-v3'")
+  @Deprecated("Use result() instead", ReplaceWith("result()"))
+  fun getCalculationResult(): CalculationResult = result()
 
-    val sortedXirrs = xirrs.sorted()
-    val middle = xirrs.size / 2
-    return if (xirrs.size % 2 == 0) {
-      (sortedXirrs[middle - 1] + sortedXirrs[middle]) / 2.0
-    } else {
-      sortedXirrs[middle]
-    }
+  fun median(values: List<Double>): Double {
+    if (values.isEmpty()) return 0.0
+    val sorted = values.sorted()
+    val middle = values.size / 2
+    return if (values.size % 2 == 0) (sorted[middle - 1] + sorted[middle]) / 2.0 else sorted[middle]
   }
 
-  fun calculateRollingXirr(instrumentCode: String): List<Xirr> {
-    val instrument =
-      instrumentRepository
-        .findBySymbol(instrumentCode)
-      .orElseThrow {
-        ee.tenman.portfolio.exception
-        .EntityNotFoundException("Instrument not found with symbol: $instrumentCode")
+  @Deprecated("Use median(values) instead", ReplaceWith("median(values)"))
+  fun calculateMedian(xirrs: List<Double>): Double = median(xirrs)
+
+  fun rolling(code: String): List<Xirr> {
+    val instrument = instrumentRepository.findBySymbol(code).orElseThrow { EntityNotFoundException("Instrument not found with symbol: $code") }
+    val all = dailyPriceService.findAllByInstrument(instrument).sortedBy { it.entryDate }
+    if (all.size < 2) return emptyList()
+    val start = all.first().entryDate
+    return generateSequence(LocalDate.now(clock)) { it.minusWeeks(4) }
+      .takeWhile { it.isAfter(start.plusMonths(1)) }
+      .mapNotNull { end ->
+        val filtered = all.filter { it.entryDate <= end }
+        if (filtered.size < 2) return@mapNotNull null
+        val first = filtered.first()
+        val last = filtered.last()
+        if (first.closePrice <= BigDecimal.ZERO) return@mapNotNull null
+        val shares = BigDecimal(AMOUNT).divide(first.closePrice, SCALE, RoundingMode.HALF_UP)
+        val value = shares.multiply(last.closePrice)
+        if (value <= BigDecimal.ZERO) return@mapNotNull null
+        Xirr(listOf(Transaction(-AMOUNT, first.entryDate), Transaction(value.toDouble(), last.entryDate)))
       }
-    val allDailyPrices =
-      dataRetrievalService
-        .findAllByInstrument(instrument)
-        .sortedBy { it.entryDate }
-
-    if (allDailyPrices.size < 2) return emptyList()
-
-    val xirrs = mutableListOf<Xirr>()
-    var endDate = LocalDate.now(clock)
-    val startDate = allDailyPrices.first().entryDate
-
-    while (endDate.isAfter(startDate.plusMonths(1))) {
-      val dailyPrices = allDailyPrices.filter { it.entryDate <= endDate }
-      if (dailyPrices.size >= 2) {
-        val firstPrice = dailyPrices.first()
-        val lastPrice = dailyPrices.last()
-
-        if (firstPrice.closePrice > BigDecimal.ZERO) {
-          val sharesAmount =
-            BigDecimal(AMOUNT_TO_SPEND)
-            .divide(firstPrice.closePrice, 8, RoundingMode.HALF_UP)
-
-          val currentValue = sharesAmount.multiply(lastPrice.closePrice)
-
-          val transactions =
-            listOf(
-              Transaction(-AMOUNT_TO_SPEND, firstPrice.entryDate),
-              Transaction(currentValue.toDouble(), lastPrice.entryDate),
-            )
-
-          if (currentValue > BigDecimal.ZERO) {
-            xirrs.add(Xirr(transactions))
-          }
-        }
-      }
-
-      endDate = endDate.minusWeeks(4)
-    }
-
-    return xirrs.filter { xirr ->
-      try {
-        val result = xirr.calculate()
-        result > -1.0
-      } catch (e: Exception) {
-        log.error("Error calculating XIRR", e)
-        false
-      }
-    }
+      .filter { xirr -> runCatching { xirr.calculate() > -1.0 }.onFailure { log.error("Error calculating XIRR", it) }.getOrDefault(false) }
+      .toList()
   }
 
-  suspend fun calculateBatchXirrAsync(dates: List<LocalDate>): XirrCalculationResult =
-    coroutineScope {
-      val startTime = System.currentTimeMillis()
+  @Deprecated("Use rolling(code) instead", ReplaceWith("rolling(code)"))
+  fun calculateRollingXirr(instrumentCode: String): List<Xirr> = rolling(instrumentCode)
 
-      val results =
-        dates
-          .map { date ->
-            async(calculationDispatcher) {
-              runCatching {
-                val summary = portfolioSummaryService.calculateSummaryForDate(date)
-                portfolioSummaryService.saveDailySummary(summary)
-                date to null
-              }.getOrElse { exception ->
-                date to "Failed for date $date: ${exception.message}"
-              }
-            }
-          }.awaitAll()
+  suspend fun batch(dates: List<LocalDate>): XirrCalculationResult = coroutineScope {
+    val start = System.currentTimeMillis()
+    val results = dates.map { date ->
+      async(dispatcher) {
+        runCatching {
+          val summary = summaryService.calculateSummaryForDate(date)
+          summaryService.saveDailySummary(summary)
+          date to null
+        }.getOrElse { date to "Failed for date $date: ${it.message}" }
+      }
+    }.awaitAll()
+    val failures = results.mapNotNull { it.second }
+    val success = results.count { it.second == null }
+    XirrCalculationResult(success, 0, failures, System.currentTimeMillis() - start)
+  }
 
-      val failures = results.mapNotNull { it.second }
-      val successCount = results.count { it.second == null }
-
-      XirrCalculationResult(
-        processedDates = successCount,
-        processedInstruments = 0,
-        failedCalculations = failures,
-        duration = System.currentTimeMillis() - startTime,
-      )
-    }
+  @Deprecated("Use batch(dates) instead", ReplaceWith("batch(dates)"))
+  suspend fun calculateBatchXirrAsync(dates: List<LocalDate>): XirrCalculationResult = batch(dates)
 }

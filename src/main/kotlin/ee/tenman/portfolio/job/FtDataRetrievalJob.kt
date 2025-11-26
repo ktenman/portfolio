@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
 import ee.tenman.portfolio.service.InstrumentService
@@ -27,71 +28,60 @@ class FtDataRetrievalJob(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Volatile
-  private var isExecuting = false
+  private var executing = false
 
   @PostConstruct
   fun scheduleInitialRun() {
     log.info("Scheduling initial FT data retrieval job to run in 10 seconds")
-    taskScheduler.schedule(
-      { runScheduledJob() },
-      Instant.now(clock).plus(Duration.ofSeconds(10)),
-    )
+    taskScheduler.schedule({ run() }, Instant.now(clock).plus(Duration.ofSeconds(10)))
   }
 
   @Scheduled(cron = "0 0 5 * * *")
   fun runDailyJob() {
     log.info("Running daily FT data retrieval job at 05:00")
-    runScheduledJob()
+    run()
   }
 
-  private fun runScheduledJob() {
+  private fun run() {
     jobExecutionService.executeJob(this)
     log.info("Completed FT data retrieval job")
   }
 
   override fun execute() {
-    if (isExecuting) {
+    if (executing) {
       log.warn("FT data retrieval job is already running, skipping this execution")
       return
     }
 
-    isExecuting = true
-
+    executing = true
     try {
-      log.info("Starting FT data retrieval execution")
-      val instruments =
-        instrumentService
-          .getAllInstruments()
-          .filter { it.providerName == ProviderName.FT }
-
-      if (instruments.isEmpty()) {
-        log.info("No FT instruments found to process")
-        return
-      }
-
-      instruments.forEach { instrument ->
-        processInstrument(instrument)
-      }
-
-      log.info("Completed FT data retrieval execution. Processed ${instruments.size} instruments")
+      process()
     } finally {
-      isExecuting = false
+      executing = false
     }
   }
 
-  private fun processInstrument(instrument: ee.tenman.portfolio.domain.Instrument) {
-    try {
-      log.info("Retrieving FT data for instrument: ${instrument.symbol}")
-      val ftData = historicalPricesService.fetchPrices(instrument.symbol)
+  private fun process() {
+    log.info("Starting FT data retrieval execution")
+    val instruments = instrumentService.findAll().filter { it.providerName == ProviderName.FT }
+    if (instruments.isEmpty()) {
+      log.info("No FT instruments found to process")
+      return
+    }
 
-      if (ftData.isEmpty()) {
+    instruments.forEach { fetch(it) }
+    log.info("Completed FT data retrieval execution. Processed ${instruments.size} instruments")
+  }
+
+  private fun fetch(instrument: Instrument) {
+    runCatching {
+      log.info("Retrieving FT data for instrument: ${instrument.symbol}")
+      val data = historicalPricesService.fetchPrices(instrument.symbol)
+      if (data.isEmpty()) {
         log.warn("No FT data found for instrument: ${instrument.symbol}")
         return
       }
-
-      dataProcessingUtil.processDailyData(instrument, ftData, ProviderName.FT)
-    } catch (e: Exception) {
-      log.error("Error processing instrument ${instrument.symbol}", e)
-    }
+      dataProcessingUtil.processDailyData(instrument, data, ProviderName.FT)
+    }.onFailure { log.error("Error processing instrument ${instrument.symbol}", it) }
   }
 }

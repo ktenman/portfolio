@@ -56,11 +56,11 @@ class CalculationServiceTest {
 
     calculationService =
       CalculationService(
-        dataRetrievalService = dataRetrievalService,
+        dailyPriceService = dataRetrievalService,
         instrumentRepository = instrumentRepository,
-        calculationDispatcher = testDispatcher,
+        dispatcher = testDispatcher,
         clock = clock,
-        portfolioSummaryService = portfolioSummaryService,
+        summaryService = portfolioSummaryService,
       )
 
     every { instrumentRepository.findBySymbol(instrumentCode) } returns Optional.of(testInstrument)

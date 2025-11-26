@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
@@ -16,29 +18,29 @@ import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.LocalDate
+
+private const val SCALE = 10
+private val MIN_DATE: LocalDate = LocalDate.of(2000, 1, 1)
+
+data class ProfitAccumulator(
+  val quantity: BigDecimal = BigDecimal.ZERO,
+  val cost: BigDecimal = BigDecimal.ZERO,
+)
 
 @Service
 class TransactionService(
-  private val portfolioTransactionRepository: PortfolioTransactionRepository,
+  private val repository: PortfolioTransactionRepository,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
-  fun getTransactionById(id: Long): PortfolioTransaction =
-    portfolioTransactionRepository
-      .findById(id)
-      .orElseThrow {
-        ee.tenman.portfolio.exception
-        .EntityNotFoundException("Transaction not found with id: $id")
-      }
+  fun getTransaction(id: Long): PortfolioTransaction =
+    repository.findById(id).orElseThrow { EntityNotFoundException("Transaction not found with id: $id") }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
-  @Retryable(
-    value = [ObjectOptimisticLockingFailureException::class],
-    maxAttempts = 5,
-    backoff = Backoff(delay = 100),
-  )
+  @Retryable(value = [ObjectOptimisticLockingFailureException::class], maxAttempts = 5, backoff = Backoff(delay = 100))
   @Caching(
     evict = [
       CacheEvict(value = [TRANSACTION_CACHE], key = "#transaction.id", condition = "#transaction.id != null"),
@@ -46,45 +48,20 @@ class TransactionService(
     ],
   )
   fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction {
-    try {
-      val saved = portfolioTransactionRepository.save(transaction)
-      val relatedTransactions =
-        portfolioTransactionRepository
-          .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
-      calculateTransactionProfits(relatedTransactions)
-      return portfolioTransactionRepository
-        .saveAll(relatedTransactions)
-        .find { it.id == saved.id }!!
-    } catch (e: ObjectOptimisticLockingFailureException) {
-      log.warn("Optimistic locking failure while saving transaction. Will retry.", e)
-      throw e
-    }
+    val saved = repository.save(transaction)
+    val related = repository.findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
+    calculateProfits(related)
+    return repository.saveAll(related).find { it.id == saved.id }!!
   }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
-  @Retryable(
-    value = [ObjectOptimisticLockingFailureException::class],
-    maxAttempts = 5,
-    backoff = Backoff(delay = 100),
-  )
-  @Caching(
-    evict = [
-      CacheEvict(value = [TRANSACTION_CACHE], key = "#id"),
-      CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
-    ],
-  )
-  fun deleteTransaction(id: Long) {
-    try {
-      portfolioTransactionRepository.deleteById(id)
-    } catch (e: ObjectOptimisticLockingFailureException) {
-      log.warn("Optimistic locking failure while deleting transaction. Will retry.", e)
-      throw e
-    }
-  }
+  @Retryable(value = [ObjectOptimisticLockingFailureException::class], maxAttempts = 5, backoff = Backoff(delay = 100))
+  @Caching(evict = [CacheEvict(value = [TRANSACTION_CACHE], key = "#id"), CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'")])
+  fun deleteTransaction(id: Long) = repository.deleteById(id)
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "'transactions'", unless = "#result.isEmpty()")
-  fun getAllTransactions(): List<PortfolioTransaction> = portfolioTransactionRepository.findAllWithInstruments()
+  fun getAllTransactions(): List<PortfolioTransaction> = repository.findAllWithInstruments()
 
   @Transactional(readOnly = true)
   @Cacheable(
@@ -93,263 +70,101 @@ class TransactionService(
     unless = "#result.isEmpty()",
   )
   fun getAllTransactions(platforms: List<String>?): List<PortfolioTransaction> {
-    if (platforms.isNullOrEmpty()) {
-      return getAllTransactions()
-    }
-
-    val platformEnums =
-      platforms.mapNotNull { platformName ->
-        try {
-          ee.tenman.portfolio.domain.Platform
-            .valueOf(platformName)
-        } catch (e: IllegalArgumentException) {
-          log.warn("Invalid platform name: $platformName")
-          null
-        }
-      }
-
-    if (platformEnums.isEmpty()) {
-      return emptyList()
-    }
-
-    return portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
+    if (platforms.isNullOrEmpty()) return getAllTransactions()
+    val enums = parse(platforms)
+    if (enums.isEmpty()) return emptyList()
+    return repository.findAllByPlatformsWithInstruments(enums)
   }
 
   @Transactional(readOnly = true)
   @Cacheable(
     value = [TRANSACTION_CACHE],
-    key =
-      "'transactions:' + (#platforms?.toString() ?: 'all') + ':' + " +
-        "(#fromDate?.toString() ?: 'null') + ':' + (#untilDate?.toString() ?: 'null')",
+    key = "'transactions:' + (#platforms?.toString() ?: 'all') + ':' + (#fromDate?.toString() ?: 'null') + ':' + (#untilDate?.toString() ?: 'null')",
     unless = "#result.isEmpty()",
   )
-  fun getAllTransactions(
-    platforms: List<String>?,
-    fromDate: java.time.LocalDate?,
-    untilDate: java.time.LocalDate?,
-  ): List<PortfolioTransaction> {
+  fun getAllTransactions(platforms: List<String>?, fromDate: LocalDate?, untilDate: LocalDate?): List<PortfolioTransaction> {
     val hasPlatforms = !platforms.isNullOrEmpty()
     val hasDates = fromDate != null || untilDate != null
-
-    if (!hasPlatforms && !hasDates) {
-      return getAllTransactions()
-    }
-
-    val platformEnums =
-      platforms?.mapNotNull { platformName ->
-        try {
-          ee.tenman.portfolio.domain.Platform
-            .valueOf(platformName)
-        } catch (e: IllegalArgumentException) {
-          log.warn("Invalid platform name: $platformName")
-          null
-        }
-      }
-
-    if (hasPlatforms && platformEnums.isNullOrEmpty()) {
-      return emptyList()
-    }
-
-    val effectiveFromDate = fromDate ?: java.time.LocalDate.of(2000, 1, 1)
-    val effectiveUntilDate =
-      untilDate ?: java.time.LocalDate
-      .now()
-      .plusYears(100)
-
+    if (!hasPlatforms && !hasDates) return getAllTransactions()
+    val enums = platforms?.let { parse(it) }
+    if (hasPlatforms && enums.isNullOrEmpty()) return emptyList()
+    val from = fromDate ?: MIN_DATE
+    val until = untilDate ?: LocalDate.now().plusYears(100)
     return when {
-      !platformEnums.isNullOrEmpty() && hasDates ->
-        portfolioTransactionRepository
-          .findAllByPlatformsAndDateRangeWithInstruments(platformEnums, effectiveFromDate, effectiveUntilDate)
-      !platformEnums.isNullOrEmpty() ->
-        portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
-      hasDates ->
-        portfolioTransactionRepository.findAllByDateRangeWithInstruments(effectiveFromDate, effectiveUntilDate)
-      else ->
-        getAllTransactions()
+      !enums.isNullOrEmpty() && hasDates -> repository.findAllByPlatformsAndDateRangeWithInstruments(enums, from, until)
+      !enums.isNullOrEmpty() -> repository.findAllByPlatformsWithInstruments(enums)
+      hasDates -> repository.findAllByDateRangeWithInstruments(from, until)
+      else -> getAllTransactions()
     }
+  }
+
+  @Transactional(readOnly = true)
+  fun getTransactionHistory(filtered: List<PortfolioTransaction>, platforms: List<String>?): List<PortfolioTransaction> {
+    if (filtered.isEmpty()) return emptyList()
+    val ids = filtered.map { it.instrument.id }.distinct()
+    val enums = platforms?.let { parse(it) }
+    return if (!enums.isNullOrEmpty()) repository.findAllByPlatformsAndInstrumentIds(enums, ids) else repository.findAllByInstrumentIds(ids)
   }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
-  @Retryable(
-    value = [ObjectOptimisticLockingFailureException::class],
-    maxAttempts = 5,
-    backoff = Backoff(delay = 100),
-  )
-  fun calculateTransactionProfits(
-    transactions: List<PortfolioTransaction>,
-    currentPrice: BigDecimal = BigDecimal.ZERO,
-  ) {
-    try {
-      transactions
-        .groupBy { it.platform to it.instrument.id }
-        .forEach { (_, platformTransactions) ->
-          calculateProfitsForPlatform(platformTransactions.sortedWith(compareBy({ it.transactionDate }, { it.id })), currentPrice)
-        }
-    } catch (e: ObjectOptimisticLockingFailureException) {
-      log.warn("Optimistic locking failure while calculating profits. Will retry.", e)
-      throw e
+  @Retryable(value = [ObjectOptimisticLockingFailureException::class], maxAttempts = 5, backoff = Backoff(delay = 100))
+  fun calculateProfits(transactions: List<PortfolioTransaction>, price: BigDecimal = BigDecimal.ZERO) {
+    transactions.groupBy { it.platform to it.instrument.id }.values.forEach { group ->
+      profit(group.sortedWith(compareBy({ it.transactionDate }, { it.id })), price)
     }
   }
 
-  private fun calculateProfitsForPlatform(
-    transactions: List<PortfolioTransaction>,
-    passedPrice: BigDecimal = BigDecimal.ZERO,
-  ) {
-    val sortedTransactions = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
-    var currentQuantity = BigDecimal.ZERO
-    var totalCost = BigDecimal.ZERO
-
-    sortedTransactions.forEach { transaction ->
-      when (transaction.transactionType) {
-        TransactionType.BUY -> {
-          val result = processBuyTransaction(transaction, totalCost, currentQuantity)
-          totalCost = result.first
-          currentQuantity = result.second
-        }
-        TransactionType.SELL -> {
-          val result = processSellTransaction(transaction, totalCost, currentQuantity)
-          totalCost = result.first
-          currentQuantity = result.second
-        }
-      }
+  private fun parse(platforms: List<String>): List<Platform> =
+    platforms.mapNotNull { name ->
+      runCatching { Platform.valueOf(name) }
+        .onFailure { log.warn("Invalid platform name: $name") }
+        .getOrNull()
     }
 
-    val currentPrice =
-      if (passedPrice >
-      BigDecimal.ZERO
-      ) {
-        passedPrice
-      } else {
-        (sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO)
-      }
-
-    distributeUnrealizedProfits(sortedTransactions, currentQuantity, currentPrice)
+  private fun profit(transactions: List<PortfolioTransaction>, passed: BigDecimal = BigDecimal.ZERO) {
+    val sorted = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
+    val state = sorted.fold(ProfitAccumulator()) { acc, tx -> process(tx, acc) }
+    val price = if (passed > BigDecimal.ZERO) passed else sorted.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO
+    distribute(sorted.filter { it.transactionType == TransactionType.BUY }, state.quantity, price)
   }
 
-  private fun processBuyTransaction(
-    transaction: PortfolioTransaction,
-    totalCost: BigDecimal,
-    currentQuantity: BigDecimal,
-  ): Pair<BigDecimal, BigDecimal> {
-    val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
-    transaction.realizedProfit = BigDecimal.ZERO
-
-    return Pair(
-      totalCost.add(cost),
-      currentQuantity.add(transaction.quantity),
-    )
-  }
-
-  private fun processSellTransaction(
-    transaction: PortfolioTransaction,
-    totalCost: BigDecimal,
-    currentQuantity: BigDecimal,
-  ): Pair<BigDecimal, BigDecimal> {
-    val averageCost = calculateAverageCost(totalCost, currentQuantity)
-    transaction.averageCost = averageCost
-
-    val grossProfit =
-      calculateSimpleProfit(
-        quantity = transaction.quantity,
-        buyPrice = averageCost,
-        currentPrice = transaction.price,
-      )
-
-    transaction.realizedProfit = grossProfit.subtract(transaction.commission)
-    transaction.unrealizedProfit = BigDecimal.ZERO
-    transaction.remainingQuantity = BigDecimal.ZERO
-
-    if (currentQuantity <= BigDecimal.ZERO) {
-      return Pair(totalCost, currentQuantity)
+  private fun process(tx: PortfolioTransaction, state: ProfitAccumulator): ProfitAccumulator =
+    when (tx.transactionType) {
+      TransactionType.BUY -> buy(tx, state)
+      TransactionType.SELL -> sell(tx, state)
     }
 
-    val sellRatio = transaction.quantity.divide(currentQuantity, 10, RoundingMode.HALF_UP)
-    val newTotalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
-    val newQuantity = currentQuantity.subtract(transaction.quantity)
-
-    return Pair(newTotalCost, newQuantity)
+  private fun buy(tx: PortfolioTransaction, state: ProfitAccumulator): ProfitAccumulator {
+    val cost = tx.price.multiply(tx.quantity).add(tx.commission)
+    tx.realizedProfit = BigDecimal.ZERO
+    return ProfitAccumulator(state.quantity.add(tx.quantity), state.cost.add(cost))
   }
 
-  private fun calculateAverageCost(
-    totalCost: BigDecimal,
-    currentQuantity: BigDecimal,
-  ): BigDecimal =
-    if (currentQuantity > BigDecimal.ZERO) {
-      totalCost.divide(currentQuantity, 10, RoundingMode.HALF_UP)
-    } else {
-      BigDecimal.ZERO
-    }
+  private fun sell(tx: PortfolioTransaction, state: ProfitAccumulator): ProfitAccumulator {
+    val average = divide(state.cost, state.quantity)
+    tx.averageCost = average
+    tx.realizedProfit = tx.quantity.multiply(tx.price.subtract(average)).subtract(tx.commission)
+    tx.unrealizedProfit = BigDecimal.ZERO
+    tx.remainingQuantity = BigDecimal.ZERO
+    if (state.quantity <= BigDecimal.ZERO) return state
+    val ratio = tx.quantity.divide(state.quantity, SCALE, RoundingMode.HALF_UP)
+    return ProfitAccumulator(state.quantity.subtract(tx.quantity), state.cost.multiply(BigDecimal.ONE.subtract(ratio)))
+  }
 
-  private fun distributeUnrealizedProfits(
-    transactions: List<PortfolioTransaction>,
-    currentQuantity: BigDecimal,
-    currentPrice: BigDecimal,
-  ) {
-    val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
-
-    if (currentQuantity <= BigDecimal.ZERO) {
-      buyTransactions.forEach { it.setZeroUnrealizedMetrics() }
+  private fun distribute(buys: List<PortfolioTransaction>, quantity: BigDecimal, price: BigDecimal) {
+    if (quantity <= BigDecimal.ZERO) {
+      buys.forEach { it.remainingQuantity = BigDecimal.ZERO; it.unrealizedProfit = BigDecimal.ZERO; it.averageCost = it.price }
       return
     }
-
-    val totalBuyQuantity = buyTransactions.sumOf { it.quantity }
-
-    buyTransactions.forEach { buyTx ->
-      val proportionalQuantity =
-        buyTx.quantity
-          .multiply(currentQuantity)
-          .divide(totalBuyQuantity, 10, RoundingMode.HALF_UP)
-
-      buyTx.remainingQuantity = proportionalQuantity
-      buyTx.averageCost = buyTx.price
-      buyTx.unrealizedProfit =
-        if (currentPrice <= BigDecimal.ZERO) {
-          BigDecimal.ZERO
-        } else {
-          calculateSimpleProfit(
-            quantity = proportionalQuantity,
-            buyPrice = buyTx.price,
-            currentPrice = currentPrice,
-          )
-        }
+    val total = buys.sumOf { it.quantity }
+    buys.forEach { tx ->
+      val proportional = tx.quantity.multiply(quantity).divide(total, SCALE, RoundingMode.HALF_UP)
+      tx.remainingQuantity = proportional
+      tx.averageCost = tx.price
+      tx.unrealizedProfit = if (price <= BigDecimal.ZERO) BigDecimal.ZERO else proportional.multiply(price.subtract(tx.price))
     }
   }
 
-  private fun PortfolioTransaction.setZeroUnrealizedMetrics() {
-    this.remainingQuantity = BigDecimal.ZERO
-    this.unrealizedProfit = BigDecimal.ZERO
-    this.averageCost = this.price
-  }
-
-  private fun calculateSimpleProfit(
-    quantity: BigDecimal,
-    buyPrice: BigDecimal,
-    currentPrice: BigDecimal,
-  ): BigDecimal = quantity.multiply(currentPrice.subtract(buyPrice))
-
-  @Transactional(readOnly = true)
-  fun getFullTransactionHistoryForProfitCalculation(
-    filteredTransactions: List<PortfolioTransaction>,
-    platforms: List<String>?,
-  ): List<PortfolioTransaction> {
-    if (filteredTransactions.isEmpty()) return emptyList()
-
-    val instrumentIds = filteredTransactions.map { it.instrument.id }.distinct()
-
-    val platformEnums =
-      platforms?.mapNotNull { platformName ->
-        try {
-          ee.tenman.portfolio.domain.Platform
-            .valueOf(platformName)
-        } catch (e: IllegalArgumentException) {
-          null
-        }
-      }
-
-    return if (!platformEnums.isNullOrEmpty()) {
-      portfolioTransactionRepository.findAllByPlatformsAndInstrumentIds(platformEnums, instrumentIds)
-    } else {
-      portfolioTransactionRepository.findAllByInstrumentIds(instrumentIds)
-    }
-  }
+  private fun divide(numerator: BigDecimal, denominator: BigDecimal): BigDecimal =
+    if (denominator > BigDecimal.ZERO) numerator.divide(denominator, SCALE, RoundingMode.HALF_UP) else BigDecimal.ZERO
 }

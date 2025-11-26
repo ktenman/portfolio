@@ -47,7 +47,7 @@ class FtDataRetrievalJobConcurrencyTest {
   fun `should prevent concurrent execution`() {
     val instrument = createTestInstrument()
 
-    every { instrumentService.getAllInstruments() } returns listOf(instrument)
+    every { instrumentService.findAll() } returns listOf(instrument)
     every { historicalPricesService.fetchPrices(any()) } answers {
       Thread.sleep(100)
       emptyMap()
@@ -82,20 +82,20 @@ class FtDataRetrievalJobConcurrencyTest {
   fun `should allow execution after previous execution completes`() {
     val instrument = createTestInstrument()
 
-    every { instrumentService.getAllInstruments() } returns listOf(instrument)
+    every { instrumentService.findAll() } returns listOf(instrument)
     every { historicalPricesService.fetchPrices(any()) } returns emptyMap()
 
     job.execute()
     job.execute()
 
-    verify(exactly = 2) { instrumentService.getAllInstruments() }
+    verify(exactly = 2) { instrumentService.findAll() }
   }
 
   @Test
   fun `should release lock even when exception occurs`() {
     val instrument = createTestInstrument()
 
-    every { instrumentService.getAllInstruments() } returns listOf(instrument)
+    every { instrumentService.findAll() } returns listOf(instrument)
     every { historicalPricesService.fetchPrices(any()) } throws RuntimeException("Test error")
     every { dataProcessingUtil.processDailyData(any(), any(), any()) } returns Unit
 
@@ -103,16 +103,16 @@ class FtDataRetrievalJobConcurrencyTest {
 
     job.execute()
 
-    verify(exactly = 2) { instrumentService.getAllInstruments() }
+    verify(exactly = 2) { instrumentService.findAll() }
   }
 
   @Test
   fun `should handle empty instruments list`() {
-    every { instrumentService.getAllInstruments() } returns emptyList()
+    every { instrumentService.findAll() } returns emptyList()
 
     job.execute()
 
-    verify(exactly = 1) { instrumentService.getAllInstruments() }
+    verify(exactly = 1) { instrumentService.findAll() }
     verify(exactly = 0) { historicalPricesService.fetchPrices(any()) }
   }
 

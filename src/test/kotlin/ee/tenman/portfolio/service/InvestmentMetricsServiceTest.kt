@@ -53,7 +53,7 @@ class InvestmentMetricsServiceTest {
     }
     investmentMetricsService = InvestmentMetricsService(dailyPriceService, transactionService, Clock.systemDefaultZone())
 
-    every { transactionService.calculateTransactionProfits(any(), any()) } answers {
+    every { transactionService.calculateProfits(any(), any()) } answers {
       val transactions = firstArg<List<PortfolioTransaction>>()
       transactions.forEach {
         it.unrealizedProfit = BigDecimal.ZERO
@@ -302,7 +302,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateInstrumentMetrics with empty transactions returns empty metrics`() {
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, emptyList(), testDate)
 
-    expect(metrics).toEqual(InvestmentMetricsService.InstrumentMetrics.EMPTY)
+    expect(metrics).toEqual(InstrumentMetrics.EMPTY)
   }
 
   @Test
@@ -356,7 +356,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateInstrumentMetricsWithProfits calls transaction service`() {
     val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
 
-    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
+    every { transactionService.calculateProfits(any(), any()) } returns Unit
 
     val metrics = investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, transactions, testDate)
 
@@ -505,7 +505,7 @@ class InvestmentMetricsServiceTest {
         testDate,
       )
 
-    expect(metrics).toEqual(InvestmentMetricsService.InstrumentMetrics.EMPTY)
+    expect(metrics).toEqual(InstrumentMetrics.EMPTY)
   }
 
   @Test
@@ -517,7 +517,7 @@ class InvestmentMetricsServiceTest {
         createSellTransaction(quantity = BigDecimal("3"), price = BigDecimal("150"), platform = Platform.LHV),
       )
 
-    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
+    every { transactionService.calculateProfits(any(), any()) } returns Unit
 
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(
@@ -539,7 +539,7 @@ class InvestmentMetricsServiceTest {
         createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("150")),
       )
 
-    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
+    every { transactionService.calculateProfits(any(), any()) } returns Unit
 
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(

@@ -15,8 +15,8 @@ import java.time.LocalDate
 @Component
 @ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
 class DailyPortfolioXirrJob(
-  private val portfolioTransactionService: TransactionService,
-  private val portfolioSummaryService: SummaryService,
+  private val transactionService: TransactionService,
+  private val summaryService: SummaryService,
   private val calculationService: CalculationService,
   private val clock: Clock,
   private val jobExecutionService: JobExecutionService,
@@ -32,53 +32,34 @@ class DailyPortfolioXirrJob(
 
   override fun execute() {
     log.info("Starting daily portfolio XIRR calculation")
-    val allTransactions =
-      portfolioTransactionService
-        .getAllTransactions()
-        .sortedWith(compareBy({ it.transactionDate }, { it.id }))
-
-    if (allTransactions.isEmpty()) {
+    val sorted = transactionService.getAllTransactions().sortedWith(compareBy({ it.transactionDate }, { it.id }))
+    if (sorted.isEmpty()) {
       log.info("No transactions found. Skipping XIRR calculation.")
       return
     }
 
-    val firstTransactionDate = allTransactions.first().transactionDate
+    val start = sorted.first().transactionDate
     val yesterday = LocalDate.now(clock).minusDays(1)
+    log.info("Calculating summaries from $start to $yesterday")
 
-    log.info("Calculating summaries from $firstTransactionDate to $yesterday")
+    runCatching { process(start, yesterday) }
+      .onFailure { log.error("Error calculating XIRR", it); throw it }
+  }
 
-    try {
-      val existingDates =
-        portfolioSummaryService
-          .getDailySummariesBetween(firstTransactionDate, yesterday)
-          .map { it.entryDate }
-          .toSet()
+  private fun process(start: LocalDate, end: LocalDate) {
+    val existing = summaryService.getDailySummariesBetween(start, end).map { it.entryDate }.toSet()
+    val dates = generateSequence(start) { it.plusDays(1).takeIf { d -> !d.isAfter(end) } }
+      .filterNot { it in existing }
+      .toList()
 
-      val datesToProcess =
-        generateSequence(firstTransactionDate) { date ->
-          val next = date.plusDays(1)
-          if (next.isAfter(yesterday)) null else next
-        }.filterNot { it in existingDates }
-          .toList()
-
-      if (datesToProcess.isNotEmpty()) {
-        log.info("Processing ${datesToProcess.size} dates in parallel batches")
-
-        val result =
-          runBlocking {
-            calculationService.calculateBatchXirrAsync(datesToProcess)
-          }
-
-        log.info("Processed ${result.processedDates} dates in ${result.duration}ms")
-        if (result.failedCalculations.isNotEmpty()) {
-          log.warn("Failed calculations: ${result.failedCalculations}")
-        }
-      } else {
-        log.info("No new dates to process")
-      }
-    } catch (e: Exception) {
-      log.error("Error calculating XIRR", e)
-      throw e
+    if (dates.isEmpty()) {
+      log.info("No new dates to process")
+      return
     }
+
+    log.info("Processing ${dates.size} dates in parallel batches")
+    val result = runBlocking { calculationService.batch(dates) }
+    log.info("Processed ${result.dates} dates in ${result.duration}ms")
+    if (result.failures.isNotEmpty()) log.warn("Failed calculations: ${result.failures}")
   }
 }

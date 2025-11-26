@@ -14,304 +14,216 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.min
 
+private const val SCALE = 10
+private const val DAMPING_DAYS = 60.0
+private const val XIRR_MIN = -10.0
+private const val XIRR_MAX = 10.0
+
+data class InstrumentMetrics(
+  val investment: BigDecimal,
+  val value: BigDecimal,
+  val profit: BigDecimal,
+  val realized: BigDecimal,
+  val unrealized: BigDecimal,
+  val xirr: Double,
+  val quantity: BigDecimal,
+) {
+  @Deprecated("Use investment instead", ReplaceWith("investment"))
+  val totalInvestment: BigDecimal get() = investment
+  @Deprecated("Use value instead", ReplaceWith("value"))
+  val currentValue: BigDecimal get() = value
+  @Deprecated("Use realized instead", ReplaceWith("realized"))
+  val realizedProfit: BigDecimal get() = realized
+  @Deprecated("Use unrealized instead", ReplaceWith("unrealized"))
+  val unrealizedProfit: BigDecimal get() = unrealized
+  companion object {
+    val EMPTY = InstrumentMetrics(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0.0, BigDecimal.ZERO)
+  }
+}
+
+data class PortfolioMetrics(
+  var totalValue: BigDecimal = BigDecimal.ZERO,
+  var realizedProfit: BigDecimal = BigDecimal.ZERO,
+  var unrealizedProfit: BigDecimal = BigDecimal.ZERO,
+  var totalProfit: BigDecimal = BigDecimal.ZERO,
+  val xirrTransactions: MutableList<Transaction> = mutableListOf(),
+)
+
+data class Holdings(val quantity: BigDecimal, val cost: BigDecimal)
+
 @Service
 class InvestmentMetricsService(
   private val dailyPriceService: DailyPriceService,
   private val transactionService: TransactionService,
   private val clock: Clock,
 ) {
-  private companion object {
-    private val log = LoggerFactory.getLogger(InvestmentMetricsService::class.java)
-  }
+  private val log = LoggerFactory.getLogger(javaClass)
 
-  data class InstrumentMetrics(
-    val totalInvestment: BigDecimal,
-    val currentValue: BigDecimal,
-    val profit: BigDecimal,
-    val realizedProfit: BigDecimal,
-    val unrealizedProfit: BigDecimal,
-    val xirr: Double,
-    val quantity: BigDecimal,
-  ) {
-    override fun toString(): String =
-      "InstrumentMetrics(totalInvestment=$totalInvestment, " +
-        "currentValue=$currentValue, " +
-        "profit=$profit, " +
-        "realizedProfit=$realizedProfit, " +
-        "unrealizedProfit=$unrealizedProfit, " +
-        "xirr=${String.format("%.2f%%", xirr * 100)})"
-
-    companion object {
-      val EMPTY =
-        InstrumentMetrics(
-          totalInvestment = BigDecimal.ZERO,
-          currentValue = BigDecimal.ZERO,
-          profit = BigDecimal.ZERO,
-          realizedProfit = BigDecimal.ZERO,
-          unrealizedProfit = BigDecimal.ZERO,
-          xirr = 0.0,
-          quantity = BigDecimal.ZERO,
-        )
+  fun holdings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> {
+    val result = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id })).fold(Holdings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, tx ->
+      when (tx.transactionType) {
+        TransactionType.BUY -> Holdings(acc.quantity.add(tx.quantity), acc.cost.add(tx.price.multiply(tx.quantity).add(tx.commission)))
+        TransactionType.SELL -> if (acc.quantity > BigDecimal.ZERO) {
+          val ratio = tx.quantity.divide(acc.quantity, SCALE, RoundingMode.HALF_UP)
+          Holdings(acc.quantity.subtract(tx.quantity), acc.cost.multiply(BigDecimal.ONE.subtract(ratio)))
+        } else acc
+      }
     }
+    val average = if (result.quantity > BigDecimal.ZERO) result.cost.divide(result.quantity, SCALE, RoundingMode.HALF_UP) else BigDecimal.ZERO
+    return Pair(result.quantity, average)
   }
 
-  data class PortfolioMetrics(
-    var totalValue: BigDecimal = BigDecimal.ZERO,
-    var realizedProfit: BigDecimal = BigDecimal.ZERO,
-    var unrealizedProfit: BigDecimal = BigDecimal.ZERO,
-    var totalProfit: BigDecimal = BigDecimal.ZERO,
-    val xirrTransactions: MutableList<Transaction> = mutableListOf(),
-  )
+  @Deprecated("Use holdings(transactions) instead", ReplaceWith("holdings(transactions)"))
+  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> = holdings(transactions)
 
-  private fun isToday(date: LocalDate): Boolean = date.isEqual(LocalDate.now(clock))
+  fun value(quantity: BigDecimal, price: BigDecimal): BigDecimal = quantity.multiply(price)
 
-  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> {
+  @Deprecated("Use value(quantity, price) instead", ReplaceWith("value(quantity, price)"))
+  fun calculateCurrentValue(holdings: BigDecimal, currentPrice: BigDecimal): BigDecimal = value(holdings, currentPrice)
+
+  fun profit(quantity: BigDecimal, cost: BigDecimal, price: BigDecimal): BigDecimal =
+    quantity.multiply(price).subtract(quantity.multiply(cost))
+
+  @Deprecated("Use profit(quantity, cost, price) instead", ReplaceWith("profit(quantity, cost, price)"))
+  fun calculateProfit(holdings: BigDecimal, averageCost: BigDecimal, currentPrice: BigDecimal): BigDecimal =
+    profit(holdings, averageCost, currentPrice)
+
+  fun xirr(transactions: List<PortfolioTransaction>, value: BigDecimal, date: LocalDate = LocalDate.now()): List<Transaction> {
+    val flows = transactions.map { convert(it) }
+    return if (value > BigDecimal.ZERO) flows + Transaction(value.toDouble(), date) else flows
+  }
+
+  @Deprecated("Use xirr(transactions, value, date) instead", ReplaceWith("xirr(transactions, value, date)"))
+  fun buildXirrTransactions(transactions: List<PortfolioTransaction>, currentValue: BigDecimal, calculationDate: LocalDate = LocalDate.now()): List<Transaction> =
+    xirr(transactions, currentValue, calculationDate)
+
+  fun adjusted(xirrTransactions: List<Transaction>, date: LocalDate = LocalDate.now()): Double {
+    if (xirrTransactions.size < 2) return 0.0
+    return runCatching {
+      val result = Xirr(xirrTransactions).calculate()
+      val flows = xirrTransactions.filter { it.amount < 0 }
+      if (flows.isEmpty()) return 0.0
+      val days = weighted(flows, date)
+      val factor = min(1.0, days / DAMPING_DAYS)
+      result.coerceIn(XIRR_MIN, XIRR_MAX) * factor
+    }.onFailure { log.error("Error calculating adjusted XIRR", it) }.getOrDefault(0.0)
+  }
+
+  @Deprecated("Use adjusted(xirrTransactions, date) instead", ReplaceWith("adjusted(xirrTransactions, date)"))
+  fun calculateAdjustedXirr(transactions: List<Transaction>, calculationDate: LocalDate = LocalDate.now()): Double =
+    adjusted(transactions, calculationDate)
+
+  fun metrics(instrument: Instrument, transactions: List<PortfolioTransaction>, date: LocalDate = LocalDate.now()): InstrumentMetrics {
+    if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
+    val grouped = transactions.groupBy { it.platform }
+    var investment = BigDecimal.ZERO
     var quantity = BigDecimal.ZERO
-    var totalCost = BigDecimal.ZERO
+    grouped.values.forEach { platformTransactions ->
+      val (qty, avg) = holdings(platformTransactions)
+      if (qty > BigDecimal.ZERO) {
+        investment = investment.add(qty.multiply(avg))
+        quantity = quantity.add(qty)
+      }
+    }
+    val price = instrument.currentPrice ?: BigDecimal.ZERO
+    val current = value(quantity, price)
+    val realized = transactions.filter { it.transactionType == TransactionType.SELL }.sumOf { it.realizedProfit ?: BigDecimal.ZERO }
+    val unrealized = current.subtract(investment)
+    val total = realized.add(unrealized)
+    val xirrList = xirr(transactions, current, date)
+    val rate = adjusted(xirrList, date)
+    return InstrumentMetrics(investment, current, total, realized, unrealized, rate, quantity)
+  }
 
-    transactions.sortedWith(compareBy({ it.transactionDate }, { it.id })).forEach { transaction ->
-      when (transaction.transactionType) {
-        TransactionType.BUY -> {
-          val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
-          totalCost = totalCost.add(cost)
-          quantity = quantity.add(transaction.quantity)
+  @Deprecated("Use metrics(instrument, transactions, date) instead", ReplaceWith("metrics(instrument, transactions, date)"))
+  fun calculateInstrumentMetrics(instrument: Instrument, transactions: List<PortfolioTransaction>, calculationDate: LocalDate = LocalDate.now()): InstrumentMetrics =
+    metrics(instrument, transactions, calculationDate)
+
+  fun metricsWithProfits(instrument: Instrument, transactions: List<PortfolioTransaction>, date: LocalDate = LocalDate.now()): InstrumentMetrics {
+    if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
+    val price = instrument.currentPrice ?: BigDecimal.ZERO
+    transactionService.calculateProfits(transactions, price)
+    return metrics(instrument, transactions, date)
+  }
+
+  @Deprecated("Use metricsWithProfits(instrument, transactions, date) instead", ReplaceWith("metricsWithProfits(instrument, transactions, date)"))
+  fun calculateInstrumentMetricsWithProfits(instrument: Instrument, transactions: List<PortfolioTransaction>, calculationDate: LocalDate = LocalDate.now()): InstrumentMetrics =
+    metricsWithProfits(instrument, transactions, calculationDate)
+
+  fun calculatePortfolioMetrics(groups: Map<Instrument, List<PortfolioTransaction>>, date: LocalDate): PortfolioMetrics {
+    val result = PortfolioMetrics()
+    val all = groups.values.flatten()
+    transactionService.calculateProfits(all)
+    groups.forEach { (instrument, transactions) ->
+      runCatching { unified(instrument, transactions, date, result) }
+        .onFailure {
+          log.warn("Unified calculation failed, using fallback: ${it.message}")
+          fallback(instrument, transactions, date, result)
         }
-
-        TransactionType.SELL -> {
-          if (quantity.compareTo(BigDecimal.ZERO) > 0) {
-            val sellRatio = transaction.quantity.divide(quantity, 10, RoundingMode.HALF_UP)
-            totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
-            quantity = quantity.subtract(transaction.quantity)
-          }
-        }
-      }
     }
-
-    val averageCost =
-      if (quantity.compareTo(BigDecimal.ZERO) > 0) {
-        totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
-      } else {
-        BigDecimal.ZERO
-      }
-
-    return Pair(quantity, averageCost)
+    return result
   }
 
-  fun calculateCurrentValue(
-    holdings: BigDecimal,
-    currentPrice: BigDecimal,
-  ): BigDecimal = holdings.multiply(currentPrice)
-
-  fun calculateProfit(
-    holdings: BigDecimal,
-    averageCost: BigDecimal,
-    currentPrice: BigDecimal,
-  ): BigDecimal {
-    val currentValue = holdings.multiply(currentPrice)
-    val investment = holdings.multiply(averageCost)
-    return currentValue.subtract(investment)
-  }
-
-  fun buildXirrTransactions(
-    transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal,
-    calculationDate: LocalDate = LocalDate.now(),
-  ): List<Transaction> {
-    val cashflows = transactions.map { convertToXirrTransaction(it) }
-
-    return if (currentValue > BigDecimal.ZERO) {
-      cashflows + Transaction(currentValue.toDouble(), calculationDate)
-    } else {
-      cashflows
+  fun convert(tx: PortfolioTransaction): Transaction {
+    val amount = when (tx.transactionType) {
+      TransactionType.BUY -> -(tx.price.multiply(tx.quantity).add(tx.commission))
+      TransactionType.SELL -> tx.price.multiply(tx.quantity).subtract(tx.commission)
     }
+    return Transaction(amount.toDouble(), tx.transactionDate)
   }
 
-  fun calculateAdjustedXirr(
-    transactions: List<Transaction>,
-    calculationDate: LocalDate = LocalDate.now(),
-  ): Double {
-    if (transactions.size < 2) return 0.0
+  @Deprecated("Use convert(tx) instead", ReplaceWith("convert(tx)"))
+  fun convertToXirrTransaction(tx: PortfolioTransaction): Transaction = convert(tx)
 
-    return try {
-      val xirrResult = Xirr(transactions).calculate()
-      val cashFlows = transactions.filter { it.amount < 0 }
-
-      if (cashFlows.isEmpty()) {
-        0.0
-      } else {
-        val weightedDays = calculateWeightedInvestmentAge(cashFlows, calculationDate)
-        val dampingFactor = min(1.0, weightedDays / 60.0)
-        val boundedXirr = xirrResult.coerceIn(-10.0, 10.0)
-        boundedXirr * dampingFactor
-      }
-    } catch (e: Exception) {
-      log.error("Error calculating adjusted XIRR", e)
-      0.0
-    }
-  }
-
-  private fun calculateWeightedInvestmentAge(
-    cashFlows: List<Transaction>,
-    calculationDate: LocalDate,
-  ): Double {
-    val totalInvestment = cashFlows.sumOf { -it.amount }
-    return cashFlows.sumOf { transaction ->
-      val weight = -transaction.amount / totalInvestment
-      val days = ChronoUnit.DAYS.between(transaction.date, calculationDate).toDouble()
+  private fun weighted(flows: List<Transaction>, date: LocalDate): Double {
+    val total = flows.sumOf { -it.amount }
+    return flows.sumOf { tx ->
+      val weight = -tx.amount / total
+      val days = ChronoUnit.DAYS.between(tx.date, date).toDouble()
       days * weight
     }
   }
 
-  fun calculateInstrumentMetrics(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate = LocalDate.now(),
-  ): InstrumentMetrics {
-    if (transactions.isEmpty()) {
-      return InstrumentMetrics.EMPTY
+  private fun isToday(date: LocalDate): Boolean = date.isEqual(LocalDate.now(clock))
+
+  private fun unified(instrument: Instrument, transactions: List<PortfolioTransaction>, date: LocalDate, metrics: PortfolioMetrics) {
+    val (quantity, average) = holdings(transactions)
+    val realized = transactions.filter { it.transactionType == TransactionType.SELL }.sumOf { it.realizedProfit ?: BigDecimal.ZERO }
+    val investment = quantity.multiply(average)
+    val current = when {
+      quantity <= BigDecimal.ZERO -> BigDecimal.ZERO
+      isToday(date) -> quantity.multiply(instrument.currentPrice ?: BigDecimal.ZERO)
+      else -> quantity.multiply(dailyPriceService.getPrice(instrument, date))
     }
-
-    val groupedByPlatform = transactions.groupBy { it.platform }
-
-    var totalInvestment = BigDecimal.ZERO
-    var totalHoldings = BigDecimal.ZERO
-
-    groupedByPlatform.forEach { (_, platformTransactions) ->
-      val (quantity, averageCost) = calculateCurrentHoldings(platformTransactions)
-      if (quantity > BigDecimal.ZERO) {
-        val investment = quantity.multiply(averageCost)
-        totalInvestment = totalInvestment.add(investment)
-        totalHoldings = totalHoldings.add(quantity)
-      }
-    }
-
-    val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
-    val currentValue = calculateCurrentValue(totalHoldings, currentPrice)
-
-    val realizedProfit =
-      transactions
-        .filter { it.transactionType == TransactionType.SELL }
-        .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
-
-    val unrealizedProfit = currentValue.subtract(totalInvestment)
-    val profit = realizedProfit.add(unrealizedProfit)
-
-    val xirrTransactions = buildXirrTransactions(transactions, currentValue, calculationDate)
-    val xirr = calculateAdjustedXirr(xirrTransactions, calculationDate)
-
-    return InstrumentMetrics(
-      totalInvestment = totalInvestment,
-      currentValue = currentValue,
-      profit = profit,
-      realizedProfit = realizedProfit,
-      unrealizedProfit = unrealizedProfit,
-      xirr = xirr,
-      quantity = totalHoldings,
-    )
-  }
-
-  fun calculateInstrumentMetricsWithProfits(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate = LocalDate.now(),
-  ): InstrumentMetrics {
-    if (transactions.isEmpty()) {
-      return InstrumentMetrics.EMPTY
-    }
-
-    val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
-    transactionService.calculateTransactionProfits(transactions, currentPrice)
-    return calculateInstrumentMetrics(instrument, transactions, calculationDate)
-  }
-
-  fun calculatePortfolioMetrics(
-    instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
-    date: LocalDate,
-  ): PortfolioMetrics {
-    val metrics = PortfolioMetrics()
-
-    val allTransactions = instrumentGroups.values.flatten()
-    transactionService.calculateTransactionProfits(allTransactions)
-
-    instrumentGroups.forEach { (instrument, instrumentTransactions) ->
-      try {
-        processInstrumentWithUnifiedCalculation(instrument, instrumentTransactions, date, metrics)
-      } catch (e: Exception) {
-        log.warn("Unified calculation failed, using fallback: ${e.message}")
-        processInstrumentWithFallback(instrument, instrumentTransactions, date, metrics)
-      }
-    }
-
-    return metrics
-  }
-
-  private fun processInstrumentWithUnifiedCalculation(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-    date: LocalDate,
-    metrics: PortfolioMetrics,
-  ) {
-    val holdingsResult = calculateCurrentHoldings(transactions)
-    val currentHoldings = holdingsResult.first
-    val averageCost = holdingsResult.second
-
-    val realizedProfit =
-      transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
-
-    val investment = currentHoldings.multiply(averageCost)
-
-    val currentValue =
-      when {
-      currentHoldings <= BigDecimal.ZERO -> BigDecimal.ZERO
-      isToday(date) -> currentHoldings.multiply(instrument.currentPrice ?: BigDecimal.ZERO)
-      else -> currentHoldings.multiply(dailyPriceService.getPrice(instrument, date))
-    }
-
-    val unrealizedProfit = currentValue.subtract(investment)
-
-    if (currentValue > BigDecimal.ZERO || realizedProfit > BigDecimal.ZERO) {
-      updateMetricsWithSeparateProfits(metrics, currentValue, realizedProfit, unrealizedProfit)
-      addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
+    val unrealized = current.subtract(investment)
+    if (current > BigDecimal.ZERO || realized > BigDecimal.ZERO) {
+      update(metrics, current, realized, unrealized)
+      append(metrics.xirrTransactions, transactions, current, date)
     }
   }
 
-  private fun processInstrumentWithFallback(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-    date: LocalDate,
-    metrics: PortfolioMetrics,
-  ) {
-    val netQuantity = calculateNetQuantity(transactions)
-
-    if (netQuantity <= BigDecimal.ZERO) {
-      val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, BigDecimal.ZERO)
-      if (realizedProfit > BigDecimal.ZERO) {
-        updateMetricsWithSeparateProfits(metrics, BigDecimal.ZERO, realizedProfit, unrealizedProfit)
-        addXirrTransactions(metrics.xirrTransactions, transactions, BigDecimal.ZERO, date)
+  private fun fallback(instrument: Instrument, transactions: List<PortfolioTransaction>, date: LocalDate, metrics: PortfolioMetrics) {
+    val net = quantity(transactions)
+    if (net <= BigDecimal.ZERO) {
+      val (realized, unrealized) = profits(transactions, BigDecimal.ZERO)
+      if (realized > BigDecimal.ZERO) {
+        update(metrics, BigDecimal.ZERO, realized, unrealized)
+        append(metrics.xirrTransactions, transactions, BigDecimal.ZERO, date)
       }
       return
     }
-
-    val price =
-      try {
-      dailyPriceService.getPrice(instrument, date)
-    } catch (e: NoSuchElementException) {
-      log.warn("Skipping ${instrument.symbol} on $date: ${e.message}")
-      return
-    }
-
-    val currentValue = netQuantity.multiply(price)
-    val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, currentValue)
-
-    if (currentValue > BigDecimal.ZERO || realizedProfit > BigDecimal.ZERO) {
-      updateMetricsWithSeparateProfits(metrics, currentValue, realizedProfit, unrealizedProfit)
-      addXirrTransactions(metrics.xirrTransactions, transactions, currentValue, date)
+    val price = runCatching { dailyPriceService.getPrice(instrument, date) }
+      .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
+      .getOrNull() ?: return
+    val current = net.multiply(price)
+    val (realized, unrealized) = profits(transactions, current)
+    if (current > BigDecimal.ZERO || realized > BigDecimal.ZERO) {
+      update(metrics, current, realized, unrealized)
+      append(metrics.xirrTransactions, transactions, current, date)
     }
   }
 
-  private fun calculateNetQuantity(transactions: List<PortfolioTransaction>): BigDecimal =
+  private fun quantity(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions.fold(BigDecimal.ZERO) { acc, tx ->
       when (tx.transactionType) {
         TransactionType.BUY -> acc.add(tx.quantity)
@@ -319,107 +231,35 @@ class InvestmentMetricsService(
       }
     }
 
-  private fun calculateFallbackProfits(
-    transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal,
-  ): Pair<BigDecimal, BigDecimal> {
-    val totalBuys = calculateTotalBuys(transactions)
-    val totalSells = calculateTotalSells(transactions)
-    val realizedGains = calculateRealizedGains(transactions, totalBuys, totalSells)
-    val unrealizedGains = calculateUnrealizedGains(transactions, currentValue, totalBuys)
-    return Pair(realizedGains, unrealizedGains)
-  }
-
-  private fun calculateTotalBuys(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.BUY }
-      .sumOf { it.price.multiply(it.quantity).add(it.commission) }
-
-  private fun calculateTotalSells(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.price.multiply(it.quantity).subtract(it.commission) }
-
-  private fun calculateRealizedGains(
-    transactions: List<PortfolioTransaction>,
-    totalBuys: BigDecimal,
-    totalSells: BigDecimal,
-  ): BigDecimal {
-    val sellQuantity =
-      transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.quantity }
-
-    val buyQuantity =
-      transactions
-      .filter { it.transactionType == TransactionType.BUY }
-      .sumOf { it.quantity }
-
-    return if (totalSells <= BigDecimal.ZERO || totalBuys <= BigDecimal.ZERO || buyQuantity <= BigDecimal.ZERO) {
-      BigDecimal.ZERO
-    } else {
-      val avgBuyPrice = totalBuys.divide(buyQuantity, 10, RoundingMode.HALF_UP)
-      totalSells.subtract(avgBuyPrice.multiply(sellQuantity))
+  private fun profits(transactions: List<PortfolioTransaction>, current: BigDecimal): Pair<BigDecimal, BigDecimal> {
+    val buys = transactions.filter { it.transactionType == TransactionType.BUY }
+    val sells = transactions.filter { it.transactionType == TransactionType.SELL }
+    val buyTotal = buys.sumOf { it.price.multiply(it.quantity).add(it.commission) }
+    val sellTotal = sells.sumOf { it.price.multiply(it.quantity).subtract(it.commission) }
+    val buyQty = buys.sumOf { it.quantity }
+    val sellQty = sells.sumOf { it.quantity }
+    val realized = if (sellTotal <= BigDecimal.ZERO || buyTotal <= BigDecimal.ZERO || buyQty <= BigDecimal.ZERO) BigDecimal.ZERO
+    else {
+      val avg = buyTotal.divide(buyQty, SCALE, RoundingMode.HALF_UP)
+      sellTotal.subtract(avg.multiply(sellQty))
     }
+    val soldCost = if (buyQty <= BigDecimal.ZERO) BigDecimal.ZERO else {
+      val avg = buyTotal.divide(buyQty, SCALE, RoundingMode.HALF_UP)
+      sells.sumOf { avg.multiply(it.quantity) }
+    }
+    val unrealized = current.subtract(buyTotal.subtract(soldCost))
+    return Pair(realized, unrealized)
   }
 
-  private fun calculateUnrealizedGains(
-    transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal,
-    totalBuys: BigDecimal,
-  ): BigDecimal {
-    val soldCost = calculateSoldCost(transactions, totalBuys)
-    return currentValue.subtract(totalBuys.subtract(soldCost))
-  }
-
-  private fun calculateSoldCost(
-    transactions: List<PortfolioTransaction>,
-    totalBuys: BigDecimal,
-  ): BigDecimal {
-    val buyQuantity =
-      transactions
-      .filter { it.transactionType == TransactionType.BUY }
-      .sumOf { it.quantity }
-
-    if (buyQuantity <= BigDecimal.ZERO) return BigDecimal.ZERO
-
-    val avgBuyPrice = totalBuys.divide(buyQuantity, 10, RoundingMode.HALF_UP)
-
-    return transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { avgBuyPrice.multiply(it.quantity) }
-  }
-
-  private fun updateMetricsWithSeparateProfits(
-    metrics: PortfolioMetrics,
-    value: BigDecimal,
-    realizedProfit: BigDecimal,
-    unrealizedProfit: BigDecimal,
-  ) {
+  private fun update(metrics: PortfolioMetrics, value: BigDecimal, realized: BigDecimal, unrealized: BigDecimal) {
     metrics.totalValue = metrics.totalValue.add(value)
-    metrics.realizedProfit = metrics.realizedProfit.add(realizedProfit)
-    metrics.unrealizedProfit = metrics.unrealizedProfit.add(unrealizedProfit)
-    metrics.totalProfit = metrics.totalProfit.add(realizedProfit).add(unrealizedProfit)
+    metrics.realizedProfit = metrics.realizedProfit.add(realized)
+    metrics.unrealizedProfit = metrics.unrealizedProfit.add(unrealized)
+    metrics.totalProfit = metrics.totalProfit.add(realized).add(unrealized)
   }
 
-  private fun addXirrTransactions(
-    xirrList: MutableList<Transaction>,
-    transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal,
-    date: LocalDate,
-  ) {
-    transactions.forEach { tx ->
-      xirrList.add(convertToXirrTransaction(tx))
-    }
-    xirrList.add(Transaction(currentValue.toDouble(), date))
-  }
-
-  fun convertToXirrTransaction(tx: PortfolioTransaction): Transaction {
-    val amount =
-      when (tx.transactionType) {
-        TransactionType.BUY -> -(tx.price.multiply(tx.quantity).add(tx.commission))
-        TransactionType.SELL -> tx.price.multiply(tx.quantity).subtract(tx.commission)
-      }
-    return Transaction(amount.toDouble(), tx.transactionDate)
+  private fun append(xirrList: MutableList<Transaction>, transactions: List<PortfolioTransaction>, value: BigDecimal, date: LocalDate) {
+    transactions.forEach { xirrList.add(convert(it)) }
+    xirrList.add(Transaction(value.toDouble(), date))
   }
 }

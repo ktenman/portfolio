@@ -72,7 +72,7 @@ class InstrumentServiceTest {
   fun `should return instrument when found by id`() {
     every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
 
-    val result = instrumentService.getInstrumentById(1L)
+    val result = instrumentService.getInstrument(1L)
 
     expect(result).toEqual(testInstrument)
     expect(result.symbol).toEqual("AAPL")
@@ -84,7 +84,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findById(999L) } returns Optional.empty()
 
     expect {
-      instrumentService.getInstrumentById(999L)
+      instrumentService.getInstrument(999L)
     }.toThrow<RuntimeException> {
       messageToContain("Instrument not found with id: 999")
     }
@@ -96,7 +96,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
     every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns emptyList()
 
-    val result = instrumentService.saveInstrument(testInstrument)
+    val result = instrumentService.save(testInstrument)
 
     expect(result).toEqual(testInstrument)
     verify { instrumentRepository.save(testInstrument) }
@@ -123,12 +123,12 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -174,12 +174,12 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -208,12 +208,12 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -240,12 +240,12 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal.ZERO,
-        currentValue = BigDecimal.ZERO,
+      InstrumentMetrics(
+        investment = BigDecimal.ZERO,
+        value = BigDecimal.ZERO,
         profit = BigDecimal.ZERO,
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal.ZERO,
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal.ZERO,
         xirr = 0.0,
         quantity = BigDecimal.ZERO,
       )
@@ -272,12 +272,12 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal.ZERO,
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal.ZERO,
         profit = BigDecimal("-1000"),
-        realizedProfit = BigDecimal("-1000"),
-        unrealizedProfit = BigDecimal.ZERO,
+        realized = BigDecimal("-1000"),
+        unrealized = BigDecimal.ZERO,
         xirr = -100.0,
         quantity = BigDecimal.ZERO,
       )
@@ -339,12 +339,12 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -379,12 +379,12 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -421,12 +421,12 @@ class InstrumentServiceTest {
     testInstrument.currentPrice = BigDecimal("150")
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -468,12 +468,12 @@ class InstrumentServiceTest {
     testInstrument.currentPrice = BigDecimal("14.80")
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("2181.50"),
-        currentValue = BigDecimal("2220.00"),
+      InstrumentMetrics(
+        investment = BigDecimal("2181.50"),
+        value = BigDecimal("2220.00"),
         profit = BigDecimal("38.50"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("38.50"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("38.50"),
         xirr = 0.0,
         quantity = BigDecimal("150"),
       )
@@ -510,12 +510,12 @@ class InstrumentServiceTest {
     testInstrument.currentPrice = BigDecimal("14.54")
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("4652.325"),
-        currentValue = BigDecimal("4665.159"),
+      InstrumentMetrics(
+        investment = BigDecimal("4652.325"),
+        value = BigDecimal("4665.159"),
         profit = BigDecimal("12.834"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("12.834"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("12.834"),
         xirr = 0.0,
         quantity = BigDecimal("320.85"),
       )
@@ -555,12 +555,12 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1550"),
-        currentValue = BigDecimal("2250"),
+      InstrumentMetrics(
+        investment = BigDecimal("1550"),
+        value = BigDecimal("2250"),
         profit = BigDecimal("700"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("700"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("700"),
         xirr = 30.0,
         quantity = BigDecimal("15"),
       )
@@ -599,12 +599,12 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1550"),
-        currentValue = BigDecimal("2250"),
+      InstrumentMetrics(
+        investment = BigDecimal("1550"),
+        value = BigDecimal("2250"),
         profit = BigDecimal("700"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("700"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("700"),
         xirr = 30.0,
         quantity = BigDecimal("15"),
       )
@@ -637,12 +637,12 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -719,12 +719,12 @@ class InstrumentServiceTest {
       )
 
     val metrics1 =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal("200"),
-        unrealizedProfit = BigDecimal("300"),
+        realized = BigDecimal("200"),
+        unrealized = BigDecimal("300"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )
@@ -752,12 +752,12 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
-        totalInvestment = BigDecimal("1000"),
-        currentValue = BigDecimal("1500"),
+      InstrumentMetrics(
+        investment = BigDecimal("1000"),
+        value = BigDecimal("1500"),
         profit = BigDecimal("500"),
-        realizedProfit = BigDecimal.ZERO,
-        unrealizedProfit = BigDecimal("500"),
+        realized = BigDecimal.ZERO,
+        unrealized = BigDecimal("500"),
         xirr = 25.0,
         quantity = BigDecimal("10"),
       )

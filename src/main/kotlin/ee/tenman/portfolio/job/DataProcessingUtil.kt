@@ -20,28 +20,15 @@ class DataProcessingUtil(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun processDailyData(
-    instrument: Instrument,
-    dailyData: Map<LocalDate, DailyPriceData>,
-    providerName: ProviderName,
-  ) {
+  fun processDailyData(instrument: Instrument, dailyData: Map<LocalDate, DailyPriceData>, providerName: ProviderName) {
     transactionRunner.runInTransaction {
-      dailyData.forEach { (date, data) ->
-        val dailyPrice = createDailyPrice(instrument, date, data, providerName)
-        dailyPriceService.saveDailyPrice(dailyPrice)
-      }
+      dailyData.forEach { (date, data) -> dailyPriceService.saveDailyPrice(create(instrument, date, data, providerName)) }
     }
-
-    updateInstrumentPrice(instrument)
+    update(instrument)
     log.info("Successfully retrieved and processed data for ${instrument.symbol}")
   }
 
-  private fun createDailyPrice(
-    instrument: Instrument,
-    date: LocalDate,
-    data: DailyPriceData,
-    providerName: ProviderName,
-  ): DailyPrice =
+  private fun create(instrument: Instrument, date: LocalDate, data: DailyPriceData, providerName: ProviderName) =
     DailyPrice(
       instrument = instrument,
       entryDate = date,
@@ -53,10 +40,9 @@ class DataProcessingUtil(
       volume = data.volume,
     )
 
-  private fun updateInstrumentPrice(instrument: Instrument) {
-    val currentDate = LocalDate.now(clock)
-    val dailyPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)
-    instrument.currentPrice = dailyPrice?.closePrice
-    instrumentService.saveInstrument(instrument)
+  private fun update(instrument: Instrument) {
+    val price = dailyPriceService.findLastDailyPrice(instrument, LocalDate.now(clock))
+    instrument.currentPrice = price?.closePrice
+    instrumentService.save(instrument)
   }
 }

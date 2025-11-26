@@ -52,7 +52,7 @@ class InstrumentController(
   fun saveInstrument(
     @Valid @RequestBody instrumentDto: InstrumentDto,
   ): InstrumentDto {
-    val savedInstrument = instrumentService.saveInstrument(instrumentDto.toEntity())
+    val savedInstrument = instrumentService.save(instrumentDto.toEntity())
     return InstrumentDto.fromEntity(savedInstrument)
   }
 
@@ -74,7 +74,7 @@ class InstrumentController(
     @PathVariable id: Long,
     @Valid @RequestBody instrumentDto: InstrumentDto,
   ): InstrumentDto {
-    val existingInstrument = instrumentService.getInstrumentById(id)
+    val existingInstrument = instrumentService.getInstrument(id)
     val updatedInstrument =
       existingInstrument.apply {
         symbol = instrumentDto.symbol
@@ -84,7 +84,7 @@ class InstrumentController(
         currentPrice = instrumentDto.currentPrice
       }
 
-    val savedInstrument = instrumentService.saveInstrument(updatedInstrument)
+    val savedInstrument = instrumentService.save(updatedInstrument)
     return InstrumentDto.fromEntity(savedInstrument)
   }
 
@@ -122,7 +122,7 @@ class InstrumentController(
 
     CoroutineScope(Dispatchers.Default).launch {
       val allTransactions = transactionService.getAllTransactions()
-      transactionService.calculateTransactionProfits(allTransactions)
+      transactionService.calculateProfits(allTransactions)
     }
 
     return mapOf("status" to "Jobs triggered, caches cleared, and transaction profits recalculated")

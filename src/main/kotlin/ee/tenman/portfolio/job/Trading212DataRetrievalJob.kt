@@ -15,6 +15,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
+private val TRADING_START = LocalTime.of(10, 0)
+private val TRADING_END = LocalTime.of(18, 30)
+
 @Component
 @ConditionalOnProperty(
   name = ["scheduling.enabled", "scheduling.jobs.trading212-enabled"],
@@ -45,17 +48,10 @@ class Trading212DataRetrievalJob(
 
   private fun isWithinTradingHours(): Boolean {
     val estonianTime = ZonedDateTime.now(clock.withZone(estonianZone))
-    val dayOfWeek = estonianTime.dayOfWeek
+    if (estonianTime.dayOfWeek == DayOfWeek.SATURDAY || estonianTime.dayOfWeek == DayOfWeek.SUNDAY) return false
+
     val currentTime = estonianTime.toLocalTime()
-
-    if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
-      return false
-    }
-
-    val startTime = LocalTime.of(10, 0)
-    val endTime = LocalTime.of(18, 30)
-
-    return !currentTime.isBefore(startTime) && !currentTime.isAfter(endTime)
+    return !currentTime.isBefore(TRADING_START) && !currentTime.isAfter(TRADING_END)
   }
 
   override fun execute() {

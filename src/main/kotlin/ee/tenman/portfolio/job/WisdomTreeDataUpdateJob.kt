@@ -25,29 +25,21 @@ class WisdomTreeDataUpdateJob(
 
   override fun execute() {
     log.info("Executing WisdomTree data update job for WTAI")
-    val startTime = Instant.now()
-    var status = JobStatus.SUCCESS
-    var message: String? = null
-
-    try {
-      val result = wisdomTreeUpdateService.updateWtaiHoldings()
-      message =
-        "Successfully updated WTAI holdings: " +
-          "deleted=${result["deleted"]}, created=${result["created"]}"
-      log.info(message)
-    } catch (e: Exception) {
-      status = JobStatus.FAILURE
-      message = "Failed to update WTAI holdings: ${e.message}"
-      log.error("WisdomTree data update job failed", e)
-    } finally {
-      val endTime = Instant.now()
-      jobTransactionService.saveJobExecution(
-        job = this,
-        startTime = startTime,
-        endTime = endTime,
-        status = status,
-        message = message,
-      )
+    val start = Instant.now()
+    val result = runCatching {
+      val data = wisdomTreeUpdateService.updateWtaiHoldings()
+      val msg = "Successfully updated WTAI holdings: deleted=${data["deleted"]}, created=${data["created"]}"
+      log.info(msg)
+      msg
     }
+
+    jobTransactionService.saveJobExecution(
+      job = this,
+      startTime = start,
+      endTime = Instant.now(),
+      status = if (result.isSuccess) JobStatus.SUCCESS else JobStatus.FAILURE,
+      message = result.getOrElse { "Failed to update WTAI holdings: ${it.message}" },
+    )
+    result.onFailure { log.error("WisdomTree data update job failed", it) }
   }
 }

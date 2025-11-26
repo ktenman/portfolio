@@ -748,6 +748,9 @@ private fun calculateTransactionCost(tx: Transaction): BigDecimal =
 - **Spring best practices**: Proper use of `@Transactional`, dependency injection, and service layer patterns
 - **Error handling**: Use sealed classes or exceptions appropriately, never swallow errors
 - **BigDecimal for money**: Always use BigDecimal for financial calculations, never float/double
+- **Dependency naming**: Keep full descriptive names for injected dependencies. For services use the full name (e.g., `transactionService`, `dailyPriceService`, `instrumentService`), never abbreviate to short names like `transactions`, `prices`, or `instruments`. For repositories use full names (e.g., `instrumentRepository`, `transactionRepository`)
+- **Method naming**: Use descriptive method names that clearly indicate what the method does. Prefer `getAllTransactions()`, `getAllInstruments()`, `getAllDailySummaries()` over generic names like `list()`. The method name should be self-documenting and indicate the return type or action. Exception: `findAll()` is acceptable when the context is clear (e.g., `instrumentService.findAll()`)
+- **Variable naming**: Use descriptive variable names that indicate what the variable contains. Prefer `instruments`, `transactions`, `summaries` over generic names like `list`, `items`, `data`
 
 ### Code Quality Tools
 
@@ -1006,3 +1009,93 @@ ALWAYS follow the existing file naming patterns in the codebase:
 - Services: `[domain]-service.ts` (e.g., `instruments-service.ts`)
 - Models/Types: `[entity].ts` (e.g., `instrument.ts`)
 - Keep file names consistent with the existing patterns in each directory
+
+## CI/CD and Code Review Rules
+
+- All CI workflows must pass before code changes may be reviewed
+- The existing code structure must not be changed without a strong reason
+- Every bug must be reproduced by a unit test before being fixed
+- Every new feature must be covered by a unit test before it is implemented
+- Minor inconsistencies and typos in the existing code may be fixed
+
+## Kotlin/Backend Design Principles
+
+### Method and Class Design
+
+- Method bodies may not contain blank lines
+- Method and function bodies may not contain comments
+- Variable names should be clear single-word nouns when possible
+- Method names should be clear single-word verbs when possible (exceptions for Kotlin idioms like `findBySymbol`)
+- Error and log messages should not end with a period
+- Error and log messages must always be a single sentence
+- Favor "fail fast" paradigm over "fail safe": throw exceptions early
+- Constructors should only contain assignment statements
+- Favor immutable objects (`val`) over mutable ones (`var`)
+- Use Kotlin data classes for DTOs and value objects
+- Use `runCatching` for error handling instead of try-catch blocks
+- Use guard clauses for early returns instead of nested conditionals
+
+### Exception Handling
+
+- Exception messages must include as much context as possible
+- Never swallow exceptions silently
+- Use domain-specific exceptions when appropriate
+- Prefer `runCatching { }.getOrElse { }` over try-catch
+
+### Kotlin-Specific Guidelines
+
+- Use extension functions for domain operations
+- Prefer `when` expressions over if-else chains
+- Use `?.let { }` and `?: return` for null handling
+- Use `also`, `apply`, `let`, `run`, `with` appropriately
+- Prefer functional transformations (`map`, `filter`, `fold`) over imperative loops
+- Use `generateSequence` instead of while loops with mutable state
+
+## Testing Standards
+
+### Test Design Principles
+
+- Every change must be covered by a unit test to guarantee repeatability
+- Tests must be named as full English sentences stating what the object under test does
+- Use backtick naming: `` `should return empty list when no transactions exist`() ``
+- Each test should verify only one specific behavioral pattern
+- Tests must use irregular inputs such as non-ASCII strings where appropriate
+- Tests may not share object attributes between test methods
+- Tests must prepare a clean state at the start rather than clean up after themselves
+- Prefer fake objects and stubs over mocks when possible
+
+### Test Structure
+
+- Test cases should be as short as possible
+- In every test, the assertion must be the last statement
+- Tests may not test functionality irrelevant to their stated purpose
+- Tests must close resources they use (file handlers, sockets, database connections)
+- Objects must not provide functionality used only by tests
+- Tests may not assert on side effects such as logging output
+- The best tests consist of a single statement
+- Test method names must spell "cannot" and "dont" without apostrophes
+
+### Test Isolation
+
+- Tests must assume the absence of an Internet connection
+- Tests must not mock the file system, sockets, or memory managers
+- Tests should use ephemeral TCP ports generated using appropriate library functions
+- Tests should inline small fixtures instead of loading them from files
+- Tests should create large fixtures at runtime rather than store them in files
+- Tests may create supplementary fixture objects to avoid code duplication
+
+### Test Reliability
+
+- Tests must not wait indefinitely for any event; they must always stop waiting on a timeout
+- Tests must retry potentially flaky code blocks
+- Tests must not rely on default configurations of the objects they test
+- Tests should store temporary files in temporary directories, not in the codebase directory
+
+## Frontend (Vue/TypeScript) Standards
+
+- Use TypeScript strict mode
+- Prefer composition API over options API
+- Use `const` for all variables unless reassignment is required
+- Extract reusable logic into composables (`use-*.ts`)
+- Keep components focused and under 200 lines
+- Use proper TypeScript types, avoid `any`

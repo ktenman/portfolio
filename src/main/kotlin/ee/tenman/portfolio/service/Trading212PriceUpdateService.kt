@@ -28,7 +28,7 @@ class Trading212PriceUpdateService(
       val instrument = instrumentService.findBySymbol(symbol)
       if (instrument != null) {
         instrument.currentPrice = price
-        instrumentService.saveInstrument(instrument)
+        instrumentService.save(instrument)
         log.debug("Updated current price for {}: {}", symbol, price)
 
         if (!isWeekend) {

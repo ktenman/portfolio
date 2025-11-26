@@ -71,7 +71,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(any()) } returns null
 
     every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal.ZERO,
         totalProfit = BigDecimal.ZERO,
         xirrTransactions = mutableListOf(),
@@ -123,7 +123,7 @@ class SummaryServiceTest {
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("21870.94"),
         totalProfit = BigDecimal("-1762.39"),
         xirrTransactions = mutableListOf(),
@@ -180,13 +180,12 @@ class SummaryServiceTest {
       )
 
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = expectedTotal,
-          totalProfit = expectedProfit,
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = expectedTotal,
+        totalProfit = expectedProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     val summary = summaryService.calculateSummaryForDate(date)
     val expectedEarningsPerDay =
@@ -309,13 +308,12 @@ class SummaryServiceTest {
         Transaction(totalValue.toDouble(), LocalDate.of(2024, 7, 5)),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = totalValue,
-          totalProfit = totalProfit,
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = totalValue,
+        totalProfit = totalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     every { portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()) } answers { firstArg() }
     val emptyList = emptyList<PortfolioDailySummary>()
@@ -441,13 +439,12 @@ class SummaryServiceTest {
         Transaction(expectedTotalValue.toDouble(), date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = expectedTotalValue,
-          totalProfit = BigDecimal.ZERO,
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = expectedTotalValue,
+        totalProfit = BigDecimal.ZERO,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     val summary = summaryService.calculateSummaryForDate(date)
 
@@ -478,7 +475,7 @@ class SummaryServiceTest {
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("600.00"),
         totalProfit = BigDecimal("100.00"),
         xirrTransactions = mutableListOf(),
@@ -546,13 +543,12 @@ class SummaryServiceTest {
         Transaction(totalValue.toDouble(), today),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = totalValue,
-          totalProfit = totalProfit,
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = totalValue,
+        totalProfit = totalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     every { portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()) } answers { firstArg() }
     every { portfolioDailySummaryRepository.flush() } returns Unit
@@ -608,13 +604,12 @@ class SummaryServiceTest {
         Transaction(expectedTotalValue.toDouble(), date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = expectedTotalValue,
-          totalProfit = expectedTotalProfit,
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = expectedTotalValue,
+        totalProfit = expectedTotalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     val summary = summaryService.calculateSummaryForDate(date)
 
@@ -663,13 +658,12 @@ class SummaryServiceTest {
         Transaction(totalValue.toDouble(), date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = totalValue,
-          totalProfit = totalProfit,
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = totalValue,
+        totalProfit = totalProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     val summary = summaryService.calculateSummaryForDate(date)
 
@@ -723,13 +717,12 @@ class SummaryServiceTest {
         Transaction(2225.0, date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = BigDecimal("2225.00"),
-          totalProfit = BigDecimal("175.00"),
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = BigDecimal("2225.00"),
+        totalProfit = BigDecimal("175.00"),
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     val summary = summaryService.calculateSummaryForDate(date)
 
@@ -776,7 +769,7 @@ class SummaryServiceTest {
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("1200.00"),
         totalProfit = BigDecimal("200.00"),
         xirrTransactions = mutableListOf(),
@@ -883,7 +876,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(today) } returns existingSummary
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("1200.00"),
         totalProfit = BigDecimal("200.00"),
         xirrTransactions = mutableListOf(),
@@ -928,7 +921,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns previousSummary
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("2000.00"),
         totalProfit = BigDecimal("100.00"),
         xirrTransactions = mutableListOf(),
@@ -963,7 +956,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns null
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("2000.00"),
         totalProfit = BigDecimal("100.00"),
         xirrTransactions = mutableListOf(),
@@ -1008,7 +1001,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns previousSummary
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("2100.00"),
         totalProfit = BigDecimal("150.00"),
         xirrTransactions = mutableListOf(),

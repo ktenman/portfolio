@@ -40,7 +40,7 @@ class PortfolioTransactionController(
   fun createTransaction(
     @Valid @RequestBody request: TransactionRequestDto,
   ): TransactionResponseDto {
-    val instrument = instrumentService.getInstrumentById(request.instrumentId)
+    val instrument = instrumentService.getInstrument(request.instrumentId)
     val transaction =
       PortfolioTransaction(
         instrument = instrument,
@@ -69,8 +69,8 @@ class PortfolioTransactionController(
     val isDateFiltered = fromDate != null || untilDate != null
     if (isDateFiltered && transactions.isNotEmpty()) {
       val fullHistory =
-        portfolioTransactionService.getFullTransactionHistoryForProfitCalculation(transactions, platformList)
-      portfolioTransactionService.calculateTransactionProfits(fullHistory)
+        portfolioTransactionService.getTransactionHistory(transactions, platformList)
+      portfolioTransactionService.calculateProfits(fullHistory)
 
       val profitMap = fullHistory.associateBy { it.id }
       transactions.forEach { tx ->
@@ -82,7 +82,7 @@ class PortfolioTransactionController(
         }
       }
     } else {
-      portfolioTransactionService.calculateTransactionProfits(transactions)
+      portfolioTransactionService.calculateProfits(transactions)
     }
 
     val groupedByInstrument = transactions.groupBy { it.instrument }
@@ -126,8 +126,8 @@ class PortfolioTransactionController(
   fun getTransaction(
     @PathVariable id: Long,
   ): TransactionResponseDto {
-    val transaction = portfolioTransactionService.getTransactionById(id)
-    portfolioTransactionService.calculateTransactionProfits(listOf(transaction))
+    val transaction = portfolioTransactionService.getTransaction(id)
+    portfolioTransactionService.calculateProfits(listOf(transaction))
     return TransactionResponseDto.fromEntity(transaction)
   }
 
@@ -137,9 +137,9 @@ class PortfolioTransactionController(
     @PathVariable id: Long,
     @Valid @RequestBody request: TransactionRequestDto,
   ): TransactionResponseDto {
-    val existingTransaction = portfolioTransactionService.getTransactionById(id)
+    val existingTransaction = portfolioTransactionService.getTransaction(id)
 
-    val instrument = instrumentService.getInstrumentById(request.instrumentId)
+    val instrument = instrumentService.getInstrument(request.instrumentId)
 
     existingTransaction.apply {
       this.instrument = instrument
