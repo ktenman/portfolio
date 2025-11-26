@@ -29,7 +29,8 @@ data class InstrumentMetrics(
   val quantity: BigDecimal,
 ) {
   companion object {
-    val EMPTY = InstrumentMetrics(
+    val EMPTY =
+      InstrumentMetrics(
       BigDecimal.ZERO,
       BigDecimal.ZERO,
       BigDecimal.ZERO,
@@ -64,13 +65,15 @@ class InvestmentMetricsService(
 
   fun holdings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> {
     val sorted = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
-    val result = sorted.fold(Holdings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, tx ->
+    val result =
+      sorted.fold(Holdings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, tx ->
       when (tx.transactionType) {
         TransactionType.BUY -> {
           val cost = tx.price.multiply(tx.quantity).add(tx.commission)
           Holdings(acc.quantity.add(tx.quantity), acc.cost.add(cost))
         }
-        TransactionType.SELL -> if (acc.quantity > BigDecimal.ZERO) {
+        TransactionType.SELL ->
+          if (acc.quantity > BigDecimal.ZERO) {
           val ratio = tx.quantity.divide(acc.quantity, SCALE, RoundingMode.HALF_UP)
           val newCost = acc.cost.multiply(BigDecimal.ONE.subtract(ratio))
           Holdings(acc.quantity.subtract(tx.quantity), newCost)

@@ -79,9 +79,10 @@ class TransactionService(
   @Transactional(readOnly = true)
   @Cacheable(
     value = [TRANSACTION_CACHE],
-    key = "'transactions:' + (#platforms?.toString() ?: 'all') + ':' + " +
+    key =
+      "'transactions:' + (#platforms?.toString() ?: 'all') + ':' + " +
       "(#fromDate?.toString() ?: 'null') + ':' + (#untilDate?.toString() ?: 'null')",
-    unless = "#result.isEmpty()",
+      unless = "#result.isEmpty()",
   )
   fun getAllTransactions(
     platforms: List<String>?,
