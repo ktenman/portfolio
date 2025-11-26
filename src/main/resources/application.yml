@@ -221,6 +221,9 @@ scraping:
       - symbol: "VNRT"
         path: "VNRT:AEX"
         expected-pages: 3
+      - symbol: "CNDX"
+        path: "CNDX:AEX"
+        expected-pages: 3
 
 cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}

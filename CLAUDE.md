@@ -114,135 +114,18 @@ pkill -f 'bootRun|vite' && docker-compose -f compose.yaml down
 
 ### Gradle Version Catalogs
 
-The project uses **Gradle Version Catalogs** (`gradle/libs.versions.toml`) for centralized dependency management.
-
-**Benefits:**
-
-- Single source of truth for all dependency versions
-- Type-safe dependency accessors
-- Easier version updates across modules
-- Prevents version conflicts
-
-**Usage in build.gradle.kts:**
-
-```kotlin
-// Plugins
-plugins {
-  alias(libs.plugins.spring.boot)
-  alias(libs.plugins.kotlin.jvm)
-}
-
-// Dependencies
-dependencies {
-  implementation(libs.spring.boot.starter.web)
-  implementation(libs.kotlin.reflect)
-  testImplementation(libs.atrium.fluent)
-}
-
-// Version access
-configure<KtlintExtension> {
-  version.set(libs.versions.ktlint.get())
-}
-```
-
-**Version Catalog Structure (`gradle/libs.versions.toml`):**
-
-```toml
-[versions]
-kotlin = "2.2.20"
-springBoot = "3.5.6"
-atrium = "1.3.0-alpha-2"
-
-[libraries]
-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
-atrium-fluent = { module = "ch.tutteli.atrium:atrium-fluent", version.ref = "atrium" }
-
-[plugins]
-spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-```
-
-**To add new dependencies:**
-
-1. Add version to `[versions]` section
-2. Define library in `[libraries]` section
-3. Use `alias(libs.library.name)` in build.gradle.kts
+Dependencies are managed via Gradle Version Catalogs in `gradle/libs.versions.toml`. Use `alias(libs.library.name)` in build.gradle.kts.
 
 ### TypeScript Type Generation
 
-The project uses **automatic TypeScript type generation** from Kotlin DTOs to eliminate manual type duplication between backend and frontend.
+Auto-generates TypeScript types from Kotlin DTOs to `ui/models/generated/domain-models.ts`.
 
-**Key Configuration (build.gradle.kts:179-213):**
+**Rules:**
 
-```kotlin
-tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeScript") {
-  jsonLibrary = cz.habarta.typescript.generator.JsonLibrary.jackson2
-  classes = listOf(
-    "ee.tenman.portfolio.dto.InstrumentDto",
-    "ee.tenman.portfolio.dto.TransactionRequestDto",
-    "ee.tenman.portfolio.dto.TransactionResponseDto",
-    "ee.tenman.portfolio.dto.PortfolioSummaryDto",
-    "ee.tenman.portfolio.domain.Platform",
-    "ee.tenman.portfolio.domain.ProviderName",
-    "ee.tenman.portfolio.domain.TransactionType",
-  )
-  outputKind = cz.habarta.typescript.generator.TypeScriptOutputKind.module
-  outputFile = "ui/models/generated/domain-models.ts"
-  mapEnum = cz.habarta.typescript.generator.EnumMapping.asEnum
-  mapDate = cz.habarta.typescript.generator.DateMapping.asString
-  nonConstEnums = true
-}
-
-// Auto-generate on every Kotlin compilation
-tasks.named("compileKotlin") {
-  finalizedBy("generateTypeScript")
-}
-
-// Post-processing to fix issues with generated code
-tasks.named("generateTypeScript") {
-  doLast {
-    val generatedFile = file("ui/models/generated/domain-models.ts")
-    if (generatedFile.exists()) {
-      var content = generatedFile.readText()
-
-      // Remove timestamp to prevent unnecessary git diffs
-      content = content.replace(
-        Regex("// Generated using typescript-generator version .+ on .+"),
-        "// Generated using typescript-generator (timestamp removed to prevent git churn)"
-      )
-
-      // Remove export from DateAsString (internal type)
-      content = content.replace("export type DateAsString = string", "type DateAsString = string")
-
-      generatedFile.writeText(content)
-      println("Post-processed: Removed timestamp and export from DateAsString")
-    }
-  }
-}
-```
-
-**Why Post-Processing?**
-
-1. **Timestamp Removal:** The generator adds a timestamp comment on every run, causing unnecessary git diffs even when nothing changed. We replace it with a static comment to prevent git churn.
-
-2. **DateAsString Export:** The `mapDate = DateMapping.asString` configuration creates `export type DateAsString = string`, which is only used internally within the generated file for date field type annotations. This causes knip (unused code detector) to fail because `DateAsString` is never imported elsewhere. We remove the `export` keyword, making it a file-scoped type alias.
-
-**Note:** The generated file is added to `.prettierignore` since it's auto-generated and doesn't need to match project formatting rules.
-
-**Important Rules:**
-
-- **NEVER manually edit** `ui/models/generated/domain-models.ts` - it's auto-generated
-- **Generate from DTOs, not JPA entities** - DTOs have flattened API structure
-- **Add new types** to the `classes` list in build.gradle.kts
-- **Run `./gradlew generateTypeScript`** to manually regenerate after Kotlin changes
+- **NEVER manually edit** generated file - it's auto-generated
+- **Add new types** to the `classes` list in `build.gradle.kts:179-213`
 - Types auto-regenerate on `./gradlew compileKotlin` or `./gradlew build`
-
-**Generated Output:**
-
-- All DTO interfaces exported (InstrumentDto, TransactionRequestDto, etc.)
-- All enums exported as runtime constants (Platform, ProviderName, TransactionType)
-- DateAsString as internal type alias (not exported)
-- ES6 module format compatible with Vue/TypeScript
+- Post-processing removes timestamps and unexports DateAsString (for knip compatibility)
 
 ## Architecture Overview
 
@@ -272,47 +155,7 @@ Additional diagrams in `screenshots/`:
 
 - **architecture.puml** - Full system deployment architecture with authentication flow
 
-### PlantUML Setup in IntelliJ
-
-**Plugin Installation:**
-
-1. Open IntelliJ IDEA
-2. Go to Settings/Preferences → Plugins
-3. Search for "PlantUML Integration"
-4. Install the official PlantUML plugin by Eugene Steinberg
-5. Restart IntelliJ
-
-**Usage:**
-
-- Open any `.puml` file in `docs/architecture/` or `screenshots/`
-- IntelliJ will automatically render the diagram preview in a split view
-- Edit the PlantUML code on the left, see live preview on the right
-- Right-click the diagram → "Copy diagram to clipboard" to export
-
-**Generating SVG Files:**
-
-```bash
-./scripts/generate-diagrams.sh                    # Generate all SVG diagrams
-./scripts/generate-diagrams.sh screenshots/architecture.puml  # Generate specific diagram
-```
-
-The script automatically:
-
-- Downloads PlantUML JAR if not present
-- Generates SVG files in the same directory as source `.puml` files
-- Supports batch processing of all diagrams
-
-**File Locations:**
-
-- Architecture diagrams: `docs/architecture/*.puml` + generated `*.svg`
-- Deployment diagrams: `screenshots/*.puml` + generated `*.svg`
-- PlantUML JAR: `plantuml-*.jar` (auto-downloaded, git-ignored)
-
-**Important:**
-
-- Always edit `.puml` source files, not `.svg` outputs
-- SVG files are committed to git for documentation purposes
-- Run `./scripts/generate-diagrams.sh` after editing to update SVG exports
+PlantUML diagrams can be generated with `./scripts/generate-diagrams.sh`. Edit `.puml` source files, not `.svg` outputs.
 
 ### Key Architectural Patterns
 
@@ -402,52 +245,9 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 - **Cloudflare Bypass Proxy** - Node.js/TypeScript service using curl-impersonate for TLS fingerprint spoofing to bypass Cloudflare protection
 - **MinIO** - S3-compatible object storage for company logos
 
-### FT Data Retrieval - Market-Phase Adaptive Scheduling
+### FT Data Retrieval - Adaptive Scheduling
 
-The FT data retrieval job uses a **simplified market-phase-based adaptive scheduling** approach that adjusts polling intervals based on NYSE trading hours:
-
-**Market Phases & Intervals:**
-
-- **MAIN_MARKET_HOURS** (10:30 AM - 5:30 PM ET): 60 seconds (1 minute)
-- **PRE_POST_MARKET** (4:00 AM - 10:30 AM, 5:30 PM - 8:00 PM ET): 900 seconds (15 minutes)
-- **OFF_HOURS** (8:00 PM - 4:00 AM ET weekdays): 7200 seconds (2 hours)
-- **WEEKEND** (Saturday, Sunday & Xetra holidays): 14400 seconds (4 hours)
-
-**Key Features:**
-
-- **Stateless**: No Redis state tracking for scheduling (Redis still used for caching)
-- **Self-Rescheduling**: Uses Spring TaskScheduler for dynamic interval adjustment
-- **Concurrency Protection**: `@Volatile` flag prevents overlapping executions
-- **API Call Tracking**: Logs API call rates for monitoring (estimates ~9 calls per instrument per execution)
-
-**Configuration:**
-
-```yaml
-ft:
-  adaptive-scheduling:
-    enabled: true # Enable adaptive scheduling (false = fixed 15-min cron)
-    minimum-interval-seconds: 60 # Minimum polling interval (safety floor)
-```
-
-**Implementation:**
-
-- `MarketPhaseDetectionService` - Detects current market phase based on NYC timezone with Xetra holiday support (2025-2027)
-- `FtDataRetrievalJob` - Self-rescheduling job with market-phase-based intervals
-- `AdaptiveSchedulingProperties` - Simple configuration (enabled + minimum interval only)
-
-**Benefits:**
-
-- **80% API reduction** during off-hours (vs constant polling)
-- **Eliminates complexity**: Removed 350+ lines of volatility tracking code
-- **Production-ready**: Simple, testable, maintainable
-- **Observability**: Built-in API call rate logging for monitoring
-
-**Design Trade-offs:**
-
-- **Xetra holidays**: Supported for 2025-2027 (24 holidays/year). Will need updates for 2028+
-- **NYSE holidays**: Not yet implemented (estimated ~10 holidays/year, ~2,400 wasted API calls/year)
-- No per-instrument customization (global intervals for all FT instruments)
-- Matches observed FT API availability (10:30-17:30 ET) rather than official NYSE hours (9:30-16:00 ET)
+FT job uses market-phase-based adaptive scheduling (60s during market hours, 15min pre/post, 2hr off-hours, 4hr weekends). Config in `ft.adaptive-scheduling`. Key classes: `MarketPhaseDetectionService`, `FtDataRetrievalJob`.
 
 ### Testing Strategy
 
@@ -580,40 +380,6 @@ A comprehensive test runner that runs ALL tests across the entire stack: backend
 ./test-runner.sh --help       # Show all options
 ```
 
-**Output Example:**
-
-The script displays a comprehensive summary:
-
-```
-Test Results Summary
-
-  Backend Unit Tests:
-  - Total tests: 261
-  - Passed: 259
-  - Failed: 0
-  - Success rate: 100%
-
-  Frontend UI Tests:
-  - Total tests: 414
-  - Passed: 414
-  - Failed: 0
-  - Success rate: 100%
-
-  E2E Tests:
-  - Total tests: 14
-  - Passed: 11
-  - Ignored: 3
-  - Success rate: 100%
-
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Total Across All Categories:
-  - Total tests: 689
-  - Passed: 684
-  - Failed: 0
-  - Ignored: 5
-  - Success rate: 99%
-```
-
 **Technical Notes:**
 
 - E2E environment uses `CI=true` to run Vite in non-interactive mode
@@ -675,79 +441,6 @@ Test Results Summary
 - B-tree indexes on all foreign keys
 - Composite index on `(instrument_id, entry_date, provider_name)`
 - Optimistic locking prevents race conditions
-
-### Code Style Guidelines
-
-#### Clean Code Principles
-
-This codebase follows **senior-level programming practices** focused on readability, maintainability, and professional standards:
-
-##### No Comments Policy
-
-Write self-documenting code that doesn't need comments:
-
-- **Clear naming**: Use descriptive variable and function names that explain intent
-- **Small functions**: Each function should do one thing well (Single Responsibility Principle)
-- **Meaningful types**: Use type definitions and interfaces to express domain concepts
-- **Well-structured code**: Organize code to tell a story without needing explanation
-
-The only exception is TypeScript triple-slash directives (`///`) when required for type definitions.
-
-##### Method Design Principles
-
-- **Guard clauses**: Exit early from functions to reduce nesting and improve readability
-- **Single responsibility**: Each method should have one clear purpose
-- **Pure functions**: Prefer functions without side effects when possible
-- **Composition over complexity**: Break complex operations into smaller, composable functions
-- **Immutability**: Favor immutable data structures and avoid modifying parameters
-
-##### Example of Clean Code
-
-```kotlin
-// ❌ Poor: Long method with nested logic and comments
-fun processTransaction(tx: Transaction): Result {
-  // Check if transaction is valid
-  if (tx != null) {
-    if (tx.amount > 0) {
-      // Process buy transaction
-      if (tx.type == TransactionType.BUY) {
-        // Calculate cost...
-        val cost = tx.price * tx.quantity + tx.commission
-        // Update holdings...
-        // More nested logic...
-      }
-    }
-  }
-}
-
-// ✅ Good: Focused methods with guard clauses
-fun processTransaction(tx: Transaction): Result {
-  if (!isValidTransaction(tx)) return Result.Invalid
-
-  return when (tx.type) {
-    TransactionType.BUY -> processBuyTransaction(tx)
-    TransactionType.SELL -> processSellTransaction(tx)
-  }
-}
-
-private fun isValidTransaction(tx: Transaction?): Boolean =
-  tx != null && tx.amount > BigDecimal.ZERO
-
-private fun processBuyTransaction(tx: Transaction): Result {
-  val cost = calculateTransactionCost(tx)
-  return updateHoldings(tx, cost)
-}
-
-private fun calculateTransactionCost(tx: Transaction): BigDecimal =
-  tx.price.multiply(tx.quantity).add(tx.commission)
-```
-
-##### Backend Specific Guidelines
-
-- **Kotlin idioms**: Use Kotlin's expressive features (data classes, extension functions, scope functions)
-- **Spring best practices**: Proper use of `@Transactional`, dependency injection, and service layer patterns
-- **Error handling**: Use sealed classes or exceptions appropriately, never swallow errors
-- **BigDecimal for money**: Always use BigDecimal for financial calculations, never float/double
 
 ### Code Quality Tools
 
@@ -894,105 +587,7 @@ private fun processBuyTransaction(
 - Use descriptive names that explain what, not how
 - Prefer returning values over mutating parameters
 
-#### 3. Functional Transformation Pattern
-
-Replace imperative loops with functional operations:
-
-```kotlin
-private fun deleteHistoricalSummaries(today: LocalDate) {
-  val summariesToDelete =
-    portfolioDailySummaryRepository
-      .findAll()
-      .filterNot { it.entryDate == today }
-
-  portfolioDailySummaryRepository.deleteAll(summariesToDelete)
-  portfolioDailySummaryRepository.flush()
-}
-```
-
-**Benefits:** More declarative, easier to test, less error-prone
-
-#### 4. Extension Function Pattern
-
-Create domain-specific operations:
-
-```kotlin
-private fun PortfolioTransaction.setZeroUnrealizedMetrics() {
-  this.remainingQuantity = BigDecimal.ZERO
-  this.unrealizedProfit = BigDecimal.ZERO
-  this.averageCost = this.price
-}
-```
-
-**Use when:** Related operations need to be reused across multiple methods
-
-#### 5. Method Decomposition Pattern
-
-For methods >50 lines, decompose into a coordinating method + helper methods:
-
-```kotlin
-private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
-  val sortedTransactions = transactions.sortedBy { it.transactionDate }
-  var currentQuantity = BigDecimal.ZERO
-  var totalCost = BigDecimal.ZERO
-
-  sortedTransactions.forEach { transaction ->
-    when (transaction.transactionType) {
-      TransactionType.BUY -> {
-        val result = processBuyTransaction(transaction, totalCost, currentQuantity)
-        totalCost = result.first
-        currentQuantity = result.second
-      }
-      TransactionType.SELL -> {
-        val result = processSellTransaction(transaction, totalCost, currentQuantity)
-        totalCost = result.first
-        currentQuantity = result.second
-      }
-    }
-  }
-
-  val currentPrice = sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO
-  val averageCost = calculateAverageCost(totalCost, currentQuantity)
-  val totalUnrealizedProfit = calculateTotalUnrealizedProfit(currentQuantity, currentPrice, averageCost)
-
-  distributeUnrealizedProfits(sortedTransactions, currentQuantity, averageCost, totalUnrealizedProfit)
-}
-```
-
-**Result:** Main method reduced from 92 lines to 25 lines, creating 6 focused helper methods
-
-#### 6. Service Decomposition Pattern
-
-For services >300 lines, split into specialized services:
-
-**Example:** InvestmentMetricsService (371 lines) → Split into:
-
-- `HoldingsCalculationService` - calculateCurrentHoldings, calculateNetQuantity
-- `XirrCalculationService` - buildXirrTransactions, calculateAdjustedXirr
-- `PortfolioMetricsService` - calculatePortfolioMetrics, processInstrument methods
-
-**Benefits:**
-
-- Each service has a single, clear responsibility
-- Easier to test in isolation
-- Reduces cognitive load when reading code
-- Enables parallel development
-
-#### Refactoring Metrics from This Codebase
-
-**Completed Refactorings:**
-
-- **Guard clauses applied:** 7 methods (reduced avg nesting from 3 levels → 1 level)
-- **Methods extracted:** 20+ new focused methods created
-- **Large method decompositions:** 2 critical (92 lines → 25 lines, 53 lines → 9 lines)
-- **Code eliminated:** ~150 lines through better organization
-- **Readability improvement:** +40%
-- **Testability improvement:** +60%
-
-**Remaining Opportunities:**
-
-- InvestmentMetricsService.kt: 371 lines → needs split into 3 services
-- SummaryService.kt: 376 lines → needs split into 3 services
+Additional patterns: Functional transformations, extension functions, method decomposition, and service decomposition (split services >300 lines).
 
 ## File Naming Conventions
 
@@ -1006,3 +601,93 @@ ALWAYS follow the existing file naming patterns in the codebase:
 - Services: `[domain]-service.ts` (e.g., `instruments-service.ts`)
 - Models/Types: `[entity].ts` (e.g., `instrument.ts`)
 - Keep file names consistent with the existing patterns in each directory
+
+## CI/CD and Code Review Rules
+
+- All CI workflows must pass before code changes may be reviewed
+- The existing code structure must not be changed without a strong reason
+- Every bug must be reproduced by a unit test before being fixed
+- Every new feature must be covered by a unit test before it is implemented
+- Minor inconsistencies and typos in the existing code may be fixed
+
+## Kotlin/Backend Design Principles
+
+### Method and Class Design
+
+- Method bodies may not contain blank lines
+- Method and function bodies may not contain comments
+- Variable names should be clear single-word nouns when possible
+- Method names should be clear single-word verbs when possible (exceptions for Kotlin idioms like `findBySymbol`)
+- Error and log messages should not end with a period
+- Error and log messages must always be a single sentence
+- Favor "fail fast" paradigm over "fail safe": throw exceptions early
+- Constructors should only contain assignment statements
+- Favor immutable objects (`val`) over mutable ones (`var`)
+- Use Kotlin data classes for DTOs and value objects
+- Use `runCatching` for error handling instead of try-catch blocks
+- Use guard clauses for early returns instead of nested conditionals
+
+### Exception Handling
+
+- Exception messages must include as much context as possible
+- Never swallow exceptions silently
+- Use domain-specific exceptions when appropriate
+- Prefer `runCatching { }.getOrElse { }` over try-catch
+
+### Kotlin-Specific Guidelines
+
+- Use extension functions for domain operations
+- Prefer `when` expressions over if-else chains
+- Use `?.let { }` and `?: return` for null handling
+- Use `also`, `apply`, `let`, `run`, `with` appropriately
+- Prefer functional transformations (`map`, `filter`, `fold`) over imperative loops
+- Use `generateSequence` instead of while loops with mutable state
+
+## Testing Standards
+
+### Test Design Principles
+
+- Every change must be covered by a unit test to guarantee repeatability
+- Tests must be named as full English sentences stating what the object under test does
+- Use backtick naming: `` `should return empty list when no transactions exist`() ``
+- Each test should verify only one specific behavioral pattern
+- Tests must use irregular inputs such as non-ASCII strings where appropriate
+- Tests may not share object attributes between test methods
+- Tests must prepare a clean state at the start rather than clean up after themselves
+- Prefer fake objects and stubs over mocks when possible
+
+### Test Structure
+
+- Test cases should be as short as possible
+- In every test, the assertion must be the last statement
+- Tests may not test functionality irrelevant to their stated purpose
+- Tests must close resources they use (file handlers, sockets, database connections)
+- Objects must not provide functionality used only by tests
+- Tests may not assert on side effects such as logging output
+- The best tests consist of a single statement
+- Test method names must spell "cannot" and "dont" without apostrophes
+
+### Test Isolation
+
+- Tests must assume the absence of an Internet connection
+- Tests must not mock the file system, sockets, or memory managers
+- Tests should use ephemeral TCP ports generated using appropriate library functions
+- Tests should inline small fixtures instead of loading them from files
+- Tests should create large fixtures at runtime rather than store them in files
+- Tests may create supplementary fixture objects to avoid code duplication
+
+### Test Reliability
+
+- Tests must not wait indefinitely for any event; they must always stop waiting on a timeout
+- Tests must retry potentially flaky code blocks
+- Tests must not rely on default configurations of the objects they test
+- Tests should store temporary files in temporary directories, not in the codebase directory
+
+## Frontend (Vue/TypeScript) Standards
+
+- Use TypeScript strict mode
+- Prefer composition API over options API
+- Use `const` for all variables unless reassignment is required
+- Extract reusable logic into composables (`use-*.ts`)
+- Keep components focused and under 200 lines
+- Use proper TypeScript types, avoid `any`
