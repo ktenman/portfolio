@@ -187,7 +187,7 @@ scheduling:
 scraping:
   lightyear:
     base-url: "https://lightyear.com/en/etf"
-    max-pages: 5
+    max-pages: 20
     page-delay-ms: 2000
     selectors:
       holdings-table: "table-row"
@@ -221,9 +221,9 @@ scraping:
       - symbol: "VNRT"
         path: "VNRT:AEX"
         expected-pages: 3
-      - symbol: "CNDX"
-        path: "CNDX:AEX"
-        expected-pages: 3
+      - symbol: "VWCE"
+        path: "VWCE:XETRA"
+        expected-pages: 20
 
 cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}
