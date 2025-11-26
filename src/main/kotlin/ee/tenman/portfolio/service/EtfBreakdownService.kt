@@ -122,10 +122,17 @@ class EtfBreakdownService(
         val holdingValue = calculateHoldingValue(position, etfQuantity, etfPrice)
         allHoldings.add(
           HoldingData(
-            ticker = position.holding.ticker?.uppercase()?.trim()?.takeIf { it.isNotBlank() },
-            name = position.holding.name.trim(),
-            sector = position.holding.sector?.trim()?.takeIf { it.isNotBlank() },
-            value = holdingValue,
+            ticker =
+              position.holding.ticker
+              ?.uppercase()
+              ?.trim()
+              ?.takeIf { it.isNotBlank() },
+              name = position.holding.name.trim(),
+            sector =
+              position.holding.sector
+              ?.trim()
+              ?.takeIf { it.isNotBlank() },
+              value = holdingValue,
             etfSymbol = etf.symbol,
           ),
         )
