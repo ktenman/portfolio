@@ -171,19 +171,19 @@ class InstrumentService(
   }
 
   private fun apply(instrument: Instrument, transactions: List<PortfolioTransaction>, context: InstrumentEnrichmentContext): Instrument? {
-    val result = investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, context.date)
-    instrument.totalInvestment = result.totalInvestment
-    instrument.currentValue = result.currentValue
+    val result = investmentMetricsService.metricsWithProfits(instrument, transactions, context.date)
+    instrument.totalInvestment = result.investment
+    instrument.currentValue = result.value
     instrument.profit = result.profit
-    instrument.realizedProfit = result.realizedProfit
-    instrument.unrealizedProfit = result.unrealizedProfit ?: BigDecimal.ZERO
+    instrument.realizedProfit = result.realized
+    instrument.unrealizedProfit = result.unrealized
     instrument.xirr = result.xirr
     instrument.quantity = result.quantity
     instrument.platforms = transactions.map { it.platform }.toSet()
     val change = change(instrument, transactions, context)
     instrument.priceChangeAmount = change?.changeAmount?.multiply(result.quantity)
     instrument.priceChangePercent = change?.changePercent
-    return if (result.quantity == BigDecimal.ZERO && result.totalInvestment == BigDecimal.ZERO) null else instrument
+    return if (result.quantity == BigDecimal.ZERO && result.investment == BigDecimal.ZERO) null else instrument
   }
 
   private fun change(instrument: Instrument, transactions: List<PortfolioTransaction>, context: InstrumentEnrichmentContext): PriceChange? {

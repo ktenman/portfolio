@@ -88,8 +88,8 @@ class PortfolioTransactionController(
     val groupedByInstrument = transactions.groupBy { it.instrument }
     val totalUnrealizedProfit =
       groupedByInstrument.entries.sumOf { (instrument, instrumentTransactions) ->
-        val metrics = investmentMetricsService.calculateInstrumentMetrics(instrument, instrumentTransactions)
-        metrics.unrealizedProfit
+        val metrics = investmentMetricsService.metrics(instrument, instrumentTransactions)
+        metrics.unrealized
       }
 
     val totalRealizedProfit =

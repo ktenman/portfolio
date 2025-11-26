@@ -136,7 +136,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns transactions
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -188,7 +188,7 @@ class InstrumentServiceTest {
     every { portfolioTransactionRepository.findAllWithInstruments() } returns
       listOf(lhvTransaction, lightyearTransaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         listOf(lhvTransaction),
         any(),
@@ -221,7 +221,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -253,7 +253,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -285,7 +285,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         listOf(transaction),
         any(),
@@ -354,7 +354,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -392,7 +392,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -434,7 +434,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -482,7 +482,7 @@ class InstrumentServiceTest {
     every { portfolioTransactionRepository.findAllWithInstruments() } returns
       listOf(transaction1, transaction2)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -523,7 +523,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction1)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -569,7 +569,7 @@ class InstrumentServiceTest {
     every { portfolioTransactionRepository.findAllWithInstruments() } returns
       listOf(lhvTx, lightyearTx)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         any(),
@@ -613,7 +613,7 @@ class InstrumentServiceTest {
     every { portfolioTransactionRepository.findAllWithInstruments() } returns
       listOf(lhvTx, lightyearTx)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         listOf(lhvTx, lightyearTx),
         any(),
@@ -650,7 +650,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         listOf(transaction),
         any(),
@@ -732,7 +732,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument, instrument2)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(tx1, tx2)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         listOf(tx1),
         any(),
@@ -765,7 +765,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         testDate,
@@ -776,7 +776,7 @@ class InstrumentServiceTest {
     instrumentService.getAllInstruments()
 
     verify {
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+      investmentMetricsService.metricsWithProfits(
         testInstrument,
         any(),
         testDate,

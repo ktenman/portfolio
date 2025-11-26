@@ -67,7 +67,7 @@ class WisdomTreeUpdateService(
       log.debug("Created position for ${holding.name} with weight ${wisdomTreeHolding.weight}%")
     }
 
-    etfBreakdownService.evictBreakdownCache()
+    etfBreakdownService.evict()
 
     log.info("Successfully updated WTAI holdings: deleted=$deletedCount, created=$createdCount")
     return mapOf("deleted" to deletedCount, "created" to createdCount, "updated" to updatedCount)

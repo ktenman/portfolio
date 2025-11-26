@@ -51,18 +51,10 @@ class EtfBreakdownService(
     return result
   }
 
-  @Cacheable("etf:breakdown", key = "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all'", unless = "#result.isEmpty()")
-  @Deprecated("Use breakdown(symbols) instead", ReplaceWith("breakdown(symbols)"))
-  fun getHoldingsBreakdown(etfSymbols: List<String>? = null): List<EtfHoldingBreakdownDto> = breakdown(etfSymbols)
-
   @CacheEvict("etf:breakdown", allEntries = true)
   fun evict() {
     log.info("Evicting ETF breakdown cache")
   }
-
-  @CacheEvict("etf:breakdown", allEntries = true)
-  @Deprecated("Use evict() instead", ReplaceWith("evict()"))
-  fun evictBreakdownCache() = evict()
 
   private fun etfs(symbols: List<String>? = null): List<Instrument> {
     val lightyear = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)

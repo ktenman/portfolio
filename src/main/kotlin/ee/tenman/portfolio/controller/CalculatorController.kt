@@ -17,7 +17,7 @@ class CalculatorController(
 ) {
   @GetMapping
   fun calculate(): CalculationResult {
-    val result = calculationService.getCalculationResult()
+    val result = calculationService.result()
     result.total = summaryService.getCurrentDaySummary().totalValue
     return result
   }

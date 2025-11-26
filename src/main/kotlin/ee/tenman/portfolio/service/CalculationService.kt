@@ -39,14 +39,7 @@ data class XirrCalculationResult(
   val instruments: Int,
   val failures: List<String> = emptyList(),
   val duration: Long,
-) {
-  @Deprecated("Use dates instead", ReplaceWith("dates"))
-  val processedDates: Int get() = dates
-  @Deprecated("Use instruments instead", ReplaceWith("instruments"))
-  val processedInstruments: Int get() = instruments
-  @Deprecated("Use failures instead", ReplaceWith("failures"))
-  val failedCalculations: List<String> get() = failures
-}
+)
 
 @Service
 class CalculationService(
@@ -78,19 +71,12 @@ class CalculationService(
     )
   }
 
-  @Cacheable(value = [ONE_DAY_CACHE], key = "'xirr-v3'")
-  @Deprecated("Use result() instead", ReplaceWith("result()"))
-  fun getCalculationResult(): CalculationResult = result()
-
   fun median(values: List<Double>): Double {
     if (values.isEmpty()) return 0.0
     val sorted = values.sorted()
     val middle = values.size / 2
     return if (values.size % 2 == 0) (sorted[middle - 1] + sorted[middle]) / 2.0 else sorted[middle]
   }
-
-  @Deprecated("Use median(values) instead", ReplaceWith("median(values)"))
-  fun calculateMedian(xirrs: List<Double>): Double = median(xirrs)
 
   fun rolling(code: String): List<Xirr> {
     val instrument = instrumentRepository.findBySymbol(code).orElseThrow { EntityNotFoundException("Instrument not found with symbol: $code") }
@@ -114,9 +100,6 @@ class CalculationService(
       .toList()
   }
 
-  @Deprecated("Use rolling(code) instead", ReplaceWith("rolling(code)"))
-  fun calculateRollingXirr(instrumentCode: String): List<Xirr> = rolling(instrumentCode)
-
   suspend fun batch(dates: List<LocalDate>): XirrCalculationResult = coroutineScope {
     val start = System.currentTimeMillis()
     val results = dates.map { date ->
@@ -132,7 +115,4 @@ class CalculationService(
     val success = results.count { it.second == null }
     XirrCalculationResult(success, 0, failures, System.currentTimeMillis() - start)
   }
-
-  @Deprecated("Use batch(dates) instead", ReplaceWith("batch(dates)"))
-  suspend fun calculateBatchXirrAsync(dates: List<LocalDate>): XirrCalculationResult = batch(dates)
 }

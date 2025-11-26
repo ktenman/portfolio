@@ -158,7 +158,7 @@ class SummaryService(
     if (filtered.isEmpty()) return createEmptySummary(date)
     val grouped = filtered.groupBy { it.instrument }
     val results = investmentMetricsService.calculatePortfolioMetrics(grouped, date)
-    val xirr = investmentMetricsService.calculateAdjustedXirr(results.xirrTransactions, date)
+    val xirr = investmentMetricsService.adjusted(results.xirrTransactions, date)
     val earnings = results.totalValue.multiply(BigDecimal(xirr)).divide(DAYS_PER_YEAR, SCALE, RoundingMode.HALF_UP)
     return PortfolioDailySummary(
       entryDate = date,

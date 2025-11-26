@@ -28,14 +28,6 @@ data class InstrumentMetrics(
   val xirr: Double,
   val quantity: BigDecimal,
 ) {
-  @Deprecated("Use investment instead", ReplaceWith("investment"))
-  val totalInvestment: BigDecimal get() = investment
-  @Deprecated("Use value instead", ReplaceWith("value"))
-  val currentValue: BigDecimal get() = value
-  @Deprecated("Use realized instead", ReplaceWith("realized"))
-  val realizedProfit: BigDecimal get() = realized
-  @Deprecated("Use unrealized instead", ReplaceWith("unrealized"))
-  val unrealizedProfit: BigDecimal get() = unrealized
   companion object {
     val EMPTY = InstrumentMetrics(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0.0, BigDecimal.ZERO)
   }
@@ -73,29 +65,15 @@ class InvestmentMetricsService(
     return Pair(result.quantity, average)
   }
 
-  @Deprecated("Use holdings(transactions) instead", ReplaceWith("holdings(transactions)"))
-  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> = holdings(transactions)
-
   fun value(quantity: BigDecimal, price: BigDecimal): BigDecimal = quantity.multiply(price)
-
-  @Deprecated("Use value(quantity, price) instead", ReplaceWith("value(quantity, price)"))
-  fun calculateCurrentValue(holdings: BigDecimal, currentPrice: BigDecimal): BigDecimal = value(holdings, currentPrice)
 
   fun profit(quantity: BigDecimal, cost: BigDecimal, price: BigDecimal): BigDecimal =
     quantity.multiply(price).subtract(quantity.multiply(cost))
-
-  @Deprecated("Use profit(quantity, cost, price) instead", ReplaceWith("profit(quantity, cost, price)"))
-  fun calculateProfit(holdings: BigDecimal, averageCost: BigDecimal, currentPrice: BigDecimal): BigDecimal =
-    profit(holdings, averageCost, currentPrice)
 
   fun xirr(transactions: List<PortfolioTransaction>, value: BigDecimal, date: LocalDate = LocalDate.now()): List<Transaction> {
     val flows = transactions.map { convert(it) }
     return if (value > BigDecimal.ZERO) flows + Transaction(value.toDouble(), date) else flows
   }
-
-  @Deprecated("Use xirr(transactions, value, date) instead", ReplaceWith("xirr(transactions, value, date)"))
-  fun buildXirrTransactions(transactions: List<PortfolioTransaction>, currentValue: BigDecimal, calculationDate: LocalDate = LocalDate.now()): List<Transaction> =
-    xirr(transactions, currentValue, calculationDate)
 
   fun adjusted(xirrTransactions: List<Transaction>, date: LocalDate = LocalDate.now()): Double {
     if (xirrTransactions.size < 2) return 0.0
@@ -108,10 +86,6 @@ class InvestmentMetricsService(
       result.coerceIn(XIRR_MIN, XIRR_MAX) * factor
     }.onFailure { log.error("Error calculating adjusted XIRR", it) }.getOrDefault(0.0)
   }
-
-  @Deprecated("Use adjusted(xirrTransactions, date) instead", ReplaceWith("adjusted(xirrTransactions, date)"))
-  fun calculateAdjustedXirr(transactions: List<Transaction>, calculationDate: LocalDate = LocalDate.now()): Double =
-    adjusted(transactions, calculationDate)
 
   fun metrics(instrument: Instrument, transactions: List<PortfolioTransaction>, date: LocalDate = LocalDate.now()): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
@@ -135,20 +109,12 @@ class InvestmentMetricsService(
     return InstrumentMetrics(investment, current, total, realized, unrealized, rate, quantity)
   }
 
-  @Deprecated("Use metrics(instrument, transactions, date) instead", ReplaceWith("metrics(instrument, transactions, date)"))
-  fun calculateInstrumentMetrics(instrument: Instrument, transactions: List<PortfolioTransaction>, calculationDate: LocalDate = LocalDate.now()): InstrumentMetrics =
-    metrics(instrument, transactions, calculationDate)
-
   fun metricsWithProfits(instrument: Instrument, transactions: List<PortfolioTransaction>, date: LocalDate = LocalDate.now()): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
     val price = instrument.currentPrice ?: BigDecimal.ZERO
     transactionService.calculateProfits(transactions, price)
     return metrics(instrument, transactions, date)
   }
-
-  @Deprecated("Use metricsWithProfits(instrument, transactions, date) instead", ReplaceWith("metricsWithProfits(instrument, transactions, date)"))
-  fun calculateInstrumentMetricsWithProfits(instrument: Instrument, transactions: List<PortfolioTransaction>, calculationDate: LocalDate = LocalDate.now()): InstrumentMetrics =
-    metricsWithProfits(instrument, transactions, calculationDate)
 
   fun calculatePortfolioMetrics(groups: Map<Instrument, List<PortfolioTransaction>>, date: LocalDate): PortfolioMetrics {
     val result = PortfolioMetrics()
@@ -171,9 +137,6 @@ class InvestmentMetricsService(
     }
     return Transaction(amount.toDouble(), tx.transactionDate)
   }
-
-  @Deprecated("Use convert(tx) instead", ReplaceWith("convert(tx)"))
-  fun convertToXirrTransaction(tx: PortfolioTransaction): Transaction = convert(tx)
 
   private fun weighted(flows: List<Transaction>, date: LocalDate): Double {
     val total = flows.sumOf { -it.amount }
