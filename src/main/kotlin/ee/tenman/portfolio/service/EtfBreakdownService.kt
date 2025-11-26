@@ -106,32 +106,48 @@ class EtfBreakdownService(
   }
 
   private fun buildHoldingsMap(etfs: List<Instrument>): Map<HoldingKey, HoldingValue> {
-    val holdingsMap = mutableMapOf<HoldingKey, HoldingValue>()
-
+    data class HoldingData(
+      val ticker: String?,
+      val name: String,
+      val sector: String?,
+      val value: BigDecimal,
+      val etfSymbol: String,
+    )
+    val allHoldings = mutableListOf<HoldingData>()
     etfs.forEach { etf ->
       val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
       val etfQuantity = calculateNetQuantity(etf.id)
       val etfPrice = getCurrentPrice(etf)
-
       positions.forEach { position ->
-          val holdingValue = calculateHoldingValue(position, etfQuantity, etfPrice)
-          val key =
-            HoldingKey(
-              ticker = position.holding.ticker,
-              name = position.holding.name,
-              sector = position.holding.sector,
-            )
-
-          holdingsMap.merge(key, HoldingValue(holdingValue, mutableSetOf(etf.symbol))) { existing, new ->
-            HoldingValue(
-              totalValue = existing.totalValue.add(new.totalValue),
-              etfSymbols = existing.etfSymbols.apply { addAll(new.etfSymbols) },
-            )
-          }
-        }
+        val holdingValue = calculateHoldingValue(position, etfQuantity, etfPrice)
+        allHoldings.add(
+          HoldingData(
+            ticker = position.holding.ticker?.uppercase()?.trim()?.takeIf { it.isNotBlank() },
+            name = position.holding.name.trim(),
+            sector = position.holding.sector?.trim()?.takeIf { it.isNotBlank() },
+            value = holdingValue,
+            etfSymbol = etf.symbol,
+          ),
+        )
+      }
     }
-
-    return holdingsMap
+    val groupedByKey =
+      allHoldings.groupBy { holding ->
+        if (!holding.ticker.isNullOrBlank()) {
+          "ticker:${holding.ticker}"
+        } else {
+          "name:${holding.name.lowercase()}:${holding.sector?.lowercase().orEmpty()}"
+        }
+      }
+    return groupedByKey.entries.associate { (_, holdings) ->
+      val bestName = holdings.maxByOrNull { it.name.length }!!.name
+      val bestTicker = holdings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker
+      val bestSector = holdings.mapNotNull { it.sector }.maxByOrNull { it.length }
+      val key = HoldingKey(ticker = bestTicker, name = bestName, sector = bestSector)
+      val totalValue = holdings.fold(BigDecimal.ZERO) { acc, h -> acc.add(h.value) }
+      val etfSymbols = holdings.map { it.etfSymbol }.toMutableSet()
+      key to HoldingValue(totalValue = totalValue, etfSymbols = etfSymbols)
+    }
   }
 
   private fun getCurrentPrice(instrument: Instrument): BigDecimal {
