@@ -149,25 +149,6 @@ services:
       timeout: 3s
       retries: 5
 
-  market_price_tracker:
-    container_name: market_price_tracker
-    image: ktenman/market-price-tracker:latest
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: always
-    environment:
-      - BACKEND_URL=http://backend:8080/api/instruments
-      - FETCH_INTERVAL=180
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"  # Enable Watchtower for this container
-
   cloudflare-bypass-proxy:
     container_name: cloudflare-bypass-proxy
     platform: linux/amd64
@@ -197,14 +178,6 @@ services:
     depends_on:
       - app
 
-  restart_scheduler:
-    image: docker:cli
-    container_name: restart_scheduler
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: sh -c 'while true; do [ "$(date +%H:%M)" = "03:00" ] && docker restart market_price_tracker && sleep 3600; sleep 30; done'
-    restart: always
-
   healthcheck:
     container_name: healthcheck
     image: alpine:latest
@@ -222,8 +195,6 @@ services:
       auth:
         condition: service_healthy
       app:
-        condition: service_healthy
-      market_price_tracker:
         condition: service_healthy
       cloudflare-bypass-proxy:
         condition: service_healthy

@@ -9,7 +9,6 @@
 !include ICONURL2/vuejs.puml
 !include ICONURL2/kotlin.puml
 !include ICONURL2/spring.puml
-!include ICONURL2/python.puml
 !include ICONURL2/chrome.puml
 
 LAYOUT_WITH_LEGEND()
@@ -26,7 +25,6 @@ System_Boundary(portfolio_system, "Portfolio Management System") {
   Container(backend, "Backend", "Kotlin, Spring Boot", "Handles API requests, processes data, and manages business logic", $sprite="kotlin")
   ContainerDb(database, "Database", "PostgreSQL", "Stores portfolio and financial data", $sprite="postgresql")
   ContainerDb(cache, "Cache", "Redis", "Caches session data and portfolio summaries", $sprite="redis")
-  Container(market_price_tracker, "Market Price Tracker", "Python, Selenium", "Tracks and updates market prices using web scraping", $sprite="python")
   Container(cloudflare_bypass_proxy, "Cloudflare Bypass Proxy", "Node.js/TypeScript, curl-impersonate", "Bypasses Cloudflare protection with TLS fingerprint spoofing")
   ContainerDb(minio, "MinIO", "Object Storage", "S3-compatible storage for company logos")
   Container(email_whitelist, "emails.txt", "Text File", "List of authorized email addresses")
@@ -73,6 +71,5 @@ Rel(backend, minio, "Stores/retrieves logos", "S3 API")
 Rel(backend, openrouter, "AI classification", "HTTPS")
 Rel(backend, google_vision, "OCR captcha solving", "HTTPS")
 Rel(backend, telegram, "Sends notifications", "HTTPS")
-Rel(market_price_tracker, backend, "Pushes scraped prices", "HTTP")
 
 @enduml
