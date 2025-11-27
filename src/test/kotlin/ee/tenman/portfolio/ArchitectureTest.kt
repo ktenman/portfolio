@@ -361,4 +361,192 @@ class ArchitectureTest {
         }
       },
           ).because("API should expose DTOs for decoupling and versioning")
+
+  @ArchTest
+  val `jobs should follow naming convention with Job suffix`: ArchRule =
+    classes()
+      .that()
+      .resideInAPackage("..job..")
+      .and()
+      .areAnnotatedWith(Component::class.java)
+      .and()
+      .haveSimpleNameNotEndingWith("Util")
+      .and()
+      .haveSimpleNameNotEndingWith("Runner")
+      .should()
+      .haveSimpleNameEndingWith("Job")
+      .because("Scheduled job classes should be named with Job suffix per CLAUDE.md")
+
+  @ArchTest
+  val `test methods should use backtick naming convention`: ArchRule =
+    methods()
+      .that()
+      .areAnnotatedWith(org.junit.jupiter.api.Test::class.java)
+      .should(
+        object : com.tngtech.archunit.lang.ArchCondition<JavaMethod>("use backtick naming convention") {
+          override fun check(method: JavaMethod, events: com.tngtech.archunit.lang.ConditionEvents) {
+            val methodName = method.name
+            if (!methodName.contains(" ") && !methodName.startsWith("test")) {
+              events.add(
+                com.tngtech.archunit.lang.SimpleConditionEvent.violated(
+                  method,
+                  "${method.fullName} should use backtick naming with English sentence",
+                ),
+              )
+            }
+          }
+        },
+      ).because("Test names should be full English sentences per CLAUDE.md testing standards")
+
+  @ArchTest
+  val `test method names should not contain apostrophes`: ArchRule =
+    methods()
+      .that()
+      .areAnnotatedWith(org.junit.jupiter.api.Test::class.java)
+      .should(
+        object : com.tngtech.archunit.lang.ArchCondition<JavaMethod>("not contain apostrophes") {
+          override fun check(method: JavaMethod, events: com.tngtech.archunit.lang.ConditionEvents) {
+            val methodName = method.name
+            val forbiddenContractions = listOf("can't", "don't", "won't", "isn't", "doesn't")
+            if (forbiddenContractions.any { methodName.contains(it) }) {
+              events.add(
+                com.tngtech.archunit.lang.SimpleConditionEvent.violated(
+                  method,
+                  "${method.fullName} contains apostrophe - use 'cannot' not 'can't' per CLAUDE.md",
+                ),
+              )
+            }
+          }
+        },
+      ).because("Test names must spell 'cannot' and 'dont' without apostrophes per CLAUDE.md")
+
+  @ArchTest
+  val `no field injection in any class`: ArchRule =
+    noFields()
+      .should()
+      .beAnnotatedWith("jakarta.inject.Inject")
+      .because("Constructor injection provides better testability per CLAUDE.md")
+
+  @ArchTest
+  val `response classes should be data classes with immutable fields`: ArchRule =
+    classes()
+      .that()
+      .haveSimpleNameEndingWith("Response")
+      .and()
+      .resideOutsideOfPackages("..domain..", "..googlevision..")
+      .should()
+      .haveOnlyFinalFields()
+      .because("Response classes should be immutable per CLAUDE.md - prefer val over var")
+
+  @ArchTest
+  val `request classes should be data classes with immutable fields`: ArchRule =
+    classes()
+      .that()
+      .haveSimpleNameEndingWith("Request")
+      .should()
+      .haveOnlyFinalFields()
+      .because("Request classes should be immutable per CLAUDE.md - prefer val over var")
+
+  @ArchTest
+  val `context classes should be data classes`: ArchRule =
+    classes()
+      .that()
+      .haveSimpleNameEndingWith("Context")
+      .and()
+      .resideInAPackage("..service..")
+      .should()
+      .haveOnlyFinalFields()
+      .because("Context classes should be immutable data carriers")
+
+  @ArchTest
+  val `no direct instantiation of domain entities in controllers`: ArchRule =
+    noClasses()
+      .that()
+      .resideInAPackage("..controller..")
+      .should()
+      .callConstructorWhere(
+        object : DescribedPredicate<com.tngtech.archunit.core.domain.JavaConstructorCall>("domain entity constructor") {
+          override fun test(call: com.tngtech.archunit.core.domain.JavaConstructorCall): Boolean {
+            val target = call.targetOwner
+            return target.packageName.contains(".domain.") && target.isAnnotatedWith(Entity::class.java)
+          }
+        },
+      ).because("Controllers should use DTOs and delegate entity creation to services")
+
+  @ArchTest
+  val `public methods in services should have clear verb-based names`: ArchRule =
+    methods()
+      .that()
+      .areDeclaredInClassesThat()
+      .areAnnotatedWith(Service::class.java)
+      .and()
+      .arePublic()
+      .and()
+      .doNotHaveName("toString")
+      .and()
+      .doNotHaveName("hashCode")
+      .and()
+      .doNotHaveName("equals")
+      .should(
+        object : com.tngtech.archunit.lang.ArchCondition<JavaMethod>("have verb-based names") {
+          private val verbPrefixes = listOf(
+            "get", "find", "fetch", "retrieve", "load", "create", "save", "store", "persist",
+            "update", "modify", "change", "set", "delete", "remove", "clear", "reset",
+            "calculate", "compute", "process", "transform", "convert", "validate", "check",
+            "verify", "is", "has", "can", "should", "send", "notify", "publish", "emit",
+            "start", "stop", "run", "execute", "invoke", "apply", "build", "generate",
+            "parse", "format", "enrich", "filter", "sort", "group", "aggregate",
+            "initialize", "configure", "setup", "handle", "on", "do",
+            "predict", "detect", "classify", "evict", "logo", "upload", "cleanup", "return",
+            "extract", "recalculate",
+          )
+          override fun check(method: JavaMethod, events: com.tngtech.archunit.lang.ConditionEvents) {
+            val name = method.name
+            val startsWithVerb = verbPrefixes.any { name.startsWith(it) }
+            if (!startsWithVerb && !name.contains("$")) {
+              events.add(
+                com.tngtech.archunit.lang.SimpleConditionEvent.violated(
+                  method,
+                  "${method.fullName} should start with a verb per CLAUDE.md",
+                ),
+              )
+            }
+          }
+        },
+      ).because("Method names should be clear single-word verbs per CLAUDE.md")
+
+  @ArchTest
+  val `jobs should not directly call repositories`: ArchRule =
+    noClasses()
+      .that()
+      .resideInAPackage("..job..")
+      .and()
+      .haveSimpleNameEndingWith("Job")
+      .and()
+      .doNotHaveSimpleName("EtfHoldingsClassificationJob")
+      .should()
+      .dependOnClassesThat()
+      .resideInAPackage("..repository..")
+      .because("Jobs should delegate data access to services")
+
+  @ArchTest
+  val `integration tests should use IntegrationTest annotation`: ArchRule =
+    classes()
+      .that()
+      .haveSimpleNameEndingWith("IT")
+      .should()
+      .beAnnotatedWith("ee.tenman.portfolio.configuration.IntegrationTest")
+      .orShould()
+      .beInterfaces()
+      .because("Integration tests should use @IntegrationTest for proper container setup per CLAUDE.md")
+
+  @ArchTest
+  val `companion objects should only contain constants`: ArchRule =
+    fields()
+      .that()
+      .areDeclaredInClassesThat()
+      .haveSimpleNameContaining("Companion")
+      .should()
+      .beFinal()
+      .because("Companion object fields should be constants (val) not mutable state")
 }
