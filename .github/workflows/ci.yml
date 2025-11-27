@@ -32,7 +32,7 @@ jobs:
             lint-name: Lint Frontend
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Set up JDK 21
@@ -98,7 +98,7 @@ jobs:
             test-name: Cloudflare Bypass Proxy Tests
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Set up JDK 21
@@ -149,7 +149,7 @@ jobs:
         run: ./gradlew bootJar --build-cache
       - name: Upload backend JAR
         if: matrix.test-type == 'backend-unit'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: backend-jar
           path: build/libs/*.jar
@@ -258,7 +258,7 @@ jobs:
           fetch-depth: 1
       - name: Download backend JAR
         if: matrix.name == 'backend'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: backend-jar
           path: build/libs/
