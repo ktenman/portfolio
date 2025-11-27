@@ -9,7 +9,7 @@ fi
 
 while true; do
   all_healthy=true
-  for service in postgres redis backend frontend auth app market_price_tracker; do
+  for service in postgres redis backend frontend auth app; do
     health=$(curl -s --unix-socket /var/run/docker.sock http://localhost/containers/${service}/json | jq -r .State.Health.Status)
     echo "$(date): ${service} status: ${health}"
     if [ "${health}" != "healthy" ]; then

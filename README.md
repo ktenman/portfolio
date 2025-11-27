@@ -16,7 +16,6 @@ The Portfolio Management System is a production-ready, full-stack application fo
 - **Performance Metrics**: Calculate portfolio performance with XIRR, daily earnings, and profit tracking
 - **Multi-Provider Data Sync**: Fetch data from Alpha Vantage (stocks/ETFs), Binance (crypto), and Financial Times
 - **Advanced Caching**: Redis-based caching with Spring Cache annotations for optimal performance
-- **Real-time Market Tracker**: Selenium-based price scraping with automatic captcha solving
 - **OAuth 2.0 Authentication**: Secure login via Google and GitHub with session management
 - **Responsive UI**: Vue.js 3 SPA with Bootstrap 5 for desktop and mobile
 - **Automated Jobs**: Scheduled tasks for price updates and portfolio calculations
@@ -94,14 +93,6 @@ The Portfolio Management System is a production-ready, full-stack application fo
 - Google Cloud Vision API for OCR/captcha solving
 - Telegram Bot API for notifications
 
-### Market Price Tracker
-
-- Python with Flask
-- Selenium WebDriver for web scraping
-- Automated captcha solving integration
-- Scheduled price fetching every 3 minutes
-- Health monitoring and auto-restart
-
 ## Architecture 🏗️
 
 ### Overview
@@ -114,7 +105,6 @@ The system follows a clean microservices architecture with strong separation of 
 - **Database**: PostgreSQL 17 with optimized indexes and constraints
 - **Cache**: Redis 8 for session storage and data caching
 - **Object Storage**: MinIO for ETF/stock logo storage with Redis caching
-- **Market Price Tracker**: Python service for real-time price updates
 - **Captcha Solver**: ML-based service for automated captcha resolution
 - **Reverse Proxy**: Caddy handling SSL, routing, and authentication
 - **Scheduled Jobs**: Background tasks for price updates and XIRR calculations
@@ -161,8 +151,7 @@ details and portfolio summaries.
 2. **Binance Data Retrieval**: Updates cryptocurrency prices in real-time
 3. **FT Data Retrieval**: Syncs Financial Times market data
 4. **Daily Portfolio XIRR Job**: Calculates portfolio performance metrics
-5. **Market Price Tracker**: Continuous web scraping with 3-minute intervals
-6. **Cache Eviction**: Automatic cache cleanup for data consistency
+5. **Cache Eviction**: Automatic cache cleanup for data consistency
 
 ### Authentication & Security 🔐
 
@@ -267,7 +256,7 @@ docker-compose -f docker-compose.local.yml build
 docker-compose -f docker-compose.local.yml up -d
 ```
 
-This includes all services: backend, frontend, auth, market tracker, and captcha solver.
+This includes all services: backend, frontend, auth, and captcha solver.
 
 ### End-to-End Tests
 
@@ -334,7 +323,7 @@ The project uses **Trivy** for automated container vulnerability scanning:
 
 - Triggers after successful CI builds when images are pushed to DockerHub
 - Daily scans at 2 AM UTC to catch new vulnerabilities
-- Scans all three Docker images: backend, frontend, and market tracker
+- Scans all Docker images: backend and frontend
 
 **Security Features:**
 
@@ -538,7 +527,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 1. **Authentication Divergence**: Production and development use different auth systems (custom vs Keycloak). Migration to unified Keycloak is planned.
 2. **API Key Security**: Hardcoded Alpha Vantage keys need externalization to environment variables.
-3. **Market Data Reliability**: Selenium-based scraper requires daily restarts. Replacement with API-based solution is in progress.
 
 ### Planned Enhancements
 
