@@ -183,6 +183,8 @@ scheduling:
     etf-holdings-classification-enabled: ${ETF_HOLDINGS_CLASSIFICATION_ENABLED:true}
     etf-holdings-classification-cron: ${ETF_HOLDINGS_CLASSIFICATION_CRON:0 0 3 * * *}
     ecb-cron: ${ECB_JOB_CRON:0 0 9 * * *}
+    wbit-enabled: ${WBIT_ENABLED:true}
+    wbit-interval: ${WBIT_JOB_INTERVAL:30000}
 
 scraping:
   lightyear:

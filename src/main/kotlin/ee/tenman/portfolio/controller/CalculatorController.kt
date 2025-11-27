@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.dto.PortfolioRollingXirrDto
 import ee.tenman.portfolio.service.CalculationResult
 import ee.tenman.portfolio.service.CalculationService
 import ee.tenman.portfolio.service.SummaryService
@@ -21,4 +22,7 @@ class CalculatorController(
     result.total = summaryService.getCurrentDaySummary().totalValue
     return result
   }
+
+  @GetMapping("/portfolio-rolling-xirr")
+  fun getPortfolioRollingXirr(): PortfolioRollingXirrDto = calculationService.calculatePortfolioRollingXirr()
 }

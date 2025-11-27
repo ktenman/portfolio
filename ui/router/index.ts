@@ -32,6 +32,10 @@ const routes: Array<RouteRecordRaw> = [
     component: Calculator,
   },
   {
+    path: '/portfolio-xirr',
+    redirect: '/calculator',
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

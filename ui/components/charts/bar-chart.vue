@@ -22,7 +22,7 @@ interface ChartProps {
 }
 
 const props = withDefaults(defineProps<ChartProps>(), {
-  title: 'Bar Chart',
+  title: '',
   xAxisLabel: 'Date',
   yAxisLabel: 'Value',
   backgroundColor: 'rgba(75, 192, 192, 0.6)',
@@ -79,6 +79,7 @@ const createChart = () => {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
         x: {
           title: { display: true, text: props.xAxisLabel },
@@ -101,7 +102,7 @@ const createChart = () => {
         },
       },
       plugins: {
-        title: { display: true, text: props.title, font: { size: 16 } },
+        title: { display: false },
         legend: { display: false },
         tooltip: {
           callbacks: {

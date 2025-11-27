@@ -12,8 +12,11 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.xirr.Xirr
 import io.mockk.every
@@ -40,6 +43,8 @@ class CalculationServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val clock = mockk<Clock>()
   private val portfolioSummaryService = mockk<SummaryService>()
+  private val transactionService = mockk<TransactionService>()
+  private val investmentMetricsService = mockk<InvestmentMetricsService>()
 
   private lateinit var calculationService: CalculationService
   private lateinit var testInstrument: Instrument
@@ -61,6 +66,8 @@ class CalculationServiceTest {
         calculationDispatcher = testDispatcher,
         clock = clock,
         portfolioSummaryService = portfolioSummaryService,
+        transactionService = transactionService,
+        investmentMetricsService = investmentMetricsService,
       )
 
     every { instrumentRepository.findBySymbol(instrumentCode) } returns Optional.of(testInstrument)
@@ -601,4 +608,83 @@ class CalculationServiceTest {
 
     expect(exception.message!!).toContain("Instrument not found with symbol: UNKNOWN")
   }
+
+  @Test
+  fun `should calculatePortfolioRollingXirr returns empty result when no transactions exist`() {
+    every { transactionService.getAllTransactions() } returns emptyList()
+
+    val result = calculationService.calculatePortfolioRollingXirr()
+
+    expect(result.instruments).toBeEmpty()
+    expect(result.portfolioWeightedXirr).toEqual(0.0)
+    expect(result.portfolioAverageXirr).toEqual(0.0)
+    expect(result.totalPortfolioValue).toEqual(0.0)
+  }
+
+  @Test
+  fun `should calculatePortfolioRollingXirr returns empty result when no current holdings exist`() {
+    val transaction = createTestTransaction(BigDecimal("10"), TransactionType.BUY)
+    val sellTransaction = createTestTransaction(BigDecimal("10"), TransactionType.SELL)
+    every { transactionService.getAllTransactions() } returns listOf(transaction, sellTransaction)
+    every { investmentMetricsService.calculateCurrentHoldings(any()) } returns Pair(BigDecimal.ZERO, BigDecimal.ZERO)
+
+    val result = calculationService.calculatePortfolioRollingXirr()
+
+    expect(result.instruments).toBeEmpty()
+    expect(result.totalPortfolioValue).toEqual(0.0)
+  }
+
+  @Test
+  fun `should calculatePortfolioRollingXirr calculates weighted xirr for single instrument`() {
+    testInstrument.currentPrice = BigDecimal("100")
+    val transaction = createTestTransaction(BigDecimal("10"), TransactionType.BUY)
+    every { transactionService.getAllTransactions() } returns listOf(transaction)
+    every { investmentMetricsService.calculateCurrentHoldings(any()) } returns Pair(BigDecimal.TEN, BigDecimal("100"))
+    val prices = createPriceHistory(today.minusDays(60), 20.0, 30.0)
+    every { dataRetrievalService.findAllByInstrument(testInstrument) } returns prices
+
+    val result = calculationService.calculatePortfolioRollingXirr()
+
+    expect(result.instruments).toHaveSize(1)
+    expect(result.instruments[0].symbol).toEqual(instrumentCode)
+    expect(result.instruments[0].portfolioWeight).toEqual(100.0)
+    expect(result.totalPortfolioValue).toEqual(1000.0)
+  }
+
+  @Test
+  fun `should calculatePortfolioRollingXirr sorts instruments by current value descending`() {
+    val instrument1 = createTestInstrument().apply { currentPrice = BigDecimal("100") }
+    val instrument2 =
+      createTestInstrument().apply {
+      id = 2L
+      symbol = "TEST2"
+      currentPrice = BigDecimal("100")
+    }
+    val transaction1 = createTestTransaction(BigDecimal("10"), TransactionType.BUY, instrument1)
+    val transaction2 = createTestTransaction(BigDecimal("5"), TransactionType.BUY, instrument2)
+    every { transactionService.getAllTransactions() } returns listOf(transaction1, transaction2)
+    every { investmentMetricsService.calculateCurrentHoldings(listOf(transaction1)) } returns Pair(BigDecimal.TEN, BigDecimal("100"))
+    every { investmentMetricsService.calculateCurrentHoldings(listOf(transaction2)) } returns Pair(BigDecimal("5"), BigDecimal("100"))
+    every { dataRetrievalService.findAllByInstrument(instrument1) } returns createPriceHistory(today.minusDays(60), 20.0, 30.0)
+    every { dataRetrievalService.findAllByInstrument(instrument2) } returns createPriceHistory(today.minusDays(60), 20.0, 25.0)
+
+    val result = calculationService.calculatePortfolioRollingXirr()
+
+    expect(result.instruments).toHaveSize(2)
+    expect(result.instruments[0].currentValue).toBeGreaterThan(result.instruments[1].currentValue)
+  }
+
+  private fun createTestTransaction(
+    quantity: BigDecimal,
+    transactionType: TransactionType,
+    instrument: Instrument = testInstrument,
+  ): PortfolioTransaction =
+    PortfolioTransaction(
+      instrument = instrument,
+      transactionType = transactionType,
+      quantity = quantity,
+      price = BigDecimal("100"),
+      transactionDate = today.minusDays(30),
+      platform = Platform.TRADING212,
+    )
 }

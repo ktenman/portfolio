@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { useLocalStorage, watchDebounced } from '@vueuse/core'
 import { utilityService } from '../services/utility-service'
 import { CalculationResult } from '../models/calculation-result'
+import { PortfolioRollingXirrDto } from '../models/generated/domain-models'
 
 interface CalculatorForm {
   initialWorth: number
@@ -47,6 +48,12 @@ export function useCalculator() {
   } = useQuery<CalculationResult>({
     queryKey: ['calculationResult'],
     queryFn: utilityService.getCalculationResult,
+  })
+
+  const { data: portfolioXirr } = useQuery<PortfolioRollingXirrDto>({
+    queryKey: ['portfolioRollingXirr'],
+    queryFn: utilityService.getPortfolioRollingXirr,
+    staleTime: 1000 * 60 * 60,
   })
 
   const calculate = () => {
@@ -141,12 +148,13 @@ export function useCalculator() {
     try {
       const result = await refetch()
       const freshData = result.data
+      const weightedXirr = portfolioXirr.value?.portfolioWeightedXirr
 
       Object.assign(form.value, {
         initialWorth: freshData?.total || 0,
         monthlyInvestment: 585,
         yearlyGrowthRate: 5,
-        annualReturnRate: initialAnnualReturnRate.value || freshData?.median || 7,
+        annualReturnRate: weightedXirr || freshData?.median || 7,
         years: 30,
         taxRate: 22,
       })
@@ -162,6 +170,7 @@ export function useCalculator() {
     yearSummary: computed(() => yearSummary.value),
     portfolioData: computed(() => portfolioData.value),
     calculationResult,
+    portfolioXirr,
     resetCalculator,
   }
 }

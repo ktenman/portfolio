@@ -384,7 +384,10 @@ class ArchitectureTest {
       .areAnnotatedWith(org.junit.jupiter.api.Test::class.java)
       .should(
         object : com.tngtech.archunit.lang.ArchCondition<JavaMethod>("use backtick naming convention") {
-          override fun check(method: JavaMethod, events: com.tngtech.archunit.lang.ConditionEvents) {
+          override fun check(
+            method: JavaMethod,
+            events: com.tngtech.archunit.lang.ConditionEvents,
+          ) {
             val methodName = method.name
             if (!methodName.contains(" ") && !methodName.startsWith("test")) {
               events.add(
@@ -405,7 +408,10 @@ class ArchitectureTest {
       .areAnnotatedWith(org.junit.jupiter.api.Test::class.java)
       .should(
         object : com.tngtech.archunit.lang.ArchCondition<JavaMethod>("not contain apostrophes") {
-          override fun check(method: JavaMethod, events: com.tngtech.archunit.lang.ConditionEvents) {
+          override fun check(
+            method: JavaMethod,
+            events: com.tngtech.archunit.lang.ConditionEvents,
+          ) {
             val methodName = method.name
             val forbiddenContractions = listOf("can't", "don't", "won't", "isn't", "doesn't")
             if (forbiddenContractions.any { methodName.contains(it) }) {
@@ -489,18 +495,78 @@ class ArchitectureTest {
       .doNotHaveName("equals")
       .should(
         object : com.tngtech.archunit.lang.ArchCondition<JavaMethod>("have verb-based names") {
-          private val verbPrefixes = listOf(
-            "get", "find", "fetch", "retrieve", "load", "create", "save", "store", "persist",
-            "update", "modify", "change", "set", "delete", "remove", "clear", "reset",
-            "calculate", "compute", "process", "transform", "convert", "validate", "check",
-            "verify", "is", "has", "can", "should", "send", "notify", "publish", "emit",
-            "start", "stop", "run", "execute", "invoke", "apply", "build", "generate",
-            "parse", "format", "enrich", "filter", "sort", "group", "aggregate",
-            "initialize", "configure", "setup", "handle", "on", "do",
-            "predict", "detect", "classify", "evict", "logo", "upload", "cleanup", "return",
-            "extract", "recalculate",
+          private val verbPrefixes =
+            listOf(
+            "get",
+              "find",
+              "fetch",
+              "retrieve",
+              "load",
+              "create",
+              "save",
+              "store",
+              "persist",
+            "update",
+              "modify",
+              "change",
+              "set",
+              "delete",
+              "remove",
+              "clear",
+              "reset",
+            "calculate",
+              "compute",
+              "process",
+              "transform",
+              "convert",
+              "validate",
+              "check",
+            "verify",
+              "is",
+              "has",
+              "can",
+              "should",
+              "send",
+              "notify",
+              "publish",
+              "emit",
+            "start",
+              "stop",
+              "run",
+              "execute",
+              "invoke",
+              "apply",
+              "build",
+              "generate",
+            "parse",
+              "format",
+              "enrich",
+              "filter",
+              "sort",
+              "group",
+              "aggregate",
+            "initialize",
+              "configure",
+              "setup",
+              "handle",
+              "on",
+              "do",
+            "predict",
+              "detect",
+              "classify",
+              "evict",
+              "logo",
+              "upload",
+              "cleanup",
+              "return",
+            "extract",
+              "recalculate",
           )
-          override fun check(method: JavaMethod, events: com.tngtech.archunit.lang.ConditionEvents) {
+
+          override fun check(
+            method: JavaMethod,
+            events: com.tngtech.archunit.lang.ConditionEvents,
+          ) {
             val name = method.name
             val startsWithVerb = verbPrefixes.any { name.startsWith(it) }
             if (!startsWithVerb && !name.contains("$")) {

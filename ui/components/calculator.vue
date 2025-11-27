@@ -25,6 +25,20 @@
             </button>
           </div>
         </form>
+        <div v-if="!isLoading && portfolioXirr" class="stats-container mt-4">
+          <div class="stat-card">
+            <div class="stat-label">Weighted XIRR</div>
+            <div class="stat-value" :class="getXirrClass(portfolioXirr.portfolioWeightedXirr)">
+              {{ formatPercentage(portfolioXirr.portfolioWeightedXirr) }}
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Average XIRR</div>
+            <div class="stat-value" :class="getXirrClass(portfolioXirr.portfolioAverageXirr)">
+              {{ formatPercentage(portfolioXirr.portfolioAverageXirr) }}
+            </div>
+          </div>
+        </div>
       </div>
       <div class="col-md-8">
         <LoadingSpinner v-if="isLoading" />
@@ -35,28 +49,62 @@
           x-axis-label="Year"
           y-axis-label="Worth (€)"
         />
-        <div v-if="!isLoading && calculationResult" class="card mt-3 xirr-stats-card">
-          <div class="card-body py-2">
-            <div class="row text-center">
-              <div class="col-6">
-                <div class="stat-label">Median XIRR</div>
-                <div class="stat-value">{{ formatPercentage(calculationResult.median) }}</div>
-              </div>
-              <div class="col-6">
-                <div class="stat-label">Average XIRR</div>
-                <div class="stat-value">{{ formatPercentage(calculationResult.average) }}</div>
-              </div>
-            </div>
-          </div>
+      </div>
+    </div>
+
+    <div v-if="!isLoading && portfolioXirr" class="row mt-4">
+      <div class="col-12">
+        <h5>Instrument Performance</h5>
+        <div v-if="portfolioXirr.instruments.length > 0" class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th class="text-end">Current Value</th>
+                <th class="text-end">Median XIRR</th>
+                <th class="text-end">Weight</th>
+                <th class="text-end">Contribution</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="instrument in sortedInstruments" :key="instrument.instrumentId">
+                <tr
+                  class="instrument-row"
+                  :class="{ expanded: isRowExpanded(instrument.instrumentId) }"
+                  @click="toggleRow(instrument.instrumentId)"
+                >
+                  <td>
+                    <span class="expand-icon">
+                      {{ isRowExpanded(instrument.instrumentId) ? '▼' : '▶' }}
+                    </span>
+                    {{ instrument.symbol }}
+                  </td>
+                  <td>{{ instrument.name }}</td>
+                  <td class="text-end">{{ formatCurrency(instrument.currentValue) }}</td>
+                  <td class="text-end" :class="getXirrClass(instrument.medianXirr)">
+                    {{ formatPercentage(instrument.medianXirr) }}
+                  </td>
+                  <td class="text-end">{{ formatPercentage(instrument.portfolioWeight) }}</td>
+                  <td class="text-end" :class="getXirrClass(instrument.weightedXirr)">
+                    {{ formatPercentage(instrument.weightedXirr) }}
+                  </td>
+                </tr>
+                <tr v-if="isRowExpanded(instrument.instrumentId)" class="chart-row">
+                  <td colspan="6" class="p-0">
+                    <div class="chart-container">
+                      <BarChart
+                        :data="getReversedXirrs(instrument)"
+                        x-axis-label="Date"
+                        y-axis-label="XIRR (%)"
+                      />
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
         </div>
-        <BarChart
-          v-if="!isLoading && calculationResult"
-          :data="calculationResult.xirrs"
-          title="XIRR Rolling Result (ASAP)"
-          x-axis-label="Date"
-          y-axis-label="XIRR (%)"
-          class="mt-3"
-        />
       </div>
     </div>
 
@@ -76,6 +124,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useCalculator } from '../composables/use-calculator'
 import { formatCurrency } from '../utils/formatters'
 import LineChart from './charts/line-chart.vue'
@@ -83,14 +132,37 @@ import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import { useConfirm } from '../composables/use-confirm'
+import type { InstrumentRollingXirrDto } from '../models/generated/domain-models'
 
-const { form, isLoading, yearSummary, portfolioData, calculationResult, resetCalculator } =
+const { form, isLoading, yearSummary, portfolioData, portfolioXirr, resetCalculator } =
   useCalculator()
 
 const { confirm } = useConfirm()
+const expandedRows = ref<Set<number>>(new Set())
 
 const formatPercentage = (value: number) => {
   return `${value.toFixed(2)}%`
+}
+
+const sortedInstruments = computed(() => {
+  if (!portfolioXirr.value?.instruments) return []
+  return [...portfolioXirr.value.instruments].sort((a, b) => b.currentValue - a.currentValue)
+})
+
+const toggleRow = (instrumentId: number) => {
+  if (expandedRows.value.has(instrumentId)) {
+    expandedRows.value.delete(instrumentId)
+  } else {
+    expandedRows.value.add(instrumentId)
+  }
+}
+
+const isRowExpanded = (instrumentId: number) => expandedRows.value.has(instrumentId)
+
+const getXirrClass = (xirr: number) => (xirr >= 0 ? 'text-success' : 'text-danger')
+
+const getReversedXirrs = (instrument: InstrumentRollingXirrDto) => {
+  return [...instrument.rollingXirrs].reverse()
 }
 
 const handleReset = async () => {
@@ -150,27 +222,34 @@ canvas {
   font-size: rem(14.4px);
 }
 
-.xirr-stats-card {
+.stats-container {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+}
+
+.stat-card {
+  background: $white;
+  border: 1px solid $gray-300;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba($black, 0.1);
+  flex: 1;
+}
 
-  .card-body {
-    padding: 0.75rem 1rem;
-  }
+.stat-label {
+  font-size: rem(12px);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $gray-600;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
 
-  .stat-label {
-    font-size: rem(12px);
-    color: $gray-600;
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .stat-value {
-    font-size: rem(20px);
-    font-weight: 600;
-    color: rgb(75, 192, 192);
-  }
+.stat-value {
+  font-size: rem(24px);
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .calculator-buttons-desktop {
@@ -181,6 +260,49 @@ canvas {
 
 .calculator-buttons-mobile {
   display: none;
+}
+
+.instrument-row {
+  cursor: pointer;
+  @include transition(background-color);
+
+  &:hover {
+    background-color: rgba($primary-color, 0.05);
+  }
+
+  &.expanded {
+    background-color: rgba($primary-color, 0.1);
+  }
+}
+
+.expand-icon {
+  display: inline-block;
+  width: 1rem;
+  margin-right: 0.5rem;
+  font-size: 0.75rem;
+  color: $gray-600;
+}
+
+.chart-row {
+  > td {
+    background-color: $gray-100;
+    border-top: none !important;
+    padding: 0 !important;
+  }
+}
+
+.chart-container {
+  padding: 1rem 1.5rem;
+  background-color: $white;
+  border: 1px solid $gray-200;
+  border-radius: 0.5rem;
+  margin: 0.75rem;
+  height: 320px;
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
 }
 
 @include media-breakpoint-down(md) {
