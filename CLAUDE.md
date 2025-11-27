@@ -16,7 +16,7 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 - Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
 - Authentication: Keycloak 25 + OAuth2-Proxy (dev), Custom auth service (prod) ⚠️
 - Infrastructure: Docker, Kubernetes, Caddy reverse proxy
-- Additional Services: Python-based market price tracker (Selenium), Google Cloud Vision API
+- Additional Services: Google Cloud Vision API
 
 ## Essential Commands
 
@@ -137,7 +137,6 @@ The system follows a clean microservices architecture with strong separation of 
 4. **Backend API (Spring Boot)** - RESTful API with comprehensive business logic
 5. **PostgreSQL** - Primary data store with optimized indexes and constraints
 6. **Redis** - Multi-level caching reducing DB load by ~70%
-7. **Market Price Tracker** - Python service for real-time price updates (⚠️ Needs stabilization)
 
 ### Architecture Documentation
 
@@ -413,12 +412,6 @@ A comprehensive test runner that runs ALL tests across the entire stack: backend
 **Issue**: Alpha Vantage API keys are hardcoded in `AlphaVantageClient.kt`.
 **Action Required**: Move these to environment variables immediately.
 **Location**: `src/main/kotlin/ee/tenman/portfolio/alphavantage/AlphaVantageClient.kt:45-55`
-
-### 🔴 Unstable Market Price Tracker
-
-**Issue**: Selenium-based scraper requires daily restarts (see `restart_scheduler` service).
-**Symptoms**: Missing price updates, high memory usage.
-**Workaround**: Monitor the `market_price_tracker` container logs for failures.
 
 ## Performance Optimization Points
 

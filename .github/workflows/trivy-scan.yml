@@ -40,8 +40,6 @@ jobs:
             name: portfolio-be
           - image: portfolio-fe
             name: portfolio-fe
-          - image: market-price-tracker
-            name: market-price-tracker
 
     steps:
       - name: Checkout code
@@ -136,7 +134,7 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
 
           # Generate SBOMs and scan each image
-          for image in portfolio-be portfolio-fe market-price-tracker; do
+          for image in portfolio-be portfolio-fe; do
             echo "Generating SBOM for $image..."
             syft ${DOCKER_HUB_USER}/${image}:latest -o spdx-json > ${image}-sbom.json
 
@@ -181,7 +179,6 @@ jobs:
           |-------|--------|-----------|
           | portfolio-be | ✅ Scanned | ${SCAN_TIMESTAMP} |
           | portfolio-fe | ✅ Scanned | ${SCAN_TIMESTAMP} |
-          | market-price-tracker | ✅ Scanned | ${SCAN_TIMESTAMP} |
 
           ## Actions
 

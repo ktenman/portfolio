@@ -12,7 +12,6 @@
     "build/**",
     "dist/**",
     "k8s/**",
-    "market-price-tracker/**",
     "cloudflare-bypass-proxy/**"
   ],
   "ignoreUnresolved": ["./tests/setup.ts"],
