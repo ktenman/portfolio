@@ -149,7 +149,7 @@ jobs:
         run: ./gradlew bootJar --build-cache
       - name: Upload backend JAR
         if: matrix.test-type == 'backend-unit'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: backend-jar
           path: build/libs/*.jar
