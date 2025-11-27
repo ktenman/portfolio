@@ -129,7 +129,7 @@ describe('InstrumentsView', () => {
       id: 1,
       symbol: 'AAPL',
       name: 'Apple Inc.',
-      providerName: ProviderName.ALPHA_VANTAGE,
+      providerName: ProviderName.FT,
       category: 'STOCK',
       platforms: ['TRADING212'],
       totalInvestment: 1000,
@@ -149,7 +149,7 @@ describe('InstrumentsView', () => {
       id: 3,
       symbol: 'GOOGL',
       name: 'Alphabet Inc.',
-      providerName: ProviderName.ALPHA_VANTAGE,
+      providerName: ProviderName.FT,
       category: 'STOCK',
       platforms: ['TRADING212'],
       totalInvestment: 2000,
@@ -211,7 +211,7 @@ describe('InstrumentsView', () => {
       const createdInstrument = createInstrumentDto({
         id: 3,
         ...newInstrumentData,
-        providerName: ProviderName.ALPHA_VANTAGE,
+        providerName: ProviderName.FT,
       })
       vi.mocked(instrumentsService.create).mockResolvedValue(createdInstrument)
 
@@ -298,7 +298,7 @@ describe('InstrumentsView', () => {
           id: 4,
           symbol: 'NEW',
           name: 'New',
-          providerName: ProviderName.ALPHA_VANTAGE,
+          providerName: ProviderName.FT,
         })
       )
 
@@ -442,7 +442,7 @@ describe('InstrumentsView', () => {
           id: 4,
           symbol: 'EMPTY',
           name: 'Empty InstrumentDto',
-          providerName: ProviderName.ALPHA_VANTAGE,
+          providerName: ProviderName.FT,
           category: 'STOCK',
           platforms: ['LHV'],
           totalInvestment: 0,

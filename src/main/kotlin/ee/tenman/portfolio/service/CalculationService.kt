@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CA
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.dto.InstrumentRollingXirrDto
 import ee.tenman.portfolio.dto.PortfolioRollingXirrDto
+import ee.tenman.portfolio.dto.TransactionDto
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.xirr.Transaction
 import ee.tenman.portfolio.service.xirr.Xirr
@@ -22,7 +23,7 @@ import java.time.Clock
 import java.time.LocalDate
 
 data class CalculationResult(
-  var xirrs: List<Transaction> = mutableListOf(),
+  var xirrs: List<TransactionDto> = mutableListOf(),
   var median: Double = 0.0,
   var average: Double = 0.0,
   var total: BigDecimal = BigDecimal.ZERO,
@@ -74,7 +75,7 @@ class CalculationService(
             async(calculationDispatcher) {
               val xirrValue = xirr.calculate()
               if (xirrValue > -1.0) {
-                Transaction(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
+                TransactionDto(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
               } else {
                 null
               }
@@ -252,7 +253,7 @@ class CalculationService(
           runCatching {
             val xirrValue = xirr.calculate()
             if (xirrValue > -1.0) {
-              Transaction(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
+              TransactionDto(xirrValue * 100.0, xirr.getTransactions().maxOf { it.date })
             } else {
               null
             }

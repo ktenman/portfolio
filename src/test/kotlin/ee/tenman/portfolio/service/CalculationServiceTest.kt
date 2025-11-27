@@ -79,7 +79,7 @@ class CalculationServiceTest {
       name = "iShares S&P 500 Information Technology Sector",
       category = "ETF",
       baseCurrency = "EUR",
-      providerName = ProviderName.ALPHA_VANTAGE,
+      providerName = ProviderName.FT,
     ).apply {
       id = 1L
       currentPrice = BigDecimal("28.50")
@@ -203,7 +203,7 @@ class CalculationServiceTest {
     DailyPrice(
       instrument = testInstrument,
       entryDate = date,
-      providerName = ProviderName.ALPHA_VANTAGE,
+      providerName = ProviderName.FT,
       openPrice = price,
       highPrice = price,
       lowPrice = price,

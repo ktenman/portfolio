@@ -41,7 +41,6 @@ class ArchitectureTest {
       .layer("Infrastructure")
       .definedBy(
         "..repository..",
-        "..alphavantage..",
         "..binance..",
         "..ft..",
         "..googlevision..",
@@ -193,7 +192,7 @@ class ArchitectureTest {
   val `clients should follow naming convention with Client suffix`: ArchRule =
     classes()
       .that()
-      .resideInAnyPackage("..alphavantage..", "..binance..", "..ft..", "..googlevision..", "..telegram..")
+      .resideInAnyPackage("..binance..", "..ft..", "..googlevision..", "..telegram..")
       .and()
       .haveSimpleNameEndingWith("Client")
       .should()

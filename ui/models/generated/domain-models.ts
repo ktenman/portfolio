@@ -1,5 +1,5 @@
 /* tslint:disable */
- 
+/* eslint-disable */
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -89,11 +89,16 @@ export interface EtfHoldingBreakdownDto extends Serializable {
     numEtfs: number;
 }
 
+export interface TransactionDto extends Serializable {
+    amount: number;
+    date: DateAsString;
+}
+
 export interface InstrumentRollingXirrDto extends Serializable {
     instrumentId: number;
     symbol: string;
     name: string;
-    rollingXirrs: Transaction[];
+    rollingXirrs: TransactionDto[];
     medianXirr: number;
     portfolioWeight: number;
     weightedXirr: number;
@@ -108,11 +113,6 @@ export interface PortfolioRollingXirrDto extends Serializable {
 }
 
 export interface Serializable {
-}
-
-export interface Transaction extends Serializable {
-    amount: number;
-    date: DateAsString;
 }
 
 type DateAsString = string;
@@ -130,7 +130,6 @@ export enum Platform {
 }
 
 export enum ProviderName {
-    ALPHA_VANTAGE = "ALPHA_VANTAGE",
     BINANCE = "BINANCE",
     FT = "FT",
     LIGHTYEAR = "LIGHTYEAR",

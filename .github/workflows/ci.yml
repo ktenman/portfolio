@@ -241,11 +241,6 @@ jobs:
             image: ktenman/portfolio-fe
             ghcr_image: portfolio-fe
             context: .
-          - name: market-price-tracker
-            dockerfile: ./market-price-tracker/Dockerfile
-            image: ktenman/market-price-tracker
-            ghcr_image: market-price-tracker
-            context: ./market-price-tracker
           - name: cloudflare-bypass-proxy
             dockerfile: ./cloudflare-bypass-proxy/Dockerfile
             image: ktenman/cloudflare-bypass-proxy

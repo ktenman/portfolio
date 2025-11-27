@@ -1,21 +1,16 @@
 package ee.tenman.portfolio.job
 
-import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalTo
-import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.matching
-import com.github.tomakehurst.wiremock.client.WireMock.stubFor
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -24,8 +19,6 @@ import ee.tenman.portfolio.service.TransactionService
 import io.mockk.every
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
-import org.springframework.http.HttpHeaders.CONTENT_TYPE
-import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.context.TestPropertySource
 import java.math.BigDecimal
 import java.time.Clock
@@ -37,9 +30,6 @@ import java.time.LocalDate
 class DailyPortfolioXirrJobIT {
   @Resource
   private lateinit var transactionService: TransactionService
-
-  @Resource
-  private lateinit var alphaVantageDataRetrievalJob: AlphaVantageDataRetrievalJob
 
   @Resource
   private lateinit var dailyPortfolioXirrJob: DailyPortfolioXirrJob
@@ -67,9 +57,9 @@ class DailyPortfolioXirrJobIT {
         "ETF",
         "EUR",
       ).let {
+        it.providerName = ProviderName.FT
         instrumentRepository.save(it)
       }
-
     PortfolioTransaction(
       instrument = instrument,
       transactionType = TransactionType.BUY,
@@ -80,32 +70,7 @@ class DailyPortfolioXirrJobIT {
     ).let {
       transactionService.saveTransaction(it)
     }
-    expect(dailyPriceRepository.findAll()).toBeEmpty()
-    stubFor(
-      get(urlPathEqualTo("/query"))
-        .withQueryParam("function", equalTo("SYMBOL_SEARCH"))
-        .withQueryParam("keywords", matching("QDVE.*"))
-        .willReturn(
-          aResponse()
-            .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("symbol-search-response.json"),
-        ),
-    )
-
-    stubFor(
-      get(urlPathEqualTo("/query"))
-        .withQueryParam("function", equalTo("TIME_SERIES_DAILY"))
-        .withQueryParam("symbol", equalTo("QDVE.DEX"))
-        .withQueryParam("outputsize", equalTo("full"))
-        .willReturn(
-          aResponse()
-            .withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .withBodyFile("alpha-vantage-response.json"),
-        ),
-    )
-
-    alphaVantageDataRetrievalJob.execute()
-    alphaVantageDataRetrievalJob.execute()
+    createDailyPrices(instrument)
 
     dailyPortfolioXirrJob.execute()
     dailyPortfolioXirrJob.execute()
@@ -120,5 +85,29 @@ class DailyPortfolioXirrJobIT {
     expect(minSummary.unrealizedProfit).toBeGreaterThan(BigDecimal.ZERO)
     expect(minSummary.totalProfit.scale()).toBeGreaterThan(0)
     expect(minSummary.earningsPerDay.compareTo(BigDecimal("0E-10"))).toEqual(0)
+  }
+
+  private fun createDailyPrices(instrument: Instrument) {
+    val prices =
+      listOf(
+      LocalDate.of(2024, 7, 1) to BigDecimal("29.7550"),
+      LocalDate.of(2024, 7, 2) to BigDecimal("29.9600"),
+      LocalDate.of(2024, 7, 3) to BigDecimal("30.1650"),
+      LocalDate.of(2024, 7, 4) to BigDecimal("30.22"),
+    )
+    prices.forEach { (date, price) ->
+      dailyPriceRepository.save(
+        DailyPrice(
+          instrument = instrument,
+          entryDate = date,
+          providerName = ProviderName.FT,
+          openPrice = price,
+          highPrice = price,
+          lowPrice = price,
+          closePrice = price,
+          volume = 100000,
+        ),
+      )
+    }
   }
 }

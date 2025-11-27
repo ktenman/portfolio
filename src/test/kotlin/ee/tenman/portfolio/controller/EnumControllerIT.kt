@@ -77,7 +77,7 @@ class EnumControllerIT {
 
     expect(response.providers)
       .toHaveSize(ProviderName.entries.size)
-      .toContain(ProviderName.ALPHA_VANTAGE.name, ProviderName.BINANCE.name)
+      .toContain(ProviderName.BINANCE.name, ProviderName.FT.name)
 
     expect(response.transactionTypes)
       .toContain.inOrder.only

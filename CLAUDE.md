@@ -16,7 +16,7 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 - Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
 - Authentication: Keycloak 25 + OAuth2-Proxy (dev), Custom auth service (prod) ⚠️
 - Infrastructure: Docker, Kubernetes, Caddy reverse proxy
-- Additional Services: Python-based market price tracker (Selenium), Google Cloud Vision API
+- Additional Services: Google Cloud Vision API
 
 ## Essential Commands
 
@@ -137,7 +137,6 @@ The system follows a clean microservices architecture with strong separation of 
 4. **Backend API (Spring Boot)** - RESTful API with comprehensive business logic
 5. **PostgreSQL** - Primary data store with optimized indexes and constraints
 6. **Redis** - Multi-level caching reducing DB load by ~70%
-7. **Market Price Tracker** - Python service for real-time price updates (⚠️ Needs stabilization)
 
 ### Architecture Documentation
 
@@ -184,9 +183,9 @@ PlantUML diagrams can be generated with `./scripts/generate-diagrams.sh`. Edit `
 - Integration: Trading212PriceUpdateService, IndustryClassificationService
 - Infrastructure: JobExecutionService, MinioService, SummaryBatchProcessorService
 
-**Background Jobs (9 scheduled tasks):**
+**Background Jobs (8 scheduled tasks):**
 
-- AlphaVantageDataRetrievalJob, BinanceDataRetrievalJob, FtDataRetrievalJob - Price updates
+- BinanceDataRetrievalJob, FtDataRetrievalJob - Price updates
 - Trading212DataRetrievalJob - Trading platform sync
 - DailyPortfolioXirrJob - XIRR calculations (parallel with coroutines)
 - LightyearDataFetchJob, WisdomTreeDataUpdateJob - ETF holdings scraping
@@ -199,9 +198,9 @@ PlantUML diagrams can be generated with `./scripts/generate-diagrams.sh`. Edit `
 - Infrastructure: JobExecution, UserAccount
 - Enums: Platform, ProviderName, TransactionType, InstrumentCategory, Currency, IndustrySector, JobStatus, PriceChangePeriod
 
-**External Integrations (10 systems):**
+**External Integrations (9 systems):**
 
-- Market Data: AlphaVantage (stocks/ETFs), Binance (crypto), FT (historical prices)
+- Market Data: Binance (crypto), FT (historical prices)
 - Trading Platforms: Trading212, WisdomTree, Lightyear
 - AI Services: OpenRouter (Claude Haiku for classification), Google Vision (OCR)
 - Other: Telegram (notifications), MinIO (logo storage)
@@ -224,7 +223,6 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 
 **Market Data APIs:**
 
-- **Alpha Vantage API** - Stock/ETF price data via JSON API (requires API key)
 - **Binance API** - Cryptocurrency prices via JSON API
 - **FT Markets** - Historical prices via HTML scraping (Jsoup parsing of AJAX endpoint)
 
@@ -407,18 +405,6 @@ A comprehensive test runner that runs ALL tests across the entire stack: backend
 **Issue**: Development uses Keycloak while production uses a custom auth service.
 **Impact**: Tests may pass locally but fail in production.
 **Workaround**: Test auth flows in both `docker-compose.local.yml` (Keycloak) and `docker-compose.yml` (custom auth) environments.
-
-### 🔴 Hardcoded API Keys
-
-**Issue**: Alpha Vantage API keys are hardcoded in `AlphaVantageClient.kt`.
-**Action Required**: Move these to environment variables immediately.
-**Location**: `src/main/kotlin/ee/tenman/portfolio/alphavantage/AlphaVantageClient.kt:45-55`
-
-### 🔴 Unstable Market Price Tracker
-
-**Issue**: Selenium-based scraper requires daily restarts (see `restart_scheduler` service).
-**Symptoms**: Missing price updates, high memory usage.
-**Workaround**: Monitor the `market_price_tracker` container logs for failures.
 
 ## Performance Optimization Points
 

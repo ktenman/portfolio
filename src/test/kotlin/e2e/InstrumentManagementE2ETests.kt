@@ -86,7 +86,7 @@ class InstrumentManagementE2ETests {
     id("symbol").shouldNotHave(text("TSLA")).value = "TSLA"
     id("name").shouldNotHave(text("Tesla Inc.")).value = "Tesla Inc."
     id("category").selectOption("ETF")
-    id("providerName").selectOption("Alpha Vantage")
+    id("providerName").selectOption("FT")
     val priceField = id("currentPrice")
     priceField.shouldBe(visible)
     priceField.value = "250.00"

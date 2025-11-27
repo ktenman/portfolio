@@ -106,9 +106,6 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
-alphavantage:
-  url: https://www.alphavantage.co
-
 binance:
   url: https://api.binance.com
 
@@ -173,7 +170,6 @@ scheduling:
   jobs:
     binance-interval: ${BINANCE_JOB_INTERVAL:120000}
     ft-interval: ${FT_JOB_INTERVAL:120000}
-    alphavantage-interval: ${ALPHAVANTAGE_JOB_INTERVAL:120000}
     xirr-interval: ${XIRR_JOB_INTERVAL:120000}
     summary-interval: ${SUMMARY_JOB_INTERVAL:120000}
     trading212-enabled: ${TRADING212_ENABLED:false}

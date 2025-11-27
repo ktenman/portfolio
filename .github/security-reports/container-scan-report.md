@@ -8,7 +8,6 @@ Last updated: 2025-11-25 10:10:23 UTC
 |-------|--------|-----------|
 | portfolio-be | ✅ Scanned | 2025-11-25 10:10:23 UTC |
 | portfolio-fe | ✅ Scanned | 2025-11-25 10:10:23 UTC |
-| market-price-tracker | ✅ Scanned | 2025-11-25 10:10:23 UTC |
 
 ## Actions
 

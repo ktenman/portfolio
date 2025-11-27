@@ -15,7 +15,7 @@ export const createInstrumentDto = (overrides?: Partial<InstrumentDto>): Instrum
   baseCurrency: 'EUR',
   currentPrice: 100,
   quantity: 10,
-  providerName: ProviderName.ALPHA_VANTAGE,
+  providerName: ProviderName.FT,
   totalInvestment: 1000,
   currentValue: 1000,
   profit: 0,
