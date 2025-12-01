@@ -24,6 +24,7 @@ class LightyearPriceService(
         "VNRT:AEX:EUR" to "1ecf2da3-e426-68b7-a268-3d0ec5cf88ad",
         "WBIT:GER:EUR" to "1ef3aa4c-5f26-6cf0-8eba-bb4404220dad",
         "VWCE:GER:EUR" to "1eda0a07-10b3-63e0-b568-6deedaa217e7",
+        "VNRA:GER:EUR" to "1eda4008-ca17-6926-b60a-654bcfbd8ac3",
       )
   }
 
