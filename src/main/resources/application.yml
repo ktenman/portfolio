@@ -224,6 +224,9 @@ scraping:
       - symbol: "VWCE"
         path: "VWCE:XETRA"
         expected-pages: 20
+      - symbol: "VNRA"
+        path: "VNRA:XETRA"
+        expected-pages: 3
 
 cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}
