@@ -6,9 +6,27 @@
         <strong>Error:</strong>
         {{ errorMessage }}
       </div>
-      <div v-else-if="holdings.length === 0" class="alert alert-info m-4 mb-0">
-        <strong>No data found.</strong>
-        Make sure you have ETFs with active positions.
+      <div v-else-if="holdings.length === 0" class="empty-state">
+        <div class="empty-state-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+            <path d="M11 8v6" />
+            <path d="M8 11h6" />
+          </svg>
+        </div>
+        <h5 class="empty-state-title">{{ emptyStateMessage.title }}</h5>
+        <p class="empty-state-subtitle">{{ emptyStateMessage.subtitle }}</p>
       </div>
       <data-table
         v-else
@@ -51,15 +69,70 @@ import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
 import { utilityService } from '../../services/utility-service'
+import { formatPlatformName } from '../../utils/platform-utils'
 
 const props = defineProps<{
   holdings: EtfHoldingBreakdownDto[]
   isLoading: boolean
   isError: boolean
   errorMessage: string
+  selectedEtfs?: string[]
+  selectedPlatforms?: string[]
+  masterHoldings?: EtfHoldingBreakdownDto[]
 }>()
 
 const totalValue = computed(() => props.holdings.reduce((sum, h) => sum + h.totalValueEur, 0))
+
+const emptyStateMessage = computed(() => {
+  if (
+    !props.selectedEtfs?.length ||
+    !props.selectedPlatforms?.length ||
+    !props.masterHoldings?.length
+  ) {
+    return { title: 'No data found', subtitle: 'Make sure you have ETFs with active positions.' }
+  }
+  const selectedEtfSymbols = props.selectedEtfs.map(e => e.split(':')[0])
+  const etfPlatformMap = new Map<string, Set<string>>()
+  props.masterHoldings.forEach(holding => {
+    if (holding.platforms) {
+      holding.inEtfs.split(',').forEach(etf => {
+        const etfSymbol = etf.trim().split(':')[0]
+        if (!etfPlatformMap.has(etfSymbol)) {
+          etfPlatformMap.set(etfSymbol, new Set())
+        }
+        holding.platforms.split(',').forEach(p => {
+          etfPlatformMap.get(etfSymbol)?.add(p.trim())
+        })
+      })
+    }
+  })
+  const unavailableEtfs: { etf: string; availablePlatforms: string[] }[] = []
+  selectedEtfSymbols.forEach(etf => {
+    const etfPlatforms = etfPlatformMap.get(etf)
+    if (etfPlatforms) {
+      const hasOverlap = props.selectedPlatforms?.some(p => etfPlatforms.has(p))
+      if (!hasOverlap) {
+        unavailableEtfs.push({
+          etf,
+          availablePlatforms: Array.from(etfPlatforms),
+        })
+      }
+    }
+  })
+  if (unavailableEtfs.length > 0) {
+    const etfList = unavailableEtfs
+      .map(({ etf, availablePlatforms }) => {
+        const platformNames = availablePlatforms.map(p => formatPlatformName(p)).join(', ')
+        return `${etf} (available on ${platformNames})`
+      })
+      .join(', ')
+    return {
+      title: 'No matching holdings',
+      subtitle: `The selected ETFs are not available on the selected platforms: ${etfList}`,
+    }
+  }
+  return { title: 'No data found', subtitle: 'Try selecting different ETFs or platforms.' }
+})
 
 const formatCurrency = (value: number | null) => {
   if (value === null || value === undefined) return '-'
@@ -130,6 +203,34 @@ const columns: ColumnDefinition[] = [
 </script>
 
 <style scoped>
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.empty-state-title {
+  color: #374151;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-subtitle {
+  color: #6b7280;
+  font-size: 0.9rem;
+  max-width: 400px;
+  margin: 0;
+  line-height: 1.5;
+}
+
 .ticker-cell {
   display: flex;
   align-items: center;
