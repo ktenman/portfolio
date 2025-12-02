@@ -67,6 +67,7 @@ class EtfBreakdownServiceTest {
     expect(result[0].inEtfs).toContain("ETF1")
     expect(result[0].inEtfs).toContain("ETF2")
     expect(result[0].numEtfs).toEqual(2)
+    expect(result[0].platforms).toEqual("LIGHTYEAR")
   }
 
   @Test
@@ -175,6 +176,105 @@ class EtfBreakdownServiceTest {
     expect(result[0].holdingSector).toEqual("Software & Cloud Services")
   }
 
+  @Test
+  fun `should filter holdings by platform`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology")
+    val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"), LocalDate.now())
+    val transaction1 = createTransaction(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
+    val transaction2 = createTransaction(etf1, BigDecimal("5"), BigDecimal("100"), Platform.TRADING212)
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
+    every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
+    every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1, transaction2)
+
+    val resultLightyear = etfBreakdownService.getHoldingsBreakdown(platforms = listOf("LIGHTYEAR"))
+
+    expect(resultLightyear).toHaveSize(1)
+    expect(resultLightyear[0].platforms).toEqual("LIGHTYEAR")
+    expect(resultLightyear[0].totalValueEur).toEqualNumerically(BigDecimal("1000.00"))
+  }
+
+  @Test
+  fun `should return all holdings when no platform filter specified`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology")
+    val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"), LocalDate.now())
+    val transaction1 = createTransaction(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
+    val transaction2 = createTransaction(etf1, BigDecimal("5"), BigDecimal("100"), Platform.TRADING212)
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
+    every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
+    every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1, transaction2)
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].platforms).toContain("LIGHTYEAR")
+    expect(result[0].platforms).toContain("TRADING212")
+    expect(result[0].totalValueEur).toEqualNumerically(BigDecimal("1500.00"))
+  }
+
+  @Test
+  fun `should return empty list when platform has no active etf holdings`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology")
+    val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"), LocalDate.now())
+    val transaction1 = createTransaction(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
+    every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
+    every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
+
+    val result = etfBreakdownService.getHoldingsBreakdown(platforms = listOf("TRADING212"))
+
+    expect(result).toHaveSize(0)
+  }
+
+  @Test
+  fun `should ignore invalid platform names in filter`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology")
+    val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"), LocalDate.now())
+    val transaction1 = createTransaction(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
+    every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
+    every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
+
+    val result = etfBreakdownService.getHoldingsBreakdown(platforms = listOf("INVALID_PLATFORM"))
+
+    expect(result).toHaveSize(1)
+  }
+
+  @Test
+  fun `should combine etf symbols and platform filters with AND logic`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology")
+    val holding2 = createHolding(2L, "MSFT", "Microsoft", "Technology")
+    val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"), LocalDate.now())
+    val position2 = createPosition(etf2, holding2, BigDecimal("100.0000"), LocalDate.now())
+    val transaction1 = createTransaction(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
+    val transaction2 = createTransaction(etf2, BigDecimal("10"), BigDecimal("100"), Platform.TRADING212)
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
+    every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
+    every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
+    every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
+    every { transactionRepository.findAllByInstrumentId(2L) } returns listOf(transaction2)
+
+    val result =
+      etfBreakdownService.getHoldingsBreakdown(
+      etfSymbols = listOf("ETF1"),
+      platforms = listOf("LIGHTYEAR"),
+    )
+
+    expect(result).toHaveSize(1)
+    expect(result[0].holdingTicker).toEqual("AAPL")
+    expect(result[0].platforms).toEqual("LIGHTYEAR")
+  }
+
   private fun createInstrument(
     id: Long,
     symbol: String,
@@ -219,6 +319,7 @@ class EtfBreakdownServiceTest {
     instrument: Instrument,
     quantity: BigDecimal,
     price: BigDecimal,
+    platform: Platform = Platform.LIGHTYEAR,
   ): PortfolioTransaction =
     PortfolioTransaction(
       instrument = instrument,
@@ -226,6 +327,6 @@ class EtfBreakdownServiceTest {
       quantity = quantity,
       price = price,
       transactionDate = LocalDate.now().minusDays(30),
-      platform = Platform.LIGHTYEAR,
+      platform = platform,
     )
 }
