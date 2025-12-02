@@ -124,6 +124,7 @@ export enum PriceChangePeriod {
     P48H = "P48H",
     P3D = "P3D",
     P7D = "P7D",
+    P10D = "P10D",
     P30D = "P30D",
     P1Y = "P1Y",
 }

@@ -15,34 +15,32 @@ class LightyearScraperService(
 
   fun fetchEtfHoldings(etfConfig: LightyearScrapingProperties.EtfConfig): List<HoldingData> {
     log.info("Fetching ETF holdings for: {}", etfConfig.symbol)
-    val allHoldings = mutableListOf<HoldingData>()
     val maxPages = minOf(etfConfig.expectedPages, properties.maxPages)
+    return fetchPagesSequentially(etfConfig, maxPages).also { holdings ->
+      log.info("Fetched {} total holdings for {}", holdings.size, etfConfig.symbol)
+    }
+  }
 
-    var page = 1
-    var shouldContinue = true
-
-    while (page <= maxPages && shouldContinue) {
+  private fun fetchPagesSequentially(
+    etfConfig: LightyearScrapingProperties.EtfConfig,
+    maxPages: Int,
+  ): List<HoldingData> =
+    buildList {
+    for (page in 1..maxPages) {
       log.info("Fetching page $page of $maxPages for ${etfConfig.symbol}")
       val holdings = lightyearHoldingsService.fetchHoldings(etfConfig.path, page)
-
       when {
         holdings.isEmpty() -> {
           log.info("No more holdings found on page $page, stopping")
-          shouldContinue = false
+          return@buildList
         }
         holdings.size < 45 -> {
           log.info("Page $page has fewer holdings, likely last page")
-          allHoldings.addAll(holdings)
-          shouldContinue = false
+          addAll(holdings)
+          return@buildList
         }
-        else -> {
-          allHoldings.addAll(holdings)
-          page++
-        }
+        else -> addAll(holdings)
       }
     }
-
-    log.info("Fetched {} total holdings for {}", allHoldings.size, etfConfig.symbol)
-    return allHoldings
   }
 }
