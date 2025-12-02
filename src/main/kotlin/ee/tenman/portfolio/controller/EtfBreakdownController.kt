@@ -16,7 +16,8 @@ class EtfBreakdownController(
   @GetMapping
   fun getEtfHoldingsBreakdown(
     @RequestParam(required = false) etfSymbols: List<String>?,
-  ): List<EtfHoldingBreakdownDto> = etfBreakdownService.getHoldingsBreakdown(etfSymbols)
+    @RequestParam(required = false) platforms: List<String>?,
+  ): List<EtfHoldingBreakdownDto> = etfBreakdownService.getHoldingsBreakdown(etfSymbols, platforms)
 
   @DeleteMapping("/cache")
   fun evictCache() {

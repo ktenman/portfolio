@@ -13,6 +13,7 @@ describe('EtfBreakdownTable', () => {
       holdingSector: 'Technology',
       inEtfs: 'IITU:50%, VUSA:30%',
       numEtfs: 2,
+      platforms: 'LIGHTYEAR, TRADING212',
     },
     {
       holdingTicker: 'MSFT',
@@ -22,6 +23,7 @@ describe('EtfBreakdownTable', () => {
       holdingSector: 'Technology',
       inEtfs: 'IITU:40%',
       numEtfs: 1,
+      platforms: 'LIGHTYEAR',
     },
   ]
 
@@ -95,9 +97,9 @@ describe('EtfBreakdownTable', () => {
         },
       })
 
-      const alert = wrapper.find('.alert-info')
-      expect(alert.exists()).toBe(true)
-      expect(alert.text()).toContain('No data found')
+      const emptyState = wrapper.find('.empty-state')
+      expect(emptyState.exists()).toBe(true)
+      expect(wrapper.find('.empty-state-title').text()).toContain('No data found')
     })
   })
 
@@ -160,6 +162,7 @@ describe('EtfBreakdownTable', () => {
           holdingSector: 'Technology',
           inEtfs: 'IITU:100%',
           numEtfs: 1,
+          platforms: 'LIGHTYEAR',
         },
       ]
 
@@ -186,6 +189,7 @@ describe('EtfBreakdownTable', () => {
           holdingSector: null,
           inEtfs: '',
           numEtfs: 0,
+          platforms: '',
         },
       ]
 

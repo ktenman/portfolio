@@ -87,6 +87,7 @@ export interface EtfHoldingBreakdownDto extends Serializable {
     holdingSector: string | null;
     inEtfs: string;
     numEtfs: number;
+    platforms: string;
 }
 
 export interface Serializable {
