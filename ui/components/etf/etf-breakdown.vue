@@ -66,6 +66,9 @@
       :is-loading="isLoading"
       :is-error="isError"
       :error-message="errorMessage"
+      :selected-etfs="selectedEtfs"
+      :selected-platforms="selectedPlatforms"
+      :master-holdings="masterHoldings"
     />
   </div>
 </template>

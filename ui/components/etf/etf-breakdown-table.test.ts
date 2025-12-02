@@ -97,9 +97,9 @@ describe('EtfBreakdownTable', () => {
         },
       })
 
-      const alert = wrapper.find('.alert-info')
-      expect(alert.exists()).toBe(true)
-      expect(alert.text()).toContain('No data found')
+      const emptyState = wrapper.find('.empty-state')
+      expect(emptyState.exists()).toBe(true)
+      expect(wrapper.find('.empty-state-title').text()).toContain('No data found')
     })
   })
 
