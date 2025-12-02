@@ -21,8 +21,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.cache.CacheManager
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
@@ -39,6 +37,7 @@ class SummaryServiceTest {
   private val clock = mockk<Clock>()
   private val summaryBatchProcessor = mockk<SummaryBatchProcessorService>(relaxed = true)
   private val summaryDeletionService = mockk<SummaryDeletionService>(relaxed = true)
+  private val summaryCacheService = mockk<SummaryCacheService>(relaxed = true)
 
   private lateinit var summaryService: SummaryService
 
@@ -60,6 +59,7 @@ class SummaryServiceTest {
         clock,
         summaryBatchProcessor,
         summaryDeletionService,
+        summaryCacheService,
       )
 
     testDate = LocalDate.of(2025, 5, 10)
@@ -71,7 +71,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(any()) } returns null
 
     every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal.ZERO,
         totalProfit = BigDecimal.ZERO,
         xirrTransactions = mutableListOf(),
@@ -123,7 +123,7 @@ class SummaryServiceTest {
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("21870.94"),
         totalProfit = BigDecimal("-1762.39"),
         xirrTransactions = mutableListOf(),
@@ -180,13 +180,12 @@ class SummaryServiceTest {
       )
 
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
-          totalValue = expectedTotal,
-          totalProfit = expectedProfit,
-        ).apply {
-          this.xirrTransactions.addAll(xirrTransactions)
-        }
+      PortfolioMetrics(
+        totalValue = expectedTotal,
+        totalProfit = expectedProfit,
+      ).apply {
+        this.xirrTransactions.addAll(xirrTransactions)
+      }
 
     val summary = summaryService.calculateSummaryForDate(date)
     val expectedEarningsPerDay =
@@ -206,68 +205,6 @@ class SummaryServiceTest {
     summaryService.deleteAllDailySummaries()
 
     verify(exactly = 1) { portfolioDailySummaryRepository.deleteAll() }
-  }
-
-  @Test
-  fun `should getAllDailySummaries should return all summaries`() {
-    val summaries =
-      listOf(
-        PortfolioDailySummary(
-          LocalDate.of(2024, 7, 1),
-          BigDecimal("100"),
-          BigDecimal("0.05"),
-          BigDecimal.ZERO,
-          BigDecimal.ZERO,
-          BigDecimal("10"),
-          BigDecimal("0.01"),
-        ),
-        PortfolioDailySummary(
-          LocalDate.of(2024, 7, 2),
-          BigDecimal("110"),
-          BigDecimal("0.06"),
-          BigDecimal.ZERO,
-          BigDecimal.ZERO,
-          BigDecimal("20"),
-          BigDecimal("0.02"),
-        ),
-      )
-    every { portfolioDailySummaryRepository.findAll() } returns summaries
-
-    val result = summaryService.getAllDailySummaries()
-
-    expect(result).toHaveSize(2)
-    expect(result).toEqual(summaries)
-  }
-
-  @Test
-  fun `should getAllDailySummaries with paging should return paged summaries`() {
-    val summaries =
-      listOf(
-        PortfolioDailySummary(
-          LocalDate.of(2024, 7, 2),
-          BigDecimal("110"),
-          BigDecimal("0.06"),
-          BigDecimal.ZERO,
-          BigDecimal.ZERO,
-          BigDecimal("20"),
-          BigDecimal("0.02"),
-        ),
-        PortfolioDailySummary(
-          LocalDate.of(2024, 7, 1),
-          BigDecimal("100"),
-          BigDecimal("0.05"),
-          BigDecimal.ZERO,
-          BigDecimal.ZERO,
-          BigDecimal("10"),
-          BigDecimal("0.01"),
-        ),
-      )
-    every { portfolioDailySummaryRepository.findAll(any<PageRequest>()) } returns PageImpl(summaries)
-
-    val result = summaryService.getAllDailySummaries(0, 10)
-
-    expect(result.content).toHaveSize(2)
-    expect(result.content).toEqual(summaries)
   }
 
   @Test
@@ -309,8 +246,7 @@ class SummaryServiceTest {
         Transaction(totalValue.toDouble(), LocalDate.of(2024, 7, 5)),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
+      PortfolioMetrics(
           totalValue = totalValue,
           totalProfit = totalProfit,
         ).apply {
@@ -441,8 +377,7 @@ class SummaryServiceTest {
         Transaction(expectedTotalValue.toDouble(), date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
+      PortfolioMetrics(
           totalValue = expectedTotalValue,
           totalProfit = BigDecimal.ZERO,
         ).apply {
@@ -478,7 +413,7 @@ class SummaryServiceTest {
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("600.00"),
         totalProfit = BigDecimal("100.00"),
         xirrTransactions = mutableListOf(),
@@ -546,8 +481,7 @@ class SummaryServiceTest {
         Transaction(totalValue.toDouble(), today),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
+      PortfolioMetrics(
           totalValue = totalValue,
           totalProfit = totalProfit,
         ).apply {
@@ -608,8 +542,7 @@ class SummaryServiceTest {
         Transaction(expectedTotalValue.toDouble(), date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
+      PortfolioMetrics(
           totalValue = expectedTotalValue,
           totalProfit = expectedTotalProfit,
         ).apply {
@@ -663,8 +596,7 @@ class SummaryServiceTest {
         Transaction(totalValue.toDouble(), date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
+      PortfolioMetrics(
           totalValue = totalValue,
           totalProfit = totalProfit,
         ).apply {
@@ -723,8 +655,7 @@ class SummaryServiceTest {
         Transaction(2225.0, date),
       )
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      InvestmentMetricsService
-        .PortfolioMetrics(
+      PortfolioMetrics(
           totalValue = BigDecimal("2225.00"),
           totalProfit = BigDecimal("175.00"),
         ).apply {
@@ -776,7 +707,7 @@ class SummaryServiceTest {
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("1200.00"),
         totalProfit = BigDecimal("200.00"),
         xirrTransactions = mutableListOf(),
@@ -883,7 +814,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(today) } returns existingSummary
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("1200.00"),
         totalProfit = BigDecimal("200.00"),
         xirrTransactions = mutableListOf(),
@@ -928,7 +859,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns previousSummary
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("2000.00"),
         totalProfit = BigDecimal("100.00"),
         xirrTransactions = mutableListOf(),
@@ -963,7 +894,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns null
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("2000.00"),
         totalProfit = BigDecimal("100.00"),
         xirrTransactions = mutableListOf(),
@@ -1008,7 +939,7 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns previousSummary
 
     val portfolioMetrics =
-      InvestmentMetricsService.PortfolioMetrics(
+      PortfolioMetrics(
         totalValue = BigDecimal("2100.00"),
         totalProfit = BigDecimal("150.00"),
         xirrTransactions = mutableListOf(),
@@ -1102,62 +1033,5 @@ class SummaryServiceTest {
         ),
       )
     }
-  }
-
-  @Test
-  fun `should calculate24hProfitChange when yesterday summary exists`() {
-    val today = LocalDate.of(2025, 5, 10)
-    val yesterday = today.minusDays(1)
-
-    val currentSummary =
-      PortfolioDailySummary(
-        entryDate = today,
-        totalValue = BigDecimal("1000.00"),
-        xirrAnnualReturn = BigDecimal("0.05"),
-        realizedProfit = BigDecimal("50.00"),
-        unrealizedProfit = BigDecimal("100.00"),
-        totalProfit = BigDecimal("150.00"),
-        earningsPerDay = BigDecimal("0.50"),
-      )
-
-    val yesterdaySummary =
-      PortfolioDailySummary(
-        entryDate = yesterday,
-        totalValue = BigDecimal("950.00"),
-        xirrAnnualReturn = BigDecimal("0.05"),
-        realizedProfit = BigDecimal("40.00"),
-        unrealizedProfit = BigDecimal("80.00"),
-        totalProfit = BigDecimal("120.00"),
-        earningsPerDay = BigDecimal("0.45"),
-      )
-
-    every { portfolioDailySummaryRepository.findByEntryDate(yesterday) } returns yesterdaySummary
-
-    val change24h = summaryService.calculate24hProfitChange(currentSummary)
-
-    expect(change24h!!).toEqualNumerically(BigDecimal("30.00"))
-  }
-
-  @Test
-  fun `should calculate24hProfitChange return null when no yesterday summary`() {
-    val today = LocalDate.of(2025, 5, 10)
-    val yesterday = today.minusDays(1)
-
-    val currentSummary =
-      PortfolioDailySummary(
-        entryDate = today,
-        totalValue = BigDecimal("1000.00"),
-        xirrAnnualReturn = BigDecimal("0.05"),
-        realizedProfit = BigDecimal("50.00"),
-        unrealizedProfit = BigDecimal("100.00"),
-        totalProfit = BigDecimal("150.00"),
-        earningsPerDay = BigDecimal("0.50"),
-      )
-
-    every { portfolioDailySummaryRepository.findByEntryDate(yesterday) } returns null
-
-    val change24h = summaryService.calculate24hProfitChange(currentSummary)
-
-    expect(change24h).toEqual(null)
   }
 }

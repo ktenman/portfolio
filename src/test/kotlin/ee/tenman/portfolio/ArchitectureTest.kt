@@ -2,10 +2,15 @@ package ee.tenman.portfolio
 
 import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass
+import com.tngtech.archunit.core.domain.JavaClasses
 import com.tngtech.archunit.core.domain.JavaMethod
+import com.tngtech.archunit.core.domain.Source
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
+import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ArchRule
+import com.tngtech.archunit.lang.ConditionEvents
+import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
@@ -361,4 +366,82 @@ class ArchitectureTest {
         }
       },
           ).because("API should expose DTOs for decoupling and versioning")
+
+  @ArchTest
+  val `data classes should not be nested inside service classes`: ArchRule =
+    classes()
+      .that()
+      .resideInAPackage("ee.tenman.portfolio.service")
+      .and()
+      .haveSimpleNameEndingWith("Metrics")
+      .should()
+      .beTopLevelClasses()
+      .because("Data classes should be in separate files for better organization and testability")
+
+  @ArchTest
+  fun `each source file should contain only one top level class`(classes: JavaClasses) {
+    val violations = findMultipleClassesPerFileViolations(classes)
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Each file should contain only one top-level class. Violations:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
+  private fun findMultipleClassesPerFileViolations(classes: JavaClasses): List<String> {
+    val topLevelClasses: Map<String, List<JavaClass>> = classes
+      .filter { isRelevantTopLevelClass(it) }
+      .groupBy { javaClass -> extractFileName(javaClass) }
+    return topLevelClasses.entries
+      .filter { entry ->
+        !isAcceptableMultiClassFile(entry.key) && filterKotlinFileClasses(entry.value).size > 1
+      }
+      .map { entry ->
+        val classNames = filterKotlinFileClasses(entry.value).joinToString(", ") { it.simpleName }
+        "${entry.key} contains multiple classes: [$classNames]"
+      }
+  }
+
+  private fun extractFileName(javaClass: JavaClass): String {
+    val source = javaClass.source
+    if (!source.isPresent) return "unknown"
+    val fileName = source.get().fileName
+    return if (fileName.isPresent) fileName.get() else "unknown"
+  }
+
+  private val temporaryExclusions = setOf(
+    "InvestmentMetricsService.kt",
+    "EtfBreakdownService.kt",
+    "CalculationService.kt",
+    "InstrumentService.kt",
+    "LightyearHoldingsService.kt",
+  )
+
+  private fun isAcceptableMultiClassFile(fileName: String): Boolean =
+    fileName.endsWith("Response.kt") ||
+      fileName.endsWith("Request.kt") ||
+      fileName.endsWith("Properties.kt") ||
+      fileName.endsWith("Client.kt") ||
+      fileName.endsWith("Test.kt") ||
+      fileName.endsWith("IT.kt") ||
+      fileName.endsWith("Utility.kt") ||
+      fileName.endsWith("Controller.kt") ||
+      fileName.endsWith("Handler.kt") ||
+      fileName.endsWith("Indicator.kt") ||
+      fileName.endsWith("Processor.kt") ||
+      temporaryExclusions.contains(fileName)
+
+  private fun isRelevantTopLevelClass(javaClass: JavaClass): Boolean =
+    !javaClass.isInnerClass &&
+      !javaClass.isAnonymousClass &&
+      !javaClass.simpleName.contains("$") &&
+      javaClass.packageName.startsWith("ee.tenman.portfolio")
+
+  private fun filterKotlinFileClasses(classes: List<JavaClass>): List<JavaClass> =
+    classes.filter { javaClass ->
+      !javaClass.simpleName.endsWith("Kt") &&
+        javaClass.simpleName != "Companion" &&
+        javaClass.simpleName != "DefaultImpls"
+    }
 }

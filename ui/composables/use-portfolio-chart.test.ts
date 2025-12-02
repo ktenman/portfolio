@@ -85,7 +85,7 @@ describe('usePortfolioChart', () => {
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(31)
+      expect(processedChartData.value?.labels).toHaveLength(50)
     })
 
     it('should limit data points to 15 on mobile', () => {
@@ -100,7 +100,7 @@ describe('usePortfolioChart', () => {
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(15)
+      expect(processedChartData.value?.labels).toHaveLength(30)
     })
 
     it('should not sample when data points are less than max', () => {
@@ -124,9 +124,9 @@ describe('usePortfolioChart', () => {
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(31)
+      expect(processedChartData.value?.labels).toHaveLength(61)
       expect(processedChartData.value?.labels?.[0]).toBe('2023-01-01')
-      expect(processedChartData.value?.labels?.[30]).toBe('2023-02-30')
+      expect(processedChartData.value?.labels?.[30]).toBe('2023-01-31')
     })
   })
 

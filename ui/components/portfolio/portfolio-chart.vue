@@ -106,7 +106,7 @@ const chartOptions: ChartOptions<'line'> = {
 
 .chart-container {
   @media (min-width: $breakpoint-lg) {
-    height: 25rem;
+    //height: 45rem;
   }
 }
 </style>
