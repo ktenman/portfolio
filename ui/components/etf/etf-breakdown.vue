@@ -105,10 +105,10 @@ const availablePlatforms = computed(() => {
 })
 
 const availableEtfs = computed(() => {
-  if (allHoldings.value.length === 0) return []
+  if (masterHoldings.value.length === 0) return []
 
   const etfSet = new Set<string>()
-  allHoldings.value.forEach(holding => {
+  masterHoldings.value.forEach(holding => {
     holding.inEtfs.split(',').forEach(etf => {
       const trimmedEtf = etf.trim()
       if (trimmedEtf) {
