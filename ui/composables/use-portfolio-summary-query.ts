@@ -5,7 +5,7 @@ import { portfolioSummaryService } from '../services/portfolio-summary-service'
 export function usePortfolioSummaryQuery() {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
-  const pageSize = 40
+  const pageSize = 186
 
   const {
     data: historicalData,

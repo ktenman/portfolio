@@ -27,7 +27,7 @@ export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
 
-    const maxPoints = Math.min(window.innerWidth >= 1000 ? 31 : 15, chronologicalSummaries.length)
+    const maxPoints = Math.min(window.innerWidth >= 1000 ? 61 : 30, chronologicalSummaries.length)
     const sampledData = sampleDataPoints(chronologicalSummaries, maxPoints)
 
     return {

@@ -18,7 +18,7 @@ class OnceInstrumentDataRetrievalService(
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
   private val dailyPortfolioXirrJob: DailyPortfolioXirrJob,
   private val jobExecutionService: JobExecutionService,
-  private val portfolioSummaryService: SummaryService,
+  private val summaryCacheService: SummaryCacheService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -27,7 +27,7 @@ class OnceInstrumentDataRetrievalService(
     CompletableFuture
       .runAsync {
         log.info("Retrieving data for all instruments")
-        val allDailySummaries = portfolioSummaryService.getAllDailySummaries()
+        val allDailySummaries = summaryCacheService.getAllDailySummaries()
 
         if (allDailySummaries.isNotEmpty()) {
           log.info("Daily summaries found. Skipping instrument data retrieval job.")

@@ -10,11 +10,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 
-data class PriceChange(
-  val changeAmount: BigDecimal,
-  val changePercent: Double,
-)
-
 @Service
 class DailyPriceService(
   private val dailyPriceRepository: DailyPriceRepository,

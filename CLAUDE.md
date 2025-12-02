@@ -619,6 +619,7 @@ ALWAYS follow the existing file naming patterns in the codebase:
 - Use Kotlin data classes for DTOs and value objects
 - Use `runCatching` for error handling instead of try-catch blocks
 - Use guard clauses for early returns instead of nested conditionals
+- **Data classes must be in separate files** - Never nest data classes inside service classes. Each data class should have its own file for better organization and testability. This is enforced by ArchUnit tests.
 
 ### Exception Handling
 
@@ -635,6 +636,118 @@ ALWAYS follow the existing file naming patterns in the codebase:
 - Use `also`, `apply`, `let`, `run`, `with` appropriately
 - Prefer functional transformations (`map`, `filter`, `fold`) over imperative loops
 - Use `generateSequence` instead of while loops with mutable state
+
+### Spring Framework Guidelines
+
+#### @Cacheable Self-Invocation Problem
+
+**CRITICAL**: Spring's `@Cacheable`, `@Transactional`, and other proxy-based annotations do NOT work with self-invocation (calling a method within the same class).
+
+```kotlin
+// ❌ WRONG: Cache is BYPASSED - self-invocation
+@Service
+class MyService {
+  @Cacheable("cache")
+  fun getCachedData(): Data = repository.findAll()
+
+  fun processData(): Result {
+    val data = getCachedData()  // Cache annotation IGNORED!
+    return transform(data)
+  }
+}
+
+// ✅ CORRECT: Use separate service for cached operations
+@Service
+class MyCacheService(private val repository: MyRepository) {
+  @Cacheable("cache")
+  fun getCachedData(): Data = repository.findAll()
+}
+
+@Service
+class MyService(private val cacheService: MyCacheService) {
+  fun processData(): Result {
+    val data = cacheService.getCachedData()  // Cache works via proxy
+    return transform(data)
+  }
+}
+
+// ✅ ALTERNATIVE: Self-injection with @Lazy
+@Service
+class MyService(
+  @Lazy private val self: MyService,
+  private val repository: MyRepository,
+) {
+  @Cacheable("cache")
+  fun getCachedData(): Data = repository.findAll()
+
+  fun processData(): Result {
+    val data = self.getCachedData()  // Cache works via proxy
+    return transform(data)
+  }
+}
+```
+
+**Why this happens**: Spring AOP uses proxies. When you call a method internally, you bypass the proxy and the annotation is ignored.
+
+### Clean Architecture Principles
+
+#### Layer Responsibilities
+
+1. **Controller Layer** (thin)
+   - Handle HTTP concerns only (request/response mapping)
+   - Delegate ALL business logic to services
+   - No business logic, calculations, or data transformations
+   - One-liner methods that delegate to services are ideal
+
+2. **Service Layer** (business logic)
+   - Contains all business logic and calculations
+   - Orchestrates domain operations
+   - Returns DTOs when the mapping involves business logic
+   - Handles transactions and caching
+
+3. **Repository Layer** (data access)
+   - Data access only, no business logic
+   - Simple CRUD operations
+
+```kotlin
+// ✅ CORRECT: Thin controller
+@GetMapping("/summary")
+fun getSummary(): SummaryDto = summaryService.getSummaryDto()
+
+// ❌ WRONG: Business logic in controller
+@GetMapping("/summary")
+fun getSummary(): SummaryDto {
+  val data = summaryService.getData()
+  val calculated = data.value * 1.1  // Business logic!
+  return SummaryDto(calculated)
+}
+```
+
+#### Guard Clauses
+
+Use guard clauses to exit early and reduce nesting:
+
+```kotlin
+// ✅ CORRECT: Guard clause with early return
+fun getHistoricalSummaries(page: Int, size: Int): Page<SummaryDto> {
+  val summaries = repository.findAll(page, size)
+  if (summaries.isEmpty) return Page.empty()
+
+  val lookup = buildLookup(summaries.content)
+  return summaries.map { it.toDto(lookup) }
+}
+
+// ❌ WRONG: Nested conditionals
+fun getHistoricalSummaries(page: Int, size: Int): Page<SummaryDto> {
+  val summaries = repository.findAll(page, size)
+  if (summaries.isNotEmpty()) {
+    val lookup = buildLookup(summaries.content)
+    return summaries.map { it.toDto(lookup) }
+  } else {
+    return Page.empty()
+  }
+}
+```
 
 ## Testing Standards
 

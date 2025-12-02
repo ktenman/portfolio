@@ -302,7 +302,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateInstrumentMetrics with empty transactions returns empty metrics`() {
     val metrics = investmentMetricsService.calculateInstrumentMetrics(testInstrument, emptyList(), testDate)
 
-    expect(metrics).toEqual(InvestmentMetricsService.InstrumentMetrics.EMPTY)
+    expect(metrics).toEqual(InstrumentMetrics.EMPTY)
   }
 
   @Test
@@ -505,7 +505,7 @@ class InvestmentMetricsServiceTest {
         testDate,
       )
 
-    expect(metrics).toEqual(InvestmentMetricsService.InstrumentMetrics.EMPTY)
+    expect(metrics).toEqual(InstrumentMetrics.EMPTY)
   }
 
   @Test

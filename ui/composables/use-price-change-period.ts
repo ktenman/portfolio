@@ -9,14 +9,10 @@ interface PeriodOption {
   readonly label: string
 }
 
-const periodOptions: ReadonlyArray<PeriodOption> = [
-  { value: PriceChangePeriod.P24H, label: '24H' },
-  { value: PriceChangePeriod.P48H, label: '48H' },
-  { value: PriceChangePeriod.P3D, label: '3D' },
-  { value: PriceChangePeriod.P7D, label: '7D' },
-  { value: PriceChangePeriod.P30D, label: '30D' },
-  { value: PriceChangePeriod.P1Y, label: '1Y' },
-] as const
+const periodOptions: ReadonlyArray<PeriodOption> = Object.values(PriceChangePeriod).map(value => ({
+  value: value as PriceChangePeriod,
+  label: value.substring(1),
+}))
 
 export function usePriceChangePeriod() {
   const storedPeriod = localStorage.getItem(STORAGE_KEY)

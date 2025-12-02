@@ -123,7 +123,7 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -174,7 +174,7 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -208,7 +208,7 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -240,7 +240,7 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal.ZERO,
         currentValue = BigDecimal.ZERO,
         profit = BigDecimal.ZERO,
@@ -272,7 +272,7 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal.ZERO,
         profit = BigDecimal("-1000"),
@@ -339,7 +339,7 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -379,7 +379,7 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -421,7 +421,7 @@ class InstrumentServiceTest {
     testInstrument.currentPrice = BigDecimal("150")
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -468,7 +468,7 @@ class InstrumentServiceTest {
     testInstrument.currentPrice = BigDecimal("14.80")
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("2181.50"),
         currentValue = BigDecimal("2220.00"),
         profit = BigDecimal("38.50"),
@@ -510,7 +510,7 @@ class InstrumentServiceTest {
     testInstrument.currentPrice = BigDecimal("14.54")
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("4652.325"),
         currentValue = BigDecimal("4665.159"),
         profit = BigDecimal("12.834"),
@@ -555,7 +555,7 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1550"),
         currentValue = BigDecimal("2250"),
         profit = BigDecimal("700"),
@@ -599,7 +599,7 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1550"),
         currentValue = BigDecimal("2250"),
         profit = BigDecimal("700"),
@@ -637,7 +637,7 @@ class InstrumentServiceTest {
       )
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -719,7 +719,7 @@ class InstrumentServiceTest {
       )
 
     val metrics1 =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),
@@ -752,7 +752,7 @@ class InstrumentServiceTest {
       createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
     val metrics =
-      InvestmentMetricsService.InstrumentMetrics(
+      InstrumentMetrics(
         totalInvestment = BigDecimal("1000"),
         currentValue = BigDecimal("1500"),
         profit = BigDecimal("500"),

@@ -1,17 +1,10 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
-import org.springframework.cache.annotation.CacheEvict
-import org.springframework.cache.annotation.Cacheable
-import org.springframework.cache.annotation.Caching
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -28,6 +21,7 @@ class SummaryService(
   private val clock: Clock,
   private val summaryBatchProcessor: SummaryBatchProcessorService,
   private val summaryDeletionService: SummaryDeletionService,
+  private val summaryCacheService: SummaryCacheService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -40,26 +34,16 @@ class SummaryService(
       .divide(BigDecimal(365.25), 10, RoundingMode.HALF_UP)
 
   @Transactional
-  @Caching(
-    evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
-      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
-    ],
-  )
   fun deleteAllDailySummaries() {
     log.info("Deleting all portfolio daily summaries")
     portfolioDailySummaryRepository.deleteAll()
+    summaryCacheService.evictAllCaches()
   }
 
-  @Caching(
-    evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
-      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
-    ],
-  )
   fun recalculateAllDailySummaries(): Int {
     log.info("Starting full recalculation of portfolio daily summaries")
     cacheManager.getCache(INSTRUMENT_CACHE)?.clear()
+    summaryCacheService.evictAllCaches()
 
     val transactions =
       transactionService
@@ -86,35 +70,9 @@ class SummaryService(
   }
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [SUMMARY_CACHE], key = "'summaries'", unless = "#result.isEmpty()")
-  fun getAllDailySummaries(): List<PortfolioDailySummary> = portfolioDailySummaryRepository.findAll()
-
-  @Transactional(readOnly = true)
-  @Cacheable(
-    value = [SUMMARY_CACHE],
-    key = "'summaries-page-' + #page + '-size-' + #size",
-    unless = "#result.isEmpty()",
-  )
-  fun getAllDailySummaries(
-    page: Int,
-    size: Int,
-  ): Page<PortfolioDailySummary> {
-    val pageable = PageRequest.of(page, size, Sort.by("entryDate").descending())
-    return portfolioDailySummaryRepository.findAll(pageable)
-  }
-
-  @Transactional(readOnly = true)
   fun getCurrentDaySummary(): PortfolioDailySummary {
     val today = LocalDate.now(clock)
     return calculateCurrentDaySummaryForDate(today)
-  }
-
-  @Transactional(readOnly = true)
-  fun calculate24hProfitChange(currentSummary: PortfolioDailySummary): BigDecimal? {
-    val yesterday = currentSummary.entryDate.minusDays(1)
-    val yesterdaySummary = portfolioDailySummaryRepository.findByEntryDate(yesterday) ?: return null
-
-    return currentSummary.totalProfit.subtract(yesterdaySummary.totalProfit)
   }
 
   fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
@@ -127,12 +85,6 @@ class SummaryService(
   }
 
   @Transactional
-  @Caching(
-    evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
-      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
-    ],
-  )
   fun saveDailySummary(summary: PortfolioDailySummary): PortfolioDailySummary {
     val existing = portfolioDailySummaryRepository.findByEntryDate(summary.entryDate)
     val toSave =
@@ -145,16 +97,12 @@ class SummaryService(
       earningsPerDay = summary.earningsPerDay
     } ?: summary
 
-    return portfolioDailySummaryRepository.save(toSave)
+    val saved = portfolioDailySummaryRepository.save(toSave)
+    summaryCacheService.evictAllCaches()
+    return saved
   }
 
   @Transactional
-  @Caching(
-    evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
-      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
-    ],
-  )
   fun saveDailySummaries(summaries: List<PortfolioDailySummary>) {
     val existing =
       portfolioDailySummaryRepository
@@ -174,6 +122,7 @@ class SummaryService(
     }
 
     portfolioDailySummaryRepository.saveAll(merged)
+    summaryCacheService.evictAllCaches()
   }
 
   @Transactional(readOnly = true)
