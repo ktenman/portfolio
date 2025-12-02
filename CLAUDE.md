@@ -603,6 +603,19 @@ ALWAYS follow the existing file naming patterns in the codebase:
 - Every new feature must be covered by a unit test before it is implemented
 - Minor inconsistencies and typos in the existing code may be fixed
 
+## Git Commit Conventions
+
+When creating commits:
+
+- Use the global git user configured in the system (`git config --global user.name` and `git config --global user.email`)
+- **NEVER** add "Generated with Claude Code" or similar attribution lines to commit messages
+- **NEVER** add "Co-Authored-By: Claude" or any AI co-author attribution
+- Start with uppercase imperative verb (e.g., "Add", "Fix", "Update", "Remove")
+- **NO PREFIXES** - never use `feat:`, `fix:`, `chore:`, `docs:`, etc.
+- Subject line max 50 characters
+- Good: `Add user authentication`
+- Bad: `feat: add user authentication`
+
 ## Kotlin/Backend Design Principles
 
 ### Method and Class Design
