@@ -4,7 +4,6 @@ import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaClasses
 import com.tngtech.archunit.core.domain.JavaMethod
-import com.tngtech.archunit.core.domain.Source
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchCondition
@@ -379,7 +378,7 @@ class ArchitectureTest {
       .because("Data classes should be in separate files for better organization and testability")
 
   @ArchTest
-  fun `each source file should contain only one top level class`(classes: JavaClasses) {
+  fun eachSourceFileShouldContainOnlyOneTopLevelClass(classes: JavaClasses) {
     val violations = findMultipleClassesPerFileViolations(classes)
     if (violations.isNotEmpty()) {
       throw AssertionError(
@@ -390,14 +389,14 @@ class ArchitectureTest {
   }
 
   private fun findMultipleClassesPerFileViolations(classes: JavaClasses): List<String> {
-    val topLevelClasses: Map<String, List<JavaClass>> = classes
+    val topLevelClasses: Map<String, List<JavaClass>> =
+      classes
       .filter { isRelevantTopLevelClass(it) }
       .groupBy { javaClass -> extractFileName(javaClass) }
     return topLevelClasses.entries
       .filter { entry ->
         !isAcceptableMultiClassFile(entry.key) && filterKotlinFileClasses(entry.value).size > 1
-      }
-      .map { entry ->
+      }.map { entry ->
         val classNames = filterKotlinFileClasses(entry.value).joinToString(", ") { it.simpleName }
         "${entry.key} contains multiple classes: [$classNames]"
       }
@@ -410,7 +409,8 @@ class ArchitectureTest {
     return if (fileName.isPresent) fileName.get() else "unknown"
   }
 
-  private val temporaryExclusions = setOf(
+  private val temporaryExclusions =
+    setOf(
     "InvestmentMetricsService.kt",
     "EtfBreakdownService.kt",
     "CalculationService.kt",
