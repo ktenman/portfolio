@@ -1,25 +1,27 @@
 package ee.tenman.portfolio.configuration
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.SerializationFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 
 const val MAX_LENGTH = 300
 
 @Configuration
 class ObjectMapperConfig {
   companion object {
-    val OBJECT_MAPPER: ObjectMapper =
-      ObjectMapper()
-        .registerModule(JavaTimeModule())
-        .registerKotlinModule()
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    val JSON_MAPPER: JsonMapper =
+      JsonMapper
+        .builder()
+        .addModule(KotlinModule.Builder().build())
+        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .build()
+
+    val OBJECT_MAPPER: ObjectMapper = JSON_MAPPER
 
     fun truncateJson(json: String): String {
       if (json.length <= MAX_LENGTH) {
@@ -35,5 +37,8 @@ class ObjectMapperConfig {
   }
 
   @Bean
-  fun objectMapper(): ObjectMapper = OBJECT_MAPPER
+  fun jsonMapper(): JsonMapper = JSON_MAPPER
+
+  @Bean
+  fun objectMapper(): ObjectMapper = JSON_MAPPER
 }
