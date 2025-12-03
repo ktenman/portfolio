@@ -31,6 +31,7 @@ class MinioService(
         )
       true
     } catch (e: Exception) {
+      log.trace("Logo not found for {}: {}", symbol, e.message)
       false
     }
 

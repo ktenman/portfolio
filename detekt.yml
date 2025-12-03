@@ -1,19 +1,12 @@
-build:
-  maxIssues: 0
-  excludeCorrectable: false
-
 config:
   validation: true
-  warningsAsErrors: false
+  warningsAsErrors: true
   checkExhaustiveness: false
 
 processors:
   active: true
 
 console-reports:
-  active: true
-
-output-reports:
   active: true
 
 comments:
@@ -23,40 +16,142 @@ complexity:
   active: false
 
 coroutines:
-  active: false
+  active: true
+  GlobalCoroutineUsage:
+    active: true
+    severity: error
+  InjectDispatcher:
+    active: true
+    severity: error
+  RedundantSuspendModifier:
+    active: true
+    severity: error
+  SleepInsteadOfDelay:
+    active: true
+    severity: error
+  SuspendFunSwallowedCancellation:
+    active: true
+    severity: error
+  SuspendFunWithFlowReturnType:
+    active: true
+    severity: error
 
 empty-blocks:
   active: false
 
 exceptions:
-  active: false
-
-formatting:
-  active: false
+  active: true
+  NotImplementedDeclaration:
+    active: true
+    severity: error
+  PrintStackTrace:
+    active: true
+    severity: error
+  SwallowedException:
+    active: true
+    severity: error
+    ignoredExceptionTypes:
+      - 'InterruptedException'
+      - 'MalformedURLException'
+      - 'NumberFormatException'
+      - 'ParseException'
+  ThrowingExceptionsWithoutMessageOrCause:
+    active: true
+    severity: error
+    exceptions:
+      - 'IllegalArgumentException'
+      - 'IllegalStateException'
+      - 'IOException'
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false
 
 naming:
   active: false
 
 performance:
-  active: false
+  active: true
+  ArrayPrimitive:
+    active: true
+    severity: error
+  ForEachOnRange:
+    active: true
+    severity: error
+  SpreadOperator:
+    active: false
+  UnnecessaryTemporaryInstantiation:
+    active: true
+    severity: error
 
 potential-bugs:
-  active: false
+  active: true
+  CastToNullableType:
+    active: true
+    severity: error
+  DoubleMutabilityForCollection:
+    active: true
+    severity: error
+  EqualsWithHashCodeExist:
+    active: true
+    severity: error
+  ExitOutsideMain:
+    active: true
+    severity: error
+  HasPlatformType:
+    active: true
+    severity: error
+  IgnoredReturnValue:
+    active: false
+  ImplicitUnitReturnType:
+    active: true
+    severity: error
+  MapGetWithNotNullAssertionOperator:
+    active: true
+    severity: error
+  NullableToStringCall:
+    active: true
+    severity: error
+  UnconditionalJumpStatementInLoop:
+    active: true
+    severity: error
+  UnnecessaryNotNullOperator:
+    active: true
+    severity: error
+  UnnecessarySafeCall:
+    active: true
+    severity: error
+  UnreachableCode:
+    active: true
+    severity: error
+  UnsafeCallOnNullableType:
+    active: true
+    severity: error
+  UnsafeCast:
+    active: true
+    severity: error
+  UselessPostfixExpression:
+    active: true
+    severity: error
 
 style:
   active: true
   UnusedPrivateClass:
     active: true
-  UnusedPrivateMember:
+    severity: error
+  UnusedPrivateFunction:
     active: true
+    severity: error
     allowedNames: 'log|logger|_.*'
-  UnusedImports:
+  UnusedImport:
     active: false
   MaxLineLength:
     active: true
+    severity: error
     maxLineLength: 140
   ReturnCount:
     active: true
+    severity: error
     max: 3
     excludeGuardClauses: true
   MagicNumber:
