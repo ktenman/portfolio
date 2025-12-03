@@ -35,6 +35,9 @@ dependencies {
   implementation(libs.spring.boot.starter.webmvc)
   implementation(libs.spring.cloud.starter.openfeign)
   implementation(libs.jackson.module.kotlin)
+  implementation(libs.spring.boot.jackson2)
+  implementation(libs.jackson2.module.kotlin)
+  implementation(libs.jackson2.datatype.jsr310)
 
   // Security fixes for CVEs
   implementation(libs.commons.fileupload)
@@ -71,11 +74,6 @@ dependencies {
   testImplementation(libs.spring.boot.starter.webmvc.test)
   testImplementation(libs.spring.boot.testcontainers)
   testImplementation(libs.kotlin.test.junit5)
-  testImplementation(libs.spring.cloud.starter.contract.stub.runner) {
-    exclude(group = "org.mockito")
-    exclude(group = "org.assertj", module = "assertj-core")
-    exclude(group = "net.javacrumbs.json-unit", module = "json-unit-assertj")
-  }
   testImplementation(libs.wiremock.spring.boot)
   testImplementation(libs.testcontainers.junit.jupiter)
   testImplementation(libs.junit.jupiter.api)

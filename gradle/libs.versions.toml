@@ -43,7 +43,6 @@ spring-boot-docker-compose = { module = "org.springframework.boot:spring-boot-do
 # Spring Cloud
 spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "springCloud" }
 spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign" }
-spring-cloud-starter-contract-stub-runner = { module = "org.springframework.cloud:spring-cloud-starter-contract-stub-runner" }
 
 # Spring Retry
 spring-retry = { module = "org.springframework.retry:spring-retry", version.ref = "springRetry" }
@@ -58,6 +57,11 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 
 # Jackson 3
 jackson-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin" }
+
+# Jackson 2 bridge (for OpenFeign compatibility)
+spring-boot-jackson2 = { module = "org.springframework.boot:spring-boot-jackson2" }
+jackson2-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version = "2.20.1" }
+jackson2-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version = "2.20.1" }
 
 # Database
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
