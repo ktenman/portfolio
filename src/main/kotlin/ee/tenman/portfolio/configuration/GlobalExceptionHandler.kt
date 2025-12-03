@@ -8,14 +8,14 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.bind.support.WebExchangeBindException
 
 @ControllerAdvice
 class GlobalExceptionHandler {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @ExceptionHandler(WebExchangeBindException::class, MethodArgumentNotValidException::class)
-  fun handleValidationExceptions(exception: Exception): ResponseEntity<ApiError> = handleValidationException(exception)
+  @ExceptionHandler(MethodArgumentNotValidException::class)
+  fun handleValidationExceptions(exception: MethodArgumentNotValidException): ResponseEntity<ApiError> =
+    handleValidationException(exception)
 
   @ExceptionHandler(Exception::class)
   fun handleAllExceptions(exception: Exception): ResponseEntity<ApiError> {
@@ -45,8 +45,8 @@ class GlobalExceptionHandler {
     return ResponseEntity(apiError, HttpStatus.BAD_REQUEST)
   }
 
-  fun handleValidationException(exception: Exception): ResponseEntity<ApiError> {
-    val errors = extractErrors(exception)
+  fun handleValidationException(exception: MethodArgumentNotValidException): ResponseEntity<ApiError> {
+    val errors = extractErrors(exception.bindingResult)
     val apiError =
       ApiError(
         status = HttpStatus.BAD_REQUEST,
@@ -57,18 +57,10 @@ class GlobalExceptionHandler {
     return ResponseEntity(apiError, HttpStatus.BAD_REQUEST)
   }
 
-  private fun extractErrors(exception: Exception): Map<String, String> {
-    val bindingResult: BindingResult? =
-      when (exception) {
-        is MethodArgumentNotValidException -> exception.bindingResult
-        is WebExchangeBindException -> exception.bindingResult
-        else -> null
-      }
-
-    return bindingResult?.fieldErrors?.associate { fieldError ->
+  private fun extractErrors(bindingResult: BindingResult): Map<String, String> =
+    bindingResult.fieldErrors.associate { fieldError ->
       fieldError.field to (fieldError.defaultMessage ?: "Invalid value")
-    } ?: emptyMap()
-  }
+    }
 
   data class ApiError(
     val status: HttpStatus,
