@@ -616,6 +616,17 @@ When creating commits:
 - Good: `Add user authentication`
 - Bad: `feat: add user authentication`
 
+## Pull Request Conventions
+
+When creating pull requests:
+
+- **NEVER** add "Generated with Claude Code" or similar attribution lines to PR descriptions
+- **NEVER** add any AI attribution or emoji indicators
+- Use clear, descriptive titles that summarize the change
+- Include a Summary section with bullet points
+- Include a Test plan section with checkboxes
+- Reference related issues with "Closes #XXX" or "Fixes #XXX"
+
 ## Kotlin/Backend Design Principles
 
 ### Method and Class Design

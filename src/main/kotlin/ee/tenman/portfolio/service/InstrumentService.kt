@@ -11,6 +11,7 @@ import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
@@ -34,6 +35,8 @@ class InstrumentService(
   private val dailyPriceService: DailyPriceService,
   private val clock: Clock,
 ) {
+  private val log = LoggerFactory.getLogger(javaClass)
+
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
   fun getInstrumentById(id: Long): Instrument =
@@ -222,6 +225,7 @@ class InstrumentService(
         try {
           Platform.valueOf(platformStr.uppercase())
         } catch (e: IllegalArgumentException) {
+          log.debug("Invalid platform filter: {}", platformStr, e)
           null
         }
       }?.toSet()

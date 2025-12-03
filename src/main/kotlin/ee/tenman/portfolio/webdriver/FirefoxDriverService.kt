@@ -61,6 +61,7 @@ class FirefoxDriverService {
           try {
             it.quit()
           } catch (e: Exception) {
+            logger.trace("Error quitting unhealthy driver", e)
           }
         }
         driver = createDriver()
@@ -85,6 +86,7 @@ class FirefoxDriverService {
       try {
         driver.quit()
       } catch (ex: Exception) {
+        logger.trace("Error quitting driver during cleanup", ex)
       }
     }
   }
@@ -158,6 +160,7 @@ class FirefoxDriverService {
       driver.title
       true
     } catch (e: Exception) {
+      logger.trace("Driver health check failed", e)
       false
     }
 }

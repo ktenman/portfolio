@@ -212,7 +212,7 @@ class EtfBreakdownService(
     return try {
       dailyPriceService.getPrice(instrument, java.time.LocalDate.now())
     } catch (e: NoSuchElementException) {
-      log.warn("No price found for ${instrument.symbol}, using zero")
+      log.warn("No price found for ${instrument.symbol}, using zero", e)
       BigDecimal.ZERO
     }
   }

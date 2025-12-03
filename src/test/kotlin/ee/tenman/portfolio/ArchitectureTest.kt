@@ -442,6 +442,7 @@ class ArchitectureTest {
     classes.filter { javaClass ->
       !javaClass.simpleName.endsWith("Kt") &&
         javaClass.simpleName != "Companion" &&
-        javaClass.simpleName != "DefaultImpls"
+        javaClass.simpleName != "DefaultImpls" &&
+        javaClass.simpleName != "WhenMappings"
     }
 }

@@ -103,7 +103,7 @@ class TransactionService(
           ee.tenman.portfolio.domain.Platform
             .valueOf(platformName)
         } catch (e: IllegalArgumentException) {
-          log.warn("Invalid platform name: $platformName")
+          log.warn("Invalid platform name: {}", platformName, e)
           null
         }
       }
@@ -141,7 +141,7 @@ class TransactionService(
           ee.tenman.portfolio.domain.Platform
             .valueOf(platformName)
         } catch (e: IllegalArgumentException) {
-          log.warn("Invalid platform name: $platformName")
+          log.warn("Invalid platform name: {}", platformName, e)
           null
         }
       }
@@ -342,6 +342,7 @@ class TransactionService(
           ee.tenman.portfolio.domain.Platform
             .valueOf(platformName)
         } catch (e: IllegalArgumentException) {
+          log.debug("Invalid platform name: {}", platformName, e)
           null
         }
       }
