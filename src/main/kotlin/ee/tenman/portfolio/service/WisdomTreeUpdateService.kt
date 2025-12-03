@@ -104,7 +104,7 @@ class WisdomTreeUpdateService(
           return byTicker.get()
         }
       } catch (e: Exception) {
-        log.warn("Multiple holdings found for ticker $ticker, creating new entry for name=$name")
+        log.warn("Multiple holdings found for ticker {}, creating new entry for name={}", ticker, name, e)
       }
     }
 

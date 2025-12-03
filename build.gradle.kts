@@ -88,8 +88,6 @@ dependencies {
   testImplementation(libs.datafaker)
   testRuntimeOnly(libs.junit.platform.launcher)
   testRuntimeOnly(libs.junit.jupiter.engine)
-
-  detektPlugins(libs.detekt.formatting)
 }
 
 configurations.all {
@@ -110,7 +108,7 @@ dependencyManagement {
 
 kotlin {
   compilerOptions {
-    freeCompilerArgs.addAll("-Xjsr305=strict")
+    freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
   }
 }
 val isE2ETestEnvironmentEnabled = System.getenv("E2E")?.toBoolean() == true
@@ -238,12 +236,11 @@ detekt {
   config.setFrom(files("$projectDir/detekt.yml"))
 }
 
-tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
   reports {
     html.required.set(true)
-    xml.required.set(true)
-    txt.required.set(false)
+    checkstyle.required.set(true)
     sarif.required.set(false)
-    md.required.set(false)
+    markdown.required.set(false)
   }
 }
