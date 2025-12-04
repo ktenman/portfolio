@@ -1,39 +1,23 @@
 package ee.tenman.portfolio.configuration
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import feign.codec.Decoder
+import feign.codec.Encoder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-
-const val MAX_LENGTH = 300
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 
 @Configuration
 class ObjectMapperConfig {
-  companion object {
-    val OBJECT_MAPPER: ObjectMapper =
-      ObjectMapper()
-        .registerModule(JavaTimeModule())
-        .registerKotlinModule()
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-    fun truncateJson(json: String): String {
-      if (json.length <= MAX_LENGTH) {
-        return json
-      }
-
-      val halfLength = MAX_LENGTH / 2
-      val start = json.substring(0, halfLength)
-      val end = json.substring(json.length - halfLength)
-
-      return "$start ... $end"
-    }
-  }
+  @Bean
+  fun jsonMapper(): JsonMapper = JsonMapperFactory.instance
 
   @Bean
-  fun objectMapper(): ObjectMapper = OBJECT_MAPPER
+  fun objectMapper(): ObjectMapper = JsonMapperFactory.instance
+
+  @Bean
+  fun feignEncoder(): Encoder = JacksonFeignEncoder(JsonMapperFactory.instance)
+
+  @Bean
+  fun feignDecoder(): Decoder = JacksonFeignDecoder(JsonMapperFactory.instance)
 }
