@@ -185,7 +185,7 @@ PlantUML diagrams can be generated with `./scripts/generate-diagrams.sh`. Edit `
 
 **Background Jobs (9 scheduled tasks):**
 
-- AlphaVantageDataRetrievalJob, BinanceDataRetrievalJob, FtDataRetrievalJob - Price updates
+- BinanceDataRetrievalJob, FtDataRetrievalJob - Price updates
 - Trading212DataRetrievalJob - Trading platform sync
 - DailyPortfolioXirrJob - XIRR calculations (parallel with coroutines)
 - LightyearDataFetchJob, WisdomTreeDataUpdateJob - ETF holdings scraping
@@ -200,7 +200,7 @@ PlantUML diagrams can be generated with `./scripts/generate-diagrams.sh`. Edit `
 
 **External Integrations (10 systems):**
 
-- Market Data: AlphaVantage (stocks/ETFs), Binance (crypto), FT (historical prices)
+- Market Data: FT (stocks/ETFs), Binance (crypto)
 - Trading Platforms: Trading212, WisdomTree, Lightyear
 - AI Services: OpenRouter (Claude Haiku for classification), Google Vision (OCR)
 - Other: Telegram (notifications), MinIO (logo storage)
@@ -223,9 +223,8 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 
 **Market Data APIs:**
 
-- **Alpha Vantage API** - Stock/ETF price data via JSON API (requires API key)
 - **Binance API** - Cryptocurrency prices via JSON API
-- **FT Markets** - Historical prices via HTML scraping (Jsoup parsing of AJAX endpoint)
+- **FT Markets** - Stock/ETF prices via HTML scraping (Jsoup parsing of AJAX endpoint)
 
 **Trading Platforms (Web Scraping):**
 
@@ -406,12 +405,6 @@ A comprehensive test runner that runs ALL tests across the entire stack: backend
 **Issue**: Development uses Keycloak while production uses a custom auth service.
 **Impact**: Tests may pass locally but fail in production.
 **Workaround**: Test auth flows in both `docker-compose.local.yml` (Keycloak) and `docker-compose.yml` (custom auth) environments.
-
-### 🔴 Hardcoded API Keys
-
-**Issue**: Alpha Vantage API keys are hardcoded in `AlphaVantageClient.kt`.
-**Action Required**: Move these to environment variables immediately.
-**Location**: `src/main/kotlin/ee/tenman/portfolio/alphavantage/AlphaVantageClient.kt:45-55`
 
 ## Performance Optimization Points
 

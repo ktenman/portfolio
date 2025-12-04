@@ -30,7 +30,6 @@ System_Boundary(portfolio_system, "Portfolio Management System") {
   Container(email_whitelist, "emails.txt", "Text File", "List of authorized email addresses")
 }
 
-System_Ext(alphavantage, "Alpha Vantage API", "Provides financial market data", $sprite="cloud")
 System_Ext(binance, "Binance API", "Provides cryptocurrency prices", $sprite="cloud")
 System_Ext(ft_markets, "FT Markets", "AJAX endpoint returning HTML fragments (parsed with Jsoup)", $sprite="cloud")
 System_Ext(trading212_platform, "Trading212 Platform", "External trading platform for price data", $sprite="cloud")
@@ -57,7 +56,6 @@ Rel(app_internal, frontend, "Routes UI requests", "HTTP :61234")
 Rel(frontend, backend, "API calls", "via proxy")
 Rel(backend, database, "Reads/writes data", "JDBC")
 Rel(backend, cache, "Caches data", "Redis protocol")
-Rel(backend, alphavantage, "Fetches stock prices", "HTTPS/JSON")
 Rel(backend, binance, "Fetches crypto prices", "HTTPS/JSON")
 Rel(backend, ft_markets, "Fetches HTML fragments", "HTTPS/Jsoup")
 Rel(backend, cloudflare_bypass_proxy, "Requests prices", "HTTP :3000")

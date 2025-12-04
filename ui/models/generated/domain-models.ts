@@ -108,7 +108,6 @@ export enum Platform {
 }
 
 export enum ProviderName {
-    ALPHA_VANTAGE = "ALPHA_VANTAGE",
     BINANCE = "BINANCE",
     FT = "FT",
     LIGHTYEAR = "LIGHTYEAR",

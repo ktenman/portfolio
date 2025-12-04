@@ -45,7 +45,7 @@ class TransactionServiceTest {
       category = "Stock",
       baseCurrency = "USD",
       currentPrice = BigDecimal("150.00"),
-      providerName = ProviderName.ALPHA_VANTAGE,
+      providerName = ProviderName.FT,
     ).apply {
       id = 1L
     }
