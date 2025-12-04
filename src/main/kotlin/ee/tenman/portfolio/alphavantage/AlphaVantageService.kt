@@ -1,8 +1,7 @@
 package ee.tenman.portfolio.alphavantage
 
 import ee.tenman.portfolio.alphavantage.AlphaVantageResponse.AlphaVantageDailyPriceData
-import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.OBJECT_MAPPER
-import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.truncateJson
+import ee.tenman.portfolio.configuration.JsonMapperFactory
 import jakarta.annotation.Resource
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -34,7 +33,8 @@ class AlphaVantageService {
 
     return try {
       val timeSeriesDaily = client.getTimeSeries("TIME_SERIES_DAILY", ticker)
-      log.info("Retrieved daily ticker data for $ticker: ${truncateJson(OBJECT_MAPPER.writeValueAsString(timeSeriesDaily))}")
+      val json = JsonMapperFactory.instance.writeValueAsString(timeSeriesDaily)
+      log.info("Retrieved daily ticker data for $ticker: ${JsonMapperFactory.truncateJson(json)}")
 
       timeSeriesDaily.dailyTimeSeries
         ?.asSequence()

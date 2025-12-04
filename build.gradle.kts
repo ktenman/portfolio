@@ -32,7 +32,7 @@ dependencies {
   implementation(libs.spring.boot.starter.data.jpa)
   implementation(libs.spring.boot.starter.validation)
   implementation(libs.spring.boot.starter.data.redis)
-  implementation(libs.spring.boot.starter.web)
+  implementation(libs.spring.boot.starter.webmvc)
   implementation(libs.spring.cloud.starter.openfeign)
   implementation(libs.jackson.module.kotlin)
 
@@ -40,10 +40,10 @@ dependencies {
   implementation(libs.commons.fileupload)
   implementation(libs.commons.lang3)
   implementation(libs.spring.boot.starter.actuator)
-  implementation(libs.spring.boot.starter.aop)
+  implementation(libs.spring.boot.starter.aspectj)
   implementation(libs.micrometer.registry.prometheus)
   implementation(libs.selenide)
-  implementation(libs.flyway.core)
+  implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
   implementation(libs.kotlin.reflect)
   implementation(libs.spring.retry)
@@ -68,13 +68,10 @@ dependencies {
     exclude(group = "org.mockito", module = "mockito-junit-jupiter")
     exclude(group = "org.assertj", module = "assertj-core")
   }
+  testImplementation(libs.spring.boot.starter.webmvc.test)
   testImplementation(libs.spring.boot.testcontainers)
   testImplementation(libs.kotlin.test.junit5)
-  testImplementation(libs.spring.cloud.starter.contract.stub.runner) {
-    exclude(group = "org.mockito")
-    exclude(group = "org.assertj", module = "assertj-core")
-    exclude(group = "net.javacrumbs.json-unit", module = "json-unit-assertj")
-  }
+  testImplementation(libs.wiremock.spring.boot)
   testImplementation(libs.testcontainers.junit.jupiter)
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.testcontainers.postgresql)
