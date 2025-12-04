@@ -107,7 +107,7 @@ testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", ve
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version = "1.21.3" }
 testcontainers-minio = { module = "org.testcontainers:minio", version = "1.21.3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-spring-mockk = { module = "com.ninja-squad:springmockk", version = "4.0.2" }
+spring-mockk = { module = "com.ninja-squad:springmockk", version = "5.0.1" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archUnit" }
 atrium-fluent = { module = "ch.tutteli.atrium:atrium-fluent", version.ref = "atrium" }
 datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
