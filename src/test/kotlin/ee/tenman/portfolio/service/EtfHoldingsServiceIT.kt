@@ -22,6 +22,7 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.wiremock.spring.InjectWireMock
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -48,7 +49,7 @@ class EtfHoldingsServiceIT {
   @Resource
   private lateinit var minioProperties: MinioProperties
 
-  @Resource
+  @InjectWireMock
   private lateinit var wireMockServer: WireMockServer
 
   private lateinit var testEtf: Instrument

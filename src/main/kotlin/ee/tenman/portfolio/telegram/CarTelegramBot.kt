@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.telegram
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import ee.tenman.portfolio.auto24.Auto24Service
 import ee.tenman.portfolio.configuration.TimeUtility
 import ee.tenman.portfolio.googlevision.GoogleVisionService
@@ -14,6 +13,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
+import tools.jackson.databind.ObjectMapper
 import java.io.File
 import java.net.URI
 import java.nio.file.Files

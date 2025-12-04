@@ -1,12 +1,11 @@
 package ee.tenman.portfolio
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 import org.springframework.boot.runApplication
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.scheduling.annotation.EnableScheduling
 
-@SpringBootApplication(exclude = [RedisRepositoriesAutoConfiguration::class])
+@SpringBootApplication
 @EnableFeignClients
 @EnableScheduling
 class PortfolioApplication

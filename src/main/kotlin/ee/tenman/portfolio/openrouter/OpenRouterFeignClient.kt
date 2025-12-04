@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestHeader
 @FeignClient(
   name = "openrouter",
   url = "\${openrouter.url:https://openrouter.ai/api/v1}",
-  configuration = [OpenRouterFeignConfiguration::class],
 )
 interface OpenRouterFeignClient {
   @PostMapping("/chat/completions")

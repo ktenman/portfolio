@@ -94,6 +94,7 @@ class ArchitectureTest {
         "jakarta.validation..",
         "org.hibernate.annotations..",
         "com.fasterxml.jackson..",
+        "tools.jackson..",
         "java.time..",
         "java.math..",
         "org.jetbrains.annotations..",

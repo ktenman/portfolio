@@ -72,6 +72,8 @@ spring:
     redis:
       host: redis
       port: 6379
+      repositories:
+        enabled: false
 
   task:
     scheduling:

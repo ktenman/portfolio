@@ -3,10 +3,9 @@ package ee.tenman.portfolio.configuration
 import io.minio.BucketExistsArgs
 import io.minio.MakeBucketArgs
 import io.minio.MinioClient
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.util.TestPropertyValues
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Import
@@ -20,13 +19,15 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.MinIOContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
+import org.wiremock.spring.ConfigureWireMock
+import org.wiremock.spring.EnableWireMock
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @Import(TestConfiguration::class)
 @SpringBootTest
 @AutoConfigureMockMvc
-@AutoConfigureWireMock(port = 0)
+@EnableWireMock(ConfigureWireMock(port = 0))
 @ActiveProfiles("test")
 @ContextConfiguration(initializers = [IntegrationTest.Initializer::class])
 @Sql(scripts = ["/clear_database.sql"], executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
