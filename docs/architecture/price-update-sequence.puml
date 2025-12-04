@@ -3,18 +3,18 @@
 title Price Update Flow - Scheduled Job Execution
 
 participant "Scheduler" as scheduler
-participant "AlphaVantageJob" as job
+participant "FtDataRetrievalJob" as job
 participant "JobExecutionService" as job_svc
-participant "AlphaVantageService" as av_svc
+participant "FtService" as ft_svc
 participant "DataProcessingUtil" as processor
 participant "DailyPriceService" as price_svc
 participant "InstrumentService" as inst_svc
 participant "Database" as db
 participant "Redis Cache" as cache
-participant "Alpha Vantage API" as api
+participant "FT Markets API" as api
 
 activate scheduler
-scheduler -> job: @Scheduled trigger\n(every 2 hours)
+scheduler -> job: @Scheduled trigger\n(adaptive scheduling)
 activate job
 
 job -> job_svc: executeJob(this)
@@ -29,15 +29,15 @@ inst_svc -> db: SELECT * FROM instrument
 db --> inst_svc: instruments
 deactivate inst_svc
 
-loop for each ALPHA_VANTAGE instrument
-    job -> av_svc: getDailyTimeSeriesForLastWeek(symbol)
-    activate av_svc
-    av_svc -> api: GET /query?function=TIME_SERIES_DAILY
-    api --> av_svc: JSON price data
-    av_svc --> job: Map<LocalDate, DailyPriceData>
-    deactivate av_svc
+loop for each FT instrument
+    job -> ft_svc: getHistoricalPrices(symbol)
+    activate ft_svc
+    ft_svc -> api: GET /data/chart (HTML fragment)
+    api --> ft_svc: HTML price data
+    ft_svc --> job: Map<LocalDate, DailyPriceData>
+    deactivate ft_svc
 
-    job -> processor: processDailyData(instrument, dailyData, ALPHA_VANTAGE)
+    job -> processor: processDailyData(instrument, dailyData, FT)
     activate processor
 
     loop for each date in dailyData

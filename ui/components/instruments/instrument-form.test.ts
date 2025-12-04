@@ -19,7 +19,7 @@ vi.mock('../../services/enum-service', () => ({
           'TRADING212',
           'UNKNOWN',
         ],
-        providers: ['ALPHA_VANTAGE', 'BINANCE', 'FT'],
+        providers: ['BINANCE', 'FT', 'LIGHTYEAR', 'TRADING212'],
         transactionTypes: ['BUY', 'SELL'],
         categories: ['CRYPTOCURRENCY', 'ETF', 'STOCK'],
         currencies: ['USD', 'EUR', 'GBP'],
@@ -78,7 +78,7 @@ describe('InstrumentForm', () => {
         id: 1,
         symbol: 'AAPL',
         name: 'Apple Inc.',
-        providerName: 'ALPHA_VANTAGE',
+        providerName: 'FT',
         category: 'STOCK',
         baseCurrency: 'USD',
       }
@@ -88,7 +88,7 @@ describe('InstrumentForm', () => {
       const formInputs = wrapper.findAllComponents(FormInput)
       expect(formInputs[0].props('modelValue')).toBe('AAPL')
       expect(formInputs[1].props('modelValue')).toBe('Apple Inc.')
-      expect(formInputs[2].props('modelValue')).toBe('ALPHA_VANTAGE')
+      expect(formInputs[2].props('modelValue')).toBe('FT')
       expect(formInputs[3].props('modelValue')).toBe('STOCK')
       expect(formInputs[4].props('modelValue')).toBe('USD')
     })
@@ -98,7 +98,7 @@ describe('InstrumentForm', () => {
         id: 1,
         symbol: 'AAPL',
         name: 'Apple Inc.',
-        providerName: 'ALPHA_VANTAGE',
+        providerName: 'FT',
         category: 'STOCK',
         baseCurrency: 'USD',
       }
@@ -118,7 +118,7 @@ describe('InstrumentForm', () => {
       const initialData = {
         symbol: 'AAPL',
         name: 'Apple Inc.',
-        providerName: 'ALPHA_VANTAGE',
+        providerName: 'FT',
         category: 'STOCK',
         baseCurrency: 'USD',
         currentPrice: 150.25,
@@ -237,9 +237,10 @@ describe('InstrumentForm', () => {
 
       const providerInput = wrapper.findAllComponents(FormInput)[2]
       const expectedOptions = [
-        { value: 'ALPHA_VANTAGE', text: 'Alpha Vantage' },
         { value: 'BINANCE', text: 'Binance' },
         { value: 'FT', text: 'FT' },
+        { value: 'LIGHTYEAR', text: 'Lightyear' },
+        { value: 'TRADING212', text: 'Trading212' },
       ] as any
       expect(providerInput.props('options')).toEqual(expectedOptions)
     })

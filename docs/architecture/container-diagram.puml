@@ -16,7 +16,7 @@ System_Boundary(portfolio, "Portfolio Management System") {
     Container(jobs, "Background Jobs", "Spring Scheduler", "Price updates, XIRR calc, ETF scraping")
 }
 
-System_Ext(market_apis, "Market Data APIs", "AlphaVantage, Binance, FT")
+System_Ext(market_apis, "Market Data APIs", "Binance, FT")
 System_Ext(platform_apis, "Trading Platforms", "Trading212, WisdomTree, Lightyear")
 System_Ext(ai_services, "AI Services", "OpenRouter, Google Vision")
 System_Ext(notification, "Notifications", "Telegram")

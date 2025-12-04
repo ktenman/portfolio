@@ -23,7 +23,7 @@ class Instrument(
   var currentPrice: BigDecimal? = null,
   @Enumerated(EnumType.STRING)
   @Column(name = "provider_name", nullable = true)
-  var providerName: ProviderName = ProviderName.ALPHA_VANTAGE,
+  var providerName: ProviderName = ProviderName.FT,
   @Transient
   var totalInvestment: BigDecimal = BigDecimal.ZERO,
   @Transient

@@ -178,7 +178,6 @@ CORE_ARCHITECTURAL_PATTERNS = [
   'src/main/kotlin/ee/tenman/portfolio/PortfolioApplication.kt',  # Main app entry point
   'src/main/kotlin/ee/tenman/portfolio/common/',  # Common utilities
   'src/main/kotlin/ee/tenman/portfolio/binance/',  # Binance integration
-  'src/main/kotlin/ee/tenman/portfolio/alphavantage/',  # Alpha Vantage integration
   'src/main/kotlin/ee/tenman/portfolio/ft/',  # FT integration
   'src/main/kotlin/ee/tenman/portfolio/telegram/',  # Telegram integration
 

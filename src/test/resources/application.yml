@@ -14,9 +14,6 @@ server:
       enabled: true
       force: true
 
-alphavantage:
-  url: http://localhost:${wiremock.server.port}
-
 binance:
   url: http://localhost:${wiremock.server.port}
 

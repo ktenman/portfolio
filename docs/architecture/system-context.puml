@@ -9,7 +9,6 @@ Person(user, "Portfolio User", "Investor tracking portfolio performance")
 
 System(portfolio, "Portfolio Management System", "Tracks investments, calculates returns (XIRR), analyzes ETF holdings, monitors performance")
 
-System_Ext(alphavantage, "Alpha Vantage API", "Stock & ETF price data")
 System_Ext(binance, "Binance API", "Cryptocurrency prices")
 System_Ext(ft, "Financial Times API", "Market data & historical prices")
 System_Ext(trading212, "Trading212", "Trading platform integration")
@@ -23,7 +22,6 @@ System_Ext(minio, "MinIO", "Object storage for logos")
 
 Rel(user, portfolio, "Manages portfolio, views analytics", "HTTPS")
 
-Rel(portfolio, alphavantage, "Fetches stock/ETF prices", "REST/JSON")
 Rel(portfolio, binance, "Fetches crypto prices", "REST/JSON")
 Rel(portfolio, ft, "Fetches historical prices", "HTTP/HTML")
 Rel(portfolio, trading212, "Fetches portfolio data via Cloudflare Bypass Proxy", "REST/JSON")

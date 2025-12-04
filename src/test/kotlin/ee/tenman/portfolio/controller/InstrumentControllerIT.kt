@@ -65,7 +65,7 @@ class InstrumentControllerIT {
       name = faker.company().name(),
       category = listOf("Stock", "ETF", "Crypto").random(),
       baseCurrency = listOf("USD", "EUR", "GBP").random(),
-      providerName = ProviderName.ALPHA_VANTAGE,
+      providerName = ProviderName.FT,
     )
 
   @Test

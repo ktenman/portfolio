@@ -28,7 +28,6 @@ Container_Boundary(api, "API Application") {
     Component(summary_repo, "SummaryRepository", "JPA Repository", "Summary data access")
     Component(etf_repo, "EtfHoldingRepository", "JPA Repository", "ETF data access")
 
-    Component(alphavantage, "AlphaVantageService", "Integration", "Stock/ETF prices")
     Component(binance, "BinanceService", "Integration", "Crypto prices")
     Component(ft, "HistoricalPricesService", "Integration", "FT market data")
     Component(openrouter, "OpenRouterService", "Integration", "AI classification")
@@ -60,7 +59,6 @@ Rel(calc_svc, price_repo, "Uses")
 Rel(etf_svc, etf_repo, "Uses")
 Rel(price_svc, price_repo, "Uses")
 
-Rel(jobs, alphavantage, "Uses")
 Rel(jobs, binance, "Uses")
 Rel(jobs, ft, "Uses")
 Rel(jobs, openrouter, "Uses")

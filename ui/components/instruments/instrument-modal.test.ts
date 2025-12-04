@@ -25,7 +25,7 @@ describe('InstrumentModal', () => {
     symbol: 'AAPL',
     name: 'Apple Inc.',
     category: 'STOCK',
-    providerName: ProviderName.ALPHA_VANTAGE,
+    providerName: ProviderName.FT,
   })
 
   const createWrapper = (props = {}) => {

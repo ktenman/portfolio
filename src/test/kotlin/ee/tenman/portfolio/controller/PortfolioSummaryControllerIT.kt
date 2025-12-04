@@ -201,7 +201,7 @@ class PortfolioSummaryControllerIT {
       DailyPrice(
         instrument = instrument,
         entryDate = LocalDate.of(2023, 7, 21),
-        providerName = ProviderName.ALPHA_VANTAGE,
+        providerName = ProviderName.FT,
         openPrice = BigDecimal("28.25"),
         highPrice = BigDecimal("28.25"),
         lowPrice = BigDecimal("28.25"),

@@ -6,7 +6,7 @@ vi.mock('../services/enum-service')
 describe('useEnumValues', () => {
   const mockEnumData = {
     platforms: ['DEGIRO', 'TRADING212', 'BINANCE'],
-    providers: ['ALPHA_VANTAGE', 'BINANCE', 'FT'],
+    providers: ['BINANCE', 'FT', 'LIGHTYEAR', 'TRADING212'],
     transactionTypes: ['BUY', 'SELL'],
     categories: ['STOCK', 'ETF', 'CRYPTO'],
     currencies: ['EUR', 'USD', 'GBP'],
