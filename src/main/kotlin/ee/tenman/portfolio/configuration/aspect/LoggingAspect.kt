@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.configuration.aspect
 
-import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.OBJECT_MAPPER
-import ee.tenman.portfolio.configuration.ObjectMapperConfig.Companion.truncateJson
+import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.configuration.TimeUtility
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
@@ -50,7 +49,7 @@ class LoggingAspect {
 
   @Throws(Throwable::class)
   private fun logEntry(joinPoint: ProceedingJoinPoint) {
-    val argsJson = OBJECT_MAPPER.writeValueAsString(joinPoint.args)
+    val argsJson = JsonMapperFactory.instance.writeValueAsString(joinPoint.args)
     log.info("{} entered with arguments: {}", joinPoint.signature.toShortString(), argsJson)
   }
 
@@ -63,7 +62,7 @@ class LoggingAspect {
     log.info(
       "{} exited with result: {} in {} seconds",
       joinPoint.signature.toShortString(),
-      truncateJson(OBJECT_MAPPER.writeValueAsString(result)),
+      JsonMapperFactory.truncateJson(JsonMapperFactory.instance.writeValueAsString(result)),
       TimeUtility.durationInSeconds(startTime),
     )
   }
