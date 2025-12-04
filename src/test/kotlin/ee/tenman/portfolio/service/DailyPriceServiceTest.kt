@@ -35,7 +35,7 @@ class DailyPriceServiceTest {
         category = "Stock",
         baseCurrency = "USD",
         currentPrice = BigDecimal("150.00"),
-        providerName = ProviderName.ALPHA_VANTAGE,
+        providerName = ProviderName.FT,
       ).apply {
         id = 1L
       }
@@ -84,7 +84,7 @@ class DailyPriceServiceTest {
       dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
         testInstrument,
         testDate,
-        ProviderName.ALPHA_VANTAGE,
+        ProviderName.FT,
       )
     } returns null
     every { dailyPriceRepository.save(newDailyPrice) } returns newDailyPrice
@@ -118,7 +118,7 @@ class DailyPriceServiceTest {
       dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
         testInstrument,
         testDate,
-        ProviderName.ALPHA_VANTAGE,
+        ProviderName.FT,
       )
     } returns existingPrice
     every { dailyPriceRepository.save(existingPrice) } returns existingPrice
@@ -514,7 +514,7 @@ class DailyPriceServiceTest {
     DailyPrice(
       instrument = testInstrument,
       entryDate = date,
-      providerName = ProviderName.ALPHA_VANTAGE,
+      providerName = ProviderName.FT,
       openPrice = openPrice,
       highPrice = highPrice,
       lowPrice = lowPrice,
