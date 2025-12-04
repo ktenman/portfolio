@@ -6,7 +6,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
-import com.ninjasquad.springmockk.SpykBean
+import com.ninjasquad.springmockk.MockkSpyBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.MinioProperties
 import ee.tenman.portfolio.domain.Instrument
@@ -40,7 +40,7 @@ class EtfHoldingsServiceIT {
   @Resource
   private lateinit var etfPositionRepository: EtfPositionRepository
 
-  @SpykBean
+  @MockkSpyBean
   private lateinit var minioService: MinioService
 
   @Resource
