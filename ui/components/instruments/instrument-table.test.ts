@@ -35,7 +35,7 @@ describe('InstrumentTable', () => {
       symbol: 'AAPL',
       name: 'Apple Inc.',
       category: 'STOCK',
-      providerName: ProviderName.ALPHA_VANTAGE,
+      providerName: ProviderName.FT,
       currentPrice: 150.5,
       totalInvestment: 10000,
       currentValue: 15050,

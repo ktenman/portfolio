@@ -29,7 +29,7 @@ vi.mock('../../services/enum-service', () => ({
           'TRADING212',
           'UNKNOWN',
         ],
-        providers: ['ALPHA_VANTAGE', 'BINANCE', 'FT'],
+        providers: ['BINANCE', 'FT', 'LIGHTYEAR', 'TRADING212'],
         transactionTypes: ['BUY', 'SELL'],
         categories: ['CRYPTOCURRENCY', 'ETF', 'STOCK'],
         currencies: ['USD', 'EUR', 'GBP'],
@@ -45,7 +45,7 @@ describe('TransactionForm', () => {
       symbol: 'AAPL',
       name: 'Apple Inc.',
       currentPrice: 150.5,
-      providerName: ProviderName.ALPHA_VANTAGE,
+      providerName: ProviderName.FT,
       category: 'STOCK',
     }),
     createInstrumentDto({

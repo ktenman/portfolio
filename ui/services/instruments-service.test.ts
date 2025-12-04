@@ -24,7 +24,7 @@ describe('instrumentsService', () => {
           id: 1,
           symbol: 'AAPL',
           name: 'Apple Inc.',
-          providerName: ProviderName.ALPHA_VANTAGE,
+          providerName: ProviderName.FT,
           category: 'STOCK',
         }),
         createInstrumentDto({
@@ -73,7 +73,7 @@ describe('instrumentsService', () => {
           id: 1,
           symbol: 'AAPL',
           name: 'Apple Inc.',
-          providerName: ProviderName.ALPHA_VANTAGE,
+          providerName: ProviderName.FT,
           category: 'STOCK',
           platforms: ['TRADING212'],
         }),
@@ -151,7 +151,7 @@ describe('instrumentsService', () => {
       const newInstrument = {
         symbol: 'GOOGL',
         name: 'Alphabet Inc.',
-        providerName: ProviderName.ALPHA_VANTAGE,
+        providerName: ProviderName.FT,
         category: 'STOCK',
       }
 
@@ -214,7 +214,7 @@ describe('instrumentsService', () => {
         id: 1,
         symbol: 'AAPL',
         name: 'Updated Name',
-        providerName: ProviderName.ALPHA_VANTAGE,
+        providerName: ProviderName.FT,
         category: 'STOCK',
       })
 

@@ -14,7 +14,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 - **Instrument Management**: Add, update, and delete financial instruments (stocks, ETFs, cryptocurrencies)
 - **Transaction Tracking**: Record buy and sell transactions across multiple trading platforms
 - **Performance Metrics**: Calculate portfolio performance with XIRR, daily earnings, and profit tracking
-- **Multi-Provider Data Sync**: Fetch data from Alpha Vantage (stocks/ETFs), Binance (crypto), and Financial Times
+- **Multi-Provider Data Sync**: Fetch data from Financial Times (stocks/ETFs) and Binance (crypto)
 - **Advanced Caching**: Redis-based caching with Spring Cache annotations for optimal performance
 - **OAuth 2.0 Authentication**: Secure login via Google and GitHub with session management
 - **Responsive UI**: Vue.js 3 SPA with Bootstrap 5 for desktop and mobile
@@ -87,7 +87,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 ### API Integration
 
-- Alpha Vantage API for stock/ETF data
+- Financial Times API for stock/ETF data
 - Binance API for cryptocurrency prices
 - Financial Times API for market data
 - Google Cloud Vision API for OCR/captcha solving
@@ -116,7 +116,7 @@ The system follows a clean microservices architecture with strong separation of 
 **Key Integration Technologies:**
 
 - **Cloudflare Bypass Proxy**: Node.js/TypeScript service with curl-impersonate for Cloudflare bypass (TLS fingerprint spoofing)
-- **Market Data**: Alpha Vantage & Binance APIs (JSON), FT Markets (HTML scraping with Jsoup)
+- **Market Data**: FT Markets (HTML scraping with Jsoup), Binance API (JSON)
 - **ETF Holdings**: WisdomTree (via Cloudflare Bypass Proxy + Jsoup), Lightyear (Selenide browser automation)
 - **AI Services**: OpenRouter (Claude Haiku for sector classification), Google Cloud Vision (OCR)
 - **Storage**: MinIO (S3-compatible) for company logos
@@ -147,11 +147,10 @@ details and portfolio summaries.
 
 ### Scheduled Jobs ⚙️
 
-1. **Alpha Vantage Data Retrieval**: Fetches stock/ETF prices with rate limiting
+1. **FT Data Retrieval**: Fetches stock/ETF prices from Financial Times
 2. **Binance Data Retrieval**: Updates cryptocurrency prices in real-time
-3. **FT Data Retrieval**: Syncs Financial Times market data
-4. **Daily Portfolio XIRR Job**: Calculates portfolio performance metrics
-5. **Cache Eviction**: Automatic cache cleanup for data consistency
+3. **Daily Portfolio XIRR Job**: Calculates portfolio performance metrics
+4. **Cache Eviction**: Automatic cache cleanup for data consistency
 
 ### Authentication & Security 🔐
 
@@ -413,9 +412,8 @@ HEALTHCHECK_URL=https://hc-ping.com/your-check-uuid
 
 ### API Keys Setup
 
-1. **Alpha Vantage API**: Get free API key at https://www.alphavantage.co/support/#api-key
-2. **Google Cloud Vision**: Create service account at https://console.cloud.google.com/apis/credentials
-3. **OAuth Setup**: Configure OAuth apps in Google Cloud Console and GitHub settings
+1. **Google Cloud Vision**: Create service account at https://console.cloud.google.com/apis/credentials
+2. **OAuth Setup**: Configure OAuth apps in Google Cloud Console and GitHub settings
 
 ## Monitoring & Observability
 
@@ -450,7 +448,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Critical Issues Being Addressed
 
 1. **Authentication Divergence**: Production and development use different auth systems (custom vs Keycloak). Migration to unified Keycloak is planned.
-2. **API Key Security**: Hardcoded Alpha Vantage keys need externalization to environment variables.
 
 ### Planned Enhancements
 

@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.service
 
-import ee.tenman.portfolio.job.AlphaVantageDataRetrievalJob
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.DailyPortfolioXirrJob
+import ee.tenman.portfolio.job.FtDataRetrievalJob
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture
 @Profile("!test")
 @ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
 class OnceInstrumentDataRetrievalService(
-  private val alphaVantageDataRetrievalJob: AlphaVantageDataRetrievalJob,
+  private val ftDataRetrievalJob: FtDataRetrievalJob,
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob,
   private val dailyPortfolioXirrJob: DailyPortfolioXirrJob,
   private val jobExecutionService: JobExecutionService,
@@ -35,7 +35,7 @@ class OnceInstrumentDataRetrievalService(
         }
 
         log.info("No daily summaries found. Running instrument data retrieval job.")
-        jobExecutionService.executeJob(alphaVantageDataRetrievalJob)
+        jobExecutionService.executeJob(ftDataRetrievalJob)
         jobExecutionService.executeJob(binanceDataRetrievalJob)
       }.thenRun {
         log.info("Running daily portfolio XIRR job")
