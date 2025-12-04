@@ -5,6 +5,7 @@ import feign.codec.DecodeException
 import feign.codec.Decoder
 import tools.jackson.databind.ObjectMapper
 import java.lang.reflect.Type
+import java.nio.charset.StandardCharsets
 
 class JacksonFeignDecoder(
   private val objectMapper: ObjectMapper,
@@ -18,6 +19,11 @@ class JacksonFeignDecoder(
     }
     if (response.body() == null) {
       return null
+    }
+    if (type == String::class.java) {
+      return response.body().asInputStream().use { inputStream ->
+        inputStream.readAllBytes().toString(StandardCharsets.UTF_8)
+      }
     }
     runCatching {
       response.body().asInputStream().use { inputStream ->
