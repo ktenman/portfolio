@@ -7,7 +7,6 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
@@ -18,15 +17,16 @@ import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import io.mockk.every
+import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import tools.jackson.databind.ObjectMapper
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
-import javax.annotation.Resource
 
 @IntegrationTest
 class HistoricalPricesServiceIT {
