@@ -15,20 +15,15 @@ class HoldingParser {
     element: SelenideElement,
     rank: Int,
   ): HoldingData? =
-    try {
+    runCatching {
       log.debug("Parsing Holding data from row: {}", element.text())
-      val holding = extractHoldingData(element, rank)
-
-      if (holding != null) {
+      extractHoldingData(element, rank)?.also { holding ->
         validateWeightSequence(holding.weight, rank)
         previousWeight = holding.weight
       }
-
-      holding
-    } catch (e: Exception) {
+    }.onFailure { e ->
       log.warn("Failed to parse holding row: ${element.text()}", e)
-      null
-    }
+    }.getOrNull()
 
   fun resetState() {
     previousWeight = null
@@ -89,104 +84,69 @@ class HoldingParser {
     weight: BigDecimal,
     name: String,
   ): BigDecimal? {
-    if (weight == BigDecimal.ZERO) {
-      log.debug("Skipping holding with zero weight: {}", name)
-      return null
-    }
+    if (weight == BigDecimal.ZERO) return null.also { log.debug("Skipping holding with zero weight: {}", name) }
     return normalizeWeight(weight, name)
   }
 
-  private fun extractLogoUrl(element: SelenideElement): String? {
-    val logoUrl =
-      try {
-        val imgSrc =
-          element
-            .findAll("img")
-            .firstOrNull()
-            ?.getAttribute("src")
-            ?.takeIf { it.isNotEmpty() }
-
-        imgSrc ?: extractBackgroundImageUrl(element)
-      } catch (e: Exception) {
-        log.debug("Failed to extract logo URL: ${e.message}")
-        null
-      }
-
-    logoUrl?.let { log.debug("Found logo URL: $it") }
-      ?: log.debug("No logo found in element")
-
-    return logoUrl
-  }
+  private fun extractLogoUrl(element: SelenideElement): String? =
+    runCatching {
+      element
+        .findAll("img")
+        .firstOrNull()
+        ?.getAttribute("src")
+        ?.takeIf { it.isNotEmpty() }
+        ?: extractBackgroundImageUrl(element)
+    }.onFailure { e ->
+      log.debug("Failed to extract logo URL: ${e.message}")
+    }.getOrNull()
+      ?.also { log.debug("Found logo URL: $it") }
+      ?: null.also { log.debug("No logo found in element") }
 
   private fun extractBackgroundImageUrl(element: SelenideElement): String? {
-    val divs = element.findAll("div")
-
-    for (div in divs) {
-      val style = div.getAttribute("style") ?: continue
-      if (style.contains("background-image")) {
-        val urlPattern = Regex("""url\(['"]?([^'"()]+)['"]?\)""")
-        val match = urlPattern.find(style)
-        if (match != null) {
-          return match.groupValues[1]
-        }
-      }
+    val urlPattern = Regex("""url\(['"]?([^'"()]+)['"]?\)""")
+    return element.findAll("div").firstNotNullOfOrNull { div ->
+      div
+        .getAttribute("style")
+        ?.takeIf { it.contains("background-image") }
+        ?.let { urlPattern.find(it)?.groupValues?.get(1) }
     }
-
-    return null
   }
 
   private fun extractWeightFromAllDivs(allDivs: List<String>): BigDecimal {
     val weightText =
-      allDivs
-        .firstOrNull { it.contains("%") && !it.contains("$") && !it.contains("\n") }
-        ?: return BigDecimal.ZERO
-
-    val cleanedText =
-      weightText
-        .replace("%", "")
-        .replace(",", "")
-        .trim()
-
-    return try {
-      val parsedWeight = BigDecimal(cleanedText)
-
-      if (parsedWeight > BigDecimal(10000)) {
-        log.warn(
-          "Parsed weight {} from '{}' exceeds 10000%, likely incorrect data (market cap/volume). Returning ZERO.",
-          parsedWeight,
-          weightText,
-        )
-        return BigDecimal.ZERO
+      allDivs.firstOrNull { it.contains("%") && !it.contains("$") && !it.contains("\n") }
+      ?: return BigDecimal.ZERO
+    val cleanedText = weightText.replace("%", "").replace(",", "").trim()
+    return runCatching { BigDecimal(cleanedText) }
+      .onFailure { log.warn("Failed to parse weight from: '$weightText'", it) }
+      .getOrNull()
+      ?.let { parsed ->
+        if (parsed > BigDecimal(10000)) {
+          log.warn("Parsed weight from '{}' exceeds 10000%, likely incorrect data", weightText)
+          BigDecimal.ZERO
+        } else {
+          parsed
+        }
       }
-
-      parsedWeight
-    } catch (e: NumberFormatException) {
-      log.warn("Failed to parse weight from: '$weightText'", e)
-      BigDecimal.ZERO
-    }
+      ?: BigDecimal.ZERO
   }
 
   private fun normalizeWeight(
     weight: BigDecimal,
     name: String,
   ): BigDecimal? {
-    if (weight <= BigDecimal(100)) {
-      return weight
+    if (weight <= BigDecimal(100)) return weight
+    val maxDivisor = 1_000_000_000
+    val result =
+      generateSequence(10) { it * 10 }
+      .takeWhile { it <= maxDivisor }
+      .map { divisor -> divisor to weight.divide(BigDecimal(divisor), 4, java.math.RoundingMode.HALF_UP) }
+      .firstOrNull { (_, normalized) -> normalized <= BigDecimal(100) }
+    if (result == null) {
+      log.warn("Unable to normalize weight {} for holding {}, skipping", weight, name)
+      return null
     }
-
-    var normalized = weight
-    var divisor = 1
-
-    while (normalized > BigDecimal(100)) {
-      divisor *= 10
-      normalized = weight.divide(BigDecimal(divisor), 4, java.math.RoundingMode.HALF_UP)
-
-      if (divisor > 1_000_000_000) {
-        log.warn("Unable to normalize weight {} for holding {}, skipping", weight, name)
-        return null
-      }
-    }
-
+    val (divisor, normalized) = result
     log.info("Normalized weight {} to {} for holding {} (divided by {})", weight, normalized, name, divisor)
     return normalized
   }
