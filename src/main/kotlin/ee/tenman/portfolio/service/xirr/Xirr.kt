@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.xirr
 
+import ee.tenman.portfolio.exception.XirrCalculationException
 import org.apache.commons.math3.analysis.differentiation.DerivativeStructure
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction
 import org.apache.commons.math3.analysis.solvers.BisectionSolver
@@ -58,8 +59,7 @@ class Xirr(
         calculateXirrWithBisection()
       } catch (bisectionError: Exception) {
         log.error("Both Newton-Raphson and Bisection methods failed.")
-        throw ee.tenman.portfolio.exception
-          .XirrCalculationException("XIRR calculation failed using both methods", bisectionError)
+        throw XirrCalculationException("XIRR calculation failed using both methods", bisectionError)
       }
     }
 

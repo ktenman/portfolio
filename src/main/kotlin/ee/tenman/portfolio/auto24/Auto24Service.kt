@@ -3,6 +3,7 @@ package ee.tenman.portfolio.auto24
 import com.codeborne.selenide.Condition
 import com.codeborne.selenide.Configuration
 import com.codeborne.selenide.Selenide
+import ee.tenman.portfolio.exception.CaptchaException
 import org.openqa.selenium.By
 import org.openqa.selenium.firefox.FirefoxOptions
 import org.slf4j.LoggerFactory
@@ -87,8 +88,7 @@ class Auto24Service(
         TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS)
       }
     }
-    throw ee.tenman.portfolio.exception
-      .CaptchaException("Failed to solve CAPTCHA after $MAX_ATTEMPTS attempts")
+    throw CaptchaException("Failed to solve CAPTCHA after $MAX_ATTEMPTS attempts")
   }
 
   private fun processCaptchaAttempt(): Boolean {
