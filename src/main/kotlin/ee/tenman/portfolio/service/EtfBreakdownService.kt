@@ -38,6 +38,15 @@ class EtfBreakdownService(
     val platforms: MutableSet<Platform>,
   )
 
+  private data class InternalHoldingData(
+    val ticker: String?,
+    val name: String,
+    val sector: String?,
+    val value: BigDecimal,
+    val etfSymbol: String,
+    val platforms: Set<Platform>,
+  )
+
   @Cacheable(
     "etf:breakdown",
     key =
@@ -148,73 +157,71 @@ class EtfBreakdownService(
     etfs: List<Instrument>,
     platformFilter: Set<Platform>? = null,
   ): Map<HoldingKey, HoldingValue> {
-    data class HoldingData(
-      val ticker: String?,
-      val name: String,
-      val sector: String?,
-      val value: BigDecimal,
-      val etfSymbol: String,
-      val platforms: Set<Platform>,
-    )
-    val allHoldings = mutableListOf<HoldingData>()
-    etfs.forEach { etf ->
-      val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
-      val etfQuantity = calculateNetQuantity(etf.id, platformFilter)
-      val etfPrice = getCurrentPrice(etf)
-      val etfPlatforms = getPlatformsForInstrument(etf.id, platformFilter)
-      positions.forEach { position ->
-        val holdingValue = calculateHoldingValue(position, etfQuantity, etfPrice)
-        allHoldings.add(
-          HoldingData(
-            ticker =
-              position.holding.ticker
-                ?.uppercase()
-                ?.trim()
-                ?.takeIf { it.isNotBlank() },
-            name = position.holding.name.trim(),
-            sector =
-              position.holding.sector
-                ?.trim()
-                ?.takeIf { it.isNotBlank() },
-            value = holdingValue,
-            etfSymbol = etf.symbol,
-            platforms = etfPlatforms,
-          ),
-        )
-      }
-    }
-    val groupedByKey =
-      allHoldings.groupBy { holding ->
-        if (!holding.ticker.isNullOrBlank()) {
-          "ticker:${holding.ticker}"
-        } else {
-          "name:${holding.name.lowercase()}:${holding.sector?.lowercase().orEmpty()}"
-        }
-      }
-    return groupedByKey.entries.associate { (_, holdings) ->
-      val bestName = holdings.maxByOrNull { it.name.length }!!.name
-      val bestTicker = holdings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker
-      val bestSector = holdings.mapNotNull { it.sector }.maxByOrNull { it.length }
-      val key = HoldingKey(ticker = bestTicker, name = bestName, sector = bestSector)
-      val totalValue = holdings.fold(BigDecimal.ZERO) { acc, h -> acc.add(h.value) }
-      val etfSymbols = holdings.map { it.etfSymbol }.toMutableSet()
-      val allPlatforms = holdings.flatMap { it.platforms }.toMutableSet()
-      key to HoldingValue(totalValue = totalValue, etfSymbols = etfSymbols, platforms = allPlatforms)
+    val allHoldings = etfs.flatMap { etf -> buildHoldingsForEtf(etf, platformFilter) }
+    return aggregateHoldings(allHoldings)
+  }
+
+  private fun buildHoldingsForEtf(
+    etf: Instrument,
+    platformFilter: Set<Platform>?,
+  ): List<InternalHoldingData> {
+    val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
+    val etfQuantity = calculateNetQuantity(etf.id, platformFilter)
+    val etfPrice = getCurrentPrice(etf)
+    val etfPlatforms = getPlatformsForInstrument(etf.id, platformFilter)
+    return positions.map { position ->
+      InternalHoldingData(
+        ticker =
+          position.holding.ticker
+          ?.uppercase()
+          ?.trim()
+          ?.takeIf { it.isNotBlank() },
+          name = position.holding.name.trim(),
+        sector =
+          position.holding.sector
+          ?.trim()
+          ?.takeIf { it.isNotBlank() },
+          value = calculateHoldingValue(position, etfQuantity, etfPrice),
+        etfSymbol = etf.symbol,
+        platforms = etfPlatforms,
+      )
     }
   }
 
-  private fun getCurrentPrice(instrument: Instrument): BigDecimal {
-    val currentPrice = instrument.currentPrice
-    if (currentPrice != null && currentPrice > BigDecimal.ZERO) {
-      return currentPrice
+  private fun aggregateHoldings(holdings: List<InternalHoldingData>): Map<HoldingKey, HoldingValue> =
+    holdings
+      .groupBy { holding -> buildHoldingGroupKey(holding) }
+      .entries
+      .associate { (_, groupedHoldings) -> buildHoldingEntry(groupedHoldings) }
+
+  private fun buildHoldingGroupKey(holding: InternalHoldingData): String =
+    if (!holding.ticker.isNullOrBlank()) {
+      "ticker:${holding.ticker}"
+    } else {
+      "name:${holding.name.lowercase()}:${holding.sector?.lowercase().orEmpty()}"
     }
 
-    return try {
-      dailyPriceService.getPrice(instrument, java.time.LocalDate.now())
-    } catch (e: NoSuchElementException) {
-      log.warn("No price found for ${instrument.symbol}, using zero", e)
-      BigDecimal.ZERO
-    }
+  private fun buildHoldingEntry(groupedHoldings: List<InternalHoldingData>): Pair<HoldingKey, HoldingValue> {
+    val key =
+      HoldingKey(
+      ticker = groupedHoldings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker,
+      name = groupedHoldings.maxByOrNull { it.name.length }!!.name,
+      sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
+    )
+    val value =
+      HoldingValue(
+      totalValue = groupedHoldings.fold(BigDecimal.ZERO) { acc, h -> acc.add(h.value) },
+      etfSymbols = groupedHoldings.map { it.etfSymbol }.toMutableSet(),
+      platforms = groupedHoldings.flatMap { it.platforms }.toMutableSet(),
+    )
+    return key to value
+  }
+
+  private fun getCurrentPrice(instrument: Instrument): BigDecimal {
+    instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }?.let { return it }
+    return runCatching { dailyPriceService.getPrice(instrument, java.time.LocalDate.now()) }
+      .onFailure { log.warn("No price found for ${instrument.symbol}, using zero", it) }
+      .getOrDefault(BigDecimal.ZERO)
   }
 
   private fun calculateHoldingValue(
