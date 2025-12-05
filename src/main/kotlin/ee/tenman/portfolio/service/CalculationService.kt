@@ -94,60 +94,47 @@ class CalculationService(
 
   fun calculateRollingXirr(instrumentCode: String): List<Xirr> {
     val instrument =
-      instrumentRepository
-        .findBySymbol(instrumentCode)
-      .orElseThrow {
-        ee.tenman.portfolio.exception
+      instrumentRepository.findBySymbol(instrumentCode).orElseThrow {
+      ee.tenman.portfolio.exception
         .EntityNotFoundException("Instrument not found with symbol: $instrumentCode")
-      }
-    val allDailyPrices =
-      dataRetrievalService
-        .findAllByInstrument(instrument)
-        .sortedBy { it.entryDate }
-
+    }
+    val allDailyPrices = dataRetrievalService.findAllByInstrument(instrument).sortedBy { it.entryDate }
     if (allDailyPrices.size < 2) return emptyList()
-
-    val xirrs = mutableListOf<Xirr>()
-    var endDate = LocalDate.now(clock)
     val startDate = allDailyPrices.first().entryDate
+    val cutoffDate = startDate.plusMonths(1)
+    return generateSequence(LocalDate.now(clock)) { it.minusWeeks(4) }
+      .takeWhile { it.isAfter(cutoffDate) }
+      .mapNotNull { endDate -> calculateXirrForPeriod(allDailyPrices, endDate) }
+      .filter { xirr -> isValidXirr(xirr) }
+      .toList()
+  }
 
-    while (endDate.isAfter(startDate.plusMonths(1))) {
-      val dailyPrices = allDailyPrices.filter { it.entryDate <= endDate }
-      if (dailyPrices.size >= 2) {
-        val firstPrice = dailyPrices.first()
-        val lastPrice = dailyPrices.last()
+  private fun isValidXirr(xirr: Xirr): Boolean =
+    runCatching { xirr.calculate() > -1.0 }
+      .onFailure { log.error("Error calculating XIRR", it) }
+      .getOrDefault(false)
 
-        if (firstPrice.closePrice > BigDecimal.ZERO) {
-          val sharesAmount =
-            BigDecimal(AMOUNT_TO_SPEND)
-            .divide(firstPrice.closePrice, 8, RoundingMode.HALF_UP)
-
-          val currentValue = sharesAmount.multiply(lastPrice.closePrice)
-
-          val transactions =
-            listOf(
-              Transaction(-AMOUNT_TO_SPEND, firstPrice.entryDate),
-              Transaction(currentValue.toDouble(), lastPrice.entryDate),
-            )
-
-          if (currentValue > BigDecimal.ZERO) {
-            xirrs.add(Xirr(transactions))
-          }
-        }
+  private fun calculateXirrForPeriod(
+    allDailyPrices: List<ee.tenman.portfolio.domain.DailyPrice>,
+    endDate: LocalDate,
+  ): Xirr? {
+    val dailyPrices = allDailyPrices.filter { it.entryDate <= endDate }
+    if (dailyPrices.size < 2) return null
+    val firstPrice = dailyPrices.first()
+    val lastPrice = dailyPrices.last()
+    return firstPrice.closePrice
+      .takeIf { it > BigDecimal.ZERO }
+      ?.let { closePrice -> BigDecimal(AMOUNT_TO_SPEND).divide(closePrice, 8, RoundingMode.HALF_UP) }
+      ?.multiply(lastPrice.closePrice)
+      ?.takeIf { it > BigDecimal.ZERO }
+      ?.let { currentValue ->
+        Xirr(
+          listOf(
+            Transaction(-AMOUNT_TO_SPEND, firstPrice.entryDate),
+            Transaction(currentValue.toDouble(), lastPrice.entryDate),
+          ),
+        )
       }
-
-      endDate = endDate.minusWeeks(4)
-    }
-
-    return xirrs.filter { xirr ->
-      try {
-        val result = xirr.calculate()
-        result > -1.0
-      } catch (e: Exception) {
-        log.error("Error calculating XIRR", e)
-        false
-      }
-    }
   }
 
   suspend fun calculateBatchXirrAsync(dates: List<LocalDate>): XirrCalculationResult =
