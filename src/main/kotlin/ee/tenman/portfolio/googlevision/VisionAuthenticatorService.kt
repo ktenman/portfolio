@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.googlevision
 
 import com.google.auth.oauth2.GoogleCredentials
+import ee.tenman.portfolio.exception.VisionServiceException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -49,16 +50,14 @@ class VisionAuthenticatorService(
     get() =
       try {
         if (!visionEnabled) {
-          throw ee.tenman.portfolio.exception
-            .VisionServiceException("Vision service is disabled")
+          throw VisionServiceException("Vision service is disabled")
         } else {
           log.info("Getting access token")
         }
         credentials?.refreshIfExpired()
         credentials?.accessToken?.tokenValue?.also {
           log.info("Successfully authorized with Google Vision API")
-        } ?: throw ee.tenman.portfolio.exception
-          .VisionServiceException("Google Vision credentials not initialized")
+        } ?: throw VisionServiceException("Google Vision credentials not initialized")
       } catch (e: Exception) {
         log.error("Failed to get access token", e)
         throw e
