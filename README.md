@@ -26,45 +26,45 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 ### Backend
 
-- Spring Boot v3.5.6
-- Kotlin v2.2.20
-- Java v21
-- Gradle v8.8 with Version Catalogs
-- Atrium v1.3.0-alpha-2 (Kotlin test assertions)
+- Spring Boot 4
+- Kotlin 2
+- Java 21
+- Gradle 8 with Version Catalogs
+- Atrium (Kotlin test assertions)
 
 ### Frontend
 
-- Vue.js v3.5.16
-- TypeScript v5.8.3
-- Bootstrap v5.3.5
-- Vite v6.3.5
-- Vue Router v4.5.1
-- Chart.js v4.4.9
+- Vue.js 3
+- TypeScript 5
+- Bootstrap 5
+- Vite 7
+- Vue Router 4
+- Chart.js 4
 
 ### Database & Caching
 
-- PostgreSQL v17 with Flyway migrations
-- Redis v8 for caching
+- PostgreSQL 17 with Flyway migrations
+- Redis 8 for caching
 - Spring Data JPA with Hibernate
 
 ### Testing
 
-**Backend (367 tests):**
+**Backend:**
 
 - JUnit 5 with Spring Boot Test
-- Atrium v1.3.0-alpha-2 for fluent assertions (Kotlin-native)
-- Mockito Kotlin v5.4.0
-- Selenide v7.9.3 for E2E tests
+- Atrium for fluent assertions (Kotlin-native)
+- MockK for mocking
+- Selenide for E2E tests
 - Testcontainers for integration tests (PostgreSQL, Redis, MinIO)
 - WireMock for API mocking
 
-**Frontend (414 tests):**
+**Frontend:**
 
-- Vitest v3.2.4 for component testing
+- Vitest for component testing
 - Vue Test Utils for component mounting
 - Comprehensive test coverage focusing on business logic
 
-**E2E (14 tests):**
+**E2E:**
 
 - Selenide-based browser automation
 - Retry mechanism for flaky tests
@@ -72,24 +72,38 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 **Unified Test Runner:**
 
-- `test-runner.sh` - Runs all 689 tests across backend, frontend, and E2E
+- `test-runner.sh` - Runs comprehensive test suite across backend, frontend, and E2E
 - Automatic environment setup for E2E tests
 - Parallel execution support
 - Comprehensive test result summary
+
+### Code Quality Tools
+
+**Frontend:**
+
+```bash
+npm run lint-format        # Type check, lint, and format (recommended before commits)
+npm run check-unused       # Detect unused exports and dependencies with Knip
+```
+
+**Backend:**
+
+```bash
+./gradlew detekt          # Static code analysis for Kotlin
+```
 
 ### CI/CD & Containerization
 
 - GitHub Actions for CI/CD pipeline
 - Docker with multi-stage builds
 - Docker Compose for orchestration
-- Caddy v2.10 as reverse proxy
+- Caddy 2 as reverse proxy
 - Nginx for frontend serving
 
 ### API Integration
 
-- Financial Times API for stock/ETF data
+- Financial Times API for stock/ETF market data
 - Binance API for cryptocurrency prices
-- Financial Times API for market data
 - Google Cloud Vision API for OCR/captcha solving
 - Telegram Bot API for notifications
 
@@ -175,10 +189,20 @@ details and portfolio summaries.
 
 ### Prerequisites
 
-- Java v21 (required for backend)
-- Node.js v22+ and npm v10+ (required for frontend)
+- Java 21 (required for backend)
+- Node.js 22+ and npm 10+ (required for frontend)
 - Docker and Docker Compose (for containerized services)
 - Gradle (included via wrapper)
+
+### Quick Start
+
+Run backend and frontend together with a single command:
+
+```bash
+./run.sh                    # Opens 2 terminals: backend (8081) + frontend (61234)
+```
+
+The script automatically starts Spring Boot backend and Vite frontend dev server. Works on macOS, Linux, and Windows.
 
 ### Local Development Setup
 
