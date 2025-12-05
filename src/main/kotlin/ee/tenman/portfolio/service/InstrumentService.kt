@@ -100,82 +100,90 @@ class InstrumentService(
 
   private fun calculateProfitsForPlatform(transactions: List<PortfolioTransaction>) {
     val sortedTransactions = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
-    var currentQuantity = BigDecimal.ZERO
-    var totalCost = BigDecimal.ZERO
+    val (totalCost, currentQuantity) = processTransactions(sortedTransactions)
+    val currentPrice = sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO
+    val averageCost = calculateAverageCost(totalCost, currentQuantity)
+    val totalUnrealizedProfit = calculateUnrealizedProfit(currentQuantity, currentPrice, averageCost)
+    val buyTransactions = sortedTransactions.filter { it.transactionType == ee.tenman.portfolio.domain.TransactionType.BUY }
+    distributeProfitsToBuyTransactions(buyTransactions, currentQuantity, averageCost, totalUnrealizedProfit)
+  }
 
-    sortedTransactions.forEach { transaction ->
+  private data class TransactionState(
+    val totalCost: BigDecimal,
+    val currentQuantity: BigDecimal,
+  )
+
+  private fun processTransactions(transactions: List<PortfolioTransaction>): TransactionState =
+    transactions.fold(TransactionState(BigDecimal.ZERO, BigDecimal.ZERO)) { state, transaction ->
       when (transaction.transactionType) {
-        ee.tenman.portfolio.domain.TransactionType.BUY -> {
-          val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
-          transaction.realizedProfit = BigDecimal.ZERO
-          totalCost = totalCost.add(cost)
-          currentQuantity = currentQuantity.add(transaction.quantity)
-        }
-
-        ee.tenman.portfolio.domain.TransactionType.SELL -> {
-          val averageCost =
-            if (currentQuantity > BigDecimal.ZERO) {
-              totalCost.divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
-            } else {
-              BigDecimal.ZERO
-            }
-          transaction.averageCost = averageCost
-
-          val grossProfit =
-            transaction.quantity.multiply(transaction.price.subtract(averageCost))
-
-          transaction.realizedProfit = grossProfit.subtract(transaction.commission)
-          transaction.unrealizedProfit = BigDecimal.ZERO
-          transaction.remainingQuantity = BigDecimal.ZERO
-
-          if (currentQuantity > BigDecimal.ZERO) {
-            val sellRatio = transaction.quantity.divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
-            totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio))
-            currentQuantity = currentQuantity.subtract(transaction.quantity)
-          }
-        }
+        ee.tenman.portfolio.domain.TransactionType.BUY -> processBuyTransaction(transaction, state)
+        ee.tenman.portfolio.domain.TransactionType.SELL -> processSellTransaction(transaction, state)
       }
     }
 
-    val currentPrice = sortedTransactions.firstOrNull()?.instrument?.currentPrice ?: BigDecimal.ZERO
-    val averageCost =
-      if (currentQuantity > BigDecimal.ZERO) {
-        totalCost.divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
-      } else {
-        BigDecimal.ZERO
-      }
-    val totalUnrealizedProfit =
-      if (currentQuantity > BigDecimal.ZERO && currentPrice > BigDecimal.ZERO) {
-        currentQuantity.multiply(currentPrice.subtract(averageCost))
-      } else {
-        BigDecimal.ZERO
-      }
+  private fun processBuyTransaction(
+    transaction: PortfolioTransaction,
+    state: TransactionState,
+  ): TransactionState {
+    val cost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
+    transaction.realizedProfit = BigDecimal.ZERO
+    return TransactionState(state.totalCost.add(cost), state.currentQuantity.add(transaction.quantity))
+  }
 
-    val buyTransactions =
-      sortedTransactions.filter { it.transactionType == ee.tenman.portfolio.domain.TransactionType.BUY }
+  private fun processSellTransaction(
+    transaction: PortfolioTransaction,
+    state: TransactionState,
+  ): TransactionState {
+    val averageCost = calculateAverageCost(state.totalCost, state.currentQuantity)
+    transaction.averageCost = averageCost
+    transaction.realizedProfit = transaction.quantity.multiply(transaction.price.subtract(averageCost)).subtract(transaction.commission)
+    transaction.unrealizedProfit = BigDecimal.ZERO
+    transaction.remainingQuantity = BigDecimal.ZERO
+    if (state.currentQuantity <= BigDecimal.ZERO) return state
+    val sellRatio = transaction.quantity.divide(state.currentQuantity, 10, java.math.RoundingMode.HALF_UP)
+    return TransactionState(
+      state.totalCost.multiply(BigDecimal.ONE.subtract(sellRatio)),
+      state.currentQuantity.subtract(transaction.quantity),
+    )
+  }
 
+  private fun calculateAverageCost(
+    totalCost: BigDecimal,
+    quantity: BigDecimal,
+  ): BigDecimal = if (quantity > BigDecimal.ZERO) totalCost.divide(quantity, 10, java.math.RoundingMode.HALF_UP) else BigDecimal.ZERO
+
+  private fun calculateUnrealizedProfit(
+    quantity: BigDecimal,
+    price: BigDecimal,
+    avgCost: BigDecimal,
+  ): BigDecimal = if (quantity > BigDecimal.ZERO && price > BigDecimal.ZERO) quantity.multiply(price.subtract(avgCost)) else BigDecimal.ZERO
+
+  private fun distributeProfitsToBuyTransactions(
+    buyTransactions: List<PortfolioTransaction>,
+    currentQuantity: BigDecimal,
+    averageCost: BigDecimal,
+    totalUnrealizedProfit: BigDecimal,
+  ) {
     if (currentQuantity <= BigDecimal.ZERO) {
       buyTransactions.forEach {
         it.remainingQuantity = BigDecimal.ZERO
         it.unrealizedProfit = BigDecimal.ZERO
         it.averageCost = it.price
       }
-    } else {
-      val totalBuyQuantity = buyTransactions.sumOf { it.quantity }
-
-      buyTransactions.forEach { buyTx ->
-        val proportionalQuantity =
-          buyTx.quantity
-            .multiply(currentQuantity)
-            .divide(totalBuyQuantity, 10, java.math.RoundingMode.HALF_UP)
-
-        buyTx.remainingQuantity = proportionalQuantity
-        buyTx.averageCost = averageCost
-        buyTx.unrealizedProfit =
-          totalUnrealizedProfit
-            .multiply(proportionalQuantity)
-            .divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
-      }
+      return
+    }
+    val totalBuyQuantity = buyTransactions.sumOf { it.quantity }
+    buyTransactions.forEach { buyTx ->
+      val proportionalQuantity =
+        buyTx.quantity
+        .multiply(currentQuantity)
+        .divide(totalBuyQuantity, 10, java.math.RoundingMode.HALF_UP)
+      buyTx.remainingQuantity = proportionalQuantity
+      buyTx.averageCost = averageCost
+      buyTx.unrealizedProfit =
+        totalUnrealizedProfit
+        .multiply(proportionalQuantity)
+        .divide(currentQuantity, 10, java.math.RoundingMode.HALF_UP)
     }
   }
 
@@ -222,13 +230,10 @@ class InstrumentService(
   private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? =
     platforms
       ?.mapNotNull { platformStr ->
-        try {
-          Platform.valueOf(platformStr.uppercase())
-        } catch (e: IllegalArgumentException) {
-          log.debug("Invalid platform filter: {}", platformStr, e)
-          null
-        }
-      }?.toSet()
+      runCatching { Platform.valueOf(platformStr.uppercase()) }
+        .onFailure { log.debug("Invalid platform filter: {}", platformStr, it) }
+        .getOrNull()
+    }?.toSet()
 
   private fun enrichInstrumentWithMetrics(
     instrument: Instrument,
