@@ -93,9 +93,6 @@ class SummaryServiceTest {
         currentPrice = BigDecimal("27.58"),
       ).apply {
         id = 1L
-        currentValue = BigDecimal("21870.94")
-        totalInvestment = BigDecimal("23633.33")
-        profit = BigDecimal("-1762.39")
       }
 
     transaction =

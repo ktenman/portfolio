@@ -10,6 +10,7 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.dto.InstrumentEnrichmentContext
 import ee.tenman.portfolio.exception.EntityNotFoundException
+import ee.tenman.portfolio.model.InstrumentSnapshot
 import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.model.TransactionState
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -195,16 +196,16 @@ class InstrumentService(
   fun getAllInstrumentsWithoutFiltering(): List<Instrument> = instrumentRepository.findAll()
 
   @Transactional(readOnly = true)
-  fun getAllInstruments(): List<Instrument> = getAllInstruments(null, null)
+  fun getAllInstrumentSnapshots(): List<InstrumentSnapshot> = getAllInstrumentSnapshots(null, null)
 
   @Transactional(readOnly = true)
-  fun getAllInstruments(platforms: List<String>?): List<Instrument> = getAllInstruments(platforms, null)
+  fun getAllInstrumentSnapshots(platforms: List<String>?): List<InstrumentSnapshot> = getAllInstrumentSnapshots(platforms, null)
 
   @Transactional(readOnly = true)
-  fun getAllInstruments(
+  fun getAllInstrumentSnapshots(
     platforms: List<String>?,
     period: String?,
-  ): List<Instrument> {
+  ): List<InstrumentSnapshot> {
     val instruments = getAllInstrumentsWithoutFiltering().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val context =
@@ -231,15 +232,15 @@ class InstrumentService(
     instrument: Instrument,
     transactionsByInstrument: Map<Long, List<PortfolioTransaction>>,
     context: InstrumentEnrichmentContext,
-  ): Instrument? {
+  ): InstrumentSnapshot? {
     val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
     val filteredTransactions = filterTransactionsByPlatforms(allTransactions, context.targetPlatforms)
 
     if (!shouldIncludeInstrument(filteredTransactions)) {
-      return if (context.targetPlatforms == null) instrument else null
+      return if (context.targetPlatforms == null) InstrumentSnapshot(instrument) else null
     }
 
-    return applyInstrumentMetrics(instrument, filteredTransactions, context)
+    return createInstrumentSnapshot(instrument, filteredTransactions, context)
   }
 
   private fun filterTransactionsByPlatforms(
@@ -254,31 +255,32 @@ class InstrumentService(
 
   private fun shouldIncludeInstrument(filteredTransactions: List<PortfolioTransaction>): Boolean = filteredTransactions.isNotEmpty()
 
-  private fun applyInstrumentMetrics(
+  private fun createInstrumentSnapshot(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
     context: InstrumentEnrichmentContext,
-  ): Instrument? {
+  ): InstrumentSnapshot? {
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, context.calculationDate)
 
-    instrument.totalInvestment = metrics.totalInvestment
-    instrument.currentValue = metrics.currentValue
-    instrument.profit = metrics.profit
-    instrument.realizedProfit = metrics.realizedProfit
-    instrument.unrealizedProfit = metrics.unrealizedProfit ?: BigDecimal.ZERO
-    instrument.xirr = metrics.xirr
-    instrument.quantity = metrics.quantity
-    instrument.platforms = transactions.map { it.platform }.toSet()
-
     val priceChange = calculatePriceChange(instrument, transactions, context)
-    instrument.priceChangeAmount = priceChange?.changeAmount?.multiply(metrics.quantity)
-    instrument.priceChangePercent = priceChange?.changePercent
 
     return if (metrics.quantity == BigDecimal.ZERO && metrics.totalInvestment == BigDecimal.ZERO) {
       null
     } else {
-      instrument
+      InstrumentSnapshot(
+        instrument = instrument,
+        totalInvestment = metrics.totalInvestment,
+        currentValue = metrics.currentValue,
+        profit = metrics.profit,
+        realizedProfit = metrics.realizedProfit,
+        unrealizedProfit = metrics.unrealizedProfit ?: BigDecimal.ZERO,
+        xirr = metrics.xirr,
+        quantity = metrics.quantity,
+        platforms = transactions.map { it.platform }.toSet(),
+        priceChangeAmount = priceChange?.changeAmount?.multiply(metrics.quantity),
+        priceChangePercent = priceChange?.changePercent,
+      )
     }
   }
 

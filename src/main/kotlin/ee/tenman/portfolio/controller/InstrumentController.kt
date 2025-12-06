@@ -63,9 +63,9 @@ class InstrumentController(
     @RequestParam(defaultValue = "24h") period: String,
   ): List<InstrumentDto> =
     instrumentService
-      .getAllInstruments(platforms, period)
-      .sortedBy { it.id }
-      .map { InstrumentDto.fromEntity(it) }
+      .getAllInstrumentSnapshots(platforms, period)
+      .sortedBy { it.instrument.id }
+      .map { InstrumentDto.fromSnapshot(it) }
 
   @PutMapping("/{id}")
   @Loggable
