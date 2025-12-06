@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.service
+package ee.tenman.portfolio.model
 
 import java.math.BigDecimal
 

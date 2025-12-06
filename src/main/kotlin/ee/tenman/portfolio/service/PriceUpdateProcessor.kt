@@ -1,18 +1,13 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import org.slf4j.Logger
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
-
-enum class ProcessResult {
-  SUCCESS_WITH_DAILY_PRICE,
-  SUCCESS_WITHOUT_DAILY_PRICE,
-  FAILED,
-}
 
 @Component
 class PriceUpdateProcessor(
