@@ -20,6 +20,7 @@ class RedisConfiguration {
     cacheConfigurations[TRANSACTION_CACHE] =
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(1))
     cacheConfigurations[ETF_LOGOS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(7))
+    cacheConfigurations[EASTER_HOLIDAYS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
       .builder(connectionFactory)
@@ -34,6 +35,7 @@ class RedisConfiguration {
     const val TRANSACTION_CACHE = "transaction-cache-v2"
     const val ONE_DAY_CACHE: String = "one-day-cache-v2"
     const val ETF_LOGOS_CACHE: String = "etf-logos-v2"
+    const val EASTER_HOLIDAYS_CACHE: String = "easter-holidays"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }
