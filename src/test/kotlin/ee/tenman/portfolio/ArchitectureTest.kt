@@ -409,15 +409,6 @@ class ArchitectureTest {
     return if (fileName.isPresent) fileName.get() else "unknown"
   }
 
-  private val temporaryExclusions =
-    setOf(
-    "InvestmentMetricsService.kt",
-    "EtfBreakdownService.kt",
-    "CalculationService.kt",
-    "InstrumentService.kt",
-    "LightyearHoldingsService.kt",
-  )
-
   private fun isAcceptableMultiClassFile(fileName: String): Boolean =
     fileName.endsWith("Response.kt") ||
       fileName.endsWith("Request.kt") ||
@@ -429,8 +420,7 @@ class ArchitectureTest {
       fileName.endsWith("Controller.kt") ||
       fileName.endsWith("Handler.kt") ||
       fileName.endsWith("Indicator.kt") ||
-      fileName.endsWith("Processor.kt") ||
-      temporaryExclusions.contains(fileName)
+      fileName.endsWith("Processor.kt")
 
   private fun isRelevantTopLevelClass(javaClass: JavaClass): Boolean =
     !javaClass.isInnerClass &&
