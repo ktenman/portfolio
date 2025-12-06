@@ -61,7 +61,7 @@ class FtDataRetrievalJob(
       log.info("Starting FT data retrieval execution")
       val instruments =
         instrumentService
-          .getAllInstruments()
+          .getAllInstrumentsWithoutFiltering()
           .filter { it.providerName == ProviderName.FT }
 
       if (instruments.isEmpty()) {
