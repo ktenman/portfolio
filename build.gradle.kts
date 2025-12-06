@@ -60,6 +60,8 @@ dependencies {
     exclude(group = "commons-logging", module = "commons-logging")
   }
   implementation(libs.minio)
+  implementation(libs.jollyday.core)
+  runtimeOnly(libs.jollyday.jaxb)
 
   developmentOnly(libs.spring.boot.docker.compose)
   runtimeOnly(libs.postgresql)

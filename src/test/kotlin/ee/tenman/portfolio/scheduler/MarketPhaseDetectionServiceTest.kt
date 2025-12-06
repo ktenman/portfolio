@@ -215,6 +215,60 @@ class MarketPhaseDetectionServiceTest {
     expect(result).toEqual(false)
   }
 
+  @ParameterizedTest
+  @CsvSource(
+    "2028, 4, 14, Good Friday 2028",
+    "2028, 4, 17, Easter Monday 2028",
+    "2029, 3, 30, Good Friday 2029",
+    "2029, 4, 2, Easter Monday 2029",
+    "2030, 4, 19, Good Friday 2030",
+    "2030, 4, 22, Easter Monday 2030",
+    "2031, 4, 11, Good Friday 2031",
+    "2031, 4, 14, Easter Monday 2031",
+    "2032, 3, 26, Good Friday 2032",
+    "2032, 3, 29, Easter Monday 2032",
+    "2033, 4, 15, Good Friday 2033",
+    "2033, 4, 18, Easter Monday 2033",
+    "2034, 4, 7, Good Friday 2034",
+    "2034, 4, 10, Easter Monday 2034",
+    "2035, 3, 23, Good Friday 2035",
+    "2035, 3, 26, Easter Monday 2035",
+  )
+  fun `should detect WEEKEND on Easter holidays in future years via JollyDay`(
+    year: Int,
+    month: Int,
+    day: Int,
+    @Suppress("UNUSED_PARAMETER") _holidayName: String,
+  ) {
+    val holiday = createNyTime(year, month, day, 12, 0)
+
+    val result = service.detectMarketPhase(holiday)
+
+    expect(result).toEqual(MarketPhase.WEEKEND)
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "2025, 5, 29, Ascension Day 2025",
+    "2025, 6, 9, Whit Monday 2025",
+    "2025, 10, 3, German Unity Day 2025",
+    "2026, 5, 14, Ascension Day 2026",
+    "2026, 5, 25, Whit Monday 2026",
+    "2028, 10, 3, German Unity Day 2028",
+  )
+  fun `should detect MAIN_MARKET_HOURS on German holidays where XETRA is open`(
+    year: Int,
+    month: Int,
+    day: Int,
+    @Suppress("UNUSED_PARAMETER") _holidayName: String,
+  ) {
+    val holiday = createNyTime(year, month, day, 12, 0)
+
+    val result = service.detectMarketPhase(holiday)
+
+    expect(result).toEqual(MarketPhase.MAIN_MARKET_HOURS)
+  }
+
   private fun createNyTime(
     year: Int,
     month: Int,
