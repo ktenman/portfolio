@@ -21,12 +21,6 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 
-data class InstrumentEnrichmentContext(
-  val calculationDate: LocalDate,
-  val priceChangePeriod: PriceChangePeriod,
-  val targetPlatforms: Set<Platform>?,
-)
-
 @Service
 class InstrumentService(
   private val instrumentRepository: InstrumentRepository,
