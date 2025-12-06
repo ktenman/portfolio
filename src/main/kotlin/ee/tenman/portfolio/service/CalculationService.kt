@@ -12,29 +12,10 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
-import java.io.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
-
-data class CalculationResult(
-  var xirrs: List<Transaction> = mutableListOf(),
-  var median: Double = 0.0,
-  var average: Double = 0.0,
-  var total: BigDecimal = BigDecimal.ZERO,
-) : Serializable {
-  companion object {
-    private const val serialVersionUID: Long = 1L
-  }
-}
-
-data class XirrCalculationResult(
-  val processedDates: Int,
-  val processedInstruments: Int,
-  val failedCalculations: List<String> = emptyList(),
-  val duration: Long,
-)
 
 @Service
 class CalculationService(
