@@ -87,13 +87,6 @@ class LightyearHoldingsService(
     )
   }
 
-  private data class ValidatedRowData(
-    val name: String,
-    val ticker: String?,
-    val sector: String?,
-    val weightText: String,
-  )
-
   private fun extractValidatedRowData(element: Element): ValidatedRowData? {
     val parsedData = parseBasicRowData(element) ?: return null
 
@@ -118,11 +111,6 @@ class LightyearHoldingsService(
 
     return ValidatedRowData(name, ticker, sector, parsedData.weightText)
   }
-
-  private data class BasicRowData(
-    val nameParts: List<String>,
-    val weightText: String,
-  )
 
   private fun parseBasicRowData(element: Element): BasicRowData? {
     val allDivs = element.select("div")

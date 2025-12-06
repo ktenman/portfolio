@@ -26,18 +26,6 @@ class EtfBreakdownService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  data class HoldingKey(
-    val ticker: String?,
-    val name: String,
-    val sector: String?,
-  )
-
-  data class HoldingValue(
-    val totalValue: BigDecimal,
-    val etfSymbols: MutableSet<String>,
-    val platforms: MutableSet<Platform>,
-  )
-
   @Cacheable(
     "etf:breakdown",
     key =
