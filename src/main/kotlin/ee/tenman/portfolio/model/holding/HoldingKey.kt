@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.service
+package ee.tenman.portfolio.model.holding
 
 data class HoldingKey(
   val ticker: String?,

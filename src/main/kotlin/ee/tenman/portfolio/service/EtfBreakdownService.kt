@@ -6,6 +6,9 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
+import ee.tenman.portfolio.model.holding.HoldingKey
+import ee.tenman.portfolio.model.holding.HoldingValue
+import ee.tenman.portfolio.model.holding.InternalHoldingData
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository

@@ -59,12 +59,14 @@ class ArchitectureTest {
       .definedBy("..scheduler..")
       .layer("DTOs")
       .definedBy("..dto..")
+      .layer("Model")
+      .definedBy("..model..")
       .whereLayer("API")
       .mayOnlyBeAccessedByLayers("Configuration")
       .whereLayer("Application")
-      .mayOnlyBeAccessedByLayers("API", "Jobs", "Scheduler", "Configuration", "Application")
+      .mayOnlyBeAccessedByLayers("API", "Jobs", "Scheduler", "Configuration", "Application", "Model", "DTOs")
       .whereLayer("Domain")
-      .mayOnlyBeAccessedByLayers("Application", "Infrastructure", "API", "DTOs", "Jobs", "Configuration")
+      .mayOnlyBeAccessedByLayers("Application", "Infrastructure", "API", "DTOs", "Jobs", "Configuration", "Model")
       .whereLayer("Infrastructure")
       .mayOnlyBeAccessedByLayers("Application", "Jobs", "Configuration")
       .whereLayer("Jobs")
@@ -73,6 +75,8 @@ class ArchitectureTest {
       .mayOnlyBeAccessedByLayers("Jobs", "Configuration", "Application")
       .whereLayer("DTOs")
       .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure")
+      .whereLayer("Model")
+      .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure", "DTOs", "Jobs")
       .whereLayer("Configuration")
       .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure", "Jobs")
       .ignoreDependency(
@@ -371,15 +375,13 @@ class ArchitectureTest {
           ).because("API should expose DTOs for decoupling and versioning")
 
   @ArchTest
-  val `data classes should not be nested inside service classes`: ArchRule =
-    classes()
+  val `data classes should be in model package not service package`: ArchRule =
+    noClasses()
       .that()
-      .resideInAPackage("ee.tenman.portfolio.service")
-      .and()
       .haveSimpleNameEndingWith("Metrics")
       .should()
-      .beTopLevelClasses()
-      .because("Data classes should be in separate files for better organization and testability")
+      .resideInAPackage("ee.tenman.portfolio.service")
+      .because("Data classes like *Metrics should be in model package for better organization")
 
   @ArchTest
   fun eachSourceFileShouldContainOnlyOneTopLevelClass(classes: JavaClasses) {

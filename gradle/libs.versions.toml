@@ -27,6 +27,9 @@ postgresql = "42.7.8"
 grpcNettyShaded = "1.77.0"
 minio = "8.6.0"
 jollyday = "1.8.0"
+pitest = "1.17.4"
+pitestPlugin = "1.15.0"
+kotest = "6.0.0.M2"
 
 [libraries]
 # Spring Boot
@@ -116,6 +119,8 @@ spring-mockk = { module = "com.ninja-squad:springmockk", version = "5.0.1" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archUnit" }
 atrium-fluent = { module = "ch.tutteli.atrium:atrium-fluent", version.ref = "atrium" }
 datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
+kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
@@ -126,3 +131,4 @@ kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 typescript-generator = { id = "cz.habarta.typescript-generator", version.ref = "typescriptGenerator" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "pitestPlugin" }

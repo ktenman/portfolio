@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.service
+package ee.tenman.portfolio.model.holding
 
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import java.math.BigDecimal

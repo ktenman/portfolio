@@ -18,6 +18,7 @@ class SummaryService(
   private val transactionService: TransactionService,
   private val cacheManager: CacheManager,
   private val investmentMetricsService: InvestmentMetricsService,
+  private val xirrCalculationService: XirrCalculationService,
   private val clock: Clock,
   private val summaryBatchProcessor: SummaryBatchProcessorService,
   private val summaryDeletionService: SummaryDeletionService,
@@ -208,7 +209,7 @@ class SummaryService(
     val instrumentGroups = transactions.groupBy { it.instrument }
     val results = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, date)
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(results.xirrTransactions, date)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(results.xirrTransactions, date)
     val earningsPerDay = calculateEarningsPerDay(results.totalValue, BigDecimal(xirr))
 
     return PortfolioDailySummary(
