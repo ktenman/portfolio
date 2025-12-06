@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_BREAKDOWN_CACHE
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
@@ -14,7 +15,6 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
-import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -26,11 +26,12 @@ class EtfBreakdownService(
   private val etfPositionRepository: EtfPositionRepository,
   private val transactionRepository: PortfolioTransactionRepository,
   private val dailyPriceService: DailyPriceService,
+  private val cacheInvalidationService: CacheInvalidationService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Cacheable(
-    "etf:breakdown",
+    ETF_BREAKDOWN_CACHE,
     key =
       "T(java.util.Objects).hash(" +
       "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all', " +
@@ -67,9 +68,9 @@ class EtfBreakdownService(
     return parsed.toSet().takeIf { it.isNotEmpty() }
   }
 
-  @CacheEvict("etf:breakdown", allEntries = true)
   fun evictBreakdownCache() {
-    log.info("Evicting ETF breakdown cache")
+    cacheInvalidationService.evictEtfBreakdownCache()
+    log.info("Evicted ETF breakdown cache")
   }
 
   private fun getLightyearEtfs(

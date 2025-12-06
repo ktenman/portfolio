@@ -2,9 +2,6 @@ package ee.tenman.portfolio.service
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
@@ -16,8 +13,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.cache.Cache
-import org.springframework.cache.CacheManager
 
 class PriceRefreshServiceTest {
   private val binanceDataRetrievalJob = mockk<BinanceDataRetrievalJob>(relaxed = true)
@@ -25,15 +20,13 @@ class PriceRefreshServiceTest {
   private val lightyearPriceRetrievalJob = mockk<LightyearPriceRetrievalJob>(relaxed = true)
   private val etfHoldingsClassificationJob = mockk<EtfHoldingsClassificationJob>(relaxed = true)
   private val wisdomTreeDataUpdateJob = mockk<WisdomTreeDataUpdateJob>(relaxed = true)
-  private val cacheManager = mockk<CacheManager>()
+  private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private val transactionService = mockk<TransactionService>()
 
   private lateinit var priceRefreshService: PriceRefreshService
 
   @BeforeEach
   fun setup() {
-    val mockCache = mockk<Cache>(relaxed = true)
-    every { cacheManager.getCache(any()) } returns mockCache
     every { transactionService.getAllTransactions() } returns emptyList()
     coEvery { transactionService.calculateTransactionProfits(any()) } returns Unit
 
@@ -44,7 +37,7 @@ class PriceRefreshServiceTest {
         lightyearPriceRetrievalJob = lightyearPriceRetrievalJob,
         etfHoldingsClassificationJob = etfHoldingsClassificationJob,
         wisdomTreeDataUpdateJob = wisdomTreeDataUpdateJob,
-        cacheManager = cacheManager,
+        cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
       )
   }
@@ -60,10 +53,8 @@ class PriceRefreshServiceTest {
   fun `refreshAllPrices should clear all caches`() {
     priceRefreshService.refreshAllPrices()
 
-    verify { cacheManager.getCache(INSTRUMENT_CACHE) }
-    verify { cacheManager.getCache(SUMMARY_CACHE) }
-    verify { cacheManager.getCache(TRANSACTION_CACHE) }
-    verify { cacheManager.getCache("etf:breakdown") }
+    verify { cacheInvalidationService.evictAllRelatedCaches(null, null) }
+    verify { cacheInvalidationService.evictEtfBreakdownCache() }
   }
 
   @Test
@@ -82,7 +73,7 @@ class PriceRefreshServiceTest {
         lightyearPriceRetrievalJob = null,
         etfHoldingsClassificationJob = null,
         wisdomTreeDataUpdateJob = null,
-        cacheManager = cacheManager,
+        cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
       )
 
@@ -107,7 +98,7 @@ class PriceRefreshServiceTest {
         lightyearPriceRetrievalJob = null,
         etfHoldingsClassificationJob = null,
         wisdomTreeDataUpdateJob = null,
-        cacheManager = cacheManager,
+        cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
       )
 
@@ -125,7 +116,7 @@ class PriceRefreshServiceTest {
         lightyearPriceRetrievalJob = null,
         etfHoldingsClassificationJob = null,
         wisdomTreeDataUpdateJob = null,
-        cacheManager = cacheManager,
+        cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
       )
 

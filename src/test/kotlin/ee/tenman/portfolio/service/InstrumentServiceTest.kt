@@ -35,6 +35,7 @@ class InstrumentServiceTest {
   private val portfolioTransactionRepository = mockk<PortfolioTransactionRepository>()
   private val investmentMetricsService = mockk<InvestmentMetricsService>()
   private val dailyPriceService = mockk<DailyPriceService>()
+  private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private val clock = mockk<Clock>()
 
   private lateinit var instrumentService: InstrumentService
@@ -66,6 +67,7 @@ class InstrumentServiceTest {
         portfolioTransactionRepository,
         investmentMetricsService,
         dailyPriceService,
+        cacheInvalidationService,
         clock,
       )
   }
@@ -106,10 +108,12 @@ class InstrumentServiceTest {
 
   @Test
   fun `should call repository delete when deleting instrument`() {
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
     every { instrumentRepository.deleteById(1L) } returns Unit
 
     instrumentService.deleteInstrument(1L)
 
+    verify { cacheInvalidationService.evictInstrumentCaches(1L, "AAPL") }
     verify { instrumentRepository.deleteById(1L) }
   }
 

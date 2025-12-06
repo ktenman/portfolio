@@ -3,9 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
-import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.cache.annotation.Caching
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -17,6 +15,7 @@ import java.time.LocalDate
 @Service
 class SummaryCacheService(
   private val portfolioDailySummaryRepository: PortfolioDailySummaryRepository,
+  private val cacheInvalidationService: CacheInvalidationService,
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [SUMMARY_CACHE], key = "'summaries'", unless = "#result.isEmpty()")
@@ -56,11 +55,5 @@ class SummaryCacheService(
   )
   fun findByEntryDate(date: LocalDate): PortfolioDailySummary? = portfolioDailySummaryRepository.findByEntryDate(date)
 
-  @Caching(
-    evict = [
-      CacheEvict(value = [SUMMARY_CACHE], key = "'summaries'"),
-      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
-    ],
-  )
-  fun evictAllCaches() {}
+  fun evictAllCaches() = cacheInvalidationService.evictSummaryCaches()
 }

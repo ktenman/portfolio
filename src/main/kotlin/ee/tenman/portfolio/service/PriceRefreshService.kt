@@ -1,8 +1,5 @@
 package ee.tenman.portfolio.service
 
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
@@ -11,7 +8,6 @@ import ee.tenman.portfolio.job.WisdomTreeDataUpdateJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Service
 
 @Service
@@ -21,7 +17,7 @@ class PriceRefreshService(
   private val lightyearPriceRetrievalJob: LightyearPriceRetrievalJob?,
   private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob?,
   private val wisdomTreeDataUpdateJob: WisdomTreeDataUpdateJob?,
-  private val cacheManager: CacheManager,
+  private val cacheInvalidationService: CacheInvalidationService,
   private val transactionService: TransactionService,
 ) {
   fun refreshAllPrices(): String {
@@ -54,9 +50,8 @@ class PriceRefreshService(
   }
 
   private fun clearAllCaches() {
-    listOf(INSTRUMENT_CACHE, SUMMARY_CACHE, TRANSACTION_CACHE, ETF_BREAKDOWN_CACHE).forEach { cacheName ->
-      cacheManager.getCache(cacheName)?.clear()
-    }
+    cacheInvalidationService.evictAllRelatedCaches(null, null)
+    cacheInvalidationService.evictEtfBreakdownCache()
   }
 
   private fun recalculateTransactionProfits() {
@@ -68,9 +63,5 @@ class PriceRefreshService(
 
   private fun launchJob(block: () -> Unit) {
     CoroutineScope(Dispatchers.Default).launch { block() }
-  }
-
-  companion object {
-    private const val ETF_BREAKDOWN_CACHE = "etf:breakdown"
   }
 }
