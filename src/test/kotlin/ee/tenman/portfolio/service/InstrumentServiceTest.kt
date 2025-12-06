@@ -147,17 +147,17 @@ class InstrumentServiceTest {
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns
       PriceChange(BigDecimal("5.00"), 3.5)
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
-    val instrument = result[0]
-    expect(instrument.totalInvestment).toEqualNumerically(BigDecimal("1000"))
-    expect(instrument.currentValue).toEqualNumerically(BigDecimal("1500"))
-    expect(instrument.profit).toEqualNumerically(BigDecimal("500"))
-    expect(instrument.xirr).toEqual(25.0)
-    expect(instrument.quantity).toEqualNumerically(BigDecimal("10"))
-    expect(instrument.priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("50.00"))
-    expect(instrument.priceChangePercent).toEqual(3.5)
+    val snapshot = result[0]
+    expect(snapshot.totalInvestment).toEqualNumerically(BigDecimal("1000"))
+    expect(snapshot.currentValue).toEqualNumerically(BigDecimal("1500"))
+    expect(snapshot.profit).toEqualNumerically(BigDecimal("500"))
+    expect(snapshot.xirr).toEqual(25.0)
+    expect(snapshot.quantity).toEqualNumerically(BigDecimal("10"))
+    expect(snapshot.priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("50.00"))
+    expect(snapshot.priceChangePercent).toEqual(3.5)
   }
 
   @Test
@@ -198,7 +198,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments(listOf("lhv"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("lhv"))
 
     expect(result).toHaveSize(1)
     expect(result[0].platforms).toContainExactly(Platform.LHV)
@@ -231,7 +231,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments(listOf("invalid_platform", "lhv"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("invalid_platform", "lhv"))
 
     expect(result).toHaveSize(1)
   }
@@ -263,7 +263,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments(listOf("lhv"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("lhv"))
 
     expect(result).toBeEmpty()
   }
@@ -295,7 +295,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments(listOf("lhv"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("lhv"))
 
     expect(result).toHaveSize(1)
     expect(result[0].totalInvestment).toEqualNumerically(BigDecimal("1000"))
@@ -315,20 +315,20 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument, anotherInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns emptyList()
 
-    val result = instrumentService.getAllInstruments(listOf("lhv"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("lhv"))
 
     expect(result).toBeEmpty()
   }
 
   @Test
-  fun `should return instrument when no transactions and no platform filter`() {
+  fun `should return instrument snapshot when no transactions and no platform filter`() {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns emptyList()
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
-    expect(result[0]).toEqual(testInstrument)
+    expect(result[0].instrument).toEqual(testInstrument)
   }
 
   @Test
@@ -364,7 +364,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns priceChange
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
     expect(result[0].priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("50.00"))
@@ -402,7 +402,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
     expect(result[0].priceChangeAmount).toEqual(null)
@@ -443,7 +443,7 @@ class InstrumentServiceTest {
       )
     } returns metrics
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
     expect(result[0].priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("500.00"))
@@ -491,7 +491,7 @@ class InstrumentServiceTest {
       )
     } returns metrics
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
     val priceChange = result[0].priceChangeAmount
@@ -532,7 +532,7 @@ class InstrumentServiceTest {
       )
     } returns metrics
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
     val priceChange = result[0].priceChangeAmount
@@ -579,7 +579,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments()
+    val result = instrumentService.getAllInstrumentSnapshots()
 
     expect(result).toHaveSize(1)
     expect(result[0].platforms.toSet()).toEqual(setOf(Platform.LHV, Platform.LIGHTYEAR))
@@ -623,7 +623,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments(listOf("lhv", "lightyear"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("lhv", "lightyear"))
 
     expect(result).toHaveSize(1)
     expect(result[0].platforms.toSet()).toEqual(setOf(Platform.LHV, Platform.LIGHTYEAR))
@@ -660,7 +660,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments(listOf("Lhv", "LIGHTYEAR"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("Lhv", "LIGHTYEAR"))
 
     expect(result).toHaveSize(1)
   }
@@ -673,7 +673,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
 
-    val result = instrumentService.getAllInstruments(emptyList())
+    val result = instrumentService.getAllInstrumentSnapshots(emptyList())
 
     expect(result).toBeEmpty()
   }
@@ -690,7 +690,7 @@ class InstrumentServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(lhvTransaction)
 
-    val result = instrumentService.getAllInstruments(listOf("LIGHTYEAR"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("LIGHTYEAR"))
 
     expect(result).toBeEmpty()
   }
@@ -742,10 +742,10 @@ class InstrumentServiceTest {
     } returns metrics1
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    val result = instrumentService.getAllInstruments(listOf("lhv"))
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("lhv"))
 
     expect(result).toHaveSize(1)
-    expect(result[0].symbol).toEqual("AAPL")
+    expect(result[0].instrument.symbol).toEqual("AAPL")
   }
 
   @Test
@@ -775,7 +775,7 @@ class InstrumentServiceTest {
     } returns metrics
     every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
 
-    instrumentService.getAllInstruments()
+    instrumentService.getAllInstrumentSnapshots()
 
     verify {
       investmentMetricsService.calculateInstrumentMetricsWithProfits(

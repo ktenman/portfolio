@@ -2,6 +2,7 @@ package ee.tenman.portfolio.dto
 
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.model.InstrumentSnapshot
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import java.math.BigDecimal
@@ -41,12 +42,6 @@ data class InstrumentDto(
       providerName = ProviderName.valueOf(providerName),
     ).apply {
       id.let { this.id = it }
-      totalInvestment = this@InstrumentDto.totalInvestment ?: BigDecimal.ZERO
-      currentValue = this@InstrumentDto.currentValue ?: BigDecimal.ZERO
-      profit = this@InstrumentDto.profit ?: BigDecimal.ZERO
-      realizedProfit = this@InstrumentDto.realizedProfit ?: BigDecimal.ZERO
-      unrealizedProfit = this@InstrumentDto.unrealizedProfit ?: BigDecimal.ZERO
-      xirr = this@InstrumentDto.xirr ?: 0.0
     }
 
   companion object {
@@ -58,17 +53,38 @@ data class InstrumentDto(
         category = instrument.category,
         baseCurrency = instrument.baseCurrency,
         currentPrice = instrument.currentPrice,
-        quantity = instrument.quantity,
+        quantity = BigDecimal.ZERO,
         providerName = instrument.providerName.name,
-        totalInvestment = instrument.totalInvestment,
-        currentValue = instrument.currentValue,
-        profit = instrument.profit,
-        realizedProfit = instrument.realizedProfit,
-        unrealizedProfit = instrument.unrealizedProfit,
-        xirr = instrument.xirr,
-        platforms = instrument.platforms?.map { it.name }?.toSet() ?: emptySet(),
-        priceChangeAmount = instrument.priceChangeAmount,
-        priceChangePercent = instrument.priceChangePercent,
+        totalInvestment = BigDecimal.ZERO,
+        currentValue = BigDecimal.ZERO,
+        profit = BigDecimal.ZERO,
+        realizedProfit = BigDecimal.ZERO,
+        unrealizedProfit = BigDecimal.ZERO,
+        xirr = 0.0,
+        platforms = emptySet(),
+        priceChangeAmount = null,
+        priceChangePercent = null,
+      )
+
+    fun fromSnapshot(snapshot: InstrumentSnapshot) =
+      InstrumentDto(
+        id = snapshot.instrument.id,
+        symbol = snapshot.instrument.symbol,
+        name = snapshot.instrument.name,
+        category = snapshot.instrument.category,
+        baseCurrency = snapshot.instrument.baseCurrency,
+        currentPrice = snapshot.instrument.currentPrice,
+        quantity = snapshot.quantity,
+        providerName = snapshot.instrument.providerName.name,
+        totalInvestment = snapshot.totalInvestment,
+        currentValue = snapshot.currentValue,
+        profit = snapshot.profit,
+        realizedProfit = snapshot.realizedProfit,
+        unrealizedProfit = snapshot.unrealizedProfit,
+        xirr = snapshot.xirr,
+        platforms = snapshot.platforms.map { it.name }.toSet(),
+        priceChangeAmount = snapshot.priceChangeAmount,
+        priceChangePercent = snapshot.priceChangePercent,
       )
   }
 }
