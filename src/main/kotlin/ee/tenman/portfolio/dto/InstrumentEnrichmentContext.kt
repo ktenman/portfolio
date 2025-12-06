@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.service
+package ee.tenman.portfolio.dto
 
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PriceChangePeriod
