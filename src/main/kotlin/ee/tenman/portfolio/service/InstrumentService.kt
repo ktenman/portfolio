@@ -8,7 +8,10 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.PriceChangePeriod
+import ee.tenman.portfolio.dto.InstrumentEnrichmentContext
 import ee.tenman.portfolio.exception.EntityNotFoundException
+import ee.tenman.portfolio.model.PriceChange
+import ee.tenman.portfolio.model.TransactionState
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.slf4j.LoggerFactory

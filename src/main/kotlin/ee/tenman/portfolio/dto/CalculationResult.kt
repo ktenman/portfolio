@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.service
+package ee.tenman.portfolio.dto
 
 import ee.tenman.portfolio.service.xirr.Transaction
 import java.io.Serializable

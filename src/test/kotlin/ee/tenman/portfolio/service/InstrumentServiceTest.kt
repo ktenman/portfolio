@@ -14,6 +14,8 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.model.PriceChange
+import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import io.mockk.every

@@ -16,6 +16,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.service.xirr.Transaction
 import io.mockk.every
 import io.mockk.mockk
@@ -33,6 +34,8 @@ import java.util.stream.Stream
 class InvestmentMetricsServiceTest {
   private val dailyPriceService = mockk<DailyPriceService>()
   private val transactionService = mockk<TransactionService>()
+  private val xirrCalculationService = XirrCalculationService()
+  private val holdingsCalculationService = HoldingsCalculationService()
   private lateinit var investmentMetricsService: InvestmentMetricsService
 
   private lateinit var testInstrument: Instrument
@@ -51,7 +54,14 @@ class InvestmentMetricsServiceTest {
     ).apply {
       id = 1L
     }
-    investmentMetricsService = InvestmentMetricsService(dailyPriceService, transactionService, Clock.systemDefaultZone())
+    investmentMetricsService =
+      InvestmentMetricsService(
+      dailyPriceService,
+      transactionService,
+      xirrCalculationService,
+      holdingsCalculationService,
+      Clock.systemDefaultZone(),
+    )
 
     every { transactionService.calculateTransactionProfits(any(), any()) } answers {
       val transactions = firstArg<List<PortfolioTransaction>>()
@@ -201,7 +211,7 @@ class InvestmentMetricsServiceTest {
       )
     val currentValue = BigDecimal("1500")
 
-    val xirrTransactions = investmentMetricsService.buildXirrTransactions(transactions, currentValue, testDate)
+    val xirrTransactions = xirrCalculationService.buildXirrTransactions(transactions, currentValue, testDate)
 
     expect(xirrTransactions).toHaveSize(3)
     expect(xirrTransactions[0].amount).toBeLessThan(0.0)
@@ -219,7 +229,7 @@ class InvestmentMetricsServiceTest {
       )
     val currentValue = BigDecimal("4200")
 
-    val xirrTransactions = investmentMetricsService.buildXirrTransactions(transactions, currentValue, testDate)
+    val xirrTransactions = xirrCalculationService.buildXirrTransactions(transactions, currentValue, testDate)
 
     expect(xirrTransactions).toHaveSize(3)
     expect(xirrTransactions[0].amount).toBeLessThan(0.0)
@@ -231,7 +241,7 @@ class InvestmentMetricsServiceTest {
   fun `should buildXirrTransactions with zero current value`() {
     val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
 
-    val xirrTransactions = investmentMetricsService.buildXirrTransactions(transactions, BigDecimal.ZERO, testDate)
+    val xirrTransactions = xirrCalculationService.buildXirrTransactions(transactions, BigDecimal.ZERO, testDate)
 
     expect(xirrTransactions).toHaveSize(1)
     expect(xirrTransactions[0].amount).toBeLessThan(0.0)
@@ -246,7 +256,7 @@ class InvestmentMetricsServiceTest {
         Transaction(2000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -255,7 +265,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateAdjustedXirr with fewer than 2 transactions returns zero`() {
     val transactions = listOf(Transaction(-1000.0, testDate))
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toEqual(0.0)
   }
@@ -269,7 +279,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1500.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeLessThan(10.0)
   }
@@ -282,7 +292,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toEqual(0.0)
   }
@@ -293,7 +303,7 @@ class InvestmentMetricsServiceTest {
     transactions: List<Transaction>,
     expectedBehavior: (Double) -> Boolean,
   ) {
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(expectedBehavior(xirr)).toEqual(true)
   }
@@ -368,7 +378,7 @@ class InvestmentMetricsServiceTest {
   fun `should convertToXirrTransaction for BUY transaction has negative amount`() {
     val buyTransaction = createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
-    val xirrTx = investmentMetricsService.convertToXirrTransaction(buyTransaction)
+    val xirrTx = xirrCalculationService.convertToXirrTransaction(buyTransaction)
 
     expect(xirrTx.amount).toBeLessThan(0.0)
     expect(xirrTx.date).toEqual(buyTransaction.transactionDate)
@@ -378,7 +388,7 @@ class InvestmentMetricsServiceTest {
   fun `should convertToXirrTransaction for SELL transaction has positive amount`() {
     val sellTransaction = createSellTransaction(quantity = BigDecimal("10"), price = BigDecimal("120"))
 
-    val xirrTx = investmentMetricsService.convertToXirrTransaction(sellTransaction)
+    val xirrTx = xirrCalculationService.convertToXirrTransaction(sellTransaction)
 
     expect(xirrTx.amount).toBeGreaterThan(0.0)
     expect(xirrTx.date).toEqual(sellTransaction.transactionDate)
@@ -393,7 +403,7 @@ class InvestmentMetricsServiceTest {
         commission = BigDecimal("20"),
       )
 
-    val xirrTx = investmentMetricsService.convertToXirrTransaction(buyTransaction)
+    val xirrTx = xirrCalculationService.convertToXirrTransaction(buyTransaction)
 
     expect(xirrTx.amount).toEqual(-1020.0)
   }
@@ -560,7 +570,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1200.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeLessThan(10.0)
     expect(xirr).toBeGreaterThanOrEqualTo(0.0)
@@ -574,7 +584,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1500.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -587,7 +597,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1200.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -600,7 +610,7 @@ class InvestmentMetricsServiceTest {
         Transaction(1000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toEqual(0.0)
   }
@@ -610,7 +620,7 @@ class InvestmentMetricsServiceTest {
     val transactions = listOf(createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")))
 
     val xirrTransactions =
-      investmentMetricsService.buildXirrTransactions(
+      xirrCalculationService.buildXirrTransactions(
         transactions,
         BigDecimal("-100"),
         testDate,
@@ -631,7 +641,7 @@ class InvestmentMetricsServiceTest {
       )
     val currentValue = BigDecimal("10000")
 
-    val xirrTransactions = investmentMetricsService.buildXirrTransactions(transactions, currentValue, testDate)
+    val xirrTransactions = xirrCalculationService.buildXirrTransactions(transactions, currentValue, testDate)
 
     expect(xirrTransactions).toHaveSize(5)
     expect(xirrTransactions[0].amount).toBeLessThan(0.0)
@@ -777,7 +787,7 @@ class InvestmentMetricsServiceTest {
         commission = BigDecimal("15"),
       )
 
-    val xirrTx = investmentMetricsService.convertToXirrTransaction(sellTransaction)
+    val xirrTx = xirrCalculationService.convertToXirrTransaction(sellTransaction)
 
     expect(xirrTx.amount).toEqual(985.0)
   }
@@ -792,7 +802,7 @@ class InvestmentMetricsServiceTest {
         Transaction(12000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -1088,7 +1098,7 @@ class InvestmentMetricsServiceTest {
         Transaction(20000.0, testDate),
       )
 
-    val xirr = investmentMetricsService.calculateAdjustedXirr(transactions, testDate)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
     expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
   }
@@ -1102,7 +1112,7 @@ class InvestmentMetricsServiceTest {
         commission = BigDecimal("500"),
       )
 
-    val xirrTx = investmentMetricsService.convertToXirrTransaction(buyTransaction)
+    val xirrTx = xirrCalculationService.convertToXirrTransaction(buyTransaction)
 
     expect(xirrTx.amount).toEqual(-1500.0)
   }
@@ -1116,7 +1126,7 @@ class InvestmentMetricsServiceTest {
         commission = BigDecimal.ZERO,
       )
 
-    val xirrTx = investmentMetricsService.convertToXirrTransaction(sellTransaction)
+    val xirrTx = xirrCalculationService.convertToXirrTransaction(sellTransaction)
 
     expect(xirrTx.amount).toEqual(1000.0)
   }

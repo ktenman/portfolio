@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.controller
 
-import ee.tenman.portfolio.service.CalculationResult
+import ee.tenman.portfolio.dto.CalculationResult
 import ee.tenman.portfolio.service.CalculationService
 import ee.tenman.portfolio.service.SummaryService
 import org.springframework.validation.annotation.Validated

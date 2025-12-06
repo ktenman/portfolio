@@ -11,14 +11,14 @@ ENV BUILD_HASH=${BUILD_HASH}
 ENV BUILD_TIME=${BUILD_TIME}
 
 # Copy necessary files
-COPY build.gradle.kts settings.gradle.kts ./
+COPY build.gradle.kts settings.gradle.kts gradlew ./
 COPY .editorconfig ./
 COPY detekt.yml ./
 COPY gradle ./gradle
 COPY src ./src
 
-# Build with optimizations
-RUN gradle clean build -x test --no-daemon \
+# Build with optimizations using Gradle wrapper for version consistency
+RUN chmod +x gradlew && ./gradlew clean build -x test --no-daemon \
     --build-cache \
     -Dorg.gradle.caching=true \
     -Dorg.gradle.parallel=true \

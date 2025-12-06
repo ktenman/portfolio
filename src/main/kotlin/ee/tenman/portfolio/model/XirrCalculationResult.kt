@@ -1,4 +1,4 @@
-package ee.tenman.portfolio.service
+package ee.tenman.portfolio.model
 
 data class XirrCalculationResult(
   val processedDates: Int,

@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.ktlint)
   alias(libs.plugins.detekt)
   alias(libs.plugins.typescript.generator)
+  alias(libs.plugins.pitest)
 }
 
 group = "ee.tenman"
@@ -85,6 +86,8 @@ dependencies {
     exclude("org.jetbrains.kotlin")
   }
   testImplementation(libs.datafaker)
+  testImplementation(libs.kotest.property)
+  testImplementation(libs.kotest.runner.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
@@ -242,4 +245,36 @@ tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
     sarif.required.set(false)
     markdown.required.set(false)
   }
+}
+
+pitest {
+  junit5PluginVersion.set("1.2.1")
+  pitestVersion.set(libs.versions.pitest.get())
+  targetClasses.set(
+    listOf(
+      "ee.tenman.portfolio.service.XirrCalculationService",
+      "ee.tenman.portfolio.service.HoldingsCalculationService",
+      "ee.tenman.portfolio.service.InvestmentMetricsService",
+      "ee.tenman.portfolio.service.TransactionService",
+      "ee.tenman.portfolio.service.xirr.*",
+    ),
+  )
+  targetTests.set(
+    listOf(
+      "ee.tenman.portfolio.service.*Test",
+      "ee.tenman.portfolio.service.*PropertyTest",
+    ),
+  )
+  threads.set(4)
+  outputFormats.set(listOf("HTML", "XML"))
+  mutationThreshold.set(80)
+  coverageThreshold.set(80)
+  timestampedReports.set(false)
+  useClasspathFile.set(true)
+  excludedClasses.set(
+    listOf(
+      "ee.tenman.portfolio.service.*IT",
+      "ee.tenman.portfolio.service.*IntegrationTest",
+    ),
+  )
 }

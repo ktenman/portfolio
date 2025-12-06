@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.model.ProcessResult
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
