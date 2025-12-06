@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_BREAKDOWN_CACHE
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
@@ -30,7 +31,7 @@ class EtfBreakdownService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Cacheable(
-    "etf:breakdown",
+    ETF_BREAKDOWN_CACHE,
     key =
       "T(java.util.Objects).hash(" +
       "#etfSymbols != null && !#etfSymbols.isEmpty() ? new java.util.TreeSet(#etfSymbols).toString() : 'all', " +

@@ -35,6 +35,7 @@ class RedisConfiguration {
     const val TRANSACTION_CACHE = "transaction-cache-v2"
     const val ONE_DAY_CACHE: String = "one-day-cache-v2"
     const val ETF_LOGOS_CACHE: String = "etf-logos-v2"
+    const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown"
     const val EASTER_HOLIDAYS_CACHE: String = "easter-holidays"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }

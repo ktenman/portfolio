@@ -50,9 +50,9 @@ class InstrumentService(
 
   @Transactional
   fun saveInstrument(instrument: Instrument): Instrument {
-    cacheInvalidationService.evictAllRelatedCaches(instrument.id, instrument.symbol)
     val saved = instrumentRepository.save(instrument)
     recalculateTransactionProfitsForInstrument(saved.id)
+    cacheInvalidationService.evictAllRelatedCaches(saved.id, saved.symbol)
     return saved
   }
 

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_BREAKDOWN_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
@@ -71,6 +72,5 @@ class CacheInvalidationService(
   companion object {
     private const val ALL_INSTRUMENTS_KEY = "allInstruments"
     private const val XIRR_KEY = "xirr-v3"
-    private const val ETF_BREAKDOWN_CACHE = "etf:breakdown"
   }
 }
