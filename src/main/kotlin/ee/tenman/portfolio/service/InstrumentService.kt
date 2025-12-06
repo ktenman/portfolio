@@ -1,9 +1,6 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -16,9 +13,7 @@ import ee.tenman.portfolio.model.TransactionState
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.slf4j.LoggerFactory
-import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -31,6 +26,7 @@ class InstrumentService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val investmentMetricsService: InvestmentMetricsService,
   private val dailyPriceService: DailyPriceService,
+  private val cacheInvalidationService: CacheInvalidationService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -53,27 +49,8 @@ class InstrumentService(
   }
 
   @Transactional
-  @Caching(
-    evict = [
-      CacheEvict(
-        value = [INSTRUMENT_CACHE],
-        key = "#instrument.id",
-        condition = "#instrument.id != null",
-      ),
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "#instrument.symbol"),
-      CacheEvict(
-        value = [INSTRUMENT_CACHE],
-        key = "'allInstruments'",
-      ),
-      CacheEvict(value = [SUMMARY_CACHE], allEntries = true),
-      CacheEvict(
-        value = [TRANSACTION_CACHE],
-        allEntries = true,
-      ),
-      CacheEvict(value = [ONE_DAY_CACHE], allEntries = true),
-    ],
-  )
   fun saveInstrument(instrument: Instrument): Instrument {
+    cacheInvalidationService.evictAllRelatedCaches(instrument.id, instrument.symbol)
     val saved = instrumentRepository.save(instrument)
     recalculateTransactionProfitsForInstrument(saved.id)
     return saved
@@ -181,16 +158,11 @@ class InstrumentService(
   }
 
   @Transactional
-  @Caching(
-    evict = [
-      CacheEvict(value = [INSTRUMENT_CACHE], key = "#id"),
-      CacheEvict(
-        value = [INSTRUMENT_CACHE],
-        key = "'allInstruments'",
-      ),
-    ],
-  )
-  fun deleteInstrument(id: Long) = instrumentRepository.deleteById(id)
+  fun deleteInstrument(id: Long) {
+    val instrument = instrumentRepository.findById(id).orElse(null)
+    cacheInvalidationService.evictInstrumentCaches(id, instrument?.symbol)
+    instrumentRepository.deleteById(id)
+  }
 
   @Transactional(readOnly = true)
   fun getAllInstrumentsWithoutFiltering(): List<Instrument> = instrumentRepository.findAll()
