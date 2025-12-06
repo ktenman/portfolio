@@ -27,6 +27,7 @@ class EtfBreakdownServiceTest {
   private val etfPositionRepository = mockk<EtfPositionRepository>()
   private val transactionRepository = mockk<PortfolioTransactionRepository>()
   private val dailyPriceService = mockk<DailyPriceService>()
+  private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private lateinit var etfBreakdownService: EtfBreakdownService
 
   @BeforeEach
@@ -37,6 +38,7 @@ class EtfBreakdownServiceTest {
         etfPositionRepository,
         transactionRepository,
         dailyPriceService,
+        cacheInvalidationService,
       )
   }
 
