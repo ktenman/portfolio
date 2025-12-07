@@ -26,23 +26,15 @@ class LightyearPriceUpdateService(
     today: LocalDate,
   ): ProcessResult =
     runCatching {
-    val instrument =
-      instrumentService.findBySymbol(symbol) ?: run {
-      log.warn("Instrument not found for symbol: {}", symbol)
-      return@runCatching ProcessResult.FAILED
+      val instrument = instrumentService.findBySymbol(symbol)
+      updateInstrumentPrice(instrument, price, symbol)
+      if (isWeekend) return@runCatching ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
+      saveDailyPrice(instrument, price, today, symbol)
+      ProcessResult.SUCCESS_WITH_DAILY_PRICE
+    }.getOrElse {
+      log.warn("Failed to update price for symbol {}: {}", symbol, it.message)
+      ProcessResult.FAILED
     }
-    updateInstrumentPrice(instrument, price, symbol)
-    when {
-      isWeekend -> ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
-      else -> {
-        saveDailyPrice(instrument, price, today, symbol)
-        ProcessResult.SUCCESS_WITH_DAILY_PRICE
-      }
-    }
-  }.getOrElse {
-    log.warn("Failed to update price for symbol {}: {}", symbol, it.message)
-    ProcessResult.FAILED
-  }
 
   private fun updateInstrumentPrice(
     instrument: Instrument,
