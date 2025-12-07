@@ -121,11 +121,12 @@ import TransactionTable from './transaction-table.vue'
 import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
+import { STORAGE_KEYS } from '../../constants'
 
-const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_transaction_platforms', [])
-const fromDate = useLocalStorage<string>('portfolio_transactions_from_date', '')
-const untilDate = useLocalStorage<string>('portfolio_transactions_until_date', '')
-const selectedQuickDate = useLocalStorage<string>('portfolio_selected_quick_date', '')
+const selectedPlatforms = useLocalStorage<string[]>(STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS, [])
+const fromDate = useLocalStorage<string>(STORAGE_KEYS.TRANSACTIONS_FROM_DATE, '')
+const untilDate = useLocalStorage<string>(STORAGE_KEYS.TRANSACTIONS_UNTIL_DATE, '')
+const selectedQuickDate = useLocalStorage<string>(STORAGE_KEYS.SELECTED_QUICK_DATE, '')
 const quickDateDropdown = ref<HTMLElement | null>(null)
 
 let manualDateChange = false

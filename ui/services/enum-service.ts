@@ -1,4 +1,5 @@
 import { httpClient } from '../utils/http-client'
+import { API_ENDPOINTS } from '../constants'
 
 interface EnumValues {
   platforms: string[]
@@ -9,5 +10,5 @@ interface EnumValues {
 }
 
 export const enumService = {
-  getAll: () => httpClient.get<EnumValues>('/enums').then(res => res.data),
+  getAll: () => httpClient.get<EnumValues>(API_ENDPOINTS.ENUMS).then(res => res.data),
 }
