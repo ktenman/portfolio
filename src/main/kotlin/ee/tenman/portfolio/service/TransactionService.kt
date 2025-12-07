@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
+import org.springframework.context.annotation.Lazy
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
@@ -20,6 +21,7 @@ import java.math.RoundingMode
 @Service
 class TransactionService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
+  @Lazy private val self: TransactionService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -94,7 +96,7 @@ class TransactionService(
   )
   fun getAllTransactions(platforms: List<String>?): List<PortfolioTransaction> {
     if (platforms.isNullOrEmpty()) {
-      return getAllTransactions()
+      return self.getAllTransactions()
     }
 
     val platformEnums =
@@ -132,7 +134,7 @@ class TransactionService(
     val hasDates = fromDate != null || untilDate != null
 
     if (!hasPlatforms && !hasDates) {
-      return getAllTransactions()
+      return self.getAllTransactions()
     }
 
     val platformEnums =
@@ -165,7 +167,7 @@ class TransactionService(
       hasDates ->
         portfolioTransactionRepository.findAllByDateRangeWithInstruments(effectiveFromDate, effectiveUntilDate)
       else ->
-        getAllTransactions()
+        self.getAllTransactions()
     }
   }
 

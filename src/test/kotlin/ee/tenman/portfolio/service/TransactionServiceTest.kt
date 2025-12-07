@@ -36,7 +36,7 @@ class TransactionServiceTest {
   @BeforeEach
   fun setUp() {
     portfolioTransactionRepository = mockk()
-    transactionService = TransactionService(portfolioTransactionRepository)
+    transactionService = TransactionService(portfolioTransactionRepository, mockk(relaxed = true))
 
     testInstrument =
       Instrument(
