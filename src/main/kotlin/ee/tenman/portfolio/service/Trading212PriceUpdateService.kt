@@ -26,32 +26,26 @@ class Trading212PriceUpdateService(
   ): ProcessResult =
     try {
       val instrument = instrumentService.findBySymbol(symbol)
-      if (instrument != null) {
-        instrument.currentPrice = price
-        instrumentService.saveInstrument(instrument)
-        log.debug("Updated current price for {}: {}", symbol, price)
-
-        if (!isWeekend) {
-          val dailyPrice =
-            DailyPrice(
-              instrument = instrument,
-              entryDate = today,
-              providerName = ProviderName.TRADING212,
-              openPrice = price,
-              highPrice = price,
-              lowPrice = price,
-              closePrice = price,
-              volume = null,
-            )
-          dailyPriceService.saveDailyPrice(dailyPrice)
-          log.debug("Saved Trading212 daily price for {}: {}", symbol, price)
-          ProcessResult.SUCCESS_WITH_DAILY_PRICE
-        } else {
-          ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
-        }
+      instrument.currentPrice = price
+      instrumentService.saveInstrument(instrument)
+      log.debug("Updated current price for {}: {}", symbol, price)
+      if (isWeekend) {
+        ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
       } else {
-        log.warn("Instrument not found for symbol: $symbol")
-        ProcessResult.FAILED
+        val dailyPrice =
+          DailyPrice(
+            instrument = instrument,
+            entryDate = today,
+            providerName = ProviderName.TRADING212,
+            openPrice = price,
+            highPrice = price,
+            lowPrice = price,
+            closePrice = price,
+            volume = null,
+          )
+        dailyPriceService.saveDailyPrice(dailyPrice)
+        log.debug("Saved Trading212 daily price for {}: {}", symbol, price)
+        ProcessResult.SUCCESS_WITH_DAILY_PRICE
       }
     } catch (e: Exception) {
       log.warn("Failed to update price for symbol $symbol: ${e.message}")
