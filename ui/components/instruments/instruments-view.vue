@@ -68,9 +68,10 @@ import InstrumentModal from './instrument-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { formatPlatformName } from '../../utils/platform-utils'
+import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
 const selectedItem = ref<InstrumentDto | null>(null)
-const selectedPlatforms = useLocalStorage<string[]>('portfolio_selected_platforms', [])
+const selectedPlatforms = useLocalStorage<string[]>(STORAGE_KEYS.SELECTED_PLATFORMS, [])
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 const { selectedPeriod, periods } = usePriceChangePeriod()
 const queryClient = useQueryClient()
@@ -134,7 +135,7 @@ const {
     }
     return instrumentsService.getAll(selectedPlatforms.value, selectedPeriod.value)
   },
-  refetchInterval: 2000,
+  refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
 })
 
 const items = computed(() => {

@@ -1,5 +1,6 @@
 import { httpClient } from '../utils/http-client'
 import { CalculationResult } from '../models/calculation-result'
+import { API_ENDPOINTS } from '../constants'
 
 interface BuildInfo {
   hash: string
@@ -8,9 +9,9 @@ interface BuildInfo {
 
 export const utilityService = {
   getCalculationResult: () =>
-    httpClient.get<CalculationResult>('/calculator').then(res => res.data),
+    httpClient.get<CalculationResult>(API_ENDPOINTS.CALCULATOR).then(res => res.data),
 
-  getBuildInfo: () => httpClient.get<BuildInfo>('/build-info').then(res => res.data),
+  getBuildInfo: () => httpClient.get<BuildInfo>(API_ENDPOINTS.BUILD_INFO).then(res => res.data),
 
-  getLogoUrl: (ticker: string): string => `/api/logos/${ticker}`,
+  getLogoUrl: (ticker: string): string => `/api${API_ENDPOINTS.LOGOS}/${ticker}`,
 }
