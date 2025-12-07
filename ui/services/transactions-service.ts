@@ -4,6 +4,7 @@ import type {
   TransactionRequestDto,
   TransactionsWithSummaryDto,
 } from '../models/generated/domain-models'
+import { API_ENDPOINTS } from '../constants'
 
 export const transactionsService = {
   getAll: (platforms?: string[], fromDate?: string, untilDate?: string) => {
@@ -18,16 +19,18 @@ export const transactionsService = {
       params.untilDate = untilDate
     }
     return httpClient
-      .get<TransactionsWithSummaryDto>('/transactions', { params })
+      .get<TransactionsWithSummaryDto>(API_ENDPOINTS.TRANSACTIONS, { params })
       .then(res => res.data)
   },
 
   create: (data: Partial<TransactionRequestDto>) =>
-    httpClient.post<TransactionResponseDto>('/transactions', data).then(res => res.data),
+    httpClient.post<TransactionResponseDto>(API_ENDPOINTS.TRANSACTIONS, data).then(res => res.data),
 
   update: (id: number | string, data: Partial<TransactionRequestDto>) =>
-    httpClient.put<TransactionResponseDto>(`/transactions/${id}`, data).then(res => res.data),
+    httpClient
+      .put<TransactionResponseDto>(`${API_ENDPOINTS.TRANSACTIONS}/${id}`, data)
+      .then(res => res.data),
 
   delete: (id: number | string) =>
-    httpClient.delete<void>(`/transactions/${id}`).then(() => undefined),
+    httpClient.delete<void>(`${API_ENDPOINTS.TRANSACTIONS}/${id}`).then(() => undefined),
 }
