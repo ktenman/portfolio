@@ -27,16 +27,16 @@ import java.util.*
 
 class TransactionServiceTest {
   private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
-
+  private lateinit var profitCalculationEngine: ProfitCalculationEngine
   private lateinit var transactionService: TransactionService
-
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setUp() {
     portfolioTransactionRepository = mockk()
-    transactionService = TransactionService(portfolioTransactionRepository, mockk(relaxed = true))
+    profitCalculationEngine = ProfitCalculationEngine()
+    transactionService = TransactionService(portfolioTransactionRepository, profitCalculationEngine, mockk(relaxed = true))
 
     testInstrument =
       Instrument(
