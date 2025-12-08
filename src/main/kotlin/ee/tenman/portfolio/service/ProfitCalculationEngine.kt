@@ -53,10 +53,11 @@ class ProfitCalculationEngine {
     transaction.unrealizedProfit = BigDecimal.ZERO
     transaction.remainingQuantity = BigDecimal.ZERO
     if (state.currentQuantity <= BigDecimal.ZERO) return state
-    val sellRatio = transaction.quantity.divide(state.currentQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
+    val effectiveQuantity = transaction.quantity.min(state.currentQuantity)
+    val sellRatio = effectiveQuantity.divide(state.currentQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
     return TransactionState(
       state.totalCost.multiply(BigDecimal.ONE.subtract(sellRatio)),
-      state.currentQuantity.subtract(transaction.quantity),
+      state.currentQuantity.subtract(effectiveQuantity),
     )
   }
 
