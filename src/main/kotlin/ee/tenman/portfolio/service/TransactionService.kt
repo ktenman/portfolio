@@ -46,21 +46,21 @@ class TransactionService(
       CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
     ],
   )
-  fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction {
-    try {
+  fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction =
+    runCatching {
       val saved = portfolioTransactionRepository.save(transaction)
       val relatedTransactions =
         portfolioTransactionRepository
           .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
       calculateTransactionProfits(relatedTransactions)
-      return portfolioTransactionRepository
+      portfolioTransactionRepository
         .saveAll(relatedTransactions)
         .find { it.id == saved.id }!!
-    } catch (e: ObjectOptimisticLockingFailureException) {
-      log.warn("Optimistic locking failure while saving transaction. Will retry.", e)
-      throw e
-    }
-  }
+    }.onFailure { e ->
+      if (e is ObjectOptimisticLockingFailureException) {
+        log.warn("Optimistic locking failure while saving transaction. Will retry.", e)
+      }
+    }.getOrThrow()
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   @Retryable(
@@ -74,14 +74,14 @@ class TransactionService(
       CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
     ],
   )
-  fun deleteTransaction(id: Long) {
-    try {
+  fun deleteTransaction(id: Long) =
+    runCatching {
       portfolioTransactionRepository.deleteById(id)
-    } catch (e: ObjectOptimisticLockingFailureException) {
-      log.warn("Optimistic locking failure while deleting transaction. Will retry.", e)
-      throw e
-    }
-  }
+    }.onFailure { e ->
+      if (e is ObjectOptimisticLockingFailureException) {
+        log.warn("Optimistic locking failure while deleting transaction. Will retry.", e)
+      }
+    }.getOrThrow()
 
   @Transactional(readOnly = true)
   fun getAllTransactions(): List<PortfolioTransaction> = transactionCacheService.getAllTransactions()
@@ -143,18 +143,18 @@ class TransactionService(
   fun calculateTransactionProfits(
     transactions: List<PortfolioTransaction>,
     currentPrice: BigDecimal = BigDecimal.ZERO,
-  ) {
-    try {
+  ) =
+    runCatching {
       transactions
         .groupBy { it.platform to it.instrument.id }
         .forEach { (_, platformTransactions) ->
           profitCalculationEngine.calculateProfitsForPlatform(platformTransactions, currentPrice)
         }
-    } catch (e: ObjectOptimisticLockingFailureException) {
-      log.warn("Optimistic locking failure while calculating profits. Will retry.", e)
-      throw e
-    }
-  }
+    }.onFailure { e ->
+      if (e is ObjectOptimisticLockingFailureException) {
+        log.warn("Optimistic locking failure while calculating profits. Will retry.", e)
+      }
+    }.getOrThrow()
 
   @Transactional(readOnly = true)
   fun getFullTransactionHistoryForProfitCalculation(
@@ -164,6 +164,7 @@ class TransactionService(
     if (filteredTransactions.isEmpty()) return emptyList()
     val instrumentIds = filteredTransactions.map { it.instrument.id }.distinct()
     val platformEnums = platforms?.mapNotNull { it.toPlatformOrNull() }
+    if (!platforms.isNullOrEmpty() && platformEnums.isNullOrEmpty()) return emptyList()
     return platformEnums
       ?.takeIf { it.isNotEmpty() }
       ?.let { portfolioTransactionRepository.findAllByPlatformsAndInstrumentIds(it, instrumentIds) }

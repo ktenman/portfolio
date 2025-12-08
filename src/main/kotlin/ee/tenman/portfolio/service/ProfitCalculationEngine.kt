@@ -52,7 +52,7 @@ class ProfitCalculationEngine {
         .subtract(transaction.commission)
     transaction.unrealizedProfit = BigDecimal.ZERO
     transaction.remainingQuantity = BigDecimal.ZERO
-    if (state.currentQuantity <= BigDecimal.ZERO) return state
+    if (state.currentQuantity.compareTo(BigDecimal.ZERO) <= 0) return state
     val effectiveQuantity = transaction.quantity.min(state.currentQuantity)
     val sellRatio = effectiveQuantity.divide(state.currentQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
     return TransactionState(
@@ -65,7 +65,7 @@ class ProfitCalculationEngine {
     passedPrice: BigDecimal,
     transactions: List<PortfolioTransaction>,
   ): BigDecimal =
-    passedPrice.takeIf { it > BigDecimal.ZERO }
+    passedPrice.takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
       ?: transactions.firstOrNull()?.instrument?.currentPrice
       ?: BigDecimal.ZERO
 
@@ -75,7 +75,7 @@ class ProfitCalculationEngine {
     currentPrice: BigDecimal,
   ) {
     val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
-    if (currentQuantity <= BigDecimal.ZERO) {
+    if (currentQuantity.compareTo(BigDecimal.ZERO) <= 0) {
       buyTransactions.forEach { it.setZeroUnrealizedMetrics() }
       return
     }
@@ -88,7 +88,7 @@ class ProfitCalculationEngine {
     currentPrice: BigDecimal,
   ) {
     val totalBuyQuantity = buyTransactions.sumOf { it.quantity }
-    if (totalBuyQuantity <= BigDecimal.ZERO) return
+    if (totalBuyQuantity.compareTo(BigDecimal.ZERO) <= 0) return
     buyTransactions.forEach { buyTx ->
       val proportionalQuantity =
         buyTx.quantity
@@ -97,7 +97,7 @@ class ProfitCalculationEngine {
       buyTx.remainingQuantity = proportionalQuantity
       buyTx.averageCost = buyTx.price
       buyTx.unrealizedProfit = currentPrice
-        .takeIf { it > BigDecimal.ZERO }
+        .takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
         ?.let { proportionalQuantity.multiply(it.subtract(buyTx.price)) }
         ?: BigDecimal.ZERO
     }
@@ -108,7 +108,7 @@ class ProfitCalculationEngine {
     quantity: BigDecimal,
   ): BigDecimal =
     quantity
-      .takeIf { it > BigDecimal.ZERO }
+      .takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
       ?.let { totalCost.divide(it, CALCULATION_SCALE, RoundingMode.HALF_UP) }
       ?: BigDecimal.ZERO
 
@@ -118,7 +118,7 @@ class ProfitCalculationEngine {
     avgCost: BigDecimal,
   ): BigDecimal =
     quantity
-      .takeIf { it > BigDecimal.ZERO && price > BigDecimal.ZERO }
+      .takeIf { it.compareTo(BigDecimal.ZERO) > 0 && price.compareTo(BigDecimal.ZERO) > 0 }
       ?.multiply(price.subtract(avgCost))
       ?: BigDecimal.ZERO
 

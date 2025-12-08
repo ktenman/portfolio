@@ -24,9 +24,11 @@ class EtfHoldingPersistenceService(
     holdingId: Long,
     sector: String,
   ) {
-    etfHoldingRepository.findById(holdingId).ifPresent { holding ->
-      holding.sector = sector
-      etfHoldingRepository.save(holding)
-    }
+    val holding =
+      etfHoldingRepository.findById(holdingId).orElseThrow {
+        IllegalStateException("EtfHolding not found with id=$holdingId")
+      }
+    holding.sector = sector
+    etfHoldingRepository.save(holding)
   }
 }

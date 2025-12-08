@@ -77,13 +77,17 @@ class EtfHoldingsClassificationJob(
       log.warn("Skipping holding with blank name: id=${holding.id}")
       return ClassificationOutcome.SKIPPED
     }
+    val holdingId = holding.id ?: run {
+      log.warn("Skipping holding with null id: name=${holding.name}")
+      return ClassificationOutcome.SKIPPED
+    }
     log.info("Classifying: ${holding.name}")
     val sector: IndustrySector? = industryClassificationService.classifyCompany(holding.name)
     if (sector == null) {
       log.warn("Classification returned null for: ${holding.name}")
       return ClassificationOutcome.FAILURE
     }
-    etfHoldingPersistenceService.updateSector(holding.id!!, sector.displayName)
+    etfHoldingPersistenceService.updateSector(holdingId, sector.displayName)
     log.info("Successfully classified '${holding.name}' as '${sector.displayName}'")
     return ClassificationOutcome.SUCCESS
   }

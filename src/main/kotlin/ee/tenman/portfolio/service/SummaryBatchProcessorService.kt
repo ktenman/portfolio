@@ -30,6 +30,7 @@ class SummaryBatchProcessorService(
           .onFailure { log.warn("Failed to calculate summary for $date: ${it.message}") }
           .getOrNull()
       }
-    return summaries.ifEmpty { return 0 }.let { summaryPersistenceService.saveSummaries(it) }
+    if (summaries.isEmpty()) return 0
+    return summaryPersistenceService.saveSummaries(summaries)
   }
 }
