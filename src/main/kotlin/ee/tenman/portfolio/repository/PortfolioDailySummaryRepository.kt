@@ -7,6 +7,8 @@ import java.time.LocalDate
 
 @Repository
 interface PortfolioDailySummaryRepository : JpaRepository<PortfolioDailySummary, Long> {
+  fun deleteByEntryDateNot(entryDate: LocalDate)
+
   fun findAllByEntryDateIn(dates: List<LocalDate>): List<PortfolioDailySummary>
 
   fun findAllByEntryDateBetween(
