@@ -143,8 +143,7 @@ class TransactionService(
   fun calculateTransactionProfits(
     transactions: List<PortfolioTransaction>,
     currentPrice: BigDecimal = BigDecimal.ZERO,
-  ) =
-    runCatching {
+  ) = runCatching {
       transactions
         .groupBy { it.platform to it.instrument.id }
         .forEach { (_, platformTransactions) ->
