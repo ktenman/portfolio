@@ -422,12 +422,12 @@ setup_e2e_environment() {
     
     print_success "Docker services are ready"
     
-    # Step 3: Start Spring Boot backend
+    # Step 3: Start Spring Boot backend (with scheduling disabled for E2E tests)
     print_info "Step 3: Starting Spring Boot backend..."
     if [ "$VERBOSE_MODE" = true ]; then
-        ./gradlew bootRun &
+        SCHEDULING_ENABLED=false ./gradlew bootRun &
     else
-        ./gradlew bootRun > backend.log 2>&1 &
+        SCHEDULING_ENABLED=false ./gradlew bootRun > backend.log 2>&1 &
     fi
     BACKEND_PID=$!
     
