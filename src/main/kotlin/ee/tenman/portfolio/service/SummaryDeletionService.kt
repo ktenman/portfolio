@@ -14,8 +14,7 @@ class SummaryDeletionService(
     val summariesToDelete =
       portfolioDailySummaryRepository
         .findAll()
-        .filterNot { it.entryDate == today }
-
+        .filterNot { it.entryDate.isEqual(today) }
     portfolioDailySummaryRepository.deleteAll(summariesToDelete)
     portfolioDailySummaryRepository.flush()
   }
