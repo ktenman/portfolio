@@ -653,6 +653,35 @@ When creating pull requests:
 - Use `also`, `apply`, `let`, `run`, `with` appropriately
 - Prefer functional transformations (`map`, `filter`, `fold`) over imperative loops
 - Use `generateSequence` instead of while loops with mutable state
+- Use `takeIf`/`takeUnless` with elvis operator instead of if-else for conditional returns
+
+#### Idiomatic Conditional Returns
+
+Use `takeIf` with `?.let` and `?:` instead of if-else blocks:
+
+```kotlin
+// ✅ CORRECT: Idiomatic Kotlin with takeIf (multiline expression on new line)
+fun calculateAverageCost(totalCost: BigDecimal, quantity: BigDecimal): BigDecimal =
+  quantity
+    .takeIf { it > BigDecimal.ZERO }
+    ?.let { totalCost.divide(it, 10, RoundingMode.HALF_UP) }
+    ?: BigDecimal.ZERO
+
+// ✅ CORRECT: Chain with multiple fallbacks
+fun determinePrice(passedPrice: BigDecimal, transactions: List<Transaction>): BigDecimal =
+  passedPrice
+    .takeIf { it > BigDecimal.ZERO }
+    ?: transactions.firstOrNull()?.instrument?.currentPrice
+    ?: BigDecimal.ZERO
+
+// ❌ WRONG: Verbose if-else blocks
+fun calculateAverageCost(totalCost: BigDecimal, quantity: BigDecimal): BigDecimal =
+  if (quantity > BigDecimal.ZERO) {
+    totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
+  } else {
+    BigDecimal.ZERO
+  }
+```
 
 ### Spring Framework Guidelines
 
