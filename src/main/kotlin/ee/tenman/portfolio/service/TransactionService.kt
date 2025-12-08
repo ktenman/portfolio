@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
-import org.springframework.context.annotation.Lazy
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
@@ -20,7 +19,7 @@ import java.math.BigDecimal
 class TransactionService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val profitCalculationEngine: ProfitCalculationEngine,
-  @Lazy private val self: TransactionService,
+  private val transactionCacheService: TransactionCacheService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -84,8 +83,7 @@ class TransactionService(
   }
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [TRANSACTION_CACHE], key = "'transactions'", unless = "#result.isEmpty()")
-  fun getAllTransactions(): List<PortfolioTransaction> = portfolioTransactionRepository.findAllWithInstruments()
+  fun getAllTransactions(): List<PortfolioTransaction> = transactionCacheService.getAllTransactions()
 
   @Transactional(readOnly = true)
   @Cacheable(
@@ -95,7 +93,7 @@ class TransactionService(
   )
   fun getAllTransactions(platforms: List<String>?): List<PortfolioTransaction> {
     if (platforms.isNullOrEmpty()) {
-      return self.getAllTransactions()
+      return transactionCacheService.getAllTransactions()
     }
 
     val platformEnums =
@@ -133,7 +131,7 @@ class TransactionService(
     val hasDates = fromDate != null || untilDate != null
 
     if (!hasPlatforms && !hasDates) {
-      return self.getAllTransactions()
+      return transactionCacheService.getAllTransactions()
     }
 
     val platformEnums =
@@ -166,7 +164,7 @@ class TransactionService(
       hasDates ->
         portfolioTransactionRepository.findAllByDateRangeWithInstruments(effectiveFromDate, effectiveUntilDate)
       else ->
-        self.getAllTransactions()
+        transactionCacheService.getAllTransactions()
     }
   }
 
