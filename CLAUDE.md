@@ -664,7 +664,7 @@ Use `takeIf` with `?.let` and `?:` instead of if-else blocks:
 fun calculateAverageCost(totalCost: BigDecimal, quantity: BigDecimal): BigDecimal =
   quantity
     .takeIf { it > BigDecimal.ZERO }
-    ?.let { totalCost.divide(it, 10, RoundingMode.HALF_UP) }
+    ?.let { totalCost.divide(it, CALCULATION_SCALE, RoundingMode.HALF_UP) }
     ?: BigDecimal.ZERO
 
 // ✅ CORRECT: Chain with multiple fallbacks
@@ -677,7 +677,7 @@ fun determinePrice(passedPrice: BigDecimal, transactions: List<Transaction>): Bi
 // ❌ WRONG: Verbose if-else blocks
 fun calculateAverageCost(totalCost: BigDecimal, quantity: BigDecimal): BigDecimal =
   if (quantity > BigDecimal.ZERO) {
-    totalCost.divide(quantity, 10, RoundingMode.HALF_UP)
+    totalCost.divide(quantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
   } else {
     BigDecimal.ZERO
   }

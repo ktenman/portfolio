@@ -21,3 +21,10 @@ ALTER TABLE portfolio_daily_summary
     ALTER COLUMN xirr_annual_return TYPE NUMERIC(22, 12),
     ALTER COLUMN total_profit TYPE NUMERIC(22, 12),
     ALTER COLUMN earnings_per_day TYPE NUMERIC(22, 12);
+
+-- daily_price table
+ALTER TABLE daily_price
+    ALTER COLUMN open_price TYPE NUMERIC(22, 12),
+    ALTER COLUMN high_price TYPE NUMERIC(22, 12),
+    ALTER COLUMN low_price TYPE NUMERIC(22, 12),
+    ALTER COLUMN close_price TYPE NUMERIC(22, 12);
