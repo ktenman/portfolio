@@ -41,7 +41,7 @@ class InstrumentSnapshotService(
     platforms: List<String>?,
     period: String?,
   ): List<InstrumentSnapshot> {
-    val instruments = instrumentRepository.findAll()
+    val instruments = instrumentRepository.findAll().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val context =
       InstrumentEnrichmentContext(
