@@ -42,11 +42,12 @@ class SummaryPersistenceServiceTest {
 
   @Test
   fun `should save multiple summaries and return correct count`() {
-    val summaries = listOf(
-      createSummary(LocalDate.of(2024, 1, 15)),
-      createSummary(LocalDate.of(2024, 1, 16)),
-      createSummary(LocalDate.of(2024, 1, 17)),
-    )
+    val summaries =
+      listOf(
+        createSummary(LocalDate.of(2024, 1, 15)),
+        createSummary(LocalDate.of(2024, 1, 16)),
+        createSummary(LocalDate.of(2024, 1, 17)),
+      )
     every { portfolioDailySummaryRepository.saveAll(summaries) } returns summaries
 
     val result = summaryPersistenceService.saveSummaries(summaries)
