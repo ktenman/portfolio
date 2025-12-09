@@ -252,11 +252,25 @@ jobs:
         with:
           fetch-depth: 1
       - name: Download backend JAR
-        if: matrix.name == 'backend'
+        if: matrix.name == 'backend' && github.event_name != 'workflow_dispatch'
         uses: actions/download-artifact@v6
         with:
           name: backend-jar
           path: build/libs/
+      - name: Set up JDK 21 (for workflow_dispatch)
+        if: matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
+        uses: actions/setup-java@v5.0.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Gradle (for workflow_dispatch)
+        if: matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
+        uses: gradle/actions/setup-gradle@v5.0.0
+        with:
+          gradle-home-cache-cleanup: true
+      - name: Build JAR (for workflow_dispatch)
+        if: matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
+        run: ./gradlew bootJar --build-cache
       - name: Set build info
         id: build_info
         run: |
