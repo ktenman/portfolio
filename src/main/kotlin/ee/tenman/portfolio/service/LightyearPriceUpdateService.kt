@@ -41,8 +41,7 @@ class LightyearPriceUpdateService(
     price: BigDecimal,
     symbol: String,
   ) {
-    instrument.currentPrice = price
-    instrumentService.saveInstrument(instrument)
+    instrumentService.updateCurrentPrice(instrument.id, price)
     log.debug("Updated current price for {}: {}", symbol, price)
   }
 

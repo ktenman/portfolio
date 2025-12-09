@@ -26,8 +26,7 @@ class Trading212PriceUpdateService(
   ): ProcessResult =
     runCatching {
       val instrument = instrumentService.findBySymbol(symbol)
-      instrument.currentPrice = price
-      instrumentService.saveInstrument(instrument)
+      instrumentService.updateCurrentPrice(instrument.id, price)
       log.debug("Updated current price for {}: {}", symbol, price)
       if (isWeekend) return@runCatching ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
       val dailyPrice =

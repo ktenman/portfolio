@@ -56,7 +56,6 @@ class DataProcessingUtil(
   private fun updateInstrumentPrice(instrument: Instrument) {
     val currentDate = LocalDate.now(clock)
     val dailyPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)
-    instrument.currentPrice = dailyPrice?.closePrice
-    instrumentService.saveInstrument(instrument)
+    instrumentService.updateCurrentPrice(instrument.id, dailyPrice?.closePrice)
   }
 }
