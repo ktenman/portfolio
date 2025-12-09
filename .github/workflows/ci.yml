@@ -358,7 +358,7 @@ jobs:
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
     needs: [test, build-push]
-    if: always() && (needs.test.result == 'success' && needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main')
+    if: always() && needs.build-push.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       deployments: write
