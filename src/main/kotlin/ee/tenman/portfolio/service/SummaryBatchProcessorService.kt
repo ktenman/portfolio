@@ -26,6 +26,7 @@ class SummaryBatchProcessorService(
     batch: List<LocalDate>,
     summaryCalculator: (LocalDate) -> PortfolioDailySummary,
   ): Int {
+    entityManager.clear()
     val summaries =
       batch.mapNotNull { date ->
         runCatching { summaryCalculator(date) }
@@ -33,8 +34,6 @@ class SummaryBatchProcessorService(
           .getOrNull()
       }
     if (summaries.isEmpty()) return 0
-    val saved = summaryPersistenceService.saveSummaries(summaries)
-    entityManager.clear()
-    return saved
+    return summaryPersistenceService.saveSummaries(summaries)
   }
 }
