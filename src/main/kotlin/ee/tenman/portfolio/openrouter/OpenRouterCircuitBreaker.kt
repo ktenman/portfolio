@@ -89,6 +89,13 @@ class OpenRouterCircuitBreaker(
 
   fun tryAcquireFallback(): Boolean = tryAcquireWithRateLimit(lastFallbackRequestTime, fallbackRateLimitMs(), "Fallback")
 
+  fun getWaitTimeMs(isUsingFallback: Boolean): Long {
+    val lastRequestTime = if (isUsingFallback) lastFallbackRequestTime else lastPrimaryRequestTime
+    val rateLimitMs = if (isUsingFallback) fallbackRateLimitMs() else primaryRateLimitMs()
+    val elapsed = clock.millis() - lastRequestTime.get()
+    return maxOf(0, rateLimitMs - elapsed)
+  }
+
   private fun primaryRateLimitMs(): Long = MILLISECONDS_PER_MINUTE / primaryModel.rateLimitPerMinute
 
   private fun fallbackRateLimitMs(): Long = MILLISECONDS_PER_MINUTE / fallbackModel.rateLimitPerMinute
