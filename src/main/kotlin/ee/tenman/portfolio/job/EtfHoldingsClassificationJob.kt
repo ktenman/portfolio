@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.model.ClassificationOutcome
 import ee.tenman.portfolio.model.ClassificationResult
+import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.IndustryClassificationService
 import ee.tenman.portfolio.service.JobExecutionService
@@ -14,8 +15,14 @@ class EtfHoldingsClassificationJob(
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService,
   private val industryClassificationService: IndustryClassificationService,
   private val jobExecutionService: JobExecutionService,
+  private val circuitBreaker: OpenRouterCircuitBreaker,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
+
+  companion object {
+    private const val PROGRESS_LOG_INTERVAL = 50
+    private const val RATE_LIMIT_BUFFER_MS = 100L
+  }
 
   @Scheduled(initialDelay = 180000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * *}")
@@ -39,18 +46,26 @@ class EtfHoldingsClassificationJob(
     )
   }
 
-  private fun processHoldings(holdingIds: List<Long>): ClassificationResult =
-    holdingIds
-      .map { classifyHolding(it) }
-      .groupingBy { it }
-      .eachCount()
-      .let { counts ->
-        ClassificationResult(
-          success = counts[ClassificationOutcome.SUCCESS] ?: 0,
-          failure = counts[ClassificationOutcome.FAILURE] ?: 0,
-          skipped = counts[ClassificationOutcome.SKIPPED] ?: 0,
-        )
+  private fun processHoldings(holdingIds: List<Long>): ClassificationResult {
+    var successCount = 0
+    var failureCount = 0
+    var skippedCount = 0
+    holdingIds.forEachIndexed { index, holdingId ->
+      val waitTime = circuitBreaker.getWaitTimeMs(circuitBreaker.isUsingFallback())
+      if (waitTime > 0) {
+        Thread.sleep(waitTime + RATE_LIMIT_BUFFER_MS)
       }
+      when (classifyHolding(holdingId)) {
+        ClassificationOutcome.SUCCESS -> successCount++
+        ClassificationOutcome.FAILURE -> failureCount++
+        ClassificationOutcome.SKIPPED -> skippedCount++
+      }
+      if ((index + 1) % PROGRESS_LOG_INTERVAL == 0) {
+        log.info("Progress: ${index + 1}/${holdingIds.size} processed")
+      }
+    }
+    return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedCount)
+  }
 
   private fun classifyHolding(holdingId: Long): ClassificationOutcome =
     runCatching {
