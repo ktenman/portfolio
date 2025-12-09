@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import jakarta.persistence.EntityManager
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -8,6 +9,7 @@ import java.time.LocalDate
 @Service
 class SummaryBatchProcessorService(
   private val summaryPersistenceService: SummaryPersistenceService,
+  private val entityManager: EntityManager,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -31,6 +33,8 @@ class SummaryBatchProcessorService(
           .getOrNull()
       }
     if (summaries.isEmpty()) return 0
-    return summaryPersistenceService.saveSummaries(summaries)
+    val saved = summaryPersistenceService.saveSummaries(summaries)
+    entityManager.clear()
+    return saved
   }
 }
