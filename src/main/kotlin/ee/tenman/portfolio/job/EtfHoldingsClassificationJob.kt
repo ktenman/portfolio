@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.EtfHolding
-import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.model.ClassificationOutcome
 import ee.tenman.portfolio.model.ClassificationResult
 import ee.tenman.portfolio.service.EtfHoldingPersistenceService
@@ -74,13 +73,13 @@ class EtfHoldingsClassificationJob(
         return ClassificationOutcome.SKIPPED
       }
     log.info("Classifying: ${holding.name}")
-    val sector: IndustrySector? = industryClassificationService.classifyCompany(holding.name)
-    if (sector == null) {
-      log.warn("Classification returned null for: ${holding.name}")
-      return ClassificationOutcome.FAILURE
-    }
-    etfHoldingPersistenceService.updateSector(holdingId, sector.displayName)
-    log.info("Successfully classified '${holding.name}' as '${sector.displayName}'")
+    val result =
+      industryClassificationService.classifyCompanyWithModel(holding.name) ?: run {
+        log.warn("Classification returned null for: ${holding.name}")
+        return ClassificationOutcome.FAILURE
+      }
+    etfHoldingPersistenceService.updateSector(holdingId, result.sector.displayName, result.model)
+    log.info("Successfully classified '${holding.name}' as '${result.sector.displayName}' using model ${result.model}")
     return ClassificationOutcome.SUCCESS
   }
 }

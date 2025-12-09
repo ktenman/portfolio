@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import org.springframework.stereotype.Service
@@ -23,12 +24,14 @@ class EtfHoldingPersistenceService(
   fun updateSector(
     holdingId: Long,
     sector: String,
+    classifiedByModel: AiModel? = null,
   ) {
     val holding =
       etfHoldingRepository.findById(holdingId).orElseThrow {
         IllegalStateException("EtfHolding not found with id=$holdingId")
       }
     holding.sector = sector
+    holding.classifiedByModel = classifiedByModel
     etfHoldingRepository.save(holding)
   }
 }

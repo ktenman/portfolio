@@ -58,3 +58,6 @@ keycloak-data/
 
 ### PlantUML ###
 plantuml*.jar
+
+### macOS ###
+.DS_Store
