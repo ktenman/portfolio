@@ -104,7 +104,11 @@ class LightyearHoldingsService(
       parsedData.nameParts
         .getOrNull(1)
         ?.removePrefix("$")
+        ?.removePrefix("€")
+        ?.removePrefix("£")
+        ?.substringBefore("·")
         ?.trim()
+        ?.takeIf { it.isNotBlank() }
         .takeUnless { isNotAvailable }
 
     val sector = parsedData.nameParts.getOrNull(2).takeUnless { isNotAvailable }

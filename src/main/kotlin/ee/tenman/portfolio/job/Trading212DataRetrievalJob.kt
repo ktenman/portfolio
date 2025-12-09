@@ -6,21 +6,14 @@ import ee.tenman.portfolio.service.PriceUpdateProcessor
 import ee.tenman.portfolio.service.Trading212PriceUpdateService
 import ee.tenman.portfolio.trading212.Trading212Service
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-@Component
-@ConditionalOnProperty(
-  name = ["scheduling.enabled", "scheduling.jobs.trading212-enabled"],
-  havingValue = "true",
-  matchIfMissing = false,
-)
+@ScheduledJob
 class Trading212DataRetrievalJob(
   private val jobExecutionService: JobExecutionService,
   private val trading212Service: Trading212Service,
