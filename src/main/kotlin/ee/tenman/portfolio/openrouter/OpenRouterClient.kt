@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.openrouter
 
+import ee.tenman.portfolio.domain.AiModel
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Component
 class OpenRouterClient(
   private val openRouterFeignClient: OpenRouterFeignClient,
   private val openRouterProperties: OpenRouterProperties,
+  private val circuitBreaker: OpenRouterCircuitBreaker,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -14,36 +16,61 @@ class OpenRouterClient(
     prompt: String,
     maxTokens: Int = 500,
     temperature: Double = 0.1,
-  ): String? {
+  ): String? = classifyWithModel(prompt, maxTokens, temperature)?.content
+
+  fun classifyWithModel(
+    prompt: String,
+    maxTokens: Int = 500,
+    temperature: Double = 0.1,
+  ): OpenRouterClassificationResult? = executeWithSelection(circuitBreaker.selectModel(), prompt, maxTokens, temperature)
+
+  fun classifyWithFallback(
+    prompt: String,
+    maxTokens: Int = 500,
+    temperature: Double = 0.1,
+  ): OpenRouterClassificationResult? = executeWithSelection(circuitBreaker.selectFallbackModel(), prompt, maxTokens, temperature)
+
+  private fun executeWithSelection(
+    selection: ModelSelection,
+    prompt: String,
+    maxTokens: Int,
+    temperature: Double,
+  ): OpenRouterClassificationResult? {
     if (openRouterProperties.apiKey.isBlank()) {
       log.warn("OpenRouter API key is not configured")
       return null
     }
+    if (!circuitBreaker.tryAcquireRateLimit(selection.isUsingFallback)) {
+      val modelType = if (selection.isUsingFallback) "fallback" else "primary"
+      log.warn("Rate limit exceeded for {} model, skipping request", modelType)
+      return null
+    }
+    return executeRequest(selection, prompt, maxTokens, temperature)
+  }
 
+  private fun executeRequest(
+    selection: ModelSelection,
+    prompt: String,
+    maxTokens: Int,
+    temperature: Double,
+  ): OpenRouterClassificationResult? {
     val request =
       OpenRouterRequest(
-        model = openRouterProperties.model,
-        messages =
-          listOf(
-            OpenRouterRequest.Message(
-              role = "user",
-              content = prompt,
-            ),
-          ),
+        model = selection.modelId,
+        messages = listOf(OpenRouterRequest.Message(role = "user", content = prompt)),
         maxTokens = maxTokens,
         temperature = temperature,
       )
-
-    return try {
-      log.info("Calling OpenRouter API with model: {}", openRouterProperties.model)
+    return runCatching {
+      log.info("Calling OpenRouter API with model: {} (fallback: {})", selection.modelId, selection.isUsingFallback)
       val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
-      log.info("Raw OpenRouter response: choices={}, choices.size={}", response.choices, response.choices?.size)
       val content = response.extractContent()
-      log.info("Extracted content: '{}'", content)
-      content
-    } catch (e: Exception) {
-      log.error("Error calling OpenRouter API: {}", e.message, e)
-      null
-    }
+      log.info("OpenRouter response successful, content: '{}'", content)
+      circuitBreaker.recordSuccess()
+      OpenRouterClassificationResult(content = content, model = AiModel.fromModelId(selection.modelId))
+    }.onFailure { throwable ->
+      log.error("Error calling OpenRouter API with model {}: {}", selection.modelId, throwable.message, throwable)
+      circuitBreaker.recordFailure(throwable)
+    }.getOrNull()
   }
 }
