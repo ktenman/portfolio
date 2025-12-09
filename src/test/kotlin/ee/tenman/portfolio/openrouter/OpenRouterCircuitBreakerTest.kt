@@ -183,6 +183,37 @@ class OpenRouterCircuitBreakerTest {
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.CLOSED)
   }
 
+  @Test
+  fun `should return zero wait time when no previous request`() {
+    expect(circuitBreaker.getWaitTimeMs(isUsingFallback = false)).toEqual(0L)
+  }
+
+  @Test
+  fun `should return remaining wait time after primary request`() {
+    circuitBreaker.tryAcquirePrimary()
+    val waitTime = circuitBreaker.getWaitTimeMs(isUsingFallback = false)
+    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_3_HAIKU.rateLimitPerMinute
+    expect(waitTime).toEqual(expectedMs)
+  }
+
+  @Test
+  fun `should return zero wait time after rate limit period elapsed`() {
+    circuitBreaker.tryAcquirePrimary()
+    clock.advance(PRIMARY_RATE_LIMIT_INTERVAL_MS)
+    expect(circuitBreaker.getWaitTimeMs(isUsingFallback = false)).toEqual(0L)
+  }
+
+  @Test
+  fun `should return remaining wait time for fallback model`() {
+    repeat(3) {
+      circuitBreaker.recordFailure(Exception("API error"))
+    }
+    circuitBreaker.tryAcquireFallback()
+    val waitTime = circuitBreaker.getWaitTimeMs(isUsingFallback = true)
+    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_HAIKU_4_5.rateLimitPerMinute
+    expect(waitTime).toEqual(expectedMs)
+  }
+
   private class MutableClock(
     private var instant: Instant,
   ) : Clock() {
