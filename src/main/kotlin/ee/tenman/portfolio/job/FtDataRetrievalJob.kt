@@ -6,16 +6,13 @@ import ee.tenman.portfolio.service.InstrumentService
 import ee.tenman.portfolio.service.JobExecutionService
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
-@Component
-@ConditionalOnProperty(name = ["ft.job.enabled"], havingValue = "true", matchIfMissing = false)
+@ScheduledJob
 class FtDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val historicalPricesService: HistoricalPricesService,
