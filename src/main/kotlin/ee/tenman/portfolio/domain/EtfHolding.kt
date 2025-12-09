@@ -2,6 +2,8 @@ package ee.tenman.portfolio.domain
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 
@@ -19,4 +21,7 @@ class EtfHolding(
   var name: String,
   @Column(length = 150)
   var sector: String? = null,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "classified_by_model", length = 100)
+  var classifiedByModel: AiModel? = null,
 ) : BaseEntity()

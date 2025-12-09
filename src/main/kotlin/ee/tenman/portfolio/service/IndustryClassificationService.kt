@@ -14,23 +14,31 @@ class IndustryClassificationService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun classifyCompany(companyName: String): IndustrySector? {
+  fun classifyCompany(companyName: String): IndustrySector? = classifyCompanyWithModel(companyName)?.sector
+
+  fun classifyCompanyWithModel(companyName: String): SectorClassificationResult? {
     log.info("Classifying company: {}", LogSanitizerUtil.sanitize(companyName))
     if (!properties.enabled || companyName.isBlank()) {
       log.warn("Classification disabled or blank company name")
       return null
     }
+    return classifyWithOpenRouter(companyName)
+  }
 
-    val prompt = buildPrompt(companyName)
-    val response = openRouterClient.classify(prompt)
-    if (response == null) {
+  private fun classifyWithOpenRouter(companyName: String): SectorClassificationResult? {
+    val response = openRouterClient.classifyWithModel(buildPrompt(companyName))
+    val content = response?.content
+    if (content == null) {
       log.warn("No response from OpenRouter for company: {}", LogSanitizerUtil.sanitize(companyName))
       return null
     }
-
-    val sector = IndustrySector.fromDisplayName(response)
-    log.info("Classified {} as {}", LogSanitizerUtil.sanitize(companyName), sector?.displayName ?: "UNKNOWN")
-    return sector
+    val sector = IndustrySector.fromDisplayName(content)
+    if (sector == null) {
+      log.warn("Unknown sector from response: {}", content)
+      return null
+    }
+    log.info("Classified {} as {} using model {}", LogSanitizerUtil.sanitize(companyName), sector.displayName, response.model)
+    return SectorClassificationResult(sector = sector, model = response.model)
   }
 
   private fun buildPrompt(companyName: String): String =
