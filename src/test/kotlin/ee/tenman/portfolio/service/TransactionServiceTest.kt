@@ -27,16 +27,18 @@ import java.util.*
 
 class TransactionServiceTest {
   private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
-
+  private lateinit var profitCalculationEngine: ProfitCalculationEngine
+  private lateinit var transactionCacheService: TransactionCacheService
   private lateinit var transactionService: TransactionService
-
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setUp() {
     portfolioTransactionRepository = mockk()
-    transactionService = TransactionService(portfolioTransactionRepository, mockk(relaxed = true))
+    profitCalculationEngine = ProfitCalculationEngine()
+    transactionCacheService = mockk()
+    transactionService = TransactionService(portfolioTransactionRepository, profitCalculationEngine, transactionCacheService)
 
     testInstrument =
       Instrument(
@@ -284,12 +286,12 @@ class TransactionServiceTest {
         createBuyTransaction(quantity = BigDecimal("10"), price = BigDecimal("100")),
       )
 
-    every { portfolioTransactionRepository.findAllWithInstruments() } returns transactions
+    every { transactionCacheService.getAllTransactions() } returns transactions
 
     val result = transactionService.getAllTransactions()
 
     expect(result).toHaveSize(1)
-    verify { portfolioTransactionRepository.findAllWithInstruments() }
+    verify { transactionCacheService.getAllTransactions() }
   }
 
   @Test

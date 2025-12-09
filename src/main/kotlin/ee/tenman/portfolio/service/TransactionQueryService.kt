@@ -44,10 +44,9 @@ class TransactionQueryService(
     isDateFiltered: Boolean,
   ) {
     if (transactions.isEmpty()) return
-    if (isDateFiltered) {
-      calculateProfitsWithFullHistory(transactions, platforms)
-    } else {
-      transactionService.calculateTransactionProfits(transactions)
+    when {
+      isDateFiltered -> calculateProfitsWithFullHistory(transactions, platforms)
+      else -> transactionService.calculateTransactionProfits(transactions)
     }
   }
 
@@ -96,6 +95,9 @@ class TransactionQueryService(
   private fun calculateTotalInvested(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions.sumOf { transaction ->
       val transactionCost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
-      if (transaction.transactionType == TransactionType.BUY) transactionCost else transactionCost.negate()
+      when (transaction.transactionType) {
+        TransactionType.BUY -> transactionCost
+        TransactionType.SELL -> transactionCost.negate()
+      }
     }
 }

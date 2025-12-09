@@ -7,21 +7,14 @@ import ee.tenman.portfolio.service.LightyearPriceUpdateService
 import ee.tenman.portfolio.service.PriceUpdateProcessor
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-@Component
-@ConditionalOnProperty(
-  name = ["scheduling.enabled", "scheduling.jobs.lightyear-price-enabled"],
-  havingValue = "true",
-  matchIfMissing = false,
-)
+@ScheduledJob
 class LightyearPriceRetrievalJob(
   private val jobExecutionService: JobExecutionService,
   private val lightyearPriceService: LightyearPriceService,

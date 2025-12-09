@@ -14,7 +14,6 @@ import java.time.Instant
 class JobTransactionService(
   private val jobExecutionRepository: JobExecutionRepository,
 ) {
-  @Transactional
   fun executeJobInTransaction(job: Job) {
     job.execute()
   }

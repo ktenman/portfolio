@@ -8,6 +8,7 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 
 @Service
 class InstrumentService(
@@ -58,4 +59,19 @@ class InstrumentService(
     platforms: List<String>?,
     period: String?,
   ): List<InstrumentSnapshot> = instrumentSnapshotService.getAllSnapshots(platforms, period)
+
+  @Transactional
+  fun updateCurrentPrice(
+    instrumentId: Long,
+    price: BigDecimal?,
+  ) {
+    instrumentRepository.updateCurrentPrice(instrumentId, price)
+    val instrument = instrumentRepository.findById(instrumentId).orElse(null)
+    if (instrument != null) {
+      transactionProfitService.recalculateProfitsForInstrument(instrumentId)
+      cacheInvalidationService.evictAllRelatedCaches(instrumentId, instrument.symbol)
+    } else {
+      cacheInvalidationService.evictInstrumentCaches(instrumentId, null)
+    }
+  }
 }

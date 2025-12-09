@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.InstrumentEnrichmentContext
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.InstrumentSnapshot
 import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -40,7 +41,7 @@ class InstrumentSnapshotService(
     platforms: List<String>?,
     period: String?,
   ): List<InstrumentSnapshot> {
-    val instruments = instrumentRepository.findAll()
+    val instruments = instrumentRepository.findAll().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val context =
       InstrumentEnrichmentContext(
@@ -135,12 +136,12 @@ class InstrumentSnapshotService(
       buyTransactions.sumOf { transaction ->
         transaction.price.multiply(transaction.quantity).add(transaction.commission)
       }
-    val weightedAveragePurchasePrice = totalCost.divide(totalQuantity, 10, RoundingMode.HALF_UP)
+    val weightedAveragePurchasePrice = totalCost.divide(totalQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
     if (weightedAveragePurchasePrice.compareTo(BigDecimal.ZERO) == 0) return null
     val changeAmount = currentPrice.subtract(weightedAveragePurchasePrice)
     val changePercent =
       changeAmount
-        .divide(weightedAveragePurchasePrice, 10, RoundingMode.HALF_UP)
+        .divide(weightedAveragePurchasePrice, CALCULATION_SCALE, RoundingMode.HALF_UP)
         .multiply(BigDecimal(100))
         .toDouble()
     return PriceChange(changeAmount, changePercent)

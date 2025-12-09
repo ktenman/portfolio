@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service
 
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.holding.HoldingsAccumulator
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -22,7 +23,7 @@ class HoldingsCalculationService {
     val averageCost =
       quantity
         .takeIf { it > BigDecimal.ZERO }
-        ?.let { totalCost.divide(it, 10, RoundingMode.HALF_UP) }
+        ?.let { totalCost.divide(it, CALCULATION_SCALE, RoundingMode.HALF_UP) }
         ?: BigDecimal.ZERO
     return quantity to averageCost
   }

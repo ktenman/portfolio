@@ -11,12 +11,7 @@ class SummaryDeletionService(
 ) {
   @Transactional
   fun deleteHistoricalSummaries(today: LocalDate) {
-    val summariesToDelete =
-      portfolioDailySummaryRepository
-        .findAll()
-        .filterNot { it.entryDate == today }
-
-    portfolioDailySummaryRepository.deleteAll(summariesToDelete)
+    portfolioDailySummaryRepository.deleteByEntryDateNot(today)
     portfolioDailySummaryRepository.flush()
   }
 }

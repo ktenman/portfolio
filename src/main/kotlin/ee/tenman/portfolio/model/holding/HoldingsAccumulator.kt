@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.model.holding
 
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -15,7 +16,7 @@ data class HoldingsAccumulator(
 
   fun applySell(tx: PortfolioTransaction): HoldingsAccumulator {
     if (quantity <= BigDecimal.ZERO) return this
-    val sellRatio = tx.quantity.divide(quantity, 10, RoundingMode.HALF_UP)
+    val sellRatio = tx.quantity.divide(quantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
     return copy(
       quantity = quantity.subtract(tx.quantity),
       totalCost = totalCost.multiply(BigDecimal.ONE.subtract(sellRatio)),

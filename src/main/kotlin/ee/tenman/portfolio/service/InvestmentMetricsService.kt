@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import org.slf4j.LoggerFactory
@@ -191,7 +192,7 @@ class InvestmentMetricsService(
     if (totalSells <= BigDecimal.ZERO || totalBuys <= BigDecimal.ZERO || buyQuantity <= BigDecimal.ZERO) {
       return BigDecimal.ZERO
     }
-    val avgBuyPrice = totalBuys.divide(buyQuantity, 10, RoundingMode.HALF_UP)
+    val avgBuyPrice = totalBuys.divide(buyQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
     return totalSells.subtract(avgBuyPrice.multiply(sellQuantity))
   }
 
@@ -213,7 +214,7 @@ class InvestmentMetricsService(
         .filter { it.transactionType == TransactionType.BUY }
         .sumOf { it.quantity }
     if (buyQuantity <= BigDecimal.ZERO) return BigDecimal.ZERO
-    val avgBuyPrice = totalBuys.divide(buyQuantity, 10, RoundingMode.HALF_UP)
+    val avgBuyPrice = totalBuys.divide(buyQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
     return transactions
       .filter { it.transactionType == TransactionType.SELL }
       .sumOf { avgBuyPrice.multiply(it.quantity) }

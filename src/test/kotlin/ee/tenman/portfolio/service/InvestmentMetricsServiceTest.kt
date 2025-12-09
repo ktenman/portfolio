@@ -16,6 +16,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.service.xirr.Transaction
 import io.mockk.every
@@ -106,7 +107,7 @@ class InvestmentMetricsServiceTest {
         .multiply(BigDecimal("100"))
         .add(BigDecimal("5"))
       .add(BigDecimal("5").multiply(BigDecimal("120")).add(BigDecimal("5")))
-    val expectedAvgCost = expectedTotalCost.divide(BigDecimal("15"), 10, RoundingMode.HALF_UP)
+    val expectedAvgCost = expectedTotalCost.divide(BigDecimal("15"), CALCULATION_SCALE, RoundingMode.HALF_UP)
     expect(averageCost).toEqualNumerically(expectedAvgCost)
   }
 

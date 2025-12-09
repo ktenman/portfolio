@@ -6,14 +6,11 @@ import ee.tenman.portfolio.service.EtfHoldingsService
 import ee.tenman.portfolio.service.JobTransactionService
 import ee.tenman.portfolio.service.LightyearScraperService
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
 
-@Component
-@ConditionalOnProperty(name = ["scheduling.enabled"], havingValue = "true", matchIfMissing = true)
+@ScheduledJob
 class LightyearDataFetchJob(
   private val jobTransactionService: JobTransactionService,
   private val properties: LightyearScrapingProperties,

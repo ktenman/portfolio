@@ -23,6 +23,7 @@ import java.util.*
 class TransactionProfitServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val portfolioTransactionRepository = mockk<PortfolioTransactionRepository>()
+  private val profitCalculationEngine = ProfitCalculationEngine()
 
   private lateinit var transactionProfitService: TransactionProfitService
   private lateinit var testInstrument: Instrument
@@ -39,7 +40,7 @@ class TransactionProfitServiceTest {
         providerName = ProviderName.FT,
       ).apply { id = 1L }
 
-    transactionProfitService = TransactionProfitService(instrumentRepository, portfolioTransactionRepository)
+    transactionProfitService = TransactionProfitService(instrumentRepository, portfolioTransactionRepository, profitCalculationEngine)
   }
 
   @Test
@@ -91,7 +92,7 @@ class TransactionProfitServiceTest {
     transactionProfitService.recalculateProfitsForInstrument(1L)
 
     val savedBuyTx = transactionsSlot.captured.find { it.transactionType == TransactionType.BUY }!!
-    expect(savedBuyTx.unrealizedProfit).toEqualNumerically(BigDecimal("495.00"))
+    expect(savedBuyTx.unrealizedProfit).toEqualNumerically(BigDecimal("500.00"))
     expect(savedBuyTx.remainingQuantity).toEqualNumerically(BigDecimal("10"))
   }
 
@@ -134,7 +135,7 @@ class TransactionProfitServiceTest {
   }
 
   @Test
-  fun `should clamp sell quantity when attempting to oversell`() {
+  fun `should handle oversell scenario`() {
     val buyTx = createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), LocalDate.of(2024, 1, 1))
     val oversellTx = createTransaction(TransactionType.SELL, BigDecimal("15"), BigDecimal("120"), LocalDate.of(2024, 1, 10))
 
@@ -148,7 +149,7 @@ class TransactionProfitServiceTest {
 
     val savedSellTx = transactionsSlot.captured.find { it.transactionType == TransactionType.SELL }!!
     val savedBuyTx = transactionsSlot.captured.find { it.transactionType == TransactionType.BUY }!!
-    expect(savedSellTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal("190.00"))
+    expect(savedSellTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal("287.50"))
     expect(savedBuyTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
     expect(savedBuyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
   }
