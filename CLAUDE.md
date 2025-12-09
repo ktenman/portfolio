@@ -620,6 +620,18 @@ When creating pull requests:
 - Include a Test plan section with checkboxes
 - Reference related issues with "Closes #XXX" or "Fixes #XXX"
 
+## Git Branching Strategy
+
+When working on features or bug fixes:
+
+1. **Always create a branch from the related GitHub issue** when possible
+   - Use format: `feature/<issue-number>-<short-description>` (e.g., `feature/1035-circuit-breaker-openrouter`)
+   - For bug fixes: `fix/<issue-number>-<short-description>`
+2. **Never commit directly to main** for non-trivial changes
+3. **Create PRs that reference the issue** with "Closes #XXX" or "Fixes #XXX"
+4. **If CI fails on main**, reset main to the last good commit and move failing changes to a feature branch
+5. **Squash related commits** when moving work to a feature branch to keep history clean
+
 ## Kotlin/Backend Design Principles
 
 ### Method and Class Design
