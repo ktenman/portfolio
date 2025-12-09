@@ -22,53 +22,47 @@ class OpenRouterClient(
     prompt: String,
     maxTokens: Int = 500,
     temperature: Double = 0.1,
-  ): OpenRouterClassificationResult? {
-    if (openRouterProperties.apiKey.isBlank()) {
-      log.warn("OpenRouter API key is not configured")
-      return null
-    }
-    val selection = circuitBreaker.selectModel()
-    return classifyWithSelection(prompt, selection, maxTokens, temperature)
-  }
+  ): OpenRouterClassificationResult? =
+    executeWithSelection(circuitBreaker.selectModel(), prompt, maxTokens, temperature)
 
   fun classifyWithFallback(
     prompt: String,
     maxTokens: Int = 500,
     temperature: Double = 0.1,
+  ): OpenRouterClassificationResult? =
+    executeWithSelection(circuitBreaker.selectFallbackModel(), prompt, maxTokens, temperature)
+
+  private fun executeWithSelection(
+    selection: ModelSelection,
+    prompt: String,
+    maxTokens: Int,
+    temperature: Double,
   ): OpenRouterClassificationResult? {
     if (openRouterProperties.apiKey.isBlank()) {
       log.warn("OpenRouter API key is not configured")
       return null
     }
-    val selection = circuitBreaker.selectFallbackModel()
-    return classifyWithSelection(prompt, selection, maxTokens, temperature)
-  }
-
-  private fun classifyWithSelection(
-    prompt: String,
-    selection: ModelSelection,
-    maxTokens: Int,
-    temperature: Double,
-  ): OpenRouterClassificationResult? {
     if (!circuitBreaker.tryAcquireRateLimit(selection.isUsingFallback)) {
-      log.warn("Rate limit exceeded for {} model, skipping request", if (selection.isUsingFallback) "fallback" else "primary")
+      val modelType = if (selection.isUsingFallback) "fallback" else "primary"
+      log.warn("Rate limit exceeded for {} model, skipping request", modelType)
       return null
     }
-    val request =
-      OpenRouterRequest(
-        model = selection.modelId,
-        messages = listOf(OpenRouterRequest.Message(role = "user", content = prompt)),
-        maxTokens = maxTokens,
-        temperature = temperature,
-      )
-    return executeRequest(request, selection)
+    return executeRequest(selection, prompt, maxTokens, temperature)
   }
 
   private fun executeRequest(
-    request: OpenRouterRequest,
     selection: ModelSelection,
-  ): OpenRouterClassificationResult? =
-    runCatching {
+    prompt: String,
+    maxTokens: Int,
+    temperature: Double,
+  ): OpenRouterClassificationResult? {
+    val request = OpenRouterRequest(
+      model = selection.modelId,
+      messages = listOf(OpenRouterRequest.Message(role = "user", content = prompt)),
+      maxTokens = maxTokens,
+      temperature = temperature,
+    )
+    return runCatching {
       log.info("Calling OpenRouter API with model: {} (fallback: {})", selection.modelId, selection.isUsingFallback)
       val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
       val content = response.extractContent()
@@ -79,4 +73,5 @@ class OpenRouterClient(
       log.error("Error calling OpenRouter API with model {}: {}", selection.modelId, throwable.message, throwable)
       circuitBreaker.recordFailure(throwable)
     }.getOrNull()
+  }
 }

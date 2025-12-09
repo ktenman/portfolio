@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.IndustrySector
+import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
@@ -18,66 +19,62 @@ class IndustryClassificationService(
   fun classifyCompany(companyName: String): IndustrySector? = classifyCompanyWithModel(companyName)?.sector
 
   fun classifyCompanyWithModel(companyName: String): SectorClassificationResult? {
-    log.info("Classifying company: {}", LogSanitizerUtil.sanitize(companyName))
+    val sanitizedName = LogSanitizerUtil.sanitize(companyName)
+    log.info("Classifying company: {}", sanitizedName)
     if (!properties.enabled || companyName.isBlank()) {
       log.warn("Classification disabled or blank company name")
       return null
     }
-    return classifyWithOpenRouter(companyName)
-  }
-
-  private fun classifyWithOpenRouter(companyName: String): SectorClassificationResult? {
     val prompt = buildPrompt(companyName)
-    val response = openRouterClient.classifyWithModel(prompt)
-    val content =
-      response?.content ?: run {
-      log.warn("No response from OpenRouter for company: {}", LogSanitizerUtil.sanitize(companyName))
-      return null
-    }
-    val sector = IndustrySector.fromDisplayName(content)
-    if (sector != null) {
-      log.info("Classified {} as {} using model {}", LogSanitizerUtil.sanitize(companyName), sector.displayName, response.model)
-      return SectorClassificationResult(sector = sector, model = response.model)
-    }
-    return handleUnknownSector(content, response.model, prompt, companyName)
+    return classifyWithPrimaryModel(prompt, sanitizedName)
   }
 
-  private fun handleUnknownSector(
-    content: String,
+  private fun classifyWithPrimaryModel(
+    prompt: String,
+    sanitizedName: String,
+  ): SectorClassificationResult? {
+    val response = openRouterClient.classifyWithModel(prompt) ?: run {
+      log.warn("No response from OpenRouter for company: {}", sanitizedName)
+      return retryWithFallbackModel(prompt, sanitizedName)
+    }
+    return parseResponse(response, sanitizedName)
+      ?: retryIfNotFallbackModel(response.model, prompt, sanitizedName)
+  }
+
+  private fun retryIfNotFallbackModel(
     model: AiModel?,
     prompt: String,
-    companyName: String,
+    sanitizedName: String,
   ): SectorClassificationResult? {
-    if (model == AiModel.CLAUDE_HAIKU_4_5) {
-      log.warn("Unknown sector from fallback model response: {}", content)
-      return null
-    }
-    log.info("Unknown sector '{}' from primary model, retrying with fallback for: {}", content, LogSanitizerUtil.sanitize(companyName))
-    return retryWithFallback(prompt, companyName)
+    if (model == AiModel.CLAUDE_HAIKU_4_5) return null
+    return retryWithFallbackModel(prompt, sanitizedName)
   }
 
-  private fun retryWithFallback(
+  private fun retryWithFallbackModel(
     prompt: String,
-    companyName: String,
+    sanitizedName: String,
   ): SectorClassificationResult? {
-    val fallbackResponse = openRouterClient.classifyWithFallback(prompt)
-    val fallbackContent = fallbackResponse?.content
-    if (fallbackContent == null) {
-      log.warn("No response from fallback model for company: {}", LogSanitizerUtil.sanitize(companyName))
+    log.info("Retrying classification with fallback model for: {}", sanitizedName)
+    val response = openRouterClient.classifyWithFallback(prompt) ?: run {
+      log.warn("No response from fallback model for company: {}", sanitizedName)
       return null
     }
-    val sector = IndustrySector.fromDisplayName(fallbackContent)
+    return parseResponse(response, sanitizedName, logUnknownSector = true)
+  }
+
+  private fun parseResponse(
+    response: OpenRouterClassificationResult,
+    sanitizedName: String,
+    logUnknownSector: Boolean = false,
+  ): SectorClassificationResult? {
+    val content = response.content ?: return null
+    val sector = IndustrySector.fromDisplayName(content)
     if (sector == null) {
-      log.warn("Unknown sector from fallback model response: {}", fallbackContent)
+      if (logUnknownSector) log.warn("Unknown sector from model response: {}", content)
       return null
     }
-    log.info(
-      "Classified {} as {} using fallback model {}",
-      LogSanitizerUtil.sanitize(companyName),
-      sector.displayName,
-      fallbackResponse.model,
-    )
-    return SectorClassificationResult(sector = sector, model = fallbackResponse.model)
+    log.info("Classified {} as {} using model {}", sanitizedName, sector.displayName, response.model)
+    return SectorClassificationResult(sector = sector, model = response.model)
   }
 
   private fun buildPrompt(companyName: String): String =

@@ -543,7 +543,7 @@ This codebase has been systematically refactored following clean code principles
 
 #### 1. Guard Clauses Pattern
 
-Replace nested if-else with early returns:
+Replace nested if-else with early returns. Check for the negative/null case first and return early:
 
 ```kotlin
 fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
@@ -555,6 +555,23 @@ fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
   return calculateHistoricalSummary(date)
 }
 ```
+
+**Null Check Pattern:** Always check for null first and return early, then proceed with the happy path:
+
+```kotlin
+private fun parseResponse(response: Response): Result? {
+  val content = response.content ?: return null
+  val sector = IndustrySector.fromDisplayName(content)
+  if (sector == null) {
+    log.warn("Unknown sector: {}", content)
+    return null
+  }
+  log.info("Classified as {}", sector.displayName)
+  return Result(sector = sector)
+}
+```
+
+**Key principle:** Check for the negative case (`== null`) and return early, keeping the happy path at the end without nesting.
 
 **Benefits:** Reduces nesting from 3 levels to 1, improves readability by 40%
 

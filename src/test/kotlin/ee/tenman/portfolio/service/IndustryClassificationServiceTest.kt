@@ -48,6 +48,7 @@ class IndustryClassificationServiceTest {
   fun `should return null when OpenRouter returns no response`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns null
+    every { openRouterClient.classifyWithFallback(any()) } returns null
 
     val result = service.classifyCompanyWithModel("Apple Inc")
 
@@ -59,6 +60,7 @@ class IndustryClassificationServiceTest {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
       OpenRouterClassificationResult(content = null, model = AiModel.CLAUDE_3_HAIKU)
+    every { openRouterClient.classifyWithFallback(any()) } returns null
 
     val result = service.classifyCompanyWithModel("Apple Inc")
 
@@ -158,6 +160,7 @@ class IndustryClassificationServiceTest {
   fun `should return null from classifyCompany when classification fails`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns null
+    every { openRouterClient.classifyWithFallback(any()) } returns null
 
     val result = service.classifyCompany("Unknown Corp")
 
