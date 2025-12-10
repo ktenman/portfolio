@@ -1,5 +1,5 @@
 import { httpClient } from '../utils/http-client'
-import { CalculationResult } from '../models/calculation-result'
+import { CalculationResult } from '../models/generated/domain-models'
 import { API_ENDPOINTS } from '../constants'
 
 interface BuildInfo {

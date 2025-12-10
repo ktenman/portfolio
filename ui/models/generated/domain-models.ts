@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -90,7 +90,19 @@ export interface EtfHoldingBreakdownDto extends Serializable {
     platforms: string;
 }
 
+export interface CalculationResult extends Serializable {
+    cashFlows: CashFlow[];
+    median: number;
+    average: number;
+    total: number;
+}
+
 export interface Serializable {
+}
+
+export interface CashFlow extends Serializable {
+    amount: number;
+    date: DateAsString;
 }
 
 type DateAsString = string;
