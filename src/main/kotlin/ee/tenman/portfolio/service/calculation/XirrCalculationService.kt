@@ -35,7 +35,7 @@ class XirrCalculationService {
   ): Double {
     if (cashFlows.size < 2) return 0.0
     return runCatching {
-      val xirrResult = Xirr(cashFlows).calculate()
+      val xirrResult = Xirr(cashFlows)()
       val outflows = cashFlows.filter { it.amount < 0 }
       if (outflows.isEmpty()) return@runCatching 0.0
       val weightedDays = calculateWeightedInvestmentAge(outflows, calculationDate)

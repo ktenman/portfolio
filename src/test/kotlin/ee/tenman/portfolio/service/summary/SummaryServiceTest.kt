@@ -43,6 +43,7 @@ class SummaryServiceTest {
   private val summaryBatchProcessor = mockk<SummaryBatchProcessorService>(relaxed = true)
   private val summaryDeletionService = mockk<SummaryDeletionService>(relaxed = true)
   private val summaryCacheService = mockk<SummaryCacheService>(relaxed = true)
+  private val dailySummaryCalculator = DailySummaryCalculator(investmentMetricsService, xirrCalculationService)
 
   private lateinit var summaryService: SummaryService
 
@@ -60,12 +61,11 @@ class SummaryServiceTest {
         portfolioDailySummaryRepository,
         transactionService,
         cacheManager,
-        investmentMetricsService,
-        xirrCalculationService,
         clock,
         summaryBatchProcessor,
         summaryDeletionService,
         summaryCacheService,
+        dailySummaryCalculator,
       )
 
     testDate = LocalDate.of(2025, 5, 10)

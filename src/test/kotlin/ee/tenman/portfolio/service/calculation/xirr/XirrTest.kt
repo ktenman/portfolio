@@ -61,7 +61,7 @@ class XirrTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("xirrTestCases")
   fun `should calculate correct XIRR value when given transactions`(testCase: XirrTestCase) {
-    val xirrValue = Xirr(testCase.cashFlows).calculate()
+    val xirrValue = Xirr(testCase.cashFlows)()
 
     val tolerance = 1e-14
     expect(Math.abs(xirrValue - testCase.expectedXirr)).toBeLessThan(tolerance)

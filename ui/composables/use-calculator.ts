@@ -3,6 +3,11 @@ import { useQuery } from '@tanstack/vue-query'
 import { useLocalStorage, watchDebounced } from '@vueuse/core'
 import { utilityService } from '../services/utility-service'
 import { CalculationResult } from '../models/calculation-result'
+import {
+  calculateProjection,
+  CalculatorInput,
+  YearSummary,
+} from '../services/portfolio-growth-calculator'
 
 interface CalculatorForm {
   initialWorth: number
@@ -11,16 +16,6 @@ interface CalculatorForm {
   annualReturnRate: number
   years: number
   taxRate: number
-}
-
-interface YearSummary {
-  year: number
-  totalInvested: number
-  totalWorth: number
-  grossProfit: number
-  taxAmount: number
-  netWorth: number
-  monthlyEarnings: number
 }
 
 const getDefaultFormValues = (): CalculatorForm => ({
@@ -50,56 +45,22 @@ export function useCalculator() {
   })
 
   const calculate = () => {
-    const currentPortfolioWorth = form.value.initialWorth
     const avgReturn = hasUserModifiedAnnualReturn.value
       ? form.value.annualReturnRate
       : (calculationResult.value?.median ?? form.value.annualReturnRate)
 
-    const monthlyGrowthRate = form.value.yearlyGrowthRate / 100 / 12
-    const monthlyReturnRate = Math.pow(1 + avgReturn / 100, 1 / 12) - 1
-
-    const tempYearSummary: YearSummary[] = []
-    const tempPortfolioData: number[] = []
-
-    let totalWorth = currentPortfolioWorth
-    let totalInvested = currentPortfolioWorth
-    tempPortfolioData.push(totalWorth)
-
-    let currentMonthlyInvestment = form.value.monthlyInvestment
-    for (let year = 1; year <= form.value.years; year++) {
-      let yearlyInvestmentAmount = 0
-
-      for (let month = 1; month <= 12; month++) {
-        yearlyInvestmentAmount += currentMonthlyInvestment
-        totalWorth += currentMonthlyInvestment
-        totalWorth *= 1 + monthlyReturnRate
-      }
-
-      totalInvested += yearlyInvestmentAmount
-      currentMonthlyInvestment *= 1 + monthlyGrowthRate
-
-      const grossProfit = totalWorth - totalInvested
-      const taxAmount = grossProfit * (form.value.taxRate / 100)
-      const netProfit = grossProfit - taxAmount
-      const grossTotalWorth = totalInvested + grossProfit
-      const netWorth = grossTotalWorth - taxAmount
-      const monthlyEarnings = netProfit / 12
-
-      tempPortfolioData.push(grossTotalWorth)
-
-      tempYearSummary.push({
-        year,
-        totalInvested,
-        totalWorth: grossTotalWorth,
-        grossProfit,
-        taxAmount,
-        netWorth,
-        monthlyEarnings,
-      })
+    const input: CalculatorInput = {
+      initialWorth: form.value.initialWorth,
+      monthlyInvestment: form.value.monthlyInvestment,
+      yearlyGrowthRate: form.value.yearlyGrowthRate,
+      annualReturnRate: avgReturn,
+      years: form.value.years,
+      taxRate: form.value.taxRate,
     }
 
-    yearSummary.value = tempYearSummary
-    portfolioData.value = tempPortfolioData
+    const result = calculateProjection(input)
+    yearSummary.value = result.yearSummaries
+    portfolioData.value = result.portfolioData
   }
 
   watchDebounced(
