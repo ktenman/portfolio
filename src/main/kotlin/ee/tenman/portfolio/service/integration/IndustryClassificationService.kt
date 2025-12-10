@@ -36,28 +36,29 @@ class IndustryClassificationService(
     val response =
       openRouterClient.classifyWithModel(prompt) ?: run {
         log.warn("No response from OpenRouter for company: {}", sanitizedName)
-        return retryWithFallbackModel(prompt, sanitizedName)
+        return retryWithCascadingFallback(prompt, sanitizedName)
       }
-    return parseResponse(response, sanitizedName) ?: retryIfNotFallbackModel(response.model, prompt, sanitizedName)
+    return parseResponse(response, sanitizedName) ?: retryWithCascadingFallback(prompt, sanitizedName, response.model)
   }
 
-  private fun retryIfNotFallbackModel(
-    model: AiModel?,
+  private fun retryWithCascadingFallback(
     prompt: String,
     sanitizedName: String,
+    failedModel: AiModel? = null,
   ): SectorClassificationResult? {
-    if (model == AiModel.CLAUDE_HAIKU_4_5) return null
-    return retryWithFallbackModel(prompt, sanitizedName)
-  }
-
-  private fun retryWithFallbackModel(
-    prompt: String,
-    sanitizedName: String,
-  ): SectorClassificationResult? {
-    log.info("Retrying classification with fallback model for: {}", sanitizedName)
+    val startingModel =
+      when {
+        failedModel == null -> AiModel.CLAUDE_HAIKU_4_5
+        else ->
+          failedModel.getNextFallback() ?: run {
+            log.warn("No fallback available after {}", failedModel.modelId)
+            return null
+          }
+      }
+    log.info("Retrying classification with cascading fallback starting from {} for: {}", startingModel.modelId, sanitizedName)
     val response =
-      openRouterClient.classifyWithFallback(prompt) ?: run {
-        log.warn("No response from fallback model for company: {}", sanitizedName)
+      openRouterClient.classifyWithCascadingFallback(prompt, startingModel) ?: run {
+        log.warn("All fallback models exhausted for company: {}", sanitizedName)
         return null
       }
     return parseResponse(response, sanitizedName, logUnknownSector = true)

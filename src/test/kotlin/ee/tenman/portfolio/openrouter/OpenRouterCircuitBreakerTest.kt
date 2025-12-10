@@ -214,6 +214,79 @@ class OpenRouterCircuitBreakerTest {
     expect(waitTime).toEqual(expectedMs)
   }
 
+  @Test
+  fun `should rate limit CLAUDE_SONNET_4_5 at 2 requests per minute`() {
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(false)
+    clock.advance((MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(true)
+  }
+
+  @Test
+  fun `should rate limit CLAUDE_OPUS_4_5 at 1 request per minute`() {
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(false)
+    clock.advance((MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(true)
+  }
+
+  @Test
+  fun `should track rate limits independently for each model`() {
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_HAIKU_4_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_HAIKU_4_5)).toEqual(false)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(false)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(false)
+  }
+
+  @Test
+  fun `should return correct wait time for CLAUDE_SONNET_4_5`() {
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)
+    val waitTime = circuitBreaker.getWaitTimeMsForModel(AiModel.CLAUDE_SONNET_4_5)
+    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute
+    expect(waitTime).toEqual(expectedMs)
+  }
+
+  @Test
+  fun `should return correct wait time for CLAUDE_OPUS_4_5`() {
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)
+    val waitTime = circuitBreaker.getWaitTimeMsForModel(AiModel.CLAUDE_OPUS_4_5)
+    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute
+    expect(waitTime).toEqual(expectedMs)
+  }
+
+  @Test
+  fun `should select model by tier`() {
+    val tier0 = circuitBreaker.selectModelByTier(0)
+    val tier1 = circuitBreaker.selectModelByTier(1)
+    val tier2 = circuitBreaker.selectModelByTier(2)
+    val tier3 = circuitBreaker.selectModelByTier(3)
+    expect(tier0.model).toEqual(AiModel.CLAUDE_3_HAIKU)
+    expect(tier1.model).toEqual(AiModel.CLAUDE_HAIKU_4_5)
+    expect(tier2.model).toEqual(AiModel.CLAUDE_SONNET_4_5)
+    expect(tier3.model).toEqual(AiModel.CLAUDE_OPUS_4_5)
+  }
+
+  @Test
+  fun `should return fallback model for invalid tier`() {
+    val invalidTier = circuitBreaker.selectModelByTier(99)
+    expect(invalidTier.model).toEqual(AiModel.CLAUDE_HAIKU_4_5)
+  }
+
+  @Test
+  fun `should reset all model rate limits`() {
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_3_HAIKU)
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_HAIKU_4_5)
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)
+    circuitBreaker.resetRateLimits()
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_3_HAIKU)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_HAIKU_4_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(true)
+  }
+
   private class MutableClock(
     private var instant: Instant,
   ) : Clock() {

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.openrouter
 
+import ee.tenman.portfolio.domain.AiModel
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
@@ -16,8 +18,7 @@ class OpenRouterCircuitBreaker(
   private val clock: Clock = Clock.systemUTC(),
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
-  private val lastPrimaryRequestTime = AtomicLong(0)
-  private val lastFallbackRequestTime = AtomicLong(0)
+  private val modelRequestTimes = ConcurrentHashMap<AiModel, AtomicLong>()
   private val circuitBreaker: CircuitBreaker
   private val primaryModel = properties.primaryModel
   private val fallbackModel = properties.fallbackModel
@@ -48,6 +49,9 @@ class OpenRouterCircuitBreaker(
           event.stateTransition.toState,
         )
       }
+    AiModel.entries.forEach { model ->
+      modelRequestTimes[model] = AtomicLong(0)
+    }
   }
 
   fun selectModel(): ModelSelection {
@@ -57,17 +61,15 @@ class OpenRouterCircuitBreaker(
         CircuitBreaker.State.CLOSED, CircuitBreaker.State.HALF_OPEN -> primaryModel
         else -> fallbackModel
       }
-    return ModelSelection(
-      modelId = model.modelId,
-      isUsingFallback = state == CircuitBreaker.State.OPEN,
-    )
+    return ModelSelection(model = model, fallbackTier = model.fallbackTier)
   }
 
-  fun selectFallbackModel(): ModelSelection =
-    ModelSelection(
-      modelId = fallbackModel.modelId,
-      isUsingFallback = true,
-    )
+  fun selectModelByTier(tier: Int): ModelSelection {
+    val model = AiModel.entries.find { it.fallbackTier == tier } ?: fallbackModel
+    return ModelSelection(model = model, fallbackTier = model.fallbackTier)
+  }
+
+  fun selectFallbackModel(): ModelSelection = ModelSelection(model = fallbackModel, fallbackTier = fallbackModel.fallbackTier)
 
   fun getCurrentModel(): String = selectModel().modelId
 
@@ -75,30 +77,36 @@ class OpenRouterCircuitBreaker(
 
   fun canMakeRequest(): Boolean =
     when {
-      isUsingFallback() -> canUseFallback()
-      else -> canUsePrimary()
+      isUsingFallback() -> canUseModel(fallbackModel)
+      else -> canUseModel(primaryModel)
     }
 
   fun tryAcquireRateLimit(isUsingFallback: Boolean): Boolean =
     when {
-      isUsingFallback -> tryAcquireFallback()
-      else -> tryAcquirePrimary()
+      isUsingFallback -> tryAcquireForModel(fallbackModel)
+      else -> tryAcquireForModel(primaryModel)
     }
 
-  fun tryAcquirePrimary(): Boolean = tryAcquireWithRateLimit(lastPrimaryRequestTime, primaryRateLimitMs(), "Primary")
+  fun tryAcquireForModel(model: AiModel): Boolean {
+    val lastRequestTime = modelRequestTimes.getOrPut(model) { AtomicLong(0) }
+    val rateLimitMs = calculateRateLimitMs(model)
+    return tryAcquireWithRateLimit(lastRequestTime, rateLimitMs, model.name)
+  }
 
-  fun tryAcquireFallback(): Boolean = tryAcquireWithRateLimit(lastFallbackRequestTime, fallbackRateLimitMs(), "Fallback")
+  fun tryAcquirePrimary(): Boolean = tryAcquireForModel(primaryModel)
 
-  fun getWaitTimeMs(isUsingFallback: Boolean): Long {
-    val lastRequestTime = if (isUsingFallback) lastFallbackRequestTime else lastPrimaryRequestTime
-    val rateLimitMs = if (isUsingFallback) fallbackRateLimitMs() else primaryRateLimitMs()
+  fun tryAcquireFallback(): Boolean = tryAcquireForModel(fallbackModel)
+
+  fun getWaitTimeMs(isUsingFallback: Boolean): Long = getWaitTimeMsForModel(if (isUsingFallback) fallbackModel else primaryModel)
+
+  fun getWaitTimeMsForModel(model: AiModel): Long {
+    val lastRequestTime = modelRequestTimes.getOrPut(model) { AtomicLong(0) }
+    val rateLimitMs = calculateRateLimitMs(model)
     val elapsed = clock.millis() - lastRequestTime.get()
     return maxOf(0, rateLimitMs - elapsed)
   }
 
-  private fun primaryRateLimitMs(): Long = MILLISECONDS_PER_MINUTE / primaryModel.rateLimitPerMinute
-
-  private fun fallbackRateLimitMs(): Long = MILLISECONDS_PER_MINUTE / fallbackModel.rateLimitPerMinute
+  private fun calculateRateLimitMs(model: AiModel): Long = MILLISECONDS_PER_MINUTE / model.rateLimitPerMinute
 
   private fun tryAcquireWithRateLimit(
     lastRequestTime: AtomicLong,
@@ -128,9 +136,10 @@ class OpenRouterCircuitBreaker(
     log.warn("Recorded failure, circuit breaker state: {}", circuitBreaker.state)
   }
 
-  private fun canUsePrimary(): Boolean = (clock.millis() - lastPrimaryRequestTime.get()) >= primaryRateLimitMs()
-
-  private fun canUseFallback(): Boolean = (clock.millis() - lastFallbackRequestTime.get()) >= fallbackRateLimitMs()
+  private fun canUseModel(model: AiModel): Boolean {
+    val lastRequestTime = modelRequestTimes.getOrPut(model) { AtomicLong(0) }
+    return (clock.millis() - lastRequestTime.get()) >= calculateRateLimitMs(model)
+  }
 
   fun getState(): CircuitBreaker.State = circuitBreaker.state
 
@@ -144,7 +153,6 @@ class OpenRouterCircuitBreaker(
   }
 
   fun resetRateLimits() {
-    lastPrimaryRequestTime.set(0)
-    lastFallbackRequestTime.set(0)
+    modelRequestTimes.values.forEach { it.set(0) }
   }
 }
