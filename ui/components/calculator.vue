@@ -50,8 +50,8 @@
           </div>
         </div>
         <BarChart
-          v-if="!isLoading && calculationResult"
-          :data="calculationResult.xirrs"
+          v-if="!isLoading && calculationResult && calculationResult.cashFlows.length > 0"
+          :data="calculationResult.cashFlows"
           title="XIRR Rolling Result (ASAP)"
           x-axis-label="Date"
           y-axis-label="XIRR (%)"
