@@ -1,9 +1,9 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.service.CalculationService
-import ee.tenman.portfolio.service.JobExecutionService
-import ee.tenman.portfolio.service.SummaryService
-import ee.tenman.portfolio.service.TransactionService
+import ee.tenman.portfolio.service.calculation.CalculationService
+import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.summary.SummaryService
+import ee.tenman.portfolio.service.transaction.TransactionService
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled

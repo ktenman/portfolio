@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.model.metrics
 
-import ee.tenman.portfolio.service.xirr.Transaction
+import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import java.math.BigDecimal
 
 data class PortfolioMetrics(
@@ -8,5 +8,5 @@ data class PortfolioMetrics(
   var realizedProfit: BigDecimal = BigDecimal.ZERO,
   var unrealizedProfit: BigDecimal = BigDecimal.ZERO,
   var totalProfit: BigDecimal = BigDecimal.ZERO,
-  val xirrTransactions: MutableList<Transaction> = mutableListOf(),
+  val xirrCashFlows: MutableList<CashFlow> = mutableListOf(),
 )
