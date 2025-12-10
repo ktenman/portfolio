@@ -1,6 +1,11 @@
 import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/vue-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
+import {
+  mergeHistoricalWithCurrent,
+  sortSummariesByDateAsc,
+  flattenPages,
+} from '../services/summary-aggregator'
 
 export function usePortfolioSummaryQuery() {
   const queryClient = useQueryClient()
@@ -44,25 +49,11 @@ export function usePortfolioSummaryQuery() {
   })
 
   const summaries = computed(() => {
-    const historicalSummaries = historicalData.value?.pages.flatMap(page => page.content) || []
-
-    if (currentSummary.value) {
-      const existingIndex = historicalSummaries.findIndex(
-        item => item.date === currentSummary.value.date
-      )
-      if (existingIndex >= 0) {
-        historicalSummaries[existingIndex] = currentSummary.value
-      } else {
-        historicalSummaries.push(currentSummary.value)
-      }
-    }
-
-    return historicalSummaries
+    const historicalSummaries = flattenPages(historicalData.value?.pages)
+    return mergeHistoricalWithCurrent(historicalSummaries, currentSummary.value)
   })
 
-  const sortedSummaries = computed(() =>
-    [...summaries.value].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  )
+  const sortedSummaries = computed(() => sortSummariesByDateAsc(summaries.value))
 
   const reversedSummaries = computed(() => [...sortedSummaries.value].reverse())
 
