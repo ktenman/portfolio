@@ -9,6 +9,8 @@ import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
+private val EUROPEAN_CURRENCY_PATTERN = Regex("""^(.+?)\s+(Fr\.|DKr|Skr|Nkr|Ft|zł)\s*([A-Z0-9]+)·(.+)$""")
+
 @Service
 class LightyearHoldingsService(
   private val lightyearHoldingsClient: LightyearHoldingsClient,
@@ -38,8 +40,8 @@ class LightyearHoldingsService(
     val document = Jsoup.parse(htmlContent)
     val rows =
       document
-      .select(".table-row")
-      .filter { it.text().contains("%") }
+        .select(".table-row")
+        .filter { it.text().contains("%") }
 
     val holdings = mutableListOf<HoldingData>()
     val baseRank = (page - 1) * 45
@@ -89,17 +91,21 @@ class LightyearHoldingsService(
 
   private fun extractValidatedRowData(element: Element): ValidatedRowData? {
     val parsedData = parseBasicRowData(element) ?: return null
-
     val rawName = parsedData.nameParts.first()
     val isNotAvailable = element.text().contains("Instrument is not available")
-
+    EUROPEAN_CURRENCY_PATTERN.matchEntire(rawName)?.let { match ->
+      return ValidatedRowData(
+        name = match.groupValues[1],
+        ticker = match.groupValues[3],
+        sector = match.groupValues[4],
+        weightText = parsedData.weightText,
+      )
+    }
     val name =
-      if (isNotAvailable) {
-        rawName.replace(Regex("""Instrument is not available.*"""), "").trim()
-      } else {
-        rawName
-      }
-
+      when {
+      isNotAvailable -> rawName.replace(Regex("""Instrument is not available.*"""), "").trim()
+      else -> rawName
+    }
     val ticker =
       parsedData.nameParts
         .getOrNull(1)
@@ -110,9 +116,7 @@ class LightyearHoldingsService(
         ?.trim()
         ?.takeIf { it.isNotBlank() }
         .takeUnless { isNotAvailable }
-
     val sector = parsedData.nameParts.getOrNull(2).takeUnless { isNotAvailable }
-
     return ValidatedRowData(name, ticker, sector, parsedData.weightText)
   }
 
@@ -227,8 +231,15 @@ class LightyearHoldingsService(
     val potentialTicker = allDivTexts.getOrNull(2) ?: ""
     val potentialSector = allDivTexts.getOrNull(3) ?: ""
 
-    val startsWithCurrency = potentialTicker.startsWith("$") || potentialTicker.startsWith("€") || potentialTicker.startsWith("£")
-    if (startsWithCurrency && !potentialTicker.contains("%") && potentialSector.isNotEmpty() && !potentialSector.contains("%")) {
+    val startsWithCurrency =
+      potentialTicker.startsWith("$") || potentialTicker.startsWith("€") || potentialTicker.startsWith("£")
+    if (startsWithCurrency &&
+      !potentialTicker.contains("%") &&
+      potentialSector.isNotEmpty() &&
+      !potentialSector.contains(
+        "%",
+      )
+    ) {
       return listOf(potentialName, potentialTicker, potentialSector)
     }
 
@@ -274,10 +285,10 @@ class LightyearHoldingsService(
   private fun extractLogoUrl(element: Element): String? {
     val imgSrc =
       element
-      .select("img")
-      .firstOrNull()
-      ?.attr("src")
-      ?.takeIf { it.isNotEmpty() }
+        .select("img")
+        .firstOrNull()
+        ?.attr("src")
+        ?.takeIf { it.isNotEmpty() }
     if (imgSrc != null) {
       return imgSrc
     }
