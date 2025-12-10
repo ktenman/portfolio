@@ -2,9 +2,9 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.lightyear.LightyearPriceService
-import ee.tenman.portfolio.service.JobExecutionService
-import ee.tenman.portfolio.service.LightyearPriceUpdateService
-import ee.tenman.portfolio.service.PriceUpdateProcessor
+import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.pricing.LightyearPriceUpdateService
+import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled

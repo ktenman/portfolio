@@ -46,11 +46,11 @@ class PortfolioTransactionRepositoryTest {
   @Test
   fun `should find transactions by single platform`() {
     val binanceTransaction1 =
-      createAndSaveTransaction(Platform.BINANCE, BigDecimal("100"), LocalDate.now().minusDays(1))
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now().minusDays(1))
     val binanceTransaction2 =
-      createAndSaveTransaction(Platform.BINANCE, BigDecimal("200"), LocalDate.now())
-    createAndSaveTransaction(Platform.TRADING212, BigDecimal("300"), LocalDate.now())
-    createAndSaveTransaction(Platform.LIGHTYEAR, BigDecimal("400"), LocalDate.now())
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("200"), LocalDate.now())
+    createAndSaveCashFlow(Platform.TRADING212, BigDecimal("300"), LocalDate.now())
+    createAndSaveCashFlow(Platform.LIGHTYEAR, BigDecimal("400"), LocalDate.now())
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(listOf(Platform.BINANCE))
 
@@ -63,11 +63,11 @@ class PortfolioTransactionRepositoryTest {
   @Test
   fun `should find transactions by multiple platforms`() {
     val binanceTransaction =
-      createAndSaveTransaction(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
     val trading212Transaction =
-      createAndSaveTransaction(Platform.TRADING212, BigDecimal("200"), LocalDate.now())
-    createAndSaveTransaction(Platform.LIGHTYEAR, BigDecimal("300"), LocalDate.now())
-    createAndSaveTransaction(Platform.SWEDBANK, BigDecimal("400"), LocalDate.now())
+      createAndSaveCashFlow(Platform.TRADING212, BigDecimal("200"), LocalDate.now())
+    createAndSaveCashFlow(Platform.LIGHTYEAR, BigDecimal("300"), LocalDate.now())
+    createAndSaveCashFlow(Platform.SWEDBANK, BigDecimal("400"), LocalDate.now())
 
     val result =
       portfolioTransactionRepository.findAllByPlatformsWithInstruments(
@@ -84,8 +84,8 @@ class PortfolioTransactionRepositoryTest {
 
   @Test
   fun `should return empty list when no transactions match platforms`() {
-    createAndSaveTransaction(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
-    createAndSaveTransaction(Platform.TRADING212, BigDecimal("200"), LocalDate.now())
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
+    createAndSaveCashFlow(Platform.TRADING212, BigDecimal("200"), LocalDate.now())
 
     val result =
       portfolioTransactionRepository.findAllByPlatformsWithInstruments(
@@ -98,12 +98,12 @@ class PortfolioTransactionRepositoryTest {
   @Test
   fun `should return transactions ordered by date and id descending`() {
     val today = LocalDate.now()
-    createAndSaveTransaction(Platform.BINANCE, BigDecimal("100"), today.minusDays(2))
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), today.minusDays(2))
     val transaction2 =
-      createAndSaveTransaction(Platform.BINANCE, BigDecimal("200"), today)
-    createAndSaveTransaction(Platform.BINANCE, BigDecimal("300"), today.minusDays(1))
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("200"), today)
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("300"), today.minusDays(1))
     val transaction4 =
-      createAndSaveTransaction(Platform.BINANCE, BigDecimal("400"), today)
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("400"), today)
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(listOf(Platform.BINANCE))
 
@@ -121,7 +121,7 @@ class PortfolioTransactionRepositoryTest {
 
   @Test
   fun `should fetch instruments eagerly with transactions`() {
-    createAndSaveTransaction(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(listOf(Platform.BINANCE))
 
@@ -133,14 +133,14 @@ class PortfolioTransactionRepositoryTest {
 
   @Test
   fun `should handle empty platforms list`() {
-    createAndSaveTransaction(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(emptyList())
 
     expect(result).toHaveSize(0)
   }
 
-  private fun createAndSaveTransaction(
+  private fun createAndSaveCashFlow(
     platform: Platform,
     price: BigDecimal,
     date: LocalDate,

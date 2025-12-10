@@ -1,11 +1,11 @@
 package ee.tenman.portfolio.dto
 
-import ee.tenman.portfolio.service.xirr.Transaction
+import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import java.io.Serializable
 import java.math.BigDecimal
 
 data class CalculationResult(
-  var xirrs: List<Transaction> = mutableListOf(),
+  var cashFlows: List<CashFlow> = mutableListOf(),
   var median: Double = 0.0,
   var average: Double = 0.0,
   var total: BigDecimal = BigDecimal.ZERO,

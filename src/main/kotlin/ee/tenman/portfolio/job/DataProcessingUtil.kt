@@ -4,8 +4,8 @@ import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.service.DailyPriceService
-import ee.tenman.portfolio.service.InstrumentService
+import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.service.pricing.DailyPriceService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Clock

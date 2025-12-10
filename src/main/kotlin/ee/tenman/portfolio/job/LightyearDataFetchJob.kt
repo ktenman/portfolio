@@ -2,9 +2,9 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.JobStatus
-import ee.tenman.portfolio.service.EtfHoldingsService
-import ee.tenman.portfolio.service.JobTransactionService
-import ee.tenman.portfolio.service.LightyearScraperService
+import ee.tenman.portfolio.service.etf.EtfHoldingsService
+import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.service.integration.LightyearScraperService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Instant
@@ -16,7 +16,7 @@ class LightyearDataFetchJob(
   private val properties: LightyearScrapingProperties,
   private val scraperService: LightyearScraperService,
   private val etfHoldingsService: EtfHoldingsService,
-  private val etfBreakdownService: ee.tenman.portfolio.service.EtfBreakdownService,
+  private val etfBreakdownService: ee.tenman.portfolio.service.etf.EtfBreakdownService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 

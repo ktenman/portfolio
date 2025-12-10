@@ -2,9 +2,9 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.dto.InstrumentDto
-import ee.tenman.portfolio.service.IndustryClassificationService
-import ee.tenman.portfolio.service.InstrumentService
-import ee.tenman.portfolio.service.PriceRefreshService
+import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.service.integration.IndustryClassificationService
+import ee.tenman.portfolio.service.pricing.PriceRefreshService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid

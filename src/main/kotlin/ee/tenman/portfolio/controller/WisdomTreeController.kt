@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.controller
 
-import ee.tenman.portfolio.service.WisdomTreeUpdateService
+import ee.tenman.portfolio.service.integration.WisdomTreeUpdateService
 import ee.tenman.portfolio.wisdomtree.WisdomTreeHolding
 import ee.tenman.portfolio.wisdomtree.WisdomTreeHoldingsService
 import org.springframework.http.ResponseEntity
