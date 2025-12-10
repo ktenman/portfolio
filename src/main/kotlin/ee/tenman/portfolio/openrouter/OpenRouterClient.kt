@@ -30,6 +30,31 @@ class OpenRouterClient(
     temperature: Double = 0.1,
   ): OpenRouterClassificationResult? = executeWithSelection(circuitBreaker.selectFallbackModel(), prompt, maxTokens, temperature)
 
+  fun classifyWithCascadingFallback(
+    prompt: String,
+    startingModel: AiModel,
+    maxTokens: Int = 500,
+    temperature: Double = 0.1,
+  ): OpenRouterClassificationResult? {
+    if (openRouterProperties.apiKey.isBlank()) {
+      log.warn("OpenRouter API key is not configured")
+      return null
+    }
+    var currentModel: AiModel? = startingModel
+    while (currentModel != null) {
+      val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.fallbackTier)
+      val result = executeWithSelectionForCascade(selection, prompt, maxTokens, temperature)
+      if (result != null) return result
+      val nextModel = currentModel.getNextFallback()
+      if (nextModel != null) {
+        log.info("Cascading to next fallback model: {} (tier {})", nextModel.modelId, nextModel.fallbackTier)
+      }
+      currentModel = nextModel
+    }
+    log.warn("All fallback models exhausted, no successful response")
+    return null
+  }
+
   private fun executeWithSelection(
     selection: ModelSelection,
     prompt: String,
@@ -43,6 +68,19 @@ class OpenRouterClient(
     if (!circuitBreaker.tryAcquireRateLimit(selection.isUsingFallback)) {
       val modelType = if (selection.isUsingFallback) "fallback" else "primary"
       log.warn("Rate limit exceeded for {} model, skipping request", modelType)
+      return null
+    }
+    return executeRequest(selection, prompt, maxTokens, temperature)
+  }
+
+  private fun executeWithSelectionForCascade(
+    selection: ModelSelection,
+    prompt: String,
+    maxTokens: Int,
+    temperature: Double,
+  ): OpenRouterClassificationResult? {
+    if (!circuitBreaker.tryAcquireForModel(selection.model)) {
+      log.warn("Rate limit exceeded for model {}, trying next fallback", selection.modelId)
       return null
     }
     return executeRequest(selection, prompt, maxTokens, temperature)
@@ -62,7 +100,7 @@ class OpenRouterClient(
         temperature = temperature,
       )
     return runCatching {
-      log.info("Calling OpenRouter API with model: {} (fallback: {})", selection.modelId, selection.isUsingFallback)
+      log.info("Calling OpenRouter API with model: {} (tier: {})", selection.modelId, selection.fallbackTier)
       val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
       val content = response.extractContent()
       log.info("OpenRouter response successful, content: '{}'", content)
