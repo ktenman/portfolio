@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.scheduler
 
-import ee.tenman.portfolio.service.EasterHolidayService
+import ee.tenman.portfolio.service.common.EasterHolidayService
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.DayOfWeek

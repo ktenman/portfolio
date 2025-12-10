@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.dto.CalculationResult
-import ee.tenman.portfolio.service.CalculationService
-import ee.tenman.portfolio.service.SummaryService
+import ee.tenman.portfolio.service.calculation.CalculationService
+import ee.tenman.portfolio.service.summary.SummaryService
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping

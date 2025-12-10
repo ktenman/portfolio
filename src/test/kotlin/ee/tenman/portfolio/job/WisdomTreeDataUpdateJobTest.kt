@@ -2,8 +2,8 @@ package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.service.JobTransactionService
-import ee.tenman.portfolio.service.WisdomTreeUpdateService
+import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.service.integration.WisdomTreeUpdateService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

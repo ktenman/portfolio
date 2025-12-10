@@ -3,8 +3,8 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
-import ee.tenman.portfolio.service.SummaryCacheService
-import ee.tenman.portfolio.service.SummaryService
+import ee.tenman.portfolio.service.summary.SummaryCacheService
+import ee.tenman.portfolio.service.summary.SummaryService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest

@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.JobStatus
-import ee.tenman.portfolio.service.JobTransactionService
-import ee.tenman.portfolio.service.WisdomTreeUpdateService
+import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.service.integration.WisdomTreeUpdateService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Instant

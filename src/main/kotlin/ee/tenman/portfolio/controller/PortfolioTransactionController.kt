@@ -5,9 +5,9 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.dto.TransactionRequestDto
 import ee.tenman.portfolio.dto.TransactionResponseDto
 import ee.tenman.portfolio.dto.TransactionsWithSummaryDto
-import ee.tenman.portfolio.service.InstrumentService
-import ee.tenman.portfolio.service.TransactionQueryService
-import ee.tenman.portfolio.service.TransactionService
+import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.service.transaction.TransactionQueryService
+import ee.tenman.portfolio.service.transaction.TransactionService
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus

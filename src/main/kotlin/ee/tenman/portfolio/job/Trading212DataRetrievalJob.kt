@@ -1,9 +1,9 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.Platform
-import ee.tenman.portfolio.service.JobExecutionService
-import ee.tenman.portfolio.service.PriceUpdateProcessor
-import ee.tenman.portfolio.service.Trading212PriceUpdateService
+import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
+import ee.tenman.portfolio.service.pricing.Trading212PriceUpdateService
 import ee.tenman.portfolio.trading212.Trading212Service
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled

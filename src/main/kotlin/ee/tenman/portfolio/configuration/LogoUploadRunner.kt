@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.configuration
 
-import ee.tenman.portfolio.service.MinioService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner

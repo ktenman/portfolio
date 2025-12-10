@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.controller
 
-import ee.tenman.portfolio.service.MinioService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
 import org.springframework.http.CacheControl
