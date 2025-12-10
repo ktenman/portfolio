@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { useCalculator } from './use-calculator'
-import type { CalculationResult } from '../models/calculation-result'
+import type { CalculationResult } from '../models/generated/domain-models'
 
 vi.mock('../services/utility-service')
 
@@ -48,7 +48,7 @@ describe('useCalculator', () => {
     mockData.value = null
     mockRefetch = vi.fn().mockResolvedValue({
       data: {
-        xirrs: [],
+        cashFlows: [],
         median: 0,
         average: 7,
         total: 0,
@@ -94,11 +94,11 @@ describe('useCalculator', () => {
     expect(calculator.form.value.annualReturnRate).toBe(7)
 
     mockData.value = {
-      xirrs: [],
+      cashFlows: [],
       median: 11.5,
       average: 12.5,
       total: 50000,
-    } as any
+    } as CalculationResult
 
     await nextTick()
 
@@ -186,7 +186,7 @@ describe('useCalculator', () => {
   it('should reset calculator with fresh data', async () => {
     mockRefetch = vi.fn().mockResolvedValue({
       data: {
-        xirrs: [],
+        cashFlows: [],
         median: 15,
         average: 18,
         total: 75000,
@@ -300,11 +300,11 @@ describe('useCalculator', () => {
     await nextTick()
 
     mockData.value = {
-      xirrs: [],
+      cashFlows: [],
       median: 11.5,
       average: 12.5,
       total: 10000,
-    } as any
+    } as CalculationResult
 
     await nextTick()
 
@@ -339,11 +339,11 @@ describe('useCalculator', () => {
     await nextTick()
 
     mockData.value = {
-      xirrs: [],
+      cashFlows: [],
       median: 11.5,
       average: 15.5,
       total: 60000,
-    } as any
+    } as CalculationResult
 
     await nextTick()
 
@@ -354,7 +354,7 @@ describe('useCalculator', () => {
   it('should reset user-modified flag when resetCalculator is called', async () => {
     mockRefetch = vi.fn().mockResolvedValue({
       data: {
-        xirrs: [],
+        cashFlows: [],
         median: 15,
         average: 18,
         total: 75000,
@@ -372,11 +372,11 @@ describe('useCalculator', () => {
     expect(calculator.form.value.annualReturnRate).toBe(15)
 
     mockData.value = {
-      xirrs: [],
+      cashFlows: [],
       median: 20,
       average: 22,
       total: 80000,
-    } as any
+    } as CalculationResult
 
     await nextTick()
 

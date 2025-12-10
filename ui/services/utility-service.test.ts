@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { utilityService } from './utility-service'
 import { httpClient } from '../utils/http-client'
-import type { CalculationResult } from '../models/calculation-result'
+import type { CalculationResult } from '../models/generated/domain-models'
 
 vi.mock('../utils/http-client', () => ({
   httpClient: {
@@ -17,7 +17,7 @@ describe('utilityService', () => {
   describe('getCalculationResult', () => {
     it('should fetch calculation result', async () => {
       const mockCalculationResult: CalculationResult = {
-        xirrs: [
+        cashFlows: [
           { date: '2023-01-01', amount: 1000 },
           { date: '2023-02-01', amount: 2000 },
           { date: '2023-03-01', amount: 3000 },
@@ -39,7 +39,7 @@ describe('utilityService', () => {
 
     it('should handle empty arrays in calculation result', async () => {
       const mockEmptyResult: CalculationResult = {
-        xirrs: [],
+        cashFlows: [],
         median: 0,
         average: 0,
         total: 0,
@@ -57,7 +57,7 @@ describe('utilityService', () => {
 
     it('should handle negative values in calculation result', async () => {
       const mockNegativeResult: CalculationResult = {
-        xirrs: [
+        cashFlows: [
           { date: '2023-01-01', amount: -1000 },
           { date: '2023-02-01', amount: -2000 },
         ],
