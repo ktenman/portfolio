@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
-import ee.tenman.portfolio.service.EtfBreakdownService
+import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping

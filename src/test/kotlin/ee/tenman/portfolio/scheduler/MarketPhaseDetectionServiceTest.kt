@@ -2,7 +2,7 @@ package ee.tenman.portfolio.scheduler
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.service.EasterHolidayService
+import ee.tenman.portfolio.service.common.EasterHolidayService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource

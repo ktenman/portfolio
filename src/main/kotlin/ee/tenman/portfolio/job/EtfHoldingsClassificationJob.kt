@@ -4,9 +4,9 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.model.ClassificationOutcome
 import ee.tenman.portfolio.model.ClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
-import ee.tenman.portfolio.service.EtfHoldingPersistenceService
-import ee.tenman.portfolio.service.IndustryClassificationService
-import ee.tenman.portfolio.service.JobExecutionService
+import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
+import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.integration.IndustryClassificationService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 

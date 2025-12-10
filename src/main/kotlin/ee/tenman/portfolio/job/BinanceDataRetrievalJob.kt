@@ -2,8 +2,8 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.service.InstrumentService
-import ee.tenman.portfolio.service.JobExecutionService
+import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.instrument.InstrumentService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 

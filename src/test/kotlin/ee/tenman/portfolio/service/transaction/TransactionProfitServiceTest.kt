@@ -1,0 +1,174 @@
+package ee.tenman.portfolio.service.transaction
+
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
+import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import ee.tenman.portfolio.service.calculation.ProfitCalculationEngine
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+import java.time.LocalDate
+import java.util.*
+
+class TransactionProfitServiceTest {
+  private val instrumentRepository = mockk<InstrumentRepository>()
+  private val portfolioTransactionRepository = mockk<PortfolioTransactionRepository>()
+  private val profitCalculationEngine = ProfitCalculationEngine()
+
+  private lateinit var transactionProfitService: TransactionProfitService
+  private lateinit var testInstrument: Instrument
+
+  @BeforeEach
+  fun setUp() {
+    testInstrument =
+      Instrument(
+        symbol = "AAPL",
+        name = "Apple Inc.",
+        category = "Stock",
+        baseCurrency = "USD",
+        currentPrice = BigDecimal("150.00"),
+        providerName = ProviderName.FT,
+      ).apply { id = 1L }
+
+    transactionProfitService = TransactionProfitService(instrumentRepository, portfolioTransactionRepository, profitCalculationEngine)
+  }
+
+  @Test
+  fun `should not recalculate when instrument not found`() {
+    every { instrumentRepository.findById(999L) } returns Optional.empty()
+
+    transactionProfitService.recalculateProfitsForInstrument(999L)
+
+    verify(exactly = 0) { portfolioTransactionRepository.findAllByInstrumentId(any()) }
+  }
+
+  @Test
+  fun `should not recalculate when no transactions exist`() {
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+    every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns emptyList()
+
+    transactionProfitService.recalculateProfitsForInstrument(1L)
+
+    verify(exactly = 0) { portfolioTransactionRepository.saveAll(any<List<PortfolioTransaction>>()) }
+  }
+
+  @Test
+  fun `should calculate realized profit for sell transaction`() {
+    val buyTx = createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), LocalDate.of(2024, 1, 1))
+    val sellTx = createCashFlow(TransactionType.SELL, BigDecimal("5"), BigDecimal("120"), LocalDate.of(2024, 1, 10))
+
+    val transactionsSlot = slot<List<PortfolioTransaction>>()
+
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+    every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns listOf(buyTx, sellTx)
+    every { portfolioTransactionRepository.saveAll(capture(transactionsSlot)) } answers { transactionsSlot.captured }
+
+    transactionProfitService.recalculateProfitsForInstrument(1L)
+
+    val savedSellTx = transactionsSlot.captured.find { it.transactionType == TransactionType.SELL }!!
+    expect(savedSellTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal("92.50"))
+  }
+
+  @Test
+  fun `should calculate unrealized profit for buy transaction`() {
+    val buyTx = createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), LocalDate.of(2024, 1, 1))
+
+    val transactionsSlot = slot<List<PortfolioTransaction>>()
+
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+    every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns listOf(buyTx)
+    every { portfolioTransactionRepository.saveAll(capture(transactionsSlot)) } answers { transactionsSlot.captured }
+
+    transactionProfitService.recalculateProfitsForInstrument(1L)
+
+    val savedBuyTx = transactionsSlot.captured.find { it.transactionType == TransactionType.BUY }!!
+    expect(savedBuyTx.unrealizedProfit).toEqualNumerically(BigDecimal("500.00"))
+    expect(savedBuyTx.remainingQuantity).toEqualNumerically(BigDecimal("10"))
+  }
+
+  @Test
+  fun `should handle multiple platforms separately`() {
+    val lhvBuy = createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), LocalDate.of(2024, 1, 1), Platform.LHV)
+    val lightyearBuy =
+      createCashFlow(TransactionType.BUY, BigDecimal("5"), BigDecimal("110"), LocalDate.of(2024, 1, 1), Platform.LIGHTYEAR)
+
+    val transactionsSlot = slot<List<PortfolioTransaction>>()
+
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+    every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns listOf(lhvBuy, lightyearBuy)
+    every { portfolioTransactionRepository.saveAll(capture(transactionsSlot)) } answers { transactionsSlot.captured }
+
+    transactionProfitService.recalculateProfitsForInstrument(1L)
+
+    val savedLhv = transactionsSlot.captured.find { it.platform == Platform.LHV }!!
+    val savedLightyear = transactionsSlot.captured.find { it.platform == Platform.LIGHTYEAR }!!
+    expect(savedLhv.remainingQuantity).toEqualNumerically(BigDecimal("10"))
+    expect(savedLightyear.remainingQuantity).toEqualNumerically(BigDecimal("5"))
+  }
+
+  @Test
+  fun `should set zero remaining quantity when all sold`() {
+    val buyTx = createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), LocalDate.of(2024, 1, 1))
+    val sellTx = createCashFlow(TransactionType.SELL, BigDecimal("10"), BigDecimal("120"), LocalDate.of(2024, 1, 10))
+
+    val transactionsSlot = slot<List<PortfolioTransaction>>()
+
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+    every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns listOf(buyTx, sellTx)
+    every { portfolioTransactionRepository.saveAll(capture(transactionsSlot)) } answers { transactionsSlot.captured }
+
+    transactionProfitService.recalculateProfitsForInstrument(1L)
+
+    val savedBuyTx = transactionsSlot.captured.find { it.transactionType == TransactionType.BUY }!!
+    expect(savedBuyTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(savedBuyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `should handle oversell scenario`() {
+    val buyTx = createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), LocalDate.of(2024, 1, 1))
+    val oversellTx = createCashFlow(TransactionType.SELL, BigDecimal("15"), BigDecimal("120"), LocalDate.of(2024, 1, 10))
+
+    val transactionsSlot = slot<List<PortfolioTransaction>>()
+
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+    every { portfolioTransactionRepository.findAllByInstrumentId(1L) } returns listOf(buyTx, oversellTx)
+    every { portfolioTransactionRepository.saveAll(capture(transactionsSlot)) } answers { transactionsSlot.captured }
+
+    transactionProfitService.recalculateProfitsForInstrument(1L)
+
+    val savedSellTx = transactionsSlot.captured.find { it.transactionType == TransactionType.SELL }!!
+    val savedBuyTx = transactionsSlot.captured.find { it.transactionType == TransactionType.BUY }!!
+    expect(savedSellTx.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal("287.50"))
+    expect(savedBuyTx.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(savedBuyTx.unrealizedProfit).toEqualNumerically(BigDecimal.ZERO)
+  }
+
+  private fun createCashFlow(
+    type: TransactionType,
+    quantity: BigDecimal,
+    price: BigDecimal,
+    date: LocalDate,
+    platform: Platform = Platform.LHV,
+  ): PortfolioTransaction =
+    PortfolioTransaction(
+      instrument = testInstrument,
+      transactionType = type,
+      quantity = quantity,
+      price = price,
+      transactionDate = date,
+      platform = platform,
+      commission = BigDecimal("5"),
+    )
+}
