@@ -25,6 +25,8 @@ class Xirr(
 
   fun getCashFlows(): List<CashFlow> = cashFlows
 
+  operator fun invoke(): Double = calculate()
+
   fun calculate(): Double {
     log.info("Starting XIRR calculation with ${cashFlows.size} cash flows")
     log.info("Start date: $startDate, End date: $endDate")
