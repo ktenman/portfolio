@@ -40,6 +40,8 @@ class ArchitectureTest {
       .definedBy("..controller..")
       .layer("Application")
       .definedBy("..service..")
+      .layer("UseCase")
+      .definedBy("..usecase..")
       .layer("Domain")
       .definedBy("..domain..")
       .layer("Infrastructure")
@@ -64,11 +66,13 @@ class ArchitectureTest {
       .whereLayer("API")
       .mayOnlyBeAccessedByLayers("Configuration")
       .whereLayer("Application")
-      .mayOnlyBeAccessedByLayers("API", "Jobs", "Scheduler", "Configuration", "Application", "Model", "DTOs")
+      .mayOnlyBeAccessedByLayers("API", "Jobs", "Scheduler", "Configuration", "Application", "Model", "DTOs", "UseCase")
+      .whereLayer("UseCase")
+      .mayOnlyBeAccessedByLayers("API", "Configuration", "Application", "Jobs")
       .whereLayer("Domain")
-      .mayOnlyBeAccessedByLayers("Application", "Infrastructure", "API", "DTOs", "Jobs", "Configuration", "Model")
+      .mayOnlyBeAccessedByLayers("Application", "Infrastructure", "API", "DTOs", "Jobs", "Configuration", "Model", "UseCase")
       .whereLayer("Infrastructure")
-      .mayOnlyBeAccessedByLayers("Application", "Jobs", "Configuration")
+      .mayOnlyBeAccessedByLayers("Application", "Jobs", "Configuration", "UseCase")
       .whereLayer("Jobs")
       .mayOnlyBeAccessedByLayers("Configuration", "API", "Application")
       .whereLayer("Scheduler")
@@ -76,12 +80,15 @@ class ArchitectureTest {
       .whereLayer("DTOs")
       .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure")
       .whereLayer("Model")
-      .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure", "DTOs", "Jobs")
+      .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure", "DTOs", "Jobs", "UseCase")
       .whereLayer("Configuration")
       .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure", "Jobs")
       .ignoreDependency(
-        DescribedPredicate.describe("test classes") { javaClass: JavaClass ->
-          javaClass.name.endsWith("IT") || javaClass.name.endsWith("Test") || javaClass.name.endsWith("IntegrationTest")
+        DescribedPredicate.describe("test classes and fixtures") { javaClass: JavaClass ->
+          javaClass.name.endsWith("IT") ||
+            javaClass.name.endsWith("Test") ||
+            javaClass.name.endsWith("IntegrationTest") ||
+            javaClass.packageName.contains(".testing.")
         },
         DescribedPredicate.alwaysTrue(),
       )

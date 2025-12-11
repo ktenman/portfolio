@@ -5,7 +5,7 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.TransactionResponseDto
 import ee.tenman.portfolio.dto.TransactionSummaryDto
 import ee.tenman.portfolio.dto.TransactionsWithSummaryDto
-import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
+import ee.tenman.portfolio.usecase.GetPortfolioPerformanceUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -14,7 +14,7 @@ import java.time.LocalDate
 @Service
 class TransactionQueryService(
   private val transactionService: TransactionService,
-  private val investmentMetricsService: InvestmentMetricsService,
+  private val getPortfolioPerformanceUseCase: GetPortfolioPerformanceUseCase,
 ) {
   @Transactional(readOnly = true)
   fun getTransactionsWithSummary(
@@ -82,11 +82,9 @@ class TransactionQueryService(
 
   private fun calculateTotalUnrealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions
-      .groupBy { it.instrument }
-      .entries
-      .sumOf { (instrument, instrumentTransactions) ->
-        investmentMetricsService.calculateInstrumentMetrics(instrument, instrumentTransactions).unrealizedProfit
-      }
+      .mapNotNull { it.instrument.id }
+      .distinct()
+      .sumOf { instrumentId -> getPortfolioPerformanceUseCase(instrumentId).unrealizedProfit }
 
   private fun calculateTotalRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions
