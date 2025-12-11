@@ -46,10 +46,12 @@ class IndustryClassificationService(
     sanitizedName: String,
     failedModel: AiModel? = null,
   ): SectorClassificationResult? {
-    val model = failedModel?.getNextFallback() ?: failedModel?.let {
-      log.warn("No fallback available after {}", it.modelId)
+    val nextModel = failedModel?.getNextFallback()
+    if (failedModel != null && nextModel == null) {
+      log.warn("No fallback available after {}", failedModel.modelId)
       return null
-    } ?: AiModel.GROK_4_1_FAST
+    }
+    val model = nextModel ?: AiModel.GROK_4_1_FAST
     log.info("Retrying classification with cascading fallback starting from {} for: {}", model.modelId, sanitizedName)
     val response =
       openRouterClient.classifyWithCascadingFallback(prompt, model) ?: run {
