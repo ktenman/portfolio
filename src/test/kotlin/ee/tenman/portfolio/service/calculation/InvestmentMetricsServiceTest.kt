@@ -82,7 +82,7 @@ class InvestmentMetricsServiceTest {
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
     expect(quantity).toEqualNumerically(BigDecimal("10"))
-    expect(averageCost).toEqualNumerically(BigDecimal("100.50"))
+    expect(averageCost).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -107,8 +107,7 @@ class InvestmentMetricsServiceTest {
     val expectedTotalCost =
       BigDecimal("10")
         .multiply(BigDecimal("100"))
-        .add(BigDecimal("5"))
-      .add(BigDecimal("5").multiply(BigDecimal("120")).add(BigDecimal("5")))
+        .add(BigDecimal("5").multiply(BigDecimal("120")))
     val expectedAvgCost = expectedTotalCost.divide(BigDecimal("15"), CALCULATION_SCALE, RoundingMode.HALF_UP)
     expect(averageCost).toEqualNumerically(expectedAvgCost)
   }
@@ -153,7 +152,7 @@ class InvestmentMetricsServiceTest {
     val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
     expect(quantity).toEqualNumerically(BigDecimal("10"))
-    expect(averageCost).toEqualNumerically(BigDecimal("101"))
+    expect(averageCost).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test

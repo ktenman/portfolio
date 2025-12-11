@@ -10,7 +10,7 @@ data class HoldingsAccumulator(
   val totalCost: BigDecimal = BigDecimal.ZERO,
 ) {
   fun applyBuy(tx: PortfolioTransaction): HoldingsAccumulator {
-    val cost = tx.price.multiply(tx.quantity).add(tx.commission)
+    val cost = tx.price.multiply(tx.quantity)
     return copy(quantity = quantity.add(tx.quantity), totalCost = totalCost.add(cost))
   }
 
