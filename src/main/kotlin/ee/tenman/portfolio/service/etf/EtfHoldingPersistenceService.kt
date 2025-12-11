@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -32,6 +33,7 @@ class EtfHoldingPersistenceService(
       }
     holding.sector = sector
     holding.classifiedByModel = classifiedByModel
+    holding.sectorSource = SectorSource.LLM
     etfHoldingRepository.save(holding)
   }
 }

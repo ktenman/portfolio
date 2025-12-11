@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.etf
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
@@ -99,6 +100,7 @@ class EtfHoldingsService(
       if (holdingData.logoUrl != null) {
         uploadLogoToMinioIfNeeded(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
       }
+      updateSectorFromSourceIfMissing(holding, holdingData.sector)
       holding
     } else {
       log.debug(
@@ -117,8 +119,18 @@ class EtfHoldingsService(
           name = holdingData.name,
           ticker = holdingData.ticker,
           sector = holdingData.sector,
+          sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
         )
       etfHoldingRepository.save(newHolding)
+    }
+  }
+
+  private fun updateSectorFromSourceIfMissing(holding: EtfHolding, sourceSector: String?) {
+    if (holding.sector.isNullOrBlank() && !sourceSector.isNullOrBlank()) {
+      log.info("Updating sector from source for '{}': {}", holding.name, sourceSector)
+      holding.sector = sourceSector
+      holding.sectorSource = SectorSource.LIGHTYEAR
+      etfHoldingRepository.save(holding)
     }
   }
 

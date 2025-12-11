@@ -230,4 +230,73 @@ class EtfHoldingsServiceIT {
     val savedHoldings = etfHoldingRepository.findAll()
     expect(savedHoldings.size).toEqual(3)
   }
+
+  @Test
+  fun `should update sector from source when existing holding has no sector`() {
+    val holdingsWithoutSector =
+      listOf(
+        HoldingData(
+          name = "Google Inc",
+          ticker = "GOOGL",
+          sector = null,
+          weight = BigDecimal("10.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdingsWithoutSector)
+    val savedWithoutSector = etfHoldingRepository.findAll().first()
+    expect(savedWithoutSector.sector).toEqual(null)
+
+    val holdingsWithSector =
+      listOf(
+        HoldingData(
+          name = "Google Inc",
+          ticker = "GOOGL",
+          sector = "Technology",
+          weight = BigDecimal("10.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), holdingsWithSector)
+
+    val updatedHolding = etfHoldingRepository.findAll().first()
+    expect(updatedHolding.sector).toEqual("Technology")
+    expect(updatedHolding.classifiedByModel).toEqual(null)
+  }
+
+  @Test
+  fun `should not overwrite existing sector from source`() {
+    val holdingsWithSector =
+      listOf(
+        HoldingData(
+          name = "Facebook Inc",
+          ticker = "FB",
+          sector = "Technology",
+          weight = BigDecimal("10.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdingsWithSector)
+    val savedWithSector = etfHoldingRepository.findAll().first()
+    expect(savedWithSector.sector).toEqual("Technology")
+
+    val holdingsWithDifferentSector =
+      listOf(
+        HoldingData(
+          name = "Facebook Inc",
+          ticker = "FB",
+          sector = "Communication",
+          weight = BigDecimal("10.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), holdingsWithDifferentSector)
+
+    val unchangedHolding = etfHoldingRepository.findAll().first()
+    expect(unchangedHolding.sector).toEqual("Technology")
+  }
 }
