@@ -141,13 +141,9 @@ const {
 const items = computed(() => {
   if (!rawItems.value) return []
 
-  const sorted = [...rawItems.value].sort((a, b) => {
-    const valueA = a.currentValue || 0
-    const valueB = b.currentValue || 0
-    return valueB - valueA
-  })
-
-  return sorted
+  return [...rawItems.value]
+    .filter(instrument => (instrument.currentValue || 0) > 0)
+    .sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0))
 })
 
 const saveMutation = useMutation({
