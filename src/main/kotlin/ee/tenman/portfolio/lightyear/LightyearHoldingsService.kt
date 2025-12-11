@@ -106,9 +106,9 @@ class LightyearHoldingsService(
       isNotAvailable -> rawName.replace(Regex("""Instrument is not available.*"""), "").trim()
       else -> rawName
     }
+    val tickerAndSector = parsedData.nameParts.getOrNull(1)
     val ticker =
-      parsedData.nameParts
-        .getOrNull(1)
+      tickerAndSector
         ?.removePrefix("$")
         ?.removePrefix("€")
         ?.removePrefix("£")
@@ -116,7 +116,8 @@ class LightyearHoldingsService(
         ?.trim()
         ?.takeIf { it.isNotBlank() }
         .takeUnless { isNotAvailable }
-    val sector = parsedData.nameParts.getOrNull(2).takeUnless { isNotAvailable }
+    val sectorFromTickerField = tickerAndSector?.substringAfter("·", "")?.trim()?.takeIf { it.isNotBlank() }
+    val sector = (parsedData.nameParts.getOrNull(2) ?: sectorFromTickerField).takeUnless { isNotAvailable }
     return ValidatedRowData(name, ticker, sector, parsedData.weightText)
   }
 
@@ -247,12 +248,16 @@ class LightyearHoldingsService(
   }
 
   private fun tryParseWithCurrencyIndex(firstDivText: String): List<String>? {
-    val currencyIndex = firstDivText.indexOfAny(listOf(" $", " €", " £"))
-    if (currencyIndex <= 0) return null
-
-    val name = firstDivText.substring(0, currencyIndex).trim()
-    val remaining = firstDivText.substring(currencyIndex + 1).trim()
-
+    val currencyIndexWithSpace = firstDivText.indexOfAny(listOf(" $", " €", " £"))
+    if (currencyIndexWithSpace > 0) {
+      val name = firstDivText.substring(0, currencyIndexWithSpace).trim()
+      val remaining = firstDivText.substring(currencyIndexWithSpace + 1).trim()
+      return parseRemainingText(name, remaining)
+    }
+    val currencyIndexNoSpace = firstDivText.indexOfAny(charArrayOf('$', '€', '£'))
+    if (currencyIndexNoSpace <= 0) return null
+    val name = firstDivText.substring(0, currencyIndexNoSpace).trim()
+    val remaining = firstDivText.substring(currencyIndexNoSpace).trim()
     return parseRemainingText(name, remaining)
   }
 
@@ -260,15 +265,20 @@ class LightyearHoldingsService(
     name: String,
     remaining: String,
   ): List<String> {
+    val tickerWithDotPattern = Regex("""([\$€£][A-Z0-9]+)·(.+)""")
+    val matchWithDot = tickerWithDotPattern.find(remaining)
+    if (matchWithDot != null) {
+      val ticker = matchWithDot.groupValues[1]
+      val sector = matchWithDot.groupValues[2]
+      return listOf(name, ticker, sector)
+    }
     val tickerEndPattern = Regex("""([\$€£][A-Z]+)([A-Z][a-z].*)""")
     val match = tickerEndPattern.find(remaining)
-
     if (match != null) {
       val ticker = match.groupValues[1]
       val sector = match.groupValues[2]
       return listOf(name, ticker, sector)
     }
-
     val parts = remaining.split(Regex("(?<=[A-Z])(?=[A-Z][a-z])"), limit = 2)
     return if (parts.size == 2) {
       listOf(name, parts[0], parts[1])

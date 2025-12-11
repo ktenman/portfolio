@@ -24,4 +24,7 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "classified_by_model", length = 100)
   var classifiedByModel: AiModel? = null,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "sector_source", length = 20)
+  var sectorSource: SectorSource? = null,
 ) : BaseEntity()
