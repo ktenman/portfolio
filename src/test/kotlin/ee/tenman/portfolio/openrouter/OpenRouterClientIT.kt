@@ -50,7 +50,7 @@ class OpenRouterClientIT {
 
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Technology")
-    expect(result?.model).toEqual(AiModel.CLAUDE_3_HAIKU)
+    expect(result?.model).toEqual(AiModel.GEMINI_2_5_FLASH)
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.CLOSED)
   }
 
@@ -116,7 +116,7 @@ class OpenRouterClientIT {
 
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Healthcare")
-    expect(result?.model).toEqual(AiModel.CLAUDE_HAIKU_4_5)
+    expect(result?.model).toEqual(AiModel.GROK_4_1_FAST)
   }
 
   private fun createSuccessResponse(content: String): String =
