@@ -84,8 +84,11 @@ class ArchitectureTest {
       .whereLayer("Configuration")
       .mayOnlyBeAccessedByLayers("API", "Application", "Infrastructure", "Jobs")
       .ignoreDependency(
-        DescribedPredicate.describe("test classes") { javaClass: JavaClass ->
-          javaClass.name.endsWith("IT") || javaClass.name.endsWith("Test") || javaClass.name.endsWith("IntegrationTest")
+        DescribedPredicate.describe("test classes and fixtures") { javaClass: JavaClass ->
+          javaClass.name.endsWith("IT") ||
+            javaClass.name.endsWith("Test") ||
+            javaClass.name.endsWith("IntegrationTest") ||
+            javaClass.packageName.contains(".testing.")
         },
         DescribedPredicate.alwaysTrue(),
       )
