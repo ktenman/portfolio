@@ -48,7 +48,7 @@ class IndustryClassificationService(
   ): SectorClassificationResult? {
     val startingModel =
       when {
-        failedModel == null -> AiModel.CLAUDE_HAIKU_4_5
+        failedModel == null -> AiModel.CLAUDE_3_HAIKU
         else ->
           failedModel.getNextFallback() ?: run {
             log.warn("No fallback available after {}", failedModel.modelId)

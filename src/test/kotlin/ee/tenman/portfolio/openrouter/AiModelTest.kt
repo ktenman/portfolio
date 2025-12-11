@@ -7,6 +7,34 @@ import org.junit.jupiter.api.Test
 
 class AiModelTest {
   @Test
+  fun `should return GROK_4_1_FAST for matching model id`() {
+    val result = AiModel.fromModelId("x-ai/grok-4.1-fast")
+
+    expect(result).toEqual(AiModel.GROK_4_1_FAST)
+  }
+
+  @Test
+  fun `should return GROK_4 for matching model id`() {
+    val result = AiModel.fromModelId("x-ai/grok-4")
+
+    expect(result).toEqual(AiModel.GROK_4)
+  }
+
+  @Test
+  fun `should return GEMINI_2_5_FLASH for matching model id`() {
+    val result = AiModel.fromModelId("google/gemini-2.5-flash")
+
+    expect(result).toEqual(AiModel.GEMINI_2_5_FLASH)
+  }
+
+  @Test
+  fun `should return GEMINI_3_PRO_PREVIEW for matching model id`() {
+    val result = AiModel.fromModelId("google/gemini-3-pro-preview")
+
+    expect(result).toEqual(AiModel.GEMINI_3_PRO_PREVIEW)
+  }
+
+  @Test
   fun `should return CLAUDE_3_HAIKU for matching model id`() {
     val result = AiModel.fromModelId("anthropic/claude-3-haiku")
 
@@ -43,9 +71,29 @@ class AiModelTest {
 
   @Test
   fun `should match model id case insensitively`() {
-    val result = AiModel.fromModelId("ANTHROPIC/CLAUDE-3-HAIKU")
+    val result = AiModel.fromModelId("GOOGLE/GEMINI-2.5-FLASH")
 
-    expect(result).toEqual(AiModel.CLAUDE_3_HAIKU)
+    expect(result).toEqual(AiModel.GEMINI_2_5_FLASH)
+  }
+
+  @Test
+  fun `should have correct rate limits for GROK_4_1_FAST`() {
+    expect(AiModel.GROK_4_1_FAST.rateLimitPerMinute).toEqual(60)
+  }
+
+  @Test
+  fun `should have correct rate limits for GROK_4`() {
+    expect(AiModel.GROK_4.rateLimitPerMinute).toEqual(2)
+  }
+
+  @Test
+  fun `should have correct rate limits for GEMINI_2_5_FLASH`() {
+    expect(AiModel.GEMINI_2_5_FLASH.rateLimitPerMinute).toEqual(100)
+  }
+
+  @Test
+  fun `should have correct rate limits for GEMINI_3_PRO_PREVIEW`() {
+    expect(AiModel.GEMINI_3_PRO_PREVIEW.rateLimitPerMinute).toEqual(2)
   }
 
   @Test
@@ -70,10 +118,24 @@ class AiModelTest {
 
   @Test
   fun `should have correct fallback tiers`() {
-    expect(AiModel.CLAUDE_3_HAIKU.fallbackTier).toEqual(0)
-    expect(AiModel.CLAUDE_HAIKU_4_5.fallbackTier).toEqual(1)
-    expect(AiModel.CLAUDE_SONNET_4_5.fallbackTier).toEqual(2)
-    expect(AiModel.CLAUDE_OPUS_4_5.fallbackTier).toEqual(3)
+    expect(AiModel.GEMINI_2_5_FLASH.fallbackTier).toEqual(0)
+    expect(AiModel.GROK_4_1_FAST.fallbackTier).toEqual(1)
+    expect(AiModel.CLAUDE_3_HAIKU.fallbackTier).toEqual(2)
+    expect(AiModel.CLAUDE_HAIKU_4_5.fallbackTier).toEqual(3)
+    expect(AiModel.GEMINI_3_PRO_PREVIEW.fallbackTier).toEqual(4)
+    expect(AiModel.GROK_4.fallbackTier).toEqual(5)
+    expect(AiModel.CLAUDE_SONNET_4_5.fallbackTier).toEqual(6)
+    expect(AiModel.CLAUDE_OPUS_4_5.fallbackTier).toEqual(7)
+  }
+
+  @Test
+  fun `should return next fallback model for GEMINI_2_5_FLASH`() {
+    expect(AiModel.GEMINI_2_5_FLASH.getNextFallback()).toEqual(AiModel.GROK_4_1_FAST)
+  }
+
+  @Test
+  fun `should return next fallback model for GROK_4_1_FAST`() {
+    expect(AiModel.GROK_4_1_FAST.getNextFallback()).toEqual(AiModel.CLAUDE_3_HAIKU)
   }
 
   @Test
@@ -83,7 +145,17 @@ class AiModelTest {
 
   @Test
   fun `should return next fallback model for CLAUDE_HAIKU_4_5`() {
-    expect(AiModel.CLAUDE_HAIKU_4_5.getNextFallback()).toEqual(AiModel.CLAUDE_SONNET_4_5)
+    expect(AiModel.CLAUDE_HAIKU_4_5.getNextFallback()).toEqual(AiModel.GEMINI_3_PRO_PREVIEW)
+  }
+
+  @Test
+  fun `should return next fallback model for GEMINI_3_PRO_PREVIEW`() {
+    expect(AiModel.GEMINI_3_PRO_PREVIEW.getNextFallback()).toEqual(AiModel.GROK_4)
+  }
+
+  @Test
+  fun `should return next fallback model for GROK_4`() {
+    expect(AiModel.GROK_4.getNextFallback()).toEqual(AiModel.CLAUDE_SONNET_4_5)
   }
 
   @Test
