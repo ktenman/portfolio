@@ -322,6 +322,23 @@ class LightyearHoldingsServiceIT {
   }
 
   @Test
+  fun `should parse real Lightyear HTML with sectors`() {
+    val realHtml = javaClass.getResourceAsStream("/lightyear-vwce-page1.html")?.bufferedReader()?.readText()
+      ?: throw IllegalStateException("Test resource not found")
+
+    val holdings = lightyearHoldingsService.parseHoldings(realHtml, 1)
+
+    expect(holdings.size).toBeGreaterThan(30)
+    val nvidia = holdings.find { it.name == "NVIDIA" }
+    expect(nvidia).notToEqualNull()
+    expect(nvidia!!.ticker).toEqual("NVDA")
+    expect(nvidia.sector).notToEqualNull().toEqual("Semiconductors")
+    val apple = holdings.find { it.name == "Apple" }
+    expect(apple).notToEqualNull()
+    expect(apple!!.sector).notToEqualNull().toEqual("Digital Hardware")
+  }
+
+  @Test
   fun `should parse company name with special characters in European currency pattern`() {
     val sampleHtml =
       """
