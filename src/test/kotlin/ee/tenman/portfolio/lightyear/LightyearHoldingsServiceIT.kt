@@ -323,7 +323,8 @@ class LightyearHoldingsServiceIT {
 
   @Test
   fun `should parse real Lightyear HTML with sectors`() {
-    val realHtml = javaClass.getResourceAsStream("/lightyear-vwce-page1.html")?.bufferedReader()?.readText()
+    val realHtml =
+      javaClass.getResourceAsStream("/lightyear-vwce-page1.html")?.bufferedReader()?.readText()
       ?: throw IllegalStateException("Test resource not found")
 
     val holdings = lightyearHoldingsService.parseHoldings(realHtml, 1)

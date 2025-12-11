@@ -125,7 +125,10 @@ class EtfHoldingsService(
     }
   }
 
-  private fun updateSectorFromSourceIfMissing(holding: EtfHolding, sourceSector: String?) {
+  private fun updateSectorFromSourceIfMissing(
+    holding: EtfHolding,
+    sourceSector: String?,
+  ) {
     if (holding.sector.isNullOrBlank() && !sourceSector.isNullOrBlank()) {
       log.info("Updating sector from source for '{}': {}", holding.name, sourceSector)
       holding.sector = sourceSector
