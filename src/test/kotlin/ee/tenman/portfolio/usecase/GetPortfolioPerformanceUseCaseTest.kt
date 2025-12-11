@@ -35,7 +35,8 @@ class GetPortfolioPerformanceUseCaseTest {
   private lateinit var useCase: GetPortfolioPerformanceUseCase
 
   private val testDate = LocalDate.of(2024, 1, 15)
-  private val testInstrument = Instrument(
+  private val testInstrument =
+    Instrument(
     symbol = "AAPL",
     name = "Apple Inc.",
     category = "Stock",
@@ -46,14 +47,16 @@ class GetPortfolioPerformanceUseCaseTest {
 
   @BeforeEach
   fun setUp() {
-    investmentMetricsService = InvestmentMetricsService(
+    investmentMetricsService =
+      InvestmentMetricsService(
       dailyPriceService,
       transactionService,
       xirrCalculationService,
       holdingsCalculationService,
       Clock.systemDefaultZone(),
     )
-    useCase = GetPortfolioPerformanceUseCase(
+    useCase =
+      GetPortfolioPerformanceUseCase(
       transactionRepository,
       transactionService,
       investmentMetricsService,
@@ -90,7 +93,8 @@ class GetPortfolioPerformanceUseCaseTest {
 
   @Test
   fun `should calculate metrics for multiple transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createBuyTransaction(BigDecimal("10"), BigDecimal("100")),
       createBuyTransaction(BigDecimal("5"), BigDecimal("120")),
       createSellTransaction(BigDecimal("3"), BigDecimal("150")),
@@ -137,7 +141,8 @@ class GetPortfolioPerformanceUseCaseTest {
 
   @Test
   fun `should handle all sold positions returning zero quantity`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createBuyTransaction(BigDecimal("10"), BigDecimal("100")),
       createSellTransaction(BigDecimal("10"), BigDecimal("150")),
     )
@@ -151,7 +156,8 @@ class GetPortfolioPerformanceUseCaseTest {
   private fun createBuyTransaction(
     quantity: BigDecimal,
     price: BigDecimal,
-  ): PortfolioTransaction = PortfolioTransaction(
+  ): PortfolioTransaction =
+    PortfolioTransaction(
     instrument = testInstrument,
     transactionType = TransactionType.BUY,
     quantity = quantity,
@@ -164,7 +170,8 @@ class GetPortfolioPerformanceUseCaseTest {
   private fun createSellTransaction(
     quantity: BigDecimal,
     price: BigDecimal,
-  ): PortfolioTransaction = PortfolioTransaction(
+  ): PortfolioTransaction =
+    PortfolioTransaction(
     instrument = testInstrument,
     transactionType = TransactionType.SELL,
     quantity = quantity,

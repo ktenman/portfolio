@@ -13,7 +13,8 @@ import java.time.LocalDate
 
 class InvestmentMathTest {
   private val testDate = LocalDate.of(2024, 1, 15)
-  private val testInstrument = Instrument(
+  private val testInstrument =
+    Instrument(
     symbol = "AAPL",
     name = "Apple Inc.",
     category = "Stock",
@@ -23,7 +24,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateRealizedProfit with sell transactions having realized profits`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100")),
       createTransaction(TransactionType.SELL, BigDecimal("5"), BigDecimal("120")).apply {
         realizedProfit = BigDecimal("100")
@@ -40,7 +42,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateRealizedProfit returns zero when no sell transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100")),
       createTransaction(TransactionType.BUY, BigDecimal("5"), BigDecimal("110")),
     )
@@ -52,7 +55,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateRealizedProfit handles null realized profit as zero`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.SELL, BigDecimal("5"), BigDecimal("120")).apply {
         realizedProfit = null
       },
@@ -72,7 +76,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateTotalBuys with multiple buy transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), BigDecimal("5")),
       createTransaction(TransactionType.BUY, BigDecimal("5"), BigDecimal("120"), BigDecimal("3")),
     )
@@ -84,7 +89,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateTotalBuys excludes sell transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), BigDecimal("5")),
       createTransaction(TransactionType.SELL, BigDecimal("5"), BigDecimal("120"), BigDecimal("3")),
     )
@@ -103,7 +109,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateTotalSells with multiple sell transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.SELL, BigDecimal("10"), BigDecimal("120"), BigDecimal("5")),
       createTransaction(TransactionType.SELL, BigDecimal("5"), BigDecimal("130"), BigDecimal("3")),
     )
@@ -115,7 +122,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateTotalSells excludes buy transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100"), BigDecimal("5")),
       createTransaction(TransactionType.SELL, BigDecimal("5"), BigDecimal("120"), BigDecimal("3")),
     )
@@ -134,7 +142,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateBuyQuantity with multiple buy transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100")),
       createTransaction(TransactionType.BUY, BigDecimal("15"), BigDecimal("110")),
     )
@@ -146,7 +155,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateBuyQuantity excludes sell transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("10"), BigDecimal("100")),
       createTransaction(TransactionType.SELL, BigDecimal("5"), BigDecimal("120")),
     )
@@ -158,7 +168,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateSellQuantity with multiple sell transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.SELL, BigDecimal("5"), BigDecimal("120")),
       createTransaction(TransactionType.SELL, BigDecimal("3"), BigDecimal("130")),
     )
@@ -182,7 +193,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateRealizedGains returns zero when totalSells is zero`() {
-    val result = InvestmentMath.calculateRealizedGains(
+    val result =
+      InvestmentMath.calculateRealizedGains(
       BigDecimal("50"),
       BigDecimal("100"),
       BigDecimal("5000"),
@@ -194,7 +206,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateRealizedGains returns zero when totalBuys is zero`() {
-    val result = InvestmentMath.calculateRealizedGains(
+    val result =
+      InvestmentMath.calculateRealizedGains(
       BigDecimal("50"),
       BigDecimal("100"),
       BigDecimal.ZERO,
@@ -206,7 +219,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateRealizedGains returns zero when buyQuantity is zero`() {
-    val result = InvestmentMath.calculateRealizedGains(
+    val result =
+      InvestmentMath.calculateRealizedGains(
       BigDecimal("50"),
       BigDecimal.ZERO,
       BigDecimal("5000"),
@@ -240,7 +254,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateSoldCost calculates correctly`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("100"), BigDecimal("50"), BigDecimal.ZERO),
       createTransaction(TransactionType.SELL, BigDecimal("40"), BigDecimal("60"), BigDecimal.ZERO),
     )
@@ -253,7 +268,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateSoldCost returns zero when no buy quantity`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.SELL, BigDecimal("10"), BigDecimal("100")),
     )
 
@@ -264,7 +280,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateFallbackProfits with mixed transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("100"), BigDecimal("50"), BigDecimal("10")),
       createTransaction(TransactionType.BUY, BigDecimal("50"), BigDecimal("60"), BigDecimal("5")),
       createTransaction(TransactionType.SELL, BigDecimal("30"), BigDecimal("80"), BigDecimal("5")),
@@ -279,7 +296,8 @@ class InvestmentMathTest {
 
   @Test
   fun `should calculateFallbackProfits with only buy transactions`() {
-    val transactions = listOf(
+    val transactions =
+      listOf(
       createTransaction(TransactionType.BUY, BigDecimal("100"), BigDecimal("50"), BigDecimal("10")),
     )
     val currentValue = BigDecimal("6000")
@@ -295,7 +313,8 @@ class InvestmentMathTest {
     quantity: BigDecimal,
     price: BigDecimal,
     commission: BigDecimal = BigDecimal("5"),
-  ): PortfolioTransaction = PortfolioTransaction(
+  ): PortfolioTransaction =
+    PortfolioTransaction(
     instrument = testInstrument,
     transactionType = type,
     quantity = quantity,
