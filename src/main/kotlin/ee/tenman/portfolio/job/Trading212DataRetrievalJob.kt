@@ -6,7 +6,6 @@ import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import ee.tenman.portfolio.service.pricing.Trading212PriceUpdateService
 import ee.tenman.portfolio.trading212.Trading212Service
 import org.slf4j.LoggerFactory
-import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -24,7 +23,6 @@ class Trading212DataRetrievalJob(
   private val log = LoggerFactory.getLogger(javaClass)
   private val estonianZone = ZoneId.of("Europe/Tallinn")
 
-  @Scheduled(cron = "0/10 * 10-18 * * MON-FRI", zone = "Europe/Tallinn")
   fun runJob() {
     if (!isWithinTradingHours()) {
       log.debug("Skipping Trading212 job - outside trading hours (10:00-18:30 EET/EEST on workdays)")

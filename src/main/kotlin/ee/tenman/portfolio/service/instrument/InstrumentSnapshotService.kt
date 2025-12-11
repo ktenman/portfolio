@@ -95,7 +95,7 @@ class InstrumentSnapshotService(
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, context.calculationDate)
     val priceChange = calculatePriceChange(instrument, transactions, context)
-    if (metrics.quantity.compareTo(BigDecimal.ZERO) == 0 && metrics.totalInvestment.compareTo(BigDecimal.ZERO) == 0) return null
+    if (metrics.quantity.compareTo(BigDecimal.ZERO) == 0 && metrics.realizedProfit.compareTo(BigDecimal.ZERO) == 0) return null
     return InstrumentSnapshot(
       instrument = instrument,
       totalInvestment = metrics.totalInvestment,
