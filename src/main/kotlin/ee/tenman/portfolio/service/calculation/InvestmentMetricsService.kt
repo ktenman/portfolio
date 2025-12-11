@@ -2,8 +2,6 @@ package ee.tenman.portfolio.service.calculation
 
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TransactionType
-import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.service.pricing.DailyPriceService
@@ -11,7 +9,6 @@ import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
 
@@ -152,74 +149,12 @@ class InvestmentMetricsService(
     }
 
   private fun calculateRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
+    InvestmentMath.calculateRealizedProfit(transactions)
 
   private fun calculateFallbackProfits(
     transactions: List<PortfolioTransaction>,
     currentValue: BigDecimal,
-  ): Pair<BigDecimal, BigDecimal> {
-    val totalBuys = calculateTotalBuys(transactions)
-    val totalSells = calculateTotalSells(transactions)
-    val realizedGains = calculateRealizedGains(transactions, totalBuys, totalSells)
-    val unrealizedGains = calculateUnrealizedGains(transactions, currentValue, totalBuys)
-    return Pair(realizedGains, unrealizedGains)
-  }
-
-  private fun calculateTotalBuys(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.BUY }
-      .sumOf { it.price.multiply(it.quantity).add(it.commission) }
-
-  private fun calculateTotalSells(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.price.multiply(it.quantity).subtract(it.commission) }
-
-  private fun calculateRealizedGains(
-    transactions: List<PortfolioTransaction>,
-    totalBuys: BigDecimal,
-    totalSells: BigDecimal,
-  ): BigDecimal {
-    val sellQuantity =
-      transactions
-        .filter { it.transactionType == TransactionType.SELL }
-        .sumOf { it.quantity }
-    val buyQuantity =
-      transactions
-        .filter { it.transactionType == TransactionType.BUY }
-        .sumOf { it.quantity }
-    if (totalSells <= BigDecimal.ZERO || totalBuys <= BigDecimal.ZERO || buyQuantity <= BigDecimal.ZERO) {
-      return BigDecimal.ZERO
-    }
-    val avgBuyPrice = totalBuys.divide(buyQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
-    return totalSells.subtract(avgBuyPrice.multiply(sellQuantity))
-  }
-
-  private fun calculateUnrealizedGains(
-    transactions: List<PortfolioTransaction>,
-    currentValue: BigDecimal,
-    totalBuys: BigDecimal,
-  ): BigDecimal {
-    val soldCost = calculateSoldCost(transactions, totalBuys)
-    return currentValue.subtract(totalBuys.subtract(soldCost))
-  }
-
-  private fun calculateSoldCost(
-    transactions: List<PortfolioTransaction>,
-    totalBuys: BigDecimal,
-  ): BigDecimal {
-    val buyQuantity =
-      transactions
-        .filter { it.transactionType == TransactionType.BUY }
-        .sumOf { it.quantity }
-    if (buyQuantity <= BigDecimal.ZERO) return BigDecimal.ZERO
-    val avgBuyPrice = totalBuys.divide(buyQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
-    return transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { avgBuyPrice.multiply(it.quantity) }
-  }
+  ): Pair<BigDecimal, BigDecimal> = InvestmentMath.calculateFallbackProfits(transactions, currentValue)
 
   private fun updateMetrics(
     metrics: PortfolioMetrics,
