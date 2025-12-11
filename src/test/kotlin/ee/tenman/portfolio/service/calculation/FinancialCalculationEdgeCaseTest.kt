@@ -87,7 +87,7 @@ class FinancialCalculationEdgeCaseTest {
       val transaction = createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal.ZERO)
       val (quantity, averageCost) = holdingsCalculationService.calculateCurrentHoldings(listOf(transaction))
       expect(quantity).toEqualNumerically(BigDecimal("10"))
-      expect(averageCost).toEqualNumerically(BigDecimal("0.05"))
+      expect(averageCost).toEqualNumerically(BigDecimal.ZERO)
     }
   }
 

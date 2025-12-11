@@ -98,11 +98,10 @@ class InvestmentMetricsService(
     date: LocalDate,
     metrics: PortfolioMetrics,
   ) {
-    val (currentHoldings, averageCost) = holdingsCalculationService.calculateCurrentHoldings(transactions)
+    val (currentHoldings, totalInvestment) = holdingsCalculationService.calculateAggregatedHoldings(transactions)
     val realizedProfit = calculateRealizedProfit(transactions)
-    val investment = currentHoldings.multiply(averageCost)
     val currentValue = calculateCurrentValueForDate(currentHoldings, instrument, date)
-    val unrealizedProfit = currentValue.subtract(investment)
+    val unrealizedProfit = currentValue.subtract(totalInvestment)
     if (currentValue <= BigDecimal.ZERO && realizedProfit <= BigDecimal.ZERO) return
     updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
     xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, currentValue, date)
