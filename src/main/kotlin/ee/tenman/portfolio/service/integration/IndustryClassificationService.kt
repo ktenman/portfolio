@@ -46,7 +46,7 @@ class IndustryClassificationService(
     sanitizedName: String,
     failedModel: AiModel? = null,
   ): SectorClassificationResult? {
-    val nextModel = failedModel?.getNextFallback()
+    val nextModel = failedModel?.nextFallbackModel()
     if (failedModel != null && nextModel == null) {
       log.warn("No fallback available after {}", failedModel.modelId)
       return null

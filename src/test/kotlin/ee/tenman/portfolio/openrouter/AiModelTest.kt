@@ -130,42 +130,42 @@ class AiModelTest {
 
   @Test
   fun `should return next fallback model for GEMINI_2_5_FLASH`() {
-    expect(AiModel.GEMINI_2_5_FLASH.getNextFallback()).toEqual(AiModel.GROK_4_1_FAST)
+    expect(AiModel.GEMINI_2_5_FLASH.nextFallbackModel()).toEqual(AiModel.GROK_4_1_FAST)
   }
 
   @Test
   fun `should return next fallback model for GROK_4_1_FAST`() {
-    expect(AiModel.GROK_4_1_FAST.getNextFallback()).toEqual(AiModel.CLAUDE_3_HAIKU)
+    expect(AiModel.GROK_4_1_FAST.nextFallbackModel()).toEqual(AiModel.CLAUDE_3_HAIKU)
   }
 
   @Test
   fun `should return next fallback model for CLAUDE_3_HAIKU`() {
-    expect(AiModel.CLAUDE_3_HAIKU.getNextFallback()).toEqual(AiModel.CLAUDE_HAIKU_4_5)
+    expect(AiModel.CLAUDE_3_HAIKU.nextFallbackModel()).toEqual(AiModel.CLAUDE_HAIKU_4_5)
   }
 
   @Test
   fun `should return next fallback model for CLAUDE_HAIKU_4_5`() {
-    expect(AiModel.CLAUDE_HAIKU_4_5.getNextFallback()).toEqual(AiModel.GEMINI_3_PRO_PREVIEW)
+    expect(AiModel.CLAUDE_HAIKU_4_5.nextFallbackModel()).toEqual(AiModel.GEMINI_3_PRO_PREVIEW)
   }
 
   @Test
   fun `should return next fallback model for GEMINI_3_PRO_PREVIEW`() {
-    expect(AiModel.GEMINI_3_PRO_PREVIEW.getNextFallback()).toEqual(AiModel.GROK_4)
+    expect(AiModel.GEMINI_3_PRO_PREVIEW.nextFallbackModel()).toEqual(AiModel.GROK_4)
   }
 
   @Test
   fun `should return next fallback model for GROK_4`() {
-    expect(AiModel.GROK_4.getNextFallback()).toEqual(AiModel.CLAUDE_SONNET_4_5)
+    expect(AiModel.GROK_4.nextFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_4_5)
   }
 
   @Test
   fun `should return next fallback model for CLAUDE_SONNET_4_5`() {
-    expect(AiModel.CLAUDE_SONNET_4_5.getNextFallback()).toEqual(AiModel.CLAUDE_OPUS_4_5)
+    expect(AiModel.CLAUDE_SONNET_4_5.nextFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_5)
   }
 
   @Test
   fun `should return null for CLAUDE_OPUS_4_5 as last fallback`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.getNextFallback()).toEqual(null)
+    expect(AiModel.CLAUDE_OPUS_4_5.nextFallbackModel()).toEqual(null)
   }
 
   @Test

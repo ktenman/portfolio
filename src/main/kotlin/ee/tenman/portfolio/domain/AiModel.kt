@@ -15,7 +15,7 @@ enum class AiModel(
   CLAUDE_OPUS_4_5("anthropic/claude-opus-4.5", 1, 7),
   ;
 
-  fun getNextFallback(): AiModel? = entries.find { it.fallbackTier == this.fallbackTier + 1 }
+  fun nextFallbackModel(): AiModel? = entries.find { it.fallbackTier == this.fallbackTier + 1 }
 
   companion object {
     fun fromModelId(modelId: String): AiModel? = entries.find { it.modelId.equals(modelId, ignoreCase = true) }
