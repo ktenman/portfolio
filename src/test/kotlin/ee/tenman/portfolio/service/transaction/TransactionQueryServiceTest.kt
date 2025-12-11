@@ -10,7 +10,7 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
-import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
+import ee.tenman.portfolio.usecase.GetPortfolioPerformanceUseCase
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -21,7 +21,7 @@ import java.time.LocalDate
 
 class TransactionQueryServiceTest {
   private val transactionService = mockk<TransactionService>()
-  private val investmentMetricsService = mockk<InvestmentMetricsService>()
+  private val getPortfolioPerformanceUseCase = mockk<GetPortfolioPerformanceUseCase>()
   private lateinit var transactionQueryService: TransactionQueryService
   private lateinit var testInstrument: Instrument
 
@@ -36,7 +36,7 @@ class TransactionQueryServiceTest {
         currentPrice = BigDecimal("150.00"),
         providerName = ProviderName.FT,
       ).apply { id = 1L }
-    transactionQueryService = TransactionQueryService(transactionService, investmentMetricsService)
+    transactionQueryService = TransactionQueryService(transactionService, getPortfolioPerformanceUseCase)
   }
 
   @Test
@@ -45,7 +45,7 @@ class TransactionQueryServiceTest {
     val metrics = createMetrics(unrealizedProfit = BigDecimal("500"))
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(transaction)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
-    every { investmentMetricsService.calculateInstrumentMetrics(testInstrument, any()) } returns metrics
+    every { getPortfolioPerformanceUseCase(1L) } returns metrics
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
     expect(result.transactions).toHaveSize(1)
     expect(result.summary.totalUnrealizedProfit).toEqualNumerically(BigDecimal("500"))
@@ -64,7 +64,7 @@ class TransactionQueryServiceTest {
     every { transactionService.getAllTransactions(null, LocalDate.of(2024, 1, 1), null) } returns listOf(transaction)
     every { transactionService.getFullTransactionHistoryForProfitCalculation(any(), any()) } returns listOf(fullHistoryTx)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
-    every { investmentMetricsService.calculateInstrumentMetrics(testInstrument, any()) } returns metrics
+    every { getPortfolioPerformanceUseCase(1L) } returns metrics
     val result = transactionQueryService.getTransactionsWithSummary(null, LocalDate.of(2024, 1, 1), null)
     expect(result.transactions).toHaveSize(1)
     verify { transactionService.getFullTransactionHistoryForProfitCalculation(any(), any()) }
@@ -78,7 +78,7 @@ class TransactionQueryServiceTest {
     val metrics = createMetrics(unrealizedProfit = BigDecimal.ZERO)
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(buyTx, sellTx)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
-    every { investmentMetricsService.calculateInstrumentMetrics(testInstrument, any()) } returns metrics
+    every { getPortfolioPerformanceUseCase(1L) } returns metrics
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
     expect(result.summary.totalRealizedProfit).toEqualNumerically(BigDecimal("100"))
   }
@@ -92,7 +92,7 @@ class TransactionQueryServiceTest {
     val metrics = createMetrics(unrealizedProfit = BigDecimal.ZERO)
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(buyTx, sellTx)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
-    every { investmentMetricsService.calculateInstrumentMetrics(testInstrument, any()) } returns metrics
+    every { getPortfolioPerformanceUseCase(1L) } returns metrics
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
     expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("400"))
   }
@@ -122,7 +122,7 @@ class TransactionQueryServiceTest {
     val metrics = createMetrics(unrealizedProfit = BigDecimal("500"))
     every { transactionService.getAllTransactions(listOf("LHV"), null, null) } returns listOf(transaction)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
-    every { investmentMetricsService.calculateInstrumentMetrics(testInstrument, any()) } returns metrics
+    every { getPortfolioPerformanceUseCase(1L) } returns metrics
     val result = transactionQueryService.getTransactionsWithSummary(listOf("LHV"), null, null)
     expect(result.transactions).toHaveSize(1)
     verify { transactionService.getAllTransactions(listOf("LHV"), null, null) }
