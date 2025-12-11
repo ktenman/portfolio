@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
+import java.time.ZoneId
 
 class GetPortfolioPerformanceUseCaseTest {
   private val transactionRepository = mockk<PortfolioTransactionRepository>()
@@ -35,6 +36,7 @@ class GetPortfolioPerformanceUseCaseTest {
   private lateinit var useCase: GetPortfolioPerformanceUseCase
 
   private val testDate = LocalDate.of(2024, 1, 15)
+  private val fixedClock = Clock.fixed(testDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault())
   private val testInstrument =
     Instrument(
     symbol = "AAPL",
@@ -53,13 +55,14 @@ class GetPortfolioPerformanceUseCaseTest {
       transactionService,
       xirrCalculationService,
       holdingsCalculationService,
-      Clock.systemDefaultZone(),
+      fixedClock,
     )
     useCase =
       GetPortfolioPerformanceUseCase(
       transactionRepository,
       transactionService,
       investmentMetricsService,
+      fixedClock,
     )
     every { transactionService.calculateTransactionProfits(any()) } answers {
       val transactions = firstArg<List<PortfolioTransaction>>()
@@ -73,9 +76,7 @@ class GetPortfolioPerformanceUseCaseTest {
   @Test
   fun `should return empty metrics when no transactions exist`() {
     every { transactionRepository.findAllByInstrumentId(1L) } returns emptyList()
-
-    val result = useCase(1L, testDate)
-
+    val result = useCase(1L)
     expect(result).toEqual(InstrumentMetrics.EMPTY)
   }
 
@@ -83,9 +84,7 @@ class GetPortfolioPerformanceUseCaseTest {
   fun `should calculate metrics for single buy transaction`() {
     val transactions = listOf(createBuyTransaction(BigDecimal("10"), BigDecimal("100")))
     every { transactionRepository.findAllByInstrumentId(1L) } returns transactions
-
-    val result = useCase(1L, testDate)
-
+    val result = useCase(1L)
     expect(result.quantity).toEqualNumerically(BigDecimal("10"))
     expect(result.totalInvestment).toBeGreaterThan(BigDecimal.ZERO)
     expect(result.currentValue).toBeGreaterThan(BigDecimal.ZERO)
@@ -100,9 +99,7 @@ class GetPortfolioPerformanceUseCaseTest {
       createSellTransaction(BigDecimal("3"), BigDecimal("150")),
     )
     every { transactionRepository.findAllByInstrumentId(1L) } returns transactions
-
-    val result = useCase(1L, testDate)
-
+    val result = useCase(1L)
     expect(result.quantity).toEqualNumerically(BigDecimal("12"))
     expect(result.totalInvestment).toBeGreaterThan(BigDecimal.ZERO)
   }
@@ -111,9 +108,7 @@ class GetPortfolioPerformanceUseCaseTest {
   fun `should call transactionService to calculate profits`() {
     val transactions = listOf(createBuyTransaction(BigDecimal("10"), BigDecimal("100")))
     every { transactionRepository.findAllByInstrumentId(1L) } returns transactions
-
-    useCase(1L, testDate)
-
+    useCase(1L)
     verify { transactionService.calculateTransactionProfits(transactions) }
   }
 
@@ -121,20 +116,15 @@ class GetPortfolioPerformanceUseCaseTest {
   fun `should use invoke operator for cleaner syntax`() {
     val transactions = listOf(createBuyTransaction(BigDecimal("10"), BigDecimal("100")))
     every { transactionRepository.findAllByInstrumentId(1L) } returns transactions
-
     val result = useCase(1L)
-
     expect(result.quantity).toEqualNumerically(BigDecimal("10"))
   }
 
   @Test
-  fun `should calculate metrics with custom calculation date`() {
-    val customDate = LocalDate.of(2023, 12, 1)
+  fun `should calculate metrics using clock for current date`() {
     val transactions = listOf(createBuyTransaction(BigDecimal("10"), BigDecimal("100")))
     every { transactionRepository.findAllByInstrumentId(1L) } returns transactions
-
-    val result = useCase(1L, customDate)
-
+    val result = useCase(1L)
     expect(result.quantity).toEqualNumerically(BigDecimal("10"))
     expect(result.totalInvestment).toBeGreaterThan(BigDecimal.ZERO)
   }
@@ -147,9 +137,7 @@ class GetPortfolioPerformanceUseCaseTest {
       createSellTransaction(BigDecimal("10"), BigDecimal("150")),
     )
     every { transactionRepository.findAllByInstrumentId(1L) } returns transactions
-
-    val result = useCase(1L, testDate)
-
+    val result = useCase(1L)
     expect(result.quantity).toEqualNumerically(BigDecimal.ZERO)
   }
 
