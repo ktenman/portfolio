@@ -45,7 +45,7 @@ class OpenRouterClient(
       val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.fallbackTier)
       val result = executeWithSelectionForCascade(selection, prompt, maxTokens, temperature)
       if (result != null) return result
-      val nextModel = currentModel.getNextFallback()
+      val nextModel = currentModel.nextFallbackModel()
       if (nextModel != null) {
         log.info("Cascading to next fallback model: {} (tier {})", nextModel.modelId, nextModel.fallbackTier)
       }
