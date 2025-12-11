@@ -19,9 +19,9 @@ class OpenRouterCircuitBreakerTest {
     private const val MILLISECONDS_PER_MINUTE = 60_000L
     private const val RATE_LIMIT_BUFFER_MS = 1L
     private val PRIMARY_RATE_LIMIT_INTERVAL_MS =
-      MILLISECONDS_PER_MINUTE / AiModel.GEMINI_2_5_FLASH.rateLimitPerMinute + RATE_LIMIT_BUFFER_MS
+      (MILLISECONDS_PER_MINUTE / AiModel.GEMINI_2_5_FLASH.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val FALLBACK_RATE_LIMIT_INTERVAL_MS =
-      MILLISECONDS_PER_MINUTE / AiModel.GROK_4_1_FAST.rateLimitPerMinute + RATE_LIMIT_BUFFER_MS
+      (MILLISECONDS_PER_MINUTE / AiModel.GROK_4_1_FAST.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
   }
 
   @BeforeEach
