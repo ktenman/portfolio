@@ -2,9 +2,11 @@
 FROM gradle:jdk21-ubi AS build
 WORKDIR /app
 
+# src/Dockerfile - Add these near the top
 ARG BUILD_HASH=unknown
 ARG BUILD_TIME=unknown
 
+# Later in the file, in the runtime stage
 ENV BUILD_HASH=${BUILD_HASH}
 ENV BUILD_TIME=${BUILD_TIME}
 
@@ -22,18 +24,17 @@ RUN chmod +x gradlew && ./gradlew clean build -x test --no-daemon \
     -Dorg.gradle.parallel=true \
     -Dorg.gradle.configureondemand=true
 
-# Stage 2: Runtime - Use Debian-based image for glibc compatibility with Firefox
-FROM eclipse-temurin:21-jre
+# Stage 2: Runtime
+FROM openjdk:25-ea-21-jdk-slim-bookworm
 WORKDIR /app
 
-# Install Firefox and dependencies with security updates
+# Install Firefox and dependencies with optimizations
 RUN apt-get update && \
-    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         curl \
         firefox-esr \
         fonts-liberation \
-        libasound2t64 \
+        libasound2 \
         libdbus-glib-1-2 \
         libfreetype6 \
         libgtk-3-0 \
@@ -60,10 +61,11 @@ RUN ARCH=$(uname -m); \
         x86_64) GECKODRIVER_ARCH="linux64" ;; \
         *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
     esac && \
-    GECKODRIVER_VERSION="v0.36.0" && \
+    GECKODRIVER_VERSION="v0.35.0" && \
     echo "Downloading geckodriver ${GECKODRIVER_VERSION} for ${GECKODRIVER_ARCH}" && \
     curl -sL "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz" | tar -xz -C /usr/bin/ && \
     chmod +x /usr/bin/geckodriver && \
+    # Verify installation
     geckodriver --version
 
 # Create a non-root user
@@ -73,7 +75,7 @@ RUN useradd -m -s /bin/bash appuser && \
 # Set environment variables
 ENV JAVA_OPTS="-Xms1024m -Xmx3072m -XX:+UseG1GC -XX:+UseStringDeduplication -Duser.timezone=Europe/Tallinn" \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=85 -XX:+UseContainerSupport -XX:+ExitOnOutOfMemoryError" \
-    PATH="/usr/bin/firefox-esr:/usr/bin/geckodriver:${PATH}" \
+    PATH="/usr/bin/firefox:/usr/bin/geckodriver:${PATH}" \
     SERVER_PORT=8080 \
     MOZ_HEADLESS=1 \
     MOZ_MEMORY_LIMIT=2048 \
