@@ -2,6 +2,7 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.dto.InstrumentDto
+import ee.tenman.portfolio.dto.InstrumentsResponse
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.integration.IndustryClassificationService
 import ee.tenman.portfolio.service.pricing.PriceRefreshService
@@ -45,11 +46,11 @@ class InstrumentController(
   fun getAllInstruments(
     @RequestParam(required = false) platforms: List<String>?,
     @RequestParam(defaultValue = "24h") period: String,
-  ): List<InstrumentDto> =
-    instrumentService
-      .getAllInstrumentSnapshots(platforms, period)
-      .sortedBy { it.instrument.id }
-      .map { InstrumentDto.fromSnapshot(it) }
+  ): InstrumentsResponse {
+    val result = instrumentService.getAllInstrumentSnapshotsWithPortfolioXirr(platforms, period)
+    val instruments = result.snapshots.sortedBy { it.instrument.id }.map { InstrumentDto.fromSnapshot(it) }
+    return InstrumentsResponse(instruments = instruments, portfolioXirr = result.portfolioXirr)
+  }
 
   @PutMapping("/{id}")
   @Loggable

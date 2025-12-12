@@ -16,7 +16,10 @@ import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
+import ee.tenman.portfolio.service.calculation.XirrCalculationService
+import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import io.mockk.every
 import io.mockk.mockk
@@ -34,6 +37,8 @@ class InstrumentSnapshotServiceTest {
   private val portfolioTransactionRepository = mockk<PortfolioTransactionRepository>()
   private val investmentMetricsService = mockk<InvestmentMetricsService>()
   private val dailyPriceService = mockk<DailyPriceService>()
+  private val xirrCalculationService = mockk<XirrCalculationService>()
+  private val holdingsCalculationService = mockk<HoldingsCalculationService>()
   private val clock = mockk<Clock>()
 
   private lateinit var instrumentSnapshotService: InstrumentSnapshotService
@@ -56,12 +61,16 @@ class InstrumentSnapshotServiceTest {
     every { clock.instant() } returns fixedInstant
     every { clock.zone } returns ZoneId.of("UTC")
 
+    every { xirrCalculationService.convertToCashFlow(any()) } returns CashFlow(-1000.0, testDate)
+    every { xirrCalculationService.calculateAdjustedXirr(any(), any()) } returns 0.15
     instrumentSnapshotService =
       InstrumentSnapshotService(
         instrumentRepository,
         portfolioTransactionRepository,
         investmentMetricsService,
         dailyPriceService,
+        xirrCalculationService,
+        holdingsCalculationService,
         clock,
       )
   }

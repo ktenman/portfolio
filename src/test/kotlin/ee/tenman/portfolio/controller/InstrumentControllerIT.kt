@@ -113,15 +113,16 @@ class InstrumentControllerIT {
     mockMvc
       .perform(get("/api/instruments").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$").isArray)
-      .andExpect(jsonPath("$[0].symbol").value(instrument1.symbol))
-      .andExpect(jsonPath("$[0].name").value(instrument1.name))
-      .andExpect(jsonPath("$[0].category").value(instrument1.category))
-      .andExpect(jsonPath("$[0].baseCurrency").value(instrument1.baseCurrency))
-      .andExpect(jsonPath("$[1].symbol").value(instrument2.symbol))
-      .andExpect(jsonPath("$[1].name").value(instrument2.name))
-      .andExpect(jsonPath("$[1].category").value(instrument2.category))
-      .andExpect(jsonPath("$[1].baseCurrency").value(instrument2.baseCurrency))
+      .andExpect(jsonPath("$.instruments").isArray)
+      .andExpect(jsonPath("$.portfolioXirr").isNumber)
+      .andExpect(jsonPath("$.instruments[0].symbol").value(instrument1.symbol))
+      .andExpect(jsonPath("$.instruments[0].name").value(instrument1.name))
+      .andExpect(jsonPath("$.instruments[0].category").value(instrument1.category))
+      .andExpect(jsonPath("$.instruments[0].baseCurrency").value(instrument1.baseCurrency))
+      .andExpect(jsonPath("$.instruments[1].symbol").value(instrument2.symbol))
+      .andExpect(jsonPath("$.instruments[1].name").value(instrument2.name))
+      .andExpect(jsonPath("$.instruments[1].category").value(instrument2.category))
+      .andExpect(jsonPath("$.instruments[1].baseCurrency").value(instrument2.baseCurrency))
   }
 
   @Test
