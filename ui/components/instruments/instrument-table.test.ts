@@ -84,6 +84,7 @@ describe('InstrumentTable', () => {
     return mount(InstrumentTable, {
       props: {
         instruments: mockInstruments,
+        portfolioXirr: 0.125,
         selectedPeriod: '24h',
         ...props,
       },
@@ -242,6 +243,7 @@ describe('InstrumentTable', () => {
       const wrapper = mount(InstrumentTable, {
         props: {
           instruments: [],
+          portfolioXirr: 0,
           selectedPeriod: '24h',
         },
       })

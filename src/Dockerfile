@@ -24,36 +24,35 @@ RUN chmod +x gradlew && ./gradlew clean build -x test --no-daemon \
     -Dorg.gradle.parallel=true \
     -Dorg.gradle.configureondemand=true
 
-# Stage 2: Runtime - Use Alpine for reduced attack surface and newer packages
-FROM eclipse-temurin:21-jre-alpine
+# Stage 2: Runtime
+FROM openjdk:25-ea-21-jdk-slim-bookworm
 WORKDIR /app
 
-# Install Firefox and dependencies with security updates
-# Explicitly upgrade busybox packages to fix CVE-2024-58251 and CVE-2025-46394
-RUN apk update && \
-    apk upgrade --no-cache busybox busybox-binsh ssl_client && \
-    apk add --no-cache \
+# Install Firefox and dependencies with optimizations
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
         curl \
-        firefox \
-        ttf-liberation \
-        gtk+3.0 \
-        libx11 \
-        libxcb \
-        libxcomposite \
-        libxcursor \
-        libxdamage \
-        libxext \
-        libxfixes \
-        libxi \
-        libxrandr \
-        libxrender \
-        libxt \
-        libxtst \
-        dbus-x11 \
-        fontconfig \
-        mesa-gl \
-        mesa-dri-gallium && \
-    rm -rf /var/cache/apk/*
+        firefox-esr \
+        fonts-liberation \
+        libasound2 \
+        libdbus-glib-1-2 \
+        libfreetype6 \
+        libgtk-3-0 \
+        libx11-xcb1 \
+        libxcb-dri3-0 \
+        libxcomposite1 \
+        libxcursor1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxi6 \
+        libxrandr2 \
+        libxrender1 \
+        libxss1 \
+        libxt6 \
+        libxtst6 \
+        tar && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install geckodriver with architecture detection
 RUN ARCH=$(uname -m); \
@@ -62,15 +61,15 @@ RUN ARCH=$(uname -m); \
         x86_64) GECKODRIVER_ARCH="linux64" ;; \
         *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
     esac && \
-    GECKODRIVER_VERSION="v0.36.0" && \
+    GECKODRIVER_VERSION="v0.35.0" && \
     echo "Downloading geckodriver ${GECKODRIVER_VERSION} for ${GECKODRIVER_ARCH}" && \
     curl -sL "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz" | tar -xz -C /usr/bin/ && \
     chmod +x /usr/bin/geckodriver && \
     # Verify installation
     geckodriver --version
 
-# Create a non-root user (Alpine uses adduser)
-RUN adduser -D -s /bin/sh appuser && \
+# Create a non-root user
+RUN useradd -m -s /bin/bash appuser && \
     chown -R appuser:appuser /app
 
 # Set environment variables

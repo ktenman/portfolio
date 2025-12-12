@@ -1,5 +1,9 @@
 import { httpClient } from '../utils/http-client'
-import { type InstrumentDto, PriceChangePeriod } from '../models/generated/domain-models'
+import {
+  type InstrumentDto,
+  type InstrumentsResponse,
+  PriceChangePeriod,
+} from '../models/generated/domain-models'
 import { API_ENDPOINTS } from '../constants'
 
 export const instrumentsService = {
@@ -9,7 +13,7 @@ export const instrumentsService = {
       params.platforms = platforms
     }
     return httpClient
-      .get<InstrumentDto[]>(API_ENDPOINTS.INSTRUMENTS, { params })
+      .get<InstrumentsResponse>(API_ENDPOINTS.INSTRUMENTS, { params })
       .then(res => res.data)
   },
 

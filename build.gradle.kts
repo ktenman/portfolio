@@ -187,6 +187,7 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
   classes =
     listOf(
       "ee.tenman.portfolio.dto.InstrumentDto",
+      "ee.tenman.portfolio.dto.InstrumentsResponse",
       "ee.tenman.portfolio.dto.TransactionRequestDto",
       "ee.tenman.portfolio.dto.TransactionResponseDto",
       "ee.tenman.portfolio.dto.TransactionSummaryDto",

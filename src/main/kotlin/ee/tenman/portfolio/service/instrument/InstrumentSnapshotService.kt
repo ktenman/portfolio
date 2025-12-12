@@ -8,10 +8,13 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.InstrumentEnrichmentContext
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.InstrumentSnapshot
+import ee.tenman.portfolio.model.InstrumentSnapshotsWithPortfolioXirr
 import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
+import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -28,6 +31,8 @@ class InstrumentSnapshotService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val investmentMetricsService: InvestmentMetricsService,
   private val dailyPriceService: DailyPriceService,
+  private val xirrCalculationService: XirrCalculationService,
+  private val holdingsCalculationService: HoldingsCalculationService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -42,7 +47,13 @@ class InstrumentSnapshotService(
   fun getAllSnapshots(
     platforms: List<String>?,
     period: String?,
-  ): List<InstrumentSnapshot> {
+  ): List<InstrumentSnapshot> = getAllSnapshotsWithPortfolioXirr(platforms, period).snapshots
+
+  @Transactional(readOnly = true)
+  fun getAllSnapshotsWithPortfolioXirr(
+    platforms: List<String>?,
+    period: String?,
+  ): InstrumentSnapshotsWithPortfolioXirr {
     val instruments = instrumentRepository.findAll().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val context =
@@ -51,9 +62,41 @@ class InstrumentSnapshotService(
         priceChangePeriod = period?.let { PriceChangePeriod.fromString(it) } ?: PriceChangePeriod.P24H,
         targetPlatforms = parsePlatformFilters(platforms),
       )
-    return instruments.mapNotNull { instrument ->
-      enrichInstrumentWithMetrics(instrument, transactionsByInstrument, context)
+    val snapshotsWithTransactions = mutableListOf<Pair<InstrumentSnapshot, List<PortfolioTransaction>>>()
+    instruments.forEach { instrument ->
+      val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
+      val filteredTransactions = filterTransactionsByPlatforms(allTransactions, context.targetPlatforms)
+      val snapshot = enrichInstrumentWithMetrics(instrument, transactionsByInstrument, context)
+      if (snapshot != null && filteredTransactions.isNotEmpty()) {
+        snapshotsWithTransactions.add(snapshot to filteredTransactions)
+      } else if (snapshot != null) {
+        snapshotsWithTransactions.add(snapshot to emptyList())
+      }
     }
+    val snapshots = snapshotsWithTransactions.map { it.first }
+    val portfolioXirr = calculatePortfolioXirr(snapshotsWithTransactions, context.calculationDate)
+    return InstrumentSnapshotsWithPortfolioXirr(snapshots, portfolioXirr)
+  }
+
+  private fun calculatePortfolioXirr(
+    snapshotsWithTransactions: List<Pair<InstrumentSnapshot, List<PortfolioTransaction>>>,
+    calculationDate: LocalDate,
+  ): Double {
+    val allCashFlows = mutableListOf<ee.tenman.portfolio.service.calculation.xirr.CashFlow>()
+    var totalCurrentValue = BigDecimal.ZERO
+    snapshotsWithTransactions.forEach { (snapshot, transactions) ->
+      transactions.forEach { tx ->
+        allCashFlows.add(xirrCalculationService.convertToCashFlow(tx))
+      }
+      totalCurrentValue = totalCurrentValue.add(snapshot.currentValue)
+    }
+    if (totalCurrentValue > BigDecimal.ZERO) {
+      allCashFlows.add(
+        ee.tenman.portfolio.service.calculation.xirr
+        .CashFlow(totalCurrentValue.toDouble(), calculationDate),
+          )
+    }
+    return xirrCalculationService.calculateAdjustedXirr(allCashFlows, calculationDate)
   }
 
   private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? =

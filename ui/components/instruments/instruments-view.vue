@@ -41,6 +41,7 @@
     <template #content>
       <instrument-table
         :instruments="items || []"
+        :portfolio-xirr="portfolioXirr"
         :is-loading="isLoading"
         :is-error="isError"
         :error-message="error?.message"
@@ -86,7 +87,7 @@ const availablePlatforms = computed(() => {
   if (!allInstruments.value) return []
 
   const platformSet = new Set<string>()
-  allInstruments.value.forEach(instrument => {
+  allInstruments.value.instruments.forEach(instrument => {
     if (
       instrument.platforms &&
       instrument.platforms.length > 0 &&
@@ -141,10 +142,12 @@ const {
 const items = computed(() => {
   if (!rawItems.value) return []
 
-  return [...rawItems.value]
+  return [...rawItems.value.instruments]
     .filter(instrument => (instrument.currentValue || 0) > 0)
     .sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0))
 })
+
+const portfolioXirr = computed(() => rawItems.value?.portfolioXirr ?? 0)
 
 const saveMutation = useMutation({
   mutationFn: (data: Partial<InstrumentDto>) => {

@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.model.InstrumentSnapshot
+import ee.tenman.portfolio.model.InstrumentSnapshotsWithPortfolioXirr
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionProfitService
@@ -61,6 +62,12 @@ class InstrumentService(
     platforms: List<String>?,
     period: String?,
   ): List<InstrumentSnapshot> = instrumentSnapshotService.getAllSnapshots(platforms, period)
+
+  @Transactional(readOnly = true)
+  fun getAllInstrumentSnapshotsWithPortfolioXirr(
+    platforms: List<String>?,
+    period: String?,
+  ): InstrumentSnapshotsWithPortfolioXirr = instrumentSnapshotService.getAllSnapshotsWithPortfolioXirr(platforms, period)
 
   @Transactional
   fun updateCurrentPrice(
