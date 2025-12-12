@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
 import { instrumentsService } from '../../services/instruments-service'
-import type { Platform } from '../../models/generated/domain-models'
+import type { InstrumentsResponse, Platform } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
 import { h } from 'vue'
 import { createInstrumentDto } from '../../tests/fixtures'
@@ -156,9 +156,13 @@ describe('InstrumentsView', () => {
       quantity: 15,
     }),
   ]
+  const mockResponse: InstrumentsResponse = {
+    instruments: mockInstruments,
+    portfolioXirr: 0.125,
+  }
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstruments)
+    vi.mocked(instrumentsService.getAll).mockResolvedValue(mockResponse)
   })
 
   afterEach(() => {
@@ -394,7 +398,10 @@ describe('InstrumentsView', () => {
           platforms: ['UNKNOWN' as Platform],
         }),
       ]
-      vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstrumentsInvalid)
+      vi.mocked(instrumentsService.getAll).mockResolvedValue({
+        instruments: mockInstrumentsInvalid,
+        portfolioXirr: 0,
+      })
 
       const { wrapper } = createWrapper()
       await flushPromises()
@@ -449,7 +456,10 @@ describe('InstrumentsView', () => {
           quantity: 0,
         }),
       ]
-      vi.mocked(instrumentsService.getAll).mockResolvedValue(mockInstrumentsWithEmpty)
+      vi.mocked(instrumentsService.getAll).mockResolvedValue({
+        instruments: mockInstrumentsWithEmpty,
+        portfolioXirr: 0.125,
+      })
 
       const { wrapper } = createWrapper()
       await flushPromises()

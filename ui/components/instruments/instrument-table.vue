@@ -289,6 +289,7 @@ import { useNumberTransition } from '../../composables/use-number-transition'
 
 interface Props {
   instruments: InstrumentDto[]
+  portfolioXirr: number
   isLoading?: boolean
   isError?: boolean
   errorMessage?: string
@@ -296,6 +297,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  portfolioXirr: 0,
   isLoading: false,
   isError: false,
   selectedPeriod: '24h',
@@ -339,15 +341,7 @@ const totalUnrealizedProfit = computed(() => {
   }, 0)
 })
 
-const totalXirr = computed(() => {
-  const weightedSum = props.instruments.reduce((sum, instrument) => {
-    const xirr = instrument.xirr || 0
-    const invested = instrument.totalInvestment || 0
-    return sum + xirr * invested
-  }, 0)
-
-  return totalInvested.value > 0 ? weightedSum / totalInvested.value : 0
-})
+const totalXirr = computed(() => props.portfolioXirr)
 
 const totalChangeAmount = computed(() => {
   return props.instruments.reduce((sum, instrument) => {

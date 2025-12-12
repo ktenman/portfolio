@@ -25,6 +25,14 @@ export interface InstrumentDto {
     priceChangePercent: number | null;
 }
 
+/**
+ * Response containing instruments list with portfolio-wide XIRR
+ */
+export interface InstrumentsResponse {
+    instruments: InstrumentDto[];
+    portfolioXirr: number;
+}
+
 export interface TransactionRequestDto {
     id: number | null;
     instrumentId: number;
