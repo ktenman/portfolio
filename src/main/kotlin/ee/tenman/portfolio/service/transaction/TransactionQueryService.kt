@@ -5,16 +5,16 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.TransactionResponseDto
 import ee.tenman.portfolio.dto.TransactionSummaryDto
 import ee.tenman.portfolio.dto.TransactionsWithSummaryDto
-import ee.tenman.portfolio.usecase.GetPortfolioPerformanceUseCase
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 @Service
 class TransactionQueryService(
   private val transactionService: TransactionService,
-  private val getPortfolioPerformanceUseCase: GetPortfolioPerformanceUseCase,
 ) {
   @Transactional(readOnly = true)
   fun getTransactionsWithSummary(
@@ -82,21 +82,28 @@ class TransactionQueryService(
 
   private fun calculateTotalUnrealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions
-      .mapNotNull { it.instrument.id }
-      .distinct()
-      .sumOf { instrumentId -> getPortfolioPerformanceUseCase(instrumentId).unrealizedProfit }
+      .filter { it.transactionType == TransactionType.BUY }
+      .sumOf { it.unrealizedProfit }
 
   private fun calculateTotalRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions
       .filter { it.transactionType == TransactionType.SELL }
       .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
 
-  private fun calculateTotalInvested(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions.sumOf { transaction ->
-      val transactionCost = transaction.price.multiply(transaction.quantity).add(transaction.commission)
-      when (transaction.transactionType) {
-        TransactionType.BUY -> transactionCost
-        TransactionType.SELL -> transactionCost.negate()
-      }
-    }
+  private fun calculateTotalInvested(transactions: List<PortfolioTransaction>): BigDecimal {
+    val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
+    return buyTransactions
+      .groupBy { it.instrument.id }
+      .values
+      .sumOf { calculateInstrumentCostBasis(it) }
+  }
+
+  private fun calculateInstrumentCostBasis(buys: List<PortfolioTransaction>): BigDecimal {
+    val totalQuantity = buys.sumOf { it.quantity }
+    if (totalQuantity.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO
+    val totalCost = buys.sumOf { it.quantity.multiply(it.price).add(it.commission) }
+    val averageCost = totalCost.divide(totalQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
+    val remainingQuantity = buys.sumOf { it.remainingQuantity }
+    return remainingQuantity.multiply(averageCost)
+  }
 }
