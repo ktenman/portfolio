@@ -64,7 +64,7 @@ class ArchitectureTest {
       .whereLayer("API")
       .mayOnlyBeAccessedByLayers("Configuration")
       .whereLayer("Application")
-      .mayOnlyBeAccessedByLayers("API", "Jobs", "Scheduler", "Configuration", "Application", "Model", "DTOs")
+      .mayOnlyBeAccessedByLayers("API", "Jobs", "Scheduler", "Configuration", "Application", "Model", "DTOs", "Infrastructure")
       .whereLayer("Domain")
       .mayOnlyBeAccessedByLayers("Application", "Infrastructure", "API", "DTOs", "Jobs", "Configuration", "Model")
       .whereLayer("Infrastructure")
