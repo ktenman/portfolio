@@ -24,7 +24,7 @@ INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, pr
 VALUES (
     (SELECT id FROM instrument WHERE symbol = 'BNBEUR'),
     'BUY',
-    0.13289525,
+    0.1330711,
     747.9257,
     '2025-12-12',
     'BINANCE'
