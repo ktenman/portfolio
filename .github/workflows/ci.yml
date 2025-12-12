@@ -232,7 +232,7 @@ jobs:
       matrix:
         include:
           - name: backend
-            dockerfile: ./src/Dockerfile.ci
+            dockerfile: ./src/Dockerfile
             image: ktenman/portfolio-be
             ghcr_image: portfolio-be
             context: .
