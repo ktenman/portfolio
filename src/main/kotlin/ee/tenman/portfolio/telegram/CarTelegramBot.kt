@@ -2,7 +2,7 @@ package ee.tenman.portfolio.telegram
 
 import ee.tenman.portfolio.auto24.Auto24Service
 import ee.tenman.portfolio.configuration.TimeUtility
-import ee.tenman.portfolio.googlevision.GoogleVisionService
+import ee.tenman.portfolio.service.LicensePlateDetectionService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -35,7 +35,7 @@ import java.nio.file.attribute.PosixFilePermission
 class CarTelegramBot(
   @Value("\${telegram.bot.token:}") private val botToken: String,
   @Value("\${telegram.bot.enabled:false}") private val botEnabled: Boolean,
-  private val googleVisionService: GoogleVisionService,
+  private val licensePlateDetectionService: LicensePlateDetectionService,
   private val auto24Service: Auto24Service,
   private val objectMapper: ObjectMapper,
 ) : TelegramLongPollingBot(botToken) {
@@ -104,13 +104,13 @@ class CarTelegramBot(
     replyToMessageId: Int,
     startTime: Long,
   ) = try {
-    val visionResult = googleVisionService.getPlateNumber(imageFile)
-    log.debug("Vision result: {}", objectMapper.writeValueAsString(visionResult))
-
+    val detectionResult = licensePlateDetectionService.detectPlateNumber(imageFile)
+    log.debug("Detection result: {}", objectMapper.writeValueAsString(detectionResult))
     when {
-      visionResult["hasCar"] == "false" -> sendMessage(chatId, "No car detected.", replyToMessageId)
-      visionResult["plateNumber"] == null -> sendMessage(chatId, "No license plate detected.", replyToMessageId)
-      else -> lookupAndSendCarPrice(visionResult["plateNumber"].toString(), chatId, replyToMessageId, startTime)
+      !detectionResult.hasCar -> sendMessage(chatId, "No car detected.", replyToMessageId)
+      detectionResult.plateNumber == null ->
+        sendMessage(chatId, "No license plate detected (provider: ${detectionResult.provider}).", replyToMessageId)
+      else -> lookupAndSendCarPrice(detectionResult.plateNumber, chatId, replyToMessageId, startTime)
     }
   } finally {
     imageFile.delete()
