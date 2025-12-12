@@ -60,19 +60,36 @@ class Auto24Service(
 
   private fun openPageAndHandleCookies(regNr: String) {
     Selenide.open(AUTO24_URL)
-    TimeUnit.MILLISECONDS.sleep(1500)
-
-    val acceptCookies =
-      Selenide
-        .elements(By.tagName("button"))
-        .find(Condition.text("Nõustun"))
-    if (acceptCookies.exists()) {
-      acceptCookies.click()
-    }
-
+    TimeUnit.MILLISECONDS.sleep(2000)
+    dismissCookiePopup()
     Selenide.element(By.name("vpc_reg_nr")).value = regNr
     Selenide.element(By.className("sbmt")).click()
     TimeUnit.MILLISECONDS.sleep(1500)
+  }
+
+  private fun dismissCookiePopup() {
+    val selectors =
+      listOf(
+      "#onetrust-accept-btn-handler",
+      ".onetrust-close-btn-handler",
+      "[id*='accept']",
+      "button[title='Nõustun']",
+    )
+    for (selector in selectors) {
+      val element = Selenide.element(By.cssSelector(selector))
+      if (element.exists() && element.isDisplayed) {
+        log.info("Clicking cookie consent button: {}", selector)
+        element.click()
+        TimeUnit.MILLISECONDS.sleep(500)
+        return
+      }
+    }
+    val acceptButton = Selenide.elements(By.tagName("button")).find(Condition.text("Nõustun"))
+    if (acceptButton.exists()) {
+      log.info("Clicking cookie consent button by text: Nõustun")
+      acceptButton.click()
+      TimeUnit.MILLISECONDS.sleep(500)
+    }
   }
 
   private fun solveCaptcha(regNr: String) {
