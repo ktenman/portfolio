@@ -3,10 +3,12 @@ import { trading212Adapter } from './trading212'
 import { wisdomTreeAdapter } from './wisdom-tree'
 import { lightyearAdapter } from './lightyear'
 import { lightyearHoldingsAdapter } from './lightyear-holdings'
+import { genericFetchAdapter } from './generic-fetch'
 
 export const adapters: ServiceAdapter[] = [
   trading212Adapter,
   wisdomTreeAdapter,
   lightyearAdapter,
   lightyearHoldingsAdapter,
+  genericFetchAdapter,
 ]
