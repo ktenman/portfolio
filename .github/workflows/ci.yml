@@ -82,52 +82,78 @@ jobs:
         run: .github/workflows/check-readme-links.sh
 
   test:
-    name: 🧪 ${{ matrix.test-name }}
+    name: 🧪 ${{ matrix.name }}
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - test-type: backend-unit
-            test-name: Backend Unit Tests
-          - test-type: e2e
-            test-name: E2E Tests
-          - test-type: frontend-unit
-            test-name: Frontend Unit Tests
-          - test-type: cloudflare-bypass-proxy
-            test-name: Cloudflare Bypass Proxy Tests
+          - type: backend
+            name: Backend Unit Tests
+          - type: frontend
+            name: Frontend Unit Tests
+          - type: cloudflare
+            name: Cloudflare Bypass Proxy Tests
+          - type: e2e
+            name: E2E Tests
       fail-fast: false
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Set up JDK 21
-        if: matrix.test-type != 'frontend-unit'
-        uses: actions/setup-java@v5.0.0
+      - uses: actions/setup-java@v5.0.0
+        if: matrix.type == 'backend' || matrix.type == 'e2e'
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Setup Gradle
-        if: matrix.test-type != 'frontend-unit'
-        uses: gradle/actions/setup-gradle@v5.0.0
+      - uses: gradle/actions/setup-gradle@v5.0.0
+        if: matrix.type == 'backend' || matrix.type == 'e2e'
         with:
           gradle-home-cache-cleanup: true
-      - name: Use Node.js
-        if: matrix.test-type == 'frontend-unit'
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6
+        if: matrix.type == 'frontend' || matrix.type == 'cloudflare'
         with:
           node-version: 'lts/iron'
           cache: 'npm'
-      - name: Install frontend dependencies
-        if: matrix.test-type == 'frontend-unit'
-        run: npm ci
-      - name: Cache Docker images
-        if: matrix.test-type == 'e2e'
-        uses: ScribeMD/docker-cache@0.5.0
+          cache-dependency-path: ${{ matrix.type == 'cloudflare' && 'cloudflare-bypass-proxy/package-lock.json' || 'package-lock.json' }}
+      - name: Run backend tests
+        if: matrix.type == 'backend'
+        run: ./gradlew test --info -x bootJar --build-cache
+      - name: Build JAR
+        if: matrix.type == 'backend'
+        run: ./gradlew bootJar --build-cache
+      - uses: actions/upload-artifact@v5
+        if: matrix.type == 'backend'
         with:
-          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml') }}
-      - name: Start services with Docker Compose (for E2E tests)
-        if: matrix.test-type == 'e2e'
+          name: backend-jar
+          path: build/libs/*.jar
+          retention-days: 1
+      - name: Install Node dependencies
+        if: matrix.type == 'frontend' || matrix.type == 'cloudflare'
+        run: npm ci
+        working-directory: ${{ matrix.type == 'cloudflare' && 'cloudflare-bypass-proxy' || '.' }}
+      - name: Run frontend tests
+        if: matrix.type == 'frontend'
+        run: npm run test:run && npm run test:coverage
+      - name: Run cloudflare tests
+        if: matrix.type == 'cloudflare'
+        run: npm test && npm run test:coverage
+        working-directory: cloudflare-bypass-proxy
+      - name: Build JAR for E2E
+        if: matrix.type == 'e2e'
+        run: |
+          ./gradlew bootJar --build-cache
+          JAR_FILE=$(find build/libs -name "*.jar" ! -name "*-plain.jar" | head -1)
+          cp "$JAR_FILE" src/app.jar
+      - name: Build base image
+        if: matrix.type == 'e2e'
+        run: docker build -t ghcr.io/ktenman/portfolio-base:firefox -f src/Dockerfile.base src/
+      - uses: ScribeMD/docker-cache@0.5.0
+        if: matrix.type == 'e2e'
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml', 'src/Dockerfile.e2e', 'src/Dockerfile.base') }}
+      - name: Start services
+        if: matrix.type == 'e2e'
         env:
           VISION_BASE64_ENCODED_KEY: ${{ secrets.VISION_BASE64_ENCODED_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -136,26 +162,9 @@ jobs:
           MINIO_BUCKET_NAME: portfolio-logos
         run: |
           docker compose -f docker-compose.e2e-minimal.yml up -d
-          echo "Waiting for services to be healthy..."
-          docker compose -f docker-compose.e2e-minimal.yml ps
-          timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do echo "Waiting for services..."; sleep 2; done'
-          echo "All services are healthy!"
-          docker compose -f docker-compose.e2e-minimal.yml ps
-      - name: Run backend unit tests
-        if: matrix.test-type == 'backend-unit'
-        run: ./gradlew test --info -x bootJar --build-cache
-      - name: Build JAR artifact
-        if: matrix.test-type == 'backend-unit'
-        run: ./gradlew bootJar --build-cache
-      - name: Upload backend JAR
-        if: matrix.test-type == 'backend-unit'
-        uses: actions/upload-artifact@v5
-        with:
-          name: backend-jar
-          path: build/libs/*.jar
-          retention-days: 1
+          timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do sleep 2; done'
       - name: Run E2E tests
-        if: matrix.test-type == 'e2e'
+        if: matrix.type == 'e2e'
         uses: Wandalen/wretry.action@v3.8.0
         with:
           command: |
@@ -163,33 +172,8 @@ jobs:
             ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
           attempt_limit: 3
           attempt_delay: 30000
-      - name: Run frontend unit tests
-        if: matrix.test-type == 'frontend-unit'
-        run: npm run test:run
-      - name: Run frontend test coverage
-        if: matrix.test-type == 'frontend-unit'
-        run: npm run test:coverage
-      - name: Use Node.js for cloudflare-bypass-proxy
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        uses: actions/setup-node@v6
-        with:
-          node-version: 'lts/iron'
-          cache: 'npm'
-          cache-dependency-path: cloudflare-bypass-proxy/package-lock.json
-      - name: Install cloudflare-bypass-proxy dependencies
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        working-directory: cloudflare-bypass-proxy
-        run: npm ci
-      - name: Run cloudflare-bypass-proxy tests
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        working-directory: cloudflare-bypass-proxy
-        run: npm test
-      - name: Run cloudflare-bypass-proxy test coverage
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        working-directory: cloudflare-bypass-proxy
-        run: npm run test:coverage
       - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'backend-unit'
+        if: always() && matrix.type == 'backend'
         with:
           name: Backend Unit Test Reports
           path: |
@@ -197,31 +181,29 @@ jobs:
             build/test-results/test/
             build/reports/jacoco/test/html/
       - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'e2e'
+        if: always() && matrix.type == 'frontend'
         with:
-          name: E2E Test Reports and Screenshots
+          name: Frontend Unit Test Reports
+          path: |
+            coverage/
+            test-results/
+      - uses: actions/upload-artifact@v5
+        if: always() && matrix.type == 'cloudflare'
+        with:
+          name: Cloudflare Bypass Proxy Test Reports
+          path: cloudflare-bypass-proxy/coverage/
+      - uses: actions/upload-artifact@v5
+        if: always() && matrix.type == 'e2e'
+        with:
+          name: E2E Test Reports
           path: |
             build/reports/tests/test/
             build/test-results/test/
             build/reports/selenide/
             build/reports/jacoco/test/html/
-      - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'frontend-unit'
-        with:
-          name: Frontend Unit Test Reports
-          path: |
-            coverage/
-            test-results/html/
-            test-results/junit.xml
-      - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'cloudflare-bypass-proxy'
-        with:
-          name: Cloudflare Bypass Proxy Test Reports
-          path: |
-            cloudflare-bypass-proxy/coverage/
 
   build-push:
-    name: 🐳 Build & Push ${{ matrix.name }} image
+    name: 🐳 Build & Push ${{ matrix.name }}
     needs: [lint, test]
     if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
@@ -247,61 +229,49 @@ jobs:
             ghcr_image: cloudflare-bypass-proxy
             context: ./cloudflare-bypass-proxy
     steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Download backend JAR
+      - uses: actions/download-artifact@v6
         if: matrix.name == 'backend' && github.event_name != 'workflow_dispatch'
-        uses: actions/download-artifact@v6
         with:
           name: backend-jar
           path: build/libs/
-      - name: Set up JDK 21 (for workflow_dispatch)
+      - uses: actions/setup-java@v5.0.0
         if: matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
-        uses: actions/setup-java@v5.0.0
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Setup Gradle (for workflow_dispatch)
+      - uses: gradle/actions/setup-gradle@v5.0.0
         if: matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
-        uses: gradle/actions/setup-gradle@v5.0.0
         with:
           gradle-home-cache-cleanup: true
-      - name: Build JAR (for workflow_dispatch)
+      - run: ./gradlew bootJar --build-cache
         if: matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
-        run: ./gradlew bootJar --build-cache
       - name: Set build info
-        id: build_info
         run: |
           echo "COMMIT_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.11.1
+      - uses: docker/setup-buildx-action@v3.11.1
         with:
           buildkitd-flags: --debug
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3.6.0
+      - uses: docker/login-action@v3.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3.6.0
+      - uses: docker/login-action@v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Docker metadata for ${{ matrix.name }}
-        id: meta
+      - id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ${{ matrix.image }}
             ghcr.io/${{ github.repository_owner }}/${{ matrix.ghcr_image }}
-          tags: |
-            type=raw,value=latest
-      - name: Build and push ${{ matrix.name }} image
-        id: docker_build
+          tags: type=raw,value=latest
+      - id: docker_build
         uses: docker/build-push-action@v6.18.0
         continue-on-error: true
         with:
@@ -316,12 +286,10 @@ jobs:
           build-args: |
             BUILD_HASH=${{ env.COMMIT_HASH }}
             BUILD_TIME=${{ env.BUILD_TIME }}
-      - name: Wait before retry
+      - run: sleep 15
         if: steps.docker_build.outcome == 'failure'
-        run: sleep 15
-      - name: Retry build and push ${{ matrix.name }} image (attempt 2)
+      - id: docker_build_retry
         if: steps.docker_build.outcome == 'failure'
-        id: docker_build_retry_1
         uses: docker/build-push-action@v6.18.0
         continue-on-error: true
         with:
@@ -336,11 +304,9 @@ jobs:
           build-args: |
             BUILD_HASH=${{ env.COMMIT_HASH }}
             BUILD_TIME=${{ env.BUILD_TIME }}
-      - name: Wait before final retry
-        if: steps.docker_build.outcome == 'failure' && steps.docker_build_retry_1.outcome == 'failure'
-        run: sleep 15
-      - name: Retry build and push ${{ matrix.name }} image (attempt 3 - final)
-        if: steps.docker_build.outcome == 'failure' && steps.docker_build_retry_1.outcome == 'failure'
+      - run: sleep 15
+        if: steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
+      - if: steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
         uses: docker/build-push-action@v6.18.0
         with:
           context: ${{ matrix.context }}
@@ -356,9 +322,9 @@ jobs:
             BUILD_TIME=${{ env.BUILD_TIME }}
 
   call-deploy-pipeline:
-    name: 🔄 Call Deploy Pipeline
-    needs: [test, build-push]
-    if: always() && needs.build-push.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main'
+    name: 🔄 Deploy
+    needs: [build-push]
+    if: always() && needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       deployments: write
@@ -379,7 +345,7 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   auto-merge-dependabot:
-    name: 🤖 Auto-Merge Dependabot PR
+    name: 🤖 Auto-Merge Dependabot
     needs: [lint, test]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -387,8 +353,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - name: 🤖Merge PR from dependabot
-        uses: fastify/github-action-merge-dependabot@v3.11.2
+      - uses: fastify/github-action-merge-dependabot@v3.11.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target: minor

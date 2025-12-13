@@ -1,0 +1,14 @@
+FROM ghcr.io/ktenman/portfolio-base:firefox
+
+ARG BUILD_HASH=unknown
+ARG BUILD_TIME=unknown
+ENV BUILD_HASH=${BUILD_HASH}
+ENV BUILD_TIME=${BUILD_TIME}
+
+COPY app.jar app.jar
+
+USER appuser
+
+RUN mkdir -p /home/appuser/.cache/mozilla
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
