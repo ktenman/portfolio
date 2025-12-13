@@ -71,7 +71,9 @@ describe('Generic Fetch Adapter', () => {
     })
 
     const headersParam = encodeURIComponent(JSON.stringify(customHeaders))
-    const response = await request(app).get(`/fetch?url=https://example.com&headers=${headersParam}`)
+    const response = await request(app).get(
+      `/fetch?url=https://example.com&headers=${headersParam}`
+    )
 
     expect(response.status).toBe(200)
     expect(executeCurl).toHaveBeenCalledWith(

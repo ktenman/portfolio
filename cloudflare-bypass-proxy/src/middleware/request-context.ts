@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks'
 import { Request, Response, NextFunction } from 'express'
+import { randomUUID } from 'crypto'
 
 interface RequestContext {
   requestId: string
@@ -9,7 +10,8 @@ interface RequestContext {
 export const requestContext = new AsyncLocalStorage<RequestContext>()
 
 export function requestContextMiddleware(req: Request, res: Response, next: NextFunction): void {
-  requestContext.run({ requestId: req.id }, () => {
+  const requestId = (req as Request & { id?: string }).id || randomUUID()
+  requestContext.run({ requestId }, () => {
     next()
   })
 }
