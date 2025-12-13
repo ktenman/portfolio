@@ -204,7 +204,14 @@ jobs:
           name: backend-jar
           path: build/libs/
       - name: Prepare JAR for Docker build
-        run: cp build/libs/*.jar src/app.jar
+        run: |
+          echo "Contents of build/libs/:"
+          ls -la build/libs/
+          echo "Contents of src/:"
+          ls -la src/
+          cp build/libs/*.jar src/app.jar
+          echo "Copied JAR to src/app.jar"
+          ls -la src/app.jar
       - name: Cache Docker images
         uses: ScribeMD/docker-cache@0.5.0
         with:
