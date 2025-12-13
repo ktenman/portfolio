@@ -80,6 +80,18 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
+            echo 'Checking disk space...' && \
+            df -h / | tail -1 && \
+            echo 'Cleaning up disk space...' && \
+            sudo journalctl --vacuum-size=100M 2>/dev/null || true && \
+            docker container prune -f 2>/dev/null || true && \
+            for builder in \$(docker ps -a --filter 'name=buildx_buildkit' --format '{{.Names}}' 2>/dev/null); do \
+              docker stop \$builder 2>/dev/null; docker rm \$builder 2>/dev/null; \
+            done && \
+            docker volume prune -f 2>/dev/null || true && \
+            docker builder prune -af 2>/dev/null || true && \
+            echo 'Disk space after cleanup:' && \
+            df -h / | tail -1 && \
             echo 'Stopping existing containers...' && \
             docker-compose down --remove-orphans || true && \
             echo 'Removing any conflicting containers...' && \
