@@ -90,8 +90,6 @@ jobs:
         include:
           - test-type: backend-unit
             test-name: Backend Unit Tests
-          - test-type: e2e
-            test-name: E2E Tests
           - test-type: frontend-unit
             test-name: Frontend Unit Tests
           - test-type: cloudflare-bypass-proxy
@@ -102,13 +100,13 @@ jobs:
         with:
           fetch-depth: 1
       - name: Set up JDK 21
-        if: matrix.test-type != 'frontend-unit'
+        if: matrix.test-type == 'backend-unit'
         uses: actions/setup-java@v5.0.0
         with:
           java-version: '21'
           distribution: 'temurin'
       - name: Setup Gradle
-        if: matrix.test-type != 'frontend-unit'
+        if: matrix.test-type == 'backend-unit'
         uses: gradle/actions/setup-gradle@v5.0.0
         with:
           gradle-home-cache-cleanup: true
@@ -121,26 +119,6 @@ jobs:
       - name: Install frontend dependencies
         if: matrix.test-type == 'frontend-unit'
         run: npm ci
-      - name: Cache Docker images
-        if: matrix.test-type == 'e2e'
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml') }}
-      - name: Start services with Docker Compose (for E2E tests)
-        if: matrix.test-type == 'e2e'
-        env:
-          VISION_BASE64_ENCODED_KEY: ${{ secrets.VISION_BASE64_ENCODED_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-          MINIO_BUCKET_NAME: portfolio-logos
-        run: |
-          docker compose -f docker-compose.e2e-minimal.yml up -d
-          echo "Waiting for services to be healthy..."
-          docker compose -f docker-compose.e2e-minimal.yml ps
-          timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do echo "Waiting for services..."; sleep 2; done'
-          echo "All services are healthy!"
-          docker compose -f docker-compose.e2e-minimal.yml ps
       - name: Run backend unit tests
         if: matrix.test-type == 'backend-unit'
         run: ./gradlew test --info -x bootJar --build-cache
@@ -154,15 +132,6 @@ jobs:
           name: backend-jar
           path: build/libs/*.jar
           retention-days: 1
-      - name: Run E2E tests
-        if: matrix.test-type == 'e2e'
-        uses: Wandalen/wretry.action@v3.8.0
-        with:
-          command: |
-            export E2E=true
-            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
-          attempt_limit: 3
-          attempt_delay: 30000
       - name: Run frontend unit tests
         if: matrix.test-type == 'frontend-unit'
         run: npm run test:run
@@ -197,15 +166,6 @@ jobs:
             build/test-results/test/
             build/reports/jacoco/test/html/
       - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'e2e'
-        with:
-          name: E2E Test Reports and Screenshots
-          path: |
-            build/reports/tests/test/
-            build/test-results/test/
-            build/reports/selenide/
-            build/reports/jacoco/test/html/
-      - uses: actions/upload-artifact@v5
         if: always() && matrix.test-type == 'frontend-unit'
         with:
           name: Frontend Unit Test Reports
@@ -220,10 +180,71 @@ jobs:
           path: |
             cloudflare-bypass-proxy/coverage/
 
+  test-e2e:
+    name: 🧪 E2E Tests
+    needs: [test]
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5.0.0
+        with:
+          gradle-home-cache-cleanup: true
+      - name: Download backend JAR
+        uses: actions/download-artifact@v6
+        with:
+          name: backend-jar
+          path: build/libs/
+      - name: Prepare JAR for Docker build
+        run: cp build/libs/*.jar src/app.jar
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml', 'src/Dockerfile.e2e') }}
+      - name: Start services with Docker Compose
+        env:
+          VISION_BASE64_ENCODED_KEY: ${{ secrets.VISION_BASE64_ENCODED_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+          MINIO_BUCKET_NAME: portfolio-logos
+        run: |
+          docker compose -f docker-compose.e2e-minimal.yml up -d
+          echo "Waiting for services to be healthy..."
+          docker compose -f docker-compose.e2e-minimal.yml ps
+          timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do echo "Waiting for services..."; sleep 2; done'
+          echo "All services are healthy!"
+          docker compose -f docker-compose.e2e-minimal.yml ps
+      - name: Run E2E tests
+        uses: Wandalen/wretry.action@v3.8.0
+        with:
+          command: |
+            export E2E=true
+            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
+          attempt_limit: 3
+          attempt_delay: 30000
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: E2E Test Reports and Screenshots
+          path: |
+            build/reports/tests/test/
+            build/test-results/test/
+            build/reports/selenide/
+            build/reports/jacoco/test/html/
+
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
-    needs: [lint, test]
-    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    needs: [lint, test, test-e2e]
+    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' && needs.test-e2e.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -357,8 +378,8 @@ jobs:
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
-    needs: [test, build-push]
-    if: always() && needs.build-push.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main'
+    needs: [test, test-e2e, build-push]
+    if: always() && needs.build-push.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       deployments: write
@@ -380,7 +401,7 @@ jobs:
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
-    needs: [lint, test]
+    needs: [lint, test, test-e2e]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
