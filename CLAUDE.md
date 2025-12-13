@@ -8,12 +8,12 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 
 **Tech Stack:**
 
-- Backend: Kotlin 2, Spring Boot 4, Java 21
-- Frontend: Vue.js 3, TypeScript 5, Vite 7, Bootstrap 5
+- Backend: Kotlin 2.2, Spring Boot 4.0, Java 21
+- Frontend: Vue.js 3.5, TypeScript 5.9, Vite 7.2, Bootstrap 5.3
 - Database: PostgreSQL 17 with Flyway migrations (V1-V60+)
 - Cache: Redis 8 (multi-level caching strategy)
-- Testing: Atrium (Kotlin assertions), JUnit 5, Mockito, Selenide, Vitest
-- Build: Gradle 8 with Version Catalogs (libs.versions.toml)
+- Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, Mockito, Selenide, Vitest
+- Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
 - Authentication: Keycloak 25 + OAuth2-Proxy (dev), Custom auth service (prod) ⚠️
 - Infrastructure: Docker, Kubernetes, Caddy reverse proxy
 - Additional Services: Google Cloud Vision API
