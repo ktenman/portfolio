@@ -145,10 +145,13 @@ jobs:
           ./gradlew bootJar --build-cache
           JAR_FILE=$(find build/libs -name "*.jar" ! -name "*-plain.jar" | head -1)
           cp "$JAR_FILE" src/app.jar
+      - name: Build base image
+        if: matrix.type == 'e2e'
+        run: docker build -t ghcr.io/ktenman/portfolio-base:firefox -f src/Dockerfile.base src/
       - uses: ScribeMD/docker-cache@0.5.0
         if: matrix.type == 'e2e'
         with:
-          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml', 'src/Dockerfile.e2e') }}
+          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml', 'src/Dockerfile.e2e', 'src/Dockerfile.base') }}
       - name: Start services
         if: matrix.type == 'e2e'
         env:
