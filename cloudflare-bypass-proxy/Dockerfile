@@ -19,6 +19,29 @@ COPY --from=curl-source /usr/local/bin/curl-impersonate-ff /usr/local/bin/curl-i
 COPY --from=curl-source /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
 RUN chmod +x /usr/local/bin/curl_ff117 /usr/local/bin/curl-impersonate-ff
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    firefox-esr \
+    libgtk-3-0 \
+    libdbus-glib-1-2 \
+    libxt6 \
+    libx11-xcb1 \
+    libasound2 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    FIREFOX_BIN=/usr/bin/firefox-esr \
+    MOZ_HEADLESS=1
+
 WORKDIR /app
 
 COPY package*.json ./

@@ -15,7 +15,7 @@
     "express": "5.2.1",
     "express-rate-limit": "8.2.1",
     "express-request-id": "^3.0.0",
-    "puppeteer": "^24.33.0"
+    "puppeteer-core": "^24.33.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

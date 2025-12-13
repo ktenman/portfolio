@@ -27,7 +27,7 @@ const mockBrowser = {
   close: jest.fn(),
 }
 
-jest.mock('puppeteer', () => ({
+jest.mock('puppeteer-core', () => ({
   __esModule: true,
   default: {
     launch: jest.fn().mockImplementation(() => Promise.resolve(mockBrowser)),
