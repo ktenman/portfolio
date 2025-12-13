@@ -5,6 +5,17 @@ import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
 import { randomUUID } from 'crypto'
 
+const config = {
+  sessionTtlMs: 5 * 60 * 1000,
+  cleanupIntervalMs: 60_000,
+  pageTimeoutMs: 30_000,
+  elementTimeoutMs: 10_000,
+  settleDelayMs: 1000,
+  cookieDismissDelayMs: 500,
+  rateLimitWindowMs: 60_000,
+  rateLimitMax: 10,
+}
+
 interface SessionData {
   cookies: string
   regNr: string
@@ -12,7 +23,6 @@ interface SessionData {
 }
 
 const sessions = new Map<string, SessionData>()
-const SESSION_TTL_MS = 5 * 60 * 1000
 
 let browserInstance: Browser | null = null
 
@@ -26,16 +36,26 @@ async function getBrowser(): Promise<Browser> {
   return browserInstance
 }
 
+async function closeBrowser(): Promise<void> {
+  if (browserInstance) {
+    await browserInstance.close().catch(() => {})
+    browserInstance = null
+  }
+}
+
+process.on('SIGTERM', closeBrowser)
+process.on('SIGINT', closeBrowser)
+
 function cleanupExpiredSessions(): void {
   const now = Date.now()
   for (const [sessionId, data] of sessions.entries()) {
-    if (now - data.createdAt > SESSION_TTL_MS) {
+    if (now - data.createdAt > config.sessionTtlMs) {
       sessions.delete(sessionId)
     }
   }
 }
 
-const cleanupTimer = setInterval(cleanupExpiredSessions, 60000)
+const cleanupTimer = setInterval(cleanupExpiredSessions, config.cleanupIntervalMs)
 cleanupTimer.unref()
 
 async function setupPage(page: Page): Promise<void> {
@@ -50,7 +70,7 @@ async function dismissCookieConsent(page: Page): Promise<void> {
     const acceptBtn = await page.$('#onetrust-accept-btn-handler')
     if (acceptBtn) {
       await acceptBtn.click()
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, config.cookieDismissDelayMs))
     }
   } catch {
     logger.debug('Auto24: No cookie consent popup found')
@@ -77,21 +97,21 @@ async function getCaptchaHandler(req: Request, res: Response): Promise<void> {
 
     await page.goto('https://www.auto24.ee/ostuabi/?t=soiduki-turuhinna-paring', {
       waitUntil: 'networkidle2',
-      timeout: 30000,
+      timeout: config.pageTimeoutMs,
     })
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, config.settleDelayMs))
     await dismissCookieConsent(page)
 
     const inputSelector = 'input[name="vpc_reg_nr"]'
-    await page.waitForSelector(inputSelector, { timeout: 10000 })
+    await page.waitForSelector(inputSelector, { timeout: config.elementTimeoutMs })
     await page.type(inputSelector, regNr)
     await page.click('button[name="vpc_reg_search"]')
 
     logger.info('Auto24: Waiting for CAPTCHA...')
 
     try {
-      await page.waitForSelector('#vpc_captcha', { timeout: 10000 })
+      await page.waitForSelector('#vpc_captcha', { timeout: config.elementTimeoutMs })
     } catch {
       const pageContent = await page.content()
       const priceMatch = pageContent.match(
@@ -114,10 +134,10 @@ async function getCaptchaHandler(req: Request, res: Response): Promise<void> {
         const img = document.querySelector('#vpc_captcha');
         return img && img.complete && img.naturalHeight > 0;
       })()`,
-      { timeout: 10000 }
+      { timeout: config.elementTimeoutMs }
     )
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, config.settleDelayMs))
 
     const captchaElement = await page.$('#vpc_captcha')
     if (!captchaElement) {
@@ -190,10 +210,10 @@ async function submitCaptchaHandler(req: Request, res: Response): Promise<void> 
 
     await page.goto(submitUrl, {
       waitUntil: 'networkidle2',
-      timeout: 30000,
+      timeout: config.pageTimeoutMs,
     })
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, config.settleDelayMs))
     await dismissCookieConsent(page)
 
     const pageContent = await page.content()
@@ -240,7 +260,7 @@ export const auto24PuppeteerCaptchaAdapter: ServiceAdapter = {
   path: '/auto24/captcha',
   method: 'POST',
   serviceName: 'Auto24PuppeteerCaptcha',
-  middleware: [createRateLimiter({ windowMs: 60000, max: 10 })],
+  middleware: [createRateLimiter({ windowMs: config.rateLimitWindowMs, max: config.rateLimitMax })],
   handler: getCaptchaHandler,
 }
 
@@ -248,6 +268,6 @@ export const auto24PuppeteerSubmitAdapter: ServiceAdapter = {
   path: '/auto24/submit',
   method: 'POST',
   serviceName: 'Auto24PuppeteerSubmit',
-  middleware: [createRateLimiter({ windowMs: 60000, max: 10 })],
+  middleware: [createRateLimiter({ windowMs: config.rateLimitWindowMs, max: config.rateLimitMax })],
   handler: submitCaptchaHandler,
 }
