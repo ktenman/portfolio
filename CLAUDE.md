@@ -8,9 +8,9 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 
 **Tech Stack:**
 
-- Backend: Kotlin 2.2.20, Spring Boot 3.5.6, Java 21
-- Frontend: Vue.js 3.5.16, TypeScript 5.8.3, Vite 6.3.5, Bootstrap 5.3.5
-- Database: PostgreSQL 42.7.8 with Flyway migrations (V1-V30+)
+- Backend: Kotlin 2.2.20, Spring Boot 4.0.0, Java 21
+- Frontend: Vue.js 3.5.25, TypeScript 5.9.3, Vite 7.2.6, Bootstrap 5.3.8
+- Database: PostgreSQL 42.7.8 with Flyway migrations (V1-V60+)
 - Cache: Redis 8 (multi-level caching strategy)
 - Testing: Atrium 1.3.0-alpha-2 (Kotlin assertions), JUnit 5, Mockito, Selenide, Vitest
 - Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
@@ -353,6 +353,7 @@ expect(value == null).toEqual(false)  // Don't use this!
 - Frontend env: Development uses proxy config in `vite.config.ts`
 - Docker services: Multiple compose files for different environments
 - CI/CD: GitHub Actions workflows in `.github/workflows/`
+- Deployment: Automated via GitHub Actions with health check verification
 
 ### Test Runner Script
 

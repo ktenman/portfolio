@@ -26,20 +26,20 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 ### Backend
 
-- Spring Boot 4
-- Kotlin 2
+- Spring Boot 4.0.0
+- Kotlin 2.2.20
 - Java 21
-- Gradle 8 with Version Catalogs
-- Atrium (Kotlin test assertions)
+- Gradle 8.8 with Version Catalogs
+- Atrium 1.3.0-alpha-2 (Kotlin test assertions)
 
 ### Frontend
 
-- Vue.js 3
-- TypeScript 5
-- Bootstrap 5
-- Vite 7
-- Vue Router 4
-- Chart.js 4
+- Vue.js 3.5.25
+- TypeScript 5.9.3
+- Bootstrap 5.3.8
+- Vite 7.2.6
+- Vue Router 4.6.3
+- Chart.js 4.5.1
 
 ### Database & Caching
 
