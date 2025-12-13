@@ -81,100 +81,95 @@ jobs:
         if: matrix.lint-type == 'frontend'
         run: .github/workflows/check-readme-links.sh
 
-  test:
-    name: 🧪 ${{ matrix.test-name }}
+  test-backend:
+    name: 🧪 Backend Unit Tests
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - test-type: backend-unit
-            test-name: Backend Unit Tests
-          - test-type: frontend-unit
-            test-name: Frontend Unit Tests
-          - test-type: cloudflare-bypass-proxy
-            test-name: Cloudflare Bypass Proxy Tests
-      fail-fast: false
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Set up JDK 21
-        if: matrix.test-type == 'backend-unit'
         uses: actions/setup-java@v5.0.0
         with:
           java-version: '21'
           distribution: 'temurin'
       - name: Setup Gradle
-        if: matrix.test-type == 'backend-unit'
         uses: gradle/actions/setup-gradle@v5.0.0
         with:
           gradle-home-cache-cleanup: true
-      - name: Use Node.js
-        if: matrix.test-type == 'frontend-unit'
-        uses: actions/setup-node@v6
-        with:
-          node-version: 'lts/iron'
-          cache: 'npm'
-      - name: Install frontend dependencies
-        if: matrix.test-type == 'frontend-unit'
-        run: npm ci
       - name: Run backend unit tests
-        if: matrix.test-type == 'backend-unit'
         run: ./gradlew test --info -x bootJar --build-cache
       - name: Build JAR artifact
-        if: matrix.test-type == 'backend-unit'
         run: ./gradlew bootJar --build-cache
       - name: Upload backend JAR
-        if: matrix.test-type == 'backend-unit'
         uses: actions/upload-artifact@v5
         with:
           name: backend-jar
           path: build/libs/*.jar
           retention-days: 1
-      - name: Run frontend unit tests
-        if: matrix.test-type == 'frontend-unit'
-        run: npm run test:run
-      - name: Run frontend test coverage
-        if: matrix.test-type == 'frontend-unit'
-        run: npm run test:coverage
-      - name: Use Node.js for cloudflare-bypass-proxy
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        uses: actions/setup-node@v6
-        with:
-          node-version: 'lts/iron'
-          cache: 'npm'
-          cache-dependency-path: cloudflare-bypass-proxy/package-lock.json
-      - name: Install cloudflare-bypass-proxy dependencies
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        working-directory: cloudflare-bypass-proxy
-        run: npm ci
-      - name: Run cloudflare-bypass-proxy tests
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        working-directory: cloudflare-bypass-proxy
-        run: npm test
-      - name: Run cloudflare-bypass-proxy test coverage
-        if: matrix.test-type == 'cloudflare-bypass-proxy'
-        working-directory: cloudflare-bypass-proxy
-        run: npm run test:coverage
       - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'backend-unit'
+        if: always()
         with:
           name: Backend Unit Test Reports
           path: |
             build/reports/tests/test/
             build/test-results/test/
             build/reports/jacoco/test/html/
+
+  test-frontend:
+    name: 🧪 Frontend Unit Tests
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/iron'
+          cache: 'npm'
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Run frontend unit tests
+        run: npm run test:run
+      - name: Run frontend test coverage
+        run: npm run test:coverage
       - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'frontend-unit'
+        if: always()
         with:
           name: Frontend Unit Test Reports
           path: |
             coverage/
             test-results/html/
             test-results/junit.xml
+
+  test-cloudflare-proxy:
+    name: 🧪 Cloudflare Bypass Proxy Tests
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/iron'
+          cache: 'npm'
+          cache-dependency-path: cloudflare-bypass-proxy/package-lock.json
+      - name: Install dependencies
+        working-directory: cloudflare-bypass-proxy
+        run: npm ci
+      - name: Run tests
+        working-directory: cloudflare-bypass-proxy
+        run: npm test
+      - name: Run test coverage
+        working-directory: cloudflare-bypass-proxy
+        run: npm run test:coverage
       - uses: actions/upload-artifact@v5
-        if: always() && matrix.test-type == 'cloudflare-bypass-proxy'
+        if: always()
         with:
           name: Cloudflare Bypass Proxy Test Reports
           path: |
@@ -182,7 +177,7 @@ jobs:
 
   test-e2e:
     name: 🧪 E2E Tests
-    needs: [test]
+    needs: [test-backend]
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -247,8 +242,8 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }} image
-    needs: [lint, test, test-e2e]
-    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' && needs.test-e2e.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    needs: [lint, test-backend, test-frontend, test-cloudflare-proxy, test-e2e]
+    if: always() && (needs.lint.result == 'success' && needs.test-backend.result == 'success' && needs.test-frontend.result == 'success' && needs.test-cloudflare-proxy.result == 'success' && needs.test-e2e.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -382,8 +377,8 @@ jobs:
 
   call-deploy-pipeline:
     name: 🔄 Call Deploy Pipeline
-    needs: [test, test-e2e, build-push]
-    if: always() && needs.build-push.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main'
+    needs: [test-backend, test-frontend, test-cloudflare-proxy, test-e2e, build-push]
+    if: always() && needs.build-push.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy == 'true') && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       deployments: write
@@ -405,7 +400,7 @@ jobs:
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot PR
-    needs: [lint, test, test-e2e]
+    needs: [lint, test-backend, test-frontend, test-cloudflare-proxy, test-e2e]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
