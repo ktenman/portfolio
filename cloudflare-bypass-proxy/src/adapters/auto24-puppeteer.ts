@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import puppeteer, { Browser, Page } from 'puppeteer'
+import puppeteer, { Browser, Page } from 'puppeteer-core'
 import { ServiceAdapter } from '../types'
 import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
@@ -29,8 +29,10 @@ let browserInstance: Browser | null = null
 async function getBrowser(): Promise<Browser> {
   if (!browserInstance || !browserInstance.connected) {
     browserInstance = await puppeteer.launch({
+      browser: 'firefox',
+      executablePath: process.env.FIREFOX_BIN || '/usr/bin/firefox-esr',
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: ['--no-sandbox'],
     })
   }
   return browserInstance
