@@ -26,14 +26,20 @@ const sessions = new Map<string, SessionData>()
 
 let browserInstance: Browser | null = null
 
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
 async function getBrowser(): Promise<Browser> {
   if (!browserInstance || !browserInstance.connected) {
     browserInstance = await puppeteer.launch({
       browser: 'firefox',
       executablePath: process.env.FIREFOX_BIN || '/usr/bin/firefox-esr',
       headless: true,
-      args: ['--no-sandbox'],
-    })
+      args: ['--no-sandbox', '--width=1280', '--height=800'],
+      extraPrefsFirefox: {
+        'general.useragent.override': USER_AGENT,
+      },
+    } as Parameters<typeof puppeteer.launch>[0])
   }
   return browserInstance
 }
@@ -60,12 +66,6 @@ function cleanupExpiredSessions(): void {
 const cleanupTimer = setInterval(cleanupExpiredSessions, config.cleanupIntervalMs)
 cleanupTimer.unref()
 
-async function setupPage(page: Page): Promise<void> {
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-  )
-  await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 })
-}
 
 async function dismissCookieConsent(page: Page): Promise<void> {
   try {
@@ -95,7 +95,6 @@ async function getCaptchaHandler(req: Request, res: Response): Promise<void> {
 
     const browser = await getBrowser()
     page = await browser.newPage()
-    await setupPage(page)
 
     await page.goto('https://www.auto24.ee/ostuabi/?t=soiduki-turuhinna-paring', {
       waitUntil: 'networkidle2',
@@ -197,7 +196,6 @@ async function submitCaptchaHandler(req: Request, res: Response): Promise<void> 
 
     const browser = await getBrowser()
     page = await browser.newPage()
-    await setupPage(page)
 
     const cookiePairs = session.cookies.split('; ')
     const cookies = cookiePairs.map(pair => {

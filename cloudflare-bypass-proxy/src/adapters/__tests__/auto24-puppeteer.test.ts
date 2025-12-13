@@ -6,8 +6,6 @@ const mockScreenshot = jest.fn()
 const mockClick = jest.fn()
 
 const mockPage = {
-  setUserAgent: jest.fn(),
-  setViewport: jest.fn(),
   goto: jest.fn(),
   waitForSelector: jest.fn(),
   waitForFunction: jest.fn(),
