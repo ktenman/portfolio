@@ -53,8 +53,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: src/Dockerfile
+      context: ./src
+      dockerfile: Dockerfile.e2e
     container_name: portfolio-backend
     ports:
       - "8081:8081"
