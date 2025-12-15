@@ -228,6 +228,11 @@ jobs:
             image: ktenman/cloudflare-bypass-proxy
             ghcr_image: cloudflare-bypass-proxy
             context: ./cloudflare-bypass-proxy
+          - name: captcha-solver
+            dockerfile: ./captcha-solver/Dockerfile
+            image: ktenman/captcha-solver
+            ghcr_image: captcha-solver
+            context: ./captcha-solver
     steps:
       - uses: actions/checkout@v6
         with:

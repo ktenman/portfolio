@@ -20,9 +20,6 @@ binance:
 auth:
   url: http://localhost:${wiremock.server.port}
 
-captcha:
-  url: http://localhost:${wiremock.server.port}
-
 historicalPrices:
   url: http://localhost:${wiremock.server.port}
 
