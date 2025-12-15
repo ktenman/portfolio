@@ -128,9 +128,8 @@ async function handler(req: Request, res: Response): Promise<void> {
 
   logger.info(`Fetching: ${body.url}`)
 
-  const tempDir = os.tmpdir()
-  const sessionId = `${Date.now()}_${crypto.randomBytes(16).toString('hex')}`
-  const cookieFile = path.join(tempDir, `cookies_${sessionId}.txt`)
+  const secureTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fetch-'))
+  const cookieFile = path.join(secureTempDir, 'cookies.txt')
 
   try {
     if (body.cookies) {
@@ -140,7 +139,7 @@ async function handler(req: Request, res: Response): Promise<void> {
     const useCookieFile = body.cookies || body.saveCookies
 
     if (body.returnType === 'base64') {
-      const outputFile = path.join(tempDir, `output_${sessionId}.bin`)
+      const outputFile = path.join(secureTempDir, 'output.bin')
 
       await executeCurl(body.url, {
         method: body.method,
@@ -209,8 +208,11 @@ async function handler(req: Request, res: Response): Promise<void> {
       if (fs.existsSync(cookieFile)) {
         fs.unlinkSync(cookieFile)
       }
+      if (fs.existsSync(secureTempDir)) {
+        fs.rmSync(secureTempDir, { recursive: true, force: true })
+      }
     } catch {
-      logger.warn(`Failed to cleanup cookie file: ${cookieFile}`)
+      logger.warn(`Failed to cleanup temp files in: ${secureTempDir}`)
     }
   }
 }

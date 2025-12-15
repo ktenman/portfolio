@@ -67,11 +67,8 @@ async function executeCurlWithCookies(
 }
 
 async function downloadImageAsBase64(url: string, cookieFile: string): Promise<string> {
-  const tempDir = os.tmpdir()
-  const imageFile = path.join(
-    tempDir,
-    `captcha_image_${Date.now()}_${crypto.randomBytes(8).toString('hex')}.png`
-  )
+  const secureTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'captcha-'))
+  const imageFile = path.join(secureTempDir, 'image.png')
 
   try {
     const args = ['-s', '-L', '-b', cookieFile, '-o', imageFile, url]
@@ -87,8 +84,11 @@ async function downloadImageAsBase64(url: string, cookieFile: string): Promise<s
       if (fs.existsSync(imageFile)) {
         fs.unlinkSync(imageFile)
       }
+      if (fs.existsSync(secureTempDir)) {
+        fs.rmdirSync(secureTempDir)
+      }
     } catch {
-      logger.warn(`Failed to cleanup image file: ${imageFile}`)
+      logger.warn(`Failed to cleanup temp files in: ${secureTempDir}`)
     }
   }
 }
@@ -100,11 +100,8 @@ async function solveCaptcha(base64Image: string): Promise<string | null> {
     imageBase64: base64Image,
   })
 
-  const tempDir = os.tmpdir()
-  const payloadFile = path.join(
-    tempDir,
-    `captcha_payload_${Date.now()}_${crypto.randomBytes(8).toString('hex')}.json`
-  )
+  const secureTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'captcha-'))
+  const payloadFile = path.join(secureTempDir, 'payload.json')
 
   try {
     fs.writeFileSync(payloadFile, payload)
@@ -141,8 +138,11 @@ async function solveCaptcha(base64Image: string): Promise<string | null> {
       if (fs.existsSync(payloadFile)) {
         fs.unlinkSync(payloadFile)
       }
+      if (fs.existsSync(secureTempDir)) {
+        fs.rmdirSync(secureTempDir)
+      }
     } catch {
-      logger.warn(`Failed to cleanup payload file: ${payloadFile}`)
+      logger.warn(`Failed to cleanup temp files in: ${secureTempDir}`)
     }
   }
 }
