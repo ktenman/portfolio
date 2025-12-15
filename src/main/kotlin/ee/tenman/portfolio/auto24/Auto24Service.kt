@@ -21,14 +21,18 @@ class Auto24Service(
         log.info("Vehicle not found for registration number: {}", regNr)
         return "Vehicle not found"
       }
+      if (response.error.contains("Price not available")) {
+        log.info("Price not available for registration number: {}", regNr)
+        return "Price not available"
+      }
       log.error("Failed to fetch price: {}", response.error)
       throw CaptchaException("Failed to fetch price: ${response.error}")
     }
     if (response.marketPrice == null) {
       log.warn("No price found for registration number: {}", regNr)
-      return "Price not found"
+      return "Price not available"
     }
-    log.info("Market price for {}: {} (found on attempt {})", regNr, response.marketPrice, response.attempts)
+    log.info("Market price for {}: {} (attempt {}, duration {}s)", regNr, response.marketPrice, response.attempts, response.durationSeconds)
     return response.marketPrice
   }
 }

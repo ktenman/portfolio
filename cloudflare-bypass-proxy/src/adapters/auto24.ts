@@ -16,13 +16,14 @@ const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
 const CAPTCHA_SOLVER_URL = process.env.CAPTCHA_SOLVER_URL || 'http://captcha-solver:8000'
 const AUTO24_BASE_URL = 'https://www.auto24.ee'
 const AUTO24_PRICE_PAGE = `${AUTO24_BASE_URL}/ostuabi/?t=soiduki-turuhinna-paring`
-const MAX_RETRIES = 20
+const MAX_RETRIES = 10
 
 interface Auto24PriceResult {
   registrationNumber: string
   marketPrice: string | null
   error: string | null
   attempts?: number
+  durationSeconds?: number
 }
 
 interface LookupResult {
@@ -31,6 +32,7 @@ interface LookupResult {
   error: string | null
   isInvalidCaptcha: boolean
   vehicleNotFound: boolean
+  noPriceData?: boolean
 }
 
 async function executeCurlWithCookies(
@@ -238,6 +240,26 @@ async function attemptPriceLookup(
     }
   }
 
+  const noPriceMessage = price$('div.vehicl_price_request').text().trim()
+  logger.info(`No price found. Page content: ${noPriceMessage.substring(0, 500)}`)
+
+  const vehicleFound =
+    noPriceMessage.includes('Sõiduk:') || noPriceMessage.includes('iduk:')
+  const hasPriceLabel =
+    noPriceMessage.includes('keskmine hind') || noPriceMessage.includes('turuhind')
+
+  if (vehicleFound && hasPriceLabel) {
+    logger.info('Vehicle exists but no price data available')
+    return {
+      success: true,
+      marketPrice: null,
+      error: null,
+      isInvalidCaptcha: false,
+      vehicleNotFound: false,
+      noPriceData: true,
+    }
+  }
+
   return {
     success: false,
     marketPrice: null,
@@ -254,6 +276,8 @@ async function handler(req: Request, res: Response): Promise<void> {
   const sanitizedRegNumber = regNumber.toUpperCase().replace(/[^A-Z0-9]/g, '')
   logger.info(`Fetching market price for registration number: ${sanitizedRegNumber}`)
 
+  const startTime = Date.now()
+  const getDuration = () => Number(((Date.now() - startTime) / 1000).toFixed(3))
   const tempDir = os.tmpdir()
   let attempt = 0
   let lastError: string | null = null
@@ -284,6 +308,19 @@ async function handler(req: Request, res: Response): Promise<void> {
           marketPrice: null,
           error: 'Vehicle not found',
           attempts: attempt,
+          durationSeconds: getDuration(),
+        } as Auto24PriceResult)
+        return
+      }
+
+      if (result.noPriceData) {
+        logger.info(`No price data available for registration number: ${sanitizedRegNumber}`)
+        res.json({
+          registrationNumber: sanitizedRegNumber,
+          marketPrice: null,
+          error: 'Price not available',
+          attempts: attempt,
+          durationSeconds: getDuration(),
         } as Auto24PriceResult)
         return
       }
@@ -297,6 +334,7 @@ async function handler(req: Request, res: Response): Promise<void> {
           marketPrice: result.marketPrice,
           error: null,
           attempts: attempt,
+          durationSeconds: getDuration(),
         } as Auto24PriceResult)
         return
       }
@@ -328,6 +366,7 @@ async function handler(req: Request, res: Response): Promise<void> {
     marketPrice: null,
     error: `Failed after ${MAX_RETRIES} attempts: ${lastError}`,
     attempts: attempt,
+    durationSeconds: getDuration(),
   } as Auto24PriceResult)
 }
 
