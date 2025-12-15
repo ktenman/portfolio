@@ -14,6 +14,8 @@ RUN npm run build
 
 FROM node:20-slim
 
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 COPY --from=curl-source /usr/local/bin/curl_ff117 /usr/local/bin/curl_ff117
 COPY --from=curl-source /usr/local/bin/curl-impersonate-ff /usr/local/bin/curl-impersonate-ff
 COPY --from=curl-source /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
