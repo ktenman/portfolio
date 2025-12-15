@@ -243,8 +243,7 @@ async function attemptPriceLookup(
   const noPriceMessage = price$('div.vehicl_price_request').text().trim()
   logger.info(`No price found. Page content: ${noPriceMessage.substring(0, 500)}`)
 
-  const vehicleFound =
-    noPriceMessage.includes('Sõiduk:') || noPriceMessage.includes('iduk:')
+  const vehicleFound = noPriceMessage.includes('Sõiduk:') || noPriceMessage.includes('iduk:')
   const hasPriceLabel =
     noPriceMessage.includes('keskmine hind') || noPriceMessage.includes('turuhind')
 
