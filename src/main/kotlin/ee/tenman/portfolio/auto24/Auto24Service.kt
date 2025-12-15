@@ -19,7 +19,10 @@ class Auto24Service(
     return handleResponse(regNr, response)
   }
 
-  private fun handleResponse(regNr: String, response: Auto24PriceResponse): String {
+  private fun handleResponse(
+    regNr: String,
+    response: Auto24PriceResponse,
+  ): String {
     if (response.error != null) {
       return handleError(regNr, response.error)
     }
@@ -31,8 +34,11 @@ class Auto24Service(
     return response.marketPrice
   }
 
-  private fun handleError(regNr: String, error: String): String {
-    return when {
+  private fun handleError(
+    regNr: String,
+    error: String,
+  ): String =
+    when {
       error.contains("Vehicle not found") -> {
         log.info("Vehicle not found for registration number: {}", regNr)
         "Vehicle not found"
@@ -46,5 +52,4 @@ class Auto24Service(
         throw CaptchaException("Failed to fetch price: $error")
       }
     }
-  }
 }
