@@ -210,8 +210,7 @@ async def predict(request: PredictionRequest):
     raise HTTPException(status_code=503, detail="Model not loaded")
 
   start = time.time()
-  sanitized_uuid = re.sub(r'[^a-zA-Z0-9\-]', '', request.uuid)[:64]
-  logger.info(f"Prediction requested for UUID: {sanitized_uuid}")
+  logger.info("Prediction request received")
 
   try:
     # Clean and decode base64 image
