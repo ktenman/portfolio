@@ -5,4 +5,5 @@ data class Auto24PriceResponse(
   val marketPrice: String?,
   val error: String?,
   val attempts: Int?,
+  val durationSeconds: Double?,
 )
