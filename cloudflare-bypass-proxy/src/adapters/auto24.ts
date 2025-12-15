@@ -6,6 +6,7 @@ import { logger } from '../utils/logger'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import * as cheerio from 'cheerio'
+import * as crypto from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
@@ -15,7 +16,7 @@ const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
 const CAPTCHA_SOLVER_URL = process.env.CAPTCHA_SOLVER_URL || 'http://captcha-solver:8000'
 const AUTO24_BASE_URL = 'https://www.auto24.ee'
 const AUTO24_PRICE_PAGE = `${AUTO24_BASE_URL}/ostuabi/?t=soiduki-turuhinna-paring`
-const MAX_RETRIES = 1000
+const MAX_RETRIES = 20
 
 interface Auto24PriceResult {
   registrationNumber: string
@@ -67,7 +68,10 @@ async function executeCurlWithCookies(
 
 async function downloadImageAsBase64(url: string, cookieFile: string): Promise<string> {
   const tempDir = os.tmpdir()
-  const imageFile = path.join(tempDir, `captcha_image_${Date.now()}.png`)
+  const imageFile = path.join(
+    tempDir,
+    `captcha_image_${Date.now()}_${crypto.randomBytes(8).toString('hex')}.png`
+  )
 
   try {
     const args = ['-s', '-L', '-b', cookieFile, '-o', imageFile, url]
@@ -90,14 +94,17 @@ async function downloadImageAsBase64(url: string, cookieFile: string): Promise<s
 }
 
 async function solveCaptcha(base64Image: string): Promise<string | null> {
-  const uuid = `${Date.now()}-${Math.random().toString(36).substring(7)}`
+  const uuid = crypto.randomUUID()
   const payload = JSON.stringify({
     uuid,
     imageBase64: base64Image,
   })
 
   const tempDir = os.tmpdir()
-  const payloadFile = path.join(tempDir, `captcha_payload_${Date.now()}.json`)
+  const payloadFile = path.join(
+    tempDir,
+    `captcha_payload_${Date.now()}_${crypto.randomBytes(8).toString('hex')}.json`
+  )
 
   try {
     fs.writeFileSync(payloadFile, payload)
@@ -260,7 +267,10 @@ async function handler(req: Request, res: Response): Promise<void> {
 
   while (attempt < MAX_RETRIES) {
     attempt++
-    const cookieFile = path.join(tempDir, `auto24_cookies_${Date.now()}_${attempt}.txt`)
+    const cookieFile = path.join(
+      tempDir,
+      `auto24_cookies_${Date.now()}_${crypto.randomBytes(8).toString('hex')}.txt`
+    )
 
     try {
       logger.info(`Attempt ${attempt}/${MAX_RETRIES} for ${sanitizedRegNumber}`)

@@ -1,14 +1,51 @@
 import { Request, Response } from 'express'
 import { ServiceAdapter } from '../types'
+import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import * as crypto from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 
 const execFileAsync = promisify(execFile)
 const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
+const ALLOWED_DOMAINS = (process.env.FETCH_ALLOWED_DOMAINS || 'auto24.ee')
+  .split(',')
+  .map(d => d.trim().toLowerCase())
+
+function isUrlAllowed(urlString: string): { allowed: boolean; reason?: string } {
+  try {
+    const url = new URL(urlString)
+
+    if (url.protocol !== 'https:') {
+      return { allowed: false, reason: 'Only HTTPS URLs are allowed' }
+    }
+
+    const hostname = url.hostname.toLowerCase()
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      return { allowed: false, reason: 'Localhost URLs are not allowed' }
+    }
+
+    if (/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/.test(hostname)) {
+      return { allowed: false, reason: 'Private IP addresses are not allowed' }
+    }
+
+    const isAllowed = ALLOWED_DOMAINS.some(
+      domain => hostname === domain || hostname.endsWith(`.${domain}`)
+    )
+
+    if (!isAllowed) {
+      return { allowed: false, reason: `Domain not in allowlist: ${hostname}` }
+    }
+
+    return { allowed: true }
+  } catch {
+    return { allowed: false, reason: 'Invalid URL format' }
+  }
+}
 
 interface FetchRequest {
   url: string
@@ -82,10 +119,17 @@ async function handler(req: Request, res: Response): Promise<void> {
     return
   }
 
+  const urlValidation = isUrlAllowed(body.url)
+  if (!urlValidation.allowed) {
+    logger.warn(`URL rejected: ${body.url} - ${urlValidation.reason}`)
+    res.status(403).json({ success: false, error: urlValidation.reason } as FetchResponse)
+    return
+  }
+
   logger.info(`Fetching: ${body.url}`)
 
   const tempDir = os.tmpdir()
-  const sessionId = `${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const sessionId = `${Date.now()}_${crypto.randomBytes(16).toString('hex')}`
   const cookieFile = path.join(tempDir, `cookies_${sessionId}.txt`)
 
   try {
@@ -175,6 +219,6 @@ export const fetchAdapter: ServiceAdapter = {
   path: '/fetch',
   method: 'POST',
   serviceName: 'GenericFetch',
-  middleware: [],
+  middleware: [createRateLimiter({ max: 60 })],
   handler,
 }
