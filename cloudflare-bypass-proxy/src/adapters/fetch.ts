@@ -4,7 +4,6 @@ import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import * as crypto from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
@@ -14,6 +13,18 @@ const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
 const ALLOWED_DOMAINS = (process.env.FETCH_ALLOWED_DOMAINS || 'auto24.ee')
   .split(',')
   .map(d => d.trim().toLowerCase())
+
+function sanitizeCookieContent(cookies: string): string {
+  return cookies
+    .split('\n')
+    .filter(line => {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) return true
+      const parts = trimmed.split('\t')
+      return parts.length >= 7 && parts.every(p => !/[<>{}|\\^`]/.test(p))
+    })
+    .join('\n')
+}
 
 function isUrlAllowed(urlString: string): { allowed: boolean; reason?: string } {
   try {
@@ -133,7 +144,8 @@ async function handler(req: Request, res: Response): Promise<void> {
 
   try {
     if (body.cookies) {
-      fs.writeFileSync(cookieFile, body.cookies)
+      const sanitizedCookies = sanitizeCookieContent(body.cookies)
+      fs.writeFileSync(cookieFile, sanitizedCookies, { mode: 0o600 })
     }
 
     const useCookieFile = body.cookies || body.saveCookies
