@@ -61,3 +61,18 @@ plantuml*.jar
 
 ### macOS ###
 .DS_Store
+
+### Scripts Generated Files ###
+scripts/*.log
+scripts/alerts.json
+scripts/security-issues-report.md
+scripts/security-issues.csv
+scripts/top-50-fixes.md
+scripts/captcha_debug/
+scripts/captcha_training_data/
+scripts/auto24_captcha/
+scripts/auto24_*.py
+scripts/train_captcha_model.py
+scripts/*.keras
+scripts/*.png
+scripts/*.jpg
