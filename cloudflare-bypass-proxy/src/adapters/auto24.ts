@@ -102,7 +102,16 @@ async function solveCaptcha(base64Image: string): Promise<string | null> {
   try {
     fs.writeFileSync(payloadFile, payload)
 
-    const args = ['-s', '-X', 'POST', '-H', 'Content-Type: application/json', '-d', `@${payloadFile}`, `${CAPTCHA_SOLVER_URL}/predict`]
+    const args = [
+      '-s',
+      '-X',
+      'POST',
+      '-H',
+      'Content-Type: application/json',
+      '-d',
+      `@${payloadFile}`,
+      `${CAPTCHA_SOLVER_URL}/predict`,
+    ]
 
     const { stdout } = await execFileAsync('/usr/bin/curl', args, {
       timeout: 30000,
@@ -116,7 +125,9 @@ async function solveCaptcha(base64Image: string): Promise<string | null> {
     logger.info(`Captcha prediction: ${prediction} (confidence: ${(confidence * 100).toFixed(1)}%)`)
     return prediction
   } catch (error) {
-    logger.error(`Captcha solver failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    logger.error(
+      `Captcha solver failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
     return null
   } finally {
     try {
@@ -145,17 +156,31 @@ async function attemptPriceLookup(
 
   if (!captchaUrl) {
     logger.error('Captcha image not found on page')
-    return { success: false, marketPrice: null, error: 'Captcha image not found', isInvalidCaptcha: false, vehicleNotFound: false }
+    return {
+      success: false,
+      marketPrice: null,
+      error: 'Captcha image not found',
+      isInvalidCaptcha: false,
+      vehicleNotFound: false,
+    }
   }
 
-  const fullCaptchaUrl = captchaUrl.startsWith('http') ? captchaUrl : `${AUTO24_BASE_URL}${captchaUrl}`
+  const fullCaptchaUrl = captchaUrl.startsWith('http')
+    ? captchaUrl
+    : `${AUTO24_BASE_URL}${captchaUrl}`
   logger.debug(`Downloading captcha from: ${fullCaptchaUrl}`)
 
   const base64Image = await downloadImageAsBase64(fullCaptchaUrl, cookieFile)
 
   const captchaResult = await solveCaptcha(base64Image)
   if (!captchaResult) {
-    return { success: false, marketPrice: null, error: 'Failed to solve captcha', isInvalidCaptcha: true, vehicleNotFound: false }
+    return {
+      success: false,
+      marketPrice: null,
+      error: 'Failed to solve captcha',
+      isInvalidCaptcha: true,
+      vehicleNotFound: false,
+    }
   }
 
   const priceUrl = `${AUTO24_PRICE_PAGE}&vpc_reg_nr=${encodeURIComponent(regNumber)}&checksec1=${encodeURIComponent(captchaResult)}&vpc_reg_search=1`
@@ -174,21 +199,45 @@ async function attemptPriceLookup(
 
   if (errorMessage.includes('Vale kontrollkood') || errorMessage.includes('kontroll')) {
     logger.warn(`Invalid captcha detected: ${errorMessage}`)
-    return { success: false, marketPrice: null, error: errorMessage, isInvalidCaptcha: true, vehicleNotFound: false }
+    return {
+      success: false,
+      marketPrice: null,
+      error: errorMessage,
+      isInvalidCaptcha: true,
+      vehicleNotFound: false,
+    }
   }
 
   if (errorMessage.includes('Ei leitud sõidukit')) {
-    return { success: true, marketPrice: null, error: null, isInvalidCaptcha: false, vehicleNotFound: true }
+    return {
+      success: true,
+      marketPrice: null,
+      error: null,
+      isInvalidCaptcha: false,
+      vehicleNotFound: true,
+    }
   }
 
   const priceElement = price$('b.color')
   const marketPrice = priceElement.first().text().trim() || null
 
   if (marketPrice) {
-    return { success: true, marketPrice, error: null, isInvalidCaptcha: false, vehicleNotFound: false }
+    return {
+      success: true,
+      marketPrice,
+      error: null,
+      isInvalidCaptcha: false,
+      vehicleNotFound: false,
+    }
   }
 
-  return { success: false, marketPrice: null, error: 'Price not found in response', isInvalidCaptcha: false, vehicleNotFound: false }
+  return {
+    success: false,
+    marketPrice: null,
+    error: 'Price not found in response',
+    isInvalidCaptcha: false,
+    vehicleNotFound: false,
+  }
 }
 
 async function handler(req: Request, res: Response): Promise<void> {
@@ -230,7 +279,9 @@ async function handler(req: Request, res: Response): Promise<void> {
       }
 
       if (result.success && result.marketPrice) {
-        logger.info(`Market price for ${sanitizedRegNumber}: ${result.marketPrice} (found on attempt ${attempt})`)
+        logger.info(
+          `Market price for ${sanitizedRegNumber}: ${result.marketPrice} (found on attempt ${attempt})`
+        )
         res.json({
           registrationNumber: sanitizedRegNumber,
           marketPrice: result.marketPrice,
