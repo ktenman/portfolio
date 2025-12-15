@@ -120,9 +120,6 @@ feign:
       default:
         loggerLevel: FULL
 
-captcha:
-  url: http://captcha-solver:8000
-
 historicalPrices:
   url: https://markets.ft.com
 

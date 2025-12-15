@@ -7,6 +7,7 @@ import { requestContext, requestContextMiddleware } from './middleware/request-c
 const app = express()
 const PORT = process.env.PORT || 3000
 
+app.use(express.json())
 app.use(expressRequestId())
 app.use(requestContextMiddleware)
 
