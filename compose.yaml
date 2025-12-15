@@ -66,8 +66,10 @@ services:
       NODE_ENV: production
 
   captcha-solver:
-    container_name: captcha_solver
-    image: ktenman/captcha-solver:latest
+    container_name: captcha-solver
+    build:
+      context: ./captcha-solver
+      dockerfile: Dockerfile
     ports:
       - '53278:8000'
     restart: unless-stopped
@@ -76,6 +78,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 512m
 
 volumes:
   postgres_data_dev:
