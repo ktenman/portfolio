@@ -76,7 +76,7 @@ The character set excludes visually ambiguous characters:
 
 ## Training Methodology
 
-### Phase 1: Initial Data Collection (~2,000 images)
+### Phase 1: Initial Data Collection (2,011 images)
 
 1. **Image Acquisition**: Used a Cloudflare bypass proxy (curl-impersonate) to capture CAPTCHA images from auto24.ee
 
@@ -86,7 +86,7 @@ The character set excludes visually ambiguous characters:
 
 3. **Verification**: Each AI prediction was tested against the actual auto24.ee website to confirm correctness. Only verified correct predictions were saved to the training dataset.
 
-4. **Label Quality**: The AI-generated labels achieved approximately **22% accuracy** on verification, meaning ~440 correctly labeled images from 2,000 attempts.
+4. **Label Quality**: The AI-generated labels achieved approximately **22% accuracy** on verification, yielding 2,011 correctly labeled images from 9,140 attempts (~$8 spent on OpenRouter API).
 
 ### Phase 2: Initial Model Training
 
@@ -153,7 +153,3 @@ captcha-solver/
 - Python 3.11+
 - TensorFlow 2.18+
 - ~500MB disk space (model + dependencies)
-
-## License
-
-MIT
