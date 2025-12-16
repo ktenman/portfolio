@@ -157,7 +157,7 @@ jobs:
       # Upload Gitleaks results as artifact
       - name: Upload Gitleaks results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: gitleaks-${{ matrix.language }}-results
           path: gitleaks-${{ matrix.language }}-results.sarif
