@@ -10,7 +10,11 @@ ENV BUILD_HASH=${BUILD_HASH} \
 
 COPY build/libs/*.jar app.jar
 
-RUN apk add --no-cache curl && \
+# Update packages to fix CVE-2024-58251 and CVE-2025-46394
+RUN apk update && \
+    apk upgrade --no-cache busybox busybox-binsh ssl_client && \
+    apk add --no-cache curl && \
+    rm -rf /var/cache/apk/* && \
     adduser -D -s /bin/sh appuser && \
     chown -R appuser:appuser /app
 
