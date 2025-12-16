@@ -43,7 +43,6 @@ dependencies {
   implementation(libs.spring.boot.starter.actuator)
   implementation(libs.spring.boot.starter.aspectj)
   implementation(libs.micrometer.registry.prometheus)
-  implementation(libs.selenide)
   implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
   implementation(libs.kotlin.reflect)
@@ -88,6 +87,7 @@ dependencies {
   testImplementation(libs.datafaker)
   testImplementation(libs.kotest.property)
   testImplementation(libs.kotest.runner.junit5)
+  testImplementation(libs.selenide)
   testRuntimeOnly(libs.junit.platform.launcher)
   testRuntimeOnly(libs.junit.jupiter.engine)
 }

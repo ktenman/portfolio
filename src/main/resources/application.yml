@@ -154,16 +154,6 @@ build:
   hash: ${BUILD_HASH:unknown}
   time: ${BUILD_TIME:unknown}
 
-webdriver:
-  pool:
-    size: ${WEBDRIVER_POOL_SIZE:2}
-  headless: ${WEBDRIVER_HEADLESS:true}
-  verify:
-    on:
-      startup: ${WEBDRIVER_VERIFY_ON_STARTUP:true}
-  health:
-    enabled: ${WEBDRIVER_HEALTH_ENABLED:false}
-
 scheduling:
   enabled: ${SCHEDULING_ENABLED:true}
   jobs:
