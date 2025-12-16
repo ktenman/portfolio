@@ -143,7 +143,7 @@ jobs:
         working-directory: cloudflare-bypass-proxy
       - name: Set up Python
         if: matrix.type == 'captcha-solver'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
       - name: Install test dependencies
