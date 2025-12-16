@@ -23,6 +23,9 @@ auth:
 historicalPrices:
   url: http://localhost:${wiremock.server.port}
 
+cloudflare-bypass-proxy:
+  url: http://localhost:${wiremock.server.port}
+
 vision:
   enabled: ${VISION_ENABLED:false}
   base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}
