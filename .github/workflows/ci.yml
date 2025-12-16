@@ -54,7 +54,7 @@ jobs:
         run: ./gradlew detekt
       - name: Upload Detekt reports
         if: always() && matrix.lint-type == 'backend'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Detekt Reports
           path: |
@@ -124,7 +124,7 @@ jobs:
       - name: Build JAR
         if: matrix.type == 'backend'
         run: ./gradlew bootJar --build-cache
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: matrix.type == 'backend'
         with:
           name: backend-jar
@@ -196,7 +196,7 @@ jobs:
             ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
           attempt_limit: 3
           attempt_delay: 30000
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always() && matrix.type == 'backend'
         with:
           name: Backend Unit Test Reports
@@ -204,19 +204,19 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
             build/reports/jacoco/test/html/
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always() && matrix.type == 'frontend'
         with:
           name: Frontend Unit Test Reports
           path: |
             coverage/
             test-results/
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always() && matrix.type == 'cloudflare'
         with:
           name: Cloudflare Bypass Proxy Test Reports
           path: cloudflare-bypass-proxy/coverage/
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always() && matrix.type == 'e2e'
         with:
           name: E2E Test Reports
