@@ -7,6 +7,10 @@ import ee.tenman.portfolio.googlevision.GoogleVisionService
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.selects.select
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.File
@@ -17,6 +21,7 @@ class LicensePlateDetectionService(
   private val googleVisionService: GoogleVisionService,
   private val openRouterVisionService: OpenRouterVisionService,
   private val openRouterProperties: OpenRouterProperties,
+  private val calculationDispatcher: CoroutineDispatcher,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -28,74 +33,105 @@ class LicensePlateDetectionService(
   fun detectPlateNumber(
     base64Image: String,
     uuid: UUID,
+  ): DetectionResult = runBlocking(calculationDispatcher) {
+    detectPlateNumberAsync(base64Image, uuid)
+  }
+
+  private suspend fun detectPlateNumberAsync(
+    base64Image: String,
+    uuid: UUID,
   ): DetectionResult {
-    val googleResult = tryGoogleVision(base64Image, uuid)
-    if (googleResult.plateNumber != null) {
-      return googleResult
+    log.info("Starting parallel license plate detection")
+    val jobs = mutableListOf<kotlinx.coroutines.Deferred<DetectionResult?>>()
+    val scope = kotlinx.coroutines.coroutineScope {
+      val googleVisionJob = async {
+        tryGoogleVision(base64Image, uuid)
+      }
+      jobs.add(googleVisionJob)
+      if (openRouterProperties.apiKey.isNotBlank()) {
+        VisionModel.openRouterModels().forEach { model ->
+          val job = async {
+            tryVisionModel(model, base64Image)
+          }
+          jobs.add(job)
+        }
+      }
+      selectFirstSuccessful(jobs)
     }
-    return tryOpenRouterFallback(base64Image, googleResult.hasCar)
+    return scope
+  }
+
+  private suspend fun selectFirstSuccessful(
+    jobs: List<kotlinx.coroutines.Deferred<DetectionResult?>>,
+  ): DetectionResult {
+    val remainingJobs = jobs.toMutableList()
+    var lastHasCar = false
+    while (remainingJobs.isNotEmpty()) {
+      val result = select<DetectionResult?> {
+        remainingJobs.forEach { deferred ->
+          deferred.onAwait { it }
+        }
+      }
+      val completedJob = remainingJobs.find { it.isCompleted }
+      if (completedJob != null) {
+        remainingJobs.remove(completedJob)
+      }
+      if (result != null) {
+        if (result.plateNumber != null) {
+          log.info("Plate detected by {}, cancelling remaining jobs", result.provider)
+          remainingJobs.forEach { it.cancel() }
+          return result
+        }
+        lastHasCar = lastHasCar || result.hasCar
+      }
+    }
+    log.warn("All providers exhausted, no plate detected")
+    return DetectionResult(plateNumber = null, hasCar = lastHasCar, provider = DetectionProvider.ALL_FAILED)
   }
 
   private fun tryGoogleVision(
     base64Image: String,
     uuid: UUID,
-  ): DetectionResult {
-    log.info("Attempting license plate detection with Google Vision")
-    val result = googleVisionService.getPlateNumber(base64Image, uuid)
-    val hasCar = result["hasCar"]?.toBoolean() ?: false
-    val plateNumber = result["plateNumber"]
-    if (plateNumber != null) {
-      log.info("Google Vision detected plate: {}", plateNumber)
-      return DetectionResult(plateNumber = plateNumber, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
-    }
-    log.info("Google Vision did not detect plate number, hasCar: {}", hasCar)
-    return DetectionResult(plateNumber = null, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
-  }
-
-  private fun tryOpenRouterFallback(
-    base64Image: String,
-    hasCar: Boolean,
-  ): DetectionResult {
-    if (openRouterProperties.apiKey.isBlank()) {
-      log.warn("OpenRouter API key not configured, skipping fallback")
-      return DetectionResult(plateNumber = null, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
-    }
-    var currentModel: VisionModel? = VisionModel.primary()
-    while (currentModel != null) {
-      val plateNumber = tryVisionModel(currentModel, base64Image)
+  ): DetectionResult? =
+    runCatching {
+      log.info("Attempting detection with Google Vision")
+      val result = googleVisionService.getPlateNumber(base64Image, uuid)
+      val hasCar = result["hasCar"]?.toBoolean() ?: false
+      val plateNumber = result["plateNumber"]
       if (plateNumber != null) {
-        val provider = DetectionProvider.fromVisionModel(currentModel)
-        return DetectionResult(plateNumber = plateNumber, hasCar = true, provider = provider)
+        log.info("Google Vision detected plate: {}", plateNumber)
+        return DetectionResult(plateNumber = plateNumber, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
       }
-      val nextModel = currentModel.nextFallbackModel()
-      if (nextModel != null) {
-        log.info("Cascading to next vision model: {}", nextModel.modelId)
-      }
-      currentModel = nextModel
+      log.info("Google Vision: no plate found, hasCar={}", hasCar)
+      DetectionResult(plateNumber = null, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
+    }.getOrElse { e ->
+      log.error("Google Vision failed: {}", e.message)
+      null
     }
-    log.warn("All vision models exhausted, no plate detected")
-    return DetectionResult(plateNumber = null, hasCar = hasCar, provider = DetectionProvider.ALL_FAILED)
-  }
 
   private fun tryVisionModel(
     model: VisionModel,
     base64Image: String,
-  ): String? {
-    log.info("Attempting license plate detection with {}", model.modelId)
-    val request = OpenRouterVisionRequest.forLicensePlateExtraction(model.modelId, base64Image)
-    val response = openRouterVisionService.extractText(request)
-    if (response.isNullOrBlank()) {
-      log.info("Model {} returned empty response", model.modelId)
-      return null
+  ): DetectionResult? =
+    runCatching {
+      log.info("Attempting detection with {}", model.modelId)
+      val request = OpenRouterVisionRequest.forLicensePlateExtraction(model.modelId, base64Image)
+      val response = openRouterVisionService.extractText(request)
+      if (response.isNullOrBlank()) {
+        log.info("{}: empty response", model.modelId)
+        return DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
+      }
+      val plateNumber = extractPlateNumber(response)
+      if (plateNumber != null) {
+        log.info("{} detected plate: {}", model.modelId, plateNumber)
+        return DetectionResult(plateNumber = plateNumber, hasCar = true, provider = DetectionProvider.fromVisionModel(model))
+      }
+      log.info("{}: response '{}' did not match pattern", model.modelId, response)
+      DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
+    }.getOrElse { e ->
+      log.error("{} failed: {}", model.modelId, e.message)
+      null
     }
-    val plateNumber = extractPlateNumber(response)
-    if (plateNumber != null) {
-      log.info("Model {} detected plate: {}", model.modelId, plateNumber)
-      return plateNumber
-    }
-    log.info("Model {} response '{}' did not match plate pattern", model.modelId, response)
-    return null
-  }
 
   private fun extractPlateNumber(response: String): String? {
     val cleaned = response.replace("\\s".toRegex(), "").uppercase()

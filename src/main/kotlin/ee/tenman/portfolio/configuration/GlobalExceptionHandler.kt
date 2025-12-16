@@ -8,6 +8,7 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @ControllerAdvice
 class GlobalExceptionHandler {
@@ -16,6 +17,10 @@ class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException::class)
   fun handleValidationExceptions(exception: MethodArgumentNotValidException): ResponseEntity<ApiError> =
     handleValidationException(exception)
+
+  @ExceptionHandler(NoResourceFoundException::class)
+  fun handleNoResourceFound(exception: NoResourceFoundException): ResponseEntity<Void> =
+    ResponseEntity.notFound().build()
 
   @ExceptionHandler(Exception::class)
   fun handleAllExceptions(exception: Exception): ResponseEntity<ApiError> {
