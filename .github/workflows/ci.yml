@@ -314,7 +314,7 @@ jobs:
         if: steps.check.outputs.should_build == 'true'
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name != 'workflow_dispatch'
         with:
           name: backend-jar
