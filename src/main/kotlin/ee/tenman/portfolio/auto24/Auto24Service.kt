@@ -13,7 +13,7 @@ class Auto24Service(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Retryable(backoff = Backoff(delay = 1000))
-  fun findCarPrice(regNr: String): String {
+  fun findCarPrice(regNr: String): CarPriceResult {
     log.info("Fetching market price for registration number: {}", regNr)
     val response = auto24Client.getMarketPrice(regNr)
     return handleResponse(regNr, response)
@@ -22,16 +22,16 @@ class Auto24Service(
   private fun handleResponse(
     regNr: String,
     response: Auto24PriceResponse,
-  ): String {
+  ): CarPriceResult {
     if (response.error != null) {
-      return handleError(regNr, response.error)
+      return CarPriceResult(handleError(regNr, response.error), response.durationSeconds)
     }
     if (response.marketPrice == null) {
       log.warn("No price found for registration number: {}", regNr)
-      return "Price not available"
+      return CarPriceResult("Price not available", response.durationSeconds)
     }
     log.info("Market price for {}: {} (attempt {}, duration {}s)", regNr, response.marketPrice, response.attempts, response.durationSeconds)
-    return response.marketPrice
+    return CarPriceResult(response.marketPrice, response.durationSeconds)
   }
 
   private fun handleError(
