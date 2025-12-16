@@ -131,6 +131,7 @@ export enum ProviderName {
     BINANCE = "BINANCE",
     FT = "FT",
     LIGHTYEAR = "LIGHTYEAR",
+    MANUAL = "MANUAL",
     TRADING212 = "TRADING212",
 }
 
