@@ -62,6 +62,7 @@ The CNN model processes 65x25 grayscale images and outputs predictions for 4 cha
 **Character Set:** `2345789ABCDEFHKLMNPRTUVWXYZ` (27 characters)
 
 The character set excludes visually ambiguous characters:
+
 - `0` excluded (confused with `O`)
 - `1` excluded (confused with `I` and `L`)
 - `6` excluded (confused with `G`)
@@ -80,6 +81,7 @@ The character set excludes visually ambiguous characters:
 1. **Image Acquisition**: Used a Cloudflare bypass proxy (curl-impersonate) to capture CAPTCHA images from auto24.ee
 
 2. **AI-Assisted Labeling**: Sent base64-encoded images to OpenRouter API with Claude Opus 4.5 vision model using the prompt:
+
    > "Read this CAPTCHA. Valid chars: 2345789ABCDEFHKLMNPRTUVWXYZ only. Common confusions: 8/B, 3/E, 5/S, 0/O - pick the valid one. Output ONLY the 4 characters."
 
 3. **Verification**: Each AI prediction was tested against the actual auto24.ee website to confirm correctness. Only verified correct predictions were saved to the training dataset.
