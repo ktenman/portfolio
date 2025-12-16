@@ -14,16 +14,20 @@ const ALLOWED_DOMAINS = (process.env.FETCH_ALLOWED_DOMAINS || 'auto24.ee')
   .split(',')
   .map(d => d.trim().toLowerCase())
 
-function sanitizeCookieContent(cookies: string): string {
-  return cookies
-    .split('\n')
-    .filter(line => {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith('#')) return true
-      const parts = trimmed.split('\t')
-      return parts.length >= 7 && parts.every(p => !/[<>{}|\\^`]/.test(p))
-    })
-    .join('\n')
+function convertNetscapeCookiesToHeader(cookies: string): string {
+  const cookiePairs: string[] = []
+  for (const line of cookies.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const parts = trimmed.split('\t')
+    if (parts.length < 7) continue
+    const name = parts[5]
+    const value = parts[6]
+    if (name && value && /^[\w-]+$/.test(name) && !/[<>{}|\\^`\n\r]/.test(value)) {
+      cookiePairs.push(`${name}=${value}`)
+    }
+  }
+  return cookiePairs.join('; ')
 }
 
 function isUrlAllowed(urlString: string): { allowed: boolean; reason?: string } {
@@ -80,46 +84,36 @@ async function executeCurl(
   options: {
     method?: string
     headers?: Record<string, string>
-    cookieFile?: string
-    saveCookies?: boolean
+    cookieHeader?: string
+    saveCookiesFile?: string
     outputFile?: string
   } = {}
-): Promise<{ stdout: string; cookieFile?: string }> {
-  const { method = 'GET', headers, cookieFile, saveCookies, outputFile } = options
-
+): Promise<{ stdout: string }> {
+  const { method = 'GET', headers, cookieHeader, saveCookiesFile, outputFile } = options
   const args = ['-s', '-L']
-
   if (method === 'POST') {
     args.push('-X', 'POST')
   }
-
-  const tempCookieFile = cookieFile || path.join(os.tmpdir(), `fetch_cookies_${Date.now()}.txt`)
-
-  if (cookieFile || saveCookies) {
-    args.push('-b', tempCookieFile)
-    if (saveCookies) {
-      args.push('-c', tempCookieFile)
-    }
+  if (cookieHeader) {
+    args.push('-H', `Cookie: ${cookieHeader}`)
   }
-
+  if (saveCookiesFile) {
+    args.push('-c', saveCookiesFile)
+  }
   if (headers) {
     for (const [key, value] of Object.entries(headers)) {
       args.push('-H', `${key}: ${value}`)
     }
   }
-
   if (outputFile) {
     args.push('-o', outputFile)
   }
-
   args.push(url)
-
   const { stdout } = await execFileAsync(CURL, args, {
     timeout: 30000,
     maxBuffer: 5 * 1024 * 1024,
   })
-
-  return { stdout, cookieFile: tempCookieFile }
+  return { stdout }
 }
 
 async function handler(req: Request, res: Response): Promise<void> {
@@ -139,38 +133,34 @@ async function handler(req: Request, res: Response): Promise<void> {
 
   logger.info(`Fetching: ${body.url}`)
 
-  const secureTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fetch-'))
-  const cookieFile = path.join(secureTempDir, 'cookies.txt')
+  const cookieHeader = body.cookies ? convertNetscapeCookiesToHeader(body.cookies) : undefined
+  let secureTempDir: string | undefined
+  let saveCookiesFile: string | undefined
+
+  if (body.saveCookies || body.returnType === 'base64') {
+    secureTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fetch-'))
+    if (body.saveCookies) {
+      saveCookiesFile = path.join(secureTempDir, 'cookies.txt')
+    }
+  }
 
   try {
-    if (body.cookies) {
-      const sanitizedCookies = sanitizeCookieContent(body.cookies)
-      fs.writeFileSync(cookieFile, sanitizedCookies, { mode: 0o600 })
-    }
-
-    const useCookieFile = body.cookies || body.saveCookies
-
     if (body.returnType === 'base64') {
-      const outputFile = path.join(secureTempDir, 'output.bin')
-
+      const outputFile = path.join(secureTempDir!, 'output.bin')
       await executeCurl(body.url, {
         method: body.method,
         headers: body.headers,
-        cookieFile: useCookieFile ? cookieFile : undefined,
-        saveCookies: body.saveCookies,
+        cookieHeader,
+        saveCookiesFile,
         outputFile,
       })
-
       const fileData = fs.readFileSync(outputFile)
       const base64Data = fileData.toString('base64')
-
       let cookies: string | undefined
-      if (body.saveCookies && fs.existsSync(cookieFile)) {
-        cookies = fs.readFileSync(cookieFile, 'utf-8')
+      if (saveCookiesFile && fs.existsSync(saveCookiesFile)) {
+        cookies = fs.readFileSync(saveCookiesFile, 'utf-8')
       }
-
       fs.unlinkSync(outputFile)
-
       res.json({
         success: true,
         data: base64Data,
@@ -181,17 +171,14 @@ async function handler(req: Request, res: Response): Promise<void> {
       const result = await executeCurl(body.url, {
         method: body.method,
         headers: body.headers,
-        cookieFile: useCookieFile ? cookieFile : undefined,
-        saveCookies: body.saveCookies,
+        cookieHeader,
+        saveCookiesFile,
       })
-
       let cookies: string | undefined
-      if (body.saveCookies && fs.existsSync(cookieFile)) {
-        cookies = fs.readFileSync(cookieFile, 'utf-8')
+      if (saveCookiesFile && fs.existsSync(saveCookiesFile)) {
+        cookies = fs.readFileSync(saveCookiesFile, 'utf-8')
       }
-
       let data: string | object = result.stdout
-
       if (body.returnType === 'json') {
         try {
           data = JSON.parse(result.stdout)
@@ -199,7 +186,6 @@ async function handler(req: Request, res: Response): Promise<void> {
           logger.warn('Failed to parse response as JSON')
         }
       }
-
       res.json({
         success: true,
         data,
@@ -216,15 +202,12 @@ async function handler(req: Request, res: Response): Promise<void> {
       error: errorMessage,
     } as FetchResponse)
   } finally {
-    try {
-      if (fs.existsSync(cookieFile)) {
-        fs.unlinkSync(cookieFile)
-      }
-      if (fs.existsSync(secureTempDir)) {
+    if (secureTempDir) {
+      try {
         fs.rmSync(secureTempDir, { recursive: true, force: true })
+      } catch {
+        logger.warn(`Failed to cleanup temp files in: ${secureTempDir}`)
       }
-    } catch {
-      logger.warn(`Failed to cleanup temp files in: ${secureTempDir}`)
     }
   }
 }
