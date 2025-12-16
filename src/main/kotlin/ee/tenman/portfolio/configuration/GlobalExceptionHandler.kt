@@ -19,7 +19,8 @@ class GlobalExceptionHandler {
     handleValidationException(exception)
 
   @ExceptionHandler(NoResourceFoundException::class)
-  fun handleNoResourceFound(exception: NoResourceFoundException): ResponseEntity<Void> = ResponseEntity.notFound().build()
+  fun handleNoResourceFound(@Suppress("UNUSED_PARAMETER") exception: NoResourceFoundException): ResponseEntity<Void> =
+    ResponseEntity.notFound().build()
 
   @ExceptionHandler(Exception::class)
   fun handleAllExceptions(exception: Exception): ResponseEntity<ApiError> {
