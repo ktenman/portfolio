@@ -25,7 +25,8 @@ class LicensePlateDetectionServiceTest {
 
   @BeforeEach
   fun setUp() {
-    service = LicensePlateDetectionService(
+    service =
+      LicensePlateDetectionService(
       googleVisionService,
       openRouterVisionService,
       openRouterProperties,

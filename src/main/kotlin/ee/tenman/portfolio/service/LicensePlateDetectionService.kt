@@ -33,7 +33,8 @@ class LicensePlateDetectionService(
   fun detectPlateNumber(
     base64Image: String,
     uuid: UUID,
-  ): DetectionResult = runBlocking(calculationDispatcher) {
+  ): DetectionResult =
+    runBlocking(calculationDispatcher) {
     detectPlateNumberAsync(base64Image, uuid)
   }
 
@@ -43,14 +44,17 @@ class LicensePlateDetectionService(
   ): DetectionResult {
     log.info("Starting parallel license plate detection")
     val jobs = mutableListOf<kotlinx.coroutines.Deferred<DetectionResult?>>()
-    val scope = kotlinx.coroutines.coroutineScope {
-      val googleVisionJob = async {
+    val scope =
+      kotlinx.coroutines.coroutineScope {
+      val googleVisionJob =
+        async {
         tryGoogleVision(base64Image, uuid)
       }
       jobs.add(googleVisionJob)
       if (openRouterProperties.apiKey.isNotBlank()) {
         VisionModel.openRouterModels().forEach { model ->
-          val job = async {
+          val job =
+            async {
             tryVisionModel(model, base64Image)
           }
           jobs.add(job)
@@ -61,17 +65,16 @@ class LicensePlateDetectionService(
     return scope
   }
 
-  private suspend fun selectFirstSuccessful(
-    jobs: List<kotlinx.coroutines.Deferred<DetectionResult?>>,
-  ): DetectionResult {
+  private suspend fun selectFirstSuccessful(jobs: List<kotlinx.coroutines.Deferred<DetectionResult?>>): DetectionResult {
     val remainingJobs = jobs.toMutableList()
     var lastHasCar = false
     while (remainingJobs.isNotEmpty()) {
-      val result = select<DetectionResult?> {
-        remainingJobs.forEach { deferred ->
-          deferred.onAwait { it }
+      val result =
+        select<DetectionResult?> {
+          remainingJobs.forEach { deferred ->
+            deferred.onAwait { it }
+          }
         }
-      }
       val completedJob = remainingJobs.find { it.isCompleted }
       if (completedJob != null) {
         remainingJobs.remove(completedJob)
