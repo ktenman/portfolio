@@ -1,8 +1,9 @@
 import base64
 import os
-import pytest
-import httpx
 from pathlib import Path
+
+import httpx
+import pytest
 
 CAPTCHA_SOLVER_URL = os.getenv("CAPTCHA_SOLVER_URL", "http://localhost:8000")
 TEST_IMAGES_DIR = Path(__file__).parent / "test_images"
@@ -36,16 +37,9 @@ class TestCaptchaSolverIntegration:
         with open(img_path, "rb") as f:
             image_base64 = base64.b64encode(f.read()).decode("utf-8")
 
-        payload = {
-            "uuid": f"test-{expected_text}",
-            "imageBase64": image_base64
-        }
+        payload = {"uuid": f"test-{expected_text}", "imageBase64": image_base64}
 
-        response = httpx.post(
-            f"{CAPTCHA_SOLVER_URL}/predict",
-            json=payload,
-            timeout=30
-        )
+        response = httpx.post(f"{CAPTCHA_SOLVER_URL}/predict", json=payload, timeout=30)
 
         assert response.status_code == 200
         data = response.json()
@@ -65,41 +59,38 @@ class TestCaptchaSolverIntegration:
             with open(img_path, "rb") as f:
                 image_base64 = base64.b64encode(f.read()).decode("utf-8")
 
-            payload = {
-                "uuid": f"test-{expected_text}",
-                "imageBase64": image_base64
-            }
+            payload = {"uuid": f"test-{expected_text}", "imageBase64": image_base64}
 
-            response = httpx.post(
-                f"{CAPTCHA_SOLVER_URL}/predict",
-                json=payload,
-                timeout=30
-            )
+            response = httpx.post(f"{CAPTCHA_SOLVER_URL}/predict", json=payload, timeout=30)
 
             data = response.json()
             is_correct = data["prediction"] == expected_text
-            results.append({
-                "expected": expected_text,
-                "predicted": data["prediction"],
-                "confidence": data["confidence"],
-                "correct": is_correct
-            })
+            results.append(
+                {
+                    "expected": expected_text,
+                    "predicted": data["prediction"],
+                    "confidence": data["confidence"],
+                    "correct": is_correct,
+                }
+            )
 
         correct_count = sum(1 for r in results if r["correct"])
         total_count = len(results)
         accuracy = correct_count / total_count if total_count > 0 else 0
 
-        print(f"\n{'='*60}")
-        print(f"Captcha Solver Accuracy Report")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print("Captcha Solver Accuracy Report")
+        print(f"{'=' * 60}")
         for r in results:
             status = "PASS" if r["correct"] else "FAIL"
-            print(f"[{status}] Expected: {r['expected']}, "
-                  f"Predicted: {r['predicted']}, "
-                  f"Confidence: {r['confidence']:.2%}")
-        print(f"{'='*60}")
+            print(
+                f"[{status}] Expected: {r['expected']}, "
+                f"Predicted: {r['predicted']}, "
+                f"Confidence: {r['confidence']:.2%}"
+            )
+        print(f"{'=' * 60}")
         print(f"Accuracy: {correct_count}/{total_count} ({accuracy:.0%})")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         assert accuracy >= 0.8, f"Accuracy {accuracy:.0%} is below 80% threshold"
 
