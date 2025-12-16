@@ -122,7 +122,8 @@ class CarTelegramBot(
     replyToMessageId: Int,
     startTime: Long,
   ): Any? {
-    val carPrice = auto24Service.findCarPrice(plateNumber).replace("kuni", "to")
+    val result = auto24Service.findCarPrice(plateNumber)
+    val carPrice = result.price.replace("kuni", "to")
     val duration = TimeUtility.durationInSeconds(startTime)
     return sendMessage(
       chatId,

@@ -16,7 +16,7 @@ class Auto24Controller(
   fun getCarPrice(
     @RequestParam regNr: String,
   ): CarPriceResponse {
-    val price = auto24Service.findCarPrice(regNr)
-    return CarPriceResponse(regNr = regNr, price = price)
+    val result = auto24Service.findCarPrice(regNr)
+    return CarPriceResponse(regNr = regNr, price = result.price, durationSeconds = result.durationSeconds)
   }
 }

@@ -64,6 +64,7 @@ class Auto24ControllerIT {
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.regNr").value("876BCH"))
       .andExpect(jsonPath("$.price").value("3400 € kuni 8300 €"))
+      .andExpect(jsonPath("$.durationSeconds").value(1.5))
   }
 
   @Test
@@ -93,6 +94,7 @@ class Auto24ControllerIT {
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.regNr").value("XXXXXX"))
       .andExpect(jsonPath("$.price").value("Vehicle not found"))
+      .andExpect(jsonPath("$.durationSeconds").value(0.5))
   }
 
   @Test
@@ -122,5 +124,6 @@ class Auto24ControllerIT {
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.regNr").value("123ABC"))
       .andExpect(jsonPath("$.price").value("Price not available"))
+      .andExpect(jsonPath("$.durationSeconds").value(0.8))
   }
 }
