@@ -111,9 +111,9 @@ wiremock-spring-boot = { module = "org.wiremock.integrations:wiremock-spring-boo
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version = "1.21.3" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version = "1.21.3" }
-testcontainers-minio = { module = "org.testcontainers:minio", version = "1.21.3" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version = "1.21.4" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version = "1.21.4" }
+testcontainers-minio = { module = "org.testcontainers:minio", version = "1.21.4" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 spring-mockk = { module = "com.ninja-squad:springmockk", version = "5.0.1" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archUnit" }
