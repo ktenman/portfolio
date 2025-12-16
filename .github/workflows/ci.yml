@@ -94,6 +94,8 @@ jobs:
             name: Frontend Unit Tests
           - type: cloudflare
             name: Cloudflare Bypass Proxy Tests
+          - type: captcha-solver
+            name: Captcha Solver Tests
           - type: e2e
             name: E2E Tests
       fail-fast: false
@@ -139,6 +141,28 @@ jobs:
         if: matrix.type == 'cloudflare'
         run: npm test && npm run test:coverage
         working-directory: cloudflare-bypass-proxy
+      - name: Set up Python
+        if: matrix.type == 'captcha-solver'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install test dependencies
+        if: matrix.type == 'captcha-solver'
+        run: pip install pytest httpx
+      - name: Build and start captcha-solver
+        if: matrix.type == 'captcha-solver'
+        run: |
+          docker build -t captcha-solver -f captcha-solver/Dockerfile captcha-solver/
+          docker run -d --name captcha-solver -p 8000:8000 captcha-solver
+          timeout 60 bash -c 'until curl -s http://localhost:8000/health | grep -q healthy; do sleep 2; done'
+      - name: Run captcha-solver tests
+        if: matrix.type == 'captcha-solver'
+        run: |
+          cd captcha-solver
+          CAPTCHA_SOLVER_URL=http://localhost:8000 pytest test_captcha_integration.py -v -m integration -s
+      - name: Stop captcha-solver
+        if: always() && matrix.type == 'captcha-solver'
+        run: docker stop captcha-solver || true
       - name: Build JAR for E2E
         if: matrix.type == 'e2e'
         run: |
