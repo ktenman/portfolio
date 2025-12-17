@@ -14,7 +14,7 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 - Cache: Redis 8 (multi-level caching strategy)
 - Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, Mockito, Selenide, Vitest
 - Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
-- Authentication: Keycloak 25 + OAuth2-Proxy (dev), Custom auth service (prod) ⚠️
+- Authentication: Custom Spring Boot auth service (https://github.com/ktenman/auth)
 - Infrastructure: Docker, Kubernetes, Caddy reverse proxy
 - Additional Services: Google Cloud Vision API
 
@@ -410,14 +410,6 @@ A comprehensive test runner that runs ALL tests across the entire stack: backend
 - Test files excluded from coverage: `.eslintrc.cjs` and `app.vue`
 - **ALWAYS run `npm run lint-format` after making changes to UI code** - This ensures type safety, linting, and code formatting
 - **ALWAYS run `npm test` after making changes to UI code** - This ensures all tests pass and functionality is not broken
-
-## ⚠️ Critical Issues & Workarounds
-
-### 🔴 Authentication Divergence
-
-**Issue**: Development uses Keycloak while production uses a custom auth service.
-**Impact**: Tests may pass locally but fail in production.
-**Workaround**: Test auth flows in both `docker-compose.local.yml` (Keycloak) and `docker-compose.yml` (custom auth) environments.
 
 ## Performance Optimization Points
 

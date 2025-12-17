@@ -469,10 +469,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Known Issues & Roadmap
 
-### Critical Issues Being Addressed
-
-1. **Authentication Divergence**: Production and development use different auth systems (custom vs Keycloak). Migration to unified Keycloak is planned.
-
 ### Planned Enhancements
 
 - **OpenAPI Documentation**: Adding Swagger/OpenAPI specs for all REST endpoints
