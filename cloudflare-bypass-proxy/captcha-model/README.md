@@ -23,6 +23,7 @@ Excluded ambiguous characters: `0` (vs `O`), `1` (vs `I`/`L`), `6` (vs `G`), `I`
 1. **Image Acquisition**: Cloudflare bypass proxy (curl-impersonate) captured CAPTCHAs from auto24.ee
 
 2. **AI-Assisted Labeling**: Claude Opus 4.5 vision model via OpenRouter API:
+
    > "Read this CAPTCHA. Valid chars: 2345789ABCDEFHKLMNPRTUVWXYZ only. Common confusions: 8/B, 3/E, 5/S, 0/O - pick the valid one. Output ONLY the 4 characters."
 
 3. **Verification**: Each AI prediction tested against auto24.ee website. Only verified correct predictions saved.
@@ -45,16 +46,17 @@ Excluded ambiguous characters: `0` (vs `O`), `1` (vs `I`/`L`), `6` (vs `G`), `I`
 
 We use ONNX format for production inference instead of the original Keras model:
 
-| Aspect | Keras (.keras) | ONNX (.onnx) |
-|--------|---------------|--------------|
-| **Runtime** | TensorFlow (Python) | onnxruntime-node (Node.js) |
+| Aspect                | Keras (.keras)             | ONNX (.onnx)                   |
+| --------------------- | -------------------------- | ------------------------------ |
+| **Runtime**           | TensorFlow (Python)        | onnxruntime-node (Node.js)     |
 | **Docker Image Size** | ~2GB (TensorFlow + Python) | ~150MB (Node.js + onnxruntime) |
-| **Cold Start** | ~5-10 seconds | ~500ms |
-| **Inference Speed** | ~50ms | ~5ms |
-| **Memory Usage** | ~500MB | ~100MB |
-| **Integration** | Requires Python service | Native Node.js |
+| **Cold Start**        | ~5-10 seconds              | ~500ms                         |
+| **Inference Speed**   | ~50ms                      | ~5ms                           |
+| **Memory Usage**      | ~500MB                     | ~100MB                         |
+| **Integration**       | Requires Python service    | Native Node.js                 |
 
 **Key Benefits:**
+
 - **No Python dependency**: Runs directly in the Node.js cloudflare-bypass-proxy
 - **10x smaller Docker image**: 150MB vs 2GB
 - **10x faster inference**: 5ms vs 50ms per prediction
@@ -66,11 +68,13 @@ The Keras model remains the source of truth for training/retraining. ONNX is pur
 ## Converting to ONNX
 
 Requirements:
+
 ```bash
 pip install tensorflow tf2onnx onnxruntime
 ```
 
 Convert:
+
 ```bash
 cd captcha-model/
 python convert_to_onnx.py

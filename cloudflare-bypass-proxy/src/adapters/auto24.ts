@@ -100,7 +100,9 @@ async function solveCaptcha(base64Image: string): Promise<string | null> {
     const result = await solveCaptchaLocal(base64Image)
     return result.prediction
   } catch (error) {
-    logger.error(`Captcha solver failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    logger.error(
+      `Captcha solver failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
     return null
   }
 }
