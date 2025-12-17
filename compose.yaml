@@ -65,23 +65,7 @@ services:
     environment:
       NODE_ENV: production
 
-  captcha-solver:
-    container_name: captcha-solver
-    build:
-      context: ./captcha-solver
-      dockerfile: Dockerfile
-    ports:
-      - '53278:8000'
-    restart: unless-stopped
-    healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:8000/health' ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    mem_limit: 512m
-
 volumes:
   postgres_data_dev:
   redis_data_dev:
-  keycloak_data_dev:
   minio_data_dev:

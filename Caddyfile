@@ -1,20 +1,3 @@
-# Captcha subdomain
-captcha.fov.ee {
-    # First handle exact root redirects
-    @root {
-        path_regexp ^/?$
-    }
-    handle @root {
-        redir https://captcha.fov.ee/docs permanent
-    }
-    # Then proxy everything else
-    handle * {
-        reverse_proxy captcha-solver:8000 {
-            header_up X-Real-IP {remote_host}
-        }
-    }
-}
-
 # Calculator subdomain - completely public with no auth
 calculator.fov.ee {
     encode gzip

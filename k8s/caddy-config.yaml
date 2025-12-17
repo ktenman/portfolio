@@ -35,33 +35,6 @@ data:
         }
     }
 
-    # ──────────────── CAPTCHA SUBDOMAIN (Public Service) ────────────────
-    # This subdomain provides a completely public captcha-solving service
-    # No authentication required - it's a utility service for external use
-    captcha.fov.ee {
-        # Add health check endpoint for HTTPS as well
-        handle_path /healthz {
-            respond "OK" 200
-        }
-
-        # Redirect root requests to the documentation page
-        @root {
-            path_regexp ^/?$
-        }
-        handle @root {
-            redir https://captcha.fov.ee/docs permanent
-        }
-
-        # Proxy all other requests to the captcha solver service
-        handle * {
-            reverse_proxy captcha-solver:8000 {
-                # Pass the real client IP to the captcha service
-                header_up X-Real-IP {remote_host}
-                header_up X-Forwarded-For {remote_host}
-            }
-        }
-    }
-
     # ──────────────── CALCULATOR SUBDOMAIN (Public Service) ────────────────
     # This provides a completely public calculator service
     # Think of this as a "demo mode" that showcases your calculation capabilities
