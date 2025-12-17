@@ -3,51 +3,32 @@
 }
 
 :80 {
-    # Route Keycloak admin and authentication endpoints
-    handle /admin/* {
-        reverse_proxy keycloak:8080 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
-        }
+    encode gzip
+
+    @auth_routes {
+        path /login /login/* /oauth2/* /logout
     }
-    
-    handle /realms/* {
-        reverse_proxy keycloak:8080 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
-        }
+    handle @auth_routes {
+        reverse_proxy auth:8083
     }
-    
-    handle /resources/* {
-        reverse_proxy keycloak:8080 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
-        }
+
+    @protected {
+        not path /login /login/* /oauth2/* /logout
     }
-    
-    handle /js/* {
-        reverse_proxy keycloak:8080 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
+    handle @protected {
+        forward_auth auth:8083 {
+            uri /validate
+            copy_headers X-User-Id
         }
-    }
-    
-    # OAuth2-Proxy handles main application authentication and routing
-    handle {
-        reverse_proxy oauth2-proxy:4180 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
+
+        @api {
+            path /api/*
         }
+        handle @api {
+            reverse_proxy backend:8081
+        }
+
+        reverse_proxy frontend:61234
     }
 
     log {

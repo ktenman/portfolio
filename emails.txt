@@ -1,4 +1,0 @@
-ktenman@gmail.com
-testuser@example.com
-admin@example.com
-developer@example.com
