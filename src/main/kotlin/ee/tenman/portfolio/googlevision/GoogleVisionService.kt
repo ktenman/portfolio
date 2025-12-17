@@ -19,7 +19,6 @@ class GoogleVisionService(
   companion object {
     private const val REGEX = "\\b\\d{3}\\s?[A-Z]{3}\\b"
     val CAR_PLATE_NUMBER_PATTERN = Regex(REGEX, RegexOption.IGNORE_CASE)
-    private val VEHICLE_LABELS = setOf("vehicle", "car")
     private const val VISION_DISABLED_MESSAGE = "Vision service is disabled. Skipping plate number detection."
     private val VISION_DISABLED_RESPONSE = mapOf("error" to "Vision service is disabled")
   }
@@ -46,29 +45,9 @@ class GoogleVisionService(
     if (isVisionDisabled()) {
       return VISION_DISABLED_RESPONSE
     }
-
     MDC.put("uuid", uuid.toString())
     log.debug("Starting plate number detection from image. Image size: {} bytes", base64EncodedImage.toByteArray().size)
-
     return try {
-      log.debug("Encoded image to base64")
-
-      val labelRequest =
-        GoogleVisionApiRequest(
-          base64EncodedImage,
-          GoogleVisionApiRequest.FeatureType.LABEL_DETECTION,
-        )
-      val labelResponse = googleVisionClient.analyzeImage(labelRequest)
-      log.info("Received label detection response: {}", labelResponse)
-
-      val response = mutableMapOf<String, String>()
-      val hasVehicleOrCar = detectVehicle(labelResponse.labelAnnotations)
-      response["hasCar"] = hasVehicleOrCar.toString()
-
-      if (!hasVehicleOrCar) {
-        return response
-      }
-
       val textRequest =
         GoogleVisionApiRequest(
           base64EncodedImage,
@@ -82,17 +61,19 @@ class GoogleVisionService(
           ?.split("\n")
           ?.toTypedArray()
           ?: emptyArray()
-      log.info("Received text detection response: {}", textResponse)
-
+      log.info("Received text detection response with {} text blocks", strings.size)
+      val response = mutableMapOf<String, String>()
       for (description in strings) {
         log.debug("Processing text annotation: {}", description)
         CAR_PLATE_NUMBER_PATTERN.find(description)?.let { matchResult ->
           val plateNr = matchResult.value.replace(" ", "").uppercase()
-          log.debug("Plate number found: {}", plateNr)
+          log.info("Plate number found: {}", plateNr)
           response["plateNumber"] = plateNr
+          response["hasCar"] = "true"
           return response
         }
       }
+      response["hasCar"] = "false"
       response
     } catch (e: Exception) {
       log.error("Error during plate number detection", e)
@@ -106,12 +87,4 @@ class GoogleVisionService(
     (!visionEnabled).also { disabled ->
       log.info(if (disabled) VISION_DISABLED_MESSAGE else "Vision service is enabled.")
     }
-
-  private fun detectVehicle(labelAnnotations: List<GoogleVisionApiResponse.EntityAnnotation>?) =
-    labelAnnotations?.any { annotation ->
-      annotation.description
-        .lowercase()
-        .split("\\s+".toRegex())
-        .any { it in VEHICLE_LABELS }
-    } == true
 }

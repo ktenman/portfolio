@@ -69,16 +69,14 @@ class LicensePlateDetectionService(
     val remainingJobs = jobs.toMutableList()
     var lastHasCar = false
     while (remainingJobs.isNotEmpty()) {
-      val result =
-        select<DetectionResult?> {
+      val completedDeferred =
+        select<kotlinx.coroutines.Deferred<DetectionResult?>> {
           remainingJobs.forEach { deferred ->
-            deferred.onAwait { it }
+            deferred.onAwait { deferred }
           }
         }
-      val completedJob = remainingJobs.find { it.isCompleted }
-      if (completedJob != null) {
-        remainingJobs.remove(completedJob)
-      }
+      val result = completedDeferred.await()
+      remainingJobs.remove(completedDeferred)
       if (result != null) {
         if (result.plateNumber != null) {
           log.info("Plate detected by {}, cancelling remaining jobs", result.provider)
