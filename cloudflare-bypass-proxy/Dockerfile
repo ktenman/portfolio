@@ -27,6 +27,7 @@ COPY package*.json ./
 RUN npm install --production
 
 COPY --from=builder /app/dist ./dist
+COPY model.onnx ./model.onnx
 
 EXPOSE 3000
 

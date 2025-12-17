@@ -108,7 +108,6 @@ jobs:
             kubectl apply -f ~/k8s-deploy/frontend.yaml
             kubectl apply -f ~/k8s-deploy/auth.yaml
             kubectl apply -f ~/k8s-deploy/market-tracker.yaml
-            kubectl apply -f ~/k8s-deploy/captcha-solver.yaml
             kubectl apply -f ~/k8s-deploy/healthcheck.yaml
             kubectl apply -f ~/k8s-deploy/caddy-config.yaml
             kubectl apply -f ~/k8s-deploy/caddy.yaml
