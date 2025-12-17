@@ -30,6 +30,8 @@ jollyday = "1.8.0"
 pitest = "1.17.4"
 pitestPlugin = "1.15.0"
 kotest = "6.0.7"
+thumbnailator = "0.4.20"
+imgscalr = "4.2"
 
 [libraries]
 # Spring Boot
@@ -100,6 +102,10 @@ minio = { module = "io.minio:minio", version.ref = "minio" }
 # JollyDay - Public holidays library
 jollyday-core = { module = "de.focus-shift:jollyday-core", version.ref = "jollyday" }
 jollyday-jaxb = { module = "de.focus-shift:jollyday-jaxb", version.ref = "jollyday" }
+
+# Image Processing
+thumbnailator = { module = "net.coobird:thumbnailator", version.ref = "thumbnailator" }
+imgscalr = { module = "org.imgscalr:imgscalr-lib", version.ref = "imgscalr" }
 
 # Code Quality
 detekt-formatting = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }

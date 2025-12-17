@@ -62,6 +62,8 @@ dependencies {
   implementation(libs.minio)
   implementation(libs.jollyday.core)
   runtimeOnly(libs.jollyday.jaxb)
+  implementation(libs.thumbnailator)
+  implementation(libs.imgscalr)
 
   developmentOnly(libs.spring.boot.docker.compose)
   runtimeOnly(libs.postgresql)

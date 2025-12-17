@@ -14,6 +14,7 @@ import kotlinx.coroutines.selects.select
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.File
+import java.util.Base64
 import java.util.UUID
 
 @Service
@@ -26,7 +27,10 @@ class LicensePlateDetectionService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun detectPlateNumber(photoFile: File): DetectionResult {
-    val base64Image = encodeFileToBase64(photoFile)
+    val originalBytes = photoFile.readBytes()
+    val optimizedBytes = ImageOptimizer.optimize(originalBytes, OptimizationStrategy.IMGSCALR)
+    val base64Image = Base64.getEncoder().encodeToString(optimizedBytes)
+    log.info("Image optimized: {}KB -> {}KB", originalBytes.size / 1024, optimizedBytes.size / 1024)
     return detectPlateNumber(base64Image, UUID.randomUUID())
   }
 
@@ -146,9 +150,4 @@ class LicensePlateDetectionService(
       null
     }
   }
-
-  private fun encodeFileToBase64(file: File): String =
-    java.util.Base64
-      .getEncoder()
-      .encodeToString(file.readBytes())
 }
