@@ -8,15 +8,18 @@ import org.junit.jupiter.api.Test
 
 class VisionModelTest {
   @Test
-  fun `should return Pixtral and Gemini Flash as OpenRouter models`() {
+  fun `should return all vision models as OpenRouter models`() {
     val models = VisionModel.openRouterModels()
 
-    expect(models).toContainExactly(VisionModel.PIXTRAL_12B, VisionModel.GEMINI_2_5_FLASH)
+    expect(models).toContainExactly(
+      VisionModel.LLAMA_90B_VISION,
+      VisionModel.PIXTRAL_12B,
+    )
   }
 
   @Test
   fun `should have correct model ids`() {
+    expect(VisionModel.LLAMA_90B_VISION.modelId).toEqual("meta-llama/llama-3.2-90b-vision-instruct")
     expect(VisionModel.PIXTRAL_12B.modelId).toEqual("mistralai/pixtral-12b")
-    expect(VisionModel.GEMINI_2_5_FLASH.modelId).toEqual("google/gemini-2.5-flash")
   }
 }
