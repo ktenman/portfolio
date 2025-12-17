@@ -33,19 +33,19 @@ describe('Captcha Solver', () => {
       'YP33.png',
     ]
 
-    it.each(testCases)('should have test fixture %s', (filename) => {
+    it.each(testCases)('should have test fixture %s', filename => {
       const imagePath = path.join(FIXTURES_DIR, filename)
       expect(fs.existsSync(imagePath)).toBe(true)
     })
 
-    it.each(testCases)('should be valid PNG: %s', (filename) => {
+    it.each(testCases)('should be valid PNG: %s', filename => {
       const imagePath = path.join(FIXTURES_DIR, filename)
       const imageBuffer = fs.readFileSync(imagePath)
       const pngSignature = imageBuffer.slice(0, 8).toString('hex')
       expect(pngSignature).toBe('89504e470d0a1a0a')
     })
 
-    it.each(testCases)('should have expected dimensions (65x25): %s', (filename) => {
+    it.each(testCases)('should have expected dimensions (65x25): %s', filename => {
       const imagePath = path.join(FIXTURES_DIR, filename)
       const imageBuffer = fs.readFileSync(imagePath)
       const width = imageBuffer.readUInt32BE(16)
