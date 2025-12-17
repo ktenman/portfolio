@@ -213,12 +213,6 @@ spec:
                   failed_services="$failed_services Market-Tracker"
                 fi
 
-                echo "🤖 Checking captcha solver..."
-                if ! check_service "Captcha-Solver" "http://captcha-solver:8000/health"; then
-                  overall_healthy=false
-                  failed_services="$failed_services Captcha-Solver"
-                fi
-
                 # Report overall status
                 echo ""
                 if [ "$overall_healthy" = true ]; then
@@ -327,7 +321,6 @@ data:
     - Auth service (Spring Boot with actuator)
     - Database connectivity (via backend actuator)
     - Market price tracker microservice
-    - Captcha solver microservice
 
     Health checks run every 5 minutes and report to external monitoring if configured.
     Failed services are logged with detailed debugging information.

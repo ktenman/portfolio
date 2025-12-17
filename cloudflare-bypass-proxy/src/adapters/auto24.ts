@@ -3,6 +3,7 @@ import { ServiceAdapter } from '../types'
 import { validateParam } from '../utils/adapter-helper'
 import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
+import { solveCaptchaLocal } from '../utils/captcha-solver'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import * as cheerio from 'cheerio'
@@ -13,7 +14,6 @@ import * as os from 'os'
 
 const execFileAsync = promisify(execFile)
 const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
-const CAPTCHA_SOLVER_URL = process.env.CAPTCHA_SOLVER_URL || 'http://captcha-solver:8000'
 const AUTO24_BASE_URL = 'https://www.auto24.ee'
 const AUTO24_PRICE_PAGE = `${AUTO24_BASE_URL}/ostuabi/?t=soiduki-turuhinna-paring`
 const MAX_RETRIES = 10
@@ -96,56 +96,14 @@ async function downloadImageAsBase64(url: string, cookieFile: string): Promise<s
 }
 
 async function solveCaptcha(base64Image: string): Promise<string | null> {
-  const uuid = crypto.randomUUID()
-  const payload = JSON.stringify({
-    uuid,
-    imageBase64: base64Image,
-  })
-
-  const secureTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'captcha-'))
-  const payloadFile = path.join(secureTempDir, 'payload.json')
-
   try {
-    fs.writeFileSync(payloadFile, payload)
-
-    const args = [
-      '-s',
-      '-X',
-      'POST',
-      '-H',
-      'Content-Type: application/json',
-      '-d',
-      `@${payloadFile}`,
-      `${CAPTCHA_SOLVER_URL}/predict`,
-    ]
-
-    const { stdout } = await execFileAsync('/usr/bin/curl', args, {
-      timeout: 30000,
-      maxBuffer: 1024 * 1024,
-    })
-
-    logger.debug(`Captcha solver response: ${stdout}`)
-    const response = JSON.parse(stdout)
-    const prediction = response.prediction || response.result || response.text || null
-    const confidence = response.confidence || 0
-    logger.info(`Captcha prediction: ${prediction} (confidence: ${(confidence * 100).toFixed(1)}%)`)
-    return prediction
+    const result = await solveCaptchaLocal(base64Image)
+    return result.prediction
   } catch (error) {
     logger.error(
       `Captcha solver failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     )
     return null
-  } finally {
-    try {
-      if (fs.existsSync(payloadFile)) {
-        fs.unlinkSync(payloadFile)
-      }
-      if (fs.existsSync(secureTempDir)) {
-        fs.rmdirSync(secureTempDir)
-      }
-    } catch {
-      logger.warn(`Failed to cleanup temp files in: ${secureTempDir}`)
-    }
   }
 }
 

@@ -94,8 +94,6 @@ jobs:
             name: Frontend Unit Tests
           - type: cloudflare
             name: Cloudflare Bypass Proxy Tests
-          - type: captcha-solver
-            name: Captcha Solver Tests
           - type: e2e
             name: E2E Tests
       fail-fast: false
@@ -141,28 +139,6 @@ jobs:
         if: matrix.type == 'cloudflare'
         run: npm test && npm run test:coverage
         working-directory: cloudflare-bypass-proxy
-      - name: Set up Python
-        if: matrix.type == 'captcha-solver'
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.10'
-      - name: Install test dependencies
-        if: matrix.type == 'captcha-solver'
-        run: pip install pytest httpx
-      - name: Build and start captcha-solver
-        if: matrix.type == 'captcha-solver'
-        run: |
-          docker build -t captcha-solver -f captcha-solver/Dockerfile captcha-solver/
-          docker run -d --name captcha-solver -p 8000:8000 captcha-solver
-          timeout 60 bash -c 'until curl -s http://localhost:8000/health | grep -q healthy; do sleep 2; done'
-      - name: Run captcha-solver tests
-        if: matrix.type == 'captcha-solver'
-        run: |
-          cd captcha-solver
-          CAPTCHA_SOLVER_URL=http://localhost:8000 pytest test_captcha_integration.py -v -m integration -s
-      - name: Stop captcha-solver
-        if: always() && matrix.type == 'captcha-solver'
-        run: docker stop captcha-solver || true
       - name: Build JAR for E2E
         if: matrix.type == 'e2e'
         run: |
@@ -234,7 +210,6 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       cloudflare-bypass-proxy: ${{ steps.filter.outputs.cloudflare-bypass-proxy }}
-      captcha-solver: ${{ steps.filter.outputs.captcha-solver }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
@@ -254,8 +229,6 @@ jobs:
               - 'tsconfig.json'
             cloudflare-bypass-proxy:
               - 'cloudflare-bypass-proxy/**'
-            captcha-solver:
-              - 'captcha-solver/**'
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }}
@@ -286,12 +259,6 @@ jobs:
             ghcr_image: cloudflare-bypass-proxy
             context: ./cloudflare-bypass-proxy
             changes_key: cloudflare-bypass-proxy
-          - name: captcha-solver
-            dockerfile: ./captcha-solver/Dockerfile
-            image: ktenman/captcha-solver
-            ghcr_image: captcha-solver
-            context: ./captcha-solver
-            changes_key: captcha-solver
     steps:
       - name: Check if build needed
         id: check
@@ -303,8 +270,6 @@ jobs:
           elif [[ "${{ matrix.changes_key }}" == "frontend" && "${{ needs.detect-changes.outputs.frontend }}" == "true" ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
           elif [[ "${{ matrix.changes_key }}" == "cloudflare-bypass-proxy" && "${{ needs.detect-changes.outputs.cloudflare-bypass-proxy }}" == "true" ]]; then
-            echo "should_build=true" >> $GITHUB_OUTPUT
-          elif [[ "${{ matrix.changes_key }}" == "captcha-solver" && "${{ needs.detect-changes.outputs.captcha-solver }}" == "true" ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
           else
             echo "should_build=false" >> $GITHUB_OUTPUT
