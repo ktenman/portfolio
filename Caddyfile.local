@@ -5,29 +5,14 @@
 :80 {
     encode gzip
 
-    @auth_routes {
-        path /login /login/* /oauth2/* /logout
+    @api {
+        path /api/*
     }
-    handle @auth_routes {
-        reverse_proxy auth:8083
+    handle @api {
+        reverse_proxy backend:8081
     }
 
-    @protected {
-        not path /login /login/* /oauth2/* /logout
-    }
-    handle @protected {
-        forward_auth auth:8083 {
-            uri /validate
-            copy_headers X-User-Id
-        }
-
-        @api {
-            path /api/*
-        }
-        handle @api {
-            reverse_proxy backend:8081
-        }
-
+    handle {
         reverse_proxy frontend:61234
     }
 
