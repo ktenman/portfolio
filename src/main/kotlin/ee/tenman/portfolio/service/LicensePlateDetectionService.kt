@@ -98,14 +98,16 @@ class LicensePlateDetectionService(
   ): DetectionResult? =
     runCatching {
       log.info("Attempting detection with Google Vision")
+      val startTime = System.currentTimeMillis()
       val result = googleVisionService.getPlateNumber(base64Image, uuid)
+      val elapsedMs = System.currentTimeMillis() - startTime
       val hasCar = result["hasCar"]?.toBoolean() ?: false
       val plateNumber = result["plateNumber"]
       if (plateNumber != null) {
-        log.info("Google Vision detected plate: {}", plateNumber)
+        log.info("Google Vision detected plate: {} in {}ms", plateNumber, elapsedMs)
         return DetectionResult(plateNumber = plateNumber, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
       }
-      log.info("Google Vision: no plate found, hasCar={}", hasCar)
+      log.info("Google Vision: no plate found in {}ms, hasCar={}", elapsedMs, hasCar)
       DetectionResult(plateNumber = null, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
     }.getOrElse { e ->
       log.error("Google Vision failed: {}", e.message)
@@ -118,18 +120,20 @@ class LicensePlateDetectionService(
   ): DetectionResult? =
     runCatching {
       log.info("Attempting detection with {}", model.modelId)
+      val startTime = System.currentTimeMillis()
       val request = OpenRouterVisionRequest.forLicensePlateExtraction(model.modelId, base64Image)
       val response = openRouterVisionService.extractText(request)
+      val elapsedMs = System.currentTimeMillis() - startTime
       if (response.isNullOrBlank()) {
-        log.info("{}: empty response", model.modelId)
+        log.info("{}: empty response in {}ms", model.modelId, elapsedMs)
         return DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
       }
       val plateNumber = extractPlateNumber(response)
       if (plateNumber != null) {
-        log.info("{} detected plate: {}", model.modelId, plateNumber)
+        log.info("{} detected plate: {} in {}ms", model.modelId, plateNumber, elapsedMs)
         return DetectionResult(plateNumber = plateNumber, hasCar = true, provider = DetectionProvider.fromVisionModel(model))
       }
-      log.info("{}: response '{}' did not match pattern", model.modelId, response)
+      log.info("{}: response '{}' did not match pattern in {}ms", model.modelId, response, elapsedMs)
       DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
     }.getOrElse { e ->
       log.error("{} failed: {}", model.modelId, e.message)

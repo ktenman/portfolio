@@ -141,8 +141,9 @@ class LicensePlateDetectionServiceTest {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
     every { openRouterProperties.apiKey } returns "test-api-key"
-    every { openRouterVisionService.extractText(match { it.model == "mistralai/pixtral-12b" }) } throws RuntimeException("API error")
-    every { openRouterVisionService.extractText(match { it.model == "google/gemini-2.5-flash" }) } returns "333CCC"
+    every { openRouterVisionService.extractText(match { it.model == "meta-llama/llama-3.2-90b-vision-instruct" }) } throws
+      RuntimeException("API error")
+    every { openRouterVisionService.extractText(match { it.model == "mistralai/pixtral-12b" }) } returns "333CCC"
     every { googleVisionService.getPlateNumber(base64Image, uuid) } returns mapOf("hasCar" to "false")
 
     val result = service.detectPlateNumber(base64Image, uuid)
