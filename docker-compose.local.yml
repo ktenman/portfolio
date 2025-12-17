@@ -71,145 +71,32 @@ services:
     environment:
       NODE_ENV: development
 
-  keycloak-db:
-    image: postgres:17-alpine
-    container_name: portfolio-keycloak-db
+  auth:
+    container_name: portfolio-auth
+    image: ktenman/auth:latest
     environment:
-      POSTGRES_DB: keycloak
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-    volumes:
-      - keycloak_data:/var/lib/postgresql/data
-    networks:
-      - portfolio-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.3
-    container_name: portfolio-keycloak
-    volumes:
-      - ./keycloak-config/portfolio-realm-export.json:/opt/keycloak/data/import/portfolio-realm.json:ro
-    environment:
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://keycloak-db:5432/keycloak
-      - KC_DB_USERNAME=keycloak
-      - KC_DB_PASSWORD=${KEYCLOAK_DB_PASSWORD}
-      - KC_HOSTNAME=localhost
-      - KC_HOSTNAME_PORT=80
-      - KC_HOSTNAME_STRICT=false
-      - KC_HOSTNAME_STRICT_HTTPS=false
-      - KC_PROXY=edge
-      - KC_HTTP_ENABLED=true
-      - KC_HTTP_PORT=8080
-      - KC_HEALTH_ENABLED=true
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-    command: ["start-dev", "--import-realm"]
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-ktenman@gmail.com}
+      ALLOWED_LOGINS: ${ALLOWED_LOGINS:-ktenman}
+      REDIRECT_URI: ${REDIRECT_URI:-http://localhost}
+      SPRING_REDIS_HOST: redis
+      SERVER_PORT: 8083
     depends_on:
-      keycloak-db:
-        condition: service_healthy
-    networks:
-      - portfolio-network
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
-
-  keycloak-secrets-config:
-    image: quay.io/keycloak/keycloak:26.3
-    container_name: portfolio-keycloak-secrets-config
-    volumes:
-      - ./scripts/configure-keycloak-secrets.sh:/scripts/configure-keycloak-secrets.sh:ro
-    environment:
-      - KEYCLOAK_URL=http://keycloak:8080
-      - REALM_NAME=portfolio
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
-    entrypoint: ["bash", "/scripts/configure-keycloak-secrets.sh"]
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    networks:
-      - portfolio-network
-
-  oauth2-proxy:
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
-    container_name: portfolio-oauth2-proxy
-    ports:
-      - "4180:4180"
-    volumes:
-      - ./emails.txt:/etc/emails.txt:ro
-    environment:
-      # --- Provider Configuration ---
-      - OAUTH2_PROXY_PROVIDER=keycloak-oidc
-      - OAUTH2_PROXY_PROVIDER_DISPLAY_NAME=Keycloak
-      - OAUTH2_PROXY_OIDC_ISSUER_URL=http://localhost/realms/portfolio
-      - OAUTH2_PROXY_INSECURE_OIDC_SKIP_ISSUER_VERIFICATION=true
-      - OAUTH2_PROXY_SKIP_OIDC_DISCOVERY=true
-      - OAUTH2_PROXY_LOGIN_URL=http://localhost/realms/portfolio/protocol/openid-connect/auth
-      - OAUTH2_PROXY_REDEEM_URL=http://keycloak:8080/realms/portfolio/protocol/openid-connect/token
-      - OAUTH2_PROXY_VALIDATE_URL=http://keycloak:8080/realms/portfolio/protocol/openid-connect/userinfo
-      - OAUTH2_PROXY_OIDC_JWKS_URL=http://keycloak:8080/realms/portfolio/protocol/openid-connect/certs
-      - OAUTH2_PROXY_CLIENT_ID=portfolio-oauth2-proxy
-      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
-      - OAUTH2_PROXY_CODE_CHALLENGE_METHOD=S256
-      - OAUTH2_PROXY_OIDC_EXTRA_AUDIENCES=account
-
-      # --- Session & Cookie Configuration ---
-      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
-      - OAUTH2_PROXY_SESSION_STORE_TYPE=redis
-      - OAUTH2_PROXY_REDIS_CONNECTION_URL=redis://redis:6379
-      - OAUTH2_PROXY_COOKIE_EXPIRE=720h
-      - OAUTH2_PROXY_COOKIE_REFRESH=1h
-      - OAUTH2_PROXY_COOKIE_HTTPONLY=true
-      - OAUTH2_PROXY_COOKIE_SECURE=false
-      - OAUTH2_PROXY_COOKIE_SAMESITE=lax
-      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy_portfolio
-
-      # --- CRITICAL FIX 1: Enforce Session-Based Auth ---
-      - OAUTH2_PROXY_SKIP_JWT_BEARER_TOKENS=true
-      - OAUTH2_PROXY_PASS_ACCESS_TOKEN=true
-
-
-      # --- Routing & Security ---
-      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
-      - OAUTH2_PROXY_UPSTREAMS=http://app-internal:8090/
-      - OAUTH2_PROXY_REDIRECT_URL=http://localhost/oauth2/callback
-      - OAUTH2_PROXY_COOKIE_DOMAINS=localhost,127.0.0.1
-      # Restrict to specific emails only
-      - OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE=/etc/emails.txt
-      - OAUTH2_PROXY_INSECURE_OIDC_ALLOW_UNVERIFIED_EMAIL=true
-      - OAUTH2_PROXY_REVERSE_PROXY=true
-      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
-      - OAUTH2_PROXY_WHITELIST_DOMAINS=localhost
-      - OAUTH2_PROXY_SILENCE_PING_LOGGING=true
-      - OAUTH2_PROXY_OIDC_EMAIL_CLAIM=email
-
-      # --- Logging ---
-      - OAUTH2_PROXY_LOGGING_FILENAME=
-      - OAUTH2_PROXY_STANDARD_LOGGING=true
-      - OAUTH2_PROXY_REQUEST_LOGGING=true
-      - OAUTH2_PROXY_AUTH_LOGGING=true
-    depends_on:
-      keycloak:
-        condition: service_healthy
-      keycloak-secrets-config:
-        condition: service_completed_successfully
       redis:
-        condition: service_started
-      backend:
-        condition: service_started
+        condition: service_healthy
     networks:
       - portfolio-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    ports:
+      - '8083:8083'
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
+      interval: 6s
+      timeout: 2s
+      retries: 18
+      start_period: 40s
 
   backend:
     build:
@@ -229,8 +116,6 @@ services:
       - SCHEDULING_ENABLED=false
       - SERVER_PORT=8081
       - SECURITY_ENABLED=false
-      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/portfolio
-      - KEYCLOAK_JWK_SET_URI=http://keycloak:8080/realms/portfolio/protocol/openid-connect/certs
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://minio:9000}
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
@@ -298,7 +183,7 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
-      - oauth2-proxy
+      - auth
       - backend
       - frontend
     networks:
@@ -314,6 +199,4 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
-  keycloak_data:
-    driver: local
   minio-data:

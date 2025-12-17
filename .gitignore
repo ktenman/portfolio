@@ -52,8 +52,6 @@ test-results/
 .env
 .env.local
 
-### Keycloak ###
-keycloak-data/
 .aider*
 
 ### PlantUML ###
