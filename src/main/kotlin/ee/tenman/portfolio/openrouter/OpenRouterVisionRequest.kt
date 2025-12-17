@@ -32,8 +32,7 @@ data class OpenRouterVisionRequest(
   }
 
   companion object {
-    private const val PLATE_EXTRACTION_PROMPT =
-      "Extract the car license plate number from this image. Return ONLY the plate number, nothing else."
+    private const val PLATE_EXTRACTION_PROMPT = "License plate number only, no explanation."
 
     fun forLicensePlateExtraction(
       modelId: String,

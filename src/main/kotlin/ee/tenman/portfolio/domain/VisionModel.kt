@@ -3,11 +3,11 @@ package ee.tenman.portfolio.domain
 enum class VisionModel(
   val modelId: String,
 ) {
+  LLAMA_90B_VISION("meta-llama/llama-3.2-90b-vision-instruct"),
   PIXTRAL_12B("mistralai/pixtral-12b"),
-  GEMINI_2_5_FLASH("google/gemini-2.5-flash"),
   ;
 
   companion object {
-    fun openRouterModels(): List<VisionModel> = listOf(PIXTRAL_12B, GEMINI_2_5_FLASH)
+    fun openRouterModels(): List<VisionModel> = entries.toList()
   }
 }
