@@ -71,6 +71,32 @@ services:
     environment:
       NODE_ENV: development
 
+  auth:
+    image: ktenman/auth:latest
+    container_name: portfolio-auth
+    ports:
+      - "8083:8083"
+    environment:
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS}
+      ALLOWED_LOGINS: ${ALLOWED_LOGINS:-}
+      REDIRECT_URI: ${REDIRECT_URI:-http://localhost}
+      SPRING_REDIS_HOST: redis
+      SERVER_PORT: 8083
+    depends_on:
+      - redis
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
+      interval: 6s
+      timeout: 2s
+      retries: 18
+      start_period: 40s
+
   backend:
     build:
       context: .
@@ -145,6 +171,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - auth
     networks:
       - portfolio-network
     extra_hosts:
