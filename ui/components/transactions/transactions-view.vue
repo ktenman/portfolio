@@ -37,15 +37,11 @@
                 {{ selectedQuickDate || 'Quick Dates' }}
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" @click="setToday">Today</a></li>
-                <li><a class="dropdown-item" @click="setLast7Days">Last 7 Days</a></li>
-                <li><a class="dropdown-item" @click="setThisWeek">This Week</a></li>
-                <li><a class="dropdown-item" @click="setLastWeek">Last Week</a></li>
-                <li><a class="dropdown-item" @click="setLast30Days">Last 30 Days</a></li>
-                <li><a class="dropdown-item" @click="setThisMonth">This Month</a></li>
-                <li><a class="dropdown-item" @click="setLastMonth">Last Month</a></li>
-                <li><a class="dropdown-item" @click="setThisYear">This Year</a></li>
-                <li><a class="dropdown-item" @click="setLastYear">Last Year</a></li>
+                <li v-for="option in QUICK_DATE_OPTIONS" :key="option.preset">
+                  <a class="dropdown-item" @click="handleQuickDateSelect(option.preset)">
+                    {{ option.label }}
+                  </a>
+                </li>
               </ul>
             </div>
             <button
@@ -113,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useLocalStorage } from '@vueuse/core'
 import { Dropdown } from 'bootstrap'
@@ -122,14 +118,14 @@ import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { STORAGE_KEYS } from '../../constants'
+import {
+  useQuickDates,
+  QUICK_DATE_OPTIONS,
+  type QuickDatePreset,
+} from '../../composables/use-quick-dates'
 
 const selectedPlatforms = useLocalStorage<string[]>(STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS, [])
-const fromDate = useLocalStorage<string>(STORAGE_KEYS.TRANSACTIONS_FROM_DATE, '')
-const untilDate = useLocalStorage<string>(STORAGE_KEYS.TRANSACTIONS_UNTIL_DATE, '')
-const selectedQuickDate = useLocalStorage<string>(STORAGE_KEYS.SELECTED_QUICK_DATE, '')
 const quickDateDropdown = ref<HTMLElement | null>(null)
-
-let manualDateChange = false
 
 const closeDropdown = () => {
   if (quickDateDropdown.value) {
@@ -138,10 +134,11 @@ const closeDropdown = () => {
   }
 }
 
-watch([fromDate, untilDate], () => {
-  if (!manualDateChange) {
-    selectedQuickDate.value = ''
-  }
+const { fromDate, untilDate, selectedQuickDate, setQuickDate, clearDates } = useQuickDates({
+  fromDateKey: STORAGE_KEYS.TRANSACTIONS_FROM_DATE,
+  untilDateKey: STORAGE_KEYS.TRANSACTIONS_UNTIL_DATE,
+  selectedQuickDateKey: STORAGE_KEYS.SELECTED_QUICK_DATE,
+  onDateSet: closeDropdown,
 })
 
 const { data: allTransactionsResponse } = useQuery({
@@ -211,147 +208,8 @@ const toggleAllPlatforms = () => {
   }
 }
 
-const clearDates = () => {
-  fromDate.value = ''
-  untilDate.value = ''
-  selectedQuickDate.value = ''
-}
-
-const formatDate = (date: Date): string => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-const setToday = () => {
-  manualDateChange = true
-  const today = new Date()
-  fromDate.value = formatDate(today)
-  untilDate.value = formatDate(today)
-  selectedQuickDate.value = 'Today'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setLast7Days = () => {
-  manualDateChange = true
-  const today = new Date()
-  const sevenDaysAgo = new Date(today)
-  sevenDaysAgo.setDate(today.getDate() - 6)
-  fromDate.value = formatDate(sevenDaysAgo)
-  untilDate.value = formatDate(today)
-  selectedQuickDate.value = 'Last 7 Days'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setThisWeek = () => {
-  manualDateChange = true
-  const today = new Date()
-  const dayOfWeek = today.getDay()
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  fromDate.value = formatDate(monday)
-  untilDate.value = formatDate(sunday)
-  selectedQuickDate.value = 'This Week'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setLastWeek = () => {
-  manualDateChange = true
-  const today = new Date()
-  const dayOfWeek = today.getDay()
-  const lastMonday = new Date(today)
-  lastMonday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - 7)
-  const lastSunday = new Date(lastMonday)
-  lastSunday.setDate(lastMonday.getDate() + 6)
-  fromDate.value = formatDate(lastMonday)
-  untilDate.value = formatDate(lastSunday)
-  selectedQuickDate.value = 'Last Week'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setLast30Days = () => {
-  manualDateChange = true
-  const today = new Date()
-  const thirtyDaysAgo = new Date(today)
-  thirtyDaysAgo.setDate(today.getDate() - 29)
-  fromDate.value = formatDate(thirtyDaysAgo)
-  untilDate.value = formatDate(today)
-  selectedQuickDate.value = 'Last 30 Days'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setThisMonth = () => {
-  manualDateChange = true
-  const today = new Date()
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-  fromDate.value = formatDate(firstDay)
-  untilDate.value = formatDate(lastDay)
-  selectedQuickDate.value = 'This Month'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setLastMonth = () => {
-  manualDateChange = true
-  const today = new Date()
-  const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-  const lastDay = new Date(today.getFullYear(), today.getMonth(), 0)
-  fromDate.value = formatDate(firstDay)
-  untilDate.value = formatDate(lastDay)
-  selectedQuickDate.value = 'Last Month'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setThisYear = () => {
-  manualDateChange = true
-  const today = new Date()
-  const firstDay = new Date(today.getFullYear(), 0, 1)
-  const lastDay = new Date(today.getFullYear(), 11, 31)
-  fromDate.value = formatDate(firstDay)
-  untilDate.value = formatDate(lastDay)
-  selectedQuickDate.value = 'This Year'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
-}
-
-const setLastYear = () => {
-  manualDateChange = true
-  const today = new Date()
-  const firstDay = new Date(today.getFullYear() - 1, 0, 1)
-  const lastDay = new Date(today.getFullYear() - 1, 11, 31)
-  fromDate.value = formatDate(firstDay)
-  untilDate.value = formatDate(lastDay)
-  selectedQuickDate.value = 'Last Year'
-  closeDropdown()
-  nextTick(() => {
-    manualDateChange = false
-  })
+const handleQuickDateSelect = (preset: QuickDatePreset) => {
+  setQuickDate(preset)
 }
 </script>
 

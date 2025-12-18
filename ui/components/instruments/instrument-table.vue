@@ -108,7 +108,7 @@
           </div>
           <div class="value-info">
             <span class="value-label">Weight</span>
-            <span class="value-amount">{{ calculatePortfolioWeight(item) }}</span>
+            <span class="value-amount">{{ getPortfolioWeight(item) }}</span>
           </div>
         </div>
       </div>
@@ -253,7 +253,7 @@
     </template>
 
     <template #cell-portfolioWeight="{ item }">
-      <span class="text-nowrap">{{ calculatePortfolioWeight(item) }}</span>
+      <span class="text-nowrap">{{ getPortfolioWeight(item) }}</span>
     </template>
 
     <template #actions="{ item }">
@@ -284,8 +284,11 @@ import {
   formatPriceChange,
   formatAcronym,
 } from '../../utils/formatters'
+import { formatPlatformName } from '../../utils/platform-utils'
+import { formatProfit, calculatePortfolioWeight } from '../../utils/instrument-formatters'
 import { useValueChangeAnimation } from '../../composables/use-value-change-animation'
 import { useNumberTransition } from '../../composables/use-number-transition'
+import { useInstrumentTotals } from '../../composables/use-instrument-totals'
 
 interface Props {
   instruments: InstrumentDto[]
@@ -317,43 +320,16 @@ const columns = computed(() =>
   )
 )
 
-const totalInvested = computed(() => {
-  return props.instruments.reduce((sum, instrument) => {
-    return sum + (instrument.totalInvestment || 0)
-  }, 0)
-})
-
-const totalValue = computed(() => {
-  return props.instruments.reduce((sum, instrument) => {
-    return sum + (instrument.currentValue || 0)
-  }, 0)
-})
-
-const totalProfit = computed(() => {
-  return props.instruments.reduce((sum, instrument) => {
-    return sum + (instrument.profit || 0)
-  }, 0)
-})
-
-const totalUnrealizedProfit = computed(() => {
-  return props.instruments.reduce((sum, instrument) => {
-    return sum + (instrument.unrealizedProfit || 0)
-  }, 0)
-})
+const {
+  totalInvested,
+  totalValue,
+  totalProfit,
+  totalUnrealizedProfit,
+  totalChangeAmount,
+  totalChangePercent,
+} = useInstrumentTotals(instrumentsRef)
 
 const totalXirr = computed(() => props.portfolioXirr)
-
-const totalChangeAmount = computed(() => {
-  return props.instruments.reduce((sum, instrument) => {
-    return sum + (instrument.priceChangeAmount || 0)
-  }, 0)
-})
-
-const totalChangePercent = computed(() => {
-  const previousTotalValue = totalValue.value - totalChangeAmount.value
-  if (previousTotalValue === 0) return 0
-  return (totalChangeAmount.value / previousTotalValue) * 100
-})
 
 watch(
   [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount, totalXirr],
@@ -376,30 +352,8 @@ const animatedTotalChangeAmount = useNumberTransition(totalChangeAmount)
 const animatedTotalXirr = useNumberTransition(totalXirr)
 const animatedTotalChangePercent = useNumberTransition(totalChangePercent)
 
-const formatProfit = (amount: number, currency: string | undefined): string => {
-  const sign = amount >= 0 ? '' : '-'
-  return sign + formatCurrencyWithSign(Math.abs(amount), currency || 'EUR')
-}
-
-const formatPlatformName = (platform: string): string => {
-  const platformMap: Record<string, string> = {
-    TRADING212: 'Trading 212',
-    LIGHTYEAR: 'Lightyear',
-    SWEDBANK: 'Swedbank',
-    BINANCE: 'Binance',
-    COINBASE: 'Coinbase',
-    LHV: 'LHV',
-    AVIVA: 'Aviva',
-    UNKNOWN: 'Unknown',
-  }
-
-  return platformMap[platform] || platform
-}
-
-const calculatePortfolioWeight = (instrument: InstrumentDto): string => {
-  if (totalValue.value === 0) return '0.00%'
-  const weight = ((instrument.currentValue || 0) / totalValue.value) * 100
-  return `${weight.toFixed(2)}%`
+const getPortfolioWeight = (instrument: InstrumentDto): string => {
+  return calculatePortfolioWeight(instrument.currentValue || 0, totalValue.value)
 }
 </script>
 
