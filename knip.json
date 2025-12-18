@@ -2,6 +2,9 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["ui/main.ts", "ui/index.html"],
   "project": ["ui/**/*.{ts,tsx,vue,js}"],
+  "rules": {
+    "types": "off"
+  },
   "ignore": [
     "ui/public/**",
     "ui/vite-env.d.ts",

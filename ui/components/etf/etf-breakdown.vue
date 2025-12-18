@@ -77,10 +77,15 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn } from '@vueuse/core'
 import { etfBreakdownService } from '../../services/etf-breakdown-service'
+import {
+  buildSectorChartData,
+  buildCompanyChartData,
+  getFilterParam,
+  type ChartDataItem,
+} from '../../services/etf-chart-service'
 import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-models'
 import EtfBreakdownHeader from './etf-breakdown-header.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
-import type { ChartDataItem } from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import { formatPlatformName } from '../../utils/platform-utils'
 
@@ -159,116 +164,15 @@ watch(
 
 const totalValue = computed(() => holdings.value.reduce((sum, h) => sum + h.totalValueEur, 0))
 
-const sectorChartData = computed<ChartDataItem[]>(() => {
-  const sectorTotals = new Map<string, number>()
+const sectorChartData = computed<ChartDataItem[]>(() => buildSectorChartData(holdings.value))
 
-  holdings.value.forEach(holding => {
-    const sector = holding.holdingSector || 'Unknown'
-    const percentage = holding.percentageOfTotal
-    sectorTotals.set(sector, (sectorTotals.get(sector) || 0) + percentage)
-  })
+const companyChartData = computed<ChartDataItem[]>(() => buildCompanyChartData(holdings.value))
 
-  const sortedSectors = Array.from(sectorTotals.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, value]) => ({
-      label,
-      value,
-      percentage: value.toFixed(2),
-    }))
+const getEtfsParam = (): string[] | undefined =>
+  getFilterParam(selectedEtfs.value, availableEtfs.value)
 
-  const topSectorsCount = 20
-  const mainSectors = sortedSectors.slice(0, topSectorsCount)
-  const smallSectors = sortedSectors.slice(topSectorsCount)
-
-  const result = [...mainSectors]
-
-  if (smallSectors.length > 0) {
-    const othersTotal = smallSectors.reduce((sum, s) => sum + s.value, 0)
-    result.push({
-      label: 'Others',
-      value: othersTotal,
-      percentage: othersTotal.toFixed(2),
-    })
-  }
-
-  const colors = [
-    '#0072B2',
-    '#E69F00',
-    '#009E73',
-    '#D55E00',
-    '#56B4E9',
-    '#CC79A7',
-    '#F0E442',
-    '#7570B3',
-    '#1B9E77',
-    '#999999',
-  ]
-
-  return result.map((item, index) => ({
-    ...item,
-    color: item.label === 'Others' ? '#999999' : colors[index % colors.length],
-  }))
-})
-
-const companyChartData = computed<ChartDataItem[]>(() => {
-  const sortedHoldings = [...holdings.value].sort(
-    (a, b) => b.percentageOfTotal - a.percentageOfTotal
-  )
-
-  const threshold = 1.5
-  const mainHoldings = sortedHoldings.filter(h => h.percentageOfTotal >= threshold)
-  const smallHoldings = sortedHoldings.filter(h => h.percentageOfTotal < threshold)
-
-  const result = mainHoldings.map(h => ({
-    label: h.holdingName,
-    value: h.percentageOfTotal,
-    percentage: h.percentageOfTotal.toFixed(2),
-  }))
-
-  if (smallHoldings.length > 0) {
-    const othersTotal = smallHoldings.reduce((sum, h) => sum + h.percentageOfTotal, 0)
-    result.push({
-      label: 'Others',
-      value: othersTotal,
-      percentage: othersTotal.toFixed(2),
-    })
-  }
-
-  const colors = [
-    '#0072B2',
-    '#E69F00',
-    '#009E73',
-    '#D55E00',
-    '#56B4E9',
-    '#CC79A7',
-    '#F0E442',
-    '#7570B3',
-    '#1B9E77',
-    '#999999',
-  ]
-
-  return result.map((item, index) => ({
-    ...item,
-    color: item.label === 'Others' ? '#999999' : colors[index % colors.length],
-  }))
-})
-
-const getEtfsParam = (): string[] | undefined => {
-  if (selectedEtfs.value.length === 0 || selectedEtfs.value.length === availableEtfs.value.length) {
-    return undefined
-  }
-  return selectedEtfs.value
-}
-
-const getPlatformsParam = (): string[] | undefined => {
-  if (
-    selectedPlatforms.value.length === 0 ||
-    selectedPlatforms.value.length === availablePlatforms.value.length
-  ) {
-    return undefined
-  }
-  return selectedPlatforms.value
-}
+const getPlatformsParam = (): string[] | undefined =>
+  getFilterParam(selectedPlatforms.value, availablePlatforms.value)
 
 const loadBreakdown = async (refreshMaster = false) => {
   isLoading.value = true
