@@ -53,6 +53,8 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.commons.math3)
   implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.coroutines.reactor)
+  implementation(libs.spring.boot.starter.webflux)
   implementation(libs.telegrambots)
   implementation(libs.telegrambots.spring.boot.starter)
 
@@ -79,6 +81,7 @@ dependencies {
   testImplementation(libs.testcontainers.postgresql)
   testImplementation(libs.testcontainers.minio)
   testImplementation(libs.mockk)
+  testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.spring.mockk)
   testImplementation(libs.archunit.junit5)
   testImplementation(libs.atrium.fluent) {

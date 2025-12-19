@@ -45,6 +45,7 @@ class ArchitectureTest {
       .layer("Infrastructure")
       .definedBy(
         "..repository..",
+        "..auto24..",
         "..binance..",
         "..ft..",
         "..googlevision..",
