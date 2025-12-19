@@ -13,7 +13,7 @@ import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
 
 class LicensePlateDetectionServiceTest {
   private val googleVisionService = mockk<GoogleVisionService>()
