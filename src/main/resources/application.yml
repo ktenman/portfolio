@@ -232,4 +232,5 @@ industry-classification:
 ecb:
   url: https://data-api.ecb.europa.eu
 
-
+veego:
+  url: https://api.veego.ee/api

@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.telegram
 
-import ee.tenman.portfolio.auto24.Auto24Service
 import ee.tenman.portfolio.configuration.TimeUtility
 import ee.tenman.portfolio.service.LicensePlateDetectionService
+import ee.tenman.portfolio.service.VehicleInfoService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -36,7 +36,7 @@ class CarTelegramBot(
   @Value("\${telegram.bot.token:}") private val botToken: String,
   @Value("\${telegram.bot.enabled:false}") private val botEnabled: Boolean,
   private val licensePlateDetectionService: LicensePlateDetectionService,
-  private val auto24Service: Auto24Service,
+  private val vehicleInfoService: VehicleInfoService,
   private val objectMapper: ObjectMapper,
 ) : TelegramLongPollingBot(botToken) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -122,14 +122,10 @@ class CarTelegramBot(
     replyToMessageId: Int,
     startTime: Long,
   ): Any? {
-    val result = auto24Service.findCarPrice(plateNumber)
-    val carPrice = result.price.replace("kuni", "to")
+    val result = vehicleInfoService.getVehicleInfo(plateNumber)
     val duration = TimeUtility.durationInSeconds(startTime)
-    return sendMessage(
-      chatId,
-      "Plate: $plateNumber\nEstimated price: $carPrice\nDuration: $duration seconds",
-      replyToMessageId,
-    )
+    val responseText = "${result.formattedText}\n\n⏱️  Duration: $duration seconds"
+    return sendMessage(chatId, responseText, replyToMessageId)
   }
 
   private fun downloadTelegramFile(fileId: String): File {
