@@ -23,29 +23,28 @@ class Auto24Service(
     regNr: String,
     response: Auto24PriceResponse,
   ): CarPriceResult {
-    if (response.error != null) {
-      return CarPriceResult(handleError(regNr, response.error), response.durationSeconds)
-    }
+    if (response.error != null) return handleError(regNr, response.error, response.durationSeconds)
     if (response.marketPrice == null) {
       log.warn("No price found for registration number: {}", regNr)
-      return CarPriceResult("Price not available", response.durationSeconds)
+      return CarPriceResult(price = null, error = "Price not available", durationSeconds = response.durationSeconds)
     }
     log.info("Market price for {}: {} (attempt {}, duration {}s)", regNr, response.marketPrice, response.attempts, response.durationSeconds)
-    return CarPriceResult(response.marketPrice, response.durationSeconds)
+    return CarPriceResult(price = response.marketPrice, durationSeconds = response.durationSeconds)
   }
 
   private fun handleError(
     regNr: String,
     error: String,
-  ): String =
+    durationSeconds: Double?,
+  ): CarPriceResult =
     when {
       error.contains("Vehicle not found") -> {
         log.info("Vehicle not found for registration number: {}", regNr)
-        "Vehicle not found"
+        CarPriceResult(price = null, error = "Vehicle not found", durationSeconds = durationSeconds)
       }
       error.contains("Price not available") -> {
         log.info("Price not available for registration number: {}", regNr)
-        "Price not available"
+        CarPriceResult(price = null, error = "Price not available", durationSeconds = durationSeconds)
       }
       else -> {
         log.error("Failed to fetch price: {}", error)
