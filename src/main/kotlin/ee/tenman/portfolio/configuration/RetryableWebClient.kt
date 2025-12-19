@@ -27,7 +27,7 @@ abstract class RetryableWebClient(
           .doBeforeRetry { log.warn("Retrying {} request, attempt {}", context, it.totalRetries() + 1) },
       ).awaitSingle()
 
-  protected fun isRetryable(throwable: Throwable): Boolean =
+  protected open fun isRetryable(throwable: Throwable): Boolean =
     when (throwable) {
       is WebClientResponseException.ServiceUnavailable -> true
       is WebClientResponseException.GatewayTimeout -> true

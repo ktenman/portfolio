@@ -232,9 +232,6 @@ industry-classification:
 ecb:
   url: https://data-api.ecb.europa.eu
 
-veego:
-  url: https://api.veego.ee/api
-
 webclient:
   direct-api:
     connection-timeout-ms: ${WEBCLIENT_DIRECT_CONNECTION_TIMEOUT_MS:3000}
@@ -251,3 +248,5 @@ webclient:
     max-idle-time-seconds: 30
     max-life-time-minutes: 5
     pending-acquire-timeout-seconds: 10
+  veego:
+    url: ${VEEGO_URL:https://api.veego.ee/api}

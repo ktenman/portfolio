@@ -19,6 +19,9 @@ class WebClientConfig(
   @Bean
   fun proxyWebClient(): WebClient = createWebClient(PROXY_POOL, properties.proxy)
 
+  @Bean
+  fun veegoApiWebClient(): WebClient = createWebClient(VEEGO_POOL, properties.veego)
+
   private fun createWebClient(
     poolName: String,
     config: WebClientProperties.PoolConfig,
@@ -51,5 +54,6 @@ class WebClientConfig(
   companion object {
     private const val DIRECT_API_POOL = "direct-api-pool"
     private const val PROXY_POOL = "proxy-pool"
+    private const val VEEGO_POOL = "veego-pool"
   }
 }
