@@ -5,14 +5,14 @@ import java.math.BigDecimal
 
 data class VeegoTaxResponse(
   @JsonProperty("annual_tax")
-  val annualTax: BigDecimal,
+  val annualTax: BigDecimal? = null,
   @JsonProperty("registration_tax")
-  val registrationTax: BigDecimal,
-  val make: String,
-  val model: String,
-  val year: Int,
-  val group: String,
-  val co2: Int,
-  val fuel: String,
-  val weight: Int,
+  val registrationTax: BigDecimal? = null,
+  val make: String? = null,
+  val model: String? = null,
+  val year: Int? = null,
+  val group: String? = null,
+  val co2: Int? = null,
+  val fuel: String? = null,
+  val weight: Int? = null,
 )
