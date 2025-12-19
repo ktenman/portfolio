@@ -234,3 +234,20 @@ ecb:
 
 veego:
   url: https://api.veego.ee/api
+
+webclient:
+  direct-api:
+    connection-timeout-ms: ${WEBCLIENT_DIRECT_CONNECTION_TIMEOUT_MS:3000}
+    response-timeout-seconds: ${WEBCLIENT_DIRECT_RESPONSE_TIMEOUT_SECONDS:10}
+    max-connections: ${WEBCLIENT_DIRECT_MAX_CONNECTIONS:50}
+    max-idle-time-seconds: 30
+    max-life-time-minutes: 5
+    pending-acquire-timeout-seconds: 10
+  proxy:
+    url: ${CLOUDFLARE_BYPASS_PROXY_URL:http://localhost:3000}
+    connection-timeout-ms: ${WEBCLIENT_PROXY_CONNECTION_TIMEOUT_MS:5000}
+    response-timeout-seconds: ${WEBCLIENT_PROXY_RESPONSE_TIMEOUT_SECONDS:30}
+    max-connections: ${WEBCLIENT_PROXY_MAX_CONNECTIONS:20}
+    max-idle-time-seconds: 30
+    max-life-time-minutes: 5
+    pending-acquire-timeout-seconds: 10

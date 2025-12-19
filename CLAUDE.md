@@ -96,6 +96,27 @@ npm test -- --run          # Run tests once (no watch mode)
 npm test -- --coverage     # Run tests with coverage report
 ```
 
+### Kotlin Code Formatting
+
+The project uses **ktlint** for Kotlin code formatting. Configuration is defined in `.editorconfig`:
+
+**Indentation Rules (from .editorconfig):**
+
+- All files: 2 spaces (indent_style = space, indent_size = 2)
+- Kotlin files (`*.kt`, `*.kts`): 2 spaces
+- Line endings: LF
+- Final newline: required
+- Trailing whitespace: trimmed
+
+**Formatting Commands:**
+
+```bash
+./gradlew ktlintFormat     # Auto-format all Kotlin files
+./gradlew ktlintCheck      # Check formatting without fixing
+```
+
+**IMPORTANT:** Always run `./gradlew ktlintFormat` after making changes to Kotlin code to ensure consistent formatting across the project.
+
 ### Docker Development
 
 ```bash

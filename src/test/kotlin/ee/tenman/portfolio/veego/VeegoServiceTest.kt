@@ -12,58 +12,58 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
 class VeegoServiceTest {
-    private val veegoWebClient = mockk<VeegoWebClient>()
-    private lateinit var veegoService: VeegoService
+  private val veegoWebClient = mockk<VeegoWebClient>()
+  private lateinit var veegoService: VeegoService
 
-    @BeforeEach
-    fun setUp() {
-        veegoService = VeegoService(veegoWebClient)
-    }
+  @BeforeEach
+  fun setUp() {
+    veegoService = VeegoService(veegoWebClient)
+  }
 
-    @Test
-    fun `should return tax info when API call succeeds`() =
-      runTest {
-        val plateNumber = "876BCH"
-        val response =
-          VeegoTaxResponse(
-            annualTax = BigDecimal("94.14"),
-            registrationTax = BigDecimal("599.50"),
-            make = "Subaru",
-            model = "Forester",
-            year = 2009,
-            group = "Passenger car",
-            co2 = 199,
-            fuel = "Petrol",
-            weight = 2015,
+  @Test
+  fun `should return tax info when API call succeeds`() =
+    runTest {
+      val plateNumber = "876BCH"
+      val response =
+        VeegoTaxResponse(
+          annualTax = BigDecimal("94.14"),
+          registrationTax = BigDecimal("599.50"),
+          make = "Subaru",
+          model = "Forester",
+          year = 2009,
+          group = "Passenger car",
+          co2 = 199,
+          fuel = "Petrol",
+          weight = 2015,
         )
-        coEvery { veegoWebClient.getTaxInfo(plateNumber) } returns response
+      coEvery { veegoWebClient.getTaxInfo(plateNumber) } returns response
 
-        val result = veegoService.getTaxInfo(plateNumber)
+      val result = veegoService.getTaxInfo(plateNumber)
 
-        expect(result.annualTax).notToEqualNull().toEqualNumerically(BigDecimal("94.14"))
-        expect(result.registrationTax).notToEqualNull().toEqualNumerically(BigDecimal("599.50"))
-        expect(result.make).toEqual("Subaru")
-        expect(result.model).toEqual("Forester")
-        expect(result.year).toEqual(2009)
-        expect(result.group).toEqual("Passenger car")
-        expect(result.co2).toEqual(199)
-        expect(result.fuel).toEqual("Petrol")
-        expect(result.weight).toEqual(2015)
-        expect(result.error).toEqual(null)
+      expect(result.annualTax).notToEqualNull().toEqualNumerically(BigDecimal("94.14"))
+      expect(result.registrationTax).notToEqualNull().toEqualNumerically(BigDecimal("599.50"))
+      expect(result.make).toEqual("Subaru")
+      expect(result.model).toEqual("Forester")
+      expect(result.year).toEqual(2009)
+      expect(result.group).toEqual("Passenger car")
+      expect(result.co2).toEqual(199)
+      expect(result.fuel).toEqual("Petrol")
+      expect(result.weight).toEqual(2015)
+      expect(result.error).toEqual(null)
     }
 
-    @Test
-    fun `should return error result when API call fails`() =
-      runTest {
-        val plateNumber = "INVALID"
-        coEvery { veegoWebClient.getTaxInfo(plateNumber) } throws RuntimeException("Connection refused")
+  @Test
+  fun `should return error result when API call fails`() =
+    runTest {
+      val plateNumber = "INVALID"
+      coEvery { veegoWebClient.getTaxInfo(plateNumber) } throws RuntimeException("Connection refused")
 
-        val result = veegoService.getTaxInfo(plateNumber)
+      val result = veegoService.getTaxInfo(plateNumber)
 
-        expect(result.annualTax).toEqual(null)
-        expect(result.registrationTax).toEqual(null)
-        expect(result.make).toEqual(null)
-        expect(result.model).toEqual(null)
-        expect(result.error).toEqual("Connection refused")
+      expect(result.annualTax).toEqual(null)
+      expect(result.registrationTax).toEqual(null)
+      expect(result.make).toEqual(null)
+      expect(result.model).toEqual(null)
+      expect(result.error).toEqual("Connection refused")
     }
 }

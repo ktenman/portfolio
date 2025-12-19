@@ -25,7 +25,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get a
 private val AUTH_COOKIE = Cookie("AUTHSESSION", "test-session-id")
 
 @IntegrationTest
-@TestPropertySource(properties = ["veego.url=http://localhost:\${wiremock.server.port}"])
+@TestPropertySource(
+  properties = [
+    "veego.url=http://localhost:\${wiremock.server.port}",
+    "webclient.proxy.url=http://localhost:\${wiremock.server.port}",
+  ],
+)
 class VehicleInfoControllerIT {
   @Resource
   private lateinit var mockMvc: MockMvc
