@@ -368,6 +368,74 @@ expect(value == null).toEqual(false)  // Don't use this!
 - 169 BigDecimal assertions using `.toEqualNumerically()`
 - All tests use backtick naming: `` `should do something when condition`() ``
 
+#### Parameterized Tests
+
+Use JUnit 5 parameterized tests to reduce repetition when testing similar scenarios with different inputs.
+
+**When to Use:**
+
+- Testing the same behavior with multiple inputs (e.g., validating multiple exception types)
+- Data-driven tests where only the inputs vary
+- Reduces boilerplate and makes adding new test cases trivial
+
+**Standard Imports:**
+
+```kotlin
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.MethodSource
+import java.util.stream.Stream
+```
+
+**CsvSource Pattern (for simple values):**
+
+```kotlin
+@ParameterizedTest(name = "should detect WEEKEND on {3}")
+@CsvSource(
+  "2025, 1, 1, New Year Day",
+  "2025, 12, 25, Christmas Day",
+)
+fun `should detect holiday as weekend`(
+  year: Int,
+  month: Int,
+  day: Int,
+  @Suppress("UNUSED_PARAMETER") _holidayName: String,
+) {
+  val result = service.detectPhase(createDate(year, month, day))
+  expect(result).toEqual(MarketPhase.WEEKEND)
+}
+```
+
+**MethodSource Pattern (for complex objects):**
+
+```kotlin
+@ParameterizedTest(name = "should identify {0} as retryable")
+@MethodSource("retryableExceptions")
+fun `should identify exception as retryable`(
+  @Suppress("UNUSED_PARAMETER") _name: String,
+  exception: Throwable,
+) {
+  expect(client.isRetryable(exception)).toEqual(true)
+}
+
+companion object {
+  @JvmStatic
+  fun retryableExceptions(): Stream<Arguments> =
+    Stream.of(
+      Arguments.of("ServiceUnavailable", createException(HttpStatus.SERVICE_UNAVAILABLE)),
+      Arguments.of("IOException", IOException("Connection reset")),
+    )
+}
+```
+
+**Key Points:**
+
+- Use `@JvmStatic` on companion object methods for `@MethodSource`
+- First argument is typically a description for the test name display
+- Suppress unused parameter warnings with `@Suppress("UNUSED_PARAMETER")` and prefix with `_`
+- Group related test cases (e.g., retryable vs non-retryable) into separate parameterized tests
+
 ### Configuration
 
 - Backend config: `src/main/resources/application.yml`
