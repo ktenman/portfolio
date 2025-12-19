@@ -12,7 +12,7 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 - Frontend: Vue.js 3.5, TypeScript 5.9, Vite 7.2, Bootstrap 5.3
 - Database: PostgreSQL 17 with Flyway migrations (V1-V60+)
 - Cache: Redis 8 (multi-level caching strategy)
-- Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, Mockito, Selenide, Vitest
+- Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, MockK, Selenide, Vitest
 - Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
 - Authentication: Custom Spring Boot auth service (https://github.com/ktenman/auth)
 - Infrastructure: Docker, Kubernetes, Caddy reverse proxy
@@ -261,7 +261,7 @@ FT job uses market-phase-based adaptive scheduling (60s during market hours, 15m
 
 ### Testing Strategy
 
-1. **Unit Tests**: Mock external dependencies with Mockito
+1. **Unit Tests**: Mock external dependencies with MockK (NOT Mockito)
 2. **Integration Tests**: Use `@IntegrationTest` annotation which starts PostgreSQL and Redis containers
 3. **E2E Tests**: Browser-based tests with Selenide, include retry mechanism for flaky tests
 4. **API Testing**: WireMock for external API mocking
