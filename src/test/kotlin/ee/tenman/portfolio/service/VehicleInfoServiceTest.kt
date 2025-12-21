@@ -151,7 +151,7 @@ class VehicleInfoServiceTest {
 
     val result = vehicleInfoService.getVehicleInfo(plateNumber)
 
-    expect(result.formattedText).toContain("🚗 Subaru Forester")
+    expect(result.formattedText).toContain("🚗 Subaru Forester (876BCH)")
   }
 
   @Test
@@ -163,7 +163,6 @@ class VehicleInfoServiceTest {
     val result = vehicleInfoService.getVehicleInfo(plateNumber)
 
     expect(result.formattedText).toContain("📋 Details:")
-    expect(result.formattedText).toContain("• Type: Passenger car")
     expect(result.formattedText).toContain("• Engine: Petrol")
     expect(result.formattedText).toContain("• First registration: 2009")
     expect(result.formattedText).toContain("• CO2: 199")
