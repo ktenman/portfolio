@@ -65,20 +65,20 @@ class VehicleInfoService(
       auto24Error = auto24Result.error,
       veegoError = veegoResult.error,
       totalDurationSeconds = totalDuration,
-      formattedText = buildFormattedText(veegoResult, marketPrice),
+      formattedText = buildFormattedText(plateNumber, veegoResult, marketPrice),
     )
   }
 
   private fun buildFormattedText(
+    plateNumber: String,
     veegoResult: VeegoResult,
     marketPrice: String?,
   ): String {
     val sb = StringBuilder()
     if (veegoResult.make != null && veegoResult.model != null) {
-      sb.append("🚗 ${veegoResult.make} ${veegoResult.model}\n\n")
+      sb.append("🚗 ${veegoResult.make} ${veegoResult.model} ($plateNumber)\n\n")
     }
     sb.append("📋 Details:\n")
-    veegoResult.group?.let { sb.append("• Type: $it\n") }
     veegoResult.fuel?.let { sb.append("• Engine: $it\n") }
     veegoResult.year?.let { sb.append("• First registration: $it\n") }
     veegoResult.co2?.let { sb.append("• CO2: $it\n") }
