@@ -146,6 +146,29 @@ const formatCurrency = (value: number | null) => {
 
 const formatPercentage = (value: number | null) => {
   if (value === null || value === undefined) return '-'
+  if (value === 0) return '0%'
+  if (Math.abs(value) < 0.0001) {
+    const exponent = Math.floor(Math.log10(Math.abs(value)))
+    const mantissa = value / Math.pow(10, exponent)
+    const superscriptDigits: Record<string, string> = {
+      '-': '⁻',
+      '0': '⁰',
+      '1': '¹',
+      '2': '²',
+      '3': '³',
+      '4': '⁴',
+      '5': '⁵',
+      '6': '⁶',
+      '7': '⁷',
+      '8': '⁸',
+      '9': '⁹',
+    }
+    const superscriptExp = String(exponent)
+      .split('')
+      .map(c => superscriptDigits[c] || c)
+      .join('')
+    return `${mantissa.toFixed(2)} × 10${superscriptExp}%`
+  }
   return `${value.toFixed(4)}%`
 }
 
