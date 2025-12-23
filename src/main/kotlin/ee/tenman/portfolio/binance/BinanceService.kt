@@ -25,7 +25,7 @@ class BinanceService(
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun getCurrentPrice(symbol: String): BigDecimal {
-    log.info("Getting current price for symbol: {}", symbol)
+    log.debug("Getting current price for symbol: {}", symbol)
     val tickerPrice = binanceClient.getTickerPrice(symbol)
     return tickerPrice.price.toBigDecimal()
   }

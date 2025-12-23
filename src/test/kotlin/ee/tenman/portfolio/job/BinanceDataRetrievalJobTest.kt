@@ -13,6 +13,10 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.TreeMap
 
 class BinanceDataRetrievalJobTest {
@@ -20,7 +24,9 @@ class BinanceDataRetrievalJobTest {
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val binanceService: BinanceService = mockk()
   private val dataProcessingUtil: DataProcessingUtil = mockk(relaxed = true)
-  private val dailyPriceService: DailyPriceService = mockk()
+  private val dailyPriceService: DailyPriceService = mockk(relaxed = true)
+  private val fixedInstant: Instant = Instant.parse("2025-12-23T10:00:00Z")
+  private val clock: Clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
 
   private val job =
     BinanceDataRetrievalJob(
@@ -29,12 +35,14 @@ class BinanceDataRetrievalJobTest {
       binanceService = binanceService,
       dataProcessingUtil = dataProcessingUtil,
       dailyPriceService = dailyPriceService,
+      clock = clock,
     )
 
   @Test
   fun `should refresh current price when historical data exists`() {
     val instrument = createInstrument("BTCEUR")
     val currentPrice = BigDecimal("95000.50")
+    val expectedDate = LocalDate.of(2025, 12, 23)
     every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument)
     every { dailyPriceService.hasHistoricalData(instrument) } returns true
     every { binanceService.getCurrentPrice("BTCEUR") } returns currentPrice
@@ -42,6 +50,9 @@ class BinanceDataRetrievalJobTest {
     job.execute()
 
     verify(exactly = 1) { binanceService.getCurrentPrice("BTCEUR") }
+    verify(exactly = 1) {
+      dailyPriceService.saveCurrentPrice(instrument, currentPrice, expectedDate, ProviderName.BINANCE)
+    }
     verify(exactly = 1) { instrumentService.updateCurrentPrice(1L, currentPrice) }
     verify(exactly = 0) { binanceService.getDailyPricesAsync(any()) }
   }

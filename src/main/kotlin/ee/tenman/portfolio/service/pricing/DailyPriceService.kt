@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.pricing
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PriceChangePeriod
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import org.springframework.stereotype.Service
@@ -168,5 +169,26 @@ class DailyPriceService(
   }
 
   @Transactional(readOnly = true)
-  fun hasHistoricalData(instrument: Instrument): Boolean = dailyPriceRepository.countByInstrument(instrument) > 0
+  fun hasHistoricalData(instrument: Instrument): Boolean = dailyPriceRepository.existsByInstrument(instrument)
+
+  @Transactional
+  fun saveCurrentPrice(
+    instrument: Instrument,
+    price: BigDecimal,
+    date: LocalDate,
+    providerName: ProviderName,
+  ): DailyPrice {
+    val dailyPrice =
+      DailyPrice(
+        instrument = instrument,
+        entryDate = date,
+        providerName = providerName,
+        openPrice = null,
+        highPrice = null,
+        lowPrice = null,
+        closePrice = price,
+        volume = null,
+      )
+    return saveDailyPrice(dailyPrice)
+  }
 }

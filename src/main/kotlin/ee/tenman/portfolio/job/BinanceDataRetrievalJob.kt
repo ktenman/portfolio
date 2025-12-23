@@ -8,6 +8,8 @@ import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.time.Clock
+import java.time.LocalDate
 
 @ScheduledJob
 class BinanceDataRetrievalJob(
@@ -16,19 +18,37 @@ class BinanceDataRetrievalJob(
   private val binanceService: BinanceService,
   private val dataProcessingUtil: DataProcessingUtil,
   private val dailyPriceService: DailyPriceService,
+  private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  @Volatile
+  private var isExecuting = false
+
   @Scheduled(fixedDelayString = "\${scheduling.jobs.binance-interval:120000}")
   fun runJob() {
-    log.info("Running Binance data retrieval job")
+    log.debug("Running Binance data retrieval job")
     jobExecutionService.executeJob(this)
-    log.info("Completed Binance data retrieval job")
+    log.debug("Completed Binance data retrieval job")
   }
 
   override fun execute() {
+    if (isExecuting) {
+      log.warn("Binance data retrieval job is already running, skipping this execution")
+      return
+    }
+    isExecuting = true
+    try {
+      executeJob()
+    } finally {
+      isExecuting = false
+    }
+  }
+
+  private fun executeJob() {
     log.info("Starting Binance data retrieval job")
-    val instruments = instrumentService.getAllInstrumentsWithoutFiltering().filter { it.providerName == ProviderName.BINANCE }
+    val instruments =
+      instrumentService.getAllInstrumentsWithoutFiltering().filter { it.providerName == ProviderName.BINANCE }
     if (instruments.isEmpty()) {
       log.info("No Binance instruments found to process")
       return
@@ -48,10 +68,12 @@ class BinanceDataRetrievalJob(
   }
 
   private fun refreshCurrentPrice(instrument: Instrument) {
-    log.info("Refreshing current price for instrument: {}", instrument.symbol)
+    log.debug("Refreshing current price for instrument: {}", instrument.symbol)
     val currentPrice = binanceService.getCurrentPrice(instrument.symbol)
+    val today = LocalDate.now(clock)
+    dailyPriceService.saveCurrentPrice(instrument, currentPrice, today, ProviderName.BINANCE)
     instrumentService.updateCurrentPrice(instrument.id, currentPrice)
-    log.info("Updated current price for {}: {}", instrument.symbol, currentPrice)
+    log.debug("Updated current price for {}: {}", instrument.symbol, currentPrice)
   }
 
   private fun fetchFullHistory(instrument: Instrument) {
