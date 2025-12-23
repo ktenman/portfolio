@@ -41,6 +41,7 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
     return
   }
 
+  const startTime = Date.now()
   logger.info(`Fetching batch instrument data for ${instrumentIds.length} instruments`)
 
   try {
@@ -62,9 +63,15 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
     })
 
     const data = JSON.parse(result)
+    const duration = Date.now() - startTime
+    const resultCount = Array.isArray(data) ? data.length : 0
+    logger.info(
+      `Batch fetch completed: ${resultCount}/${instrumentIds.length} instruments returned in ${duration}ms`
+    )
     res.json(data)
   } catch (error) {
-    logger.error(`Failed to fetch batch instrument data: ${error}`)
+    const duration = Date.now() - startTime
+    logger.error(`Failed to fetch batch instrument data after ${duration}ms: ${error}`)
     res.status(500).json({ error: 'Failed to fetch batch instrument data' })
   }
 }
@@ -114,11 +121,13 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
   logger.info(
     `Looking up UUID for symbol: ${sanitizeLogInput(symbol)} (ticker: ${ticker}, exchange: ${targetExchange || 'any'}, currency: ${currency || 'any'})`
   )
+
+  let result: string
   try {
     const searchPath = `/v1/instrument/search?value=${encodeURIComponent(ticker)}`
     const encodedPath = Buffer.from(searchPath).toString('base64').replace(/=+$/, '')
     const searchUrl = `${LIGHTYEAR_FETCH_URL}?path=${encodedPath}&withAPIKey=true`
-    const result = await execCurl({
+    result = await execCurl({
       url: searchUrl,
       timeout: 15000,
       maxBuffer: 1024 * 1024,
@@ -130,42 +139,55 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
         Referer: 'https://lightyear.com/',
       },
     })
-    const data: SearchResult = JSON.parse(result)
-    if (!data.results || data.results.length === 0) {
-      logger.warn(`No instruments found for symbol: ${sanitizeLogInput(symbol)}`)
-      res.status(404).json({ error: 'Instrument not found', symbol })
-      return
-    }
-    const tickerMatches = data.results.filter(
-      r => r.instrument?.symbol?.toUpperCase() === ticker.toUpperCase()
-    )
-    let match = tickerMatches[0]
-    if (tickerMatches.length > 1 && targetExchange) {
-      const exchangeMatch = tickerMatches.find(
-        r => r.instrument?.exchange?.toUpperCase() === targetExchange
-      )
-      if (exchangeMatch) match = exchangeMatch
-    }
-    if (tickerMatches.length > 1 && !match && currency) {
-      const currencyMatch = tickerMatches.find(
-        r => r.instrument?.currency?.toUpperCase() === currency
-      )
-      if (currencyMatch) match = currencyMatch
-    }
-    const instrument = match?.instrument
-    if (!instrument || !instrument.id) {
-      logger.warn(`No matching instrument found for symbol: ${sanitizeLogInput(symbol)}`)
-      res.status(404).json({ error: 'Matching instrument not found', symbol })
-      return
-    }
-    logger.info(
-      `Found UUID ${instrument.id} for symbol: ${sanitizeLogInput(symbol)} (exchange: ${instrument.exchange})`
-    )
-    res.json({ symbol, uuid: instrument.id })
   } catch (error) {
-    logger.error(`Failed to lookup UUID for symbol ${sanitizeLogInput(symbol)}: ${error}`)
-    res.status(500).json({ error: 'Failed to lookup UUID', symbol })
+    logger.error(`Network error looking up UUID for ${sanitizeLogInput(symbol)}: ${error}`)
+    res.status(502).json({ error: 'Failed to connect to Lightyear API', symbol })
+    return
   }
+
+  let data: SearchResult
+  try {
+    data = JSON.parse(result)
+  } catch (error) {
+    logger.error(`Failed to parse response for ${sanitizeLogInput(symbol)}: ${error}`)
+    res.status(502).json({ error: 'Invalid response from Lightyear API', symbol })
+    return
+  }
+
+  if (!data.results || data.results.length === 0) {
+    logger.warn(`No instruments found for symbol: ${sanitizeLogInput(symbol)}`)
+    res.status(404).json({ error: 'Instrument not found', symbol })
+    return
+  }
+
+  const tickerMatches = data.results.filter(
+    r => r.instrument?.symbol?.toUpperCase() === ticker.toUpperCase()
+  )
+  let match = tickerMatches[0]
+  if (tickerMatches.length > 1 && targetExchange) {
+    const exchangeMatch = tickerMatches.find(
+      r => r.instrument?.exchange?.toUpperCase() === targetExchange
+    )
+    if (exchangeMatch) match = exchangeMatch
+  }
+  if (tickerMatches.length > 1 && !match && currency) {
+    const currencyMatch = tickerMatches.find(
+      r => r.instrument?.currency?.toUpperCase() === currency
+    )
+    if (currencyMatch) match = currencyMatch
+  }
+
+  const instrument = match?.instrument
+  if (!instrument || !instrument.id) {
+    logger.warn(`No matching instrument found for symbol: ${sanitizeLogInput(symbol)}`)
+    res.status(404).json({ error: 'Matching instrument not found', symbol })
+    return
+  }
+
+  logger.info(
+    `Found UUID ${instrument.id} for symbol: ${sanitizeLogInput(symbol)} (exchange: ${instrument.exchange})`
+  )
+  res.json({ symbol, uuid: instrument.id })
 }
 
 export const lightyearLookupAdapter: ServiceAdapter = {

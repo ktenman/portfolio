@@ -236,6 +236,32 @@ class ArchitectureTest {
       .because("@Lazy hides circular dependencies and makes code harder to test")
 
   @ArchTest
+  val `should use TimeUtility for timing instead of System nanoTime or currentTimeMillis`: ArchRule =
+    noClasses()
+      .that()
+      .doNotHaveSimpleName("TimeUtility")
+      .should(callSystemTimingMethods())
+      .because("Use TimeUtility for consistent timing across the codebase")
+
+  private fun callSystemTimingMethods(): ArchCondition<JavaClass> =
+    object : ArchCondition<JavaClass>("call System.nanoTime() or System.currentTimeMillis()") {
+      override fun check(javaClass: JavaClass, events: ConditionEvents) {
+        javaClass.methodCallsFromSelf.forEach { call ->
+          val targetOwner = call.targetOwner.name
+          val targetName = call.target.name
+          if (targetOwner == "java.lang.System" && (targetName == "nanoTime" || targetName == "currentTimeMillis")) {
+            events.add(
+              SimpleConditionEvent.violated(
+                call,
+                "${javaClass.name} calls System.$targetName() directly - use TimeUtility instead",
+              ),
+            )
+          }
+        }
+      }
+    }
+
+  @ArchTest
   val `loggers should be private final`: ArchRule =
     fields()
       .that()
