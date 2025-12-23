@@ -10,16 +10,26 @@ export async function executeCurl({
   timeout = 10000,
   maxBuffer = 1024 * 1024,
   headers,
+  method,
+  body,
 }: CurlOptions): Promise<CurlResult> {
   const start = Date.now()
 
   try {
     const args = ['-s']
 
+    if (method && method.toUpperCase() !== 'GET') {
+      args.push('-X', method.toUpperCase())
+    }
+
     if (headers) {
       for (const [key, value] of Object.entries(headers)) {
         args.push('-H', `${key}: ${value}`)
       }
+    }
+
+    if (body) {
+      args.push('-d', body)
     }
 
     args.push(url)
@@ -35,4 +45,9 @@ export async function executeCurl({
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     throw new Error(`curl execution failed: ${errorMessage}`)
   }
+}
+
+export async function execCurl(options: CurlOptions): Promise<string> {
+  const result = await executeCurl(options)
+  return result.stdout
 }

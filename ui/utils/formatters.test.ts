@@ -12,6 +12,7 @@ import {
   getAmountClass,
   formatDate,
   formatQuantity,
+  formatScientific,
 } from './formatters'
 
 describe('formatCurrencyWithSymbol', () => {
@@ -244,20 +245,9 @@ describe('formatTransactionAmount', () => {
     expect(formatTransactionAmount(10, 0, 'SELL')).toBe('-€0.00')
   })
 
-  it('should format BUY transactions with commission (commission is separate, not included in amount)', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY', 5)).toBe('+€1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'BUY', 2.5)).toBe('+€112.75')
-  })
-
-  it('should format SELL transactions with commission (commission is separate, not included in amount)', () => {
-    expect(formatTransactionAmount(10, 100, 'SELL', 5)).toBe('-€1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'SELL', 2.5)).toBe('-€112.75')
-  })
-
   it('should format with different currencies', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY', 0, 'USD')).toBe('+$1,000.00')
-    expect(formatTransactionAmount(10, 100, 'SELL', 0, 'GBP')).toBe('-£1,000.00')
-    expect(formatTransactionAmount(10, 100, 'BUY', 5, 'USD')).toBe('+$1,000.00')
+    expect(formatTransactionAmount(10, 100, 'BUY', 'USD')).toBe('+$1,000.00')
+    expect(formatTransactionAmount(10, 100, 'SELL', 'GBP')).toBe('-£1,000.00')
   })
 })
 
@@ -330,23 +320,23 @@ describe('formatQuantity', () => {
     expect(formatQuantity(0.99999)).toBe('1.00')
   })
 
-  it('should format small quantities in scientific notation', () => {
-    expect(formatQuantity(0.00927072)).toBe('9.27 × 10^-3')
-    expect(formatQuantity(0.00001)).toBe('1.00 × 10^-5')
-    expect(formatQuantity(0.0000123456)).toBe('1.23 × 10^-5')
-    expect(formatQuantity(0.009)).toBe('9.00 × 10^-3')
+  it('should format small quantities in scientific notation with superscript', () => {
+    expect(formatQuantity(0.00927072)).toBe('9.27 × 10⁻³')
+    expect(formatQuantity(0.00001)).toBe('1.00 × 10⁻⁵')
+    expect(formatQuantity(0.0000123456)).toBe('1.23 × 10⁻⁵')
+    expect(formatQuantity(0.009)).toBe('9.00 × 10⁻³')
   })
 
   it('should handle negative small quantities', () => {
-    expect(formatQuantity(-0.00927072)).toBe('-9.27 × 10^-3')
-    expect(formatQuantity(-0.00001)).toBe('-1.00 × 10^-5')
+    expect(formatQuantity(-0.00927072)).toBe('-9.27 × 10⁻³')
+    expect(formatQuantity(-0.00001)).toBe('-1.00 × 10⁻⁵')
   })
 
   it('should handle edge cases at threshold', () => {
     expect(formatQuantity(0.01)).toBe('0.01')
-    expect(formatQuantity(0.009999)).toBe('10.00 × 10^-3')
+    expect(formatQuantity(0.009999)).toBe('10.00 × 10⁻³')
     expect(formatQuantity(-0.01)).toBe('-0.01')
-    expect(formatQuantity(-0.009999)).toBe('-10.00 × 10^-3')
+    expect(formatQuantity(-0.009999)).toBe('-10.00 × 10⁻³')
   })
 
   it('should handle null and undefined values', () => {
@@ -359,7 +349,30 @@ describe('formatQuantity', () => {
   })
 
   it('should handle very small values correctly', () => {
-    expect(formatQuantity(0.000000001)).toBe('1.00 × 10^-9')
-    expect(formatQuantity(0.0000000001)).toBe('1.00 × 10^-10')
+    expect(formatQuantity(0.000000001)).toBe('1.00 × 10⁻⁹')
+    expect(formatQuantity(0.0000000001)).toBe('1.00 × 10⁻¹⁰')
+  })
+})
+
+describe('formatScientific', () => {
+  it('should format numbers with superscript exponents', () => {
+    expect(formatScientific(0.001)).toBe('1.00 × 10⁻³')
+    expect(formatScientific(0.00001)).toBe('1.00 × 10⁻⁵')
+    expect(formatScientific(0.0000123)).toBe('1.23 × 10⁻⁵')
+  })
+
+  it('should format with suffix', () => {
+    expect(formatScientific(0.0001, '%')).toBe('1.00 × 10⁻⁴%')
+    expect(formatScientific(0.00005, ' units')).toBe('5.00 × 10⁻⁵ units')
+  })
+
+  it('should handle negative numbers', () => {
+    expect(formatScientific(-0.001)).toBe('-1.00 × 10⁻³')
+    expect(formatScientific(-0.00005)).toBe('-5.00 × 10⁻⁵')
+  })
+
+  it('should handle double-digit exponents', () => {
+    expect(formatScientific(0.0000000001)).toBe('1.00 × 10⁻¹⁰')
+    expect(formatScientific(0.00000000001)).toBe('1.00 × 10⁻¹¹')
   })
 })
