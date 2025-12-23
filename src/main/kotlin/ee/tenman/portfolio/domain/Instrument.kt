@@ -23,4 +23,6 @@ class Instrument(
   @Enumerated(EnumType.STRING)
   @Column(name = "provider_name", nullable = true)
   var providerName: ProviderName = ProviderName.FT,
+  @Column(name = "provider_external_id", nullable = true)
+  var providerExternalId: String? = null,
 ) : BaseEntity()

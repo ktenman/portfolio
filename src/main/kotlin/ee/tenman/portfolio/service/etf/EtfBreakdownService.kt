@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.dto.EtfDiagnosticDto
 import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
 import ee.tenman.portfolio.model.holding.HoldingKey
 import ee.tenman.portfolio.model.holding.HoldingValue
@@ -262,5 +263,42 @@ class EtfBreakdownService(
         )
       }.filter { it.totalValueEur > BigDecimal.ZERO }
       .sortedByDescending { it.totalValueEur }
+  }
+
+  fun getDiagnosticData(): List<EtfDiagnosticDto> {
+    val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
+    val ftInstruments = instrumentRepository.findByProviderName(ProviderName.FT)
+    log.info("Diagnostic: Found {} LIGHTYEAR and {} FT instruments", lightyearInstruments.size, ftInstruments.size)
+    val allInstruments = lightyearInstruments + ftInstruments
+    return allInstruments.map { instrument -> buildDiagnosticDto(instrument) }
+  }
+
+  private fun buildDiagnosticDto(instrument: Instrument): EtfDiagnosticDto {
+    val positions = etfPositionRepository.findLatestPositionsByEtfId(instrument.id)
+    val transactions = transactionRepository.findAllByInstrumentId(instrument.id)
+    val netQuantity = calculateNetQuantity(instrument.id, null)
+    val platforms = transactions.map { it.platform.name }.distinct()
+    val latestDate = positions.firstOrNull()?.snapshotDate?.toString()
+    log.info(
+      "Diagnostic for {}: positions={}, transactions={}, netQty={}, platforms={}",
+      instrument.symbol,
+      positions.size,
+      transactions.size,
+      netQuantity,
+      platforms,
+    )
+    return EtfDiagnosticDto(
+      instrumentId = instrument.id,
+      symbol = instrument.symbol,
+      providerName = instrument.providerName,
+      currentPrice = instrument.currentPrice,
+      etfPositionCount = positions.size,
+      latestSnapshotDate = latestDate,
+      transactionCount = transactions.size,
+      netQuantity = netQuantity,
+      hasEtfHoldings = positions.isNotEmpty(),
+      hasActivePosition = netQuantity > BigDecimal.ZERO,
+      platforms = platforms,
+    )
   }
 }

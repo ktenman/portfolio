@@ -26,7 +26,7 @@ class EtfPosition(
   var holding: EtfHolding,
   @Column(name = "snapshot_date", nullable = false)
   var snapshotDate: LocalDate,
-  @Column(name = "weight_percentage", nullable = false, precision = 8, scale = 4)
+  @Column(name = "weight_percentage", nullable = false, precision = 22, scale = 12)
   var weightPercentage: BigDecimal,
   @Column(name = "position_rank")
   var positionRank: Int? = null,

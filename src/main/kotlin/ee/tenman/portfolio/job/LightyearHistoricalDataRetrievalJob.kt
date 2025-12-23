@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
-import ee.tenman.portfolio.lightyear.LightyearPriceService.Companion.LIGHTYEAR_INSTRUMENTS
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import jakarta.annotation.PostConstruct
@@ -20,6 +20,7 @@ class LightyearHistoricalDataRetrievalJob(
   private val dataProcessingUtil: DataProcessingUtil,
   private val jobExecutionService: JobExecutionService,
   private val taskScheduler: TaskScheduler,
+  private val lightyearProperties: LightyearScrapingProperties,
   private val clock: Clock = Clock.systemDefaultZone(),
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -82,19 +83,17 @@ class LightyearHistoricalDataRetrievalJob(
   }
 
   private fun processInstrument(instrument: ee.tenman.portfolio.domain.Instrument) {
-    val uuid =
-      requireNotNull(LIGHTYEAR_INSTRUMENTS[instrument.symbol]) {
-        "No UUID mapping found for LIGHTYEAR instrument: ${instrument.symbol}. Add it to LIGHTYEAR_INSTRUMENTS map."
-      }
-
+    val uuid = lightyearProperties.findUuidBySymbol(instrument.symbol)
+    if (uuid == null) {
+      log.warn("No UUID mapping found for LIGHTYEAR instrument: ${instrument.symbol}")
+      return
+    }
     log.info("Retrieving Lightyear historical data for instrument: ${instrument.symbol}")
     val historicalData = lightyearHistoricalPricesService.fetchHistoricalPrices(uuid)
-
     if (historicalData.isEmpty()) {
       log.warn("No historical data found for instrument: ${instrument.symbol}")
       return
     }
-
     dataProcessingUtil.processDailyData(instrument, historicalData, ProviderName.LIGHTYEAR)
   }
 }

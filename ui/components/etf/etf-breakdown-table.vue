@@ -70,6 +70,7 @@ import type { ColumnDefinition } from '../shared/data-table.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
 import { utilityService } from '../../services/utility-service'
 import { formatPlatformName } from '../../utils/platform-utils'
+import { formatScientific } from '../../utils/formatters'
 
 const props = defineProps<{
   holdings: EtfHoldingBreakdownDto[]
@@ -146,6 +147,10 @@ const formatCurrency = (value: number | null) => {
 
 const formatPercentage = (value: number | null) => {
   if (value === null || value === undefined) return '-'
+  if (value === 0) return '0%'
+  if (Math.abs(value) < 0.0001) {
+    return formatScientific(value, '%')
+  }
   return `${value.toFixed(4)}%`
 }
 
