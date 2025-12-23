@@ -168,47 +168,15 @@ scheduling:
 
 scraping:
   lightyear:
-    base-url: "https://lightyear.com/en/etf"
-    max-pages: 20
-    page-delay-ms: 2000
-    selectors:
-      holdings-table: "table-row"
-      row-filter: "%"
-      cells:
-        name: "> div:nth-child(1)"
-        ticker: "> div:nth-child(2)"
-        sector: "> div:nth-child(3)"
-        weight: "> div:nth-child(2)"
-        market-cap: "> div:nth-child(3)"
     etfs:
       - symbol: "VUAA"
-        path: "VUAA:XETRA"
-        expected-pages: 3
       - symbol: "QDVE"
-        path: "QDVE:XETRA"
-        expected-pages: 1
       - symbol: "XAIX"
-        path: "XAIX:XETRA"
-        expected-pages: 1
       - symbol: "SPYL"
-        path: "SPYL:XETRA"
-        expected-pages: 3
-      - symbol: "WTAI"   # Holdings handled by WisdomTreeDataUpdateJob (skip-holdings: true keeps WTAI for logo updates only)
-        path: "WTAI:XMIL"
-        expected-pages: 3
-        skip-holdings: true
       - symbol: "CSX5"
-        path: "CSX5:AEX"
-        expected-pages: 3
       - symbol: "VNRT"
-        path: "VNRT:AEX"
-        expected-pages: 3
       - symbol: "VWCE"
-        path: "VWCE:XETRA"
-        expected-pages: 20
       - symbol: "VNRA"
-        path: "VNRA:XETRA"
-        expected-pages: 3
 
 cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}
