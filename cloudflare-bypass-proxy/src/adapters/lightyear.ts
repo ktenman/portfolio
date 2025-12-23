@@ -136,14 +136,20 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
       res.status(404).json({ error: 'Instrument not found', symbol })
       return
     }
-    const tickerMatches = data.results.filter(r => r.instrument?.symbol?.toUpperCase() === ticker.toUpperCase())
+    const tickerMatches = data.results.filter(
+      r => r.instrument?.symbol?.toUpperCase() === ticker.toUpperCase()
+    )
     let match = tickerMatches[0]
     if (tickerMatches.length > 1 && targetExchange) {
-      const exchangeMatch = tickerMatches.find(r => r.instrument?.exchange?.toUpperCase() === targetExchange)
+      const exchangeMatch = tickerMatches.find(
+        r => r.instrument?.exchange?.toUpperCase() === targetExchange
+      )
       if (exchangeMatch) match = exchangeMatch
     }
     if (tickerMatches.length > 1 && !match && currency) {
-      const currencyMatch = tickerMatches.find(r => r.instrument?.currency?.toUpperCase() === currency)
+      const currencyMatch = tickerMatches.find(
+        r => r.instrument?.currency?.toUpperCase() === currency
+      )
       if (currencyMatch) match = currencyMatch
     }
     const instrument = match?.instrument
@@ -152,7 +158,9 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
       res.status(404).json({ error: 'Matching instrument not found', symbol })
       return
     }
-    logger.info(`Found UUID ${instrument.id} for symbol: ${sanitizeLogInput(symbol)} (exchange: ${instrument.exchange})`)
+    logger.info(
+      `Found UUID ${instrument.id} for symbol: ${sanitizeLogInput(symbol)} (exchange: ${instrument.exchange})`
+    )
     res.json({ symbol, uuid: instrument.id })
   } catch (error) {
     logger.error(`Failed to lookup UUID for symbol ${sanitizeLogInput(symbol)}: ${error}`)
