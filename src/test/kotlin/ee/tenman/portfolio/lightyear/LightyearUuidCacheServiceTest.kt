@@ -3,11 +3,10 @@ package ee.tenman.portfolio.lightyear
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.LIGHTYEAR_UUID_CACHE
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.cache.CacheManager
+import org.springframework.data.redis.core.StringRedisTemplate
 
 @IntegrationTest
 class LightyearUuidCacheServiceTest {
@@ -15,11 +14,14 @@ class LightyearUuidCacheServiceTest {
   private lateinit var cacheService: LightyearUuidCacheService
 
   @Resource
-  private lateinit var cacheManager: CacheManager
+  private lateinit var stringRedisTemplate: StringRedisTemplate
 
   @BeforeEach
   fun setUp() {
-    cacheManager.getCache(LIGHTYEAR_UUID_CACHE)?.clear()
+    stringRedisTemplate.connectionFactory
+      ?.connection
+      ?.serverCommands()
+      ?.flushAll()
   }
 
   @Test
@@ -39,13 +41,12 @@ class LightyearUuidCacheServiceTest {
   }
 
   @Test
-  fun `cacheUuid should put value in cache that can be retrieved via service`() {
+  fun `cached uuid should be retrievable after caching`() {
     val symbol = "CACHED:SYMBOL"
     val uuid = "cached-uuid-456"
 
     cacheService.cacheUuid(symbol, uuid)
-    val cache = cacheManager.getCache(LIGHTYEAR_UUID_CACHE)
-    val cachedValue = cache?.get(symbol, String::class.java)
+    val cachedValue = cacheService.getCachedUuid(symbol)
 
     expect(cachedValue).toEqual(uuid)
   }
@@ -58,8 +59,7 @@ class LightyearUuidCacheServiceTest {
     cacheService.cacheUuid(symbol1, "uuid-1")
     cacheService.cacheUuid(symbol2, "uuid-2")
 
-    val cache = cacheManager.getCache(LIGHTYEAR_UUID_CACHE)
-    expect(cache?.get(symbol1, String::class.java)).toEqual("uuid-1")
-    expect(cache?.get(symbol2, String::class.java)).toEqual("uuid-2")
+    expect(cacheService.getCachedUuid(symbol1)).toEqual("uuid-1")
+    expect(cacheService.getCachedUuid(symbol2)).toEqual("uuid-2")
   }
 }
