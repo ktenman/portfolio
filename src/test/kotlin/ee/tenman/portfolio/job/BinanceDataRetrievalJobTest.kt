@@ -22,13 +22,14 @@ class BinanceDataRetrievalJobTest {
   private val dataProcessingUtil: DataProcessingUtil = mockk(relaxed = true)
   private val dailyPriceService: DailyPriceService = mockk()
 
-  private val job = BinanceDataRetrievalJob(
-    instrumentService = instrumentService,
-    jobExecutionService = jobExecutionService,
-    binanceService = binanceService,
-    dataProcessingUtil = dataProcessingUtil,
-    dailyPriceService = dailyPriceService,
-  )
+  private val job =
+    BinanceDataRetrievalJob(
+      instrumentService = instrumentService,
+      jobExecutionService = jobExecutionService,
+      binanceService = binanceService,
+      dataProcessingUtil = dataProcessingUtil,
+      dailyPriceService = dailyPriceService,
+    )
 
   @Test
   fun `should refresh current price when historical data exists`() {
@@ -95,9 +96,10 @@ class BinanceDataRetrievalJobTest {
     symbol: String,
     providerName: ProviderName = ProviderName.BINANCE,
     id: Long = 1L,
-  ): Instrument = mockk {
-    every { this@mockk.id } returns id
-    every { this@mockk.symbol } returns symbol
-    every { this@mockk.providerName } returns providerName
-  }
+  ): Instrument =
+    mockk {
+      every { this@mockk.id } returns id
+      every { this@mockk.symbol } returns symbol
+      every { this@mockk.providerName } returns providerName
+    }
 }

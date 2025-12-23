@@ -32,10 +32,11 @@ class BinanceServiceTest {
 
   @Test
   fun `should fetch daily prices for date range`() {
-    val klines = listOf(
-      listOf("1703289600000", "42000.00", "43000.00", "41000.00", "42500.00", "1000.5"),
-      listOf("1703376000000", "42500.00", "44000.00", "42000.00", "43500.00", "1200.7"),
-    )
+    val klines =
+      listOf(
+        listOf("1703289600000", "42000.00", "43000.00", "41000.00", "42500.00", "1000.5"),
+        listOf("1703376000000", "42500.00", "44000.00", "42000.00", "43500.00", "1200.7"),
+      )
     every { binanceClient.getKlines(any(), any(), any(), any(), any()) } returns klines andThen emptyList()
 
     val prices = binanceService.getDailyPricesAsync("BTCEUR")
