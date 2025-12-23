@@ -148,10 +148,10 @@ const formatCurrency = (value: number | null) => {
 const formatPercentage = (value: number | null) => {
   if (value === null || value === undefined) return '-'
   if (value === 0) return '0%'
-  if (Math.abs(value) < 0.00001) {
+  if (Math.abs(value) < 0.0001) {
     return formatScientific(value, '%')
   }
-  return `${value.toFixed(5)}%`
+  return `${value.toFixed(4)}%`
 }
 
 const handleImageError = (event: Event) => {
