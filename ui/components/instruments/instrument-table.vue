@@ -48,6 +48,7 @@
         </td>
         <td class="fw-bold text-nowrap">100.00%</td>
         <td></td>
+        <td></td>
       </tr>
     </template>
     <template #mobile-card="{ item }">
@@ -256,6 +257,10 @@
       <span class="text-nowrap">{{ getPortfolioWeight(item) }}</span>
     </template>
 
+    <template #cell-ter="{ item }">
+      <span class="text-nowrap">{{ formatTer(item.ter) }}</span>
+    </template>
+
     <template #actions="{ item }">
       <div class="action-buttons">
         <button
@@ -354,6 +359,11 @@ const animatedTotalChangePercent = useNumberTransition(totalChangePercent)
 
 const getPortfolioWeight = (instrument: InstrumentDto): string => {
   return calculatePortfolioWeight(instrument.currentValue || 0, totalValue.value)
+}
+
+const formatTer = (ter: number | null | undefined): string => {
+  if (ter === null || ter === undefined) return '-'
+  return `${ter.toFixed(2)}%`
 }
 </script>
 
