@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.dto.EtfDiagnosticDto
 import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -23,4 +24,7 @@ class EtfBreakdownController(
   fun evictCache() {
     etfBreakdownService.evictBreakdownCache()
   }
+
+  @GetMapping("/diagnostic")
+  fun getDiagnostic(): List<EtfDiagnosticDto> = etfBreakdownService.getDiagnosticData()
 }

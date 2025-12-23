@@ -2,9 +2,9 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.JobStatus
+import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.service.etf.EtfHoldingsService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
-import ee.tenman.portfolio.service.integration.LightyearScraperService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Instant
@@ -14,7 +14,7 @@ import java.time.LocalDate
 class LightyearDataFetchJob(
   private val jobTransactionService: JobTransactionService,
   private val properties: LightyearScrapingProperties,
-  private val scraperService: LightyearScraperService,
+  private val lightyearPriceService: LightyearPriceService,
   private val etfHoldingsService: EtfHoldingsService,
   private val etfBreakdownService: ee.tenman.portfolio.service.etf.EtfBreakdownService,
 ) : Job {
@@ -58,37 +58,8 @@ class LightyearDataFetchJob(
 
     properties.etfs.forEach { etfConfig ->
       try {
-        if (etfConfig.skipHoldings) {
-          val msg = "Holdings scraping disabled for ${etfConfig.symbol} (using WisdomTree job instead)"
-          log.info(msg)
-          results.add(msg)
-          return@forEach
-        }
-
-        if (etfHoldingsService.hasHoldingsForDate(etfConfig.symbol, today)) {
-          val msg = "Holdings for ${etfConfig.symbol} already exist for $today, skipping"
-          log.info(msg)
-          results.add(msg)
-          return@forEach
-        }
-
-        log.info("Fetching holdings for ETF: ${etfConfig.symbol}")
-        val holdings = scraperService.fetchEtfHoldings(etfConfig)
-
-        if (holdings.isNotEmpty()) {
-          etfHoldingsService.saveHoldings(
-            etfSymbol = etfConfig.symbol,
-            date = today,
-            holdings = holdings,
-          )
-          val msg = "Successfully fetched and saved ${holdings.size} holdings for ${etfConfig.symbol}"
-          log.info(msg)
-          results.add(msg)
-        } else {
-          val msg = "No holdings found for ${etfConfig.symbol}"
-          log.warn(msg)
-          results.add(msg)
-        }
+        val msg = processEtf(etfConfig, today)
+        results.add(msg)
       } catch (e: Exception) {
         val msg = "Failed to process ${etfConfig.symbol}: ${e.message}"
         log.error(msg, e)
@@ -97,5 +68,35 @@ class LightyearDataFetchJob(
     }
 
     return results.joinToString("\n")
+  }
+
+  private fun processEtf(
+    etfConfig: LightyearScrapingProperties.EtfConfig,
+    today: LocalDate,
+  ): String {
+    if (etfHoldingsService.hasHoldingsForDate(etfConfig.symbol, today)) {
+      val msg = "Holdings for ${etfConfig.symbol} already exist for $today, skipping"
+      log.info(msg)
+      return msg
+    }
+
+    log.info("Fetching holdings for ETF: ${etfConfig.symbol}")
+    val holdings = lightyearPriceService.fetchHoldingsAsDto(etfConfig.symbol)
+
+    if (holdings.isEmpty()) {
+      val msg = "No holdings found for ${etfConfig.symbol}"
+      log.warn(msg)
+      return msg
+    }
+
+    etfHoldingsService.saveHoldings(
+      etfSymbol = etfConfig.symbol,
+      date = today,
+      holdings = holdings,
+    )
+
+    val msg = "Successfully fetched and saved ${holdings.size} holdings for ${etfConfig.symbol}"
+    log.info(msg)
+    return msg
   }
 }

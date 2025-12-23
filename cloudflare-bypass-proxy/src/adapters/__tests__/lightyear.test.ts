@@ -52,7 +52,7 @@ describe('Lightyear Adapter', () => {
       maxBuffer: 1024 * 1024,
       headers: {
         'user-agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
         referer: 'https://lightyear.com/',
         accept: '*/*',
         'accept-language': 'en-US,en;q=0.9',

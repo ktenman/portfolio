@@ -23,4 +23,11 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
     id: Long,
     price: BigDecimal?,
   )
+
+  @Modifying(clearAutomatically = true)
+  @Query("UPDATE Instrument i SET i.providerExternalId = :providerExternalId WHERE i.symbol = :symbol")
+  fun updateProviderExternalId(
+    symbol: String,
+    providerExternalId: String,
+  )
 }

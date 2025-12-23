@@ -5,6 +5,8 @@ export interface CurlOptions {
   timeout?: number
   maxBuffer?: number
   headers?: Record<string, string>
+  method?: string
+  body?: string
 }
 
 export interface CurlResult {

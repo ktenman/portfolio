@@ -2,6 +2,8 @@ package ee.tenman.portfolio.lightyear
 
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 
 @FeignClient(
@@ -18,4 +20,24 @@ interface LightyearPriceClient {
   fun getChartData(
     @RequestParam path: String,
   ): List<LightyearChartDataPoint>
+
+  @GetMapping("/lightyear/fetch")
+  fun getHoldings(
+    @RequestParam path: String,
+  ): List<LightyearHoldingResponse>
+
+  @GetMapping("/lightyear/fetch")
+  fun getInstrument(
+    @RequestParam path: String,
+  ): LightyearInstrumentResponse
+
+  @PostMapping("/lightyear/batch")
+  fun getInstrumentBatch(
+    @RequestBody instrumentIds: List<String>,
+  ): List<LightyearInstrumentResponse>
+
+  @GetMapping("/lightyear/lookup")
+  fun lookupUuid(
+    @RequestParam symbol: String,
+  ): LightyearUuidLookupResponse
 }

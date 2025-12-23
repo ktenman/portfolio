@@ -83,4 +83,12 @@ class InstrumentService(
     transactionProfitService.recalculateProfitsForInstrument(instrumentId)
     cacheInvalidationService.evictAllRelatedCaches(instrumentId, instrument.symbol)
   }
+
+  @Transactional
+  fun updateProviderExternalId(
+    symbol: String,
+    providerExternalId: String,
+  ) {
+    instrumentRepository.updateProviderExternalId(symbol, providerExternalId)
+  }
 }

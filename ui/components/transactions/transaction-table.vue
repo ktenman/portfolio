@@ -80,7 +80,6 @@
                 item.quantity,
                 item.price,
                 item.transactionType,
-                item.commission,
                 item.currency
               )
             }}
@@ -135,7 +134,6 @@
             item.quantity,
             item.price,
             item.transactionType,
-            item.commission,
             item.currency,
             false
           )
