@@ -145,7 +145,6 @@ export const formatTransactionAmount = (
   quantity: number,
   price: number,
   type: string,
-  _commission?: number,
   currency?: string,
   includeSign: boolean = true
 ): string => {

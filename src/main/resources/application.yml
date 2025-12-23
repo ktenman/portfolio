@@ -169,14 +169,27 @@ scheduling:
 scraping:
   lightyear:
     etfs:
-      - symbol: "VUAA"
-      - symbol: "QDVE"
-      - symbol: "XAIX"
-      - symbol: "SPYL"
-      - symbol: "CSX5"
-      - symbol: "VNRT"
-      - symbol: "VWCE"
-      - symbol: "VNRA"
+      - symbol: "VUAA:GER:EUR"
+        uuid: "1eda4008-c9e6-6bde-b60a-654bcfbd8ac3"
+      - symbol: "QDVE:GER:EUR"
+        uuid: "1ef27f9a-bde6-6dda-a873-3946ca86bd5c"
+      - symbol: "XAIX:GER:EUR"
+        uuid: "1ef66ace-af0a-6d81-ab3f-c9f7567377e0"
+      - symbol: "SPYL:GER:EUR"
+        uuid: "1ef66aa4-5a18-65da-ab3f-c9f7567377e0"
+      - symbol: "CSX5:AEX:EUR"
+        uuid: "1ecf2dbe-e840-6165-8df4-d975f6a704cf"
+      - symbol: "VNRT:AEX:EUR"
+        uuid: "1ecf2da3-e426-68b7-a268-3d0ec5cf88ad"
+      - symbol: "VWCE:GER:EUR"
+        uuid: "1eda0a07-10b3-63e0-b568-6deedaa217e7"
+      - symbol: "VNRA:GER:EUR"
+        uuid: "1eda4008-ca17-6926-b60a-654bcfbd8ac3"
+    additional-instruments:
+      - symbol: "WTAI:MIL:EUR"
+        uuid: "1f02fdcc-38f9-67b8-ad1b-a71ae2564bd4"
+      - symbol: "WBIT:GER:EUR"
+        uuid: "1ef3aa4c-5f26-6cf0-8eba-bb4404220dad"
 
 cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}

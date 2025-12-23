@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -96,6 +96,20 @@ export interface EtfHoldingBreakdownDto extends Serializable {
     inEtfs: string;
     numEtfs: number;
     platforms: string;
+}
+
+export interface EtfDiagnosticDto {
+    instrumentId: number;
+    symbol: string;
+    providerName: ProviderName;
+    currentPrice: number | null;
+    etfPositionCount: number;
+    latestSnapshotDate: string | null;
+    transactionCount: number;
+    netQuantity: number;
+    hasEtfHoldings: boolean;
+    hasActivePosition: boolean;
+    platforms: string[];
 }
 
 export interface CalculationResult extends Serializable {

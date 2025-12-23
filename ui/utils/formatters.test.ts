@@ -245,20 +245,9 @@ describe('formatTransactionAmount', () => {
     expect(formatTransactionAmount(10, 0, 'SELL')).toBe('-€0.00')
   })
 
-  it('should format BUY transactions with commission (commission is separate, not included in amount)', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY', 5)).toBe('+€1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'BUY', 2.5)).toBe('+€112.75')
-  })
-
-  it('should format SELL transactions with commission (commission is separate, not included in amount)', () => {
-    expect(formatTransactionAmount(10, 100, 'SELL', 5)).toBe('-€1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'SELL', 2.5)).toBe('-€112.75')
-  })
-
   it('should format with different currencies', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY', 0, 'USD')).toBe('+$1,000.00')
-    expect(formatTransactionAmount(10, 100, 'SELL', 0, 'GBP')).toBe('-£1,000.00')
-    expect(formatTransactionAmount(10, 100, 'BUY', 5, 'USD')).toBe('+$1,000.00')
+    expect(formatTransactionAmount(10, 100, 'BUY', 'USD')).toBe('+$1,000.00')
+    expect(formatTransactionAmount(10, 100, 'SELL', 'GBP')).toBe('-£1,000.00')
   })
 })
 

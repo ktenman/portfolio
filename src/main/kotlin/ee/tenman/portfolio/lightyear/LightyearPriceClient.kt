@@ -35,4 +35,9 @@ interface LightyearPriceClient {
   fun getInstrumentBatch(
     @RequestBody instrumentIds: List<String>,
   ): List<LightyearInstrumentResponse>
+
+  @GetMapping("/lightyear/lookup")
+  fun lookupUuid(
+    @RequestParam symbol: String,
+  ): LightyearUuidLookupResponse
 }
