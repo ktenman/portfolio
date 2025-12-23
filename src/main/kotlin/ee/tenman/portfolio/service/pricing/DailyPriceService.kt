@@ -166,4 +166,7 @@ class DailyPriceService(
       .map { true }
       .getOrDefault(false)
   }
+
+  @Transactional(readOnly = true)
+  fun hasHistoricalData(instrument: Instrument): Boolean = dailyPriceRepository.countByInstrument(instrument) > 0
 }

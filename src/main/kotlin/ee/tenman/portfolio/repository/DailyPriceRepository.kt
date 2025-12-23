@@ -45,4 +45,6 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
     instrument: Instrument,
     entryDate: LocalDate,
   ): DailyPrice?
+
+  fun countByInstrument(instrument: Instrument): Long
 }

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.Instant
@@ -21,6 +22,13 @@ class BinanceService(
   private val clock: Clock = Clock.systemDefaultZone(),
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+
+  @Retryable(backoff = Backoff(delay = 1000))
+  fun getCurrentPrice(symbol: String): BigDecimal {
+    log.info("Getting current price for symbol: {}", symbol)
+    val tickerPrice = binanceClient.getTickerPrice(symbol)
+    return tickerPrice.price.toBigDecimal()
+  }
 
   fun getDailyPricesAsync(symbol: String): SortedMap<LocalDate, DailyPriceData> =
     runBlocking {
