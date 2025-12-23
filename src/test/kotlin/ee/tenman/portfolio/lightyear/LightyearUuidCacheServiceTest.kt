@@ -39,24 +39,26 @@ class LightyearUuidCacheServiceTest {
   }
 
   @Test
-  fun `cacheUuid should put value in cache that can be retrieved directly`() {
-    val symbol = "CACHED:SYMBOL"
+  fun `cacheUuid should put value in cache that can be retrieved via service`() {
+    val symbol = "CACHED:SYMBOL:${System.nanoTime()}"
     val uuid = "cached-uuid-456"
 
     cacheService.cacheUuid(symbol, uuid)
+    val cachedValue = cacheService.getCachedUuid(symbol)
 
-    val cache = cacheManager.getCache(LIGHTYEAR_UUID_CACHE)
-    val cachedValue = cache?.get(symbol, String::class.java)
     expect(cachedValue).toEqual(uuid)
   }
 
   @Test
   fun `cacheUuid should store different values for different symbols`() {
-    cacheService.cacheUuid("SYMBOL1", "uuid-1")
-    cacheService.cacheUuid("SYMBOL2", "uuid-2")
+    val suffix = System.nanoTime()
+    val symbol1 = "SYMBOL1:$suffix"
+    val symbol2 = "SYMBOL2:$suffix"
 
-    val cache = cacheManager.getCache(LIGHTYEAR_UUID_CACHE)
-    expect(cache?.get("SYMBOL1", String::class.java)).toEqual("uuid-1")
-    expect(cache?.get("SYMBOL2", String::class.java)).toEqual("uuid-2")
+    cacheService.cacheUuid(symbol1, "uuid-1")
+    cacheService.cacheUuid(symbol2, "uuid-2")
+
+    expect(cacheService.getCachedUuid(symbol1)).toEqual("uuid-1")
+    expect(cacheService.getCachedUuid(symbol2)).toEqual("uuid-2")
   }
 }

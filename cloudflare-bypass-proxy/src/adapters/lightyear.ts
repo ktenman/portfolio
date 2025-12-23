@@ -8,6 +8,8 @@ import { execCurl } from '../utils/curl-executor'
 
 const LIGHTYEAR_FETCH_URL = 'https://lightyear.com/fetch'
 const LIGHTYEAR_BATCH_URL = 'https://api.lightyear.com/v1/instrument/batch'
+const CHROME_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 
 async function fetchHandler(req: Request, res: Response): Promise<void> {
   const path = validateParam(req, res, 'path', 'query')
@@ -24,8 +26,7 @@ async function fetchHandler(req: Request, res: Response): Promise<void> {
     maxBuffer: 1024 * 1024,
     responseType: ResponseType.JSON,
     headers: {
-      'user-agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+      'user-agent': CHROME_USER_AGENT,
       referer: 'https://lightyear.com/',
       accept: '*/*',
       'accept-language': 'en-US,en;q=0.9',
@@ -54,8 +55,7 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
         'Accept-Language': 'en',
         Origin: 'https://lightyear.com',
         Referer: 'https://lightyear.com/',
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+        'User-Agent': CHROME_USER_AGENT,
       },
       body: JSON.stringify(instrumentIds),
       timeout: 30000,
@@ -107,7 +107,7 @@ interface SearchResult {
   }>
 }
 
-// Exchange mapping must match LightyearScrapingProperties.EXCHANGE_MAPPING in Kotlin
+// Keep in sync with LightyearScrapingProperties.EXCHANGE_MAPPING in Kotlin
 const EXCHANGE_MAPPING: Record<string, string> = {
   GER: 'XETRA',
   AEX: 'AMS',
@@ -137,8 +137,7 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
       timeout: 15000,
       maxBuffer: 1024 * 1024,
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+        'User-Agent': CHROME_USER_AGENT,
         Accept: '*/*',
         'Accept-Language': 'en',
         Referer: 'https://lightyear.com/',
