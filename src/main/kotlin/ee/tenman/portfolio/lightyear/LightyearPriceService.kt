@@ -69,9 +69,7 @@ class LightyearPriceService(
     }
   }
 
-  private fun fetchInstrumentsBatch(
-    holdings: List<LightyearHoldingResponse>,
-  ): Map<String, LightyearInstrumentResponse> {
+  private fun fetchInstrumentsBatch(holdings: List<LightyearHoldingResponse>): Map<String, LightyearInstrumentResponse> {
     val instrumentIds = holdings.mapNotNull { it.instrumentId }.distinct()
     if (instrumentIds.isEmpty()) return emptyMap()
 

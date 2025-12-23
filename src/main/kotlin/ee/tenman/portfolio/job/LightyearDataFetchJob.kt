@@ -70,7 +70,10 @@ class LightyearDataFetchJob(
     return results.joinToString("\n")
   }
 
-  private fun processEtf(etfConfig: LightyearScrapingProperties.EtfConfig, today: LocalDate): String {
+  private fun processEtf(
+    etfConfig: LightyearScrapingProperties.EtfConfig,
+    today: LocalDate,
+  ): String {
     if (etfConfig.skipHoldings) {
       val msg = "Holdings fetch disabled for ${etfConfig.symbol} (using WisdomTree job instead)"
       log.info(msg)
