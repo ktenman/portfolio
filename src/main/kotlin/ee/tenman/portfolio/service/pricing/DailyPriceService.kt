@@ -162,7 +162,8 @@ class DailyPriceService(
       dailyPrice.entryDate,
     )
     if (existing != null) return false
-    dailyPriceRepository.save(dailyPrice)
-    return true
+    return runCatching { dailyPriceRepository.save(dailyPrice) }
+      .map { true }
+      .getOrDefault(false)
   }
 }

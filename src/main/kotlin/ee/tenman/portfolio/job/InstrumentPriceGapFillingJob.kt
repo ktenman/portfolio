@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 
 @ScheduledJob
 class InstrumentPriceGapFillingJob(
@@ -25,9 +26,7 @@ class InstrumentPriceGapFillingJob(
   private val clock: Clock = Clock.systemDefaultZone(),
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
-
-  @Volatile
-  private var isExecuting = false
+  private val isExecuting = AtomicBoolean(false)
 
   @PostConstruct
   fun scheduleInitialRun() {
@@ -38,7 +37,7 @@ class InstrumentPriceGapFillingJob(
     )
   }
 
-  @Scheduled(cron = "0 10 6 * * *")
+  @Scheduled(cron = "0 10 6 * * *", zone = "Europe/Tallinn")
   fun runDailyJob() {
     log.info("Running daily instrument price gap filling job at 06:10")
     runScheduledJob()
@@ -50,17 +49,16 @@ class InstrumentPriceGapFillingJob(
   }
 
   override fun execute() {
-    if (isExecuting) {
+    if (!isExecuting.compareAndSet(false, true)) {
       log.warn("Instrument price gap filling job is already running, skipping")
       return
     }
-    isExecuting = true
     try {
       log.info("Starting instrument price gap filling execution")
       val instruments =
         instrumentService
-        .getAllInstrumentsWithoutFiltering()
-        .filter { it.providerName == ProviderName.LIGHTYEAR }
+          .getAllInstrumentsWithoutFiltering()
+          .filter { it.providerName == ProviderName.LIGHTYEAR }
       if (instruments.isEmpty()) {
         log.info("No LIGHTYEAR instruments found to fill gaps")
         return
@@ -73,7 +71,7 @@ class InstrumentPriceGapFillingJob(
       }
       log.info("Instrument price gap filling completed: {} prices saved", totalSaved)
     } finally {
-      isExecuting = false
+      isExecuting.set(false)
     }
   }
 
