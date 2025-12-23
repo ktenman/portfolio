@@ -6,4 +6,9 @@ data class LightyearInstrumentResponse(
   val name: String,
   val exchange: String?,
   val logo: String?,
+  val summary: LightyearInstrumentSummary? = null,
+)
+
+data class LightyearInstrumentSummary(
+  val sector: String? = null,
 )

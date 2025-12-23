@@ -2,6 +2,8 @@ package ee.tenman.portfolio.lightyear
 
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 
 @FeignClient(
@@ -28,4 +30,9 @@ interface LightyearPriceClient {
   fun getInstrument(
     @RequestParam path: String,
   ): LightyearInstrumentResponse
+
+  @PostMapping("/lightyear/batch")
+  fun getInstrumentBatch(
+    @RequestBody instrumentIds: List<String>,
+  ): List<LightyearInstrumentResponse>
 }

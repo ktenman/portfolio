@@ -54,14 +54,14 @@ class LightyearPriceService(
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchHoldingsAsDto(symbol: String): List<HoldingData> {
     val apiHoldings = fetchHoldingsRaw(symbol)
-    val instrumentMap = fetchInstrumentsSequentially(apiHoldings)
+    val instrumentMap = fetchInstrumentsBatch(apiHoldings)
 
     return apiHoldings.mapIndexed { index, holding ->
       val instrument = holding.instrumentId?.let { instrumentMap[it] }
       HoldingData(
         name = holding.name,
         ticker = instrument?.symbol,
-        sector = null,
+        sector = instrument?.summary?.sector,
         weight = BigDecimal.valueOf(holding.value),
         rank = index + 1,
         logoUrl = instrument?.logo,
@@ -69,24 +69,22 @@ class LightyearPriceService(
     }
   }
 
-  private fun fetchInstrumentsSequentially(
+  private fun fetchInstrumentsBatch(
     holdings: List<LightyearHoldingResponse>,
   ): Map<String, LightyearInstrumentResponse> {
     val instrumentIds = holdings.mapNotNull { it.instrumentId }.distinct()
     if (instrumentIds.isEmpty()) return emptyMap()
 
-    log.info("Fetching {} instrument details sequentially", instrumentIds.size)
+    log.info("Fetching {} instrument details in batches", instrumentIds.size)
     val cache = mutableMapOf<String, LightyearInstrumentResponse>()
+    val batchSize = 100
 
-    instrumentIds.forEachIndexed { index, instrumentId ->
+    instrumentIds.chunked(batchSize).forEachIndexed { batchIndex, batch ->
       runCatching {
-        val path = "/v1/instrument/$instrumentId"
-        lightyearPriceClient.getInstrument(path).also { cache[instrumentId] = it }
-      }.onFailure { log.debug("Failed to fetch instrument {}: {}", instrumentId, it.message) }
-
-      if ((index + 1) % 100 == 0) {
-        log.info("Fetched {}/{} instrument details", index + 1, instrumentIds.size)
-      }
+        val instruments = lightyearPriceClient.getInstrumentBatch(batch)
+        instruments.forEach { cache[it.id] = it }
+        log.info("Fetched batch {}/{} ({} instruments)", batchIndex + 1, (instrumentIds.size + batchSize - 1) / batchSize, instruments.size)
+      }.onFailure { log.warn("Failed to fetch batch {}: {}", batchIndex + 1, it.message) }
     }
 
     log.info("Successfully fetched {} of {} instrument details", cache.size, instrumentIds.size)
