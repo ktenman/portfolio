@@ -59,5 +59,4 @@ class LightyearUuidCacheServiceTest {
     expect(cache?.get("SYMBOL1", String::class.java)).toEqual("uuid-1")
     expect(cache?.get("SYMBOL2", String::class.java)).toEqual("uuid-2")
   }
-
 }

@@ -62,11 +62,15 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
       maxBuffer: 5 * 1024 * 1024,
     })
 
-    const data = JSON.parse(result)
+    const data: unknown = JSON.parse(result)
     const duration = Date.now() - startTime
-    const resultCount = Array.isArray(data) ? data.length : 0
+    if (!Array.isArray(data)) {
+      logger.error(`Batch fetch returned non-array response after ${duration}ms`)
+      res.status(502).json({ error: 'Invalid response format from Lightyear API' })
+      return
+    }
     logger.info(
-      `Batch fetch completed: ${resultCount}/${instrumentIds.length} instruments returned in ${duration}ms`
+      `Batch fetch completed: ${data.length}/${instrumentIds.length} instruments returned in ${duration}ms`
     )
     res.json(data)
   } catch (error) {
@@ -103,6 +107,7 @@ interface SearchResult {
   }>
 }
 
+// Exchange mapping must match LightyearScrapingProperties.EXCHANGE_MAPPING in Kotlin
 const EXCHANGE_MAPPING: Record<string, string> = {
   GER: 'XETRA',
   AEX: 'AMS',

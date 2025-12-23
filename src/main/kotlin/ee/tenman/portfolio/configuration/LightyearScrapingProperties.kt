@@ -30,4 +30,16 @@ data class LightyearScrapingProperties(
     val matchingKey = allInstruments.keys.find { it.startsWith("$symbol:") }
     return matchingKey?.let { allInstruments[it] }
   }
+
+  fun convertExchangeToLightyear(exchange: String): String = EXCHANGE_MAPPING[exchange.uppercase()] ?: exchange
+
+  companion object {
+    val EXCHANGE_MAPPING: Map<String, String> =
+      mapOf(
+      "GER" to "XETRA",
+      "AEX" to "AMS",
+      "MIL" to "MIL",
+      "LON" to "LSE",
+    )
+  }
 }

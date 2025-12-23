@@ -31,7 +31,16 @@ class LightyearPriceServiceTest {
   fun setUp() {
     every { uuidCacheService.getCachedUuid(any()) } returns null
     every { uuidCacheService.cacheUuid(any(), any()) } answers { secondArg() }
+    setupExchangeMapping()
     service = LightyearPriceService(lightyearPriceClient, properties, instrumentRepository, instrumentService, uuidCacheService)
+  }
+
+  private fun setupExchangeMapping() {
+    every { properties.convertExchangeToLightyear("GER") } returns "XETRA"
+    every { properties.convertExchangeToLightyear("AEX") } returns "AMS"
+    every { properties.convertExchangeToLightyear("MIL") } returns "MIL"
+    every { properties.convertExchangeToLightyear("LON") } returns "LSE"
+    every { properties.convertExchangeToLightyear(match { it !in listOf("GER", "AEX", "MIL", "LON") }) } answers { firstArg() }
   }
 
   @Test

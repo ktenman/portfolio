@@ -245,7 +245,10 @@ class ArchitectureTest {
 
   private fun callSystemTimingMethods(): ArchCondition<JavaClass> =
     object : ArchCondition<JavaClass>("call System.nanoTime() or System.currentTimeMillis()") {
-      override fun check(javaClass: JavaClass, events: ConditionEvents) {
+      override fun check(
+        javaClass: JavaClass,
+        events: ConditionEvents,
+      ) {
         javaClass.methodCallsFromSelf.forEach { call ->
           val targetOwner = call.targetOwner.name
           val targetName = call.target.name

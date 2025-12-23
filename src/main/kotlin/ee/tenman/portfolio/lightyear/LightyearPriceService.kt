@@ -153,13 +153,7 @@ class LightyearPriceService(
     if (parts.size < 2) return symbol
     val ticker = parts[0]
     val exchange = parts[1]
-    val lightyearExchange =
-      when (exchange.uppercase()) {
-      "GER" -> "XETRA"
-      "AEX" -> "AMS"
-      "MIL" -> "MIL"
-      else -> exchange
-    }
+    val lightyearExchange = properties.convertExchangeToLightyear(exchange)
     return "$ticker:$lightyearExchange"
   }
 }
