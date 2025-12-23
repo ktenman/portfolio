@@ -150,4 +150,19 @@ class DailyPriceService(
       .divide(previousPrice, 10, RoundingMode.HALF_UP)
       .multiply(BigDecimal(100))
       .toDouble()
+
+  @Transactional(readOnly = true)
+  fun findAllExistingDates(instrument: Instrument): Set<LocalDate> = dailyPriceRepository.findAllEntryDatesByInstrument(instrument)
+
+  @Transactional
+  fun saveDailyPriceIfNotExists(dailyPrice: DailyPrice): Boolean {
+    val existing =
+      dailyPriceRepository.findByInstrumentAndEntryDate(
+      dailyPrice.instrument,
+      dailyPrice.entryDate,
+    )
+    if (existing != null) return false
+    dailyPriceRepository.save(dailyPrice)
+    return true
+  }
 }
