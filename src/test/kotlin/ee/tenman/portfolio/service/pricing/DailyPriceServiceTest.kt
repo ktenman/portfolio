@@ -503,6 +503,50 @@ class DailyPriceServiceTest {
     expect(result.changePercent).toEqual(-20.0)
   }
 
+  @Test
+  fun `should findAllExistingDates returns set of dates for instrument`() {
+    val expectedDates = setOf(testDate, testDate.minusDays(1), testDate.minusDays(2))
+    every { dailyPriceRepository.findAllEntryDatesByInstrument(testInstrument) } returns expectedDates
+
+    val result = dailyPriceService.findAllExistingDates(testInstrument)
+
+    expect(result).toEqual(expectedDates)
+    verify { dailyPriceRepository.findAllEntryDatesByInstrument(testInstrument) }
+  }
+
+  @Test
+  fun `should findAllExistingDates returns empty set when no prices exist`() {
+    every { dailyPriceRepository.findAllEntryDatesByInstrument(testInstrument) } returns emptySet()
+
+    val result = dailyPriceService.findAllExistingDates(testInstrument)
+
+    expect(result).toEqual(emptySet())
+  }
+
+  @Test
+  fun `should saveDailyPriceIfNotExists saves and returns true when price does not exist`() {
+    val newDailyPrice = createDailyPrice(closePrice = BigDecimal("100.00"))
+    every { dailyPriceRepository.findByInstrumentAndEntryDate(testInstrument, testDate) } returns null
+    every { dailyPriceRepository.save(newDailyPrice) } returns newDailyPrice
+
+    val result = dailyPriceService.saveDailyPriceIfNotExists(newDailyPrice)
+
+    expect(result).toEqual(true)
+    verify { dailyPriceRepository.save(newDailyPrice) }
+  }
+
+  @Test
+  fun `should saveDailyPriceIfNotExists returns false when price already exists`() {
+    val existingPrice = createDailyPrice(closePrice = BigDecimal("100.00"))
+    val newDailyPrice = createDailyPrice(closePrice = BigDecimal("110.00"))
+    every { dailyPriceRepository.findByInstrumentAndEntryDate(testInstrument, testDate) } returns existingPrice
+
+    val result = dailyPriceService.saveDailyPriceIfNotExists(newDailyPrice)
+
+    expect(result).toEqual(false)
+    verify(exactly = 0) { dailyPriceRepository.save(any()) }
+  }
+
   private fun createDailyPrice(
     closePrice: BigDecimal,
     date: LocalDate = testDate,
