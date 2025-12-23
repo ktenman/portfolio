@@ -30,6 +30,20 @@ class BinanceService(
     return tickerPrice.price.toBigDecimal()
   }
 
+  fun getDailyPricesIncremental(
+    symbol: String,
+    lastStoredDate: LocalDate?,
+  ): SortedMap<LocalDate, DailyPriceData> {
+    val now = LocalDate.now(clock)
+    val startDate = lastStoredDate?.plusDays(1) ?: LocalDate.of(2015, 1, 1)
+    if (!startDate.isBefore(now)) {
+      log.info("No new data to fetch for $symbol, already up to date")
+      return TreeMap()
+    }
+    log.info("Fetching $symbol data from $startDate to $now (incremental)")
+    return getDailyPrices(symbol, startDate, now.plusDays(1))
+  }
+
   fun getDailyPricesAsync(symbol: String): SortedMap<LocalDate, DailyPriceData> =
     runBlocking {
       val now = LocalDate.now(clock)
