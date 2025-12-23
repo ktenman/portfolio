@@ -77,7 +77,7 @@ class InstrumentPriceGapFillingJob(
 
   private fun fillGapsForInstrument(instrument: Instrument): Int {
     try {
-      log.info("Filling price gaps for instrument: {}", instrument.symbol)
+      log.debug("Filling price gaps for instrument: {}", instrument.symbol)
       val existingDates = dailyPriceService.findAllExistingDates(instrument)
       val ftData = ftHistoricalPricesService.fetchPrices(instrument.symbol)
       if (ftData.isEmpty()) {
@@ -103,7 +103,7 @@ class InstrumentPriceGapFillingJob(
         }
       }
       if (savedCount > 0) {
-        log.info("Saved {} new FT prices for instrument {}", savedCount, instrument.symbol)
+        log.debug("Saved {} new FT prices for instrument {}", savedCount, instrument.symbol)
       }
       return savedCount
     } catch (e: Exception) {
