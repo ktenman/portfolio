@@ -73,7 +73,7 @@ export const lightyearAdapter: ServiceAdapter = {
   path: '/lightyear/fetch',
   method: 'GET',
   serviceName: 'Lightyear',
-  middleware: [createRateLimiter({ max: 240 })],
+  middleware: [createRateLimiter({ max: 120 })],
   handler: fetchHandler,
 }
 
@@ -81,7 +81,7 @@ export const lightyearBatchAdapter: ServiceAdapter = {
   path: '/lightyear/batch',
   method: 'POST',
   serviceName: 'Lightyear Batch',
-  middleware: [createRateLimiter({ max: 60 })],
+  middleware: [createRateLimiter({ max: 120 })],
   handler: batchHandler,
 }
 
@@ -172,6 +172,6 @@ export const lightyearLookupAdapter: ServiceAdapter = {
   path: '/lightyear/lookup',
   method: 'GET',
   serviceName: 'Lightyear Lookup',
-  middleware: [createRateLimiter({ max: 30 })],
+  middleware: [createRateLimiter({ max: 120 })],
   handler: lookupUuidHandler,
 }

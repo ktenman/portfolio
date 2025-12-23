@@ -16,9 +16,9 @@ class LightyearPriceService(
   private val properties: LightyearScrapingProperties,
   private val instrumentRepository: InstrumentRepository,
   private val instrumentService: InstrumentService,
+  private val uuidCacheService: LightyearUuidCacheService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
-  private val uuidCache = mutableMapOf<String, String>()
 
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchCurrentPrices(): Map<String, BigDecimal> {
@@ -70,13 +70,13 @@ class LightyearPriceService(
     val batchSize = 100
     val totalBatches = (instrumentIds.size + batchSize - 1) / batchSize
     instrumentIds.chunked(batchSize).forEachIndexed { batchIndex, batch ->
-      fetchBatchWithRetry(batch, batchIndex + 1, totalBatches)?.forEach { cache[it.id] = it }
+      fetchInstrumentBatchWithRetry(batch, batchIndex + 1, totalBatches)?.forEach { cache[it.id] = it }
     }
     log.info("Successfully fetched {} of {} instrument details", cache.size, instrumentIds.size)
     return cache
   }
 
-  private fun fetchBatchWithRetry(
+  private fun fetchInstrumentBatchWithRetry(
     batch: List<String>,
     batchNumber: Int,
     totalBatches: Int,
@@ -116,8 +116,8 @@ class LightyearPriceService(
 
   fun resolveUuid(symbol: String): String? =
     properties.findUuidBySymbol(symbol)
-      ?: uuidCache[symbol]
-      ?: findUuidFromDatabase(symbol)?.also { uuidCache[symbol] = it }
+      ?: uuidCacheService.getCachedUuid(symbol)
+      ?: findUuidFromDatabase(symbol)?.also { uuidCacheService.cacheUuid(symbol, it) }
       ?: lookupUuidFromWeb(symbol)
 
   private fun findUuidFromDatabase(symbol: String): String? = instrumentRepository.findBySymbol(symbol).orElse(null)?.providerExternalId
@@ -127,7 +127,7 @@ class LightyearPriceService(
     log.info("Looking up UUID from web for symbol: {} (lookup: {})", symbol, lookupSymbol)
     return runCatching {
       val response = lightyearPriceClient.lookupUuid(lookupSymbol)
-      uuidCache[symbol] = response.uuid
+      uuidCacheService.cacheUuid(symbol, response.uuid)
       saveUuidToDatabase(symbol, response.uuid)
       log.info("Found UUID {} for symbol {} from web lookup", response.uuid, symbol)
       response.uuid

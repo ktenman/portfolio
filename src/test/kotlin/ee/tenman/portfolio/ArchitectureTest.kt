@@ -22,8 +22,10 @@ import jakarta.persistence.Entity
 import org.slf4j.Logger
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Lazy
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
@@ -227,6 +229,13 @@ class ArchitectureTest {
       .because("Constructor injection provides better testability and immutability")
 
   @ArchTest
+  val `no lazy injection should be used as it hides design issues`: ArchRule =
+    noFields()
+      .should()
+      .beAnnotatedWith(Lazy::class.java)
+      .because("@Lazy hides circular dependencies and makes code harder to test")
+
+  @ArchTest
   val `loggers should be private final`: ArchRule =
     fields()
       .that()
@@ -289,16 +298,18 @@ class ArchitectureTest {
       .because("JPA entities are part of the domain model")
 
   @ArchTest
-  val `cache annotations should only be on service methods`: ArchRule =
+  val `cache annotations should only be on service or infrastructure methods`: ArchRule =
     methods()
       .that()
       .areAnnotatedWith(Cacheable::class.java)
       .or()
       .areAnnotatedWith(CacheEvict::class.java)
+      .or()
+      .areAnnotatedWith(CachePut::class.java)
       .should()
       .beDeclaredInClassesThat()
-      .resideInAPackage("..service..")
-      .because("Caching is a service layer concern")
+      .resideInAnyPackage("..service..", "..lightyear..", "..binance..", "..ft..", "..openrouter..")
+      .because("Caching is a service or infrastructure layer concern")
 
   @ArchTest
   val `interfaces should not have I prefix`: ArchRule =

@@ -24,11 +24,14 @@ class LightyearPriceServiceTest {
   private val properties = mockk<LightyearScrapingProperties>()
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val instrumentService = mockk<InstrumentService>()
+  private val uuidCacheService = mockk<LightyearUuidCacheService>()
   private lateinit var service: LightyearPriceService
 
   @BeforeEach
   fun setUp() {
-    service = LightyearPriceService(lightyearPriceClient, properties, instrumentRepository, instrumentService)
+    every { uuidCacheService.getCachedUuid(any()) } returns null
+    every { uuidCacheService.cacheUuid(any(), any()) } answers { secondArg() }
+    service = LightyearPriceService(lightyearPriceClient, properties, instrumentRepository, instrumentService, uuidCacheService)
   }
 
   @Test
@@ -296,11 +299,13 @@ class LightyearPriceServiceTest {
     expect(result).toEqual("web-uuid-123")
     verify { lightyearPriceClient.lookupUuid("NEWETF:XETRA") }
     verify { instrumentService.updateProviderExternalId("NEWETF:GER:EUR", "web-uuid-123") }
+    verify { uuidCacheService.cacheUuid("NEWETF:GER:EUR", "web-uuid-123") }
   }
 
   @Test
   fun `should use cached UUID on subsequent calls`() {
     every { properties.findUuidBySymbol("CACHED:GER:EUR") } returns null
+    every { uuidCacheService.getCachedUuid("CACHED:GER:EUR") } returns null andThen "cached-uuid"
     every { instrumentRepository.findBySymbol("CACHED:GER:EUR") } returns Optional.empty()
     every { lightyearPriceClient.lookupUuid("CACHED:XETRA") } returns LightyearUuidLookupResponse("CACHED:XETRA", "cached-uuid")
     every { instrumentService.updateProviderExternalId("CACHED:GER:EUR", "cached-uuid") } just runs
@@ -310,6 +315,7 @@ class LightyearPriceServiceTest {
 
     expect(result).toEqual("cached-uuid")
     verify(exactly = 1) { lightyearPriceClient.lookupUuid("CACHED:XETRA") }
+    verify(exactly = 1) { uuidCacheService.cacheUuid("CACHED:GER:EUR", "cached-uuid") }
   }
 
   @Test
