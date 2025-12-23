@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.lightyear
 
+import ee.tenman.portfolio.dto.HoldingData
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
@@ -48,5 +49,67 @@ class LightyearPriceService(
 
     log.info("Successfully fetched prices for ${prices.size}/${LIGHTYEAR_INSTRUMENTS.size} instruments")
     return prices
+  }
+
+  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  fun fetchHoldingsAsDto(symbol: String): List<HoldingData> {
+    val apiHoldings = fetchHoldingsRaw(symbol)
+    val instrumentMap = fetchInstrumentsSequentially(apiHoldings)
+
+    return apiHoldings.mapIndexed { index, holding ->
+      val instrument = holding.instrumentId?.let { instrumentMap[it] }
+      HoldingData(
+        name = holding.name,
+        ticker = instrument?.symbol,
+        sector = null,
+        weight = BigDecimal.valueOf(holding.value),
+        rank = index + 1,
+        logoUrl = instrument?.logo,
+      )
+    }
+  }
+
+  private fun fetchInstrumentsSequentially(
+    holdings: List<LightyearHoldingResponse>,
+  ): Map<String, LightyearInstrumentResponse> {
+    val instrumentIds = holdings.mapNotNull { it.instrumentId }.distinct()
+    if (instrumentIds.isEmpty()) return emptyMap()
+
+    log.info("Fetching {} instrument details sequentially", instrumentIds.size)
+    val cache = mutableMapOf<String, LightyearInstrumentResponse>()
+
+    instrumentIds.forEachIndexed { index, instrumentId ->
+      runCatching {
+        val path = "/v1/instrument/$instrumentId"
+        lightyearPriceClient.getInstrument(path).also { cache[instrumentId] = it }
+      }.onFailure { log.debug("Failed to fetch instrument {}: {}", instrumentId, it.message) }
+
+      if ((index + 1) % 100 == 0) {
+        log.info("Fetched {}/{} instrument details", index + 1, instrumentIds.size)
+      }
+    }
+
+    log.info("Successfully fetched {} of {} instrument details", cache.size, instrumentIds.size)
+    return cache
+  }
+
+  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  fun fetchHoldingsRaw(symbol: String): List<LightyearHoldingResponse> {
+    val uuid = findUuidBySymbol(symbol)
+    if (uuid == null) {
+      log.warn("No UUID mapping found for symbol: {}", symbol)
+      return emptyList()
+    }
+    log.info("Fetching holdings for {} ({})", symbol, uuid)
+    val path = "/v1/market-data/$uuid/fund-info/holdings"
+    val holdings = lightyearPriceClient.getHoldings(path)
+    log.info("Fetched {} holdings for {}", holdings.size, symbol)
+    return holdings
+  }
+
+  private fun findUuidBySymbol(symbol: String): String? {
+    LIGHTYEAR_INSTRUMENTS[symbol]?.let { return it }
+    val matchingKey = LIGHTYEAR_INSTRUMENTS.keys.find { it.startsWith("$symbol:") }
+    return matchingKey?.let { LIGHTYEAR_INSTRUMENTS[it] }
   }
 }
