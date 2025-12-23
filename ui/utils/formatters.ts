@@ -1,6 +1,30 @@
 import { styleClasses } from './style-classes'
 import type { InstrumentDto } from '../models/generated/domain-models'
 
+const SUPERSCRIPT_DIGITS: Record<string, string> = {
+  '-': '⁻',
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+}
+
+export const formatScientific = (value: number, suffix: string = ''): string => {
+  const exponent = Math.floor(Math.log10(Math.abs(value)))
+  const mantissa = value / Math.pow(10, exponent)
+  const superscriptExp = String(exponent)
+    .split('')
+    .map(c => SUPERSCRIPT_DIGITS[c] || c)
+    .join('')
+  return `${mantissa.toFixed(2)} × 10${superscriptExp}${suffix}`
+}
+
 const ACRONYMS = [
   'ETF',
   'FT',
@@ -170,9 +194,7 @@ export const formatQuantity = (value: number | string | undefined | null): strin
   if (numValue === 0) return '0.00'
 
   if (Math.abs(numValue) < 0.01) {
-    const exponent = Math.floor(Math.log10(Math.abs(numValue)))
-    const mantissa = numValue / Math.pow(10, exponent)
-    return `${mantissa.toFixed(2)} × 10^${exponent}`
+    return formatScientific(numValue)
   }
 
   return numValue.toFixed(2)
