@@ -21,4 +21,9 @@ interface BinanceClient {
     @RequestParam endTime: Long? = null,
     @RequestParam limit: Int? = null,
   ): List<List<String>>
+
+  @GetMapping("/api/v3/ticker/price")
+  fun getTickerPrice(
+    @RequestParam symbol: String,
+  ): TickerPrice
 }
