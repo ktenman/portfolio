@@ -1,5 +1,5 @@
 /* tslint:disable */
- 
+/* eslint-disable */
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -23,6 +23,7 @@ export interface InstrumentDto {
     platforms: string[];
     priceChangeAmount: number | null;
     priceChangePercent: number | null;
+    ter: number | null;
     xirrAnnualReturn: number | null;
 }
 

@@ -32,6 +32,13 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
   )
 
   @Modifying(clearAutomatically = true)
+  @Query("UPDATE Instrument i SET i.ter = :ter WHERE i.id = :id")
+  fun updateTer(
+    id: Long,
+    ter: BigDecimal?,
+  )
+
+  @Modifying(clearAutomatically = true)
   @Query("UPDATE Instrument i SET i.xirrAnnualReturn = :xirr WHERE i.id = :id")
   fun updateXirrAnnualReturn(
     id: Long,

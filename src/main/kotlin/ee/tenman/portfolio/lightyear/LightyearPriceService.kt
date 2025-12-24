@@ -114,6 +114,23 @@ class LightyearPriceService(
     return holdings
   }
 
+  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  fun fetchFundInfo(symbol: String): BigDecimal? {
+    val uuid = resolveUuid(symbol)
+    if (uuid == null) {
+      log.warn("No UUID found for symbol: {}", symbol)
+      return null
+    }
+    return runCatching {
+      val path = "/v1/market-data/$uuid/fund-info"
+      val response = lightyearPriceClient.getFundInfo(path)
+      log.debug("Fetched TER for {}: {}", symbol, response.ter)
+      response.ter
+    }.onFailure { e ->
+      log.warn("Failed to fetch fund info for symbol: {}", symbol, e)
+    }.getOrNull()
+  }
+
   fun resolveUuid(symbol: String): String? =
     properties.findUuidBySymbol(symbol)
       ?: uuidCacheService.getCachedUuid(symbol)

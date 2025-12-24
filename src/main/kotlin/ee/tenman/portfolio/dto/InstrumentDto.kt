@@ -31,6 +31,7 @@ data class InstrumentDto(
   val platforms: Set<String> = emptySet(),
   val priceChangeAmount: BigDecimal? = null,
   val priceChangePercent: Double? = null,
+  val ter: BigDecimal? = null,
   val xirrAnnualReturn: BigDecimal? = null,
 ) {
   fun toEntity() =
@@ -65,6 +66,7 @@ data class InstrumentDto(
         platforms = emptySet(),
         priceChangeAmount = null,
         priceChangePercent = null,
+        ter = instrument.ter,
         xirrAnnualReturn = instrument.xirrAnnualReturn,
       )
 
@@ -87,6 +89,7 @@ data class InstrumentDto(
         platforms = snapshot.platforms.map { it.name }.toSet(),
         priceChangeAmount = snapshot.priceChangeAmount,
         priceChangePercent = snapshot.priceChangePercent,
+        ter = snapshot.instrument.ter,
         xirrAnnualReturn = snapshot.instrument.xirrAnnualReturn,
       )
   }

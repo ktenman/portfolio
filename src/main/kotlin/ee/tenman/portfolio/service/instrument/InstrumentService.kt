@@ -93,6 +93,14 @@ class InstrumentService(
   }
 
   @Transactional
+  fun updateTer(
+    instrumentId: Long,
+    ter: BigDecimal?,
+  ) {
+    instrumentRepository.updateTer(instrumentId, ter)
+  }
+
+  @Transactional
   fun updateXirrAnnualReturn(
     instrumentId: Long,
     xirr: BigDecimal?,
