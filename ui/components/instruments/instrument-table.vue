@@ -46,7 +46,7 @@
             {{ formatPercentageFromDecimal(animatedTotalXirr) }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap">-</td>
+        <td class="fw-bold text-nowrap">{{ formatAnnualReturn(totalAnnualReturn) }}</td>
         <td class="fw-bold text-nowrap">100.00%</td>
         <td class="fw-bold text-nowrap">{{ formatTer(totalTer) }}</td>
         <td></td>
@@ -344,6 +344,7 @@ const {
   totalChangeAmount,
   totalChangePercent,
   totalTer,
+  totalAnnualReturn,
 } = useInstrumentTotals(instrumentsRef)
 
 const totalXirr = computed(() => props.portfolioXirr)
