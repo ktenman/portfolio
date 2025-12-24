@@ -362,7 +362,7 @@ const getPortfolioWeight = (instrument: InstrumentDto): string => {
 }
 
 const formatTer = (ter: number | null | undefined): string => {
-  if (ter === null || ter === undefined) return '-'
+  if (ter === null || ter === undefined) return '0.00%'
   return `${ter.toFixed(2)}%`
 }
 </script>
