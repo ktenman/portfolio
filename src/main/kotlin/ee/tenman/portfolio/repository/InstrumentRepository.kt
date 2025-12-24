@@ -30,4 +30,11 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
     symbol: String,
     providerExternalId: String,
   )
+
+  @Modifying(clearAutomatically = true)
+  @Query("UPDATE Instrument i SET i.xirrAnnualReturn = :xirr WHERE i.id = :id")
+  fun updateXirrAnnualReturn(
+    id: Long,
+    xirr: BigDecimal?,
+  )
 }

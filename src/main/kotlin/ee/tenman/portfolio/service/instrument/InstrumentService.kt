@@ -91,4 +91,12 @@ class InstrumentService(
   ) {
     instrumentRepository.updateProviderExternalId(symbol, providerExternalId)
   }
+
+  @Transactional
+  fun updateXirrAnnualReturn(
+    instrumentId: Long,
+    xirr: BigDecimal?,
+  ) {
+    instrumentRepository.updateXirrAnnualReturn(instrumentId, xirr)
+  }
 }
