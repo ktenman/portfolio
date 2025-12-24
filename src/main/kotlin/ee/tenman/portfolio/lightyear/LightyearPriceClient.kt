@@ -40,4 +40,9 @@ interface LightyearPriceClient {
   fun lookupUuid(
     @RequestParam symbol: String,
   ): LightyearUuidLookupResponse
+
+  @GetMapping("/lightyear/fetch")
+  fun getFundInfo(
+    @RequestParam path: String,
+  ): LightyearFundInfoResponse
 }

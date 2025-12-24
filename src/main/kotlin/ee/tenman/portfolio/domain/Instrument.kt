@@ -25,4 +25,6 @@ class Instrument(
   var providerName: ProviderName = ProviderName.FT,
   @Column(name = "provider_external_id", nullable = true)
   var providerExternalId: String? = null,
+  @Column(name = "ter", nullable = true)
+  var ter: BigDecimal? = null,
 ) : BaseEntity()
