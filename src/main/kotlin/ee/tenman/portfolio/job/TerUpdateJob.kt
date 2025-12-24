@@ -6,9 +6,11 @@ import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 
 @ScheduledJob
 class TerUpdateJob(
@@ -18,6 +20,14 @@ class TerUpdateJob(
   private val instrumentService: InstrumentService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
+
+  @PostConstruct
+  fun onStartup() {
+    CompletableFuture.runAsync {
+      log.info("Running TER update job on startup")
+      runJob()
+    }
+  }
 
   @Scheduled(cron = "0 0 3 * * SUN")
   fun runJob() {
