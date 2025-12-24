@@ -46,6 +46,7 @@
             {{ formatPercentageFromDecimal(animatedTotalXirr) }}
           </span>
         </td>
+        <td class="fw-bold text-nowrap">-</td>
         <td class="fw-bold text-nowrap">100.00%</td>
         <td class="fw-bold text-nowrap">{{ formatTer(totalTer) }}</td>
         <td></td>
@@ -257,6 +258,12 @@
       </span>
     </template>
 
+    <template #cell-xirrAnnualReturn="{ item }">
+      <span class="text-nowrap">
+        {{ formatAnnualReturn(item.xirrAnnualReturn) }}
+      </span>
+    </template>
+
     <template #cell-portfolioWeight="{ item }">
       <span class="text-nowrap">{{ getPortfolioWeight(item) }}</span>
     </template>
@@ -369,6 +376,11 @@ const getPortfolioWeight = (instrument: InstrumentDto): string => {
 const formatTer = (ter: number | null | undefined): string => {
   if (ter === null || ter === undefined) return '-'
   return `${ter.toFixed(2)}%`
+}
+
+const formatAnnualReturn = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return '-'
+  return formatPercentageFromDecimal(value)
 }
 </script>
 
