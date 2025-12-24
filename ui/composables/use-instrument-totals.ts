@@ -8,6 +8,7 @@ export interface UseInstrumentTotalsReturn {
   totalUnrealizedProfit: ComputedRef<number>
   totalChangeAmount: ComputedRef<number>
   totalChangePercent: ComputedRef<number>
+  totalTer: ComputedRef<number>
 }
 
 export function useInstrumentTotals(instruments: Ref<InstrumentDto[]>): UseInstrumentTotalsReturn {
@@ -47,6 +48,15 @@ export function useInstrumentTotals(instruments: Ref<InstrumentDto[]>): UseInstr
     return (totalChangeAmount.value / previousTotalValue) * 100
   })
 
+  const totalTer = computed(() => {
+    if (totalValue.value === 0) return 0
+    return instruments.value.reduce((sum, instrument) => {
+      const weight = (instrument.currentValue || 0) / totalValue.value
+      const ter = instrument.ter ?? 0
+      return sum + ter * weight
+    }, 0)
+  })
+
   return {
     totalInvested,
     totalValue,
@@ -54,5 +64,6 @@ export function useInstrumentTotals(instruments: Ref<InstrumentDto[]>): UseInstr
     totalUnrealizedProfit,
     totalChangeAmount,
     totalChangePercent,
+    totalTer,
   }
 }

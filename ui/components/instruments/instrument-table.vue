@@ -47,7 +47,7 @@
           </span>
         </td>
         <td class="fw-bold text-nowrap">100.00%</td>
-        <td></td>
+        <td class="fw-bold text-nowrap">{{ formatTer(totalTer) }}</td>
         <td></td>
       </tr>
     </template>
@@ -171,6 +171,10 @@
             <span class="total-value" :class="getTotalsChangeClass('totalXirr')">
               {{ formatPercentageFromDecimal(animatedTotalXirr) }}
             </span>
+          </div>
+          <div class="total-item">
+            <span class="total-label">TER</span>
+            <span class="total-value">{{ formatTer(totalTer) }}</span>
           </div>
         </div>
       </div>
@@ -332,6 +336,7 @@ const {
   totalUnrealizedProfit,
   totalChangeAmount,
   totalChangePercent,
+  totalTer,
 } = useInstrumentTotals(instrumentsRef)
 
 const totalXirr = computed(() => props.portfolioXirr)
