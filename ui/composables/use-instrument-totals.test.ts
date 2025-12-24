@@ -21,6 +21,7 @@ const createInstrument = (overrides: Partial<InstrumentDto> = {}): InstrumentDto
   xirr: 0.15,
   providerName: 'FT',
   platforms: ['TRADING212'],
+  ter: null,
   ...overrides,
 })
 
@@ -184,6 +185,47 @@ describe('useInstrumentTotals', () => {
       const instruments = ref<InstrumentDto[]>([])
       const { totalChangePercent } = useInstrumentTotals(instruments)
       expect(totalChangePercent.value).toBe(0)
+    })
+  })
+
+  describe('totalTer', () => {
+    it('should calculate weighted average TER based on portfolio value', () => {
+      const instruments = ref([
+        createInstrument({ currentValue: 10000, ter: 0.07 }),
+        createInstrument({ currentValue: 10000, ter: 0.22 }),
+      ])
+      const { totalTer } = useInstrumentTotals(instruments)
+      expect(totalTer.value).toBeCloseTo(0.145, 4)
+    })
+
+    it('should weight TER by instrument value', () => {
+      const instruments = ref([
+        createInstrument({ currentValue: 30000, ter: 0.07 }),
+        createInstrument({ currentValue: 10000, ter: 0.22 }),
+      ])
+      const { totalTer } = useInstrumentTotals(instruments)
+      expect(totalTer.value).toBeCloseTo(0.1075, 4)
+    })
+
+    it('should return 0 for empty array', () => {
+      const instruments = ref<InstrumentDto[]>([])
+      const { totalTer } = useInstrumentTotals(instruments)
+      expect(totalTer.value).toBe(0)
+    })
+
+    it('should treat null TER as 0', () => {
+      const instruments = ref([
+        createInstrument({ currentValue: 5000, ter: 0.2 }),
+        createInstrument({ currentValue: 5000, ter: null }),
+      ])
+      const { totalTer } = useInstrumentTotals(instruments)
+      expect(totalTer.value).toBeCloseTo(0.1, 4)
+    })
+
+    it('should return 0 when total value is 0', () => {
+      const instruments = ref([createInstrument({ currentValue: 0, ter: 0.15 })])
+      const { totalTer } = useInstrumentTotals(instruments)
+      expect(totalTer.value).toBe(0)
     })
   })
 
