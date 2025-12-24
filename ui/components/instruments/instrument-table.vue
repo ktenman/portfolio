@@ -47,6 +47,7 @@
           </span>
         </td>
         <td class="fw-bold text-nowrap">100.00%</td>
+        <td class="fw-bold text-nowrap">{{ formatTer(totalTer) }}</td>
         <td></td>
       </tr>
     </template>
@@ -171,6 +172,10 @@
               {{ formatPercentageFromDecimal(animatedTotalXirr) }}
             </span>
           </div>
+          <div class="total-item">
+            <span class="total-label">TER</span>
+            <span class="total-value">{{ formatTer(totalTer) }}</span>
+          </div>
         </div>
       </div>
     </template>
@@ -256,6 +261,10 @@
       <span class="text-nowrap">{{ getPortfolioWeight(item) }}</span>
     </template>
 
+    <template #cell-ter="{ item }">
+      <span class="text-nowrap">{{ formatTer(item.ter) }}</span>
+    </template>
+
     <template #actions="{ item }">
       <div class="action-buttons">
         <button
@@ -327,6 +336,7 @@ const {
   totalUnrealizedProfit,
   totalChangeAmount,
   totalChangePercent,
+  totalTer,
 } = useInstrumentTotals(instrumentsRef)
 
 const totalXirr = computed(() => props.portfolioXirr)
@@ -354,6 +364,11 @@ const animatedTotalChangePercent = useNumberTransition(totalChangePercent)
 
 const getPortfolioWeight = (instrument: InstrumentDto): string => {
   return calculatePortfolioWeight(instrument.currentValue || 0, totalValue.value)
+}
+
+const formatTer = (ter: number | null | undefined): string => {
+  if (ter === null || ter === undefined) return '-'
+  return `${ter.toFixed(2)}%`
 }
 </script>
 

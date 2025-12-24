@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.lightyear
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
@@ -421,4 +422,47 @@ class LightyearPriceServiceTest {
       changePercent = BigDecimal.ZERO,
       currency = "EUR",
     )
+
+  @Test
+  fun `should fetch fund info and return TER`() {
+    val response = LightyearFundInfoResponse(ter = BigDecimal("0.40"))
+    every { properties.findUuidBySymbol("VUAA") } returns "test-uuid"
+    every { lightyearPriceClient.getFundInfo("/v1/market-data/test-uuid/fund-info") } returns response
+
+    val result = service.fetchFundInfo("VUAA")
+
+    expect(result).notToEqualNull().toEqualNumerically(BigDecimal("0.40"))
+  }
+
+  @Test
+  fun `should return null when fund info fetch fails`() {
+    every { properties.findUuidBySymbol("VUAA") } returns "test-uuid"
+    every { lightyearPriceClient.getFundInfo(any()) } throws RuntimeException("API error")
+
+    val result = service.fetchFundInfo("VUAA")
+
+    expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should return null when no UUID found for fund info`() {
+    every { properties.findUuidBySymbol("UNKNOWN") } returns null
+    every { instrumentRepository.findBySymbol("UNKNOWN") } returns Optional.empty()
+    every { lightyearPriceClient.lookupUuid(any()) } throws RuntimeException("Not found")
+
+    val result = service.fetchFundInfo("UNKNOWN")
+
+    expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should return null when fund info has no TER`() {
+    val response = LightyearFundInfoResponse(ter = null, aum = BigDecimal("1000"))
+    every { properties.findUuidBySymbol("STOCK") } returns "stock-uuid"
+    every { lightyearPriceClient.getFundInfo("/v1/market-data/stock-uuid/fund-info") } returns response
+
+    val result = service.fetchFundInfo("STOCK")
+
+    expect(result).toEqual(null)
+  }
 }

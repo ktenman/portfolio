@@ -91,4 +91,12 @@ class InstrumentService(
   ) {
     instrumentRepository.updateProviderExternalId(symbol, providerExternalId)
   }
+
+  @Transactional
+  fun updateTer(
+    instrumentId: Long,
+    ter: BigDecimal?,
+  ) {
+    instrumentRepository.updateTer(instrumentId, ter)
+  }
 }
