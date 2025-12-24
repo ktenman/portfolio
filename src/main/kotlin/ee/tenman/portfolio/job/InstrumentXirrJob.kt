@@ -6,6 +6,7 @@ import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -16,6 +17,8 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 @ScheduledJob
 class InstrumentXirrJob(
@@ -26,6 +29,15 @@ class InstrumentXirrJob(
   private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
+
+  @PostConstruct
+  fun onStartup() {
+    CompletableFuture.runAsync {
+      Thread.sleep(TimeUnit.MINUTES.toMillis(STARTUP_DELAY_MINUTES))
+      log.info("Running instrument XIRR job after startup delay")
+      runJob()
+    }
+  }
 
   @Scheduled(cron = "0 45 6 * * *")
   fun runJob() {
@@ -132,5 +144,6 @@ class InstrumentXirrJob(
 
   companion object {
     private val MONTHLY_INVESTMENT = BigDecimal("1000")
+    private const val STARTUP_DELAY_MINUTES = 2L
   }
 }
