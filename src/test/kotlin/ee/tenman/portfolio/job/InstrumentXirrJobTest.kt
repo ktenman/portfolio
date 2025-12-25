@@ -94,7 +94,6 @@ class InstrumentXirrJobTest {
   fun `should handle errors gracefully and continue processing`() {
     val instrument1 = createInstrument("AAPL", 1L, BigDecimal("150"))
     val instrument2 = createInstrument("GOOGL", 2L, BigDecimal("180"))
-    val prices1 = createMonthlyPrices(instrument1, "2025-01-01", "2025-06-01")
     val prices2 = createMonthlyPrices(instrument2, "2025-01-01", "2025-06-01")
     every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument1, instrument2)
     every { dailyPriceService.findAllByInstrument(instrument1) } throws RuntimeException("API error")
