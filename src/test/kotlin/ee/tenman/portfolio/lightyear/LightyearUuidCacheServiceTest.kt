@@ -4,29 +4,21 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import jakarta.annotation.Resource
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.redis.core.StringRedisTemplate
+import org.junit.jupiter.api.parallel.Isolated
+import java.util.UUID
 
 @IntegrationTest
+@Isolated
 class LightyearUuidCacheServiceTest {
   @Resource
   private lateinit var cacheService: LightyearUuidCacheService
 
-  @Resource
-  private lateinit var stringRedisTemplate: StringRedisTemplate
-
-  @BeforeEach
-  fun setUp() {
-    stringRedisTemplate.connectionFactory
-      ?.connection
-      ?.serverCommands()
-      ?.flushAll()
-  }
+  private fun uniqueSymbol(): String = "TEST_${UUID.randomUUID()}:SYMBOL"
 
   @Test
   fun `getCachedUuid should return null when cache is empty`() {
-    val result = cacheService.getCachedUuid("UNKNOWN:SYMBOL")
+    val result = cacheService.getCachedUuid(uniqueSymbol())
 
     expect(result).toEqual(null)
   }
@@ -35,14 +27,14 @@ class LightyearUuidCacheServiceTest {
   fun `cacheUuid should store and return uuid`() {
     val uuid = "test-uuid-123"
 
-    val result = cacheService.cacheUuid("TEST:SYMBOL", uuid)
+    val result = cacheService.cacheUuid(uniqueSymbol(), uuid)
 
     expect(result).toEqual(uuid)
   }
 
   @Test
   fun `cached uuid should be retrievable after caching`() {
-    val symbol = "CACHED:SYMBOL"
+    val symbol = uniqueSymbol()
     val uuid = "cached-uuid-456"
 
     cacheService.cacheUuid(symbol, uuid)
@@ -53,8 +45,8 @@ class LightyearUuidCacheServiceTest {
 
   @Test
   fun `cacheUuid should store different values for different symbols`() {
-    val symbol1 = "SYMBOL1:TEST"
-    val symbol2 = "SYMBOL2:TEST"
+    val symbol1 = uniqueSymbol()
+    val symbol2 = uniqueSymbol()
 
     cacheService.cacheUuid(symbol1, "uuid-1")
     cacheService.cacheUuid(symbol2, "uuid-2")
