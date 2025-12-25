@@ -17,7 +17,9 @@
             {{ formatCurrencyWithSign(animatedTotalValue, 'EUR') }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap">{{ formatCurrencyWithSign(totalInvested, 'EUR') }}</td>
+        <td class="fw-bold text-nowrap d-none d-md-table-cell">
+          {{ formatCurrencyWithSign(totalInvested, 'EUR') }}
+        </td>
         <td class="fw-bold text-nowrap profit-column">
           <span :class="[getProfitClass(totalProfit), getTotalsChangeClass('totalProfit')]">
             {{ formatProfit(animatedTotalProfit, 'EUR') }}
@@ -33,7 +35,7 @@
             {{ formatProfit(animatedTotalUnrealizedProfit, 'EUR') }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap price-change-column">
+        <td class="fw-bold text-nowrap d-none d-lg-table-cell price-change-column">
           <span
             :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
           >
@@ -46,10 +48,11 @@
             {{ formatPercentageFromDecimal(animatedTotalXirr) }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap">{{ formatAnnualReturn(totalAnnualReturn) }}</td>
-        <td class="fw-bold text-nowrap">100.00%</td>
-        <td class="fw-bold text-nowrap">{{ formatTer(totalTer) }}</td>
-        <td></td>
+        <td class="fw-bold text-nowrap d-none d-xl-table-cell">
+          {{ totalAnnualReturn === null ? '-' : formatAnnualReturn(animatedTotalAnnualReturn) }}
+        </td>
+        <td class="fw-bold text-nowrap d-none d-xl-table-cell">100.00%</td>
+        <td class="fw-bold text-nowrap d-none d-xl-table-cell">{{ formatTer(totalTer) }}</td>
       </tr>
     </template>
     <template #mobile-card="{ item }">
@@ -68,13 +71,6 @@
               </span>
             </div>
           </div>
-          <button
-            class="btn btn-sm btn-ghost btn-secondary btn-table-action"
-            @click="$emit('edit', item)"
-            title="Edit"
-          >
-            <PenLine :size="16" />
-          </button>
         </div>
         <div class="instrument-metrics">
           <div class="metric-group">
@@ -271,24 +267,11 @@
     <template #cell-ter="{ item }">
       <span class="text-nowrap">{{ formatTer(item.ter) }}</span>
     </template>
-
-    <template #actions="{ item }">
-      <div class="action-buttons">
-        <button
-          class="btn btn-sm btn-ghost btn-secondary btn-table-action"
-          @click="$emit('edit', item)"
-          title="Edit"
-        >
-          <PenLine :size="16" />
-        </button>
-      </div>
-    </template>
   </data-table>
 </template>
 
 <script setup lang="ts">
 import { computed, toRef, watch } from 'vue'
-import { PenLine } from 'lucide-vue-next'
 import DataTable from '../shared/data-table.vue'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { instrumentColumns } from '../../config'
@@ -321,10 +304,6 @@ const props = withDefaults(defineProps<Props>(), {
   isError: false,
   selectedPeriod: '24h',
 })
-
-defineEmits<{
-  edit: [instrument: InstrumentDto]
-}>()
 
 const instrumentsRef = toRef(props, 'instruments')
 const { getChangeClass, trackTotalsChange, getTotalsChangeClass } =
@@ -369,6 +348,8 @@ const animatedTotalUnrealizedProfit = useNumberTransition(totalUnrealizedProfit)
 const animatedTotalChangeAmount = useNumberTransition(totalChangeAmount)
 const animatedTotalXirr = useNumberTransition(totalXirr)
 const animatedTotalChangePercent = useNumberTransition(totalChangePercent)
+const totalAnnualReturnForAnimation = computed(() => totalAnnualReturn.value ?? 0)
+const animatedTotalAnnualReturn = useNumberTransition(totalAnnualReturnForAnimation)
 
 const getPortfolioWeight = (instrument: InstrumentDto): string => {
   return calculatePortfolioWeight(instrument.currentValue || 0, totalValue.value)

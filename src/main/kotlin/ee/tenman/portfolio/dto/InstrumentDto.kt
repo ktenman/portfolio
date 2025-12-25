@@ -43,7 +43,7 @@ data class InstrumentDto(
       currentPrice = currentPrice,
       providerName = ProviderName.valueOf(providerName),
     ).apply {
-      id.let { this.id = it }
+      this.id = id
     }
 
   companion object {

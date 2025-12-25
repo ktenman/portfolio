@@ -1,12 +1,12 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -17,8 +17,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 
 @ScheduledJob
 class InstrumentXirrJob(
@@ -30,13 +28,10 @@ class InstrumentXirrJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @PostConstruct
+  @Scheduled(initialDelay = STARTUP_DELAY_MS, fixedDelay = Long.MAX_VALUE)
   fun onStartup() {
-    CompletableFuture.runAsync {
-      Thread.sleep(TimeUnit.MINUTES.toMillis(STARTUP_DELAY_MINUTES))
-      log.info("Running instrument XIRR job after startup delay")
-      runJob()
-    }
+    log.info("Running instrument XIRR job after startup delay")
+    runJob()
   }
 
   @Scheduled(cron = "0 45 6 * * *")
@@ -98,52 +93,51 @@ class InstrumentXirrJob(
   private fun generateMonthlyCashFlows(
     startDate: LocalDate,
     endDate: LocalDate,
-    sortedPrices: List<ee.tenman.portfolio.domain.DailyPrice>,
+    sortedPrices: List<DailyPrice>,
     instrument: Instrument,
   ): List<CashFlow> {
-    val cashFlows = mutableListOf<CashFlow>()
-    var totalQuantity = BigDecimal.ZERO
     val priceByDate = sortedPrices.associateBy { it.entryDate }
-    var currentDate = startDate.withDayOfMonth(1)
-    while (!currentDate.isAfter(endDate)) {
-      val price = findClosestPrice(currentDate, priceByDate, sortedPrices)
-      if (price != null && price > BigDecimal.ZERO) {
-        val quantity = MONTHLY_INVESTMENT.divide(price, 10, RoundingMode.HALF_UP)
-        totalQuantity = totalQuantity.add(quantity)
-        cashFlows.add(CashFlow(-MONTHLY_INVESTMENT.toDouble(), currentDate))
-      }
-      currentDate = currentDate.plusMonths(1)
-    }
+    var totalQuantity = BigDecimal.ZERO
+    val cashFlows =
+      generateSequence(startDate.withDayOfMonth(1)) { it.plusMonths(1) }
+      .takeWhile { !it.isAfter(endDate) }
+      .mapNotNull { date ->
+        val price = findClosestPrice(date, priceByDate, sortedPrices)
+        if (price != null && price > BigDecimal.ZERO) {
+          totalQuantity = totalQuantity.add(MONTHLY_INVESTMENT.divide(price, 10, RoundingMode.HALF_UP))
+          CashFlow(-MONTHLY_INVESTMENT.toDouble(), date)
+        } else {
+          null
+        }
+      }.toMutableList()
     if (totalQuantity > BigDecimal.ZERO) {
       val currentPrice = instrument.currentPrice ?: sortedPrices.last().closePrice
-      val currentValue = totalQuantity.multiply(currentPrice)
-      cashFlows.add(CashFlow(currentValue.toDouble(), endDate))
+      cashFlows.add(CashFlow(totalQuantity.multiply(currentPrice).toDouble(), endDate))
     }
     return cashFlows
   }
 
   private fun findClosestPrice(
     targetDate: LocalDate,
-    priceByDate: Map<LocalDate, ee.tenman.portfolio.domain.DailyPrice>,
-    sortedPrices: List<ee.tenman.portfolio.domain.DailyPrice>,
+    priceByDate: Map<LocalDate, DailyPrice>,
+    sortedPrices: List<DailyPrice>,
   ): BigDecimal? =
     priceByDate[targetDate]?.closePrice
       ?: findPriceWithinOffset(targetDate, priceByDate)
-      ?: sortedPrices.filter { !it.entryDate.isAfter(targetDate) }.maxByOrNull { it.entryDate }?.closePrice
+      ?: sortedPrices.lastOrNull { !it.entryDate.isAfter(targetDate) }?.closePrice
 
   private fun findPriceWithinOffset(
     targetDate: LocalDate,
-    priceByDate: Map<LocalDate, ee.tenman.portfolio.domain.DailyPrice>,
-  ): BigDecimal? {
-    for (offset in 1..7) {
-      priceByDate[targetDate.plusDays(offset.toLong())]?.let { return it.closePrice }
-      priceByDate[targetDate.minusDays(offset.toLong())]?.let { return it.closePrice }
+    priceByDate: Map<LocalDate, DailyPrice>,
+  ): BigDecimal? =
+    (1..MAX_PRICE_OFFSET_DAYS).firstNotNullOfOrNull { offset ->
+      priceByDate[targetDate.plusDays(offset.toLong())]?.closePrice
+        ?: priceByDate[targetDate.minusDays(offset.toLong())]?.closePrice
     }
-    return null
-  }
 
   companion object {
     private val MONTHLY_INVESTMENT = BigDecimal("1000")
-    private const val STARTUP_DELAY_MINUTES = 2L
+    private const val STARTUP_DELAY_MS = 120_000L
+    private const val MAX_PRICE_OFFSET_DAYS = 7
   }
 }
