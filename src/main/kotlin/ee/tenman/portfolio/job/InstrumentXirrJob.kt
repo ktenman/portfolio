@@ -53,7 +53,7 @@ class InstrumentXirrJob(
       runBlocking {
       instruments
         .map { instrument ->
-        async(Dispatchers.Default) {
+        async(Dispatchers.IO) {
           calculateInstrumentXirr(instrument, calculationDate)
         }
       }.awaitAll()
