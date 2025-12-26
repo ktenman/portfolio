@@ -27,4 +27,6 @@ class Instrument(
   var providerExternalId: String? = null,
   @Column(name = "ter", nullable = true)
   var ter: BigDecimal? = null,
+  @Column(name = "xirr_annual_return", nullable = true)
+  var xirrAnnualReturn: BigDecimal? = null,
 ) : BaseEntity()

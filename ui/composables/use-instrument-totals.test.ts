@@ -22,6 +22,7 @@ const createInstrument = (overrides: Partial<InstrumentDto> = {}): InstrumentDto
   providerName: 'FT',
   platforms: ['TRADING212'],
   ter: null,
+  xirrAnnualReturn: null,
   ...overrides,
 })
 
@@ -226,6 +227,56 @@ describe('useInstrumentTotals', () => {
       const instruments = ref([createInstrument({ currentValue: 0, ter: 0.15 })])
       const { totalTer } = useInstrumentTotals(instruments)
       expect(totalTer.value).toBe(0)
+    })
+  })
+
+  describe('totalAnnualReturn', () => {
+    it('should calculate weighted average annual return based on portfolio value', () => {
+      const instruments = ref([
+        createInstrument({ currentValue: 10000, xirrAnnualReturn: 0.1 }),
+        createInstrument({ currentValue: 10000, xirrAnnualReturn: 0.2 }),
+      ])
+      const { totalAnnualReturn } = useInstrumentTotals(instruments)
+      expect(totalAnnualReturn.value).toBeCloseTo(0.15, 4)
+    })
+
+    it('should weight annual return by instrument value', () => {
+      const instruments = ref([
+        createInstrument({ currentValue: 30000, xirrAnnualReturn: 0.1 }),
+        createInstrument({ currentValue: 10000, xirrAnnualReturn: 0.3 }),
+      ])
+      const { totalAnnualReturn } = useInstrumentTotals(instruments)
+      expect(totalAnnualReturn.value).toBeCloseTo(0.15, 4)
+    })
+
+    it('should return null for empty array', () => {
+      const instruments = ref<InstrumentDto[]>([])
+      const { totalAnnualReturn } = useInstrumentTotals(instruments)
+      expect(totalAnnualReturn.value).toBeNull()
+    })
+
+    it('should exclude null annual returns from calculation', () => {
+      const instruments = ref([
+        createInstrument({ currentValue: 5000, xirrAnnualReturn: 0.2 }),
+        createInstrument({ currentValue: 5000, xirrAnnualReturn: null }),
+      ])
+      const { totalAnnualReturn } = useInstrumentTotals(instruments)
+      expect(totalAnnualReturn.value).toBeCloseTo(0.2, 4)
+    })
+
+    it('should return null when no instruments have annual return', () => {
+      const instruments = ref([
+        createInstrument({ currentValue: 5000, xirrAnnualReturn: null }),
+        createInstrument({ currentValue: 5000, xirrAnnualReturn: null }),
+      ])
+      const { totalAnnualReturn } = useInstrumentTotals(instruments)
+      expect(totalAnnualReturn.value).toBeNull()
+    })
+
+    it('should return null when total value is 0', () => {
+      const instruments = ref([createInstrument({ currentValue: 0, xirrAnnualReturn: 0.15 })])
+      const { totalAnnualReturn } = useInstrumentTotals(instruments)
+      expect(totalAnnualReturn.value).toBeNull()
     })
   })
 

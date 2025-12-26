@@ -24,6 +24,7 @@ export interface InstrumentDto {
     priceChangeAmount: number | null;
     priceChangePercent: number | null;
     ter: number | null;
+    xirrAnnualReturn: number | null;
 }
 
 /**

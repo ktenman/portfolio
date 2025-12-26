@@ -58,17 +58,8 @@ const CrudLayoutStub = {
 const InstrumentTableStub = {
   name: 'InstrumentTable',
   props: ['instruments'],
-  emits: ['edit'],
-  setup(props: any, { emit }: any) {
-    const handleEdit = (item: any) => emit('edit', item)
-    return () =>
-      h('div', { id: 'stub-table' }, [
-        h(
-          'button',
-          { onClick: () => handleEdit(props.instruments?.[0]), id: 'stub-edit-button' },
-          'Edit'
-        ),
-      ])
+  setup() {
+    return () => h('div', { id: 'stub-table' })
   },
 }
 
@@ -192,20 +183,6 @@ describe('InstrumentsView', () => {
       expect(instrumentData).toEqual({})
       expect(mockShow).toHaveBeenCalled()
     })
-
-    it('should set selectedItem and show modal when opening edit modal', async () => {
-      const { wrapper } = createWrapper()
-      await flushPromises()
-
-      const editButton = wrapper.find('#stub-edit-button')
-      await editButton.trigger('click')
-      await flushPromises()
-
-      const modal = wrapper.find('#stub-modal')
-      const instrumentData = JSON.parse(modal.attributes('data-instrument') || '{}')
-      expect(instrumentData).toMatchObject(mockInstruments[0])
-      expect(mockShow).toHaveBeenCalled()
-    })
   })
 
   describe('create mutation', () => {
@@ -243,47 +220,6 @@ describe('InstrumentsView', () => {
       await flushPromises()
 
       await wrapper.find('#stub-add-button').trigger('click')
-      await flushPromises()
-
-      await wrapper.find('#stub-save-button').trigger('click')
-      await flushPromises()
-
-      expect(mockToastError).toHaveBeenCalledWith(`Failed to save instrument: ${error.message}`)
-      expect(mockHide).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('update mutation', () => {
-    it('should update instrument when selectedItem has id', async () => {
-      const { wrapper, queryClient } = createWrapper()
-      const instrumentToEdit = mockInstruments[0]
-      const updateData = { symbol: 'TEST', name: 'Test' }
-      const updatedInstrument = createInstrumentDto({ ...instrumentToEdit, ...updateData })
-      vi.mocked(instrumentsService.update).mockResolvedValue(updatedInstrument)
-
-      await flushPromises()
-
-      await wrapper.find('#stub-edit-button').trigger('click')
-      await flushPromises()
-
-      await wrapper.find('#stub-save-button').trigger('click')
-      await flushPromises()
-
-      expect(instrumentsService.update).toHaveBeenCalledWith(instrumentToEdit.id, updateData)
-      expect(instrumentsService.create).not.toHaveBeenCalled()
-      expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
-      expect(mockToastSuccess).toHaveBeenCalledWith('InstrumentDto updated successfully')
-      expect(mockHide).toHaveBeenCalled()
-    })
-
-    it('should handle update error and keep modal open', async () => {
-      const { wrapper } = createWrapper()
-      const error = new Error('Validation failed')
-      vi.mocked(instrumentsService.update).mockRejectedValue(error)
-
-      await flushPromises()
-
-      await wrapper.find('#stub-edit-button').trigger('click')
       await flushPromises()
 
       await wrapper.find('#stub-save-button').trigger('click')

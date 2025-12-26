@@ -9,6 +9,7 @@ export interface UseInstrumentTotalsReturn {
   totalChangeAmount: ComputedRef<number>
   totalChangePercent: ComputedRef<number>
   totalTer: ComputedRef<number>
+  totalAnnualReturn: ComputedRef<number | null>
 }
 
 export function useInstrumentTotals(instruments: Ref<InstrumentDto[]>): UseInstrumentTotalsReturn {
@@ -57,6 +58,23 @@ export function useInstrumentTotals(instruments: Ref<InstrumentDto[]>): UseInstr
     }, 0)
   })
 
+  const totalAnnualReturn = computed(() => {
+    if (totalValue.value === 0) return null
+    const instrumentsWithAnnualReturn = instruments.value.filter(
+      i => i.xirrAnnualReturn !== null && i.xirrAnnualReturn !== undefined
+    )
+    if (instrumentsWithAnnualReturn.length === 0) return null
+    const totalWithAnnualReturn = instrumentsWithAnnualReturn.reduce(
+      (sum, i) => sum + (i.currentValue || 0),
+      0
+    )
+    if (totalWithAnnualReturn === 0) return null
+    return instrumentsWithAnnualReturn.reduce((sum, instrument) => {
+      const weight = (instrument.currentValue || 0) / totalWithAnnualReturn
+      return sum + (instrument.xirrAnnualReturn ?? 0) * weight
+    }, 0)
+  })
+
   return {
     totalInvested,
     totalValue,
@@ -65,5 +83,6 @@ export function useInstrumentTotals(instruments: Ref<InstrumentDto[]>): UseInstr
     totalChangeAmount,
     totalChangePercent,
     totalTer,
+    totalAnnualReturn,
   }
 }
