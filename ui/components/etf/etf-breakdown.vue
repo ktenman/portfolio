@@ -53,13 +53,21 @@
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-4">
       <div class="row g-3">
         <div class="col-lg-4 col-md-6">
-          <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
+          <etf-breakdown-chart
+            title="Sector Allocation"
+            :chart-data="sectorChartData"
+            enhance-small-slices
+          />
         </div>
         <div class="col-lg-4 col-md-6">
           <etf-breakdown-chart title="Top Companies" :chart-data="companyChartData" />
         </div>
         <div class="col-lg-4 col-md-6">
-          <etf-breakdown-chart title="Country Allocation" :chart-data="countryChartData" />
+          <etf-breakdown-chart
+            title="Country Allocation"
+            :chart-data="countryChartData"
+            enhance-small-slices
+          />
         </div>
       </div>
     </div>

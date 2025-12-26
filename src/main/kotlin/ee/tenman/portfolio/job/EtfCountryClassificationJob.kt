@@ -40,7 +40,9 @@ class EtfCountryClassificationJob(
       return
     }
     log.info("Found ${holdingIds.size} holdings without country classification")
-    val holdings = etfHoldingPersistenceService.findAllByIds(holdingIds)
+    val holdings =
+      etfHoldingPersistenceService
+        .findAllByIds(holdingIds)
       .mapNotNull { holding -> holding.id?.let { it to holding } }
       .toMap()
     val etfNamesMap = etfHoldingPersistenceService.findEtfNamesForHoldings(holdingIds)
