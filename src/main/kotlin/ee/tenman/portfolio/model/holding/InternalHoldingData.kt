@@ -7,6 +7,8 @@ data class InternalHoldingData(
   val ticker: String?,
   val name: String,
   val sector: String?,
+  val countryCode: String?,
+  val countryName: String?,
   val value: BigDecimal,
   val etfSymbol: String,
   val platforms: Set<Platform>,

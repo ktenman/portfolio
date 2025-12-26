@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { buildSectorChartData, buildCompanyChartData, getFilterParam } from './etf-chart-service'
+import {
+  buildSectorChartData,
+  buildCompanyChartData,
+  buildCountryChartData,
+  getFilterParam,
+} from './etf-chart-service'
 import type { EtfHoldingBreakdownDto } from '../models/generated/domain-models'
 
 const createHolding = (
@@ -8,6 +13,8 @@ const createHolding = (
   holdingName: 'Apple Inc.',
   holdingTicker: 'AAPL',
   holdingSector: 'Technology',
+  holdingCountryCode: 'US',
+  holdingCountryName: 'United States',
   totalValueEur: 1000,
   percentageOfTotal: 10,
   inEtfs: 'VWCE',
@@ -183,6 +190,97 @@ describe('etf-chart-service', () => {
       const holdings = [createHolding({ holdingName: 'Company', percentageOfTotal: 100 })]
       const result = buildCompanyChartData(holdings, { colors: ['#00FF00'] })
       expect(result[0].color).toBe('#00FF00')
+    })
+  })
+
+  describe('buildCountryChartData', () => {
+    it('should aggregate holdings by country', () => {
+      const holdings = [
+        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 30 }),
+        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 20 }),
+        createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 25 }),
+      ]
+      const result = buildCountryChartData(holdings)
+      expect(result).toHaveLength(2)
+      expect(result[0].label).toBe('United States')
+      expect(result[0].value).toBe(50)
+      expect(result[1].label).toBe('Germany')
+      expect(result[1].value).toBe(25)
+    })
+
+    it('should sort countries by total percentage descending', () => {
+      const holdings = [
+        createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 10 }),
+        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 50 }),
+        createHolding({ holdingCountryName: 'Japan', percentageOfTotal: 30 }),
+      ]
+      const result = buildCountryChartData(holdings)
+      expect(result[0].label).toBe('United States')
+      expect(result[1].label).toBe('Japan')
+      expect(result[2].label).toBe('Germany')
+    })
+
+    it('should limit to top 20 countries by default', () => {
+      const holdings = Array.from({ length: 25 }, (_, i) =>
+        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 4 })
+      )
+      const result = buildCountryChartData(holdings)
+      expect(result).toHaveLength(21)
+      expect(result[20].label).toBe('Others')
+    })
+
+    it('should group remaining countries as Others', () => {
+      const holdings = Array.from({ length: 22 }, (_, i) =>
+        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: i + 1 })
+      )
+      const result = buildCountryChartData(holdings)
+      const others = result.find(item => item.label === 'Others')
+      expect(others).toBeDefined()
+    })
+
+    it('should assign colors from palette', () => {
+      const holdings = [
+        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 50 }),
+        createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 30 }),
+      ]
+      const result = buildCountryChartData(holdings)
+      expect(result[0].color).toBe('#0072B2')
+      expect(result[1].color).toBe('#E69F00')
+    })
+
+    it('should assign gray color to Others', () => {
+      const holdings = Array.from({ length: 22 }, (_, i) =>
+        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 1 })
+      )
+      const result = buildCountryChartData(holdings)
+      const others = result.find(item => item.label === 'Others')
+      expect(others?.color).toBe('#999999')
+    })
+
+    it('should handle empty holdings array', () => {
+      const result = buildCountryChartData([])
+      expect(result).toHaveLength(0)
+    })
+
+    it('should handle unknown country as Unknown', () => {
+      const holdings = [createHolding({ holdingCountryName: null, percentageOfTotal: 10 })]
+      const result = buildCountryChartData(holdings)
+      expect(result[0].label).toBe('Unknown')
+    })
+
+    it('should accept custom top count', () => {
+      const holdings = Array.from({ length: 10 }, (_, i) =>
+        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 10 })
+      )
+      const result = buildCountryChartData(holdings, { topCount: 5 })
+      expect(result).toHaveLength(6)
+      expect(result[5].label).toBe('Others')
+    })
+
+    it('should accept custom color palette', () => {
+      const holdings = [createHolding({ holdingCountryName: 'USA', percentageOfTotal: 100 })]
+      const result = buildCountryChartData(holdings, { colors: ['#FF0000'] })
+      expect(result[0].color).toBe('#FF0000')
     })
   })
 

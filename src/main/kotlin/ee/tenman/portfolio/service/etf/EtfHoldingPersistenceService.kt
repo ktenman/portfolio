@@ -19,7 +19,16 @@ class EtfHoldingPersistenceService(
       .mapNotNull { it.id }
 
   @Transactional(readOnly = true)
+  fun findUnclassifiedByCountryHoldingIds(): List<Long> =
+    etfHoldingRepository
+      .findByCountryCodeIsNullOrCountryCodeEquals("")
+      .mapNotNull { it.id }
+
+  @Transactional(readOnly = true)
   fun findById(id: Long): EtfHolding? = etfHoldingRepository.findById(id).orElse(null)
+
+  @Transactional(readOnly = true)
+  fun findEtfNamesForHolding(holdingId: Long): List<String> = etfHoldingRepository.findEtfNamesForHolding(holdingId)
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun updateSector(
@@ -34,6 +43,21 @@ class EtfHoldingPersistenceService(
     holding.sector = sector
     holding.classifiedByModel = classifiedByModel
     holding.sectorSource = SectorSource.LLM
+    etfHoldingRepository.save(holding)
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun updateCountry(
+    holdingId: Long,
+    countryCode: String,
+    countryName: String,
+  ) {
+    val holding =
+      etfHoldingRepository.findById(holdingId).orElseThrow {
+        IllegalStateException("EtfHolding not found with id=$holdingId")
+      }
+    holding.countryCode = countryCode
+    holding.countryName = countryName
     etfHoldingRepository.save(holding)
   }
 }

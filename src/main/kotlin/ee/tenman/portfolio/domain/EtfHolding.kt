@@ -27,4 +27,8 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "sector_source", length = 20)
   var sectorSource: SectorSource? = null,
+  @Column(name = "country_code", length = 2)
+  var countryCode: String? = null,
+  @Column(name = "country_name", length = 100)
+  var countryName: String? = null,
 ) : BaseEntity()
