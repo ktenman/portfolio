@@ -318,13 +318,14 @@ describe('EtfBreakdownTable', () => {
       const dataTable = wrapper.findComponent({ name: 'DataTable' })
       const columns = dataTable.props('columns')
 
-      expect(columns).toHaveLength(6)
+      expect(columns).toHaveLength(7)
       expect(columns[0].key).toBe('holdingTicker')
       expect(columns[1].key).toBe('holdingName')
       expect(columns[2].key).toBe('percentageOfTotal')
       expect(columns[3].key).toBe('totalValueEur')
       expect(columns[4].key).toBe('holdingSector')
-      expect(columns[5].key).toBe('inEtfs')
+      expect(columns[5].key).toBe('holdingCountryName')
+      expect(columns[6].key).toBe('inEtfs')
     })
 
     it('should have correct sortable configuration', () => {
@@ -345,7 +346,8 @@ describe('EtfBreakdownTable', () => {
       expect(columns[2].sortable).toBe(true)
       expect(columns[3].sortable).toBe(true)
       expect(columns[4].sortable).toBe(true)
-      expect(columns[5].sortable).toBe(false)
+      expect(columns[5].sortable).toBe(true)
+      expect(columns[6].sortable).toBe(false)
     })
   })
 

@@ -54,7 +54,7 @@
             <td></td>
             <td class="fw-bold text-end">100.0000%</td>
             <td class="fw-bold text-end">{{ formatCurrency(totalValue) }}</td>
-            <td colspan="2"></td>
+            <td colspan="3"></td>
           </tr>
         </template>
       </data-table>
@@ -192,6 +192,12 @@ const columns: ColumnDefinition[] = [
     formatter: (value: string | null) => value || '-',
   },
   {
+    key: 'holdingCountryName',
+    label: 'Country',
+    sortable: true,
+    formatter: (value: string | null) => value || '-',
+  },
+  {
     key: 'inEtfs',
     label: 'Found in ETFs',
     sortable: false,
@@ -324,17 +330,11 @@ const columns: ColumnDefinition[] = [
     font-size: 0.75rem;
   }
 
-  .card :deep(.table th:nth-child(6)) {
-    font-size: 0;
-  }
-
-  .card :deep(.table th:nth-child(6))::after {
-    content: 'ETF';
-    font-size: 0.75rem;
-  }
-
-  .card :deep(.table td:nth-child(6)) {
-    font-size: 0.75rem;
+  .card :deep(.table th:nth-child(6)),
+  .card :deep(.table td:nth-child(6)),
+  .card :deep(.table th:nth-child(7)),
+  .card :deep(.table td:nth-child(7)) {
+    display: none;
   }
 }
 
