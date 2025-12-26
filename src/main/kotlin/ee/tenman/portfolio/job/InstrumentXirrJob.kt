@@ -30,15 +30,15 @@ class InstrumentXirrJob(
 
   @Scheduled(initialDelay = STARTUP_DELAY_MS, fixedDelay = Long.MAX_VALUE)
   fun onStartup() {
-    log.info("Running instrument XIRR job after startup delay")
+    log.info("Running {} after startup delay", getName())
     runJob()
   }
 
   @Scheduled(cron = "0 45 6 * * *")
   fun runJob() {
-    log.info("Running instrument XIRR job")
+    log.info("Running {}", getName())
     jobExecutionService.executeJob(this)
-    log.info("Completed instrument XIRR job")
+    log.info("Completed {}", getName())
   }
 
   override fun execute() {
