@@ -6,6 +6,7 @@ export interface ChartDataItem {
   value: number
   percentage: string
   color: string
+  code?: string
 }
 
 export interface ChartDataConfig {
@@ -133,6 +134,7 @@ export function buildCountryChartData(
     value: item.value,
     percentage: item.percentage,
     color: item.label === 'Others' ? OTHERS_COLOR : colors[index % colors.length],
+    code: item.code || undefined,
   }))
 }
 

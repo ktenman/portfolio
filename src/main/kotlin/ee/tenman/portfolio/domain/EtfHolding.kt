@@ -31,4 +31,7 @@ class EtfHolding(
   var countryCode: String? = null,
   @Column(name = "country_name", length = 100)
   var countryName: String? = null,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "country_classified_by_model", length = 100)
+  var countryClassifiedByModel: AiModel? = null,
 ) : BaseEntity()

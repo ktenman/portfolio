@@ -40,13 +40,22 @@ class EtfCountryClassificationJob(
       return
     }
     log.info("Found ${holdingIds.size} holdings without country classification")
-    val (successCount, failureCount, skippedCount) = processHoldings(holdingIds)
+    val holdings = etfHoldingPersistenceService.findAllByIds(holdingIds)
+      .mapNotNull { holding -> holding.id?.let { it to holding } }
+      .toMap()
+    val etfNamesMap = etfHoldingPersistenceService.findEtfNamesForHoldings(holdingIds)
+    log.info("Batch loaded ${holdings.size} holdings and ETF names")
+    val (successCount, failureCount, skippedCount) = processHoldings(holdingIds, holdings, etfNamesMap)
     log.info(
       "Country classification complete. Success: $successCount, Failed: $failureCount, Skipped: $skippedCount, Total: ${holdingIds.size}",
     )
   }
 
-  private fun processHoldings(holdingIds: List<Long>): ClassificationResult {
+  private fun processHoldings(
+    holdingIds: List<Long>,
+    holdings: Map<Long, EtfHolding>,
+    etfNamesMap: Map<Long, List<String>>,
+  ): ClassificationResult {
     var successCount = 0
     var failureCount = 0
     var skippedCount = 0
@@ -55,7 +64,9 @@ class EtfCountryClassificationJob(
       if (waitTime > 0) {
         Thread.sleep(waitTime + RATE_LIMIT_BUFFER_MS)
       }
-      when (classifyHolding(holdingId)) {
+      val holding = holdings[holdingId]
+      val etfNames = etfNamesMap[holdingId] ?: emptyList()
+      when (classifyHolding(holdingId, holding, etfNames)) {
         ClassificationOutcome.SUCCESS -> successCount++
         ClassificationOutcome.FAILURE -> failureCount++
         ClassificationOutcome.SKIPPED -> skippedCount++
@@ -67,17 +78,23 @@ class EtfCountryClassificationJob(
     return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedCount)
   }
 
-  private fun classifyHolding(holdingId: Long): ClassificationOutcome =
+  private fun classifyHolding(
+    holdingId: Long,
+    holding: EtfHolding?,
+    etfNames: List<String>,
+  ): ClassificationOutcome =
     runCatching {
-      val holding =
-        etfHoldingPersistenceService.findById(holdingId) ?: return ClassificationOutcome.SKIPPED
-      classifyAndSave(holding)
+      if (holding == null) return ClassificationOutcome.SKIPPED
+      classifyAndSave(holding, etfNames)
     }.getOrElse { e ->
       log.error("Error classifying country for holding id=$holdingId", e)
       ClassificationOutcome.FAILURE
     }
 
-  private fun classifyAndSave(holding: EtfHolding): ClassificationOutcome {
+  private fun classifyAndSave(
+    holding: EtfHolding,
+    etfNames: List<String>,
+  ): ClassificationOutcome {
     if (holding.name.isBlank()) {
       log.warn("Skipping holding with blank name: id=${holding.id}")
       return ClassificationOutcome.SKIPPED
@@ -87,15 +104,16 @@ class EtfCountryClassificationJob(
         log.warn("Skipping holding with null id: name=${holding.name}")
         return ClassificationOutcome.SKIPPED
       }
-    val etfNames = etfHoldingPersistenceService.findEtfNamesForHolding(holdingId)
     log.info("Classifying country for: ${holding.name} (ETFs: ${etfNames.joinToString(", ")})")
     val result =
       countryClassificationService.classifyCompanyCountryWithModel(holding.name, etfNames) ?: run {
         log.warn("Country classification returned null for: ${holding.name}")
         return ClassificationOutcome.FAILURE
       }
-    etfHoldingPersistenceService.updateCountry(holdingId, result.countryCode, result.countryName)
-    log.info("Successfully classified '${holding.name}' as '${result.countryName}' (${result.countryCode})")
+    etfHoldingPersistenceService.updateCountry(holdingId, result.countryCode, result.countryName, result.model)
+    log.info(
+      "Successfully classified '${holding.name}' as '${result.countryName}' (${result.countryCode}) using model ${result.model?.modelId}",
+    )
     return ClassificationOutcome.SUCCESS
   }
 }

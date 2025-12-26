@@ -30,6 +30,18 @@ class EtfHoldingPersistenceService(
   @Transactional(readOnly = true)
   fun findEtfNamesForHolding(holdingId: Long): List<String> = etfHoldingRepository.findEtfNamesForHolding(holdingId)
 
+  @Transactional(readOnly = true)
+  fun findEtfNamesForHoldings(holdingIds: List<Long>): Map<Long, List<String>> {
+    if (holdingIds.isEmpty()) return emptyMap()
+    return etfHoldingRepository
+      .findEtfNamesForHoldings(holdingIds)
+      .groupBy({ (it[0] as Long) }, { it[1] as String })
+      .mapValues { it.value.distinct() }
+  }
+
+  @Transactional(readOnly = true)
+  fun findAllByIds(ids: List<Long>): List<EtfHolding> = etfHoldingRepository.findAllById(ids)
+
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun updateSector(
     holdingId: Long,
@@ -51,6 +63,7 @@ class EtfHoldingPersistenceService(
     holdingId: Long,
     countryCode: String,
     countryName: String,
+    classifiedByModel: AiModel? = null,
   ) {
     val holding =
       etfHoldingRepository.findById(holdingId).orElseThrow {
@@ -58,6 +71,7 @@ class EtfHoldingPersistenceService(
       }
     holding.countryCode = countryCode
     holding.countryName = countryName
+    holding.countryClassifiedByModel = classifiedByModel
     etfHoldingRepository.save(holding)
   }
 }

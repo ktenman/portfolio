@@ -282,6 +282,37 @@ describe('etf-chart-service', () => {
       const result = buildCountryChartData(holdings, { colors: ['#FF0000'] })
       expect(result[0].color).toBe('#FF0000')
     })
+
+    it('should include country code for flag display', () => {
+      const holdings = [
+        createHolding({
+          holdingCountryName: 'United States',
+          holdingCountryCode: 'US',
+          percentageOfTotal: 60,
+        }),
+        createHolding({
+          holdingCountryName: 'Germany',
+          holdingCountryCode: 'DE',
+          percentageOfTotal: 40,
+        }),
+      ]
+      const result = buildCountryChartData(holdings)
+      expect(result[0].code).toBe('US')
+      expect(result[1].code).toBe('DE')
+    })
+
+    it('should have undefined code for Others category', () => {
+      const holdings = Array.from({ length: 22 }, (_, i) =>
+        createHolding({
+          holdingCountryName: `Country ${i}`,
+          holdingCountryCode: `C${i}`,
+          percentageOfTotal: 1,
+        })
+      )
+      const result = buildCountryChartData(holdings)
+      const others = result.find(item => item.label === 'Others')
+      expect(others?.code).toBeUndefined()
+    })
   })
 
   describe('getFilterParam', () => {

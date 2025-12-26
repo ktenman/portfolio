@@ -32,4 +32,15 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   fun findEtfNamesForHolding(
     @Param("holdingId") holdingId: Long,
   ): List<String>
+
+  @Query(
+    """
+    SELECT ep.holding.id, ep.etfInstrument.name
+    FROM EtfPosition ep
+    WHERE ep.holding.id IN :holdingIds
+  """,
+  )
+  fun findEtfNamesForHoldings(
+    @Param("holdingIds") holdingIds: List<Long>,
+  ): List<Array<Any>>
 }
