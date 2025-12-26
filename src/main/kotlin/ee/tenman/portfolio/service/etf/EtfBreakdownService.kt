@@ -167,6 +167,14 @@ class EtfBreakdownService(
           position.holding.sector
             ?.trim()
             ?.takeIf { it.isNotBlank() },
+        countryCode =
+          position.holding.countryCode
+            ?.trim()
+            ?.takeIf { it.isNotBlank() },
+        countryName =
+          position.holding.countryName
+            ?.trim()
+            ?.takeIf { it.isNotBlank() },
         value = calculateHoldingValue(position, etfQuantity, etfPrice),
         etfSymbol = etf.symbol,
         platforms = etfPlatforms,
@@ -193,6 +201,8 @@ class EtfBreakdownService(
         ticker = groupedHoldings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker,
         name = groupedHoldings.maxByOrNull { it.name.length }!!.name,
         sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
+        countryCode = groupedHoldings.mapNotNull { it.countryCode }.firstOrNull(),
+        countryName = groupedHoldings.mapNotNull { it.countryName }.firstOrNull(),
       )
     val value =
       HoldingValue(
@@ -253,6 +263,8 @@ class EtfBreakdownService(
           percentageOfTotal = percentage,
           totalValueEur = scaledValue.setScale(2, RoundingMode.HALF_UP),
           holdingSector = key.sector,
+          holdingCountryCode = key.countryCode,
+          holdingCountryName = key.countryName,
           inEtfs = value.etfSymbols.sorted().joinToString(", "),
           numEtfs = value.etfSymbols.size,
           platforms =

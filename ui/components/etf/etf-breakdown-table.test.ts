@@ -11,6 +11,8 @@ describe('EtfBreakdownTable', () => {
       percentageOfTotal: 25.5432,
       totalValueEur: 10000,
       holdingSector: 'Technology',
+      holdingCountryCode: 'US',
+      holdingCountryName: 'United States',
       inEtfs: 'IITU:50%, VUSA:30%',
       numEtfs: 2,
       platforms: 'LIGHTYEAR, TRADING212',
@@ -21,6 +23,8 @@ describe('EtfBreakdownTable', () => {
       percentageOfTotal: 20.1234,
       totalValueEur: 8000,
       holdingSector: 'Technology',
+      holdingCountryCode: 'US',
+      holdingCountryName: 'United States',
       inEtfs: 'IITU:40%',
       numEtfs: 1,
       platforms: 'LIGHTYEAR',
@@ -160,6 +164,8 @@ describe('EtfBreakdownTable', () => {
           percentageOfTotal: 100,
           totalValueEur: 1234567.89,
           holdingSector: 'Technology',
+          holdingCountryCode: 'US',
+          holdingCountryName: 'United States',
           inEtfs: 'IITU:100%',
           numEtfs: 1,
           platforms: 'LIGHTYEAR',
@@ -187,6 +193,8 @@ describe('EtfBreakdownTable', () => {
           percentageOfTotal: 100,
           totalValueEur: 0,
           holdingSector: null,
+          holdingCountryCode: null,
+          holdingCountryName: null,
           inEtfs: '',
           numEtfs: 0,
           platforms: '',
@@ -310,13 +318,14 @@ describe('EtfBreakdownTable', () => {
       const dataTable = wrapper.findComponent({ name: 'DataTable' })
       const columns = dataTable.props('columns')
 
-      expect(columns).toHaveLength(6)
+      expect(columns).toHaveLength(7)
       expect(columns[0].key).toBe('holdingTicker')
       expect(columns[1].key).toBe('holdingName')
       expect(columns[2].key).toBe('percentageOfTotal')
       expect(columns[3].key).toBe('totalValueEur')
       expect(columns[4].key).toBe('holdingSector')
-      expect(columns[5].key).toBe('inEtfs')
+      expect(columns[5].key).toBe('holdingCountryName')
+      expect(columns[6].key).toBe('inEtfs')
     })
 
     it('should have correct sortable configuration', () => {
@@ -337,7 +346,8 @@ describe('EtfBreakdownTable', () => {
       expect(columns[2].sortable).toBe(true)
       expect(columns[3].sortable).toBe(true)
       expect(columns[4].sortable).toBe(true)
-      expect(columns[5].sortable).toBe(false)
+      expect(columns[5].sortable).toBe(true)
+      expect(columns[6].sortable).toBe(false)
     })
   })
 

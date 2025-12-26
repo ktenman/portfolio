@@ -52,11 +52,14 @@
 
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-4">
       <div class="row g-3">
-        <div class="col-md-6">
+        <div class="col-lg-4 col-md-6">
           <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
         </div>
-        <div class="col-md-6">
+        <div class="col-lg-4 col-md-6">
           <etf-breakdown-chart title="Top Companies" :chart-data="companyChartData" />
+        </div>
+        <div class="col-lg-4 col-md-6">
+          <etf-breakdown-chart title="Country Allocation" :chart-data="countryChartData" />
         </div>
       </div>
     </div>
@@ -80,6 +83,7 @@ import { etfBreakdownService } from '../../services/etf-breakdown-service'
 import {
   buildSectorChartData,
   buildCompanyChartData,
+  buildCountryChartData,
   getFilterParam,
   type ChartDataItem,
 } from '../../services/etf-chart-service'
@@ -167,6 +171,8 @@ const totalValue = computed(() => holdings.value.reduce((sum, h) => sum + h.tota
 const sectorChartData = computed<ChartDataItem[]>(() => buildSectorChartData(holdings.value))
 
 const companyChartData = computed<ChartDataItem[]>(() => buildCompanyChartData(holdings.value))
+
+const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(holdings.value))
 
 const getEtfsParam = (): string[] | undefined =>
   getFilterParam(selectedEtfs.value, availableEtfs.value)
