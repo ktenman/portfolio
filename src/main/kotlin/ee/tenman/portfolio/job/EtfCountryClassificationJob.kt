@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.model.ClassificationOutcome
 import ee.tenman.portfolio.model.ClassificationResult
@@ -16,12 +17,12 @@ class EtfCountryClassificationJob(
   private val countryClassificationService: CountryClassificationService,
   private val jobExecutionService: JobExecutionService,
   private val circuitBreaker: OpenRouterCircuitBreaker,
+  private val properties: IndustryClassificationProperties,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
     private const val PROGRESS_LOG_INTERVAL = 50
-    private const val RATE_LIMIT_BUFFER_MS = 100L
   }
 
   @Scheduled(initialDelay = 240000, fixedDelay = Long.MAX_VALUE)
@@ -64,7 +65,7 @@ class EtfCountryClassificationJob(
     holdingIds.forEachIndexed { index, holdingId ->
       val waitTime = circuitBreaker.getWaitTimeMs(circuitBreaker.isUsingFallback())
       if (waitTime > 0) {
-        Thread.sleep(waitTime + RATE_LIMIT_BUFFER_MS)
+        Thread.sleep(waitTime + properties.rateLimitBufferMs)
       }
       val holding = holdings[holdingId]
       val etfNames = etfNamesMap[holdingId] ?: emptyList()

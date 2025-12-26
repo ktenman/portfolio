@@ -341,19 +341,19 @@ describe('etf-chart-service', () => {
       expect(others?.code).toBeUndefined()
     })
 
-    it('should group countries below 0.5% threshold into Others by default', () => {
+    it('should group countries below 0.2% threshold into Others by default', () => {
       const holdings = [
         createHolding({ holdingCountryName: 'United States', percentageOfTotal: 70 }),
         createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 20 }),
-        createHolding({ holdingCountryName: 'TinyCountry1', percentageOfTotal: 0.3 }),
-        createHolding({ holdingCountryName: 'TinyCountry2', percentageOfTotal: 0.2 }),
+        createHolding({ holdingCountryName: 'TinyCountry1', percentageOfTotal: 0.15 }),
+        createHolding({ holdingCountryName: 'TinyCountry2', percentageOfTotal: 0.1 }),
       ]
       const result = buildCountryChartData(holdings)
       expect(result).toHaveLength(3)
       expect(result[0].label).toBe('United States')
       expect(result[1].label).toBe('Germany')
       expect(result[2].label).toBe('Others')
-      expect(result[2].value).toBeCloseTo(0.5)
+      expect(result[2].value).toBeCloseTo(0.25)
     })
 
     it('should accept custom minThreshold', () => {

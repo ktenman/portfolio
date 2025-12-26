@@ -94,7 +94,7 @@ export function buildCountryChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 20, minThreshold = 0.5, colors = CHART_COLORS } = config
+  const { topCount = 20, minThreshold = 0.2, colors = CHART_COLORS } = config
   const countryTotals = new Map<string, { value: number; code: string }>()
 
   holdings.forEach(holding => {

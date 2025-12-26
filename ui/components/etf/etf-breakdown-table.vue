@@ -48,6 +48,22 @@
             <span class="ticker-symbol">{{ item.holdingTicker || '-' }}</span>
           </div>
         </template>
+        <template #cell-holdingCountryName="{ item }">
+          <div
+            v-if="item.holdingCountryCode"
+            class="country-flag"
+            :title="item.holdingCountryName ?? ''"
+          >
+            <img
+              :src="getFlagUrl(item.holdingCountryCode)"
+              :alt="item.holdingCountryName ?? ''"
+              class="flag-icon"
+              @error="(e: Event) => handleFlagError(e, item.holdingCountryCode ?? '')"
+            />
+            <span class="flag-fallback" style="display: none">{{ item.holdingCountryCode }}</span>
+          </div>
+          <span v-else>-</span>
+        </template>
         <template #footer>
           <tr v-if="holdings.length > 0" class="table-footer-totals">
             <td class="fw-bold ps-3">Total</td>
@@ -159,6 +175,18 @@ const handleImageError = (event: Event) => {
   img.style.display = 'none'
 }
 
+const getFlagUrl = (countryCode: string): string =>
+  `https://hatscripts.github.io/circle-flags/flags/${countryCode.toLowerCase()}.svg`
+
+const handleFlagError = (event: Event, _countryCode: string) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+  const fallback = img.nextElementSibling as HTMLElement | null
+  if (fallback) {
+    fallback.style.display = 'inline'
+  }
+}
+
 const columns: ColumnDefinition[] = [
   {
     key: 'holdingTicker',
@@ -260,6 +288,28 @@ const columns: ColumnDefinition[] = [
 
 .ticker-symbol {
   font-weight: 600;
+}
+
+.country-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flag-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.flag-fallback {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
 }
 
 .card {
