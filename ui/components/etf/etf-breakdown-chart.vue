@@ -29,26 +29,13 @@ export interface ChartDataItem {
   color: string
 }
 
-const props = withDefaults(
-  defineProps<{
-    title: string
-    chartData: ChartDataItem[]
-    enhanceSmallSlices?: boolean
-  }>(),
-  {
-    enhanceSmallSlices: false,
-  }
-)
+const props = defineProps<{
+  title: string
+  chartData: ChartDataItem[]
+}>()
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 let chart: Chart | null = null
-
-const getVisualValues = () => {
-  if (!props.enhanceSmallSlices) {
-    return props.chartData.map(item => item.value)
-  }
-  return props.chartData.map(item => Math.sqrt(item.value))
-}
 
 const renderChart = () => {
   if (!chartCanvas.value || props.chartData.length === 0) return
@@ -57,15 +44,13 @@ const renderChart = () => {
     chart.destroy()
   }
 
-  const actualValues = props.chartData.map(item => item.value)
-
   chart = new Chart(chartCanvas.value, {
     type: 'pie',
     data: {
       labels: props.chartData.map(item => item.label),
       datasets: [
         {
-          data: getVisualValues(),
+          data: props.chartData.map(item => item.value),
           backgroundColor: props.chartData.map(item => item.color),
           borderWidth: 2,
           borderColor: '#ffffff',
@@ -84,7 +69,7 @@ const renderChart = () => {
           callbacks: {
             label: context => {
               const label = context.label || ''
-              const value = actualValues[context.dataIndex] || 0
+              const value = context.parsed || 0
               return `${label}: ${value.toFixed(2)}%`
             },
           },

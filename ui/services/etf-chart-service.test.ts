@@ -113,6 +113,33 @@ describe('etf-chart-service', () => {
       const result = buildSectorChartData(holdings, { colors: ['#FF0000'] })
       expect(result[0].color).toBe('#FF0000')
     })
+
+    it('should group sectors below 0.5% threshold into Others by default', () => {
+      const holdings = [
+        createHolding({ holdingSector: 'Technology', percentageOfTotal: 70 }),
+        createHolding({ holdingSector: 'Finance', percentageOfTotal: 20 }),
+        createHolding({ holdingSector: 'TinySector1', percentageOfTotal: 0.3 }),
+        createHolding({ holdingSector: 'TinySector2', percentageOfTotal: 0.2 }),
+      ]
+      const result = buildSectorChartData(holdings)
+      expect(result).toHaveLength(3)
+      expect(result[0].label).toBe('Technology')
+      expect(result[1].label).toBe('Finance')
+      expect(result[2].label).toBe('Others')
+      expect(result[2].value).toBeCloseTo(0.5)
+    })
+
+    it('should accept custom minThreshold', () => {
+      const holdings = [
+        createHolding({ holdingSector: 'Technology', percentageOfTotal: 70 }),
+        createHolding({ holdingSector: 'Finance', percentageOfTotal: 20 }),
+        createHolding({ holdingSector: 'SmallSector', percentageOfTotal: 1 }),
+      ]
+      const result = buildSectorChartData(holdings, { minThreshold: 2 })
+      expect(result).toHaveLength(3)
+      expect(result[2].label).toBe('Others')
+      expect(result[2].value).toBe(1)
+    })
   })
 
   describe('buildCompanyChartData', () => {
@@ -312,6 +339,33 @@ describe('etf-chart-service', () => {
       const result = buildCountryChartData(holdings)
       const others = result.find(item => item.label === 'Others')
       expect(others?.code).toBeUndefined()
+    })
+
+    it('should group countries below 0.5% threshold into Others by default', () => {
+      const holdings = [
+        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 70 }),
+        createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 20 }),
+        createHolding({ holdingCountryName: 'TinyCountry1', percentageOfTotal: 0.3 }),
+        createHolding({ holdingCountryName: 'TinyCountry2', percentageOfTotal: 0.2 }),
+      ]
+      const result = buildCountryChartData(holdings)
+      expect(result).toHaveLength(3)
+      expect(result[0].label).toBe('United States')
+      expect(result[1].label).toBe('Germany')
+      expect(result[2].label).toBe('Others')
+      expect(result[2].value).toBeCloseTo(0.5)
+    })
+
+    it('should accept custom minThreshold', () => {
+      const holdings = [
+        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 70 }),
+        createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 20 }),
+        createHolding({ holdingCountryName: 'SmallCountry', percentageOfTotal: 1 }),
+      ]
+      const result = buildCountryChartData(holdings, { minThreshold: 2 })
+      expect(result).toHaveLength(3)
+      expect(result[2].label).toBe('Others')
+      expect(result[2].value).toBe(1)
     })
   })
 

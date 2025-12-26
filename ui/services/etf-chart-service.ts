@@ -12,6 +12,7 @@ export interface ChartDataItem {
 export interface ChartDataConfig {
   topCount?: number
   threshold?: number
+  minThreshold?: number
   colors?: string[]
 }
 
@@ -19,7 +20,7 @@ export function buildSectorChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 20, colors = CHART_COLORS } = config
+  const { topCount = 20, minThreshold = 0.5, colors = CHART_COLORS } = config
   const sectorTotals = new Map<string, number>()
 
   holdings.forEach(holding => {
@@ -36,8 +37,10 @@ export function buildSectorChartData(
       percentage: value.toFixed(2),
     }))
 
-  const mainSectors = sortedSectors.slice(0, topCount)
-  const smallSectors = sortedSectors.slice(topCount)
+  const aboveThreshold = sortedSectors.filter(s => s.value >= minThreshold)
+  const belowThreshold = sortedSectors.filter(s => s.value < minThreshold)
+  const mainSectors = aboveThreshold.slice(0, topCount)
+  const smallSectors = [...aboveThreshold.slice(topCount), ...belowThreshold]
 
   const result = [...mainSectors]
 
@@ -91,7 +94,7 @@ export function buildCountryChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 20, colors = CHART_COLORS } = config
+  const { topCount = 20, minThreshold = 0.5, colors = CHART_COLORS } = config
   const countryTotals = new Map<string, { value: number; code: string }>()
 
   holdings.forEach(holding => {
@@ -114,8 +117,10 @@ export function buildCountryChartData(
       code: data.code,
     }))
 
-  const mainCountries = sortedCountries.slice(0, topCount)
-  const smallCountries = sortedCountries.slice(topCount)
+  const aboveThreshold = sortedCountries.filter(c => c.value >= minThreshold)
+  const belowThreshold = sortedCountries.filter(c => c.value < minThreshold)
+  const mainCountries = aboveThreshold.slice(0, topCount)
+  const smallCountries = [...aboveThreshold.slice(topCount), ...belowThreshold]
 
   const result = [...mainCountries]
 
