@@ -26,6 +26,7 @@ export const createInstrumentDto = (overrides?: Partial<InstrumentDto>): Instrum
   priceChangeAmount: 0,
   priceChangePercent: 0,
   ter: null,
+  xirrAnnualReturn: null,
   ...overrides,
 })
 
