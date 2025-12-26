@@ -130,7 +130,7 @@ class CountryClassificationService(
     }
   }
 
-  private fun getCountryName(countryCode: String): String = Locale("", countryCode).displayCountry
+  private fun getCountryName(countryCode: String): String = Locale.of("", countryCode).displayCountry
 
   private fun buildPrompt(
     companyName: String,
