@@ -32,6 +32,7 @@ data class InstrumentDto(
   val priceChangeAmount: BigDecimal? = null,
   val priceChangePercent: Double? = null,
   val ter: BigDecimal? = null,
+  val xirrAnnualReturn: BigDecimal? = null,
 ) {
   fun toEntity() =
     Instrument(
@@ -42,7 +43,7 @@ data class InstrumentDto(
       currentPrice = currentPrice,
       providerName = ProviderName.valueOf(providerName),
     ).apply {
-      id.let { this.id = it }
+      this.id = id
     }
 
   companion object {
@@ -66,6 +67,7 @@ data class InstrumentDto(
         priceChangeAmount = null,
         priceChangePercent = null,
         ter = instrument.ter,
+        xirrAnnualReturn = instrument.xirrAnnualReturn,
       )
 
     fun fromSnapshot(snapshot: InstrumentSnapshot) =
@@ -88,6 +90,7 @@ data class InstrumentDto(
         priceChangeAmount = snapshot.priceChangeAmount,
         priceChangePercent = snapshot.priceChangePercent,
         ter = snapshot.instrument.ter,
+        xirrAnnualReturn = snapshot.instrument.xirrAnnualReturn,
       )
   }
 }

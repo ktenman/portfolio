@@ -46,7 +46,6 @@
         :is-error="isError"
         :error-message="error?.message"
         :selected-period="selectedPeriod"
-        @edit="openEditModal"
       />
     </template>
 
@@ -192,11 +191,6 @@ const toggleAllPlatforms = () => {
 
 const openAddModal = () => {
   selectedItem.value = null
-  showModal()
-}
-
-const openEditModal = (instrument: InstrumentDto) => {
-  selectedItem.value = { ...instrument }
   showModal()
 }
 

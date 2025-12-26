@@ -26,6 +26,12 @@ export const instrumentColumns: ColumnDefinition[] = [
   },
   { key: 'priceChange', label: '24H', class: 'd-none d-lg-table-cell price-change-column' },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
+  {
+    key: 'xirrAnnualReturn',
+    label: 'Annual',
+    formatter: formatPercentageFromDecimal,
+    class: 'd-none d-xl-table-cell',
+  },
   { key: 'portfolioWeight', label: 'Weight', class: 'd-none d-xl-table-cell' },
   { key: 'ter', label: 'TER', class: 'd-none d-xl-table-cell' },
 ]
