@@ -9,11 +9,13 @@ data class EtfHoldingBreakdownDto(
   val percentageOfTotal: BigDecimal,
   val totalValueEur: BigDecimal,
   val holdingSector: String?,
+  val holdingCountryCode: String?,
+  val holdingCountryName: String?,
   val inEtfs: String,
   val numEtfs: Int,
   val platforms: String,
 ) : Serializable {
   companion object {
-    private const val serialVersionUID = 1L
+    private const val serialVersionUID = 2L
   }
 }
