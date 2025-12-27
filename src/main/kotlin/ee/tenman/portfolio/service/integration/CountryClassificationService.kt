@@ -59,13 +59,40 @@ class CountryClassificationService(
   ): CountryClassificationResult? {
     val sanitizedName = LogSanitizerUtil.sanitize(companyName)
     log.info("Classifying country for company: {} (ticker: {})", sanitizedName, ticker)
-    if (!properties.enabled || companyName.isBlank()) {
-      log.warn("Classification disabled or blank company name")
+    if (companyName.isBlank()) {
+      log.warn("Blank company name")
+      return null
+    }
+    return tryAutoAssign(etfNames, sanitizedName) ?: classifyWithLlm(companyName, ticker, etfNames, sanitizedName)
+  }
+
+  private fun classifyWithLlm(
+    companyName: String,
+    ticker: String?,
+    etfNames: List<String>,
+    sanitizedName: String,
+  ): CountryClassificationResult? {
+    if (!properties.enabled) {
+      log.warn("LLM classification disabled, skipping: {}", sanitizedName)
       return null
     }
     val prompt = buildPrompt(companyName, ticker, etfNames)
     return classifyWithCountryModels(prompt, sanitizedName)
   }
+
+  private fun tryAutoAssign(
+    etfNames: List<String>,
+    sanitizedName: String,
+  ): CountryClassificationResult? {
+    val anySp500 = etfNames.any { it.contains("S&P 500", ignoreCase = true) }
+    if (anySp500) {
+      log.info("Auto-assigning US for {} (in S&P 500 ETF)", sanitizedName)
+      return CountryClassificationResult(countryCode = "US", countryName = "United States", model = null)
+    }
+    return null
+  }
+
+  private fun isNorthAmericaEtf(etfNames: List<String>): Boolean = etfNames.any { it.contains("North America", ignoreCase = true) }
 
   private fun classifyWithCountryModels(
     prompt: String,
@@ -119,6 +146,9 @@ class CountryClassificationService(
   ): String {
     val tickerInfo = if (!ticker.isNullOrBlank()) " (ticker: $ticker)" else ""
     val etfContext = if (etfNames.isNotEmpty()) "\nThis company is held in: ${etfNames.joinToString(", ")}" else ""
+    if (isNorthAmericaEtf(etfNames)) {
+      return buildNorthAmericaPrompt(companyName, tickerInfo, etfContext)
+    }
     return """
     What is the headquarters country of "$companyName"$tickerInfo?
 
@@ -138,4 +168,18 @@ class CountryClassificationService(
     Country code:
     """.trimIndent()
   }
+
+  private fun buildNorthAmericaPrompt(
+    companyName: String,
+    tickerInfo: String,
+    etfContext: String,
+  ): String =
+    """
+    This company "$companyName"$tickerInfo is a holding in a North America ETF.
+    $etfContext
+
+    Is this company headquartered in Canada or United States?
+
+    ANSWER WITH ONLY: US or CA
+    """.trimIndent()
 }
