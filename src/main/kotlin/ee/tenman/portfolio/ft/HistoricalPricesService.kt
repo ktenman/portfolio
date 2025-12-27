@@ -32,6 +32,7 @@ private val TICKERS: Map<String, String> =
     "VNRT:AEX:EUR" to "79451207",
     "GB00B0ZDNB53:GBP" to "543017012",
     "VWCE:GER:EUR" to "544541677",
+    "SPPW:GER:EUR" to "519953640",
     "VNRA:GER:EUR" to "544523562",
   )
 
