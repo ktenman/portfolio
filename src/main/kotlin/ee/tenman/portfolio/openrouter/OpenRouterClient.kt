@@ -42,16 +42,40 @@ class OpenRouterClient(
     }
     var currentModel: AiModel? = startingModel
     while (currentModel != null) {
-      val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.fallbackTier)
+      val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.sectorFallbackTier)
       val result = executeWithSelectionForCascade(selection, prompt, maxTokens, temperature)
       if (result != null) return result
-      val nextModel = currentModel.nextFallbackModel()
+      val nextModel = currentModel.nextSectorFallbackModel()
       if (nextModel != null) {
-        log.info("Cascading to next fallback model: {} (tier {})", nextModel.modelId, nextModel.fallbackTier)
+        log.info("Cascading to next fallback model: {} (tier {})", nextModel.modelId, nextModel.sectorFallbackTier)
       }
       currentModel = nextModel
     }
     log.warn("All fallback models exhausted, no successful response")
+    return null
+  }
+
+  fun classifyWithCountryFallback(
+    prompt: String,
+    maxTokens: Int = 10,
+    temperature: Double = 0.0,
+  ): OpenRouterClassificationResult? {
+    if (openRouterProperties.apiKey.isBlank()) {
+      log.warn("OpenRouter API key is not configured")
+      return null
+    }
+    var currentModel: AiModel? = AiModel.primaryCountryModel()
+    while (currentModel != null) {
+      val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.countryFallbackTier)
+      val result = executeWithSelectionForCascade(selection, prompt, maxTokens, temperature)
+      if (result != null) return result
+      val nextModel = currentModel.nextCountryFallbackModel()
+      if (nextModel != null) {
+        log.info("Cascading to next country fallback model: {} (tier {})", nextModel.modelId, nextModel.countryFallbackTier)
+      }
+      currentModel = nextModel
+    }
+    log.warn("All country fallback models exhausted, no successful response")
     return null
   }
 

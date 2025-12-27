@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.service.integration
 
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
-import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
@@ -17,85 +16,60 @@ class CountryClassificationService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val VALID_COUNTRY_CODES: Set<String> =
-      Locale.getISOCountries().toSet()
-
-    private val COMMON_COUNTRY_CODES: String =
-      listOf(
-        "US",
-        "CN",
-        "JP",
-        "GB",
-        "DE",
-        "FR",
-        "CA",
-        "AU",
-        "KR",
-        "TW",
-        "IN",
-        "BR",
-        "CH",
-        "NL",
-        "IE",
-        "SE",
-        "DK",
-        "ES",
-        "IT",
-        "FI",
-        "NO",
-        "BE",
-        "AT",
-        "SG",
-        "HK",
-        "IL",
-        "ZA",
-        "MX",
-      ).joinToString(", ")
+    private val VALID_COUNTRY_CODES: Set<String> = Locale.getISOCountries().toSet()
   }
 
   fun classifyCompanyCountryWithModel(
     companyName: String,
+    ticker: String? = null,
     etfNames: List<String> = emptyList(),
   ): CountryClassificationResult? {
     val sanitizedName = LogSanitizerUtil.sanitize(companyName)
-    log.info("Classifying country for company: {}", sanitizedName)
-    if (!properties.enabled || companyName.isBlank()) {
-      log.warn("Classification disabled or blank company name")
+    log.info("Classifying country for company: {} (ticker: {})", sanitizedName, ticker)
+    if (companyName.isBlank()) {
+      log.warn("Blank company name")
       return null
     }
-    val prompt = buildPrompt(companyName, etfNames)
-    return classifyWithPrimaryModel(prompt, sanitizedName)
+    return tryAutoAssign(etfNames, sanitizedName) ?: classifyWithLlm(companyName, ticker, etfNames, sanitizedName)
   }
 
-  private fun classifyWithPrimaryModel(
+  private fun classifyWithLlm(
+    companyName: String,
+    ticker: String?,
+    etfNames: List<String>,
+    sanitizedName: String,
+  ): CountryClassificationResult? {
+    if (!properties.enabled) {
+      log.warn("LLM classification disabled, skipping: {}", sanitizedName)
+      return null
+    }
+    val prompt = buildPrompt(companyName, ticker, etfNames)
+    return classifyWithCountryModels(prompt, sanitizedName)
+  }
+
+  private fun tryAutoAssign(
+    etfNames: List<String>,
+    sanitizedName: String,
+  ): CountryClassificationResult? {
+    val anySp500 = etfNames.any { it.contains("S&P 500", ignoreCase = true) }
+    if (anySp500) {
+      log.info("Auto-assigning US for {} (in S&P 500 ETF)", sanitizedName)
+      return CountryClassificationResult(countryCode = "US", countryName = "United States", model = null)
+    }
+    return null
+  }
+
+  private fun isNorthAmericaEtf(etfNames: List<String>): Boolean = etfNames.any { it.contains("North America", ignoreCase = true) }
+
+  private fun classifyWithCountryModels(
     prompt: String,
     sanitizedName: String,
   ): CountryClassificationResult? {
-    val response =
-      openRouterClient.classifyWithModel(prompt) ?: run {
-        log.warn("No response from OpenRouter for country classification: {}", sanitizedName)
-        return retryWithCascadingFallback(prompt, sanitizedName)
-      }
-    return parseResponse(response, sanitizedName) ?: retryWithCascadingFallback(prompt, sanitizedName, response.model)
-  }
-
-  private fun retryWithCascadingFallback(
-    prompt: String,
-    sanitizedName: String,
-    failedModel: AiModel? = null,
-  ): CountryClassificationResult? {
-    val nextModel = failedModel?.nextFallbackModel()
-    if (failedModel != null && nextModel == null) {
-      log.warn("No fallback available after {}", failedModel.modelId)
+    val response = openRouterClient.classifyWithCountryFallback(prompt)
+    if (response == null) {
+      log.warn("All country classification models failed for: {}", sanitizedName)
       return null
     }
-    val model = nextModel ?: AiModel.GROK_4_1_FAST
-    log.info("Retrying country classification with fallback {} for: {}", model.modelId, sanitizedName)
-    val response =
-      openRouterClient.classifyWithCascadingFallback(prompt, model) ?: run {
-        log.warn("All fallback models exhausted for country classification: {}", sanitizedName)
-        return null
-      }
     return parseResponse(response, sanitizedName, logUnknownCountry = true)
   }
 
@@ -134,22 +108,45 @@ class CountryClassificationService(
 
   private fun buildPrompt(
     companyName: String,
+    ticker: String?,
     etfNames: List<String>,
   ): String {
-    val etfContext =
-      if (etfNames.isNotEmpty()) {
-        "\nThis company is held in: ${etfNames.joinToString(", ")}"
-      } else {
-        ""
-      }
+    val tickerInfo = if (!ticker.isNullOrBlank()) " (ticker: $ticker)" else ""
+    val etfContext = if (etfNames.isNotEmpty()) "\nThis company is held in: ${etfNames.joinToString(", ")}" else ""
+    if (isNorthAmericaEtf(etfNames)) {
+      return buildNorthAmericaPrompt(companyName, tickerInfo, etfContext)
+    }
     return """
-    Classify the headquarters country of "$companyName" into ONE of these ISO 2-letter codes: $COMMON_COUNTRY_CODES (or any valid ISO 3166-1 alpha-2 code)
-    $etfContext
-    Consider the ETF context - if the company is in a US-focused ETF (like S&P 500), it's likely US-headquartered.
+    What is the headquarters country of "$companyName"$tickerInfo?
 
-    ANSWER WITH ONLY THE 2-LETTER COUNTRY CODE. DO NOT EXPLAIN.
+    IMPORTANT: Answer with the country where the company's OPERATIONAL headquarters is located,
+    not just where it is legally incorporated for tax purposes.
+
+    Examples:
+    - Ferrari (RACE): Answer IT (Italy, Maranello) - not NL even though incorporated there
+    - Shell (SHEL): Answer GB (UK, London) - moved from NL in 2022
+    - Unilever (ULVR): Answer GB (UK, London) - unified structure since 2020
+    - Airbus (AIR): Answer FR (France, Toulouse) - operational HQ, not NL incorporation
+    - Linde (LIN): Answer IE (Ireland) - moved HQ from Germany
+    $etfContext
+
+    ANSWER WITH ONLY THE 2-LETTER ISO COUNTRY CODE. DO NOT EXPLAIN.
 
     Country code:
     """.trimIndent()
   }
+
+  private fun buildNorthAmericaPrompt(
+    companyName: String,
+    tickerInfo: String,
+    etfContext: String,
+  ): String =
+    """
+    This company "$companyName"$tickerInfo is a holding in a North America ETF.
+    $etfContext
+
+    Is this company headquartered in Canada or United States?
+
+    ANSWER WITH ONLY: US or CA
+    """.trimIndent()
 }

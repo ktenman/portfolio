@@ -7,7 +7,13 @@
       </div>
       <div class="chart-legend mt-3">
         <div v-for="item in chartData" :key="item.label" class="legend-item">
-          <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
+          <img
+            v-if="item.code"
+            :src="`https://hatscripts.github.io/circle-flags/flags/${item.code.toLowerCase()}.svg`"
+            :alt="item.code"
+            class="legend-flag"
+          />
+          <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
           <span class="legend-label">{{ item.label }}</span>
           <span class="legend-value">{{ item.percentage }}%</span>
         </div>
@@ -27,6 +33,7 @@ export interface ChartDataItem {
   value: number
   percentage: string
   color: string
+  code?: string
 }
 
 const props = defineProps<{
@@ -140,6 +147,13 @@ onBeforeUnmount(() => {
   height: 12px;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+.legend-flag {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 50%;
 }
 
 .legend-label {

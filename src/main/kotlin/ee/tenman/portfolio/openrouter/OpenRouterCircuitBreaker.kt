@@ -61,15 +61,15 @@ class OpenRouterCircuitBreaker(
         CircuitBreaker.State.CLOSED, CircuitBreaker.State.HALF_OPEN -> primaryModel
         else -> fallbackModel
       }
-    return ModelSelection(model = model, fallbackTier = model.fallbackTier)
+    return ModelSelection(model = model, fallbackTier = model.sectorFallbackTier)
   }
 
   fun selectModelByTier(tier: Int): ModelSelection {
-    val model = AiModel.entries.find { it.fallbackTier == tier } ?: fallbackModel
-    return ModelSelection(model = model, fallbackTier = model.fallbackTier)
+    val model = AiModel.entries.find { it.sectorFallbackTier == tier } ?: fallbackModel
+    return ModelSelection(model = model, fallbackTier = model.sectorFallbackTier)
   }
 
-  fun selectFallbackModel(): ModelSelection = ModelSelection(model = fallbackModel, fallbackTier = fallbackModel.fallbackTier)
+  fun selectFallbackModel(): ModelSelection = ModelSelection(model = fallbackModel, fallbackTier = fallbackModel.sectorFallbackTier)
 
   fun getCurrentModel(): String = selectModel().modelId
 
