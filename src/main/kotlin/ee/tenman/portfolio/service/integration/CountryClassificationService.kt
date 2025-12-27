@@ -16,40 +16,7 @@ class CountryClassificationService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val VALID_COUNTRY_CODES: Set<String> =
-      Locale.getISOCountries().toSet()
-
-    private val COMMON_COUNTRY_CODES: String =
-      listOf(
-        "US",
-        "CN",
-        "JP",
-        "GB",
-        "DE",
-        "FR",
-        "CA",
-        "AU",
-        "KR",
-        "TW",
-        "IN",
-        "BR",
-        "CH",
-        "NL",
-        "IE",
-        "SE",
-        "DK",
-        "ES",
-        "IT",
-        "FI",
-        "NO",
-        "BE",
-        "AT",
-        "SG",
-        "HK",
-        "IL",
-        "ZA",
-        "MX",
-      ).joinToString(", ")
+    private val VALID_COUNTRY_CODES: Set<String> = Locale.getISOCountries().toSet()
   }
 
   fun classifyCompanyCountryWithModel(
