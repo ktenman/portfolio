@@ -107,9 +107,9 @@ class EtfCountryClassificationJob(
         log.warn("Skipping holding with null id: name=${holding.name}")
         return ClassificationOutcome.SKIPPED
       }
-    log.info("Classifying country for: ${holding.name} (ETFs: ${etfNames.joinToString(", ")})")
+    log.info("Classifying country for: ${holding.name} (ticker: ${holding.ticker}, ETFs: ${etfNames.joinToString(", ")})")
     val result =
-      countryClassificationService.classifyCompanyCountryWithModel(holding.name, etfNames) ?: run {
+      countryClassificationService.classifyCompanyCountryWithModel(holding.name, holding.ticker, etfNames) ?: run {
         log.warn("Country classification returned null for: ${holding.name}")
         return ClassificationOutcome.FAILURE
       }

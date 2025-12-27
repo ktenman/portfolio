@@ -4,6 +4,7 @@ enum class AiModel(
   val modelId: String,
   val rateLimitPerMinute: Int,
   val fallbackTier: Int,
+  val countryFallbackTier: Int = -1,
 ) {
   GEMINI_2_5_FLASH("google/gemini-2.5-flash", 100, 0),
   GROK_4_1_FAST("x-ai/grok-4.1-fast", 60, 1),
@@ -11,13 +12,18 @@ enum class AiModel(
   CLAUDE_HAIKU_4_5("anthropic/claude-haiku-4.5", 7, 3),
   GEMINI_3_PRO_PREVIEW("google/gemini-3-pro-preview", 2, 4),
   GROK_4("x-ai/grok-4", 2, 5),
-  CLAUDE_SONNET_4_5("anthropic/claude-sonnet-4.5", 2, 6),
-  CLAUDE_OPUS_4_5("anthropic/claude-opus-4.5", 1, 7),
+  CLAUDE_SONNET_4_5("anthropic/claude-sonnet-4.5", 2, 6, countryFallbackTier = 1),
+  CLAUDE_OPUS_4_5("anthropic/claude-opus-4.5", 1, 7, countryFallbackTier = 2),
+  DEEPSEEK_V3_2("deepseek/deepseek-v3.2", 60, 8, countryFallbackTier = 0),
   ;
 
   fun nextFallbackModel(): AiModel? = entries.find { it.fallbackTier == this.fallbackTier + 1 }
 
+  fun nextCountryFallbackModel(): AiModel? = entries.find { it.countryFallbackTier == this.countryFallbackTier + 1 }
+
   companion object {
     fun fromModelId(modelId: String): AiModel? = entries.find { it.modelId.equals(modelId, ignoreCase = true) }
+
+    fun primaryCountryModel(): AiModel = DEEPSEEK_V3_2
   }
 }

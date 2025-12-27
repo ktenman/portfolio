@@ -55,47 +55,28 @@ class CountryClassificationService(
 
   fun classifyCompanyCountryWithModel(
     companyName: String,
+    ticker: String? = null,
     etfNames: List<String> = emptyList(),
   ): CountryClassificationResult? {
     val sanitizedName = LogSanitizerUtil.sanitize(companyName)
-    log.info("Classifying country for company: {}", sanitizedName)
+    log.info("Classifying country for company: {} (ticker: {})", sanitizedName, ticker)
     if (!properties.enabled || companyName.isBlank()) {
       log.warn("Classification disabled or blank company name")
       return null
     }
-    val prompt = buildPrompt(companyName, etfNames)
-    return classifyWithPrimaryModel(prompt, sanitizedName)
+    val prompt = buildPrompt(companyName, ticker, etfNames)
+    return classifyWithCountryModels(prompt, sanitizedName)
   }
 
-  private fun classifyWithPrimaryModel(
+  private fun classifyWithCountryModels(
     prompt: String,
     sanitizedName: String,
   ): CountryClassificationResult? {
-    val response =
-      openRouterClient.classifyWithModel(prompt) ?: run {
-        log.warn("No response from OpenRouter for country classification: {}", sanitizedName)
-        return retryWithCascadingFallback(prompt, sanitizedName)
-      }
-    return parseResponse(response, sanitizedName) ?: retryWithCascadingFallback(prompt, sanitizedName, response.model)
-  }
-
-  private fun retryWithCascadingFallback(
-    prompt: String,
-    sanitizedName: String,
-    failedModel: AiModel? = null,
-  ): CountryClassificationResult? {
-    val nextModel = failedModel?.nextFallbackModel()
-    if (failedModel != null && nextModel == null) {
-      log.warn("No fallback available after {}", failedModel.modelId)
+    val response = openRouterClient.classifyWithCountryFallback(prompt)
+    if (response == null) {
+      log.warn("All country classification models failed for: {}", sanitizedName)
       return null
     }
-    val model = nextModel ?: AiModel.GROK_4_1_FAST
-    log.info("Retrying country classification with fallback {} for: {}", model.modelId, sanitizedName)
-    val response =
-      openRouterClient.classifyWithCascadingFallback(prompt, model) ?: run {
-        log.warn("All fallback models exhausted for country classification: {}", sanitizedName)
-        return null
-      }
     return parseResponse(response, sanitizedName, logUnknownCountry = true)
   }
 
@@ -134,20 +115,26 @@ class CountryClassificationService(
 
   private fun buildPrompt(
     companyName: String,
+    ticker: String?,
     etfNames: List<String>,
   ): String {
-    val etfContext =
-      if (etfNames.isNotEmpty()) {
-        "\nThis company is held in: ${etfNames.joinToString(", ")}"
-      } else {
-        ""
-      }
+    val tickerInfo = if (!ticker.isNullOrBlank()) " (ticker: $ticker)" else ""
+    val etfContext = if (etfNames.isNotEmpty()) "\nThis company is held in: ${etfNames.joinToString(", ")}" else ""
     return """
-    Classify the headquarters country of "$companyName" into ONE of these ISO 2-letter codes: $COMMON_COUNTRY_CODES (or any valid ISO 3166-1 alpha-2 code)
-    $etfContext
-    Consider the ETF context - if the company is in a US-focused ETF (like S&P 500), it's likely US-headquartered.
+    What is the headquarters country of "$companyName"$tickerInfo?
 
-    ANSWER WITH ONLY THE 2-LETTER COUNTRY CODE. DO NOT EXPLAIN.
+    IMPORTANT: Answer with the country where the company's OPERATIONAL headquarters is located,
+    not just where it is legally incorporated for tax purposes.
+
+    Examples:
+    - Ferrari (RACE): Answer IT (Italy, Maranello) - not NL even though incorporated there
+    - Shell (SHEL): Answer GB (UK, London) - moved from NL in 2022
+    - Unilever (ULVR): Answer GB (UK, London) - unified structure since 2020
+    - Airbus (AIR): Answer FR (France, Toulouse) - operational HQ, not NL incorporation
+    - Linde (LIN): Answer IE (Ireland) - moved HQ from Germany
+    $etfContext
+
+    ANSWER WITH ONLY THE 2-LETTER ISO COUNTRY CODE. DO NOT EXPLAIN.
 
     Country code:
     """.trimIndent()

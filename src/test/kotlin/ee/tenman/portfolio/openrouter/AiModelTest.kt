@@ -164,8 +164,13 @@ class AiModelTest {
   }
 
   @Test
-  fun `should return null for CLAUDE_OPUS_4_5 as last fallback`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.nextFallbackModel()).toEqual(null)
+  fun `should return next fallback model for CLAUDE_OPUS_4_5`() {
+    expect(AiModel.CLAUDE_OPUS_4_5.nextFallbackModel()).toEqual(AiModel.DEEPSEEK_V3_2)
+  }
+
+  @Test
+  fun `should return null for DEEPSEEK_V3_2 as last fallback`() {
+    expect(AiModel.DEEPSEEK_V3_2.nextFallbackModel()).toEqual(null)
   }
 
   @Test
@@ -174,5 +179,44 @@ class AiModelTest {
     val uniqueTiers = tiers.toSet()
 
     expect(tiers.size).toEqual(uniqueTiers.size)
+  }
+
+  @Test
+  fun `should return DEEPSEEK_V3_2 for matching model id`() {
+    val result = AiModel.fromModelId("deepseek/deepseek-v3.2")
+
+    expect(result).toEqual(AiModel.DEEPSEEK_V3_2)
+  }
+
+  @Test
+  fun `should have correct rate limits for DEEPSEEK_V3_2`() {
+    expect(AiModel.DEEPSEEK_V3_2.rateLimitPerMinute).toEqual(60)
+  }
+
+  @Test
+  fun `should have correct country fallback chain`() {
+    expect(AiModel.DEEPSEEK_V3_2.countryFallbackTier).toEqual(0)
+    expect(AiModel.CLAUDE_SONNET_4_5.countryFallbackTier).toEqual(1)
+    expect(AiModel.CLAUDE_OPUS_4_5.countryFallbackTier).toEqual(2)
+  }
+
+  @Test
+  fun `should return next country fallback model for DEEPSEEK_V3_2`() {
+    expect(AiModel.DEEPSEEK_V3_2.nextCountryFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_4_5)
+  }
+
+  @Test
+  fun `should return next country fallback model for CLAUDE_SONNET_4_5`() {
+    expect(AiModel.CLAUDE_SONNET_4_5.nextCountryFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_5)
+  }
+
+  @Test
+  fun `should return null for CLAUDE_OPUS_4_5 as last country fallback`() {
+    expect(AiModel.CLAUDE_OPUS_4_5.nextCountryFallbackModel()).toEqual(null)
+  }
+
+  @Test
+  fun `should return primary country model`() {
+    expect(AiModel.primaryCountryModel()).toEqual(AiModel.DEEPSEEK_V3_2)
   }
 }

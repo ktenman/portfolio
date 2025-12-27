@@ -201,12 +201,27 @@ class IndustryClassificationServiceTest {
   fun `should return null when last model in chain fails with unknown sector`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Unknown", model = AiModel.CLAUDE_OPUS_4_5)
+      OpenRouterClassificationResult(content = "Unknown", model = AiModel.DEEPSEEK_V3_2)
 
     val result = service.classifyCompanyWithModel("Test Corp")
 
     expect(result).toEqual(null)
     verify(exactly = 1) { openRouterClient.classifyWithModel(any()) }
     verify(exactly = 0) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `should use DEEPSEEK_V3_2 as final cascading fallback after CLAUDE_OPUS_4_5`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithModel(any()) } returns
+      OpenRouterClassificationResult(content = "Unknown", model = AiModel.CLAUDE_OPUS_4_5)
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V3_2, any(), any()) } returns
+      OpenRouterClassificationResult(content = "Finance", model = AiModel.DEEPSEEK_V3_2)
+
+    val result = service.classifyCompanyWithModel("Test Bank")
+
+    expect(result?.sector).toEqual(IndustrySector.FINANCE)
+    expect(result?.model).toEqual(AiModel.DEEPSEEK_V3_2)
+    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V3_2, any(), any()) }
   }
 }
