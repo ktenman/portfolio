@@ -223,7 +223,7 @@ class OpenRouterCircuitBreakerTest {
   }
 
   @Test
-  fun `should rate limit CLAUDE_SONNET_4_5 at 2 requests per minute`() {
+  fun `should rate limit CLAUDE_SONNET_4_5 at configured rate`() {
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_4_5)).toEqual(false)
     clock.advance((MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS)
@@ -231,7 +231,7 @@ class OpenRouterCircuitBreakerTest {
   }
 
   @Test
-  fun `should rate limit CLAUDE_OPUS_4_5 at 1 request per minute`() {
+  fun `should rate limit CLAUDE_OPUS_4_5 at configured rate`() {
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_5)).toEqual(false)
     clock.advance((MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS)

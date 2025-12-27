@@ -67,12 +67,12 @@ class AiModelTest {
 
   @Test
   fun `should have correct rate limits for CLAUDE_SONNET_4_5`() {
-    expect(AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute).toEqual(2)
+    expect(AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute).toEqual(60)
   }
 
   @Test
   fun `should have correct rate limits for CLAUDE_OPUS_4_5`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute).toEqual(1)
+    expect(AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute).toEqual(60)
   }
 
   @Test
