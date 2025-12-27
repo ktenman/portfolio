@@ -183,6 +183,8 @@ scraping:
         uuid: "1ecf2da3-e426-68b7-a268-3d0ec5cf88ad"
       - symbol: "VWCE:GER:EUR"
         uuid: "1eda0a07-10b3-63e0-b568-6deedaa217e7"
+      - symbol: "SPPW:GER:EUR"
+        uuid: "1ef56330-1354-62df-99c7-5dccd8043f1d"
       - symbol: "VNRA:GER:EUR"
         uuid: "1eda4008-ca17-6926-b60a-654bcfbd8ac3"
     additional-instruments:
