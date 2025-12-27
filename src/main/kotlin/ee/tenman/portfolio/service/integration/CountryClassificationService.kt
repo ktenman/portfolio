@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.service.integration
 
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
-import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil

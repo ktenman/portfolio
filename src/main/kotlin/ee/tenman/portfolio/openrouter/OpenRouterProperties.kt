@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class OpenRouterProperties(
   val apiKey: String = "",
   val url: String = "https://openrouter.ai/api/v1",
-  val primaryModel: AiModel = AiModel.GEMINI_2_5_FLASH,
-  val fallbackModel: AiModel = AiModel.GROK_4_1_FAST,
+  val primaryModel: AiModel = AiModel.GEMINI_3_FLASH_PREVIEW,
+  val fallbackModel: AiModel = AiModel.CLAUDE_OPUS_4_5,
   val circuitBreaker: CircuitBreakerProperties = CircuitBreakerProperties(),
 )

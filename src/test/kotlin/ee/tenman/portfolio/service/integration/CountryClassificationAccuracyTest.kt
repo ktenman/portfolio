@@ -6,19 +6,19 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.openrouter.OpenRouterClient
+import jakarta.annotation.Resource
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 
 @IntegrationTest
 class CountryClassificationAccuracyTest {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Autowired
+  @Resource
   private lateinit var openRouterClient: OpenRouterClient
 
-  @Autowired
+  @Resource
   private lateinit var countryClassificationService: CountryClassificationService
 
   companion object {
@@ -79,9 +79,9 @@ class CountryClassificationAccuracyTest {
 
     val MODELS_TO_TEST =
       listOf(
-        AiModel.GEMINI_2_5_FLASH,
-        AiModel.GROK_4_1_FAST,
-        AiModel.CLAUDE_3_HAIKU,
+        AiModel.CLAUDE_OPUS_4_5,
+        AiModel.CLAUDE_SONNET_4_5,
+        AiModel.DEEPSEEK_V3_2,
       )
   }
 
@@ -182,8 +182,12 @@ class CountryClassificationAccuracyTest {
     """.trimIndent()
 
   private fun parseCountryCode(content: String): String? {
-    val trimmed = content.trim().uppercase()
-    if (trimmed.length == 2 && java.util.Locale.getISOCountries().contains(trimmed)) {
+    val trimmed =
+      content
+        .trim()
+        .uppercase()
+    val isoCountries = java.util.Locale.getISOCountries()
+    if (trimmed.length == 2 && isoCountries.contains(trimmed)) {
       return trimmed
     }
     return null
@@ -211,7 +215,10 @@ class CountryClassificationAccuracyTest {
 
   @Test
   fun `ground truth should have valid country codes`() {
-    val validCodes = java.util.Locale.getISOCountries().toSet()
+    val validCodes =
+      java.util.Locale
+        .getISOCountries()
+        .toSet()
     GROUND_TRUTH.values.forEach { code ->
       expect(validCodes.contains(code)).toEqual(true)
     }

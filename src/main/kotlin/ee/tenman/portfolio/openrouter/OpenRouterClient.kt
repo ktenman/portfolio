@@ -42,12 +42,12 @@ class OpenRouterClient(
     }
     var currentModel: AiModel? = startingModel
     while (currentModel != null) {
-      val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.fallbackTier)
+      val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.sectorFallbackTier)
       val result = executeWithSelectionForCascade(selection, prompt, maxTokens, temperature)
       if (result != null) return result
-      val nextModel = currentModel.nextFallbackModel()
+      val nextModel = currentModel.nextSectorFallbackModel()
       if (nextModel != null) {
-        log.info("Cascading to next fallback model: {} (tier {})", nextModel.modelId, nextModel.fallbackTier)
+        log.info("Cascading to next fallback model: {} (tier {})", nextModel.modelId, nextModel.sectorFallbackTier)
       }
       currentModel = nextModel
     }
