@@ -3,21 +3,25 @@ package ee.tenman.portfolio.domain
 enum class AiModel(
   val modelId: String,
   val rateLimitPerMinute: Int,
-  val fallbackTier: Int,
+  val sectorFallbackTier: Int = -1,
+  val countryFallbackTier: Int = -1,
 ) {
-  GEMINI_2_5_FLASH("google/gemini-2.5-flash", 100, 0),
-  GROK_4_1_FAST("x-ai/grok-4.1-fast", 60, 1),
-  CLAUDE_3_HAIKU("anthropic/claude-3-haiku", 30, 2),
-  CLAUDE_HAIKU_4_5("anthropic/claude-haiku-4.5", 7, 3),
-  GEMINI_3_PRO_PREVIEW("google/gemini-3-pro-preview", 2, 4),
-  GROK_4("x-ai/grok-4", 2, 5),
-  CLAUDE_SONNET_4_5("anthropic/claude-sonnet-4.5", 2, 6),
-  CLAUDE_OPUS_4_5("anthropic/claude-opus-4.5", 1, 7),
+  GEMINI_3_FLASH_PREVIEW("google/gemini-3-flash-preview", 100, sectorFallbackTier = 0),
+  CLAUDE_OPUS_4_5("anthropic/claude-opus-4.5", 60, sectorFallbackTier = 1, countryFallbackTier = 0),
+  CLAUDE_SONNET_4_5("anthropic/claude-sonnet-4.5", 60, sectorFallbackTier = 2, countryFallbackTier = 1),
+  GEMINI_2_5_FLASH("google/gemini-2.5-flash", 100, sectorFallbackTier = 3),
+  DEEPSEEK_V3_2("deepseek/deepseek-v3.2", 60, sectorFallbackTier = 4, countryFallbackTier = 2),
   ;
 
-  fun nextFallbackModel(): AiModel? = entries.find { it.fallbackTier == this.fallbackTier + 1 }
+  fun nextSectorFallbackModel(): AiModel? = entries.find { it.sectorFallbackTier == this.sectorFallbackTier + 1 }
+
+  fun nextCountryFallbackModel(): AiModel? = entries.find { it.countryFallbackTier == this.countryFallbackTier + 1 }
 
   companion object {
     fun fromModelId(modelId: String): AiModel? = entries.find { it.modelId.equals(modelId, ignoreCase = true) }
+
+    fun primarySectorModel(): AiModel = GEMINI_3_FLASH_PREVIEW
+
+    fun primaryCountryModel(): AiModel = CLAUDE_OPUS_4_5
   }
 }

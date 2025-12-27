@@ -25,7 +25,7 @@ class EtfCountryClassificationJob(
     private const val PROGRESS_LOG_INTERVAL = 50
   }
 
-  @Scheduled(initialDelay = 240000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(initialDelay = 120000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 3 * * *}")
   fun runJob() {
     log.info("Running ETF country classification job")
@@ -107,9 +107,9 @@ class EtfCountryClassificationJob(
         log.warn("Skipping holding with null id: name=${holding.name}")
         return ClassificationOutcome.SKIPPED
       }
-    log.info("Classifying country for: ${holding.name} (ETFs: ${etfNames.joinToString(", ")})")
+    log.info("Classifying country for: ${holding.name} (ticker: ${holding.ticker}, ETFs: ${etfNames.joinToString(", ")})")
     val result =
-      countryClassificationService.classifyCompanyCountryWithModel(holding.name, etfNames) ?: run {
+      countryClassificationService.classifyCompanyCountryWithModel(holding.name, holding.ticker, etfNames) ?: run {
         log.warn("Country classification returned null for: ${holding.name}")
         return ClassificationOutcome.FAILURE
       }
