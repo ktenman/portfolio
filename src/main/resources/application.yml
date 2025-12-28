@@ -187,6 +187,8 @@ scraping:
         uuid: "1ef56330-1354-62df-99c7-5dccd8043f1d"
       - symbol: "VNRA:GER:EUR"
         uuid: "1eda4008-ca17-6926-b60a-654bcfbd8ac3"
+      - symbol: "XNAS:GER:EUR"
+        uuid: "1f098996-8150-6170-8254-e77b526cb347"
     additional-instruments:
       - symbol: "WTAI:MIL:EUR"
         uuid: "1f02fdcc-38f9-67b8-ad1b-a71ae2564bd4"
