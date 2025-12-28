@@ -97,6 +97,24 @@
             <span class="metric-label">{{ selectedPeriod.toUpperCase() }}</span>
           </div>
         </div>
+        <div class="instrument-metrics secondary-metrics">
+          <div class="metric-group">
+            <span class="metric-value" :class="getProfitClass(item.profit || 0)">
+              {{ formatProfit(item.profit || 0, item.baseCurrency) }}
+            </span>
+            <span class="metric-label">Profit</span>
+          </div>
+          <div class="metric-group">
+            <span class="metric-value" :class="getProfitClass(item.unrealizedProfit || 0)">
+              {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
+            </span>
+            <span class="metric-label">Unrealized</span>
+          </div>
+          <div class="metric-group">
+            <span class="metric-value">{{ formatAnnualReturn(item.xirrAnnualReturn) }}</span>
+            <span class="metric-label">Annual</span>
+          </div>
+        </div>
         <div class="instrument-footer">
           <div class="value-info">
             <span class="value-label">Value</span>
@@ -511,6 +529,12 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--bs-gray-200);
     gap: 0.75rem 0.5rem;
+
+    &.secondary-metrics {
+      margin-bottom: 0.75rem;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
 
     .metric-group {
       text-align: center;

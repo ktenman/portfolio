@@ -315,7 +315,6 @@ const columns: ColumnDefinition[] = [
 .card {
   border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid #e0e0e0;
 }
 
 .card :deep(.table) {
@@ -385,6 +384,30 @@ const columns: ColumnDefinition[] = [
   .card :deep(.table th:nth-child(7)),
   .card :deep(.table td:nth-child(7)) {
     display: none;
+  }
+
+  .ticker-cell,
+  .country-flag {
+    justify-content: flex-end;
+  }
+
+  .card :deep(.mobile-card) {
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--bs-gray-200);
+  }
+
+  .card :deep(.mobile-card:first-child) {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+  }
+
+  .card :deep(.mobile-card:last-child) {
+    border-bottom: none;
+    margin-bottom: 0;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
   }
 }
 
