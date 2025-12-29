@@ -20,7 +20,7 @@ export function buildSectorChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 20, minThreshold = 0.5, colors = CHART_COLORS } = config
+  const { topCount = 15, minThreshold = 0.5, colors = CHART_COLORS } = config
   const sectorTotals = new Map<string, number>()
 
   holdings.forEach(holding => {
@@ -63,11 +63,11 @@ export function buildCompanyChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { threshold = 1.5, colors = CHART_COLORS } = config
+  const { topCount = 15, colors = CHART_COLORS } = config
   const sortedHoldings = [...holdings].sort((a, b) => b.percentageOfTotal - a.percentageOfTotal)
 
-  const mainHoldings = sortedHoldings.filter(h => h.percentageOfTotal >= threshold)
-  const smallHoldings = sortedHoldings.filter(h => h.percentageOfTotal < threshold)
+  const mainHoldings = sortedHoldings.slice(0, topCount)
+  const smallHoldings = sortedHoldings.slice(topCount)
 
   const result = mainHoldings.map(h => ({
     label: h.holdingName,
@@ -94,7 +94,7 @@ export function buildCountryChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 20, minThreshold = 0.2, colors = CHART_COLORS } = config
+  const { topCount = 15, minThreshold = 0.2, colors = CHART_COLORS } = config
   const countryTotals = new Map<string, { value: number; code: string }>()
 
   holdings.forEach(holding => {
