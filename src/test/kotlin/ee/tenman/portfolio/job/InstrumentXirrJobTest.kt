@@ -25,12 +25,12 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 class InstrumentXirrJobTest {
-  private val instrumentService: InstrumentService = mockk(relaxed = true)
-  private val dailyPriceService: DailyPriceService = mockk()
-  private val xirrCalculationService: XirrCalculationService = XirrCalculationService()
-  private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val fixedInstant: Instant = Instant.parse("2025-06-15T10:00:00Z")
   private val clock: Clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
+  private val instrumentService: InstrumentService = mockk(relaxed = true)
+  private val dailyPriceService: DailyPriceService = mockk()
+  private val xirrCalculationService: XirrCalculationService = XirrCalculationService(clock)
+  private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
 
   private val job =
     InstrumentXirrJob(

@@ -276,6 +276,32 @@ class ArchitectureTest {
       .because("Loggers should be private and immutable (Kotlin doesn't require static)")
 
   @ArchTest
+  fun logStatementsShouldUseStringInterpolationNotParameterizedFormat(classes: JavaClasses) {
+    val logMethods = setOf("trace", "debug", "info", "warn", "error")
+    val violations = mutableListOf<String>()
+    classes.forEach { javaClass ->
+      javaClass.methodCallsFromSelf
+        .filter { call ->
+          call.targetOwner.name == "org.slf4j.Logger" && logMethods.contains(call.target.name)
+        }.forEach { call ->
+          val paramTypes = call.target.rawParameterTypes.map { it.name }
+          val hasMultipleParams = paramTypes.size >= 2 && paramTypes[0] == "java.lang.String"
+          val hasObjectParams = paramTypes.drop(1).any { it == "java.lang.Object" || it == "[Ljava.lang.Object;" }
+          val isNotThrowableOnly = !(paramTypes.size == 2 && paramTypes[1] == "java.lang.Throwable")
+          if (hasMultipleParams && hasObjectParams && isNotThrowableOnly) {
+            violations.add("${javaClass.simpleName} at ${call.sourceCodeLocation}")
+          }
+        }
+    }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Use Kotlin string interpolation (\$variable) instead of SLF4J placeholders ({}):\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
+  @ArchTest
   val `no System out or err should be used`: ArchRule =
     GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS
       .because("Use SLF4J logging instead of System.out/err")
@@ -426,6 +452,41 @@ class ArchitectureTest {
       .should()
       .resideInAPackage("ee.tenman.portfolio.service")
       .because("Data classes like *Metrics should be in model package for better organization")
+
+  @ArchTest
+  fun timeMethodsShouldUseClockParameter(classes: JavaClasses) {
+    val timeClasses =
+      mapOf(
+        "java.time.LocalDate" to "now",
+        "java.time.LocalDateTime" to "now",
+        "java.time.Instant" to "now",
+        "java.time.ZonedDateTime" to "now",
+      )
+    val violations = mutableListOf<String>()
+    classes.forEach { javaClass ->
+      javaClass.methodCallsFromSelf
+        .filter { call ->
+          val targetClass = call.targetOwner.name
+          val targetMethod = call.target.name
+          timeClasses[targetClass] == targetMethod
+        }.forEach { call ->
+          val paramTypes = call.target.rawParameterTypes.map { it.name }
+          val hasNoParams = paramTypes.isEmpty()
+          val hasOnlyZoneId = paramTypes.size == 1 && paramTypes[0] == "java.time.ZoneId"
+          if (hasNoParams || hasOnlyZoneId) {
+            violations.add(
+              "${javaClass.simpleName}.${call.target.name}() at ${call.sourceCodeLocation} - use Clock parameter",
+            )
+          }
+        }
+    }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Time methods should use Clock parameter for testability:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
 
   @ArchTest
   fun eachSourceFileShouldContainOnlyOneTopLevelClass(classes: JavaClasses) {

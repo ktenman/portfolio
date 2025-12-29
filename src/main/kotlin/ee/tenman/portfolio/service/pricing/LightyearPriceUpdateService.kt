@@ -33,7 +33,7 @@ class LightyearPriceUpdateService(
       saveDailyPrice(instrument, price, today, symbol)
       ProcessResult.SUCCESS_WITH_DAILY_PRICE
     }.getOrElse {
-      log.warn("Failed to update price for symbol {}: {}", symbol, it.message)
+      log.warn("Failed to update price for symbol $symbol: ${it.message}")
       ProcessResult.FAILED
     }
 
@@ -43,7 +43,7 @@ class LightyearPriceUpdateService(
     symbol: String,
   ) {
     instrumentService.updateCurrentPrice(instrument.id, price)
-    log.debug("Updated current price for {}: {}", symbol, price)
+    log.debug("Updated current price for $symbol: $price")
   }
 
   private fun saveDailyPrice(
@@ -64,6 +64,6 @@ class LightyearPriceUpdateService(
         volume = null,
       )
     dailyPriceService.saveDailyPrice(dailyPrice)
-    log.debug("Saved Lightyear daily price for {}: {}", symbol, price)
+    log.debug("Saved Lightyear daily price for $symbol: $price")
   }
 }

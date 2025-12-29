@@ -55,6 +55,8 @@ class EtfHoldingsServiceIT {
 
   private lateinit var testEtf: Instrument
 
+  private val testDate = LocalDate.of(2024, 1, 15)
+
   @BeforeEach
   fun setup() {
     etfPositionRepository.deleteAll()
@@ -120,7 +122,7 @@ class EtfHoldingsServiceIT {
         ),
       )
 
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdings)
+    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
 
     verify(exactly = 1) { minioService.logoExists("AAPL") }
     verify(exactly = 1) { minioService.uploadLogo("AAPL", any()) }
@@ -141,7 +143,7 @@ class EtfHoldingsServiceIT {
         ),
       )
 
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdings)
+    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
 
     verify(atLeast = 1) { minioService.logoExists("MSFT") }
     verify(atLeast = 1) { minioService.uploadLogo("MSFT", any()) }
@@ -149,7 +151,7 @@ class EtfHoldingsServiceIT {
     val logoExistsBefore = minioService.logoExists("MSFT")
     expect(logoExistsBefore).toEqual(true)
 
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), holdings)
+    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdings)
 
     val logoExistsAfter = minioService.logoExists("MSFT")
     expect(logoExistsAfter).toEqual(true)
@@ -169,7 +171,7 @@ class EtfHoldingsServiceIT {
         ),
       )
 
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdings)
+    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
 
     val tslaExists = minioService.logoExists("TSLA")
     expect(tslaExists).toEqual(false)
@@ -216,7 +218,7 @@ class EtfHoldingsServiceIT {
         ),
       )
 
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdings)
+    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
 
     val nvdaExistsAfter = minioService.logoExists("NVDA")
     expect(nvdaExistsAfter).toEqual(true)
@@ -244,7 +246,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdingsWithoutSector)
+    etfHoldingsService.saveHoldings("IITU", testDate, holdingsWithoutSector)
     val savedWithoutSector = etfHoldingRepository.findAll().first()
     expect(savedWithoutSector.sector).toEqual(null)
 
@@ -259,7 +261,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), holdingsWithSector)
+    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithSector)
 
     val updatedHolding = etfHoldingRepository.findAll().first()
     expect(updatedHolding.sector).toEqual("Technology")
@@ -279,7 +281,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), holdingsWithSector)
+    etfHoldingsService.saveHoldings("IITU", testDate, holdingsWithSector)
     val savedWithSector = etfHoldingRepository.findAll().first()
     expect(savedWithSector.sector).toEqual("Technology")
 
@@ -294,80 +296,67 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), holdingsWithDifferentSector)
+    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithDifferentSector)
 
     val unchangedHolding = etfHoldingRepository.findAll().first()
     expect(unchangedHolding.sector).toEqual("Technology")
   }
 
   @Test
-  fun `should update holding name when ticker matches but name differs`() {
-    val originalHoldings =
+  fun `should create separate holdings when same ticker has different company names`() {
+    val usCompanyHoldings =
       listOf(
         HoldingData(
-          name = "Alphabet Inc Class A",
-          ticker = "GOOGL",
-          sector = "Technology",
+          name = "Merck & Co.",
+          ticker = "MRK",
+          sector = "Healthcare",
           weight = BigDecimal("10.0"),
           rank = 1,
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), originalHoldings)
-    val originalSaved = etfHoldingRepository.findAll().first()
-    expect(originalSaved.name).toEqual("Alphabet Inc Class A")
-    expect(originalSaved.ticker).toEqual("GOOGL")
+    etfHoldingsService.saveHoldings("IITU", testDate, usCompanyHoldings)
+    expect(etfHoldingRepository.findAll().size).toEqual(1)
 
-    val updatedHoldings =
+    val germanCompanyHoldings =
       listOf(
         HoldingData(
-          name = "Alphabet Inc",
-          ticker = "GOOGL",
-          sector = "Technology",
-          weight = BigDecimal("12.0"),
-          rank = 1,
-          logoUrl = null,
-        ),
-      )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), updatedHoldings)
-
-    val allHoldings = etfHoldingRepository.findAll()
-    expect(allHoldings.size).toEqual(1)
-    expect(allHoldings.first().name).toEqual("Alphabet Inc")
-    expect(allHoldings.first().ticker).toEqual("GOOGL")
-  }
-
-  @Test
-  fun `should find existing holding by ticker when name and ticker combination not found`() {
-    val firstHoldings =
-      listOf(
-        HoldingData(
-          name = "Meta Platforms Inc Class A",
-          ticker = "META",
-          sector = "Communication",
+          name = "Merck KGaA",
+          ticker = "MRK",
+          sector = "Healthcare",
           weight = BigDecimal("8.0"),
           rank = 1,
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), firstHoldings)
-    expect(etfHoldingRepository.findAll().size).toEqual(1)
+    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), germanCompanyHoldings)
 
-    val secondHoldings =
+    val allHoldings = etfHoldingRepository.findAll()
+    expect(allHoldings.size).toEqual(2)
+    expect(allHoldings.map { it.name }.toSet()).toEqual(setOf("Merck & Co.", "Merck KGaA"))
+    expect(allHoldings.all { it.ticker == "MRK" }).toEqual(true)
+  }
+
+  @Test
+  fun `should reuse existing holding when name and ticker match exactly`() {
+    val holdings =
       listOf(
         HoldingData(
-          name = "Meta Platforms",
-          ticker = "META",
-          sector = "Communication",
-          weight = BigDecimal("9.0"),
+          name = "Apple Inc",
+          ticker = "AAPL",
+          sector = "Technology",
+          weight = BigDecimal("15.0"),
           rank = 1,
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), secondHoldings)
+    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
+    val originalId = etfHoldingRepository.findAll().first().id
+
+    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdings)
 
     val allHoldings = etfHoldingRepository.findAll()
     expect(allHoldings.size).toEqual(1)
-    expect(allHoldings.first().name).toEqual("Meta Platforms")
+    expect(allHoldings.first().id).toEqual(originalId)
   }
 }

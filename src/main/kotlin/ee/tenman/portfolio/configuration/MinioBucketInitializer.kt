@@ -33,15 +33,14 @@ class MinioBucketInitializer(
             .bucket(minioProperties.bucketName)
             .build(),
         )
-        log.info("Created MinIO bucket: {}", minioProperties.bucketName)
+        log.info("Created MinIO bucket: ${minioProperties.bucketName}")
       } else {
-        log.info("MinIO bucket already exists: {}", minioProperties.bucketName)
+        log.info("MinIO bucket already exists: ${minioProperties.bucketName}")
       }
     } catch (e: Exception) {
       log.warn(
-        "Failed to initialize MinIO bucket '{}'. " +
-          "MinIO may not be running. Logo upload/download features will not work until MinIO is available.",
-        minioProperties.bucketName,
+        "Failed to initialize MinIO bucket '${minioProperties.bucketName}'. " +
+          "MinIO may not be running. Logo upload/download features will not work until MinIO is available",
         e,
       )
     }

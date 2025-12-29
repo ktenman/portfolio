@@ -9,6 +9,7 @@ import ee.tenman.portfolio.service.instrument.InstrumentService
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.time.Clock
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
@@ -18,6 +19,7 @@ class TerUpdateJob(
   private val instrumentRepository: InstrumentRepository,
   private val lightyearPriceService: LightyearPriceService,
   private val instrumentService: InstrumentService,
+  private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -32,7 +34,7 @@ class TerUpdateJob(
   @Scheduled(cron = "0 0 3 * * SUN")
   fun runJob() {
     log.info("Running TER update job")
-    val startTime = Instant.now()
+    val startTime = Instant.now(clock)
     var status = JobStatus.SUCCESS
     var message: String? = null
     try {
@@ -43,7 +45,7 @@ class TerUpdateJob(
       message = "Failed to update TERs: ${e.message}"
       log.error("TER update job failed", e)
     } finally {
-      val endTime = Instant.now()
+      val endTime = Instant.now(clock)
       jobTransactionService.saveJobExecution(
         job = this,
         startTime = startTime,
@@ -60,7 +62,7 @@ class TerUpdateJob(
 
   private fun updateAllTers(): String {
     val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
-    log.info("Found {} Lightyear instruments to update TERs", lightyearInstruments.size)
+    log.info("Found ${lightyearInstruments.size} Lightyear instruments to update TERs")
     var updated = 0
     var noData = 0
     lightyearInstruments.forEach { instrument ->
@@ -68,10 +70,10 @@ class TerUpdateJob(
       if (ter != null) {
         instrumentService.updateTer(instrument.id, ter)
         updated++
-        log.debug("Updated TER for {}: {}", instrument.symbol, ter)
+        log.debug("Updated TER for ${instrument.symbol}: $ter")
       } else {
         noData++
-        log.debug("No TER data for {}", instrument.symbol)
+        log.debug("No TER data for ${instrument.symbol}")
       }
     }
     val resultMessage = "Updated $updated/${lightyearInstruments.size} TERs, $noData with no data"

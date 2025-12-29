@@ -20,7 +20,7 @@ class IndustryClassificationService(
 
   fun classifyCompanyWithModel(companyName: String): SectorClassificationResult? {
     val sanitizedName = LogSanitizerUtil.sanitize(companyName)
-    log.info("Classifying company: {}", sanitizedName)
+    log.info("Classifying company: $sanitizedName")
     if (!properties.enabled || companyName.isBlank()) {
       log.warn("Classification disabled or blank company name")
       return null
@@ -35,7 +35,7 @@ class IndustryClassificationService(
   ): SectorClassificationResult? {
     val response =
       openRouterClient.classifyWithModel(prompt) ?: run {
-        log.warn("No response from OpenRouter for company: {}", sanitizedName)
+        log.warn("No response from OpenRouter for company: $sanitizedName")
         return retryWithCascadingFallback(prompt, sanitizedName)
       }
     return parseResponse(response, sanitizedName) ?: retryWithCascadingFallback(prompt, sanitizedName, response.model)
@@ -48,14 +48,14 @@ class IndustryClassificationService(
   ): SectorClassificationResult? {
     val nextModel = failedModel?.nextSectorFallbackModel()
     if (failedModel != null && nextModel == null) {
-      log.warn("No fallback available after {}", failedModel.modelId)
+      log.warn("No fallback available after ${failedModel.modelId}")
       return null
     }
     val model = nextModel ?: AiModel.CLAUDE_OPUS_4_5
-    log.info("Retrying classification with cascading fallback starting from {} for: {}", model.modelId, sanitizedName)
+    log.info("Retrying classification with cascading fallback starting from ${model.modelId} for: $sanitizedName")
     val response =
       openRouterClient.classifyWithCascadingFallback(prompt, model) ?: run {
-        log.warn("All fallback models exhausted for company: {}", sanitizedName)
+        log.warn("All fallback models exhausted for company: $sanitizedName")
         return null
       }
     return parseResponse(response, sanitizedName, logUnknownSector = true)
@@ -69,10 +69,10 @@ class IndustryClassificationService(
     val content = response.content ?: return null
     val sector = IndustrySector.fromDisplayName(content)
     if (sector == null) {
-      if (logUnknownSector) log.warn("Unknown sector from model response: {}", content)
+      if (logUnknownSector) log.warn("Unknown sector from model response: $content")
       return null
     }
-    log.info("Classified {} as {} using model {}", sanitizedName, sector.displayName, response.model)
+    log.info("Classified $sanitizedName as ${sector.displayName} using model ${response.model}")
     return SectorClassificationResult(sector = sector, model = response.model)
   }
 

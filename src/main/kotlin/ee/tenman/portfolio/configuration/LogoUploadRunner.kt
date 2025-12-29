@@ -18,32 +18,32 @@ class LogoUploadRunner(
   }
 
   private fun uploadLogoIfMissing(ticker: String) {
-    log.info("Checking logo for ticker: {}", ticker)
+    log.info("Checking logo for ticker: $ticker")
 
     if (minioService.logoExists(ticker)) {
-      log.info("Logo already exists in MinIO for ticker: {}", ticker)
+      log.info("Logo already exists in MinIO for ticker: $ticker")
       return
     }
 
     try {
       val resource = ClassPathResource("static/logos/$ticker.png")
-      log.info("Looking for logo file: static/logos/{}.png, exists: {}", ticker, resource.exists())
+      log.info("Looking for logo file: static/logos/$ticker.png, exists: ${resource.exists()}")
 
       if (!resource.exists()) {
-        log.warn("Logo file not found in static resources for ticker: {}", ticker)
+        log.warn("Logo file not found in static resources for ticker: $ticker")
         return
       }
 
       val logoData = resource.inputStream.use { it.readBytes() }
-      log.info("Read {} bytes from logo file for ticker: {}", logoData.size, ticker)
+      log.info("Read ${logoData.size} bytes from logo file for ticker: $ticker")
 
       minioService.uploadLogo(ticker, logoData)
-      log.info("Successfully uploaded logo to MinIO for ticker: {}", ticker)
+      log.info("Successfully uploaded logo to MinIO for ticker: $ticker")
 
       val exists = minioService.logoExists(ticker)
-      log.info("Verification after upload - logo exists: {} for ticker: {}", exists, ticker)
+      log.info("Verification after upload - logo exists: $exists for ticker: $ticker")
     } catch (e: Exception) {
-      log.error("Failed to upload logo to MinIO for ticker: {}", ticker, e)
+      log.error("Failed to upload logo to MinIO for ticker: $ticker", e)
     }
   }
 }

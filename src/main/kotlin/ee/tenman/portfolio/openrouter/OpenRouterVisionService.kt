@@ -16,13 +16,13 @@ class OpenRouterVisionService(
       return null
     }
     return runCatching {
-      log.info("Calling OpenRouter Vision API with model: {}", request.model)
+      log.info("Calling OpenRouter Vision API with model: ${request.model}")
       val response = openRouterVisionClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
       val content = response.extractContent()
-      log.info("OpenRouter Vision response: '{}'", content)
+      log.info("OpenRouter Vision response: '$content'")
       content
     }.onFailure { throwable ->
-      log.error("Error calling OpenRouter Vision API: {}", throwable.message, throwable)
+      log.error("Error calling OpenRouter Vision API: ${throwable.message}", throwable)
     }.getOrNull()
   }
 }

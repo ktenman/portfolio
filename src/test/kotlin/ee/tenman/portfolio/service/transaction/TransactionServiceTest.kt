@@ -23,7 +23,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.*
 
 class TransactionServiceTest {
@@ -33,13 +36,14 @@ class TransactionServiceTest {
   private lateinit var transactionService: TransactionService
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
 
   @BeforeEach
   fun setUp() {
     portfolioTransactionRepository = mockk()
     profitCalculationEngine = ProfitCalculationEngine()
     transactionCacheService = mockk()
-    transactionService = TransactionService(portfolioTransactionRepository, profitCalculationEngine, transactionCacheService)
+    transactionService = TransactionService(portfolioTransactionRepository, profitCalculationEngine, transactionCacheService, clock)
 
     testInstrument =
       Instrument(

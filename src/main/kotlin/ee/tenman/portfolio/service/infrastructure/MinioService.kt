@@ -31,7 +31,7 @@ class MinioService(
         )
       true
     } catch (e: Exception) {
-      log.trace("Logo not found for {}: {}", symbol, e.message)
+      log.trace("Logo not found for $symbol: ${e.message}")
       false
     }
 
@@ -50,7 +50,7 @@ class MinioService(
         .contentType(contentType)
         .build(),
     )
-    log.debug("Uploaded logo for symbol: {}", symbol)
+    log.debug("Uploaded logo for symbol: $symbol")
   }
 
   @Cacheable(value = ["etfLogos"], key = "#symbol")
@@ -68,7 +68,7 @@ class MinioService(
           stream.readBytes()
         }
     } catch (e: Exception) {
-      log.warn("Failed to download logo for symbol: {}", LogSanitizerUtil.sanitize(symbol), e)
+      log.warn("Failed to download logo for symbol: ${LogSanitizerUtil.sanitize(symbol)}", e)
       null
     }
 }

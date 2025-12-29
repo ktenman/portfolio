@@ -20,13 +20,13 @@ class WisdomTreeHoldingsService(
 
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchHoldings(etfId: String = WTAI_ETF_ID): List<WisdomTreeHolding> {
-    log.info("Fetching holdings for ETF: {}", LogSanitizerUtil.sanitize(etfId))
+    log.info("Fetching holdings for ETF: ${LogSanitizerUtil.sanitize(etfId)}")
 
     return try {
       val htmlContent = wisdomTreeHoldingsClient.getHoldings(etfId)
       parseHoldings(htmlContent)
     } catch (e: Exception) {
-      log.error("Failed to fetch holdings for ETF: {}", LogSanitizerUtil.sanitize(etfId), e)
+      log.error("Failed to fetch holdings for ETF: ${LogSanitizerUtil.sanitize(etfId)}", e)
       throw e
     }
   }

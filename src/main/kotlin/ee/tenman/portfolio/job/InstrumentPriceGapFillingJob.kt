@@ -63,13 +63,13 @@ class InstrumentPriceGapFillingJob(
         log.info("No LIGHTYEAR instruments found to fill gaps")
         return
       }
-      log.info("Found {} LIGHTYEAR instruments to process for gap filling", instruments.size)
+      log.info("Found ${instruments.size} LIGHTYEAR instruments to process for gap filling")
       var totalSaved = 0
       instruments.forEach { instrument ->
         val saved = fillGapsForInstrument(instrument)
         totalSaved += saved
       }
-      log.info("Instrument price gap filling completed: {} prices saved", totalSaved)
+      log.info("Instrument price gap filling completed: $totalSaved prices saved")
     } finally {
       isExecuting.set(false)
     }
@@ -77,11 +77,11 @@ class InstrumentPriceGapFillingJob(
 
   private fun fillGapsForInstrument(instrument: Instrument): Int {
     try {
-      log.debug("Filling price gaps for instrument: {}", instrument.symbol)
+      log.debug("Filling price gaps for instrument: ${instrument.symbol}")
       val existingDates = dailyPriceService.findAllExistingDates(instrument)
       val ftData = ftHistoricalPricesService.fetchPrices(instrument.symbol)
       if (ftData.isEmpty()) {
-        log.warn("No FT data found for instrument: {}", instrument.symbol)
+        log.warn("No FT data found for instrument: ${instrument.symbol}")
         return 0
       }
       var savedCount = 0
@@ -103,11 +103,11 @@ class InstrumentPriceGapFillingJob(
         }
       }
       if (savedCount > 0) {
-        log.debug("Saved {} new FT prices for instrument {}", savedCount, instrument.symbol)
+        log.debug("Saved $savedCount new FT prices for instrument ${instrument.symbol}")
       }
       return savedCount
     } catch (e: Exception) {
-      log.error("Error filling gaps for instrument {}: {}", instrument.symbol, e.message)
+      log.error("Error filling gaps for instrument ${instrument.symbol}: ${e.message}")
       return 0
     }
   }

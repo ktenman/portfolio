@@ -23,10 +23,7 @@ class LoggingAspect {
     val method = signature.method
 
     if (method.returnType == Void.TYPE) {
-      log.warn(
-        "Loggable annotation should not be used on methods without return type: {}",
-        method.name,
-      )
+      log.warn("Loggable annotation should not be used on methods without return type: ${method.name}")
       return joinPoint.proceed()
     }
 
@@ -50,7 +47,7 @@ class LoggingAspect {
   @Throws(Throwable::class)
   private fun logEntry(joinPoint: ProceedingJoinPoint) {
     val argsJson = JsonMapperFactory.instance.writeValueAsString(joinPoint.args)
-    log.info("{} entered with arguments: {}", joinPoint.signature.toShortString(), argsJson)
+    log.info("${joinPoint.signature.toShortString()} entered with arguments: $argsJson")
   }
 
   @Throws(Throwable::class)
@@ -59,12 +56,9 @@ class LoggingAspect {
     result: Any,
     startTime: Long,
   ) {
-    log.info(
-      "{} exited with result: {} in {} seconds",
-      joinPoint.signature.toShortString(),
-      JsonMapperFactory.truncateJson(JsonMapperFactory.instance.writeValueAsString(result)),
-      TimeUtility.durationInSeconds(startTime),
-    )
+    val resultJson = JsonMapperFactory.truncateJson(JsonMapperFactory.instance.writeValueAsString(result))
+    val duration = TimeUtility.durationInSeconds(startTime)
+    log.info("${joinPoint.signature.toShortString()} exited with result: $resultJson in $duration seconds")
   }
 
   companion object {

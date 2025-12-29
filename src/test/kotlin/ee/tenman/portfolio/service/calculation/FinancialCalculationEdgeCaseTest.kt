@@ -15,16 +15,20 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 class FinancialCalculationEdgeCaseTest {
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
   private lateinit var xirrCalculationService: XirrCalculationService
   private lateinit var holdingsCalculationService: HoldingsCalculationService
   private lateinit var testInstrument: Instrument
 
   @BeforeEach
   fun setUp() {
-    xirrCalculationService = XirrCalculationService()
+    xirrCalculationService = XirrCalculationService(clock)
     holdingsCalculationService = HoldingsCalculationService()
     testInstrument = createTestInstrument()
   }
@@ -33,15 +37,15 @@ class FinancialCalculationEdgeCaseTest {
   inner class SingleTransactionXirrEdgeCases {
     @Test
     fun `should return zero XIRR for single buy transaction`() {
-      val transaction = CashFlow(-1000.0, LocalDate.now().minusDays(30))
-      val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(transaction), LocalDate.now())
+      val transaction = CashFlow(-1000.0, LocalDate.now(clock).minusDays(30))
+      val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(transaction), LocalDate.now(clock))
       expect(xirr).toEqual(0.0)
     }
 
     @Test
     fun `should return zero XIRR for single sell transaction`() {
-      val transaction = CashFlow(1000.0, LocalDate.now().minusDays(30))
-      val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(transaction), LocalDate.now())
+      val transaction = CashFlow(1000.0, LocalDate.now(clock).minusDays(30))
+      val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(transaction), LocalDate.now(clock))
       expect(xirr).toEqual(0.0)
     }
 
@@ -49,10 +53,10 @@ class FinancialCalculationEdgeCaseTest {
     fun `should handle very recent transaction with small time delta`() {
       val transactions =
         listOf(
-        CashFlow(-1000.0, LocalDate.now().minusDays(1)),
-        CashFlow(1010.0, LocalDate.now()),
+        CashFlow(-1000.0, LocalDate.now(clock).minusDays(1)),
+        CashFlow(1010.0, LocalDate.now(clock)),
       )
-      val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now())
+      val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
       expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
       expect(xirr).toBeLessThanOrEqualTo(10.0)
     }
@@ -220,9 +224,9 @@ class FinancialCalculationEdgeCaseTest {
         xirrCalculationService.buildCashFlows(
         transactions,
         BigDecimal.ZERO,
-        LocalDate.now(),
+        LocalDate.now(clock),
       )
-      expect(xirrCashFlows.any { it.amount > 0 && it.date == LocalDate.now() }).toEqual(false)
+      expect(xirrCashFlows.any { it.amount > 0 && it.date == LocalDate.now(clock) }).toEqual(false)
     }
 
     @Test
@@ -233,7 +237,7 @@ class FinancialCalculationEdgeCaseTest {
         transactionType = TransactionType.BUY,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.now().minusDays(30),
+        transactionDate = LocalDate.now(clock).minusDays(30),
         platform = Platform.LIGHTYEAR,
         commission = BigDecimal("10"),
       )
@@ -249,7 +253,7 @@ class FinancialCalculationEdgeCaseTest {
         transactionType = TransactionType.SELL,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.now().minusDays(30),
+        transactionDate = LocalDate.now(clock).minusDays(30),
         platform = Platform.LIGHTYEAR,
         commission = BigDecimal("10"),
       )
@@ -272,7 +276,7 @@ class FinancialCalculationEdgeCaseTest {
     type: TransactionType,
     quantity: BigDecimal,
     price: BigDecimal,
-    date: LocalDate = LocalDate.now().minusDays(30),
+    date: LocalDate = LocalDate.now(clock).minusDays(30),
   ): PortfolioTransaction =
     PortfolioTransaction(
       instrument = testInstrument,

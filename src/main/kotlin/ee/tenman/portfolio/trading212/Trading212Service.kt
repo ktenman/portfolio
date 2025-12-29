@@ -38,7 +38,7 @@ class Trading212Service(
         val priceData = response.data[ticker]
         if (priceData != null) {
           prices[symbol] = priceData.bid
-          log.debug("Fetched price for {}: {}", symbol, priceData.bid)
+          log.debug("Fetched price for $symbol: ${priceData.bid}")
         } else {
           log.warn("No price data found for ticker: $ticker (symbol: $symbol)")
         }

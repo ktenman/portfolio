@@ -44,9 +44,7 @@ class OpenRouterCircuitBreaker(
     circuitBreaker.eventPublisher
       .onStateTransition { event ->
         log.info(
-          "Circuit breaker state transition: {} -> {}",
-          event.stateTransition.fromState,
-          event.stateTransition.toState,
+          "Circuit breaker state transition: ${event.stateTransition.fromState} -> ${event.stateTransition.toState}",
         )
       }
     AiModel.entries.forEach { model ->
@@ -117,7 +115,7 @@ class OpenRouterCircuitBreaker(
       val now = clock.millis()
       val lastRequest = lastRequestTime.get()
       if ((now - lastRequest) < rateLimitMs) {
-        log.debug("{} rate limit active, {} ms until next request allowed", modelType, rateLimitMs - (now - lastRequest))
+        log.debug("$modelType rate limit active, ${rateLimitMs - (now - lastRequest)} ms until next request allowed")
         return false
       }
       if (lastRequestTime.compareAndSet(lastRequest, now)) {
@@ -128,12 +126,12 @@ class OpenRouterCircuitBreaker(
 
   fun recordSuccess() {
     circuitBreaker.onSuccess(0, TimeUnit.MILLISECONDS)
-    log.debug("Recorded success, circuit breaker state: {}", circuitBreaker.state)
+    log.debug("Recorded success, circuit breaker state: ${circuitBreaker.state}")
   }
 
   fun recordFailure(throwable: Throwable) {
     circuitBreaker.onError(0, TimeUnit.MILLISECONDS, throwable)
-    log.warn("Recorded failure, circuit breaker state: {}", circuitBreaker.state)
+    log.warn("Recorded failure, circuit breaker state: ${circuitBreaker.state}")
   }
 
   private fun canUseModel(model: AiModel): Boolean {

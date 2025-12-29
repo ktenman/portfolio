@@ -10,6 +10,7 @@ import ee.tenman.portfolio.wisdomtree.WisdomTreeHoldingsService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.LocalDate
 
 @Service
@@ -19,6 +20,7 @@ class WisdomTreeUpdateService(
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
   private val etfBreakdownService: EtfBreakdownService,
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -33,7 +35,7 @@ class WisdomTreeUpdateService(
     }
     val etf = wtaiInstrument.get()
 
-    val today = LocalDate.now()
+    val today = LocalDate.now(clock)
     val deletedCount = clearOldWtaiHoldings(etf.id, today)
     log.info("Deleted $deletedCount old WTAI holdings for $today")
 
@@ -46,8 +48,6 @@ class WisdomTreeUpdateService(
     }
 
     var createdCount = 0
-    var updatedCount = 0
-
     holdings.forEachIndexed { index, wisdomTreeHolding ->
       val tickerSymbol = wisdomTreeHoldingsService.extractTickerSymbol(wisdomTreeHolding.ticker)
 
@@ -71,7 +71,7 @@ class WisdomTreeUpdateService(
     etfBreakdownService.evictBreakdownCache()
 
     log.info("Successfully updated WTAI holdings: deleted=$deletedCount, created=$createdCount")
-    return mapOf("deleted" to deletedCount, "created" to createdCount, "updated" to updatedCount)
+    return mapOf("deleted" to deletedCount, "created" to createdCount)
   }
 
   private fun clearOldWtaiHoldings(
@@ -94,29 +94,7 @@ class WisdomTreeUpdateService(
     etfHoldingRepository
       .findByNameAndTicker(name, ticker)
       .orElseGet {
-        ticker
-          ?.let { etfHoldingRepository.findFirstByTickerOrderByIdDesc(it).orElse(null) }
-          ?.let { existing -> updateHoldingNameIfChanged(existing, name, ticker) }
-          ?: createNewHolding(name, ticker)
+        log.info("Creating new holding: name=$name, ticker=$ticker")
+        etfHoldingRepository.save(EtfHolding(ticker = ticker, name = name, sector = null))
       }.also { log.debug("Resolved holding: name=${it.name}, ticker=${it.ticker}") }
-
-  private fun updateHoldingNameIfChanged(
-    existing: EtfHolding,
-    newName: String,
-    ticker: String,
-  ): EtfHolding =
-    if (existing.name != newName) {
-      log.info("Updating holding name for ticker $ticker: '${existing.name}' -> '$newName'")
-      existing.also { it.name = newName }.let { etfHoldingRepository.save(it) }
-    } else {
-      existing
-    }
-
-  private fun createNewHolding(
-    name: String,
-    ticker: String?,
-  ): EtfHolding =
-    EtfHolding(ticker = ticker, name = name, sector = null)
-      .also { log.info("Creating new holding: name=$name, ticker=$ticker") }
-      .let { etfHoldingRepository.save(it) }
 }
