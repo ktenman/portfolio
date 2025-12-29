@@ -15,13 +15,13 @@ class EtfHoldingPersistenceService(
   @Transactional(readOnly = true)
   fun findUnclassifiedHoldingIds(): List<Long> =
     etfHoldingRepository
-      .findBySectorIsNullOrSectorEquals("")
+      .findUnclassifiedSectorHoldingsForCurrentPortfolio()
       .mapNotNull { it.id }
 
   @Transactional(readOnly = true)
   fun findUnclassifiedByCountryHoldingIds(): List<Long> =
     etfHoldingRepository
-      .findByCountryCodeIsNullOrCountryCodeEquals("")
+      .findUnclassifiedCountryHoldingsForCurrentPortfolio()
       .mapNotNull { it.id }
 
   @Transactional(readOnly = true)

@@ -14,13 +14,39 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     ticker: String?,
   ): Optional<EtfHolding>
 
-  fun findByTicker(ticker: String): Optional<EtfHolding>
+  fun findFirstByTickerOrderByIdDesc(ticker: String): Optional<EtfHolding>
 
   fun findByName(name: String): Optional<EtfHolding>
 
   fun findBySectorIsNullOrSectorEquals(sector: String): List<EtfHolding>
 
   fun findByCountryCodeIsNullOrCountryCodeEquals(countryCode: String): List<EtfHolding>
+
+  @Query(
+    """
+    SELECT h FROM EtfHolding h
+    JOIN EtfPosition ep ON ep.holding.id = h.id
+    JOIN PortfolioTransaction pt ON pt.instrument.id = ep.etfInstrument.id
+    WHERE (h.sector IS NULL OR h.sector = '')
+    GROUP BY h.id
+    HAVING SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) > 0.01
+    ORDER BY MAX(ep.weightPercentage) DESC
+  """,
+  )
+  fun findUnclassifiedSectorHoldingsForCurrentPortfolio(): List<EtfHolding>
+
+  @Query(
+    """
+    SELECT h FROM EtfHolding h
+    JOIN EtfPosition ep ON ep.holding.id = h.id
+    JOIN PortfolioTransaction pt ON pt.instrument.id = ep.etfInstrument.id
+    WHERE (h.countryCode IS NULL OR h.countryCode = '')
+    GROUP BY h.id
+    HAVING SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) > 0.01
+    ORDER BY MAX(ep.weightPercentage) DESC
+  """,
+  )
+  fun findUnclassifiedCountryHoldingsForCurrentPortfolio(): List<EtfHolding>
 
   @Query(
     """
