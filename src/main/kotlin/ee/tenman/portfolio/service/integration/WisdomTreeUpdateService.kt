@@ -98,8 +98,7 @@ class WisdomTreeUpdateService(
           ?.let { etfHoldingRepository.findFirstByTickerOrderByIdDesc(it).orElse(null) }
           ?.let { existing -> updateHoldingNameIfChanged(existing, name, ticker) }
           ?: createNewHolding(name, ticker)
-      }
-      .also { log.debug("Resolved holding: name=${it.name}, ticker=${it.ticker}") }
+      }.also { log.debug("Resolved holding: name=${it.name}, ticker=${it.ticker}") }
 
   private fun updateHoldingNameIfChanged(
     existing: EtfHolding,
