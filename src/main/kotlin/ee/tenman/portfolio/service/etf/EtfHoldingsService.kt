@@ -94,35 +94,50 @@ class EtfHoldingsService(
 
   private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding {
     val existingHolding = etfHoldingRepository.findByNameAndTicker(holdingData.name, holdingData.ticker)
-
-    return if (existingHolding.isPresent) {
+    if (existingHolding.isPresent) {
       val holding = existingHolding.get()
       if (holdingData.logoUrl != null) {
         uploadLogoToMinioIfNeeded(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
       }
       updateSectorFromSourceIfMissing(holding, holdingData.sector)
-      holding
-    } else {
-      log.debug(
-        "Creating new holding - Name: '${holdingData.name}' (length: ${holdingData.name.length}), " +
-          "Ticker: '${holdingData.ticker}' (length: ${holdingData.ticker?.length ?: 0}), " +
-          "Sector: '${holdingData.sector}' (length: ${holdingData.sector?.length ?: 0}), " +
-          "Logo URL: '${holdingData.logoUrl}'",
-      )
-
-      if (holdingData.logoUrl != null) {
-        uploadLogoToMinioIfNeeded(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
-      }
-
-      val newHolding =
-        EtfHolding(
-          name = holdingData.name,
-          ticker = holdingData.ticker,
-          sector = holdingData.sector,
-          sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
-        )
-      etfHoldingRepository.save(newHolding)
+      return holding
     }
+
+    if (holdingData.ticker != null) {
+      val byTicker = etfHoldingRepository.findFirstByTickerOrderByIdDesc(holdingData.ticker)
+      if (byTicker.isPresent) {
+        val existing = byTicker.get()
+        if (existing.name != holdingData.name) {
+          log.info("Updating holding name for ticker ${holdingData.ticker}: '${existing.name}' -> '${holdingData.name}'")
+          existing.name = holdingData.name
+        }
+        if (holdingData.logoUrl != null) {
+          uploadLogoToMinioIfNeeded(holdingData.ticker, holdingData.logoUrl)
+        }
+        updateSectorFromSourceIfMissing(existing, holdingData.sector)
+        return etfHoldingRepository.save(existing)
+      }
+    }
+
+    log.debug(
+      "Creating new holding - Name: '${holdingData.name}' (length: ${holdingData.name.length}), " +
+        "Ticker: '${holdingData.ticker}' (length: ${holdingData.ticker?.length ?: 0}), " +
+        "Sector: '${holdingData.sector}' (length: ${holdingData.sector?.length ?: 0}), " +
+        "Logo URL: '${holdingData.logoUrl}'",
+    )
+
+    if (holdingData.logoUrl != null) {
+      uploadLogoToMinioIfNeeded(holdingData.ticker ?: holdingData.name, holdingData.logoUrl)
+    }
+
+    val newHolding =
+      EtfHolding(
+        name = holdingData.name,
+        ticker = holdingData.ticker,
+        sector = holdingData.sector,
+        sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
+      )
+    return etfHoldingRepository.save(newHolding)
   }
 
   private fun updateSectorFromSourceIfMissing(

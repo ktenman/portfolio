@@ -90,26 +90,33 @@ class WisdomTreeUpdateService(
   private fun findOrCreateHolding(
     name: String,
     ticker: String?,
-  ): EtfHolding {
-    val exactMatch = etfHoldingRepository.findByNameAndTicker(name, ticker)
-    if (exactMatch.isPresent) {
-      log.debug("Found exact match: name=$name, ticker=$ticker")
-      return exactMatch.get()
+  ): EtfHolding =
+    etfHoldingRepository
+      .findByNameAndTicker(name, ticker)
+      .orElseGet {
+        ticker
+          ?.let { etfHoldingRepository.findFirstByTickerOrderByIdDesc(it).orElse(null) }
+          ?.let { existing -> updateHoldingNameIfChanged(existing, name, ticker) }
+          ?: createNewHolding(name, ticker)
+      }.also { log.debug("Resolved holding: name=${it.name}, ticker=${it.ticker}") }
+
+  private fun updateHoldingNameIfChanged(
+    existing: EtfHolding,
+    newName: String,
+    ticker: String,
+  ): EtfHolding =
+    if (existing.name != newName) {
+      log.info("Updating holding name for ticker $ticker: '${existing.name}' -> '$newName'")
+      existing.also { it.name = newName }.let { etfHoldingRepository.save(it) }
+    } else {
+      existing
     }
 
-    if (ticker != null) {
-      try {
-        val byTicker = etfHoldingRepository.findByTicker(ticker)
-        if (byTicker.isPresent) {
-          log.debug("Found existing holding by ticker: $ticker (name may differ)")
-          return byTicker.get()
-        }
-      } catch (e: Exception) {
-        log.warn("Multiple holdings found for ticker {}, creating new entry for name={}", ticker, name, e)
-      }
-    }
-
-    log.info("Creating new holding: name=$name, ticker=$ticker")
-    return etfHoldingRepository.save(EtfHolding(ticker = ticker, name = name, sector = null))
-  }
+  private fun createNewHolding(
+    name: String,
+    ticker: String?,
+  ): EtfHolding =
+    EtfHolding(ticker = ticker, name = name, sector = null)
+      .also { log.info("Creating new holding: name=$name, ticker=$ticker") }
+      .let { etfHoldingRepository.save(it) }
 }
