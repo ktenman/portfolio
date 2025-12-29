@@ -31,13 +31,16 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.stream.Stream
 
 class InvestmentMetricsServiceTest {
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
   private val dailyPriceService = mockk<DailyPriceService>()
   private val transactionService = mockk<TransactionService>()
-  private val xirrCalculationService = XirrCalculationService()
+  private val xirrCalculationService = XirrCalculationService(clock)
   private val holdingsCalculationService = HoldingsCalculationService()
   private lateinit var investmentMetricsService: InvestmentMetricsService
 

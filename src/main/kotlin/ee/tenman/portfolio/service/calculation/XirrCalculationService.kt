@@ -7,18 +7,21 @@ import ee.tenman.portfolio.service.calculation.xirr.Xirr
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.min
 
 @Service
-class XirrCalculationService {
+class XirrCalculationService(
+  private val clock: Clock,
+) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun buildCashFlows(
     transactions: List<PortfolioTransaction>,
     currentValue: BigDecimal,
-    calculationDate: LocalDate = LocalDate.now(),
+    calculationDate: LocalDate = LocalDate.now(clock),
   ): List<CashFlow> {
     val cashFlows = transactions.map(::convertToCashFlow)
     val finalValue =
@@ -31,7 +34,7 @@ class XirrCalculationService {
 
   fun calculateAdjustedXirr(
     cashFlows: List<CashFlow>,
-    calculationDate: LocalDate = LocalDate.now(),
+    calculationDate: LocalDate = LocalDate.now(clock),
   ): Double {
     if (cashFlows.size < 2) return 0.0
     return runCatching {

@@ -46,7 +46,7 @@ class GoogleVisionService(
       return VISION_DISABLED_RESPONSE
     }
     MDC.put("uuid", uuid.toString())
-    log.debug("Starting plate number detection from image. Image size: {} bytes", base64EncodedImage.toByteArray().size)
+    log.debug("Starting plate number detection from image. Image size: ${base64EncodedImage.toByteArray().size} bytes")
     return try {
       val textRequest =
         GoogleVisionApiRequest(
@@ -61,13 +61,13 @@ class GoogleVisionService(
           ?.split("\n")
           ?.toTypedArray()
           ?: emptyArray()
-      log.info("Received text detection response with {} text blocks", strings.size)
+      log.info("Received text detection response with ${strings.size} text blocks")
       val response = mutableMapOf<String, String>()
       for (description in strings) {
-        log.debug("Processing text annotation: {}", description)
+        log.debug("Processing text annotation: $description")
         CAR_PLATE_NUMBER_PATTERN.find(description)?.let { matchResult ->
           val plateNr = matchResult.value.replace(" ", "").uppercase()
-          log.info("Plate number found: {}", plateNr)
+          log.info("Plate number found: $plateNr")
           response["plateNumber"] = plateNr
           response["hasCar"] = "true"
           return response

@@ -16,12 +16,14 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.Clock
 
 @Service
 class TransactionService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val profitCalculationEngine: ProfitCalculationEngine,
   private val transactionCacheService: TransactionCacheService,
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -121,7 +123,7 @@ class TransactionService(
     val effectiveFromDate = fromDate ?: java.time.LocalDate.of(2000, 1, 1)
     val effectiveUntilDate =
       untilDate ?: java.time.LocalDate
-        .now()
+        .now(clock)
         .plusYears(100)
     return when {
       !platformEnums.isNullOrEmpty() && hasDates ->
@@ -173,6 +175,6 @@ class TransactionService(
 
   private fun String.toPlatformOrNull(): Platform? =
     runCatching { Platform.valueOf(this) }
-      .onFailure { log.warn("Invalid platform name: {}", this) }
+      .onFailure { log.warn("Invalid platform name: $this") }
       .getOrNull()
 }

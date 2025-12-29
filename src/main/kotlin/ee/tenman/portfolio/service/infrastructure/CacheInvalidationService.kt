@@ -25,7 +25,7 @@ class CacheInvalidationService(
     instrumentId?.let { cache.evict(it) }
     symbol?.let { cache.evict(it) }
     cache.evict(ALL_INSTRUMENTS_KEY)
-    log.debug("Evicted instrument cache for id={}, symbol={}", instrumentId, symbol)
+    log.debug("Evicted instrument cache for id=$instrumentId, symbol=$symbol")
   }
 
   fun evictTransactionCaches() {
@@ -62,7 +62,7 @@ class CacheInvalidationService(
     val keys = redisTemplate.keys("$cacheName::*")
     if (keys.isNotEmpty()) {
       redisTemplate.delete(keys)
-      log.debug("Evicted {} keys from cache {}", keys.size, cacheName)
+      log.debug("Evicted ${keys.size} keys from cache $cacheName")
     }
   }
 

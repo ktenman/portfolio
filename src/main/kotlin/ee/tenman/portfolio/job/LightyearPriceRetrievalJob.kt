@@ -51,10 +51,7 @@ class LightyearPriceRetrievalJob(
       .toMinutes()
 
     if (minutesSinceStartup < 4) {
-      log.debug(
-        "Skipping job execution. Only {} minutes since startup. Waiting for 4 minutes.",
-        minutesSinceStartup,
-      )
+      log.debug("Skipping job execution. Only $minutesSinceStartup minutes since startup. Waiting for 4 minutes.")
       return false
     }
 

@@ -103,7 +103,7 @@ class InstrumentSnapshotService(
     platforms
       ?.mapNotNull { platformStr ->
         runCatching { Platform.valueOf(platformStr.uppercase()) }
-          .onFailure { log.debug("Invalid platform filter: {}", platformStr, it) }
+          .onFailure { log.debug("Invalid platform filter: $platformStr", it) }
           .getOrNull()
       }?.toSet()
 

@@ -11,23 +11,29 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 class DailyPriceServiceTest {
   private val dailyPriceRepository = mockk<DailyPriceRepository>()
-  private val dailyPriceService = DailyPriceService(dailyPriceRepository)
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
+  private val dailyPriceService = DailyPriceService(dailyPriceRepository, clock)
 
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setUp() {
+    clearMocks(dailyPriceRepository)
     testInstrument =
       Instrument(
         symbol = "AAPL",
@@ -346,23 +352,22 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange with 24h period returns correct change`() {
-    val currentDate = LocalDate.now()
-    val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = currentDate)
-    val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(1))
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = testDate)
+    val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1))
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusYears(10),
-        currentDate,
+        testDate.minusYears(10),
+        testDate,
       )
     } returns currentPrice
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(6),
-        currentDate.minusDays(1),
+        testDate.minusDays(6),
+        testDate.minusDays(1),
       )
     } returns yesterdayPrice
 
@@ -375,23 +380,22 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange with 7d period returns correct change`() {
-    val currentDate = LocalDate.now()
-    val currentPrice = createDailyPrice(closePrice = BigDecimal("120.00"), date = currentDate)
-    val weekAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(7))
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("120.00"), date = testDate)
+    val weekAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(7))
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusYears(10),
-        currentDate,
+        testDate.minusYears(10),
+        testDate,
       )
     } returns currentPrice
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(12),
-        currentDate.minusDays(7),
+        testDate.minusDays(12),
+        testDate.minusDays(7),
       )
     } returns weekAgoPrice
 
@@ -404,23 +408,22 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange with 30d period returns correct change`() {
-    val currentDate = LocalDate.now()
-    val currentPrice = createDailyPrice(closePrice = BigDecimal("150.00"), date = currentDate)
-    val monthAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(30))
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("150.00"), date = testDate)
+    val monthAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(30))
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusYears(10),
-        currentDate,
+        testDate.minusYears(10),
+        testDate,
       )
     } returns currentPrice
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(35),
-        currentDate.minusDays(30),
+        testDate.minusDays(35),
+        testDate.minusDays(30),
       )
     } returns monthAgoPrice
 
@@ -433,13 +436,11 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange returns null when current price not found`() {
-    val currentDate = LocalDate.now()
-
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusYears(10),
-        currentDate,
+        testDate.minusYears(10),
+        testDate,
       )
     } returns null
 
@@ -450,22 +451,21 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange returns null when historical price not found`() {
-    val currentDate = LocalDate.now()
-    val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = currentDate)
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = testDate)
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusYears(10),
-        currentDate,
+        testDate.minusYears(10),
+        testDate,
       )
     } returns currentPrice
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(6),
-        currentDate.minusDays(1),
+        testDate.minusDays(6),
+        testDate.minusDays(1),
       )
     } returns null
 
@@ -476,23 +476,22 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange with negative change returns correct percentage`() {
-    val currentDate = LocalDate.now()
-    val currentPrice = createDailyPrice(closePrice = BigDecimal("80.00"), date = currentDate)
-    val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = currentDate.minusDays(1))
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("80.00"), date = testDate)
+    val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1))
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusYears(10),
-        currentDate,
+        testDate.minusYears(10),
+        testDate,
       )
     } returns currentPrice
 
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
-        currentDate.minusDays(6),
-        currentDate.minusDays(1),
+        testDate.minusDays(6),
+        testDate.minusDays(1),
       )
     } returns yesterdayPrice
 
