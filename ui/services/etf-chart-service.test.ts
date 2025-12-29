@@ -51,13 +51,13 @@ describe('etf-chart-service', () => {
       expect(result[2].label).toBe('Finance')
     })
 
-    it('should limit to top 20 sectors by default', () => {
-      const holdings = Array.from({ length: 25 }, (_, i) =>
-        createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: 4 })
+    it('should limit to top 15 sectors by default', () => {
+      const holdings = Array.from({ length: 20 }, (_, i) =>
+        createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: 5 })
       )
       const result = buildSectorChartData(holdings)
-      expect(result).toHaveLength(21)
-      expect(result[20].label).toBe('Others')
+      expect(result).toHaveLength(16)
+      expect(result[15].label).toBe('Others')
     })
 
     it('should group remaining sectors as Others', () => {
@@ -155,26 +155,22 @@ describe('etf-chart-service', () => {
       expect(result[2].label).toBe('Company A')
     })
 
-    it('should filter by 1.5% threshold by default', () => {
-      const holdings = [
-        createHolding({ holdingName: 'Big Company', percentageOfTotal: 10 }),
-        createHolding({ holdingName: 'Small Company', percentageOfTotal: 1 }),
-      ]
+    it('should show top 15 companies by default', () => {
+      const holdings = Array.from({ length: 20 }, (_, i) =>
+        createHolding({ holdingName: `Company ${i}`, percentageOfTotal: 5 })
+      )
       const result = buildCompanyChartData(holdings)
-      expect(result).toHaveLength(2)
-      expect(result[0].label).toBe('Big Company')
-      expect(result[1].label).toBe('Others')
+      expect(result).toHaveLength(16)
+      expect(result[15].label).toBe('Others')
     })
 
-    it('should group small holdings as Others', () => {
-      const holdings = [
-        createHolding({ holdingName: 'Big', percentageOfTotal: 50 }),
-        createHolding({ holdingName: 'Small 1', percentageOfTotal: 0.5 }),
-        createHolding({ holdingName: 'Small 2', percentageOfTotal: 0.3 }),
-      ]
+    it('should group holdings beyond top count as Others', () => {
+      const holdings = Array.from({ length: 22 }, (_, i) =>
+        createHolding({ holdingName: `Company ${i}`, percentageOfTotal: i + 1 })
+      )
       const result = buildCompanyChartData(holdings)
       const others = result.find(item => item.label === 'Others')
-      expect(others?.value).toBeCloseTo(0.8)
+      expect(others).toBeDefined()
     })
 
     it('should assign colors from palette', () => {
@@ -188,10 +184,9 @@ describe('etf-chart-service', () => {
     })
 
     it('should assign gray color to Others', () => {
-      const holdings = [
-        createHolding({ holdingName: 'Big', percentageOfTotal: 50 }),
-        createHolding({ holdingName: 'Small', percentageOfTotal: 0.5 }),
-      ]
+      const holdings = Array.from({ length: 18 }, (_, i) =>
+        createHolding({ holdingName: `Company ${i}`, percentageOfTotal: 5 })
+      )
       const result = buildCompanyChartData(holdings)
       const others = result.find(item => item.label === 'Others')
       expect(others?.color).toBe('#999999')
@@ -202,15 +197,13 @@ describe('etf-chart-service', () => {
       expect(result).toHaveLength(0)
     })
 
-    it('should accept custom threshold', () => {
-      const holdings = [
-        createHolding({ holdingName: 'Company A', percentageOfTotal: 5 }),
-        createHolding({ holdingName: 'Company B', percentageOfTotal: 3 }),
-      ]
-      const result = buildCompanyChartData(holdings, { threshold: 4 })
-      expect(result).toHaveLength(2)
-      expect(result[0].label).toBe('Company A')
-      expect(result[1].label).toBe('Others')
+    it('should accept custom top count', () => {
+      const holdings = Array.from({ length: 10 }, (_, i) =>
+        createHolding({ holdingName: `Company ${i}`, percentageOfTotal: 10 })
+      )
+      const result = buildCompanyChartData(holdings, { topCount: 5 })
+      expect(result).toHaveLength(6)
+      expect(result[5].label).toBe('Others')
     })
 
     it('should accept custom color palette', () => {
@@ -247,13 +240,13 @@ describe('etf-chart-service', () => {
       expect(result[2].label).toBe('Germany')
     })
 
-    it('should limit to top 20 countries by default', () => {
-      const holdings = Array.from({ length: 25 }, (_, i) =>
-        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 4 })
+    it('should limit to top 15 countries by default', () => {
+      const holdings = Array.from({ length: 20 }, (_, i) =>
+        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 5 })
       )
       const result = buildCountryChartData(holdings)
-      expect(result).toHaveLength(21)
-      expect(result[20].label).toBe('Others')
+      expect(result).toHaveLength(16)
+      expect(result[15].label).toBe('Others')
     })
 
     it('should group remaining countries as Others', () => {
