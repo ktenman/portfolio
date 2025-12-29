@@ -3,7 +3,7 @@ import { RateLimitConfig } from '../types'
 
 const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 1000,
-  max: 200,
+  max: 100,
 }
 
 export function createRateLimiter(config?: Partial<RateLimitConfig>) {
