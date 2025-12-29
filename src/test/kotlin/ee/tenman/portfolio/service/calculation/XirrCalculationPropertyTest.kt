@@ -22,15 +22,19 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 class XirrCalculationPropertyTest {
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
   private lateinit var xirrCalculationService: XirrCalculationService
   private lateinit var testInstrument: Instrument
 
   @BeforeEach
   fun setUp() {
-    xirrCalculationService = XirrCalculationService()
+    xirrCalculationService = XirrCalculationService(clock)
     testInstrument =
       Instrument(
       symbol = "TEST",
@@ -47,7 +51,7 @@ class XirrCalculationPropertyTest {
     runBlocking {
     val cashFlowArb = createXirrCashFlowArb()
     checkAll(100, Arb.list(cashFlowArb, 2..10)) { cashFlows ->
-      val calculationDate = LocalDate.now()
+      val calculationDate = LocalDate.now(clock)
       val xirr = xirrCalculationService.calculateAdjustedXirr(cashFlows, calculationDate)
       expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
       expect(xirr).toBeLessThanOrEqualTo(10.0)
@@ -59,14 +63,14 @@ class XirrCalculationPropertyTest {
     runBlocking {
     val cashFlowArb = createXirrCashFlowArb()
     checkAll(50, cashFlowArb) { cashFlow ->
-      val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(cashFlow), LocalDate.now())
+      val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(cashFlow), LocalDate.now(clock))
       expect(xirr).toEqual(0.0)
     }
   }
 
   @Test
   fun `XIRR returns zero for empty cash flow list`() {
-    val xirr = xirrCalculationService.calculateAdjustedXirr(emptyList(), LocalDate.now())
+    val xirr = xirrCalculationService.calculateAdjustedXirr(emptyList(), LocalDate.now(clock))
     expect(xirr).toEqual(0.0)
   }
 
@@ -76,7 +80,7 @@ class XirrCalculationPropertyTest {
     val portfolioTransactionArb = createPortfolioTransactionArb()
     val currentValueArb = Arb.bigDecimal(BigDecimal("100"), BigDecimal("100000"))
     checkAll(50, Arb.list(portfolioTransactionArb, 1..5), currentValueArb) { transactions, currentValue ->
-      val calculationDate = LocalDate.now()
+      val calculationDate = LocalDate.now(clock)
       val xirrCashFlows =
         xirrCalculationService.buildCashFlows(
         transactions,
@@ -102,7 +106,7 @@ class XirrCalculationPropertyTest {
         transactionType = TransactionType.BUY,
         quantity = quantity.setScale(2, RoundingMode.HALF_UP),
         price = price.setScale(2, RoundingMode.HALF_UP),
-        transactionDate = LocalDate.now().minusDays(30),
+        transactionDate = LocalDate.now(clock).minusDays(30),
         platform = Platform.LIGHTYEAR,
         commission = BigDecimal("0.50"),
       )
@@ -123,7 +127,7 @@ class XirrCalculationPropertyTest {
         transactionType = TransactionType.SELL,
         quantity = quantity.setScale(2, RoundingMode.HALF_UP),
         price = price.setScale(2, RoundingMode.HALF_UP),
-        transactionDate = LocalDate.now().minusDays(30),
+        transactionDate = LocalDate.now(clock).minusDays(30),
         platform = Platform.LIGHTYEAR,
         commission = BigDecimal("0.50"),
       )
@@ -137,13 +141,13 @@ class XirrCalculationPropertyTest {
     runBlocking {
     val transactions =
       listOf(
-      CashFlow(-1000.0, LocalDate.now().minusDays(365)),
-      CashFlow(-500.0, LocalDate.now().minusDays(180)),
-      CashFlow(1800.0, LocalDate.now()),
+      CashFlow(-1000.0, LocalDate.now(clock).minusDays(365)),
+      CashFlow(-500.0, LocalDate.now(clock).minusDays(180)),
+      CashFlow(1800.0, LocalDate.now(clock)),
     )
     val results =
       (1..10).map {
-      xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now())
+      xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
     }
     val first = results.first()
     results.forEach { result ->
@@ -155,8 +159,8 @@ class XirrCalculationPropertyTest {
     Arb.double(-10000.0, 10000.0).let { amountArb ->
       Arb
         .localDate(
-        LocalDate.now().minusYears(3),
-        LocalDate.now(),
+        LocalDate.now(clock).minusYears(3),
+        LocalDate.now(clock),
       ).let { dateArb ->
         io.kotest.property.arbitrary.arbitrary {
           CashFlow(amountArb.bind(), dateArb.bind())

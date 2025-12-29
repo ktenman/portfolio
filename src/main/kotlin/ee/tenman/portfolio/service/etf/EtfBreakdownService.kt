@@ -22,6 +22,8 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
+import java.time.LocalDate
 
 @Service
 class EtfBreakdownService(
@@ -30,6 +32,7 @@ class EtfBreakdownService(
   private val transactionRepository: PortfolioTransactionRepository,
   private val dailyPriceService: DailyPriceService,
   private val cacheInvalidationService: CacheInvalidationService,
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -89,7 +92,7 @@ class EtfBreakdownService(
 
     if (!etfSymbols.isNullOrEmpty()) {
       allInstruments = allInstruments.filter { it.symbol in etfSymbols }
-      log.info("Filtered to ${allInstruments.size} instruments matching symbols: {}", LogSanitizerUtil.sanitize(etfSymbols))
+      log.info("Filtered to ${allInstruments.size} instruments matching symbols: ${LogSanitizerUtil.sanitize(etfSymbols)}")
     }
 
     val withHoldings = allInstruments.filter { hasEtfHoldings(it.id) }
@@ -215,7 +218,7 @@ class EtfBreakdownService(
 
   private fun getCurrentPrice(instrument: Instrument): BigDecimal {
     instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }?.let { return it }
-    return runCatching { dailyPriceService.getPrice(instrument, java.time.LocalDate.now()) }
+    return runCatching { dailyPriceService.getPrice(instrument, LocalDate.now(clock)) }
       .onFailure { log.warn("No price found for ${instrument.symbol}, using zero", it) }
       .getOrDefault(BigDecimal.ZERO)
   }
@@ -280,7 +283,7 @@ class EtfBreakdownService(
   fun getDiagnosticData(): List<EtfDiagnosticDto> {
     val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
     val ftInstruments = instrumentRepository.findByProviderName(ProviderName.FT)
-    log.info("Diagnostic: Found {} LIGHTYEAR and {} FT instruments", lightyearInstruments.size, ftInstruments.size)
+    log.info("Diagnostic: Found ${lightyearInstruments.size} LIGHTYEAR and ${ftInstruments.size} FT instruments")
     val allInstruments = lightyearInstruments + ftInstruments
     return allInstruments.map { instrument -> buildDiagnosticDto(instrument) }
   }
@@ -292,12 +295,8 @@ class EtfBreakdownService(
     val platforms = transactions.map { it.platform.name }.distinct()
     val latestDate = positions.firstOrNull()?.snapshotDate?.toString()
     log.info(
-      "Diagnostic for {}: positions={}, transactions={}, netQty={}, platforms={}",
-      instrument.symbol,
-      positions.size,
-      transactions.size,
-      netQuantity,
-      platforms,
+      "Diagnostic for ${instrument.symbol}: positions=${positions.size}, " +
+        "transactions=${transactions.size}, netQty=$netQuantity, platforms=$platforms",
     )
     return EtfDiagnosticDto(
       instrumentId = instrument.id,

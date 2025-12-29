@@ -105,7 +105,7 @@ class CarTelegramBot(
     startTime: Long,
   ) = try {
     val detectionResult = licensePlateDetectionService.detectPlateNumber(imageFile)
-    log.debug("Detection result: {}", objectMapper.writeValueAsString(detectionResult))
+    log.debug("Detection result: ${objectMapper.writeValueAsString(detectionResult)}")
     when {
       !detectionResult.hasCar -> sendMessage(chatId, "No car detected.", replyToMessageId)
       detectionResult.plateNumber == null ->
@@ -175,6 +175,6 @@ class CarTelegramBot(
       },
     )
   } catch (e: TelegramApiException) {
-    log.error("Failed to send message: {}", text, e)
+    log.error("Failed to send message: $text", e)
   }
 }

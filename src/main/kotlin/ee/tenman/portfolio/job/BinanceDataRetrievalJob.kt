@@ -54,7 +54,7 @@ class BinanceDataRetrievalJob(
       return
     }
     instruments.forEach { instrument -> processInstrument(instrument) }
-    log.info("Completed Binance data retrieval job. Processed {} instruments", instruments.size)
+    log.info("Completed Binance data retrieval job. Processed ${instruments.size} instruments")
   }
 
   private fun processInstrument(instrument: Instrument) {
@@ -64,23 +64,23 @@ class BinanceDataRetrievalJob(
       } else {
         fetchFullHistory(instrument)
       }
-    }.onFailure { e -> log.error("Error retrieving data for instrument {}", instrument.symbol, e) }
+    }.onFailure { e -> log.error("Error retrieving data for instrument ${instrument.symbol}", e) }
   }
 
   private fun refreshCurrentPrice(instrument: Instrument) {
-    log.debug("Refreshing current price for instrument: {}", instrument.symbol)
+    log.debug("Refreshing current price for instrument: ${instrument.symbol}")
     val currentPrice = binanceService.getCurrentPrice(instrument.symbol)
     val today = LocalDate.now(clock)
     dailyPriceService.saveCurrentPrice(instrument, currentPrice, today, ProviderName.BINANCE)
     instrumentService.updateCurrentPrice(instrument.id, currentPrice)
-    log.debug("Updated current price for {}: {}", instrument.symbol, currentPrice)
+    log.debug("Updated current price for ${instrument.symbol}: $currentPrice")
   }
 
   private fun fetchFullHistory(instrument: Instrument) {
-    log.info("Fetching full history for instrument: {} (no historical data found)", instrument.symbol)
+    log.info("Fetching full history for instrument: ${instrument.symbol} (no historical data found)")
     val dailyData = binanceService.getDailyPricesAsync(instrument.symbol)
     if (dailyData.isEmpty()) {
-      log.warn("No daily data found for instrument: {}", instrument.symbol)
+      log.warn("No daily data found for instrument: ${instrument.symbol}")
       return
     }
     dataProcessingUtil.processDailyData(

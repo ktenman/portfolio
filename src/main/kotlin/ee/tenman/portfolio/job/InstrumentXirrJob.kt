@@ -57,7 +57,7 @@ class InstrumentXirrJob(
     }
     val successCount = results.count { it.second }
     val failureCount = results.count { !it.second }
-    log.info("Instrument XIRR calculation completed: {} succeeded, {} failed", successCount, failureCount)
+    log.info("Instrument XIRR calculation completed: $successCount succeeded, $failureCount failed")
   }
 
   private fun calculateInstrumentXirr(
@@ -67,14 +67,14 @@ class InstrumentXirrJob(
     runCatching {
     val dailyPrices = dailyPriceService.findAllByInstrument(instrument)
     if (dailyPrices.isEmpty()) {
-      log.debug("No price history for {}", instrument.symbol)
+      log.debug("No price history for ${instrument.symbol}")
       return instrument.symbol to true
     }
     val sortedPrices = dailyPrices.sortedBy { it.entryDate }
     val firstPriceDate = sortedPrices.first().entryDate
     val cashFlows = generateMonthlyCashFlows(firstPriceDate, calculationDate, sortedPrices, instrument)
     if (cashFlows.size < 2) {
-      log.debug("Insufficient data for XIRR calculation for {}", instrument.symbol)
+      log.debug("Insufficient data for XIRR calculation for ${instrument.symbol}")
       instrumentService.updateXirrAnnualReturn(instrument.id, null)
       return instrument.symbol to true
     }
@@ -83,7 +83,7 @@ class InstrumentXirrJob(
     instrumentService.updateXirrAnnualReturn(instrument.id, xirrValue)
     instrument.symbol to true
   }.getOrElse { e ->
-    log.warn("Failed to calculate XIRR for {}: {}", instrument.symbol, e.message)
+    log.warn("Failed to calculate XIRR for ${instrument.symbol}: ${e.message}")
     instrument.symbol to false
   }
 

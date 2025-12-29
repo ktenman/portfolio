@@ -19,18 +19,22 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 class TerUpdateJobTest {
   private val jobTransactionService = mockk<JobTransactionService>()
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val lightyearPriceService = mockk<LightyearPriceService>()
   private val instrumentService = mockk<InstrumentService>()
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
   private lateinit var job: TerUpdateJob
 
   @BeforeEach
   fun setUp() {
     every { jobTransactionService.saveJobExecution(any(), any(), any(), any(), any()) } returns mockk()
-    job = TerUpdateJob(jobTransactionService, instrumentRepository, lightyearPriceService, instrumentService)
+    job = TerUpdateJob(jobTransactionService, instrumentRepository, lightyearPriceService, instrumentService, clock)
   }
 
   @Test

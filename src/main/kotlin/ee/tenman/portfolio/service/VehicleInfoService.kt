@@ -21,11 +21,11 @@ class VehicleInfoService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun getVehicleInfo(plateNumber: String): VehicleInfoResponse {
-    log.info("Fetching vehicle info for plate: {}", plateNumber)
+    log.info("Fetching vehicle info for plate: $plateNumber")
     val startTime = System.nanoTime()
     val (auto24Result, veegoResult) = fetchInParallel(plateNumber)
     val totalDuration = TimeUtility.durationInSeconds(startTime).toDouble()
-    log.info("Vehicle info fetched for {} in {}s", plateNumber, totalDuration)
+    log.info("Vehicle info fetched for $plateNumber in ${totalDuration}s")
     return buildResponse(plateNumber, auto24Result, veegoResult, totalDuration)
   }
 
@@ -39,7 +39,7 @@ class VehicleInfoService(
   private fun fetchAuto24Safely(plateNumber: String): CarPriceResult =
     runCatching { auto24Service.findCarPrice(plateNumber) }
       .getOrElse { exception ->
-        log.error("Failed to fetch Auto24 price for {}: {}", plateNumber, exception.message)
+        log.error("Failed to fetch Auto24 price for $plateNumber: ${exception.message}")
         CarPriceResult(price = null, error = exception.message ?: "Unknown error")
       }
 

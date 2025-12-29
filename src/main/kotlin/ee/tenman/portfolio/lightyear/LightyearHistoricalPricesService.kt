@@ -22,7 +22,7 @@ class LightyearHistoricalPricesService(
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchHistoricalPrices(uuid: String): Map<LocalDate, DailyPriceData> =
     runBlocking {
-      log.info("Fetching historical prices for Lightyear instrument: {}", uuid)
+      log.info("Fetching historical prices for Lightyear instrument: $uuid")
 
       val (fiveYearData, maxData) =
         listOf(
@@ -35,11 +35,7 @@ class LightyearHistoricalPricesService(
       mergedData.putAll(fiveYearData)
 
       log.info(
-        "Fetched {} historical prices for instrument {} (5y: {}, max: {})",
-        mergedData.size,
-        uuid,
-        fiveYearData.size,
-        maxData.size,
+        "Fetched ${mergedData.size} historical prices for instrument $uuid (5y: ${fiveYearData.size}, max: ${maxData.size})",
       )
 
       mergedData

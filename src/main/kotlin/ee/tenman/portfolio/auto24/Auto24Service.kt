@@ -14,7 +14,7 @@ class Auto24Service(
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun findCarPrice(regNr: String): CarPriceResult {
-    log.info("Fetching market price for registration number: {}", regNr)
+    log.info("Fetching market price for registration number: $regNr")
     val response = auto24Client.getMarketPrice(regNr)
     return handleResponse(regNr, response)
   }
@@ -25,10 +25,10 @@ class Auto24Service(
   ): CarPriceResult {
     if (response.error != null) return handleError(regNr, response.error, response.durationSeconds)
     if (response.marketPrice == null) {
-      log.warn("No price found for registration number: {}", regNr)
+      log.warn("No price found for registration number: $regNr")
       return CarPriceResult(price = null, error = "Price not available", durationSeconds = response.durationSeconds)
     }
-    log.info("Market price for {}: {} (attempt {}, duration {}s)", regNr, response.marketPrice, response.attempts, response.durationSeconds)
+    log.info("Market price for $regNr: ${response.marketPrice} (attempt ${response.attempts}, duration ${response.durationSeconds}s)")
     return CarPriceResult(price = response.marketPrice, durationSeconds = response.durationSeconds)
   }
 
@@ -39,15 +39,15 @@ class Auto24Service(
   ): CarPriceResult =
     when {
       error.contains("Vehicle not found") -> {
-        log.info("Vehicle not found for registration number: {}", regNr)
+        log.info("Vehicle not found for registration number: $regNr")
         CarPriceResult(price = null, error = "Vehicle not found", durationSeconds = durationSeconds)
       }
       error.contains("Price not available") -> {
-        log.info("Price not available for registration number: {}", regNr)
+        log.info("Price not available for registration number: $regNr")
         CarPriceResult(price = null, error = "Price not available", durationSeconds = durationSeconds)
       }
       else -> {
-        log.error("Failed to fetch price: {}", error)
+        log.error("Failed to fetch price: $error")
         throw CaptchaException("Failed to fetch price: $error")
       }
     }

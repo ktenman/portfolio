@@ -25,7 +25,7 @@ class CountryClassificationService(
     etfNames: List<String> = emptyList(),
   ): CountryClassificationResult? {
     val sanitizedName = LogSanitizerUtil.sanitize(companyName)
-    log.info("Classifying country for company: {} (ticker: {})", sanitizedName, ticker)
+    log.info("Classifying country for company: $sanitizedName (ticker: $ticker)")
     if (companyName.isBlank()) {
       log.warn("Blank company name")
       return null
@@ -40,7 +40,7 @@ class CountryClassificationService(
     sanitizedName: String,
   ): CountryClassificationResult? {
     if (!properties.enabled) {
-      log.warn("LLM classification disabled, skipping: {}", sanitizedName)
+      log.warn("LLM classification disabled, skipping: $sanitizedName")
       return null
     }
     val prompt = buildPrompt(companyName, ticker, etfNames)
@@ -53,7 +53,7 @@ class CountryClassificationService(
   ): CountryClassificationResult? {
     val anySp500 = etfNames.any { it.contains("S&P 500", ignoreCase = true) }
     if (anySp500) {
-      log.info("Auto-assigning US for {} (in S&P 500 ETF)", sanitizedName)
+      log.info("Auto-assigning US for $sanitizedName (in S&P 500 ETF)")
       return CountryClassificationResult(countryCode = "US", countryName = "United States", model = null)
     }
     return null
@@ -67,7 +67,7 @@ class CountryClassificationService(
   ): CountryClassificationResult? {
     val response = openRouterClient.classifyWithCountryFallback(prompt)
     if (response == null) {
-      log.warn("All country classification models failed for: {}", sanitizedName)
+      log.warn("All country classification models failed for: $sanitizedName")
       return null
     }
     return parseResponse(response, sanitizedName, logUnknownCountry = true)
@@ -81,11 +81,11 @@ class CountryClassificationService(
     val content = response.content ?: return null
     val countryCode = parseCountryCode(content)
     if (countryCode == null) {
-      if (logUnknownCountry) log.warn("Unknown country from model response: {}", content)
+      if (logUnknownCountry) log.warn("Unknown country from model response: $content")
       return null
     }
     val countryName = getCountryName(countryCode)
-    log.info("Classified {} as {} ({}) using model {}", sanitizedName, countryName, countryCode, response.model)
+    log.info("Classified $sanitizedName as $countryName ($countryCode) using model ${response.model}")
     return CountryClassificationResult(countryCode = countryCode, countryName = countryName, model = response.model)
   }
 

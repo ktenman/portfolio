@@ -41,6 +41,7 @@ private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgx
 @ExtendWith(OutputCaptureExtension::class)
 @IntegrationTest
 class PortfolioTransactionControllerIT {
+  private val testDate = LocalDate.of(2024, 1, 15)
   private val faker = Faker()
 
   @Resource
@@ -89,7 +90,7 @@ class PortfolioTransactionControllerIT {
         transactionType = TransactionType.BUY,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.now(),
+        transactionDate = testDate,
         platform = Platform.TRADING212,
       )
 
@@ -105,7 +106,7 @@ class PortfolioTransactionControllerIT {
       .andExpect(jsonPath("$.transactionType").value("BUY"))
       .andExpect(jsonPath("$.quantity").value(10))
       .andExpect(jsonPath("$.price").value(100))
-      .andExpect(jsonPath("$.transactionDate").value(LocalDate.now().toString()))
+      .andExpect(jsonPath("$.transactionDate").value(testDate.toString()))
       .andExpect(jsonPath("$.platform").value("TRADING212"))
 
     val savedTransaction = portfolioTransactionRepository.findAll().first()
@@ -272,7 +273,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.BINANCE,
         ),
         PortfolioTransaction(
@@ -280,7 +281,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("20"),
           price = BigDecimal("200"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.TRADING212,
         ),
         PortfolioTransaction(
@@ -288,7 +289,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.SELL,
           quantity = BigDecimal("5"),
           price = BigDecimal("150"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.BINANCE,
         ),
       ),
@@ -318,7 +319,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.BINANCE,
         ),
         PortfolioTransaction(
@@ -326,7 +327,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("20"),
           price = BigDecimal("200"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.TRADING212,
         ),
         PortfolioTransaction(
@@ -334,7 +335,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.SELL,
           quantity = BigDecimal("30"),
           price = BigDecimal("300"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.LIGHTYEAR,
         ),
         PortfolioTransaction(
@@ -342,7 +343,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("40"),
           price = BigDecimal("400"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.SWEDBANK,
         ),
       ),
@@ -373,7 +374,7 @@ class PortfolioTransactionControllerIT {
         transactionType = TransactionType.BUY,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.now(),
+        transactionDate = testDate,
         platform = Platform.BINANCE,
       ),
     )
@@ -401,7 +402,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.BINANCE,
         ),
         PortfolioTransaction(
@@ -409,7 +410,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.BUY,
           quantity = BigDecimal("20"),
           price = BigDecimal("200"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.TRADING212,
         ),
         PortfolioTransaction(
@@ -417,7 +418,7 @@ class PortfolioTransactionControllerIT {
           transactionType = TransactionType.SELL,
           quantity = BigDecimal("30"),
           price = BigDecimal("300"),
-          transactionDate = LocalDate.now(),
+          transactionDate = testDate,
           platform = Platform.LIGHTYEAR,
         ),
       ),

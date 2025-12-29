@@ -22,6 +22,7 @@ class OpenRouterCircuitBreakerTest {
       (MILLISECONDS_PER_MINUTE / AiModel.GEMINI_3_FLASH_PREVIEW.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val FALLBACK_RATE_LIMIT_INTERVAL_MS =
       (MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
+    private val TEST_INSTANT = Instant.parse("2024-01-15T10:00:00Z")
   }
 
   @BeforeEach
@@ -35,7 +36,7 @@ class OpenRouterCircuitBreakerTest {
             recoveryTimeoutSeconds = 60,
           ),
       )
-    clock = MutableClock(Instant.now())
+    clock = MutableClock(TEST_INSTANT)
     circuitBreaker = OpenRouterCircuitBreaker(properties, clock)
   }
 

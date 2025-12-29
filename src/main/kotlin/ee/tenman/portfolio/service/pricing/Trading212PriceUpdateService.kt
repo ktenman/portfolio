@@ -28,7 +28,7 @@ class Trading212PriceUpdateService(
     runCatching {
       val instrument = instrumentService.findBySymbol(symbol)
       instrumentService.updateCurrentPrice(instrument.id, price)
-      log.debug("Updated current price for {}: {}", symbol, price)
+      log.debug("Updated current price for $symbol: $price")
       if (isWeekend) return@runCatching ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
       val dailyPrice =
         DailyPrice(
@@ -42,10 +42,10 @@ class Trading212PriceUpdateService(
           volume = null,
         )
       dailyPriceService.saveDailyPrice(dailyPrice)
-      log.debug("Saved Trading212 daily price for {}: {}", symbol, price)
+      log.debug("Saved Trading212 daily price for $symbol: $price")
       ProcessResult.SUCCESS_WITH_DAILY_PRICE
     }.getOrElse {
-      log.warn("Failed to update price for symbol {}: {}", symbol, it.message)
+      log.warn("Failed to update price for symbol $symbol: ${it.message}")
       ProcessResult.FAILED
     }
 }
