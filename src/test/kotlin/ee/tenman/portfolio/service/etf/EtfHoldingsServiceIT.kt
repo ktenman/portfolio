@@ -299,4 +299,75 @@ class EtfHoldingsServiceIT {
     val unchangedHolding = etfHoldingRepository.findAll().first()
     expect(unchangedHolding.sector).toEqual("Technology")
   }
+
+  @Test
+  fun `should update holding name when ticker matches but name differs`() {
+    val originalHoldings =
+      listOf(
+        HoldingData(
+          name = "Alphabet Inc Class A",
+          ticker = "GOOGL",
+          sector = "Technology",
+          weight = BigDecimal("10.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), originalHoldings)
+    val originalSaved = etfHoldingRepository.findAll().first()
+    expect(originalSaved.name).toEqual("Alphabet Inc Class A")
+    expect(originalSaved.ticker).toEqual("GOOGL")
+
+    val updatedHoldings =
+      listOf(
+        HoldingData(
+          name = "Alphabet Inc",
+          ticker = "GOOGL",
+          sector = "Technology",
+          weight = BigDecimal("12.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), updatedHoldings)
+
+    val allHoldings = etfHoldingRepository.findAll()
+    expect(allHoldings.size).toEqual(1)
+    expect(allHoldings.first().name).toEqual("Alphabet Inc")
+    expect(allHoldings.first().ticker).toEqual("GOOGL")
+  }
+
+  @Test
+  fun `should find existing holding by ticker when name and ticker combination not found`() {
+    val firstHoldings =
+      listOf(
+        HoldingData(
+          name = "Meta Platforms Inc Class A",
+          ticker = "META",
+          sector = "Communication",
+          weight = BigDecimal("8.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now(), firstHoldings)
+    expect(etfHoldingRepository.findAll().size).toEqual(1)
+
+    val secondHoldings =
+      listOf(
+        HoldingData(
+          name = "Meta Platforms",
+          ticker = "META",
+          sector = "Communication",
+          weight = BigDecimal("9.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingsService.saveHoldings("IITU", LocalDate.now().plusDays(1), secondHoldings)
+
+    val allHoldings = etfHoldingRepository.findAll()
+    expect(allHoldings.size).toEqual(1)
+    expect(allHoldings.first().name).toEqual("Meta Platforms")
+  }
 }
