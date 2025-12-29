@@ -5,12 +5,14 @@ import ee.tenman.portfolio.service.infrastructure.JobTransactionService
 import ee.tenman.portfolio.service.integration.WisdomTreeUpdateService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.time.Clock
 import java.time.Instant
 
 @ScheduledJob
 class WisdomTreeDataUpdateJob(
   private val jobTransactionService: JobTransactionService,
   private val wisdomTreeUpdateService: WisdomTreeUpdateService,
+  private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -22,7 +24,7 @@ class WisdomTreeDataUpdateJob(
 
   override fun execute() {
     log.info("Executing WisdomTree data update job for WTAI")
-    val startTime = Instant.now()
+    val startTime = Instant.now(clock)
     var status = JobStatus.SUCCESS
     var message: String? = null
 
@@ -37,7 +39,7 @@ class WisdomTreeDataUpdateJob(
       message = "Failed to update WTAI holdings: ${e.message}"
       log.error("WisdomTree data update job failed", e)
     } finally {
-      val endTime = Instant.now()
+      val endTime = Instant.now(clock)
       jobTransactionService.saveJobExecution(
         job = this,
         startTime = startTime,

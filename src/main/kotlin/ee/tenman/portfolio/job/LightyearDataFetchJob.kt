@@ -7,6 +7,7 @@ import ee.tenman.portfolio.service.etf.EtfHoldingsService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 
@@ -17,6 +18,7 @@ class LightyearDataFetchJob(
   private val lightyearPriceService: LightyearPriceService,
   private val etfHoldingsService: EtfHoldingsService,
   private val etfBreakdownService: ee.tenman.portfolio.service.etf.EtfBreakdownService,
+  private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -24,7 +26,7 @@ class LightyearDataFetchJob(
   @Scheduled(cron = "0 50 23 * * ?")
   fun runJob() {
     log.info("Running Lightyear data fetch job for ${properties.etfs.size} ETFs")
-    val startTime = Instant.now()
+    val startTime = Instant.now(clock)
     var status = JobStatus.SUCCESS
     var message: String? = null
 
@@ -37,7 +39,7 @@ class LightyearDataFetchJob(
       message = "Failed to fetch data: ${e.message}"
       log.error("Lightyear data fetch job failed", e)
     } finally {
-      val endTime = Instant.now()
+      val endTime = Instant.now(clock)
       jobTransactionService.saveJobExecution(
         job = this,
         startTime = startTime,
@@ -53,7 +55,7 @@ class LightyearDataFetchJob(
   }
 
   private fun fetchAllEtfs(): String {
-    val today = LocalDate.now()
+    val today = LocalDate.now(clock)
     val results = mutableListOf<String>()
 
     properties.etfs.forEach { etfConfig ->

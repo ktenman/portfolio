@@ -41,22 +41,23 @@ class InvestmentMetricsService(
   fun calculateInstrumentMetrics(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate = LocalDate.now(),
+    calculationDate: LocalDate? = null,
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
+    val effectiveDate = calculationDate ?: LocalDate.now(clock)
     val (totalHoldings, totalInvestment) = holdingsCalculationService.calculateAggregatedHoldings(transactions)
     val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
     val currentValue = holdingsCalculationService.calculateCurrentValue(totalHoldings, currentPrice)
     val realizedProfit = calculateRealizedProfit(transactions)
     val unrealizedProfit = currentValue.subtract(totalInvestment)
-    val cashFlows = xirrCalculationService.buildCashFlows(transactions, currentValue, calculationDate)
+    val cashFlows = xirrCalculationService.buildCashFlows(transactions, currentValue, effectiveDate)
     return InstrumentMetrics(
       totalInvestment = totalInvestment,
       currentValue = currentValue,
       profit = realizedProfit.add(unrealizedProfit),
       realizedProfit = realizedProfit,
       unrealizedProfit = unrealizedProfit,
-      xirr = xirrCalculationService.calculateAdjustedXirr(cashFlows, calculationDate),
+      xirr = xirrCalculationService.calculateAdjustedXirr(cashFlows, effectiveDate),
       quantity = totalHoldings,
     )
   }
@@ -64,12 +65,13 @@ class InvestmentMetricsService(
   fun calculateInstrumentMetricsWithProfits(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate = LocalDate.now(),
+    calculationDate: LocalDate? = null,
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
+    val effectiveDate = calculationDate ?: LocalDate.now(clock)
     val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
     transactionService.calculateTransactionProfits(transactions, currentPrice)
-    return calculateInstrumentMetrics(instrument, transactions, calculationDate)
+    return calculateInstrumentMetrics(instrument, transactions, effectiveDate)
   }
 
   fun calculatePortfolioMetrics(

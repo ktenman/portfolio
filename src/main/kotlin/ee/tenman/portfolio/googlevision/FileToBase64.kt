@@ -14,7 +14,7 @@ object FileToBase64 {
     try {
       encodeToBase64(Files.readAllBytes(Paths.get(filePath)))
     } catch (e: Exception) {
-      log.error("Error reading file: {}", filePath, e)
+      log.error("Error reading file: $filePath", e)
       ""
     }
 

@@ -26,6 +26,7 @@ class PortfolioTransactionRepositoryTest {
   private lateinit var instrumentRepository: InstrumentRepository
 
   private lateinit var testInstrument: Instrument
+  private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setup() {
@@ -46,11 +47,11 @@ class PortfolioTransactionRepositoryTest {
   @Test
   fun `should find transactions by single platform`() {
     val binanceTransaction1 =
-      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now().minusDays(1))
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), testDate.minusDays(1))
     val binanceTransaction2 =
-      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("200"), LocalDate.now())
-    createAndSaveCashFlow(Platform.TRADING212, BigDecimal("300"), LocalDate.now())
-    createAndSaveCashFlow(Platform.LIGHTYEAR, BigDecimal("400"), LocalDate.now())
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("200"), testDate)
+    createAndSaveCashFlow(Platform.TRADING212, BigDecimal("300"), testDate)
+    createAndSaveCashFlow(Platform.LIGHTYEAR, BigDecimal("400"), testDate)
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(listOf(Platform.BINANCE))
 
@@ -63,11 +64,11 @@ class PortfolioTransactionRepositoryTest {
   @Test
   fun `should find transactions by multiple platforms`() {
     val binanceTransaction =
-      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), testDate)
     val trading212Transaction =
-      createAndSaveCashFlow(Platform.TRADING212, BigDecimal("200"), LocalDate.now())
-    createAndSaveCashFlow(Platform.LIGHTYEAR, BigDecimal("300"), LocalDate.now())
-    createAndSaveCashFlow(Platform.SWEDBANK, BigDecimal("400"), LocalDate.now())
+      createAndSaveCashFlow(Platform.TRADING212, BigDecimal("200"), testDate)
+    createAndSaveCashFlow(Platform.LIGHTYEAR, BigDecimal("300"), testDate)
+    createAndSaveCashFlow(Platform.SWEDBANK, BigDecimal("400"), testDate)
 
     val result =
       portfolioTransactionRepository.findAllByPlatformsWithInstruments(
@@ -84,8 +85,8 @@ class PortfolioTransactionRepositoryTest {
 
   @Test
   fun `should return empty list when no transactions match platforms`() {
-    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
-    createAndSaveCashFlow(Platform.TRADING212, BigDecimal("200"), LocalDate.now())
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), testDate)
+    createAndSaveCashFlow(Platform.TRADING212, BigDecimal("200"), testDate)
 
     val result =
       portfolioTransactionRepository.findAllByPlatformsWithInstruments(
@@ -97,21 +98,20 @@ class PortfolioTransactionRepositoryTest {
 
   @Test
   fun `should return transactions ordered by date and id descending`() {
-    val today = LocalDate.now()
-    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), today.minusDays(2))
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), testDate.minusDays(2))
     val transaction2 =
-      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("200"), today)
-    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("300"), today.minusDays(1))
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("200"), testDate)
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("300"), testDate.minusDays(1))
     val transaction4 =
-      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("400"), today)
+      createAndSaveCashFlow(Platform.BINANCE, BigDecimal("400"), testDate)
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(listOf(Platform.BINANCE))
 
     expect(result).toHaveSize(4)
-    expect(result[0].transactionDate).toEqual(today)
-    expect(result[1].transactionDate).toEqual(today)
-    expect(result[2].transactionDate).toEqual(today.minusDays(1))
-    expect(result[3].transactionDate).toEqual(today.minusDays(2))
+    expect(result[0].transactionDate).toEqual(testDate)
+    expect(result[1].transactionDate).toEqual(testDate)
+    expect(result[2].transactionDate).toEqual(testDate.minusDays(1))
+    expect(result[3].transactionDate).toEqual(testDate.minusDays(2))
 
     val todayTransactions = result.take(2)
     expect(todayTransactions[0].id > todayTransactions[1].id).toEqual(true)
@@ -121,7 +121,7 @@ class PortfolioTransactionRepositoryTest {
 
   @Test
   fun `should fetch instruments eagerly with transactions`() {
-    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), testDate)
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(listOf(Platform.BINANCE))
 
@@ -133,7 +133,7 @@ class PortfolioTransactionRepositoryTest {
 
   @Test
   fun `should handle empty platforms list`() {
-    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), LocalDate.now())
+    createAndSaveCashFlow(Platform.BINANCE, BigDecimal("100"), testDate)
 
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(emptyList())
 

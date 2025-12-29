@@ -47,7 +47,7 @@ class OpenRouterClient(
       if (result != null) return result
       val nextModel = currentModel.nextSectorFallbackModel()
       if (nextModel != null) {
-        log.info("Cascading to next fallback model: {} (tier {})", nextModel.modelId, nextModel.sectorFallbackTier)
+        log.info("Cascading to next fallback model: ${nextModel.modelId} (tier ${nextModel.sectorFallbackTier})")
       }
       currentModel = nextModel
     }
@@ -71,7 +71,7 @@ class OpenRouterClient(
       if (result != null) return result
       val nextModel = currentModel.nextCountryFallbackModel()
       if (nextModel != null) {
-        log.info("Cascading to next country fallback model: {} (tier {})", nextModel.modelId, nextModel.countryFallbackTier)
+        log.info("Cascading to next country fallback model: ${nextModel.modelId} (tier ${nextModel.countryFallbackTier})")
       }
       currentModel = nextModel
     }
@@ -91,7 +91,7 @@ class OpenRouterClient(
     }
     if (!circuitBreaker.tryAcquireRateLimit(selection.isUsingFallback)) {
       val modelType = if (selection.isUsingFallback) "fallback" else "primary"
-      log.warn("Rate limit exceeded for {} model, skipping request", modelType)
+      log.warn("Rate limit exceeded for $modelType model, skipping request")
       return null
     }
     return executeRequest(selection, prompt, maxTokens, temperature)
@@ -104,7 +104,7 @@ class OpenRouterClient(
     temperature: Double,
   ): OpenRouterClassificationResult? {
     if (!circuitBreaker.tryAcquireForModel(selection.model)) {
-      log.warn("Rate limit exceeded for model {}, trying next fallback", selection.modelId)
+      log.warn("Rate limit exceeded for model ${selection.modelId}, trying next fallback")
       return null
     }
     return executeRequest(selection, prompt, maxTokens, temperature)
@@ -124,14 +124,14 @@ class OpenRouterClient(
         temperature = temperature,
       )
     return runCatching {
-      log.info("Calling OpenRouter API with model: {} (tier: {})", selection.modelId, selection.fallbackTier)
+      log.info("Calling OpenRouter API with model: ${selection.modelId} (tier: ${selection.fallbackTier})")
       val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
       val content = response.extractContent()
-      log.info("OpenRouter response successful, content: '{}'", content)
+      log.info("OpenRouter response successful, content: '$content'")
       circuitBreaker.recordSuccess()
       OpenRouterClassificationResult(content = content, model = AiModel.fromModelId(selection.modelId))
     }.onFailure { throwable ->
-      log.error("Error calling OpenRouter API with model {}: {}", selection.modelId, throwable.message, throwable)
+      log.error("Error calling OpenRouter API with model ${selection.modelId}: ${throwable.message}", throwable)
       circuitBreaker.recordFailure(throwable)
     }.getOrNull()
   }

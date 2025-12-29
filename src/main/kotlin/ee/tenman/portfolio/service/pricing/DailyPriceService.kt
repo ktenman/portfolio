@@ -10,11 +10,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 
 @Service
 class DailyPriceService(
   private val dailyPriceRepository: DailyPriceRepository,
+  private val clock: Clock,
 ) {
   @Transactional(readOnly = true)
   fun getPrice(
@@ -96,7 +98,7 @@ class DailyPriceService(
     instrument: Instrument,
     period: PriceChangePeriod = PriceChangePeriod.P24H,
   ): PriceChange? {
-    val currentDate = LocalDate.now()
+    val currentDate = LocalDate.now(clock)
     val targetDate = currentDate.minusDays(period.days.toLong())
 
     val currentPrice = findLastDailyPrice(instrument, currentDate)?.closePrice ?: return null
@@ -120,7 +122,7 @@ class DailyPriceService(
     instrument: Instrument,
     startDate: LocalDate,
   ): PriceChange? {
-    val currentDate = LocalDate.now()
+    val currentDate = LocalDate.now(clock)
 
     val currentPrice = findLastDailyPrice(instrument, currentDate)?.closePrice ?: return null
 

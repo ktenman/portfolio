@@ -79,7 +79,7 @@ class LicensePlateDetectionService(
       remainingJobs.remove(completedDeferred)
       if (result != null) {
         if (result.plateNumber != null) {
-          log.info("Plate detected by {}, cancelling remaining jobs", result.provider)
+          log.info("Plate detected by ${result.provider}, cancelling remaining jobs")
           remainingJobs.forEach { it.cancel() }
           return result
         }
@@ -102,13 +102,13 @@ class LicensePlateDetectionService(
       val hasCar = result["hasCar"]?.toBoolean() ?: false
       val plateNumber = result["plateNumber"]
       if (plateNumber != null) {
-        log.info("Google Vision detected plate: {} in {}ms", plateNumber, elapsedMs)
+        log.info("Google Vision detected plate: $plateNumber in ${elapsedMs}ms")
         return DetectionResult(plateNumber = plateNumber, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
       }
-      log.info("Google Vision: no plate found in {}ms, hasCar={}", elapsedMs, hasCar)
+      log.info("Google Vision: no plate found in ${elapsedMs}ms, hasCar=$hasCar")
       DetectionResult(plateNumber = null, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
     }.getOrElse { e ->
-      log.error("Google Vision failed: {}", e.message)
+      log.error("Google Vision failed: ${e.message}")
       null
     }
 
@@ -117,24 +117,24 @@ class LicensePlateDetectionService(
     base64Image: String,
   ): DetectionResult? =
     runCatching {
-      log.info("Attempting detection with {}", model.modelId)
+      log.info("Attempting detection with ${model.modelId}")
       val startTime = System.currentTimeMillis()
       val request = OpenRouterVisionRequest.forLicensePlateExtraction(model.modelId, base64Image)
       val response = openRouterVisionService.extractText(request)
       val elapsedMs = System.currentTimeMillis() - startTime
       if (response.isNullOrBlank()) {
-        log.info("{}: empty response in {}ms", model.modelId, elapsedMs)
+        log.info("${model.modelId}: empty response in ${elapsedMs}ms")
         return DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
       }
       val plateNumber = extractPlateNumber(response)
       if (plateNumber != null) {
-        log.info("{} detected plate: {} in {}ms", model.modelId, plateNumber, elapsedMs)
+        log.info("${model.modelId} detected plate: $plateNumber in ${elapsedMs}ms")
         return DetectionResult(plateNumber = plateNumber, hasCar = true, provider = DetectionProvider.fromVisionModel(model))
       }
-      log.info("{}: response '{}' did not match pattern in {}ms", model.modelId, response, elapsedMs)
+      log.info("${model.modelId}: response '$response' did not match pattern in ${elapsedMs}ms")
       DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
     }.getOrElse { e ->
-      log.error("{} failed: {}", model.modelId, e.message)
+      log.error("${model.modelId} failed: ${e.message}")
       null
     }
 
