@@ -14,6 +14,11 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     ticker: String?,
   ): Optional<EtfHolding>
 
+  @Query("SELECT h FROM EtfHolding h WHERE LOWER(h.name) = LOWER(:name) ORDER BY h.id ASC")
+  fun findByNameIgnoreCase(
+    @Param("name") name: String,
+  ): Optional<EtfHolding>
+
   fun findFirstByTickerOrderByIdDesc(ticker: String): Optional<EtfHolding>
 
   fun findByName(name: String): Optional<EtfHolding>
@@ -69,4 +74,17 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   fun findEtfNamesForHoldings(
     @Param("holdingIds") holdingIds: List<Long>,
   ): List<Array<Any>>
+
+  @Query(
+    """
+    SELECT h FROM EtfHolding h
+    JOIN EtfPosition ep ON ep.holding.id = h.id
+    JOIN PortfolioTransaction pt ON pt.instrument.id = ep.etfInstrument.id
+    WHERE h.logoFetched = false
+    GROUP BY h.id
+    HAVING SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) > 0.01
+    ORDER BY MAX(ep.weightPercentage) DESC
+  """,
+  )
+  fun findHoldingsWithoutLogosForCurrentPortfolio(): List<EtfHolding>
 }

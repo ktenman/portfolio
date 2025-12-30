@@ -160,6 +160,7 @@ class EtfBreakdownService(
     val etfPlatforms = getPlatformsForInstrument(etf.id, platformFilter)
     return positions.map { position ->
       InternalHoldingData(
+        holdingId = position.holding.id,
         ticker =
           position.holding.ticker
             ?.uppercase()
@@ -199,22 +200,30 @@ class EtfBreakdownService(
     }
 
   private fun buildHoldingEntry(groupedHoldings: List<InternalHoldingData>): Pair<HoldingKey, HoldingValue> {
-    val key =
-      HoldingKey(
-        ticker = groupedHoldings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker,
-        name = groupedHoldings.maxByOrNull { it.name.length }!!.name,
-        sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
-        countryCode = groupedHoldings.mapNotNull { it.countryCode }.firstOrNull(),
-        countryName = groupedHoldings.mapNotNull { it.countryName }.firstOrNull(),
-      )
-    val value =
-      HoldingValue(
-        totalValue = groupedHoldings.fold(BigDecimal.ZERO) { acc, h -> acc.add(h.value) },
-        etfSymbols = groupedHoldings.map { it.etfSymbol }.toMutableSet(),
-        platforms = groupedHoldings.flatMap { it.platforms }.toMutableSet(),
-      )
+    val key = buildHoldingKey(groupedHoldings)
+    val value = buildHoldingValue(groupedHoldings)
     return key to value
   }
+
+  private fun buildHoldingKey(groupedHoldings: List<InternalHoldingData>): HoldingKey {
+    val first = groupedHoldings.first()
+    val longestName = groupedHoldings.maxByOrNull { it.name.length }?.name ?: first.name
+    return HoldingKey(
+      holdingId = first.holdingId,
+      ticker = groupedHoldings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker,
+      name = longestName,
+      sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
+      countryCode = groupedHoldings.mapNotNull { it.countryCode }.firstOrNull(),
+      countryName = groupedHoldings.mapNotNull { it.countryName }.firstOrNull(),
+    )
+  }
+
+  private fun buildHoldingValue(groupedHoldings: List<InternalHoldingData>) =
+    HoldingValue(
+      totalValue = groupedHoldings.fold(BigDecimal.ZERO) { acc, h -> acc.add(h.value) },
+      etfSymbols = groupedHoldings.map { it.etfSymbol }.toMutableSet(),
+      platforms = groupedHoldings.flatMap { it.platforms }.toMutableSet(),
+    )
 
   private fun getCurrentPrice(instrument: Instrument): BigDecimal {
     instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }?.let { return it }
@@ -261,6 +270,7 @@ class EtfBreakdownService(
         val percentage = scaledValue.multiply(BigDecimal(100)).divide(portfolioTotal, 4, RoundingMode.HALF_UP)
 
         EtfHoldingBreakdownDto(
+          holdingId = key.holdingId,
           holdingTicker = key.ticker,
           holdingName = key.name,
           percentageOfTotal = percentage,

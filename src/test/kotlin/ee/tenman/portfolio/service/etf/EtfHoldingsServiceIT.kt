@@ -6,18 +6,23 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.MockkSpyBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.MinioProperties
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.service.logo.LogoFallbackService
+import ee.tenman.portfolio.service.logo.LogoFetchResult
 import io.minio.ListObjectsArgs
 import io.minio.MinioClient
 import io.minio.RemoveObjectArgs
+import io.mockk.every
 import io.mockk.verify
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.AfterEach
@@ -44,6 +49,9 @@ class EtfHoldingsServiceIT {
   @MockkSpyBean
   private lateinit var minioService: MinioService
 
+  @MockkBean
+  private lateinit var logoFallbackService: LogoFallbackService
+
   @Resource
   private lateinit var minioClient: MinioClient
 
@@ -56,6 +64,8 @@ class EtfHoldingsServiceIT {
   private lateinit var testEtf: Instrument
 
   private val testDate = LocalDate.of(2024, 1, 15)
+
+  private val testLogoData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
 
   @BeforeEach
   fun setup() {
@@ -79,9 +89,11 @@ class EtfHoldingsServiceIT {
           aResponse()
             .withStatus(200)
             .withHeader("Content-Type", "image/png")
-            .withBody(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)),
+            .withBody(testLogoData),
         ),
     )
+
+    every { logoFallbackService.fetchLogo(any(), any(), isNull()) } returns null
   }
 
   @AfterEach
@@ -110,6 +122,8 @@ class EtfHoldingsServiceIT {
   @Test
   fun `should upload logo only once for new holding`() {
     val logoUrl = "http://localhost:${wireMockServer.port()}/test-logo.png"
+    every { logoFallbackService.fetchLogo("Apple Inc", "AAPL", logoUrl) } returns
+      LogoFetchResult(imageData = testLogoData, source = LogoSource.LIGHTYEAR)
     val holdings =
       listOf(
         HoldingData(
@@ -123,14 +137,17 @@ class EtfHoldingsServiceIT {
       )
 
     etfHoldingsService.saveHoldings("IITU", testDate, holdings)
+    val savedHolding = etfHoldingRepository.findAll().first()
 
-    verify(exactly = 1) { minioService.logoExists("AAPL") }
-    verify(exactly = 1) { minioService.uploadLogo("AAPL", any()) }
+    verify(exactly = 1) { minioService.logoExists(savedHolding.id) }
+    verify(exactly = 1) { minioService.uploadLogo(savedHolding.id, any()) }
   }
 
   @Test
   fun `should not upload logo if it already exists`() {
     val logoUrl = "http://localhost:${wireMockServer.port()}/test-logo.png"
+    every { logoFallbackService.fetchLogo("Microsoft Corp", "MSFT", logoUrl) } returns
+      LogoFetchResult(imageData = testLogoData, source = LogoSource.LIGHTYEAR)
     val holdings =
       listOf(
         HoldingData(
@@ -144,16 +161,17 @@ class EtfHoldingsServiceIT {
       )
 
     etfHoldingsService.saveHoldings("IITU", testDate, holdings)
+    val savedHolding = etfHoldingRepository.findAll().first()
 
-    verify(atLeast = 1) { minioService.logoExists("MSFT") }
-    verify(atLeast = 1) { minioService.uploadLogo("MSFT", any()) }
+    verify(atLeast = 1) { minioService.logoExists(savedHolding.id) }
+    verify(atLeast = 1) { minioService.uploadLogo(savedHolding.id, any()) }
 
-    val logoExistsBefore = minioService.logoExists("MSFT")
+    val logoExistsBefore = minioService.logoExists(savedHolding.id)
     expect(logoExistsBefore).toEqual(true)
 
     etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdings)
 
-    val logoExistsAfter = minioService.logoExists("MSFT")
+    val logoExistsAfter = minioService.logoExists(savedHolding.id)
     expect(logoExistsAfter).toEqual(true)
   }
 
@@ -173,22 +191,22 @@ class EtfHoldingsServiceIT {
 
     etfHoldingsService.saveHoldings("IITU", testDate, holdings)
 
-    val tslaExists = minioService.logoExists("TSLA")
-    expect(tslaExists).toEqual(false)
-
     val savedHoldings = etfHoldingRepository.findAll()
     expect(savedHoldings.size).toEqual(1)
     expect(savedHoldings.first().ticker).toEqual("TSLA")
+
+    val tslaExists = minioService.logoExists(savedHoldings.first().id)
+    expect(tslaExists).toEqual(false)
   }
 
   @Test
   fun `should handle multiple holdings with mixed logo states`() {
     val logoUrl = "http://localhost:${wireMockServer.port()}/test-logo.png"
-
-    minioService.uploadLogo("NVDA", byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47))
-
-    val nvdaExistsBefore = minioService.logoExists("NVDA")
-    expect(nvdaExistsBefore).toEqual(true)
+    every { logoFallbackService.fetchLogo("NVIDIA Corp", "NVDA", logoUrl) } returns
+      LogoFetchResult(imageData = testLogoData, source = LogoSource.LIGHTYEAR)
+    every { logoFallbackService.fetchLogo("Amazon.com Inc", "AMZN", logoUrl) } returns
+      LogoFetchResult(imageData = testLogoData, source = LogoSource.LIGHTYEAR)
+    every { logoFallbackService.fetchLogo("Meta Platforms Inc", "META", isNull()) } returns null
 
     val holdings =
       listOf(
@@ -220,17 +238,21 @@ class EtfHoldingsServiceIT {
 
     etfHoldingsService.saveHoldings("IITU", testDate, holdings)
 
-    val nvdaExistsAfter = minioService.logoExists("NVDA")
-    expect(nvdaExistsAfter).toEqual(true)
-
-    val amznExists = minioService.logoExists("AMZN")
-    expect(amznExists).toEqual(true)
-
-    val metaExists = minioService.logoExists("META")
-    expect(metaExists).toEqual(false)
-
     val savedHoldings = etfHoldingRepository.findAll()
     expect(savedHoldings.size).toEqual(3)
+
+    val nvda = savedHoldings.find { it.ticker == "NVDA" }!!
+    val amzn = savedHoldings.find { it.ticker == "AMZN" }!!
+    val meta = savedHoldings.find { it.ticker == "META" }!!
+
+    val nvdaExists = minioService.logoExists(nvda.id)
+    expect(nvdaExists).toEqual(true)
+
+    val amznExists = minioService.logoExists(amzn.id)
+    expect(amznExists).toEqual(true)
+
+    val metaExists = minioService.logoExists(meta.id)
+    expect(metaExists).toEqual(false)
   }
 
   @Test

@@ -8,8 +8,8 @@ import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
-import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.service.logo.LogoFallbackService
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
@@ -22,7 +22,7 @@ class EtfHoldingsService(
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
   private val minioService: MinioService,
-  private val imageDownloadService: ImageDownloadService,
+  private val logoFallbackService: LogoFallbackService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -85,24 +85,26 @@ class EtfHoldingsService(
     }
 
   private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding {
-    val logoKey = holdingData.ticker ?: holdingData.name
-    holdingData.logoUrl?.let { uploadLogoToMinioIfNeeded(logoKey, it) }
-    return etfHoldingRepository
-      .findByNameAndTicker(holdingData.name, holdingData.ticker)
-      .map { existing ->
-        updateSectorFromSourceIfMissing(existing, holdingData.sector)
-        existing
-      }.orElseGet {
-        log.debug("Creating new holding: name='${holdingData.name}', ticker='${holdingData.ticker}'")
-        etfHoldingRepository.save(
-          EtfHolding(
-            name = holdingData.name,
-            ticker = holdingData.ticker,
-            sector = holdingData.sector,
-            sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
-          ),
-        )
-      }
+    val existing = etfHoldingRepository.findByNameIgnoreCase(holdingData.name)
+    if (existing.isPresent) {
+      val holding = existing.get()
+      updateTickerIfExtracted(holding, holdingData.ticker)
+      updateSectorFromSourceIfMissing(holding, holdingData.sector)
+      uploadLogoWithFallback(holding, holdingData.logoUrl)
+      return holding
+    }
+    log.debug("Creating new holding: name='${holdingData.name}', ticker='${holdingData.ticker}'")
+    val newHolding =
+      etfHoldingRepository.save(
+      EtfHolding(
+        name = holdingData.name,
+        ticker = holdingData.ticker,
+        sector = holdingData.sector,
+        sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
+      ),
+    )
+    uploadLogoWithFallback(newHolding, holdingData.logoUrl)
+    return newHolding
   }
 
   private fun updateSectorFromSourceIfMissing(
@@ -117,13 +119,49 @@ class EtfHoldingsService(
     }
   }
 
-  private fun uploadLogoToMinioIfNeeded(
-    symbol: String,
-    logoUrl: String,
+  private fun uploadLogoWithFallback(
+    holding: EtfHolding,
+    lightyearLogoUrl: String?,
   ) {
-    if (minioService.logoExists(symbol)) return
-    runCatching { imageDownloadService.download(logoUrl) }
-      .onSuccess { minioService.uploadLogo(symbol, it) }
-      .onFailure { log.warn("Failed to upload logo for symbol: $symbol", it) }
+    if (holding.logoFetched) return
+    if (minioService.logoExists(holding.id)) {
+      holding.logoFetched = true
+      etfHoldingRepository.save(holding)
+      return
+    }
+    val result =
+      runCatching {
+        logoFallbackService.fetchLogo(
+          companyName = holding.name,
+          existingTicker = holding.ticker,
+          lightyearLogoUrl = lightyearLogoUrl,
+        )
+      }.onFailure {
+        log.warn("Logo fallback failed for holding: ${holding.name}", it)
+      }.getOrNull()
+    if (result == null) {
+      holding.logoFetched = true
+      etfHoldingRepository.save(holding)
+      return
+    }
+    updateTickerIfExtracted(holding, result.ticker)
+    runCatching { minioService.uploadLogo(holding.id, result.imageData) }
+      .onSuccess {
+        log.info("Uploaded logo for '${holding.name}' from ${result.source}")
+        holding.logoFetched = true
+        holding.logoSource = result.source
+        etfHoldingRepository.save(holding)
+      }.onFailure { log.warn("Failed to upload logo to MinIO for: ${holding.name}", it) }
+  }
+
+  private fun updateTickerIfExtracted(
+    holding: EtfHolding,
+    extractedTicker: String?,
+  ) {
+    if (extractedTicker.isNullOrBlank()) return
+    if (!holding.ticker.isNullOrBlank()) return
+    log.info("Updating ticker for '${holding.name}': $extractedTicker")
+    holding.ticker = extractedTicker
+    etfHoldingRepository.save(holding)
   }
 }

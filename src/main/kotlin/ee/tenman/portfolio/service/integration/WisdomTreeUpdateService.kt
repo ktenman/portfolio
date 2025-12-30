@@ -92,9 +92,23 @@ class WisdomTreeUpdateService(
     ticker: String?,
   ): EtfHolding =
     etfHoldingRepository
-      .findByNameAndTicker(name, ticker)
-      .orElseGet {
+      .findByNameIgnoreCase(name)
+      .map { holding ->
+        updateTickerIfMissing(holding, ticker)
+        holding
+      }.orElseGet {
         log.info("Creating new holding: name=$name, ticker=$ticker")
         etfHoldingRepository.save(EtfHolding(ticker = ticker, name = name, sector = null))
       }.also { log.debug("Resolved holding: name=${it.name}, ticker=${it.ticker}") }
+
+  private fun updateTickerIfMissing(
+    holding: EtfHolding,
+    ticker: String?,
+  ) {
+    if (holding.ticker.isNullOrBlank() && !ticker.isNullOrBlank()) {
+      log.info("Updating ticker for '${holding.name}': $ticker")
+      holding.ticker = ticker
+      etfHoldingRepository.save(holding)
+    }
+  }
 }
