@@ -19,22 +19,6 @@ class EtfLogoCollectionJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 60000, fixedDelay = Long.MAX_VALUE)
-  fun syncExistingLogos() {
-    log.info("Syncing existing logos from MinIO")
-    val holdings = etfHoldingRepository.findAll().filter { !it.logoFetched }
-    var synced = 0
-    holdings.forEach { holding ->
-      if (minioService.logoExists(holding.id)) {
-        holding.logoFetched = true
-        etfHoldingRepository.save(holding)
-        synced++
-      }
-    }
-    log.info("Synced $synced existing logos from MinIO")
-  }
-
-  @Scheduled(initialDelay = 120000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-logo-collection-cron:0 40 3 * * *}")
   fun collectMissingLogos() {
     log.info("Starting ETF logo collection job")
