@@ -128,22 +128,17 @@ describe('utilityService', () => {
   })
 
   describe('getLogoUrl', () => {
-    it('should return correct logo URL for ticker', () => {
-      const ticker = 'AAPL'
-      const result = utilityService.getLogoUrl(ticker)
+    it('should return correct logo URL for holdingId', () => {
+      const holdingId = 123
+      const result = utilityService.getLogoUrl(holdingId)
 
-      expect(result).toBe('/api/logos/AAPL')
+      expect(result).toBe('/api/logos/123')
     })
 
-    it('should handle different ticker symbols', () => {
-      expect(utilityService.getLogoUrl('MSFT')).toBe('/api/logos/MSFT')
-      expect(utilityService.getLogoUrl('GOOGL')).toBe('/api/logos/GOOGL')
-      expect(utilityService.getLogoUrl('TSLA')).toBe('/api/logos/TSLA')
-    })
-
-    it('should preserve ticker case', () => {
-      expect(utilityService.getLogoUrl('aapl')).toBe('/api/logos/aapl')
-      expect(utilityService.getLogoUrl('Aapl')).toBe('/api/logos/Aapl')
+    it('should handle different holdingIds', () => {
+      expect(utilityService.getLogoUrl(1)).toBe('/api/logos/1')
+      expect(utilityService.getLogoUrl(999)).toBe('/api/logos/999')
+      expect(utilityService.getLogoUrl(12345)).toBe('/api/logos/12345')
     })
   })
 })
