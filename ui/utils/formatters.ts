@@ -186,17 +186,17 @@ export const formatDate = (dateString: string): string => {
 }
 
 export const formatQuantity = (value: number | string | undefined | null): string => {
-  if (value === null || value === undefined) return '0.00'
+  if (value === null || value === undefined) return '0.0000'
 
   const numValue = typeof value === 'string' ? parseFloat(value) : value
-  if (isNaN(numValue) || !isFinite(numValue)) return '0.00'
-  if (numValue === 0) return '0.00'
+  if (isNaN(numValue) || !isFinite(numValue)) return '0.0000'
+  if (numValue === 0) return '0.0000'
 
-  if (Math.abs(numValue) < 0.01) {
-    return formatScientific(numValue)
-  }
-
-  return numValue.toFixed(2)
+  const absValue = Math.abs(numValue)
+  if (absValue < 0.0001) return formatScientific(numValue)
+  if (absValue >= 100) return numValue.toFixed(2)
+  if (absValue >= 10) return numValue.toFixed(3)
+  return numValue.toFixed(4)
 }
 
 export const formatPriceChange = (item: InstrumentDto): string => {
