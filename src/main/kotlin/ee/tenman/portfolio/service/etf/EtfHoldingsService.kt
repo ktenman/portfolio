@@ -8,6 +8,10 @@ import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
+import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
@@ -19,6 +23,9 @@ class EtfHoldingsService(
   private val instrumentRepository: InstrumentRepository,
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
+  private val minioService: MinioService,
+  private val imageDownloadService: ImageDownloadService,
+  private val imageProcessingService: ImageProcessingService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -96,8 +103,11 @@ class EtfHoldingsService(
     )
   }
 
-  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding =
-    findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
+  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding {
+    val holding = findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
+    downloadLightyearLogo(holding, holdingData.logoUrl)
+    return holding
+  }
 
   private fun updateSectorFromSourceIfMissing(
     holding: EtfHolding,
@@ -120,5 +130,30 @@ class EtfHoldingsService(
     log.info("Updating ticker for '${holding.name}': $ticker")
     holding.ticker = ticker
     etfHoldingRepository.save(holding)
+  }
+
+  private fun downloadLightyearLogo(
+    holding: EtfHolding,
+    lightyearLogoUrl: String?,
+  ) {
+    if (lightyearLogoUrl.isNullOrBlank()) return
+    if (holding.logoFetched) return
+    if (minioService.logoExists(holding.id)) {
+      holding.logoFetched = true
+      etfHoldingRepository.save(holding)
+      return
+    }
+    val imageData =
+      runCatching { imageDownloadService.download(lightyearLogoUrl) }
+        .onFailure { log.debug("Failed to download Lightyear logo for ${holding.name}: ${it.message}") }
+        .getOrNull() ?: return
+    val processedImage = imageProcessingService.resizeToMaxDimension(imageData)
+    runCatching { minioService.uploadLogo(holding.id, processedImage) }
+      .onSuccess {
+        log.info("Uploaded Lightyear logo for: ${holding.name}")
+        holding.logoFetched = true
+        holding.logoSource = LogoSource.LIGHTYEAR
+        etfHoldingRepository.save(holding)
+      }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
   }
 }
