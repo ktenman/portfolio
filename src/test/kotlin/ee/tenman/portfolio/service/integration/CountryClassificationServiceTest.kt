@@ -211,6 +211,40 @@ class CountryClassificationServiceTest {
   }
 
   @ParameterizedTest
+  @CsvSource(
+    "United Arab Emirates, AE",
+    "united arab emirates, AE",
+    "South Africa, ZA",
+    "New Zealand, NZ",
+    "Saudi Arabia, SA",
+    "South Korea, KR",
+    "North Korea, KP",
+    "Costa Rica, CR",
+    "Puerto Rico, PR",
+    "Sri Lanka, LK",
+  )
+  fun `should extract country code from multi-word country names`(
+    name: String,
+    expectedCode: String,
+  ) {
+    expect(service.findCountryCodeByName(name)).toEqual(expectedCode)
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "headquartered in United Arab Emirates, AE",
+    "The company is based in South Africa, ZA",
+    "located in New Zealand, NZ",
+    "Based in Saudi Arabia, SA",
+  )
+  fun `should extract multi-word country from verbose response`(
+    response: String,
+    expectedCode: String,
+  ) {
+    expect(service.findCountryCodeByName(response)).toEqual(expectedCode)
+  }
+
+  @ParameterizedTest
   @ValueSource(
     strings = [
       "Mali Corp",

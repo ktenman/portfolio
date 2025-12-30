@@ -17,6 +17,10 @@ class CountryClassificationService(
 
   companion object {
     private val VALID_COUNTRY_CODES: Set<String> = Locale.getISOCountries().toSet()
+    private val COUNTRY_NAME_TO_CODE: Map<String, String> =
+      VALID_COUNTRY_CODES.associateBy { code ->
+        Locale.of("", code).getDisplayCountry(Locale.ENGLISH).lowercase()
+      }
     private val NON_COMPANY_REGEXES =
       listOf(
         Regex("^other/?cash$", RegexOption.IGNORE_CASE),
@@ -32,9 +36,9 @@ class CountryClassificationService(
       )
     private val COUNTRY_EXTRACTION_PATTERN =
       Regex(
-      "(?:headquartered|based|located)\\s+in\\s+(\\w+(?:\\s+\\w+)?)",
-      RegexOption.IGNORE_CASE,
-    )
+        "(?:headquartered|based|located)\\s+in\\s+(\\w+(?:\\s+\\w+){0,3})",
+        RegexOption.IGNORE_CASE,
+      )
   }
 
   fun classifyCompanyCountryWithModel(
@@ -126,13 +130,12 @@ class CountryClassificationService(
 
   internal fun findCountryCodeByName(name: String): String? {
     val normalized = name.trim().lowercase()
-    val exactMatch = VALID_COUNTRY_CODES.find { code -> getCountryName(code).lowercase() == normalized }
-    if (exactMatch != null) return exactMatch
+    COUNTRY_NAME_TO_CODE[normalized]?.let { return it }
     val extractedCountry = COUNTRY_EXTRACTION_PATTERN.find(normalized)?.groupValues?.get(1) ?: return null
-    return VALID_COUNTRY_CODES.find { code -> getCountryName(code).lowercase() == extractedCountry }
+    return COUNTRY_NAME_TO_CODE[extractedCountry]
   }
 
-  private fun getCountryName(countryCode: String): String = Locale.of("", countryCode).displayCountry
+  private fun getCountryName(countryCode: String): String = Locale.of("", countryCode).getDisplayCountry(Locale.ENGLISH)
 
   private fun buildPrompt(
     companyName: String,
