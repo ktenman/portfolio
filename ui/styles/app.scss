@@ -16,7 +16,7 @@ body {
 
 .container,
 .container-fluid {
-  max-width: 1200px;
+  max-width: min(1350px, 91vw);
 }
 
 .alert-dismissible {
