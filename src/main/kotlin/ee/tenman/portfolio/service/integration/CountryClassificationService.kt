@@ -17,6 +17,17 @@ class CountryClassificationService(
 
   companion object {
     private val VALID_COUNTRY_CODES: Set<String> = Locale.getISOCountries().toSet()
+    private val NON_COMPANY_REGEXES =
+      listOf(
+        Regex("^other/?cash$", RegexOption.IGNORE_CASE),
+        Regex("^(aud|cad|eur|gbp|ils|jpy|krw|nok|sek|sgd|usd|chf|hkd|nzd|twd|dkk|pln|czk|huf|inr|mxn|zar)\\s+cash$", RegexOption.IGNORE_CASE),
+        Regex("^cash\\s+collateral", RegexOption.IGNORE_CASE),
+        Regex("^(australian|canadian|hong kong|new zealand|new taiwan|singapore|us)\\s+dollar$", RegexOption.IGNORE_CASE),
+        Regex("^(danish krone|japanese yen|pound sterling|swiss franc|euro currency)$", RegexOption.IGNORE_CASE),
+        Regex("^bitcoin$", RegexOption.IGNORE_CASE),
+        Regex("^ethereum$", RegexOption.IGNORE_CASE),
+        Regex("stoxx.*\\d{2}\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\s+\\d{2}$", RegexOption.IGNORE_CASE),
+      )
   }
 
   fun classifyCompanyCountryWithModel(
@@ -30,7 +41,16 @@ class CountryClassificationService(
       log.warn("Blank company name")
       return null
     }
+    if (isNonCompanyHolding(companyName)) {
+      log.info("Skipping non-company holding: $sanitizedName")
+      return null
+    }
     return tryAutoAssign(etfNames, sanitizedName) ?: classifyWithLlm(companyName, ticker, etfNames, sanitizedName)
+  }
+
+  internal fun isNonCompanyHolding(name: String): Boolean {
+    val normalized = name.trim()
+    return NON_COMPANY_REGEXES.any { regex -> regex.containsMatchIn(normalized) }
   }
 
   private fun classifyWithLlm(
@@ -99,8 +119,14 @@ class CountryClassificationService(
 
   private fun findCodeByName(name: String): String? {
     val normalized = name.trim().lowercase()
+    val exactMatch =
+      VALID_COUNTRY_CODES.find { code ->
+        getCountryName(code).lowercase() == normalized
+      }
+    if (exactMatch != null) return exactMatch
     return VALID_COUNTRY_CODES.find { code ->
-      getCountryName(code).lowercase() == normalized
+      val countryName = getCountryName(code).lowercase()
+      countryName.length >= 4 && normalized.contains(countryName)
     }
   }
 
@@ -118,21 +144,13 @@ class CountryClassificationService(
     }
     return """
     What is the headquarters country of "$companyName"$tickerInfo?
-
-    IMPORTANT: Answer with the country where the company's OPERATIONAL headquarters is located,
-    not just where it is legally incorporated for tax purposes.
-
-    Examples:
-    - Ferrari (RACE): Answer IT (Italy, Maranello) - not NL even though incorporated there
-    - Shell (SHEL): Answer GB (UK, London) - moved from NL in 2022
-    - Unilever (ULVR): Answer GB (UK, London) - unified structure since 2020
-    - Airbus (AIR): Answer FR (France, Toulouse) - operational HQ, not NL incorporation
-    - Linde (LIN): Answer IE (Ireland) - moved HQ from Germany
     $etfContext
 
-    ANSWER WITH ONLY THE 2-LETTER ISO COUNTRY CODE. DO NOT EXPLAIN.
-
-    Country code:
+    Rules:
+    - Use OPERATIONAL headquarters, not legal incorporation country
+    - Ferrari (RACE) = IT, Shell (SHEL) = GB, Airbus (AIR) = FR
+    - Reply with ONLY the 2-letter ISO code (US, GB, DE, FR, etc.)
+    - NO sentences, NO explanations, NO punctuation - just 2 letters
     """.trimIndent()
   }
 
