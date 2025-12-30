@@ -38,6 +38,7 @@ private val TICKERS: Map<String, String> =
     "EXUS:GER:EUR" to "871264993",
     "DFEN:GER:EUR" to "794499387",
     "WBIT:GER:EUR" to "653421505",
+    "DFND:PAR:EUR" to "913527044",
   )
 
 private val REQUEST_DATE_FORMATTER: DateTimeFormatter =
