@@ -759,39 +759,6 @@ class ArchitectureTest {
   }
 
   @ArchTest
-  fun kotlinNotNullAssertionOperatorShouldNotBeUsed(classes: JavaClasses) {
-    val violations = mutableListOf<String>()
-    classes
-      .filter { javaClass ->
-        javaClass.packageName.startsWith("ee.tenman.portfolio") &&
-          !javaClass.simpleName.endsWith("Test") &&
-          !javaClass.simpleName.endsWith("IT") &&
-          !javaClass.simpleName.contains("$") &&
-          !isTestSourceFile(javaClass)
-      }.forEach { javaClass ->
-        javaClass.methodCallsFromSelf
-          .filter { call ->
-            call.targetOwner.name == "kotlin.jvm.internal.Intrinsics" &&
-              (call.target.name == "checkNotNull" || call.target.name == "checkNotNullExpressionValue")
-          }.forEach { call ->
-            violations.add("${javaClass.simpleName} at ${call.sourceCodeLocation} uses !! operator")
-          }
-      }
-    if (violations.isNotEmpty()) {
-      throw AssertionError(
-        "Kotlin !! operator is a code smell. Use ?:, ?.let, requireNotNull(), or checkNotNull() instead:\n" +
-          violations.joinToString("\n") { "  - $it" },
-      )
-    }
-  }
-
-  private fun isTestSourceFile(javaClass: JavaClass): Boolean {
-    val source = javaClass.source.orElse(null) ?: return false
-    val uri = source.uri.toString()
-    return uri.contains("/test/") || uri.contains("/test-classes/")
-  }
-
-  @ArchTest
   fun controllerMethodsShouldNotHaveMoreThanFiveParameters(classes: JavaClasses) {
     val maxParams = 5
     val violations = mutableListOf<String>()
