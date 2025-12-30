@@ -20,7 +20,10 @@ class CountryClassificationService(
     private val NON_COMPANY_REGEXES =
       listOf(
         Regex("^other/?cash$", RegexOption.IGNORE_CASE),
-        Regex("^(aud|cad|eur|gbp|ils|jpy|krw|nok|sek|sgd|usd|chf|hkd|nzd|twd|dkk|pln|czk|huf|inr|mxn|zar)\\s+cash$", RegexOption.IGNORE_CASE),
+        Regex(
+          "^(aud|cad|eur|gbp|ils|jpy|krw|nok|sek|sgd|usd|chf|hkd|nzd|twd|dkk|pln|czk|huf|inr|mxn|zar)\\s+cash$",
+          RegexOption.IGNORE_CASE,
+        ),
         Regex("^cash\\s+collateral", RegexOption.IGNORE_CASE),
         Regex("^(australian|canadian|hong kong|new zealand|new taiwan|singapore|us)\\s+dollar$", RegexOption.IGNORE_CASE),
         Regex("^(danish krone|japanese yen|pound sterling|swiss franc|euro currency)$", RegexOption.IGNORE_CASE),
