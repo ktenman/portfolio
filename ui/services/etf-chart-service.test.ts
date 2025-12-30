@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import {
   buildSectorChartData,
   buildCompanyChartData,
@@ -7,9 +7,12 @@ import {
 } from './etf-chart-service'
 import type { EtfHoldingBreakdownDto } from '../models/generated/domain-models'
 
+let holdingIdCounter = 1
+
 const createHolding = (
   overrides: Partial<EtfHoldingBreakdownDto> = {}
 ): EtfHoldingBreakdownDto => ({
+  holdingId: holdingIdCounter++,
   holdingName: 'Apple Inc.',
   holdingTicker: 'AAPL',
   holdingSector: 'Technology',
@@ -24,6 +27,9 @@ const createHolding = (
 })
 
 describe('etf-chart-service', () => {
+  beforeEach(() => {
+    holdingIdCounter = 1
+  })
   describe('buildSectorChartData', () => {
     it('should aggregate holdings by sector', () => {
       const holdings = [

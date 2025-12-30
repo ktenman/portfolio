@@ -1,10 +1,10 @@
 package ee.tenman.portfolio.service.infrastructure
 
 import ee.tenman.portfolio.configuration.MinioProperties
-import ee.tenman.portfolio.util.LogSanitizerUtil
 import io.minio.GetObjectArgs
 import io.minio.MinioClient
 import io.minio.PutObjectArgs
+import io.minio.StatObjectArgs
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -18,45 +18,51 @@ class MinioService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun logoExists(symbol: String): Boolean =
+  fun logoExists(holdingId: Long): Boolean = objectExists("logos/$holdingId.png")
+
+  fun uploadLogo(
+    holdingId: Long,
+    logoData: ByteArray,
+    contentType: String = "image/png",
+  ) = uploadObject("logos/$holdingId.png", logoData, contentType)
+
+  @Cacheable(value = ["etfLogos"], key = "#holdingId")
+  fun downloadLogo(holdingId: Long): ByteArray? = downloadObject("logos/$holdingId.png")
+
+  private fun objectExists(objectName: String): Boolean =
     try {
-      val objectName = "logos/${symbol.uppercase()}.png"
-      minioClient
-        .statObject(
-          io.minio.StatObjectArgs
-            .builder()
-            .bucket(minioProperties.bucketName)
-            .`object`(objectName)
-            .build(),
-        )
+      minioClient.statObject(
+        StatObjectArgs
+          .builder()
+          .bucket(minioProperties.bucketName)
+          .`object`(objectName)
+          .build(),
+      )
       true
     } catch (e: Exception) {
-      log.trace("Logo not found for $symbol: ${e.message}")
+      log.trace("Object not found: $objectName, reason: ${e.message}")
       false
     }
 
-  fun uploadLogo(
-    symbol: String,
-    logoData: ByteArray,
-    contentType: String = "image/png",
+  private fun uploadObject(
+    objectName: String,
+    data: ByteArray,
+    contentType: String,
   ) {
-    val objectName = "logos/${symbol.uppercase()}.png"
     minioClient.putObject(
       PutObjectArgs
         .builder()
         .bucket(minioProperties.bucketName)
         .`object`(objectName)
-        .stream(ByteArrayInputStream(logoData), logoData.size.toLong(), -1)
+        .stream(ByteArrayInputStream(data), data.size.toLong(), -1)
         .contentType(contentType)
         .build(),
     )
-    log.debug("Uploaded logo for symbol: $symbol")
+    log.debug("Uploaded object: $objectName")
   }
 
-  @Cacheable(value = ["etfLogos"], key = "#symbol")
-  fun downloadLogo(symbol: String): ByteArray? =
+  private fun downloadObject(objectName: String): ByteArray? =
     try {
-      val objectName = "logos/${symbol.uppercase()}.png"
       minioClient
         .getObject(
           GetObjectArgs
@@ -68,7 +74,7 @@ class MinioService(
           stream.readBytes()
         }
     } catch (e: Exception) {
-      log.warn("Failed to download logo for symbol: ${LogSanitizerUtil.sanitize(symbol)}", e)
+      log.trace("Object not found: $objectName, reason: ${e.message}")
       null
     }
 }

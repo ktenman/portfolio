@@ -39,8 +39,8 @@
         <template #cell-holdingTicker="{ item }">
           <div class="ticker-cell">
             <img
-              v-if="item.holdingTicker"
-              :src="utilityService.getLogoUrl(item.holdingTicker)"
+              v-if="item.holdingId"
+              :src="utilityService.getLogoUrl(item.holdingId)"
               :alt="item.holdingName"
               class="company-logo"
               @error="handleImageError"

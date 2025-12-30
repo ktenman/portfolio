@@ -1,0 +1,3 @@
+ALTER TABLE etf_holding
+ADD COLUMN logo_fetched BOOLEAN DEFAULT FALSE,
+ADD COLUMN logo_source VARCHAR(20);

@@ -4,6 +4,7 @@ import { wisdomTreeAdapter } from './wisdom-tree'
 import { lightyearAdapter, lightyearBatchAdapter, lightyearLookupAdapter } from './lightyear'
 import { auto24Adapter } from './auto24'
 import { fetchAdapter } from './fetch'
+import { bingAdapter } from './bing'
 
 export const adapters: ServiceAdapter[] = [
   trading212Adapter,
@@ -13,4 +14,5 @@ export const adapters: ServiceAdapter[] = [
   lightyearLookupAdapter,
   auto24Adapter,
   fetchAdapter,
+  bingAdapter,
 ]
