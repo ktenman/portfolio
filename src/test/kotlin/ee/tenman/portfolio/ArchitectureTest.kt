@@ -16,8 +16,10 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods
+import com.tngtech.archunit.core.domain.JavaConstructor
 import com.tngtech.archunit.library.Architectures.layeredArchitecture
 import com.tngtech.archunit.library.GeneralCodingRules
+import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
 import jakarta.persistence.Entity
 import org.slf4j.Logger
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -576,4 +578,183 @@ class ArchitectureTest {
     }
   }
 
+  @ArchTest
+  fun serviceMethodsShouldNotHaveTooManyDependencies(classes: JavaClasses) {
+    val maxDependencies = 65
+    val violations = mutableListOf<String>()
+    classes
+      .filter { javaClass ->
+        javaClass.packageName.startsWith("ee.tenman.portfolio.service") &&
+          !javaClass.simpleName.endsWith("Test") &&
+          !javaClass.simpleName.endsWith("IT") &&
+          !javaClass.simpleName.contains("$") &&
+          javaClass.isAnnotatedWith(Service::class.java)
+      }.forEach { javaClass ->
+        javaClass.methods
+          .filter { method ->
+            !method.name.startsWith("access$") &&
+              !method.name.contains("$") &&
+              !method.name.startsWith("component") &&
+              method.name != "copy" &&
+              method.name != "equals" &&
+              method.name != "hashCode" &&
+              method.name != "toString"
+          }.forEach { method ->
+            val dependencies = method.methodCallsFromSelf.size + method.fieldAccesses.size
+            if (dependencies > maxDependencies) {
+              violations.add("${javaClass.simpleName}.${method.name}() has $dependencies dependencies - consider extracting helper methods")
+            }
+          }
+      }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Service methods should not have more than $maxDependencies dependencies:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
+  @ArchTest
+  fun servicesShouldNotHaveTooManyMethods(classes: JavaClasses) {
+    val maxMethods = 25
+    val violations = mutableListOf<String>()
+    classes
+      .filter { javaClass ->
+        javaClass.packageName.startsWith("ee.tenman.portfolio.service") &&
+          !javaClass.simpleName.endsWith("Test") &&
+          !javaClass.simpleName.endsWith("IT") &&
+          !javaClass.simpleName.contains("$") &&
+          javaClass.isAnnotatedWith(Service::class.java)
+      }.forEach { javaClass ->
+        val publicMethods = javaClass.methods.filter { method ->
+          method.modifiers.contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC) &&
+            !method.name.startsWith("access$") &&
+            !method.name.contains("$") &&
+            !method.name.startsWith("component") &&
+            method.name != "copy" &&
+            method.name != "equals" &&
+            method.name != "hashCode" &&
+            method.name != "toString"
+        }
+        if (publicMethods.size > maxMethods) {
+          violations.add("${javaClass.simpleName} has ${publicMethods.size} public methods (max $maxMethods) - consider splitting")
+        }
+      }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Services should not have more than $maxMethods public methods:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
+  @ArchTest
+  fun serviceConstructorsShouldNotHaveMoreThanEightParameters(classes: JavaClasses) {
+    val maxParams = 8
+    val violations = mutableListOf<String>()
+    classes
+      .filter { javaClass ->
+        javaClass.packageName.startsWith("ee.tenman.portfolio.service") &&
+          !javaClass.simpleName.endsWith("Test") &&
+          !javaClass.simpleName.endsWith("IT") &&
+          !javaClass.simpleName.contains("$") &&
+          !javaClass.isInterface &&
+          javaClass.isAnnotatedWith(Service::class.java)
+      }.forEach { javaClass ->
+        javaClass.constructors.forEach { constructor ->
+          val paramCount = constructor.rawParameterTypes.size
+          if (paramCount > maxParams) {
+            violations.add("${javaClass.simpleName} constructor has $paramCount parameters (max $maxParams)")
+          }
+        }
+      }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Service constructors should not have more than $maxParams parameters. Consider splitting the service:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
+  @ArchTest
+  fun controllersShouldBeFreeOfCircularDependencies(classes: JavaClasses) {
+    slices()
+      .matching("ee.tenman.portfolio.controller.(*)..")
+      .should()
+      .beFreeOfCycles()
+      .allowEmptyShould(true)
+      .because("Circular dependencies between controller packages indicate poor design")
+      .check(classes)
+  }
+
+  @ArchTest
+  fun repositoryMethodsShouldFollowNamingConventions(classes: JavaClasses) {
+    val validPrefixes = setOf(
+      "find", "get", "read", "query", "search", "stream", "count", "exists",
+      "save", "insert", "update", "delete", "remove", "flush", "refresh",
+    )
+    val violations = mutableListOf<String>()
+    classes
+      .filter { javaClass ->
+        javaClass.simpleName.endsWith("Repository") &&
+          javaClass.packageName.startsWith("ee.tenman.portfolio") &&
+          javaClass.isInterface
+      }.forEach { repository ->
+        repository.methods
+          .filter { method ->
+            !method.name.startsWith("$") &&
+              method.owner.name == repository.name &&
+              !isSpringDataMethod(method.name)
+          }.forEach { method ->
+            val hasValidPrefix = validPrefixes.any { prefix -> method.name.startsWith(prefix) }
+            if (!hasValidPrefix) {
+              violations.add("${repository.simpleName}.${method.name}() should start with: ${validPrefixes.joinToString(", ")}")
+            }
+          }
+      }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Repository methods should follow Spring Data naming conventions:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
+  private fun isSpringDataMethod(methodName: String): Boolean {
+    val springDataMethods = setOf(
+      "findAll", "findById", "save", "saveAll", "deleteById", "delete", "deleteAll",
+      "count", "existsById", "flush", "saveAndFlush", "deleteAllInBatch", "getById",
+      "getReferenceById", "findAllById", "deleteAllById", "deleteAllByIdInBatch",
+    )
+    return springDataMethods.contains(methodName)
+  }
+
+  @ArchTest
+  fun controllerMethodsShouldNotHaveMoreThanFiveParameters(classes: JavaClasses) {
+    val maxParams = 5
+    val violations = mutableListOf<String>()
+    classes
+      .filter { javaClass ->
+        javaClass.packageName.startsWith("ee.tenman.portfolio.controller") &&
+          javaClass.isAnnotatedWith(RestController::class.java)
+      }.forEach { javaClass ->
+        javaClass.methods
+          .filter { method ->
+            method.modifiers.contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC) &&
+              !method.name.startsWith("access$") &&
+              !method.name.contains("$")
+          }.forEach { method ->
+            val paramCount = method.rawParameterTypes.size
+            if (paramCount > maxParams) {
+              violations.add("${javaClass.simpleName}.${method.name}() has $paramCount parameters (max $maxParams)")
+            }
+          }
+      }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Controller methods should not have more than $maxParams parameters. Consider using a request DTO:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
 }
