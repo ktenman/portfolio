@@ -117,7 +117,6 @@ class EtfHoldingsService(
       log.info("Updating sector from source for '${holding.name}': $sourceSector")
       holding.sector = sourceSector
       holding.sectorSource = SectorSource.LIGHTYEAR
-      etfHoldingRepository.save(holding)
     }
   }
 
@@ -129,7 +128,6 @@ class EtfHoldingsService(
     if (!holding.ticker.isNullOrBlank()) return
     log.info("Updating ticker for '${holding.name}': $ticker")
     holding.ticker = ticker
-    etfHoldingRepository.save(holding)
   }
 
   private fun downloadLightyearLogo(
@@ -140,7 +138,6 @@ class EtfHoldingsService(
     if (holding.logoFetched) return
     if (minioService.logoExists(holding.id)) {
       holding.logoFetched = true
-      etfHoldingRepository.save(holding)
       return
     }
     val imageData =
@@ -153,7 +150,6 @@ class EtfHoldingsService(
         log.info("Uploaded Lightyear logo for: ${holding.name}")
         holding.logoFetched = true
         holding.logoSource = LogoSource.LIGHTYEAR
-        etfHoldingRepository.save(holding)
       }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
   }
 }
