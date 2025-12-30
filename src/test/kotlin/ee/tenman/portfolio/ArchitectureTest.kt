@@ -16,7 +16,6 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods
-import com.tngtech.archunit.core.domain.JavaConstructor
 import com.tngtech.archunit.library.Architectures.layeredArchitecture
 import com.tngtech.archunit.library.GeneralCodingRules
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
@@ -626,7 +625,8 @@ class ArchitectureTest {
           !javaClass.simpleName.contains("$") &&
           javaClass.isAnnotatedWith(Service::class.java)
       }.forEach { javaClass ->
-        val publicMethods = javaClass.methods.filter { method ->
+        val publicMethods =
+          javaClass.methods.filter { method ->
           method.modifiers.contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC) &&
             !method.name.startsWith("access$") &&
             !method.name.contains("$") &&
@@ -689,9 +689,23 @@ class ArchitectureTest {
 
   @ArchTest
   fun repositoryMethodsShouldFollowNamingConventions(classes: JavaClasses) {
-    val validPrefixes = setOf(
-      "find", "get", "read", "query", "search", "stream", "count", "exists",
-      "save", "insert", "update", "delete", "remove", "flush", "refresh",
+    val validPrefixes =
+      setOf(
+      "find",
+        "get",
+        "read",
+        "query",
+        "search",
+        "stream",
+        "count",
+        "exists",
+      "save",
+        "insert",
+        "update",
+        "delete",
+        "remove",
+        "flush",
+        "refresh",
     )
     val violations = mutableListOf<String>()
     classes
@@ -721,10 +735,25 @@ class ArchitectureTest {
   }
 
   private fun isSpringDataMethod(methodName: String): Boolean {
-    val springDataMethods = setOf(
-      "findAll", "findById", "save", "saveAll", "deleteById", "delete", "deleteAll",
-      "count", "existsById", "flush", "saveAndFlush", "deleteAllInBatch", "getById",
-      "getReferenceById", "findAllById", "deleteAllById", "deleteAllByIdInBatch",
+    val springDataMethods =
+      setOf(
+      "findAll",
+        "findById",
+        "save",
+        "saveAll",
+        "deleteById",
+        "delete",
+        "deleteAll",
+      "count",
+        "existsById",
+        "flush",
+        "saveAndFlush",
+        "deleteAllInBatch",
+        "getById",
+      "getReferenceById",
+        "findAllById",
+        "deleteAllById",
+        "deleteAllByIdInBatch",
     )
     return springDataMethods.contains(methodName)
   }
