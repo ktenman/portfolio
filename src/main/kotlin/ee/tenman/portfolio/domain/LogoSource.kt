@@ -4,5 +4,4 @@ enum class LogoSource {
   LIGHTYEAR,
   NVSTLY_ICONS,
   BING,
-  DUCKDUCKGO,
 }
