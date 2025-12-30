@@ -7,8 +7,14 @@ import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.integration.IndustryClassificationService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.util.concurrent.atomic.AtomicInteger
 
 @ScheduledJob
 class EtfHoldingsClassificationJob(
@@ -22,6 +28,7 @@ class EtfHoldingsClassificationJob(
   companion object {
     private const val PROGRESS_LOG_INTERVAL = 50
     private const val RATE_LIMIT_BUFFER_MS = 100L
+    private const val PARALLEL_THREADS = 3
   }
 
   @Scheduled(initialDelay = 180000, fixedDelay = Long.MAX_VALUE)
@@ -33,35 +40,60 @@ class EtfHoldingsClassificationJob(
   }
 
   override fun execute() {
-    log.info("Starting ETF holdings classification")
+    log.info("Starting ETF holdings classification with $PARALLEL_THREADS parallel threads")
     val holdingIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
     if (holdingIds.isEmpty()) {
       log.info("No unclassified holdings found")
       return
     }
     log.info("Found ${holdingIds.size} holdings without sector classification")
-    val (successCount, failureCount, skippedCount) = processHoldings(holdingIds)
-    log.info(
-      "Classification complete. Success: $successCount, Failed: $failureCount, Skipped: $skippedCount, Total: ${holdingIds.size}",
-    )
+    val result = processHoldingsInParallel(holdingIds)
+    log.info("Sector classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 
-  private fun processHoldings(holdingIds: List<Long>): ClassificationResult {
+  private fun processHoldingsInParallel(holdingIds: List<Long>): ClassificationResult {
+    val chunks = holdingIds.chunked((holdingIds.size + PARALLEL_THREADS - 1) / PARALLEL_THREADS)
+    val processedCount = AtomicInteger(0)
+    val totalCount = holdingIds.size
+    val results =
+      runBlocking {
+        chunks
+          .map { chunk ->
+            async(Dispatchers.IO) {
+              processChunk(chunk, processedCount, totalCount)
+            }
+          }.awaitAll()
+      }
+    return results.fold(ClassificationResult(0, 0, 0)) { acc, result ->
+      ClassificationResult(
+        success = acc.success + result.success,
+        failure = acc.failure + result.failure,
+        skipped = acc.skipped + result.skipped,
+      )
+    }
+  }
+
+  private suspend fun processChunk(
+    holdingIds: List<Long>,
+    processedCount: AtomicInteger,
+    totalCount: Int,
+  ): ClassificationResult {
     var successCount = 0
     var failureCount = 0
     var skippedCount = 0
-    holdingIds.forEachIndexed { index, holdingId ->
+    holdingIds.forEach { holdingId ->
       val waitTime = circuitBreaker.getWaitTimeMs(circuitBreaker.isUsingFallback())
       if (waitTime > 0) {
-        Thread.sleep(waitTime + RATE_LIMIT_BUFFER_MS)
+        delay(waitTime + RATE_LIMIT_BUFFER_MS)
       }
       when (classifyHolding(holdingId)) {
         ClassificationOutcome.SUCCESS -> successCount++
         ClassificationOutcome.FAILURE -> failureCount++
         ClassificationOutcome.SKIPPED -> skippedCount++
       }
-      if ((index + 1) % PROGRESS_LOG_INTERVAL == 0) {
-        log.info("Progress: ${index + 1}/${holdingIds.size} processed")
+      val processed = processedCount.incrementAndGet()
+      if (processed % PROGRESS_LOG_INTERVAL == 0) {
+        log.info("Progress: $processed/$totalCount processed")
       }
     }
     return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedCount)
