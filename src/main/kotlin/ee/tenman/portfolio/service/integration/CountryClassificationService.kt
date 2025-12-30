@@ -17,6 +17,28 @@ class CountryClassificationService(
 
   companion object {
     private val VALID_COUNTRY_CODES: Set<String> = Locale.getISOCountries().toSet()
+    private val COUNTRY_NAME_TO_CODE: Map<String, String> =
+      VALID_COUNTRY_CODES.associateBy { code ->
+        Locale.of("", code).getDisplayCountry(Locale.ENGLISH).lowercase()
+      }
+    private val NON_COMPANY_REGEXES =
+      listOf(
+        Regex("^other/?cash$", RegexOption.IGNORE_CASE),
+        Regex(
+          "^(aud|cad|eur|gbp|ils|jpy|krw|nok|sek|sgd|usd|chf|hkd|nzd|twd|dkk|pln|czk|huf|inr|mxn|zar)\\s+cash$",
+          RegexOption.IGNORE_CASE,
+        ),
+        Regex("^cash\\s+collateral", RegexOption.IGNORE_CASE),
+        Regex("^(australian|canadian|hong kong|new zealand|new taiwan|singapore|us)\\s+dollar$", RegexOption.IGNORE_CASE),
+        Regex("^(danish krone|japanese yen|pound sterling|swiss franc|euro currency)$", RegexOption.IGNORE_CASE),
+        Regex("^(bitcoin|ethereum|litecoin|ripple|xrp|solana|cardano|dogecoin|polkadot|avalanche)$", RegexOption.IGNORE_CASE),
+        Regex("(stoxx|industrial|s&p).*\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\s+\\d{2}$", RegexOption.IGNORE_CASE),
+      )
+    private val COUNTRY_EXTRACTION_PATTERN =
+      Regex(
+        "(?:headquartered|based|located)\\s+in\\s+(\\w+(?:\\s+\\w+){0,3})",
+        RegexOption.IGNORE_CASE,
+      )
   }
 
   fun classifyCompanyCountryWithModel(
@@ -30,7 +52,16 @@ class CountryClassificationService(
       log.warn("Blank company name")
       return null
     }
+    if (isNonCompanyHolding(companyName)) {
+      log.info("Skipping non-company holding: $sanitizedName")
+      return null
+    }
     return tryAutoAssign(etfNames, sanitizedName) ?: classifyWithLlm(companyName, ticker, etfNames, sanitizedName)
+  }
+
+  internal fun isNonCompanyHolding(name: String): Boolean {
+    val normalized = name.trim()
+    return NON_COMPANY_REGEXES.any { regex -> regex.containsMatchIn(normalized) }
   }
 
   private fun classifyWithLlm(
@@ -94,17 +125,17 @@ class CountryClassificationService(
     if (trimmed.length == 2 && VALID_COUNTRY_CODES.contains(trimmed)) {
       return trimmed
     }
-    return findCodeByName(content)
+    return findCountryCodeByName(content)
   }
 
-  private fun findCodeByName(name: String): String? {
+  internal fun findCountryCodeByName(name: String): String? {
     val normalized = name.trim().lowercase()
-    return VALID_COUNTRY_CODES.find { code ->
-      getCountryName(code).lowercase() == normalized
-    }
+    COUNTRY_NAME_TO_CODE[normalized]?.let { return it }
+    val extractedCountry = COUNTRY_EXTRACTION_PATTERN.find(normalized)?.groupValues?.get(1) ?: return null
+    return COUNTRY_NAME_TO_CODE[extractedCountry]
   }
 
-  private fun getCountryName(countryCode: String): String = Locale.of("", countryCode).displayCountry
+  private fun getCountryName(countryCode: String): String = Locale.of("", countryCode).getDisplayCountry(Locale.ENGLISH)
 
   private fun buildPrompt(
     companyName: String,
@@ -118,21 +149,13 @@ class CountryClassificationService(
     }
     return """
     What is the headquarters country of "$companyName"$tickerInfo?
-
-    IMPORTANT: Answer with the country where the company's OPERATIONAL headquarters is located,
-    not just where it is legally incorporated for tax purposes.
-
-    Examples:
-    - Ferrari (RACE): Answer IT (Italy, Maranello) - not NL even though incorporated there
-    - Shell (SHEL): Answer GB (UK, London) - moved from NL in 2022
-    - Unilever (ULVR): Answer GB (UK, London) - unified structure since 2020
-    - Airbus (AIR): Answer FR (France, Toulouse) - operational HQ, not NL incorporation
-    - Linde (LIN): Answer IE (Ireland) - moved HQ from Germany
     $etfContext
 
-    ANSWER WITH ONLY THE 2-LETTER ISO COUNTRY CODE. DO NOT EXPLAIN.
-
-    Country code:
+    Rules:
+    - Use OPERATIONAL headquarters, not legal incorporation country
+    - Ferrari (RACE) = IT, Shell (SHEL) = GB, Airbus (AIR) = FR
+    - Reply with ONLY the 2-letter ISO code (US, GB, DE, FR, etc.)
+    - NO sentences, NO explanations, NO punctuation - just 2 letters
     """.trimIndent()
   }
 
