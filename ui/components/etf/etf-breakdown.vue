@@ -282,7 +282,7 @@ onMounted(async () => {
 
 <style scoped>
 .etf-breakdown-container {
-  max-width: 1400px;
+  max-width: min(1350px, 91vw);
   margin: 0 auto;
   padding: 1.5rem;
 }

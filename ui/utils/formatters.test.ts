@@ -313,39 +313,56 @@ describe('formatDate', () => {
 })
 
 describe('formatQuantity', () => {
-  it('should format regular quantities with 2 decimal places', () => {
+  it('should format large quantities with 2 decimal places', () => {
+    expect(formatQuantity(176.73)).toBe('176.73')
     expect(formatQuantity(100)).toBe('100.00')
-    expect(formatQuantity(5.25)).toBe('5.25')
-    expect(formatQuantity(0.01)).toBe('0.01')
-    expect(formatQuantity(0.99999)).toBe('1.00')
+    expect(formatQuantity(999.99)).toBe('999.99')
+    expect(formatQuantity(1234.5678)).toBe('1234.57')
   })
 
-  it('should format small quantities in scientific notation with superscript', () => {
-    expect(formatQuantity(0.00927072)).toBe('9.27 × 10⁻³')
+  it('should format medium quantities with 3 decimal places', () => {
+    expect(formatQuantity(84.446)).toBe('84.446')
+    expect(formatQuantity(10)).toBe('10.000')
+    expect(formatQuantity(99.999)).toBe('99.999')
+    expect(formatQuantity(45.1234)).toBe('45.123')
+  })
+
+  it('should format small quantities with 4 decimal places', () => {
+    expect(formatQuantity(5.25)).toBe('5.2500')
+    expect(formatQuantity(0.1331)).toBe('0.1331')
+    expect(formatQuantity(0.01332304)).toBe('0.0133')
+    expect(formatQuantity(1.2345)).toBe('1.2345')
+    expect(formatQuantity(9.9999)).toBe('9.9999')
+  })
+
+  it('should format very small quantities in scientific notation', () => {
     expect(formatQuantity(0.00001)).toBe('1.00 × 10⁻⁵')
     expect(formatQuantity(0.0000123456)).toBe('1.23 × 10⁻⁵')
-    expect(formatQuantity(0.009)).toBe('9.00 × 10⁻³')
   })
 
-  it('should handle negative small quantities', () => {
-    expect(formatQuantity(-0.00927072)).toBe('-9.27 × 10⁻³')
+  it('should handle negative quantities', () => {
+    expect(formatQuantity(-176.73)).toBe('-176.73')
+    expect(formatQuantity(-84.446)).toBe('-84.446')
+    expect(formatQuantity(-0.1331)).toBe('-0.1331')
     expect(formatQuantity(-0.00001)).toBe('-1.00 × 10⁻⁵')
   })
 
-  it('should handle edge cases at threshold', () => {
-    expect(formatQuantity(0.01)).toBe('0.01')
-    expect(formatQuantity(0.009999)).toBe('10.00 × 10⁻³')
-    expect(formatQuantity(-0.01)).toBe('-0.01')
-    expect(formatQuantity(-0.009999)).toBe('-10.00 × 10⁻³')
+  it('should handle edge cases at thresholds', () => {
+    expect(formatQuantity(0.0001)).toBe('0.0001')
+    expect(formatQuantity(0.00009999)).toBe('10.00 × 10⁻⁵')
+    expect(formatQuantity(10)).toBe('10.000')
+    expect(formatQuantity(9.9999)).toBe('9.9999')
+    expect(formatQuantity(100)).toBe('100.00')
+    expect(formatQuantity(99.999)).toBe('99.999')
   })
 
   it('should handle null and undefined values', () => {
-    expect(formatQuantity(null)).toBe('0.00')
-    expect(formatQuantity(undefined)).toBe('0.00')
+    expect(formatQuantity(null)).toBe('0.0000')
+    expect(formatQuantity(undefined)).toBe('0.0000')
   })
 
   it('should handle zero value', () => {
-    expect(formatQuantity(0)).toBe('0.00')
+    expect(formatQuantity(0)).toBe('0.0000')
   })
 
   it('should handle very small values correctly', () => {
