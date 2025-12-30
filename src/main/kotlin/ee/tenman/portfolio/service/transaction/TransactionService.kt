@@ -56,9 +56,11 @@ class TransactionService(
         portfolioTransactionRepository
           .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
       calculateTransactionProfits(relatedTransactions)
-      portfolioTransactionRepository
-        .saveAll(relatedTransactions)
-        .find { it.id == saved.id }!!
+      requireNotNull(
+        portfolioTransactionRepository
+          .saveAll(relatedTransactions)
+          .find { it.id == saved.id },
+      ) { "Transaction not found after save: ${saved.id}" }
     }.onFailure { e ->
       if (e is ObjectOptimisticLockingFailureException) {
         log.warn("Optimistic locking failure while saving transaction. Will retry.", e)

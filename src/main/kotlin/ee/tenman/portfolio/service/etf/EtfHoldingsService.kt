@@ -8,8 +8,6 @@ import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
-import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
-import ee.tenman.portfolio.service.infrastructure.MinioService
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
@@ -21,8 +19,6 @@ class EtfHoldingsService(
   private val instrumentRepository: InstrumentRepository,
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
-  private val minioService: MinioService,
-  private val imageDownloadService: ImageDownloadService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -43,19 +39,15 @@ class EtfHoldingsService(
     holdings: List<HoldingData>,
   ) {
     val etf = findOrCreateEtf(etfSymbol)
-
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
-
     holdings.forEach { holdingData ->
       val holding = findOrCreateHolding(holdingData)
-
       val existingPosition =
         etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
           etfInstrument = etf,
           holdingId = holding.id,
           snapshotDate = date,
         )
-
       val position =
         existingPosition ?: EtfPosition(
           etfInstrument = etf,
@@ -64,15 +56,12 @@ class EtfHoldingsService(
           weightPercentage = holdingData.weight,
           positionRank = holdingData.rank,
         )
-
       if (existingPosition != null) {
         position.weightPercentage = holdingData.weight
         position.positionRank = holdingData.rank
       }
-
       etfPositionRepository.save(position)
     }
-
     log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
   }
 
@@ -84,26 +73,31 @@ class EtfHoldingsService(
       matches.first()
     }
 
-  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding {
-    val logoKey = holdingData.ticker ?: holdingData.name
-    holdingData.logoUrl?.let { uploadLogoToMinioIfNeeded(logoKey, it) }
-    return etfHoldingRepository
-      .findByNameAndTicker(holdingData.name, holdingData.ticker)
-      .map { existing ->
-        updateSectorFromSourceIfMissing(existing, holdingData.sector)
-        existing
-      }.orElseGet {
-        log.debug("Creating new holding: name='${holdingData.name}', ticker='${holdingData.ticker}'")
-        etfHoldingRepository.save(
-          EtfHolding(
-            name = holdingData.name,
-            ticker = holdingData.ticker,
-            sector = holdingData.sector,
-            sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
-          ),
-        )
-      }
+  fun findOrCreateHolding(
+    name: String,
+    ticker: String?,
+    sector: String? = null,
+  ): EtfHolding {
+    val existing = etfHoldingRepository.findByNameIgnoreCase(name)
+    if (existing.isPresent) {
+      val holding = existing.get()
+      updateTickerIfMissing(holding, ticker)
+      updateSectorFromSourceIfMissing(holding, sector)
+      return holding
+    }
+    log.debug("Creating new holding: name='$name', ticker='$ticker'")
+    return etfHoldingRepository.save(
+      EtfHolding(
+        name = name,
+        ticker = ticker,
+        sector = sector,
+        sectorSource = sector?.let { SectorSource.LIGHTYEAR },
+      ),
+    )
   }
+
+  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding =
+    findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
 
   private fun updateSectorFromSourceIfMissing(
     holding: EtfHolding,
@@ -117,13 +111,14 @@ class EtfHoldingsService(
     }
   }
 
-  private fun uploadLogoToMinioIfNeeded(
-    symbol: String,
-    logoUrl: String,
+  private fun updateTickerIfMissing(
+    holding: EtfHolding,
+    ticker: String?,
   ) {
-    if (minioService.logoExists(symbol)) return
-    runCatching { imageDownloadService.download(logoUrl) }
-      .onSuccess { minioService.uploadLogo(symbol, it) }
-      .onFailure { log.warn("Failed to upload logo for symbol: $symbol", it) }
+    if (ticker.isNullOrBlank()) return
+    if (!holding.ticker.isNullOrBlank()) return
+    log.info("Updating ticker for '${holding.name}': $ticker")
+    holding.ticker = ticker
+    etfHoldingRepository.save(holding)
   }
 }

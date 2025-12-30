@@ -4,6 +4,7 @@ import java.io.Serializable
 import java.math.BigDecimal
 
 data class EtfHoldingBreakdownDto(
+  val holdingId: Long,
   val holdingTicker: String?,
   val holdingName: String,
   val percentageOfTotal: BigDecimal,
@@ -16,6 +17,6 @@ data class EtfHoldingBreakdownDto(
   val platforms: String,
 ) : Serializable {
   companion object {
-    private const val serialVersionUID = 2L
+    private const val serialVersionUID = 3L
   }
 }

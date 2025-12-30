@@ -90,6 +90,7 @@ export interface PortfolioSummaryDto {
 }
 
 export interface EtfHoldingBreakdownDto extends Serializable {
+    holdingId: number;
     holdingTicker: string | null;
     holdingName: string;
     percentageOfTotal: number;

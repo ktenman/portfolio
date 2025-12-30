@@ -49,75 +49,54 @@ class MinioServiceIT {
 
   @Test
   fun `should upload and download logo successfully`() {
-    val symbol = "AAPL"
+    val holdingId = 12345L
     val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
 
-    minioService.uploadLogo(symbol, testData)
+    minioService.uploadLogo(holdingId, testData)
 
-    val downloaded = minioService.downloadLogo(symbol)
+    val downloaded = minioService.downloadLogo(holdingId)
     expect(downloaded).notToEqualNull()
     assertTrue(downloaded.contentEquals(testData))
   }
 
   @Test
   fun `should return null when logo does not exist`() {
-    val downloaded = minioService.downloadLogo("NONEXISTENT")
+    val downloaded = minioService.downloadLogo(99999L)
     expect(downloaded).toEqual(null)
   }
 
   @Test
   fun `logoExists should return true when logo exists`() {
-    val symbol = "TSLA"
+    val holdingId = 67890L
     val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
 
-    minioService.uploadLogo(symbol, testData)
+    minioService.uploadLogo(holdingId, testData)
 
-    val exists = minioService.logoExists(symbol)
+    val exists = minioService.logoExists(holdingId)
     expect(exists).toEqual(true)
   }
 
   @Test
   fun `logoExists should return false when logo does not exist`() {
-    val exists = minioService.logoExists("NONEXISTENT")
+    val exists = minioService.logoExists(88888L)
     expect(exists).toEqual(false)
   }
 
   @Test
-  fun `should not upload logo if it already exists`() {
-    val symbol = "MSFT"
+  fun `should overwrite logo if uploaded again`() {
+    val holdingId = 11111L
     val originalData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x01)
     val newData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x02)
 
-    minioService.uploadLogo(symbol, originalData)
+    minioService.uploadLogo(holdingId, originalData)
 
-    val existsBefore = minioService.logoExists(symbol)
+    val existsBefore = minioService.logoExists(holdingId)
     expect(existsBefore).toEqual(true)
 
-    minioService.uploadLogo(symbol, newData)
+    minioService.uploadLogo(holdingId, newData)
 
-    val downloaded = minioService.downloadLogo(symbol)
+    val downloaded = minioService.downloadLogo(holdingId)
     expect(downloaded).notToEqualNull()
     assertTrue(downloaded.contentEquals(newData))
-  }
-
-  @Test
-  fun `should handle symbol case insensitivity`() {
-    val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-
-    minioService.uploadLogo("googl", testData)
-
-    val existsLowerCase = minioService.logoExists("googl")
-    val existsUpperCase = minioService.logoExists("GOOGL")
-
-    expect(existsLowerCase).toEqual(true)
-    expect(existsUpperCase).toEqual(true)
-
-    val downloadedLowerCase = minioService.downloadLogo("googl")
-    val downloadedUpperCase = minioService.downloadLogo("GOOGL")
-
-    expect(downloadedLowerCase).notToEqualNull()
-    expect(downloadedUpperCase).notToEqualNull()
-    assertTrue(downloadedLowerCase.contentEquals(testData))
-    assertTrue(downloadedUpperCase.contentEquals(testData))
   }
 }

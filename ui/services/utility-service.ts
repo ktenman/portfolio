@@ -13,5 +13,5 @@ export const utilityService = {
 
   getBuildInfo: () => httpClient.get<BuildInfo>(API_ENDPOINTS.BUILD_INFO).then(res => res.data),
 
-  getLogoUrl: (ticker: string): string => `/api${API_ENDPOINTS.LOGOS}/${ticker}`,
+  getLogoUrl: (holdingId: number): string => `/api${API_ENDPOINTS.LOGOS}/${holdingId}`,
 }
