@@ -29,7 +29,7 @@ class EtfCountryClassificationJob(
 
   companion object {
     private const val PROGRESS_LOG_INTERVAL = 50
-    private const val PARALLEL_THREADS = 5
+    private const val PARALLEL_THREADS = 3
   }
 
   @Scheduled(initialDelay = 120000, fixedDelay = Long.MAX_VALUE)
@@ -132,25 +132,27 @@ class EtfCountryClassificationJob(
     holding: EtfHolding,
     etfNames: List<String>,
   ): ClassificationOutcome {
-    if (holding.name.isBlank()) {
-      log.warn("Skipping holding with blank name: id=${holding.id}")
+    val holdingId = holding.id
+    if (holding.name.isBlank() || holdingId == null || countryClassificationService.isNonCompanyHolding(holding.name)) {
+      logSkipReason(holding)
       return ClassificationOutcome.SKIPPED
     }
-    val holdingId =
-      holding.id ?: run {
-        log.warn("Skipping holding with null id: name=${holding.name}")
-        return ClassificationOutcome.SKIPPED
-      }
     log.info("Classifying country for: ${holding.name} (ticker: ${holding.ticker}, ETFs: ${etfNames.joinToString(", ")})")
-    val result =
-      countryClassificationService.classifyCompanyCountryWithModel(holding.name, holding.ticker, etfNames) ?: run {
-        log.warn("Country classification returned null for: ${holding.name}")
-        return ClassificationOutcome.FAILURE
-      }
+    val result = countryClassificationService.classifyCompanyCountryWithModel(holding.name, holding.ticker, etfNames)
+    if (result == null) {
+      log.warn("Country classification returned null for: ${holding.name}")
+      return ClassificationOutcome.FAILURE
+    }
     etfHoldingPersistenceService.updateCountry(holdingId, result.countryCode, result.countryName, result.model)
-    log.info(
-      "Successfully classified '${holding.name}' as '${result.countryName}' (${result.countryCode}) using model ${result.model?.modelId}",
-    )
+    log.info("Successfully classified '${holding.name}' as '${result.countryName}' (${result.countryCode})")
     return ClassificationOutcome.SUCCESS
+  }
+
+  private fun logSkipReason(holding: EtfHolding) {
+    when {
+      holding.name.isBlank() -> log.warn("Skipping holding with blank name: id=${holding.id}")
+      holding.id == null -> log.warn("Skipping holding with null id: name=${holding.name}")
+      else -> log.info("Skipping non-company holding: ${holding.name}")
+    }
   }
 }
