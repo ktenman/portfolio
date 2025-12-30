@@ -206,7 +206,7 @@ class EtfBreakdownService(
   }
 
   private fun buildHoldingKey(groupedHoldings: List<InternalHoldingData>): HoldingKey {
-    val first = groupedHoldings.first()
+    val first = groupedHoldings.firstOrNull() ?: error("Cannot build key from empty holdings list")
     val longestName = groupedHoldings.maxByOrNull { it.name.length }?.name ?: first.name
     return HoldingKey(
       holdingId = first.holdingId,

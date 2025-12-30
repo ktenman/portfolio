@@ -2,7 +2,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 
 const execFileAsync = promisify(execFile)
-const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
+const CURL = process.env.CURL_BINARY || 'curl'
 
 export interface ImageSearchRequest {
   query: string
