@@ -6,11 +6,11 @@ enum class AiModel(
   val sectorFallbackTier: Int = -1,
   val countryFallbackTier: Int = -1,
 ) {
-  GEMINI_3_FLASH_PREVIEW("google/gemini-3-flash-preview", 100, sectorFallbackTier = 0),
-  CLAUDE_OPUS_4_5("anthropic/claude-opus-4.5", 60, sectorFallbackTier = 1, countryFallbackTier = 0),
-  CLAUDE_SONNET_4_5("anthropic/claude-sonnet-4.5", 60, sectorFallbackTier = 2, countryFallbackTier = 1),
-  GEMINI_2_5_FLASH("google/gemini-2.5-flash", 100, sectorFallbackTier = 3),
-  DEEPSEEK_V3_2("deepseek/deepseek-v3.2", 60, sectorFallbackTier = 4, countryFallbackTier = 2),
+  GEMINI_3_FLASH_PREVIEW("google/gemini-3-flash-preview", 400, sectorFallbackTier = 0),
+  CLAUDE_OPUS_4_5("anthropic/claude-opus-4.5", 240, sectorFallbackTier = 1, countryFallbackTier = 0),
+  CLAUDE_SONNET_4_5("anthropic/claude-sonnet-4.5", 240, sectorFallbackTier = 2, countryFallbackTier = 1),
+  GEMINI_2_5_FLASH("google/gemini-2.5-flash", 400, sectorFallbackTier = 3),
+  DEEPSEEK_V3_2("deepseek/deepseek-v3.2", 240, sectorFallbackTier = 4, countryFallbackTier = 2),
   ;
 
   fun nextSectorFallbackModel(): AiModel? = entries.find { it.sectorFallbackTier == this.sectorFallbackTier + 1 }
