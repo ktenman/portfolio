@@ -103,11 +103,24 @@ class OpenRouterClient(
     maxTokens: Int,
     temperature: Double,
   ): OpenRouterClassificationResult? {
-    if (!circuitBreaker.tryAcquireForModel(selection.model)) {
-      log.warn("Rate limit exceeded for model ${selection.modelId}, trying next fallback")
-      return null
+    repeat(MAX_RATE_LIMIT_RETRIES) { attempt ->
+      val waitTimeMs = circuitBreaker.getWaitTimeMsForModel(selection.model)
+      if (waitTimeMs > 0) {
+        log.debug("Waiting ${waitTimeMs}ms for rate limit on model ${selection.modelId} (attempt ${attempt + 1})")
+        Thread.sleep(waitTimeMs + RATE_LIMIT_BUFFER_MS)
+      }
+      if (circuitBreaker.tryAcquireForModel(selection.model)) {
+        return executeRequest(selection, prompt, maxTokens, temperature)
+      }
+      Thread.sleep(RATE_LIMIT_BUFFER_MS)
     }
-    return executeRequest(selection, prompt, maxTokens, temperature)
+    log.warn("Rate limit exceeded for model ${selection.modelId} after $MAX_RATE_LIMIT_RETRIES attempts, trying next fallback")
+    return null
+  }
+
+  companion object {
+    private const val RATE_LIMIT_BUFFER_MS = 50L
+    private const val MAX_RATE_LIMIT_RETRIES = 3
   }
 
   private fun executeRequest(
