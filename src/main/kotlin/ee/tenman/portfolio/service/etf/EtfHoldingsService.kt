@@ -73,24 +73,31 @@ class EtfHoldingsService(
       matches.first()
     }
 
-  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding {
-    val existing = etfHoldingRepository.findByNameIgnoreCase(holdingData.name)
+  fun findOrCreateHolding(
+    name: String,
+    ticker: String?,
+    sector: String? = null,
+  ): EtfHolding {
+    val existing = etfHoldingRepository.findByNameIgnoreCase(name)
     if (existing.isPresent) {
       val holding = existing.get()
-      updateTickerIfMissing(holding, holdingData.ticker)
-      updateSectorFromSourceIfMissing(holding, holdingData.sector)
+      updateTickerIfMissing(holding, ticker)
+      updateSectorFromSourceIfMissing(holding, sector)
       return holding
     }
-    log.debug("Creating new holding: name='${holdingData.name}', ticker='${holdingData.ticker}'")
+    log.debug("Creating new holding: name='$name', ticker='$ticker'")
     return etfHoldingRepository.save(
       EtfHolding(
-        name = holdingData.name,
-        ticker = holdingData.ticker,
-        sector = holdingData.sector,
-        sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
+        name = name,
+        ticker = ticker,
+        sector = sector,
+        sectorSource = sector?.let { SectorSource.LIGHTYEAR },
       ),
     )
   }
+
+  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding =
+    findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
 
   private fun updateSectorFromSourceIfMissing(
     holding: EtfHolding,

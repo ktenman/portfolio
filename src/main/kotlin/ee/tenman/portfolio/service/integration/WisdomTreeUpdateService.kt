@@ -1,11 +1,10 @@
 package ee.tenman.portfolio.service.integration
 
-import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
-import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
+import ee.tenman.portfolio.service.etf.EtfHoldingsService
 import ee.tenman.portfolio.wisdomtree.WisdomTreeHoldingsService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -17,9 +16,9 @@ import java.time.LocalDate
 class WisdomTreeUpdateService(
   private val wisdomTreeHoldingsService: WisdomTreeHoldingsService,
   private val instrumentRepository: InstrumentRepository,
-  private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
   private val etfBreakdownService: EtfBreakdownService,
+  private val etfHoldingsService: EtfHoldingsService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -51,7 +50,7 @@ class WisdomTreeUpdateService(
     holdings.forEachIndexed { index, wisdomTreeHolding ->
       val tickerSymbol = wisdomTreeHoldingsService.extractTickerSymbol(wisdomTreeHolding.ticker)
 
-      val holding = findOrCreateHolding(wisdomTreeHolding.name, tickerSymbol)
+      val holding = etfHoldingsService.findOrCreateHolding(wisdomTreeHolding.name, tickerSymbol)
 
       val position =
         EtfPosition(
@@ -85,30 +84,5 @@ class WisdomTreeUpdateService(
       etfPositionRepository.flush()
     }
     return positions.size
-  }
-
-  private fun findOrCreateHolding(
-    name: String,
-    ticker: String?,
-  ): EtfHolding =
-    etfHoldingRepository
-      .findByNameIgnoreCase(name)
-      .map { holding ->
-        updateTickerIfMissing(holding, ticker)
-        holding
-      }.orElseGet {
-        log.info("Creating new holding: name=$name, ticker=$ticker")
-        etfHoldingRepository.save(EtfHolding(ticker = ticker, name = name, sector = null))
-      }.also { log.debug("Resolved holding: name=${it.name}, ticker=${it.ticker}") }
-
-  private fun updateTickerIfMissing(
-    holding: EtfHolding,
-    ticker: String?,
-  ) {
-    if (holding.ticker.isNullOrBlank() && !ticker.isNullOrBlank()) {
-      log.info("Updating ticker for '${holding.name}': $ticker")
-      holding.ticker = ticker
-      etfHoldingRepository.save(holding)
-    }
   }
 }
