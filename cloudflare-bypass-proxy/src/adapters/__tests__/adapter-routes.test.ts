@@ -43,6 +43,6 @@ describe('Adapter Routes', () => {
 
   it('should export correct number of adapters', () => {
     expect(adapters.length).toBeGreaterThan(0)
-    expect(adapters.length).toBe(9)
+    expect(adapters.length).toBe(8)
   })
 })

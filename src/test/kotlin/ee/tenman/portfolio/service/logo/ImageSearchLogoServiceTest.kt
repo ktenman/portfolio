@@ -1,4 +1,5 @@
 package ee.tenman.portfolio.service.logo
+
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -44,13 +45,13 @@ class ImageSearchLogoServiceTest {
   fun `should return Bing results when available`() {
     val bingResponse =
       ImageSearchResponse(
-      success = true,
-      results =
-        listOf(
-        ImageResult(image = "https://example.com/logo1.png", thumbnail = "", title = "", width = 100, height = 100),
-        ImageResult(image = "https://example.com/logo2.png", thumbnail = "", title = "", width = 100, height = 100),
-      ),
-        )
+        success = true,
+        results =
+          listOf(
+            ImageResult(image = "https://example.com/logo1.png", thumbnail = "", title = "", width = 100, height = 100),
+            ImageResult(image = "https://example.com/logo2.png", thumbnail = "", title = "", width = 100, height = 100),
+          ),
+      )
     setupRestClientMock(bingResponse)
 
     val result = service.searchLogoUrls("Apple Inc")
@@ -59,27 +60,9 @@ class ImageSearchLogoServiceTest {
   }
 
   @Test
-  fun `should fallback to DuckDuckGo when Bing fails`() {
-    val bingResponse = ImageSearchResponse(success = false, results = emptyList())
-    val ddgResponse =
-      ImageSearchResponse(
-      success = true,
-      results =
-        listOf(
-        ImageResult(image = "https://ddg.com/logo.png", thumbnail = "", title = "", width = 100, height = 100),
-      ),
-        )
-    setupRestClientMockWithFallback(bingResponse, ddgResponse)
-
-    val result = service.searchLogoUrls("Apple Inc")
-
-    expect(result).toContainExactly("https://ddg.com/logo.png")
-  }
-
-  @Test
-  fun `should return empty list when both search engines fail`() {
+  fun `should return empty list when Bing fails`() {
     val failedResponse = ImageSearchResponse(success = false, results = emptyList())
-    setupRestClientMockWithFallback(failedResponse, failedResponse)
+    setupRestClientMock(failedResponse)
 
     val result = service.searchLogoUrls("Apple Inc")
 
@@ -138,8 +121,7 @@ class ImageSearchLogoServiceTest {
             ImageResult(image = "https://example.com/bad.png", thumbnail = "", title = "", width = 100, height = 100),
           ),
       )
-    val ddgResponse = ImageSearchResponse(success = false, results = emptyList())
-    setupRestClientMockWithFallback(bingResponse, ddgResponse)
+    setupRestClientMock(bingResponse)
     every { imageDownloadService.download(any()) } throws RuntimeException("Download failed")
 
     val result = service.searchAndDownloadLogo("Apple Inc")
@@ -148,32 +130,11 @@ class ImageSearchLogoServiceTest {
   }
 
   @Test
-  fun `should fallback to DuckDuckGo when Bing download fails`() {
-    val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    val bingResponse =
-      ImageSearchResponse(
-        success = true,
-        results =
-          listOf(
-            ImageResult(image = "https://bing.com/bad.png", thumbnail = "", title = "", width = 100, height = 100),
-          ),
-      )
-    val ddgResponse =
-      ImageSearchResponse(
-        success = true,
-        results =
-          listOf(
-            ImageResult(image = "https://ddg.com/logo.png", thumbnail = "", title = "", width = 100, height = 100),
-          ),
-      )
-    setupRestClientMockWithFallback(bingResponse, ddgResponse)
-    every { imageDownloadService.download("https://bing.com/bad.png") } throws RuntimeException("Download failed")
-    every { imageDownloadService.download("https://ddg.com/logo.png") } returns imageData
+  fun `should return null when company name is blank for download`() {
+    val result = service.searchAndDownloadLogo("   ")
 
-    val result = service.searchAndDownloadLogo("Apple Inc")
-
-    expect(result?.imageData).toEqual(imageData)
-    expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
+    expect(result).toEqual(null)
+    verify(exactly = 0) { restClient.post() }
   }
 
   private fun setupRestClientMock(response: ImageSearchResponse) {
@@ -183,17 +144,5 @@ class ImageSearchLogoServiceTest {
     every { requestBodySpec.body(any<ImageSearchRequest>()) } returns requestBodySpec
     every { requestBodySpec.retrieve() } returns responseSpec
     every { responseSpec.body(ImageSearchResponse::class.java) } returns response
-  }
-
-  private fun setupRestClientMockWithFallback(
-    bingResponse: ImageSearchResponse,
-    ddgResponse: ImageSearchResponse,
-  ) {
-    every { restClient.post() } returns requestBodyUriSpec
-    every { requestBodyUriSpec.uri(any<String>()) } returns requestBodySpec
-    every { requestBodySpec.contentType(MediaType.APPLICATION_JSON) } returns requestBodySpec
-    every { requestBodySpec.body(any<ImageSearchRequest>()) } returns requestBodySpec
-    every { requestBodySpec.retrieve() } returns responseSpec
-    every { responseSpec.body(ImageSearchResponse::class.java) } returnsMany listOf(bingResponse, ddgResponse)
   }
 }

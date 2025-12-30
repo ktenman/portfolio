@@ -96,12 +96,12 @@ class LogoFallbackServiceTest {
   fun `should skip nvstly when ticker extraction fails`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     every { tickerExtractionService.extractTicker("Unknown Corp") } returns null
-    every { imageSearchLogoService.searchAndDownloadLogo("Unknown Corp") } returns ImageSearchResult(imageData, LogoSource.DUCKDUCKGO)
+    every { imageSearchLogoService.searchAndDownloadLogo("Unknown Corp") } returns ImageSearchResult(imageData, LogoSource.BING)
     every { logoValidationService.isValidLogo(imageData) } returns true
 
     val result = service.fetchLogo("Unknown Corp", null, null)
 
-    expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
+    expect(result?.source).toEqual(LogoSource.BING)
     verify(exactly = 0) { nvstlyLogoService.fetchLogo(any()) }
   }
 
