@@ -27,10 +27,14 @@ class CountryClassificationService(
         Regex("^cash\\s+collateral", RegexOption.IGNORE_CASE),
         Regex("^(australian|canadian|hong kong|new zealand|new taiwan|singapore|us)\\s+dollar$", RegexOption.IGNORE_CASE),
         Regex("^(danish krone|japanese yen|pound sterling|swiss franc|euro currency)$", RegexOption.IGNORE_CASE),
-        Regex("^bitcoin$", RegexOption.IGNORE_CASE),
-        Regex("^ethereum$", RegexOption.IGNORE_CASE),
-        Regex("stoxx.*\\d{2}\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\s+\\d{2}$", RegexOption.IGNORE_CASE),
+        Regex("^(bitcoin|ethereum|litecoin|ripple|xrp|solana|cardano|dogecoin|polkadot|avalanche)$", RegexOption.IGNORE_CASE),
+        Regex("(stoxx|industrial|s&p).*\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\s+\\d{2}$", RegexOption.IGNORE_CASE),
       )
+    private val COUNTRY_EXTRACTION_PATTERN =
+      Regex(
+      "(?:headquartered|based|located)\\s+in\\s+(\\w+(?:\\s+\\w+)?)",
+      RegexOption.IGNORE_CASE,
+    )
   }
 
   fun classifyCompanyCountryWithModel(
@@ -117,20 +121,15 @@ class CountryClassificationService(
     if (trimmed.length == 2 && VALID_COUNTRY_CODES.contains(trimmed)) {
       return trimmed
     }
-    return findCodeByName(content)
+    return findCountryCodeByName(content)
   }
 
-  private fun findCodeByName(name: String): String? {
+  internal fun findCountryCodeByName(name: String): String? {
     val normalized = name.trim().lowercase()
-    val exactMatch =
-      VALID_COUNTRY_CODES.find { code ->
-        getCountryName(code).lowercase() == normalized
-      }
+    val exactMatch = VALID_COUNTRY_CODES.find { code -> getCountryName(code).lowercase() == normalized }
     if (exactMatch != null) return exactMatch
-    return VALID_COUNTRY_CODES.find { code ->
-      val countryName = getCountryName(code).lowercase()
-      countryName.length >= 4 && normalized.contains(countryName)
-    }
+    val extractedCountry = COUNTRY_EXTRACTION_PATTERN.find(normalized)?.groupValues?.get(1) ?: return null
+    return VALID_COUNTRY_CODES.find { code -> getCountryName(code).lowercase() == extractedCountry }
   }
 
   private fun getCountryName(countryCode: String): String = Locale.of("", countryCode).displayCountry

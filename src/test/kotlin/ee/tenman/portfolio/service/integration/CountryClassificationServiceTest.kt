@@ -7,6 +7,7 @@ import ee.tenman.portfolio.openrouter.OpenRouterClient
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 
 class CountryClassificationServiceTest {
@@ -119,6 +120,14 @@ class CountryClassificationServiceTest {
       "Ethereum",
       "ethereum",
       "ETHEREUM",
+      "Litecoin",
+      "Ripple",
+      "XRP",
+      "Solana",
+      "Cardano",
+      "Dogecoin",
+      "Polkadot",
+      "Avalanche",
     ],
   )
   fun `should filter crypto assets`(name: String) {
@@ -130,6 +139,8 @@ class CountryClassificationServiceTest {
     strings = [
       "Euro Stoxx 50 Mar 26",
       "Euro Stoxx 50 Dec 25",
+      "Xai Industrial Mar 26",
+      "S&P 500 Jun 25",
     ],
   )
   fun `should filter index futures`(name: String) {
@@ -165,5 +176,51 @@ class CountryClassificationServiceTest {
   )
   fun `should not filter real companies`(name: String) {
     expect(service.isNonCompanyHolding(name)).toEqual(false)
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "Germany, DE",
+    "germany, DE",
+    "GERMANY, DE",
+    "United States, US",
+    "France, FR",
+    "Japan, JP",
+    "Luxembourg, LU",
+  )
+  fun `should extract country code from exact country name`(
+    name: String,
+    expectedCode: String,
+  ) {
+    expect(service.findCountryCodeByName(name)).toEqual(expectedCode)
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "headquartered in Luxembourg, LU",
+    "Spotify Technology SA is headquartered in Luxembourg, LU",
+    "The company is based in Germany, DE",
+    "located in France, FR",
+    "Based in Japan, JP",
+  )
+  fun `should extract country code from verbose response`(
+    response: String,
+    expectedCode: String,
+  ) {
+    expect(service.findCountryCodeByName(response)).toEqual(expectedCode)
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+    strings = [
+      "Mali Corp",
+      "Peru Holdings",
+      "Chad Enterprises",
+      "Some random text",
+      "XX",
+    ],
+  )
+  fun `should not extract country code from company names or invalid responses`(response: String) {
+    expect(service.findCountryCodeByName(response)).toEqual(null)
   }
 }

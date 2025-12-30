@@ -546,4 +546,34 @@ class ArchitectureTest {
         javaClass.simpleName != "DefaultImpls" &&
         javaClass.simpleName != "WhenMappings"
     }
+
+  @ArchTest
+  fun testsShouldNotUseWhenExpressions(classes: JavaClasses) {
+    val violations =
+      classes
+        .filter { javaClass ->
+          javaClass.simpleName == "WhenMappings" &&
+            javaClass.packageName.startsWith("ee.tenman.portfolio") &&
+            (
+              javaClass.enclosingClass
+                .orElse(null)
+                ?.simpleName
+                ?.endsWith("Test") == true ||
+              javaClass.enclosingClass
+                .orElse(null)
+                ?.simpleName
+                ?.endsWith("IT") == true
+            )
+        }.map { javaClass ->
+          val enclosingClass = javaClass.enclosingClass.orElse(null)?.simpleName ?: "unknown"
+          "$enclosingClass uses 'when' expression - prefer explicit test assertions with CsvSource"
+        }
+    if (violations.isNotEmpty()) {
+      throw AssertionError(
+        "Tests should not use 'when' expressions as they duplicate logic:\n" +
+          violations.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
 }
