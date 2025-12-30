@@ -57,27 +57,27 @@ class AiModelTest {
 
   @Test
   fun `should have correct rate limits for GEMINI_3_FLASH_PREVIEW`() {
-    expect(AiModel.GEMINI_3_FLASH_PREVIEW.rateLimitPerMinute).toEqual(100)
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.rateLimitPerMinute).toEqual(400)
   }
 
   @Test
   fun `should have correct rate limits for GEMINI_2_5_FLASH`() {
-    expect(AiModel.GEMINI_2_5_FLASH.rateLimitPerMinute).toEqual(100)
+    expect(AiModel.GEMINI_2_5_FLASH.rateLimitPerMinute).toEqual(400)
   }
 
   @Test
   fun `should have correct rate limits for CLAUDE_SONNET_4_5`() {
-    expect(AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute).toEqual(60)
+    expect(AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
   fun `should have correct rate limits for CLAUDE_OPUS_4_5`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute).toEqual(60)
+    expect(AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
   fun `should have correct rate limits for DEEPSEEK_V3_2`() {
-    expect(AiModel.DEEPSEEK_V3_2.rateLimitPerMinute).toEqual(60)
+    expect(AiModel.DEEPSEEK_V3_2.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
