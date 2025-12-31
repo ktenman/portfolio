@@ -3,7 +3,7 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.lightyear.LightyearPriceService
-import ee.tenman.portfolio.service.etf.EtfHoldingsService
+import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -16,7 +16,7 @@ class LightyearDataFetchJob(
   private val jobTransactionService: JobTransactionService,
   private val properties: LightyearScrapingProperties,
   private val lightyearPriceService: LightyearPriceService,
-  private val etfHoldingsService: EtfHoldingsService,
+  private val etfHoldingService: EtfHoldingService,
   private val etfBreakdownService: ee.tenman.portfolio.service.etf.EtfBreakdownService,
   private val clock: Clock,
 ) : Job {
@@ -76,7 +76,7 @@ class LightyearDataFetchJob(
     etfConfig: LightyearScrapingProperties.EtfConfig,
     today: LocalDate,
   ): String {
-    if (etfHoldingsService.hasHoldingsForDate(etfConfig.symbol, today)) {
+    if (etfHoldingService.hasHoldingsForDate(etfConfig.symbol, today)) {
       val msg = "Holdings for ${etfConfig.symbol} already exist for $today, skipping"
       log.info(msg)
       return msg
@@ -91,7 +91,7 @@ class LightyearDataFetchJob(
       return msg
     }
 
-    etfHoldingsService.saveHoldings(
+    etfHoldingService.saveHoldings(
       etfSymbol = etfConfig.symbol,
       date = today,
       holdings = holdings,

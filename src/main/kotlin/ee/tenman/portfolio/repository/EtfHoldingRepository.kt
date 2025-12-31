@@ -9,23 +9,10 @@ import java.util.Optional
 
 @Repository
 interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
-  fun findByNameAndTicker(
-    name: String,
-    ticker: String?,
-  ): Optional<EtfHolding>
-
   @Query("SELECT h FROM EtfHolding h WHERE LOWER(h.name) = LOWER(:name) ORDER BY h.id ASC")
   fun findByNameIgnoreCase(
     @Param("name") name: String,
   ): Optional<EtfHolding>
-
-  fun findFirstByTickerOrderByIdDesc(ticker: String): Optional<EtfHolding>
-
-  fun findByName(name: String): Optional<EtfHolding>
-
-  fun findBySectorIsNullOrSectorEquals(sector: String): List<EtfHolding>
-
-  fun findByCountryCodeIsNullOrCountryCodeEquals(countryCode: String): List<EtfHolding>
 
   @Query(
     """
@@ -80,7 +67,7 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     SELECT h FROM EtfHolding h
     JOIN EtfPosition ep ON ep.holding.id = h.id
     JOIN PortfolioTransaction pt ON pt.instrument.id = ep.etfInstrument.id
-    WHERE h.logoFetched = false
+    WHERE h.logoSource IS NULL
     GROUP BY h.id
     HAVING SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) > 0.01
     ORDER BY MAX(ep.weightPercentage) DESC
