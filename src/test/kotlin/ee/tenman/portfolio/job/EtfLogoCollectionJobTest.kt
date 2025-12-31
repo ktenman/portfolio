@@ -71,34 +71,6 @@ class EtfLogoCollectionJobTest {
   }
 
   @Test
-  fun `should update ticker when extracted from logo service`() {
-    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = null)
-    val imageData = byteArrayOf(0x89.toByte(), 0x50)
-    val logoResult = LogoFetchResult(imageData = imageData, source = LogoSource.BING, ticker = "AAPL")
-    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
-    every { logoFallbackService.fetchLogo("Apple Inc", null, null) } returns logoResult
-    every { imageProcessingService.resizeToMaxDimension(imageData) } returns imageData
-
-    job.processHolding(1L)
-
-    expect(holding.ticker).toEqual("AAPL")
-  }
-
-  @Test
-  fun `should not update ticker when holding already has one`() {
-    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = "EXISTING")
-    val imageData = byteArrayOf(0x89.toByte(), 0x50)
-    val logoResult = LogoFetchResult(imageData = imageData, source = LogoSource.BING, ticker = "AAPL")
-    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
-    every { logoFallbackService.fetchLogo("Apple Inc", "EXISTING", null) } returns logoResult
-    every { imageProcessingService.resizeToMaxDimension(imageData) } returns imageData
-
-    job.processHolding(1L)
-
-    expect(holding.ticker).toEqual("EXISTING")
-  }
-
-  @Test
   fun `should handle errors gracefully`() {
     every { etfHoldingRepository.findById(1L) } throws RuntimeException("Database error")
 

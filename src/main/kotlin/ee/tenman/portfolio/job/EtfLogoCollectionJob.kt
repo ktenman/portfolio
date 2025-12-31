@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
@@ -8,6 +7,8 @@ import ee.tenman.portfolio.service.logo.LogoFallbackService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+private const val INITIAL_DELAY_MS = 60 * 60 * 1000L
+private const val REPEAT_INTERVAL_MS = 4 * 60 * 60 * 1000L
 
 @Component
 @ScheduledJob
@@ -19,7 +20,7 @@ class EtfLogoCollectionJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 3600000, fixedDelay = 14400000)
+  @Scheduled(initialDelay = INITIAL_DELAY_MS, fixedDelay = REPEAT_INTERVAL_MS)
   fun collectMissingLogos() {
     log.info("Starting ETF logo collection job")
     val holdingIds = etfHoldingRepository.findHoldingsWithoutLogosForCurrentPortfolio().map { it.id }
@@ -40,7 +41,6 @@ class EtfLogoCollectionJob(
       runCatching { logoFallbackService.fetchLogo(holding.name, holding.ticker, null) }
         .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }
         .getOrNull() ?: return
-    updateTickerIfExtracted(holding, result.ticker)
     val processedImage = imageProcessingService.resizeToMaxDimension(result.imageData)
     runCatching { minioService.uploadLogo(holding.id, processedImage) }
       .onSuccess {
@@ -48,14 +48,5 @@ class EtfLogoCollectionJob(
         holding.logoSource = result.source
         etfHoldingRepository.save(holding)
       }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
-  }
-
-  private fun updateTickerIfExtracted(
-    holding: EtfHolding,
-    extractedTicker: String?,
-  ) {
-    if (!holding.ticker.isNullOrBlank() || extractedTicker.isNullOrBlank()) return
-    log.info("Updating ticker for '${holding.name}': $extractedTicker")
-    holding.ticker = extractedTicker
   }
 }
