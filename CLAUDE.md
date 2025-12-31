@@ -728,6 +728,47 @@ class MyService(
 
 **Why this happens**: Spring AOP uses proxies. When you call a method internally, you bypass the proxy and the annotation is ignored.
 
+#### Network I/O Outside Transactions
+
+**CRITICAL**: Keep network I/O (HTTP calls, file downloads, external API calls) outside `@Transactional` boundaries to avoid holding database connections during slow operations.
+
+```kotlin
+// ❌ WRONG: Network I/O inside transaction holds DB connection
+@Service
+class HoldingService(private val repository: HoldingRepository) {
+  @Transactional
+  fun saveHoldings(holdings: List<HoldingData>) {
+    holdings.forEach { data ->
+      val holding = repository.save(Holding(data.name))
+      downloadLogo(data.logoUrl)  // Network I/O blocks transaction!
+    }
+  }
+}
+
+// ✅ CORRECT: Separate persistence from network I/O
+@Service
+class HoldingService(
+  private val persistenceService: HoldingPersistenceService,
+  private val imageService: ImageDownloadService,
+) {
+  fun saveHoldings(holdings: List<HoldingData>) {
+    val saved = persistenceService.saveAll(holdings)  // Transaction commits here
+    saved.forEach { holding ->
+      downloadLogo(holding, holding.logoUrl)  // Network I/O outside transaction
+    }
+  }
+}
+
+@Service
+class HoldingPersistenceService(private val repository: HoldingRepository) {
+  @Transactional
+  fun saveAll(holdings: List<HoldingData>): List<Holding> =
+    holdings.map { repository.save(Holding(it.name)) }
+}
+```
+
+**Why this matters**: Database connections are limited resources. Holding them during network calls can exhaust the connection pool and cause timeouts.
+
 ### Clean Architecture Principles
 
 #### Layer Responsibilities

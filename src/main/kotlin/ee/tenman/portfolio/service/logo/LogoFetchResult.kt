@@ -1,4 +1,5 @@
 package ee.tenman.portfolio.service.logo
+
 import ee.tenman.portfolio.domain.LogoSource
 
 data class LogoFetchResult(

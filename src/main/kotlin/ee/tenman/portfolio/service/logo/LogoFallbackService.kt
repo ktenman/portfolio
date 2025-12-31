@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service
 
 @Service
 class LogoFallbackService(
-  private val tickerExtractionService: TickerExtractionService,
   private val nvstlyLogoService: NvstlyLogoService,
   private val imageSearchLogoService: ImageSearchLogoService,
   private val logoValidationService: LogoValidationService,
@@ -18,18 +17,14 @@ class LogoFallbackService(
     companyName: String,
     existingTicker: String?,
     lightyearLogoUrl: String?,
-  ): LogoFetchResult? {
-    val ticker = existingTicker ?: extractTicker(companyName)
-    return tryLightyearLogo(lightyearLogoUrl)
-      ?: tryNvstlyLogo(ticker)?.copy(ticker = ticker)
-      ?: tryImageSearchLogo(companyName)?.copy(ticker = ticker)
+  ): LogoFetchResult? =
+    tryLightyearLogo(lightyearLogoUrl)
+      ?: tryNvstlyLogo(existingTicker)?.copy(ticker = existingTicker)
+      ?: tryImageSearchLogo(companyName)?.copy(ticker = existingTicker)
       ?: run {
         log.debug("All logo sources exhausted for company: $companyName")
         null
       }
-  }
-
-  fun extractTickerForCompany(companyName: String): String? = extractTicker(companyName)
 
   private fun tryLightyearLogo(logoUrl: String?): LogoFetchResult? {
     if (logoUrl.isNullOrBlank()) return null
@@ -44,12 +39,6 @@ class LogoFallbackService(
     }
     log.info("Successfully fetched logo from Lightyear")
     return LogoFetchResult(imageData = imageData, source = LogoSource.LIGHTYEAR)
-  }
-
-  private fun extractTicker(companyName: String): String? {
-    if (companyName.isBlank()) return null
-    log.debug("Extracting ticker for company: $companyName")
-    return tickerExtractionService.extractTicker(companyName)?.ticker
   }
 
   private fun tryNvstlyLogo(ticker: String?): LogoFetchResult? {

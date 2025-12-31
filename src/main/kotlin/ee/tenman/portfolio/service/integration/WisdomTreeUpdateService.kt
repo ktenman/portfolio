@@ -4,7 +4,7 @@ import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
-import ee.tenman.portfolio.service.etf.EtfHoldingsService
+import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.wisdomtree.WisdomTreeHoldingsService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -18,7 +18,7 @@ class WisdomTreeUpdateService(
   private val instrumentRepository: InstrumentRepository,
   private val etfPositionRepository: EtfPositionRepository,
   private val etfBreakdownService: EtfBreakdownService,
-  private val etfHoldingsService: EtfHoldingsService,
+  private val etfHoldingService: EtfHoldingService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -50,7 +50,7 @@ class WisdomTreeUpdateService(
     holdings.forEachIndexed { index, wisdomTreeHolding ->
       val tickerSymbol = wisdomTreeHoldingsService.extractTickerSymbol(wisdomTreeHolding.ticker)
 
-      val holding = etfHoldingsService.findOrCreateHolding(wisdomTreeHolding.name, tickerSymbol)
+      val holding = etfHoldingService.findOrCreateHolding(wisdomTreeHolding.name, tickerSymbol)
 
       val position =
         EtfPosition(

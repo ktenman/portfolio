@@ -30,8 +30,8 @@ class EtfLogoCollectionJobTest {
     )
 
   @Test
-  fun `should skip processing when holding is already fetched`() {
-    val holding = createHolding(id = 1L, name = "Apple Inc", logoFetched = true)
+  fun `should skip processing when holding already has logo source`() {
+    val holding = createHolding(id = 1L, name = "Apple Inc", logoSource = LogoSource.LIGHTYEAR)
     every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
 
     job.processHolding(1L)
@@ -41,26 +41,12 @@ class EtfLogoCollectionJobTest {
   }
 
   @Test
-  fun `should mark as fetched when logo already exists in minio`() {
-    val holding = createHolding(id = 1L, name = "Apple Inc")
-    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns true
-
-    job.processHolding(1L)
-
-    verify(exactly = 0) { logoFallbackService.fetchLogo(any(), any(), any()) }
-    verify(exactly = 1) { etfHoldingRepository.save(holding) }
-    expect(holding.logoFetched).toEqual(true)
-  }
-
-  @Test
-  fun `should fetch and upload logo when not exists`() {
+  fun `should fetch and upload logo when logo source is null`() {
     val holding = createHolding(id = 1L, name = "Apple Inc", ticker = "AAPL")
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     val processedImage = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x00)
     val logoResult = LogoFetchResult(imageData = imageData, source = LogoSource.NVSTLY_ICONS)
     every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns false
     every { logoFallbackService.fetchLogo("Apple Inc", "AAPL", null) } returns logoResult
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
 
@@ -68,53 +54,20 @@ class EtfLogoCollectionJobTest {
 
     verify(exactly = 1) { minioService.uploadLogo(1L, processedImage) }
     verify(exactly = 1) { etfHoldingRepository.save(holding) }
-    expect(holding.logoFetched).toEqual(true)
     expect(holding.logoSource).toEqual(LogoSource.NVSTLY_ICONS)
   }
 
   @Test
-  fun `should mark as fetched when no logo found`() {
+  fun `should not save when no logo found from any source`() {
     val holding = createHolding(id = 1L, name = "Unknown Corp")
     every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns false
     every { logoFallbackService.fetchLogo("Unknown Corp", null, null) } returns null
 
     job.processHolding(1L)
 
     verify(exactly = 0) { minioService.uploadLogo(any(), any(), any()) }
-    verify(exactly = 1) { etfHoldingRepository.save(holding) }
-    expect(holding.logoFetched).toEqual(true)
+    verify(exactly = 0) { etfHoldingRepository.save(any()) }
     expect(holding.logoSource).toEqual(null)
-  }
-
-  @Test
-  fun `should update ticker when extracted from logo service`() {
-    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = null)
-    val imageData = byteArrayOf(0x89.toByte(), 0x50)
-    val logoResult = LogoFetchResult(imageData = imageData, source = LogoSource.BING, ticker = "AAPL")
-    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns false
-    every { logoFallbackService.fetchLogo("Apple Inc", null, null) } returns logoResult
-    every { imageProcessingService.resizeToMaxDimension(imageData) } returns imageData
-
-    job.processHolding(1L)
-
-    expect(holding.ticker).toEqual("AAPL")
-  }
-
-  @Test
-  fun `should not update ticker when holding already has one`() {
-    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = "EXISTING")
-    val imageData = byteArrayOf(0x89.toByte(), 0x50)
-    val logoResult = LogoFetchResult(imageData = imageData, source = LogoSource.BING, ticker = "AAPL")
-    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns false
-    every { logoFallbackService.fetchLogo("Apple Inc", "EXISTING", null) } returns logoResult
-    every { imageProcessingService.resizeToMaxDimension(imageData) } returns imageData
-
-    job.processHolding(1L)
-
-    expect(holding.ticker).toEqual("EXISTING")
   }
 
   @Test
@@ -139,10 +92,10 @@ class EtfLogoCollectionJobTest {
     id: Long = 1L,
     name: String = "Test Company",
     ticker: String? = null,
-    logoFetched: Boolean = false,
+    logoSource: LogoSource? = null,
   ): EtfHolding =
     EtfHolding(name = name, ticker = ticker).apply {
       this.id = id
-      this.logoFetched = logoFetched
+      this.logoSource = logoSource
     }
 }

@@ -1,4 +1,5 @@
 package ee.tenman.portfolio.service.logo
+
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.LogoSource
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class LogoFallbackServiceTest {
-  private val tickerExtractionService = mockk<TickerExtractionService>()
   private val nvstlyLogoService = mockk<NvstlyLogoService>()
   private val imageSearchLogoService = mockk<ImageSearchLogoService>()
   private val logoValidationService = mockk<LogoValidationService>()
@@ -21,12 +21,11 @@ class LogoFallbackServiceTest {
   fun setUp() {
     service =
       LogoFallbackService(
-      tickerExtractionService,
-      nvstlyLogoService,
-      imageSearchLogoService,
-      logoValidationService,
-      imageDownloadService,
-    )
+        nvstlyLogoService,
+        imageSearchLogoService,
+        logoValidationService,
+        imageDownloadService,
+      )
   }
 
   @Test
@@ -39,7 +38,6 @@ class LogoFallbackServiceTest {
 
     expect(result?.source).toEqual(LogoSource.LIGHTYEAR)
     expect(result?.imageData).toEqual(imageData)
-    verify(exactly = 0) { tickerExtractionService.extractTicker(any()) }
     verify(exactly = 0) { nvstlyLogoService.fetchLogo(any()) }
   }
 
@@ -56,17 +54,15 @@ class LogoFallbackServiceTest {
   }
 
   @Test
-  fun `should extract ticker when not provided`() {
+  fun `should skip nvstly and fallback to bing when no ticker provided`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    every { tickerExtractionService.extractTicker("Apple Inc") } returns TickerExtractionResult("AAPL", null)
-    every { nvstlyLogoService.fetchLogo("AAPL") } returns imageData
+    every { imageSearchLogoService.searchAndDownloadLogo("Apple Inc") } returns ImageSearchResult(imageData, LogoSource.BING)
     every { logoValidationService.isValidLogo(imageData) } returns true
 
     val result = service.fetchLogo("Apple Inc", null, null)
 
-    expect(result?.ticker).toEqual("AAPL")
-    expect(result?.source).toEqual(LogoSource.NVSTLY_ICONS)
-    verify { tickerExtractionService.extractTicker("Apple Inc") }
+    expect(result?.source).toEqual(LogoSource.BING)
+    verify(exactly = 0) { nvstlyLogoService.fetchLogo(any()) }
   }
 
   @Test
@@ -90,19 +86,6 @@ class LogoFallbackServiceTest {
     val result = service.fetchLogo("Apple Inc", "AAPL", null)
 
     expect(result).toEqual(null)
-  }
-
-  @Test
-  fun `should skip nvstly when ticker extraction fails`() {
-    val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    every { tickerExtractionService.extractTicker("Unknown Corp") } returns null
-    every { imageSearchLogoService.searchAndDownloadLogo("Unknown Corp") } returns ImageSearchResult(imageData, LogoSource.BING)
-    every { logoValidationService.isValidLogo(imageData) } returns true
-
-    val result = service.fetchLogo("Unknown Corp", null, null)
-
-    expect(result?.source).toEqual(LogoSource.BING)
-    verify(exactly = 0) { nvstlyLogoService.fetchLogo(any()) }
   }
 
   @Test
@@ -132,7 +115,7 @@ class LogoFallbackServiceTest {
   }
 
   @Test
-  fun `should use existing ticker instead of extracting`() {
+  fun `should use existing ticker for nvstly lookup`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     every { nvstlyLogoService.fetchLogo("EXISTING") } returns imageData
     every { logoValidationService.isValidLogo(imageData) } returns true
@@ -140,24 +123,6 @@ class LogoFallbackServiceTest {
     val result = service.fetchLogo("Apple Inc", "EXISTING", null)
 
     expect(result?.ticker).toEqual("EXISTING")
-    verify(exactly = 0) { tickerExtractionService.extractTicker(any()) }
-  }
-
-  @Test
-  fun `extractTickerForCompany should delegate to ticker extraction service`() {
-    every { tickerExtractionService.extractTicker("Apple Inc") } returns TickerExtractionResult("AAPL", null)
-
-    val result = service.extractTickerForCompany("Apple Inc")
-
-    expect(result).toEqual("AAPL")
-  }
-
-  @Test
-  fun `extractTickerForCompany should return null when extraction fails`() {
-    every { tickerExtractionService.extractTicker("Unknown") } returns null
-
-    val result = service.extractTickerForCompany("Unknown")
-
-    expect(result).toEqual(null)
+    expect(result?.source).toEqual(LogoSource.NVSTLY_ICONS)
   }
 }
