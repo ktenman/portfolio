@@ -19,6 +19,7 @@ class EtfLogoCollectionJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  @Scheduled(initialDelay = 300000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-logo-collection-cron:0 40 3 * * *}")
   fun collectMissingLogos() {
     log.info("Starting ETF logo collection job")
