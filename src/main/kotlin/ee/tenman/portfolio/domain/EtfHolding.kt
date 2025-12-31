@@ -34,6 +34,8 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "country_classified_by_model", length = 100)
   var countryClassifiedByModel: AiModel? = null,
+  @Column(name = "country_fetch_attempts", nullable = false)
+  var countryFetchAttempts: Int = 0,
   @Enumerated(EnumType.STRING)
   @Column(name = "logo_source", length = 20)
   var logoSource: LogoSource? = null,
