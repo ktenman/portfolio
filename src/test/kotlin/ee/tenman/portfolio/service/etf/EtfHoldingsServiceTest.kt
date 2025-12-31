@@ -30,6 +30,7 @@ class EtfHoldingsServiceTest {
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val imageProcessingService = mockk<ImageProcessingService>()
   private lateinit var service: EtfHoldingsService
+  private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setup() {
@@ -115,7 +116,7 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    service.saveHoldings("VWCE", LocalDate.now(), listOf(holdingData))
+    service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoFetched).toEqual(true)
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
@@ -135,7 +136,7 @@ class EtfHoldingsServiceTest {
     every { etfPositionRepository.save(capture(positionSlot)) } answers { positionSlot.captured }
 
     val holdingData = createHoldingData("Apple Inc", "AAPL", null)
-    service.saveHoldings("VWCE", LocalDate.now(), listOf(holdingData))
+    service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     verify(exactly = 0) { imageDownloadService.download(any()) }
     verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
@@ -162,7 +163,7 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    service.saveHoldings("VWCE", LocalDate.now(), listOf(holdingData))
+    service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     verify(exactly = 0) { imageDownloadService.download(any()) }
   }
@@ -190,7 +191,7 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/tesla.png",
       )
-    service.saveHoldings("VWCE", LocalDate.now(), listOf(holdingData))
+    service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoFetched).toEqual(false)
     verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
@@ -218,7 +219,7 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    service.saveHoldings("VWCE", LocalDate.now(), listOf(holdingData))
+    service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoFetched).toEqual(true)
     verify(exactly = 0) { imageDownloadService.download(any()) }
