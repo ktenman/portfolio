@@ -125,6 +125,7 @@ class EtfCountryClassificationJob(
       classifyAndSave(holding, etfNames)
     }.getOrElse { e ->
       log.error("Error classifying country for holding id=$holdingId", e)
+      etfHoldingPersistenceService.incrementCountryFetchAttempts(holdingId)
       ClassificationOutcome.FAILURE
     }
 
