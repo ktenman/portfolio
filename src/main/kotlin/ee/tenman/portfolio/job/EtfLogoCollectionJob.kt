@@ -7,6 +7,7 @@ import ee.tenman.portfolio.service.logo.LogoFallbackService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+
 private const val INITIAL_DELAY_MS = 60 * 60 * 1000L
 private const val REPEAT_INTERVAL_MS = 4 * 60 * 60 * 1000L
 
