@@ -7,6 +7,7 @@ import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -26,6 +27,7 @@ class EtfHoldingService(
     date: LocalDate,
   ): Boolean = etfHoldingPersistenceService.hasHoldingsForDate(etfSymbol, date)
 
+  @CacheEvict(value = ["etf:holdings"], key = "#etfSymbol + ':' + #date")
   fun saveHoldings(
     etfSymbol: String,
     date: LocalDate,
