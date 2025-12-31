@@ -9,23 +9,10 @@ import java.util.Optional
 
 @Repository
 interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
-  fun findByNameAndTicker(
-    name: String,
-    ticker: String?,
-  ): Optional<EtfHolding>
-
   @Query("SELECT h FROM EtfHolding h WHERE LOWER(h.name) = LOWER(:name) ORDER BY h.id ASC")
   fun findByNameIgnoreCase(
     @Param("name") name: String,
   ): Optional<EtfHolding>
-
-  fun findFirstByTickerOrderByIdDesc(ticker: String): Optional<EtfHolding>
-
-  fun findByName(name: String): Optional<EtfHolding>
-
-  fun findBySectorIsNullOrSectorEquals(sector: String): List<EtfHolding>
-
-  fun findByCountryCodeIsNullOrCountryCodeEquals(countryCode: String): List<EtfHolding>
 
   @Query(
     """

@@ -15,9 +15,9 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @IntegrationTest
-class EtfHoldingsServiceIT {
+class EtfHoldingServiceIT {
   @Resource
-  private lateinit var etfHoldingsService: EtfHoldingsService
+  private lateinit var etfHoldingService: EtfHoldingService
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
@@ -62,7 +62,7 @@ class EtfHoldingsServiceIT {
         ),
       )
 
-    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
+    etfHoldingService.saveHoldings("IITU", testDate, holdings)
 
     val savedHoldings = etfHoldingRepository.findAll()
     expect(savedHoldings.size).toEqual(1)
@@ -83,7 +83,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate, holdingsWithoutSector)
+    etfHoldingService.saveHoldings("IITU", testDate, holdingsWithoutSector)
     val savedWithoutSector = etfHoldingRepository.findAll().first()
     expect(savedWithoutSector.sector).toEqual(null)
 
@@ -98,7 +98,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithSector)
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithSector)
 
     val updatedHolding = etfHoldingRepository.findAll().first()
     expect(updatedHolding.sector).toEqual("Technology")
@@ -118,7 +118,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate, holdingsWithSector)
+    etfHoldingService.saveHoldings("IITU", testDate, holdingsWithSector)
     val savedWithSector = etfHoldingRepository.findAll().first()
     expect(savedWithSector.sector).toEqual("Technology")
 
@@ -133,7 +133,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithDifferentSector)
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithDifferentSector)
 
     val unchangedHolding = etfHoldingRepository.findAll().first()
     expect(unchangedHolding.sector).toEqual("Technology")
@@ -152,7 +152,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate, usCompanyHoldings)
+    etfHoldingService.saveHoldings("IITU", testDate, usCompanyHoldings)
     expect(etfHoldingRepository.findAll().size).toEqual(1)
 
     val germanCompanyHoldings =
@@ -166,7 +166,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), germanCompanyHoldings)
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), germanCompanyHoldings)
 
     val allHoldings = etfHoldingRepository.findAll()
     expect(allHoldings.size).toEqual(2)
@@ -187,10 +187,10 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
+    etfHoldingService.saveHoldings("IITU", testDate, holdings)
     val originalId = etfHoldingRepository.findAll().first().id
 
-    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdings)
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdings)
 
     val allHoldings = etfHoldingRepository.findAll()
     expect(allHoldings.size).toEqual(1)
@@ -227,7 +227,7 @@ class EtfHoldingsServiceIT {
         ),
       )
 
-    etfHoldingsService.saveHoldings("IITU", testDate, holdings)
+    etfHoldingService.saveHoldings("IITU", testDate, holdings)
 
     val savedHoldings = etfHoldingRepository.findAll()
     expect(savedHoldings.size).toEqual(3)
@@ -247,7 +247,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate, holdingsWithoutTicker)
+    etfHoldingService.saveHoldings("IITU", testDate, holdingsWithoutTicker)
     expect(etfHoldingRepository.findAll().first().ticker).toEqual(null)
 
     val holdingsWithTicker =
@@ -261,7 +261,7 @@ class EtfHoldingsServiceIT {
           logoUrl = null,
         ),
       )
-    etfHoldingsService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithTicker)
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithTicker)
 
     val updatedHolding = etfHoldingRepository.findAll().first()
     expect(updatedHolding.ticker).toEqual("TSLA")

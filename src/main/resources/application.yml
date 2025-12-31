@@ -91,7 +91,7 @@ logging:
     root: INFO
     org.springframework: INFO
     org.hibernate: INFO
-    ee.tenman.portfolio.service.EtfHoldingsService: DEBUG
+    ee.tenman.portfolio.service.etf.EtfHoldingService: DEBUG
     ee.tenman.portfolio.service.HoldingParser: DEBUG
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{transactionId}- %msg%n'

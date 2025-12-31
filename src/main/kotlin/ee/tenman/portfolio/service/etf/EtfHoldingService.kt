@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 @Service
-class EtfHoldingsService(
-  private val etfHoldingsPersistenceService: EtfHoldingsPersistenceService,
+class EtfHoldingService(
+  private val etfHoldingPersistenceService: EtfHoldingPersistenceService,
   private val minioService: MinioService,
   private val imageDownloadService: ImageDownloadService,
   private val imageProcessingService: ImageProcessingService,
@@ -24,14 +24,14 @@ class EtfHoldingsService(
   fun hasHoldingsForDate(
     etfSymbol: String,
     date: LocalDate,
-  ): Boolean = etfHoldingsPersistenceService.hasHoldingsForDate(etfSymbol, date)
+  ): Boolean = etfHoldingPersistenceService.hasHoldingsForDate(etfSymbol, date)
 
   fun saveHoldings(
     etfSymbol: String,
     date: LocalDate,
     holdings: List<HoldingData>,
   ) {
-    val savedHoldings = etfHoldingsPersistenceService.saveHoldings(etfSymbol, date, holdings)
+    val savedHoldings = etfHoldingPersistenceService.saveHoldings(etfSymbol, date, holdings)
     holdings.forEach { holdingData ->
       val holding = savedHoldings[holdingData.name] ?: return@forEach
       downloadLightyearLogo(holding, holdingData.logoUrl)
@@ -42,7 +42,7 @@ class EtfHoldingsService(
     name: String,
     ticker: String?,
     sector: String? = null,
-  ): EtfHolding = etfHoldingsPersistenceService.findOrCreateHolding(name, ticker, sector)
+  ): EtfHolding = etfHoldingPersistenceService.findOrCreateHolding(name, ticker, sector)
 
   private fun downloadLightyearLogo(
     holding: EtfHolding,
@@ -59,7 +59,7 @@ class EtfHoldingsService(
       .onSuccess {
         log.info("Uploaded Lightyear logo for: ${holding.name}")
         holding.logoSource = LogoSource.LIGHTYEAR
-        etfHoldingsPersistenceService.saveHolding(holding)
+        etfHoldingPersistenceService.saveHolding(holding)
       }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
   }
 }

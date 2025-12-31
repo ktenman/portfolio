@@ -16,19 +16,19 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
 
-class EtfHoldingsServiceTest {
-  private val etfHoldingsPersistenceService = mockk<EtfHoldingsPersistenceService>()
+class EtfHoldingServiceTest {
+  private val etfHoldingPersistenceService = mockk<EtfHoldingPersistenceService>()
   private val minioService = mockk<MinioService>()
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val imageProcessingService = mockk<ImageProcessingService>()
-  private lateinit var service: EtfHoldingsService
+  private lateinit var service: EtfHoldingService
   private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setup() {
     service =
-      EtfHoldingsService(
-        etfHoldingsPersistenceService,
+      EtfHoldingService(
+        etfHoldingPersistenceService,
         minioService,
         imageDownloadService,
         imageProcessingService,
@@ -38,7 +38,7 @@ class EtfHoldingsServiceTest {
   @Test
   fun `should return existing holding when found by name`() {
     val holding = createHolding(1L, "AAPL", "Apple Inc")
-    every { etfHoldingsPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", null) } returns holding
+    every { etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", null) } returns holding
 
     val result = service.findOrCreateHolding("Apple Inc", "AAPL", null)
 
@@ -49,7 +49,7 @@ class EtfHoldingsServiceTest {
   @Test
   fun `should create new holding when not found`() {
     val savedHolding = createHolding(2L, "NVDA", "NVIDIA Corp")
-    every { etfHoldingsPersistenceService.findOrCreateHolding("NVIDIA Corp", "NVDA", "Technology") } returns savedHolding
+    every { etfHoldingPersistenceService.findOrCreateHolding("NVIDIA Corp", "NVDA", "Technology") } returns savedHolding
 
     val result = service.findOrCreateHolding("NVIDIA Corp", "NVDA", "Technology")
 
@@ -59,7 +59,7 @@ class EtfHoldingsServiceTest {
   @Test
   fun `should update ticker when existing holding has no ticker`() {
     val holding = createHolding(1L, "AAPL", "Apple Inc")
-    every { etfHoldingsPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", null) } returns holding
+    every { etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", null) } returns holding
 
     val result = service.findOrCreateHolding("Apple Inc", "AAPL", null)
 
@@ -69,7 +69,7 @@ class EtfHoldingsServiceTest {
   @Test
   fun `should not update ticker when existing holding already has ticker`() {
     val holding = createHolding(1L, "AAPL", "Apple Inc")
-    every { etfHoldingsPersistenceService.findOrCreateHolding("Apple Inc", "DIFFERENT", null) } returns holding
+    every { etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "DIFFERENT", null) } returns holding
 
     val result = service.findOrCreateHolding("Apple Inc", "DIFFERENT", null)
 
@@ -90,24 +90,24 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    every { etfHoldingsPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("NVIDIA Corp" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("NVIDIA Corp" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
     every { minioService.uploadLogo(1L, processedImage) } returns Unit
-    every { etfHoldingsPersistenceService.saveHolding(holding) } returns holding
+    every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
     verify { minioService.uploadLogo(1L, processedImage) }
-    verify { etfHoldingsPersistenceService.saveHolding(holding) }
+    verify { etfHoldingPersistenceService.saveHolding(holding) }
   }
 
   @Test
   fun `should skip logo download when logoUrl is null via saveHoldings`() {
     val holding = createHolding(1L, "AAPL", "Apple Inc")
     val holdingData = createHoldingData("Apple Inc", "AAPL", null)
-    every { etfHoldingsPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
@@ -127,7 +127,7 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    every { etfHoldingsPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
@@ -148,17 +148,17 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    every { etfHoldingsPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
     every { minioService.uploadLogo(1L, processedImage) } returns Unit
-    every { etfHoldingsPersistenceService.saveHolding(holding) } returns holding
+    every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
     verify { minioService.uploadLogo(1L, processedImage) }
-    verify { etfHoldingsPersistenceService.saveHolding(holding) }
+    verify { etfHoldingPersistenceService.saveHolding(holding) }
   }
 
   @Test
@@ -173,7 +173,7 @@ class EtfHoldingsServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/tesla.png",
       )
-    every { etfHoldingsPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Tesla Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Tesla Inc" to holding)
     every { imageDownloadService.download("https://lightyear.com/tesla.png") } throws RuntimeException("Network error")
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
