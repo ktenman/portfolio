@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
-private const val INITIAL_DELAY_MS = 60 * 60 * 1000L
-private const val REPEAT_INTERVAL_MS = 4 * 60 * 60 * 1000L
+private const val DEFAULT_INITIAL_DELAY = "3600000"
+private const val DEFAULT_FIXED_DELAY = "14400000"
 
 @Component
 @ScheduledJob
@@ -21,7 +21,10 @@ class EtfLogoCollectionJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = INITIAL_DELAY_MS, fixedDelay = REPEAT_INTERVAL_MS)
+  @Scheduled(
+    initialDelayString = "\${scheduling.jobs.logo-collection.initial-delay:$DEFAULT_INITIAL_DELAY}",
+    fixedDelayString = "\${scheduling.jobs.logo-collection.fixed-delay:$DEFAULT_FIXED_DELAY}",
+  )
   fun collectMissingLogos() {
     log.info("Starting ETF logo collection job")
     val holdingIds = etfHoldingRepository.findHoldingsWithoutLogosForCurrentPortfolio().map { it.id }

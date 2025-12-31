@@ -39,16 +39,30 @@ class EtfHoldingsService(
       .map { etfPositionRepository.countByEtfInstrumentIdAndDate(it.id, date) > 0 }
       .orElse(false)
 
-  @Transactional
   fun saveHoldings(
     etfSymbol: String,
     date: LocalDate,
     holdings: List<HoldingData>,
   ) {
+    val savedHoldings = saveHoldingsTransactional(etfSymbol, date, holdings)
+    holdings.forEach { holdingData ->
+      val holding = savedHoldings[holdingData.name] ?: return@forEach
+      downloadLightyearLogo(holding, holdingData.logoUrl)
+    }
+  }
+
+  @Transactional
+  fun saveHoldingsTransactional(
+    etfSymbol: String,
+    date: LocalDate,
+    holdings: List<HoldingData>,
+  ): Map<String, EtfHolding> {
     val etf = findOrCreateEtf(etfSymbol)
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
+    val savedHoldings = mutableMapOf<String, EtfHolding>()
     holdings.forEach { holdingData ->
-      val holding = findOrCreateHolding(holdingData)
+      val holding = findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
+      savedHoldings[holdingData.name] = holding
       val existingPosition =
         etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
           etfInstrument = etf,
@@ -70,6 +84,7 @@ class EtfHoldingsService(
       etfPositionRepository.save(position)
     }
     log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
+    return savedHoldings
   }
 
   private fun findOrCreateEtf(symbol: String): Instrument =
@@ -101,12 +116,6 @@ class EtfHoldingsService(
         sectorSource = sector?.let { SectorSource.LIGHTYEAR },
       ),
     )
-  }
-
-  private fun findOrCreateHolding(holdingData: HoldingData): EtfHolding {
-    val holding = findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
-    downloadLightyearLogo(holding, holdingData.logoUrl)
-    return holding
   }
 
   private fun updateSectorFromSourceIfMissing(
