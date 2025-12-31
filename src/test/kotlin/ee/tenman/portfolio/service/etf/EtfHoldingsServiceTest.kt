@@ -24,7 +24,7 @@ import java.util.Optional
 
 class EtfHoldingsServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
-  private val etfHoldingRepository = mockk<EtfHoldingRepository>()
+  private val etfHoldingRepository = mockk<EtfHoldingRepository>(relaxed = true)
   private val etfPositionRepository = mockk<EtfPositionRepository>()
   private val minioService = mockk<MinioService>()
   private val imageDownloadService = mockk<ImageDownloadService>()
@@ -100,7 +100,7 @@ class EtfHoldingsServiceTest {
 
     every { instrumentRepository.findBySymbol("VWCE") } returns Optional.of(etf)
     every { etfHoldingRepository.findByNameIgnoreCase("NVIDIA Corp") } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns false
+    every { etfHoldingRepository.save(any<EtfHolding>()) } returnsArgument 0
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
     every { minioService.uploadLogo(1L, processedImage) } returns Unit
@@ -118,9 +118,9 @@ class EtfHoldingsServiceTest {
       )
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
-    expect(holding.logoFetched).toEqual(true)
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
     verify { minioService.uploadLogo(1L, processedImage) }
+    verify { etfHoldingRepository.save(holding) }
   }
 
   @Test
@@ -143,10 +143,10 @@ class EtfHoldingsServiceTest {
   }
 
   @Test
-  fun `should skip logo download when logo already fetched`() {
+  fun `should skip logo download when logo source is already LIGHTYEAR`() {
     val etf = mockk<Instrument>()
     every { etf.id } returns 100L
-    val holding = createHolding(1L, "AAPL", "Apple Inc", logoFetched = true)
+    val holding = createHolding(1L, "AAPL", "Apple Inc", logoSource = LogoSource.LIGHTYEAR)
     val positionSlot = slot<ee.tenman.portfolio.domain.EtfPosition>()
 
     every { instrumentRepository.findBySymbol("VWCE") } returns Optional.of(etf)
@@ -169,6 +169,40 @@ class EtfHoldingsServiceTest {
   }
 
   @Test
+  fun `should upgrade BING logo to LIGHTYEAR when lightyear url provided`() {
+    val etf = mockk<Instrument>()
+    every { etf.id } returns 100L
+    val holding = createHolding(1L, "AAPL", "Apple Inc", logoSource = LogoSource.BING)
+    val imageData = "image-bytes".toByteArray()
+    val processedImage = "processed-bytes".toByteArray()
+    val positionSlot = slot<ee.tenman.portfolio.domain.EtfPosition>()
+
+    every { instrumentRepository.findBySymbol("VWCE") } returns Optional.of(etf)
+    every { etfHoldingRepository.findByNameIgnoreCase("Apple Inc") } returns Optional.of(holding)
+    every { etfHoldingRepository.save(any<EtfHolding>()) } returnsArgument 0
+    every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
+    every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
+    every { minioService.uploadLogo(1L, processedImage) } returns Unit
+    every { etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(any(), any(), any()) } returns null
+    every { etfPositionRepository.save(capture(positionSlot)) } answers { positionSlot.captured }
+
+    val holdingData =
+      HoldingData(
+        name = "Apple Inc",
+        ticker = "AAPL",
+        sector = null,
+        weight = BigDecimal.TEN,
+        rank = 1,
+        logoUrl = "https://lightyear.com/logo.png",
+      )
+    service.saveHoldings("VWCE", testDate, listOf(holdingData))
+
+    expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
+    verify { minioService.uploadLogo(1L, processedImage) }
+    verify { etfHoldingRepository.save(holding) }
+  }
+
+  @Test
   fun `should handle download failure gracefully`() {
     val etf = mockk<Instrument>()
     every { etf.id } returns 100L
@@ -177,7 +211,6 @@ class EtfHoldingsServiceTest {
 
     every { instrumentRepository.findBySymbol("VWCE") } returns Optional.of(etf)
     every { etfHoldingRepository.findByNameIgnoreCase("Tesla Inc") } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns false
     every { imageDownloadService.download("https://lightyear.com/tesla.png") } throws RuntimeException("Network error")
     every { etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(any(), any(), any()) } returns null
     every { etfPositionRepository.save(capture(positionSlot)) } answers { positionSlot.captured }
@@ -193,47 +226,19 @@ class EtfHoldingsServiceTest {
       )
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
-    expect(holding.logoFetched).toEqual(false)
+    expect(holding.logoSource).toEqual(null)
     verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
-  }
-
-  @Test
-  fun `should mark logo fetched when logo already exists in MinIO`() {
-    val etf = mockk<Instrument>()
-    every { etf.id } returns 100L
-    val holding = createHolding(1L, "AAPL", "Apple Inc")
-    val positionSlot = slot<ee.tenman.portfolio.domain.EtfPosition>()
-
-    every { instrumentRepository.findBySymbol("VWCE") } returns Optional.of(etf)
-    every { etfHoldingRepository.findByNameIgnoreCase("Apple Inc") } returns Optional.of(holding)
-    every { minioService.logoExists(1L) } returns true
-    every { etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(any(), any(), any()) } returns null
-    every { etfPositionRepository.save(capture(positionSlot)) } answers { positionSlot.captured }
-
-    val holdingData =
-      HoldingData(
-        name = "Apple Inc",
-        ticker = "AAPL",
-        sector = null,
-        weight = BigDecimal.TEN,
-        rank = 1,
-        logoUrl = "https://lightyear.com/logo.png",
-      )
-    service.saveHoldings("VWCE", testDate, listOf(holdingData))
-
-    expect(holding.logoFetched).toEqual(true)
-    verify(exactly = 0) { imageDownloadService.download(any()) }
   }
 
   private fun createHolding(
     id: Long,
     ticker: String?,
     name: String,
-    logoFetched: Boolean = false,
+    logoSource: LogoSource? = null,
   ): EtfHolding =
     EtfHolding(ticker = ticker, name = name).apply {
       this.id = id
-      this.logoFetched = logoFetched
+      this.logoSource = logoSource
     }
 
   private fun createHoldingData(

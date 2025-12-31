@@ -135,11 +135,7 @@ class EtfHoldingsService(
     lightyearLogoUrl: String?,
   ) {
     if (lightyearLogoUrl.isNullOrBlank()) return
-    if (holding.logoFetched) return
-    if (minioService.logoExists(holding.id)) {
-      holding.logoFetched = true
-      return
-    }
+    if (holding.logoSource == LogoSource.LIGHTYEAR) return
     val imageData =
       runCatching { imageDownloadService.download(lightyearLogoUrl) }
         .onFailure { log.debug("Failed to download Lightyear logo for ${holding.name}: ${it.message}") }
@@ -148,8 +144,8 @@ class EtfHoldingsService(
     runCatching { minioService.uploadLogo(holding.id, processedImage) }
       .onSuccess {
         log.info("Uploaded Lightyear logo for: ${holding.name}")
-        holding.logoFetched = true
         holding.logoSource = LogoSource.LIGHTYEAR
+        etfHoldingRepository.save(holding)
       }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
   }
 }

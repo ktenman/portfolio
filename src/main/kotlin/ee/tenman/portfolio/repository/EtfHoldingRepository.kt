@@ -80,7 +80,7 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     SELECT h FROM EtfHolding h
     JOIN EtfPosition ep ON ep.holding.id = h.id
     JOIN PortfolioTransaction pt ON pt.instrument.id = ep.etfInstrument.id
-    WHERE h.logoFetched = false
+    WHERE h.logoSource IS NULL
     GROUP BY h.id
     HAVING SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) > 0.01
     ORDER BY MAX(ep.weightPercentage) DESC
