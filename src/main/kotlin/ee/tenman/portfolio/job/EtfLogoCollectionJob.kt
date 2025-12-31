@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
@@ -8,6 +7,9 @@ import ee.tenman.portfolio.service.logo.LogoFallbackService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+
+private const val DEFAULT_INITIAL_DELAY = "3600000"
+private const val DEFAULT_FIXED_DELAY = "14400000"
 
 @Component
 @ScheduledJob
@@ -19,8 +21,10 @@ class EtfLogoCollectionJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 300000, fixedDelay = Long.MAX_VALUE)
-  @Scheduled(cron = "\${scheduling.jobs.etf-logo-collection-cron:0 40 3 * * *}")
+  @Scheduled(
+    initialDelayString = "\${scheduling.jobs.logo-collection.initial-delay:$DEFAULT_INITIAL_DELAY}",
+    fixedDelayString = "\${scheduling.jobs.logo-collection.fixed-delay:$DEFAULT_FIXED_DELAY}",
+  )
   fun collectMissingLogos() {
     log.info("Starting ETF logo collection job")
     val holdingIds = etfHoldingRepository.findHoldingsWithoutLogosForCurrentPortfolio().map { it.id }
@@ -36,40 +40,17 @@ class EtfLogoCollectionJob(
 
   private fun processHoldingInternal(holdingId: Long) {
     val holding = etfHoldingRepository.findById(holdingId).orElse(null) ?: return
-    if (holding.logoFetched) return
-    if (minioService.logoExists(holding.id)) {
-      log.debug("Logo already exists in MinIO for: ${holding.name}")
-      holding.logoFetched = true
-      etfHoldingRepository.save(holding)
-      return
-    }
+    if (holding.logoSource != null) return
     val result =
       runCatching { logoFallbackService.fetchLogo(holding.name, holding.ticker, null) }
         .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }
-        .getOrNull()
-    if (result == null) {
-      log.debug("No logo found for: ${holding.name}")
-      holding.logoFetched = true
-      etfHoldingRepository.save(holding)
-      return
-    }
-    updateTickerIfExtracted(holding, result.ticker)
+        .getOrNull() ?: return
     val processedImage = imageProcessingService.resizeToMaxDimension(result.imageData)
     runCatching { minioService.uploadLogo(holding.id, processedImage) }
       .onSuccess {
         log.info("Uploaded logo from ${result.source} for: ${holding.name}")
-        holding.logoFetched = true
         holding.logoSource = result.source
         etfHoldingRepository.save(holding)
       }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
-  }
-
-  private fun updateTickerIfExtracted(
-    holding: EtfHolding,
-    extractedTicker: String?,
-  ) {
-    if (!holding.ticker.isNullOrBlank() || extractedTicker.isNullOrBlank()) return
-    log.info("Updating ticker for '${holding.name}': $extractedTicker")
-    holding.ticker = extractedTicker
   }
 }
