@@ -33,12 +33,15 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     JOIN EtfPosition ep ON ep.holding.id = h.id
     JOIN PortfolioTransaction pt ON pt.instrument.id = ep.etfInstrument.id
     WHERE (h.countryCode IS NULL OR h.countryCode = '')
+      AND h.countryFetchAttempts < :maxAttempts
     GROUP BY h.id
     HAVING SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) > 0.01
     ORDER BY MAX(ep.weightPercentage) DESC
   """,
   )
-  fun findUnclassifiedCountryHoldingsForCurrentPortfolio(): List<EtfHolding>
+  fun findUnclassifiedCountryHoldingsForCurrentPortfolio(
+    @Param("maxAttempts") maxAttempts: Int = 3,
+  ): List<EtfHolding>
 
   @Query(
     """

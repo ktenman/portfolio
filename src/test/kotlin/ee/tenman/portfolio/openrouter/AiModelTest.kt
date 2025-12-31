@@ -117,18 +117,18 @@ class AiModelTest {
   @Test
   fun `should have correct country fallback tiers`() {
     expect(AiModel.CLAUDE_OPUS_4_5.countryFallbackTier).toEqual(0)
-    expect(AiModel.CLAUDE_SONNET_4_5.countryFallbackTier).toEqual(1)
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.countryFallbackTier).toEqual(1)
     expect(AiModel.DEEPSEEK_V3_2.countryFallbackTier).toEqual(2)
   }
 
   @Test
   fun `should return next country fallback model for CLAUDE_OPUS_4_5`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.nextCountryFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_4_5)
+    expect(AiModel.CLAUDE_OPUS_4_5.nextCountryFallbackModel()).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
 
   @Test
-  fun `should return next country fallback model for CLAUDE_SONNET_4_5`() {
-    expect(AiModel.CLAUDE_SONNET_4_5.nextCountryFallbackModel()).toEqual(AiModel.DEEPSEEK_V3_2)
+  fun `should return next country fallback model for GEMINI_3_FLASH_PREVIEW`() {
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.nextCountryFallbackModel()).toEqual(AiModel.DEEPSEEK_V3_2)
   }
 
   @Test

@@ -33,7 +33,7 @@ class EtfCountryClassificationJob(
   }
 
   @Scheduled(initialDelay = 120000, fixedDelay = Long.MAX_VALUE)
-  @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 3 * * *}")
+  @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 */6 * * *}")
   fun runJob() {
     log.info("Running ETF country classification job")
     jobExecutionService.executeJob(this)
@@ -125,6 +125,7 @@ class EtfCountryClassificationJob(
       classifyAndSave(holding, etfNames)
     }.getOrElse { e ->
       log.error("Error classifying country for holding id=$holdingId", e)
+      etfHoldingPersistenceService.incrementCountryFetchAttempts(holdingId)
       ClassificationOutcome.FAILURE
     }
 
@@ -141,6 +142,7 @@ class EtfCountryClassificationJob(
     val result = countryClassificationService.classifyCompanyCountryWithModel(holding.name, holding.ticker, etfNames)
     if (result == null) {
       log.warn("Country classification returned null for: ${holding.name}")
+      etfHoldingPersistenceService.incrementCountryFetchAttempts(holdingId)
       return ClassificationOutcome.FAILURE
     }
     etfHoldingPersistenceService.updateCountry(holdingId, result.countryCode, result.countryName, result.model)
