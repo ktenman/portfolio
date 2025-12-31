@@ -17,15 +17,14 @@ class LogoFallbackService(
     companyName: String,
     existingTicker: String?,
     lightyearLogoUrl: String?,
-  ): LogoFetchResult? {
-    return tryLightyearLogo(lightyearLogoUrl)
+  ): LogoFetchResult? =
+    tryLightyearLogo(lightyearLogoUrl)
       ?: tryNvstlyLogo(existingTicker)?.copy(ticker = existingTicker)
       ?: tryImageSearchLogo(companyName)?.copy(ticker = existingTicker)
       ?: run {
         log.debug("All logo sources exhausted for company: $companyName")
         null
       }
-  }
 
   private fun tryLightyearLogo(logoUrl: String?): LogoFetchResult? {
     if (logoUrl.isNullOrBlank()) return null
