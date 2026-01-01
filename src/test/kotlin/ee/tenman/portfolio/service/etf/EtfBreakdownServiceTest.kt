@@ -26,6 +26,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Optional
 
 class EtfBreakdownServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
@@ -64,6 +65,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("5"), BigDecimal("200"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -94,6 +98,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("5"), BigDecimal("200"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -118,6 +125,8 @@ class EtfBreakdownServiceTest {
     val transaction = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1, position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction)
 
@@ -141,6 +150,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -157,6 +169,7 @@ class EtfBreakdownServiceTest {
   fun `should return empty list when no etfs found`() {
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns emptyList()
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
@@ -175,6 +188,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -195,6 +211,8 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf1, BigDecimal("5"), BigDecimal("100"), Platform.TRADING212)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1, transaction2)
 
@@ -214,6 +232,8 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf1, BigDecimal("5"), BigDecimal("100"), Platform.TRADING212)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1, transaction2)
 
@@ -233,6 +253,8 @@ class EtfBreakdownServiceTest {
     val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
 
@@ -249,6 +271,8 @@ class EtfBreakdownServiceTest {
     val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
 
@@ -269,6 +293,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"), Platform.TRADING212)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)

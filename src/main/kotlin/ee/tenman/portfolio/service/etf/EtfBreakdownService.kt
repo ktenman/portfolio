@@ -11,6 +11,7 @@ import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
 import ee.tenman.portfolio.model.holding.HoldingKey
 import ee.tenman.portfolio.model.holding.HoldingValue
 import ee.tenman.portfolio.model.holding.InternalHoldingData
+import ee.tenman.portfolio.model.holding.SyntheticHoldingValue
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
@@ -85,10 +86,12 @@ class EtfBreakdownService(
   ): List<Instrument> {
     val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
     val ftInstruments = instrumentRepository.findByProviderName(ProviderName.FT)
-
-    log.info("Found ${lightyearInstruments.size} LIGHTYEAR instruments and ${ftInstruments.size} FT instruments")
-
-    var allInstruments = lightyearInstruments + ftInstruments
+    val syntheticInstruments = instrumentRepository.findByProviderName(ProviderName.SYNTHETIC)
+    log.info(
+      "Found ${lightyearInstruments.size} LIGHTYEAR, ${ftInstruments.size} FT, " +
+        "${syntheticInstruments.size} SYNTHETIC instruments",
+    )
+    var allInstruments = lightyearInstruments + ftInstruments + syntheticInstruments
 
     if (!etfSymbols.isNullOrEmpty()) {
       allInstruments = allInstruments.filter { it.symbol in etfSymbols }
@@ -110,9 +113,22 @@ class EtfBreakdownService(
     instrumentId: Long,
     platformFilter: Set<Platform>? = null,
   ): Boolean {
+    val instrument = instrumentRepository.findById(instrumentId).orElse(null) ?: return false
+    if (instrument.providerName == ProviderName.SYNTHETIC) {
+      return hasSyntheticActiveHoldings(instrumentId)
+    }
     val netQuantity = calculateNetQuantity(instrumentId, platformFilter)
     log.debug("Instrument $instrumentId has net quantity: $netQuantity")
     return netQuantity > BigDecimal.ZERO
+  }
+
+  private fun hasSyntheticActiveHoldings(syntheticEtfId: Long): Boolean {
+    val positions = etfPositionRepository.findLatestPositionsByEtfId(syntheticEtfId)
+    return positions.any { pos ->
+      val ticker = pos.holding.ticker ?: return@any false
+      val instrument = instrumentRepository.findBySymbol(ticker).orElse(null) ?: return@any false
+      calculateNetQuantity(instrument.id, null) > BigDecimal.ZERO
+    }
   }
 
   private fun calculateNetQuantity(
@@ -155,6 +171,9 @@ class EtfBreakdownService(
     platformFilter: Set<Platform>?,
   ): List<InternalHoldingData> {
     val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
+    if (etf.providerName == ProviderName.SYNTHETIC) {
+      return buildSyntheticHoldings(positions, etf.symbol)
+    }
     val etfQuantity = calculateNetQuantity(etf.id, platformFilter)
     val etfPrice = getCurrentPrice(etf)
     val etfPlatforms = getPlatformsForInstrument(etf.id, platformFilter)
@@ -182,6 +201,50 @@ class EtfBreakdownService(
         value = calculateHoldingValue(position, etfQuantity, etfPrice),
         etfSymbol = etf.symbol,
         platforms = etfPlatforms,
+      )
+    }
+  }
+
+  private fun buildSyntheticHoldings(
+    positions: List<EtfPosition>,
+    etfSymbol: String,
+  ): List<InternalHoldingData> {
+    val holdingValues =
+      positions.mapNotNull { pos ->
+        val ticker = pos.holding.ticker ?: return@mapNotNull null
+        val instrument = instrumentRepository.findBySymbol(ticker).orElse(null) ?: return@mapNotNull null
+        val qty = calculateNetQuantity(instrument.id, null)
+        val price = getCurrentPrice(instrument)
+        val value = qty.multiply(price)
+        val platforms = getPlatformsForInstrument(instrument.id, null)
+        SyntheticHoldingValue(pos, value, platforms)
+      }
+    return holdingValues.map { h ->
+      InternalHoldingData(
+        holdingId = h.position.holding.id,
+        ticker =
+          h.position.holding.ticker
+            ?.uppercase()
+            ?.trim()
+            ?.takeIf { it.isNotBlank() },
+        name =
+          h.position.holding.name
+            .trim(),
+        sector =
+          h.position.holding.sector
+            ?.trim()
+            ?.takeIf { it.isNotBlank() },
+        countryCode =
+          h.position.holding.countryCode
+            ?.trim()
+            ?.takeIf { it.isNotBlank() },
+        countryName =
+          h.position.holding.countryName
+            ?.trim()
+            ?.takeIf { it.isNotBlank() },
+        value = h.value,
+        etfSymbol = etfSymbol,
+        platforms = h.platforms,
       )
     }
   }
