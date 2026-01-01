@@ -86,7 +86,8 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should saveDailyPrice calls upsert with correct parameters`() {
-    val dailyPrice = createDailyPrice(
+    val dailyPrice =
+      createDailyPrice(
       closePrice = BigDecimal("100.00"),
       openPrice = BigDecimal("95.00"),
       highPrice = BigDecimal("105.00"),
