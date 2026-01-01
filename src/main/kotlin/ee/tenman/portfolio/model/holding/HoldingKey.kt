@@ -7,5 +7,4 @@ data class HoldingKey(
   val sector: String?,
   val countryCode: String?,
   val countryName: String?,
-  val isSynthetic: Boolean = false,
 )

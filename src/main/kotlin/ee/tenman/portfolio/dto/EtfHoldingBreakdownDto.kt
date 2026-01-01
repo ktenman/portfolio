@@ -4,7 +4,7 @@ import java.io.Serializable
 import java.math.BigDecimal
 
 data class EtfHoldingBreakdownDto(
-  val holdingId: Long?,
+  val holdingId: Long,
   val holdingTicker: String?,
   val holdingName: String,
   val percentageOfTotal: BigDecimal,
