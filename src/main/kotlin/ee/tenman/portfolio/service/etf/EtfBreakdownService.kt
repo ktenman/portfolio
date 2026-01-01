@@ -308,12 +308,36 @@ class EtfBreakdownService(
   private fun calculateActualPortfolioTotal(
     etfs: List<Instrument>,
     platformFilter: Set<Platform>? = null,
-  ): BigDecimal =
-    etfs.fold(BigDecimal.ZERO) { acc, etf ->
-      val quantity = calculateNetQuantity(etf.id, platformFilter)
-      val price = getCurrentPrice(etf)
-      acc.add(quantity.multiply(price))
-    }
+  ): BigDecimal {
+    val syntheticValues = calculateSyntheticTotalValue(etfs)
+    val regularValues =
+      etfs
+        .filter { it.providerName != ProviderName.SYNTHETIC }
+        .fold(BigDecimal.ZERO) { acc, etf ->
+          val quantity = calculateNetQuantity(etf.id, platformFilter)
+          val price = getCurrentPrice(etf)
+          acc.add(quantity.multiply(price))
+        }
+    return regularValues.add(syntheticValues)
+  }
+
+  private fun calculateSyntheticTotalValue(etfs: List<Instrument>): BigDecimal =
+    etfs
+      .filter { it.providerName == ProviderName.SYNTHETIC }
+      .fold(BigDecimal.ZERO) { acc, etf ->
+        val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
+        val syntheticValue =
+          positions.sumOf { pos ->
+            val ticker = pos.holding.ticker ?: return@sumOf BigDecimal.ZERO
+            val instrument =
+              instrumentRepository.findBySymbol(ticker).orElse(null)
+                ?: return@sumOf BigDecimal.ZERO
+            val qty = calculateNetQuantity(instrument.id, null)
+            val price = getCurrentPrice(instrument)
+            qty.multiply(price)
+          }
+        acc.add(syntheticValue)
+      }
 
   private fun aggregateByHolding(
     holdingsMap: Map<HoldingKey, HoldingValue>,
