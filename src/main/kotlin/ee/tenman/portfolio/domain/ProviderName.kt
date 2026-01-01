@@ -5,5 +5,6 @@ enum class ProviderName {
   FT,
   LIGHTYEAR,
   MANUAL,
+  SYNTHETIC,
   TRADING212,
 }

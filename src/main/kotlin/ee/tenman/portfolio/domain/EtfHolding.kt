@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import java.util.UUID
 
 @Entity
 @Table(
@@ -15,6 +16,8 @@ import jakarta.persistence.UniqueConstraint
   ],
 )
 class EtfHolding(
+  @Column(nullable = false, updatable = false, unique = true)
+  var uuid: UUID = UUID.randomUUID(),
   @Column(length = 50)
   var ticker: String? = null,
   @Column(nullable = false, length = 255)

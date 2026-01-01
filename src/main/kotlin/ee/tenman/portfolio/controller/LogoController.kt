@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 @RestController
@@ -19,12 +20,12 @@ class LogoController(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @GetMapping("/{holdingId}")
+  @GetMapping("/{uuid}")
   fun getLogo(
-    @PathVariable holdingId: Long,
+    @PathVariable uuid: UUID,
   ): ResponseEntity<ByteArray> {
-    log.debug("Fetching logo for holding: $holdingId")
-    val logoData = minioService.downloadLogo(holdingId)
+    log.debug("Fetching logo for holding UUID: $uuid")
+    val logoData = minioService.downloadLogo(uuid)
     if (logoData != null) {
       return ResponseEntity
         .ok()
@@ -32,7 +33,7 @@ class LogoController(
         .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
         .body(logoData)
     }
-    log.debug("Logo not found for holding: $holdingId")
+    log.debug("Logo not found for holding UUID: $uuid")
     return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
   }
 }

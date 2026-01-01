@@ -12,6 +12,7 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.UUID
 
 @IntegrationTest
 class MinioServiceIT {
@@ -49,53 +50,53 @@ class MinioServiceIT {
 
   @Test
   fun `should upload and download logo successfully`() {
-    val holdingId = 12345L
+    val holdingUuid = UUID.randomUUID()
     val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
 
-    minioService.uploadLogo(holdingId, testData)
+    minioService.uploadLogo(holdingUuid, testData)
 
-    val downloaded = minioService.downloadLogo(holdingId)
+    val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull()
     assertTrue(downloaded.contentEquals(testData))
   }
 
   @Test
   fun `should return null when logo does not exist`() {
-    val downloaded = minioService.downloadLogo(99999L)
+    val downloaded = minioService.downloadLogo(UUID.randomUUID())
     expect(downloaded).toEqual(null)
   }
 
   @Test
   fun `logoExists should return true when logo exists`() {
-    val holdingId = 67890L
+    val holdingUuid = UUID.randomUUID()
     val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
 
-    minioService.uploadLogo(holdingId, testData)
+    minioService.uploadLogo(holdingUuid, testData)
 
-    val exists = minioService.logoExists(holdingId)
+    val exists = minioService.logoExists(holdingUuid)
     expect(exists).toEqual(true)
   }
 
   @Test
   fun `logoExists should return false when logo does not exist`() {
-    val exists = minioService.logoExists(88888L)
+    val exists = minioService.logoExists(UUID.randomUUID())
     expect(exists).toEqual(false)
   }
 
   @Test
   fun `should overwrite logo if uploaded again`() {
-    val holdingId = 11111L
+    val holdingUuid = UUID.randomUUID()
     val originalData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x01)
     val newData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x02)
 
-    minioService.uploadLogo(holdingId, originalData)
+    minioService.uploadLogo(holdingUuid, originalData)
 
-    val existsBefore = minioService.logoExists(holdingId)
+    val existsBefore = minioService.logoExists(holdingUuid)
     expect(existsBefore).toEqual(true)
 
-    minioService.uploadLogo(holdingId, newData)
+    minioService.uploadLogo(holdingUuid, newData)
 
-    val downloaded = minioService.downloadLogo(holdingId)
+    val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull()
     assertTrue(downloaded.contentEquals(newData))
   }

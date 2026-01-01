@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.UUID
 
 class EtfHoldingServiceTest {
   private val etfHoldingPersistenceService = mockk<EtfHoldingPersistenceService>()
@@ -78,7 +79,8 @@ class EtfHoldingServiceTest {
 
   @Test
   fun `should download and upload logo via saveHoldings`() {
-    val holding = createHolding(1L, "NVDA", "NVIDIA Corp")
+    val holdingUuid = UUID.randomUUID()
+    val holding = createHolding(1L, "NVDA", "NVIDIA Corp", uuid = holdingUuid)
     val imageData = "image-bytes".toByteArray()
     val processedImage = "processed-bytes".toByteArray()
     val holdingData =
@@ -93,13 +95,13 @@ class EtfHoldingServiceTest {
     every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("NVIDIA Corp" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-    every { minioService.uploadLogo(1L, processedImage) } returns Unit
+    every { minioService.uploadLogo(holdingUuid, processedImage) } returns Unit
     every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
-    verify { minioService.uploadLogo(1L, processedImage) }
+    verify { minioService.uploadLogo(holdingUuid, processedImage) }
     verify { etfHoldingPersistenceService.saveHolding(holding) }
   }
 
@@ -136,7 +138,8 @@ class EtfHoldingServiceTest {
 
   @Test
   fun `should upgrade BING logo to LIGHTYEAR when lightyear url provided`() {
-    val holding = createHolding(1L, "AAPL", "Apple Inc", logoSource = LogoSource.BING)
+    val holdingUuid = UUID.randomUUID()
+    val holding = createHolding(1L, "AAPL", "Apple Inc", logoSource = LogoSource.BING, uuid = holdingUuid)
     val imageData = "image-bytes".toByteArray()
     val processedImage = "processed-bytes".toByteArray()
     val holdingData =
@@ -151,13 +154,13 @@ class EtfHoldingServiceTest {
     every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-    every { minioService.uploadLogo(1L, processedImage) } returns Unit
+    every { minioService.uploadLogo(holdingUuid, processedImage) } returns Unit
     every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
-    verify { minioService.uploadLogo(1L, processedImage) }
+    verify { minioService.uploadLogo(holdingUuid, processedImage) }
     verify { etfHoldingPersistenceService.saveHolding(holding) }
   }
 
@@ -187,10 +190,12 @@ class EtfHoldingServiceTest {
     ticker: String?,
     name: String,
     logoSource: LogoSource? = null,
+    uuid: UUID = UUID.randomUUID(),
   ): EtfHolding =
     EtfHolding(ticker = ticker, name = name).apply {
       this.id = id
       this.logoSource = logoSource
+      this.uuid = uuid
     }
 
   private fun createHoldingData(

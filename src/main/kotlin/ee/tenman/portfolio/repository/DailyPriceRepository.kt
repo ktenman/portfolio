@@ -4,8 +4,10 @@ import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
@@ -47,4 +49,25 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
   ): DailyPrice?
 
   fun existsByInstrument(instrument: Instrument): Boolean
+
+  @Modifying
+  @Query(
+    """
+    INSERT INTO daily_price (instrument_id, entry_date, provider_name, open_price, high_price, low_price, close_price, volume, created_at, updated_at, version)
+    VALUES (:instrumentId, :entryDate, :providerName, :openPrice, :highPrice, :lowPrice, :closePrice, :volume, NOW(), NOW(), 0)
+    ON CONFLICT (instrument_id, entry_date, provider_name)
+    DO UPDATE SET open_price = :openPrice, high_price = :highPrice, low_price = :lowPrice, close_price = :closePrice, volume = :volume, updated_at = NOW(), version = daily_price.version + 1
+    """,
+    nativeQuery = true,
+  )
+  fun upsert(
+    instrumentId: Long,
+    entryDate: LocalDate,
+    providerName: String,
+    openPrice: BigDecimal?,
+    highPrice: BigDecimal?,
+    lowPrice: BigDecimal?,
+    closePrice: BigDecimal,
+    volume: Long?,
+  )
 }

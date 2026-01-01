@@ -25,7 +25,7 @@ class ImageSearchLogoService(
 
   fun searchLogoUrls(
     companyName: String,
-    maxResults: Int = 5,
+    maxResults: Int = 10,
   ): List<String> {
     if (companyName.isBlank()) return emptyList()
     log.debug("Searching Bing for company logo: $companyName")
