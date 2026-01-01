@@ -202,14 +202,14 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
-  fun `should merge holdings with Trezor suffix into base name`() {
+  fun `should merge holdings with same name from different ETFs`() {
     val etf1 = createInstrument(1L, "WBIT", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val etf2 = createInstrument(2L, "TREZOR", ProviderName.SYNTHETIC, BigDecimal("100"))
     val btcInstrument = createInstrument(3L, "BTCEUR", ProviderName.BINANCE, BigDecimal("50000"))
     val holdingBitcoin = createHolding(1L, "BTC", "Bitcoin", "Cryptocurrency")
-    val holdingBitcoinTrezor = createHolding(2L, "BTCEUR", "Bitcoin (Trezor)", "Cryptocurrency")
+    val holdingBitcoinSynthetic = createHolding(2L, "BTCEUR", "Bitcoin", "Cryptocurrency")
     val position1 = createPosition(etf1, holdingBitcoin, BigDecimal("50.0000"), testDate)
-    val position2 = createPosition(etf2, holdingBitcoinTrezor, BigDecimal("50.0000"), testDate)
+    val position2 = createPosition(etf2, holdingBitcoinSynthetic, BigDecimal("50.0000"), testDate)
     val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
     val btcTransaction = createCashFlow(btcInstrument, BigDecimal("1"), BigDecimal("50000"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)

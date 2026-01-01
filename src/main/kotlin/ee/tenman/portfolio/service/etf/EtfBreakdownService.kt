@@ -38,10 +38,6 @@ class EtfBreakdownService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  companion object {
-    private val TREZOR_SUFFIX_REGEX = Regex("\\s*\\(Trezor\\)\\s*$", RegexOption.IGNORE_CASE)
-  }
-
   @Transactional(readOnly = true)
   @Cacheable(
     ETF_BREAKDOWN_CACHE,
@@ -290,7 +286,7 @@ class EtfBreakdownService(
 
   private fun buildHoldingGroupKey(holding: InternalHoldingData): String = "name:${normalizeHoldingName(holding.name)}"
 
-  private fun normalizeHoldingName(name: String): String = name.replace(TREZOR_SUFFIX_REGEX, "").lowercase()
+  private fun normalizeHoldingName(name: String): String = name.trim().lowercase()
 
   private fun buildHoldingEntry(groupedHoldings: List<InternalHoldingData>): Pair<HoldingKey, HoldingValue> {
     val key = buildHoldingKey(groupedHoldings)
@@ -315,11 +311,7 @@ class EtfBreakdownService(
     )
   }
 
-  private fun selectBestName(names: List<String>): String {
-    val cleanNames = names.filter { !it.contains("(Trezor)", ignoreCase = true) }
-    val bestName = cleanNames.maxByOrNull { it.length } ?: names.maxByOrNull { it.length } ?: names.first()
-    return bestName.replace(TREZOR_SUFFIX_REGEX, "")
-  }
+  private fun selectBestName(names: List<String>): String = names.maxByOrNull { it.length } ?: names.first()
 
   private fun buildHoldingValue(groupedHoldings: List<InternalHoldingData>) =
     HoldingValue(
