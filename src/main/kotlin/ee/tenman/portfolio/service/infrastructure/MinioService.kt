@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.io.ByteArrayInputStream
 import java.io.InputStream
+import java.util.UUID
 
 @Service
 class MinioService(
@@ -20,14 +21,25 @@ class MinioService(
 
   fun logoExists(holdingId: Long): Boolean = objectExists("logos/$holdingId.png")
 
+  fun logoExistsByUuid(uuid: UUID): Boolean = objectExists("logos/$uuid.png")
+
   fun uploadLogo(
     holdingId: Long,
     logoData: ByteArray,
     contentType: String = "image/png",
   ) = uploadObject("logos/$holdingId.png", logoData, contentType)
 
+  fun uploadLogoByUuid(
+    uuid: UUID,
+    logoData: ByteArray,
+    contentType: String = "image/png",
+  ) = uploadObject("logos/$uuid.png", logoData, contentType)
+
   @Cacheable(value = ["etfLogos"], key = "#holdingId")
   fun downloadLogo(holdingId: Long): ByteArray? = downloadObject("logos/$holdingId.png")
+
+  @Cacheable(value = ["etfLogos"], key = "'uuid-' + #uuid.toString()")
+  fun downloadLogoByUuid(uuid: UUID): ByteArray? = downloadObject("logos/$uuid.png")
 
   private fun objectExists(objectName: String): Boolean =
     try {

@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -90,7 +90,7 @@ export interface PortfolioSummaryDto {
 }
 
 export interface EtfHoldingBreakdownDto extends Serializable {
-    holdingId: number;
+    holdingUuid: string | null;
     holdingTicker: string | null;
     holdingName: string;
     percentageOfTotal: number;

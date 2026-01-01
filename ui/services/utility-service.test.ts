@@ -141,4 +141,18 @@ describe('utilityService', () => {
       expect(utilityService.getLogoUrl(12345)).toBe('/api/logos/12345')
     })
   })
+
+  describe('getLogoUrlByUuid', () => {
+    it('should return correct logo URL for UUID', () => {
+      const uuid = '550e8400-e29b-41d4-a716-446655440000'
+      const result = utilityService.getLogoUrlByUuid(uuid)
+
+      expect(result).toBe('/api/logos/uuid/550e8400-e29b-41d4-a716-446655440000')
+    })
+
+    it('should handle different UUIDs', () => {
+      expect(utilityService.getLogoUrlByUuid('abc-123')).toBe('/api/logos/uuid/abc-123')
+      expect(utilityService.getLogoUrlByUuid('test-uuid')).toBe('/api/logos/uuid/test-uuid')
+    })
+  })
 })

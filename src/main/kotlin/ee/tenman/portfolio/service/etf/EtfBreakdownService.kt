@@ -179,7 +179,7 @@ class EtfBreakdownService(
     val etfPlatforms = getPlatformsForInstrument(etf.id, platformFilter)
     return positions.map { position ->
       InternalHoldingData(
-        holdingId = position.holding.id,
+        holdingUuid = position.holding.uuid,
         ticker =
           position.holding.ticker
             ?.uppercase()
@@ -221,7 +221,7 @@ class EtfBreakdownService(
       }
     return holdingValues.map { h ->
       InternalHoldingData(
-        holdingId = h.position.holding.id,
+        holdingUuid = h.position.holding.uuid,
         ticker =
           h.position.holding.ticker
             ?.uppercase()
@@ -272,7 +272,7 @@ class EtfBreakdownService(
     val first = groupedHoldings.firstOrNull() ?: error("Cannot build key from empty holdings list")
     val longestName = groupedHoldings.maxByOrNull { it.name.length }?.name ?: first.name
     return HoldingKey(
-      holdingId = first.holdingId,
+      holdingUuid = first.holdingUuid,
       ticker = groupedHoldings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker,
       name = longestName,
       sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
@@ -357,7 +357,7 @@ class EtfBreakdownService(
         val percentage = scaledValue.multiply(BigDecimal(100)).divide(portfolioTotal, 4, RoundingMode.HALF_UP)
 
         EtfHoldingBreakdownDto(
-          holdingId = key.holdingId,
+          holdingUuid = key.holdingUuid,
           holdingTicker = key.ticker,
           holdingName = key.name,
           percentageOfTotal = percentage,

@@ -12,7 +12,7 @@ let holdingIdCounter = 1
 const createHolding = (
   overrides: Partial<EtfHoldingBreakdownDto> = {}
 ): EtfHoldingBreakdownDto => ({
-  holdingId: holdingIdCounter++,
+  holdingUuid: `uuid-${holdingIdCounter++}`,
   holdingName: 'Apple Inc.',
   holdingTicker: 'AAPL',
   holdingSector: 'Technology',
