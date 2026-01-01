@@ -13,7 +13,9 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import io.mockk.clearMocks
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -83,60 +85,41 @@ class DailyPriceServiceTest {
   }
 
   @Test
-  fun `should saveDailyPrice saves new price when no existing price found`() {
-    val newDailyPrice = createDailyPrice(closePrice = BigDecimal("100.00"))
-
+  fun `should saveDailyPrice calls upsert with correct parameters`() {
+    val dailyPrice = createDailyPrice(
+      closePrice = BigDecimal("100.00"),
+      openPrice = BigDecimal("95.00"),
+      highPrice = BigDecimal("105.00"),
+      lowPrice = BigDecimal("94.00"),
+      volume = 1000000L,
+    )
     every {
-      dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
-        testInstrument,
-        testDate,
-        ProviderName.FT,
-      )
-    } returns null
-    every { dailyPriceRepository.save(newDailyPrice) } returns newDailyPrice
-
-    val result = dailyPriceService.saveDailyPrice(newDailyPrice)
-
-    expect(result).toEqual(newDailyPrice)
-    verify { dailyPriceRepository.save(newDailyPrice) }
-  }
-
-  @Test
-  fun `should saveDailyPrice updates existing price when found`() {
-    val existingPrice =
-      createDailyPrice(
-        closePrice = BigDecimal("100.00"),
+      dailyPriceRepository.upsert(
+        instrumentId = 1L,
+        entryDate = testDate,
+        providerName = "FT",
         openPrice = BigDecimal("95.00"),
         highPrice = BigDecimal("105.00"),
         lowPrice = BigDecimal("94.00"),
+        closePrice = BigDecimal("100.00"),
         volume = 1000000L,
       )
-    val newPriceData =
-      createDailyPrice(
-        closePrice = BigDecimal("110.00"),
-        openPrice = BigDecimal("105.00"),
-        highPrice = BigDecimal("115.00"),
-        lowPrice = BigDecimal("104.00"),
-        volume = 1500000L,
+    } just runs
+
+    dailyPriceService.saveDailyPrice(dailyPrice)
+
+    verify {
+      dailyPriceRepository.upsert(
+        instrumentId = 1L,
+        entryDate = testDate,
+        providerName = "FT",
+        openPrice = BigDecimal("95.00"),
+        highPrice = BigDecimal("105.00"),
+        lowPrice = BigDecimal("94.00"),
+        closePrice = BigDecimal("100.00"),
+        volume = 1000000L,
       )
-
-    every {
-      dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
-        testInstrument,
-        testDate,
-        ProviderName.FT,
-      )
-    } returns existingPrice
-    every { dailyPriceRepository.save(existingPrice) } returns existingPrice
-
-    val result = dailyPriceService.saveDailyPrice(newPriceData)
-
-    expect(result.closePrice).toEqualNumerically(BigDecimal("110.00"))
-    expect(result.openPrice).notToEqualNull().toEqualNumerically(BigDecimal("105.00"))
-    expect(result.highPrice).notToEqualNull().toEqualNumerically(BigDecimal("115.00"))
-    expect(result.lowPrice).notToEqualNull().toEqualNumerically(BigDecimal("104.00"))
-    expect(result.volume).toEqual(1500000L)
-    verify { dailyPriceRepository.save(existingPrice) }
+    }
   }
 
   @Test
