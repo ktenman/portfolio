@@ -245,6 +245,7 @@ class EtfBreakdownService(
         value = h.value,
         etfSymbol = etfSymbol,
         platforms = h.platforms,
+        isSynthetic = true,
       )
     }
   }
@@ -278,6 +279,7 @@ class EtfBreakdownService(
       sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
       countryCode = groupedHoldings.mapNotNull { it.countryCode }.firstOrNull(),
       countryName = groupedHoldings.mapNotNull { it.countryName }.firstOrNull(),
+      isSynthetic = groupedHoldings.any { it.isSynthetic },
     )
   }
 
@@ -357,7 +359,7 @@ class EtfBreakdownService(
         val percentage = scaledValue.multiply(BigDecimal(100)).divide(portfolioTotal, 4, RoundingMode.HALF_UP)
 
         EtfHoldingBreakdownDto(
-          holdingId = key.holdingId,
+          holdingId = if (key.isSynthetic) null else key.holdingId,
           holdingTicker = key.ticker,
           holdingName = key.name,
           percentageOfTotal = percentage,

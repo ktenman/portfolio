@@ -13,4 +13,5 @@ data class InternalHoldingData(
   val value: BigDecimal,
   val etfSymbol: String,
   val platforms: Set<Platform>,
+  val isSynthetic: Boolean = false,
 )
