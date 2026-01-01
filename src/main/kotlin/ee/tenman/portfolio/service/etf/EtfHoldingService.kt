@@ -57,7 +57,7 @@ class EtfHoldingService(
         .onFailure { log.debug("Failed to download Lightyear logo for ${holding.name}: ${it.message}") }
         .getOrNull() ?: return
     val processedImage = imageProcessingService.resizeToMaxDimension(imageData)
-    runCatching { minioService.uploadLogo(holding.id, processedImage) }
+    runCatching { minioService.uploadLogo(holding.uuid, processedImage) }
       .onSuccess {
         log.info("Uploaded Lightyear logo for: ${holding.name}")
         holding.logoSource = LogoSource.LIGHTYEAR

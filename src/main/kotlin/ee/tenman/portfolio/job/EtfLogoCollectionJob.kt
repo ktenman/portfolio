@@ -46,7 +46,7 @@ class EtfLogoCollectionJob(
         .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }
         .getOrNull() ?: return
     val processedImage = imageProcessingService.resizeToMaxDimension(result.imageData)
-    runCatching { minioService.uploadLogo(holding.id, processedImage) }
+    runCatching { minioService.uploadLogo(holding.uuid, processedImage) }
       .onSuccess {
         log.info("Uploaded logo from ${result.source} for: ${holding.name}")
         holding.logoSource = result.source

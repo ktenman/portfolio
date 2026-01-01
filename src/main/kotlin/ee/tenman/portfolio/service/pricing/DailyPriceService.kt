@@ -35,26 +35,17 @@ class DailyPriceService(
   }
 
   @Transactional
-  fun saveDailyPrice(dailyPrice: DailyPrice): DailyPrice {
-    val existingPrice =
-      dailyPriceRepository.findByInstrumentAndEntryDateAndProviderName(
-        dailyPrice.instrument,
-        dailyPrice.entryDate,
-        dailyPrice.providerName,
-      )
-
-    return if (existingPrice != null) {
-      existingPrice.apply {
-        openPrice = dailyPrice.openPrice
-        highPrice = dailyPrice.highPrice
-        lowPrice = dailyPrice.lowPrice
-        closePrice = dailyPrice.closePrice
-        volume = dailyPrice.volume
-      }
-      dailyPriceRepository.save(existingPrice)
-    } else {
-      dailyPriceRepository.save(dailyPrice)
-    }
+  fun saveDailyPrice(dailyPrice: DailyPrice) {
+    dailyPriceRepository.upsert(
+      instrumentId = dailyPrice.instrument.id,
+      entryDate = dailyPrice.entryDate,
+      providerName = dailyPrice.providerName.name,
+      openPrice = dailyPrice.openPrice,
+      highPrice = dailyPrice.highPrice,
+      lowPrice = dailyPrice.lowPrice,
+      closePrice = dailyPrice.closePrice,
+      volume = dailyPrice.volume,
+    )
   }
 
   @Transactional(readOnly = true)
@@ -179,7 +170,7 @@ class DailyPriceService(
     price: BigDecimal,
     date: LocalDate,
     providerName: ProviderName,
-  ): DailyPrice {
+  ) {
     val dailyPrice =
       DailyPrice(
         instrument = instrument,
@@ -191,6 +182,6 @@ class DailyPriceService(
         closePrice = price,
         volume = null,
       )
-    return saveDailyPrice(dailyPrice)
+    saveDailyPrice(dailyPrice)
   }
 }

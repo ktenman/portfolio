@@ -49,7 +49,7 @@ class EnumServiceTest {
     expect(response.platforms)
       .toContainExactly("AVIVA", "BINANCE", "COINBASE", "IBKR", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
 
-    expect(response.providers).toContainExactly("BINANCE", "FT", "LIGHTYEAR", "MANUAL", "TRADING212")
+    expect(response.providers).toContainExactly("BINANCE", "FT", "LIGHTYEAR", "MANUAL", "SYNTHETIC", "TRADING212")
 
     expect(response.transactionTypes).toContainExactly("BUY", "SELL")
 

@@ -1,5 +1,6 @@
 module.exports = {
   root: true,
+  ignorePatterns: ['models/generated/**'],
   env: {
     browser: true,
     node: true,

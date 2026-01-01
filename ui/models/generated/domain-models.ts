@@ -90,7 +90,7 @@ export interface PortfolioSummaryDto {
 }
 
 export interface EtfHoldingBreakdownDto extends Serializable {
-    holdingId: number;
+    holdingUuid: string | null;
     holdingTicker: string | null;
     holdingName: string;
     percentageOfTotal: number;
@@ -151,6 +151,7 @@ export enum ProviderName {
     FT = "FT",
     LIGHTYEAR = "LIGHTYEAR",
     MANUAL = "MANUAL",
+    SYNTHETIC = "SYNTHETIC",
     TRADING212 = "TRADING212",
 }
 

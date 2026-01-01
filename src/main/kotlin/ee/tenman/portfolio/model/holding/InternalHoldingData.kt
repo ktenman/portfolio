@@ -2,9 +2,10 @@ package ee.tenman.portfolio.model.holding
 
 import ee.tenman.portfolio.domain.Platform
 import java.math.BigDecimal
+import java.util.UUID
 
 data class InternalHoldingData(
-  val holdingId: Long,
+  val holdingUuid: UUID?,
   val ticker: String?,
   val name: String,
   val sector: String?,

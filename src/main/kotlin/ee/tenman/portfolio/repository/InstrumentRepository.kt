@@ -13,6 +13,8 @@ import java.util.*
 interface InstrumentRepository : JpaRepository<Instrument, Long> {
   fun findBySymbol(symbol: String): Optional<Instrument>
 
+  fun findBySymbolIn(symbols: List<String>): List<Instrument>
+
   fun findBySymbolContaining(symbol: String): List<Instrument>
 
   fun findByProviderName(providerName: ProviderName): List<Instrument>

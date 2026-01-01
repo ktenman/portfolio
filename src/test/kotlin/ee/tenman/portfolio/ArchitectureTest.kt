@@ -691,7 +691,7 @@ class ArchitectureTest {
   fun repositoryMethodsShouldFollowNamingConventions(classes: JavaClasses) {
     val validPrefixes =
       setOf(
-      "find",
+        "find",
         "get",
         "read",
         "query",
@@ -699,14 +699,15 @@ class ArchitectureTest {
         "stream",
         "count",
         "exists",
-      "save",
+        "save",
         "insert",
         "update",
+        "upsert",
         "delete",
         "remove",
         "flush",
         "refresh",
-    )
+      )
     val violations = mutableListOf<String>()
     classes
       .filter { javaClass ->

@@ -6,7 +6,7 @@ import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-model
 describe('EtfBreakdownTable', () => {
   const mockHoldings: EtfHoldingBreakdownDto[] = [
     {
-      holdingId: 1,
+      holdingUuid: 'uuid-1',
       holdingTicker: 'AAPL',
       holdingName: 'Apple Inc.',
       percentageOfTotal: 25.5432,
@@ -19,7 +19,7 @@ describe('EtfBreakdownTable', () => {
       platforms: 'LIGHTYEAR, TRADING212',
     },
     {
-      holdingId: 2,
+      holdingUuid: 'uuid-2',
       holdingTicker: 'MSFT',
       holdingName: 'Microsoft Corp.',
       percentageOfTotal: 20.1234,
@@ -161,7 +161,7 @@ describe('EtfBreakdownTable', () => {
     it('should format large numbers with thousands separator', () => {
       const largeHoldings: EtfHoldingBreakdownDto[] = [
         {
-          holdingId: 3,
+          holdingUuid: 'uuid-3',
           holdingTicker: 'AAPL',
           holdingName: 'Apple Inc.',
           percentageOfTotal: 100,
@@ -191,7 +191,7 @@ describe('EtfBreakdownTable', () => {
     it('should format null values as dash', () => {
       const nullHoldings: EtfHoldingBreakdownDto[] = [
         {
-          holdingId: 4,
+          holdingUuid: 'uuid-4',
           holdingTicker: 'AAPL',
           holdingName: 'Apple Inc.',
           percentageOfTotal: 100,

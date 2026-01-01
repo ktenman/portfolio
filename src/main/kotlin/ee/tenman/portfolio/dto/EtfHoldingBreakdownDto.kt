@@ -2,9 +2,10 @@ package ee.tenman.portfolio.dto
 
 import java.io.Serializable
 import java.math.BigDecimal
+import java.util.UUID
 
 data class EtfHoldingBreakdownDto(
-  val holdingId: Long,
+  val holdingUuid: UUID?,
   val holdingTicker: String?,
   val holdingName: String,
   val percentageOfTotal: BigDecimal,
@@ -17,6 +18,6 @@ data class EtfHoldingBreakdownDto(
   val platforms: String,
 ) : Serializable {
   companion object {
-    private const val serialVersionUID = 3L
+    private const val serialVersionUID = 4L
   }
 }

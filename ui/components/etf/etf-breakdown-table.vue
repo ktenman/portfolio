@@ -39,13 +39,15 @@
         <template #cell-holdingTicker="{ item }">
           <div class="ticker-cell">
             <img
-              v-if="item.holdingId"
-              :src="utilityService.getLogoUrl(item.holdingId)"
+              v-if="item.holdingUuid"
+              :src="utilityService.getLogoUrl(item.holdingUuid)"
               :alt="item.holdingName"
               class="company-logo"
               @error="handleImageError"
             />
-            <span class="ticker-symbol">{{ item.holdingTicker || '-' }}</span>
+            <span class="ticker-symbol">
+              {{ item.holdingTicker || (item.holdingUuid ? '' : '-') }}
+            </span>
           </div>
         </template>
         <template #cell-holdingCountryName="{ item }">

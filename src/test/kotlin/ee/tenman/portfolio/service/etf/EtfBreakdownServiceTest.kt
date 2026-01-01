@@ -26,6 +26,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Optional
 
 class EtfBreakdownServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
@@ -51,11 +52,11 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
-  fun `should deduplicate holdings by ticker and prefer longer name`() {
+  fun `should deduplicate holdings by name and sector with different tickers`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR)
     val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR)
-    val holdingNvidia1 = createHolding(1L, "NVDA", "NVIDIA", "Semiconductors")
-    val holdingNvidia2 = createHolding(2L, "NVDA", "Nvidia Corp", "Semiconductors")
+    val holdingNvidia1 = createHolding(1L, "NVDA", "Nvidia", "Semiconductors")
+    val holdingNvidia2 = createHolding(2L, "NVD", "Nvidia", "Semiconductors")
     val position1 =
       createPosition(etf1, holdingNvidia1, BigDecimal("10.0000"), testDate)
     val position2 =
@@ -64,6 +65,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("5"), BigDecimal("200"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -73,7 +77,7 @@ class EtfBreakdownServiceTest {
 
     expect(result).toHaveSize(1)
     expect(result[0].holdingTicker).toEqual("NVDA")
-    expect(result[0].holdingName).toEqual("Nvidia Corp")
+    expect(result[0].holdingName).toEqual("Nvidia")
     expect(result[0].inEtfs).toContain("ETF1")
     expect(result[0].inEtfs).toContain("ETF2")
     expect(result[0].numEtfs).toEqual(2)
@@ -81,11 +85,11 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
-  fun `should aggregate values for holdings with same ticker`() {
+  fun `should aggregate values for holdings with same name and sector`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("200"))
     val holdingApple1 = createHolding(1L, "AAPL", "Apple", "Technology")
-    val holdingApple2 = createHolding(2L, "AAPL", "Apple Inc", "Technology")
+    val holdingApple2 = createHolding(2L, "APL", "Apple", "Technology")
     val position1 =
       createPosition(etf1, holdingApple1, BigDecimal("20.0000"), testDate)
     val position2 =
@@ -94,6 +98,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("5"), BigDecimal("200"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -102,12 +109,12 @@ class EtfBreakdownServiceTest {
     val result = etfBreakdownService.getHoldingsBreakdown()
 
     expect(result).toHaveSize(1)
-    expect(result[0].holdingName).toEqual("Apple Inc")
+    expect(result[0].holdingName).toEqual("Apple")
     expect(result[0].percentageOfTotal).toEqualNumerically(BigDecimal("100.0000"))
   }
 
   @Test
-  fun `should handle holdings without ticker using name and sector`() {
+  fun `should handle holdings without ticker using name`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val holdingNoTicker1 = createHolding(1L, null, "Unknown Company", "Finance")
     val holdingNoTicker2 = createHolding(2L, null, "unknown company", "Finance")
@@ -118,6 +125,8 @@ class EtfBreakdownServiceTest {
     val transaction = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1, position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction)
 
@@ -128,11 +137,11 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
-  fun `should normalize ticker to uppercase for deduplication`() {
+  fun `should merge holdings with same name in different cases and prefer longer ticker`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
-    val holdingLower = createHolding(1L, "msft", "Microsoft", "Software")
-    val holdingUpper = createHolding(2L, "MSFT", "Microsoft Corp", "Software")
+    val holdingLower = createHolding(1L, "ms", "microsoft", "Software")
+    val holdingUpper = createHolding(2L, "MSFT", "MICROSOFT", "Software")
     val position1 =
       createPosition(etf1, holdingLower, BigDecimal("50.0000"), testDate)
     val position2 =
@@ -141,6 +150,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -150,13 +162,13 @@ class EtfBreakdownServiceTest {
 
     expect(result).toHaveSize(1)
     expect(result[0].holdingTicker).toEqual("MSFT")
-    expect(result[0].holdingName).toEqual("Microsoft Corp")
   }
 
   @Test
   fun `should return empty list when no etfs found`() {
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns emptyList()
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
@@ -164,17 +176,20 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
-  fun `should select longest sector name when merging`() {
+  fun `should select longest sector name when merging by name`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val holding1 = createHolding(1L, "GOOGL", "Google", "Tech")
-    val holding2 = createHolding(2L, "GOOGL", "Alphabet Inc", "Software & Cloud Services")
+    val holding2 = createHolding(2L, "GOOGL", "Google", "Software & Cloud Services")
     val position1 = createPosition(etf1, holding1, BigDecimal("50.0000"), testDate)
     val position2 = createPosition(etf2, holding2, BigDecimal("50.0000"), testDate)
     val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
     val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
@@ -187,6 +202,39 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
+  fun `should merge holdings with same name from different ETFs`() {
+    val etf1 = createInstrument(1L, "WBIT", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val etf2 = createInstrument(2L, "TREZOR", ProviderName.SYNTHETIC, BigDecimal("100"))
+    val btcInstrument = createInstrument(3L, "BTCEUR", ProviderName.BINANCE, BigDecimal("50000"))
+    val holdingBitcoin = createHolding(1L, "BTC", "Bitcoin", "Cryptocurrency")
+    val holdingBitcoinSynthetic = createHolding(2L, "BTCEUR", "Bitcoin", "Cryptocurrency")
+    val position1 = createPosition(etf1, holdingBitcoin, BigDecimal("50.0000"), testDate)
+    val position2 = createPosition(etf2, holdingBitcoinSynthetic, BigDecimal("50.0000"), testDate)
+    val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
+    val btcTransaction = createCashFlow(btcInstrument, BigDecimal("1"), BigDecimal("50000"))
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
+    every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns listOf(etf2)
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
+    every { instrumentRepository.findById(3L) } returns Optional.of(btcInstrument)
+    every { instrumentRepository.findBySymbolIn(listOf("BTCEUR")) } returns listOf(btcInstrument)
+    every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
+    every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
+    every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
+    every { transactionRepository.findAllByInstrumentId(3L) } returns listOf(btcTransaction)
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].holdingName).toEqual("Bitcoin")
+    expect(result[0].holdingTicker).toEqual("BTCEUR")
+    expect(result[0].inEtfs).toContain("WBIT")
+    expect(result[0].inEtfs).toContain("TREZOR")
+    expect(result[0].numEtfs).toEqual(2)
+  }
+
+  @Test
   fun `should filter holdings by platform`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val holding1 = createHolding(1L, "AAPL", "Apple", "Technology")
@@ -195,6 +243,8 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf1, BigDecimal("5"), BigDecimal("100"), Platform.TRADING212)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1, transaction2)
 
@@ -214,6 +264,8 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf1, BigDecimal("5"), BigDecimal("100"), Platform.TRADING212)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1, transaction2)
 
@@ -233,6 +285,8 @@ class EtfBreakdownServiceTest {
     val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
 
@@ -249,6 +303,8 @@ class EtfBreakdownServiceTest {
     val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"), Platform.LIGHTYEAR)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
 
@@ -269,6 +325,9 @@ class EtfBreakdownServiceTest {
     val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"), Platform.TRADING212)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
     every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
