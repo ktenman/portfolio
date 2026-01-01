@@ -21,6 +21,7 @@ import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
@@ -41,6 +42,7 @@ class EtfBreakdownService(
     private val TREZOR_SUFFIX_REGEX = Regex("\\s*\\(Trezor\\)\\s*$", RegexOption.IGNORE_CASE)
   }
 
+  @Transactional(readOnly = true)
   @Cacheable(
     ETF_BREAKDOWN_CACHE,
     key =
@@ -146,9 +148,12 @@ class EtfBreakdownService(
 
   private fun hasSyntheticActiveHoldings(syntheticEtfId: Long): Boolean {
     val positions = etfPositionRepository.findLatestPositionsByEtfId(syntheticEtfId)
+    val tickers = positions.mapNotNull { it.holding.ticker }
+    if (tickers.isEmpty()) return false
+    val instrumentsByTicker = instrumentRepository.findBySymbolIn(tickers).associateBy { it.symbol }
     return positions.any { pos ->
       val ticker = pos.holding.ticker ?: return@any false
-      val instrument = instrumentRepository.findBySymbol(ticker).orElse(null) ?: return@any false
+      val instrument = instrumentsByTicker[ticker] ?: return@any false
       calculateNetQuantity(instrument.id, null) > BigDecimal.ZERO
     }
   }
@@ -231,16 +236,7 @@ class EtfBreakdownService(
     positions: List<EtfPosition>,
     etfSymbol: String,
   ): List<InternalHoldingData> {
-    val holdingValues =
-      positions.mapNotNull { pos ->
-        val ticker = pos.holding.ticker ?: return@mapNotNull null
-        val instrument = instrumentRepository.findBySymbol(ticker).orElse(null) ?: return@mapNotNull null
-        val qty = calculateNetQuantity(instrument.id, null)
-        val price = getCurrentPrice(instrument)
-        val value = qty.multiply(price)
-        val platforms = getPlatformsForInstrument(instrument.id, null)
-        SyntheticHoldingValue(pos, value, platforms)
-      }
+    val holdingValues = calculateSyntheticHoldingValues(positions)
     return holdingValues.map { h ->
       InternalHoldingData(
         holdingUuid = h.position.holding.uuid,
@@ -249,9 +245,7 @@ class EtfBreakdownService(
             ?.uppercase()
             ?.trim()
             ?.takeIf { it.isNotBlank() },
-        name =
-          h.position.holding.name
-            .trim(),
+        name = h.position.holding.name.trim(),
         sector =
           h.position.holding.sector
             ?.trim()
@@ -268,6 +262,21 @@ class EtfBreakdownService(
         etfSymbol = etfSymbol,
         platforms = h.platforms,
       )
+    }
+  }
+
+  private fun calculateSyntheticHoldingValues(positions: List<EtfPosition>): List<SyntheticHoldingValue> {
+    val tickers = positions.mapNotNull { it.holding.ticker }
+    if (tickers.isEmpty()) return emptyList()
+    val instrumentsByTicker = instrumentRepository.findBySymbolIn(tickers).associateBy { it.symbol }
+    return positions.mapNotNull { pos ->
+      val ticker = pos.holding.ticker ?: return@mapNotNull null
+      val instrument = instrumentsByTicker[ticker] ?: return@mapNotNull null
+      val qty = calculateNetQuantity(instrument.id, null)
+      val price = getCurrentPrice(instrument)
+      val value = qty.multiply(price)
+      val platforms = getPlatformsForInstrument(instrument.id, null)
+      SyntheticHoldingValue(pos, value, platforms)
     }
   }
 
@@ -355,16 +364,8 @@ class EtfBreakdownService(
       .filter { it.providerName == ProviderName.SYNTHETIC }
       .fold(BigDecimal.ZERO) { acc, etf ->
         val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
-        val syntheticValue =
-          positions.sumOf { pos ->
-            val ticker = pos.holding.ticker ?: return@sumOf BigDecimal.ZERO
-            val instrument =
-              instrumentRepository.findBySymbol(ticker).orElse(null)
-                ?: return@sumOf BigDecimal.ZERO
-            val qty = calculateNetQuantity(instrument.id, null)
-            val price = getCurrentPrice(instrument)
-            qty.multiply(price)
-          }
+        val holdingValues = calculateSyntheticHoldingValues(positions)
+        val syntheticValue = holdingValues.fold(BigDecimal.ZERO) { sum, h -> sum.add(h.value) }
         acc.add(syntheticValue)
       }
 
@@ -406,6 +407,7 @@ class EtfBreakdownService(
       .sortedByDescending { it.totalValueEur }
   }
 
+  @Transactional(readOnly = true)
   fun getDiagnosticData(): List<EtfDiagnosticDto> {
     val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
     val ftInstruments = instrumentRepository.findByProviderName(ProviderName.FT)

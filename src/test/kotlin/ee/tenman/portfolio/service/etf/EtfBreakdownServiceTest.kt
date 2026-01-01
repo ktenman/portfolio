@@ -218,7 +218,7 @@ class EtfBreakdownServiceTest {
     every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
     every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
     every { instrumentRepository.findById(3L) } returns Optional.of(btcInstrument)
-    every { instrumentRepository.findBySymbol("BTCEUR") } returns Optional.of(btcInstrument)
+    every { instrumentRepository.findBySymbolIn(listOf("BTCEUR")) } returns listOf(btcInstrument)
     every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
