@@ -39,7 +39,7 @@
         <template #cell-holdingTicker="{ item }">
           <div class="ticker-cell">
             <img
-              v-if="item.holdingId && item.inEtfs !== 'TREZOR'"
+              v-if="item.holdingId"
               :src="utilityService.getLogoUrl(item.holdingId)"
               :alt="item.holdingName"
               class="company-logo"
