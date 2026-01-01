@@ -40,7 +40,7 @@
           <div class="ticker-cell">
             <img
               v-if="item.holdingUuid"
-              :src="utilityService.getLogoUrlByUuid(item.holdingUuid)"
+              :src="utilityService.getLogoUrl(item.holdingUuid)"
               :alt="item.holdingName"
               class="company-logo"
               @error="handleImageError"

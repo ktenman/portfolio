@@ -37,6 +37,10 @@ class EtfBreakdownService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  companion object {
+    private val TREZOR_SUFFIX_REGEX = Regex("\\s*\\(Trezor\\)\\s*$", RegexOption.IGNORE_CASE)
+  }
+
   @Cacheable(
     ETF_BREAKDOWN_CACHE,
     key =
@@ -273,12 +277,9 @@ class EtfBreakdownService(
       .entries
       .associate { (_, groupedHoldings) -> buildHoldingEntry(groupedHoldings) }
 
-  private fun buildHoldingGroupKey(holding: InternalHoldingData): String =
-    if (!holding.ticker.isNullOrBlank()) {
-      "ticker:${holding.ticker}"
-    } else {
-      "name:${holding.name.lowercase()}:${holding.sector?.lowercase().orEmpty()}"
-    }
+  private fun buildHoldingGroupKey(holding: InternalHoldingData): String = "name:${normalizeHoldingName(holding.name)}"
+
+  private fun normalizeHoldingName(name: String): String = name.replace(TREZOR_SUFFIX_REGEX, "").lowercase()
 
   private fun buildHoldingEntry(groupedHoldings: List<InternalHoldingData>): Pair<HoldingKey, HoldingValue> {
     val key = buildHoldingKey(groupedHoldings)
@@ -288,15 +289,25 @@ class EtfBreakdownService(
 
   private fun buildHoldingKey(groupedHoldings: List<InternalHoldingData>): HoldingKey {
     val first = groupedHoldings.firstOrNull() ?: error("Cannot build key from empty holdings list")
-    val longestName = groupedHoldings.maxByOrNull { it.name.length }?.name ?: first.name
+    val bestName = selectBestName(groupedHoldings.map { it.name })
+    val longestTicker =
+      groupedHoldings
+        .mapNotNull { it.ticker?.takeIf { t -> t.isNotBlank() } }
+      .maxByOrNull { it.length }
     return HoldingKey(
       holdingUuid = first.holdingUuid,
-      ticker = groupedHoldings.firstOrNull { !it.ticker.isNullOrBlank() }?.ticker,
-      name = longestName,
+      ticker = longestTicker,
+      name = bestName,
       sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
       countryCode = groupedHoldings.mapNotNull { it.countryCode }.firstOrNull(),
       countryName = groupedHoldings.mapNotNull { it.countryName }.firstOrNull(),
     )
+  }
+
+  private fun selectBestName(names: List<String>): String {
+    val cleanNames = names.filter { !it.contains("(Trezor)", ignoreCase = true) }
+    val bestName = cleanNames.maxByOrNull { it.length } ?: names.maxByOrNull { it.length } ?: names.first()
+    return bestName.replace(TREZOR_SUFFIX_REGEX, "")
   }
 
   private fun buildHoldingValue(groupedHoldings: List<InternalHoldingData>) =

@@ -20,29 +20,12 @@ class LogoController(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @GetMapping("/{holdingId}")
+  @GetMapping("/{uuid}")
   fun getLogo(
-    @PathVariable holdingId: Long,
-  ): ResponseEntity<ByteArray> {
-    log.debug("Fetching logo for holding: $holdingId")
-    val logoData = minioService.downloadLogo(holdingId)
-    if (logoData != null) {
-      return ResponseEntity
-        .ok()
-        .contentType(MediaType.IMAGE_PNG)
-        .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
-        .body(logoData)
-    }
-    log.debug("Logo not found for holding: $holdingId")
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-  }
-
-  @GetMapping("/uuid/{uuid}")
-  fun getLogoByUuid(
     @PathVariable uuid: UUID,
   ): ResponseEntity<ByteArray> {
     log.debug("Fetching logo for holding UUID: $uuid")
-    val logoData = minioService.downloadLogoByUuid(uuid)
+    val logoData = minioService.downloadLogo(uuid)
     if (logoData != null) {
       return ResponseEntity
         .ok()

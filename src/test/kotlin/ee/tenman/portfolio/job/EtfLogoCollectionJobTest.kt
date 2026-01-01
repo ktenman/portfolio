@@ -14,6 +14,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import java.util.Optional
+import java.util.UUID
 
 class EtfLogoCollectionJobTest {
   private val etfHoldingRepository: EtfHoldingRepository = mockk(relaxed = true)
@@ -42,7 +43,8 @@ class EtfLogoCollectionJobTest {
 
   @Test
   fun `should fetch and upload logo when logo source is null`() {
-    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = "AAPL")
+    val holdingUuid = UUID.randomUUID()
+    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = "AAPL", uuid = holdingUuid)
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     val processedImage = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x00)
     val logoResult = LogoFetchResult(imageData = imageData, source = LogoSource.NVSTLY_ICONS)
@@ -52,7 +54,7 @@ class EtfLogoCollectionJobTest {
 
     job.processHolding(1L)
 
-    verify(exactly = 1) { minioService.uploadLogo(1L, processedImage) }
+    verify(exactly = 1) { minioService.uploadLogo(holdingUuid, processedImage) }
     verify(exactly = 1) { etfHoldingRepository.save(holding) }
     expect(holding.logoSource).toEqual(LogoSource.NVSTLY_ICONS)
   }
@@ -93,9 +95,11 @@ class EtfLogoCollectionJobTest {
     name: String = "Test Company",
     ticker: String? = null,
     logoSource: LogoSource? = null,
+    uuid: UUID? = null,
   ): EtfHolding =
     EtfHolding(name = name, ticker = ticker).apply {
       this.id = id
       this.logoSource = logoSource
+      if (uuid != null) this.uuid = uuid
     }
 }

@@ -128,31 +128,16 @@ describe('utilityService', () => {
   })
 
   describe('getLogoUrl', () => {
-    it('should return correct logo URL for holdingId', () => {
-      const holdingId = 123
-      const result = utilityService.getLogoUrl(holdingId)
-
-      expect(result).toBe('/api/logos/123')
-    })
-
-    it('should handle different holdingIds', () => {
-      expect(utilityService.getLogoUrl(1)).toBe('/api/logos/1')
-      expect(utilityService.getLogoUrl(999)).toBe('/api/logos/999')
-      expect(utilityService.getLogoUrl(12345)).toBe('/api/logos/12345')
-    })
-  })
-
-  describe('getLogoUrlByUuid', () => {
     it('should return correct logo URL for UUID', () => {
       const uuid = '550e8400-e29b-41d4-a716-446655440000'
-      const result = utilityService.getLogoUrlByUuid(uuid)
+      const result = utilityService.getLogoUrl(uuid)
 
-      expect(result).toBe('/api/logos/uuid/550e8400-e29b-41d4-a716-446655440000')
+      expect(result).toBe('/api/logos/550e8400-e29b-41d4-a716-446655440000')
     })
 
     it('should handle different UUIDs', () => {
-      expect(utilityService.getLogoUrlByUuid('abc-123')).toBe('/api/logos/uuid/abc-123')
-      expect(utilityService.getLogoUrlByUuid('test-uuid')).toBe('/api/logos/uuid/test-uuid')
+      expect(utilityService.getLogoUrl('abc-123')).toBe('/api/logos/abc-123')
+      expect(utilityService.getLogoUrl('test-uuid')).toBe('/api/logos/test-uuid')
     })
   })
 })
