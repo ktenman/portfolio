@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.model.holding
 
+import java.util.UUID
+
 data class HoldingKey(
-  val holdingId: Long,
+  val holdingUuid: UUID?,
   val ticker: String?,
   val name: String,
   val sector: String?,
