@@ -50,18 +50,21 @@ class EtfBreakdownService(
     platforms: List<String>? = null,
   ): List<EtfHoldingBreakdownDto> {
     val platformFilter = parsePlatformFilters(platforms)
-    val lightyearEtfs = getLightyearEtfs(etfSymbols, platformFilter)
-    log.info("Found ${lightyearEtfs.size} ETFs: ${lightyearEtfs.map { it.symbol }}")
+    val etfsWithHoldings = getEtfsWithHoldings(etfSymbols, platformFilter)
+    log.info("Found ${etfsWithHoldings.size} ETFs with holdings: ${etfsWithHoldings.map { it.symbol }}")
 
-    if (lightyearEtfs.isEmpty()) {
-      log.warn("No Lightyear ETFs found")
+    if (etfsWithHoldings.isEmpty()) {
+      log.warn("No ETFs with holdings found")
       return emptyList()
     }
 
-    val actualPortfolioTotal = calculateActualPortfolioTotal(lightyearEtfs, platformFilter)
-    log.info("Actual portfolio total value from transactions: $actualPortfolioTotal")
+    val allActiveEtfs = getAllActiveEtfs(etfSymbols, platformFilter)
+    log.info("Found ${allActiveEtfs.size} total active ETFs: ${allActiveEtfs.map { it.symbol }}")
 
-    val holdingsMap = buildHoldingsMap(lightyearEtfs, platformFilter)
+    val actualPortfolioTotal = calculateActualPortfolioTotal(allActiveEtfs, platformFilter)
+    log.info("Actual portfolio total value from all ETFs: $actualPortfolioTotal")
+
+    val holdingsMap = buildHoldingsMap(etfsWithHoldings, platformFilter)
     log.info("Built holdings map with ${holdingsMap.size} unique holdings")
 
     val result = aggregateByHolding(holdingsMap, actualPortfolioTotal)
@@ -80,10 +83,33 @@ class EtfBreakdownService(
     log.info("Evicted ETF breakdown cache")
   }
 
-  private fun getLightyearEtfs(
+  private fun getEtfsWithHoldings(
     etfSymbols: List<String>? = null,
     platformFilter: Set<Platform>? = null,
   ): List<Instrument> {
+    val allInstruments = getFilteredInstruments(etfSymbols)
+    val withHoldings = allInstruments.filter { hasEtfHoldings(it.id) }
+    log.info("${withHoldings.size} instruments have ETF holdings data: ${withHoldings.map { it.symbol }}")
+    val withActivePositions = withHoldings.filter { hasActiveHoldings(it.id, platformFilter) }
+    log.info("${withActivePositions.size} instruments with holdings have active positions: ${withActivePositions.map { it.symbol }}")
+    return withActivePositions
+  }
+
+  private fun getAllActiveEtfs(
+    etfSymbols: List<String>? = null,
+    platformFilter: Set<Platform>? = null,
+  ): List<Instrument> {
+    val allInstruments = getFilteredInstruments(etfSymbols)
+    val withActivePositions = allInstruments.filter { hasActiveHoldings(it.id, platformFilter) }
+    log.info(
+      "${withActivePositions.size} instruments have active positions (including without holdings): ${withActivePositions.map {
+        it.symbol
+      }}",
+    )
+    return withActivePositions
+  }
+
+  private fun getFilteredInstruments(etfSymbols: List<String>? = null): List<Instrument> {
     val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
     val ftInstruments = instrumentRepository.findByProviderName(ProviderName.FT)
     val syntheticInstruments = instrumentRepository.findByProviderName(ProviderName.SYNTHETIC)
@@ -92,19 +118,11 @@ class EtfBreakdownService(
         "${syntheticInstruments.size} SYNTHETIC instruments",
     )
     var allInstruments = lightyearInstruments + ftInstruments + syntheticInstruments
-
     if (!etfSymbols.isNullOrEmpty()) {
       allInstruments = allInstruments.filter { it.symbol in etfSymbols }
       log.info("Filtered to ${allInstruments.size} instruments matching symbols: ${LogSanitizerUtil.sanitize(etfSymbols)}")
     }
-
-    val withHoldings = allInstruments.filter { hasEtfHoldings(it.id) }
-    log.info("${withHoldings.size} instruments have ETF holdings data: ${withHoldings.map { it.symbol }}")
-
-    val withActivePositions = withHoldings.filter { hasActiveHoldings(it.id, platformFilter) }
-    log.info("${withActivePositions.size} instruments have active positions: ${withActivePositions.map { it.symbol }}")
-
-    return withActivePositions
+    return allInstruments
   }
 
   private fun hasEtfHoldings(instrumentId: Long): Boolean = etfPositionRepository.findLatestPositionsByEtfId(instrumentId).isNotEmpty()

@@ -45,7 +45,9 @@
               class="company-logo"
               @error="handleImageError"
             />
-            <span class="ticker-symbol">{{ item.holdingTicker || '-' }}</span>
+            <span class="ticker-symbol">
+              {{ item.holdingTicker || (item.holdingUuid ? '' : '-') }}
+            </span>
           </div>
         </template>
         <template #cell-holdingCountryName="{ item }">
