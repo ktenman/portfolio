@@ -245,8 +245,10 @@ class EtfBreakdownService(
             ?.uppercase()
             ?.trim()
             ?.takeIf { it.isNotBlank() },
-        name = h.position.holding.name.trim(),
-        sector =
+        name =
+          h.position.holding.name
+          .trim(),
+          sector =
           h.position.holding.sector
             ?.trim()
             ?.takeIf { it.isNotBlank() },
