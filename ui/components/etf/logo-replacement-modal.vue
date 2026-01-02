@@ -13,7 +13,7 @@
           <h5 class="modal-title" :id="`${modalId}Label`">Replace Logo: {{ holdingName }}</h5>
           <button type="button" class="btn-close" @click="close" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-body-scroll">
           <loading-spinner v-if="isLoading" class="my-4" />
           <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
           <div
@@ -183,6 +183,11 @@ const handleImageError = (event: Event) => {
 </script>
 
 <style scoped>
+.modal-body-scroll {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 .logo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

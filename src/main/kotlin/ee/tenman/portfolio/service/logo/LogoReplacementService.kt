@@ -68,16 +68,22 @@ class LogoReplacementService(
   }
 
   private fun downloadAndProcessImage(candidate: LogoCandidate): ByteArray? {
-    val imageData =
-      runCatching { imageDownloadService.download(candidate.imageUrl) }
-      .onFailure { log.warn("Failed to download logo: ${it.message}") }
-      .getOrNull() ?: return null
+    val imageData = downloadImage(candidate.imageUrl) ?: downloadImage(candidate.thumbnailUrl)
+    if (imageData == null) {
+      log.warn("Failed to download logo from both image and thumbnail URLs for index ${candidate.index}")
+      return null
+    }
     if (!logoValidationService.isValidLogo(imageData)) {
       log.warn("Logo validation failed for candidate index ${candidate.index}")
       return null
     }
     return imageProcessingService.resizeToMaxDimension(imageData)
   }
+
+  private fun downloadImage(url: String): ByteArray? =
+    runCatching { imageDownloadService.download(url) }
+      .onFailure { log.debug("Failed to download from $url: ${it.message}") }
+      .getOrNull()
 
   private fun uploadAndSave(
     holdingUuid: UUID,
@@ -101,6 +107,6 @@ class LogoReplacementService(
   }
 
   companion object {
-    private const val MAX_CANDIDATES = 10
+    private const val MAX_CANDIDATES = 30
   }
 }
