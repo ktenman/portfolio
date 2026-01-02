@@ -144,7 +144,7 @@ describe('InstrumentTable', () => {
       const rows = wrapper.findAll('tbody tr')
 
       expect(rows[0].text()).toContain('$150.50')
-      expect(rows[1].text()).toContain('€45,000.00')
+      expect(rows[1].text()).toContain('€45,000')
     })
 
     it('should format total investment with currency', () => {

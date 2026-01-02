@@ -91,6 +91,32 @@ export const formatCurrencyWithSign = (
   return `${currencySymbol}${absValue}`
 }
 
+const PRICE_THRESHOLD_NO_DECIMALS = 10000
+const PRICE_THRESHOLD_ONE_DECIMAL = 1000
+
+export const formatPrice = (value: number | undefined | null, currency?: string): string => {
+  if (value === null || value === undefined) return '0.00'
+
+  const absValue = Math.abs(value)
+  const currencySymbol = getCurrencySymbol(currency)
+
+  let fractionDigits: number
+  if (absValue >= PRICE_THRESHOLD_NO_DECIMALS) {
+    fractionDigits = 0
+  } else if (absValue >= PRICE_THRESHOLD_ONE_DECIMAL) {
+    fractionDigits = 1
+  } else {
+    fractionDigits = 2
+  }
+
+  const formatted = absValue.toLocaleString('en-US', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })
+
+  return `${currencySymbol}${formatted}`
+}
+
 export const getCurrencySymbol = (currency?: string): string => {
   switch (currency?.toUpperCase()) {
     case 'EUR':

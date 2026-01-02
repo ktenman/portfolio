@@ -3,6 +3,7 @@ import {
   formatCurrencyWithSymbol,
   formatCurrency,
   formatCurrencyWithSign,
+  formatPrice,
   getCurrencySymbol,
   formatNumber,
   formatPercentageFromDecimal,
@@ -119,6 +120,57 @@ describe('formatCurrencyWithSign', () => {
   it('should default to EUR for unknown currencies', () => {
     expect(formatCurrencyWithSign(100, 'JPY')).toBe('€100.00')
     expect(formatCurrencyWithSign(100, 'UNKNOWN')).toBe('€100.00')
+  })
+})
+
+describe('formatPrice', () => {
+  it('should format large prices with no decimals', () => {
+    expect(formatPrice(12345.67, 'EUR')).toBe('€12,346')
+    expect(formatPrice(99999.99, 'USD')).toBe('$100,000')
+    expect(formatPrice(10000, 'GBP')).toBe('£10,000')
+  })
+
+  it('should format medium prices with 1 decimal', () => {
+    expect(formatPrice(1234.56, 'EUR')).toBe('€1,234.6')
+    expect(formatPrice(9999.99, 'USD')).toBe('$10,000.0')
+    expect(formatPrice(1000, 'GBP')).toBe('£1,000.0')
+  })
+
+  it('should format small prices with 2 decimals', () => {
+    expect(formatPrice(123.45, 'EUR')).toBe('€123.45')
+    expect(formatPrice(12.34, 'USD')).toBe('$12.34')
+    expect(formatPrice(1.23, 'GBP')).toBe('£1.23')
+    expect(formatPrice(0.12, 'EUR')).toBe('€0.12')
+  })
+
+  it('should handle null and undefined values', () => {
+    expect(formatPrice(null)).toBe('0.00')
+    expect(formatPrice(undefined)).toBe('0.00')
+    expect(formatPrice(null, 'USD')).toBe('0.00')
+  })
+
+  it('should handle zero value', () => {
+    expect(formatPrice(0, 'EUR')).toBe('€0.00')
+    expect(formatPrice(0, 'USD')).toBe('$0.00')
+  })
+
+  it('should format negative numbers as absolute values', () => {
+    expect(formatPrice(-12345.67, 'EUR')).toBe('€12,346')
+    expect(formatPrice(-1234.56, 'USD')).toBe('$1,234.6')
+    expect(formatPrice(-123.45, 'GBP')).toBe('£123.45')
+  })
+
+  it('should default to EUR for undefined currency', () => {
+    expect(formatPrice(100)).toBe('€100.00')
+    expect(formatPrice(1234.56)).toBe('€1,234.6')
+    expect(formatPrice(12345.67)).toBe('€12,346')
+  })
+
+  it('should handle edge cases at thresholds', () => {
+    expect(formatPrice(999.99, 'EUR')).toBe('€999.99')
+    expect(formatPrice(1000, 'EUR')).toBe('€1,000.0')
+    expect(formatPrice(9999.9, 'EUR')).toBe('€9,999.9')
+    expect(formatPrice(10000, 'EUR')).toBe('€10,000')
   })
 })
 
