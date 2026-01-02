@@ -31,7 +31,8 @@ class LogoReplacementService(
       log.warn("Holding not found for UUID: $holdingUuid")
       return emptyList()
     }
-    val candidates = imageSearchLogoService.searchLogoCandidates(holding.name, MAX_CANDIDATES)
+    val searchQuery = buildSearchQuery(holding.name, holding.ticker)
+    val candidates = imageSearchLogoService.searchLogoCandidates(searchQuery, MAX_CANDIDATES)
     if (candidates.isEmpty()) {
       log.debug("No candidates found for holding: ${holding.name}")
       return emptyList()
@@ -105,6 +106,11 @@ class LogoReplacementService(
     log.info("Successfully replaced logo for holding: ${holding.name}")
     return true
   }
+
+  private fun buildSearchQuery(
+    name: String,
+    ticker: String?,
+  ): String = if (ticker.isNullOrBlank()) name else "$name $ticker"
 
   companion object {
     private const val MAX_CANDIDATES = 30
