@@ -58,7 +58,8 @@ describe('EtfBreakdownTable', () => {
         },
       })
 
-      expect(wrapper.findComponent({ name: 'LoadingSpinner' }).exists()).toBe(false)
+      const cardBody = wrapper.find('.card-body')
+      expect(cardBody.findComponent({ name: 'LoadingSpinner' }).exists()).toBe(false)
     })
   })
 

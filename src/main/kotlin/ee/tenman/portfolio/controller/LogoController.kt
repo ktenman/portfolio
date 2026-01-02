@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.dto.LogoCandidateDto
 import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.service.logo.LogoReplacementService
 import org.slf4j.LoggerFactory
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
@@ -8,6 +10,8 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
@@ -17,6 +21,7 @@ import java.util.concurrent.TimeUnit
 @RequestMapping("/api/logos")
 class LogoController(
   private val minioService: MinioService,
+  private val logoReplacementService: LogoReplacementService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -35,5 +40,27 @@ class LogoController(
     }
     log.debug("Logo not found for holding UUID: $uuid")
     return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+  }
+
+  @GetMapping("/{uuid}/candidates")
+  fun getLogoCandidates(
+    @PathVariable uuid: UUID,
+  ): ResponseEntity<List<LogoCandidateDto>> {
+    log.debug("Fetching logo candidates for holding UUID: $uuid")
+    val candidates = logoReplacementService.getCandidates(uuid)
+    return ResponseEntity.ok(candidates)
+  }
+
+  @PostMapping("/replace")
+  fun replaceLogo(
+    @RequestBody request: LogoReplacementRequest,
+  ): ResponseEntity<Map<String, Any>> {
+    log.info("Replacing logo for holding UUID: ${request.holdingUuid} with candidate index: ${request.candidateIndex}")
+    val success = logoReplacementService.replaceLogo(request.holdingUuid, request.candidateIndex)
+    return if (success) {
+      ResponseEntity.ok(mapOf("success" to true, "message" to "Logo replaced successfully"))
+    } else {
+      ResponseEntity.badRequest().body(mapOf("success" to false, "message" to "Failed to replace logo"))
+    }
   }
 }
