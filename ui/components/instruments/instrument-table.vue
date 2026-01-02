@@ -79,7 +79,7 @@
           </div>
           <div class="metric-group">
             <span class="metric-value">
-              {{ formatCurrencyWithSign(item.currentPrice, item.baseCurrency) }}
+              {{ formatPrice(item.currentPrice, item.baseCurrency) }}
             </span>
             <span class="metric-label">Price</span>
           </div>
@@ -219,7 +219,7 @@
 
     <template #cell-currentPrice="{ item }">
       <span :class="getChangeClass(item.id, 'currentPrice')">
-        {{ formatCurrencyWithSign(item.currentPrice, item.baseCurrency) }}
+        {{ formatPrice(item.currentPrice, item.baseCurrency) }}
       </span>
     </template>
 
@@ -296,6 +296,7 @@ import { instrumentColumns } from '../../config'
 import {
   getProfitClass,
   formatCurrencyWithSign,
+  formatPrice,
   formatQuantity,
   formatPercentageFromDecimal,
   formatPriceChange,
