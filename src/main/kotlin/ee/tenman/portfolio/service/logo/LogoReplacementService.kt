@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.service.logo
 
-import ee.tenman.portfolio.dto.LogoCandidateDto
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.dto.LogoCandidateDto
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
