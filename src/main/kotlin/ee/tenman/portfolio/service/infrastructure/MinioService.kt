@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.infrastructure
 
 import ee.tenman.portfolio.configuration.MinioProperties
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_LOGOS_CACHE
 import io.minio.GetObjectArgs
 import io.minio.MinioClient
 import io.minio.PutObjectArgs
@@ -27,7 +28,7 @@ class MinioService(
     contentType: String = "image/png",
   ) = uploadObject("logos/$uuid.png", logoData, contentType)
 
-  @Cacheable(value = ["etfLogos"], key = "'uuid-' + #uuid.toString()")
+  @Cacheable(value = [ETF_LOGOS_CACHE], key = "'uuid-' + #uuid.toString()")
   fun downloadLogo(uuid: UUID): ByteArray? = downloadObject("logos/$uuid.png")
 
   private fun objectExists(objectName: String): Boolean =
