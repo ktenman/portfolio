@@ -467,6 +467,24 @@
   animation: spin 1s linear infinite;
 }
 
+// Button spinner for inline loading states
+@keyframes btn-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spinner-rotate 0.75s linear infinite;
+  vertical-align: -0.125em;
+}
+
 // ========================================
 // Responsive Button Optimizations
 // ========================================
@@ -678,6 +696,14 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  // Exception: loading spinners should always animate for UX feedback
+  .loading-spinner,
+  .btn-spinner,
+  .spinner-border {
+    animation-duration: 0.75s !important;
+    animation-iteration-count: infinite !important;
   }
 }
 

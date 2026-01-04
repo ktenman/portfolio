@@ -787,4 +787,45 @@ class ArchitectureTest {
       )
     }
   }
+
+  @ArchTest
+  fun serviceClassesShouldNotExceedMaxLinesOfCode(classes: JavaClasses) {
+    val maxLinesOfCode = 300
+    val violations =
+      classes
+        .filter { isServiceClass(it) }
+        .mapNotNull { javaClass -> checkLineCount(javaClass, maxLinesOfCode) }
+    if (violations.isEmpty()) return
+    throw AssertionError(
+      "Service classes should not exceed $maxLinesOfCode lines of code:\n" +
+        violations.joinToString("\n") { "  - $it" },
+    )
+  }
+
+  private fun isServiceClass(javaClass: JavaClass): Boolean =
+    javaClass.packageName.startsWith("ee.tenman.portfolio.service") &&
+      !javaClass.simpleName.endsWith("Test") &&
+      !javaClass.simpleName.endsWith("IT") &&
+      !javaClass.simpleName.contains("$") &&
+      !javaClass.isInterface &&
+      javaClass.isAnnotatedWith(Service::class.java)
+
+  private fun checkLineCount(
+    javaClass: JavaClass,
+    maxLines: Int,
+  ): String? {
+    val sourceFile = findSourceFile(javaClass) ?: return null
+    val lineCount = sourceFile.readLines().size
+    if (lineCount <= maxLines) return null
+    return "${javaClass.simpleName} has $lineCount lines (max $maxLines) - consider splitting"
+  }
+
+  private fun findSourceFile(javaClass: JavaClass): java.io.File? {
+    val source = javaClass.source
+    if (!source.isPresent) return null
+    val fileName = source.get().fileName.orElse(null) ?: return null
+    val packagePath = javaClass.packageName.replace(".", "/")
+    val file = java.io.File("src/main/kotlin/$packagePath/$fileName")
+    return file.takeIf { it.exists() }
+  }
 }
