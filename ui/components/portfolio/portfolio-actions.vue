@@ -6,12 +6,7 @@
       @click="$emit('recalculate')"
       :disabled="isRecalculating || isLoading"
     >
-      <span
-        v-if="isRecalculating"
-        class="spinner-border spinner-border-sm me-1"
-        role="status"
-        aria-hidden="true"
-      ></span>
+      <span v-if="isRecalculating" class="btn-spinner me-1" role="status" aria-hidden="true"></span>
       {{ isRecalculating ? 'Recalculating...' : 'Recalculate Data' }}
     </button>
   </div>

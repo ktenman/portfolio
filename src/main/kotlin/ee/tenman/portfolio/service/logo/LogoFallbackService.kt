@@ -1,4 +1,5 @@
 package ee.tenman.portfolio.service.logo
+
 import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import org.slf4j.LoggerFactory
@@ -10,6 +11,7 @@ class LogoFallbackService(
   private val imageSearchLogoService: ImageSearchLogoService,
   private val logoValidationService: LogoValidationService,
   private val imageDownloadService: ImageDownloadService,
+  private val openRouterLogoSelectionService: OpenRouterLogoSelectionService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -20,7 +22,7 @@ class LogoFallbackService(
   ): LogoFetchResult? =
     tryLightyearLogo(lightyearLogoUrl)
       ?: tryNvstlyLogo(existingTicker)?.copy(ticker = existingTicker)
-      ?: tryImageSearchLogo(companyName)?.copy(ticker = existingTicker)
+      ?: tryLlmSelectedLogo(companyName, existingTicker)?.copy(ticker = existingTicker)
       ?: run {
         log.debug("All logo sources exhausted for company: $companyName")
         null
@@ -53,15 +55,24 @@ class LogoFallbackService(
     return LogoFetchResult(imageData = imageData, source = LogoSource.NVSTLY_ICONS, ticker = ticker)
   }
 
-  private fun tryImageSearchLogo(companyName: String): LogoFetchResult? {
+  private fun tryLlmSelectedLogo(
+    companyName: String,
+    ticker: String?,
+  ): LogoFetchResult? {
     if (companyName.isBlank()) return null
-    log.debug("Trying image search for company: $companyName")
-    val result = imageSearchLogoService.searchAndDownloadLogo(companyName) ?: return null
-    if (!logoValidationService.isValidLogo(result.imageData)) {
-      log.debug("Image search logo failed validation for company: $companyName")
+    log.debug("Trying LLM-selected logo for company: $companyName")
+    val searchQuery = LogoSearchQueryBuilder.buildQuery(companyName, ticker)
+    val candidates = imageSearchLogoService.searchLogoCandidates(searchQuery)
+    if (candidates.isEmpty()) {
+      log.debug("No logo candidates found for company: $companyName")
       return null
     }
-    log.info("Successfully fetched logo from ${result.source} for company: $companyName")
-    return LogoFetchResult(imageData = result.imageData, source = result.source)
+    val selectionResult = openRouterLogoSelectionService.selectBestLogo(companyName, ticker, candidates)
+    if (selectionResult == null) {
+      log.debug("LLM selection failed for company: $companyName")
+      return null
+    }
+    log.info("Successfully fetched logo from ${selectionResult.source} for company: $companyName")
+    return LogoFetchResult(imageData = selectionResult.imageData, source = selectionResult.source)
   }
 }

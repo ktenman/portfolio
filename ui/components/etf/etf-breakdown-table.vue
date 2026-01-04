@@ -38,16 +38,43 @@
       >
         <template #cell-holdingTicker="{ item }">
           <div class="ticker-cell">
-            <img
+            <div
               v-if="item.holdingUuid"
-              :src="utilityService.getLogoUrl(item.holdingUuid)"
-              :alt="item.holdingName"
-              class="company-logo"
-              @error="handleImageError"
-            />
-            <span class="ticker-symbol">
-              {{ item.holdingTicker || (item.holdingUuid ? '' : '-') }}
+              class="logo-container"
+              @click.stop="openLogoModal(item)"
+              :title="'Click to replace logo'"
+            >
+              <img
+                :src="getLogoUrl(item.holdingUuid)"
+                :alt="item.holdingName"
+                class="company-logo clickable"
+                @error="handleImageError"
+              />
+            </div>
+            <div v-else class="logo-placeholder" :title="'No logo available'">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+            </div>
+            <span
+              v-if="item.holdingUuid"
+              class="ticker-symbol clickable"
+              @click.stop="openLogoModal(item)"
+              title="Click to replace logo"
+            >
+              {{ item.holdingTicker || '' }}
             </span>
+            <span v-else class="ticker-symbol">-</span>
           </div>
         </template>
         <template #cell-holdingCountryName="{ item }">
@@ -64,7 +91,6 @@
             />
             <span class="flag-fallback" style="display: none">{{ item.holdingCountryCode }}</span>
           </div>
-          <span v-else>-</span>
         </template>
         <template #footer>
           <tr v-if="holdings.length > 0" class="table-footer-totals">
@@ -78,14 +104,21 @@
       </data-table>
     </div>
   </div>
+  <logo-replacement-modal
+    v-model="showLogoModal"
+    :holding-uuid="selectedHolding?.holdingUuid ?? null"
+    :holding-name="selectedHolding?.holdingName ?? ''"
+    @replaced="handleLogoReplaced"
+  />
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-models'
 import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
+import LogoReplacementModal from './logo-replacement-modal.vue'
 import { utilityService } from '../../services/utility-service'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatScientific } from '../../utils/formatters'
@@ -99,6 +132,39 @@ const props = defineProps<{
   selectedPlatforms?: string[]
   masterHoldings?: EtfHoldingBreakdownDto[]
 }>()
+
+const emit = defineEmits<{
+  logoReplaced: [holdingUuid: string]
+}>()
+
+const showLogoModal = ref(false)
+const selectedHolding = ref<EtfHoldingBreakdownDto | null>(null)
+
+const LOGO_VERSIONS_KEY = 'logoVersions'
+
+const loadLogoVersions = (): Record<string, number> => {
+  const stored = localStorage.getItem(LOGO_VERSIONS_KEY)
+  return stored ? JSON.parse(stored) : {}
+}
+
+const logoVersions = ref<Record<string, number>>(loadLogoVersions())
+
+const openLogoModal = (item: EtfHoldingBreakdownDto) => {
+  selectedHolding.value = item
+  showLogoModal.value = true
+}
+
+const handleLogoReplaced = (holdingUuid: string) => {
+  logoVersions.value[holdingUuid] = Date.now()
+  localStorage.setItem(LOGO_VERSIONS_KEY, JSON.stringify(logoVersions.value))
+  emit('logoReplaced', holdingUuid)
+}
+
+const getLogoUrl = (uuid: string): string => {
+  const version = logoVersions.value[uuid]
+  const baseUrl = utilityService.getLogoUrl(uuid)
+  return version ? `${baseUrl}?v=${version}` : baseUrl
+}
 
 const totalValue = computed(() => props.holdings.reduce((sum, h) => sum + h.totalValueEur, 0))
 
@@ -225,7 +291,7 @@ const columns: ColumnDefinition[] = [
     key: 'holdingCountryName',
     label: 'Country',
     sortable: true,
-    formatter: (value: string | null) => value || '-',
+    formatter: (value: string | null) => value || '',
   },
   {
     key: 'inEtfs',
@@ -278,6 +344,17 @@ const columns: ColumnDefinition[] = [
   gap: 0.5rem;
 }
 
+.logo-container {
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.logo-container:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 .company-logo {
   width: 32px;
   height: 32px;
@@ -288,8 +365,32 @@ const columns: ColumnDefinition[] = [
   padding: 2px;
 }
 
+.company-logo.clickable {
+  cursor: pointer;
+}
+
+.logo-placeholder {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border-radius: 50%;
+  color: #adb5bd;
+  flex-shrink: 0;
+}
+
 .ticker-symbol {
   font-weight: 600;
+}
+
+.ticker-symbol.clickable {
+  cursor: pointer;
+}
+
+.ticker-symbol.clickable:hover {
+  text-decoration: underline;
 }
 
 .country-flag {

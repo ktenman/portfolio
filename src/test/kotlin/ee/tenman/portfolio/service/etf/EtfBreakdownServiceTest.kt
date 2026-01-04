@@ -17,6 +17,7 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.transaction.TransactionCalculationService
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
@@ -34,7 +35,17 @@ class EtfBreakdownServiceTest {
   private val transactionRepository = mockk<PortfolioTransactionRepository>()
   private val dailyPriceService = mockk<DailyPriceService>()
   private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
+  private val holdingAggregationService = HoldingAggregationService()
   private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
+  private val transactionCalculationService = TransactionCalculationService(transactionRepository)
+  private val syntheticEtfCalculationService =
+    SyntheticEtfCalculationService(
+      instrumentRepository,
+      etfPositionRepository,
+      transactionCalculationService,
+      dailyPriceService,
+      clock,
+    )
   private val testDate = LocalDate.now(clock)
   private lateinit var etfBreakdownService: EtfBreakdownService
 
@@ -44,9 +55,11 @@ class EtfBreakdownServiceTest {
       EtfBreakdownService(
         instrumentRepository,
         etfPositionRepository,
-        transactionRepository,
         dailyPriceService,
         cacheInvalidationService,
+        holdingAggregationService,
+        syntheticEtfCalculationService,
+        transactionCalculationService,
         clock,
       )
   }
@@ -116,8 +129,8 @@ class EtfBreakdownServiceTest {
   @Test
   fun `should handle holdings without ticker using name`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
-    val holdingNoTicker1 = createHolding(1L, null, "Unknown Company", "Finance")
-    val holdingNoTicker2 = createHolding(2L, null, "unknown company", "Finance")
+    val holdingNoTicker1 = createHolding(1L, null, "Unknown Financial", "Finance")
+    val holdingNoTicker2 = createHolding(2L, null, "unknown financial", "Finance")
     val position1 =
       createPosition(etf1, holdingNoTicker1, BigDecimal("50.0000"), testDate)
     val position2 =
@@ -133,7 +146,7 @@ class EtfBreakdownServiceTest {
     val result = etfBreakdownService.getHoldingsBreakdown()
 
     expect(result).toHaveSize(1)
-    expect(result[0].holdingName).toEqual("Unknown Company")
+    expect(result[0].holdingName).toEqual("Unknown Financial")
   }
 
   @Test
@@ -223,6 +236,7 @@ class EtfBreakdownServiceTest {
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
     every { transactionRepository.findAllByInstrumentId(3L) } returns listOf(btcTransaction)
+    every { transactionRepository.findAllByInstrumentIds(listOf(3L)) } returns listOf(btcTransaction)
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
@@ -344,6 +358,82 @@ class EtfBreakdownServiceTest {
     expect(result[0].platforms).toEqual("LIGHTYEAR")
   }
 
+  @Test
+  fun `should merge holdings with different company suffixes like Co Ltd and Ltd`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holdingSamsungCoLtd = createHolding(1L, "005930", "Samsung Electronics Co Ltd", "Technology")
+    val holdingSamsungLtd = createHolding(2L, null, "Samsung Electronics Ltd", "Technology")
+    val position1 = createPosition(etf1, holdingSamsungCoLtd, BigDecimal("50.0000"), testDate)
+    val position2 = createPosition(etf2, holdingSamsungLtd, BigDecimal("50.0000"), testDate)
+    val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
+    val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
+    setupTwoEtfMergeScenario(etf1, etf2, position1, position2, transaction1, transaction2)
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].holdingName).toEqual("Samsung Electronics")
+    expect(result[0].holdingTicker).toEqual("005930")
+  }
+
+  @Test
+  fun `should merge holdings with ADR suffix`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holdingNiceAdr = createHolding(1L, "NICE", "Nice Ltd - Spon ADR", "Technology")
+    val holdingNice = createHolding(2L, null, "Nice", "Technology")
+    val position1 = createPosition(etf1, holdingNiceAdr, BigDecimal("50.0000"), testDate)
+    val position2 = createPosition(etf2, holdingNice, BigDecimal("50.0000"), testDate)
+    val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
+    val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
+    setupTwoEtfMergeScenario(etf1, etf2, position1, position2, transaction1, transaction2)
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].holdingName).toEqual("Nice")
+    expect(result[0].holdingTicker).toEqual("NICE")
+  }
+
+  @Test
+  fun `should merge Meta Platforms Inc with Meta`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holdingMetaPlatforms = createHolding(1L, "FB", "Meta Platforms, Inc. Cl A", "Technology")
+    val holdingMeta = createHolding(2L, "META", "Meta", "Technology")
+    val position1 = createPosition(etf1, holdingMetaPlatforms, BigDecimal("50.0000"), testDate)
+    val position2 = createPosition(etf2, holdingMeta, BigDecimal("50.0000"), testDate)
+    val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
+    val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
+    setupTwoEtfMergeScenario(etf1, etf2, position1, position2, transaction1, transaction2)
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].holdingName).toEqual("Meta")
+    expect(result[0].holdingTicker).toEqual("META")
+  }
+
+  @Test
+  fun `should merge Nice Systems with Nice`() {
+    val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holdingNiceSystems = createHolding(1L, "NICE", "Nice Systems", "Technology")
+    val holdingNice = createHolding(2L, "NICE", "Nice", "Technology")
+    val position1 = createPosition(etf1, holdingNiceSystems, BigDecimal("50.0000"), testDate)
+    val position2 = createPosition(etf2, holdingNice, BigDecimal("50.0000"), testDate)
+    val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
+    val transaction2 = createCashFlow(etf2, BigDecimal("10"), BigDecimal("100"))
+    setupTwoEtfMergeScenario(etf1, etf2, position1, position2, transaction1, transaction2)
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].holdingName).toEqual("Nice")
+    expect(result[0].holdingTicker).toEqual("NICE")
+  }
+
   private fun createInstrument(
     id: Long,
     symbol: String,
@@ -398,4 +488,23 @@ class EtfBreakdownServiceTest {
       transactionDate = testDate.minusDays(30),
       platform = platform,
     )
+
+  private fun setupTwoEtfMergeScenario(
+    etf1: Instrument,
+    etf2: Instrument,
+    position1: EtfPosition,
+    position2: EtfPosition,
+    transaction1: PortfolioTransaction,
+    transaction2: PortfolioTransaction,
+  ) {
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(etf1, etf2)
+    every { instrumentRepository.findByProviderName(ProviderName.FT) } returns emptyList()
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    every { instrumentRepository.findById(1L) } returns Optional.of(etf1)
+    every { instrumentRepository.findById(2L) } returns Optional.of(etf2)
+    every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position1)
+    every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
+    every { transactionRepository.findAllByInstrumentId(1L) } returns listOf(transaction1)
+    every { transactionRepository.findAllByInstrumentId(2L) } returns listOf(transaction2)
+  }
 }
