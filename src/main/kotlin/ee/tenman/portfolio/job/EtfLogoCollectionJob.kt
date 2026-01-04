@@ -2,7 +2,7 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
-import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.service.logo.LogoCacheService
 import ee.tenman.portfolio.service.logo.LogoFallbackService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -16,7 +16,7 @@ private const val DEFAULT_FIXED_DELAY = "14400000"
 class EtfLogoCollectionJob(
   private val etfHoldingRepository: EtfHoldingRepository,
   private val logoFallbackService: LogoFallbackService,
-  private val minioService: MinioService,
+  private val logoCacheService: LogoCacheService,
   private val imageProcessingService: ImageProcessingService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -46,11 +46,9 @@ class EtfLogoCollectionJob(
         .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }
         .getOrNull() ?: return
     val processedImage = imageProcessingService.resizeToMaxDimension(result.imageData)
-    runCatching { minioService.uploadLogo(holding.uuid, processedImage) }
-      .onSuccess {
-        log.info("Uploaded logo from ${result.source} for: ${holding.name}")
-        holding.logoSource = result.source
-        etfHoldingRepository.save(holding)
-      }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
+    logoCacheService.saveLogo(holding.uuid, processedImage)
+    log.info("Saved logo from ${result.source} for: ${holding.name}")
+    holding.logoSource = result.source
+    etfHoldingRepository.save(holding)
   }
 }

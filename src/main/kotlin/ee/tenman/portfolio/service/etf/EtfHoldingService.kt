@@ -5,7 +5,7 @@ import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
-import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.service.logo.LogoCacheService
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -15,7 +15,7 @@ import java.time.LocalDate
 @Service
 class EtfHoldingService(
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService,
-  private val minioService: MinioService,
+  private val logoCacheService: LogoCacheService,
   private val imageDownloadService: ImageDownloadService,
   private val imageProcessingService: ImageProcessingService,
 ) {
@@ -57,11 +57,9 @@ class EtfHoldingService(
         .onFailure { log.debug("Failed to download Lightyear logo for ${holding.name}: ${it.message}") }
         .getOrNull() ?: return
     val processedImage = imageProcessingService.resizeToMaxDimension(imageData)
-    runCatching { minioService.uploadLogo(holding.uuid, processedImage) }
-      .onSuccess {
-        log.info("Uploaded Lightyear logo for: ${holding.name}")
-        holding.logoSource = LogoSource.LIGHTYEAR
-        etfHoldingPersistenceService.saveHolding(holding)
-      }.onFailure { log.warn("Failed to upload logo for ${holding.name}: ${it.message}") }
+    logoCacheService.saveLogo(holding.uuid, processedImage)
+    log.info("Saved Lightyear logo for: ${holding.name}")
+    holding.logoSource = LogoSource.LIGHTYEAR
+    etfHoldingPersistenceService.saveHolding(holding)
   }
 }

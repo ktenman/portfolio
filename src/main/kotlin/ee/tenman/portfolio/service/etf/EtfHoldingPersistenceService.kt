@@ -66,11 +66,10 @@ class EtfHoldingPersistenceService(
     sector: String? = null,
   ): EtfHolding {
     val existing = etfHoldingRepository.findByNameIgnoreCase(name)
-    if (existing.isPresent) {
-      val holding = existing.get()
-      updateTickerIfMissing(holding, ticker)
-      updateSectorFromSourceIfMissing(holding, sector)
-      return holding
+    if (existing != null) {
+      updateTickerIfMissing(existing, ticker)
+      updateSectorFromSourceIfMissing(existing, sector)
+      return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
     return etfHoldingRepository.save(

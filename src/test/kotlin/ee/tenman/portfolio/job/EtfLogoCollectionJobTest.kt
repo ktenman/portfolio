@@ -6,7 +6,7 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
-import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.service.logo.LogoCacheService
 import ee.tenman.portfolio.service.logo.LogoFallbackService
 import ee.tenman.portfolio.service.logo.LogoFetchResult
 import io.mockk.every
@@ -19,14 +19,14 @@ import java.util.UUID
 class EtfLogoCollectionJobTest {
   private val etfHoldingRepository: EtfHoldingRepository = mockk(relaxed = true)
   private val logoFallbackService: LogoFallbackService = mockk()
-  private val minioService: MinioService = mockk(relaxed = true)
+  private val logoCacheService: LogoCacheService = mockk(relaxed = true)
   private val imageProcessingService: ImageProcessingService = mockk()
 
   private val job =
     EtfLogoCollectionJob(
       etfHoldingRepository = etfHoldingRepository,
       logoFallbackService = logoFallbackService,
-      minioService = minioService,
+      logoCacheService = logoCacheService,
       imageProcessingService = imageProcessingService,
     )
 
@@ -38,7 +38,7 @@ class EtfLogoCollectionJobTest {
     job.processHolding(1L)
 
     verify(exactly = 0) { logoFallbackService.fetchLogo(any(), any(), any()) }
-    verify(exactly = 0) { minioService.uploadLogo(any(), any(), any()) }
+    verify(exactly = 0) { logoCacheService.saveLogo(any(), any()) }
   }
 
   @Test
@@ -54,7 +54,7 @@ class EtfLogoCollectionJobTest {
 
     job.processHolding(1L)
 
-    verify(exactly = 1) { minioService.uploadLogo(holdingUuid, processedImage) }
+    verify(exactly = 1) { logoCacheService.saveLogo(holdingUuid, processedImage) }
     verify(exactly = 1) { etfHoldingRepository.save(holding) }
     expect(holding.logoSource).toEqual(LogoSource.NVSTLY_ICONS)
   }
@@ -67,7 +67,7 @@ class EtfLogoCollectionJobTest {
 
     job.processHolding(1L)
 
-    verify(exactly = 0) { minioService.uploadLogo(any(), any(), any()) }
+    verify(exactly = 0) { logoCacheService.saveLogo(any(), any()) }
     verify(exactly = 0) { etfHoldingRepository.save(any()) }
     expect(holding.logoSource).toEqual(null)
   }
@@ -78,7 +78,7 @@ class EtfLogoCollectionJobTest {
 
     job.processHolding(1L)
 
-    verify(exactly = 0) { minioService.uploadLogo(any(), any(), any()) }
+    verify(exactly = 0) { logoCacheService.saveLogo(any(), any()) }
   }
 
   @Test

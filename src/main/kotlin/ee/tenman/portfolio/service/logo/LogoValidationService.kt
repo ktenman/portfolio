@@ -9,6 +9,16 @@ import java.nio.ByteOrder
 class LogoValidationService {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  fun detectMediaType(imageData: ByteArray): String {
+    if (imageData.size < MIN_HEADER_SIZE) return MEDIA_TYPE_PNG
+    return when {
+      isPng(imageData) -> MEDIA_TYPE_PNG
+      isJpeg(imageData) -> MEDIA_TYPE_JPEG
+      isWebP(imageData) -> MEDIA_TYPE_WEBP
+      else -> MEDIA_TYPE_PNG
+    }
+  }
+
   fun isValidLogo(imageData: ByteArray): Boolean {
     if (imageData.isEmpty()) return false
     val dimensions = getImageDimensions(imageData) ?: return logAndReturnFalse("Could not determine image dimensions")
@@ -92,17 +102,58 @@ class LogoValidationService {
   }
 
   private fun getWebPDimensions(data: ByteArray): ImageDimensions? {
-    if (data.size <= 26) return null
+    if (data.size < 20) return null
     if (data[12] != 0x56.toByte() || data[13] != 0x50.toByte() || data[14] != 0x38.toByte()) return null
-    if (data[15] != 0x20.toByte()) return null
+    return when (data[15]) {
+      WEBP_VP8_LOSSY -> getVp8Dimensions(data)
+      WEBP_VP8L_LOSSLESS -> getVp8LDimensions(data)
+      WEBP_VP8X_EXTENDED -> getVp8XDimensions(data)
+      else -> null
+    }
+  }
+
+  private fun getVp8Dimensions(data: ByteArray): ImageDimensions? {
+    if (data.size <= 29) return null
     val width = ((data[26].toInt() and 0xFF) or ((data[27].toInt() and 0x3F) shl 8))
     val height = ((data[28].toInt() and 0xFF) or ((data[29].toInt() and 0x3F) shl 8))
     return ImageDimensions(width, height)
+  }
+
+  private fun getVp8LDimensions(data: ByteArray): ImageDimensions? {
+    if (data.size < 25) return null
+    val byte1 = data[21].toInt() and 0xFF
+    val byte2 = data[22].toInt() and 0xFF
+    val byte3 = data[23].toInt() and 0xFF
+    val byte4 = data[24].toInt() and 0xFF
+    val packed = byte1 or (byte2 shl 8) or (byte3 shl 16) or (byte4 shl 24)
+    val width = (packed and 0x3FFF) + 1
+    val height = ((packed shr 14) and 0x3FFF) + 1
+    return ImageDimensions(width, height)
+  }
+
+  private fun getVp8XDimensions(data: ByteArray): ImageDimensions? {
+    if (data.size < 30) return null
+    val widthMinus1 =
+      (data[24].toInt() and 0xFF) or
+      ((data[25].toInt() and 0xFF) shl 8) or
+      ((data[26].toInt() and 0xFF) shl 16)
+    val heightMinus1 =
+      (data[27].toInt() and 0xFF) or
+      ((data[28].toInt() and 0xFF) shl 8) or
+      ((data[29].toInt() and 0xFF) shl 16)
+    return ImageDimensions(widthMinus1 + 1, heightMinus1 + 1)
   }
 
   companion object {
     private const val MIN_DIMENSION = 32
     private const val MIN_ASPECT_RATIO = 0.9
     private const val MAX_ASPECT_RATIO = 1.1
+    private const val MIN_HEADER_SIZE = 4
+    private const val WEBP_VP8_LOSSY = 0x20.toByte()
+    private const val WEBP_VP8L_LOSSLESS = 0x4C.toByte()
+    private const val WEBP_VP8X_EXTENDED = 0x58.toByte()
+    const val MEDIA_TYPE_PNG = "image/png"
+    const val MEDIA_TYPE_JPEG = "image/jpeg"
+    const val MEDIA_TYPE_WEBP = "image/webp"
   }
 }

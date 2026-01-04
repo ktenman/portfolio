@@ -80,6 +80,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn } from '@vueuse/core'
 import { etfBreakdownService } from '../../services/etf-breakdown-service'
+import { logoService } from '../../services/logo-service'
 import {
   buildSectorChartData,
   buildCompanyChartData,
@@ -275,8 +276,18 @@ const toggleAllPlatforms = () => {
   }
 }
 
+const prefetchLogoCandidates = () => {
+  const uuids = masterHoldings.value
+    .map(h => h.holdingUuid)
+    .filter((uuid): uuid is string => uuid !== null)
+  if (uuids.length > 0) {
+    logoService.prefetchCandidates(uuids)
+  }
+}
+
 onMounted(async () => {
   await loadBreakdown()
+  prefetchLogoCandidates()
 })
 </script>
 
