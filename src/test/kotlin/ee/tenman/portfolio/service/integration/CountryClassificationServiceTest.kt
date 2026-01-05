@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.service.integration
 
-import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect

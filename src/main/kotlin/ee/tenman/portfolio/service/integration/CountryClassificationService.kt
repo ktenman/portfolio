@@ -144,6 +144,9 @@ class CountryClassificationService(
         CountryClassificationResult(countryCode = countryCode, countryName = countryName, model = model)
       log.info("Batch classified '${company.name}' as $countryName ($countryCode)")
     }
+    if (results.size < companies.size / 2) {
+      log.warn("Low parse success rate for country batch: ${results.size}/${companies.size}")
+    }
     log.info("Successfully parsed ${results.size}/${companies.size} batch results")
     return results
   }

@@ -17,37 +17,37 @@ class IndustryClassificationService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val CRYPTO_PATTERNS =
-      setOf(
+    private val CRYPTO_REGEXES =
+      listOf(
         "bitcoin",
         "btc",
         "ethereum",
-        "eth",
-        "bnb",
+        "\\beth\\b",
+        "\\bbnb\\b",
         "binance",
         "solana",
-        "sol",
+        "\\bsol\\b",
         "cardano",
-        "ada",
+        "\\bada\\b",
         "ripple",
-        "xrp",
+        "\\bxrp\\b",
         "dogecoin",
         "doge",
         "polkadot",
-        "dot",
+        "\\bdot\\b",
         "avalanche",
-        "avax",
+        "\\bavax\\b",
         "chainlink",
-        "link",
+        "\\blink\\b",
         "uniswap",
-        "uni",
+        "\\buni\\b",
         "litecoin",
-        "ltc",
+        "\\bltc\\b",
         "crypto",
         "blockchain",
         "defi",
-        "nft",
-      )
+        "\\bnft\\b",
+      ).map { Regex(it, RegexOption.IGNORE_CASE) }
   }
 
   fun classifyCompany(companyName: String): IndustrySector? = classifyCompanyWithModel(companyName)?.sector
@@ -68,10 +68,8 @@ class IndustryClassificationService(
     return classifyWithPrimaryModel(prompt, sanitizedName)
   }
 
-  private fun detectCryptocurrency(companyName: String): String? {
-    val lowerName = companyName.lowercase()
-    return CRYPTO_PATTERNS.find { pattern -> lowerName.contains(pattern) }
-  }
+  private fun detectCryptocurrency(companyName: String): String? =
+    CRYPTO_REGEXES.find { it.containsMatchIn(companyName) }?.pattern
 
   private fun classifyWithPrimaryModel(
     prompt: String,
@@ -197,6 +195,9 @@ class IndustryClassificationService(
       val company = companies[index]
       results[company.holdingId] = SectorClassificationResult(sector = sector, model = model)
       log.info("Batch classified '${company.name}' as ${sector.displayName}")
+    }
+    if (results.size < companies.size / 2) {
+      log.warn("Low parse success rate for sector batch: ${results.size}/${companies.size}")
     }
     log.info("Successfully parsed ${results.size}/${companies.size} batch sector results")
     return results
