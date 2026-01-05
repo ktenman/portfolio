@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.service.calculation
 
-import ch.tutteli.atrium.api.fluent.en_GB.and
 import ch.tutteli.atrium.api.fluent.en_GB.notToBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
@@ -263,16 +263,16 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
+    expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
   }
 
   @Test
-  fun `should calculateAdjustedXirr with fewer than 2 transactions returns zero`() {
+  fun `should calculateAdjustedXirr with fewer than 2 transactions returns null`() {
     val transactions = listOf(CashFlow(-1000.0, testDate))
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toEqual(0.0)
+    expect(xirr).toEqual(null)
   }
 
   @Test
@@ -286,7 +286,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toBeLessThan(10.0)
+    expect(xirr).notToEqualNull().toBeLessThan(10.0)
   }
 
   @Test
@@ -299,14 +299,14 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toEqual(0.0)
+    expect(xirr).toEqual(null)
   }
 
   @ParameterizedTest
   @MethodSource("provideXirrExtremeScenarios")
   fun `should calculateAdjustedXirr bounds extreme values`(
     cashFlows: List<CashFlow>,
-    expectedBehavior: (Double) -> Boolean,
+    expectedBehavior: (Double?) -> Boolean,
   ) {
     val xirr = xirrCalculationService.calculateAdjustedXirr(cashFlows, testDate)
 
@@ -568,7 +568,7 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr with very short investment period applies damping`() {
+  fun `should calculateAdjustedXirr with very short investment period returns null`() {
     val transactions =
       listOf(
         CashFlow(-1000.0, testDate.minusDays(15)),
@@ -577,8 +577,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toBeLessThan(10.0)
-    expect(xirr).toBeGreaterThanOrEqualTo(0.0)
+    expect(xirr).toEqual(null)
   }
 
   @Test
@@ -591,7 +590,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
+    expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
   }
 
   @Test
@@ -604,11 +603,11 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
+    expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
   }
 
   @Test
-  fun `should calculateAdjustedXirr handles exception and returns zero`() {
+  fun `should calculateAdjustedXirr handles exception and returns null`() {
     val transactions =
       listOf(
         CashFlow(-1000.0, testDate),
@@ -617,7 +616,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toEqual(0.0)
+    expect(xirr).toEqual(null)
   }
 
   @Test
@@ -809,7 +808,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
+    expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
   }
 
   @Test
@@ -1033,7 +1032,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toBeGreaterThanOrEqualTo(-10.0).and.toBeLessThanOrEqualTo(10.0)
+    expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
   }
 
   @Test
@@ -1098,17 +1097,17 @@ class InvestmentMetricsServiceTest {
       Stream.of(
         Arguments.of(
           listOf(
-            CashFlow(-1000.0, LocalDate.of(2024, 1, 1)),
-            CashFlow(100000.0, LocalDate.of(2024, 1, 30)),
+            CashFlow(-1000.0, LocalDate.of(2023, 12, 1)),
+            CashFlow(100000.0, LocalDate.of(2024, 1, 15)),
           ),
-          { xirr: Double -> xirr <= 10.0 },
+          { xirr: Double? -> xirr != null && xirr <= 10.0 },
         ),
         Arguments.of(
           listOf(
-            CashFlow(-10000.0, LocalDate.of(2024, 1, 1)),
-            CashFlow(100.0, LocalDate.of(2024, 1, 30)),
+            CashFlow(-10000.0, LocalDate.of(2023, 12, 1)),
+            CashFlow(100.0, LocalDate.of(2024, 1, 15)),
           ),
-          { xirr: Double -> xirr >= -10.0 },
+          { xirr: Double? -> xirr != null && xirr >= -10.0 },
         ),
       )
   }

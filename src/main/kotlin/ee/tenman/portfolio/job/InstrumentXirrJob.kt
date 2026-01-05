@@ -79,7 +79,7 @@ class InstrumentXirrJob(
       return instrument.symbol to true
     }
     val xirr = xirrCalculationService.calculateAdjustedXirr(cashFlows, calculationDate)
-    val xirrValue = BigDecimal.valueOf(xirr).setScale(10, RoundingMode.HALF_UP)
+    val xirrValue = xirr?.let { BigDecimal.valueOf(it).setScale(10, RoundingMode.HALF_UP) }
     instrumentService.updateXirrAnnualReturn(instrument.id, xirrValue)
     instrument.symbol to true
   }.getOrElse { e ->

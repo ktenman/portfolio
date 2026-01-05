@@ -41,6 +41,10 @@ class EtfLogoCollectionJob(
   private fun processHoldingInternal(holdingId: Long) {
     val holding = etfHoldingRepository.findById(holdingId).orElse(null) ?: return
     if (holding.logoSource != null) return
+    if (holding.countryCode.isNullOrBlank()) {
+      log.info("Skipping logo fetch for ${holding.name}: no country code")
+      return
+    }
     val result =
       runCatching { logoFallbackService.fetchLogo(holding.name, holding.ticker, null) }
         .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }

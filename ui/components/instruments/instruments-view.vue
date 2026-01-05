@@ -146,7 +146,7 @@ const items = computed(() => {
     .sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0))
 })
 
-const portfolioXirr = computed(() => rawItems.value?.portfolioXirr ?? 0)
+const portfolioXirr = computed(() => rawItems.value?.portfolioXirr ?? null)
 
 const saveMutation = useMutation({
   mutationFn: (data: Partial<InstrumentDto>) => {

@@ -33,8 +33,8 @@ class LogoFallbackService(
     log.debug("Trying Lightyear logo URL: $logoUrl")
     val imageData =
       runCatching { imageDownloadService.download(logoUrl) }
-      .onFailure { log.debug("Failed to download Lightyear logo: ${it.message}") }
-      .getOrNull() ?: return null
+        .onFailure { log.debug("Failed to download Lightyear logo: ${it.message}") }
+        .getOrNull() ?: return null
     if (!logoValidationService.isValidLogo(imageData)) {
       log.debug("Lightyear logo failed validation")
       return null

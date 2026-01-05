@@ -149,7 +149,7 @@ export const formatNumber = (value: number | undefined | null): string => {
 }
 
 export const formatPercentageFromDecimal = (value: number | undefined | null): string => {
-  if (value === null || value === undefined) return '0.00%'
+  if (value === null || value === undefined) return 'N/A'
   return `${(value * 100).toFixed(2)}%`
 }
 
