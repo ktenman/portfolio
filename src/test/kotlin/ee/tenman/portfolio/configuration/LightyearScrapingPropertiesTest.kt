@@ -8,19 +8,16 @@ import org.junit.jupiter.api.Test
 
 class LightyearScrapingPropertiesTest {
   @Test
-  fun `getAllInstruments should combine etfs and additional instruments`() {
+  fun `getAllInstruments should return all configured etfs`() {
     val properties =
       LightyearScrapingProperties(
-      etfs =
-        listOf(
-        LightyearScrapingProperties.EtfConfig(symbol = "VUAA", uuid = "uuid-1"),
-        LightyearScrapingProperties.EtfConfig(symbol = "VWCE", uuid = "uuid-2"),
-      ),
-        additionalInstruments =
+        etfs =
           listOf(
-        LightyearScrapingProperties.EtfConfig(symbol = "WTAI:MIL:EUR", uuid = "uuid-3"),
-      ),
-          )
+            LightyearScrapingProperties.EtfConfig(symbol = "VUAA", uuid = "uuid-1"),
+            LightyearScrapingProperties.EtfConfig(symbol = "VWCE", uuid = "uuid-2"),
+            LightyearScrapingProperties.EtfConfig(symbol = "WTAI:MIL:EUR", uuid = "uuid-3"),
+          ),
+      )
 
     val result = properties.getAllInstruments()
 
@@ -80,11 +77,11 @@ class LightyearScrapingPropertiesTest {
   fun `findUuidBySymbol should match by prefix when full symbol contains colon`() {
     val properties =
       LightyearScrapingProperties(
-      additionalInstruments =
-        listOf(
-        LightyearScrapingProperties.EtfConfig(symbol = "WTAI:MIL:EUR", uuid = "uuid-3"),
-      ),
-        )
+        etfs =
+          listOf(
+            LightyearScrapingProperties.EtfConfig(symbol = "WTAI:MIL:EUR", uuid = "uuid-3"),
+          ),
+      )
 
     val result = properties.findUuidBySymbol("WTAI")
 
