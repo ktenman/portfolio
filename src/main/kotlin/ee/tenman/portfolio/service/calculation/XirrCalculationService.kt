@@ -18,6 +18,11 @@ class XirrCalculationService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  companion object {
+    private const val MIN_DAYS_FOR_XIRR = 30.0
+    private const val FULL_DAMPING_DAYS = 90.0
+  }
+
   fun buildCashFlows(
     transactions: List<PortfolioTransaction>,
     currentValue: BigDecimal,
@@ -35,18 +40,19 @@ class XirrCalculationService(
   fun calculateAdjustedXirr(
     cashFlows: List<CashFlow>,
     calculationDate: LocalDate = LocalDate.now(clock),
-  ): Double {
-    if (cashFlows.size < 2) return 0.0
+  ): Double? {
+    if (cashFlows.size < 2) return null
     return runCatching {
-      val xirrResult = Xirr(cashFlows)()
       val outflows = cashFlows.filter { it.amount < 0 }
-      if (outflows.isEmpty()) return@runCatching 0.0
+      if (outflows.isEmpty()) return@runCatching null
       val weightedDays = calculateWeightedInvestmentAge(outflows, calculationDate)
-      val dampingFactor = min(1.0, weightedDays / 60.0)
+      if (weightedDays < MIN_DAYS_FOR_XIRR) return@runCatching null
+      val xirrResult = Xirr(cashFlows)()
+      val dampingFactor = min(1.0, weightedDays / FULL_DAMPING_DAYS)
       xirrResult.coerceIn(-10.0, 10.0) * dampingFactor
     }.getOrElse {
       log.error("Error calculating adjusted XIRR", it)
-      0.0
+      null
     }
   }
 

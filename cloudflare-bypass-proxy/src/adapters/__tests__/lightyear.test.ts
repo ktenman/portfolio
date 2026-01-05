@@ -48,7 +48,7 @@ describe('Lightyear Adapter', () => {
     const expectedEncodedPath = Buffer.from(path).toString('base64').replace(/=+$/, '')
     expect(executeCurl).toHaveBeenCalledWith({
       url: `https://lightyear.com/fetch?path=${expectedEncodedPath}&withAPIKey=true`,
-      timeout: 15000,
+      timeout: 10000,
       maxBuffer: 1024 * 1024,
       headers: {
         'user-agent':

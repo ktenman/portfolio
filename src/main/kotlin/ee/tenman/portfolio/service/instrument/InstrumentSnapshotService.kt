@@ -81,7 +81,7 @@ class InstrumentSnapshotService(
   private fun calculatePortfolioXirr(
     snapshotsWithTransactions: List<Pair<InstrumentSnapshot, List<PortfolioTransaction>>>,
     calculationDate: LocalDate,
-  ): Double {
+  ): Double? {
     val allCashFlows = mutableListOf<ee.tenman.portfolio.service.calculation.xirr.CashFlow>()
     var totalCurrentValue = BigDecimal.ZERO
     snapshotsWithTransactions.forEach { (snapshot, transactions) ->

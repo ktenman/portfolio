@@ -195,6 +195,8 @@ scraping:
         uuid: "1ef669ad-df78-6d52-af15-0ffcdec674e6"
       - symbol: "DFND:PAR:EUR"
         uuid: "1efc26c6-bdb9-61c9-a75b-85fa9e28d0c0"
+      - symbol: "IS3S:GER:EUR"
+        uuid: "1edb2311-2025-62c7-8923-ad904e77bd1a"
     additional-instruments:
       - symbol: "WTAI:MIL:EUR"
         uuid: "1f02fdcc-38f9-67b8-ad1b-a71ae2564bd4"

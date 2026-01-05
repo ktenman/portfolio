@@ -63,11 +63,12 @@ class DailySummaryCalculator(
     metrics: PortfolioMetrics,
   ): PortfolioDailySummary {
     val xirr = xirrCalculationService.calculateAdjustedXirr(metrics.xirrCashFlows, date)
-    val earningsPerDay = calculateEarningsPerDay(metrics.totalValue, BigDecimal(xirr))
+    val xirrBigDecimal = xirr?.let { BigDecimal(it) } ?: BigDecimal.ZERO
+    val earningsPerDay = calculateEarningsPerDay(metrics.totalValue, xirrBigDecimal)
     return PortfolioDailySummary(
       entryDate = date,
       totalValue = metrics.totalValue.setScale(CALCULATION_SCALE, RoundingMode.HALF_UP),
-      xirrAnnualReturn = BigDecimal(xirr).setScale(CALCULATION_SCALE, RoundingMode.HALF_UP),
+      xirrAnnualReturn = xirrBigDecimal.setScale(CALCULATION_SCALE, RoundingMode.HALF_UP),
       realizedProfit = metrics.realizedProfit.setScale(CALCULATION_SCALE, RoundingMode.HALF_UP),
       unrealizedProfit = metrics.unrealizedProfit.setScale(CALCULATION_SCALE, RoundingMode.HALF_UP),
       totalProfit = metrics.totalProfit.setScale(CALCULATION_SCALE, RoundingMode.HALF_UP),

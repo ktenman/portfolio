@@ -37,7 +37,7 @@ class HoldingAggregationServiceTest {
 
       expect(result.size).toEqual(1)
       val entry = result.entries.first()
-      expect(entry.key.name).toEqual("Apple")
+      expect(entry.key.name).toEqual("Apple Inc")
       expect(entry.key.ticker).toEqual("AAPL")
       expect(entry.value.totalValue).toEqualNumerically(BigDecimal("100.00"))
       expect(entry.value.etfSymbols).toContainExactly("VWCE")
@@ -48,7 +48,7 @@ class HoldingAggregationServiceTest {
       val holdings =
         listOf(
           createHolding("Apple Inc", "AAPL", BigDecimal("100.00"), "VWCE"),
-          createHolding("Apple Inc.", "AAPL", BigDecimal("50.00"), "VUAA"),
+          createHolding("Apple Inc", "AAPL", BigDecimal("50.00"), "VUAA"),
         )
 
       val result = service.aggregateHoldings(holdings)
@@ -77,7 +77,7 @@ class HoldingAggregationServiceTest {
       val holdings =
         listOf(
           createHolding("NVIDIA Corp", "NVDA", BigDecimal("50.00"), "VWCE"),
-          createHolding("NVIDIA Corporation", null, BigDecimal("30.00"), "VUAA"),
+          createHolding("NVIDIA Corp", null, BigDecimal("30.00"), "VUAA"),
         )
 
       val result = service.aggregateHoldings(holdings)
@@ -106,33 +106,33 @@ class HoldingAggregationServiceTest {
   @Nested
   inner class NormalizeHoldingName {
     @Test
-    fun `should remove Inc suffix`() {
-      expect(service.normalizeHoldingName("Apple Inc")).toEqual("apple")
+    fun `should keep company name with Inc suffix`() {
+      expect(service.normalizeHoldingName("Apple Inc")).toEqual("apple inc")
     }
 
     @Test
-    fun `should remove Corp suffix`() {
-      expect(service.normalizeHoldingName("Microsoft Corp")).toEqual("microsoft")
+    fun `should keep company name with Corp suffix`() {
+      expect(service.normalizeHoldingName("Microsoft Corp")).toEqual("microsoft corp")
     }
 
     @Test
-    fun `should remove Ltd suffix`() {
-      expect(service.normalizeHoldingName("British Ltd")).toEqual("british")
+    fun `should keep company name with Ltd suffix`() {
+      expect(service.normalizeHoldingName("British Ltd")).toEqual("british ltd")
     }
 
     @Test
-    fun `should remove LLC suffix`() {
-      expect(service.normalizeHoldingName("Acme LLC")).toEqual("acme")
+    fun `should keep company name with LLC suffix`() {
+      expect(service.normalizeHoldingName("Acme LLC")).toEqual("acme llc")
     }
 
     @Test
-    fun `should remove dot com suffix`() {
-      expect(service.normalizeHoldingName("Amazon.com")).toEqual("amazon")
+    fun `should keep dot com suffix`() {
+      expect(service.normalizeHoldingName("Amazon.com")).toEqual("amazon.com")
     }
 
     @Test
-    fun `should remove multiple suffixes`() {
-      expect(service.normalizeHoldingName("Acme Holdings Inc")).toEqual("acme")
+    fun `should keep full company name`() {
+      expect(service.normalizeHoldingName("Acme Holdings Inc")).toEqual("acme holdings inc")
     }
 
     @Test
@@ -146,18 +146,18 @@ class HoldingAggregationServiceTest {
     }
 
     @Test
-    fun `should remove Class A suffix`() {
-      expect(service.normalizeHoldingName("Alphabet Class A")).toEqual("alphabet")
+    fun `should keep Class A suffix`() {
+      expect(service.normalizeHoldingName("Alphabet Class A")).toEqual("alphabet class a")
     }
 
     @Test
-    fun `should remove ADR suffix`() {
-      expect(service.normalizeHoldingName("Taiwan Semi Spon ADR")).toEqual("taiwan semi")
+    fun `should keep ADR suffix`() {
+      expect(service.normalizeHoldingName("Taiwan Semi Spon ADR")).toEqual("taiwan semi spon adr")
     }
 
     @Test
-    fun `should handle company with only suffix`() {
-      expect(service.normalizeHoldingName("Holdings")).toEqual("")
+    fun `should keep Holdings as company name`() {
+      expect(service.normalizeHoldingName("Holdings")).toEqual("holdings")
     }
   }
 

@@ -45,7 +45,7 @@
         </td>
         <td class="fw-bold text-nowrap">
           <span :class="getTotalsChangeClass('totalXirr')">
-            {{ formatPercentageFromDecimal(animatedTotalXirr) }}
+            {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}
           </span>
         </td>
         <td class="fw-bold text-nowrap d-none d-xl-table-cell">
@@ -184,7 +184,7 @@
           <div class="total-item">
             <span class="total-label">XIRR</span>
             <span class="total-value" :class="getTotalsChangeClass('totalXirr')">
-              {{ formatPercentageFromDecimal(animatedTotalXirr) }}
+              {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}
             </span>
           </div>
           <div class="total-item">
@@ -310,7 +310,7 @@ import { useInstrumentTotals } from '../../composables/use-instrument-totals'
 
 interface Props {
   instruments: InstrumentDto[]
-  portfolioXirr: number
+  portfolioXirr: number | null
   isLoading?: boolean
   isError?: boolean
   errorMessage?: string
@@ -318,7 +318,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  portfolioXirr: 0,
+  portfolioXirr: null,
   isLoading: false,
   isError: false,
   selectedPeriod: '24h',
@@ -346,16 +346,17 @@ const {
 } = useInstrumentTotals(instrumentsRef)
 
 const totalXirr = computed(() => props.portfolioXirr)
+const totalXirrForAnimation = computed(() => props.portfolioXirr ?? 0)
 
 watch(
-  [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount, totalXirr],
+  [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount, totalXirrForAnimation],
   () => {
     trackTotalsChange({
       totalValue: totalValue.value,
       totalProfit: totalProfit.value,
       totalUnrealizedProfit: totalUnrealizedProfit.value,
       totalChangeAmount: totalChangeAmount.value,
-      totalXirr: totalXirr.value,
+      totalXirr: totalXirrForAnimation.value,
     })
   },
   { deep: true }
@@ -365,7 +366,7 @@ const animatedTotalValue = useNumberTransition(totalValue)
 const animatedTotalProfit = useNumberTransition(totalProfit)
 const animatedTotalUnrealizedProfit = useNumberTransition(totalUnrealizedProfit)
 const animatedTotalChangeAmount = useNumberTransition(totalChangeAmount)
-const animatedTotalXirr = useNumberTransition(totalXirr)
+const animatedTotalXirr = useNumberTransition(totalXirrForAnimation)
 const animatedTotalChangePercent = useNumberTransition(totalChangePercent)
 const totalAnnualReturnForAnimation = computed(() => totalAnnualReturn.value ?? 0)
 const animatedTotalAnnualReturn = useNumberTransition(totalAnnualReturnForAnimation)

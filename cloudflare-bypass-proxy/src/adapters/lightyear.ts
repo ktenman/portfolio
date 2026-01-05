@@ -22,7 +22,7 @@ async function fetchHandler(req: Request, res: Response): Promise<void> {
 
   await handleProxyRequest(req, res, {
     url: `${LIGHTYEAR_FETCH_URL}?path=${encodedPath}&withAPIKey=true`,
-    timeout: 15000,
+    timeout: 10000,
     maxBuffer: 1024 * 1024,
     responseType: ResponseType.JSON,
     headers: {
@@ -58,7 +58,7 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
         'User-Agent': CHROME_USER_AGENT,
       },
       body: JSON.stringify(instrumentIds),
-      timeout: 30000,
+      timeout: 10000,
       maxBuffer: 5 * 1024 * 1024,
     })
 
@@ -84,7 +84,7 @@ export const lightyearAdapter: ServiceAdapter = {
   path: '/lightyear/fetch',
   method: 'GET',
   serviceName: 'Lightyear',
-  middleware: [createRateLimiter({ max: 100 })],
+  middleware: [createRateLimiter({ max: 200 })],
   handler: fetchHandler,
 }
 
@@ -92,7 +92,7 @@ export const lightyearBatchAdapter: ServiceAdapter = {
   path: '/lightyear/batch',
   method: 'POST',
   serviceName: 'Lightyear Batch',
-  middleware: [createRateLimiter({ max: 100 })],
+  middleware: [createRateLimiter({ max: 200 })],
   handler: batchHandler,
 }
 
@@ -134,7 +134,7 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
     const searchUrl = `${LIGHTYEAR_FETCH_URL}?path=${encodedPath}&withAPIKey=true`
     result = await execCurl({
       url: searchUrl,
-      timeout: 15000,
+      timeout: 10000,
       maxBuffer: 1024 * 1024,
       headers: {
         'User-Agent': CHROME_USER_AGENT,
@@ -198,6 +198,6 @@ export const lightyearLookupAdapter: ServiceAdapter = {
   path: '/lightyear/lookup',
   method: 'GET',
   serviceName: 'Lightyear Lookup',
-  middleware: [createRateLimiter({ max: 100 })],
+  middleware: [createRateLimiter({ max: 200 })],
   handler: lookupUuidHandler,
 }

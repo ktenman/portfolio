@@ -4,7 +4,6 @@ import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
-import ee.tenman.portfolio.job.WisdomTreeDataUpdateJob
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +17,6 @@ class PriceRefreshService(
   private val lightyearHistoricalDataRetrievalJob: LightyearHistoricalDataRetrievalJob?,
   private val lightyearPriceRetrievalJob: LightyearPriceRetrievalJob?,
   private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob?,
-  private val wisdomTreeDataUpdateJob: WisdomTreeDataUpdateJob?,
   private val cacheInvalidationService: CacheInvalidationService,
   private val transactionService: TransactionService,
 ) {
@@ -35,14 +33,6 @@ class PriceRefreshService(
       return "ETF holdings classification job triggered"
     }
     return "ETF holdings classification job not available"
-  }
-
-  fun triggerWisdomTreeDataUpdate(): String {
-    wisdomTreeDataUpdateJob?.let { job ->
-      launchJob { job.execute() }
-      return "WisdomTree data update job triggered"
-    }
-    return "WisdomTree data update job not available"
   }
 
   private fun triggerPriceRetrievalJobs() {

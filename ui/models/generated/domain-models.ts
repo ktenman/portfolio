@@ -1,5 +1,5 @@
 /* tslint:disable */
- 
+/* eslint-disable */
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -32,7 +32,7 @@ export interface InstrumentDto {
  */
 export interface InstrumentsResponse {
     instruments: InstrumentDto[];
-    portfolioXirr: number;
+    portfolioXirr: number | null;
 }
 
 export interface TransactionRequestDto {

@@ -75,9 +75,22 @@ class LogoCacheServiceTest {
   @Nested
   inner class SaveLogo {
     @Test
-    fun `should return logo data after saving`() {
+    fun `should save logo data to cache and return it`() {
       val uuid = UUID.randomUUID()
       val logoData = "test-logo".toByteArray()
+      every { cache.put(uuid.toString(), logoData) } returns Unit
+
+      val result = service.saveLogo(uuid, logoData)
+
+      expect(result).toEqual(logoData)
+      verify { cache.put(uuid.toString(), logoData) }
+    }
+
+    @Test
+    fun `should handle null cache gracefully`() {
+      val uuid = UUID.randomUUID()
+      val logoData = "test-logo".toByteArray()
+      every { cacheManager.getCache(ETF_LOGOS_CACHE) } returns null
 
       val result = service.saveLogo(uuid, logoData)
 

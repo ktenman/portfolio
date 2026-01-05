@@ -44,7 +44,7 @@ class EtfLogoCollectionJobTest {
   @Test
   fun `should fetch and upload logo when logo source is null`() {
     val holdingUuid = UUID.randomUUID()
-    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = "AAPL", uuid = holdingUuid)
+    val holding = createHolding(id = 1L, name = "Apple Inc", ticker = "AAPL", uuid = holdingUuid, countryCode = "US")
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     val processedImage = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x00)
     val logoResult = LogoFetchResult(imageData = imageData, source = LogoSource.NVSTLY_ICONS)
@@ -60,8 +60,19 @@ class EtfLogoCollectionJobTest {
   }
 
   @Test
+  fun `should skip logo fetch when holding has no country code`() {
+    val holding = createHolding(id = 1L, name = "Unknown Corp", ticker = "UNK")
+    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
+
+    job.processHolding(1L)
+
+    verify(exactly = 0) { logoFallbackService.fetchLogo(any(), any(), any()) }
+    verify(exactly = 0) { logoCacheService.saveLogo(any(), any()) }
+  }
+
+  @Test
   fun `should not save when no logo found from any source`() {
-    val holding = createHolding(id = 1L, name = "Unknown Corp")
+    val holding = createHolding(id = 1L, name = "Unknown Corp", countryCode = "US")
     every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
     every { logoFallbackService.fetchLogo("Unknown Corp", null, null) } returns null
 
@@ -96,10 +107,12 @@ class EtfLogoCollectionJobTest {
     ticker: String? = null,
     logoSource: LogoSource? = null,
     uuid: UUID? = null,
+    countryCode: String? = null,
   ): EtfHolding =
     EtfHolding(name = name, ticker = ticker).apply {
       this.id = id
       this.logoSource = logoSource
+      this.countryCode = countryCode
       if (uuid != null) this.uuid = uuid
     }
 }

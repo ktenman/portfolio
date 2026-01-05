@@ -2,16 +2,37 @@ package ee.tenman.portfolio.service.infrastructure
 
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
+import java.net.URI
 
 @Service
 class ImageDownloadService(
   private val restClient: RestClient,
 ) {
-  fun download(url: String): ByteArray =
-    restClient
+  fun download(url: String): ByteArray {
+    validateUrl(url)
+    val data =
+      restClient
       .get()
       .uri(url)
       .retrieve()
       .body(ByteArray::class.java)
       ?: error("Empty response from $url")
+    if (data.size > MAX_DOWNLOAD_SIZE_BYTES) {
+      error("Image too large: ${data.size} bytes exceeds limit of $MAX_DOWNLOAD_SIZE_BYTES")
+    }
+    return data
+  }
+
+  private fun validateUrl(url: String) {
+    val uri = runCatching { URI(url) }.getOrElse { error("Invalid URL: $url") }
+    val scheme = uri.scheme?.lowercase()
+    if (scheme !in ALLOWED_SCHEMES) {
+      error("Invalid URL scheme: $scheme (allowed: $ALLOWED_SCHEMES)")
+    }
+  }
+
+  companion object {
+    private val ALLOWED_SCHEMES = setOf("http", "https")
+    private const val MAX_DOWNLOAD_SIZE_BYTES = 2 * 1024 * 1024
+  }
 }

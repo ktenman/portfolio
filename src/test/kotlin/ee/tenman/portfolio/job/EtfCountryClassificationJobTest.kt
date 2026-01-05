@@ -43,24 +43,7 @@ class EtfCountryClassificationJobTest {
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
     every { etfHoldingPersistenceService.findEtfNamesForHoldings(listOf(1L)) } returns mapOf(1L to listOf("VWCE"))
     every { countryClassificationService.isNonCompanyHolding("Unknown Corp") } returns false
-    every { countryClassificationService.classifyCompanyCountryWithModel("Unknown Corp", "UNK", listOf("VWCE")) } returns null
-
-    job.execute()
-
-    verify(exactly = 1) { etfHoldingPersistenceService.incrementCountryFetchAttempts(1L) }
-    verify(exactly = 0) { etfHoldingPersistenceService.updateCountry(any(), any(), any(), any()) }
-  }
-
-  @Test
-  fun `should increment attempts when exception occurs during classification`() {
-    val holding = createHolding(id = 1L, name = "Error Corp", ticker = "ERR")
-    every { etfHoldingPersistenceService.findUnclassifiedByCountryHoldingIds() } returns listOf(1L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
-    every { etfHoldingPersistenceService.findEtfNamesForHoldings(listOf(1L)) } returns mapOf(1L to listOf("VWCE"))
-    every { countryClassificationService.isNonCompanyHolding("Error Corp") } returns false
-    every {
-      countryClassificationService.classifyCompanyCountryWithModel("Error Corp", "ERR", listOf("VWCE"))
-    } throws RuntimeException("API error")
+    every { countryClassificationService.classifyBatch(any()) } returns emptyMap()
 
     job.execute()
 
@@ -76,7 +59,7 @@ class EtfCountryClassificationJobTest {
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
     every { etfHoldingPersistenceService.findEtfNamesForHoldings(listOf(1L)) } returns mapOf(1L to listOf("VWCE"))
     every { countryClassificationService.isNonCompanyHolding("Apple Inc") } returns false
-    every { countryClassificationService.classifyCompanyCountryWithModel("Apple Inc", "AAPL", listOf("VWCE")) } returns classificationResult
+    every { countryClassificationService.classifyBatch(any()) } returns mapOf(1L to classificationResult)
 
     job.execute()
 
@@ -96,7 +79,7 @@ class EtfCountryClassificationJobTest {
 
     verify(exactly = 0) { etfHoldingPersistenceService.incrementCountryFetchAttempts(any()) }
     verify(exactly = 0) { etfHoldingPersistenceService.updateCountry(any(), any(), any(), any()) }
-    verify(exactly = 0) { countryClassificationService.classifyCompanyCountryWithModel(any(), any(), any()) }
+    verify(exactly = 0) { countryClassificationService.classifyBatch(any()) }
   }
 
   @Test
@@ -109,7 +92,7 @@ class EtfCountryClassificationJobTest {
     job.execute()
 
     verify(exactly = 0) { etfHoldingPersistenceService.incrementCountryFetchAttempts(any()) }
-    verify(exactly = 0) { countryClassificationService.classifyCompanyCountryWithModel(any(), any(), any()) }
+    verify(exactly = 0) { countryClassificationService.classifyBatch(any()) }
   }
 
   @Test
@@ -119,7 +102,7 @@ class EtfCountryClassificationJobTest {
     job.execute()
 
     verify(exactly = 0) { etfHoldingPersistenceService.findAllByIds(any()) }
-    verify(exactly = 0) { countryClassificationService.classifyCompanyCountryWithModel(any(), any(), any()) }
+    verify(exactly = 0) { countryClassificationService.classifyBatch(any()) }
   }
 
   @Test
@@ -131,8 +114,7 @@ class EtfCountryClassificationJobTest {
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
     every { etfHoldingPersistenceService.findEtfNamesForHoldings(listOf(1L, 2L)) } returns mapOf(1L to emptyList(), 2L to emptyList())
     every { countryClassificationService.isNonCompanyHolding(any()) } returns false
-    every { countryClassificationService.classifyCompanyCountryWithModel("Success Corp", "SUC", emptyList()) } returns successResult
-    every { countryClassificationService.classifyCompanyCountryWithModel("Fail Corp", "FAIL", emptyList()) } returns null
+    every { countryClassificationService.classifyBatch(any()) } returns mapOf(1L to successResult)
 
     job.execute()
 
