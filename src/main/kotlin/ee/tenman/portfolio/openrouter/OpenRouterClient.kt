@@ -57,7 +57,7 @@ class OpenRouterClient(
 
   fun classifyWithCountryFallback(
     prompt: String,
-    maxTokens: Int = 10,
+    maxTokens: Int = 500,
     temperature: Double = 0.0,
   ): OpenRouterClassificationResult? {
     if (openRouterProperties.apiKey.isBlank()) {
