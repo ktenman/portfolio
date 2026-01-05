@@ -89,6 +89,6 @@ export const bingAdapter: ServiceAdapter = {
   path: '/bing/images',
   method: 'POST',
   serviceName: 'BingImages',
-  middleware: [createRateLimiter({ max: 200 })],
+  middleware: [createRateLimiter({ max: 300 })],
   handler,
 }
