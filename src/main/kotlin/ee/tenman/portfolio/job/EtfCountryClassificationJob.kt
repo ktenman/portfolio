@@ -2,20 +2,16 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.EtfHolding
-import ee.tenman.portfolio.model.ClassificationOutcome
 import ee.tenman.portfolio.model.ClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.integration.CompanyClassificationInput
 import ee.tenman.portfolio.service.integration.CountryClassificationService
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
-import java.util.concurrent.atomic.AtomicInteger
 
 @ScheduledJob
 class EtfCountryClassificationJob(
@@ -28,12 +24,11 @@ class EtfCountryClassificationJob(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private const val PROGRESS_LOG_INTERVAL = 50
-    private const val PARALLEL_THREADS = 3
+    private const val BATCH_SIZE = 100
   }
 
-  @Scheduled(initialDelay = 120000, fixedDelay = Long.MAX_VALUE)
-  @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 */6 * * *}")
+  @Scheduled(initialDelay = 240000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 */4 * * *}")
   fun runJob() {
     log.info("Running ETF country classification job")
     jobExecutionService.executeJob(this)
@@ -41,120 +36,95 @@ class EtfCountryClassificationJob(
   }
 
   override fun execute() {
-    log.info("Starting ETF country classification with $PARALLEL_THREADS parallel threads")
+    log.info("Starting ETF country classification with batch size $BATCH_SIZE")
     val holdingIds = etfHoldingPersistenceService.findUnclassifiedByCountryHoldingIds()
     if (holdingIds.isEmpty()) {
       log.info("No unclassified holdings by country found")
       return
     }
     log.info("Found ${holdingIds.size} holdings without country classification")
-    val holdings =
-      etfHoldingPersistenceService
-        .findAllByIds(holdingIds)
-        .mapNotNull { holding -> holding.id?.let { it to holding } }
-        .toMap()
+    val holdings = loadHoldingsMap(holdingIds)
     val etfNamesMap = etfHoldingPersistenceService.findEtfNamesForHoldings(holdingIds)
-    log.info("Batch loaded ${holdings.size} holdings and ETF names")
-    val result = processHoldingsInParallel(holdingIds, holdings, etfNamesMap)
+    log.info("Loaded ${holdings.size} holdings and ETF names")
+    val result = processInBatches(holdingIds, holdings, etfNamesMap)
     log.info("Country classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 
-  private fun processHoldingsInParallel(
+  private fun loadHoldingsMap(holdingIds: List<Long>): Map<Long, EtfHolding> =
+    etfHoldingPersistenceService
+      .findAllByIds(holdingIds)
+      .mapNotNull { holding -> holding.id?.let { it to holding } }
+      .toMap()
+
+  private fun processInBatches(
     holdingIds: List<Long>,
     holdings: Map<Long, EtfHolding>,
     etfNamesMap: Map<Long, List<String>>,
   ): ClassificationResult {
-    val chunks = holdingIds.chunked((holdingIds.size + PARALLEL_THREADS - 1) / PARALLEL_THREADS)
-    val processedCount = AtomicInteger(0)
-    val totalCount = holdingIds.size
-    val results =
-      runBlocking {
-        chunks
-          .map { chunk ->
-            async(Dispatchers.IO) {
-              processChunk(chunk, holdings, etfNamesMap, processedCount, totalCount)
-            }
-          }.awaitAll()
-      }
-    return results.fold(ClassificationResult(0, 0, 0)) { acc, result ->
-      ClassificationResult(
-        success = acc.success + result.success,
-        failure = acc.failure + result.failure,
-        skipped = acc.skipped + result.skipped,
-      )
+    val batches = holdingIds.chunked(BATCH_SIZE)
+    var totalSuccess = 0
+    var totalFailure = 0
+    var totalSkipped = 0
+    batches.forEachIndexed { batchIndex, batchIds ->
+      log.info("Processing batch ${batchIndex + 1}/${batches.size} (${batchIds.size} holdings)")
+      waitForRateLimit()
+      val batchResult = processBatch(batchIds, holdings, etfNamesMap)
+      totalSuccess += batchResult.success
+      totalFailure += batchResult.failure
+      totalSkipped += batchResult.skipped
+      log.info("Batch ${batchIndex + 1} complete: ${batchResult.success} ok, ${batchResult.failure} failed, ${batchResult.skipped} skipped")
     }
+    return ClassificationResult(success = totalSuccess, failure = totalFailure, skipped = totalSkipped)
   }
 
-  private suspend fun processChunk(
-    holdingIds: List<Long>,
-    holdings: Map<Long, EtfHolding>,
-    etfNamesMap: Map<Long, List<String>>,
-    processedCount: AtomicInteger,
-    totalCount: Int,
-  ): ClassificationResult {
-    var successCount = 0
-    var failureCount = 0
-    var skippedCount = 0
-    holdingIds.forEach { holdingId ->
+  private fun waitForRateLimit() {
+    runBlocking {
       val waitTime = circuitBreaker.getWaitTimeMs(circuitBreaker.isUsingFallback())
       if (waitTime > 0) {
+        log.debug("Rate limit wait: ${waitTime}ms")
         delay(waitTime + properties.rateLimitBufferMs)
       }
+    }
+  }
+
+  private fun processBatch(
+    batchIds: List<Long>,
+    holdings: Map<Long, EtfHolding>,
+    etfNamesMap: Map<Long, List<String>>,
+  ): ClassificationResult {
+    val inputs = mutableListOf<CompanyClassificationInput>()
+    val skippedIds = mutableListOf<Long>()
+    batchIds.forEach { holdingId ->
       val holding = holdings[holdingId]
-      val etfNames = etfNamesMap[holdingId] ?: emptyList()
-      when (classifyHolding(holdingId, holding, etfNames)) {
-        ClassificationOutcome.SUCCESS -> successCount++
-        ClassificationOutcome.FAILURE -> failureCount++
-        ClassificationOutcome.SKIPPED -> skippedCount++
+      if (holding == null || holding.name.isBlank() || countryClassificationService.isNonCompanyHolding(holding.name)) {
+        skippedIds.add(holdingId)
+        return@forEach
       }
-      val processed = processedCount.incrementAndGet()
-      if (processed % PROGRESS_LOG_INTERVAL == 0) {
-        log.info("Progress: $processed/$totalCount processed")
+      inputs.add(
+        CompanyClassificationInput(
+          holdingId = holdingId,
+          name = holding.name,
+          ticker = holding.ticker,
+          etfNames = etfNamesMap[holdingId] ?: emptyList(),
+        ),
+      )
+    }
+    if (inputs.isEmpty()) {
+      return ClassificationResult(success = 0, failure = 0, skipped = skippedIds.size)
+    }
+    val results = countryClassificationService.classifyBatch(inputs)
+    var successCount = 0
+    var failureCount = 0
+    inputs.forEach { input ->
+      val result = results[input.holdingId]
+      if (result != null) {
+        etfHoldingPersistenceService.updateCountry(input.holdingId, result.countryCode, result.countryName, result.model)
+        successCount++
+      } else {
+        etfHoldingPersistenceService.incrementCountryFetchAttempts(input.holdingId)
+        failureCount++
       }
     }
-    return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedCount)
-  }
-
-  private fun classifyHolding(
-    holdingId: Long,
-    holding: EtfHolding?,
-    etfNames: List<String>,
-  ): ClassificationOutcome =
-    runCatching {
-      if (holding == null) return ClassificationOutcome.SKIPPED
-      classifyAndSave(holding, etfNames)
-    }.getOrElse { e ->
-      log.error("Error classifying country for holding id=$holdingId", e)
-      etfHoldingPersistenceService.incrementCountryFetchAttempts(holdingId)
-      ClassificationOutcome.FAILURE
-    }
-
-  private fun classifyAndSave(
-    holding: EtfHolding,
-    etfNames: List<String>,
-  ): ClassificationOutcome {
-    val holdingId = holding.id
-    if (holding.name.isBlank() || holdingId == null || countryClassificationService.isNonCompanyHolding(holding.name)) {
-      logSkipReason(holding)
-      return ClassificationOutcome.SKIPPED
-    }
-    log.info("Classifying country for: ${holding.name} (ticker: ${holding.ticker}, ETFs: ${etfNames.joinToString(", ")})")
-    val result = countryClassificationService.classifyCompanyCountryWithModel(holding.name, holding.ticker, etfNames)
-    if (result == null) {
-      log.warn("Country classification returned null for: ${holding.name}")
-      etfHoldingPersistenceService.incrementCountryFetchAttempts(holdingId)
-      return ClassificationOutcome.FAILURE
-    }
-    etfHoldingPersistenceService.updateCountry(holdingId, result.countryCode, result.countryName, result.model)
-    log.info("Successfully classified '${holding.name}' as '${result.countryName}' (${result.countryCode})")
-    return ClassificationOutcome.SUCCESS
-  }
-
-  private fun logSkipReason(holding: EtfHolding) {
-    when {
-      holding.name.isBlank() -> log.warn("Skipping holding with blank name: id=${holding.id}")
-      holding.id == null -> log.warn("Skipping holding with null id: name=${holding.name}")
-      else -> log.info("Skipping non-company holding: ${holding.name}")
-    }
+    return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedIds.size)
   }
 }

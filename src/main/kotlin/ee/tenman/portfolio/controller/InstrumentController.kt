@@ -99,8 +99,4 @@ class InstrumentController(
   @PostMapping("/classify-etf-holdings")
   @Operation(summary = "Trigger ETF holdings classification job")
   fun triggerEtfHoldingsClassification(): Map<String, String> = mapOf("status" to priceRefreshService.triggerEtfHoldingsClassification())
-
-  @PostMapping("/update-wisdomtree-data")
-  @Operation(summary = "Trigger WisdomTree data update job")
-  fun triggerWisdomTreeDataUpdate(): Map<String, String> = mapOf("status" to priceRefreshService.triggerWisdomTreeDataUpdate())
 }

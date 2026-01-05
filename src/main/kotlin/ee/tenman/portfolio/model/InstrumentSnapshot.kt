@@ -11,7 +11,7 @@ data class InstrumentSnapshot(
   val profit: BigDecimal = BigDecimal.ZERO,
   val realizedProfit: BigDecimal = BigDecimal.ZERO,
   val unrealizedProfit: BigDecimal = BigDecimal.ZERO,
-  val xirr: Double = 0.0,
+  val xirr: Double? = null,
   val quantity: BigDecimal = BigDecimal.ZERO,
   val platforms: Set<Platform> = emptySet(),
   val priceChangeAmount: BigDecimal? = null,
