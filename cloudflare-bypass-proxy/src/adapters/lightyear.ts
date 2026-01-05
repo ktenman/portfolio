@@ -22,7 +22,7 @@ async function fetchHandler(req: Request, res: Response): Promise<void> {
 
   await handleProxyRequest(req, res, {
     url: `${LIGHTYEAR_FETCH_URL}?path=${encodedPath}&withAPIKey=true`,
-    timeout: 30000,
+    timeout: 10000,
     maxBuffer: 1024 * 1024,
     responseType: ResponseType.JSON,
     headers: {
@@ -58,7 +58,7 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
         'User-Agent': CHROME_USER_AGENT,
       },
       body: JSON.stringify(instrumentIds),
-      timeout: 30000,
+      timeout: 10000,
       maxBuffer: 5 * 1024 * 1024,
     })
 
@@ -134,7 +134,7 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
     const searchUrl = `${LIGHTYEAR_FETCH_URL}?path=${encodedPath}&withAPIKey=true`
     result = await execCurl({
       url: searchUrl,
-      timeout: 30000,
+      timeout: 10000,
       maxBuffer: 1024 * 1024,
       headers: {
         'User-Agent': CHROME_USER_AGENT,
