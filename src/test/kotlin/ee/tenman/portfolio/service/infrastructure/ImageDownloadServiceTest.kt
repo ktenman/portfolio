@@ -48,7 +48,7 @@ class ImageDownloadServiceTest {
 
     @Test
     fun `should reject data scheme URLs`() {
-      expect { service.download("data:text/html,<script>alert(1)</script>") }
+      expect { service.download("data:image/png;base64,iVBOR") }
         .toThrow<IllegalStateException>()
         .messageToContain("Invalid URL scheme")
     }

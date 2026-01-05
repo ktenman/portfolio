@@ -132,12 +132,13 @@ class CountryClassificationService(
   ): Map<Long, CountryClassificationResult> {
     if (content.isNullOrBlank()) return emptyMap()
     val results = mutableMapOf<Long, CountryClassificationResult>()
-    val linePattern = Regex("(\\d+)\\.?\\s*([A-Za-z]{2})")
+    val linePattern = Regex("(\\d+)\\.?\\s*(.+)")
     content.lines().forEach { line ->
       val match = linePattern.find(line.trim()) ?: return@forEach
       val index = match.groupValues[1].toIntOrNull()?.minus(1) ?: return@forEach
-      val countryCode = match.groupValues[2].uppercase()
-      if (index !in companies.indices || !VALID_COUNTRY_CODES.contains(countryCode)) return@forEach
+      if (index !in companies.indices) return@forEach
+      val countryValue = match.groupValues[2].trim()
+      val countryCode = parseCountryFromBatch(countryValue) ?: return@forEach
       val company = companies[index]
       val countryName = getCountryName(countryCode)
       results[company.holdingId] =
@@ -149,6 +150,17 @@ class CountryClassificationService(
     }
     log.info("Successfully parsed ${results.size}/${companies.size} batch results")
     return results
+  }
+
+  private fun parseCountryFromBatch(value: String): String? {
+    val trimmed = value.trim()
+    if (trimmed.length == 2) {
+      val code = trimmed.uppercase()
+      if (VALID_COUNTRY_CODES.contains(code)) return code
+    }
+    val firstWord = trimmed.split(Regex("[\\s,;:-]")).firstOrNull()?.uppercase() ?: return null
+    if (firstWord.length == 2 && VALID_COUNTRY_CODES.contains(firstWord)) return firstWord
+    return findCountryCodeByName(trimmed)
   }
 
   internal fun isNonCompanyHolding(name: String): Boolean {
