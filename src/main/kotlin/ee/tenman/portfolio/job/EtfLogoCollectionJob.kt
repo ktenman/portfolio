@@ -42,7 +42,7 @@ class EtfLogoCollectionJob(
     val holding = etfHoldingRepository.findById(holdingId).orElse(null) ?: return
     if (holding.logoSource != null) return
     if (holding.countryCode.isNullOrBlank()) {
-      log.debug("Skipping logo fetch for ${holding.name}: no country code")
+      log.info("Skipping logo fetch for ${holding.name}: no country code")
       return
     }
     val result =

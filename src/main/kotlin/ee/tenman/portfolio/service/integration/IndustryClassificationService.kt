@@ -130,11 +130,18 @@ class IndustryClassificationService(
     }
     val prompt = buildBatchPrompt(companies)
     val response = openRouterClient.classifyWithModel(prompt)
-    if (response == null) {
-      log.warn("Batch sector classification failed for ${companies.size} companies")
+    if (response != null) {
+      val results = parseBatchResponse(response.content, companies, response.model)
+      if (results.isNotEmpty()) return results
+      log.warn("Primary model returned unparseable response, trying fallback")
+    }
+    log.info("Trying cascading fallback for batch sector classification")
+    val fallbackResponse = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.CLAUDE_OPUS_4_5)
+    if (fallbackResponse == null) {
+      log.warn("All models exhausted for batch sector classification of ${companies.size} companies")
       return emptyMap()
     }
-    return parseBatchResponse(response.content, companies, response.model)
+    return parseBatchResponse(fallbackResponse.content, companies, fallbackResponse.model)
   }
 
   private fun buildBatchPrompt(companies: List<SectorClassificationInput>): String {

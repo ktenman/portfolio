@@ -335,4 +335,48 @@ class IndustryClassificationServiceTest {
     expect(result[2L]?.sector).toEqual(IndustrySector.HEALTH)
     expect(result[2L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
+
+  @Test
+  fun `should use fallback when primary batch classification fails`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithModel(any()) } returns null
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.CLAUDE_OPUS_4_5, any(), any()) } returns
+      OpenRouterClassificationResult("1. Semiconductors\n2. Finance", AiModel.CLAUDE_OPUS_4_5)
+    val companies =
+      listOf(
+        SectorClassificationInput(1L, "Nvidia Corp"),
+        SectorClassificationInput(2L, "JPMorgan Chase"),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]?.sector).toEqual(IndustrySector.SEMICONDUCTORS)
+    expect(result[2L]?.sector).toEqual(IndustrySector.FINANCE)
+    expect(result[1L]?.model).toEqual(AiModel.CLAUDE_OPUS_4_5)
+    verify(exactly = 1) { openRouterClient.classifyWithModel(any()) }
+    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), AiModel.CLAUDE_OPUS_4_5, any(), any()) }
+  }
+
+  @Test
+  fun `should use fallback when primary returns unparseable response`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithModel(any()) } returns
+      OpenRouterClassificationResult("Invalid response format", AiModel.GEMINI_3_FLASH_PREVIEW)
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.CLAUDE_OPUS_4_5, any(), any()) } returns
+      OpenRouterClassificationResult("1. Health", AiModel.CLAUDE_OPUS_4_5)
+    val companies = listOf(SectorClassificationInput(1L, "Pfizer Inc"))
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(1)
+    expect(result[1L]?.sector).toEqual(IndustrySector.HEALTH)
+    expect(result[1L]?.model).toEqual(AiModel.CLAUDE_OPUS_4_5)
+  }
+
+  @Test
+  fun `should return empty when all batch models fail`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithModel(any()) } returns null
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
+    val companies = listOf(SectorClassificationInput(1L, "Unknown Corp"))
+    val result = service.classifyBatch(companies)
+    expect(result).toEqual(emptyMap())
+  }
 }
