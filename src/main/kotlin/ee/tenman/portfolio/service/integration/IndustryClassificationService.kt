@@ -18,12 +18,35 @@ class IndustryClassificationService(
 
   companion object {
     private val CRYPTO_PATTERNS =
-      listOf(
-        "bitcoin", "btc", "ethereum", "eth", "bnb", "binance",
-        "solana", "sol", "cardano", "ada", "ripple", "xrp",
-        "dogecoin", "doge", "polkadot", "dot", "avalanche", "avax",
-        "chainlink", "link", "uniswap", "uni", "litecoin", "ltc",
-        "crypto", "blockchain", "defi", "nft",
+      setOf(
+        "bitcoin",
+        "btc",
+        "ethereum",
+        "eth",
+        "bnb",
+        "binance",
+        "solana",
+        "sol",
+        "cardano",
+        "ada",
+        "ripple",
+        "xrp",
+        "dogecoin",
+        "doge",
+        "polkadot",
+        "dot",
+        "avalanche",
+        "avax",
+        "chainlink",
+        "link",
+        "uniswap",
+        "uni",
+        "litecoin",
+        "ltc",
+        "crypto",
+        "blockchain",
+        "defi",
+        "nft",
       )
   }
 
