@@ -8,7 +8,7 @@ data class InstrumentMetrics(
   val profit: BigDecimal,
   val realizedProfit: BigDecimal,
   val unrealizedProfit: BigDecimal,
-  val xirr: Double,
+  val xirr: Double?,
   val quantity: BigDecimal,
 ) {
   override fun toString(): String =
@@ -19,7 +19,7 @@ data class InstrumentMetrics(
     append("profit=$profit, ")
     append("realizedProfit=$realizedProfit, ")
     append("unrealizedProfit=$unrealizedProfit, ")
-    append("xirr=${"%.2f%%".format(xirr * 100)})")
+    append("xirr=${xirr?.let { "%.2f%%".format(it * 100) } ?: "N/A"})")
   }
 
   companion object {
@@ -30,7 +30,7 @@ data class InstrumentMetrics(
       profit = BigDecimal.ZERO,
       realizedProfit = BigDecimal.ZERO,
       unrealizedProfit = BigDecimal.ZERO,
-      xirr = 0.0,
+      xirr = null,
       quantity = BigDecimal.ZERO,
     )
   }

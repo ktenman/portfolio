@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.calculation
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
@@ -36,29 +37,28 @@ class FinancialCalculationEdgeCaseTest {
   @Nested
   inner class SingleTransactionXirrEdgeCases {
     @Test
-    fun `should return zero XIRR for single buy transaction`() {
+    fun `should return null XIRR for single buy transaction`() {
       val transaction = CashFlow(-1000.0, LocalDate.now(clock).minusDays(30))
       val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(transaction), LocalDate.now(clock))
-      expect(xirr).toEqual(0.0)
+      expect(xirr).toEqual(null)
     }
 
     @Test
-    fun `should return zero XIRR for single sell transaction`() {
+    fun `should return null XIRR for single sell transaction`() {
       val transaction = CashFlow(1000.0, LocalDate.now(clock).minusDays(30))
       val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(transaction), LocalDate.now(clock))
-      expect(xirr).toEqual(0.0)
+      expect(xirr).toEqual(null)
     }
 
     @Test
-    fun `should handle very recent transaction with small time delta`() {
+    fun `should return null for very recent transaction below 30 days`() {
       val transactions =
         listOf(
         CashFlow(-1000.0, LocalDate.now(clock).minusDays(1)),
         CashFlow(1010.0, LocalDate.now(clock)),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
-      expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
-      expect(xirr).toBeLessThanOrEqualTo(10.0)
+      expect(xirr).toEqual(null)
     }
   }
 
@@ -98,27 +98,25 @@ class FinancialCalculationEdgeCaseTest {
   @Nested
   inner class YearBoundaryEdgeCases {
     @Test
-    fun `should handle year boundary December 31 to January 1`() {
+    fun `should return null for year boundary with 1 day holding`() {
       val transactions =
         listOf(
         CashFlow(-1000.0, LocalDate.of(2023, 12, 31)),
         CashFlow(1050.0, LocalDate.of(2024, 1, 1)),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.of(2024, 1, 1))
-      expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
-      expect(xirr).toBeLessThanOrEqualTo(10.0)
+      expect(xirr).toEqual(null)
     }
 
     @Test
-    fun `should handle leap year February 29`() {
+    fun `should return null for leap year with 1 day holding`() {
       val transactions =
         listOf(
         CashFlow(-1000.0, LocalDate.of(2024, 2, 28)),
         CashFlow(1005.0, LocalDate.of(2024, 2, 29)),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.of(2024, 2, 29))
-      expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
-      expect(xirr).toBeLessThanOrEqualTo(10.0)
+      expect(xirr).toEqual(null)
     }
   }
 
@@ -133,8 +131,7 @@ class FinancialCalculationEdgeCaseTest {
         CashFlow(5000.0, futureDate),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, futureDate)
-      expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
-      expect(xirr).toBeLessThanOrEqualTo(10.0)
+      expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
     }
 
     @Test
@@ -145,8 +142,7 @@ class FinancialCalculationEdgeCaseTest {
         CashFlow(10000.0, LocalDate.of(2024, 12, 31)),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.of(2024, 12, 31))
-      expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
-      expect(xirr).toBeLessThanOrEqualTo(10.0)
+      expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
     }
   }
 

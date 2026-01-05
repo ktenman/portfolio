@@ -10,7 +10,8 @@ class ImageDownloadService(
 ) {
   fun download(url: String): ByteArray {
     validateUrl(url)
-    val data = restClient
+    val data =
+      restClient
       .get()
       .uri(url)
       .retrieve()

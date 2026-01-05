@@ -242,8 +242,8 @@ describe('formatPercentageFromDecimal', () => {
   })
 
   it('should handle null and undefined values', () => {
-    expect(formatPercentageFromDecimal(null)).toBe('0.00%')
-    expect(formatPercentageFromDecimal(undefined)).toBe('0.00%')
+    expect(formatPercentageFromDecimal(null)).toBe('N/A')
+    expect(formatPercentageFromDecimal(undefined)).toBe('N/A')
   })
 
   it('should handle zero value', () => {

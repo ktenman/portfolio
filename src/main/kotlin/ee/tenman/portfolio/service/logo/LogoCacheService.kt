@@ -9,8 +9,7 @@ import java.util.UUID
 class LogoCacheService(
   private val cacheManager: CacheManager,
 ) {
-  fun getLogo(uuid: UUID): ByteArray? =
-    cacheManager.getCache(ETF_LOGOS_CACHE)?.get(uuid.toString())?.get() as? ByteArray
+  fun getLogo(uuid: UUID): ByteArray? = cacheManager.getCache(ETF_LOGOS_CACHE)?.get(uuid.toString())?.get() as? ByteArray
 
   fun saveLogo(
     uuid: UUID,

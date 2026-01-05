@@ -158,9 +158,12 @@ class CountryClassificationService(
       val code = trimmed.uppercase()
       if (VALID_COUNTRY_CODES.contains(code)) return code
     }
-    val firstWord = trimmed.split(Regex("[\\s,;:-]")).firstOrNull()?.uppercase() ?: return null
-    if (firstWord.length == 2 && VALID_COUNTRY_CODES.contains(firstWord)) return firstWord
-    return findCountryCodeByName(trimmed)
+    val firstWord = trimmed.split(Regex("[\\s,;:-]")).firstOrNull()?.uppercase()
+    return when {
+      firstWord == null -> null
+      firstWord.length == 2 && VALID_COUNTRY_CODES.contains(firstWord) -> firstWord
+      else -> findCountryCodeByName(trimmed)
+    }
   }
 
   internal fun isNonCompanyHolding(name: String): Boolean {

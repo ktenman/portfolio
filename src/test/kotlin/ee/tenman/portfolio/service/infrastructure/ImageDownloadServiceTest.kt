@@ -119,7 +119,10 @@ class ImageDownloadServiceTest {
     }
   }
 
-  private fun setupMocksForUrl(url: String, responseBody: ByteArray?) {
+  private fun setupMocksForUrl(
+    url: String,
+    responseBody: ByteArray?,
+  ) {
     every { restClient.get() } returns requestHeadersUriSpec
     every { requestHeadersUriSpec.uri(url) } returns requestHeadersSpec
     every { requestHeadersSpec.retrieve() } returns responseSpec

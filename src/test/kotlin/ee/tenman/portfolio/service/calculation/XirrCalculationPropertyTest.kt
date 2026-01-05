@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.calculation
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
@@ -47,31 +48,33 @@ class XirrCalculationPropertyTest {
   }
 
   @Test
-  fun `XIRR result is always bounded between -10 and 10`() =
+  fun `XIRR result is always bounded between -10 and 10 when not null`() =
     runBlocking {
     val cashFlowArb = createXirrCashFlowArb()
     checkAll(100, Arb.list(cashFlowArb, 2..10)) { cashFlows ->
       val calculationDate = LocalDate.now(clock)
       val xirr = xirrCalculationService.calculateAdjustedXirr(cashFlows, calculationDate)
-      expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
-      expect(xirr).toBeLessThanOrEqualTo(10.0)
+      if (xirr != null) {
+        expect(xirr).toBeGreaterThanOrEqualTo(-10.0)
+        expect(xirr).toBeLessThanOrEqualTo(10.0)
+      }
     }
   }
 
   @Test
-  fun `XIRR returns zero for less than 2 cash flows`() =
+  fun `XIRR returns null for less than 2 cash flows`() =
     runBlocking {
     val cashFlowArb = createXirrCashFlowArb()
     checkAll(50, cashFlowArb) { cashFlow ->
       val xirr = xirrCalculationService.calculateAdjustedXirr(listOf(cashFlow), LocalDate.now(clock))
-      expect(xirr).toEqual(0.0)
+      expect(xirr).toEqual(null)
     }
   }
 
   @Test
-  fun `XIRR returns zero for empty cash flow list`() {
+  fun `XIRR returns null for empty cash flow list`() {
     val xirr = xirrCalculationService.calculateAdjustedXirr(emptyList(), LocalDate.now(clock))
-    expect(xirr).toEqual(0.0)
+    expect(xirr).toEqual(null)
   }
 
   @Test
@@ -150,6 +153,7 @@ class XirrCalculationPropertyTest {
       xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
     }
     val first = results.first()
+    expect(first).notToEqualNull()
     results.forEach { result ->
       expect(result).toEqual(first)
     }
