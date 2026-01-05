@@ -59,6 +59,95 @@ class CountryClassificationService(
     return tryAutoAssign(etfNames, sanitizedName) ?: classifyWithLlm(companyName, ticker, etfNames, sanitizedName)
   }
 
+  fun classifyBatch(companies: List<CompanyClassificationInput>): Map<Long, CountryClassificationResult> {
+    if (companies.isEmpty()) return emptyMap()
+    val validCompanies =
+      companies.filter { !it.name.isBlank() && !isNonCompanyHolding(it.name) }
+    if (validCompanies.isEmpty()) {
+      log.info("No valid companies to classify in batch")
+      return emptyMap()
+    }
+    val autoAssigned = mutableMapOf<Long, CountryClassificationResult>()
+    val needsLlm = mutableListOf<CompanyClassificationInput>()
+    validCompanies.forEach { company ->
+      val autoResult = tryAutoAssign(company.etfNames, LogSanitizerUtil.sanitize(company.name))
+      if (autoResult != null) {
+        autoAssigned[company.holdingId] = autoResult
+      } else {
+        needsLlm.add(company)
+      }
+    }
+    if (needsLlm.isEmpty()) {
+      log.info("All ${autoAssigned.size} companies auto-assigned")
+      return autoAssigned
+    }
+    log.info("Batch classifying ${needsLlm.size} companies (${autoAssigned.size} auto-assigned)")
+    val llmResults = classifyBatchWithLlm(needsLlm)
+    return autoAssigned + llmResults
+  }
+
+  private fun classifyBatchWithLlm(companies: List<CompanyClassificationInput>): Map<Long, CountryClassificationResult> {
+    if (!properties.enabled) {
+      log.warn("LLM classification disabled")
+      return emptyMap()
+    }
+    val prompt = buildBatchPrompt(companies)
+    val response = openRouterClient.classifyWithCountryFallback(prompt)
+    if (response == null) {
+      log.warn("Batch country classification failed for ${companies.size} companies")
+      return emptyMap()
+    }
+    return parseBatchResponse(response.content, companies, response.model)
+  }
+
+  private fun buildBatchPrompt(companies: List<CompanyClassificationInput>): String {
+    val companiesList =
+      companies
+        .mapIndexed { index, company ->
+          val tickerInfo = if (!company.ticker.isNullOrBlank()) " (${company.ticker})" else ""
+          "${index + 1}. ${company.name}$tickerInfo"
+        }.joinToString("\n")
+    return """
+    Identify the headquarters country for each company. Reply with ONLY the company number and 2-letter ISO country code.
+
+    Rules:
+    - Use OPERATIONAL headquarters, not legal incorporation
+    - Ferrari = IT, Shell = GB, Airbus = FR
+    - One line per company: "1. US" or "2. DE"
+
+    Companies:
+    $companiesList
+
+    Reply format (one per line):
+    1. XX
+    2. XX
+    ...
+    """.trimIndent()
+  }
+
+  private fun parseBatchResponse(
+    content: String?,
+    companies: List<CompanyClassificationInput>,
+    model: ee.tenman.portfolio.domain.AiModel?,
+  ): Map<Long, CountryClassificationResult> {
+    if (content.isNullOrBlank()) return emptyMap()
+    val results = mutableMapOf<Long, CountryClassificationResult>()
+    val linePattern = Regex("(\\d+)\\.?\\s*([A-Za-z]{2})")
+    content.lines().forEach { line ->
+      val match = linePattern.find(line.trim()) ?: return@forEach
+      val index = match.groupValues[1].toIntOrNull()?.minus(1) ?: return@forEach
+      val countryCode = match.groupValues[2].uppercase()
+      if (index !in companies.indices || !VALID_COUNTRY_CODES.contains(countryCode)) return@forEach
+      val company = companies[index]
+      val countryName = getCountryName(countryCode)
+      results[company.holdingId] =
+        CountryClassificationResult(countryCode = countryCode, countryName = countryName, model = model)
+      log.info("Batch classified '${company.name}' as $countryName ($countryCode)")
+    }
+    log.info("Successfully parsed ${results.size}/${companies.size} batch results")
+    return results
+  }
+
   internal fun isNonCompanyHolding(name: String): Boolean {
     val normalized = name.trim()
     return NON_COMPANY_REGEXES.any { regex -> regex.containsMatchIn(normalized) }

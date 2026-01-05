@@ -1,11 +1,18 @@
 package ee.tenman.portfolio.service.integration
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
+import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
@@ -256,5 +263,73 @@ class CountryClassificationServiceTest {
   )
   fun `should not extract country code from company names or invalid responses`(response: String) {
     expect(service.findCountryCodeByName(response)).toEqual(null)
+  }
+
+  @Test
+  fun `should return empty map for empty batch`() {
+    val result = service.classifyBatch(emptyList())
+    expect(result).toEqual(emptyMap())
+  }
+
+  @Test
+  fun `should auto-assign US for S&P 500 holdings in batch`() {
+    val companies =
+      listOf(
+        CompanyClassificationInput(1L, "Apple Inc", "AAPL", listOf("S&P 500 ETF")),
+        CompanyClassificationInput(2L, "Microsoft Corp", "MSFT", listOf("S&P 500 Index")),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]?.countryCode).toEqual("US")
+    expect(result[2L]?.countryCode).toEqual("US")
+    expect(result[1L]?.model).toEqual(null)
+    verify(exactly = 0) { openRouterClient.classifyWithCountryFallback(any()) }
+  }
+
+  @Test
+  fun `should classify batch with LLM when not auto-assignable`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+      OpenRouterClassificationResult("1. DE\n2. FR", AiModel.GEMINI_3_FLASH_PREVIEW)
+    val companies =
+      listOf(
+        CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()),
+        CompanyClassificationInput(2L, "LVMH", "MC", emptyList()),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]?.countryCode).toEqual("DE")
+    expect(result[2L]?.countryCode).toEqual("FR")
+    expect(result[1L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+  }
+
+  @Test
+  fun `should skip non-company holdings in batch`() {
+    val companies =
+      listOf(
+        CompanyClassificationInput(1L, "Bitcoin", null, emptyList()),
+        CompanyClassificationInput(2L, "USD Cash", null, emptyList()),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result).toEqual(emptyMap())
+    verify(exactly = 0) { openRouterClient.classifyWithCountryFallback(any()) }
+  }
+
+  @Test
+  fun `should combine auto-assigned and LLM classified in batch`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+      OpenRouterClassificationResult("1. JP", AiModel.GEMINI_3_FLASH_PREVIEW)
+    val companies =
+      listOf(
+        CompanyClassificationInput(1L, "Apple Inc", "AAPL", listOf("S&P 500 ETF")),
+        CompanyClassificationInput(2L, "Toyota Motor", "TM", emptyList()),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]?.countryCode).toEqual("US")
+    expect(result[1L]?.model).toEqual(null)
+    expect(result[2L]?.countryCode).toEqual("JP")
+    expect(result[2L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
 }

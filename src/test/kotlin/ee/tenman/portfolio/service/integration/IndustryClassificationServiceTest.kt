@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.integration
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
@@ -265,5 +266,61 @@ class IndustryClassificationServiceTest {
     expect(result?.sector).toEqual(IndustrySector.SOFTWARE_CLOUD_SERVICES)
     expect(result?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
     verify(exactly = 1) { openRouterClient.classifyWithModel(any()) }
+  }
+
+  @Test
+  fun `should return empty map for empty batch`() {
+    val result = service.classifyBatch(emptyList())
+    expect(result).toEqual(emptyMap())
+  }
+
+  @Test
+  fun `should hardcode crypto in batch without LLM call`() {
+    val companies =
+      listOf(
+        SectorClassificationInput(1L, "Bitcoin"),
+        SectorClassificationInput(2L, "Ethereum Token"),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
+    expect(result[2L]?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
+    expect(result[1L]?.model).toEqual(null)
+    verify(exactly = 0) { openRouterClient.classifyWithModel(any()) }
+  }
+
+  @Test
+  fun `should classify batch with LLM when not crypto`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithModel(any()) } returns
+      OpenRouterClassificationResult("1. Semiconductors\n2. Finance", AiModel.GEMINI_3_FLASH_PREVIEW)
+    val companies =
+      listOf(
+        SectorClassificationInput(1L, "Nvidia Corp"),
+        SectorClassificationInput(2L, "JPMorgan Chase"),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]?.sector).toEqual(IndustrySector.SEMICONDUCTORS)
+    expect(result[2L]?.sector).toEqual(IndustrySector.FINANCE)
+    expect(result[1L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+  }
+
+  @Test
+  fun `should combine hardcoded and LLM classified in batch`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithModel(any()) } returns
+      OpenRouterClassificationResult("1. Health", AiModel.GEMINI_3_FLASH_PREVIEW)
+    val companies =
+      listOf(
+        SectorClassificationInput(1L, "Bitcoin Holdings"),
+        SectorClassificationInput(2L, "Pfizer Inc"),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
+    expect(result[1L]?.model).toEqual(null)
+    expect(result[2L]?.sector).toEqual(IndustrySector.HEALTH)
+    expect(result[2L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
 }

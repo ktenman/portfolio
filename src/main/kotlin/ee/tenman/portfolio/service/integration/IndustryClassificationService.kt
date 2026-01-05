@@ -120,6 +120,88 @@ class IndustryClassificationService(
     return SectorClassificationResult(sector = sector, model = response.model)
   }
 
+  fun classifyBatch(companies: List<SectorClassificationInput>): Map<Long, SectorClassificationResult> {
+    if (companies.isEmpty()) return emptyMap()
+    val validCompanies = companies.filter { !it.name.isBlank() }
+    if (validCompanies.isEmpty()) {
+      log.info("No valid companies to classify in batch")
+      return emptyMap()
+    }
+    val cryptoAssigned = mutableMapOf<Long, SectorClassificationResult>()
+    val needsLlm = mutableListOf<SectorClassificationInput>()
+    validCompanies.forEach { company ->
+      val cryptoMatch = detectCryptocurrency(company.name)
+      if (cryptoMatch != null) {
+        log.info("Hardcoded: ${company.name} as Cryptocurrency (matched: $cryptoMatch)")
+        cryptoAssigned[company.holdingId] = SectorClassificationResult(IndustrySector.CRYPTOCURRENCY, null)
+      } else {
+        needsLlm.add(company)
+      }
+    }
+    if (needsLlm.isEmpty()) {
+      log.info("All ${cryptoAssigned.size} companies hardcoded as crypto")
+      return cryptoAssigned
+    }
+    log.info("Batch classifying ${needsLlm.size} sectors (${cryptoAssigned.size} hardcoded)")
+    val llmResults = classifyBatchWithLlm(needsLlm)
+    return cryptoAssigned + llmResults
+  }
+
+  private fun classifyBatchWithLlm(companies: List<SectorClassificationInput>): Map<Long, SectorClassificationResult> {
+    if (!properties.enabled) {
+      log.warn("LLM classification disabled")
+      return emptyMap()
+    }
+    val prompt = buildBatchPrompt(companies)
+    val response = openRouterClient.classifyWithModel(prompt)
+    if (response == null) {
+      log.warn("Batch sector classification failed for ${companies.size} companies")
+      return emptyMap()
+    }
+    return parseBatchResponse(response.content, companies, response.model)
+  }
+
+  private fun buildBatchPrompt(companies: List<SectorClassificationInput>): String {
+    val companiesList =
+      companies
+        .mapIndexed { index, company -> "${index + 1}. ${company.name}" }
+        .joinToString("\n")
+    val categories = IndustrySector.getAllDisplayNames()
+    return """
+    Classify each company into ONE category: $categories
+
+    Companies:
+    $companiesList
+
+    Reply format (one per line, category name only):
+    1. CategoryName
+    2. CategoryName
+    ...
+    """.trimIndent()
+  }
+
+  private fun parseBatchResponse(
+    content: String?,
+    companies: List<SectorClassificationInput>,
+    model: AiModel?,
+  ): Map<Long, SectorClassificationResult> {
+    if (content.isNullOrBlank()) return emptyMap()
+    val results = mutableMapOf<Long, SectorClassificationResult>()
+    val linePattern = Regex("(\\d+)\\.?\\s*(.+)")
+    content.lines().forEach { line ->
+      val match = linePattern.find(line.trim()) ?: return@forEach
+      val index = match.groupValues[1].toIntOrNull()?.minus(1) ?: return@forEach
+      val sectorName = match.groupValues[2].trim()
+      if (index !in companies.indices) return@forEach
+      val sector = IndustrySector.fromDisplayName(sectorName) ?: return@forEach
+      val company = companies[index]
+      results[company.holdingId] = SectorClassificationResult(sector = sector, model = model)
+      log.info("Batch classified '${company.name}' as ${sector.displayName}")
+    }
+    log.info("Successfully parsed ${results.size}/${companies.size} batch sector results")
+    return results
+  }
+
   private fun buildPrompt(companyName: String): String =
     """
     Classify $companyName into ONE category: ${IndustrySector.getAllDisplayNames()}
