@@ -6,7 +6,6 @@ import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
-import ee.tenman.portfolio.job.WisdomTreeDataUpdateJob
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import io.mockk.coEvery
@@ -21,7 +20,6 @@ class PriceRefreshServiceTest {
   private val lightyearHistoricalDataRetrievalJob = mockk<LightyearHistoricalDataRetrievalJob>(relaxed = true)
   private val lightyearPriceRetrievalJob = mockk<LightyearPriceRetrievalJob>(relaxed = true)
   private val etfHoldingsClassificationJob = mockk<EtfHoldingsClassificationJob>(relaxed = true)
-  private val wisdomTreeDataUpdateJob = mockk<WisdomTreeDataUpdateJob>(relaxed = true)
   private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private val transactionService = mockk<TransactionService>()
 
@@ -38,7 +36,6 @@ class PriceRefreshServiceTest {
         lightyearHistoricalDataRetrievalJob = lightyearHistoricalDataRetrievalJob,
         lightyearPriceRetrievalJob = lightyearPriceRetrievalJob,
         etfHoldingsClassificationJob = etfHoldingsClassificationJob,
-        wisdomTreeDataUpdateJob = wisdomTreeDataUpdateJob,
         cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
       )
@@ -74,7 +71,6 @@ class PriceRefreshServiceTest {
         lightyearHistoricalDataRetrievalJob = null,
         lightyearPriceRetrievalJob = null,
         etfHoldingsClassificationJob = null,
-        wisdomTreeDataUpdateJob = null,
         cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
       )
@@ -85,31 +81,6 @@ class PriceRefreshServiceTest {
   }
 
   @Test
-  fun `triggerWisdomTreeDataUpdate should return success when job available`() {
-    val result = priceRefreshService.triggerWisdomTreeDataUpdate()
-
-    expect(result).toEqual("WisdomTree data update job triggered")
-  }
-
-  @Test
-  fun `triggerWisdomTreeDataUpdate should return not available when job is null`() {
-    val serviceWithoutJob =
-      PriceRefreshService(
-        binanceDataRetrievalJob = null,
-        lightyearHistoricalDataRetrievalJob = null,
-        lightyearPriceRetrievalJob = null,
-        etfHoldingsClassificationJob = null,
-        wisdomTreeDataUpdateJob = null,
-        cacheInvalidationService = cacheInvalidationService,
-        transactionService = transactionService,
-      )
-
-    val result = serviceWithoutJob.triggerWisdomTreeDataUpdate()
-
-    expect(result).toEqual("WisdomTree data update job not available")
-  }
-
-  @Test
   fun `refreshAllPrices should work when all jobs are null`() {
     val serviceWithoutJobs =
       PriceRefreshService(
@@ -117,7 +88,6 @@ class PriceRefreshServiceTest {
         lightyearHistoricalDataRetrievalJob = null,
         lightyearPriceRetrievalJob = null,
         etfHoldingsClassificationJob = null,
-        wisdomTreeDataUpdateJob = null,
         cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
       )

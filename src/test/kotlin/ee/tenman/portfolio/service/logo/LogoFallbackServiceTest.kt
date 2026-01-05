@@ -12,10 +12,8 @@ import org.junit.jupiter.api.Test
 
 class LogoFallbackServiceTest {
   private val nvstlyLogoService = mockk<NvstlyLogoService>()
-  private val imageSearchLogoService = mockk<ImageSearchLogoService>()
   private val logoValidationService = mockk<LogoValidationService>()
   private val imageDownloadService = mockk<ImageDownloadService>()
-  private val openRouterLogoSelectionService = mockk<OpenRouterLogoSelectionService>()
   private lateinit var service: LogoFallbackService
 
   @BeforeEach
@@ -23,10 +21,8 @@ class LogoFallbackServiceTest {
     service =
       LogoFallbackService(
         nvstlyLogoService,
-        imageSearchLogoService,
         logoValidationService,
         imageDownloadService,
-        openRouterLogoSelectionService,
       )
   }
 
@@ -56,38 +52,16 @@ class LogoFallbackServiceTest {
   }
 
   @Test
-  fun `should skip nvstly and fallback to llm selection when no ticker provided`() {
-    val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    val candidates = listOf(LogoCandidate("http://img.com", "http://thumb.com", "Apple Logo", 0))
-    every { imageSearchLogoService.searchLogoCandidates("Apple Inc logo") } returns candidates
-    every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", null, candidates) } returns
-      LogoSelectionResult(0, imageData, LogoSource.LLM_SELECTED)
-
+  fun `should return null when no ticker provided and no lightyear url`() {
     val result = service.fetchLogo("Apple Inc", null, null)
 
-    expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
+    expect(result).toEqual(null)
     verify(exactly = 0) { nvstlyLogoService.fetchLogo(any()) }
   }
 
   @Test
-  fun `should fallback to llm selection when nvstly fails`() {
-    val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    val candidates = listOf(LogoCandidate("http://img.com", "http://thumb.com", "Apple Logo", 0))
+  fun `should return null when nvstly fails and no lightyear url`() {
     every { nvstlyLogoService.fetchLogo("AAPL") } returns null
-    every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc logo") } returns candidates
-    every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", "AAPL", candidates) } returns
-      LogoSelectionResult(0, imageData, LogoSource.BING)
-
-    val result = service.fetchLogo("Apple Inc", "AAPL", null)
-
-    expect(result?.source).toEqual(LogoSource.BING)
-    expect(result?.ticker).toEqual("AAPL")
-  }
-
-  @Test
-  fun `should return null when all sources fail`() {
-    every { nvstlyLogoService.fetchLogo("AAPL") } returns null
-    every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc logo") } returns emptyList()
 
     val result = service.fetchLogo("Apple Inc", "AAPL", null)
 

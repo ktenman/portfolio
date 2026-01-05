@@ -123,7 +123,7 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
 
       expect(executeCurl).toHaveBeenCalledWith({
         url: expect.stringContaining('https://lightyear.com/fetch?path='),
-        timeout: 15000,
+        timeout: 30000,
         maxBuffer: 1024 * 1024,
         headers: {
           'user-agent': expect.any(String),
