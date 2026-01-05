@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "scraping.lightyear")
 data class LightyearScrapingProperties(
   var etfs: List<EtfConfig> = emptyList(),
-  var additionalInstruments: List<EtfConfig> = emptyList(),
 ) {
   data class EtfConfig(
     var symbol: String = "",
@@ -15,12 +14,12 @@ data class LightyearScrapingProperties(
   )
 
   fun getAllSymbols(): List<String> =
-    (etfs + additionalInstruments)
+    etfs
       .map { it.symbol }
       .filter { it.isNotBlank() }
 
   fun getAllInstruments(): Map<String, String> =
-    (etfs + additionalInstruments)
+    etfs
       .filter { it.uuid.isNotBlank() }
       .associate { it.symbol to it.uuid }
 

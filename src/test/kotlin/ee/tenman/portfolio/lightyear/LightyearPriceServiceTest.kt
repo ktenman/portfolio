@@ -92,13 +92,13 @@ class LightyearPriceServiceTest {
     expect(result[0].name).toEqual("Apple Inc")
     expect(result[0].ticker).toEqual("AAPL")
     expect(result[0].sector).toEqual("Technology")
-    expect(result[0].weight).toEqualNumerically(BigDecimal("5.5"))
+    expect(result[0].weight).toEqualNumerically(BigDecimal("56.701031"))
     expect(result[0].rank).toEqual(1)
     expect(result[0].logoUrl).toEqual("https://logo.com/aapl.png")
     expect(result[1].name).toEqual("Microsoft Corp")
     expect(result[1].ticker).toEqual("MSFT")
     expect(result[1].sector).toEqual("Software")
-    expect(result[1].weight).toEqualNumerically(BigDecimal("4.2"))
+    expect(result[1].weight).toEqualNumerically(BigDecimal("43.298969"))
     expect(result[1].rank).toEqual(2)
   }
 
@@ -117,7 +117,7 @@ class LightyearPriceServiceTest {
     expect(result[0].name).toEqual("Unknown Company")
     expect(result[0].ticker).toEqual(null)
     expect(result[0].sector).toEqual(null)
-    expect(result[0].weight).toEqualNumerically(BigDecimal("1.5"))
+    expect(result[0].weight).toEqualNumerically(BigDecimal("100.000000"))
     expect(result[0].rank).toEqual(1)
     verify(exactly = 0) { lightyearPriceClient.getInstrumentBatch(any()) }
   }

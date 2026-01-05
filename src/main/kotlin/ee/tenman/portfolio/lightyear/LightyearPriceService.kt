@@ -48,18 +48,27 @@ class LightyearPriceService(
   fun fetchHoldingsAsDto(symbol: String): List<HoldingData> {
     val apiHoldings = fetchHoldingsRaw(symbol)
     val instrumentMap = fetchInstrumentsBatch(apiHoldings)
-
+    val totalValue = apiHoldings.sumOf { it.value }
     return apiHoldings.mapIndexed { index, holding ->
       val instrument = holding.instrumentId?.let { instrumentMap[it] }
+      val weightPercentage = calculateWeightPercentage(holding.value, totalValue)
       HoldingData(
         name = holding.name,
         ticker = instrument?.symbol,
         sector = instrument?.summary?.sector,
-        weight = BigDecimal.valueOf(holding.value),
+        weight = weightPercentage,
         rank = index + 1,
         logoUrl = instrument?.logo,
       )
     }
+  }
+
+  private fun calculateWeightPercentage(
+    value: Double,
+    total: Double,
+  ): BigDecimal {
+    if (total == 0.0) return BigDecimal.ZERO
+    return BigDecimal.valueOf(value * 100 / total).setScale(6, java.math.RoundingMode.HALF_UP)
   }
 
   private fun fetchInstrumentsBatch(holdings: List<LightyearHoldingResponse>): Map<String, LightyearInstrumentResponse> {
