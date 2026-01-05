@@ -97,7 +97,7 @@ class EtfHoldingsClassificationJob(
         skippedIds.add(holdingId)
         return@forEach
       }
-      inputs.add(SectorClassificationInput(holdingId = holdingId, name = holding.name))
+      inputs.add(SectorClassificationInput(holdingId = holdingId, name = holding.name, ticker = holding.ticker))
     }
     if (inputs.isEmpty()) {
       return ClassificationResult(success = 0, failure = 0, skipped = skippedIds.size)

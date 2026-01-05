@@ -223,10 +223,10 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should hardcode cryptocurrency for ethereum holdings`() {
+  fun `should hardcode cryptocurrency for btceur holdings`() {
     every { properties.enabled } returns true
 
-    val result = service.classifyCompanyWithModel("Ethereum Foundation")
+    val result = service.classifyCompanyWithModel("BTCEUR")
 
     expect(result?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
     expect(result?.model).toEqual(null)
@@ -234,10 +234,10 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should hardcode cryptocurrency for bnb holdings`() {
+  fun `should hardcode cryptocurrency for binance holdings`() {
     every { properties.enabled } returns true
 
-    val result = service.classifyCompanyWithModel("BNB Chain")
+    val result = service.classifyCompanyWithModel("Binance Coin")
 
     expect(result?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
     expect(result?.model).toEqual(null)
@@ -245,10 +245,10 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should hardcode cryptocurrency for solana holdings`() {
+  fun `should hardcode cryptocurrency for bnbeur holdings`() {
     every { properties.enabled } returns true
 
-    val result = service.classifyCompanyWithModel("Solana Labs")
+    val result = service.classifyCompanyWithModel("BNBEUR")
 
     expect(result?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
     expect(result?.model).toEqual(null)
@@ -279,13 +279,25 @@ class IndustryClassificationServiceTest {
     val companies =
       listOf(
         SectorClassificationInput(1L, "Bitcoin"),
-        SectorClassificationInput(2L, "Ethereum Token"),
+        SectorClassificationInput(2L, "Some Crypto", "BNBEUR"),
       )
     val result = service.classifyBatch(companies)
     expect(result.keys).toHaveSize(2)
     expect(result[1L]?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
     expect(result[2L]?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
     expect(result[1L]?.model).toEqual(null)
+    verify(exactly = 0) { openRouterClient.classifyWithModel(any()) }
+  }
+
+  @Test
+  fun `should detect crypto by ticker when name does not match`() {
+    val companies =
+      listOf(
+        SectorClassificationInput(1L, "Unknown Asset", "BTCEUR"),
+      )
+    val result = service.classifyBatch(companies)
+    expect(result.keys).toHaveSize(1)
+    expect(result[1L]?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
     verify(exactly = 0) { openRouterClient.classifyWithModel(any()) }
   }
 

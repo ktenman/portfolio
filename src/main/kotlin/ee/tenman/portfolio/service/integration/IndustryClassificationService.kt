@@ -17,37 +17,7 @@ class IndustryClassificationService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val CRYPTO_REGEXES =
-      listOf(
-        "bitcoin",
-        "btc",
-        "ethereum",
-        "\\beth\\b",
-        "\\bbnb\\b",
-        "binance",
-        "solana",
-        "\\bsol\\b",
-        "cardano",
-        "\\bada\\b",
-        "ripple",
-        "\\bxrp\\b",
-        "dogecoin",
-        "doge",
-        "polkadot",
-        "\\bdot\\b",
-        "avalanche",
-        "\\bavax\\b",
-        "chainlink",
-        "\\blink\\b",
-        "uniswap",
-        "\\buni\\b",
-        "litecoin",
-        "\\bltc\\b",
-        "crypto",
-        "blockchain",
-        "defi",
-        "\\bnft\\b",
-      ).map { Regex(it, RegexOption.IGNORE_CASE) }
+    private val CRYPTO_PATTERNS = setOf("btceur", "bitcoin", "binance", "bnbeur")
   }
 
   fun classifyCompany(companyName: String): IndustrySector? = classifyCompanyWithModel(companyName)?.sector
@@ -68,8 +38,16 @@ class IndustryClassificationService(
     return classifyWithPrimaryModel(prompt, sanitizedName)
   }
 
-  private fun detectCryptocurrency(companyName: String): String? =
-    CRYPTO_REGEXES.find { it.containsMatchIn(companyName) }?.pattern
+  private fun detectCryptocurrency(
+    companyName: String,
+    ticker: String? = null,
+  ): String? {
+    val lowerName = companyName.lowercase()
+    val lowerTicker = ticker?.lowercase()
+    return CRYPTO_PATTERNS.find { pattern ->
+      lowerName.contains(pattern) || lowerTicker?.contains(pattern) == true
+    }
+  }
 
   private fun classifyWithPrimaryModel(
     prompt: String,
@@ -128,9 +106,9 @@ class IndustryClassificationService(
     val cryptoAssigned = mutableMapOf<Long, SectorClassificationResult>()
     val needsLlm = mutableListOf<SectorClassificationInput>()
     validCompanies.forEach { company ->
-      val cryptoMatch = detectCryptocurrency(company.name)
+      val cryptoMatch = detectCryptocurrency(company.name, company.ticker)
       if (cryptoMatch != null) {
-        log.info("Hardcoded: ${company.name} as Cryptocurrency (matched: $cryptoMatch)")
+        log.info("Hardcoded: ${company.name} (${company.ticker}) as Cryptocurrency (matched: $cryptoMatch)")
         cryptoAssigned[company.holdingId] = SectorClassificationResult(IndustrySector.CRYPTOCURRENCY, null)
       } else {
         needsLlm.add(company)
