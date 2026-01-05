@@ -209,4 +209,61 @@ class IndustryClassificationServiceTest {
     verify(exactly = 1) { openRouterClient.classifyWithModel(any()) }
     verify(exactly = 0) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
   }
+
+  @Test
+  fun `should hardcode cryptocurrency for bitcoin holdings`() {
+    every { properties.enabled } returns true
+
+    val result = service.classifyCompanyWithModel("Bitcoin")
+
+    expect(result?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
+    expect(result?.model).toEqual(null)
+    verify(exactly = 0) { openRouterClient.classifyWithModel(any()) }
+  }
+
+  @Test
+  fun `should hardcode cryptocurrency for ethereum holdings`() {
+    every { properties.enabled } returns true
+
+    val result = service.classifyCompanyWithModel("Ethereum Foundation")
+
+    expect(result?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
+    expect(result?.model).toEqual(null)
+    verify(exactly = 0) { openRouterClient.classifyWithModel(any()) }
+  }
+
+  @Test
+  fun `should hardcode cryptocurrency for bnb holdings`() {
+    every { properties.enabled } returns true
+
+    val result = service.classifyCompanyWithModel("BNB Chain")
+
+    expect(result?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
+    expect(result?.model).toEqual(null)
+    verify(exactly = 0) { openRouterClient.classifyWithModel(any()) }
+  }
+
+  @Test
+  fun `should hardcode cryptocurrency for solana holdings`() {
+    every { properties.enabled } returns true
+
+    val result = service.classifyCompanyWithModel("Solana Labs")
+
+    expect(result?.sector).toEqual(IndustrySector.CRYPTOCURRENCY)
+    expect(result?.model).toEqual(null)
+    verify(exactly = 0) { openRouterClient.classifyWithModel(any()) }
+  }
+
+  @Test
+  fun `should not hardcode cryptocurrency for non crypto companies`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithModel(any()) } returns
+      OpenRouterClassificationResult(content = "Software & Cloud Services", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+
+    val result = service.classifyCompanyWithModel("Apple Inc")
+
+    expect(result?.sector).toEqual(IndustrySector.SOFTWARE_CLOUD_SERVICES)
+    expect(result?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+    verify(exactly = 1) { openRouterClient.classifyWithModel(any()) }
+  }
 }

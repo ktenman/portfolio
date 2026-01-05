@@ -16,6 +16,17 @@ class IndustryClassificationService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  companion object {
+    private val CRYPTO_PATTERNS =
+      listOf(
+        "bitcoin", "btc", "ethereum", "eth", "bnb", "binance",
+        "solana", "sol", "cardano", "ada", "ripple", "xrp",
+        "dogecoin", "doge", "polkadot", "dot", "avalanche", "avax",
+        "chainlink", "link", "uniswap", "uni", "litecoin", "ltc",
+        "crypto", "blockchain", "defi", "nft",
+      )
+  }
+
   fun classifyCompany(companyName: String): IndustrySector? = classifyCompanyWithModel(companyName)?.sector
 
   fun classifyCompanyWithModel(companyName: String): SectorClassificationResult? {
@@ -25,8 +36,18 @@ class IndustryClassificationService(
       log.warn("Classification disabled or blank company name")
       return null
     }
+    val cryptoMatch = detectCryptocurrency(companyName)
+    if (cryptoMatch != null) {
+      log.info("Hardcoded classification: $sanitizedName as Cryptocurrency (matched: $cryptoMatch)")
+      return SectorClassificationResult(sector = IndustrySector.CRYPTOCURRENCY, model = null)
+    }
     val prompt = buildPrompt(companyName)
     return classifyWithPrimaryModel(prompt, sanitizedName)
+  }
+
+  private fun detectCryptocurrency(companyName: String): String? {
+    val lowerName = companyName.lowercase()
+    return CRYPTO_PATTERNS.find { pattern -> lowerName.contains(pattern) }
   }
 
   private fun classifyWithPrimaryModel(
