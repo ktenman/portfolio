@@ -17,7 +17,32 @@ class IndustryClassificationService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val CRYPTO_PATTERNS = setOf("btceur", "bitcoin", "binance", "bnbeur")
+    private val CRYPTO_PATTERNS =
+      setOf(
+        "btceur",
+        "bitcoin",
+        "binance",
+        "bnbeur",
+        "btc",
+        "ethereum",
+        "eth",
+        "litecoin",
+        "ltc",
+        "ripple",
+        "xrp",
+        "solana",
+        "sol",
+        "cardano",
+        "ada",
+        "dogecoin",
+        "doge",
+        "polkadot",
+        "dot",
+        "avalanche",
+        "avax",
+        "crypto",
+        "trezor",
+      )
   }
 
   fun classifyCompany(companyName: String): IndustrySector? = classifyCompanyWithModel(companyName)?.sector
