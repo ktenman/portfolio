@@ -19,6 +19,8 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
 
   fun findByProviderName(providerName: ProviderName): List<Instrument>
 
+  fun findByProviderNameIn(providerNames: List<ProviderName>): List<Instrument>
+
   @Modifying(clearAutomatically = true)
   @Query("UPDATE Instrument i SET i.currentPrice = :price WHERE i.id = :id")
   fun updateCurrentPrice(
