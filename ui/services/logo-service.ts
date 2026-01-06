@@ -1,6 +1,8 @@
 import { httpClient } from '../utils/http-client'
 import { API_ENDPOINTS } from '../constants'
 
+const LOGO_SEARCH_TIMEOUT = 60000
+
 export interface LogoCandidateDto {
   thumbnailUrl: string
   title: string
@@ -21,12 +23,17 @@ export interface LogoReplacementResponse {
 export const logoService = {
   getCandidates: (holdingUuid: string) =>
     httpClient
-      .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/${holdingUuid}/candidates`)
+      .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/${holdingUuid}/candidates`, {
+        timeout: LOGO_SEARCH_TIMEOUT,
+      })
       .then(res => res.data),
 
   searchByName: (name: string) =>
     httpClient
-      .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/search`, { params: { name } })
+      .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/search`, {
+        params: { name },
+        timeout: LOGO_SEARCH_TIMEOUT,
+      })
       .then(res => res.data),
 
   replaceLogo: (request: LogoReplacementRequest) =>
