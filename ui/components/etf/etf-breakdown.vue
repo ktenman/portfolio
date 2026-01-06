@@ -95,7 +95,6 @@ import EtfBreakdownTable from './etf-breakdown-table.vue'
 import { formatPlatformName } from '../../utils/platform-utils'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
-const allHoldings = ref<EtfHoldingBreakdownDto[]>([])
 const masterHoldings = ref<EtfHoldingBreakdownDto[]>([])
 const isLoading = ref(false)
 const isError = ref(false)
@@ -187,34 +186,19 @@ const loadBreakdown = async (refreshMaster = false) => {
   errorMessage.value = ''
 
   try {
-    if (refreshMaster || masterHoldings.value.length === 0) {
-      masterHoldings.value = await etfBreakdownService.getBreakdown(undefined, undefined)
-    }
-    allHoldings.value = await etfBreakdownService.getBreakdown(undefined, getPlatformsParam())
-
+    const needsMaster = refreshMaster || masterHoldings.value.length === 0
+    const platformsParam = getPlatformsParam()
     const etfsParam = getEtfsParam()
-    if (!etfsParam) {
-      holdings.value = allHoldings.value
-    } else {
-      holdings.value = await etfBreakdownService.getBreakdown(etfsParam, getPlatformsParam())
-    }
-  } catch (error) {
-    isError.value = true
-    errorMessage.value = error instanceof Error ? error.message : 'Unknown error'
-  } finally {
-    isLoading.value = false
-  }
-}
 
-const updateFilteredHoldings = async () => {
-  if (allHoldings.value.length === 0) return
-  isLoading.value = true
-  try {
-    const etfsParam = getEtfsParam()
-    if (!etfsParam) {
-      holdings.value = allHoldings.value
+    if (needsMaster) {
+      const [master, filtered] = await Promise.all([
+        etfBreakdownService.getBreakdown(undefined, undefined),
+        etfBreakdownService.getBreakdown(etfsParam, platformsParam),
+      ])
+      masterHoldings.value = master
+      holdings.value = filtered
     } else {
-      holdings.value = await etfBreakdownService.getBreakdown(etfsParam, getPlatformsParam())
+      holdings.value = await etfBreakdownService.getBreakdown(etfsParam, platformsParam)
     }
   } catch (error) {
     isError.value = true
@@ -226,7 +210,7 @@ const updateFilteredHoldings = async () => {
 
 const debouncedLoadBreakdown = useDebounceFn(() => loadBreakdown(), 300)
 
-watch(selectedEtfs, updateFilteredHoldings)
+watch(selectedEtfs, debouncedLoadBreakdown)
 
 watch(selectedPlatforms, debouncedLoadBreakdown)
 
