@@ -24,6 +24,11 @@ export const logoService = {
       .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/${holdingUuid}/candidates`)
       .then(res => res.data),
 
+  searchByName: (name: string) =>
+    httpClient
+      .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/search`, { params: { name } })
+      .then(res => res.data),
+
   replaceLogo: (request: LogoReplacementRequest) =>
     httpClient
       .post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/replace`, request)

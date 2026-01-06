@@ -20,6 +20,10 @@ class LightyearPriceService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  companion object {
+    private const val MAX_HOLDING_VALUE = 100.0
+  }
+
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchCurrentPrices(): Map<String, BigDecimal> {
     val symbols = properties.getAllSymbols()
@@ -47,9 +51,10 @@ class LightyearPriceService(
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchHoldingsAsDto(symbol: String): List<HoldingData> {
     val apiHoldings = fetchHoldingsRaw(symbol)
-    val instrumentMap = fetchInstrumentsBatch(apiHoldings)
-    val totalValue = apiHoldings.sumOf { it.value }
-    return apiHoldings.mapIndexed { index, holding ->
+    val validHoldings = filterAnomalousValues(apiHoldings)
+    val instrumentMap = fetchInstrumentsBatch(validHoldings)
+    val totalValue = validHoldings.sumOf { it.value }
+    return validHoldings.mapIndexed { index, holding ->
       val instrument = holding.instrumentId?.let { instrumentMap[it] }
       val weightPercentage = calculateWeightPercentage(holding.value, totalValue)
       HoldingData(
@@ -61,6 +66,12 @@ class LightyearPriceService(
         logoUrl = instrument?.logo,
       )
     }
+  }
+
+  private fun filterAnomalousValues(holdings: List<LightyearHoldingResponse>): List<LightyearHoldingResponse> {
+    val (valid, anomalous) = holdings.partition { it.value <= MAX_HOLDING_VALUE }
+    anomalous.forEach { log.warn("Skipping holding '${it.name}' with anomalous value: ${it.value}") }
+    return valid
   }
 
   private fun calculateWeightPercentage(

@@ -7,7 +7,7 @@ import {
 } from '../utils/formatters'
 
 export const instrumentColumns: ColumnDefinition[] = [
-  { key: 'instrument', label: 'Instrument' },
+  { key: 'instrument', label: 'Instrument', sortKey: 'name' },
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
   { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
   { key: 'currentValue', label: 'Value', formatter: formatCurrency },
@@ -24,7 +24,12 @@ export const instrumentColumns: ColumnDefinition[] = [
     formatter: formatCurrency,
     class: 'unrealized-column',
   },
-  { key: 'priceChange', label: '24H', class: 'd-none d-lg-table-cell price-change-column' },
+  {
+    key: 'priceChange',
+    label: '24H',
+    class: 'd-none d-lg-table-cell price-change-column',
+    sortKey: 'priceChangeAmount',
+  },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
   {
     key: 'xirrAnnualReturn',
@@ -32,7 +37,12 @@ export const instrumentColumns: ColumnDefinition[] = [
     formatter: formatPercentageFromDecimal,
     class: 'd-none d-xl-table-cell',
   },
-  { key: 'portfolioWeight', label: 'Weight', class: 'd-none d-xl-table-cell' },
+  {
+    key: 'portfolioWeight',
+    label: 'Weight',
+    class: 'd-none d-xl-table-cell',
+    sortKey: 'currentValue',
+  },
   { key: 'ter', label: 'TER', class: 'd-none d-xl-table-cell' },
 ]
 

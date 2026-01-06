@@ -51,7 +51,12 @@
                 @error="handleImageError"
               />
             </div>
-            <div v-else class="logo-placeholder" :title="'No logo available'">
+            <div
+              v-else
+              class="logo-placeholder clickable"
+              :title="'Click to search for logo'"
+              @click.stop="openLogoModal(item)"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -59,11 +64,11 @@
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="1.5"
+                stroke-width="2"
               >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             </div>
             <span
@@ -74,7 +79,14 @@
             >
               {{ item.holdingTicker || '' }}
             </span>
-            <span v-else class="ticker-symbol">-</span>
+            <span
+              v-else
+              class="ticker-symbol clickable"
+              @click.stop="openLogoModal(item)"
+              title="Click to search for logo"
+            >
+              {{ item.holdingTicker || '-' }}
+            </span>
           </div>
         </template>
         <template #cell-holdingCountryName="{ item }">
@@ -379,6 +391,18 @@ const columns: ColumnDefinition[] = [
   border-radius: 50%;
   color: #adb5bd;
   flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.logo-placeholder.clickable {
+  cursor: pointer;
+}
+
+.logo-placeholder.clickable:hover {
+  transform: scale(1.1);
+  background-color: #e9ecef;
+  color: #6c757d;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .ticker-symbol {

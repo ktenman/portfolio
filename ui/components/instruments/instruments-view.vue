@@ -46,6 +46,8 @@
         :is-error="isError"
         :error-message="error?.message"
         :selected-period="selectedPeriod"
+        :sort-state="sortState"
+        :on-sort="toggleSort"
       />
     </template>
 
@@ -62,6 +64,7 @@ import { useToast } from '../../composables/use-toast'
 import { useLocalStorage } from '@vueuse/core'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import { usePriceChangePeriod } from '../../composables/use-price-change-period'
+import { useSortableTable } from '../../composables/use-sortable-table'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
@@ -138,13 +141,16 @@ const {
   refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
 })
 
-const items = computed(() => {
+const filteredItems = computed(() => {
   if (!rawItems.value) return []
-
-  return [...rawItems.value.instruments]
-    .filter(instrument => (instrument.currentValue || 0) > 0)
-    .sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0))
+  return rawItems.value.instruments.filter(instrument => (instrument.currentValue || 0) > 0)
 })
+
+const {
+  sortedItems: items,
+  sortState,
+  toggleSort,
+} = useSortableTable(filteredItems, 'currentValue', 'desc')
 
 const portfolioXirr = computed(() => rawItems.value?.portfolioXirr ?? null)
 

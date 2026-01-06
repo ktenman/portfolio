@@ -40,10 +40,14 @@
           </div>
         </div>
         <div class="modal-footer">
+          <div v-if="!holdingUuid" class="text-muted small me-auto">
+            Logo preview only - no holding record to save to
+          </div>
           <button type="button" class="btn btn-secondary" @click="close" :disabled="isReplacing">
-            Cancel
+            {{ holdingUuid ? 'Cancel' : 'Close' }}
           </button>
           <button
+            v-if="holdingUuid"
             type="button"
             class="btn btn-primary"
             @click="confirmReplacement"
@@ -106,7 +110,7 @@ onUnmounted(() => {
 watch(
   () => props.modelValue,
   async newValue => {
-    if (newValue && props.holdingUuid) {
+    if (newValue && (props.holdingUuid || props.holdingName)) {
       modalInstance?.show()
       await loadCandidates()
     } else {
@@ -117,14 +121,18 @@ watch(
 )
 
 const loadCandidates = async () => {
-  if (!props.holdingUuid) return
+  if (!props.holdingUuid && !props.holdingName) return
   isLoading.value = true
   hasFetched.value = false
   error.value = null
   candidates.value = []
   selectedIndex.value = null
   try {
-    candidates.value = await logoService.getCandidates(props.holdingUuid)
+    if (props.holdingUuid) {
+      candidates.value = await logoService.getCandidates(props.holdingUuid)
+    } else {
+      candidates.value = await logoService.searchByName(props.holdingName)
+    }
   } catch {
     error.value = 'Failed to load logo candidates'
   } finally {

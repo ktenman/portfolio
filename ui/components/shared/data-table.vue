@@ -130,6 +130,7 @@ export interface ColumnDefinition {
   formatter?: (value: any, item?: any) => string
   class?: string
   sortable?: boolean
+  sortKey?: string
 }
 
 interface Props {
@@ -143,7 +144,7 @@ interface Props {
   rowClass?: (item: T, index: number) => string | Record<string, boolean>
   sortable?: boolean
   sortState?: SortState
-  onSort?: (key: string) => void
+  onSort?: (key: string, sortKey?: string) => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -190,7 +191,7 @@ const formatCellValue = (item: T, column: ColumnDefinition): string => {
 
 const handleSort = (column: ColumnDefinition) => {
   if (props.sortable && column.sortable !== false && props.onSort) {
-    props.onSort(column.key)
+    props.onSort(column.key, column.sortKey)
   }
 }
 </script>

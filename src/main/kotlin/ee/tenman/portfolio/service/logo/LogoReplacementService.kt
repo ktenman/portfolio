@@ -190,4 +190,20 @@ class LogoReplacementService(
     }
     log.info("Prefetch completed for ${holdingUuids.size} holdings")
   }
+
+  fun searchByName(name: String): List<LogoCandidateDto> {
+    val searchQuery = LogoSearchQueryBuilder.buildQuery(name, null)
+    val candidates = imageSearchLogoService.searchLogoCandidates(searchQuery, properties.maxSearchResults)
+    if (candidates.isEmpty()) {
+      log.debug("No candidates found for name: $name")
+      return emptyList()
+    }
+    val validatedCandidates = validateCandidates(candidates).take(properties.maxDisplayCandidates)
+    if (validatedCandidates.isEmpty()) {
+      log.warn("No valid candidates found for name: $name")
+      return emptyList()
+    }
+    log.info("Found ${validatedCandidates.size} valid candidates for name: $name")
+    return toDtos(validatedCandidates)
+  }
 }

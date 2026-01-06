@@ -44,7 +44,7 @@ class InstrumentXirrJobTest {
   @Test
   fun `should calculate xirr using synthetic monthly investments`() {
     val instrument = createInstrument("AAPL", 1L, BigDecimal("150"))
-    val dailyPrices = createMonthlyPrices(instrument, "2025-01-01", "2025-06-01")
+    val dailyPrices = createMonthlyPrices(instrument, "2024-10-01", "2025-06-01")
     every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument)
     every { dailyPriceService.findAllByInstrument(instrument) } returns dailyPrices
     val xirrSlot = slot<BigDecimal>()
@@ -94,7 +94,7 @@ class InstrumentXirrJobTest {
   fun `should handle errors gracefully and continue processing`() {
     val instrument1 = createInstrument("AAPL", 1L, BigDecimal("150"))
     val instrument2 = createInstrument("GOOGL", 2L, BigDecimal("180"))
-    val prices2 = createMonthlyPrices(instrument2, "2025-01-01", "2025-06-01")
+    val prices2 = createMonthlyPrices(instrument2, "2024-10-01", "2025-06-01")
     every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument1, instrument2)
     every { dailyPriceService.findAllByInstrument(instrument1) } throws RuntimeException("API error")
     every { dailyPriceService.findAllByInstrument(instrument2) } returns prices2
@@ -115,6 +115,9 @@ class InstrumentXirrJobTest {
     val instrument = createInstrument("GROWTH", 1L, BigDecimal("200"))
     val prices =
       listOf(
+      createDailyPrice(instrument, "2024-10-01", BigDecimal("80")),
+      createDailyPrice(instrument, "2024-11-01", BigDecimal("85")),
+      createDailyPrice(instrument, "2024-12-01", BigDecimal("90")),
       createDailyPrice(instrument, "2025-01-01", BigDecimal("100")),
       createDailyPrice(instrument, "2025-02-01", BigDecimal("110")),
       createDailyPrice(instrument, "2025-03-01", BigDecimal("120")),
