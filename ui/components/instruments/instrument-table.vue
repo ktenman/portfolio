@@ -6,6 +6,9 @@
     :is-error="isError"
     :error-message="errorMessage"
     empty-message="No instruments found. Add a new instrument to get started."
+    :sortable="true"
+    :sort-state="sortState"
+    :on-sort="onSort"
   >
     <template #footer>
       <tr v-if="instruments.length > 0" class="table-footer-totals d-none d-md-table-row">
@@ -307,6 +310,7 @@ import { formatProfit, calculatePortfolioWeight } from '../../utils/instrument-f
 import { useValueChangeAnimation } from '../../composables/use-value-change-animation'
 import { useNumberTransition } from '../../composables/use-number-transition'
 import { useInstrumentTotals } from '../../composables/use-instrument-totals'
+import type { SortState } from '../../composables/use-sortable-table'
 
 interface Props {
   instruments: InstrumentDto[]
@@ -315,6 +319,8 @@ interface Props {
   isError?: boolean
   errorMessage?: string
   selectedPeriod: string
+  sortState?: SortState
+  onSort?: (key: string) => void
 }
 
 const props = withDefaults(defineProps<Props>(), {

@@ -51,7 +51,7 @@ class FinancialCalculationEdgeCaseTest {
     }
 
     @Test
-    fun `should return null for very recent transaction below 30 days`() {
+    fun `should return null for very recent transaction below 90 days`() {
       val transactions =
         listOf(
         CashFlow(-1000.0, LocalDate.now(clock).minusDays(1)),
