@@ -256,8 +256,8 @@ class InvestmentMetricsServiceTest {
   fun `should calculateAdjustedXirr with sufficient transactions returns bounded value`() {
     val transactions =
       listOf(
-        CashFlow(-1000.0, testDate.minusDays(100)),
-        CashFlow(-500.0, testDate.minusDays(50)),
+        CashFlow(-1000.0, testDate.minusDays(150)),
+        CashFlow(-500.0, testDate.minusDays(100)),
         CashFlow(2000.0, testDate),
       )
 
@@ -277,7 +277,7 @@ class InvestmentMetricsServiceTest {
 
   @Test
   fun `should calculateAdjustedXirr applies dampening for new investments`() {
-    val recentDate = testDate.minusDays(70)
+    val recentDate = testDate.minusDays(100)
     val transactions =
       listOf(
         CashFlow(-1000.0, recentDate),
@@ -594,10 +594,10 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr with exactly 60 days investment period`() {
+  fun `should calculateAdjustedXirr with exactly 90 days investment period`() {
     val transactions =
       listOf(
-        CashFlow(-1000.0, testDate.minusDays(60)),
+        CashFlow(-1000.0, testDate.minusDays(90)),
         CashFlow(1200.0, testDate),
       )
 
@@ -800,9 +800,9 @@ class InvestmentMetricsServiceTest {
   fun `should calculateAdjustedXirr with weighted investment age calculation`() {
     val transactions =
       listOf(
-        CashFlow(-5000.0, testDate.minusDays(100)),
-        CashFlow(-3000.0, testDate.minusDays(50)),
-        CashFlow(-2000.0, testDate.minusDays(20)),
+        CashFlow(-5000.0, testDate.minusDays(150)),
+        CashFlow(-3000.0, testDate.minusDays(100)),
+        CashFlow(-2000.0, testDate.minusDays(70)),
         CashFlow(12000.0, testDate),
       )
 
