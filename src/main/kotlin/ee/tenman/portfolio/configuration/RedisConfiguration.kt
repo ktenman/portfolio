@@ -24,6 +24,7 @@ class RedisConfiguration {
     cacheConfigurations[ETF_BREAKDOWN_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5))
     cacheConfigurations[LIGHTYEAR_UUID_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[LOGO_CANDIDATES_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
+    cacheConfigurations[LOGO_NAME_SEARCH_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
       .builder(connectionFactory)
@@ -42,6 +43,7 @@ class RedisConfiguration {
     const val EASTER_HOLIDAYS_CACHE: String = "easter-holidays"
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid"
     const val LOGO_CANDIDATES_CACHE: String = "logo-candidates"
+    const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }

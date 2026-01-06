@@ -191,18 +191,28 @@ class LogoReplacementService(
     log.info("Prefetch completed for ${holdingUuids.size} holdings")
   }
 
+  @Suppress("ReturnCount")
   fun searchByName(name: String): List<LogoCandidateDto> {
+    val cachedData = logoCandidateCacheService.getCachedDataByName(name)
+    if (cachedData != null) {
+      log.debug("Returning cached candidates for name: $name")
+      return cachedToDtos(cachedData)
+    }
     val searchQuery = LogoSearchQueryBuilder.buildQuery(name, null)
     val candidates = imageSearchLogoService.searchLogoCandidates(searchQuery, properties.maxSearchResults)
     if (candidates.isEmpty()) {
       log.debug("No candidates found for name: $name")
       return emptyList()
     }
-    val validatedCandidates = validateCandidates(candidates).take(properties.maxDisplayCandidates)
-    if (validatedCandidates.isEmpty()) {
+    val allValidated = validateCandidates(candidates)
+    if (allValidated.isEmpty()) {
       log.warn("No valid candidates found for name: $name")
       return emptyList()
     }
+    val validatedCandidates = allValidated.take(properties.maxDisplayCandidates)
+    val validCandidates = validatedCandidates.map { it.first }
+    val imageData = validatedCandidates.associate { it.first.index to it.second }
+    logoCandidateCacheService.cacheByName(name, validCandidates, imageData)
     log.info("Found ${validatedCandidates.size} valid candidates for name: $name")
     return toDtos(validatedCandidates)
   }
