@@ -594,10 +594,10 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr with exactly 90 days investment period`() {
+  fun `should calculateAdjustedXirr with exactly 30 days investment period`() {
     val transactions =
       listOf(
-        CashFlow(-1000.0, testDate.minusDays(90)),
+        CashFlow(-1000.0, testDate.minusDays(30)),
         CashFlow(1200.0, testDate),
       )
 
