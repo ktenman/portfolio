@@ -51,9 +51,14 @@ class TransactionCalculationService(
     val allTransactions = transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
     return instrumentIds.associateWith { id ->
       val txs = allTransactions.filter { it.instrument.id == id }
+      val quantityByPlatform =
+        txs.groupBy { it.platform }.mapValues { (_, platformTxs) ->
+        calculateNetQuantityFromTransactions(platformTxs)
+      }
       InstrumentTransactionData(
         netQuantity = calculateNetQuantityFromTransactions(txs),
         platforms = txs.map { it.platform }.toSet(),
+        quantityByPlatform = quantityByPlatform,
       )
     }
   }
