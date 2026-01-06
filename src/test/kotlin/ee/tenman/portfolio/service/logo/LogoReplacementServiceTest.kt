@@ -171,6 +171,34 @@ class LogoReplacementServiceTest {
     }
   }
 
+  @Nested
+  inner class SearchByName {
+    @Test
+    fun `should return empty list when no search results`() {
+      every { imageSearchLogoService.searchLogoCandidates("Apple Inc logo", 50) } returns emptyList()
+
+      val result = service.searchByName("Apple Inc")
+
+      expect(result).toHaveSize(0)
+    }
+
+    @Test
+    fun `should return validated candidates for name search`() {
+      val imageData = "test-image".toByteArray()
+      val candidate = LogoCandidate(thumbnailUrl = "thumb.png", imageUrl = "img.png", title = "Apple", index = 0)
+      every { imageSearchLogoService.searchLogoCandidates("Microsoft logo", 50) } returns listOf(candidate)
+      every { imageDownloadService.download("img.png") } returns imageData
+      every { logoValidationService.isValidLogo(imageData) } returns true
+      every { logoValidationService.detectMediaType(imageData) } returns "image/png"
+
+      val result = service.searchByName("Microsoft")
+
+      expect(result).toHaveSize(1)
+      expect(result[0].title).toEqual("Apple")
+      expect(result[0].index).toEqual(0)
+    }
+  }
+
   private fun createHolding(
     uuid: UUID,
     name: String,
