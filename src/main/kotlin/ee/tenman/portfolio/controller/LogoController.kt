@@ -53,6 +53,15 @@ class LogoController(
     return ResponseEntity.ok(candidates)
   }
 
+  @GetMapping("/search")
+  fun searchLogoCandidates(
+    @org.springframework.web.bind.annotation.RequestParam name: String,
+  ): ResponseEntity<List<LogoCandidateDto>> {
+    log.debug("Searching logo candidates for name: $name")
+    val candidates = logoReplacementService.searchByName(name)
+    return ResponseEntity.ok(candidates)
+  }
+
   @PostMapping("/replace")
   fun replaceLogo(
     @RequestBody request: LogoReplacementRequest,
