@@ -19,8 +19,8 @@ class XirrCalculationService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private const val MIN_DAYS_FOR_XIRR = 60.0
-    private const val FULL_DAMPING_DAYS = 90.0
+    private const val MIN_DAYS_FOR_XIRR = 90.0
+    private const val FULL_DAMPING_DAYS = 120.0
   }
 
   fun buildCashFlows(
