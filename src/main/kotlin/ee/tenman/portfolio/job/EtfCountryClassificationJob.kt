@@ -27,7 +27,7 @@ class EtfCountryClassificationJob(
     private const val BATCH_SIZE = 100
   }
 
-  @Scheduled(initialDelay = 240000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(initialDelay = 300000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 */4 * * *}")
   fun runJob() {
     log.info("Running ETF country classification job")
