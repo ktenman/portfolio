@@ -277,7 +277,7 @@ class InvestmentMetricsServiceTest {
 
   @Test
   fun `should calculateAdjustedXirr applies dampening for new investments`() {
-    val recentDate = testDate.minusDays(30)
+    val recentDate = testDate.minusDays(70)
     val transactions =
       listOf(
         CashFlow(-1000.0, recentDate),
@@ -1097,14 +1097,14 @@ class InvestmentMetricsServiceTest {
       Stream.of(
         Arguments.of(
           listOf(
-            CashFlow(-1000.0, LocalDate.of(2023, 12, 1)),
+            CashFlow(-1000.0, LocalDate.of(2023, 10, 1)),
             CashFlow(100000.0, LocalDate.of(2024, 1, 15)),
           ),
           { xirr: Double? -> xirr != null && xirr <= 10.0 },
         ),
         Arguments.of(
           listOf(
-            CashFlow(-10000.0, LocalDate.of(2023, 12, 1)),
+            CashFlow(-10000.0, LocalDate.of(2023, 10, 1)),
             CashFlow(100.0, LocalDate.of(2024, 1, 15)),
           ),
           { xirr: Double? -> xirr != null && xirr >= -10.0 },

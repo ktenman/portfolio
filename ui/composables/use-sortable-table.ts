@@ -4,6 +4,7 @@ type SortDirection = 'asc' | 'desc' | null
 
 export interface SortState {
   key: string | null
+  sortKey: string | null
   direction: SortDirection
 }
 
@@ -14,16 +15,17 @@ export function useSortableTable<T extends Record<string, any>>(
 ) {
   const sortState = ref<SortState>({
     key: defaultSortKey || null,
+    sortKey: defaultSortKey || null,
     direction: defaultSortKey ? defaultDirection : null,
   })
 
   const sortedItems = computed(() => {
-    if (!sortState.value.key || !sortState.value.direction) {
+    if (!sortState.value.sortKey || !sortState.value.direction) {
       return items.value
     }
 
     const sorted = [...items.value].sort((a, b) => {
-      const key = sortState.value.key!
+      const key = sortState.value.sortKey!
       let aValue = getNestedValue(a, key)
       let bValue = getNestedValue(b, key)
 
@@ -51,16 +53,12 @@ export function useSortableTable<T extends Record<string, any>>(
     return sorted
   })
 
-  const toggleSort = (key: string) => {
+  const toggleSort = (key: string, sortKey?: string) => {
     if (sortState.value.key === key) {
-      if (sortState.value.direction === 'asc') {
-        sortState.value.direction = 'desc'
-      } else if (sortState.value.direction === 'desc') {
-        sortState.value.direction = null
-        sortState.value.key = null
-      }
+      sortState.value.direction = sortState.value.direction === 'asc' ? 'desc' : 'asc'
     } else {
       sortState.value.key = key
+      sortState.value.sortKey = sortKey || key
       sortState.value.direction = 'asc'
     }
   }

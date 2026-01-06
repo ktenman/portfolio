@@ -128,7 +128,7 @@ describe('useSortableTable', () => {
   })
 
   describe('toggleSort', () => {
-    it('should cycle through sort states: asc -> desc -> null', () => {
+    it('should toggle between asc and desc', () => {
       const items = ref(mockData)
       const { toggleSort, sortState } = useSortableTable(items)
 
@@ -139,8 +139,8 @@ describe('useSortableTable', () => {
       expect(sortState.value.direction).toBe('desc')
 
       toggleSort('name')
-      expect(sortState.value.direction).toBe(null)
-      expect(sortState.value.key).toBe(null)
+      expect(sortState.value.direction).toBe('asc')
+      expect(sortState.value.key).toBe('name')
     })
 
     it('should reset sort when switching to different column', () => {

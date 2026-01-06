@@ -465,4 +465,44 @@ class LightyearPriceServiceTest {
 
     expect(result).toEqual(null)
   }
+
+  @Test
+  fun `should filter out holdings with anomalous values exceeding threshold`() {
+    val holdings =
+      listOf(
+        LightyearHoldingResponse(name = "Normal Company", value = 5.5, instrumentId = "inst-1"),
+        LightyearHoldingResponse(name = "Corrupted Company", value = 1790494028.0, instrumentId = null),
+        LightyearHoldingResponse(name = "Another Normal", value = 4.2, instrumentId = "inst-2"),
+      )
+    val instruments =
+      listOf(
+        LightyearInstrumentResponse(
+          id = "inst-1",
+          symbol = "NORM",
+          name = "Normal Company",
+          exchange = "NYSE",
+          logo = null,
+          summary = null,
+        ),
+        LightyearInstrumentResponse(
+          id = "inst-2",
+          symbol = "ANTH",
+          name = "Another Normal",
+          exchange = "NYSE",
+          logo = null,
+          summary = null,
+        ),
+      )
+    every { properties.findUuidBySymbol("WTAI") } returns "wtai-uuid"
+    every { lightyearPriceClient.getHoldings(any()) } returns holdings
+    every { lightyearPriceClient.getInstrumentBatch(listOf("inst-1", "inst-2")) } returns instruments
+
+    val result = service.fetchHoldingsAsDto("WTAI")
+
+    expect(result).toHaveSize(2)
+    expect(result[0].name).toEqual("Normal Company")
+    expect(result[0].weight).toEqualNumerically(BigDecimal("56.701031"))
+    expect(result[1].name).toEqual("Another Normal")
+    expect(result[1].weight).toEqualNumerically(BigDecimal("43.298969"))
+  }
 }

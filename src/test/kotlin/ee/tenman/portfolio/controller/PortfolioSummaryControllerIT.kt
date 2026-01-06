@@ -216,7 +216,7 @@ class PortfolioSummaryControllerIT {
         transactionType = TransactionType.BUY,
         quantity = 3.4.toBigDecimal(),
         price = 27.25.toBigDecimal(),
-        transactionDate = LocalDate.of(2023, 6, 15),
+        transactionDate = LocalDate.of(2023, 5, 1),
         platform = Platform.LIGHTYEAR,
       ),
     )
@@ -226,10 +226,10 @@ class PortfolioSummaryControllerIT {
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.date").value("2023-07-21"))
       .andExpect(jsonPath("$.totalValue").value(96.05))
-      .andExpect(jsonPath("$.xirrAnnualReturn").value(closeTo(0.176, 0.01)))
+      .andExpect(jsonPath("$.xirrAnnualReturn").value(closeTo(0.159, 0.01)))
       .andExpect(jsonPath("$.totalProfit").value(3.4))
-      .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.046, 0.01)))
-      .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(1.41, 0.1)))
+      .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.042, 0.01)))
+      .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(1.27, 0.1)))
     expect(output.out).toContain("getCurrentPortfolioSummary")
     expect(output.out).toContain("entered with arguments: []")
     expect(output.out).toContain("exited with result:")
