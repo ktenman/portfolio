@@ -81,10 +81,8 @@ export function useSortableTable<T extends Record<string, any>>(
 function getNestedValue(obj: any, path: string): any {
   const keys = path.split('.')
   let value = obj
-
   for (const key of keys) {
     value = value?.[key]
   }
-
   return value
 }

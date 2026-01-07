@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.transaction
 
+import ee.tenman.portfolio.common.orThrow
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -29,13 +30,7 @@ class TransactionService(
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
-  fun getTransactionById(id: Long): PortfolioTransaction =
-    portfolioTransactionRepository
-      .findById(id)
-      .orElseThrow {
-        ee.tenman.portfolio.exception
-        .EntityNotFoundException("Transaction not found with id: $id")
-      }
+  fun getTransactionById(id: Long): PortfolioTransaction = portfolioTransactionRepository.findById(id).orThrow("Transaction", id)
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   @Retryable(

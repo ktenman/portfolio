@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.calculation
 
+import ee.tenman.portfolio.common.XirrPolicy
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
@@ -10,18 +11,12 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-import kotlin.math.min
 
 @Service
 class XirrCalculationService(
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
-
-  companion object {
-    private const val MIN_DAYS_FOR_XIRR = 365.25 / 12
-    private const val FULL_DAMPING_DAYS = 365.25 / 6
-  }
 
   fun buildCashFlows(
     transactions: List<PortfolioTransaction>,
@@ -46,10 +41,9 @@ class XirrCalculationService(
       val outflows = cashFlows.filter { it.amount < 0 }
       if (outflows.isEmpty()) return@runCatching null
       val weightedDays = calculateWeightedInvestmentAge(outflows, calculationDate)
-      if (weightedDays < MIN_DAYS_FOR_XIRR) return@runCatching null
+      if (!XirrPolicy.isEligibleForCalculation(weightedDays)) return@runCatching null
       val xirrResult = Xirr(cashFlows)()
-      val dampingFactor = min(1.0, weightedDays / FULL_DAMPING_DAYS)
-      xirrResult.coerceIn(-10.0, 10.0) * dampingFactor
+      XirrPolicy.applyDamping(xirrResult, weightedDays)
     }.getOrElse {
       log.error("Error calculating adjusted XIRR", it)
       null

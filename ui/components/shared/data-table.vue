@@ -167,11 +167,9 @@ const getItemKey = (item: T, index: number): string | number => {
 const getCellValue = (item: T, column: ColumnDefinition): any => {
   const keys = column.key.split('.')
   let value: any = item
-
   for (const key of keys) {
     value = value?.[key]
   }
-
   return value
 }
 
