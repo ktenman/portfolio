@@ -16,6 +16,11 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     @Param("name") name: String,
   ): EtfHolding?
 
+  @Query("SELECT h FROM EtfHolding h WHERE LOWER(h.name) IN :names")
+  fun findByNamesIgnoreCase(
+    @Param("names") names: List<String>,
+  ): List<EtfHolding>
+
   @Query(
     """
     SELECT h FROM EtfHolding h

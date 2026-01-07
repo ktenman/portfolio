@@ -10,15 +10,26 @@ import java.time.LocalDate
 
 @Repository
 interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
+  @Query(
+    """
+    SELECT ep FROM EtfPosition ep
+    JOIN FETCH ep.holding
+    WHERE ep.etfInstrument = :etfInstrument
+    AND ep.holding.id = :holdingId
+    AND ep.snapshotDate = :snapshotDate
+  """,
+  )
   fun findByEtfInstrumentAndHoldingIdAndSnapshotDate(
-    etfInstrument: Instrument,
-    holdingId: Long,
-    snapshotDate: LocalDate,
+    @Param("etfInstrument") etfInstrument: Instrument,
+    @Param("holdingId") holdingId: Long,
+    @Param("snapshotDate") snapshotDate: LocalDate,
   ): EtfPosition?
 
   @Query(
     """
     SELECT p FROM EtfPosition p
+    JOIN FETCH p.etfInstrument
+    JOIN FETCH p.holding
     WHERE p.etfInstrument.symbol = :etfSymbol
     AND p.snapshotDate = :snapshotDate
     ORDER BY p.positionRank
@@ -81,6 +92,7 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
   @Query(
     """
     SELECT ep FROM EtfPosition ep
+    JOIN FETCH ep.holding
     WHERE ep.etfInstrument.id = :etfInstrumentId
     AND ep.snapshotDate = :snapshotDate
   """,
@@ -88,5 +100,20 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
   fun findByEtfInstrumentIdAndSnapshotDate(
     @Param("etfInstrumentId") etfInstrumentId: Long,
     @Param("snapshotDate") snapshotDate: LocalDate,
+  ): List<EtfPosition>
+
+  @Query(
+    """
+    SELECT ep FROM EtfPosition ep
+    JOIN FETCH ep.holding
+    WHERE ep.etfInstrument.id = :etfInstrumentId
+    AND ep.snapshotDate = :snapshotDate
+    AND ep.holding.id IN :holdingIds
+  """,
+  )
+  fun findByEtfInstrumentIdAndSnapshotDateAndHoldingIds(
+    @Param("etfInstrumentId") etfInstrumentId: Long,
+    @Param("snapshotDate") snapshotDate: LocalDate,
+    @Param("holdingIds") holdingIds: List<Long>,
   ): List<EtfPosition>
 }

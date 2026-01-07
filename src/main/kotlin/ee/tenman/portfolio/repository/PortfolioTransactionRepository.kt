@@ -12,6 +12,14 @@ interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, L
   @Query("SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument ORDER BY pt.transactionDate DESC, pt.id DESC")
   fun findAllWithInstruments(): List<PortfolioTransaction>
 
+  @Query(
+    """
+    SELECT pt FROM PortfolioTransaction pt
+    JOIN FETCH pt.instrument
+    WHERE pt.instrument.id = :instrumentId AND pt.platform = :platform
+    ORDER BY pt.transactionDate ASC
+    """,
+  )
   fun findAllByInstrumentIdAndPlatformOrderByTransactionDate(
     instrumentId: Long,
     platform: Platform,

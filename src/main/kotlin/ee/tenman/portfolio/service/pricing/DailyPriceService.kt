@@ -1,11 +1,13 @@
 package ee.tenman.portfolio.service.pricing
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DAILY_PRICE_CACHE
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.repository.DailyPriceRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -19,6 +21,7 @@ class DailyPriceService(
   private val clock: Clock,
 ) {
   @Transactional(readOnly = true)
+  @Cacheable(value = [DAILY_PRICE_CACHE], key = "#instrument.id + ':' + #date")
   fun getPrice(
     instrument: Instrument,
     date: LocalDate,

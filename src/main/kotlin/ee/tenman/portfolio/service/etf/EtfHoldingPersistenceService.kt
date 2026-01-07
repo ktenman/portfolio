@@ -31,33 +31,77 @@ class EtfHoldingPersistenceService(
   ): Map<String, EtfHolding> {
     val etf = findOrCreateEtf(etfSymbol)
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
-    val savedHoldings = mutableMapOf<String, EtfHolding>()
+    val holdingsByName = batchLoadOrCreateHoldings(holdings)
+    val holdingIds = holdingsByName.values.map { it.id }
+    val existingPositions = batchLoadExistingPositions(etf.id, date, holdingIds)
+    val positionsToSave = buildPositionsToSave(holdings, holdingsByName, existingPositions, etf, date)
+    etfPositionRepository.saveAll(positionsToSave)
+    log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
+    return holdingsByName
+  }
+
+  private fun batchLoadOrCreateHoldings(holdings: List<HoldingData>): Map<String, EtfHolding> {
+    val names = holdings.map { it.name.lowercase() }
+    val existingHoldings = etfHoldingRepository.findByNamesIgnoreCase(names).associateBy { it.name.lowercase() }
+    val result = mutableMapOf<String, EtfHolding>()
+    val newHoldings = mutableListOf<EtfHolding>()
     holdings.forEach { holdingData ->
-      val holding = findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
-      savedHoldings[holdingData.name] = holding
-      val existingPosition =
-        etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
-          etfInstrument = etf,
-          holdingId = holding.id,
-          snapshotDate = date,
+      val nameLower = holdingData.name.lowercase()
+      val existing = existingHoldings[nameLower]
+      if (existing != null) {
+        updateTickerIfMissing(existing, holdingData.ticker)
+        updateSectorFromSourceIfMissing(existing, holdingData.sector)
+        result[holdingData.name] = existing
+      } else {
+        val newHolding = EtfHolding(
+          name = holdingData.name,
+          ticker = holdingData.ticker,
+          sector = holdingData.sector,
+          sectorSource = holdingData.sector?.let { SectorSource.LIGHTYEAR },
         )
-      val position =
-        existingPosition ?: EtfPosition(
+        newHoldings.add(newHolding)
+      }
+    }
+    val savedNewHoldings = etfHoldingRepository.saveAll(newHoldings)
+    savedNewHoldings.forEach { result[it.name] = it }
+    return result
+  }
+
+  private fun batchLoadExistingPositions(
+    etfId: Long,
+    date: LocalDate,
+    holdingIds: List<Long>,
+  ): Map<Long, EtfPosition> {
+    if (holdingIds.isEmpty()) return emptyMap()
+    return etfPositionRepository
+      .findByEtfInstrumentIdAndSnapshotDateAndHoldingIds(etfId, date, holdingIds)
+      .associateBy { it.holding.id }
+  }
+
+  private fun buildPositionsToSave(
+    holdings: List<HoldingData>,
+    holdingsByName: Map<String, EtfHolding>,
+    existingPositions: Map<Long, EtfPosition>,
+    etf: Instrument,
+    date: LocalDate,
+  ): List<EtfPosition> =
+    holdings.mapNotNull { holdingData ->
+      val holding = holdingsByName[holdingData.name] ?: return@mapNotNull null
+      val existingPosition = existingPositions[holding.id]
+      if (existingPosition != null) {
+        existingPosition.weightPercentage = holdingData.weight
+        existingPosition.positionRank = holdingData.rank
+        existingPosition
+      } else {
+        EtfPosition(
           etfInstrument = etf,
           holding = holding,
           snapshotDate = date,
           weightPercentage = holdingData.weight,
           positionRank = holdingData.rank,
         )
-      if (existingPosition != null) {
-        position.weightPercentage = holdingData.weight
-        position.positionRank = holdingData.rank
       }
-      etfPositionRepository.save(position)
     }
-    log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
-    return savedHoldings
-  }
 
   @Transactional
   fun findOrCreateHolding(
@@ -99,6 +143,10 @@ class EtfHoldingPersistenceService(
     etfHoldingRepository
       .findUnclassifiedSectorHoldingsForCurrentPortfolio()
       .map { it.id }
+
+  @Transactional(readOnly = true)
+  fun findUnclassifiedHoldings(): List<EtfHolding> =
+    etfHoldingRepository.findUnclassifiedSectorHoldingsForCurrentPortfolio()
 
   @Transactional(readOnly = true)
   fun findUnclassifiedByCountryHoldingIds(maxAttempts: Int = MAX_COUNTRY_FETCH_ATTEMPTS): List<Long> =

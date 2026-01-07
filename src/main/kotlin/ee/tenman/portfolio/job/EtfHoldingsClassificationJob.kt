@@ -41,20 +41,20 @@ class EtfHoldingsClassificationJob(
 
   override fun execute() {
     log.info("Starting ETF holdings classification with $PARALLEL_THREADS parallel threads")
-    val holdingIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
-    if (holdingIds.isEmpty()) {
+    val holdings = etfHoldingPersistenceService.findUnclassifiedHoldings()
+    if (holdings.isEmpty()) {
       log.info("No unclassified holdings found")
       return
     }
-    log.info("Found ${holdingIds.size} holdings without sector classification")
-    val result = processHoldingsInParallel(holdingIds)
+    log.info("Found ${holdings.size} holdings without sector classification")
+    val result = processHoldingsInParallel(holdings)
     log.info("Sector classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 
-  private fun processHoldingsInParallel(holdingIds: List<Long>): ClassificationResult {
-    val chunks = holdingIds.chunked((holdingIds.size + PARALLEL_THREADS - 1) / PARALLEL_THREADS)
+  private fun processHoldingsInParallel(holdings: List<EtfHolding>): ClassificationResult {
+    val chunks = holdings.chunked((holdings.size + PARALLEL_THREADS - 1) / PARALLEL_THREADS)
     val processedCount = AtomicInteger(0)
-    val totalCount = holdingIds.size
+    val totalCount = holdings.size
     val results =
       runBlocking {
         chunks
@@ -74,19 +74,19 @@ class EtfHoldingsClassificationJob(
   }
 
   private suspend fun processChunk(
-    holdingIds: List<Long>,
+    holdings: List<EtfHolding>,
     processedCount: AtomicInteger,
     totalCount: Int,
   ): ClassificationResult {
     var successCount = 0
     var failureCount = 0
     var skippedCount = 0
-    holdingIds.forEach { holdingId ->
+    holdings.forEach { holding ->
       val waitTime = circuitBreaker.getWaitTimeMs(circuitBreaker.isUsingFallback())
       if (waitTime > 0) {
         delay(waitTime + RATE_LIMIT_BUFFER_MS)
       }
-      when (classifyHolding(holdingId)) {
+      when (classifyHolding(holding)) {
         ClassificationOutcome.SUCCESS -> successCount++
         ClassificationOutcome.FAILURE -> failureCount++
         ClassificationOutcome.SKIPPED -> skippedCount++
@@ -99,13 +99,11 @@ class EtfHoldingsClassificationJob(
     return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedCount)
   }
 
-  private fun classifyHolding(holdingId: Long): ClassificationOutcome =
+  private fun classifyHolding(holding: EtfHolding): ClassificationOutcome =
     runCatching {
-      val holding =
-        etfHoldingPersistenceService.findById(holdingId) ?: return ClassificationOutcome.SKIPPED
       classifyAndSave(holding)
     }.getOrElse { e ->
-      log.error("Error classifying holding id=$holdingId", e)
+      log.error("Error classifying holding id=${holding.id}", e)
       ClassificationOutcome.FAILURE
     }
 

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.logo.LogoCacheService
@@ -27,28 +28,24 @@ class EtfLogoCollectionJob(
   )
   fun collectMissingLogos() {
     log.info("Starting ETF logo collection job")
-    val holdingIds = etfHoldingRepository.findHoldingsWithoutLogosForCurrentPortfolio().map { it.id }
-    log.info("Found ${holdingIds.size} holdings without logos")
-    holdingIds.forEach { processHolding(it) }
+    val holdings = etfHoldingRepository
+      .findHoldingsWithoutLogosForCurrentPortfolio()
+      .filter { it.logoSource == null && !it.countryCode.isNullOrBlank() }
+    log.info("Found ${holdings.size} holdings without logos")
+    holdings.forEach { processHolding(it) }
     log.info("Completed ETF logo collection job")
   }
 
-  fun processHolding(holdingId: Long) {
-    runCatching { processHoldingInternal(holdingId) }
-      .onFailure { log.warn("Failed to process holding $holdingId: ${it.message}") }
+  fun processHolding(holding: EtfHolding) {
+    runCatching { processHoldingInternal(holding) }
+      .onFailure { log.warn("Failed to process holding ${holding.id}: ${it.message}") }
   }
 
-  private fun processHoldingInternal(holdingId: Long) {
-    val holding =
-      etfHoldingRepository
-        .findById(holdingId)
-        .orElse(null)
-      ?.takeIf { it.logoSource == null && !it.countryCode.isNullOrBlank() }
-      ?: return
+  private fun processHoldingInternal(holding: EtfHolding) {
     val result =
       runCatching { logoFallbackService.fetchLogo(holding.name, holding.ticker, null) }
-      .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }
-      .getOrNull() ?: return
+        .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }
+        .getOrNull() ?: return
     val processedImage = imageProcessingService.resizeToMaxDimension(result.imageData)
     logoCacheService.saveLogo(holding.uuid, processedImage)
     log.info("Saved logo from ${result.source} for: ${holding.name}")

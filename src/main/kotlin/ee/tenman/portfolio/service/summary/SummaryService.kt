@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.summary
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
@@ -140,25 +141,26 @@ class SummaryService(
   }
 
   private fun calculateHistoricalSummary(date: LocalDate): PortfolioDailySummary {
-    val transactionsOnDate =
-      transactionService
-      .getAllTransactions()
-      .filter { it.transactionDate.isEqual(date) }
-
-    if (transactionsOnDate.isEmpty()) {
-      val previousSummary = tryUsePreviousDaySummary(date)
-      if (previousSummary != null) {
-        return previousSummary
-      }
+    val allTransactions = transactionService.getAllTransactions()
+    val transactionsUpToDate =
+      allTransactions
+        .filter { !it.transactionDate.isAfter(date) }
+        .sortedWith(compareBy({ it.transactionDate }, { it.id }))
+    val hasTransactionsOnDate = allTransactions.any { it.transactionDate.isEqual(date) }
+    if (!hasTransactionsOnDate) {
+      val previousSummary = tryUsePreviousDaySummary(date, transactionsUpToDate)
+      if (previousSummary != null) return previousSummary
     }
-
-    return calculateSummaryDetailsForDate(date)
+    return dailySummaryCalculator.calculateFromTransactions(transactionsUpToDate, date)
   }
 
-  private fun tryUsePreviousDaySummary(date: LocalDate): PortfolioDailySummary? {
+  private fun tryUsePreviousDaySummary(
+    date: LocalDate,
+    transactionsUpToDate: List<PortfolioTransaction>,
+  ): PortfolioDailySummary? {
     val previousDate = date.minusDays(1)
     val previousSummary = portfolioDailySummaryRepository.findByEntryDate(previousDate) ?: return null
-    val summary = calculateSummaryDetailsForDate(date)
+    val summary = dailySummaryCalculator.calculateFromTransactions(transactionsUpToDate, date)
     if (dailySummaryCalculator.shouldReuseYesterday(previousSummary, summary)) {
       return createSummaryFromExisting(date, summary)
     }
