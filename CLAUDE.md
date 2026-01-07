@@ -9,8 +9,8 @@ This is a **Portfolio Management System** - a production-ready, full-stack appli
 **Tech Stack:**
 
 - Backend: Kotlin 2.2, Spring Boot 4.0, Java 21
-- Frontend: Vue.js 3.5, TypeScript 5.9, Vite 7.2, Bootstrap 5.3
-- Database: PostgreSQL 17 with Flyway migrations (V1-V60+)
+- Frontend: Vue.js 3.5, TypeScript 5.9, Vite 7.3, Bootstrap 5.3
+- Database: PostgreSQL 17 with Flyway migrations (V1-V126+)
 - Cache: Redis 8 (multi-level caching strategy)
 - Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, MockK, Selenide, Vitest
 - Build: Gradle 8.8 with Version Catalogs (libs.versions.toml)
@@ -154,9 +154,9 @@ The system follows a clean microservices architecture with strong separation of 
 
 Comprehensive PlantUML diagrams are available in `docs/architecture/`:
 
-- **system-context.puml** - C4 Context diagram showing external systems and integrations (10 external APIs)
+- **system-context.puml** - C4 Context diagram showing external systems and integrations (12 external APIs)
 - **container-diagram.puml** - Internal containers: Web App, API, Database, Cache, Storage
-- **component-diagram.puml** - Detailed API components: Controllers (10), Services (21), Repositories
+- **component-diagram.puml** - Detailed API components: Controllers (11), Services (48+), Repositories
 - **database-erd.puml** - Database schema with 7 core entities and relationships
 - **price-update-sequence.puml** - Scheduled job execution flow with upsert idempotency
 - **xirr-calculation-sequence.puml** - Parallel XIRR calculation with Kotlin Coroutines
@@ -180,41 +180,59 @@ PlantUML diagrams can be generated with `./scripts/generate-diagrams.sh`. Edit `
 
 ### Component Inventory
 
-**Controllers (10 REST endpoints):**
+**Controllers (11 REST endpoints):**
 
 - InstrumentController, PortfolioTransactionController, PortfolioSummaryController - Core CRUD
-- EtfBreakdownController, WisdomTreeController - ETF analytics
+- EtfBreakdownController - ETF analytics
 - CalculatorController - XIRR calculations
+- LogoController - Logo management for ETF holdings
+- VehicleInfoController - Vehicle tracking and valuation
 - BuildInfoController, HealthController, EnumController, HomeController - Utilities
 
-**Services (21 business logic services):**
+**Services (48+ business logic services):**
 
-- Core: InstrumentService, TransactionService, SummaryService, DailyPriceService
-- Analytics: InvestmentMetricsService, CalculationService, EtfBreakdownService
-- ETF: EtfHoldingsService, LightyearScraperService, WisdomTreeUpdateService
-- Integration: Trading212PriceUpdateService, IndustryClassificationService
-- Infrastructure: JobExecutionService, MinioService, SummaryBatchProcessorService
+_Calculation:_ CalculationService, HoldingsCalculationService, InvestmentMetricsService, ProfitCalculationEngine, XirrCalculationService, InvestmentMath
 
-**Background Jobs (9 scheduled tasks):**
+_ETF:_ EtfBreakdownDataLoaderService, EtfBreakdownService, EtfHoldingPersistenceService, EtfHoldingService, HoldingAggregationService, SyntheticEtfCalculationService
 
-- BinanceDataRetrievalJob, FtDataRetrievalJob - Price updates
-- Trading212DataRetrievalJob - Trading platform sync
-- DailyPortfolioXirrJob - XIRR calculations (parallel with coroutines)
-- LightyearDataFetchJob, WisdomTreeDataUpdateJob - ETF holdings scraping
-- EtfHoldingsClassificationJob - AI-powered sector classification (OpenRouter)
+_Infrastructure:_ CacheInvalidationService, ImageDownloadService, ImageProcessingService, JobExecutionService, JobTransactionService, MinioService
 
-**Domain Entities (16 JPA entities):**
+_Logo:_ BatchLogoValidationService, ImageSearchLogoService, LogoCacheService, LogoCandidateCacheService, LogoFallbackService, LogoReplacementService, LogoValidationService, NvstlyLogoService, OpenRouterLogoSelectionService
 
-- Core: Instrument, PortfolioTransaction, DailyPrice, PortfolioDailySummary
-- ETF: EtfHolding, EtfPosition
-- Infrastructure: JobExecution, UserAccount
-- Enums: Platform, ProviderName, TransactionType, InstrumentCategory, Currency, IndustrySector, JobStatus, PriceChangePeriod
+_Pricing:_ DailyPriceService, LightyearPriceUpdateService, PriceRefreshService, PriceUpdateProcessor, Trading212PriceUpdateService
 
-**External Integrations (10 systems):**
+_Summary:_ DailySummaryCalculator, SummaryBatchProcessorService, SummaryCacheService, SummaryDeletionService, SummaryPersistenceService, SummaryService
+
+_Transaction:_ TransactionCacheService, TransactionCalculationService, TransactionProfitService, TransactionQueryService, TransactionService
+
+_Instrument:_ InstrumentService, InstrumentSnapshotService
+
+_Common:_ EasterHolidayService, EnumService, OnceInstrumentDataRetrievalService
+
+_Integration:_ CountryClassificationService, IndustryClassificationService
+
+_Vehicle:_ LicensePlateDetectionService, VehicleInfoService
+
+**Background Jobs (13 scheduled tasks):**
+
+_Price Updates:_ BinanceDataRetrievalJob, FtDataRetrievalJob, Trading212DataRetrievalJob, LightyearPriceRetrievalJob, LightyearHistoricalDataRetrievalJob, InstrumentPriceGapFillingJob
+
+_XIRR & Analytics:_ DailyPortfolioXirrJob, InstrumentXirrJob
+
+_ETF Holdings:_ LightyearDataFetchJob, EtfHoldingsClassificationJob, EtfCountryClassificationJob, EtfLogoCollectionJob, TerUpdateJob
+
+**Domain Entities (7 JPA entities + 15 enums):**
+
+_JPA Entities:_ Instrument, PortfolioTransaction, DailyPrice, PortfolioDailySummary, EtfHolding, EtfPosition, JobExecution
+
+_Enums:_ Platform, ProviderName, TransactionType, InstrumentCategory, Currency, IndustrySector, JobStatus, PriceChangePeriod, SectorSource, VisionModel, DetectionProvider, AiModel, LogoSource
+
+**External Integrations (12 systems):**
 
 - Market Data: FT (stocks/ETFs), Binance (crypto)
-- Trading Platforms: Trading212, WisdomTree, Lightyear
+- Trading Platforms: Trading212, Lightyear
 - AI Services: OpenRouter (Claude Haiku for classification), Google Vision (OCR)
+- Vehicle: Auto24 (Estonian car marketplace valuation), Veego (tax reporting)
 - Other: Telegram (notifications), MinIO (logo storage)
 
 ### Database Schema
@@ -229,7 +247,7 @@ Key entities with relationships:
 - `EtfPosition` - Links instruments to their ETF holdings
 - `JobExecution` - Background job execution tracking with status and error handling
 
-Migrations are in `src/main/resources/db/migration/` using Flyway naming convention (V1-V60+).
+Migrations are in `src/main/resources/db/migration/` using Flyway naming convention (V1-V126+).
 
 ### External Integrations
 
@@ -241,8 +259,12 @@ Migrations are in `src/main/resources/db/migration/` using Flyway naming convent
 **Trading Platforms (Web Scraping):**
 
 - **Trading212** - Price data via Cloudflare Bypass Proxy (curl-impersonate for Cloudflare bypass)
-- **WisdomTree** - ETF holdings via Cloudflare Bypass Proxy → HTML scraping with Jsoup
-- **Lightyear** - Price data via Cloudflare Bypass Proxy (curl-impersonate) + ETF holdings via Selenide browser automation
+- **Lightyear** - Price data and ETF holdings via Cloudflare Bypass Proxy (curl-impersonate)
+
+**Vehicle Tracking:**
+
+- **Auto24** - Estonian car marketplace for vehicle valuation
+- **Veego** - Tax reporting service for vehicle calculations
 
 **AI & Cloud Services:**
 
