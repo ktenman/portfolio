@@ -9,7 +9,7 @@ Person(user, "Portfolio User", "Investor")
 
 System_Boundary(portfolio, "Portfolio Management System") {
     Container(web_app, "Web Application", "Vue.js 3, TypeScript, Vite", "SPA providing portfolio management UI")
-    Container(api_app, "API Application", "Spring Boot 3.5, Kotlin 2.2", "REST API, business logic, scheduled jobs")
+    Container(api_app, "API Application", "Spring Boot 4.0, Kotlin 2.2", "REST API, business logic, scheduled jobs")
     ContainerDb(database, "Database", "PostgreSQL 17", "Stores instruments, transactions, prices, summaries, ETF holdings")
     ContainerDb(cache, "Cache", "Redis 8", "Caches instrument data, summaries, prices")
     ContainerDb(storage, "Object Storage", "MinIO", "Stores ETF company logos")
@@ -17,8 +17,9 @@ System_Boundary(portfolio, "Portfolio Management System") {
 }
 
 System_Ext(market_apis, "Market Data APIs", "Binance, FT")
-System_Ext(platform_apis, "Trading Platforms", "Trading212, WisdomTree, Lightyear")
+System_Ext(platform_apis, "Trading Platforms", "Trading212, Lightyear")
 System_Ext(ai_services, "AI Services", "OpenRouter, Google Vision")
+System_Ext(vehicle_apis, "Vehicle APIs", "Auto24, Veego")
 System_Ext(notification, "Notifications", "Telegram")
 
 Rel(user, web_app, "Uses", "HTTPS")
@@ -32,6 +33,7 @@ Rel(jobs, database, "Reads/writes", "JDBC")
 Rel(jobs, market_apis, "Fetches prices", "HTTPS")
 Rel(jobs, platform_apis, "Scrapes data", "HTTPS")
 Rel(jobs, ai_services, "AI classification", "HTTPS")
+Rel(jobs, vehicle_apis, "Vehicle valuations", "HTTPS")
 Rel(api_app, notification, "Sends alerts", "HTTPS")
 
 @enduml

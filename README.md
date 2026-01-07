@@ -37,7 +37,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 - Vue.js 3.5
 - TypeScript 5.9
 - Bootstrap 5.3
-- Vite 7.2
+- Vite 7.3
 - Vue Router 4.6
 - Chart.js 4.5
 
@@ -104,8 +104,12 @@ npm run check-unused       # Detect unused exports and dependencies with Knip
 
 - Financial Times API for stock/ETF market data
 - Binance API for cryptocurrency prices
+- Lightyear for ETF holdings and prices
 - Google Cloud Vision API for OCR/captcha solving
 - Telegram Bot API for notifications
+- OpenRouter API for AI classification (Claude Haiku)
+- Auto24 API for vehicle valuation (Estonian market)
+- Veego API for tax reporting
 
 ## Architecture 🏗️
 
@@ -131,7 +135,7 @@ The system follows a clean microservices architecture with strong separation of 
 
 - **Cloudflare Bypass Proxy**: Node.js/TypeScript service with curl-impersonate for Cloudflare bypass (TLS fingerprint spoofing)
 - **Market Data**: FT Markets (HTML scraping with Jsoup), Binance API (JSON)
-- **ETF Holdings**: WisdomTree (via Cloudflare Bypass Proxy + Jsoup), Lightyear (Selenide browser automation)
+- **ETF Holdings**: Lightyear (via Cloudflare Bypass Proxy)
 - **AI Services**: OpenRouter (Claude Haiku for sector classification), Google Cloud Vision (OCR)
 - **Storage**: MinIO (S3-compatible) for company logos
 
@@ -161,10 +165,14 @@ details and portfolio summaries.
 
 ### Scheduled Jobs ⚙️
 
-1. **FT Data Retrieval**: Fetches stock/ETF prices from Financial Times
-2. **Binance Data Retrieval**: Updates cryptocurrency prices in real-time
-3. **Daily Portfolio XIRR Job**: Calculates portfolio performance metrics
-4. **Cache Eviction**: Automatic cache cleanup for data consistency
+1. **FT Data Retrieval**: Fetches stock/ETF prices from Financial Times (adaptive scheduling)
+2. **Binance Data Retrieval**: Updates cryptocurrency prices
+3. **Trading212 Data Retrieval**: Syncs prices from Trading212 platform
+4. **Lightyear Price Retrieval**: Fetches prices from Lightyear platform
+5. **Daily Portfolio XIRR Job**: Calculates portfolio performance metrics
+6. **Instrument XIRR Job**: Per-instrument performance calculations
+7. **ETF Holdings Classification**: AI-powered sector and country classification
+8. **ETF Logo Collection**: Automated logo retrieval for ETF holdings
 
 ### Authentication & Security 🔐
 
