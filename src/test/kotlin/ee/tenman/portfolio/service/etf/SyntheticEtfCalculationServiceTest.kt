@@ -220,7 +220,7 @@ class SyntheticEtfCalculationServiceTest {
       val instrument1 = createInstrument("AAPL", BigDecimal("100.00"))
       val instrument2 = createInstrument("MSFT", BigDecimal("200.00"))
       val etf = createEtfInstrument("SYNTH-ETF")
-      every { etfPositionRepository.findLatestPositionsByEtfId(etf.id) } returns listOf(position1, position2)
+      every { etfPositionRepository.findLatestPositionsByEtfIds(listOf(etf.id)) } returns listOf(position1, position2)
       every { instrumentRepository.findBySymbolIn(listOf("AAPL", "MSFT")) } returns listOf(instrument1, instrument2)
       every { transactionCalculationService.batchCalculateAll(listOf(instrument1.id, instrument2.id)) } returns
         mapOf(

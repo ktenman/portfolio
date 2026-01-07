@@ -102,10 +102,15 @@ const errorMessage = ref('')
 const selectedEtfs = useLocalStorage<string[]>('portfolio_selected_etfs', [])
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_etf_breakdown_platforms', [])
 
-const availablePlatforms = computed(() => {
-  if (masterHoldings.value.length === 0) return []
+const etfPlatformMetadata = computed(() => {
+  if (masterHoldings.value.length === 0) return { etfs: [], platforms: [] }
+  const etfSet = new Set<string>()
   const platformSet = new Set<string>()
   masterHoldings.value.forEach(holding => {
+    holding.inEtfs.split(',').forEach(etf => {
+      const trimmed = etf.trim()
+      if (trimmed) etfSet.add(trimmed)
+    })
     if (holding.platforms) {
       holding.platforms.split(',').forEach(p => {
         const trimmed = p.trim()
@@ -113,24 +118,12 @@ const availablePlatforms = computed(() => {
       })
     }
   })
-  return Array.from(platformSet).sort()
+  return { etfs: Array.from(etfSet).sort(), platforms: Array.from(platformSet).sort() }
 })
 
-const availableEtfs = computed(() => {
-  if (masterHoldings.value.length === 0) return []
+const availablePlatforms = computed(() => etfPlatformMetadata.value.platforms)
 
-  const etfSet = new Set<string>()
-  masterHoldings.value.forEach(holding => {
-    holding.inEtfs.split(',').forEach(etf => {
-      const trimmedEtf = etf.trim()
-      if (trimmedEtf) {
-        etfSet.add(trimmedEtf)
-      }
-    })
-  })
-
-  return Array.from(etfSet).sort()
-})
+const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
 
 watch(
   availableEtfs,
