@@ -79,17 +79,7 @@ class SummaryService(
   @Transactional
   fun saveDailySummary(summary: PortfolioDailySummary): PortfolioDailySummary {
     val existing = portfolioDailySummaryRepository.findByEntryDate(summary.entryDate)
-    val toSave =
-      existing?.apply {
-      totalValue = summary.totalValue
-      xirrAnnualReturn = summary.xirrAnnualReturn
-      realizedProfit = summary.realizedProfit
-      unrealizedProfit = summary.unrealizedProfit
-      totalProfit = summary.totalProfit
-      earningsPerDay = summary.earningsPerDay
-    } ?: summary
-
-    val saved = portfolioDailySummaryRepository.save(toSave)
+    val saved = portfolioDailySummaryRepository.save(mergeWith(existing, summary))
     summaryCacheService.evictAllCaches()
     return saved
   }
@@ -98,24 +88,25 @@ class SummaryService(
   fun saveDailySummaries(summaries: List<PortfolioDailySummary>) {
     val existing =
       portfolioDailySummaryRepository
-      .findAllByEntryDateIn(summaries.map { it.entryDate })
-      .associateBy { it.entryDate }
-
-    val merged =
-      summaries.map { s ->
-      existing[s.entryDate]?.apply {
-        totalValue = s.totalValue
-        xirrAnnualReturn = s.xirrAnnualReturn
-        realizedProfit = s.realizedProfit
-        unrealizedProfit = s.unrealizedProfit
-        totalProfit = s.totalProfit
-        earningsPerDay = s.earningsPerDay
-      } ?: s
-    }
-
+        .findAllByEntryDateIn(summaries.map { it.entryDate })
+        .associateBy { it.entryDate }
+    val merged = summaries.map { mergeWith(existing[it.entryDate], it) }
     portfolioDailySummaryRepository.saveAll(merged)
     summaryCacheService.evictAllCaches()
   }
+
+  private fun mergeWith(
+    existing: PortfolioDailySummary?,
+    source: PortfolioDailySummary,
+  ): PortfolioDailySummary =
+    existing?.apply {
+      totalValue = source.totalValue
+      xirrAnnualReturn = source.xirrAnnualReturn
+      realizedProfit = source.realizedProfit
+      unrealizedProfit = source.unrealizedProfit
+      totalProfit = source.totalProfit
+      earningsPerDay = source.earningsPerDay
+    } ?: source
 
   @Transactional(readOnly = true)
   fun getDailySummariesBetween(
