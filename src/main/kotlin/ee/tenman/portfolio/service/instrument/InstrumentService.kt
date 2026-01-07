@@ -43,9 +43,9 @@ class InstrumentService(
 
   @Transactional
   fun deleteInstrument(id: Long) {
-    val instrument = instrumentRepository.findById(id).orElse(null)
+    val symbol = instrumentRepository.findById(id).map { it.symbol }.orElse(null)
     instrumentRepository.deleteById(id)
-    cacheInvalidationService.evictInstrumentCaches(id, instrument?.symbol)
+    cacheInvalidationService.evictInstrumentCaches(id, symbol)
   }
 
   @Transactional(readOnly = true)
@@ -75,13 +75,11 @@ class InstrumentService(
     price: BigDecimal?,
   ) {
     instrumentRepository.updateCurrentPrice(instrumentId, price)
-    val instrument = instrumentRepository.findById(instrumentId).orElse(null)
-    if (instrument == null) {
-      cacheInvalidationService.evictInstrumentCaches(instrumentId, null)
-      return
-    }
+    val symbol =
+      instrumentRepository.findById(instrumentId).map { it.symbol }.orElse(null)
+      ?: return cacheInvalidationService.evictInstrumentCaches(instrumentId, null)
     transactionProfitService.recalculateProfitsForInstrument(instrumentId)
-    cacheInvalidationService.evictAllRelatedCaches(instrumentId, instrument.symbol)
+    cacheInvalidationService.evictAllRelatedCaches(instrumentId, symbol)
   }
 
   @Transactional

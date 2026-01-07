@@ -74,6 +74,7 @@ import {
   formatDate,
   formatPercentageFromDecimal,
 } from '../utils/formatters'
+import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
 const PortfolioChart = defineAsyncComponent(() => import('./portfolio/portfolio-chart.vue'))
 
@@ -146,7 +147,7 @@ const summaryColumns: ColumnDefinition[] = [
   { key: 'totalValue', label: 'Total Value', formatter: formatCurrencyWithSymbol },
 ]
 
-const getSummaryRowClass = (summary: any, index: number) => {
+const getSummaryRowClass = (summary: PortfolioSummaryDto, index: number) => {
   const isToday = summary.date === new Date().toISOString().split('T')[0]
   return { 'font-weight-bold': index === 0 && isToday }
 }
