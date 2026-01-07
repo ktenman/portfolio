@@ -276,7 +276,7 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr applies dampening for new investments`() {
+  fun `should calculateAdjustedXirr returns bounded value for investments`() {
     val recentDate = testDate.minusDays(100)
     val transactions =
       listOf(
@@ -286,7 +286,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).notToEqualNull().toBeLessThan(10.0)
+    expect(xirr).notToEqualNull().toBeLessThanOrEqualTo(10.0)
   }
 
   @Test
@@ -571,7 +571,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateAdjustedXirr with very short investment period returns null`() {
     val transactions =
       listOf(
-        CashFlow(-1000.0, testDate.minusDays(30)),
+        CashFlow(-1000.0, testDate.minusDays(20)),
         CashFlow(1200.0, testDate),
       )
 
@@ -581,7 +581,7 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr with investment period over 60 days has full damping`() {
+  fun `should calculateAdjustedXirr with investment period over 60 days returns bounded value`() {
     val transactions =
       listOf(
         CashFlow(-1000.0, testDate.minusDays(100)),
@@ -594,10 +594,10 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr with exactly 60 days investment period`() {
+  fun `should calculateAdjustedXirr with exactly one quarter investment period`() {
     val transactions =
       listOf(
-        CashFlow(-1000.0, testDate.minusDays(60)),
+        CashFlow(-1000.0, testDate.minusDays(92)),
         CashFlow(1200.0, testDate),
       )
 
@@ -1020,7 +1020,7 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr with multiple investments at different times has weighted damping`() {
+  fun `should calculateAdjustedXirr with multiple investments at different times returns bounded value`() {
     val transactions =
       listOf(
         CashFlow(-10000.0, testDate.minusDays(120)),
