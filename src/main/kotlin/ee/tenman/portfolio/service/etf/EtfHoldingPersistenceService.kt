@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ee.tenman.portfolio.common.orThrow
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
@@ -53,7 +54,8 @@ class EtfHoldingPersistenceService(
         updateSectorFromSourceIfMissing(existing, holdingData.sector)
         result[holdingData.name] = existing
       } else {
-        val newHolding = EtfHolding(
+        val newHolding =
+          EtfHolding(
           name = holdingData.name,
           ticker = holdingData.ticker,
           sector = holdingData.sector,
@@ -145,8 +147,7 @@ class EtfHoldingPersistenceService(
       .map { it.id }
 
   @Transactional(readOnly = true)
-  fun findUnclassifiedHoldings(): List<EtfHolding> =
-    etfHoldingRepository.findUnclassifiedSectorHoldingsForCurrentPortfolio()
+  fun findUnclassifiedHoldings(): List<EtfHolding> = etfHoldingRepository.findUnclassifiedSectorHoldingsForCurrentPortfolio()
 
   @Transactional(readOnly = true)
   fun findUnclassifiedByCountryHoldingIds(maxAttempts: Int = MAX_COUNTRY_FETCH_ATTEMPTS): List<Long> =
@@ -182,10 +183,7 @@ class EtfHoldingPersistenceService(
     sector: String,
     classifiedByModel: AiModel? = null,
   ) {
-    val holding =
-      etfHoldingRepository.findById(holdingId).orElseThrow {
-        IllegalStateException("EtfHolding not found with id=$holdingId")
-      }
+    val holding = etfHoldingRepository.findById(holdingId).orThrow(holdingId)
     holding.sector = sector
     holding.classifiedByModel = classifiedByModel
     holding.sectorSource = SectorSource.LLM
@@ -199,10 +197,7 @@ class EtfHoldingPersistenceService(
     countryName: String,
     classifiedByModel: AiModel? = null,
   ) {
-    val holding =
-      etfHoldingRepository.findById(holdingId).orElseThrow {
-        IllegalStateException("EtfHolding not found with id=$holdingId")
-      }
+    val holding = etfHoldingRepository.findById(holdingId).orThrow(holdingId)
     holding.countryCode = countryCode
     holding.countryName = countryName
     holding.countryClassifiedByModel = classifiedByModel
@@ -211,10 +206,7 @@ class EtfHoldingPersistenceService(
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun incrementCountryFetchAttempts(holdingId: Long) {
-    val holding =
-      etfHoldingRepository.findById(holdingId).orElseThrow {
-        IllegalStateException("EtfHolding not found with id=$holdingId")
-      }
+    val holding = etfHoldingRepository.findById(holdingId).orThrow(holdingId)
     holding.countryFetchAttempts++
     etfHoldingRepository.save(holding)
     log.info("Incremented country fetch attempts for holding id=$holdingId to ${holding.countryFetchAttempts}")

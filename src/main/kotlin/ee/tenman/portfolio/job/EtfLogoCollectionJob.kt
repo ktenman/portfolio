@@ -28,7 +28,8 @@ class EtfLogoCollectionJob(
   )
   fun collectMissingLogos() {
     log.info("Starting ETF logo collection job")
-    val holdings = etfHoldingRepository
+    val holdings =
+      etfHoldingRepository
       .findHoldingsWithoutLogosForCurrentPortfolio()
       .filter { it.logoSource == null && !it.countryCode.isNullOrBlank() }
     log.info("Found ${holdings.size} holdings without logos")

@@ -30,7 +30,7 @@ class TransactionService(
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
-  fun getTransactionById(id: Long): PortfolioTransaction = portfolioTransactionRepository.findById(id).orThrow("Transaction", id)
+  fun getTransactionById(id: Long): PortfolioTransaction = portfolioTransactionRepository.findById(id).orThrow(id)
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   @Retryable(

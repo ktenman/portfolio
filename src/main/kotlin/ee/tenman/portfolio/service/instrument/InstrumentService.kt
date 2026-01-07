@@ -23,10 +23,10 @@ class InstrumentService(
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
-  fun getInstrumentById(id: Long): Instrument = instrumentRepository.findById(id).orThrow("Instrument", id)
+  fun getInstrumentById(id: Long): Instrument = instrumentRepository.findById(id).orThrow(id)
 
   @Transactional(readOnly = true)
-  fun findBySymbol(symbol: String): Instrument = instrumentRepository.findBySymbol(symbol).orThrowByField("Instrument", "symbol", symbol)
+  fun findBySymbol(symbol: String): Instrument = instrumentRepository.findBySymbol(symbol).orThrowByField("symbol", symbol)
 
   @Transactional
   fun saveInstrument(instrument: Instrument): Instrument {

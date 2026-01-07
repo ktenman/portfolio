@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.calculation
 
+import ee.tenman.portfolio.common.orThrowByField
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
 import ee.tenman.portfolio.dto.CalculationResult
 import ee.tenman.portfolio.model.XirrCalculationResult
@@ -78,11 +79,7 @@ class CalculationService(
   }
 
   fun calculateRollingXirr(instrumentCode: String): List<Xirr> {
-    val instrument =
-      instrumentRepository.findBySymbol(instrumentCode).orElseThrow {
-      ee.tenman.portfolio.exception
-        .EntityNotFoundException("Instrument not found with symbol: $instrumentCode")
-    }
+    val instrument = instrumentRepository.findBySymbol(instrumentCode).orThrowByField("symbol", instrumentCode)
     val allDailyPrices = dataRetrievalService.findAllByInstrument(instrument).sortedBy { it.entryDate }
     if (allDailyPrices.size < 2) return emptyList()
     val startDate = allDailyPrices.first().entryDate
