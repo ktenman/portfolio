@@ -91,13 +91,17 @@ class SyntheticEtfCalculationService(
     return Pair(holdingValues, instrumentsByTicker)
   }
 
-  fun calculateTotalValue(etfs: List<Instrument>): BigDecimal =
-    etfs.fold(BigDecimal.ZERO) { acc, etf ->
-      val positions = etfPositionRepository.findLatestPositionsByEtfId(etf.id)
+  fun calculateTotalValue(etfs: List<Instrument>): BigDecimal {
+    if (etfs.isEmpty()) return BigDecimal.ZERO
+    val allPositions = etfPositionRepository.findLatestPositionsByEtfIds(etfs.map { it.id })
+    val positionsByEtfId = allPositions.groupBy { it.etfInstrument.id }
+    return etfs.fold(BigDecimal.ZERO) { acc, etf ->
+      val positions = positionsByEtfId[etf.id] ?: emptyList()
       val holdingValues = calculateHoldingValues(positions)
       val syntheticValue = holdingValues.fold(BigDecimal.ZERO) { sum, h -> sum.add(h.value) }
       acc.add(syntheticValue)
     }
+  }
 
   private fun getCurrentPrice(instrument: Instrument): BigDecimal {
     instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }?.let { return it }

@@ -30,7 +30,7 @@
       </div>
       <data-table
         v-else
-        :items="holdings"
+        :items="displayedHoldings"
         :columns="columns"
         :is-loading="false"
         :is-error="false"
@@ -48,6 +48,8 @@
                 :src="getLogoUrl(item.holdingUuid)"
                 :alt="item.holdingName"
                 class="company-logo clickable"
+                loading="lazy"
+                decoding="async"
                 @error="handleImageError"
               />
             </div>
@@ -99,12 +101,26 @@
               :src="getFlagUrl(item.holdingCountryCode)"
               :alt="item.holdingCountryName ?? ''"
               class="flag-icon"
+              loading="lazy"
+              decoding="async"
               @error="(e: Event) => handleFlagError(e, item.holdingCountryCode ?? '')"
             />
             <span class="flag-fallback" style="display: none">{{ item.holdingCountryCode }}</span>
           </div>
         </template>
         <template #footer>
+          <tr v-if="hasMore" class="load-more-row">
+            <td colspan="7" class="text-center py-2">
+              <div ref="loadMoreTrigger" class="d-flex align-items-center justify-content-center">
+                <div class="spinner-border spinner-border-sm text-secondary me-2" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="text-muted small">
+                  Loading more... ({{ displayedHoldings.length }} of {{ holdings.length }})
+                </span>
+              </div>
+            </td>
+          </tr>
           <tr v-if="holdings.length > 0" class="table-footer-totals">
             <td class="fw-bold ps-3">Total</td>
             <td></td>
@@ -125,7 +141,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-models'
 import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
@@ -134,6 +150,8 @@ import LogoReplacementModal from './logo-replacement-modal.vue'
 import { utilityService } from '../../services/utility-service'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatScientific } from '../../utils/formatters'
+
+const PAGE_SIZE = 200
 
 const props = defineProps<{
   holdings: EtfHoldingBreakdownDto[]
@@ -151,6 +169,57 @@ const emit = defineEmits<{
 
 const showLogoModal = ref(false)
 const selectedHolding = ref<EtfHoldingBreakdownDto | null>(null)
+const displayedCount = ref(PAGE_SIZE)
+const loadMoreTrigger = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+const displayedHoldings = computed(() => props.holdings.slice(0, displayedCount.value))
+
+const hasMore = computed(() => displayedCount.value < props.holdings.length)
+
+watch(
+  () => props.holdings,
+  () => {
+    displayedCount.value = PAGE_SIZE
+  }
+)
+
+const loadMore = () => {
+  if (hasMore.value) {
+    displayedCount.value = Math.min(displayedCount.value + PAGE_SIZE, props.holdings.length)
+  }
+}
+
+const setupObserver = () => {
+  observer?.disconnect()
+  observer = new IntersectionObserver(
+    entries => {
+      if (entries[0].isIntersecting && hasMore.value) {
+        loadMore()
+      }
+    },
+    { rootMargin: '100px' }
+  )
+}
+
+watch(
+  loadMoreTrigger,
+  newEl => {
+    if (newEl) {
+      if (!observer) setupObserver()
+      observer?.observe(newEl)
+    }
+  },
+  { immediate: true }
+)
+
+onMounted(() => {
+  setupObserver()
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
+})
 
 const LOGO_VERSIONS_KEY = 'logoVersions'
 
