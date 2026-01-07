@@ -86,6 +86,17 @@ const renderChart = () => {
   })
 }
 
+const updateChartData = () => {
+  if (!chart?.data?.datasets?.[0] || props.chartData.length === 0) {
+    renderChart()
+    return
+  }
+  chart.data.labels = props.chartData.map(item => item.label)
+  chart.data.datasets[0].data = props.chartData.map(item => item.value)
+  chart.data.datasets[0].backgroundColor = props.chartData.map(item => item.color)
+  chart.update('none')
+}
+
 onMounted(() => {
   renderChart()
 })
@@ -93,7 +104,7 @@ onMounted(() => {
 watch(
   () => props.chartData,
   () => {
-    renderChart()
+    updateChartData()
   },
   { deep: true }
 )
