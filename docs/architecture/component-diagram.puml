@@ -13,6 +13,8 @@ Container_Boundary(api, "API Application") {
     Component(summary_ctrl, "SummaryController", "REST Controller", "Portfolio summaries")
     Component(etf_ctrl, "ETFBreakdownController", "REST Controller", "ETF analytics")
     Component(calc_ctrl, "CalculatorController", "REST Controller", "XIRR calculations")
+    Component(logo_ctrl, "LogoController", "REST Controller", "Logo management")
+    Component(vehicle_ctrl, "VehicleInfoController", "REST Controller", "Vehicle tracking")
 
     Component(instrument_svc, "InstrumentService", "Service", "Instrument business logic")
     Component(transaction_svc, "TransactionService", "Service", "Transaction processing, profit calc")
@@ -31,6 +33,9 @@ Container_Boundary(api, "API Application") {
     Component(binance, "BinanceService", "Integration", "Crypto prices")
     Component(ft, "HistoricalPricesService", "Integration", "FT market data")
     Component(openrouter, "OpenRouterService", "Integration", "AI classification")
+    Component(logo_svc, "LogoServices", "Service", "9 services for logo management")
+    Component(auto24, "Auto24Service", "Integration", "Vehicle valuation")
+    Component(veego, "VeegoService", "Integration", "Tax reporting")
 
     Component(jobs, "Scheduled Jobs", "Background Jobs", "Price updates, XIRR calc, ETF scraping")
 }
