@@ -42,7 +42,12 @@
       <div class="toggle-container mt-2">
         <span class="toggle-label">Active only</span>
         <label class="toggle-switch">
-          <input v-model="showActiveOnly" type="checkbox" />
+          <input
+            v-model="showActiveOnly"
+            type="checkbox"
+            role="switch"
+            aria-label="Show active instruments only"
+          />
           <span class="toggle-slider"></span>
         </label>
       </div>

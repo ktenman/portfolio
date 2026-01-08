@@ -56,8 +56,12 @@ const CrudLayoutStub = {
 const InstrumentTableStub = {
   name: 'InstrumentTable',
   props: ['instruments'],
-  setup() {
-    return () => h('div', { id: 'stub-table' })
+  setup(props: any) {
+    return () =>
+      h('div', {
+        id: 'stub-table',
+        'data-instruments': JSON.stringify(props.instruments || []),
+      })
   },
 }
 
@@ -430,17 +434,61 @@ describe('InstrumentsView', () => {
       expect((toggleInput.element as HTMLInputElement).checked).toBe(true)
     })
 
-    it('should include instruments with profit when toggle is unchecked', async () => {
+    it('should filter instruments based on toggle state', async () => {
+      const mockInstrumentsWithInactive = [
+        createInstrumentDto({
+          id: 1,
+          symbol: 'ACTIVE',
+          name: 'Active Stock',
+          providerName: ProviderName.FT,
+          currentValue: 1000,
+          profit: 100,
+          platforms: ['TRADING212'],
+        }),
+        createInstrumentDto({
+          id: 2,
+          symbol: 'INACTIVE_WITH_PROFIT',
+          name: 'Inactive With Profit',
+          providerName: ProviderName.FT,
+          currentValue: 0,
+          profit: -50,
+          platforms: ['TRADING212'],
+        }),
+        createInstrumentDto({
+          id: 3,
+          symbol: 'INACTIVE_NO_PROFIT',
+          name: 'Inactive No Profit',
+          providerName: ProviderName.FT,
+          currentValue: 0,
+          profit: 0,
+          platforms: ['TRADING212'],
+        }),
+      ]
+      vi.mocked(instrumentsService.getAll).mockResolvedValue({
+        instruments: mockInstrumentsWithInactive,
+        portfolioXirr: 0.1,
+      })
+
       const { wrapper } = createWrapper()
       await flushPromises()
 
-      const toggleInput = wrapper.find('.toggle-switch input')
-      expect(toggleInput.exists()).toBe(true)
+      const getTableInstruments = () => {
+        const table = wrapper.find('#stub-table')
+        return JSON.parse(table.attributes('data-instruments') || '[]')
+      }
 
+      expect(getTableInstruments()).toHaveLength(1)
+      expect(getTableInstruments()[0].symbol).toBe('ACTIVE')
+
+      const toggleInput = wrapper.find('.toggle-switch input')
       await toggleInput.setValue(false)
       await flushPromises()
 
-      expect((toggleInput.element as HTMLInputElement).checked).toBe(false)
+      const filteredInstruments = getTableInstruments()
+      expect(filteredInstruments).toHaveLength(2)
+      expect(filteredInstruments.map((i: any) => i.symbol)).toContain('ACTIVE')
+      expect(filteredInstruments.map((i: any) => i.symbol)).toContain('INACTIVE_WITH_PROFIT')
+      expect(filteredInstruments.map((i: any) => i.symbol)).not.toContain('INACTIVE_NO_PROFIT')
     })
   })
 })
