@@ -18,7 +18,7 @@ import java.time.LocalDate
 
 @IntegrationTest
 @TestPropertySource(properties = ["spring.jpa.show-sql=true"])
-class PortfolioTransactionRepositoryTest {
+class PortfolioTransactionRepositoryIT {
   @Resource
   private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
 

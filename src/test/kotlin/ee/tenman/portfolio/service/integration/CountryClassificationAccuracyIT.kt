@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 
 @IntegrationTest
-class CountryClassificationAccuracyTest {
+class CountryClassificationAccuracyIT {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Resource

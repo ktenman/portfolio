@@ -144,6 +144,7 @@ class SummaryServiceTest {
   fun `should calculateSummaryForDate should return zero values when no transactions exist`() {
     val date = LocalDate.of(2024, 7, 1)
     every { transactionService.getAllTransactions() } returns emptyList()
+    every { summaryCacheService.findByEntryDate(any()) } returns null
 
     val summary = summaryService.calculateSummaryForDate(date)
 
@@ -259,13 +260,13 @@ class SummaryServiceTest {
     every { portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()) } answers { firstArg() }
     val emptyList = emptyList<PortfolioDailySummary>()
     every { portfolioDailySummaryRepository.findAll() } returns emptyList
-    every { summaryBatchProcessor.processSummariesInBatches(any(), any()) } returns 4
+    every { summaryBatchProcessor.processSummariesWithTransactions(any(), any(), any()) } returns 4
 
     val count = summaryService.recalculateAllDailySummaries()
 
     expect(count).toEqual(4)
     verify { summaryDeletionService.deleteHistoricalSummaries(today) }
-    verify { summaryBatchProcessor.processSummariesInBatches(any(), any()) }
+    verify { summaryBatchProcessor.processSummariesWithTransactions(any(), any(), any()) }
   }
 
   @Test
@@ -493,13 +494,13 @@ class SummaryServiceTest {
 
     every { portfolioDailySummaryRepository.saveAll(any<List<PortfolioDailySummary>>()) } answers { firstArg() }
     every { portfolioDailySummaryRepository.flush() } returns Unit
-    every { summaryBatchProcessor.processSummariesInBatches(any(), any()) } returns 3
+    every { summaryBatchProcessor.processSummariesWithTransactions(any(), any(), any()) } returns 3
 
     val count = summaryService.recalculateAllDailySummaries()
 
     expect(count).toEqual(3)
     verify { summaryDeletionService.deleteHistoricalSummaries(today) }
-    verify { summaryBatchProcessor.processSummariesInBatches(any(), any()) }
+    verify { summaryBatchProcessor.processSummariesWithTransactions(any(), any(), any()) }
   }
 
   @ParameterizedTest
@@ -684,7 +685,7 @@ class SummaryServiceTest {
         earningsPerDay = BigDecimal("1.64"),
       )
 
-    every { portfolioDailySummaryRepository.findByEntryDate(historicalDate) } returns existingSummary
+    every { summaryCacheService.findByEntryDate(historicalDate) } returns existingSummary
 
     val result = summaryService.calculateSummaryForDate(historicalDate)
 
@@ -697,6 +698,7 @@ class SummaryServiceTest {
     val today = testDate
     val fixedInstant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
     every { clock.instant() } returns fixedInstant
+    every { summaryCacheService.findByEntryDate(today) } returns null
 
     val testTransaction =
       PortfolioTransaction(
@@ -722,7 +724,7 @@ class SummaryServiceTest {
 
     expect(result.entryDate).toEqual(today)
     expect(result.totalValue).toEqualNumerically(BigDecimal("1200.00"))
-    verify { portfolioDailySummaryRepository.findByEntryDate(today) }
+    verify { summaryCacheService.findByEntryDate(today) }
   }
 
   @Test
@@ -814,7 +816,7 @@ class SummaryServiceTest {
         platform = Platform.TRADING212,
       )
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
-    every { portfolioDailySummaryRepository.findByEntryDate(today) } returns existingSummary
+    every { summaryCacheService.findByEntryDate(today) } returns existingSummary
 
     val portfolioMetrics =
       PortfolioMetrics(
@@ -858,8 +860,8 @@ class SummaryServiceTest {
       )
 
     every { transactionService.getAllTransactions() } returns listOf(oldTransaction)
-    every { portfolioDailySummaryRepository.findByEntryDate(date) } returns null
-    every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns previousSummary
+    every { summaryCacheService.findByEntryDate(date) } returns null
+    every { summaryCacheService.findByEntryDate(previousDate) } returns previousSummary
 
     val portfolioMetrics =
       PortfolioMetrics(
@@ -874,7 +876,7 @@ class SummaryServiceTest {
 
     expect(result.entryDate).toEqual(date)
     expect(result.totalValue).toEqualNumerically(BigDecimal("2000.00"))
-    verify { portfolioDailySummaryRepository.findByEntryDate(previousDate) }
+    verify { summaryCacheService.findByEntryDate(previousDate) }
   }
 
   @Test
@@ -893,8 +895,8 @@ class SummaryServiceTest {
       )
 
     every { transactionService.getAllTransactions() } returns listOf(oldTransaction)
-    every { portfolioDailySummaryRepository.findByEntryDate(date) } returns null
-    every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns null
+    every { summaryCacheService.findByEntryDate(date) } returns null
+    every { summaryCacheService.findByEntryDate(previousDate) } returns null
 
     val portfolioMetrics =
       PortfolioMetrics(
@@ -909,7 +911,7 @@ class SummaryServiceTest {
 
     expect(result.entryDate).toEqual(date)
     expect(result.totalValue).toEqualNumerically(BigDecimal("2000.00"))
-    verify { portfolioDailySummaryRepository.findByEntryDate(previousDate) }
+    verify { summaryCacheService.findByEntryDate(previousDate) }
     verify { investmentMetricsService.calculatePortfolioMetrics(any(), date) }
   }
 
@@ -938,8 +940,8 @@ class SummaryServiceTest {
       )
 
     every { transactionService.getAllTransactions() } returns listOf(oldTransaction)
-    every { portfolioDailySummaryRepository.findByEntryDate(date) } returns null
-    every { portfolioDailySummaryRepository.findByEntryDate(previousDate) } returns previousSummary
+    every { summaryCacheService.findByEntryDate(date) } returns null
+    every { summaryCacheService.findByEntryDate(previousDate) } returns previousSummary
 
     val portfolioMetrics =
       PortfolioMetrics(
@@ -955,7 +957,7 @@ class SummaryServiceTest {
     expect(result.entryDate).toEqual(date)
     expect(result.totalValue).toEqualNumerically(BigDecimal("2100.00"))
     expect(result.totalProfit).toEqualNumerically(BigDecimal("150.00"))
-    verify { portfolioDailySummaryRepository.findByEntryDate(previousDate) }
+    verify { summaryCacheService.findByEntryDate(previousDate) }
   }
 
   companion object {
