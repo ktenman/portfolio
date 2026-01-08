@@ -31,32 +31,79 @@ class EtfHoldingPersistenceService(
   ): Map<String, EtfHolding> {
     val etf = findOrCreateEtf(etfSymbol)
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
-    val savedHoldings = mutableMapOf<String, EtfHolding>()
-    holdings.forEach { holdingData ->
-      val holding = findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
-      savedHoldings[holdingData.name] = holding
-      val existingPosition =
-        etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
-          etfInstrument = etf,
-          holdingId = holding.id,
-          snapshotDate = date,
-        )
-      val position =
-        existingPosition ?: EtfPosition(
-          etfInstrument = etf,
-          holding = holding,
-          snapshotDate = date,
-          weightPercentage = holdingData.weight,
-          positionRank = holdingData.rank,
-        )
-      if (existingPosition != null) {
-        position.weightPercentage = holdingData.weight
-        position.positionRank = holdingData.rank
-      }
-      etfPositionRepository.save(position)
-    }
+    val allHoldings = loadOrCreateHoldings(holdings)
+    updateExistingHoldingsMetadata(allHoldings.values.toList(), holdings)
+    savePositions(etf, date, holdings, allHoldings)
     log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
-    return savedHoldings
+    return holdings.associate { it.name to allHoldings[it.name.lowercase()]!! }
+  }
+
+  private fun loadOrCreateHoldings(holdings: List<HoldingData>): Map<String, EtfHolding> {
+    val holdingNames = holdings.map { it.name.lowercase() }
+    val existingHoldings = etfHoldingRepository.findAllByNamesIgnoreCase(holdingNames).associateBy { it.name.lowercase() }
+    val createdHoldings = createMissingHoldings(holdings, existingHoldings)
+    return existingHoldings + createdHoldings
+  }
+
+  private fun createMissingHoldings(
+    holdings: List<HoldingData>,
+    existingHoldings: Map<String, EtfHolding>,
+  ): Map<String, EtfHolding> {
+    val newHoldingData = holdings.filterNot { existingHoldings.containsKey(it.name.lowercase()) }
+    if (newHoldingData.isEmpty()) return emptyMap()
+    val newHoldings =
+      newHoldingData.map {
+        EtfHolding(
+          name = it.name,
+          ticker = it.ticker,
+          sector = it.sector,
+          sectorSource = it.sector?.let { SectorSource.LIGHTYEAR },
+        )
+      }
+    return etfHoldingRepository.saveAll(newHoldings).associateBy { it.name.lowercase() }
+  }
+
+  private fun updateExistingHoldingsMetadata(
+    holdings: List<EtfHolding>,
+    holdingsData: List<HoldingData>,
+  ) {
+    val dataByName = holdingsData.associateBy { it.name.lowercase() }
+    holdings.forEach { holding ->
+      val matchingData = dataByName[holding.name.lowercase()] ?: return@forEach
+      updateTickerIfMissing(holding, matchingData.ticker)
+      updateSectorFromSourceIfMissing(holding, matchingData.sector)
+    }
+  }
+
+  private fun savePositions(
+    etf: Instrument,
+    date: LocalDate,
+    holdings: List<HoldingData>,
+    allHoldings: Map<String, EtfHolding>,
+  ) {
+    val existingPositions = etfPositionRepository.findByEtfInstrumentIdAndSnapshotDate(etf.id, date).associateBy { it.holding.id }
+    val positions = holdings.map { buildPosition(it, allHoldings, existingPositions, etf, date) }
+    etfPositionRepository.saveAll(positions)
+  }
+
+  private fun buildPosition(
+    holdingData: HoldingData,
+    allHoldings: Map<String, EtfHolding>,
+    existingPositions: Map<Long, EtfPosition>,
+    etf: Instrument,
+    date: LocalDate,
+  ): EtfPosition {
+    val holding = allHoldings[holdingData.name.lowercase()]!!
+    return existingPositions[holding.id]?.apply {
+      weightPercentage = holdingData.weight
+      positionRank = holdingData.rank
+    } ?: EtfPosition(
+      etfInstrument = etf,
+      holding = holding,
+      snapshotDate = date,
+      weightPercentage = holdingData.weight,
+      positionRank = holdingData.rank,
+    )
   }
 
   @Transactional
