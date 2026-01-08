@@ -35,27 +35,21 @@ class SummaryService(
     log.info("Starting full recalculation of portfolio daily summaries")
     cacheManager.getCache(INSTRUMENT_CACHE)?.clear()
     summaryCacheService.evictAllCaches()
-
     val transactions =
       transactionService
-      .getAllTransactions()
-      .sortedWith(compareBy({ it.transactionDate }, { it.id }))
-
+        .getAllTransactions()
+        .sortedWith(compareBy({ it.transactionDate }, { it.id }))
     if (transactions.isEmpty()) {
-      log.info("No transactions found. Nothing to recalculate.")
+      log.info("No transactions found. Nothing to recalculate")
       return 0
     }
-
     val firstTransactionDate = transactions.first().transactionDate
     val today = LocalDate.now(clock)
     val yesterday = today.minusDays(1)
     log.info("Recalculating summaries from $firstTransactionDate to $yesterday (excluding current day)")
-
     summaryDeletionService.deleteHistoricalSummaries(today)
-
     val datesToProcess = generateDateRange(firstTransactionDate, yesterday)
-    val summariesSaved = summaryBatchProcessor.processSummariesInBatches(datesToProcess, ::calculateSummaryForDate)
-
+    val summariesSaved = summaryBatchProcessor.processSummariesWithTransactions(datesToProcess, transactions)
     log.info("Successfully recalculated and saved $summariesSaved daily summaries (excluding current day)")
     return summariesSaved
   }
@@ -68,10 +62,8 @@ class SummaryService(
 
   fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
     if (isToday(date)) return calculateTodaySummary(date)
-
-    val existingSummary = portfolioDailySummaryRepository.findByEntryDate(date)
+    val existingSummary = summaryCacheService.findByEntryDate(date)
     if (existingSummary != null) return existingSummary
-
     return calculateHistoricalSummary(date)
   }
 
@@ -133,7 +125,7 @@ class SummaryService(
   private fun isToday(date: LocalDate): Boolean = date.isEqual(LocalDate.now(clock))
 
   private fun calculateTodaySummary(date: LocalDate): PortfolioDailySummary {
-    val existingSummary = portfolioDailySummaryRepository.findByEntryDate(date)
+    val existingSummary = summaryCacheService.findByEntryDate(date)
     return existingSummary?.let {
       alignCurrentDaySummaryWithInstruments(it)
     } ?: createCurrentDaySummary(date)
@@ -157,7 +149,7 @@ class SummaryService(
 
   private fun tryUsePreviousDaySummary(date: LocalDate): PortfolioDailySummary? {
     val previousDate = date.minusDays(1)
-    val previousSummary = portfolioDailySummaryRepository.findByEntryDate(previousDate) ?: return null
+    val previousSummary = summaryCacheService.findByEntryDate(previousDate) ?: return null
     val summary = calculateSummaryDetailsForDate(date)
     if (dailySummaryCalculator.shouldReuseYesterday(previousSummary, summary)) {
       return createSummaryFromExisting(date, summary)
@@ -189,7 +181,7 @@ class SummaryService(
     date: LocalDate,
     source: PortfolioDailySummary,
   ): PortfolioDailySummary {
-    val existingSummary = portfolioDailySummaryRepository.findByEntryDate(date)
+    val existingSummary = summaryCacheService.findByEntryDate(date)
     val summary =
       PortfolioDailySummary(
         entryDate = date,

@@ -9,7 +9,7 @@ import java.util.*
 import javax.annotation.Resource
 
 @IntegrationTest
-class GoogleVisionServiceTest {
+class GoogleVisionServiceIT {
   @Resource
   private lateinit var googleVisionService: GoogleVisionService
 

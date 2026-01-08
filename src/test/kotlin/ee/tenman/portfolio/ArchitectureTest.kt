@@ -396,6 +396,15 @@ class ArchitectureTest {
       .because("Test naming convention for easy identification")
 
   @ArchTest
+  val `integration test classes should end with IT suffix`: ArchRule =
+    classes()
+      .that()
+      .areAnnotatedWith("ee.tenman.portfolio.configuration.IntegrationTest")
+      .should()
+      .haveSimpleNameEndingWith("IT")
+      .because("Integration tests using @IntegrationTest annotation must end with IT suffix")
+
+  @ArchTest
   val `services should not depend on controllers`: ArchRule =
     noClasses()
       .that()
