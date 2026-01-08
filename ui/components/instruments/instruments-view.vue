@@ -65,6 +65,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import { usePriceChangePeriod } from '../../composables/use-price-change-period'
 import { useSortableTable } from '../../composables/use-sortable-table'
+import { useAuthState } from '../../composables/use-auth-state'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
@@ -79,10 +80,12 @@ const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal'
 const { selectedPeriod, periods } = usePriceChangePeriod()
 const queryClient = useQueryClient()
 const toast = useToast()
+const { isAuthenticated } = useAuthState()
 
 const { data: allInstruments } = useQuery({
   queryKey: ['instruments-all'],
   queryFn: () => instrumentsService.getAll(),
+  enabled: isAuthenticated,
 })
 
 const availablePlatforms = computed(() => {
@@ -139,6 +142,7 @@ const {
     return instrumentsService.getAll(selectedPlatforms.value, selectedPeriod.value)
   },
   refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
+  enabled: isAuthenticated,
 })
 
 const filteredItems = computed(() => {

@@ -1,5 +1,10 @@
 <template>
-  <div class="d-flex flex-column min-vh-100">
+  <div v-if="isAuthChecking" class="auth-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <div v-else class="d-flex flex-column min-vh-100">
     <NavBar />
     <main class="flex-grow-1">
       <div class="container-fluid py-2">
@@ -27,10 +32,27 @@
 </template>
 
 <script lang="ts" setup>
+import { onMounted } from 'vue'
 import NavBar from './components/nav-bar.vue'
 import ConfirmDialog from './components/shared/confirm-dialog.vue'
 import { provideConfirm } from './composables/use-confirm'
+import { useAuthState } from './composables/use-auth-state'
 
 const currentYear = new Date().getFullYear()
 const confirmState = provideConfirm()
+const { isAuthChecking, checkAuth } = useAuthState()
+
+onMounted(() => {
+  checkAuth()
+})
 </script>
+
+<style scoped>
+.auth-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f8f9fa;
+}
+</style>

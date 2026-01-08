@@ -14,9 +14,36 @@
 
   <!-- Preconnect to external domains used in the app -->
   <link href="https://cdn.jsdelivr.net" rel="preconnect"> <!-- For Bootstrap -->
+
+  <!-- Initial loading styles -->
+  <style>
+    .initial-loader {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f8f9fa;
+    }
+    .initial-spinner {
+      width: 3rem;
+      height: 3rem;
+      border: 0.25rem solid #e9ecef;
+      border-top-color: #0d6efd;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <div class="initial-loader">
+    <div class="initial-spinner"></div>
+  </div>
+</div>
 <script src="./main.ts" type="module"></script>
 </body>
 </html>
