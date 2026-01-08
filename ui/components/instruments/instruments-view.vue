@@ -38,6 +38,16 @@
       </div>
     </template>
 
+    <template #subtitle-end>
+      <div class="toggle-container mt-2">
+        <span class="toggle-label">Active only</span>
+        <label class="toggle-switch">
+          <input v-model="showActiveOnly" type="checkbox" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </template>
+
     <template #content>
       <instrument-table
         :instruments="items || []"
@@ -76,6 +86,7 @@ import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
 const selectedItem = ref<InstrumentDto | null>(null)
 const selectedPlatforms = useLocalStorage<string[]>(STORAGE_KEYS.SELECTED_PLATFORMS, [])
+const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 const { selectedPeriod, periods } = usePriceChangePeriod()
 const queryClient = useQueryClient()
@@ -147,7 +158,12 @@ const {
 
 const filteredItems = computed(() => {
   if (!rawItems.value) return []
-  return rawItems.value.instruments.filter(instrument => (instrument.currentValue || 0) > 0)
+  return rawItems.value.instruments.filter(instrument => {
+    const hasValue = (instrument.currentValue || 0) > 0
+    const hasProfit = (instrument.profit || 0) !== 0
+    if (showActiveOnly.value) return hasValue
+    return hasValue || hasProfit
+  })
 })
 
 const {
@@ -227,10 +243,11 @@ const handleTitleClick = async () => {
 .platform-filter-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0;
   background: transparent;
   gap: 1rem;
+  width: 100%;
+  position: relative;
 }
 
 .platform-buttons {
@@ -282,6 +299,68 @@ const handleTitleClick = async () => {
   background: #374151;
   border-color: #374151;
   color: white;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.toggle-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.5rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background-color: #e2e8f0;
+  border-radius: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.toggle-slider::before {
+  position: absolute;
+  content: '';
+  height: 1.125rem;
+  width: 1.125rem;
+  left: 0.1875rem;
+  bottom: 0.1875rem;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #4b5563;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(1rem);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 0 2px rgba(75, 85, 99, 0.2);
 }
 
 .period-selector-container {
@@ -337,7 +416,7 @@ const handleTitleClick = async () => {
   }
 
   .period-selector-container {
-    width: 100%;
+    width: auto;
   }
 
   .period-select {
@@ -352,13 +431,15 @@ const handleTitleClick = async () => {
 }
 
 @media (max-width: 992px) and (orientation: landscape) {
-  .period-selector-container {
+  .period-selector-container,
+  .toggle-container {
     display: none !important;
   }
 }
 
 @media (max-height: 500px) {
-  .period-selector-container {
+  .period-selector-container,
+  .toggle-container {
     display: none !important;
   }
 }
