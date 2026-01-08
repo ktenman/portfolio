@@ -1,8 +1,6 @@
 <template>
   <div v-if="isAuthChecking" class="auth-loading">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+    <div class="auth-spinner"></div>
   </div>
   <div v-else class="d-flex flex-column min-vh-100">
     <NavBar />
@@ -54,5 +52,18 @@ onMounted(() => {
   align-items: center;
   height: 100vh;
   background-color: #f8f9fa;
+}
+.auth-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 0.25rem solid #e9ecef;
+  border-top-color: #0d6efd;
+  border-radius: 50%;
+  animation: auth-spin 1s linear infinite;
+}
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
