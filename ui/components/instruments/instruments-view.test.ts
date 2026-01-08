@@ -34,17 +34,7 @@ vi.mock('../../composables/use-bootstrap-modal', () => ({
   }),
 }))
 vi.mock('@vueuse/core', () => ({
-  useLocalStorage: vi.fn((_key: string, defaultValue: any) => {
-    let storedValue = defaultValue
-    return {
-      get value() {
-        return storedValue
-      },
-      set value(newValue: any) {
-        storedValue = newValue
-      },
-    }
-  }),
+  useLocalStorage: vi.fn((_key: string, defaultValue: any) => ref(defaultValue)),
 }))
 
 const CrudLayoutStub = {
@@ -56,6 +46,7 @@ const CrudLayoutStub = {
       h('div', [
         h('button', { onClick: handleAdd, id: 'stub-add-button' }, 'Add'),
         slots.subtitle?.(),
+        slots['subtitle-end']?.(),
         slots.content?.(),
         slots.modals?.(),
       ])
@@ -413,6 +404,43 @@ describe('InstrumentsView', () => {
         .map(btn => btn.text())
 
       expect(platformTexts).not.toContain('LHV')
+    })
+  })
+
+  describe('active only toggle', () => {
+    it('should render active only toggle', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const toggleContainer = wrapper.find('.toggle-container')
+      expect(toggleContainer.exists()).toBe(true)
+
+      const toggleLabel = wrapper.find('.toggle-label')
+      expect(toggleLabel.text()).toBe('Active only')
+
+      const toggleInput = wrapper.find('.toggle-switch input')
+      expect(toggleInput.exists()).toBe(true)
+    })
+
+    it('should default to showing active only when toggle is checked', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const toggleInput = wrapper.find('.toggle-switch input')
+      expect((toggleInput.element as HTMLInputElement).checked).toBe(true)
+    })
+
+    it('should include instruments with profit when toggle is unchecked', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      const toggleInput = wrapper.find('.toggle-switch input')
+      expect(toggleInput.exists()).toBe(true)
+
+      await toggleInput.setValue(false)
+      await flushPromises()
+
+      expect((toggleInput.element as HTMLInputElement).checked).toBe(false)
     })
   })
 })
