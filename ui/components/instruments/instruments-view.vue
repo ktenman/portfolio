@@ -27,29 +27,28 @@
             }}
           </button>
         </div>
-        <div class="period-selector-container">
-          <label class="period-label d-none d-md-inline">Period:</label>
-          <select v-model="selectedPeriod" class="period-select">
-            <option v-for="p in periods" :key="p.value" :value="p.value">
-              {{ p.label }}
-            </option>
-          </select>
+        <div class="controls-row">
+          <div class="period-selector-container">
+            <label class="period-label d-none d-md-inline">Period:</label>
+            <select v-model="selectedPeriod" class="period-select">
+              <option v-for="p in periods" :key="p.value" :value="p.value">
+                {{ p.label }}
+              </option>
+            </select>
+          </div>
+          <div class="toggle-container">
+            <span class="toggle-label">Active only</span>
+            <label class="toggle-switch">
+              <input
+                v-model="showActiveOnly"
+                type="checkbox"
+                role="switch"
+                aria-label="Show active instruments only"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
         </div>
-      </div>
-    </template>
-
-    <template #subtitle-end>
-      <div class="toggle-container mt-2">
-        <span class="toggle-label">Active only</span>
-        <label class="toggle-switch">
-          <input
-            v-model="showActiveOnly"
-            type="checkbox"
-            role="switch"
-            aria-label="Show active instruments only"
-          />
-          <span class="toggle-slider"></span>
-        </label>
       </div>
     </template>
 
@@ -306,11 +305,17 @@ const handleTitleClick = async () => {
   color: white;
 }
 
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
 .toggle-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-left: auto;
 }
 
 .toggle-label {
@@ -420,6 +425,10 @@ const handleTitleClick = async () => {
     display: none;
   }
 
+  .controls-row {
+    margin-left: 0;
+  }
+
   .period-selector-container {
     width: auto;
   }
@@ -436,15 +445,13 @@ const handleTitleClick = async () => {
 }
 
 @media (max-width: 992px) and (orientation: landscape) {
-  .period-selector-container,
-  .toggle-container {
+  .controls-row {
     display: none !important;
   }
 }
 
 @media (max-height: 500px) {
-  .period-selector-container,
-  .toggle-container {
+  .controls-row {
     display: none !important;
   }
 }
