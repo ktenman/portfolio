@@ -20,7 +20,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @IntegrationTest
-class EtfHoldingPersistenceServiceIntegrationTest {
+class EtfHoldingPersistenceServiceIT {
   @Resource
   private lateinit var etfHoldingPersistenceService: EtfHoldingPersistenceService
 

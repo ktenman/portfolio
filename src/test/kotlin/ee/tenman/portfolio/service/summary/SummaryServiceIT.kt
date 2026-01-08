@@ -21,7 +21,7 @@ import java.time.Clock
 import java.time.LocalDate
 
 @IntegrationTest
-class SummaryServiceIntegrationTest {
+class SummaryServiceIT {
   @Resource
   private lateinit var summaryService: SummaryService
 
