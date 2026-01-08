@@ -53,21 +53,23 @@ class SummaryBatchProcessorService(
     allTransactions: List<PortfolioTransaction>,
   ): Int {
     entityManager.clear()
+    val sortedTransactions = allTransactions.sortedBy { it.transactionDate }
+    val sortedDates = batch.sorted()
+    var transactionIndex = 0
+    val accumulatedTransactions = mutableListOf<PortfolioTransaction>()
     val summaries =
-      batch.mapNotNull { date ->
-        runCatching { calculateSummaryForDate(date, allTransactions) }
+      sortedDates.mapNotNull { date ->
+        while (transactionIndex < sortedTransactions.size &&
+          !sortedTransactions[transactionIndex].transactionDate.isAfter(date)
+        ) {
+          accumulatedTransactions.add(sortedTransactions[transactionIndex])
+          transactionIndex++
+        }
+        runCatching { dailySummaryCalculator.calculateFromTransactions(accumulatedTransactions.toList(), date) }
           .onFailure { log.warn("Failed to calculate summary for $date: ${it.message}") }
           .getOrNull()
       }
     if (summaries.isEmpty()) return 0
     return summaryPersistenceService.saveSummaries(summaries)
-  }
-
-  private fun calculateSummaryForDate(
-    date: LocalDate,
-    allTransactions: List<PortfolioTransaction>,
-  ): PortfolioDailySummary {
-    val transactionsUpToDate = allTransactions.filter { !it.transactionDate.isAfter(date) }
-    return dailySummaryCalculator.calculateFromTransactions(transactionsUpToDate, date)
   }
 }
