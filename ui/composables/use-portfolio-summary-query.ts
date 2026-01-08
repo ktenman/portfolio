@@ -6,11 +6,13 @@ import {
   sortSummariesByDateAsc,
   flattenPages,
 } from '../services/summary-aggregator'
+import { useAuthState } from './use-auth-state'
 
 export function usePortfolioSummaryQuery() {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
   const pageSize = 186
+  const { isAuthenticated } = useAuthState()
 
   const {
     data: historicalData,
@@ -29,11 +31,13 @@ export function usePortfolioSummaryQuery() {
       return undefined
     },
     initialPageParam: 0,
+    enabled: isAuthenticated,
   })
 
   const { data: currentSummary, isLoading: isLoadingCurrent } = useQuery({
     queryKey: ['portfolio-summary', 'current'],
     queryFn: portfolioSummaryService.getCurrent,
+    enabled: isAuthenticated,
   })
 
   const recalculateMutation = useMutation({

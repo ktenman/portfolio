@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { ref, h } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import type { InstrumentsResponse, Platform } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
-import { h } from 'vue'
 import { createInstrumentDto } from '../../tests/fixtures'
 
 const mockShow = vi.fn()
@@ -14,6 +14,13 @@ const mockToastSuccess = vi.fn()
 const mockToastError = vi.fn()
 
 vi.mock('../../services/instruments-service')
+vi.mock('../../composables/use-auth-state', () => ({
+  useAuthState: () => ({
+    isAuthenticated: ref(true),
+    isAuthChecking: ref(false),
+    checkAuth: vi.fn().mockResolvedValue(true),
+  }),
+}))
 vi.mock('../../composables/use-toast', () => ({
   useToast: () => ({
     success: mockToastSuccess,

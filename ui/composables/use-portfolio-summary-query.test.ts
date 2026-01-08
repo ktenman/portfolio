@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
@@ -8,6 +9,13 @@ import type { Page } from '../models/page'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
 
 vi.mock('../services/portfolio-summary-service')
+vi.mock('./use-auth-state', () => ({
+  useAuthState: () => ({
+    isAuthenticated: ref(true),
+    isAuthChecking: ref(false),
+    checkAuth: vi.fn().mockResolvedValue(true),
+  }),
+}))
 
 const mockCurrentSummary: PortfolioSummaryDto = createPortfolioSummaryDto({
   date: '2023-12-31',

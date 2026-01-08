@@ -123,8 +123,10 @@ import {
   QUICK_DATE_OPTIONS,
   type QuickDatePreset,
 } from '../../composables/use-quick-dates'
+import { useAuthState } from '../../composables/use-auth-state'
 
 const selectedPlatforms = useLocalStorage<string[]>(STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS, [])
+const { isAuthenticated } = useAuthState()
 const quickDateDropdown = ref<HTMLElement | null>(null)
 
 const closeDropdown = () => {
@@ -144,6 +146,7 @@ const { fromDate, untilDate, selectedQuickDate, setQuickDate, clearDates } = use
 const { data: allTransactionsResponse } = useQuery({
   queryKey: ['transactions'],
   queryFn: () => transactionsService.getAll(),
+  enabled: isAuthenticated,
 })
 
 const { data: transactionsResponse, isLoading } = useQuery({
@@ -154,6 +157,7 @@ const { data: transactionsResponse, isLoading } = useQuery({
       fromDate.value || undefined,
       untilDate.value || undefined
     ),
+  enabled: isAuthenticated,
 })
 
 const transactions = computed(() => transactionsResponse.value?.transactions)
