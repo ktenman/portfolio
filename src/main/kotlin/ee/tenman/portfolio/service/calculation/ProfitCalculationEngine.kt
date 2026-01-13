@@ -83,7 +83,10 @@ class ProfitCalculationEngine {
       return
     }
     when (category) {
-      InstrumentCategory.CASH.name -> distributeToBuyTransactionsFifo(transactions, currentQuantity, currentPrice)
+      InstrumentCategory.CASH.name -> {
+        val totalSold = transactions.filter { it.transactionType == TransactionType.SELL }.sumOf { it.quantity }
+        distributeToBuyTransactionsFifo(buyTransactions, totalSold, currentQuantity, currentPrice)
+      }
       else -> distributeToBuyTransactions(buyTransactions, currentQuantity, currentPrice)
     }
   }
@@ -110,27 +113,23 @@ class ProfitCalculationEngine {
   }
 
   private fun distributeToBuyTransactionsFifo(
-    transactions: List<PortfolioTransaction>,
+    buyTransactions: List<PortfolioTransaction>,
+    totalSold: BigDecimal,
     currentQuantity: BigDecimal,
     currentPrice: BigDecimal,
   ) {
-    val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
-    val sellTransactions = transactions.filter { it.transactionType == TransactionType.SELL }
-    val totalSold = sellTransactions.sumOf { it.quantity }
-    var remainingToAllocate = currentQuantity
-    var soldToConsume = totalSold
-    buyTransactions.forEach { buyTx ->
+    buyTransactions.fold(Pair(totalSold, currentQuantity)) { (soldToConsume, remainingToAllocate), buyTx ->
       val consumedFromThisBuy = soldToConsume.min(buyTx.quantity)
-      soldToConsume = soldToConsume.subtract(consumedFromThisBuy).max(BigDecimal.ZERO)
+      val newSoldToConsume = soldToConsume.subtract(consumedFromThisBuy).max(BigDecimal.ZERO)
       val availableFromThisBuy = buyTx.quantity.subtract(consumedFromThisBuy)
       val allocated = availableFromThisBuy.min(remainingToAllocate)
-      remainingToAllocate = remainingToAllocate.subtract(allocated)
       buyTx.remainingQuantity = allocated
       buyTx.averageCost = buyTx.price
       buyTx.unrealizedProfit = currentPrice
         .takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
         ?.let { allocated.multiply(it.subtract(buyTx.price)) }
         ?: BigDecimal.ZERO
+      Pair(newSoldToConsume, remainingToAllocate.subtract(allocated))
     }
   }
 
