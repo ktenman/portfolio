@@ -34,17 +34,25 @@ When working on features or bug fixes:
 
 ### Quick Start
 
-Run backend and frontend together in separate terminal windows:
+Run backend and frontend together with a single command:
 
 ```bash
-./run.sh                    # Opens 2 terminals: backend (8081) + frontend (61234)
+npm run dev                 # Starts both backend and frontend with colored output
 ```
 
-The script automatically:
+This command automatically:
 
+- Cleans up any existing Docker containers and processes on ports 8081/61234
 - Starts Spring Boot backend on http://localhost:8081
 - Starts Vite frontend dev server on http://localhost:61234
-- Works on macOS, Linux (gnome-terminal/xterm), and Windows
+- Shows color-coded, prefixed output (blue for backend, green for frontend)
+
+You can also run services individually:
+
+```bash
+npm run dev:ui              # Start frontend only (Vite)
+npm run dev:backend         # Start backend only (Gradle bootRun)
+```
 
 ### Backend Development
 
@@ -81,7 +89,8 @@ Add this to your shell profile (~/.bashrc, ~/.zshrc) to make it permanent.
 ```bash
 # Setup and run
 npm install                 # Install dependencies
-npm run dev                 # Start dev server (port 61234)
+npm run dev                 # Start both backend + frontend (recommended)
+npm run dev:ui              # Start frontend only (port 61234)
 npm run build              # Production build
 
 # Code quality (ALWAYS run before testing)

@@ -207,10 +207,22 @@ details and portfolio summaries.
 Run backend and frontend together with a single command:
 
 ```bash
-./run.sh                    # Opens 2 terminals: backend (8081) + frontend (61234)
+npm run dev                 # Starts both backend and frontend with colored output
 ```
 
-The script automatically starts Spring Boot backend and Vite frontend dev server. Works on macOS, Linux, and Windows.
+This command automatically:
+
+- Cleans up any existing Docker containers and processes on ports 8081/61234
+- Starts Spring Boot backend on http://localhost:8081
+- Starts Vite frontend dev server on http://localhost:61234
+- Shows color-coded, prefixed output for easy debugging
+
+You can also run services individually:
+
+```bash
+npm run dev:ui              # Start frontend only (Vite)
+npm run dev:backend         # Start backend only (Gradle bootRun)
+```
 
 ### Local Development Setup
 
@@ -248,7 +260,7 @@ Install frontend dependencies and start the development server:
 
 ```bash
 npm install
-npm run dev
+npm run dev:ui              # Start frontend only
 ```
 
 You can access it in your web browser at http://localhost:61234

@@ -37,6 +37,6 @@
   "eslint": {
     "config": ["eslint.config.js"]
   },
-  "ignoreBinaries": [],
+  "ignoreBinaries": ["lsof"],
   "ignoreWorkspaces": []
 }
