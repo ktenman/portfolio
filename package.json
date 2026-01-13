@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k -p '[{name}]' -n 'BACKEND,FRONTEND' -c 'blue,green' 'npm run dev:backend' 'npm run dev:ui'",
+    "dev:ui": "vite",
+    "dev:backend": "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew bootRun",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint ui --fix",
@@ -43,6 +45,7 @@
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.14",
     "@vue/test-utils": "^2.4.6",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-no-comments": "^1.1.10",
