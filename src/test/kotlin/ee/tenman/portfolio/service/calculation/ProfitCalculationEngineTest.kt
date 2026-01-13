@@ -187,4 +187,82 @@ class ProfitCalculationEngineTest {
       platform = Platform.LHV,
       commission = commission,
     )
+
+  @Test
+  fun `should use FIFO for cash instrument when buy then sell then buy again`() {
+    val cashInstrument = createCashInstrument()
+    val buy1 = createCashTransaction(cashInstrument, TransactionType.BUY, BigDecimal("13719.16"), testDate.minusDays(20))
+    val sell1 = createCashTransaction(cashInstrument, TransactionType.SELL, BigDecimal("13719.16"), testDate.minusDays(10))
+    val buy2 = createCashTransaction(cashInstrument, TransactionType.BUY, BigDecimal("2804.07"), testDate)
+
+    engine.calculateProfitsForPlatform(listOf(buy1, sell1, buy2), BigDecimal("1"))
+
+    expect(buy1.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(buy2.remainingQuantity).toEqualNumerically(BigDecimal("2804.07"))
+  }
+
+  @Test
+  fun `should use FIFO for cash instrument with partial sell`() {
+    val cashInstrument = createCashInstrument()
+    val buy1 = createCashTransaction(cashInstrument, TransactionType.BUY, BigDecimal("1000"), testDate.minusDays(20))
+    val sell1 = createCashTransaction(cashInstrument, TransactionType.SELL, BigDecimal("600"), testDate.minusDays(10))
+    val buy2 = createCashTransaction(cashInstrument, TransactionType.BUY, BigDecimal("500"), testDate)
+
+    engine.calculateProfitsForPlatform(listOf(buy1, sell1, buy2), BigDecimal("1"))
+
+    expect(buy1.remainingQuantity).toEqualNumerically(BigDecimal("400"))
+    expect(buy2.remainingQuantity).toEqualNumerically(BigDecimal("500"))
+  }
+
+  @Test
+  fun `should use FIFO for cash instrument consuming multiple buys`() {
+    val cashInstrument = createCashInstrument()
+    val buy1 = createCashTransaction(cashInstrument, TransactionType.BUY, BigDecimal("100"), testDate.minusDays(30))
+    val buy2 = createCashTransaction(cashInstrument, TransactionType.BUY, BigDecimal("200"), testDate.minusDays(20))
+    val sell1 = createCashTransaction(cashInstrument, TransactionType.SELL, BigDecimal("150"), testDate.minusDays(10))
+
+    engine.calculateProfitsForPlatform(listOf(buy1, buy2, sell1), BigDecimal("1"))
+
+    expect(buy1.remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(buy2.remainingQuantity).toEqualNumerically(BigDecimal("150"))
+  }
+
+  @Test
+  fun `should use proportional distribution for non-cash instrument`() {
+    val buy1 = createBuyCashFlow(BigDecimal("100"), BigDecimal("50"), testDate.minusDays(20))
+    val sell1 = createSellCashFlow(BigDecimal("100"), BigDecimal("60"), testDate.minusDays(10))
+    val buy2 = createBuyCashFlow(BigDecimal("50"), BigDecimal("55"), testDate)
+    testInstrument.currentPrice = BigDecimal("60")
+
+    engine.calculateProfitsForPlatform(listOf(buy1, sell1, buy2), BigDecimal.ZERO)
+
+    expect(buy1.remainingQuantity).toBeGreaterThan(BigDecimal.ZERO)
+    expect(buy2.remainingQuantity).toBeGreaterThan(BigDecimal.ZERO)
+  }
+
+  private fun createCashInstrument(): Instrument =
+    Instrument(
+      symbol = "EUR",
+      name = "Euro Cash",
+      category = "CASH",
+      baseCurrency = "EUR",
+      currentPrice = BigDecimal("1"),
+      providerName = ProviderName.MANUAL,
+    ).apply { id = 2L }
+
+  private fun createCashTransaction(
+    instrument: Instrument,
+    type: TransactionType,
+    quantity: BigDecimal,
+    date: LocalDate,
+  ): PortfolioTransaction =
+    PortfolioTransaction(
+      instrument = instrument,
+      transactionType = type,
+      quantity = quantity,
+      price = BigDecimal("1"),
+      transactionDate = date,
+      platform = Platform.SWEDBANK,
+      commission = BigDecimal.ZERO,
+    )
 }
