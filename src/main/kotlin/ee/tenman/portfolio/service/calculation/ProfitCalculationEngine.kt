@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.calculation
 
+import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
@@ -15,9 +16,10 @@ class ProfitCalculationEngine {
     currentPrice: BigDecimal,
   ) {
     val sortedTransactions = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
+    val category = sortedTransactions.firstOrNull()?.instrument?.category
     val (_, currentQuantity) = processTransactions(sortedTransactions)
     val effectivePrice = determineEffectivePrice(currentPrice, sortedTransactions)
-    distributeProfits(sortedTransactions, currentQuantity, effectivePrice)
+    distributeProfits(sortedTransactions, currentQuantity, effectivePrice, category)
   }
 
   private fun processTransactions(transactions: List<PortfolioTransaction>): TransactionState =
@@ -73,13 +75,20 @@ class ProfitCalculationEngine {
     transactions: List<PortfolioTransaction>,
     currentQuantity: BigDecimal,
     currentPrice: BigDecimal,
+    category: String?,
   ) {
     val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
     if (currentQuantity.compareTo(BigDecimal.ZERO) <= 0) {
       buyTransactions.forEach { it.setZeroUnrealizedMetrics() }
       return
     }
-    distributeToBuyTransactions(buyTransactions, currentQuantity, currentPrice)
+    when (category) {
+      InstrumentCategory.CASH.name -> {
+        val totalSold = transactions.filter { it.transactionType == TransactionType.SELL }.sumOf { it.quantity }
+        distributeToBuyTransactionsFifo(buyTransactions, totalSold, currentQuantity, currentPrice)
+      }
+      else -> distributeToBuyTransactions(buyTransactions, currentQuantity, currentPrice)
+    }
   }
 
   private fun distributeToBuyTransactions(
@@ -100,6 +109,27 @@ class ProfitCalculationEngine {
         .takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
         ?.let { proportionalQuantity.multiply(it.subtract(buyTx.price)) }
         ?: BigDecimal.ZERO
+    }
+  }
+
+  private fun distributeToBuyTransactionsFifo(
+    buyTransactions: List<PortfolioTransaction>,
+    totalSold: BigDecimal,
+    currentQuantity: BigDecimal,
+    currentPrice: BigDecimal,
+  ) {
+    buyTransactions.fold(Pair(totalSold, currentQuantity)) { (soldToConsume, remainingToAllocate), buyTx ->
+      val consumedFromThisBuy = soldToConsume.min(buyTx.quantity)
+      val newSoldToConsume = soldToConsume.subtract(consumedFromThisBuy).max(BigDecimal.ZERO)
+      val availableFromThisBuy = buyTx.quantity.subtract(consumedFromThisBuy)
+      val allocated = availableFromThisBuy.min(remainingToAllocate)
+      buyTx.remainingQuantity = allocated
+      buyTx.averageCost = buyTx.price
+      buyTx.unrealizedProfit = currentPrice
+        .takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
+        ?.let { allocated.multiply(it.subtract(buyTx.price)) }
+        ?: BigDecimal.ZERO
+      Pair(newSoldToConsume, remainingToAllocate.subtract(allocated))
     }
   }
 
