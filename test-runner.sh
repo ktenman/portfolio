@@ -367,9 +367,9 @@ setup_e2e_environment() {
     if [ "$SILENT_MODE" = false ]; then
         print_info "Stopping Docker containers..."
     fi
-    docker-compose -f docker-compose.e2e-minimal.yml down 2>/dev/null || true
-    docker-compose -f docker-compose.local.yml down 2>/dev/null || true
-    docker-compose -f compose.yaml down 2>/dev/null || true
+    docker compose -f docker-compose.e2e-minimal.yml down 2>/dev/null || true
+    docker compose -f docker-compose.local.yml down 2>/dev/null || true
+    docker compose -f compose.yaml down 2>/dev/null || true
     
     # Clean up Docker resources
     if [ "$SILENT_MODE" = false ]; then
@@ -389,7 +389,7 @@ setup_e2e_environment() {
     
     # Step 2: Start Docker services
     print_info "Step 2: Starting Docker services (PostgreSQL & Redis)..."
-    docker-compose -f compose.yaml up -d
+    docker compose -f compose.yaml up -d
     
     if [ "$SILENT_MODE" = false ]; then
         print_info "Waiting for Docker services to start..."
@@ -398,7 +398,7 @@ setup_e2e_environment() {
     
     # Verify PostgreSQL is ready
     for i in {1..30}; do
-        if docker-compose -f compose.yaml exec -T postgres-dev pg_isready -U postgres > /dev/null 2>&1; then
+        if docker compose -f compose.yaml exec -T postgres-dev pg_isready -U postgres > /dev/null 2>&1; then
             if [ "$SILENT_MODE" = false ]; then
                 print_success "PostgreSQL is ready"
             fi
@@ -410,7 +410,7 @@ setup_e2e_environment() {
     
     # Verify Redis is ready
     for i in {1..30}; do
-        if docker-compose -f compose.yaml exec -T redis-dev redis-cli ping > /dev/null 2>&1; then
+        if docker compose -f compose.yaml exec -T redis-dev redis-cli ping > /dev/null 2>&1; then
             if [ "$SILENT_MODE" = false ]; then
                 print_success "Redis is ready"
             fi
@@ -689,7 +689,7 @@ cleanup_services() {
     kill_port 61234
     
     # Stop Docker containers
-    docker-compose -f compose.yaml down > /dev/null 2>&1
+    docker compose -f compose.yaml down > /dev/null 2>&1
     
     # Clean up log files
     rm -f backend.log frontend.log backend-test.log frontend-test.log

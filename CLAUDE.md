@@ -109,28 +109,25 @@ npm test -- --coverage     # Run tests with coverage report
 
 ```bash
 # Local development stack
-docker-compose -f compose.yaml up -d                    # Start PostgreSQL & Redis only
-docker-compose -f docker-compose.local.yml build        # Build all services
-docker-compose -f docker-compose.local.yml up -d        # Run full stack
+docker compose -f compose.yaml up -d                    # Start PostgreSQL & Redis only
+docker compose -f docker-compose.local.yml build        # Build all services
+docker compose -f docker-compose.local.yml up -d        # Run full stack
 
-# Test Runner (RECOMMENDED - runs all tests)
-./test-runner.sh                    # Run ALL tests: backend + frontend + E2E (default)
-./test-runner.sh --unit             # Run backend unit + frontend UI tests only
-./test-runner.sh --e2e              # Run only E2E tests (with environment setup)
-./test-runner.sh --e2e --keep       # Run E2E tests and keep services running
-./test-runner.sh --parallel         # Run all tests in parallel mode
-./test-runner.sh --setup            # Setup E2E environment only (no tests)
-./test-runner.sh --summary          # Show test results summary
-./test-runner.sh --silent           # Run with minimal output
-./test-runner.sh --help             # Show all options
+# Test Runner (RECOMMENDED - runs all tests via npm)
+npm run test:all                    # Run ALL tests: backend + frontend + E2E
+npm run test:unit                   # Run backend unit + frontend UI + proxy tests
+npm run test:e2e                    # Run only E2E tests (with environment setup)
+npm run test:proxy                  # Run cloudflare-bypass-proxy tests only
+npm run test:setup                  # Setup test environment only (no tests)
+npm run test:cleanup                # Stop services and cleanup
 
 # Manual E2E test environment (if needed)
-docker-compose -f compose.yaml down
-./test-runner.sh --setup
+docker compose -f compose.yaml down
+npm run test:setup
 export E2E=true && ./gradlew test --info -Pheadless=true
 
 # Stop all services
-pkill -f 'bootRun|vite' && docker-compose -f compose.yaml down
+npm run test:cleanup
 ```
 
 ### Gradle Version Catalogs
@@ -386,48 +383,36 @@ expect(value == null).toEqual(false)  // Don't use this!
 - CI/CD: GitHub Actions workflows in `.github/workflows/`
 - Deployment: Automated via GitHub Actions with health check verification
 
-### Test Runner Script
+### Test Runner Scripts
 
-#### Unified Test Runner (`test-runner.sh`)
-
-A comprehensive test runner that runs ALL tests across the entire stack: backend unit tests, frontend UI tests, and E2E integration tests.
+The project uses npm scripts for running all tests across the stack: backend unit tests, frontend UI tests, cloudflare-bypass-proxy tests, and E2E integration tests.
 
 **Test Categories:**
 
 1. **Backend Unit Tests** - Kotlin/Spring Boot tests via Gradle (~261 tests)
 2. **Frontend UI Tests** - Vue/TypeScript component tests via npm/Vitest (~414 tests)
-3. **E2E Tests** - Browser-based integration tests via Selenide (~14 tests)
-
-**Features:**
-
-- Runs all test suites with a single command
-- Automatically sets up E2E environment (Docker, backend, frontend)
-- Parses test reports and displays unified summary
-- Shows total test count across all categories
-- Color-coded output with success rates and durations
-- Parallel execution mode for faster testing
-- Automatic cleanup of services after tests
+3. **Cloudflare Bypass Proxy Tests** - Node.js/TypeScript tests via Jest
+4. **E2E Tests** - Browser-based integration tests via Selenide (~14 tests)
 
 **Usage:**
 
 ```bash
-./test-runner.sh              # Run ALL tests: backend + frontend + E2E (default)
-./test-runner.sh --unit       # Run backend unit + frontend UI tests only
-./test-runner.sh --e2e        # Run only E2E tests with environment setup
-./test-runner.sh --parallel   # Run all tests in parallel mode
-./test-runner.sh --summary    # Show summary of existing test results
-./test-runner.sh --setup      # Setup E2E environment only (no tests)
-./test-runner.sh --keep       # Keep services running after tests
-./test-runner.sh --silent     # Minimal output mode
-./test-runner.sh --help       # Show all options
+npm run test:all              # Run ALL tests: backend + frontend + E2E
+npm run test:unit             # Run backend unit + frontend UI + proxy tests
+npm run test:e2e              # Run only E2E tests with environment setup
+npm run test:proxy            # Run cloudflare-bypass-proxy tests only
+npm run test:setup            # Setup test environment only (no tests)
+npm run test:cleanup          # Stop services and cleanup
+npm run docker:up             # Start Docker services (PostgreSQL & Redis)
+npm run docker:down           # Stop Docker services
 ```
 
 **Technical Notes:**
 
-- E2E environment uses `CI=true` to run Vite in non-interactive mode
+- E2E environment uses Docker Compose V2 (`docker compose`)
 - Frontend starts on port 61234, backend on 8081
-- Docker services (PostgreSQL, Redis) start automatically
-- Services cleanup automatically unless `--keep` is specified
+- Docker services (PostgreSQL, Redis) start automatically with `npm run test:setup`
+- Services cleanup automatically after E2E tests
 
 ### Development Tips
 

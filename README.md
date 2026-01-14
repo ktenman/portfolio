@@ -241,7 +241,7 @@ npm run dev:backend         # Start backend only (Gradle bootRun)
 
 2. **Start Infrastructure Services**:
    ```bash
-   docker-compose -f compose.yaml up -d
+   docker compose -f compose.yaml up -d
    ```
    This starts PostgreSQL, Redis, and MinIO containers.
 
@@ -272,13 +272,13 @@ To update the application or its services after making changes:
 1. Rebuild the services:
 
 ```bash
-docker-compose -f docker-compose.local.yml build
+docker compose -f docker-compose.local.yml build
 ```
 
 2. Restart the services for the changes to take effect:
 
 ```bash
-docker-compose -f docker-compose.local.yml up -d
+docker compose -f docker-compose.local.yml up -d
 ```
 
 Once all services are running, access the application at:
@@ -293,10 +293,10 @@ For a full production-like setup locally:
 
 ```bash
 # Build all services
-docker-compose -f docker-compose.local.yml build
+docker compose -f docker-compose.local.yml build
 
 # Start the complete stack
-docker-compose -f docker-compose.local.yml up -d
+docker compose -f docker-compose.local.yml up -d
 ```
 
 This includes all services: backend, frontend, auth, and captcha solver.
@@ -306,10 +306,16 @@ This includes all services: backend, frontend, auth, and captcha solver.
 To run end-to-end tests:
 
 ```bash
-docker-compose -f docker-compose.e2e-minimal.yml down
+docker compose -f docker-compose.e2e-minimal.yml down
 docker volume rm portfolio_postgres_data_e2e
-docker-compose -f docker-compose.e2e-minimal.yml up -d && sleep 30
+docker compose -f docker-compose.e2e-minimal.yml up -d && sleep 30
 export E2E=true && ./gradlew test --info -Pheadless=true
+```
+
+Or use the npm script:
+
+```bash
+npm run test:e2e
 ```
 
 ### Testing
@@ -344,9 +350,10 @@ npm test -- --coverage      # Run tests with coverage report
 **Unified Test Runner:**
 
 ```bash
-./test-runner.sh            # Run all tests (unit + E2E)
-./test-runner.sh --unit     # Run only unit tests
-./test-runner.sh --e2e      # Run only E2E tests
+npm run test:all            # Run all tests (unit + E2E)
+npm run test:unit           # Run only unit tests
+npm run test:e2e            # Run only E2E tests
+npm run test:proxy          # Run cloudflare-bypass-proxy tests
 ```
 
 ### Continuous Integration
@@ -403,10 +410,10 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 
    cd portfolio
    git pull
-   docker-compose -f docker-compose.yml down
-   docker-compose -f docker-compose.yml pull
-   docker-compose -f docker-compose.yml build
-   docker-compose -f docker-compose.yml up -d
+   docker compose -f docker-compose.yml down
+   docker compose -f docker-compose.yml pull
+   docker compose -f docker-compose.yml build
+   docker compose -f docker-compose.yml up -d
    docker rmi $(docker images -f "dangling=true" -q)
    ```
 

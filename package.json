@@ -23,7 +23,15 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh"
+    "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh",
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "test:unit": "./gradlew test && npm run test:run && npm run test:proxy",
+    "test:proxy": "cd cloudflare-bypass-proxy && npm test",
+    "test:e2e": "npm run test:setup && E2E=true ./gradlew test --info -Pheadless=true; npm run test:cleanup",
+    "test:setup": "docker compose -f compose.yaml up -d && sleep 10",
+    "test:cleanup": "pkill -f 'bootRun|vite' 2>/dev/null; docker compose -f compose.yaml down 2>/dev/null; exit 0",
+    "docker:up": "docker compose -f compose.yaml up -d",
+    "docker:down": "docker compose -f compose.yaml down"
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.92.5",
