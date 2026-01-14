@@ -116,10 +116,11 @@ docker compose -f docker-compose.local.yml up -d        # Run full stack
 # Test Runner (RECOMMENDED - runs all tests via npm)
 npm run test:all                    # Run ALL tests: backend + frontend + E2E
 npm run test:unit                   # Run backend unit + frontend UI + proxy tests
-npm run test:e2e                    # Run only E2E tests (with environment setup)
+npm run test:e2e                    # Run E2E tests (starts all services automatically)
 npm run test:proxy                  # Run cloudflare-bypass-proxy tests only
-npm run test:setup                  # Setup test environment only (no tests)
-npm run test:cleanup                # Stop services and cleanup
+npm run test:setup                  # Setup E2E environment (Docker + backend + frontend)
+npm run test:wait                   # Wait for backend and frontend to be ready
+npm run test:cleanup                # Stop all services and cleanup
 
 # Manual E2E test environment (if needed)
 docker compose -f compose.yaml down
@@ -399,10 +400,11 @@ The project uses npm scripts for running all tests across the stack: backend uni
 ```bash
 npm run test:all              # Run ALL tests: backend + frontend + E2E
 npm run test:unit             # Run backend unit + frontend UI + proxy tests
-npm run test:e2e              # Run only E2E tests with environment setup
+npm run test:e2e              # Run E2E tests (starts all services automatically)
 npm run test:proxy            # Run cloudflare-bypass-proxy tests only
-npm run test:setup            # Setup test environment only (no tests)
-npm run test:cleanup          # Stop services and cleanup
+npm run test:setup            # Setup E2E environment (Docker + backend + frontend)
+npm run test:wait             # Wait for backend and frontend to be ready
+npm run test:cleanup          # Stop all services and cleanup
 npm run docker:up             # Start Docker services (PostgreSQL & Redis)
 npm run docker:down           # Stop Docker services
 ```
@@ -411,8 +413,10 @@ npm run docker:down           # Stop Docker services
 
 - E2E environment uses Docker Compose V2 (`docker compose`)
 - Frontend starts on port 61234, backend on 8081
-- Docker services (PostgreSQL, Redis) start automatically with `npm run test:setup`
+- `npm run test:setup` starts Docker services, backend, and frontend with health check waiting
+- `npm run test:e2e` preserves test exit code after cleanup
 - Services cleanup automatically after E2E tests
+- Backend logs: `/tmp/portfolio-backend.log`, Frontend logs: `/tmp/portfolio-frontend.log`
 
 ### Development Tips
 

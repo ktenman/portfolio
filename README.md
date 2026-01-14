@@ -73,9 +73,9 @@ The Portfolio Management System is a production-ready, full-stack application fo
 **Unified Test Runner:**
 
 - `npm run test:all` - Runs comprehensive test suite across backend, frontend, and E2E
-- Automatic environment setup for E2E tests
-- Parallel execution support
-- Comprehensive test result summary
+- `npm run test:e2e` - Automatic environment setup (Docker, backend, frontend) with health checks
+- `npm run test:setup` - Setup E2E environment without running tests
+- Proper exit code preservation for CI/CD pipelines
 
 ### Code Quality Tools
 
@@ -352,8 +352,10 @@ npm test -- --coverage      # Run tests with coverage report
 ```bash
 npm run test:all            # Run all tests (unit + E2E)
 npm run test:unit           # Run only unit tests
-npm run test:e2e            # Run only E2E tests
+npm run test:e2e            # Run E2E tests (auto-starts Docker, backend, frontend)
 npm run test:proxy          # Run cloudflare-bypass-proxy tests
+npm run test:setup          # Setup E2E environment only
+npm run test:cleanup        # Stop all services
 ```
 
 ### Continuous Integration
