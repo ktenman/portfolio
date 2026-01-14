@@ -25,7 +25,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh",
     "test:all": "npm run test:unit && npm run test:e2e",
-    "test:unit": "./gradlew test && npm run test:run && npm run test:proxy",
+    "test:unit": "./gradlew test && npm run --silent test:summary && npm run test:run && npm run test:proxy",
     "test:proxy": "cd cloudflare-bypass-proxy && npm test",
     "test:e2e": "npm run test:setup && (E2E=true ./gradlew test --info -Pheadless=true; s=$?; npm run --silent test:summary; npm run test:cleanup; exit $s)",
     "test:summary": "f=build/reports/tests/test/index.html; [ -f $f ] && echo '' && echo '══════════════════════════════════════════════════════════════════════' && echo '                         TEST RESULTS SUMMARY' && echo '══════════════════════════════════════════════════════════════════════' && t=$(grep -A1 'id=\"tests\"' $f | grep counter | sed 's/[^0-9]//g'); p=$(grep -A1 'id=\"failures\"' $f | grep counter | sed 's/[^0-9]//g'); i=$(grep -A1 'id=\"ignored\"' $f | grep counter | sed 's/[^0-9]//g'); d=$(grep -A1 'id=\"duration\"' $f | grep counter | sed 's/.*>\\([^<]*\\)<.*/\\1/'); r=$(grep -A1 'id=\"successRate\"' $f | grep percent | sed 's/.*>\\([^<]*\\)<.*/\\1/'); echo \"  Tests: $t | Passed: $((t-p-i)) | Failed: $p | Ignored: $i | $r | $d\" && echo '══════════════════════════════════════════════════════════════════════' && echo '' || echo 'No test report found'",
