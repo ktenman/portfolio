@@ -33,7 +33,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.RestController
 
-@AnalyzeClasses(packages = ["ee.tenman.portfolio"])
+@AnalyzeClasses(packages = ["ee.tenman.portfolio", "e2e"])
 class ArchitectureTest {
   @ArchTest
   val `should enforce hexagonal architecture with clean boundaries`: ArchRule =
@@ -87,6 +87,7 @@ class ArchitectureTest {
         DescribedPredicate.describe("test classes and fixtures") { javaClass: JavaClass ->
           javaClass.name.endsWith("IT") ||
             javaClass.name.endsWith("Test") ||
+            javaClass.name.endsWith("E2E") ||
             javaClass.name.endsWith("IntegrationTest") ||
             javaClass.packageName.contains(".testing.")
         },
@@ -280,7 +281,9 @@ class ArchitectureTest {
   fun logStatementsShouldUseStringInterpolationNotParameterizedFormat(classes: JavaClasses) {
     val logMethods = setOf("trace", "debug", "info", "warn", "error")
     val violations = mutableListOf<String>()
-    classes.forEach { javaClass ->
+    classes
+      .filter { javaClass -> javaClass.packageName.startsWith("ee.tenman.portfolio") }
+      .forEach { javaClass ->
       javaClass.methodCallsFromSelf
         .filter { call ->
           call.targetOwner.name == "org.slf4j.Logger" && logMethods.contains(call.target.name)
@@ -384,7 +387,7 @@ class ArchitectureTest {
       .because("Kotlin and modern Java don't use Hungarian notation")
 
   @ArchTest
-  val `test classes should end with Test or IT`: ArchRule =
+  val `test classes should end with Test or IT or E2E`: ArchRule =
     classes()
       .that()
       .resideInAPackage("..test..")
@@ -392,6 +395,8 @@ class ArchitectureTest {
       .haveSimpleNameEndingWith("Test")
       .orShould()
       .haveSimpleNameEndingWith("IT")
+      .orShould()
+      .haveSimpleNameEndingWith("E2E")
       .allowEmptyShould(true)
       .because("Test naming convention for easy identification")
 
@@ -403,6 +408,21 @@ class ArchitectureTest {
       .should()
       .haveSimpleNameEndingWith("IT")
       .because("Integration tests using @IntegrationTest annotation must end with IT suffix")
+
+  @ArchTest
+  val `e2e test classes should end with E2E suffix`: ArchRule =
+    classes()
+      .that()
+      .resideInAPackage("e2e")
+      .and()
+      .haveSimpleNameNotEndingWith("Config")
+      .and()
+      .haveSimpleNameNotEndingWith("Extension")
+      .and()
+      .haveSimpleNameNotEndingWith("Kt")
+      .should()
+      .haveSimpleNameEndingWith("E2E")
+      .because("E2E tests in e2e package must end with E2E suffix, not E2ETests")
 
   @ArchTest
   val `services should not depend on controllers`: ArchRule =
@@ -537,6 +557,7 @@ class ArchitectureTest {
       fileName.endsWith("Client.kt") ||
       fileName.endsWith("Test.kt") ||
       fileName.endsWith("IT.kt") ||
+      fileName.endsWith("E2E.kt") ||
       fileName.endsWith("Utility.kt") ||
       fileName.endsWith("Controller.kt") ||
       fileName.endsWith("Handler.kt") ||
@@ -572,7 +593,11 @@ class ArchitectureTest {
               javaClass.enclosingClass
                 .orElse(null)
                 ?.simpleName
-                ?.endsWith("IT") == true
+                ?.endsWith("IT") == true ||
+              javaClass.enclosingClass
+                .orElse(null)
+                ?.simpleName
+                ?.endsWith("E2E") == true
             )
         }.map { javaClass ->
           val enclosingClass = javaClass.enclosingClass.orElse(null)?.simpleName ?: "unknown"
