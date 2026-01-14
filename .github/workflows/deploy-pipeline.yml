@@ -93,17 +93,17 @@ jobs:
             echo 'Disk space after cleanup:' && \
             df -h / | tail -1 && \
             echo 'Stopping existing containers...' && \
-            docker-compose down --remove-orphans || true && \
+            docker compose down --remove-orphans || true && \
             echo 'Removing any conflicting containers...' && \
             docker stop postgres redis minio backend frontend app auth cloudflare-bypass-proxy healthcheck 2>/dev/null || true && \
             docker rm -f postgres redis minio backend frontend app auth cloudflare-bypass-proxy healthcheck 2>/dev/null || true && \
             sleep 2 && \
             echo 'Pulling latest images (with retry)...' && \
             for i in 1 2 3; do \
-              docker-compose pull && break || { echo \"Pull attempt \$i failed, retrying in 15s...\"; sleep 15; }; \
+              docker compose pull && break || { echo \"Pull attempt \$i failed, retrying in 15s...\"; sleep 15; }; \
             done && \
             echo 'Starting containers...' && \
-            docker-compose up -d --build --force-recreate --remove-orphans && \
+            docker compose up -d --build --force-recreate --remove-orphans && \
             echo 'Waiting for services to become healthy...' && \
             for i in \$(seq 1 30); do \
               HEALTHY=\$(docker ps --filter 'health=healthy' --format '{{.Names}}' | wc -l); \

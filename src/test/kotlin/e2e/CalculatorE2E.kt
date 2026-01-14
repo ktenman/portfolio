@@ -32,7 +32,7 @@ private const val CALCULATOR_BASE_URL = "http://localhost:61234/calculator"
 
 @ExtendWith(RetryExtension::class)
 @Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])
-class CalculatorE2ETests {
+class CalculatorE2E {
   private val annualReturnInput: SelenideElement by lazy { id("annualReturnRate") }
   private val taxRateInput: SelenideElement by lazy { id("taxRate") }
   private val yearSummaryTable: SelenideElement by lazy { element(By.className("table")) }
