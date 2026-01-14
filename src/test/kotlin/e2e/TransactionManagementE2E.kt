@@ -27,7 +27,7 @@ private const val TRANSACTIONS_BASE_URL = "http://localhost:61234/transactions"
 
 @ExtendWith(RetryExtension::class)
 @Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])
-class TransactionManagementE2ETests {
+class TransactionManagementE2E {
   @BeforeEach
   fun setUp() {
     BrowserConfig.configureBrowser()
