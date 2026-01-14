@@ -68,10 +68,10 @@ export GRADLE_OPTS="--enable-native-access=ALL-UNNAMED"
 # Run a single test
 ./gradlew test --tests "ClassName.methodName"
 
-# E2E tests (use test runner for complete setup)
-./test-runner.sh --e2e        # Recommended: Full E2E setup + tests
+# E2E tests (use npm script for complete setup)
+npm run test:e2e              # Recommended: Full E2E setup + tests
 # OR manual E2E (requires environment setup first):
-export E2E=true && ./gradlew test --info -Pheadless=true
+npm run test:setup && E2E=true ./gradlew test --info -Pheadless=true
 ```
 
 #### Java 21 Native Access Warnings
@@ -421,7 +421,7 @@ npm run docker:down           # Stop Docker services
 - Redis cache keys are defined in `ui/constants/cache-keys.ts`
 - Scheduled jobs can be disabled with `scheduling.enabled=false`
 - E2E tests generate screenshots on failure (check build artifacts)
-- Use `./test-runner.sh --e2e` for reliable E2E testing
+- Use `npm run test:e2e` for reliable E2E testing
 - Frontend tests focus on business logic with comprehensive coverage
 - Test files excluded from coverage: `.eslintrc.cjs` and `app.vue`
 - **ALWAYS run `npm run lint-format` after making changes to UI code** - This ensures type safety, linting, and code formatting

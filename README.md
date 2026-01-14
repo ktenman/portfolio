@@ -72,7 +72,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 **Unified Test Runner:**
 
-- `test-runner.sh` - Runs comprehensive test suite across backend, frontend, and E2E
+- `npm run test:all` - Runs comprehensive test suite across backend, frontend, and E2E
 - Automatic environment setup for E2E tests
 - Parallel execution support
 - Comprehensive test result summary
