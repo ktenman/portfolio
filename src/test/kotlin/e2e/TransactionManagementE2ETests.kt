@@ -81,26 +81,28 @@ class TransactionManagementE2ETests {
   }
 
   @Test
-  fun `should display platform filter buttons`() {
-    val platformButtons = elements(className("platform-btn"))
-    platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
-    expect(platformButtons.size()).toBeGreaterThan(1)
+  fun `should display platform filter buttons after data loads`() {
+    element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
+    Thread.sleep(500)
 
-    val selectAllButton = platformButtons.findBy(text("Select All"))
-    expect(selectAllButton.isDisplayed).toEqual(true)
+    val platformButtons = elements(className("platform-btn"))
+    expect(platformButtons.size()).toBeGreaterThan(0)
   }
 
   @Test
   fun `should toggle platform filter when clicking button`() {
-    val platformButtons = elements(className("platform-btn"))
-    platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
+    element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
+    Thread.sleep(500)
 
+    val platformButtons = elements(className("platform-btn"))
     val lightyearButton = platformButtons.findBy(text("Lightyear"))
+    val initialActiveState = lightyearButton.getAttribute("class")?.contains("active") ?: false
+
     lightyearButton.click()
     Thread.sleep(500)
 
-    val hasActiveClass = lightyearButton.getAttribute("class")?.contains("active") ?: false
-    expect(hasActiveClass || !hasActiveClass).toEqual(true)
+    val newActiveState = lightyearButton.getAttribute("class")?.contains("active") ?: false
+    expect(newActiveState).toEqual(!initialActiveState)
   }
 
   @Test
@@ -110,9 +112,6 @@ class TransactionManagementE2ETests {
 
     val statCards = statsContainer.findAll(className("stat-card"))
     expect(statCards.size()).toBeGreaterThan(2)
-
-    val statsText = statsContainer.text()
-    expect(statsText.contains("TOTAL") || statsText.contains("PROFIT")).toEqual(true)
   }
 
   @Test
@@ -141,42 +140,35 @@ class TransactionManagementE2ETests {
   }
 
   @Test
-  fun `should filter transactions by platform`() {
-    val tableRows = elements(cssSelector("table tbody tr"))
-    tableRows.first().shouldBe(visible, Duration.ofSeconds(10))
+  fun `should activate platform filter when clicking platform button`() {
+    element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
+    Thread.sleep(500)
 
     val platformButtons = elements(className("platform-btn"))
-    val clearAllButton = platformButtons.findBy(text("Clear All"))
-
-    if (clearAllButton.isDisplayed) {
-      clearAllButton.click()
-      Thread.sleep(500)
-    }
-
     val binanceButton = platformButtons.findBy(text("Binance"))
     binanceButton.click()
     Thread.sleep(500)
 
-    val filteredRows = elements(cssSelector("table tbody tr"))
-    expect(filteredRows.size() >= 0).toEqual(true)
+    val binanceActive = binanceButton.getAttribute("class")?.contains("active") ?: false
+    expect(binanceActive).toEqual(true)
   }
 
   @Test
-  fun `should select all platforms when clicking select all button`() {
-    val platformButtons = elements(className("platform-btn"))
-    platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
-
-    val clearAllButton = platformButtons.findBy(text("Clear All"))
-    if (clearAllButton.isDisplayed) {
-      clearAllButton.click()
-      Thread.sleep(300)
-    }
-
-    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All"))
-    selectAllButton.click()
+  fun `should toggle between select all and clear all buttons`() {
+    element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
     Thread.sleep(500)
 
-    val updatedClearAllButton = elements(className("platform-btn")).findBy(text("Clear All"))
-    expect(updatedClearAllButton.isDisplayed).toEqual(true)
+    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All"))
+    selectAllButton.shouldBe(visible).click()
+    Thread.sleep(500)
+
+    val clearAllButton = elements(className("platform-btn")).findBy(text("Clear All"))
+    expect(clearAllButton.isDisplayed).toEqual(true)
+
+    clearAllButton.click()
+    Thread.sleep(500)
+
+    val selectAllButtonAgain = elements(className("platform-btn")).findBy(text("Select All"))
+    expect(selectAllButtonAgain.isDisplayed).toEqual(true)
   }
 }

@@ -127,18 +127,16 @@ class InstrumentManagementE2ETests {
   }
 
   @Test
-  fun `should filter instruments when toggling active only switch`() {
+  fun `should toggle active only switch and update table`() {
     val tableRows = elements(cssSelector("table tbody tr"))
     tableRows.first().shouldBe(visible, Duration.ofSeconds(10))
-    val initialRowCount = tableRows.size()
 
     val toggleSwitch = element(className("toggle-switch"))
     toggleSwitch.click()
     Thread.sleep(500)
 
     val updatedRows = elements(cssSelector("table tbody tr"))
-    val isFiltered = updatedRows.size() != initialRowCount || updatedRows.size() > 0
-    expect(isFiltered).toEqual(true)
+    expect(updatedRows.size()).toBeGreaterThan(0)
   }
 
   @Test
