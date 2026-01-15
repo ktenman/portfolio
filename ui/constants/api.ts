@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   PORTFOLIO_SUMMARY_CURRENT: '/portfolio-summary/current',
   PORTFOLIO_SUMMARY_RECALCULATE: '/portfolio-summary/recalculate',
   ETF_BREAKDOWN: '/etf-breakdown',
+  DIVERSIFICATION: '/diversification',
   ENUMS: '/enums',
   LOGOS: '/logos',
   CALCULATOR: '/calculator',
@@ -14,4 +15,5 @@ export const API_ENDPOINTS = {
 
 export const REFETCH_INTERVALS = {
   INSTRUMENTS: 2000,
+  DIVERSIFICATION_ETFS: 60 * 60 * 1000,
 } as const

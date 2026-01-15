@@ -89,4 +89,7 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
     @Param("etfInstrumentId") etfInstrumentId: Long,
     @Param("snapshotDate") snapshotDate: LocalDate,
   ): List<EtfPosition>
+
+  @Query("SELECT DISTINCT ep.etfInstrument.id FROM EtfPosition ep")
+  fun findDistinctEtfInstrumentIds(): List<Long>
 }

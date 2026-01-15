@@ -71,7 +71,7 @@ describe('ConfirmDialog', () => {
 
       expect(wrapper.find('.modal-title').text()).toBe('Confirm')
       expect(wrapper.find('.modal-body p').text()).toBe('Are you sure?')
-      expect(wrapper.find('.btn-secondary').text()).toBe('Cancel')
+      expect(wrapper.find('[data-testid="confirmDialogCancelButton"]').text()).toBe('Cancel')
       expect(wrapper.findAll('button').filter(b => b.text() === 'Confirm')).toHaveLength(1)
     })
 
@@ -86,7 +86,7 @@ describe('ConfirmDialog', () => {
 
       expect(wrapper.find('.modal-title').text()).toBe('Delete Item')
       expect(wrapper.find('.modal-body p').text()).toBe('This action cannot be undone.')
-      expect(wrapper.find('.btn-secondary').text()).toBe('Keep')
+      expect(wrapper.find('[data-testid="confirmDialogCancelButton"]').text()).toBe('Keep')
       expect(wrapper.findAll('button').filter(b => b.text() === 'Delete')).toHaveLength(1)
     })
 
@@ -97,7 +97,7 @@ describe('ConfirmDialog', () => {
       })
 
       const confirmButton = wrapper.findAll('button').filter(b => b.text() === 'Confirm')[0]
-      expect(confirmButton.classes()).toContain('btn-danger')
+      expect(confirmButton.classes()).toContain('danger')
     })
   })
 
@@ -117,7 +117,7 @@ describe('ConfirmDialog', () => {
     it('should emit cancel event when cancel button clicked', async () => {
       const wrapper = createWrapper({ modelValue: true })
 
-      const cancelButton = wrapper.find('.btn-secondary')
+      const cancelButton = wrapper.find('[data-testid="confirmDialogCancelButton"]')
       await cancelButton.trigger('click')
 
       expect(wrapper.emitted('cancel')).toBeTruthy()

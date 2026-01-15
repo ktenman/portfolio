@@ -242,3 +242,26 @@ export const formatPriceChange = (item: InstrumentDto): string => {
 
   return `<span class="${colorClass}">${formattedAmount} / ${formattedPercent}%</span>`
 }
+
+export const formatPercentage = (value: number): string => `${value.toFixed(2)}%`
+
+export const formatTer = (value: number | null, decimals: number = 2): string => {
+  if (value === null) return '-'
+  return `${value.toFixed(decimals)}%`
+}
+
+export const formatReturn = (value: number | null): string => {
+  if (value === null) return '-'
+  return `${(value * 100).toFixed(2)}%`
+}
+
+export const formatRelativeTime = (timestampMs: number, nowMs: number): string => {
+  const diffMs = nowMs - timestampMs
+  const diffMinutes = Math.floor(diffMs / 60000)
+  if (diffMinutes < 1) return 'just now'
+  if (diffMinutes === 1) return '1 min ago'
+  if (diffMinutes < 60) return `${diffMinutes} min ago`
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours === 1) return '1 hour ago'
+  return `${diffHours} hours ago`
+}
