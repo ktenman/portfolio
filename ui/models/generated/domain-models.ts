@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -124,12 +124,70 @@ export interface CalculationResult extends Serializable {
     total: number;
 }
 
+export interface DiversificationCalculatorRequestDto {
+    allocations: AllocationDto[];
+}
+
+export interface DiversificationCalculatorResponseDto extends Serializable {
+    weightedTer: number;
+    weightedAnnualReturn: number;
+    totalUniqueHoldings: number;
+    etfDetails: EtfDetailDto[];
+    holdings: DiversificationHoldingDto[];
+    sectors: DiversificationSectorDto[];
+    countries: DiversificationCountryDto[];
+    concentration: ConcentrationDto;
+}
+
 export interface Serializable {
 }
 
 export interface CashFlow extends Serializable {
     amount: number;
     date: DateAsString;
+}
+
+export interface AllocationDto {
+    instrumentId: number;
+    percentage: number;
+}
+
+export interface EtfDetailDto extends Serializable {
+    instrumentId: number;
+    symbol: string;
+    name: string;
+    allocation: number;
+    ter: number | null;
+    annualReturn: number | null;
+    currentPrice: number | null;
+}
+
+export interface DiversificationHoldingDto extends Serializable {
+    name: string;
+    ticker: string | null;
+    percentage: number;
+    inEtfs: string;
+}
+
+export interface DiversificationSectorDto extends Serializable {
+    sector: string;
+    percentage: number;
+}
+
+export interface DiversificationCountryDto extends Serializable {
+    countryCode: string | null;
+    countryName: string;
+    percentage: number;
+}
+
+export interface ConcentrationDto extends Serializable {
+    top10Percentage: number;
+    largestPosition: LargestPositionDto | null;
+}
+
+export interface LargestPositionDto extends Serializable {
+    name: string;
+    percentage: number;
 }
 
 type DateAsString = string;

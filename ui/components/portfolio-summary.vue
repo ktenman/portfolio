@@ -173,7 +173,7 @@ const handleRecalculate = async () => {
       'This will delete all current summary data and recalculate it from scratch. This operation may take some time. Continue?',
     confirmText: 'Recalculate',
     cancelText: 'Cancel',
-    confirmClass: 'btn-warning',
+    confirmClass: 'btn-primary',
   })
 
   if (shouldProceed) {

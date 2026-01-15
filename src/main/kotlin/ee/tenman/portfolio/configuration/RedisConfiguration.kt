@@ -25,6 +25,7 @@ class RedisConfiguration {
     cacheConfigurations[LIGHTYEAR_UUID_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[LOGO_CANDIDATES_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     cacheConfigurations[LOGO_NAME_SEARCH_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+    cacheConfigurations[DIVERSIFICATION_ETFS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
       .builder(connectionFactory)
@@ -44,6 +45,7 @@ class RedisConfiguration {
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid"
     const val LOGO_CANDIDATES_CACHE: String = "logo-candidates"
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search"
+    const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }
