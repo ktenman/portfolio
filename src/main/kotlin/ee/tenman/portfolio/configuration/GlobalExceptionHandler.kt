@@ -36,6 +36,17 @@ class GlobalExceptionHandler {
     return ResponseEntity(apiError, apiError.status)
   }
 
+  @ExceptionHandler(IllegalArgumentException::class)
+  fun handleIllegalArgumentException(exception: IllegalArgumentException): ResponseEntity<ApiError> {
+    val apiError =
+      ApiError(
+        status = HttpStatus.BAD_REQUEST,
+        message = exception.message ?: "Invalid request",
+        debugMessage = "Validation failed",
+      )
+    return ResponseEntity(apiError, HttpStatus.BAD_REQUEST)
+  }
+
   @ExceptionHandler(ConstraintViolationException::class)
   fun handleConstraintViolationException(exception: ConstraintViolationException): ResponseEntity<ApiError> {
     val errors =

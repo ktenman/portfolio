@@ -1,6 +1,19 @@
 import { config } from '@vue/test-utils'
 import { vi } from 'vitest'
 
+vi.mock('@guolao/vue-monaco-editor', () => ({
+  VueMonacoEditor: {
+    name: 'VueMonacoEditor',
+    props: ['value', 'language', 'options', 'theme'],
+    template: '<div class="mock-monaco-editor"></div>',
+  },
+  loader: {
+    __getMonacoInstance: vi.fn(),
+    config: vi.fn(),
+    init: vi.fn().mockResolvedValue({}),
+  },
+}))
+
 config.global.stubs = {
   teleport: true,
 }

@@ -21,7 +21,7 @@
         <div class="modal-footer">
           <button
             type="button"
-            class="btn btn-secondary"
+            class="dialog-btn"
             @click="cancel"
             data-testid="confirmDialogCancelButton"
           >
@@ -29,8 +29,11 @@
           </button>
           <button
             type="button"
-            class="btn"
-            :class="confirmClass"
+            class="dialog-btn"
+            :class="{
+              primary: confirmClass === 'btn-primary',
+              danger: confirmClass === 'btn-danger',
+            }"
             @click="confirm"
             data-testid="confirmDialogConfirmButton"
           >
