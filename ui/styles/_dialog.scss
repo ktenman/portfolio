@@ -1,0 +1,52 @@
+.dialog-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #6b7280;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #4b5563;
+  }
+
+  &:active:not(:disabled) {
+    background: #f1f5f9;
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.primary {
+    background: #4b5563;
+    color: white;
+    border-color: #4b5563;
+
+    &:hover:not(:disabled) {
+      background: #374151;
+      border-color: #374151;
+      color: white;
+    }
+  }
+
+  &.danger {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+      border-color: #b91c1c;
+      color: white;
+    }
+  }
+}
