@@ -1,13 +1,8 @@
 <template>
   <div class="diversification-container">
     <div class="mb-4">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <h2 class="mb-0">Diversification Calculator</h2>
-          <p class="text-muted mb-0">
-            Plan your ETF allocation and see the combined diversification analysis
-          </p>
-        </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <h2 class="mb-0">Diversification Calculator</h2>
         <div v-if="lastUpdatedText" class="last-updated">Updated {{ lastUpdatedText }}</div>
       </div>
     </div>
