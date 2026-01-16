@@ -9,7 +9,8 @@
           :class="{ active: inputMode === 'percentage' }"
           @click="$emit('update:inputMode', 'percentage')"
         >
-          Percentage
+          <span class="d-none d-sm-inline">Percentage</span>
+          <span class="d-sm-none">%</span>
         </button>
         <button
           type="button"
@@ -17,12 +18,77 @@
           :class="{ active: inputMode === 'amount' }"
           @click="$emit('update:inputMode', 'amount')"
         >
-          Amount (EUR)
+          <span class="d-none d-sm-inline">Amount (EUR)</span>
+          <span class="d-sm-none">EUR</span>
         </button>
       </div>
     </div>
 
-    <div class="table-responsive">
+    <!-- Mobile Card View -->
+    <div class="mobile-cards-wrapper d-block d-md-none">
+      <div v-for="(allocation, index) in allocations" :key="index" class="mobile-allocation-card">
+        <div class="allocation-card-header">
+          <select
+            :value="allocation.instrumentId"
+            class="form-select form-select-sm flex-grow-1"
+            @change="onInstrumentChange(index, $event)"
+          >
+            <option :value="0" disabled>Select ETF</option>
+            <option
+              v-for="etf in availableEtfsForRow(index)"
+              :key="etf.instrumentId"
+              :value="etf.instrumentId"
+            >
+              {{ etf.symbol }}
+            </option>
+          </select>
+          <button
+            type="button"
+            class="remove-btn"
+            :disabled="allocations.length <= 1"
+            @click="$emit('remove', index)"
+          >
+            &times;
+          </button>
+        </div>
+        <div v-if="getEtfName(allocation.instrumentId)" class="allocation-card-name">
+          {{ getEtfName(allocation.instrumentId) }}
+        </div>
+        <div v-if="allocation.instrumentId > 0" class="allocation-card-metrics">
+          <div class="metric-group">
+            <span class="metric-value">
+              {{ formatEtfPrice(getEtfPrice(allocation.instrumentId)) }}
+            </span>
+            <span class="metric-label">Price</span>
+          </div>
+          <div class="metric-group">
+            <span class="metric-value">{{ formatTer(getEtfTer(allocation.instrumentId)) }}</span>
+            <span class="metric-label">TER</span>
+          </div>
+          <div class="metric-group">
+            <span class="metric-value">
+              {{ formatReturn(getEtfReturn(allocation.instrumentId)) }}
+            </span>
+            <span class="metric-label">Annual</span>
+          </div>
+        </div>
+        <div class="allocation-card-input">
+          <label>{{ inputMode === 'percentage' ? 'Allocation %' : 'Amount EUR' }}</label>
+          <input
+            :value="allocation.value"
+            type="number"
+            class="form-control form-control-sm"
+            min="0"
+            :max="inputMode === 'percentage' ? 100 : undefined"
+            :step="inputMode === 'percentage' ? 1 : 100"
+            @input="onValueChange(index, $event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Table View -->
+    <div class="d-none d-md-block table-responsive">
       <table class="table table-sm allocation-table">
         <thead>
           <tr>
@@ -91,29 +157,44 @@
 
     <div class="allocation-footer">
       <div class="action-buttons">
-        <button type="button" class="action-btn" @click="$emit('add')">+ Add ETF</button>
+        <button type="button" class="action-btn" title="Add ETF" @click="$emit('add')">
+          <span class="d-none d-sm-inline">+ Add ETF</span>
+          <span class="d-sm-none">+</span>
+        </button>
         <button
           type="button"
           class="action-btn"
+          title="Load from Portfolio"
           :disabled="isLoadingPortfolio"
           @click="$emit('loadPortfolio')"
         >
           <span
             v-if="isLoadingPortfolio"
-            class="spinner-border spinner-border-sm me-1"
+            class="spinner-border spinner-border-sm"
             role="status"
           ></span>
-          Load from Portfolio
+          <template v-else>
+            <span class="d-sm-none">↓</span>
+            <span class="d-none d-sm-inline">Load from Portfolio</span>
+          </template>
         </button>
-        <button type="button" class="action-btn" @click="$emit('export')">Export</button>
-        <button type="button" class="action-btn" @click="$emit('import')">Import</button>
+        <button type="button" class="action-btn" title="Export" @click="$emit('export')">
+          <span class="d-none d-sm-inline">Export</span>
+          <span class="d-sm-none">↗</span>
+        </button>
+        <button type="button" class="action-btn" title="Import" @click="$emit('import')">
+          <span class="d-none d-sm-inline">Import</span>
+          <span class="d-sm-none">↙</span>
+        </button>
         <button
           type="button"
           class="action-btn danger"
+          title="Clear"
           :disabled="allocations.length === 1 && allocations[0].instrumentId === 0"
           @click="$emit('clear')"
         >
-          Clear
+          <span class="d-none d-sm-inline">Clear</span>
+          <span class="d-sm-none">✕</span>
         </button>
       </div>
       <div class="total-row">
@@ -389,9 +470,106 @@ const onValueChange = (index: number, event: Event) => {
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
+.mobile-cards-wrapper {
+  margin-bottom: 1rem;
+}
+
+.mobile-allocation-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.mobile-allocation-card:last-child {
+  margin-bottom: 0;
+}
+
+.allocation-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.allocation-card-header .form-select {
+  flex: 1;
+}
+
+.allocation-card-name {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.allocation-card-metrics {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.allocation-card-metrics .metric-group {
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.allocation-card-metrics .metric-value {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.125rem;
+}
+
+.allocation-card-metrics .metric-label {
+  display: block;
+  font-size: 0.6875rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.allocation-card-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.allocation-card-input label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.allocation-card-input input {
+  flex: 1;
+  max-width: 120px;
+}
+
+@media (max-width: 767.98px) {
   .allocation-section {
     padding: 1rem;
+  }
+
+  .allocation-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons {
+    justify-content: center;
+  }
+
+  .total-row {
+    justify-content: center;
   }
 }
 </style>
