@@ -76,10 +76,10 @@ class DailyPriceService(
     val currentPrice = recentPrices[0].closePrice
     val previousPrice =
       recentPrices
-      .drop(1)
-      .firstOrNull { it.closePrice != currentPrice }
-      ?.closePrice
-      ?: return null
+        .drop(1)
+        .firstOrNull { it.closePrice != currentPrice }
+        ?.closePrice
+        ?: return null
 
     val changeAmount = currentPrice.subtract(previousPrice)
     val changePercent = calculateChangePercent(changeAmount, previousPrice)
@@ -155,9 +155,9 @@ class DailyPriceService(
   fun saveDailyPriceIfNotExists(dailyPrice: DailyPrice): Boolean {
     val existing =
       dailyPriceRepository.findByInstrumentAndEntryDate(
-      dailyPrice.instrument,
-      dailyPrice.entryDate,
-    )
+        dailyPrice.instrument,
+        dailyPrice.entryDate,
+      )
     if (existing != null) return false
     return runCatching { dailyPriceRepository.save(dailyPrice) }
       .map { true }

@@ -862,4 +862,70 @@ class ArchitectureTest {
     val file = java.io.File("src/main/kotlin/$packagePath/$fileName")
     return file.takeIf { it.exists() }
   }
+
+  @ArchTest
+  fun allPublicMethodsShouldBeCalledFromSomewhere(classes: JavaClasses) {
+    val calledMethods = collectCalledMethods(classes)
+    val serviceMethods = collectServiceMethods(classes)
+    val repositoryMethods = collectCustomRepositoryMethods(classes)
+    val allMethods = serviceMethods + repositoryMethods
+    val unusedMethods = allMethods.filter { it !in calledMethods }.sorted()
+    if (unusedMethods.isNotEmpty()) {
+      throw AssertionError(
+        "Public methods should be called from somewhere. Remove unused methods:\n" +
+          unusedMethods.joinToString("\n") { "  - $it" },
+      )
+    }
+  }
+
+  private fun collectServiceMethods(classes: JavaClasses): Set<String> =
+    classes
+      .filter { javaClass ->
+        javaClass.packageName.startsWith("ee.tenman.portfolio.service") &&
+          !javaClass.simpleName.endsWith("Test") &&
+          !javaClass.simpleName.endsWith("IT") &&
+          !javaClass.simpleName.contains("$") &&
+          javaClass.isAnnotatedWith(Service::class.java)
+      }.flatMap { javaClass ->
+        javaClass.methods
+          .filter { method -> isPublicMethod(method) && !hasSpecialAnnotation(method) }
+          .map { method -> "${javaClass.name}.${method.name}" }
+      }.toSet()
+
+  private fun collectCustomRepositoryMethods(classes: JavaClasses): Set<String> =
+    classes
+      .filter { javaClass ->
+        javaClass.packageName.startsWith("ee.tenman.portfolio.repository") &&
+          javaClass.simpleName.endsWith("Repository") &&
+          javaClass.isInterface
+      }.flatMap { javaClass ->
+        javaClass.methods
+          .filter { method ->
+            method.owner.name == javaClass.name &&
+              !isSpringDataMethod(method.name) &&
+              !method.name.startsWith("$")
+          }.map { method -> "${javaClass.name}.${method.name}" }
+      }.toSet()
+
+  private fun isPublicMethod(method: JavaMethod): Boolean =
+    method.modifiers.contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC) &&
+      !method.name.startsWith("access$") &&
+      !method.name.contains("$") &&
+      !method.name.startsWith("component") &&
+      method.name !in setOf("copy", "equals", "hashCode", "toString", "invoke")
+
+  private fun hasSpecialAnnotation(method: JavaMethod): Boolean =
+    method.isAnnotatedWith(Scheduled::class.java) ||
+      method.isAnnotatedWith(Transactional::class.java) ||
+      method.isAnnotatedWith(Cacheable::class.java) ||
+      method.isAnnotatedWith(CacheEvict::class.java) ||
+      method.isAnnotatedWith(CachePut::class.java) ||
+      method.isAnnotatedWith("jakarta.annotation.PostConstruct")
+
+  private fun collectCalledMethods(classes: JavaClasses): Set<String> =
+    classes
+      .filter { javaClass -> javaClass.packageName.startsWith("ee.tenman.portfolio") }
+      .flatMap { javaClass -> javaClass.methodCallsFromSelf }
+      .map { call -> "${call.targetOwner.name}.${call.target.name}" }
+      .toSet()
 }

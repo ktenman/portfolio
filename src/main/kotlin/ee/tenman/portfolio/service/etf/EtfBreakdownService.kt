@@ -144,7 +144,15 @@ class EtfBreakdownService(
     val etfQuantity = getFilteredQuantity(transactionData, platformFilter)
     val etfPrice = dailyPriceService.getCurrentPrice(etf)
     val etfPlatforms = getFilteredPlatforms(transactionData, platformFilter)
-    return positions.map { position -> buildInternalHoldingData(position, etfQuantity, etfPrice, etf.symbol, etfPlatforms) }
+    return positions.map { position ->
+      buildInternalHoldingData(
+        position,
+        etfQuantity,
+        etfPrice,
+        etf.symbol,
+        etfPlatforms,
+      )
+    }
   }
 
   private fun buildInternalHoldingData(

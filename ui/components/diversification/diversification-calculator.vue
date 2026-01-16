@@ -90,7 +90,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, defineAsyncComponent } from 'vue'
+import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
 import { useDebounceFn, useNow } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { diversificationService } from '../../services/diversification-service'
@@ -132,6 +132,22 @@ const isInitialized = ref(false)
 const showExportDialog = ref(false)
 const showImportDialog = ref(false)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+const hasUnsavedChanges = ref(false)
+
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (hasUnsavedChanges.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
 
 const etfList = computed(() => availableEtfs.value ?? [])
 
@@ -220,6 +236,7 @@ const saveToDatabase = async () => {
       inputMode: inputMode.value,
     })
     saveStatus.value = 'saved'
+    hasUnsavedChanges.value = false
     setTimeout(() => {
       if (saveStatus.value === 'saved') saveStatus.value = 'idle'
     }, 2000)
@@ -231,12 +248,14 @@ const saveToDatabase = async () => {
 const debouncedSave = useDebounceFn(saveToDatabase, 1000)
 
 const onAllocationChange = () => {
+  hasUnsavedChanges.value = true
   debouncedSave()
   debouncedCalculate()
 }
 
 const onInputModeChange = (mode: 'percentage' | 'amount') => {
   inputMode.value = mode
+  hasUnsavedChanges.value = true
   debouncedSave()
   debouncedCalculate()
 }
@@ -264,6 +283,7 @@ const loadFromPortfolio = async () => {
             ? Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10
             : Math.round(i.currentValue ?? 0),
       }))
+    hasUnsavedChanges.value = true
     debouncedSave()
     debouncedCalculate()
   } catch (e) {
@@ -276,6 +296,7 @@ const loadFromPortfolio = async () => {
 const clearAllocations = () => {
   allocations.value = [{ instrumentId: 0, value: 0 }]
   result.value = null
+  hasUnsavedChanges.value = true
   debouncedSave()
 }
 
@@ -294,6 +315,7 @@ const onExportComplete = () => {
 const onImportComplete = (data: CachedState) => {
   allocations.value = data.allocations
   inputMode.value = data.inputMode
+  hasUnsavedChanges.value = true
   debouncedSave()
   debouncedCalculate()
 }

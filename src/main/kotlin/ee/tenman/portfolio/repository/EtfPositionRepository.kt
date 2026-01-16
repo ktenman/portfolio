@@ -18,19 +18,6 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
 
   @Query(
     """
-    SELECT p FROM EtfPosition p
-    WHERE p.etfInstrument.symbol = :etfSymbol
-    AND p.snapshotDate = :snapshotDate
-    ORDER BY p.positionRank
-  """,
-  )
-  fun findByEtfSymbolAndDate(
-    @Param("etfSymbol") etfSymbol: String,
-    @Param("snapshotDate") snapshotDate: LocalDate,
-  ): List<EtfPosition>
-
-  @Query(
-    """
     SELECT COUNT(p) FROM EtfPosition p
     WHERE p.etfInstrument.id = :etfInstrumentId
     AND p.snapshotDate = :snapshotDate
@@ -76,18 +63,6 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
   )
   fun findLatestPositionsByEtfIds(
     @Param("etfInstrumentIds") etfInstrumentIds: List<Long>,
-  ): List<EtfPosition>
-
-  @Query(
-    """
-    SELECT ep FROM EtfPosition ep
-    WHERE ep.etfInstrument.id = :etfInstrumentId
-    AND ep.snapshotDate = :snapshotDate
-  """,
-  )
-  fun findByEtfInstrumentIdAndSnapshotDate(
-    @Param("etfInstrumentId") etfInstrumentId: Long,
-    @Param("snapshotDate") snapshotDate: LocalDate,
   ): List<EtfPosition>
 
   @Query("SELECT DISTINCT ep.etfInstrument.id FROM EtfPosition ep")

@@ -2,5 +2,5 @@ package ee.tenman.portfolio.domain
 
 data class DiversificationConfigData(
   val allocations: List<DiversificationAllocationData>,
-  val inputMode: String,
+  val inputMode: InputMode,
 )

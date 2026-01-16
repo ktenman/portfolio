@@ -9,6 +9,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DiversificationAllocationData
 import ee.tenman.portfolio.domain.DiversificationConfig
 import ee.tenman.portfolio.domain.DiversificationConfigData
+import ee.tenman.portfolio.domain.InputMode
 import ee.tenman.portfolio.dto.DiversificationConfigAllocationDto
 import ee.tenman.portfolio.dto.DiversificationConfigDto
 import ee.tenman.portfolio.repository.DiversificationConfigRepository
@@ -43,7 +44,7 @@ class DiversificationConfigServiceTest {
     val configData =
       DiversificationConfigData(
       allocations = listOf(DiversificationAllocationData(instrumentId = 1L, value = BigDecimal("50.5"))),
-      inputMode = "percentage",
+      inputMode = InputMode.PERCENTAGE,
     )
     val config = DiversificationConfig(configData = configData).apply { id = 1L }
     every { repository.findConfig() } returns config
@@ -82,7 +83,7 @@ class DiversificationConfigServiceTest {
     val existingConfigData =
       DiversificationConfigData(
       allocations = listOf(DiversificationAllocationData(instrumentId = 1L, value = BigDecimal("25.0"))),
-      inputMode = "percentage",
+      inputMode = InputMode.PERCENTAGE,
     )
     val existingConfig = DiversificationConfig(configData = existingConfigData).apply { id = 1L }
     val dto =
@@ -151,6 +152,6 @@ class DiversificationConfigServiceTest {
       configSlot.captured.configData.allocations[0]
       .value,
         ).toEqualNumerically(BigDecimal("50.5"))
-    expect(configSlot.captured.configData.inputMode).toEqual("percentage")
+    expect(configSlot.captured.configData.inputMode).toEqual(InputMode.PERCENTAGE)
   }
 }

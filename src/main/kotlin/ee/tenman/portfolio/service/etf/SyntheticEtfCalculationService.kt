@@ -75,13 +75,13 @@ class SyntheticEtfCalculationService(
     val transactionData = transactionCalculationService.batchCalculateAll(instrumentsByTicker.values.map { it.id })
     val holdingValues =
       positions.mapNotNull { pos ->
-      val ticker = pos.holding.ticker ?: return@mapNotNull null
-      val instrument = instrumentsByTicker[ticker] ?: return@mapNotNull null
-      val data = transactionData[instrument.id] ?: return@mapNotNull null
-      val price = dailyPriceService.getCurrentPrice(instrument)
-      val value = data.netQuantity.multiply(price)
-      SyntheticHoldingValue(pos, value, data.platforms)
-    }
+        val ticker = pos.holding.ticker ?: return@mapNotNull null
+        val instrument = instrumentsByTicker[ticker] ?: return@mapNotNull null
+        val data = transactionData[instrument.id] ?: return@mapNotNull null
+        val price = dailyPriceService.getCurrentPrice(instrument)
+        val value = data.netQuantity.multiply(price)
+        SyntheticHoldingValue(pos, value, data.platforms)
+      }
     return Pair(holdingValues, instrumentsByTicker)
   }
 
