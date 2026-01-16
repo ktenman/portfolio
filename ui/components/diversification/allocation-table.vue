@@ -9,7 +9,8 @@
           :class="{ active: inputMode === 'percentage' }"
           @click="$emit('update:inputMode', 'percentage')"
         >
-          Percentage
+          <span class="d-none d-sm-inline">Percentage</span>
+          <span class="d-sm-none">%</span>
         </button>
         <button
           type="button"
@@ -17,12 +18,28 @@
           :class="{ active: inputMode === 'amount' }"
           @click="$emit('update:inputMode', 'amount')"
         >
-          Amount (EUR)
+          <span class="d-none d-sm-inline">Amount (EUR)</span>
+          <span class="d-sm-none">EUR</span>
         </button>
       </div>
     </div>
 
-    <div class="table-responsive">
+    <!-- Mobile Card View -->
+    <div class="mobile-cards-wrapper d-block d-md-none">
+      <AllocationCard
+        v-for="(allocation, index) in allocations"
+        :key="index"
+        :allocation="allocation"
+        :available-etfs="availableEtfsForRow(index)"
+        :input-mode="inputMode"
+        :disable-remove="allocations.length <= 1"
+        @update:allocation="updateAllocationAtIndex(index, $event)"
+        @remove="$emit('remove', index)"
+      />
+    </div>
+
+    <!-- Desktop Table View -->
+    <div class="d-none d-md-block table-responsive">
       <table class="table table-sm allocation-table">
         <thead>
           <tr>
@@ -78,6 +95,7 @@
               <button
                 type="button"
                 class="remove-btn"
+                aria-label="Remove allocation"
                 :disabled="allocations.length <= 1"
                 @click="$emit('remove', index)"
               >
@@ -91,29 +109,64 @@
 
     <div class="allocation-footer">
       <div class="action-buttons">
-        <button type="button" class="action-btn" @click="$emit('add')">+ Add ETF</button>
         <button
           type="button"
           class="action-btn"
+          title="Add ETF"
+          aria-label="Add ETF"
+          @click="$emit('add')"
+        >
+          <span class="d-none d-sm-inline">+ Add ETF</span>
+          <span class="d-sm-none">+</span>
+        </button>
+        <button
+          type="button"
+          class="action-btn"
+          title="Load from Portfolio"
+          aria-label="Load from Portfolio"
           :disabled="isLoadingPortfolio"
           @click="$emit('loadPortfolio')"
         >
           <span
             v-if="isLoadingPortfolio"
-            class="spinner-border spinner-border-sm me-1"
+            class="spinner-border spinner-border-sm"
             role="status"
           ></span>
-          Load from Portfolio
+          <template v-else>
+            <span class="d-sm-none">↓</span>
+            <span class="d-none d-sm-inline">Load from Portfolio</span>
+          </template>
         </button>
-        <button type="button" class="action-btn" @click="$emit('export')">Export</button>
-        <button type="button" class="action-btn" @click="$emit('import')">Import</button>
+        <button
+          type="button"
+          class="action-btn"
+          title="Export"
+          aria-label="Export"
+          @click="$emit('export')"
+        >
+          <span class="d-none d-sm-inline">Export</span>
+          <span class="d-sm-none">↗</span>
+        </button>
+        <button
+          type="button"
+          class="action-btn"
+          title="Import"
+          aria-label="Import"
+          @click="$emit('import')"
+        >
+          <span class="d-none d-sm-inline">Import</span>
+          <span class="d-sm-none">↙</span>
+        </button>
         <button
           type="button"
           class="action-btn danger"
+          title="Clear"
+          aria-label="Clear"
           :disabled="allocations.length === 1 && allocations[0].instrumentId === 0"
           @click="$emit('clear')"
         >
-          Clear
+          <span class="d-none d-sm-inline">Clear</span>
+          <span class="d-sm-none">✕</span>
         </button>
       </div>
       <div class="total-row">
@@ -136,6 +189,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { formatTer, formatReturn, formatCurrencyWithSymbol } from '../../utils/formatters'
+import AllocationCard from './allocation-card.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
 import type { AllocationInput } from './types'
 
@@ -205,12 +259,16 @@ const onValueChange = (index: number, event: Event) => {
     value: Number(target.value) || 0,
   })
 }
+
+const updateAllocationAtIndex = (index: number, allocation: AllocationInput) => {
+  emit('update:allocation', index, allocation)
+}
 </script>
 
 <style scoped>
 .allocation-section {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bs-white);
+  border: 1px solid var(--bs-gray-300);
   border-radius: 0.5rem;
   padding: 1.5rem;
 }
@@ -221,9 +279,9 @@ const onValueChange = (index: number, event: Event) => {
 
 .allocation-table th {
   font-weight: 500;
-  color: #6c757d;
+  color: var(--bs-gray-600);
   font-size: 0.875rem;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--bs-gray-300);
 }
 
 .allocation-table td {
@@ -231,11 +289,11 @@ const onValueChange = (index: number, event: Event) => {
 }
 
 .allocation-table tbody tr:nth-child(odd) {
-  background-color: #f9fafb;
+  background-color: var(--bs-gray-100);
 }
 
 .allocation-table tbody tr:nth-child(even) {
-  background-color: white;
+  background-color: var(--bs-white);
 }
 
 .allocation-footer {
@@ -245,7 +303,7 @@ const onValueChange = (index: number, event: Event) => {
   flex-wrap: wrap;
   gap: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--bs-gray-300);
 }
 
 .total-row {
@@ -257,7 +315,7 @@ const onValueChange = (index: number, event: Event) => {
 .total-label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--bs-gray-600);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -265,15 +323,15 @@ const onValueChange = (index: number, event: Event) => {
 .total-value {
   font-size: 1rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--bs-gray-900);
 }
 
 .total-value.valid {
-  color: #059669;
+  color: var(--bs-success);
 }
 
 .total-value.invalid {
-  color: #dc2626;
+  color: var(--bs-danger);
 }
 
 .total-hint {
@@ -290,9 +348,9 @@ const onValueChange = (index: number, event: Event) => {
 
 .action-btn {
   padding: 0.3125rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #6b7280;
+  border: 1px solid var(--bs-gray-300);
+  background: var(--bs-white);
+  color: var(--bs-gray-600);
   border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 500;
@@ -302,13 +360,13 @@ const onValueChange = (index: number, event: Event) => {
 }
 
 .action-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #4b5563;
+  background: var(--bs-gray-100);
+  border-color: var(--bs-gray-400);
+  color: var(--bs-gray-700);
 }
 
 .action-btn:active:not(:disabled) {
-  background: #f1f5f9;
+  background: var(--bs-gray-200);
   transform: scale(0.98);
 }
 
@@ -320,7 +378,7 @@ const onValueChange = (index: number, event: Event) => {
 .action-btn.danger:hover:not(:disabled) {
   background: #fef2f2;
   border-color: #fecaca;
-  color: #dc2626;
+  color: var(--bs-danger);
 }
 
 .mode-buttons {
@@ -330,9 +388,9 @@ const onValueChange = (index: number, event: Event) => {
 
 .mode-btn {
   padding: 0.3125rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #6b7280;
+  border: 1px solid var(--bs-gray-300);
+  background: var(--bs-white);
+  color: var(--bs-gray-600);
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
@@ -350,24 +408,24 @@ const onValueChange = (index: number, event: Event) => {
 }
 
 .mode-btn:hover:not(.active) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #4b5563;
+  background: var(--bs-gray-100);
+  border-color: var(--bs-gray-400);
+  color: var(--bs-gray-700);
 }
 
 .mode-btn.active {
-  background: #4b5563;
-  color: white;
-  border-color: #4b5563;
+  background: var(--bs-gray-700);
+  color: var(--bs-white);
+  border-color: var(--bs-gray-700);
 }
 
 .remove-btn {
   width: 1.5rem;
   height: 1.5rem;
   padding: 0;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #9ca3af;
+  border: 1px solid var(--bs-gray-300);
+  background: var(--bs-white);
+  color: var(--bs-gray-500);
   border-radius: 0.25rem;
   font-size: 1rem;
   line-height: 1;
@@ -381,7 +439,7 @@ const onValueChange = (index: number, event: Event) => {
 .remove-btn:hover:not(:disabled) {
   background: #fef2f2;
   border-color: #fecaca;
-  color: #dc2626;
+  color: var(--bs-danger);
 }
 
 .remove-btn:disabled {
@@ -389,9 +447,26 @@ const onValueChange = (index: number, event: Event) => {
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
+.mobile-cards-wrapper {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 767.98px) {
   .allocation-section {
     padding: 1rem;
+  }
+
+  .allocation-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons {
+    justify-content: center;
+  }
+
+  .total-row {
+    justify-content: center;
   }
 }
 </style>

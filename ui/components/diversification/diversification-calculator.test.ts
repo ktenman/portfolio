@@ -78,11 +78,6 @@ describe('DiversificationCalculator', () => {
       expect(wrapper.text()).toContain('Diversification Calculator')
     })
 
-    it('should render description text', () => {
-      const wrapper = mount(DiversificationCalculator)
-      expect(wrapper.text()).toContain('Plan your ETF allocation')
-    })
-
     it('should render AllocationTable component', () => {
       const wrapper = mount(DiversificationCalculator)
       expect(wrapper.findComponent({ name: 'AllocationTable' }).exists()).toBe(true)

@@ -160,7 +160,7 @@ describe('AllocationTable', () => {
 
     it('should emit add event when Add ETF is clicked', async () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
-      const addBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('Add ETF'))
+      const addBtn = wrapper.findAll('.action-btn').find(b => b.attributes('title') === 'Add ETF')
       await addBtn?.trigger('click')
       expect(wrapper.emitted('add')).toHaveLength(1)
     })
@@ -169,7 +169,7 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
       const loadBtn = wrapper
         .findAll('.action-btn')
-        .find(b => b.text().includes('Load from Portfolio'))
+        .find(b => b.attributes('title') === 'Load from Portfolio')
       await loadBtn?.trigger('click')
       expect(wrapper.emitted('loadPortfolio')).toHaveLength(1)
     })
@@ -180,7 +180,7 @@ describe('AllocationTable', () => {
       })
       const loadBtn = wrapper
         .findAll('.action-btn')
-        .find(b => b.text().includes('Load from Portfolio'))
+        .find(b => b.attributes('title') === 'Load from Portfolio')
       expect(loadBtn?.attributes('disabled')).toBeDefined()
     })
 
@@ -198,14 +198,14 @@ describe('AllocationTable', () => {
           allocations: [{ instrumentId: 1, value: 50 }],
         },
       })
-      const clearBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('Clear'))
+      const clearBtn = wrapper.findAll('.action-btn').find(b => b.attributes('title') === 'Clear')
       await clearBtn?.trigger('click')
       expect(wrapper.emitted('clear')).toHaveLength(1)
     })
 
     it('should disable Clear button when only empty allocation exists', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
-      const clearBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('Clear'))
+      const clearBtn = wrapper.findAll('.action-btn').find(b => b.attributes('title') === 'Clear')
       expect(clearBtn?.attributes('disabled')).toBeDefined()
     })
   })
@@ -325,14 +325,14 @@ describe('AllocationTable', () => {
 
     it('should emit export event when Export is clicked', async () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
-      const exportBtn = wrapper.findAll('.action-btn').find(b => b.text() === 'Export')
+      const exportBtn = wrapper.findAll('.action-btn').find(b => b.attributes('title') === 'Export')
       await exportBtn?.trigger('click')
       expect(wrapper.emitted('export')).toHaveLength(1)
     })
 
     it('should emit import event when Import is clicked', async () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
-      const importBtn = wrapper.findAll('.action-btn').find(b => b.text() === 'Import')
+      const importBtn = wrapper.findAll('.action-btn').find(b => b.attributes('title') === 'Import')
       await importBtn?.trigger('click')
       expect(wrapper.emitted('import')).toHaveLength(1)
     })
