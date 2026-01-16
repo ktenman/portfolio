@@ -142,16 +142,11 @@ class DiversificationConfigServiceTest {
 
     service.saveConfig(dto)
 
-    expect(configSlot.captured.configData).toBeAnInstanceOf<DiversificationConfigData>()
-    expect(configSlot.captured.configData.allocations).toHaveSize(1)
-    expect(
-      configSlot.captured.configData.allocations[0]
-      .instrumentId,
-        ).toEqual(5L)
-    expect(
-      configSlot.captured.configData.allocations[0]
-      .value,
-        ).toEqualNumerically(BigDecimal("50.5"))
-    expect(configSlot.captured.configData.inputMode).toEqual(InputMode.PERCENTAGE)
+    val savedConfig = configSlot.captured.configData
+    expect(savedConfig).toBeAnInstanceOf<DiversificationConfigData>()
+    expect(savedConfig.allocations).toHaveSize(1)
+    expect(savedConfig.allocations[0].instrumentId).toEqual(5L)
+    expect(savedConfig.allocations[0].value).toEqualNumerically(BigDecimal("50.5"))
+    expect(savedConfig.inputMode).toEqual(InputMode.PERCENTAGE)
   }
 }
