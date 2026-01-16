@@ -21,29 +21,27 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.time.Clock
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 class SyntheticEtfCalculationServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val etfPositionRepository = mockk<EtfPositionRepository>()
   private val transactionCalculationService = mockk<TransactionCalculationService>()
   private val dailyPriceService = mockk<DailyPriceService>()
-  private val fixedInstant = Instant.parse("2024-01-15T10:00:00Z")
-  private val clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
   private lateinit var service: SyntheticEtfCalculationService
 
   @BeforeEach
   fun setup() {
+    every { dailyPriceService.getCurrentPrice(any()) } answers {
+      val instrument = firstArg<Instrument>()
+      instrument.currentPrice ?: BigDecimal.ZERO
+    }
     service =
       SyntheticEtfCalculationService(
         instrumentRepository,
         etfPositionRepository,
         transactionCalculationService,
         dailyPriceService,
-        clock,
       )
   }
 

@@ -21,8 +21,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.Clock
-import java.time.LocalDate
 
 @Service
 class EtfBreakdownService(
@@ -32,7 +30,6 @@ class EtfBreakdownService(
   private val syntheticEtfCalculationService: SyntheticEtfCalculationService,
   private val transactionCalculationService: TransactionCalculationService,
   private val dataLoader: EtfBreakdownDataLoaderService,
-  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -145,7 +142,7 @@ class EtfBreakdownService(
     }
     val transactionData = data.allTransactionData[etf.id] ?: return emptyList()
     val etfQuantity = getFilteredQuantity(transactionData, platformFilter)
-    val etfPrice = getCurrentPrice(etf)
+    val etfPrice = dailyPriceService.getCurrentPrice(etf)
     val etfPlatforms = getFilteredPlatforms(transactionData, platformFilter)
     return positions.map { position -> buildInternalHoldingData(position, etfQuantity, etfPrice, etf.symbol, etfPlatforms) }
   }
@@ -181,13 +178,6 @@ class EtfBreakdownService(
     platforms = etfPlatforms,
   )
 
-  private fun getCurrentPrice(instrument: Instrument): BigDecimal {
-    instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }?.let { return it }
-    return runCatching { dailyPriceService.getPrice(instrument, LocalDate.now(clock)) }
-      .onFailure { log.warn("No price found for ${instrument.symbol}, using zero", it) }
-      .getOrDefault(BigDecimal.ZERO)
-  }
-
   private fun calculateHoldingValue(
     position: EtfPosition,
     etfQuantity: BigDecimal,
@@ -211,7 +201,7 @@ class EtfBreakdownService(
         .fold(BigDecimal.ZERO) { acc, etf ->
           val transactionData = data.allTransactionData[etf.id] ?: return@fold acc
           val quantity = getFilteredQuantity(transactionData, platformFilter)
-          acc.add(quantity.multiply(getCurrentPrice(etf)))
+          acc.add(quantity.multiply(dailyPriceService.getCurrentPrice(etf)))
         }
     return regularValues.add(syntheticValues)
   }

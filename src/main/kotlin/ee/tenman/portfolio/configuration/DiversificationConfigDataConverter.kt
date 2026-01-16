@@ -1,10 +1,10 @@
-package ee.tenman.portfolio.domain
+package ee.tenman.portfolio.configuration
 
-import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.DiversificationConfigData
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 
-@Converter(autoApply = false)
+@Converter(autoApply = true)
 class DiversificationConfigDataConverter : AttributeConverter<DiversificationConfigData, String> {
   private val objectMapper = JsonMapperFactory.instance
 

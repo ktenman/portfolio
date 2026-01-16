@@ -23,10 +23,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.time.Clock
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 class EtfBreakdownServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
@@ -35,7 +32,6 @@ class EtfBreakdownServiceTest {
   private val dailyPriceService = mockk<DailyPriceService>()
   private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private val holdingAggregationService = HoldingAggregationService()
-  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
   private val transactionCalculationService = TransactionCalculationService(transactionRepository)
   private val syntheticEtfCalculationService =
     SyntheticEtfCalculationService(
@@ -43,10 +39,9 @@ class EtfBreakdownServiceTest {
       etfPositionRepository,
       transactionCalculationService,
       dailyPriceService,
-      clock,
     )
   private val dataLoader = EtfBreakdownDataLoaderService(instrumentRepository, etfPositionRepository, transactionCalculationService)
-  private val testDate = LocalDate.now(clock)
+  private val testDate = LocalDate.of(2024, 1, 15)
   private lateinit var etfBreakdownService: EtfBreakdownService
 
   @BeforeEach
@@ -59,7 +54,6 @@ class EtfBreakdownServiceTest {
         syntheticEtfCalculationService,
         transactionCalculationService,
         dataLoader,
-        clock,
       )
   }
 
@@ -184,6 +178,10 @@ class EtfBreakdownServiceTest {
     every { transactionRepository.findAllByInstrumentIds(listOf(1L, 2L)) } returns listOf(transaction1)
     every { transactionRepository.findAllByInstrumentIds(listOf(3L)) } returns listOf(btcTransaction)
     every { instrumentRepository.findBySymbolIn(listOf("BTCEUR")) } returns listOf(btcInstrument)
+    every { dailyPriceService.getCurrentPrice(any()) } answers {
+      val instrument = firstArg<Instrument>()
+      instrument.currentPrice ?: BigDecimal("100")
+    }
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
@@ -285,6 +283,10 @@ class EtfBreakdownServiceTest {
     every { instrumentRepository.findByProviderNameIn(any()) } returns instruments
     every { etfPositionRepository.findLatestPositionsByEtfIds(any()) } returns positions
     every { transactionRepository.findAllByInstrumentIds(any()) } returns transactions
+    every { dailyPriceService.getCurrentPrice(any()) } answers {
+      val instrument = firstArg<Instrument>()
+      instrument.currentPrice ?: BigDecimal("100")
+    }
   }
 
   private fun createInstrument(
