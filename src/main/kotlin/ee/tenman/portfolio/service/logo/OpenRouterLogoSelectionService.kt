@@ -46,7 +46,7 @@ class OpenRouterLogoSelectionService(
       val titleLower = candidate.title.lowercase()
       val isExactMatch =
         titleLower.contains(normalizedName) ||
-        (normalizedTicker != null && titleLower.contains(normalizedTicker))
+          (normalizedTicker != null && titleLower.contains(normalizedTicker))
       if (!isExactMatch) continue
       log.info("Fast path match for $companyName: title '${candidate.title}' matches")
       val result = downloadAndValidate(candidate, LogoSource.BING)
@@ -84,8 +84,8 @@ class OpenRouterLogoSelectionService(
     return candidates.take(maxCandidates).mapNotNull { candidate ->
       val imageData =
         runCatching { imageDownloadService.download(candidate.imageUrl) }
-        .onFailure { log.debug("Failed to download ${candidate.imageUrl}: ${it.message}") }
-        .getOrNull()
+          .onFailure { log.debug("Failed to download ${candidate.imageUrl}: ${it.message}") }
+          .getOrNull()
       if (imageData == null || !logoValidationService.isValidLogo(imageData)) return@mapNotNull null
       candidate to imageData
     }
@@ -107,19 +107,19 @@ class OpenRouterLogoSelectionService(
     }
     val request =
       OpenRouterVisionRequest(
-      model = openRouterProperties.visionModel,
-      messages = listOf(Message(role = "user", content = contentParts)),
-      maxTokens = 20,
-      temperature = 0.0,
-    )
+        model = openRouterProperties.visionModel,
+        messages = listOf(Message(role = "user", content = contentParts)),
+        maxTokens = 20,
+        temperature = 0.0,
+      )
     return runBlocking {
       withTimeoutOrNull(openRouterProperties.apiTimeoutMs) {
         runCatching {
           val response =
             openRouterVisionClient.chatCompletion(
-            "Bearer ${openRouterProperties.apiKey}",
-            request,
-          )
+              "Bearer ${openRouterProperties.apiKey}",
+              request,
+            )
           parseSelectionResponse(response.extractContent(), images.size)
         }.onFailure { log.warn("Vision API call failed: ${it.message}") }.getOrNull()
       } ?: run {
@@ -160,8 +160,8 @@ class OpenRouterLogoSelectionService(
   ): LogoSelectionResult? {
     val imageData =
       runCatching { imageDownloadService.download(candidate.imageUrl) }
-      .onFailure { log.debug("Failed to download ${candidate.imageUrl}: ${it.message}") }
-      .getOrNull() ?: return null
+        .onFailure { log.debug("Failed to download ${candidate.imageUrl}: ${it.message}") }
+        .getOrNull() ?: return null
     if (!logoValidationService.isValidLogo(imageData)) {
       log.debug("Logo validation failed for ${candidate.imageUrl}")
       return null

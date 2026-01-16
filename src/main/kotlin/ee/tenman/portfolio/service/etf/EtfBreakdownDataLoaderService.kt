@@ -22,7 +22,8 @@ class EtfBreakdownDataLoaderService(
   ): EtfBreakdownData {
     val providers = listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.SYNTHETIC)
     val allInstruments = instrumentRepository.findByProviderNameIn(providers)
-    val filteredInstruments = etfSymbols?.let { symbols -> allInstruments.filter { it.symbol in symbols } } ?: allInstruments
+    val filteredInstruments =
+      etfSymbols?.let { symbols -> allInstruments.filter { it.symbol in symbols } } ?: allInstruments
     val instrumentIds = filteredInstruments.map { it.id }
     val allPositions = loadPositionsForInstruments(instrumentIds)
     val transactionData = transactionCalculationService.batchCalculateAll(instrumentIds)
@@ -49,7 +50,8 @@ class EtfBreakdownDataLoaderService(
   }
 
   private fun loadPositionsForInstruments(instrumentIds: List<Long>): List<EtfPosition> =
-    instrumentIds.takeIf { it.isNotEmpty() }?.let { etfPositionRepository.findLatestPositionsByEtfIds(it) } ?: emptyList()
+    instrumentIds.takeIf { it.isNotEmpty() }?.let { etfPositionRepository.findLatestPositionsByEtfIds(it) }
+      ?: emptyList()
 
   private fun applyPlatformFilter(
     transactionData: Map<Long, InstrumentTransactionData>,

@@ -38,14 +38,6 @@ class TransactionCalculationService(
     }
   }
 
-  fun batchGetPlatforms(instrumentIds: Collection<Long>): Map<Long, Set<Platform>> {
-    if (instrumentIds.isEmpty()) return emptyMap()
-    val allTransactions = transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
-    return instrumentIds.associateWith { id ->
-      allTransactions.filter { it.instrument.id == id }.map { it.platform }.toSet()
-    }
-  }
-
   fun batchCalculateAll(instrumentIds: Collection<Long>): Map<Long, InstrumentTransactionData> {
     if (instrumentIds.isEmpty()) return emptyMap()
     val allTransactions = transactionRepository.findAllByInstrumentIds(instrumentIds.toList())

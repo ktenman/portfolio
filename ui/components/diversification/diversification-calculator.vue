@@ -3,7 +3,14 @@
     <div class="mb-4">
       <div class="d-flex justify-content-between align-items-center">
         <h2 class="mb-0">Diversification Calculator</h2>
-        <div v-if="lastUpdatedText" class="last-updated">Updated {{ lastUpdatedText }}</div>
+        <div class="d-flex align-items-center gap-2">
+          <span v-if="saveStatus === 'saving'" class="save-status text-muted">Saving...</span>
+          <span v-else-if="saveStatus === 'saved'" class="save-status text-success">Saved</span>
+          <span v-else-if="saveStatus === 'error'" class="save-status text-danger">
+            Save failed
+          </span>
+          <div v-if="lastUpdatedText" class="last-updated">Updated {{ lastUpdatedText }}</div>
+        </div>
       </div>
     </div>
 
@@ -20,7 +27,7 @@
         :available-etfs="etfList"
         :is-loading-portfolio="isLoadingPortfolio"
         class="mb-4"
-        @update:input-mode="inputMode = $event"
+        @update:input-mode="onInputModeChange"
         @update:allocation="updateAllocation"
         @add="addAllocation"
         @remove="removeAllocation"
@@ -83,7 +90,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, defineAsyncComponent } from 'vue'
+import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
 import { useDebounceFn, useNow } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { diversificationService } from '../../services/diversification-service'
@@ -97,26 +104,6 @@ import type { DiversificationCalculatorResponseDto } from '../../models/generate
 import type { AllocationInput, CachedState } from './types'
 
 const ConfigDialog = defineAsyncComponent(() => import('./config-dialog.vue'))
-
-const STORAGE_KEY = 'diversification-calculator-state'
-
-const loadFromStorage = (): CachedState | null => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) return null
-    return JSON.parse(stored) as CachedState
-  } catch {
-    return null
-  }
-}
-
-const saveToStorage = (state: CachedState): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  } catch {
-    /* ignore storage errors */
-  }
-}
 
 const {
   data: availableEtfs,
@@ -144,6 +131,23 @@ const result = ref<DiversificationCalculatorResponseDto | null>(null)
 const isInitialized = ref(false)
 const showExportDialog = ref(false)
 const showImportDialog = ref(false)
+const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+const hasUnsavedChanges = ref(false)
+
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (hasUnsavedChanges.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
 
 const etfList = computed(() => availableEtfs.value ?? [])
 
@@ -224,15 +228,35 @@ const calculateDiversification = async () => {
 
 const debouncedCalculate = useDebounceFn(calculateDiversification, 500)
 
-const persistState = (): void => {
-  saveToStorage({
-    allocations: allocations.value,
-    inputMode: inputMode.value,
-  })
+const saveToDatabase = async () => {
+  saveStatus.value = 'saving'
+  try {
+    await diversificationService.saveConfig({
+      allocations: allocations.value,
+      inputMode: inputMode.value,
+    })
+    saveStatus.value = 'saved'
+    hasUnsavedChanges.value = false
+    setTimeout(() => {
+      if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+    }, 2000)
+  } catch {
+    saveStatus.value = 'error'
+  }
 }
 
+const debouncedSave = useDebounceFn(saveToDatabase, 1000)
+
 const onAllocationChange = () => {
-  persistState()
+  hasUnsavedChanges.value = true
+  debouncedSave()
+  debouncedCalculate()
+}
+
+const onInputModeChange = (mode: 'percentage' | 'amount') => {
+  inputMode.value = mode
+  hasUnsavedChanges.value = true
+  debouncedSave()
   debouncedCalculate()
 }
 
@@ -259,7 +283,8 @@ const loadFromPortfolio = async () => {
             ? Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10
             : Math.round(i.currentValue ?? 0),
       }))
-    persistState()
+    hasUnsavedChanges.value = true
+    debouncedSave()
     debouncedCalculate()
   } catch (e) {
     error.value = getErrorMessage(e)
@@ -271,7 +296,8 @@ const loadFromPortfolio = async () => {
 const clearAllocations = () => {
   allocations.value = [{ instrumentId: 0, value: 0 }]
   result.value = null
-  persistState()
+  hasUnsavedChanges.value = true
+  debouncedSave()
 }
 
 const exportConfiguration = () => {
@@ -289,29 +315,28 @@ const onExportComplete = () => {
 const onImportComplete = (data: CachedState) => {
   allocations.value = data.allocations
   inputMode.value = data.inputMode
-  persistState()
+  hasUnsavedChanges.value = true
+  debouncedSave()
   debouncedCalculate()
 }
 
-watch(inputMode, () => {
-  persistState()
-  debouncedCalculate()
-})
-
 watch(
   availableEtfs,
-  newEtfs => {
+  async newEtfs => {
     if (!newEtfs || newEtfs.length === 0 || isInitialized.value) return
     isInitialized.value = true
-    const cached = loadFromStorage()
-    if (!cached) return
     const validIds = new Set(newEtfs.map(e => e.instrumentId))
-    const validAllocations = cached.allocations.filter(
+    const dbConfig = await diversificationService.getConfig()
+    if (!dbConfig) return
+    const validAllocations = dbConfig.allocations.filter(
       a => a.instrumentId === 0 || validIds.has(a.instrumentId)
     )
     if (validAllocations.length === 0) return
-    allocations.value = validAllocations
-    inputMode.value = cached.inputMode
+    allocations.value = validAllocations.map(a => ({
+      instrumentId: Number(a.instrumentId),
+      value: Number(a.value),
+    }))
+    inputMode.value = dbConfig.inputMode
     debouncedCalculate()
   },
   { immediate: true }
@@ -329,6 +354,13 @@ watch(
   font-size: 0.75rem;
   color: #6b7280;
   background: #f9fafb;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+}
+
+.save-status {
+  font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   white-space: nowrap;

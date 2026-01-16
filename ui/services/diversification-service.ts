@@ -5,6 +5,7 @@ import type {
   EtfDetailDto,
 } from '../models/generated/domain-models'
 import { API_ENDPOINTS } from '../constants'
+import type { CachedState } from '../components/diversification/types'
 
 export const diversificationService = {
   getAvailableEtfs: () =>
@@ -17,5 +18,16 @@ export const diversificationService = {
       .post<DiversificationCalculatorResponseDto>(`${API_ENDPOINTS.DIVERSIFICATION}/calculate`, {
         allocations,
       })
+      .then(res => res.data),
+
+  getConfig: () =>
+    httpClient
+      .get<CachedState>(`${API_ENDPOINTS.DIVERSIFICATION}/config`)
+      .then(res => res.data)
+      .catch(() => null),
+
+  saveConfig: (config: CachedState) =>
+    httpClient
+      .put<CachedState>(`${API_ENDPOINTS.DIVERSIFICATION}/config`, config)
       .then(res => res.data),
 }

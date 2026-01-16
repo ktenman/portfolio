@@ -52,7 +52,8 @@ class BatchLogoValidationService(
         .map { holding ->
           async {
             val searchQuery = LogoSearchQueryBuilder.buildQuery(holding.name, holding.ticker)
-            val candidates = imageSearchLogoService.searchLogoCandidates(searchQuery, batchProperties.imagesPerCompany * 3)
+            val candidates =
+              imageSearchLogoService.searchLogoCandidates(searchQuery, batchProperties.imagesPerCompany * 3)
             val downloaded = downloadAndValidateCandidates(candidates)
             if (downloaded.isEmpty()) return@async null
             HoldingCandidateData(
@@ -102,20 +103,20 @@ class BatchLogoValidationService(
     }
     val request =
       OpenRouterVisionRequest(
-      model = batchProperties.model.modelId,
-      messages = listOf(Message(role = "user", content = contentParts)),
-      maxTokens = batchProperties.maxTokens,
-      temperature = batchProperties.temperature,
-    )
+        model = batchProperties.model.modelId,
+        messages = listOf(Message(role = "user", content = contentParts)),
+        maxTokens = batchProperties.maxTokens,
+        temperature = batchProperties.temperature,
+      )
     return runBlocking {
       withTimeoutOrNull(batchProperties.apiTimeoutMs) {
         runCatching {
           log.info("Sending batch validation request for ${holdingData.size} companies")
           val response =
             openRouterVisionClient.chatCompletion(
-            "Bearer ${openRouterProperties.apiKey}",
-            request,
-          )
+              "Bearer ${openRouterProperties.apiKey}",
+              request,
+            )
           parseValidationResponse(response.extractContent(), holdingData)
         }.onFailure { log.warn("Batch validation API call failed: ${it.message}") }
           .getOrDefault(emptyMap())
@@ -129,9 +130,9 @@ class BatchLogoValidationService(
   private fun buildBatchPrompt(holdingData: List<HoldingCandidateData>): String {
     val companyList =
       holdingData
-      .mapIndexed { index, data ->
-        "Company ${index + 1}: \"${data.companyName}\" (${data.ticker ?: "N/A"})"
-      }.joinToString("\n")
+        .mapIndexed { index, data ->
+          "Company ${index + 1}: \"${data.companyName}\" (${data.ticker ?: "N/A"})"
+        }.joinToString("\n")
     return """
       |For each company below, identify which images are VALID company logos.
       |A valid logo must be the actual official logo of that specific company, not:
@@ -162,15 +163,16 @@ class BatchLogoValidationService(
     return runCatching {
       val mapType =
         objectMapper.typeFactory.constructMapType(
-        HashMap::class.java,
-        String::class.java,
-        List::class.java,
-      )
+          HashMap::class.java,
+          String::class.java,
+          List::class.java,
+        )
       val parsed: Map<String, List<Int>> = objectMapper.readValue(jsonStr, mapType)
       holdingData
         .mapIndexed { index, data ->
           val companyKey = (index + 1).toString()
-          val validIndices = parsed[companyKey]?.map { it - 1 }?.filter { it >= 0 && it < data.candidates.size } ?: emptyList()
+          val validIndices =
+            parsed[companyKey]?.map { it - 1 }?.filter { it >= 0 && it < data.candidates.size } ?: emptyList()
           data.holdingUuid to validIndices
         }.toMap()
     }.onFailure { log.warn("Failed to parse validation response: ${it.message}") }

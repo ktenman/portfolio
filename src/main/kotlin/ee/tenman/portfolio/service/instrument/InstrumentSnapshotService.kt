@@ -93,8 +93,8 @@ class InstrumentSnapshotService(
     if (totalCurrentValue > BigDecimal.ZERO) {
       allCashFlows.add(
         ee.tenman.portfolio.service.calculation.xirr
-        .CashFlow(totalCurrentValue.toDouble(), calculationDate),
-          )
+          .CashFlow(totalCurrentValue.toDouble(), calculationDate),
+      )
     }
     return xirrCalculationService.calculateAdjustedXirr(allCashFlows, calculationDate)
   }

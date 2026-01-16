@@ -34,6 +34,8 @@ vi.mock('../../services/diversification-service', () => ({
   diversificationService: {
     getAvailableEtfs: vi.fn(),
     calculate: vi.fn(),
+    getConfig: vi.fn().mockResolvedValue(null),
+    saveConfig: vi.fn().mockResolvedValue(null),
   },
 }))
 
