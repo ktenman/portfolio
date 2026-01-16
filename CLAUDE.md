@@ -791,6 +791,31 @@ class HoldingPersistenceService(private val repository: HoldingRepository) {
 
 ### Clean Architecture Principles
 
+**MANDATORY FOR ALL NEW FEATURES**: Clean architecture rules MUST be strictly followed. Non-compliance will result in code review rejection.
+
+#### Enforcement Rules
+
+1. **Controllers MUST be thin** - Maximum 1-2 lines per method, delegation only
+2. **Business logic MUST live in services** - Never in controllers or repositories
+3. **Services MUST have single responsibility** - One service = one domain concern
+4. **Data classes MUST be in separate files** - Never nested inside services
+5. **Network I/O MUST be outside transactions** - Separate persistence from external calls
+6. **Caching MUST use separate services** - Avoid self-invocation problems
+7. **Dependencies MUST flow inward** - Controllers → Services → Repositories
+
+#### Checklist for New Features
+
+Before submitting code for a new feature, verify:
+
+- [ ] Controllers only delegate to services (no business logic)
+- [ ] Each service has a single, clear responsibility
+- [ ] Data classes are in their own files
+- [ ] No network I/O inside `@Transactional` methods
+- [ ] No self-invocation of `@Cacheable` methods
+- [ ] Guard clauses used instead of nested conditionals
+- [ ] Files under 300 lines (refactor if larger)
+- [ ] Unit tests cover all new business logic
+
 #### Layer Responsibilities
 
 1. **Controller Layer** (thin)

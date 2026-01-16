@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.repository.DailyPriceRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -18,6 +19,8 @@ class DailyPriceService(
   private val dailyPriceRepository: DailyPriceRepository,
   private val clock: Clock,
 ) {
+  private val log = LoggerFactory.getLogger(javaClass)
+
   @Transactional(readOnly = true)
   fun getPrice(
     instrument: Instrument,
@@ -73,10 +76,10 @@ class DailyPriceService(
     val currentPrice = recentPrices[0].closePrice
     val previousPrice =
       recentPrices
-      .drop(1)
-      .firstOrNull { it.closePrice != currentPrice }
-      ?.closePrice
-      ?: return null
+        .drop(1)
+        .firstOrNull { it.closePrice != currentPrice }
+        ?.closePrice
+        ?: return null
 
     val changeAmount = currentPrice.subtract(previousPrice)
     val changePercent = calculateChangePercent(changeAmount, previousPrice)
@@ -152,9 +155,9 @@ class DailyPriceService(
   fun saveDailyPriceIfNotExists(dailyPrice: DailyPrice): Boolean {
     val existing =
       dailyPriceRepository.findByInstrumentAndEntryDate(
-      dailyPrice.instrument,
-      dailyPrice.entryDate,
-    )
+        dailyPrice.instrument,
+        dailyPrice.entryDate,
+      )
     if (existing != null) return false
     return runCatching { dailyPriceRepository.save(dailyPrice) }
       .map { true }
@@ -183,5 +186,13 @@ class DailyPriceService(
         volume = null,
       )
     saveDailyPrice(dailyPrice)
+  }
+
+  @Transactional(readOnly = true)
+  fun getCurrentPrice(instrument: Instrument): BigDecimal {
+    instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }?.let { return it }
+    return runCatching { getPrice(instrument, LocalDate.now(clock)) }
+      .onFailure { log.warn("No price found for ${instrument.symbol}, using zero") }
+      .getOrDefault(BigDecimal.ZERO)
   }
 }

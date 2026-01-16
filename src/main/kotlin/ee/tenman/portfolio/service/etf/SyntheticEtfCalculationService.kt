@@ -10,11 +10,8 @@ import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.transaction.TransactionCalculationService
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.time.Clock
-import java.time.LocalDate
 
 @Service
 class SyntheticEtfCalculationService(
@@ -22,10 +19,7 @@ class SyntheticEtfCalculationService(
   private val etfPositionRepository: EtfPositionRepository,
   private val transactionCalculationService: TransactionCalculationService,
   private val dailyPriceService: DailyPriceService,
-  private val clock: Clock,
 ) {
-  private val log = LoggerFactory.getLogger(javaClass)
-
   fun hasActiveHoldings(syntheticEtfId: Long): Boolean {
     val positions = etfPositionRepository.findLatestPositionsByEtfId(syntheticEtfId)
     val tickers = positions.mapNotNull { it.holding.ticker }
@@ -81,13 +75,13 @@ class SyntheticEtfCalculationService(
     val transactionData = transactionCalculationService.batchCalculateAll(instrumentsByTicker.values.map { it.id })
     val holdingValues =
       positions.mapNotNull { pos ->
-      val ticker = pos.holding.ticker ?: return@mapNotNull null
-      val instrument = instrumentsByTicker[ticker] ?: return@mapNotNull null
-      val data = transactionData[instrument.id] ?: return@mapNotNull null
-      val price = getCurrentPrice(instrument)
-      val value = data.netQuantity.multiply(price)
-      SyntheticHoldingValue(pos, value, data.platforms)
-    }
+        val ticker = pos.holding.ticker ?: return@mapNotNull null
+        val instrument = instrumentsByTicker[ticker] ?: return@mapNotNull null
+        val data = transactionData[instrument.id] ?: return@mapNotNull null
+        val price = dailyPriceService.getCurrentPrice(instrument)
+        val value = data.netQuantity.multiply(price)
+        SyntheticHoldingValue(pos, value, data.platforms)
+      }
     return Pair(holdingValues, instrumentsByTicker)
   }
 
@@ -101,12 +95,5 @@ class SyntheticEtfCalculationService(
       val syntheticValue = holdingValues.fold(BigDecimal.ZERO) { sum, h -> sum.add(h.value) }
       acc.add(syntheticValue)
     }
-  }
-
-  private fun getCurrentPrice(instrument: Instrument): BigDecimal {
-    instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }?.let { return it }
-    return runCatching { dailyPriceService.getPrice(instrument, LocalDate.now(clock)) }
-      .onFailure { log.warn("No price found for ${instrument.symbol}, using zero", it) }
-      .getOrDefault(BigDecimal.ZERO)
   }
 }

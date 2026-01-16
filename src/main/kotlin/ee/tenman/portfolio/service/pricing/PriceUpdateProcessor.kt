@@ -41,6 +41,7 @@ class PriceUpdateProcessor(
           updatedCount++
           dailyPricesSaved++
         }
+
         ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE -> updatedCount++
         ProcessResult.FAILED -> failedCount++
       }
