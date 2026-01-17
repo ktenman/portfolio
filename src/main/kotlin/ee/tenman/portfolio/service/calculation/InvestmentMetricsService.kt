@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.calculation
 
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.model.holding.CurrentHoldings
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.service.pricing.DailyPriceService
@@ -24,7 +25,7 @@ class InvestmentMetricsService(
 
   private fun isToday(date: LocalDate): Boolean = date.isEqual(LocalDate.now(clock))
 
-  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> =
+  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): CurrentHoldings =
     holdingsCalculationService.calculateCurrentHoldings(transactions)
 
   fun calculateCurrentValue(
@@ -45,20 +46,20 @@ class InvestmentMetricsService(
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
     val effectiveDate = calculationDate ?: LocalDate.now(clock)
-    val (totalHoldings, totalInvestment) = holdingsCalculationService.calculateAggregatedHoldings(transactions)
+    val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
     val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
-    val currentValue = holdingsCalculationService.calculateCurrentValue(totalHoldings, currentPrice)
+    val currentValue = holdingsCalculationService.calculateCurrentValue(aggregated.totalQuantity, currentPrice)
     val realizedProfit = calculateRealizedProfit(transactions)
-    val unrealizedProfit = currentValue.subtract(totalInvestment)
+    val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
     val cashFlows = xirrCalculationService.buildCashFlows(transactions, currentValue, effectiveDate)
     return InstrumentMetrics(
-      totalInvestment = totalInvestment,
+      totalInvestment = aggregated.totalInvestment,
       currentValue = currentValue,
       profit = realizedProfit.add(unrealizedProfit),
       realizedProfit = realizedProfit,
       unrealizedProfit = unrealizedProfit,
       xirr = xirrCalculationService.calculateAdjustedXirr(cashFlows, effectiveDate),
-      quantity = totalHoldings,
+      quantity = aggregated.totalQuantity,
     )
   }
 
@@ -97,10 +98,10 @@ class InvestmentMetricsService(
     date: LocalDate,
     metrics: PortfolioMetrics,
   ) {
-    val (currentHoldings, totalInvestment) = holdingsCalculationService.calculateAggregatedHoldings(transactions)
+    val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
     val realizedProfit = calculateRealizedProfit(transactions)
-    val currentValue = calculateCurrentValueForDate(currentHoldings, instrument, date)
-    val unrealizedProfit = currentValue.subtract(totalInvestment)
+    val currentValue = calculateCurrentValueForDate(aggregated.totalQuantity, instrument, date)
+    val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
     if (currentValue <= BigDecimal.ZERO && realizedProfit <= BigDecimal.ZERO) return
     updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
     xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, currentValue, date)
