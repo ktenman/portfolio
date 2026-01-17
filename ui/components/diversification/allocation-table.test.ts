@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import AllocationTable from './allocation-table.vue'
+
+vi.mock('@vueuse/core', () => ({
+  useLocalStorage: vi.fn((_key: string, defaultValue: boolean) => ref(defaultValue)),
+}))
 
 describe('AllocationTable', () => {
   const defaultEtfs = [
@@ -31,6 +36,7 @@ describe('AllocationTable', () => {
     inputMode: 'percentage' as const,
     availableEtfs: defaultEtfs,
     isLoadingPortfolio: false,
+    totalInvestment: 0,
   }
 
   describe('rendering', () => {
@@ -335,6 +341,149 @@ describe('AllocationTable', () => {
       const importBtn = wrapper.findAll('.action-btn').find(b => b.attributes('title') === 'Import')
       await importBtn?.trigger('click')
       expect(wrapper.emitted('import')).toHaveLength(1)
+    })
+  })
+
+  describe('investment calculations', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      localStorage.clear()
+    })
+
+    it('should show Units and Unused columns when totalInvestment is set', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+        },
+      })
+      const headers = wrapper.findAll('th')
+      expect(headers.map(h => h.text())).toContain('Units')
+      expect(headers.map(h => h.text())).toContain('Unused')
+    })
+
+    it('should not show Units and Unused columns when totalInvestment is 0', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 0,
+          allocations: [{ instrumentId: 1, value: 100 }],
+        },
+      })
+      const headers = wrapper.findAll('th')
+      expect(headers.map(h => h.text())).not.toContain('Units')
+      expect(headers.map(h => h.text())).not.toContain('Unused')
+    })
+
+    it('should calculate units correctly', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 30 }],
+        },
+      })
+      expect(wrapper.text()).toContain('24')
+    })
+
+    it('should calculate unused amount correctly', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 30 }],
+        },
+      })
+      expect(wrapper.text()).toContain('€108.00')
+    })
+
+    it('should show total unused in footer', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [
+            { instrumentId: 1, value: 60 },
+            { instrumentId: 2, value: 40 },
+          ],
+        },
+      })
+      expect(wrapper.text()).toContain('Total Unused')
+    })
+
+    it('should show optimize toggle when totalInvestment is set', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+        },
+      })
+      expect(wrapper.find('.optimize-toggle').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Optimize')
+    })
+
+    it('should not show optimize toggle when totalInvestment is 0', () => {
+      const wrapper = mount(AllocationTable, {
+        props: defaultProps,
+      })
+      expect(wrapper.find('.optimize-toggle').exists()).toBe(false)
+    })
+
+    it('should emit update:totalInvestment when investment amount changes', async () => {
+      const wrapper = mount(AllocationTable, { props: defaultProps })
+      const input = wrapper.find('.total-investment-input input')
+      await input.setValue('5000')
+      expect(wrapper.emitted('update:totalInvestment')).toEqual([[5000]])
+    })
+
+    it('should show dash for units when no ETF selected', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 0, value: 100 }],
+        },
+      })
+      const rows = wrapper.findAll('tbody tr')
+      expect(rows[0].text()).toContain('-')
+    })
+  })
+
+  describe('optimization algorithm', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      localStorage.clear()
+    })
+
+    it('should distribute extra units using largest remainder method when optimize enabled', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 1000,
+          allocations: [
+            { instrumentId: 1, value: 50 },
+            { instrumentId: 2, value: 50 },
+          ],
+        },
+      })
+      const checkbox = wrapper.find('#optimizeAllocation')
+      await checkbox.setValue(true)
+      expect(wrapper.find('.optimize-toggle input').element).toBeInstanceOf(HTMLInputElement)
+    })
+
+    it('should show total to invest input in percentage mode', () => {
+      const wrapper = mount(AllocationTable, { props: defaultProps })
+      expect(wrapper.find('.total-investment-input').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Total to invest')
+    })
+
+    it('should not show total to invest input in amount mode', () => {
+      const wrapper = mount(AllocationTable, {
+        props: { ...defaultProps, inputMode: 'amount' },
+      })
+      expect(wrapper.find('.total-investment-input').exists()).toBe(false)
     })
   })
 })

@@ -922,3 +922,4 @@ fun getHistoricalSummaries(page: Int, size: Int): Page<SummaryDto> {
 - Extract reusable logic into composables (`use-*.ts`)
 - Keep components focused and under 200 lines
 - Use proper TypeScript types, avoid `any`
+- **Use `useLocalStorage` from `@vueuse/core`** instead of direct `localStorage` access for reactive persistence

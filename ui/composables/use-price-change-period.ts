@@ -1,4 +1,5 @@
-import { ref, watch } from 'vue'
+import { computed } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { PriceChangePeriod } from '../models/generated/domain-models'
 
 const STORAGE_KEY = 'portfolio_price_change_period'
@@ -14,24 +15,25 @@ const periodOptions: ReadonlyArray<PeriodOption> = Object.values(PriceChangePeri
   label: value.substring(1),
 }))
 
-export function usePriceChangePeriod() {
-  const storedPeriod = localStorage.getItem(STORAGE_KEY)
-  const selectedPeriod = ref<PriceChangePeriod>(
-    storedPeriod && isPeriodValid(storedPeriod)
-      ? (storedPeriod as PriceChangePeriod)
-      : DEFAULT_PERIOD
-  )
+function isPeriodValid(period: string): boolean {
+  return Object.values(PriceChangePeriod).includes(period as PriceChangePeriod)
+}
 
-  watch(selectedPeriod, newPeriod => {
-    localStorage.setItem(STORAGE_KEY, newPeriod)
+export function usePriceChangePeriod() {
+  const storedPeriod = useLocalStorage<string>(STORAGE_KEY, DEFAULT_PERIOD)
+
+  const selectedPeriod = computed({
+    get: () =>
+      isPeriodValid(storedPeriod.value)
+        ? (storedPeriod.value as PriceChangePeriod)
+        : DEFAULT_PERIOD,
+    set: (value: PriceChangePeriod) => {
+      storedPeriod.value = value
+    },
   })
 
   return {
     selectedPeriod,
     periods: periodOptions,
   }
-}
-
-function isPeriodValid(period: string): boolean {
-  return Object.values(PriceChangePeriod).includes(period as PriceChangePeriod)
 }

@@ -26,9 +26,11 @@
         :input-mode="inputMode"
         :available-etfs="etfList"
         :is-loading-portfolio="isLoadingPortfolio"
+        :total-investment="totalInvestment"
         class="mb-4"
         @update:input-mode="onInputModeChange"
         @update:allocation="updateAllocation"
+        @update:total-investment="totalInvestment = $event"
         @add="addAllocation"
         @remove="removeAllocation"
         @clear="clearAllocations"
@@ -91,7 +93,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
-import { useDebounceFn, useNow } from '@vueuse/core'
+import { useDebounceFn, useLocalStorage, useNow } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { diversificationService } from '../../services/diversification-service'
 import { instrumentsService } from '../../services/instruments-service'
@@ -124,6 +126,7 @@ const lastUpdatedText = computed(() => {
 
 const allocations = ref<AllocationInput[]>([{ instrumentId: 0, value: 0 }])
 const inputMode = ref<'percentage' | 'amount'>('percentage')
+const totalInvestment = useLocalStorage<number>('diversification-total-investment', 0)
 const isCalculating = ref(false)
 const isLoadingPortfolio = ref(false)
 const error = ref('')
