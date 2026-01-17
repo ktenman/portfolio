@@ -3,6 +3,7 @@ package ee.tenman.portfolio.dto
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Pattern
+import java.io.Serializable
 
 data class DiversificationConfigDto(
   @field:Valid
@@ -10,4 +11,8 @@ data class DiversificationConfigDto(
   val allocations: List<DiversificationConfigAllocationDto>,
   @field:Pattern(regexp = "percentage|amount", message = "Input mode must be 'percentage' or 'amount'")
   val inputMode: String,
-)
+) : Serializable {
+  companion object {
+    private const val serialVersionUID: Long = 1L
+  }
+}

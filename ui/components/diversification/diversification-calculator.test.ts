@@ -47,6 +47,7 @@ vi.mock('../../services/instruments-service', () => ({
 
 vi.mock('@vueuse/core', () => ({
   useDebounceFn: vi.fn((fn: () => void) => fn),
+  useLocalStorage: vi.fn((_key: string, defaultValue: number) => ref(defaultValue)),
   useNow: vi.fn(() => ({ value: new Date() })),
 }))
 

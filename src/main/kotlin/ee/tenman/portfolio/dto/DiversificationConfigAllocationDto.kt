@@ -2,6 +2,7 @@ package ee.tenman.portfolio.dto
 
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.PositiveOrZero
+import java.io.Serializable
 import java.math.BigDecimal
 
 data class DiversificationConfigAllocationDto(
@@ -9,4 +10,8 @@ data class DiversificationConfigAllocationDto(
   val instrumentId: Long,
   @field:PositiveOrZero(message = "Value must be non-negative")
   val value: BigDecimal,
-)
+) : Serializable {
+  companion object {
+    private const val serialVersionUID: Long = 1L
+  }
+}
