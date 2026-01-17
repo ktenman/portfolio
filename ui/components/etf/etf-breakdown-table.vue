@@ -142,6 +142,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-models'
 import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
@@ -221,14 +222,7 @@ onUnmounted(() => {
   observer?.disconnect()
 })
 
-const LOGO_VERSIONS_KEY = 'logoVersions'
-
-const loadLogoVersions = (): Record<string, number> => {
-  const stored = localStorage.getItem(LOGO_VERSIONS_KEY)
-  return stored ? JSON.parse(stored) : {}
-}
-
-const logoVersions = ref<Record<string, number>>(loadLogoVersions())
+const logoVersions = useLocalStorage<Record<string, number>>('logoVersions', {})
 
 const openLogoModal = (item: EtfHoldingBreakdownDto) => {
   selectedHolding.value = item
@@ -237,7 +231,6 @@ const openLogoModal = (item: EtfHoldingBreakdownDto) => {
 
 const handleLogoReplaced = (holdingUuid: string) => {
   logoVersions.value[holdingUuid] = Date.now()
-  localStorage.setItem(LOGO_VERSIONS_KEY, JSON.stringify(logoVersions.value))
   emit('logoReplaced', holdingUuid)
 }
 
