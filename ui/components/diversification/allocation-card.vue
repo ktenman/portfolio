@@ -50,6 +50,19 @@
         @input="onValueChange"
       />
     </div>
+    <div
+      v-if="showInvestmentInfo && allocation.instrumentId > 0"
+      class="allocation-card-investment"
+    >
+      <div class="investment-item">
+        <label>Units</label>
+        <span class="investment-value">{{ formattedUnits }}</span>
+      </div>
+      <div class="investment-item">
+        <label>Unused</label>
+        <span class="investment-value">{{ formattedUnused }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -63,7 +76,10 @@ const props = defineProps<{
   allocation: AllocationInput
   availableEtfs: EtfDetailDto[]
   inputMode: 'percentage' | 'amount'
+  totalInvestment: number
   disableRemove: boolean
+  computedUnits?: number
+  computedUnused?: number
 }>()
 
 const emit = defineEmits<{
@@ -85,6 +101,34 @@ const formattedPrice = computed(() => {
 const formattedTer = computed(() => formatTer(selectedEtf.value?.ter ?? null))
 
 const formattedReturn = computed(() => formatReturn(selectedEtf.value?.annualReturn ?? null))
+
+const showInvestmentInfo = computed(
+  () => props.inputMode === 'percentage' && props.totalInvestment > 0
+)
+
+const localInvestmentCalc = computed(() => {
+  const price = selectedEtf.value?.currentPrice
+  const percentage = props.allocation.value
+  if (!percentage || !price || price <= 0 || props.totalInvestment <= 0) {
+    return { units: 0, unused: 0 }
+  }
+  const allocated = (props.totalInvestment * percentage) / 100
+  const units = Math.floor(allocated / price)
+  const unused = allocated - units * price
+  return { units, unused }
+})
+
+const formattedUnits = computed(() => {
+  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  return units > 0 ? units.toString() : '-'
+})
+
+const formattedUnused = computed(() => {
+  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  const unused = props.computedUnused ?? localInvestmentCalc.value.unused
+  if (units === 0) return '-'
+  return `€${unused.toFixed(2)}`
+})
 
 const inputLabel = computed(() =>
   props.inputMode === 'percentage' ? 'Allocation %' : 'Amount EUR'
@@ -186,6 +230,32 @@ const onValueChange = (event: Event) => {
 .allocation-card-input input {
   flex: 1;
   max-width: 120px;
+}
+
+.allocation-card-investment {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--bs-gray-300);
+}
+
+.allocation-card-investment .investment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.allocation-card-investment label {
+  font-size: 0.75rem;
+  color: var(--bs-gray-600);
+  white-space: nowrap;
+}
+
+.allocation-card-investment .investment-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bs-gray-700);
 }
 
 .remove-btn {

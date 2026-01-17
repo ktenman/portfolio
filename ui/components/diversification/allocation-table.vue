@@ -1,26 +1,54 @@
 <template>
   <div class="allocation-section">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="mb-0">ETF Allocation</h5>
-      <div class="mode-buttons">
-        <button
-          type="button"
-          class="mode-btn"
-          :class="{ active: inputMode === 'percentage' }"
-          @click="$emit('update:inputMode', 'percentage')"
-        >
-          <span class="d-none d-sm-inline">Percentage</span>
-          <span class="d-sm-none">%</span>
-        </button>
-        <button
-          type="button"
-          class="mode-btn"
-          :class="{ active: inputMode === 'amount' }"
-          @click="$emit('update:inputMode', 'amount')"
-        >
-          <span class="d-none d-sm-inline">Amount (EUR)</span>
-          <span class="d-sm-none">EUR</span>
-        </button>
+    <div class="header-section mb-3">
+      <div class="header-row">
+        <h5 class="mb-0">ETF Allocation</h5>
+        <div class="mode-buttons">
+          <button
+            type="button"
+            class="mode-btn"
+            :class="{ active: inputMode === 'percentage' }"
+            @click="$emit('update:inputMode', 'percentage')"
+          >
+            <span class="d-none d-sm-inline">Percentage</span>
+            <span class="d-sm-none">%</span>
+          </button>
+          <button
+            type="button"
+            class="mode-btn"
+            :class="{ active: inputMode === 'amount' }"
+            @click="$emit('update:inputMode', 'amount')"
+          >
+            <span class="d-none d-sm-inline">Amount (EUR)</span>
+            <span class="d-sm-none">EUR</span>
+          </button>
+        </div>
+      </div>
+      <div v-if="inputMode === 'percentage'" class="investment-row">
+        <div class="total-investment-input">
+          <label class="d-none d-md-inline">Total to invest</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">€</span>
+            <input
+              :value="totalInvestment"
+              type="number"
+              class="form-control"
+              min="0"
+              step="1000"
+              placeholder="10000"
+              @input="onTotalInvestmentChange"
+            />
+          </div>
+        </div>
+        <div v-if="showInvestmentColumns" class="optimize-toggle">
+          <input
+            id="optimizeAllocation"
+            v-model="optimizeEnabled"
+            type="checkbox"
+            class="form-check-input"
+          />
+          <label for="optimizeAllocation" class="form-check-label">Optimize</label>
+        </div>
       </div>
     </div>
 
@@ -32,7 +60,14 @@
         :allocation="allocation"
         :available-etfs="availableEtfsForRow(index)"
         :input-mode="inputMode"
+        :total-investment="totalInvestment"
         :disable-remove="allocations.length <= 1"
+        :computed-units="
+          getUnits(allocation.instrumentId, allocation.value, getEtfPrice(allocation.instrumentId))
+        "
+        :computed-unused="
+          getUnused(allocation.instrumentId, allocation.value, getEtfPrice(allocation.instrumentId))
+        "
         @update:allocation="updateAllocationAtIndex(index, $event)"
         @remove="$emit('remove', index)"
       />
@@ -51,6 +86,8 @@
             <th style="width: 150px">
               {{ inputMode === 'percentage' ? 'Allocation %' : 'Amount EUR' }}
             </th>
+            <th v-if="showInvestmentColumns" style="width: 70px">Units</th>
+            <th v-if="showInvestmentColumns" style="width: 90px">Unused</th>
             <th style="width: 50px"></th>
           </tr>
         </thead>
@@ -90,6 +127,24 @@
                 :step="inputMode === 'percentage' ? 1 : 100"
                 @input="onValueChange(index, $event)"
               />
+            </td>
+            <td v-if="showInvestmentColumns" class="text-muted small">
+              {{
+                formatUnits(
+                  allocation.instrumentId,
+                  allocation.value,
+                  getEtfPrice(allocation.instrumentId)
+                )
+              }}
+            </td>
+            <td v-if="showInvestmentColumns" class="text-muted small">
+              {{
+                formatUnused(
+                  allocation.instrumentId,
+                  allocation.value,
+                  getEtfPrice(allocation.instrumentId)
+                )
+              }}
             </td>
             <td>
               <button
@@ -169,18 +224,24 @@
           <span class="d-sm-none">✕</span>
         </button>
       </div>
-      <div class="total-row">
-        <span class="total-label">Total</span>
-        <span class="total-value" :class="{ invalid: !isValidTotal, valid: isValidTotal }">
-          {{
-            inputMode === 'percentage'
-              ? `${totalAllocation.toFixed(1)}%`
-              : formatCurrencyWithSymbol(totalAllocation)
-          }}
-          <span v-if="inputMode === 'percentage' && !isValidTotal" class="total-hint">
-            (should be 100%)
+      <div class="totals-section">
+        <div class="total-row">
+          <span class="total-label">Total</span>
+          <span class="total-value" :class="{ invalid: !isValidTotal, valid: isValidTotal }">
+            {{
+              inputMode === 'percentage'
+                ? `${totalAllocation.toFixed(1)}%`
+                : formatCurrencyWithSymbol(totalAllocation)
+            }}
+            <span v-if="inputMode === 'percentage' && !isValidTotal" class="total-hint">
+              (should be 100%)
+            </span>
           </span>
-        </span>
+        </div>
+        <div v-if="showInvestmentColumns" class="total-row">
+          <span class="total-label">Total Unused</span>
+          <span class="total-value text-muted">€{{ totalUnused.toFixed(2) }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -188,6 +249,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { formatTer, formatReturn, formatCurrencyWithSymbol } from '../../utils/formatters'
 import AllocationCard from './allocation-card.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
@@ -198,11 +260,13 @@ const props = defineProps<{
   inputMode: 'percentage' | 'amount'
   availableEtfs: EtfDetailDto[]
   isLoadingPortfolio: boolean
+  totalInvestment: number
 }>()
 
 const emit = defineEmits<{
   'update:inputMode': ['percentage' | 'amount']
   'update:allocation': [index: number, allocation: AllocationInput]
+  'update:totalInvestment': [value: number]
   add: []
   remove: [index: number]
   clear: []
@@ -244,6 +308,117 @@ const getEtfReturn = (instrumentId: number): number | null =>
 const getEtfPrice = (instrumentId: number): number | null =>
   props.availableEtfs.find(e => e.instrumentId === instrumentId)?.currentPrice ?? null
 
+const showInvestmentColumns = computed(
+  () => props.inputMode === 'percentage' && props.totalInvestment > 0
+)
+
+const optimizeEnabled = useLocalStorage('diversification-optimize', false)
+
+const calculateBaseInvestment = (percentage: number, price: number | null) => {
+  if (!percentage || !price || price <= 0 || props.totalInvestment <= 0) {
+    return { allocated: 0, units: 0, unused: 0 }
+  }
+  const allocated = (props.totalInvestment * percentage) / 100
+  const units = Math.floor(allocated / price)
+  const unused = allocated - units * price
+  return { allocated, units, unused }
+}
+
+const optimizedAllocation = computed(() => {
+  if (!showInvestmentColumns.value || !optimizeEnabled.value) return new Map<number, number>()
+  const validAllocations = props.allocations.filter(a => a.instrumentId > 0 && a.value > 0)
+  if (validAllocations.length === 0) return new Map<number, number>()
+  const fundData = validAllocations.map(allocation => {
+    const price = getEtfPrice(allocation.instrumentId) ?? 0
+    const allocated = (props.totalInvestment * allocation.value) / 100
+    const exactUnits = price > 0 ? allocated / price : 0
+    const baseUnits = Math.floor(exactUnits)
+    const remainder = exactUnits - baseUnits
+    return {
+      id: allocation.instrumentId,
+      price,
+      baseUnits,
+      remainder,
+      currentUnits: baseUnits,
+    }
+  })
+  let totalSpent = fundData.reduce((sum, f) => sum + f.currentUnits * f.price, 0)
+  let remaining = props.totalInvestment - totalSpent
+  const sortedByRemainder = [...fundData]
+    .filter(f => f.price > 0)
+    .sort((a, b) => b.remainder - a.remainder)
+  for (const fund of sortedByRemainder) {
+    if (fund.price <= remaining) {
+      fund.currentUnits++
+      remaining -= fund.price
+      totalSpent += fund.price
+    }
+  }
+  let improved = true
+  while (improved && remaining > 0) {
+    improved = false
+    let bestFund: (typeof fundData)[0] | null = null
+    let bestDeficit = -Infinity
+    for (const fund of fundData) {
+      if (fund.price <= 0 || fund.price > remaining) continue
+      const currentPercent =
+        totalSpent > 0 ? ((fund.currentUnits * fund.price) / totalSpent) * 100 : 0
+      const totalPercent = validAllocations.reduce((sum, a) => sum + a.value, 0)
+      const targetPercent =
+        ((validAllocations.find(a => a.instrumentId === fund.id)?.value ?? 0) / totalPercent) * 100
+      const deficit = targetPercent - currentPercent
+      if (deficit > bestDeficit) {
+        bestDeficit = deficit
+        bestFund = fund
+      }
+    }
+    if (bestFund) {
+      bestFund.currentUnits++
+      remaining -= bestFund.price
+      totalSpent += bestFund.price
+      improved = true
+    }
+  }
+  const result = new Map<number, number>()
+  fundData.forEach(f => result.set(f.id, f.currentUnits))
+  return result
+})
+
+const getUnits = (instrumentId: number, percentage: number, price: number | null): number => {
+  if (optimizeEnabled.value && optimizedAllocation.value.has(instrumentId)) {
+    return optimizedAllocation.value.get(instrumentId) ?? 0
+  }
+  return calculateBaseInvestment(percentage, price).units
+}
+
+const getUnused = (instrumentId: number, percentage: number, price: number | null): number => {
+  const units = getUnits(instrumentId, percentage, price)
+  if (!price || units === 0) return 0
+  const allocated = (props.totalInvestment * percentage) / 100
+  return allocated - units * price
+}
+
+const formatUnits = (instrumentId: number, percentage: number, price: number | null): string => {
+  const units = getUnits(instrumentId, percentage, price)
+  return units > 0 ? units.toString() : '-'
+}
+
+const formatUnused = (instrumentId: number, percentage: number, price: number | null): string => {
+  const units = getUnits(instrumentId, percentage, price)
+  if (units === 0) return '-'
+  const unused = getUnused(instrumentId, percentage, price)
+  return `€${unused.toFixed(2)}`
+}
+
+const totalUnused = computed(() => {
+  if (!showInvestmentColumns.value) return 0
+  return props.allocations.reduce((sum, allocation) => {
+    const price = getEtfPrice(allocation.instrumentId)
+    const unused = getUnused(allocation.instrumentId, allocation.value, price)
+    return sum + unused
+  }, 0)
+})
+
 const onInstrumentChange = (index: number, event: Event) => {
   const target = event.target as HTMLSelectElement
   emit('update:allocation', index, {
@@ -263,6 +438,11 @@ const onValueChange = (index: number, event: Event) => {
 const updateAllocationAtIndex = (index: number, allocation: AllocationInput) => {
   emit('update:allocation', index, allocation)
 }
+
+const onTotalInvestmentChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  emit('update:totalInvestment', Number(target.value) || 0)
+}
 </script>
 
 <style scoped>
@@ -271,6 +451,25 @@ const updateAllocationAtIndex = (index: number, allocation: AllocationInput) => 
   border: 1px solid var(--bs-gray-300);
   border-radius: 0.5rem;
   padding: 1.5rem;
+}
+
+.header-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.investment-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .allocation-table {
@@ -304,6 +503,12 @@ const updateAllocationAtIndex = (index: number, allocation: AllocationInput) => 
   gap: 1rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--bs-gray-300);
+}
+
+.totals-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .total-row {
@@ -419,6 +624,49 @@ const updateAllocationAtIndex = (index: number, allocation: AllocationInput) => 
   border-color: var(--bs-gray-700);
 }
 
+.total-investment-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.total-investment-input label {
+  font-size: 0.75rem;
+  color: var(--bs-gray-600);
+  white-space: nowrap;
+}
+
+.total-investment-input .input-group {
+  width: 140px;
+}
+
+.total-investment-input .input-group-text {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.total-investment-input input {
+  font-size: 0.875rem;
+}
+
+.optimize-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.optimize-toggle .form-check-input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.optimize-toggle .form-check-label {
+  font-size: 0.75rem;
+  color: var(--bs-gray-600);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .remove-btn {
   width: 1.5rem;
   height: 1.5rem;
@@ -454,6 +702,20 @@ const updateAllocationAtIndex = (index: number, allocation: AllocationInput) => 
 @media (max-width: 767.98px) {
   .allocation-section {
     padding: 1rem;
+  }
+
+  .header-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .investment-row {
+    justify-content: space-between;
+  }
+
+  .total-investment-input .input-group {
+    min-width: 140px;
+    flex-wrap: nowrap;
   }
 
   .allocation-footer {
