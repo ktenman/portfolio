@@ -82,16 +82,16 @@ class FinancialCalculationEdgeCaseTest {
         createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal("100")),
         createCashFlow(TransactionType.SELL, BigDecimal("10"), BigDecimal("120")),
       )
-      val (quantity, _) = holdingsCalculationService.calculateCurrentHoldings(transactions)
-      expect(quantity).toEqualNumerically(BigDecimal.ZERO)
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(transactions)
+      expect(holdings.quantity).toEqualNumerically(BigDecimal.ZERO)
     }
 
     @Test
     fun `should handle zero price transaction`() {
       val transaction = createCashFlow(TransactionType.BUY, BigDecimal("10"), BigDecimal.ZERO)
-      val (quantity, averageCost) = holdingsCalculationService.calculateCurrentHoldings(listOf(transaction))
-      expect(quantity).toEqualNumerically(BigDecimal("10"))
-      expect(averageCost).toEqualNumerically(BigDecimal.ZERO)
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(listOf(transaction))
+      expect(holdings.quantity).toEqualNumerically(BigDecimal("10"))
+      expect(holdings.averageCost).toEqualNumerically(BigDecimal.ZERO)
     }
   }
 
@@ -150,16 +150,16 @@ class FinancialCalculationEdgeCaseTest {
   inner class ZeroQuantityEdgeCases {
     @Test
     fun `should handle empty transaction list for holdings`() {
-      val (quantity, averageCost) = holdingsCalculationService.calculateCurrentHoldings(emptyList())
-      expect(quantity).toEqualNumerically(BigDecimal.ZERO)
-      expect(averageCost).toEqualNumerically(BigDecimal.ZERO)
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(emptyList())
+      expect(holdings.quantity).toEqualNumerically(BigDecimal.ZERO)
+      expect(holdings.averageCost).toEqualNumerically(BigDecimal.ZERO)
     }
 
     @Test
     fun `should handle zero quantity buy transaction`() {
       val transaction = createCashFlow(TransactionType.BUY, BigDecimal.ZERO, BigDecimal("100"))
-      val (quantity, _) = holdingsCalculationService.calculateCurrentHoldings(listOf(transaction))
-      expect(quantity).toEqualNumerically(BigDecimal.ZERO)
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(listOf(transaction))
+      expect(holdings.quantity).toEqualNumerically(BigDecimal.ZERO)
     }
 
     @Test
@@ -182,8 +182,8 @@ class FinancialCalculationEdgeCaseTest {
         listOf(
         createCashFlow(TransactionType.BUY, BigDecimal("0.00000001"), BigDecimal("100")),
       )
-      val (quantity, _) = holdingsCalculationService.calculateCurrentHoldings(transactions)
-      expect(quantity).toEqualNumerically(BigDecimal("0.00000001"))
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(transactions)
+      expect(holdings.quantity).toEqualNumerically(BigDecimal("0.00000001"))
     }
 
     @Test
@@ -192,8 +192,8 @@ class FinancialCalculationEdgeCaseTest {
         listOf(
         createCashFlow(TransactionType.BUY, BigDecimal("999999999.99"), BigDecimal("100")),
       )
-      val (quantity, _) = holdingsCalculationService.calculateCurrentHoldings(transactions)
-      expect(quantity).toEqualNumerically(BigDecimal("999999999.99"))
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(transactions)
+      expect(holdings.quantity).toEqualNumerically(BigDecimal("999999999.99"))
     }
 
     @Test

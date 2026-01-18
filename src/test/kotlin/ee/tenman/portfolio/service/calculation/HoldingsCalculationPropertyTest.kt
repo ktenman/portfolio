@@ -73,8 +73,8 @@ class HoldingsCalculationPropertyTest {
       1..10,
     )
     checkAll(100, transactionArb) { transactions ->
-      val (quantity, _) = holdingsCalculationService.calculateCurrentHoldings(transactions)
-      expect(quantity).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(transactions)
+      expect(holdings.quantity).toBeGreaterThanOrEqualTo(BigDecimal.ZERO)
     }
   }
 
@@ -87,9 +87,9 @@ class HoldingsCalculationPropertyTest {
       1..10,
     )
     checkAll(100, transactionArb) { transactions ->
-      val (quantity, averageCost) = holdingsCalculationService.calculateCurrentHoldings(transactions)
-      if (quantity > BigDecimal.ZERO) {
-        expect(averageCost > BigDecimal.ZERO).toEqual(true)
+      val holdings = holdingsCalculationService.calculateCurrentHoldings(transactions)
+      if (holdings.quantity > BigDecimal.ZERO) {
+        expect(holdings.averageCost > BigDecimal.ZERO).toEqual(true)
       }
     }
   }

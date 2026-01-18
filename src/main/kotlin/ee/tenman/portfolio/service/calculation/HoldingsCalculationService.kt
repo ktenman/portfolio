@@ -3,6 +3,8 @@ package ee.tenman.portfolio.service.calculation
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
+import ee.tenman.portfolio.model.holding.AggregatedHoldings
+import ee.tenman.portfolio.model.holding.CurrentHoldings
 import ee.tenman.portfolio.model.holding.HoldingsAccumulator
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -10,7 +12,7 @@ import java.math.RoundingMode
 
 @Service
 class HoldingsCalculationService {
-  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> {
+  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): CurrentHoldings {
     val (quantity, totalCost) =
       transactions
         .sortedWith(compareBy({ it.transactionDate }, { it.id }))
@@ -25,17 +27,20 @@ class HoldingsCalculationService {
         .takeIf { it > BigDecimal.ZERO }
         ?.let { totalCost.divide(it, CALCULATION_SCALE, RoundingMode.HALF_UP) }
         ?: BigDecimal.ZERO
-    return quantity to averageCost
+    return CurrentHoldings(quantity, averageCost)
   }
 
-  fun calculateAggregatedHoldings(transactions: List<PortfolioTransaction>): Pair<BigDecimal, BigDecimal> =
+  fun calculateAggregatedHoldings(transactions: List<PortfolioTransaction>): AggregatedHoldings =
     transactions
       .groupBy { it.platform }
       .values
       .map { calculateCurrentHoldings(it) }
-      .filter { (quantity, _) -> quantity > BigDecimal.ZERO }
-      .fold(BigDecimal.ZERO to BigDecimal.ZERO) { (totalHoldings, totalInvestment), (quantity, avgCost) ->
-        totalHoldings.add(quantity) to totalInvestment.add(quantity.multiply(avgCost))
+      .filter { it.quantity > BigDecimal.ZERO }
+      .fold(AggregatedHoldings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, holdings ->
+        AggregatedHoldings(
+          totalQuantity = acc.totalQuantity.add(holdings.quantity),
+          totalInvestment = acc.totalInvestment.add(holdings.quantity.multiply(holdings.averageCost)),
+        )
       }
 
   fun calculateNetQuantity(transactions: List<PortfolioTransaction>): BigDecimal =

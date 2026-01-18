@@ -82,10 +82,10 @@ class InvestmentMetricsServiceTest {
   fun `should calculateCurrentHoldings with single buy transaction`() {
     val transaction = createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100"))
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
+    val holdings = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
-    expect(quantity).toEqualNumerically(BigDecimal("10"))
-    expect(averageCost).toEqualNumerically(BigDecimal("100"))
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("10"))
+    expect(holdings.averageCost).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -104,15 +104,15 @@ class InvestmentMetricsServiceTest {
         ),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+    val holdings = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqualNumerically(BigDecimal("15"))
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("15"))
     val expectedTotalCost =
       BigDecimal("10")
         .multiply(BigDecimal("100"))
         .add(BigDecimal("5").multiply(BigDecimal("120")))
     val expectedAvgCost = expectedTotalCost.divide(BigDecimal("15"), CALCULATION_SCALE, RoundingMode.HALF_UP)
-    expect(averageCost).toEqualNumerically(expectedAvgCost)
+    expect(holdings.averageCost).toEqualNumerically(expectedAvgCost)
   }
 
   @Test
@@ -123,10 +123,10 @@ class InvestmentMetricsServiceTest {
         createSellCashFlow(quantity = BigDecimal("40"), price = BigDecimal("60")),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+    val holdings = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqualNumerically(BigDecimal("60"))
-    expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("60"))
+    expect(holdings.averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
   @Test
@@ -137,10 +137,10 @@ class InvestmentMetricsServiceTest {
         createSellCashFlow(quantity = BigDecimal("50"), price = BigDecimal("120")),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+    val holdings = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqualNumerically(BigDecimal.ZERO)
-    expect(averageCost).toEqualNumerically(BigDecimal.ZERO)
+    expect(holdings.quantity).toEqualNumerically(BigDecimal.ZERO)
+    expect(holdings.averageCost).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
@@ -152,10 +152,10 @@ class InvestmentMetricsServiceTest {
         commission = BigDecimal("10"),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
+    val holdings = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
-    expect(quantity).toEqualNumerically(BigDecimal("10"))
-    expect(averageCost).toEqualNumerically(BigDecimal("100"))
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("10"))
+    expect(holdings.averageCost).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -728,10 +728,10 @@ class InvestmentMetricsServiceTest {
         createBuyCashFlow(quantity = BigDecimal("20"), price = BigDecimal("90")),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+    val holdings = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqualNumerically(BigDecimal("20"))
-    expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("20"))
+    expect(holdings.averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
   @Test
@@ -742,10 +742,10 @@ class InvestmentMetricsServiceTest {
         createSellCashFlow(quantity = BigDecimal("25"), price = BigDecimal("60")),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+    val holdings = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqualNumerically(BigDecimal("75"))
-    expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("75"))
+    expect(holdings.averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
   @Test
@@ -951,10 +951,10 @@ class InvestmentMetricsServiceTest {
         createSellCashFlow(quantity = BigDecimal("25"), price = BigDecimal("70")),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+    val holdings = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqualNumerically(BigDecimal("25"))
-    expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("25"))
+    expect(holdings.averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
   @Test
@@ -966,10 +966,10 @@ class InvestmentMetricsServiceTest {
         commission = BigDecimal.ZERO,
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
+    val holdings = investmentMetricsService.calculateCurrentHoldings(listOf(transaction))
 
-    expect(quantity).toEqualNumerically(BigDecimal("10"))
-    expect(averageCost).toEqualNumerically(BigDecimal("100"))
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("10"))
+    expect(holdings.averageCost).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -980,10 +980,10 @@ class InvestmentMetricsServiceTest {
         createSellCashFlow(quantity = BigDecimal("0.0005"), price = BigDecimal("55000")),
       )
 
-    val (quantity, averageCost) = investmentMetricsService.calculateCurrentHoldings(transactions)
+    val holdings = investmentMetricsService.calculateCurrentHoldings(transactions)
 
-    expect(quantity).toEqualNumerically(BigDecimal("0.0005"))
-    expect(averageCost).toBeGreaterThan(BigDecimal.ZERO)
+    expect(holdings.quantity).toEqualNumerically(BigDecimal("0.0005"))
+    expect(holdings.averageCost).toBeGreaterThan(BigDecimal.ZERO)
   }
 
   @Test
