@@ -30,21 +30,18 @@ class HoldingsCalculationService {
     return CurrentHoldings(quantity, averageCost)
   }
 
-  fun calculateAggregatedHoldings(transactions: List<PortfolioTransaction>): AggregatedHoldings {
-    val result =
-      transactions
-        .groupBy { it.platform }
-        .values
-        .map { calculateCurrentHoldings(it) }
-        .filter { it.quantity > BigDecimal.ZERO }
-        .fold(AggregatedHoldings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, holdings ->
-          AggregatedHoldings(
-            totalQuantity = acc.totalQuantity.add(holdings.quantity),
-            totalInvestment = acc.totalInvestment.add(holdings.quantity.multiply(holdings.averageCost)),
-          )
-        }
-    return result
-  }
+  fun calculateAggregatedHoldings(transactions: List<PortfolioTransaction>): AggregatedHoldings =
+    transactions
+      .groupBy { it.platform }
+      .values
+      .map { calculateCurrentHoldings(it) }
+      .filter { it.quantity > BigDecimal.ZERO }
+      .fold(AggregatedHoldings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, holdings ->
+        AggregatedHoldings(
+          totalQuantity = acc.totalQuantity.add(holdings.quantity),
+          totalInvestment = acc.totalInvestment.add(holdings.quantity.multiply(holdings.averageCost)),
+        )
+      }
 
   fun calculateNetQuantity(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions.fold(BigDecimal.ZERO) { acc, tx ->
