@@ -20,8 +20,7 @@ class XirrCalculationService(
 
   companion object {
     private const val MIN_DAYS_FOR_XIRR = 365.25 / 12
-    private const val FULL_DAMPING_DAYS = 365.25 * 10
-    private const val DAMPING_THRESHOLD = 0.25
+    private const val FULL_DAMPING_DAYS = 365.25 / 6
   }
 
   fun buildCashFlows(
@@ -48,22 +47,13 @@ class XirrCalculationService(
       if (outflows.isEmpty()) return@runCatching null
       val weightedDays = calculateWeightedInvestmentAge(outflows, calculationDate)
       if (weightedDays < MIN_DAYS_FOR_XIRR) return@runCatching null
-      val xirrResult = Xirr(cashFlows)().coerceIn(-10.0, 10.0)
-      applyHybridDamping(xirrResult, weightedDays)
+      val xirrResult = Xirr(cashFlows)()
+      val dampingFactor = min(1.0, weightedDays / FULL_DAMPING_DAYS)
+      xirrResult.coerceIn(-10.0, 10.0) * dampingFactor
     }.getOrElse {
       log.error("Error calculating adjusted XIRR", it)
       null
     }
-  }
-
-  private fun applyHybridDamping(
-    xirr: Double,
-    weightedDays: Double,
-  ): Double {
-    if (xirr <= DAMPING_THRESHOLD) return xirr
-    val linearFactor = min(1.0, weightedDays / FULL_DAMPING_DAYS)
-    val dampingFactor = linearFactor * linearFactor * linearFactor
-    return DAMPING_THRESHOLD + (xirr - DAMPING_THRESHOLD) * dampingFactor
   }
 
   fun convertToCashFlow(tx: PortfolioTransaction): CashFlow {
