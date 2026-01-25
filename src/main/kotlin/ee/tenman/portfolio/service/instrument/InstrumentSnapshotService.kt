@@ -139,6 +139,7 @@ class InstrumentSnapshotService(
       investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, context.calculationDate)
     val priceChange = calculatePriceChange(instrument, transactions, context)
     if (metrics.quantity.compareTo(BigDecimal.ZERO) == 0 && metrics.realizedProfit.compareTo(BigDecimal.ZERO) == 0) return null
+    val firstTransactionDate = transactions.minOfOrNull { it.transactionDate }
     return InstrumentSnapshot(
       instrument = instrument,
       totalInvestment = metrics.totalInvestment,
@@ -151,6 +152,7 @@ class InstrumentSnapshotService(
       platforms = transactions.map { it.platform }.toSet(),
       priceChangeAmount = priceChange?.changeAmount?.multiply(metrics.quantity),
       priceChangePercent = priceChange?.changePercent,
+      firstTransactionDate = firstTransactionDate,
     )
   }
 

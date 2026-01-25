@@ -6,6 +6,7 @@ import ee.tenman.portfolio.model.InstrumentSnapshot
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @Schema(description = "Financial instrument data transfer object")
 data class InstrumentDto(
@@ -33,6 +34,7 @@ data class InstrumentDto(
   val priceChangePercent: Double? = null,
   val ter: BigDecimal? = null,
   val xirrAnnualReturn: BigDecimal? = null,
+  val firstTransactionDate: LocalDate? = null,
 ) {
   fun toEntity() =
     Instrument(
@@ -91,6 +93,7 @@ data class InstrumentDto(
         priceChangePercent = snapshot.priceChangePercent,
         ter = snapshot.instrument.ter,
         xirrAnnualReturn = snapshot.instrument.xirrAnnualReturn,
+        firstTransactionDate = snapshot.firstTransactionDate,
       )
   }
 }

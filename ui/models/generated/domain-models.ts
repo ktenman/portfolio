@@ -25,6 +25,7 @@ export interface InstrumentDto {
     priceChangePercent: number | null;
     ter: number | null;
     xirrAnnualReturn: number | null;
+    firstTransactionDate: DateAsString | null;
 }
 
 /**

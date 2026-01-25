@@ -3,6 +3,7 @@ package ee.tenman.portfolio.model
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import java.math.BigDecimal
+import java.time.LocalDate
 
 data class InstrumentSnapshot(
   val instrument: Instrument,
@@ -16,4 +17,5 @@ data class InstrumentSnapshot(
   val platforms: Set<Platform> = emptySet(),
   val priceChangeAmount: BigDecimal? = null,
   val priceChangePercent: Double? = null,
+  val firstTransactionDate: LocalDate? = null,
 )
