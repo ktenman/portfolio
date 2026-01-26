@@ -31,7 +31,8 @@
               v-if="
                 item.transactionType === 'BUY' &&
                 item.remainingQuantity !== undefined &&
-                item.remainingQuantity !== item.quantity
+                item.remainingQuantity !== item.quantity &&
+                item.remainingQuantity > 0
               "
               class="metric-remaining"
             >
@@ -109,7 +110,8 @@
           v-if="
             item.transactionType === 'BUY' &&
             item.remainingQuantity !== undefined &&
-            item.remainingQuantity !== item.quantity
+            item.remainingQuantity !== item.quantity &&
+            item.remainingQuantity > 0
           "
           class="d-block text-muted"
         >
