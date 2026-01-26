@@ -37,6 +37,10 @@ describe('AllocationTable', () => {
     availableEtfs: defaultEtfs,
     isLoadingPortfolio: false,
     totalInvestment: 0,
+    selectedPlatform: null,
+    availablePlatforms: [] as string[],
+    currentHoldingsTotal: 0,
+    optimizeEnabled: false,
   }
 
   describe('rendering', () => {
@@ -48,17 +52,17 @@ describe('AllocationTable', () => {
     it('should render header with correct columns', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
       const headers = wrapper.findAll('th')
-      expect(headers[0].text()).toBe('ETF')
-      expect(headers[1].text()).toBe('Name')
-      expect(headers[2].text()).toBe('Price')
-      expect(headers[3].text()).toBe('TER')
-      expect(headers[4].text()).toBe('Annual Return')
+      expect(headers[0].text()).toContain('ETF')
+      expect(headers[1].text()).toContain('Name')
+      expect(headers[2].text()).toContain('Price')
+      expect(headers[3].text()).toContain('TER')
+      expect(headers[4].text()).toContain('Annual Return')
     })
 
     it('should show Allocation % header in percentage mode', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
       const headers = wrapper.findAll('th')
-      expect(headers[5].text()).toBe('Allocation %')
+      expect(headers[5].text()).toContain('Allocation %')
     })
 
     it('should show Amount EUR header in amount mode', () => {
@@ -66,7 +70,7 @@ describe('AllocationTable', () => {
         props: { ...defaultProps, inputMode: 'amount' },
       })
       const headers = wrapper.findAll('th')
-      expect(headers[5].text()).toBe('Amount EUR')
+      expect(headers[5].text()).toContain('Amount EUR')
     })
   })
 
@@ -358,9 +362,9 @@ describe('AllocationTable', () => {
           allocations: [{ instrumentId: 1, value: 100 }],
         },
       })
-      const headers = wrapper.findAll('th')
-      expect(headers.map(h => h.text())).toContain('Units')
-      expect(headers.map(h => h.text())).toContain('Unused')
+      const headers = wrapper.findAll('th').map(h => h.text())
+      expect(headers.some(h => h.includes('Units'))).toBe(true)
+      expect(headers.some(h => h.includes('Unused'))).toBe(true)
     })
 
     it('should not show Units and Unused columns when totalInvestment is 0', () => {
@@ -371,9 +375,9 @@ describe('AllocationTable', () => {
           allocations: [{ instrumentId: 1, value: 100 }],
         },
       })
-      const headers = wrapper.findAll('th')
-      expect(headers.map(h => h.text())).not.toContain('Units')
-      expect(headers.map(h => h.text())).not.toContain('Unused')
+      const headers = wrapper.findAll('th').map(h => h.text())
+      expect(headers.some(h => h.includes('Units'))).toBe(false)
+      expect(headers.some(h => h.includes('Unused'))).toBe(false)
     })
 
     it('should calculate units correctly', () => {
@@ -451,6 +455,161 @@ describe('AllocationTable', () => {
     })
   })
 
+  describe('platform rebalancing', () => {
+    it('should show platform selector when platforms are available', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          availablePlatforms: ['LHV', 'LIGHTYEAR'],
+        },
+      })
+      expect(wrapper.find('.platform-selector').exists()).toBe(true)
+    })
+
+    it('should not show platform selector when no platforms available', () => {
+      const wrapper = mount(AllocationTable, { props: defaultProps })
+      expect(wrapper.find('.platform-selector').exists()).toBe(false)
+    })
+
+    it('should format platform names correctly', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          availablePlatforms: ['LHV', 'LIGHTYEAR'],
+        },
+      })
+      const options = wrapper.find('.platform-selector select').findAll('option')
+      expect(options[1].text()).toBe('LHV')
+      expect(options[2].text()).toBe('Lightyear')
+    })
+
+    it('should emit update:selectedPlatform when platform changes', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          availablePlatforms: ['LHV', 'LIGHTYEAR'],
+        },
+      })
+      const select = wrapper.find('.platform-selector select')
+      await select.setValue('LHV')
+      expect(wrapper.emitted('update:selectedPlatform')).toEqual([['LHV']])
+    })
+
+    it('should show current holdings when platform is selected and has holdings', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatform: 'LHV',
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 5000,
+        },
+      })
+      expect(wrapper.find('.current-holdings').exists()).toBe(true)
+      expect(wrapper.text()).toContain('€5000.00')
+    })
+
+    it('should not show current holdings when no platform selected', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 5000,
+        },
+      })
+      expect(wrapper.find('.current-holdings').exists()).toBe(false)
+    })
+
+    it('should show rebalance columns when platform selected with holdings', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatform: 'LHV',
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 5000,
+          allocations: [{ instrumentId: 1, value: 100, currentValue: 5000 }],
+        },
+      })
+      const headers = wrapper.findAll('th').map(h => h.text())
+      expect(headers.some(h => h.includes('Current'))).toBe(true)
+      expect(headers.some(h => h.includes('Target %'))).toBe(true)
+    })
+
+    it('should show Target % header in rebalance mode', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatform: 'LHV',
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 5000,
+          allocations: [{ instrumentId: 1, value: 100, currentValue: 5000 }],
+        },
+      })
+      const headers = wrapper.findAll('th').map(h => h.text())
+      expect(headers.some(h => h.includes('Target %'))).toBe(true)
+    })
+
+    it('should show Action header instead of Units in rebalance mode', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatform: 'LHV',
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 5000,
+          totalInvestment: 1000,
+          allocations: [{ instrumentId: 1, value: 100, currentValue: 5000 }],
+        },
+      })
+      const headers = wrapper.findAll('th').map(h => h.text())
+      expect(headers.some(h => h.includes('Action'))).toBe(true)
+      expect(headers.some(h => h.includes('Units'))).toBe(false)
+    })
+
+    it('should show New investment label instead of Total to invest in rebalance mode', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatform: 'LHV',
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 5000,
+        },
+      })
+      expect(wrapper.text()).toContain('New investment')
+    })
+
+    it('should show optimize toggle in rebalance mode when investment is set', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatform: 'LHV',
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 5000,
+          totalInvestment: 1000,
+          allocations: [{ instrumentId: 1, value: 100, currentValue: 5000 }],
+        },
+      })
+      expect(wrapper.find('.optimize-toggle').exists()).toBe(true)
+    })
+
+    it('should calculate units to buy correctly in rebalance mode', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatform: 'LHV',
+          availablePlatforms: ['LHV'],
+          currentHoldingsTotal: 3000,
+          totalInvestment: 1000,
+          allocations: [
+            { instrumentId: 1, value: 50, currentValue: 3000 },
+            { instrumentId: 2, value: 50, currentValue: 0 },
+          ],
+        },
+      })
+      const rows = wrapper.findAll('tbody tr')
+      expect(rows[0].text()).toContain('Sell 8')
+      expect(rows[1].text()).toContain('Buy 20')
+    })
+  })
+
   describe('optimization algorithm', () => {
     beforeEach(() => {
       vi.clearAllMocks()
@@ -484,6 +643,86 @@ describe('AllocationTable', () => {
         props: { ...defaultProps, inputMode: 'amount' },
       })
       expect(wrapper.find('.total-investment-input').exists()).toBe(false)
+    })
+  })
+
+  describe('column sorting', () => {
+    it('should render sortable column headers', () => {
+      const wrapper = mount(AllocationTable, { props: defaultProps })
+      const sortableHeaders = wrapper.findAll('th.sortable')
+      expect(sortableHeaders.length).toBeGreaterThan(0)
+    })
+
+    it('should show sort indicators on column headers', () => {
+      const wrapper = mount(AllocationTable, { props: defaultProps })
+      const sortIndicators = wrapper.findAll('.sort-indicator')
+      expect(sortIndicators.length).toBeGreaterThan(0)
+    })
+
+    it('should toggle sort direction when clicking a column header', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          allocations: [
+            { instrumentId: 1, value: 60 },
+            { instrumentId: 2, value: 40 },
+          ],
+        },
+      })
+      const etfHeader = wrapper.find('th.sortable')
+      await etfHeader.trigger('click')
+      expect(wrapper.find('.sort-indicator.active').exists()).toBe(true)
+    })
+
+    it('should sort allocations by symbol when ETF header is clicked', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          allocations: [
+            { instrumentId: 2, value: 40 },
+            { instrumentId: 1, value: 60 },
+          ],
+        },
+      })
+      const etfHeader = wrapper.findAll('th.sortable')[0]
+      await etfHeader.trigger('click')
+      const rows = wrapper.findAll('tbody tr')
+      expect(rows[0].text()).toContain('VUAA')
+      expect(rows[1].text()).toContain('VWCE')
+    })
+
+    it('should reverse sort order on second click', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          allocations: [
+            { instrumentId: 2, value: 40 },
+            { instrumentId: 1, value: 60 },
+          ],
+        },
+      })
+      const etfHeader = wrapper.findAll('th.sortable')[0]
+      await etfHeader.trigger('click')
+      await etfHeader.trigger('click')
+      const indicator = wrapper.find('.sort-indicator.active')
+      expect(indicator.classes()).toContain('desc')
+    })
+
+    it('should emit remove with correct original index after sorting', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          allocations: [
+            { instrumentId: 1, value: 60 },
+            { instrumentId: 2, value: 40 },
+          ],
+        },
+      })
+      const removeButtons = wrapper.findAll('.remove-btn')
+      await removeButtons[1].trigger('click')
+      const emitted = wrapper.emitted('remove')
+      expect(emitted).toBeTruthy()
+      expect(emitted![0][0]).toBe(1)
     })
   })
 })

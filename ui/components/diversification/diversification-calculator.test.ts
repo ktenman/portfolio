@@ -76,9 +76,9 @@ describe('DiversificationCalculator', () => {
   })
 
   describe('rendering', () => {
-    it('should render calculator title', () => {
+    it('should render title', () => {
       const wrapper = mount(DiversificationCalculator)
-      expect(wrapper.text()).toContain('Diversification Calculator')
+      expect(wrapper.text()).toContain('Diversification')
     })
 
     it('should render AllocationTable component', () => {

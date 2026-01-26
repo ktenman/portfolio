@@ -2,7 +2,7 @@
   <div class="diversification-container">
     <div class="mb-4">
       <div class="d-flex justify-content-between align-items-center">
-        <h2 class="mb-0">Diversification Calculator</h2>
+        <h2 class="mb-0">Diversification</h2>
         <div class="d-flex align-items-center gap-2">
           <span v-if="saveStatus === 'saving'" class="save-status text-muted">Saving...</span>
           <span v-else-if="saveStatus === 'saved'" class="save-status text-success">Saved</span>
@@ -27,10 +27,16 @@
         :available-etfs="etfList"
         :is-loading-portfolio="isLoadingPortfolio"
         :total-investment="totalInvestment"
+        :selected-platform="selectedPlatform"
+        :available-platforms="availablePlatforms"
+        :current-holdings-total="currentHoldingsTotal"
+        :optimize-enabled="optimizeEnabled"
         class="mb-4"
         @update:input-mode="onInputModeChange"
         @update:allocation="updateAllocation"
-        @update:total-investment="totalInvestment = $event"
+        @update:total-investment="onTotalInvestmentChange"
+        @update:selected-platform="onPlatformChange"
+        @update:optimize-enabled="onOptimizeChange"
         @add="addAllocation"
         @remove="removeAllocation"
         @clear="clearAllocations"
@@ -93,7 +99,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
-import { useDebounceFn, useLocalStorage, useNow } from '@vueuse/core'
+import { useDebounceFn, useNow } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { diversificationService } from '../../services/diversification-service'
 import { instrumentsService } from '../../services/instruments-service'
@@ -102,7 +108,10 @@ import { formatRelativeTime } from '../../utils/formatters'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
-import type { DiversificationCalculatorResponseDto } from '../../models/generated/domain-models'
+import type {
+  DiversificationCalculatorResponseDto,
+  InstrumentDto,
+} from '../../models/generated/domain-models'
 import type { AllocationInput, CachedState } from './types'
 
 const ConfigDialog = defineAsyncComponent(() => import('./config-dialog.vue'))
@@ -126,7 +135,10 @@ const lastUpdatedText = computed(() => {
 
 const allocations = ref<AllocationInput[]>([{ instrumentId: 0, value: 0 }])
 const inputMode = ref<'percentage' | 'amount'>('percentage')
-const totalInvestment = useLocalStorage<number>('diversification-total-investment', 0)
+const totalInvestment = ref<number>(0)
+const selectedPlatform = ref<string | null>(null)
+const optimizeEnabled = ref(false)
+const portfolioInstruments = ref<InstrumentDto[]>([])
 const isCalculating = ref(false)
 const isLoadingPortfolio = ref(false)
 const error = ref('')
@@ -144,8 +156,14 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  try {
+    const response = await instrumentsService.getAll()
+    portfolioInstruments.value = response.instruments
+  } catch {
+    portfolioInstruments.value = []
+  }
 })
 
 onUnmounted(() => {
@@ -156,9 +174,22 @@ const etfList = computed(() => availableEtfs.value ?? [])
 
 const validEtfIds = computed(() => new Set(etfList.value.map(e => e.instrumentId)))
 
+const availablePlatforms = computed(() => {
+  const platforms = new Set<string>()
+  portfolioInstruments.value.forEach(i => i.platforms?.forEach(p => platforms.add(p)))
+  return Array.from(platforms).sort()
+})
+
+const currentHoldingsTotal = computed(() =>
+  allocations.value.reduce((sum, a) => sum + (a.currentValue ?? 0), 0)
+)
+
 const currentConfig = computed(() => ({
   allocations: allocations.value,
   inputMode: inputMode.value,
+  selectedPlatform: selectedPlatform.value,
+  optimizeEnabled: optimizeEnabled.value,
+  totalInvestment: totalInvestment.value,
 }))
 
 const toBreakdown = <T extends { percentage: number }>(
@@ -237,6 +268,9 @@ const saveToDatabase = async () => {
     await diversificationService.saveConfig({
       allocations: allocations.value,
       inputMode: inputMode.value,
+      selectedPlatform: selectedPlatform.value,
+      optimizeEnabled: optimizeEnabled.value,
+      totalInvestment: totalInvestment.value,
     })
     saveStatus.value = 'saved'
     hasUnsavedChanges.value = false
@@ -267,13 +301,16 @@ const loadFromPortfolio = async () => {
   isLoadingPortfolio.value = true
   error.value = ''
   try {
-    const response = await instrumentsService.getAll()
+    const platforms = selectedPlatform.value ? [selectedPlatform.value] : undefined
+    const response = await instrumentsService.getAll(platforms)
     const etfIds = new Set(etfList.value.map(e => e.instrumentId))
     const portfolioEtfs = response.instruments.filter(
       i => i.id !== null && etfIds.has(i.id) && (i.currentValue ?? 0) > 0
     )
     if (portfolioEtfs.length === 0) {
-      error.value = 'No ETFs found in your portfolio'
+      error.value = selectedPlatform.value
+        ? `No ETFs found on ${selectedPlatform.value}`
+        : 'No ETFs found in your portfolio'
       return
     }
     const totalValue = portfolioEtfs.reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
@@ -285,6 +322,7 @@ const loadFromPortfolio = async () => {
           inputMode.value === 'percentage'
             ? Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10
             : Math.round(i.currentValue ?? 0),
+        currentValue: selectedPlatform.value ? (i.currentValue ?? 0) : undefined,
       }))
     hasUnsavedChanges.value = true
     debouncedSave()
@@ -303,6 +341,29 @@ const clearAllocations = () => {
   debouncedSave()
 }
 
+const onPlatformChange = async (platform: string | null) => {
+  selectedPlatform.value = platform
+  hasUnsavedChanges.value = true
+  debouncedSave()
+  if (!platform) {
+    allocations.value = allocations.value.map(a => ({ ...a, currentValue: undefined }))
+    return
+  }
+  await loadCurrentValues(platform)
+}
+
+const onOptimizeChange = (enabled: boolean) => {
+  optimizeEnabled.value = enabled
+  hasUnsavedChanges.value = true
+  debouncedSave()
+}
+
+const onTotalInvestmentChange = (value: number) => {
+  totalInvestment.value = value
+  hasUnsavedChanges.value = true
+  debouncedSave()
+}
+
 const exportConfiguration = () => {
   showExportDialog.value = true
 }
@@ -315,12 +376,35 @@ const onExportComplete = () => {
   showExportDialog.value = false
 }
 
-const onImportComplete = (data: CachedState) => {
+const onImportComplete = async (data: CachedState) => {
   allocations.value = data.allocations
   inputMode.value = data.inputMode
+  selectedPlatform.value = data.selectedPlatform ?? null
+  optimizeEnabled.value = data.optimizeEnabled ?? false
+  totalInvestment.value = data.totalInvestment ?? 0
   hasUnsavedChanges.value = true
+  if (selectedPlatform.value) {
+    await loadCurrentValues(selectedPlatform.value)
+  }
   debouncedSave()
   debouncedCalculate()
+}
+
+const loadCurrentValues = async (platform: string) => {
+  try {
+    const response = await instrumentsService.getAll([platform])
+    const valueMap = new Map(
+      response.instruments
+        .filter((i): i is typeof i & { id: number } => i.id !== null)
+        .map(i => [i.id, i.currentValue ?? 0])
+    )
+    allocations.value = allocations.value.map(a => ({
+      ...a,
+      currentValue: valueMap.get(a.instrumentId) ?? 0,
+    }))
+  } catch {
+    allocations.value = allocations.value.map(a => ({ ...a, currentValue: 0 }))
+  }
 }
 
 watch(
@@ -340,6 +424,12 @@ watch(
       value: Number(a.value),
     }))
     inputMode.value = dbConfig.inputMode
+    selectedPlatform.value = dbConfig.selectedPlatform ?? null
+    optimizeEnabled.value = dbConfig.optimizeEnabled ?? false
+    totalInvestment.value = dbConfig.totalInvestment ?? 0
+    if (selectedPlatform.value) {
+      await loadCurrentValues(selectedPlatform.value)
+    }
     debouncedCalculate()
   },
   { immediate: true }
