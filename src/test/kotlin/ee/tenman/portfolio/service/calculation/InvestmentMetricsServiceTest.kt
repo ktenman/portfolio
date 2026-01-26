@@ -571,7 +571,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculateAdjustedXirr with very short investment period returns null`() {
     val transactions =
       listOf(
-        CashFlow(-1000.0, testDate.minusDays(20)),
+        CashFlow(-1000.0, testDate.minusDays(1)),
         CashFlow(1200.0, testDate),
       )
 
