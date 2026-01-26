@@ -35,6 +35,9 @@ class DiversificationConfigService(
     DiversificationConfigDto(
       allocations = configData.allocations.map { it.toDto() },
       inputMode = configData.inputMode.name.lowercase(),
+      selectedPlatform = configData.selectedPlatform,
+      optimizeEnabled = configData.optimizeEnabled,
+      totalInvestment = configData.totalInvestment,
     )
 
   private fun DiversificationAllocationData.toDto() =
@@ -47,6 +50,9 @@ class DiversificationConfigService(
     DiversificationConfigData(
       allocations = allocations.map { it.toAllocationData() },
       inputMode = InputMode.fromString(inputMode),
+      selectedPlatform = selectedPlatform,
+      optimizeEnabled = optimizeEnabled,
+      totalInvestment = totalInvestment,
     )
 
   private fun DiversificationConfigAllocationDto.toAllocationData() =

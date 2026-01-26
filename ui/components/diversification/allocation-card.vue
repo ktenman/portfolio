@@ -37,6 +37,10 @@
         <span class="metric-value">{{ formattedReturn }}</span>
         <span class="metric-label">Annual</span>
       </div>
+      <div v-if="showRebalanceMode" class="metric-group">
+        <span class="metric-value">€{{ (allocation.currentValue ?? 0).toFixed(0) }}</span>
+        <span class="metric-label">Current</span>
+      </div>
     </div>
     <div class="allocation-card-input">
       <label>{{ inputLabel }}</label>
@@ -55,12 +59,14 @@
       class="allocation-card-investment"
     >
       <div class="investment-item">
-        <label>Units</label>
-        <span class="investment-value">{{ formattedUnits }}</span>
+        <label>{{ actionLabel }}</label>
+        <span class="investment-value" :class="actionColorClass">{{ formattedUnits }}</span>
       </div>
       <div class="investment-item">
-        <label>Unused</label>
-        <span class="investment-value">{{ formattedUnused }}</span>
+        <label>{{ showRebalanceMode ? 'After %' : 'Unused' }}</label>
+        <span class="investment-value">
+          {{ showRebalanceMode ? formattedAfterPercent : formattedUnused }}
+        </span>
       </div>
     </div>
   </div>
@@ -78,8 +84,11 @@ const props = defineProps<{
   inputMode: 'percentage' | 'amount'
   totalInvestment: number
   disableRemove: boolean
+  showRebalanceMode?: boolean
+  isBuy?: boolean
   computedUnits?: number
   computedUnused?: number
+  afterPercent?: number
 }>()
 
 const emit = defineEmits<{
@@ -103,7 +112,7 @@ const formattedTer = computed(() => formatTer(selectedEtf.value?.ter ?? null))
 const formattedReturn = computed(() => formatReturn(selectedEtf.value?.annualReturn ?? null))
 
 const showInvestmentInfo = computed(
-  () => props.inputMode === 'percentage' && props.totalInvestment > 0
+  () => props.inputMode === 'percentage' && (props.totalInvestment > 0 || props.showRebalanceMode)
 )
 
 const localInvestmentCalc = computed(() => {
@@ -125,14 +134,33 @@ const formattedUnits = computed(() => {
 
 const formattedUnused = computed(() => {
   const units = props.computedUnits ?? localInvestmentCalc.value.units
-  const unused = props.computedUnused ?? localInvestmentCalc.value.unused
   if (units === 0) return '-'
+  if (props.showRebalanceMode && props.computedUnused === undefined) return '-'
+  const unused = props.computedUnused ?? localInvestmentCalc.value.unused
   return `€${unused.toFixed(2)}`
 })
 
-const inputLabel = computed(() =>
-  props.inputMode === 'percentage' ? 'Allocation %' : 'Amount EUR'
-)
+const formattedAfterPercent = computed(() => {
+  if (props.afterPercent === undefined) return '-'
+  return `${props.afterPercent.toFixed(1)}%`
+})
+
+const inputLabel = computed(() => {
+  if (props.inputMode === 'amount') return 'Amount EUR'
+  return props.showRebalanceMode ? 'Target %' : 'Allocation %'
+})
+
+const actionLabel = computed(() => {
+  if (!props.showRebalanceMode) return 'Units'
+  return props.isBuy ? 'Buy' : 'Sell'
+})
+
+const actionColorClass = computed(() => {
+  if (!props.showRebalanceMode) return ''
+  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  if (units === 0) return ''
+  return props.isBuy ? 'text-success' : 'text-danger'
+})
 
 const onInstrumentChange = (event: Event) => {
   const target = event.target as HTMLSelectElement
