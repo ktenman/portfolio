@@ -56,7 +56,7 @@ describe('AllocationTable', () => {
       expect(headers[1].text()).toContain('Name')
       expect(headers[2].text()).toContain('Price')
       expect(headers[3].text()).toContain('TER')
-      expect(headers[4].text()).toContain('Annual Return')
+      expect(headers[4].text()).toContain('Annual')
     })
 
     it('should show Allocation % header in percentage mode', () => {

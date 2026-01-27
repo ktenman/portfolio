@@ -151,7 +151,7 @@
             </th>
             <th class="sortable" @click="toggleSort('annualReturn')">
               <span class="th-content">
-                Annual Return
+                Annual
                 <span class="sort-indicator" :class="getSortIndicatorClass('annualReturn')">
                   <i class="sort-arrow-up">▲</i>
                   <i class="sort-arrow-down">▼</i>
