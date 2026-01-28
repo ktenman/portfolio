@@ -80,7 +80,7 @@ class CalculationService(
   }
 
   fun calculateRollingXirr(instrumentCode: String): List<Xirr> {
-    val instrument = instrumentRepository.findBySymbol(instrumentCode).orNotFoundBySymbol("Instrument", instrumentCode)
+    val instrument = instrumentRepository.findBySymbol(instrumentCode).orNotFoundBySymbol(instrumentCode)
     val allDailyPrices = dataRetrievalService.findAllByInstrument(instrument).sortedBy { it.entryDate }
     if (allDailyPrices.size < 2) return emptyList()
     val startDate = allDailyPrices.first().entryDate
