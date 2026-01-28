@@ -1,8 +1,9 @@
 package ee.tenman.portfolio.service.instrument
 
+import ee.tenman.portfolio.common.orNotFound
+import ee.tenman.portfolio.common.orNotFoundBySymbol
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.model.InstrumentSnapshot
 import ee.tenman.portfolio.model.InstrumentSnapshotsWithPortfolioXirr
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -22,16 +23,10 @@ class InstrumentService(
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
-  fun getInstrumentById(id: Long): Instrument =
-    instrumentRepository.findById(id).orElseThrow {
-      EntityNotFoundException("Instrument not found with id: $id")
-    }
+  fun getInstrumentById(id: Long): Instrument = instrumentRepository.findById(id).orNotFound(id)
 
   @Transactional(readOnly = true)
-  fun findBySymbol(symbol: String): Instrument =
-    instrumentRepository.findBySymbol(symbol).orElseThrow {
-      EntityNotFoundException("Instrument not found with symbol: $symbol")
-    }
+  fun findBySymbol(symbol: String): Instrument = instrumentRepository.findBySymbol(symbol).orNotFoundBySymbol(symbol)
 
   @Transactional
   fun saveInstrument(instrument: Instrument): Instrument {

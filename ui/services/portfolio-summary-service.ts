@@ -5,21 +5,14 @@ import { API_ENDPOINTS } from '../constants'
 
 export const portfolioSummaryService = {
   getHistorical: (page: number, size: number) =>
-    httpClient
-      .get<Page<PortfolioSummaryDto>>(API_ENDPOINTS.PORTFOLIO_SUMMARY_HISTORICAL, {
-        params: { page, size },
-      })
-      .then(res => res.data),
+    httpClient.get<Page<PortfolioSummaryDto>>(API_ENDPOINTS.PORTFOLIO_SUMMARY_HISTORICAL, {
+      params: { page, size },
+    }),
 
-  getCurrent: () =>
-    httpClient
-      .get<PortfolioSummaryDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_CURRENT)
-      .then(res => res.data),
+  getCurrent: () => httpClient.get<PortfolioSummaryDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_CURRENT),
 
   recalculate: () =>
-    httpClient
-      .post<{ message: string }>(API_ENDPOINTS.PORTFOLIO_SUMMARY_RECALCULATE, undefined, {
-        timeout: 60000,
-      })
-      .then(res => res.data),
+    httpClient.post<{ message: string }>(API_ENDPOINTS.PORTFOLIO_SUMMARY_RECALCULATE, undefined, {
+      timeout: 60000,
+    }),
 }

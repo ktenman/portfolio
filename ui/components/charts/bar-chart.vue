@@ -3,8 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import Chart from 'chart.js/auto'
+import { ref, toRef } from 'vue'
+import { useChartLifecycle } from '../../composables/use-chart-lifecycle'
 
 interface ChartDataPoint {
   date: string
@@ -31,39 +31,26 @@ const props = withDefaults(defineProps<ChartProps>(), {
 })
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
-let chartInstance: Chart | null = null
 
 const applyASAP = (data: ChartDataPoint[], maxPoints: number): ChartDataPoint[] => {
   if (data.length <= maxPoints) return data
-
   const step = Math.floor(data.length / maxPoints)
   const result = []
-
   for (let i = 0; i < data.length; i += step) {
     const chunk = data.slice(i, Math.min(i + step, data.length))
     const avgAmount = chunk.reduce((sum, item) => sum + item.amount, 0) / chunk.length
     result.push({ date: chunk[0].date, amount: avgAmount })
   }
-
   if (result[result.length - 1].date !== data[data.length - 1].date) {
     result.push(data[data.length - 1])
   }
-
   return result
 }
 
-const createChart = () => {
-  if (chartInstance) {
-    chartInstance.destroy()
-  }
-
-  const ctx = chartCanvas.value?.getContext('2d')
-  if (!ctx) return
-
+useChartLifecycle(chartCanvas, toRef(props, 'data'), ctx => {
   const maxPoints = Math.max(Math.floor(ctx.canvas.width / 15), 26)
   const processedData = applyASAP(props.data, Math.min(maxPoints, props.maxPoints))
-
-  chartInstance = new Chart(ctx, {
+  return {
     type: 'bar',
     data: {
       labels: processedData.map(x => x.date),
@@ -110,18 +97,6 @@ const createChart = () => {
         },
       },
     },
-  })
-}
-
-watch(() => props.data, createChart, { deep: true })
-
-onMounted(() => {
-  createChart()
-})
-
-onUnmounted(() => {
-  if (chartInstance) {
-    chartInstance.destroy()
   }
 })
 </script>

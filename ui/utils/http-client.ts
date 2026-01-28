@@ -1,8 +1,8 @@
-import axios, { AxiosError } from 'axios'
+import axios, { AxiosError, AxiosRequestConfig } from 'axios'
 import { ApiError } from '../models/api-error'
 import { ApiErrorResponse } from '../models/api-error-response'
 
-export const httpClient = axios.create({
+const axiosInstance = axios.create({
   baseURL: '/api',
   timeout: 10000,
   headers: {
@@ -13,7 +13,7 @@ export const httpClient = axios.create({
   },
 })
 
-httpClient.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   response => {
     if (response.status === 204) {
       return { ...response, data: undefined }
@@ -34,3 +34,17 @@ httpClient.interceptors.response.use(
     )
   }
 )
+
+export const httpClient = {
+  get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
+    axiosInstance.get<T>(url, config).then(res => res.data),
+
+  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
+    axiosInstance.post<T>(url, data, config).then(res => res.data),
+
+  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
+    axiosInstance.put<T>(url, data, config).then(res => res.data),
+
+  delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
+    axiosInstance.delete<T>(url, config).then(res => res.data),
+}
