@@ -24,9 +24,10 @@ class TerUpdateJob(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-    private val TER_OVERRIDES = mapOf(
-      "EXUS:GER:EUR" to java.math.BigDecimal("0.15"),
-    )
+    private val TER_OVERRIDES =
+      mapOf(
+        "EXUS:GER:EUR" to java.math.BigDecimal("0.15"),
+      )
   }
 
   @PostConstruct
