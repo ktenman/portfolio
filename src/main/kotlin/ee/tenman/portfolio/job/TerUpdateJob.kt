@@ -23,6 +23,12 @@ class TerUpdateJob(
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  companion object {
+    private val TER_OVERRIDES = mapOf(
+      "EXUS:GER:EUR" to java.math.BigDecimal("0.15"),
+    )
+  }
+
   @PostConstruct
   fun onStartup() {
     CompletableFuture.runAsync {
@@ -66,7 +72,7 @@ class TerUpdateJob(
     var updated = 0
     var noData = 0
     lightyearInstruments.forEach { instrument ->
-      val ter = lightyearPriceService.fetchFundInfo(instrument.symbol)
+      val ter = TER_OVERRIDES[instrument.symbol] ?: lightyearPriceService.fetchFundInfo(instrument.symbol)
       if (ter != null) {
         instrumentService.updateTer(instrument.id, ter)
         updated++
