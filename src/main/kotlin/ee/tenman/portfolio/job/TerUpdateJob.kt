@@ -9,6 +9,7 @@ import ee.tenman.portfolio.service.instrument.InstrumentService
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
@@ -26,7 +27,7 @@ class TerUpdateJob(
   companion object {
     private val TER_OVERRIDES =
       mapOf(
-        "EXUS:GER:EUR" to java.math.BigDecimal("0.15"),
+        "EXUS:GER:EUR" to BigDecimal("0.15"),
       )
   }
 

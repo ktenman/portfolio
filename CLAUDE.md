@@ -695,6 +695,7 @@ When creating pull requests:
 - Use `also`, `apply`, `let`, `run`, `with` appropriately
 - Prefer functional transformations (`map`, `filter`, `fold`) over imperative loops
 - Use `generateSequence` instead of while loops with mutable state
+- Prefer imports over fully qualified names (use `BigDecimal` not `java.math.BigDecimal`)
 
 ### Spring Framework Guidelines
 
