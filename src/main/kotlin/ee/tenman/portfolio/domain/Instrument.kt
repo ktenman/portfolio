@@ -29,4 +29,6 @@ class Instrument(
   var ter: BigDecimal? = null,
   @Column(name = "xirr_annual_return", nullable = true)
   var xirrAnnualReturn: BigDecimal? = null,
-) : BaseEntity()
+) : BaseEntity() {
+  fun isCash(): Boolean = category == InstrumentCategory.CASH.name
+}

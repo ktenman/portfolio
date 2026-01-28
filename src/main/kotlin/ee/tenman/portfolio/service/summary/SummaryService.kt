@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.summary
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.transaction.TransactionService
@@ -33,8 +34,7 @@ class SummaryService(
 
   fun recalculateAllDailySummaries(): Int {
     log.info("Starting full recalculation of portfolio daily summaries")
-    cacheManager.getCache(INSTRUMENT_CACHE)?.clear()
-    summaryCacheService.evictAllCaches()
+    clearAllCaches()
     val transactions =
       transactionService
         .getAllTransactions()
@@ -51,7 +51,14 @@ class SummaryService(
     val datesToProcess = generateDateRange(firstTransactionDate, yesterday)
     val summariesSaved = summaryBatchProcessor.processSummariesWithTransactions(datesToProcess, transactions)
     log.info("Successfully recalculated and saved $summariesSaved daily summaries (excluding current day)")
+    clearAllCaches()
     return summariesSaved
+  }
+
+  private fun clearAllCaches() {
+    cacheManager.getCache(INSTRUMENT_CACHE)?.clear()
+    cacheManager.getCache(TRANSACTION_CACHE)?.clear()
+    summaryCacheService.evictAllCaches()
   }
 
   @Transactional(readOnly = true)

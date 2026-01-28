@@ -11,6 +11,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createCashInstrument
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
@@ -528,6 +529,30 @@ class DailyPriceServiceTest {
 
     expect(result).toEqual(false)
     verify(exactly = 0) { dailyPriceRepository.save(any()) }
+  }
+
+  @Test
+  fun `should getPrice return ONE for cash instrument without database lookup`() {
+    val cashInstrument = createCashInstrument(currentPrice = null)
+
+    val result = dailyPriceService.getPrice(cashInstrument, testDate)
+
+    expect(result).toEqualNumerically(BigDecimal.ONE)
+    verify(exactly = 0) { dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(any(), any(), any()) }
+  }
+
+  @Test
+  fun `should getCurrentPrice return ONE for cash instrument`() {
+    val result = dailyPriceService.getCurrentPrice(createCashInstrument())
+
+    expect(result).toEqualNumerically(BigDecimal.ONE)
+  }
+
+  @Test
+  fun `should getCurrentPrice return ONE for cash instrument even with null currentPrice`() {
+    val result = dailyPriceService.getCurrentPrice(createCashInstrument(currentPrice = null))
+
+    expect(result).toEqualNumerically(BigDecimal.ONE)
   }
 
   private fun createDailyPrice(
