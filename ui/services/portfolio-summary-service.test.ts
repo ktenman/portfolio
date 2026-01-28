@@ -41,9 +41,7 @@ describe('portfolioSummaryService', () => {
         number: 0,
       }
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockPage,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPage)
 
       const result = await portfolioSummaryService.getHistorical(0, 10)
 
@@ -62,9 +60,7 @@ describe('portfolioSummaryService', () => {
         number: 5,
       }
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockPage,
-      } as any)
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPage)
 
       const result = await portfolioSummaryService.getHistorical(5, 20)
 
@@ -86,9 +82,7 @@ describe('portfolioSummaryService', () => {
 
   describe('getCurrent', () => {
     it('should fetch current portfolio summary', async () => {
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockPortfolioSummary,
-      } as any)
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPortfolioSummary)
 
       const result = await portfolioSummaryService.getCurrent()
 
@@ -110,9 +104,7 @@ describe('portfolioSummaryService', () => {
     it('should trigger portfolio recalculation', async () => {
       const mockResponse = { message: 'Portfolio recalculation started' }
 
-      vi.mocked(httpClient.post).mockResolvedValueOnce({
-        data: mockResponse,
-      } as any)
+      vi.mocked(httpClient.post).mockResolvedValueOnce(mockResponse)
 
       const result = await portfolioSummaryService.recalculate()
 
@@ -125,9 +117,7 @@ describe('portfolioSummaryService', () => {
     it('should call recalculate without request body', async () => {
       const mockResponse = { message: 'Recalculation in progress' }
 
-      vi.mocked(httpClient.post).mockResolvedValueOnce({
-        data: mockResponse,
-      } as any)
+      vi.mocked(httpClient.post).mockResolvedValueOnce(mockResponse)
 
       await portfolioSummaryService.recalculate()
 

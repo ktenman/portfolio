@@ -36,7 +36,7 @@ describe('diversificationService', () => {
           currentPrice: 95.3,
         },
       ]
-      vi.mocked(httpClient.get).mockResolvedValueOnce({ data: mockEtfs })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockEtfs)
 
       const result = await diversificationService.getAvailableEtfs()
 
@@ -45,7 +45,7 @@ describe('diversificationService', () => {
     })
 
     it('should handle empty response', async () => {
-      vi.mocked(httpClient.get).mockResolvedValueOnce({ data: [] })
+      vi.mocked(httpClient.get).mockResolvedValueOnce([])
 
       const result = await diversificationService.getAvailableEtfs()
 
@@ -85,7 +85,7 @@ describe('diversificationService', () => {
           largestPosition: { name: 'Apple Inc', percentage: 5.5 },
         },
       }
-      vi.mocked(httpClient.post).mockResolvedValueOnce({ data: mockResponse })
+      vi.mocked(httpClient.post).mockResolvedValueOnce(mockResponse)
 
       const result = await diversificationService.calculate(allocations)
 
@@ -110,7 +110,7 @@ describe('diversificationService', () => {
           largestPosition: null,
         },
       }
-      vi.mocked(httpClient.post).mockResolvedValueOnce({ data: mockResponse })
+      vi.mocked(httpClient.post).mockResolvedValueOnce(mockResponse)
 
       const result = await diversificationService.calculate(allocations)
 
@@ -132,7 +132,7 @@ describe('diversificationService', () => {
           largestPosition: null,
         },
       }
-      vi.mocked(httpClient.post).mockResolvedValueOnce({ data: mockResponse })
+      vi.mocked(httpClient.post).mockResolvedValueOnce(mockResponse)
 
       const result = await diversificationService.calculate(allocations)
 

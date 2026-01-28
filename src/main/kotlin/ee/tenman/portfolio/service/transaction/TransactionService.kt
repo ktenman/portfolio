@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.transaction
 
+import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.Clock
+import java.time.LocalDate
 
 @Service
 class TransactionService(
@@ -29,13 +31,7 @@ class TransactionService(
 
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
-  fun getTransactionById(id: Long): PortfolioTransaction =
-    portfolioTransactionRepository
-      .findById(id)
-      .orElseThrow {
-        ee.tenman.portfolio.exception
-        .EntityNotFoundException("Transaction not found with id: $id")
-      }
+  fun getTransactionById(id: Long): PortfolioTransaction = portfolioTransactionRepository.findById(id).orNotFound(id)
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   @Retryable(
@@ -114,19 +110,16 @@ class TransactionService(
   )
   fun getAllTransactions(
     platforms: List<String>?,
-    fromDate: java.time.LocalDate?,
-    untilDate: java.time.LocalDate?,
+    fromDate: LocalDate?,
+    untilDate: LocalDate?,
   ): List<PortfolioTransaction> {
     val hasPlatforms = !platforms.isNullOrEmpty()
     val hasDates = fromDate != null || untilDate != null
     if (!hasPlatforms && !hasDates) return transactionCacheService.getAllTransactions()
     val platformEnums = platforms?.mapNotNull { it.toPlatformOrNull() }
     if (hasPlatforms && platformEnums.isNullOrEmpty()) return emptyList()
-    val effectiveFromDate = fromDate ?: java.time.LocalDate.of(2000, 1, 1)
-    val effectiveUntilDate =
-      untilDate ?: java.time.LocalDate
-        .now(clock)
-        .plusYears(100)
+    val effectiveFromDate = fromDate ?: LocalDate.of(2000, 1, 1)
+    val effectiveUntilDate = untilDate ?: LocalDate.now(clock).plusYears(100)
     return when {
       !platformEnums.isNullOrEmpty() && hasDates ->
         portfolioTransactionRepository

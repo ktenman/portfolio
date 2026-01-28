@@ -22,25 +22,19 @@ export interface LogoReplacementResponse {
 
 export const logoService = {
   getCandidates: (holdingUuid: string) =>
-    httpClient
-      .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/${holdingUuid}/candidates`, {
-        timeout: LOGO_SEARCH_TIMEOUT,
-      })
-      .then(res => res.data),
+    httpClient.get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/${holdingUuid}/candidates`, {
+      timeout: LOGO_SEARCH_TIMEOUT,
+    }),
 
   searchByName: (name: string) =>
-    httpClient
-      .get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/search`, {
-        params: { name },
-        timeout: LOGO_SEARCH_TIMEOUT,
-      })
-      .then(res => res.data),
+    httpClient.get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/search`, {
+      params: { name },
+      timeout: LOGO_SEARCH_TIMEOUT,
+    }),
 
   replaceLogo: (request: LogoReplacementRequest) =>
-    httpClient
-      .post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/replace`, request)
-      .then(res => res.data),
+    httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/replace`, request),
 
   prefetchCandidates: (holdingUuids: string[]) =>
-    httpClient.post(`${API_ENDPOINTS.LOGOS}/prefetch`, { holdingUuids }).then(res => res.data),
+    httpClient.post<void>(`${API_ENDPOINTS.LOGOS}/prefetch`, { holdingUuids }),
 }

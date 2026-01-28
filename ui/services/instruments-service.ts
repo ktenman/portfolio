@@ -12,19 +12,15 @@ export const instrumentsService = {
     if (platforms && platforms.length > 0) {
       params.platforms = platforms
     }
-    return httpClient
-      .get<InstrumentsResponse>(API_ENDPOINTS.INSTRUMENTS, { params })
-      .then(res => res.data)
+    return httpClient.get<InstrumentsResponse>(API_ENDPOINTS.INSTRUMENTS, { params })
   },
 
   create: (data: Partial<InstrumentDto>) =>
-    httpClient.post<InstrumentDto>(API_ENDPOINTS.INSTRUMENTS, data).then(res => res.data),
+    httpClient.post<InstrumentDto>(API_ENDPOINTS.INSTRUMENTS, data),
 
   update: (id: number | string, data: Partial<InstrumentDto>) =>
-    httpClient.put<InstrumentDto>(`${API_ENDPOINTS.INSTRUMENTS}/${id}`, data).then(res => res.data),
+    httpClient.put<InstrumentDto>(`${API_ENDPOINTS.INSTRUMENTS}/${id}`, data),
 
   refreshPrices: () =>
-    httpClient
-      .post<{ status: string }>(API_ENDPOINTS.INSTRUMENTS_REFRESH_PRICES)
-      .then(res => res.data),
+    httpClient.post<{ status: string }>(API_ENDPOINTS.INSTRUMENTS_REFRESH_PRICES),
 }

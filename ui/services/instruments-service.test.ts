@@ -35,9 +35,7 @@ describe('instrumentsService', () => {
           category: 'CRYPTO',
         }),
       ]
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockInstruments,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockInstruments)
 
       const result = await instrumentsService.getAll()
 
@@ -48,9 +46,7 @@ describe('instrumentsService', () => {
     })
 
     it('should handle empty response', async () => {
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: [],
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce([])
 
       const result = await instrumentsService.getAll()
 
@@ -78,9 +74,7 @@ describe('instrumentsService', () => {
           platforms: ['TRADING212'],
         }),
       ]
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockInstruments,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockInstruments)
 
       const result = await instrumentsService.getAll(['TRADING212'])
 
@@ -93,9 +87,7 @@ describe('instrumentsService', () => {
     it('should handle undefined platform parameter', async () => {
       const mockInstruments: never[] = []
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockInstruments,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockInstruments)
 
       const result = await instrumentsService.getAll(undefined)
 
@@ -115,9 +107,7 @@ describe('instrumentsService', () => {
           platforms: ['TRADING212', 'BINANCE', 'COINBASE'],
         }),
       ]
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockInstruments,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockInstruments)
 
       const result = await instrumentsService.getAll(['TRADING212', 'BINANCE', 'COINBASE'])
 
@@ -133,9 +123,7 @@ describe('instrumentsService', () => {
     it('should handle empty array for platforms', async () => {
       const mockInstruments: never[] = []
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockInstruments,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockInstruments)
 
       const result = await instrumentsService.getAll([])
 
@@ -160,9 +148,7 @@ describe('instrumentsService', () => {
         ...newInstrument,
       })
 
-      vi.mocked(httpClient.post).mockResolvedValueOnce({
-        data: createdInstrument,
-      })
+      vi.mocked(httpClient.post).mockResolvedValueOnce(createdInstrument)
 
       const result = await instrumentsService.create(newInstrument)
 
@@ -184,9 +170,7 @@ describe('instrumentsService', () => {
         category: 'CRYPTO',
       })
 
-      vi.mocked(httpClient.post).mockResolvedValueOnce({
-        data: createdInstrument,
-      })
+      vi.mocked(httpClient.post).mockResolvedValueOnce(createdInstrument)
 
       const result = await instrumentsService.create(partialInstrument)
 
@@ -218,9 +202,7 @@ describe('instrumentsService', () => {
         category: 'STOCK',
       })
 
-      vi.mocked(httpClient.put).mockResolvedValueOnce({
-        data: updatedInstrument,
-      })
+      vi.mocked(httpClient.put).mockResolvedValueOnce(updatedInstrument)
 
       const result = await instrumentsService.update(1, updateData)
 
@@ -236,9 +218,7 @@ describe('instrumentsService', () => {
         providerName: ProviderName.FT,
       })
 
-      vi.mocked(httpClient.put).mockResolvedValueOnce({
-        data: updatedInstrument,
-      })
+      vi.mocked(httpClient.put).mockResolvedValueOnce(updatedInstrument)
 
       const result = await instrumentsService.update(15, {})
 
@@ -260,9 +240,7 @@ describe('instrumentsService', () => {
         currentPrice: 45000,
       })
 
-      vi.mocked(httpClient.put).mockResolvedValueOnce({
-        data: updatedInstrument,
-      })
+      vi.mocked(httpClient.put).mockResolvedValueOnce(updatedInstrument)
 
       const result = await instrumentsService.update('2', updateData)
 
@@ -283,9 +261,7 @@ describe('instrumentsService', () => {
         ...fullUpdate,
       })
 
-      vi.mocked(httpClient.put).mockResolvedValueOnce({
-        data: updatedInstrument,
-      })
+      vi.mocked(httpClient.put).mockResolvedValueOnce(updatedInstrument)
 
       const result = await instrumentsService.update(5, fullUpdate)
 

@@ -8,10 +8,9 @@ interface BuildInfo {
 }
 
 export const utilityService = {
-  getCalculationResult: () =>
-    httpClient.get<CalculationResult>(API_ENDPOINTS.CALCULATOR).then(res => res.data),
+  getCalculationResult: () => httpClient.get<CalculationResult>(API_ENDPOINTS.CALCULATOR),
 
-  getBuildInfo: () => httpClient.get<BuildInfo>(API_ENDPOINTS.BUILD_INFO).then(res => res.data),
+  getBuildInfo: () => httpClient.get<BuildInfo>(API_ENDPOINTS.BUILD_INFO),
 
   getLogoUrl: (uuid: string): string => `/api${API_ENDPOINTS.LOGOS}/${uuid}`,
 }

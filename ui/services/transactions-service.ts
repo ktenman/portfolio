@@ -18,18 +18,14 @@ export const transactionsService = {
     if (untilDate) {
       params.untilDate = untilDate
     }
-    return httpClient
-      .get<TransactionsWithSummaryDto>(API_ENDPOINTS.TRANSACTIONS, { params })
-      .then(res => res.data)
+    return httpClient.get<TransactionsWithSummaryDto>(API_ENDPOINTS.TRANSACTIONS, { params })
   },
 
   create: (data: Partial<TransactionRequestDto>) =>
-    httpClient.post<TransactionResponseDto>(API_ENDPOINTS.TRANSACTIONS, data).then(res => res.data),
+    httpClient.post<TransactionResponseDto>(API_ENDPOINTS.TRANSACTIONS, data),
 
   update: (id: number | string, data: Partial<TransactionRequestDto>) =>
-    httpClient
-      .put<TransactionResponseDto>(`${API_ENDPOINTS.TRANSACTIONS}/${id}`, data)
-      .then(res => res.data),
+    httpClient.put<TransactionResponseDto>(`${API_ENDPOINTS.TRANSACTIONS}/${id}`, data),
 
   delete: (id: number | string) =>
     httpClient.delete<void>(`${API_ENDPOINTS.TRANSACTIONS}/${id}`).then(() => undefined),
