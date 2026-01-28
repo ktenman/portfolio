@@ -3,8 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import Chart from 'chart.js/auto'
+import { ref, toRef } from 'vue'
+import { useChartLifecycle } from '../../composables/use-chart-lifecycle'
 import { formatCurrency } from '../../utils/formatters'
 
 interface ChartProps {
@@ -25,63 +25,41 @@ const props = withDefaults(defineProps<ChartProps>(), {
 })
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
-let chartInstance: Chart | null = null
 
-const createChart = () => {
-  if (chartInstance) {
-    chartInstance.destroy()
-  }
-
-  const ctx = chartCanvas.value?.getContext('2d')
-  if (!ctx) return
-
-  chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: Array.from({ length: props.data.length }, (_, i) => i + 1),
-      datasets: [
-        {
-          label: props.yAxisLabel,
-          data: props.data,
-          borderColor: props.borderColor,
-          backgroundColor: props.backgroundColor,
-          borderWidth: 2,
-          fill: false,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: {
-          title: { display: true, text: props.xAxisLabel },
-          grid: { display: false },
-        },
-        y: {
-          title: { display: true, text: props.yAxisLabel },
-          ticks: {
-            callback: value =>
-              props.yAxisLabel.includes('€') ? formatCurrency(value as number) : value,
-          },
+useChartLifecycle(chartCanvas, toRef(props, 'data'), () => ({
+  type: 'line',
+  data: {
+    labels: Array.from({ length: props.data.length }, (_, i) => i + 1),
+    datasets: [
+      {
+        label: props.yAxisLabel,
+        data: props.data,
+        borderColor: props.borderColor,
+        backgroundColor: props.backgroundColor,
+        borderWidth: 2,
+        fill: false,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    scales: {
+      x: {
+        title: { display: true, text: props.xAxisLabel },
+        grid: { display: false },
+      },
+      y: {
+        title: { display: true, text: props.yAxisLabel },
+        ticks: {
+          callback: value =>
+            props.yAxisLabel.includes('€') ? formatCurrency(value as number) : value,
         },
       },
-      plugins: {
-        title: { display: true, text: props.title, font: { size: 16 } },
-        legend: { display: false },
-      },
     },
-  })
-}
-
-watch(() => props.data, createChart, { deep: true })
-
-onMounted(() => {
-  createChart()
-})
-
-onUnmounted(() => {
-  if (chartInstance) {
-    chartInstance.destroy()
-  }
-})
+    plugins: {
+      title: { display: true, text: props.title, font: { size: 16 } },
+      legend: { display: false },
+    },
+  },
+}))
 </script>

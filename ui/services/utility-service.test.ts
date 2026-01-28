@@ -27,9 +27,7 @@ describe('utilityService', () => {
         total: 50000,
       }
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockCalculationResult,
-      } as any)
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockCalculationResult)
 
       const result = await utilityService.getCalculationResult()
 
@@ -45,9 +43,7 @@ describe('utilityService', () => {
         total: 0,
       }
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockEmptyResult,
-      } as any)
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockEmptyResult)
 
       const result = await utilityService.getCalculationResult()
 
@@ -66,9 +62,7 @@ describe('utilityService', () => {
         total: 2400,
       }
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockNegativeResult,
-      } as any)
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockNegativeResult)
 
       const result = await utilityService.getCalculationResult()
 
@@ -93,9 +87,7 @@ describe('utilityService', () => {
         time: '2023-12-31T12:00:00Z',
       }
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockBuildInfo,
-      } as any)
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockBuildInfo)
 
       const result = await utilityService.getBuildInfo()
 
@@ -109,9 +101,7 @@ describe('utilityService', () => {
         time: 'local-build',
       }
 
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockBuildInfo,
-      } as any)
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockBuildInfo)
 
       const result = await utilityService.getBuildInfo()
 

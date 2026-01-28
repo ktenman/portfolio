@@ -44,9 +44,7 @@ describe('transactionsService', () => {
           currency: 'EUR',
         }),
       ]
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockTransactions,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockTransactions)
 
       const result = await transactionsService.getAll()
 
@@ -55,9 +53,7 @@ describe('transactionsService', () => {
     })
 
     it('should handle empty transaction list', async () => {
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: [],
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce([])
 
       const result = await transactionsService.getAll()
 
@@ -79,9 +75,7 @@ describe('transactionsService', () => {
           platform: Platform.BINANCE,
         }),
       ]
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockTransactions,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockTransactions)
 
       const result = await transactionsService.getAll(['BINANCE', 'COINBASE'])
 
@@ -93,9 +87,7 @@ describe('transactionsService', () => {
 
     it('should handle empty platform filter as no filter', async () => {
       const mockTransactions = [createTransactionDto({ id: 1 })]
-      vi.mocked(httpClient.get).mockResolvedValueOnce({
-        data: mockTransactions,
-      })
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockTransactions)
 
       const result = await transactionsService.getAll([])
 
@@ -121,9 +113,7 @@ describe('transactionsService', () => {
         ...newTransaction,
       })
 
-      vi.mocked(httpClient.post).mockResolvedValueOnce({
-        data: createdTransaction,
-      })
+      vi.mocked(httpClient.post).mockResolvedValueOnce(createdTransaction)
 
       const result = await transactionsService.create(newTransaction)
 
@@ -147,9 +137,7 @@ describe('transactionsService', () => {
         ...partialTransaction,
       })
 
-      vi.mocked(httpClient.post).mockResolvedValueOnce({
-        data: createdTransaction,
-      })
+      vi.mocked(httpClient.post).mockResolvedValueOnce(createdTransaction)
 
       const result = await transactionsService.create(partialTransaction)
 
@@ -186,9 +174,7 @@ describe('transactionsService', () => {
         currency: 'EUR',
       })
 
-      vi.mocked(httpClient.put).mockResolvedValueOnce({
-        data: updatedTransaction,
-      })
+      vi.mocked(httpClient.put).mockResolvedValueOnce(updatedTransaction)
 
       const result = await transactionsService.update(1, updateData)
 
@@ -213,9 +199,7 @@ describe('transactionsService', () => {
         currency: 'EUR',
       })
 
-      vi.mocked(httpClient.put).mockResolvedValueOnce({
-        data: updatedTransaction,
-      })
+      vi.mocked(httpClient.put).mockResolvedValueOnce(updatedTransaction)
 
       const result = await transactionsService.update('2', updateData)
 
@@ -239,9 +223,7 @@ describe('transactionsService', () => {
         ...fullUpdate,
       })
 
-      vi.mocked(httpClient.put).mockResolvedValueOnce({
-        data: updatedTransaction,
-      })
+      vi.mocked(httpClient.put).mockResolvedValueOnce(updatedTransaction)
 
       const result = await transactionsService.update(5, fullUpdate)
 
@@ -261,9 +243,7 @@ describe('transactionsService', () => {
 
   describe('delete', () => {
     it('should delete a transaction by numeric id', async () => {
-      vi.mocked(httpClient.delete).mockResolvedValueOnce({
-        data: undefined,
-      })
+      vi.mocked(httpClient.delete).mockResolvedValueOnce(undefined)
 
       const result = await transactionsService.delete(1)
 
@@ -272,9 +252,7 @@ describe('transactionsService', () => {
     })
 
     it('should delete a transaction by string id', async () => {
-      vi.mocked(httpClient.delete).mockResolvedValueOnce({
-        data: undefined,
-      })
+      vi.mocked(httpClient.delete).mockResolvedValueOnce(undefined)
 
       const result = await transactionsService.delete('2')
 
@@ -283,10 +261,7 @@ describe('transactionsService', () => {
     })
 
     it('should handle void response correctly', async () => {
-      vi.mocked(httpClient.delete).mockResolvedValueOnce({
-        status: 204,
-        data: null,
-      })
+      vi.mocked(httpClient.delete).mockResolvedValueOnce(undefined)
 
       const result = await transactionsService.delete(3)
 

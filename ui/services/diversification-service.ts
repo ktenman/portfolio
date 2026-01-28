@@ -9,25 +9,17 @@ import type { CachedState } from '../components/diversification/types'
 
 export const diversificationService = {
   getAvailableEtfs: () =>
-    httpClient
-      .get<EtfDetailDto[]>(`${API_ENDPOINTS.DIVERSIFICATION}/available-etfs`)
-      .then(res => res.data),
+    httpClient.get<EtfDetailDto[]>(`${API_ENDPOINTS.DIVERSIFICATION}/available-etfs`),
 
   calculate: (allocations: AllocationDto[]) =>
-    httpClient
-      .post<DiversificationCalculatorResponseDto>(`${API_ENDPOINTS.DIVERSIFICATION}/calculate`, {
-        allocations,
-      })
-      .then(res => res.data),
+    httpClient.post<DiversificationCalculatorResponseDto>(
+      `${API_ENDPOINTS.DIVERSIFICATION}/calculate`,
+      { allocations }
+    ),
 
   getConfig: () =>
-    httpClient
-      .get<CachedState>(`${API_ENDPOINTS.DIVERSIFICATION}/config`)
-      .then(res => res.data)
-      .catch(() => null),
+    httpClient.get<CachedState>(`${API_ENDPOINTS.DIVERSIFICATION}/config`).catch(() => null),
 
   saveConfig: (config: CachedState) =>
-    httpClient
-      .put<CachedState>(`${API_ENDPOINTS.DIVERSIFICATION}/config`, config)
-      .then(res => res.data),
+    httpClient.put<CachedState>(`${API_ENDPOINTS.DIVERSIFICATION}/config`, config),
 }

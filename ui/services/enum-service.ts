@@ -10,5 +10,5 @@ interface EnumValues {
 }
 
 export const enumService = {
-  getAll: () => httpClient.get<EnumValues>(API_ENDPOINTS.ENUMS).then(res => res.data),
+  getAll: () => httpClient.get<EnumValues>(API_ENDPOINTS.ENUMS),
 }
