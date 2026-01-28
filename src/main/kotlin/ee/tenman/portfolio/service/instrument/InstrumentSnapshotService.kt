@@ -175,6 +175,7 @@ class InstrumentSnapshotService(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
   ): PriceChange? {
+    if (instrument.isCash()) return PriceChange(BigDecimal.ZERO, 0.0)
     val currentPrice = instrument.currentPrice ?: return null
     val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
     val totalQuantity = buyTransactions.sumOf { it.quantity }

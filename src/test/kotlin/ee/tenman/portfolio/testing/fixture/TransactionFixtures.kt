@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.testing.fixture
 
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
@@ -42,6 +43,22 @@ object TransactionFixtures {
       currentPrice = BigDecimal(faker.number().randomDouble(2, 10, 500)),
       id = faker.number().numberBetween(1L, 1000L),
     )
+
+  fun createCashInstrument(
+    symbol: String = "EUR",
+    name: String = "Euro Cash",
+    baseCurrency: String = "EUR",
+    currentPrice: BigDecimal? = BigDecimal.ONE,
+    id: Long = 99L,
+  ): Instrument =
+    Instrument(
+      symbol = symbol,
+      name = name,
+      category = InstrumentCategory.CASH.name,
+      baseCurrency = baseCurrency,
+      currentPrice = currentPrice,
+      providerName = ProviderName.FT,
+    ).apply { this.id = id }
 
   fun createTransaction(
     instrument: Instrument,

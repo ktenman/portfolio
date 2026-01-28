@@ -47,7 +47,7 @@ class InvestmentMetricsService(
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
     val effectiveDate = calculationDate ?: LocalDate.now(clock)
     val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
-    val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
+    val currentPrice = getEffectivePrice(instrument)
     val currentValue = holdingsCalculationService.calculateCurrentValue(aggregated.totalQuantity, currentPrice)
     val realizedProfit = calculateRealizedProfit(transactions)
     val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
@@ -70,10 +70,15 @@ class InvestmentMetricsService(
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
     val effectiveDate = calculationDate ?: LocalDate.now(clock)
-    val currentPrice = instrument.currentPrice ?: BigDecimal.ZERO
+    val currentPrice = getEffectivePrice(instrument)
     transactionService.calculateTransactionProfits(transactions, currentPrice)
     return calculateInstrumentMetrics(instrument, transactions, effectiveDate)
   }
+
+  private fun getEffectivePrice(instrument: Instrument): BigDecimal =
+    instrument.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+      ?: instrument.currentPrice
+      ?: BigDecimal.ZERO
 
   fun calculatePortfolioMetrics(
     instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
@@ -118,16 +123,22 @@ class InvestmentMetricsService(
       processZeroQuantityFallback(transactions, date, metrics)
       return
     }
-    val price =
-      runCatching { dailyPriceService.getPrice(instrument, date) }
-        .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
-        .getOrNull() ?: return
+    val price = getEffectivePriceForDate(instrument, date) ?: return
     val currentValue = netQuantity.multiply(price)
     val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, currentValue)
     if (currentValue <= BigDecimal.ZERO && realizedProfit <= BigDecimal.ZERO) return
     updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
     xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, currentValue, date)
   }
+
+  private fun getEffectivePriceForDate(
+    instrument: Instrument,
+    date: LocalDate,
+  ): BigDecimal? =
+    instrument.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+      ?: runCatching { dailyPriceService.getPrice(instrument, date) }
+        .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
+        .getOrNull()
 
   private fun processZeroQuantityFallback(
     transactions: List<PortfolioTransaction>,
@@ -147,6 +158,7 @@ class InvestmentMetricsService(
   ): BigDecimal =
     when {
       currentHoldings <= BigDecimal.ZERO -> BigDecimal.ZERO
+      instrument.isCash() -> currentHoldings
       isToday(date) -> currentHoldings.multiply(instrument.currentPrice ?: BigDecimal.ZERO)
       else -> currentHoldings.multiply(dailyPriceService.getPrice(instrument, date))
     }

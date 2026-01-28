@@ -267,6 +267,7 @@ class SummaryServiceTest {
     expect(count).toEqual(4)
     verify { summaryDeletionService.deleteHistoricalSummaries(today) }
     verify { summaryBatchProcessor.processSummariesWithTransactions(any(), any(), any()) }
+    verify(exactly = 2) { summaryCacheService.evictAllCaches() }
   }
 
   @Test

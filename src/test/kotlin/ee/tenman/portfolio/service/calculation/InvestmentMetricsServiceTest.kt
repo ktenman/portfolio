@@ -21,6 +21,7 @@ import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.transaction.TransactionService
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createCashInstrument
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
@@ -1089,6 +1090,53 @@ class InvestmentMetricsServiceTest {
 
     expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
     expect(metrics.totalProfit).toEqualNumerically(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `should calculateInstrumentMetrics use price ONE for cash instrument`() {
+    val cashInstrument = createCashInstrument()
+    val transactions = listOf(createBuyCashFlow(quantity = BigDecimal("1000"), price = BigDecimal("1"), instrument = cashInstrument))
+
+    val metrics = investmentMetricsService.calculateInstrumentMetrics(cashInstrument, transactions, testDate)
+
+    expect(metrics.currentValue).toEqualNumerically(BigDecimal("1000"))
+    expect(metrics.quantity).toEqualNumerically(BigDecimal("1000"))
+  }
+
+  @Test
+  fun `should calculateInstrumentMetrics for cash instrument with null currentPrice uses ONE`() {
+    val cashInstrument = createCashInstrument(currentPrice = null)
+    val transactions = listOf(createBuyCashFlow(quantity = BigDecimal("500"), price = BigDecimal("1"), instrument = cashInstrument))
+
+    val metrics = investmentMetricsService.calculateInstrumentMetrics(cashInstrument, transactions, testDate)
+
+    expect(metrics.currentValue).toEqualNumerically(BigDecimal("500"))
+  }
+
+  @Test
+  fun `should calculatePortfolioMetrics include cash instrument without database lookup`() {
+    val cashInstrument = createCashInstrument()
+    val cashTransactions = listOf(createBuyCashFlow(quantity = BigDecimal("2000"), price = BigDecimal("1"), instrument = cashInstrument))
+    val stockTransactions = listOf(createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")))
+    val instrumentGroups = mapOf(cashInstrument to cashTransactions, testInstrument to stockTransactions)
+
+    every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("150")
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    expect(metrics.totalValue).toBeGreaterThan(BigDecimal("2000"))
+    expect(metrics.xirrCashFlows).notToBeEmpty()
+  }
+
+  @Test
+  fun `should calculatePortfolioMetrics fallback use price ONE for cash instrument`() {
+    val cashInstrument = createCashInstrument()
+    val transactions = listOf(createBuyCashFlow(quantity = BigDecimal("1500"), price = BigDecimal("1"), instrument = cashInstrument))
+    val instrumentGroups = mapOf(cashInstrument to transactions)
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    expect(metrics.totalValue).toEqualNumerically(BigDecimal("1500"))
   }
 
   companion object {

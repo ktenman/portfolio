@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.service.calculation
 
-import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
@@ -16,10 +15,10 @@ class ProfitCalculationEngine {
     currentPrice: BigDecimal,
   ) {
     val sortedTransactions = transactions.sortedWith(compareBy({ it.transactionDate }, { it.id }))
-    val category = sortedTransactions.firstOrNull()?.instrument?.category
+    val isCash = sortedTransactions.firstOrNull()?.instrument?.isCash() == true
     val (_, currentQuantity) = processTransactions(sortedTransactions)
     val effectivePrice = determineEffectivePrice(currentPrice, sortedTransactions)
-    distributeProfits(sortedTransactions, currentQuantity, effectivePrice, category)
+    distributeProfits(sortedTransactions, currentQuantity, effectivePrice, isCash)
   }
 
   private fun processTransactions(transactions: List<PortfolioTransaction>): TransactionState =
@@ -66,28 +65,30 @@ class ProfitCalculationEngine {
   private fun determineEffectivePrice(
     passedPrice: BigDecimal,
     transactions: List<PortfolioTransaction>,
-  ): BigDecimal =
-    passedPrice.takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
-      ?: transactions.firstOrNull()?.instrument?.currentPrice
+  ): BigDecimal {
+    val instrument = transactions.firstOrNull()?.instrument
+    return instrument?.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+      ?: passedPrice.takeIf { it > BigDecimal.ZERO }
+      ?: instrument?.currentPrice
       ?: BigDecimal.ZERO
+  }
 
   private fun distributeProfits(
     transactions: List<PortfolioTransaction>,
     currentQuantity: BigDecimal,
     currentPrice: BigDecimal,
-    category: String?,
+    isCash: Boolean,
   ) {
     val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
     if (currentQuantity.compareTo(BigDecimal.ZERO) <= 0) {
       buyTransactions.forEach { it.setZeroUnrealizedMetrics() }
       return
     }
-    when (category) {
-      InstrumentCategory.CASH.name -> {
-        val totalSold = transactions.filter { it.transactionType == TransactionType.SELL }.sumOf { it.quantity }
-        distributeToBuyTransactionsFifo(buyTransactions, totalSold, currentQuantity, currentPrice)
-      }
-      else -> distributeToBuyTransactions(buyTransactions, currentQuantity, currentPrice)
+    if (isCash) {
+      val totalSold = transactions.filter { it.transactionType == TransactionType.SELL }.sumOf { it.quantity }
+      distributeToBuyTransactionsFifo(buyTransactions, totalSold, currentQuantity, currentPrice)
+    } else {
+      distributeToBuyTransactions(buyTransactions, currentQuantity, currentPrice)
     }
   }
 
