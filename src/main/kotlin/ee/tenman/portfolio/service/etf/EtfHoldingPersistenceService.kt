@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
@@ -135,10 +136,7 @@ class EtfHoldingPersistenceService(
     sector: String,
     classifiedByModel: AiModel? = null,
   ) {
-    val holding =
-      etfHoldingRepository.findById(holdingId).orElseThrow {
-        IllegalStateException("EtfHolding not found with id=$holdingId")
-      }
+    val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
     holding.sector = sector
     holding.classifiedByModel = classifiedByModel
     holding.sectorSource = SectorSource.LLM
@@ -152,10 +150,7 @@ class EtfHoldingPersistenceService(
     countryName: String,
     classifiedByModel: AiModel? = null,
   ) {
-    val holding =
-      etfHoldingRepository.findById(holdingId).orElseThrow {
-        IllegalStateException("EtfHolding not found with id=$holdingId")
-      }
+    val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
     holding.countryCode = countryCode
     holding.countryName = countryName
     holding.countryClassifiedByModel = classifiedByModel
@@ -164,10 +159,7 @@ class EtfHoldingPersistenceService(
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun incrementCountryFetchAttempts(holdingId: Long) {
-    val holding =
-      etfHoldingRepository.findById(holdingId).orElseThrow {
-        IllegalStateException("EtfHolding not found with id=$holdingId")
-      }
+    val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
     holding.countryFetchAttempts++
     etfHoldingRepository.save(holding)
     log.info("Incremented country fetch attempts for holding id=$holdingId to ${holding.countryFetchAttempts}")
