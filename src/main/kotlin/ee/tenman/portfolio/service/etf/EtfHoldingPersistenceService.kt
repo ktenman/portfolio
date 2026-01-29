@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
@@ -111,7 +112,7 @@ class EtfHoldingPersistenceService(
   }
 
   @Transactional(readOnly = true)
-  fun findById(id: Long): EtfHolding? = etfHoldingRepository.findById(id).orElse(null)
+  fun findById(id: Long): EtfHolding? = etfHoldingRepository.findById(id).orNull()
 
   @Transactional(readOnly = true)
   fun findEtfNamesForHolding(holdingId: Long): List<String> = etfHoldingRepository.findEtfNamesForHolding(holdingId)

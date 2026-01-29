@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.lightyear
 
+import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -157,7 +158,7 @@ class LightyearPriceService(
       ?: findUuidFromDatabase(symbol)?.also { uuidCacheService.cacheUuid(symbol, it) }
       ?: lookupUuidFromWeb(symbol)
 
-  private fun findUuidFromDatabase(symbol: String): String? = instrumentRepository.findBySymbol(symbol).orElse(null)?.providerExternalId
+  private fun findUuidFromDatabase(symbol: String): String? = instrumentRepository.findBySymbol(symbol).orNull()?.providerExternalId
 
   fun lookupUuidFromWeb(symbol: String): String? {
     val lookupSymbol = convertToLightyearSymbol(symbol)
