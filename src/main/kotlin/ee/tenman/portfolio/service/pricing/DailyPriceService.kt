@@ -26,7 +26,7 @@ class DailyPriceService(
     instrument: Instrument,
     date: LocalDate,
   ): BigDecimal =
-    instrument.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+    instrument.cashPriceOrNull()
       ?: dailyPriceRepository
         .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(instrument, date.minusYears(10), date)
         ?.closePrice
@@ -185,7 +185,7 @@ class DailyPriceService(
 
   @Transactional(readOnly = true)
   fun getCurrentPrice(instrument: Instrument): BigDecimal =
-    instrument.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+    instrument.cashPriceOrNull()
       ?: instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
       ?: runCatching { getPrice(instrument, LocalDate.now(clock)) }
         .onFailure { log.warn("No price found for ${instrument.symbol}, using zero") }
