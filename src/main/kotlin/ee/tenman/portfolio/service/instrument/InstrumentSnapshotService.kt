@@ -100,12 +100,7 @@ class InstrumentSnapshotService(
   }
 
   private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? =
-    platforms
-      ?.mapNotNull { platformStr ->
-        runCatching { Platform.valueOf(platformStr.uppercase()) }
-          .onFailure { log.debug("Invalid platform filter: $platformStr", it) }
-          .getOrNull()
-      }?.toSet()
+    platforms?.mapNotNull { Platform.fromStringOrNull(it) }?.toSet()
 
   private fun enrichInstrumentWithMetrics(
     instrument: Instrument,

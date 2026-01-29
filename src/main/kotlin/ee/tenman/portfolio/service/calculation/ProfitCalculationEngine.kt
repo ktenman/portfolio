@@ -67,7 +67,7 @@ class ProfitCalculationEngine {
     transactions: List<PortfolioTransaction>,
   ): BigDecimal {
     val instrument = transactions.firstOrNull()?.instrument
-    return instrument?.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+    return instrument?.cashPriceOrNull()
       ?: passedPrice.takeIf { it > BigDecimal.ZERO }
       ?: instrument?.currentPrice
       ?: BigDecimal.ZERO

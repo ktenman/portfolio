@@ -95,7 +95,7 @@ class TransactionService(
   )
   fun getAllTransactions(platforms: List<String>?): List<PortfolioTransaction> {
     if (platforms.isNullOrEmpty()) return transactionCacheService.getAllTransactions()
-    val platformEnums = platforms.mapNotNull { it.toPlatformOrNull() }
+    val platformEnums = platforms.mapNotNull { Platform.fromStringOrNull(it) }
     if (platformEnums.isEmpty()) return emptyList()
     return portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
   }
@@ -116,7 +116,7 @@ class TransactionService(
     val hasPlatforms = !platforms.isNullOrEmpty()
     val hasDates = fromDate != null || untilDate != null
     if (!hasPlatforms && !hasDates) return transactionCacheService.getAllTransactions()
-    val platformEnums = platforms?.mapNotNull { it.toPlatformOrNull() }
+    val platformEnums = platforms?.mapNotNull { Platform.fromStringOrNull(it) }
     if (hasPlatforms && platformEnums.isNullOrEmpty()) return emptyList()
     val effectiveFromDate = fromDate ?: LocalDate.of(2000, 1, 1)
     val effectiveUntilDate = untilDate ?: LocalDate.now(clock).plusYears(100)
@@ -160,16 +160,11 @@ class TransactionService(
   ): List<PortfolioTransaction> {
     if (filteredTransactions.isEmpty()) return emptyList()
     val instrumentIds = filteredTransactions.map { it.instrument.id }.distinct()
-    val platformEnums = platforms?.mapNotNull { it.toPlatformOrNull() }
+    val platformEnums = platforms?.mapNotNull { Platform.fromStringOrNull(it) }
     if (!platforms.isNullOrEmpty() && platformEnums.isNullOrEmpty()) return emptyList()
     return platformEnums
       ?.takeIf { it.isNotEmpty() }
       ?.let { portfolioTransactionRepository.findAllByPlatformsAndInstrumentIds(it, instrumentIds) }
       ?: portfolioTransactionRepository.findAllByInstrumentIds(instrumentIds)
   }
-
-  private fun String.toPlatformOrNull(): Platform? =
-    runCatching { Platform.valueOf(this) }
-      .onFailure { log.warn("Invalid platform name: $this") }
-      .getOrNull()
 }
