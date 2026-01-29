@@ -31,4 +31,6 @@ class Instrument(
   var xirrAnnualReturn: BigDecimal? = null,
 ) : BaseEntity() {
   fun isCash(): Boolean = category == InstrumentCategory.CASH.name
+
+  fun cashPriceOrNull(): BigDecimal? = if (isCash()) BigDecimal.ONE else null
 }

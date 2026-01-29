@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_ETFS_CACHE
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.dto.HoldingData
@@ -9,6 +10,7 @@ import ee.tenman.portfolio.service.logo.LogoCacheService
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -27,7 +29,12 @@ class EtfHoldingService(
     date: LocalDate,
   ): Boolean = etfHoldingPersistenceService.hasHoldingsForDate(etfSymbol, date)
 
-  @CacheEvict(value = ["etf:holdings"], key = "#etfSymbol + ':' + #date")
+  @Caching(
+    evict = [
+      CacheEvict(value = ["etf:holdings"], key = "#etfSymbol + ':' + #date"),
+      CacheEvict(value = [DIVERSIFICATION_ETFS_CACHE], allEntries = true),
+    ],
+  )
   fun saveHoldings(
     etfSymbol: String,
     date: LocalDate,

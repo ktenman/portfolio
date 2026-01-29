@@ -36,18 +36,18 @@ class RedisConfiguration {
   }
 
   companion object {
-    const val INSTRUMENT_CACHE = "instrument-cache-v2"
-    const val SUMMARY_CACHE = "summary-cache-v2"
-    const val TRANSACTION_CACHE = "transaction-cache-v2"
-    const val ONE_DAY_CACHE: String = "one-day-cache-v2"
-    const val ETF_LOGOS_CACHE: String = "etf-logos-v2"
-    const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown"
-    const val EASTER_HOLIDAYS_CACHE: String = "easter-holidays"
-    const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid"
-    const val LOGO_CANDIDATES_CACHE: String = "logo-candidates"
-    const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search"
-    const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs"
-    const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config"
+    const val INSTRUMENT_CACHE = "instrument-cache-v3"
+    const val SUMMARY_CACHE = "summary-cache-v3"
+    const val TRANSACTION_CACHE = "transaction-cache-v3"
+    const val ONE_DAY_CACHE: String = "one-day-cache-v3"
+    const val ETF_LOGOS_CACHE: String = "etf-logos-v3"
+    const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v3"
+    const val EASTER_HOLIDAYS_CACHE: String = "easter-holidays-v3"
+    const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid-v3"
+    const val LOGO_CANDIDATES_CACHE: String = "logo-candidates-v3"
+    const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v3"
+    const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs-v3"
+    const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config-v3"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }

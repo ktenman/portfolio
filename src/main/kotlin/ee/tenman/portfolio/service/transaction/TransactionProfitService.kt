@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.transaction
 
+import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.ProfitCalculationEngine
@@ -15,7 +16,7 @@ class TransactionProfitService(
 ) {
   @Transactional
   fun recalculateProfitsForInstrument(instrumentId: Long) {
-    val instrument = instrumentRepository.findById(instrumentId).orElse(null) ?: return
+    val instrument = instrumentRepository.findById(instrumentId).orNull() ?: return
     val transactions = portfolioTransactionRepository.findAllByInstrumentId(instrumentId)
     if (transactions.isEmpty()) return
     transactions.forEach { it.instrument = instrument }

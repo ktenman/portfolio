@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.instrument
 
 import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.common.orNotFoundBySymbol
+import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.model.InstrumentSnapshot
@@ -38,7 +39,7 @@ class InstrumentService(
 
   @Transactional
   fun deleteInstrument(id: Long) {
-    val instrument = instrumentRepository.findById(id).orElse(null)
+    val instrument = instrumentRepository.findById(id).orNull()
     instrumentRepository.deleteById(id)
     cacheInvalidationService.evictInstrumentCaches(id, instrument?.symbol)
   }
@@ -70,7 +71,7 @@ class InstrumentService(
     price: BigDecimal?,
   ) {
     instrumentRepository.updateCurrentPrice(instrumentId, price)
-    val instrument = instrumentRepository.findById(instrumentId).orElse(null)
+    val instrument = instrumentRepository.findById(instrumentId).orNull()
     if (instrument == null) {
       cacheInvalidationService.evictInstrumentCaches(instrumentId, null)
       return

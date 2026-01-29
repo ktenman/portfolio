@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.logo.LogoCacheService
@@ -39,7 +40,7 @@ class EtfLogoCollectionJob(
   }
 
   private fun processHoldingInternal(holdingId: Long) {
-    val holding = etfHoldingRepository.findById(holdingId).orElse(null) ?: return
+    val holding = etfHoldingRepository.findById(holdingId).orNull() ?: return
     if (holding.logoSource != null) return
     if (holding.countryCode.isNullOrBlank()) {
       log.info("Skipping logo fetch for ${holding.name}: no country code")

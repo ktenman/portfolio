@@ -8,3 +8,5 @@ inline fun <reified T> Optional<T>.orNotFound(identifier: Any): T =
 
 inline fun <reified T> Optional<T>.orNotFoundBySymbol(symbol: String): T =
   orElseThrow { EntityNotFoundException("${T::class.simpleName} not found with symbol: $symbol") }
+
+fun <T> Optional<T>.orNull(): T? = orElse(null)

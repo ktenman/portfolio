@@ -76,7 +76,7 @@ class InvestmentMetricsService(
   }
 
   private fun getEffectivePrice(instrument: Instrument): BigDecimal =
-    instrument.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+    instrument.cashPriceOrNull()
       ?: instrument.currentPrice
       ?: BigDecimal.ZERO
 
@@ -135,7 +135,7 @@ class InvestmentMetricsService(
     instrument: Instrument,
     date: LocalDate,
   ): BigDecimal? =
-    instrument.takeIf { it.isCash() }?.let { BigDecimal.ONE }
+    instrument.cashPriceOrNull()
       ?: runCatching { dailyPriceService.getPrice(instrument, date) }
         .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
         .getOrNull()

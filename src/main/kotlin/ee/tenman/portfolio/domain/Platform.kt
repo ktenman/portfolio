@@ -10,4 +10,9 @@ enum class Platform {
   SWEDBANK,
   TRADING212,
   UNKNOWN,
+  ;
+
+  companion object {
+    fun fromStringOrNull(value: String): Platform? = runCatching { valueOf(value.uppercase()) }.getOrNull()
+  }
 }

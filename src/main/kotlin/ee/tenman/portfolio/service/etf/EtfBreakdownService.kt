@@ -65,7 +65,7 @@ class EtfBreakdownService(
 
   private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? {
     if (platforms.isNullOrEmpty()) return null
-    val parsed = platforms.mapNotNull { runCatching { Platform.valueOf(it.uppercase()) }.getOrNull() }
+    val parsed = platforms.mapNotNull { Platform.fromStringOrNull(it) }
     return parsed.toSet().takeIf { it.isNotEmpty() }
   }
 
