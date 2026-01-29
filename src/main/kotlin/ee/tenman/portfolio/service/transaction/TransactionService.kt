@@ -167,5 +167,4 @@ class TransactionService(
       ?.let { portfolioTransactionRepository.findAllByPlatformsAndInstrumentIds(it, instrumentIds) }
       ?: portfolioTransactionRepository.findAllByInstrumentIds(instrumentIds)
   }
-
 }

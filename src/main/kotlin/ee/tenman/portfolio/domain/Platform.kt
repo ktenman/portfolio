@@ -13,7 +13,6 @@ enum class Platform {
   ;
 
   companion object {
-    fun fromStringOrNull(value: String): Platform? =
-      runCatching { valueOf(value.uppercase()) }.getOrNull()
+    fun fromStringOrNull(value: String): Platform? = runCatching { valueOf(value.uppercase()) }.getOrNull()
   }
 }
