@@ -14,6 +14,8 @@ data class DiversificationConfigDto(
   val selectedPlatform: String? = null,
   val optimizeEnabled: Boolean = false,
   val totalInvestment: Double = 0.0,
+  @field:Pattern(regexp = "units|amount", message = "Action display mode must be 'units' or 'amount'")
+  val actionDisplayMode: String = "units",
 ) : Serializable {
   companion object {
     private const val serialVersionUID: Long = 1L

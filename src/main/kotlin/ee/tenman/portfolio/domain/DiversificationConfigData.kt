@@ -6,4 +6,5 @@ data class DiversificationConfigData(
   val selectedPlatform: String? = null,
   val optimizeEnabled: Boolean = false,
   val totalInvestment: Double = 0.0,
+  val actionDisplayMode: ActionDisplayMode = ActionDisplayMode.UNITS,
 )
