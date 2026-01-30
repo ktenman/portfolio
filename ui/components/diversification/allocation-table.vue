@@ -741,42 +741,45 @@ const getUnused = (instrumentId: number, percentage: number, price: number | nul
   return allocated - units * price
 }
 
+const calculateRebalanceAmount = (allocation: AllocationInput): number => {
+  const currentValue = allocation.currentValue ?? 0
+  const targetPortfolio = props.currentHoldingsTotal + props.totalInvestment
+  const targetValue = (targetPortfolio * allocation.value) / 100
+  return Math.abs(targetValue - currentValue)
+}
+
+const calculateInvestmentAmount = (percentage: number): number =>
+  (props.totalInvestment * percentage) / 100
+
+const formatAmount = (amount: number): string => (amount === 0 ? '-' : `€${amount.toFixed(2)}`)
+
 const formatUnused = (instrumentId: number, percentage: number, price: number | null): string => {
-  if (actionDisplayMode.value === 'amount') return '-'
+  if (props.actionDisplayMode === 'amount') return '-'
   const units = getUnits(instrumentId, percentage, price)
   if (units === 0) return '-'
   const unused = getUnused(instrumentId, percentage, price)
   return `€${unused.toFixed(2)}`
 }
 
-const actionDisplayMode = computed(() => props.actionDisplayMode)
-
 const formatActionValue = (allocation: AllocationInput): string => {
-  const data = getRebalanceData(allocation)
-  if (actionDisplayMode.value === 'amount') {
-    const currentValue = allocation.currentValue ?? 0
-    const targetPortfolio = props.currentHoldingsTotal + props.totalInvestment
-    const targetValue = (targetPortfolio * allocation.value) / 100
-    const exactAmount = Math.abs(targetValue - currentValue)
-    return `€${exactAmount.toFixed(2)}`
+  if (props.actionDisplayMode === 'amount') {
+    return formatAmount(calculateRebalanceAmount(allocation))
   }
-  return data.units.toString()
+  return getRebalanceData(allocation).units.toString()
 }
 
 const formatAction = (instrumentId: number, percentage: number, price: number | null): string => {
-  const units = getUnits(instrumentId, percentage, price)
-  if (actionDisplayMode.value === 'amount') {
-    const exactAmount = (props.totalInvestment * percentage) / 100
-    if (exactAmount === 0) return '-'
-    return `€${exactAmount.toFixed(2)}`
+  if (props.actionDisplayMode === 'amount') {
+    return formatAmount(calculateInvestmentAmount(percentage))
   }
+  const units = getUnits(instrumentId, percentage, price)
   if (units === 0) return '-'
   return units.toString()
 }
 
 const totalUnused = computed(() => {
   if (!showInvestmentColumns.value && !showRebalanceActionColumn.value) return 0
-  if (actionDisplayMode.value === 'amount') return 0
+  if (props.actionDisplayMode === 'amount') return 0
   if (showRebalanceColumns.value && props.optimizeEnabled) {
     return optimizedRebalanceResult.value.totalRemaining
   }

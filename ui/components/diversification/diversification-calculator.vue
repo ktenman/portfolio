@@ -101,7 +101,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
-import { useDebounceFn, useNow } from '@vueuse/core'
+import { useDebounceFn, useNow, useLocalStorage } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { diversificationService } from '../../services/diversification-service'
 import { instrumentsService } from '../../services/instruments-service'
@@ -140,7 +140,10 @@ const inputMode = ref<'percentage' | 'amount'>('percentage')
 const totalInvestment = ref<number>(0)
 const selectedPlatform = ref<string | null>(null)
 const optimizeEnabled = ref(false)
-const actionDisplayMode = ref<ActionDisplayMode>('units')
+const actionDisplayMode = useLocalStorage<ActionDisplayMode>(
+  'portfolio_action_display_mode',
+  'units'
+)
 const portfolioInstruments = ref<InstrumentDto[]>([])
 const isCalculating = ref(false)
 const isLoadingPortfolio = ref(false)

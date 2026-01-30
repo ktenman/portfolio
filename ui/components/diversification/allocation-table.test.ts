@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import AllocationTable from './allocation-table.vue'
 
 vi.mock('@vueuse/core', () => ({
-  useLocalStorage: vi.fn((_key: string, defaultValue: boolean) => ref(defaultValue)),
+  useLocalStorage: vi.fn(<T>(_key: string, defaultValue: T) => ref(defaultValue)),
 }))
 
 describe('AllocationTable', () => {
