@@ -114,11 +114,8 @@
         "
         :computed-amount="
           showRebalanceColumns
-            ? Math.abs(
-                ((currentHoldingsTotal + totalInvestment) * allocation.value) / 100 -
-                  (allocation.currentValue ?? 0)
-              )
-            : (totalInvestment * allocation.value) / 100
+            ? getRebalanceAmount(allocation)
+            : calculateInvestmentAmount(totalInvestment, allocation.value)
         "
         :computed-unused="
           showRebalanceColumns
@@ -431,6 +428,13 @@
 import { computed } from 'vue'
 import { formatTer, formatReturn, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
+import {
+  calculateTargetValue,
+  calculateInvestmentAmount,
+  calculateRebalanceDifference,
+  calculateUnitsFromAmount,
+  formatEuroAmount,
+} from '../../utils/diversification-calculations'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import AllocationCard from './allocation-card.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
@@ -559,12 +563,15 @@ const getBaseRebalanceData = (allocation: AllocationInput) => {
   const currentValue = allocation.currentValue ?? 0
   const currentPercent =
     props.currentHoldingsTotal > 0 ? (currentValue / props.currentHoldingsTotal) * 100 : 0
-  const targetPortfolio = props.currentHoldingsTotal + props.totalInvestment
-  const targetValue = (targetPortfolio * allocation.value) / 100
+  const targetValue = calculateTargetValue(
+    props.currentHoldingsTotal,
+    props.totalInvestment,
+    allocation.value
+  )
   const difference = targetValue - currentValue
   const isBuy = difference >= 0
   const absoluteDifference = Math.abs(difference)
-  const units = price && price > 0 ? Math.floor(absoluteDifference / price) : 0
+  const units = calculateUnitsFromAmount(absoluteDifference, price ?? 0)
   const actualAmount = units * (price ?? 0)
   const unused = absoluteDifference - actualAmount
   return { currentValue, currentPercent, targetValue, difference, isBuy, units, unused, price }
@@ -663,8 +670,8 @@ const calculateBaseInvestment = (percentage: number, price: number | null) => {
   if (!percentage || !price || price <= 0 || props.totalInvestment <= 0) {
     return { allocated: 0, units: 0, unused: 0 }
   }
-  const allocated = (props.totalInvestment * percentage) / 100
-  const units = Math.floor(allocated / price)
+  const allocated = calculateInvestmentAmount(props.totalInvestment, percentage)
+  const units = calculateUnitsFromAmount(allocated, price)
   const unused = allocated - units * price
   return { allocated, units, unused }
 }
@@ -675,7 +682,7 @@ const optimizedAllocation = computed(() => {
   if (validAllocations.length === 0) return new Map<number, number>()
   const fundData = validAllocations.map(allocation => {
     const price = getEtfPrice(allocation.instrumentId) ?? 0
-    const allocated = (props.totalInvestment * allocation.value) / 100
+    const allocated = calculateInvestmentAmount(props.totalInvestment, allocation.value)
     const exactUnits = price > 0 ? allocated / price : 0
     const baseUnits = Math.floor(exactUnits)
     const remainder = exactUnits - baseUnits
@@ -739,40 +746,33 @@ const getUnits = (instrumentId: number, percentage: number, price: number | null
 const getUnused = (instrumentId: number, percentage: number, price: number | null): number => {
   const units = getUnits(instrumentId, percentage, price)
   if (!price || units === 0) return 0
-  const allocated = (props.totalInvestment * percentage) / 100
+  const allocated = calculateInvestmentAmount(props.totalInvestment, percentage)
   return allocated - units * price
 }
 
-const calculateRebalanceAmount = (allocation: AllocationInput): number => {
-  const currentValue = allocation.currentValue ?? 0
-  const targetPortfolio = props.currentHoldingsTotal + props.totalInvestment
-  const targetValue = (targetPortfolio * allocation.value) / 100
-  return Math.abs(targetValue - currentValue)
-}
-
-const calculateInvestmentAmount = (percentage: number): number =>
-  (props.totalInvestment * percentage) / 100
-
-const formatAmount = (amount: number): string => (amount === 0 ? '-' : `€${amount.toFixed(2)}`)
+const getRebalanceAmount = (allocation: AllocationInput): number =>
+  calculateRebalanceDifference(
+    allocation.currentValue ?? 0,
+    calculateTargetValue(props.currentHoldingsTotal, props.totalInvestment, allocation.value)
+  )
 
 const formatUnused = (instrumentId: number, percentage: number, price: number | null): string => {
   if (props.actionDisplayMode === 'amount') return '-'
   const units = getUnits(instrumentId, percentage, price)
   if (units === 0) return '-'
-  const unused = getUnused(instrumentId, percentage, price)
-  return `€${unused.toFixed(2)}`
+  return formatEuroAmount(getUnused(instrumentId, percentage, price))
 }
 
 const formatActionValue = (allocation: AllocationInput): string => {
   if (props.actionDisplayMode === 'amount') {
-    return formatAmount(calculateRebalanceAmount(allocation))
+    return formatEuroAmount(getRebalanceAmount(allocation))
   }
   return getRebalanceData(allocation).units.toString()
 }
 
 const formatAction = (instrumentId: number, percentage: number, price: number | null): string => {
   if (props.actionDisplayMode === 'amount') {
-    return formatAmount(calculateInvestmentAmount(percentage))
+    return formatEuroAmount(calculateInvestmentAmount(props.totalInvestment, percentage))
   }
   const units = getUnits(instrumentId, percentage, price)
   if (units === 0) return '-'
