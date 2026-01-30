@@ -584,6 +584,11 @@ const calcTotalAfterValue = (getData: (a: AllocationInput) => RebalanceData) =>
 const totalAfterValueForSort = computed(() => calcTotalAfterValue(getBaseRebalanceData))
 
 const getAfterPercentForSort = (allocation: AllocationInput): number => {
+  if (props.actionDisplayMode === 'amount') {
+    const targetPortfolio = props.currentHoldingsTotal + props.totalInvestment
+    if (targetPortfolio <= 0) return 0
+    return allocation.value
+  }
   if (totalAfterValueForSort.value <= 0) return 0
   const afterValue = calcAfterValue(allocation, getBaseRebalanceData(allocation))
   return (afterValue / totalAfterValueForSort.value) * 100
@@ -607,7 +612,20 @@ const getRebalanceData = (allocation: AllocationInput): RebalanceData => {
 
 const totalAfterValue = computed(() => calcTotalAfterValue(getRebalanceData))
 
+const calcAfterValueForAmountMode = (allocation: AllocationInput): number => {
+  const targetPortfolio = props.currentHoldingsTotal + props.totalInvestment
+  return (targetPortfolio * allocation.value) / 100
+}
+
+const totalAfterValueForAmountMode = computed(() =>
+  props.allocations.reduce((sum, a) => sum + calcAfterValueForAmountMode(a), 0)
+)
+
 const getAfterPercent = (allocation: AllocationInput): number => {
+  if (props.actionDisplayMode === 'amount') {
+    if (totalAfterValueForAmountMode.value <= 0) return 0
+    return (calcAfterValueForAmountMode(allocation) / totalAfterValueForAmountMode.value) * 100
+  }
   if (totalAfterValue.value <= 0) return 0
   const afterValue = calcAfterValue(allocation, getRebalanceData(allocation))
   return (afterValue / totalAfterValue.value) * 100
