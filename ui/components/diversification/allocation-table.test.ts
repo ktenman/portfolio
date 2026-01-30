@@ -41,6 +41,7 @@ describe('AllocationTable', () => {
     availablePlatforms: [] as string[],
     currentHoldingsTotal: 0,
     optimizeEnabled: false,
+    actionDisplayMode: 'units' as const,
   }
 
   describe('rendering', () => {
@@ -723,6 +724,98 @@ describe('AllocationTable', () => {
       const emitted = wrapper.emitted('remove')
       expect(emitted).toBeTruthy()
       expect(emitted![0][0]).toBe(1)
+    })
+  })
+
+  describe('action display mode', () => {
+    it('should show display mode toggle when investment columns are visible', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+        },
+      })
+      expect(wrapper.find('.display-mode-toggle').exists()).toBe(true)
+    })
+
+    it('should highlight units button when actionDisplayMode is units', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+          actionDisplayMode: 'units',
+        },
+      })
+      const buttons = wrapper.findAll('.display-mode-btn')
+      expect(buttons[0].classes()).toContain('active')
+      expect(buttons[1].classes()).not.toContain('active')
+    })
+
+    it('should highlight amount button when actionDisplayMode is amount', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+          actionDisplayMode: 'amount',
+        },
+      })
+      const buttons = wrapper.findAll('.display-mode-btn')
+      expect(buttons[0].classes()).not.toContain('active')
+      expect(buttons[1].classes()).toContain('active')
+    })
+
+    it('should emit update:actionDisplayMode when clicking units button', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+          actionDisplayMode: 'amount',
+        },
+      })
+      await wrapper.findAll('.display-mode-btn')[0].trigger('click')
+      expect(wrapper.emitted('update:actionDisplayMode')).toEqual([['units']])
+    })
+
+    it('should emit update:actionDisplayMode when clicking amount button', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+          actionDisplayMode: 'units',
+        },
+      })
+      await wrapper.findAll('.display-mode-btn')[1].trigger('click')
+      expect(wrapper.emitted('update:actionDisplayMode')).toEqual([['amount']])
+    })
+
+    it('should display exact amount with euro symbol when actionDisplayMode is amount', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+          actionDisplayMode: 'amount',
+        },
+      })
+      const actionCell = wrapper.findAll('td').find(td => td.text() === '€10000.00')
+      expect(actionCell).toBeDefined()
+    })
+
+    it('should show zero total unused when actionDisplayMode is amount', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          totalInvestment: 10000,
+          allocations: [{ instrumentId: 1, value: 100 }],
+          actionDisplayMode: 'amount',
+        },
+      })
+      expect(wrapper.text()).toContain('€0.00')
     })
   })
 })

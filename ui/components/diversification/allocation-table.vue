@@ -69,6 +69,24 @@
           />
           <label for="optimizeAllocation" class="form-check-label">Optimize</label>
         </div>
+        <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="display-mode-toggle">
+          <button
+            type="button"
+            class="display-mode-btn"
+            :class="{ active: actionDisplayMode === 'units' }"
+            @click="emit('update:actionDisplayMode', 'units')"
+          >
+            Units
+          </button>
+          <button
+            type="button"
+            class="display-mode-btn"
+            :class="{ active: actionDisplayMode === 'amount' }"
+            @click="emit('update:actionDisplayMode', 'amount')"
+          >
+            Amount
+          </button>
+        </div>
       </div>
     </div>
 
@@ -83,6 +101,7 @@
         :total-investment="totalInvestment"
         :disable-remove="allocations.length <= 1"
         :show-rebalance-mode="!!showRebalanceColumns"
+        :action-display-mode="actionDisplayMode"
         :is-buy="showRebalanceColumns ? getRebalanceData(allocation).isBuy : true"
         :computed-units="
           showRebalanceColumns
@@ -92,6 +111,14 @@
                 allocation.value,
                 getEtfPrice(allocation.instrumentId)
               )
+        "
+        :computed-amount="
+          showRebalanceColumns
+            ? Math.abs(
+                ((currentHoldingsTotal + totalInvestment) * allocation.value) / 100 -
+                  (allocation.currentValue ?? 0)
+              )
+            : (totalInvestment * allocation.value) / 100
         "
         :computed-unused="
           showRebalanceColumns
@@ -271,13 +298,13 @@
                   :class="getRebalanceData(allocation).isBuy ? 'text-success' : 'text-danger'"
                 >
                   {{ getRebalanceData(allocation).isBuy ? 'Buy' : 'Sell' }}
-                  {{ getRebalanceData(allocation).units }}
+                  {{ formatActionValue(allocation) }}
                 </span>
                 <span v-else class="text-muted">-</span>
               </template>
               <template v-else>
                 {{
-                  formatUnits(
+                  formatAction(
                     allocation.instrumentId,
                     allocation.value,
                     getEtfPrice(allocation.instrumentId)
@@ -407,7 +434,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import AllocationCard from './allocation-card.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
-import type { AllocationInput } from './types'
+import type { AllocationInput, ActionDisplayMode } from './types'
 
 interface AllocationWithData extends AllocationInput {
   symbol: string
@@ -430,6 +457,7 @@ const props = defineProps<{
   availablePlatforms: string[]
   currentHoldingsTotal: number
   optimizeEnabled: boolean
+  actionDisplayMode: ActionDisplayMode
 }>()
 
 const emit = defineEmits<{
@@ -438,6 +466,7 @@ const emit = defineEmits<{
   'update:totalInvestment': [value: number]
   'update:selectedPlatform': [value: string | null]
   'update:optimizeEnabled': [value: boolean]
+  'update:actionDisplayMode': [value: ActionDisplayMode]
   add: []
   remove: [index: number]
   clear: []
@@ -712,20 +741,42 @@ const getUnused = (instrumentId: number, percentage: number, price: number | nul
   return allocated - units * price
 }
 
-const formatUnits = (instrumentId: number, percentage: number, price: number | null): string => {
-  const units = getUnits(instrumentId, percentage, price)
-  return units > 0 ? units.toString() : '-'
-}
-
 const formatUnused = (instrumentId: number, percentage: number, price: number | null): string => {
+  if (actionDisplayMode.value === 'amount') return '-'
   const units = getUnits(instrumentId, percentage, price)
   if (units === 0) return '-'
   const unused = getUnused(instrumentId, percentage, price)
   return `€${unused.toFixed(2)}`
 }
 
+const actionDisplayMode = computed(() => props.actionDisplayMode)
+
+const formatActionValue = (allocation: AllocationInput): string => {
+  const data = getRebalanceData(allocation)
+  if (actionDisplayMode.value === 'amount') {
+    const currentValue = allocation.currentValue ?? 0
+    const targetPortfolio = props.currentHoldingsTotal + props.totalInvestment
+    const targetValue = (targetPortfolio * allocation.value) / 100
+    const exactAmount = Math.abs(targetValue - currentValue)
+    return `€${exactAmount.toFixed(2)}`
+  }
+  return data.units.toString()
+}
+
+const formatAction = (instrumentId: number, percentage: number, price: number | null): string => {
+  const units = getUnits(instrumentId, percentage, price)
+  if (actionDisplayMode.value === 'amount') {
+    const exactAmount = (props.totalInvestment * percentage) / 100
+    if (exactAmount === 0) return '-'
+    return `€${exactAmount.toFixed(2)}`
+  }
+  if (units === 0) return '-'
+  return units.toString()
+}
+
 const totalUnused = computed(() => {
   if (!showInvestmentColumns.value && !showRebalanceActionColumn.value) return 0
+  if (actionDisplayMode.value === 'amount') return 0
   if (showRebalanceColumns.value && props.optimizeEnabled) {
     return optimizedRebalanceResult.value.totalRemaining
   }
@@ -1078,6 +1129,44 @@ const onTotalInvestmentChange = (event: Event) => {
   color: var(--bs-gray-600);
   cursor: pointer;
   white-space: nowrap;
+}
+
+.display-mode-toggle {
+  display: flex;
+  gap: 0;
+}
+
+.display-mode-btn {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--bs-gray-300);
+  background: var(--bs-white);
+  color: var(--bs-gray-600);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.display-mode-btn:first-child {
+  border-radius: 0.25rem 0 0 0.25rem;
+  border-right: none;
+}
+
+.display-mode-btn:last-child {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.display-mode-btn:hover:not(.active) {
+  background: var(--bs-gray-100);
+  border-color: var(--bs-gray-400);
+  color: var(--bs-gray-700);
+}
+
+.display-mode-btn.active {
+  background: var(--bs-gray-700);
+  color: var(--bs-white);
+  border-color: var(--bs-gray-700);
 }
 
 .remove-btn {

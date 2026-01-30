@@ -31,12 +31,14 @@
         :available-platforms="availablePlatforms"
         :current-holdings-total="currentHoldingsTotal"
         :optimize-enabled="optimizeEnabled"
+        :action-display-mode="actionDisplayMode"
         class="mb-4"
         @update:input-mode="onInputModeChange"
         @update:allocation="updateAllocation"
         @update:total-investment="onTotalInvestmentChange"
         @update:selected-platform="onPlatformChange"
         @update:optimize-enabled="onOptimizeChange"
+        @update:action-display-mode="onActionDisplayModeChange"
         @add="addAllocation"
         @remove="removeAllocation"
         @clear="clearAllocations"
@@ -112,7 +114,7 @@ import type {
   DiversificationCalculatorResponseDto,
   InstrumentDto,
 } from '../../models/generated/domain-models'
-import type { AllocationInput, CachedState } from './types'
+import type { AllocationInput, CachedState, ActionDisplayMode } from './types'
 
 const ConfigDialog = defineAsyncComponent(() => import('./config-dialog.vue'))
 
@@ -138,6 +140,7 @@ const inputMode = ref<'percentage' | 'amount'>('percentage')
 const totalInvestment = ref<number>(0)
 const selectedPlatform = ref<string | null>(null)
 const optimizeEnabled = ref(false)
+const actionDisplayMode = ref<ActionDisplayMode>('units')
 const portfolioInstruments = ref<InstrumentDto[]>([])
 const isCalculating = ref(false)
 const isLoadingPortfolio = ref(false)
@@ -190,6 +193,7 @@ const currentConfig = computed(() => ({
   selectedPlatform: selectedPlatform.value,
   optimizeEnabled: optimizeEnabled.value,
   totalInvestment: totalInvestment.value,
+  actionDisplayMode: actionDisplayMode.value,
 }))
 
 const toBreakdown = <T extends { percentage: number }>(
@@ -271,6 +275,7 @@ const saveToDatabase = async () => {
       selectedPlatform: selectedPlatform.value,
       optimizeEnabled: optimizeEnabled.value,
       totalInvestment: totalInvestment.value,
+      actionDisplayMode: actionDisplayMode.value,
     })
     saveStatus.value = 'saved'
     hasUnsavedChanges.value = false
@@ -358,6 +363,12 @@ const onOptimizeChange = (enabled: boolean) => {
   debouncedSave()
 }
 
+const onActionDisplayModeChange = (mode: ActionDisplayMode) => {
+  actionDisplayMode.value = mode
+  hasUnsavedChanges.value = true
+  debouncedSave()
+}
+
 const onTotalInvestmentChange = (value: number) => {
   totalInvestment.value = value
   hasUnsavedChanges.value = true
@@ -382,6 +393,7 @@ const onImportComplete = async (data: CachedState) => {
   selectedPlatform.value = data.selectedPlatform ?? null
   optimizeEnabled.value = data.optimizeEnabled ?? false
   totalInvestment.value = data.totalInvestment ?? 0
+  actionDisplayMode.value = data.actionDisplayMode ?? 'units'
   hasUnsavedChanges.value = true
   if (selectedPlatform.value) {
     await loadCurrentValues(selectedPlatform.value)
@@ -427,6 +439,7 @@ watch(
     selectedPlatform.value = dbConfig.selectedPlatform ?? null
     optimizeEnabled.value = dbConfig.optimizeEnabled ?? false
     totalInvestment.value = dbConfig.totalInvestment ?? 0
+    actionDisplayMode.value = dbConfig.actionDisplayMode ?? 'units'
     if (selectedPlatform.value) {
       await loadCurrentValues(selectedPlatform.value)
     }

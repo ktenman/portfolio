@@ -76,7 +76,7 @@
 import { computed } from 'vue'
 import { formatTer, formatReturn } from '../../utils/formatters'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
-import type { AllocationInput } from './types'
+import type { AllocationInput, ActionDisplayMode } from './types'
 
 const props = defineProps<{
   allocation: AllocationInput
@@ -85,8 +85,10 @@ const props = defineProps<{
   totalInvestment: number
   disableRemove: boolean
   showRebalanceMode?: boolean
+  actionDisplayMode?: ActionDisplayMode
   isBuy?: boolean
   computedUnits?: number
+  computedAmount?: number
   computedUnused?: number
   afterPercent?: number
 }>()
@@ -128,11 +130,18 @@ const localInvestmentCalc = computed(() => {
 })
 
 const formattedUnits = computed(() => {
+  if (props.actionDisplayMode === 'amount') {
+    const amount = props.computedAmount ?? 0
+    if (amount === 0) return '-'
+    return `€${amount.toFixed(2)}`
+  }
   const units = props.computedUnits ?? localInvestmentCalc.value.units
-  return units > 0 ? units.toString() : '-'
+  if (units === 0) return '-'
+  return units.toString()
 })
 
 const formattedUnused = computed(() => {
+  if (props.actionDisplayMode === 'amount') return '-'
   const units = props.computedUnits ?? localInvestmentCalc.value.units
   if (units === 0) return '-'
   if (props.showRebalanceMode && props.computedUnused === undefined) return '-'
