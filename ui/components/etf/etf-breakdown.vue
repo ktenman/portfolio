@@ -45,12 +45,12 @@
     <etf-breakdown-header
       v-if="!isLoading"
       :total-value="totalValue"
-      :unique-holdings="holdings.length"
+      :unique-holdings="filteredHoldings.length"
       :selected-etfs="selectedEtfs"
       :available-etfs="availableEtfs"
     />
 
-    <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-4">
+    <div v-if="!isLoading && filteredHoldings.length > 0" class="charts-section mb-4">
       <div class="row g-3">
         <div class="col-lg-4 col-md-6">
           <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
@@ -64,21 +64,45 @@
       </div>
     </div>
 
+    <div class="search-container mb-3">
+      <div class="search-input-wrapper">
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input"
+          placeholder="Search by name, ticker, sector, or country..."
+        />
+        <button
+          v-if="searchQuery.trim()"
+          class="search-clear-btn"
+          @click="clearSearch"
+          type="button"
+          aria-label="Clear search"
+        >
+          &times;
+        </button>
+      </div>
+      <span v-if="searchQuery.trim() && !isLoading" class="search-results-count">
+        {{ filteredHoldings.length }} of {{ holdings.length }} holdings
+      </span>
+    </div>
+
     <etf-breakdown-table
-      :holdings="holdings"
+      :holdings="filteredHoldings"
       :is-loading="isLoading"
       :is-error="isError"
       :error-message="errorMessage"
       :selected-etfs="selectedEtfs"
       :selected-platforms="selectedPlatforms"
       :master-holdings="masterHoldings"
+      :search-query="searchQuery"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useLocalStorage, useDebounceFn } from '@vueuse/core'
+import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
 import { etfBreakdownService } from '../../services/etf-breakdown-service'
 import { logoService } from '../../services/logo-service'
 import {
@@ -101,6 +125,8 @@ const isError = ref(false)
 const errorMessage = ref('')
 const selectedEtfs = useLocalStorage<string[]>('portfolio_selected_etfs', [])
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_etf_breakdown_platforms', [])
+const searchQuery = useLocalStorage<string>('portfolio_etf_search', '')
+const debouncedSearchQuery = refDebounced(searchQuery, 200)
 
 const etfPlatformMetadata = computed(() => {
   if (masterHoldings.value.length === 0) return { etfs: [], platforms: [] }
@@ -159,13 +185,33 @@ watch(
   { immediate: true }
 )
 
-const totalValue = computed(() => holdings.value.reduce((sum, h) => sum + h.totalValueEur, 0))
+const filteredHoldings = computed(() => {
+  const query = (debouncedSearchQuery.value ?? '').toLowerCase().trim()
+  if (!query) return holdings.value
+  return holdings.value.filter(
+    h =>
+      h.holdingName.toLowerCase().includes(query) ||
+      h.holdingTicker?.toLowerCase().includes(query) ||
+      h.holdingSector?.toLowerCase().includes(query) ||
+      h.holdingCountryName?.toLowerCase().includes(query)
+  )
+})
 
-const sectorChartData = computed<ChartDataItem[]>(() => buildSectorChartData(holdings.value))
+const totalValue = computed(() =>
+  filteredHoldings.value.reduce((sum, h) => sum + h.totalValueEur, 0)
+)
 
-const companyChartData = computed<ChartDataItem[]>(() => buildCompanyChartData(holdings.value))
+const sectorChartData = computed<ChartDataItem[]>(() =>
+  buildSectorChartData(filteredHoldings.value)
+)
 
-const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(holdings.value))
+const companyChartData = computed<ChartDataItem[]>(() =>
+  buildCompanyChartData(filteredHoldings.value)
+)
+
+const countryChartData = computed<ChartDataItem[]>(() =>
+  buildCountryChartData(filteredHoldings.value)
+)
 
 const getEtfsParam = (): string[] | undefined =>
   getFilterParam(selectedEtfs.value, availableEtfs.value)
@@ -230,6 +276,10 @@ const toggleAllEtfs = () => {
 
 const getSymbolOnly = (fullSymbol: string): string => {
   return fullSymbol.split(':')[0]
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
 }
 
 const isPlatformSelected = (platform: string): boolean => {
@@ -391,6 +441,62 @@ onMounted(async () => {
   color: white;
 }
 
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 320px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.375rem 2rem 0.375rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: white;
+  transition: border-color 0.15s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #4b5563;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.125rem 0.25rem;
+}
+
+.search-clear-btn:hover {
+  color: #4b5563;
+}
+
+.search-results-count {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .etf-breakdown-container {
     padding: 1rem;
@@ -422,6 +528,17 @@ onMounted(async () => {
 
   .platform-separator {
     display: none;
+  }
+
+  .search-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+  }
+
+  .search-input-wrapper {
+    width: 100%;
+    max-width: none;
   }
 }
 
