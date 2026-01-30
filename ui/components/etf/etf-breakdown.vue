@@ -40,28 +40,6 @@
           </button>
         </div>
       </div>
-      <div class="search-container mt-2">
-        <div class="search-input-wrapper">
-          <input
-            v-model="searchQuery"
-            type="text"
-            class="search-input"
-            placeholder="Search by name, ticker, sector, or country..."
-          />
-          <button
-            v-if="searchQuery"
-            class="search-clear-btn"
-            @click="clearSearch"
-            type="button"
-            aria-label="Clear search"
-          >
-            &times;
-          </button>
-        </div>
-        <span v-if="searchQuery && !isLoading" class="search-results-count">
-          {{ filteredHoldings.length }} of {{ holdings.length }} holdings
-        </span>
-      </div>
     </div>
 
     <etf-breakdown-header
@@ -84,6 +62,29 @@
           <etf-breakdown-chart title="Country Allocation" :chart-data="countryChartData" />
         </div>
       </div>
+    </div>
+
+    <div class="search-container mb-3">
+      <div class="search-input-wrapper">
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input"
+          placeholder="Search by name, ticker, sector, or country..."
+        />
+        <button
+          v-if="searchQuery"
+          class="search-clear-btn"
+          @click="clearSearch"
+          type="button"
+          aria-label="Clear search"
+        >
+          &times;
+        </button>
+      </div>
+      <span v-if="searchQuery && !isLoading" class="search-results-count">
+        {{ filteredHoldings.length }} of {{ holdings.length }} holdings
+      </span>
     </div>
 
     <etf-breakdown-table
