@@ -162,6 +162,7 @@ const props = defineProps<{
   selectedEtfs?: string[]
   selectedPlatforms?: string[]
   masterHoldings?: EtfHoldingBreakdownDto[]
+  searchQuery?: string
 }>()
 
 const emit = defineEmits<{
@@ -243,6 +244,12 @@ const getLogoUrl = (uuid: string): string => {
 const totalValue = computed(() => props.holdings.reduce((sum, h) => sum + h.totalValueEur, 0))
 
 const emptyStateMessage = computed(() => {
+  if (props.searchQuery?.trim()) {
+    return {
+      title: 'No matching holdings',
+      subtitle: `No holdings match "${props.searchQuery}". Try a different search term.`,
+    }
+  }
   if (
     !props.selectedEtfs?.length ||
     !props.selectedPlatforms?.length ||
