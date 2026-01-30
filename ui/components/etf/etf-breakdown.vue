@@ -73,7 +73,7 @@
           placeholder="Search by name, ticker, sector, or country..."
         />
         <button
-          v-if="searchQuery"
+          v-if="searchQuery.trim()"
           class="search-clear-btn"
           @click="clearSearch"
           type="button"
@@ -82,7 +82,7 @@
           &times;
         </button>
       </div>
-      <span v-if="searchQuery && !isLoading" class="search-results-count">
+      <span v-if="searchQuery.trim() && !isLoading" class="search-results-count">
         {{ filteredHoldings.length }} of {{ holdings.length }} holdings
       </span>
     </div>
@@ -102,7 +102,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useLocalStorage, useDebounceFn } from '@vueuse/core'
+import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
 import { etfBreakdownService } from '../../services/etf-breakdown-service'
 import { logoService } from '../../services/logo-service'
 import {
@@ -126,6 +126,7 @@ const errorMessage = ref('')
 const selectedEtfs = useLocalStorage<string[]>('portfolio_selected_etfs', [])
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_etf_breakdown_platforms', [])
 const searchQuery = useLocalStorage<string>('portfolio_etf_search', '')
+const debouncedSearchQuery = refDebounced(searchQuery, 200)
 
 const etfPlatformMetadata = computed(() => {
   if (masterHoldings.value.length === 0) return { etfs: [], platforms: [] }
@@ -185,7 +186,7 @@ watch(
 )
 
 const filteredHoldings = computed(() => {
-  const query = searchQuery.value.toLowerCase().trim()
+  const query = (debouncedSearchQuery.value ?? '').toLowerCase().trim()
   if (!query) return holdings.value
   return holdings.value.filter(
     h =>
