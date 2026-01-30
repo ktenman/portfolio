@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.diversification
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_CONFIG_CACHE
+import ee.tenman.portfolio.domain.ActionDisplayMode
 import ee.tenman.portfolio.domain.DiversificationAllocationData
 import ee.tenman.portfolio.domain.DiversificationConfig
 import ee.tenman.portfolio.domain.DiversificationConfigData
@@ -38,6 +39,7 @@ class DiversificationConfigService(
       selectedPlatform = configData.selectedPlatform,
       optimizeEnabled = configData.optimizeEnabled,
       totalInvestment = configData.totalInvestment,
+      actionDisplayMode = configData.actionDisplayMode.name.lowercase(),
     )
 
   private fun DiversificationAllocationData.toDto() =
@@ -53,6 +55,7 @@ class DiversificationConfigService(
       selectedPlatform = selectedPlatform,
       optimizeEnabled = optimizeEnabled,
       totalInvestment = totalInvestment,
+      actionDisplayMode = ActionDisplayMode.fromString(actionDisplayMode),
     )
 
   private fun DiversificationConfigAllocationDto.toAllocationData() =
