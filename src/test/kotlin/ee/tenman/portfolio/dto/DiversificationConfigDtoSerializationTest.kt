@@ -16,25 +16,25 @@ class DiversificationConfigDtoSerializationTest {
   fun `should serialize and deserialize DiversificationConfigDto`() {
     val dto =
       DiversificationConfigDto(
-      allocations =
-        listOf(
-        DiversificationConfigAllocationDto(instrumentId = 1L, value = BigDecimal("50.5")),
-        DiversificationConfigAllocationDto(instrumentId = 2L, value = BigDecimal("49.5")),
-      ),
+        allocations =
+          listOf(
+            DiversificationConfigAllocationDto(instrumentId = 1L, value = BigDecimal("50.5")),
+            DiversificationConfigAllocationDto(instrumentId = 2L, value = BigDecimal("49.5")),
+          ),
         inputMode = "percentage",
-    )
-
+        actionDisplayMode = "amount",
+      )
     val bytes =
       ByteArrayOutputStream().use { baos ->
-      ObjectOutputStream(baos).use { it.writeObject(dto) }
-      baos.toByteArray()
-    }
+        ObjectOutputStream(baos).use { it.writeObject(dto) }
+        baos.toByteArray()
+      }
     val deserialized =
       ObjectInputStream(ByteArrayInputStream(bytes)).use {
-      it.readObject() as DiversificationConfigDto
-    }
-
+        it.readObject() as DiversificationConfigDto
+      }
     expect(deserialized.inputMode).toEqual("percentage")
+    expect(deserialized.actionDisplayMode).toEqual("amount")
     expect(deserialized.allocations).toHaveSize(2)
     expect(deserialized.allocations[0].instrumentId).toEqual(1L)
     expect(deserialized.allocations[0].value).toEqualNumerically(BigDecimal("50.5"))

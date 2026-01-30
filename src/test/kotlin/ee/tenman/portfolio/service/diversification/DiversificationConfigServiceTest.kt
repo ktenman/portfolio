@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.ActionDisplayMode
 import ee.tenman.portfolio.domain.DiversificationAllocationData
 import ee.tenman.portfolio.domain.DiversificationConfig
 import ee.tenman.portfolio.domain.DiversificationConfigData
@@ -43,38 +44,38 @@ class DiversificationConfigServiceTest {
   fun `should return config when it exists`() {
     val configData =
       DiversificationConfigData(
-      allocations = listOf(DiversificationAllocationData(instrumentId = 1L, value = BigDecimal("50.5"))),
-      inputMode = InputMode.PERCENTAGE,
-    )
+        allocations = listOf(DiversificationAllocationData(instrumentId = 1L, value = BigDecimal("50.5"))),
+        inputMode = InputMode.PERCENTAGE,
+        actionDisplayMode = ActionDisplayMode.AMOUNT,
+      )
     val config = DiversificationConfig(configData = configData).apply { id = 1L }
     every { repository.findConfig() } returns config
-
     val result = service.getConfig()
-
     expect(result).notToEqualNull()
     expect(result!!.allocations).toHaveSize(1)
     expect(result.allocations[0].instrumentId).toEqual(1L)
     expect(result.allocations[0].value).toEqualNumerically(BigDecimal("50.5"))
     expect(result.inputMode).toEqual("percentage")
+    expect(result.actionDisplayMode).toEqual("amount")
   }
 
   @Test
   fun `should create new config when none exists`() {
     val dto =
       DiversificationConfigDto(
-      allocations = listOf(DiversificationConfigAllocationDto(instrumentId = 2L, value = BigDecimal("75.0"))),
-      inputMode = "amount",
-    )
+        allocations = listOf(DiversificationConfigAllocationDto(instrumentId = 2L, value = BigDecimal("75.0"))),
+        inputMode = "amount",
+        actionDisplayMode = "amount",
+      )
     val configSlot = slot<DiversificationConfig>()
     every { repository.findConfig() } returns null
     every { repository.save(capture(configSlot)) } answers { configSlot.captured.apply { id = 1L } }
-
     val result = service.saveConfig(dto)
-
     expect(result.allocations).toHaveSize(1)
     expect(result.allocations[0].instrumentId).toEqual(2L)
     expect(result.allocations[0].value).toEqualNumerically(BigDecimal("75.0"))
     expect(result.inputMode).toEqual("amount")
+    expect(result.actionDisplayMode).toEqual("amount")
     verify(exactly = 1) { repository.save(any()) }
   }
 
