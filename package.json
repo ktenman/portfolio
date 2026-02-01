@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.6.0",
-    "@tanstack/vue-query": "^5.92.5",
+    "@tanstack/vue-query": "^5.92.9",
     "@vueuse/core": "^14.1.0",
     "axios": "^1.13.4",
     "bootstrap": "^5.3.8",
