@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.2.20"
 springBoot = "4.0.2"
-springCloud = "2025.1.0"
+springCloud = "2025.1.1"
 springDependencyManagement = "1.1.7"
 springDoc = "3.0.1"
 springRetry = "2.0.12"
