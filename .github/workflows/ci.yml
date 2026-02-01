@@ -43,7 +43,7 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         if: matrix.lint-type == 'backend'
-        uses: gradle/actions/setup-gradle@v5.0.0
+        uses: gradle/actions/setup-gradle@v5.0.1
         with:
           gradle-home-cache-cleanup: true
       - name: Run ktlint check
@@ -106,7 +106,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@v5.0.0
+      - uses: gradle/actions/setup-gradle@v5.0.1
         if: matrix.type == 'backend' || matrix.type == 'e2e'
         with:
           gradle-home-cache-cleanup: true
@@ -289,7 +289,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@v5.0.0
+      - uses: gradle/actions/setup-gradle@v5.0.1
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
         with:
           gradle-home-cache-cleanup: true
