@@ -105,7 +105,7 @@ jollyday-jaxb = { module = "de.focus-shift:jollyday-jaxb", version.ref = "jollyd
 detekt-formatting = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 
 # WireMock
-wiremock-spring-boot = { module = "org.wiremock.integrations:wiremock-spring-boot", version = "4.0.8" }
+wiremock-spring-boot = { module = "org.wiremock.integrations:wiremock-spring-boot", version = "4.1.0" }
 
 # Testing
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
