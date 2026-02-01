@@ -64,7 +64,7 @@
     "eslint-plugin-no-comments": "^1.1.10",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-unused-imports": "^4.3.0",
-    "eslint-plugin-vue": "^10.6.2",
+    "eslint-plugin-vue": "^10.7.0",
     "happy-dom": "^20.4.0",
     "knip": "^5.78.0",
     "prettier": "^3.8.1",
