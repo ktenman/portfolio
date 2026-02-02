@@ -405,6 +405,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      workflows: write
     steps:
       - uses: fastify/github-action-merge-dependabot@v3.11.2
         with:
