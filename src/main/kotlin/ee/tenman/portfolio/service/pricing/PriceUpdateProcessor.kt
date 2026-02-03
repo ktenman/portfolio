@@ -21,6 +21,7 @@ class PriceUpdateProcessor(
   private val dailyPriceService: DailyPriceService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+
   fun processPriceUpdates(
     platform: Platform,
     log: Logger,

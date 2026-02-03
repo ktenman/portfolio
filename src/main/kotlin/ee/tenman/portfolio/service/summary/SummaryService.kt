@@ -177,12 +177,13 @@ class SummaryService(
     return summary
   }
 
-  private fun PortfolioDailySummary.mergeFrom(source: PortfolioDailySummary) = apply {
-    totalValue = source.totalValue
-    xirrAnnualReturn = source.xirrAnnualReturn
-    realizedProfit = source.realizedProfit
-    unrealizedProfit = source.unrealizedProfit
-    totalProfit = source.totalProfit
-    earningsPerDay = source.earningsPerDay
-  }
+  private fun PortfolioDailySummary.mergeFrom(source: PortfolioDailySummary) =
+    apply {
+      totalValue = source.totalValue
+      xirrAnnualReturn = source.xirrAnnualReturn
+      realizedProfit = source.realizedProfit
+      unrealizedProfit = source.unrealizedProfit
+      totalProfit = source.totalProfit
+      earningsPerDay = source.earningsPerDay
+    }
 }
