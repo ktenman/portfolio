@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.infrastructure
 
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
 import java.net.URI
@@ -8,6 +9,13 @@ import java.net.URI
 class ImageDownloadService(
   private val restClient: RestClient,
 ) {
+  private val log = LoggerFactory.getLogger(javaClass)
+
+  fun downloadOrNull(url: String): ByteArray? =
+    runCatching { download(url) }
+      .onFailure { log.debug("Failed to download image from $url: ${it.message}") }
+      .getOrNull()
+
   fun download(url: String): ByteArray {
     validateUrl(url)
     val data =

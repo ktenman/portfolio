@@ -5,6 +5,7 @@ import ee.tenman.portfolio.common.orNotFoundBySymbol
 import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.InstrumentSnapshot
 import ee.tenman.portfolio.model.InstrumentSnapshotsWithPortfolioXirr
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -46,6 +47,10 @@ class InstrumentService(
 
   @Transactional(readOnly = true)
   fun getAllInstrumentsWithoutFiltering(): List<Instrument> = instrumentRepository.findAll()
+
+  @Transactional(readOnly = true)
+  fun getInstrumentsByProvider(provider: ProviderName): List<Instrument> =
+    instrumentRepository.findAll().filter { it.providerName == provider }
 
   @Transactional(readOnly = true)
   fun getAllInstrumentSnapshots(): List<InstrumentSnapshot> = instrumentSnapshotService.getAllSnapshots()

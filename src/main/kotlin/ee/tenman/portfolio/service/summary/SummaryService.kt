@@ -62,10 +62,7 @@ class SummaryService(
   }
 
   @Transactional(readOnly = true)
-  fun getCurrentDaySummary(): PortfolioDailySummary {
-    val today = LocalDate.now(clock)
-    return calculateCurrentDaySummaryForDate(today)
-  }
+  fun getCurrentDaySummary(): PortfolioDailySummary = calculateSummaryDetailsForDate(LocalDate.now(clock))
 
   fun calculateSummaryForDate(date: LocalDate): PortfolioDailySummary {
     if (isToday(date)) return calculateTodaySummary(date)
@@ -77,16 +74,7 @@ class SummaryService(
   @Transactional
   fun saveDailySummary(summary: PortfolioDailySummary): PortfolioDailySummary {
     val existing = portfolioDailySummaryRepository.findByEntryDate(summary.entryDate)
-    val toSave =
-      existing?.apply {
-      totalValue = summary.totalValue
-      xirrAnnualReturn = summary.xirrAnnualReturn
-      realizedProfit = summary.realizedProfit
-      unrealizedProfit = summary.unrealizedProfit
-      totalProfit = summary.totalProfit
-      earningsPerDay = summary.earningsPerDay
-    } ?: summary
-
+    val toSave = existing?.mergeFrom(summary) ?: summary
     val saved = portfolioDailySummaryRepository.save(toSave)
     summaryCacheService.evictAllCaches()
     return saved
@@ -96,21 +84,9 @@ class SummaryService(
   fun saveDailySummaries(summaries: List<PortfolioDailySummary>) {
     val existing =
       portfolioDailySummaryRepository
-      .findAllByEntryDateIn(summaries.map { it.entryDate })
-      .associateBy { it.entryDate }
-
-    val merged =
-      summaries.map { s ->
-      existing[s.entryDate]?.apply {
-        totalValue = s.totalValue
-        xirrAnnualReturn = s.xirrAnnualReturn
-        realizedProfit = s.realizedProfit
-        unrealizedProfit = s.unrealizedProfit
-        totalProfit = s.totalProfit
-        earningsPerDay = s.earningsPerDay
-      } ?: s
-    }
-
+        .findAllByEntryDateIn(summaries.map { it.entryDate })
+        .associateBy { it.entryDate }
+    val merged = summaries.map { s -> existing[s.entryDate]?.mergeFrom(s) ?: s }
     portfolioDailySummaryRepository.saveAll(merged)
     summaryCacheService.evictAllCaches()
   }
@@ -133,9 +109,8 @@ class SummaryService(
 
   private fun calculateTodaySummary(date: LocalDate): PortfolioDailySummary {
     val existingSummary = summaryCacheService.findByEntryDate(date)
-    return existingSummary?.let {
-      alignCurrentDaySummaryWithInstruments(it)
-    } ?: createCurrentDaySummary(date)
+    return existingSummary?.let { alignCurrentDaySummaryWithInstruments(it) }
+      ?: calculateSummaryDetailsForDate(date)
   }
 
   private fun calculateHistoricalSummary(date: LocalDate): PortfolioDailySummary {
@@ -164,16 +139,12 @@ class SummaryService(
     return summary
   }
 
-  private fun calculateCurrentDaySummaryForDate(date: LocalDate): PortfolioDailySummary = calculateSummaryDetailsForDate(date)
-
   private fun alignCurrentDaySummaryWithInstruments(summary: PortfolioDailySummary): PortfolioDailySummary {
     val newSummary = calculateSummaryDetailsForDate(summary.entryDate)
     newSummary.id = summary.id
     newSummary.version = summary.version
     return newSummary
   }
-
-  private fun createCurrentDaySummary(date: LocalDate): PortfolioDailySummary = calculateSummaryDetailsForDate(date)
 
   private fun calculateSummaryDetailsForDate(date: LocalDate): PortfolioDailySummary {
     val transactions =
@@ -204,5 +175,14 @@ class SummaryService(
       summary.version = existingSummary.version
     }
     return summary
+  }
+
+  private fun PortfolioDailySummary.mergeFrom(source: PortfolioDailySummary) = apply {
+    totalValue = source.totalValue
+    xirrAnnualReturn = source.xirrAnnualReturn
+    realizedProfit = source.realizedProfit
+    unrealizedProfit = source.unrealizedProfit
+    totalProfit = source.totalProfit
+    earningsPerDay = source.earningsPerDay
   }
 }

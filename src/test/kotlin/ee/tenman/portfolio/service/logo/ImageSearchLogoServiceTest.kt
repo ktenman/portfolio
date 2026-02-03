@@ -81,7 +81,7 @@ class ImageSearchLogoServiceTest {
           ),
       )
     setupRestClientMock(bingResponse)
-    every { imageDownloadService.download("https://example.com/logo.png") } returns imageData
+    every { imageDownloadService.downloadOrNull("https://example.com/logo.png") } returns imageData
 
     val result = service.searchAndDownloadLogo("Apple Inc")
 
@@ -102,8 +102,8 @@ class ImageSearchLogoServiceTest {
           ),
       )
     setupRestClientMock(bingResponse)
-    every { imageDownloadService.download("https://example.com/bad.png") } throws RuntimeException("Download failed")
-    every { imageDownloadService.download("https://example.com/good.png") } returns imageData
+    every { imageDownloadService.downloadOrNull("https://example.com/bad.png") } returns null
+    every { imageDownloadService.downloadOrNull("https://example.com/good.png") } returns imageData
 
     val result = service.searchAndDownloadLogo("Apple Inc")
 
@@ -122,7 +122,7 @@ class ImageSearchLogoServiceTest {
           ),
       )
     setupRestClientMock(bingResponse)
-    every { imageDownloadService.download(any()) } throws RuntimeException("Download failed")
+    every { imageDownloadService.downloadOrNull(any()) } returns null
 
     val result = service.searchAndDownloadLogo("Apple Inc")
 

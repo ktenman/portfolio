@@ -155,10 +155,7 @@ class LogoReplacementService(
     return imageProcessingService.resizeToMaxDimension(imageData)
   }
 
-  private fun downloadImage(url: String): ByteArray? =
-    runCatching { imageDownloadService.download(url) }
-      .onFailure { log.debug("Failed to download from $url: ${it.message}") }
-      .getOrNull()
+  private fun downloadImage(url: String): ByteArray? = imageDownloadService.downloadOrNull(url)
 
   private fun saveLogoAndUpdateHolding(
     holdingUuid: UUID,

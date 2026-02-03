@@ -203,7 +203,7 @@ class LogoReplacementServiceTest {
       val candidate = LogoCandidate(thumbnailUrl = "thumb.png", imageUrl = "img.png", title = "Apple", index = 0)
       every { logoCandidateCacheService.getCachedDataByName("Microsoft") } returns null
       every { imageSearchLogoService.searchLogoCandidates("Microsoft logo", 50) } returns listOf(candidate)
-      every { imageDownloadService.download("img.png") } returns imageData
+      every { imageDownloadService.downloadOrNull("img.png") } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
       every { logoCandidateCacheService.cacheByName("Microsoft", listOf(candidate), mapOf(0 to imageData)) } returns
