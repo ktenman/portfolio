@@ -58,10 +58,7 @@ class LightyearHistoricalDataRetrievalJob(
 
     try {
       log.info("Starting Lightyear historical data retrieval execution")
-      val instruments =
-        instrumentService
-          .getAllInstrumentsWithoutFiltering()
-          .filter { it.providerName == ProviderName.LIGHTYEAR }
+      val instruments = instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR)
 
       if (instruments.isEmpty()) {
         log.info("No Lightyear instruments found to process")

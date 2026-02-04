@@ -43,7 +43,7 @@ jobs:
           - language: actions  # Covers GitHub Actions YAML files
             build-mode: none
           - language: java-kotlin
-            build-mode: autobuild
+            build-mode: manual
           - language: javascript-typescript  # Covers JS, TS, and Vue
             build-mode: none
           - language: python

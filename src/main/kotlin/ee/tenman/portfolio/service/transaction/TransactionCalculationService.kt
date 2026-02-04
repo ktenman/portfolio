@@ -14,19 +14,19 @@ class TransactionCalculationService(
   fun calculateNetQuantity(
     instrumentId: Long,
     platformFilter: Set<Platform>? = null,
-  ): BigDecimal {
-    var transactions = transactionRepository.findAllByInstrumentId(instrumentId)
-    if (platformFilter != null) transactions = transactions.filter { platformFilter.contains(it.platform) }
-    return calculateNetQuantityFromTransactions(transactions)
-  }
+  ): BigDecimal = calculateNetQuantityFromTransactions(getFilteredTransactions(instrumentId, platformFilter))
 
   fun getPlatformsForInstrument(
     instrumentId: Long,
     platformFilter: Set<Platform>? = null,
-  ): Set<Platform> {
-    var transactions = transactionRepository.findAllByInstrumentId(instrumentId)
-    if (platformFilter != null) transactions = transactions.filter { platformFilter.contains(it.platform) }
-    return transactions.map { it.platform }.toSet()
+  ): Set<Platform> = getFilteredTransactions(instrumentId, platformFilter).map { it.platform }.toSet()
+
+  private fun getFilteredTransactions(
+    instrumentId: Long,
+    platformFilter: Set<Platform>?,
+  ): List<PortfolioTransaction> {
+    val transactions = transactionRepository.findAllByInstrumentId(instrumentId)
+    return platformFilter?.let { filter -> transactions.filter { it.platform in filter } } ?: transactions
   }
 
   fun batchCalculateNetQuantities(instrumentIds: Collection<Long>): Map<Long, BigDecimal> {

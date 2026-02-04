@@ -83,10 +83,7 @@ class BatchLogoValidationService(
       .filterNotNull()
       .take(batchProperties.imagesPerCompany)
 
-  private fun downloadImage(url: String): ByteArray? =
-    runCatching { imageDownloadService.download(url) }
-      .onFailure { log.debug("Failed to download from $url: ${it.message}") }
-      .getOrNull()
+  private fun downloadImage(url: String): ByteArray? = imageDownloadService.downloadOrNull(url)
 
   private fun callBatchValidationApi(holdingData: List<HoldingCandidateData>): Map<UUID, List<Int>> {
     val contentParts = mutableListOf<OpenRouterVisionRequest.ContentPart>()

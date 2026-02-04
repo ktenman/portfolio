@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
+import ee.tenman.portfolio.service.instrument.InstrumentService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -19,10 +20,12 @@ import java.time.ZoneId
 
 class PriceUpdateProcessorTest {
   private val marketPhaseDetectionService = mockk<MarketPhaseDetectionService>()
+  private val instrumentService = mockk<InstrumentService>()
+  private val dailyPriceService = mockk<DailyPriceService>()
   private val clock = Clock.fixed(Instant.parse("2024-01-15T12:00:00Z"), ZoneId.systemDefault())
   private val log = mockk<Logger>(relaxed = true)
 
-  private val processor = PriceUpdateProcessor(marketPhaseDetectionService, clock)
+  private val processor = PriceUpdateProcessor(marketPhaseDetectionService, clock, instrumentService, dailyPriceService)
 
   @Test
   fun `processPriceUpdates should process all symbols successfully on weekday`() {

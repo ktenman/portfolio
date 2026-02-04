@@ -81,10 +81,7 @@ class ImageSearchLogoService(
 
   private fun downloadFirstValidImage(imageUrls: List<String>): ByteArray? {
     for (url in imageUrls) {
-      val imageData =
-        runCatching { imageDownloadService.download(url) }
-          .onFailure { log.debug("Failed to download image from $url: ${it.message}") }
-          .getOrNull()
+      val imageData = imageDownloadService.downloadOrNull(url)
       if (imageData != null && imageData.isNotEmpty()) {
         log.info("Successfully downloaded logo image from: $url")
         return imageData

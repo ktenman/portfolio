@@ -47,7 +47,7 @@ class FtDataRetrievalJobConcurrencyTest {
   fun `should prevent concurrent execution`() {
     val instrument = createTestInstrument()
 
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.FT) } returns listOf(instrument)
     every { historicalPricesService.fetchPrices(any()) } answers {
       Thread.sleep(100)
       emptyMap()
@@ -82,20 +82,20 @@ class FtDataRetrievalJobConcurrencyTest {
   fun `should allow execution after previous execution completes`() {
     val instrument = createTestInstrument()
 
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.FT) } returns listOf(instrument)
     every { historicalPricesService.fetchPrices(any()) } returns emptyMap()
 
     job.execute()
     job.execute()
 
-    verify(exactly = 2) { instrumentService.getAllInstrumentsWithoutFiltering() }
+    verify(exactly = 2) { instrumentService.getInstrumentsByProvider(ProviderName.FT) }
   }
 
   @Test
   fun `should release lock even when exception occurs`() {
     val instrument = createTestInstrument()
 
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.FT) } returns listOf(instrument)
     every { historicalPricesService.fetchPrices(any()) } throws RuntimeException("Test error")
     every { dataProcessingUtil.processDailyData(any(), any(), any()) } returns Unit
 
@@ -103,16 +103,16 @@ class FtDataRetrievalJobConcurrencyTest {
 
     job.execute()
 
-    verify(exactly = 2) { instrumentService.getAllInstrumentsWithoutFiltering() }
+    verify(exactly = 2) { instrumentService.getInstrumentsByProvider(ProviderName.FT) }
   }
 
   @Test
   fun `should handle empty instruments list`() {
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns emptyList()
+    every { instrumentService.getInstrumentsByProvider(ProviderName.FT) } returns emptyList()
 
     job.execute()
 
-    verify(exactly = 1) { instrumentService.getAllInstrumentsWithoutFiltering() }
+    verify(exactly = 1) { instrumentService.getInstrumentsByProvider(ProviderName.FT) }
     verify(exactly = 0) { historicalPricesService.fetchPrices(any()) }
   }
 

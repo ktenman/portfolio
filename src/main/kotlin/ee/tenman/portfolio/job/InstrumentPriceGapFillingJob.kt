@@ -55,10 +55,7 @@ class InstrumentPriceGapFillingJob(
     }
     try {
       log.info("Starting instrument price gap filling execution")
-      val instruments =
-        instrumentService
-          .getAllInstrumentsWithoutFiltering()
-          .filter { it.providerName == ProviderName.LIGHTYEAR }
+      val instruments = instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR)
       if (instruments.isEmpty()) {
         log.info("No LIGHTYEAR instruments found to fill gaps")
         return
