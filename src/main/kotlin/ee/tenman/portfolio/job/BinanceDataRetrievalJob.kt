@@ -47,8 +47,7 @@ class BinanceDataRetrievalJob(
 
   private fun executeJob() {
     log.info("Starting Binance data retrieval job")
-    val instruments =
-      instrumentService.getAllInstrumentsWithoutFiltering().filter { it.providerName == ProviderName.BINANCE }
+    val instruments = instrumentService.getInstrumentsByProvider(ProviderName.BINANCE)
     if (instruments.isEmpty()) {
       log.info("No Binance instruments found to process")
       return

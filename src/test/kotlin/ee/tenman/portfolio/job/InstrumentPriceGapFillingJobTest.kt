@@ -41,17 +41,7 @@ class InstrumentPriceGapFillingJobTest {
 
   @Test
   fun `should skip execution when no LIGHTYEAR instruments found`() {
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns emptyList()
-
-    job.execute()
-
-    verify(exactly = 0) { ftHistoricalPricesService.fetchPrices(any()) }
-  }
-
-  @Test
-  fun `should skip non-LIGHTYEAR instruments`() {
-    val ftInstrument = createInstrument("AAPL", ProviderName.FT)
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(ftInstrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) } returns emptyList()
 
     job.execute()
 
@@ -81,7 +71,7 @@ class InstrumentPriceGapFillingJobTest {
             1500L,
       ),
           )
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(lightyearInstrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) } returns listOf(lightyearInstrument)
     every { dailyPriceService.findAllExistingDates(lightyearInstrument) } returns existingDates
     every { ftHistoricalPricesService.fetchPrices("VUAA:GER:EUR") } returns ftData
     every { dailyPriceService.saveDailyPriceIfNotExists(any()) } returns true
@@ -95,7 +85,7 @@ class InstrumentPriceGapFillingJobTest {
   @Test
   fun `should not save when FT returns empty data`() {
     val lightyearInstrument = createInstrument("UNKNOWN", ProviderName.LIGHTYEAR)
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(lightyearInstrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) } returns listOf(lightyearInstrument)
     every { dailyPriceService.findAllExistingDates(lightyearInstrument) } returns emptySet()
     every { ftHistoricalPricesService.fetchPrices("UNKNOWN") } returns emptyMap()
 
@@ -119,7 +109,7 @@ class InstrumentPriceGapFillingJobTest {
           1000L,
       ),
         )
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument1, instrument2)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) } returns listOf(instrument1, instrument2)
     every { dailyPriceService.findAllExistingDates(instrument1) } throws RuntimeException("DB error")
     every { dailyPriceService.findAllExistingDates(instrument2) } returns emptySet()
     every { ftHistoricalPricesService.fetchPrices("INST2") } returns ftData

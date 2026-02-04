@@ -43,7 +43,7 @@ class BinanceDataRetrievalJobTest {
     val instrument = createInstrument("BTCEUR")
     val currentPrice = BigDecimal("95000.50")
     val expectedDate = LocalDate.of(2025, 12, 23)
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.BINANCE) } returns listOf(instrument)
     every { dailyPriceService.hasHistoricalData(instrument) } returns true
     every { binanceService.getCurrentPrice("BTCEUR") } returns currentPrice
 
@@ -60,7 +60,7 @@ class BinanceDataRetrievalJobTest {
   @Test
   fun `should fetch full history when no historical data exists`() {
     val instrument = createInstrument("BNBEUR")
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(instrument)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.BINANCE) } returns listOf(instrument)
     every { dailyPriceService.hasHistoricalData(instrument) } returns false
     every { binanceService.getDailyPricesAsync("BNBEUR") } returns TreeMap()
 
@@ -71,9 +71,8 @@ class BinanceDataRetrievalJobTest {
   }
 
   @Test
-  fun `should skip non-binance instruments`() {
-    val ftInstrument = createInstrument("AAPL", ProviderName.FT)
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(ftInstrument)
+  fun `should skip when no instruments found`() {
+    every { instrumentService.getInstrumentsByProvider(ProviderName.BINANCE) } returns emptyList()
 
     job.execute()
 
@@ -85,7 +84,7 @@ class BinanceDataRetrievalJobTest {
   fun `should handle errors gracefully and continue processing`() {
     val btc = createInstrument("BTCEUR", id = 1L)
     val bnb = createInstrument("BNBEUR", id = 2L)
-    every { instrumentService.getAllInstrumentsWithoutFiltering() } returns listOf(btc, bnb)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.BINANCE) } returns listOf(btc, bnb)
     every { dailyPriceService.hasHistoricalData(btc) } returns true
     every { dailyPriceService.hasHistoricalData(bnb) } returns true
     every { binanceService.getCurrentPrice("BTCEUR") } throws RuntimeException("API error")

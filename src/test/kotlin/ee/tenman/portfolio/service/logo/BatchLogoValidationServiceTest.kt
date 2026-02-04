@@ -112,7 +112,7 @@ class BatchLogoValidationServiceTest {
       val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageSearchLogoService.searchLogoCandidates(any(), any()) } returns listOf(candidate)
-      every { imageDownloadService.download(any()) } returns imageData
+      every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
       every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
@@ -140,7 +140,7 @@ class BatchLogoValidationServiceTest {
       val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageSearchLogoService.searchLogoCandidates(any(), any()) } returns listOf(candidate)
-      every { imageDownloadService.download(any()) } returns imageData
+      every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
       every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
@@ -165,7 +165,7 @@ class BatchLogoValidationServiceTest {
       )
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageSearchLogoService.searchLogoCandidates(any(), any()) } returns listOf(candidate)
-      every { imageDownloadService.download(any()) } returns imageData
+      every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
       every { openRouterVisionClient.chatCompletion(any(), any()) } throws RuntimeException("API error")
@@ -214,7 +214,7 @@ class BatchLogoValidationServiceTest {
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc logo", any()) } returns listOf(candidate1)
       every { imageSearchLogoService.searchLogoCandidates("MSFT Microsoft Corp logo", any()) } returns listOf(candidate2)
-      every { imageDownloadService.download(any()) } returns imageData
+      every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
       every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
