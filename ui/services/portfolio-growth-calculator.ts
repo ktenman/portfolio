@@ -67,15 +67,14 @@ export function simulateYear(
   const totalInvested = startingInvested + yearlyInvestmentAmount
   const grossProfit = totalWorth - totalInvested
   const taxAmount = calculateTaxAmount(grossProfit, taxRate)
-  const grossTotalWorth = totalInvested + grossProfit
   const netWorth = calculateNetWorth(totalInvested, grossProfit, taxAmount)
-  const monthlyEarnings = calculateMonthlyEarnings(grossTotalWorth, annualReturnRate)
+  const monthlyEarnings = calculateMonthlyEarnings(totalWorth, annualReturnRate)
 
   return {
     summary: {
       year: yearNumber,
       totalInvested,
-      totalWorth: grossTotalWorth,
+      totalWorth,
       grossProfit,
       taxAmount,
       netWorth,

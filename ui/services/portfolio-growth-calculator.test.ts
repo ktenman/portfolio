@@ -246,7 +246,10 @@ describe('portfolio-growth-calculator', () => {
       const result = calculateProjection(input)
       const yearOne = result.yearSummaries[0]
 
-      expect(yearOne.monthlyEarnings).toBeCloseTo((yearOne.totalWorth * 12) / 100 / 12, 2)
+      expect(yearOne.monthlyEarnings).toBeCloseTo(
+        calculateMonthlyEarnings(yearOne.totalWorth, 12),
+        2
+      )
     })
 
     it('should accumulate investments correctly year over year', () => {
