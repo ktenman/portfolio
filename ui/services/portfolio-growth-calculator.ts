@@ -42,8 +42,8 @@ export function calculateNetWorth(
   return totalInvested + grossProfit - taxAmount
 }
 
-export function calculateMonthlyEarnings(netProfit: number): number {
-  return netProfit / 12
+export function calculateMonthlyEarnings(totalWorth: number, annualReturnRate: number): number {
+  return (totalWorth * annualReturnRate) / 100 / 12
 }
 
 export function simulateYear(
@@ -52,7 +52,8 @@ export function simulateYear(
   monthlyInvestment: number,
   monthlyReturnRate: number,
   taxRate: number,
-  yearNumber: number
+  yearNumber: number,
+  annualReturnRate: number
 ): { summary: YearSummary; endingWorth: number; endingInvested: number } {
   let totalWorth = startingWorth
   let yearlyInvestmentAmount = 0
@@ -66,10 +67,9 @@ export function simulateYear(
   const totalInvested = startingInvested + yearlyInvestmentAmount
   const grossProfit = totalWorth - totalInvested
   const taxAmount = calculateTaxAmount(grossProfit, taxRate)
-  const netProfit = grossProfit - taxAmount
   const grossTotalWorth = totalInvested + grossProfit
   const netWorth = calculateNetWorth(totalInvested, grossProfit, taxAmount)
-  const monthlyEarnings = calculateMonthlyEarnings(netProfit)
+  const monthlyEarnings = calculateMonthlyEarnings(grossTotalWorth, annualReturnRate)
 
   return {
     summary: {
@@ -104,7 +104,8 @@ export function calculateProjection(input: CalculatorInput): ProjectionResult {
       currentMonthlyInvestment,
       monthlyReturnRate,
       input.taxRate,
-      year
+      year,
+      input.annualReturnRate
     )
 
     yearSummaries.push(result.summary)

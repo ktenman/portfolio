@@ -73,22 +73,26 @@ describe('portfolio-growth-calculator', () => {
   })
 
   describe('calculateMonthlyEarnings', () => {
-    it('should divide net profit by 12', () => {
-      expect(calculateMonthlyEarnings(1200)).toBe(100)
+    it('should calculate monthly earnings from total worth and annual return rate', () => {
+      expect(calculateMonthlyEarnings(120000, 12)).toBe(1200)
     })
 
-    it('should handle zero profit', () => {
-      expect(calculateMonthlyEarnings(0)).toBe(0)
+    it('should handle zero total worth', () => {
+      expect(calculateMonthlyEarnings(0, 12)).toBe(0)
+    })
+
+    it('should handle zero annual return rate', () => {
+      expect(calculateMonthlyEarnings(100000, 0)).toBe(0)
     })
 
     it('should handle decimal results', () => {
-      expect(calculateMonthlyEarnings(1000)).toBeCloseTo(83.333, 2)
+      expect(calculateMonthlyEarnings(100000, 10)).toBeCloseTo(833.333, 2)
     })
   })
 
   describe('simulateYear', () => {
     it('should simulate a year with no growth', () => {
-      const result = simulateYear(10000, 10000, 100, 0, 22, 1)
+      const result = simulateYear(10000, 10000, 100, 0, 22, 1, 0)
 
       expect(result.summary.year).toBe(1)
       expect(result.summary.totalInvested).toBe(11200)
@@ -100,7 +104,7 @@ describe('portfolio-growth-calculator', () => {
 
     it('should simulate a year with positive return', () => {
       const monthlyRate = annualToMonthlyReturnRate(12)
-      const result = simulateYear(10000, 10000, 0, monthlyRate, 22, 1)
+      const result = simulateYear(10000, 10000, 0, monthlyRate, 22, 1, 12)
 
       expect(result.summary.year).toBe(1)
       expect(result.summary.totalInvested).toBe(10000)
@@ -109,7 +113,7 @@ describe('portfolio-growth-calculator', () => {
     })
 
     it('should track ending worth and invested amounts', () => {
-      const result = simulateYear(5000, 5000, 200, 0, 0, 1)
+      const result = simulateYear(5000, 5000, 200, 0, 0, 1, 0)
 
       expect(result.endingWorth).toBe(7400)
       expect(result.endingInvested).toBe(7400)
@@ -229,7 +233,7 @@ describe('portfolio-growth-calculator', () => {
       })
     })
 
-    it('should calculate monthly earnings based on net profit', () => {
+    it('should calculate monthly earnings from total worth and annual return rate', () => {
       const input: CalculatorInput = {
         initialWorth: 100000,
         monthlyInvestment: 0,
@@ -242,8 +246,7 @@ describe('portfolio-growth-calculator', () => {
       const result = calculateProjection(input)
       const yearOne = result.yearSummaries[0]
 
-      const netProfit = yearOne.grossProfit - yearOne.taxAmount
-      expect(yearOne.monthlyEarnings).toBeCloseTo(netProfit / 12, 2)
+      expect(yearOne.monthlyEarnings).toBeCloseTo((yearOne.totalWorth * 12) / 100 / 12, 2)
     })
 
     it('should accumulate investments correctly year over year', () => {
