@@ -4,8 +4,6 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - '**/*.java'
-      - '**/*.kt'
       - '**/*.js'
       - '**/*.ts'
       - '**/*.vue'
@@ -15,8 +13,6 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
-      - '**/*.java'
-      - '**/*.kt'
       - '**/*.js'
       - '**/*.ts'
       - '**/*.vue'
@@ -40,11 +36,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - language: actions  # Covers GitHub Actions YAML files
+          - language: actions
             build-mode: none
-          - language: java-kotlin
-            build-mode: manual
-          - language: javascript-typescript  # Covers JS, TS, and Vue
+          - language: javascript-typescript
             build-mode: none
           - language: python
             build-mode: none
@@ -64,15 +58,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-codeql-${{ matrix.language }}-
 
-      # For Java/Kotlin: Improve build by setting up Java with Gradle
-      - name: Set up JDK 21
-        if: matrix.language == 'java-kotlin'
-        uses: actions/setup-java@v5.2.0
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'gradle'
-
       # For JavaScript/TypeScript: Set up Node.js
       - name: Set up Node.js
         if: matrix.language == 'javascript-typescript'
@@ -87,11 +72,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.10'
-
-      # Setup Gradle wrapper validation
-      - name: Validate Gradle wrapper
-        if: matrix.language == 'java-kotlin' && hashFiles('gradlew') != ''
-        uses: gradle/wrapper-validation-action@v3.5.0
 
       # Run secret scanning with unique output name per job
       - name: Run secret scanning
@@ -112,25 +92,6 @@ jobs:
           queries: security-extended,security-and-quality
           threads: 8
           config-file: ./.github/codeql/codeql-config.yml
-
-      # For Java/Kotlin using Gradle build
-      - name: Build with Gradle
-        if: matrix.language == 'java-kotlin' && hashFiles('gradlew') != ''
-        run: |
-          # Check if we need to run in a subdirectory
-          if [ -f "gradlew" ]; then
-            echo "Building from root directory"
-            ./gradlew compileJava compileKotlin --no-daemon || true
-          elif [ -f "*/gradlew" ]; then
-            echo "Building from subdirectory"
-            for dir in */; do
-              if [ -f "${dir}gradlew" ]; then
-                echo "Building in ${dir}"
-                cd ${dir} && ./gradlew compileJava compileKotlin --no-daemon || true
-                cd ..
-              fi
-            done
-          fi
 
       # For JavaScript/TypeScript projects that need build steps
       - name: Install npm dependencies
