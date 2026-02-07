@@ -9,6 +9,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PriceChangePeriod
+import ee.tenman.portfolio.domain.PriceSnapshot
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createCashInstrument
@@ -28,15 +29,16 @@ import java.time.ZoneId
 
 class DailyPriceServiceTest {
   private val dailyPriceRepository = mockk<DailyPriceRepository>()
+  private val priceSnapshotService = mockk<PriceSnapshotService>()
   private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
-  private val dailyPriceService = DailyPriceService(dailyPriceRepository, clock)
+  private val dailyPriceService = DailyPriceService(dailyPriceRepository, priceSnapshotService, clock)
 
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setUp() {
-    clearMocks(dailyPriceRepository)
+    clearMocks(dailyPriceRepository, priceSnapshotService)
     testInstrument =
       Instrument(
         symbol = "AAPL",
@@ -336,7 +338,9 @@ class DailyPriceServiceTest {
   }
 
   @Test
-  fun `should getPriceChange with 24h period returns correct change`() {
+  fun `should getPriceChange with 24h period falls back to daily prices when no snapshots`() {
+    every { priceSnapshotService.findClosestBefore(1L, any()) } returns null
+
     val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = testDate)
     val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1))
 
@@ -361,6 +365,35 @@ class DailyPriceServiceTest {
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
     expect(result.changePercent).toEqual(10.0)
+  }
+
+  @Test
+  fun `should getPriceChange with 24h period uses snapshots when available`() {
+    val now = Instant.parse("2024-01-15T10:00:00Z")
+    val currentSnapshot =
+      PriceSnapshot(
+      instrument = testInstrument,
+      providerName = ProviderName.BINANCE,
+      snapshotHour = now.minus(1, java.time.temporal.ChronoUnit.HOURS),
+      price = BigDecimal("110.00"),
+    )
+    val previousSnapshot =
+      PriceSnapshot(
+      instrument = testInstrument,
+      providerName = ProviderName.BINANCE,
+      snapshotHour = now.minus(25, java.time.temporal.ChronoUnit.HOURS),
+      price = BigDecimal("100.00"),
+    )
+
+    every { priceSnapshotService.findClosestBefore(1L, now) } returns currentSnapshot
+    every { priceSnapshotService.findClosestBefore(1L, now.minus(24, java.time.temporal.ChronoUnit.HOURS)) } returns previousSnapshot
+
+    val result = dailyPriceService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
+    expect(result.changePercent).toEqual(10.0)
+    verify(exactly = 0) { dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(any(), any(), any()) }
   }
 
   @Test
@@ -421,6 +454,7 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange returns null when current price not found`() {
+    every { priceSnapshotService.findClosestBefore(1L, any()) } returns null
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
@@ -436,6 +470,8 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange returns null when historical price not found`() {
+    every { priceSnapshotService.findClosestBefore(1L, any()) } returns null
+
     val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = testDate)
 
     every {
@@ -461,6 +497,8 @@ class DailyPriceServiceTest {
 
   @Test
   fun `should getPriceChange with negative change returns correct percentage`() {
+    every { priceSnapshotService.findClosestBefore(1L, any()) } returns null
+
     val currentPrice = createDailyPrice(closePrice = BigDecimal("80.00"), date = testDate)
     val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1))
 

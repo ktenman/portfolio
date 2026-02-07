@@ -12,11 +12,14 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Service
 class DailyPriceService(
   private val dailyPriceRepository: DailyPriceRepository,
+  private val priceSnapshotService: PriceSnapshotService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -87,23 +90,11 @@ class DailyPriceService(
     instrument: Instrument,
     period: PriceChangePeriod = PriceChangePeriod.P24H,
   ): PriceChange? {
-    val currentDate = LocalDate.now(clock)
-    val targetDate = currentDate.minusDays(period.days.toLong())
-
-    val currentPrice = findLastDailyPrice(instrument, currentDate)?.closePrice ?: return null
-
-    val previousPrice =
-      dailyPriceRepository
-        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
-          instrument,
-          targetDate.minusDays(5),
-          targetDate,
-        )?.closePrice ?: return null
-
-    val changeAmount = currentPrice.subtract(previousPrice)
-    val changePercent = calculateChangePercent(changeAmount, previousPrice)
-
-    return PriceChange(changeAmount, changePercent)
+    if (period == PriceChangePeriod.P24H) {
+      val snapshotChange = getPriceChangeFromSnapshots(instrument)
+      if (snapshotChange != null) return snapshotChange
+    }
+    return getPriceChangeFromDailyPrices(instrument, period)
   }
 
   @Transactional(readOnly = true)
@@ -120,6 +111,35 @@ class DailyPriceService(
     val changeAmount = currentPrice.subtract(startPrice)
     val changePercent = calculateChangePercent(changeAmount, startPrice)
 
+    return PriceChange(changeAmount, changePercent)
+  }
+
+  private fun getPriceChangeFromSnapshots(instrument: Instrument): PriceChange? {
+    val now = Instant.now(clock)
+    val targetHour = now.minus(24, ChronoUnit.HOURS)
+    val currentSnapshot = priceSnapshotService.findClosestBefore(instrument.id, now) ?: return null
+    val previousSnapshot = priceSnapshotService.findClosestBefore(instrument.id, targetHour) ?: return null
+    val changeAmount = currentSnapshot.price.subtract(previousSnapshot.price)
+    val changePercent = calculateChangePercent(changeAmount, previousSnapshot.price)
+    return PriceChange(changeAmount, changePercent)
+  }
+
+  private fun getPriceChangeFromDailyPrices(
+    instrument: Instrument,
+    period: PriceChangePeriod,
+  ): PriceChange? {
+    val currentDate = LocalDate.now(clock)
+    val targetDate = currentDate.minusDays(period.days.toLong())
+    val currentPrice = findLastDailyPrice(instrument, currentDate)?.closePrice ?: return null
+    val previousPrice =
+      dailyPriceRepository
+        .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
+          instrument,
+          targetDate.minusDays(5),
+          targetDate,
+        )?.closePrice ?: return null
+    val changeAmount = currentPrice.subtract(previousPrice)
+    val changePercent = calculateChangePercent(changeAmount, previousPrice)
     return PriceChange(changeAmount, changePercent)
   }
 
