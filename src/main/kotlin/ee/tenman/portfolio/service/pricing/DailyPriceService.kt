@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit
 class DailyPriceService(
   private val dailyPriceRepository: DailyPriceRepository,
   private val priceSnapshotService: PriceSnapshotService,
+  private val priceSnapshotBackfillService: PriceSnapshotBackfillService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -117,8 +118,15 @@ class DailyPriceService(
   private fun getPriceChangeFromSnapshots(instrument: Instrument): PriceChange? {
     val now = Instant.now(clock)
     val targetHour = now.minus(24, ChronoUnit.HOURS)
-    val currentSnapshot = priceSnapshotService.findClosestBefore(instrument.id, now) ?: return null
-    val previousSnapshot = priceSnapshotService.findClosestBefore(instrument.id, targetHour) ?: return null
+    var currentSnapshot = priceSnapshotService.findClosestBefore(instrument.id, now)
+    var previousSnapshot = priceSnapshotService.findClosestBefore(instrument.id, targetHour)
+    if ((currentSnapshot == null || previousSnapshot == null) && instrument.providerName == ProviderName.BINANCE) {
+      runCatching { priceSnapshotBackfillService.backfillFromBinance(instrument) }
+        .onFailure { log.warn("Failed to backfill snapshots for ${instrument.symbol}: ${it.message}") }
+      currentSnapshot = priceSnapshotService.findClosestBefore(instrument.id, now)
+      previousSnapshot = priceSnapshotService.findClosestBefore(instrument.id, targetHour)
+    }
+    if (currentSnapshot == null || previousSnapshot == null) return null
     val changeAmount = currentSnapshot.price.subtract(previousSnapshot.price)
     val changePercent = calculateChangePercent(changeAmount, previousSnapshot.price)
     return PriceChange(changeAmount, changePercent)

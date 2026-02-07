@@ -30,15 +30,17 @@ import java.time.ZoneId
 class DailyPriceServiceTest {
   private val dailyPriceRepository = mockk<DailyPriceRepository>()
   private val priceSnapshotService = mockk<PriceSnapshotService>()
+  private val priceSnapshotBackfillService = mockk<PriceSnapshotBackfillService>()
   private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
-  private val dailyPriceService = DailyPriceService(dailyPriceRepository, priceSnapshotService, clock)
+  private val dailyPriceService =
+    DailyPriceService(dailyPriceRepository, priceSnapshotService, priceSnapshotBackfillService, clock)
 
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
 
   @BeforeEach
   fun setUp() {
-    clearMocks(dailyPriceRepository, priceSnapshotService)
+    clearMocks(dailyPriceRepository, priceSnapshotService, priceSnapshotBackfillService)
     testInstrument =
       Instrument(
         symbol = "AAPL",
@@ -394,6 +396,45 @@ class DailyPriceServiceTest {
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
     expect(result.changePercent).toEqual(10.0)
     verify(exactly = 0) { dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(any(), any(), any()) }
+  }
+
+  @Test
+  fun `should getPriceChange with 24h backfills from Binance when no snapshots exist`() {
+    val now = Instant.parse("2024-01-15T10:00:00Z")
+    val binanceInstrument =
+      Instrument(
+      symbol = "BTCEUR",
+      name = "Bitcoin EUR",
+      category = "Crypto",
+      baseCurrency = "EUR",
+      currentPrice = BigDecimal("50000.00"),
+      providerName = ProviderName.BINANCE,
+    ).apply { id = 2L }
+    val currentSnapshot =
+      PriceSnapshot(
+      instrument = binanceInstrument,
+      providerName = ProviderName.BINANCE,
+      snapshotHour = now.minus(1, java.time.temporal.ChronoUnit.HOURS),
+      price = BigDecimal("50000.00"),
+    )
+    val previousSnapshot =
+      PriceSnapshot(
+      instrument = binanceInstrument,
+      providerName = ProviderName.BINANCE,
+      snapshotHour = now.minus(25, java.time.temporal.ChronoUnit.HOURS),
+      price = BigDecimal("48000.00"),
+    )
+    every { priceSnapshotService.findClosestBefore(2L, now) } returns null andThen currentSnapshot
+    every {
+      priceSnapshotService.findClosestBefore(2L, now.minus(24, java.time.temporal.ChronoUnit.HOURS))
+    } returns null andThen previousSnapshot
+    every { priceSnapshotBackfillService.backfillFromBinance(binanceInstrument) } just runs
+
+    val result = dailyPriceService.getPriceChange(binanceInstrument, PriceChangePeriod.P24H)
+
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("2000.00"))
+    verify(exactly = 1) { priceSnapshotBackfillService.backfillFromBinance(binanceInstrument) }
   }
 
   @Test
