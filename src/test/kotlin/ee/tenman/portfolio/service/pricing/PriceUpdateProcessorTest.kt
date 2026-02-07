@@ -22,10 +22,12 @@ class PriceUpdateProcessorTest {
   private val marketPhaseDetectionService = mockk<MarketPhaseDetectionService>()
   private val instrumentService = mockk<InstrumentService>()
   private val dailyPriceService = mockk<DailyPriceService>()
+  private val priceSnapshotService = mockk<PriceSnapshotService>()
   private val clock = Clock.fixed(Instant.parse("2024-01-15T12:00:00Z"), ZoneId.systemDefault())
   private val log = mockk<Logger>(relaxed = true)
 
-  private val processor = PriceUpdateProcessor(marketPhaseDetectionService, clock, instrumentService, dailyPriceService)
+  private val processor =
+    PriceUpdateProcessor(marketPhaseDetectionService, clock, instrumentService, dailyPriceService, priceSnapshotService)
 
   @Test
   fun `processPriceUpdates should process all symbols successfully on weekday`() {

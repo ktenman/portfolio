@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
@@ -18,6 +19,7 @@ class BinanceDataRetrievalJob(
   private val binanceService: BinanceService,
   private val dataProcessingUtil: DataProcessingUtil,
   private val dailyPriceService: DailyPriceService,
+  private val priceSnapshotService: PriceSnapshotService,
   private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -71,6 +73,8 @@ class BinanceDataRetrievalJob(
     val currentPrice = binanceService.getCurrentPrice(instrument.symbol)
     val today = LocalDate.now(clock)
     dailyPriceService.saveCurrentPrice(instrument, currentPrice, today, ProviderName.BINANCE)
+    runCatching { priceSnapshotService.saveSnapshot(instrument, currentPrice, ProviderName.BINANCE) }
+      .onFailure { e -> log.warn("Failed to save price snapshot for ${instrument.symbol}: ${e.message}") }
     instrumentService.updateCurrentPrice(instrument.id, currentPrice)
     log.debug("Updated current price for ${instrument.symbol}: $currentPrice")
   }

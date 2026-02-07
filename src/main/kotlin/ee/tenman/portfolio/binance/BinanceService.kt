@@ -14,6 +14,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Service
@@ -79,6 +80,32 @@ class BinanceService(
       log.info("Completed async fetch for $symbol: ${mergedResult.size} total data points")
       mergedResult
     }
+
+  @Retryable(backoff = Backoff(delay = 1000))
+  fun getHourlyPrices(
+    symbol: String,
+    hours: Long = 48,
+  ): SortedMap<Instant, BigDecimal> {
+    log.info("Getting hourly prices for $symbol (last $hours hours)")
+    val now = Instant.now(clock)
+    val startTime = now.minus(hours, ChronoUnit.HOURS).toEpochMilli()
+    val endTime = now.toEpochMilli()
+    val klines =
+      binanceClient.getKlines(
+      symbol = symbol,
+      interval = "1h",
+      startTime = startTime,
+      endTime = endTime,
+      limit = 1000,
+    )
+    val result = TreeMap<Instant, BigDecimal>()
+    for (kline in klines) {
+      val timestamp = Instant.ofEpochMilli(kline[0].toLong()).truncatedTo(ChronoUnit.HOURS)
+      result[timestamp] = kline[4].toBigDecimal()
+    }
+    log.info("Fetched ${result.size} hourly prices for $symbol")
+    return result
+  }
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun getDailyPrices(

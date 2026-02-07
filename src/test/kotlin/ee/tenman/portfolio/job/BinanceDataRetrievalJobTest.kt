@@ -8,6 +8,7 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -25,6 +26,7 @@ class BinanceDataRetrievalJobTest {
   private val binanceService: BinanceService = mockk()
   private val dataProcessingUtil: DataProcessingUtil = mockk(relaxed = true)
   private val dailyPriceService: DailyPriceService = mockk(relaxed = true)
+  private val priceSnapshotService: PriceSnapshotService = mockk(relaxed = true)
   private val fixedInstant: Instant = Instant.parse("2025-12-23T10:00:00Z")
   private val clock: Clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
 
@@ -35,6 +37,7 @@ class BinanceDataRetrievalJobTest {
       binanceService = binanceService,
       dataProcessingUtil = dataProcessingUtil,
       dailyPriceService = dailyPriceService,
+      priceSnapshotService = priceSnapshotService,
       clock = clock,
     )
 
