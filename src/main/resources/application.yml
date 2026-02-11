@@ -165,6 +165,8 @@ scheduling:
     industry-classification: ${INDUSTRY_CLASSIFICATION_CRON:0 0 2 * * *}
     etf-holdings-classification-cron: ${ETF_HOLDINGS_CLASSIFICATION_CRON:0 0 3 * * *}
     ecb-cron: ${ECB_JOB_CRON:0 0 9 * * *}
+    price-snapshot-cleanup-cron: ${PRICE_SNAPSHOT_CLEANUP_CRON:0 0 4 * * *}
+    price-snapshot-retention-days: ${PRICE_SNAPSHOT_RETENTION_DAYS:30}
 
 scraping:
   lightyear:

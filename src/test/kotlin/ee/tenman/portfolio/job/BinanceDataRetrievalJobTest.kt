@@ -8,6 +8,8 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceSnapshotBackfillService
+import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -25,6 +27,8 @@ class BinanceDataRetrievalJobTest {
   private val binanceService: BinanceService = mockk()
   private val dataProcessingUtil: DataProcessingUtil = mockk(relaxed = true)
   private val dailyPriceService: DailyPriceService = mockk(relaxed = true)
+  private val priceSnapshotService: PriceSnapshotService = mockk(relaxed = true)
+  private val priceSnapshotBackfillService: PriceSnapshotBackfillService = mockk(relaxed = true)
   private val fixedInstant: Instant = Instant.parse("2025-12-23T10:00:00Z")
   private val clock: Clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
 
@@ -35,6 +39,8 @@ class BinanceDataRetrievalJobTest {
       binanceService = binanceService,
       dataProcessingUtil = dataProcessingUtil,
       dailyPriceService = dailyPriceService,
+      priceSnapshotService = priceSnapshotService,
+      priceSnapshotBackfillService = priceSnapshotBackfillService,
       clock = clock,
     )
 
@@ -53,6 +59,8 @@ class BinanceDataRetrievalJobTest {
     verify(exactly = 1) {
       dailyPriceService.saveCurrentPrice(instrument, currentPrice, expectedDate, ProviderName.BINANCE)
     }
+    verify(exactly = 1) { priceSnapshotService.saveSnapshot(instrument, currentPrice, ProviderName.BINANCE) }
+    verify(exactly = 1) { priceSnapshotBackfillService.backfillFromBinance(instrument) }
     verify(exactly = 1) { instrumentService.updateCurrentPrice(1L, currentPrice) }
     verify(exactly = 0) { binanceService.getDailyPricesAsync(any()) }
   }
@@ -95,6 +103,21 @@ class BinanceDataRetrievalJobTest {
     verify(exactly = 1) { binanceService.getCurrentPrice("BTCEUR") }
     verify(exactly = 1) { binanceService.getCurrentPrice("BNBEUR") }
     verify(exactly = 1) { instrumentService.updateCurrentPrice(2L, BigDecimal("750.00")) }
+  }
+
+  @Test
+  fun `should call backfill on every execution relying on service-level dedup`() {
+    val instrument = createInstrument("BTCEUR")
+    val currentPrice = BigDecimal("95000.50")
+    every { instrumentService.getInstrumentsByProvider(ProviderName.BINANCE) } returns listOf(instrument)
+    every { dailyPriceService.hasHistoricalData(instrument) } returns true
+    every { binanceService.getCurrentPrice("BTCEUR") } returns currentPrice
+
+    job.execute()
+    job.execute()
+
+    verify(exactly = 2) { priceSnapshotBackfillService.backfillFromBinance(instrument) }
+    verify(exactly = 2) { priceSnapshotService.saveSnapshot(instrument, currentPrice, ProviderName.BINANCE) }
   }
 
   @Test

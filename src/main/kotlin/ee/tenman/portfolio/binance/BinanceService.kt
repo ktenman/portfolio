@@ -14,6 +14,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Service
@@ -22,6 +23,15 @@ class BinanceService(
   private val clock: Clock = Clock.systemDefaultZone(),
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+
+  companion object {
+    private const val OPEN_TIME = 0
+    private const val OPEN_PRICE = 1
+    private const val HIGH_PRICE = 2
+    private const val LOW_PRICE = 3
+    private const val CLOSE_PRICE = 4
+    private const val VOLUME = 5
+  }
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun getCurrentPrice(symbol: String): BigDecimal {
@@ -66,7 +76,7 @@ class BinanceService(
             getDailyPrices(symbol, startDate, endDate)
           } catch (e: Exception) {
             log.warn("Failed to fetch $symbol for period $startDate to $endDate: ${e.message}")
-            emptyMap()
+            TreeMap()
           }
         }
       }
@@ -79,6 +89,32 @@ class BinanceService(
       log.info("Completed async fetch for $symbol: ${mergedResult.size} total data points")
       mergedResult
     }
+
+  @Retryable(backoff = Backoff(delay = 1000))
+  fun getHourlyPrices(
+    symbol: String,
+    hours: Long = 48,
+  ): SortedMap<Instant, BigDecimal> {
+    log.info("Getting hourly prices for $symbol (last $hours hours)")
+    val now = Instant.now(clock)
+    val startTime = now.minus(hours, ChronoUnit.HOURS).toEpochMilli()
+    val endTime = now.toEpochMilli()
+    val klines =
+      binanceClient.getKlines(
+        symbol = symbol,
+        interval = "1h",
+        startTime = startTime,
+        endTime = endTime,
+        limit = 1000,
+      )
+    val result =
+      klines.associateTo(TreeMap()) { kline ->
+        val hour = Instant.ofEpochMilli(kline[OPEN_TIME].toLong()).truncatedTo(ChronoUnit.HOURS)
+        hour to kline[CLOSE_PRICE].toBigDecimal()
+      }
+    log.info("Fetched ${result.size} hourly prices for $symbol")
+    return result
+  }
 
   @Retryable(backoff = Backoff(delay = 1000))
   fun getDailyPrices(
@@ -100,24 +136,24 @@ class BinanceService(
             interval = "1d",
             startTime = currentStartTime,
             endTime = endTime,
-            limit = 1000, // Binance API typically limits to 1000 entries per request
+            limit = 1000,
           )
 
         if (klines.isNotEmpty()) {
           for (kline in klines) {
-            val timestamp = kline[0].toLong()
+            val timestamp = kline[OPEN_TIME].toLong()
             val date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
             dailyPrices[date] =
               BinanceDailyPriceData(
-                open = kline[1].toBigDecimal(),
-                high = kline[2].toBigDecimal(),
-                low = kline[3].toBigDecimal(),
-                close = kline[4].toBigDecimal(),
-                volume = kline[5].toBigDecimal().setScale(0, RoundingMode.DOWN).toLong(),
+                open = kline[OPEN_PRICE].toBigDecimal(),
+                high = kline[HIGH_PRICE].toBigDecimal(),
+                low = kline[LOW_PRICE].toBigDecimal(),
+                close = kline[CLOSE_PRICE].toBigDecimal(),
+                volume = kline[VOLUME].toBigDecimal().setScale(0, RoundingMode.DOWN).toLong(),
               )
           }
 
-          currentStartTime = klines.last()[0].toLong() + 1
+          currentStartTime = klines.last()[OPEN_TIME].toLong() + 1
           shouldContinue = currentStartTime < (endTime ?: Long.MAX_VALUE)
         } else {
           shouldContinue = false

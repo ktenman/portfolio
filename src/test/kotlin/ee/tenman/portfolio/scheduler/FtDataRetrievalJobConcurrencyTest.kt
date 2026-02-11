@@ -8,6 +8,7 @@ import ee.tenman.portfolio.job.DataProcessingUtil
 import ee.tenman.portfolio.job.FtDataRetrievalJob
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -26,6 +27,7 @@ class FtDataRetrievalJobConcurrencyTest {
   private val historicalPricesService = mockk<HistoricalPricesService>()
   private val dataProcessingUtil = mockk<DataProcessingUtil>()
   private val jobExecutionService = mockk<JobExecutionService>()
+  private val priceSnapshotService = mockk<PriceSnapshotService>(relaxed = true)
   private val taskScheduler = mockk<TaskScheduler>()
 
   private lateinit var job: FtDataRetrievalJob
@@ -38,6 +40,7 @@ class FtDataRetrievalJobConcurrencyTest {
         historicalPricesService,
         dataProcessingUtil,
         jobExecutionService,
+        priceSnapshotService,
         taskScheduler,
         fixedClock,
       )
