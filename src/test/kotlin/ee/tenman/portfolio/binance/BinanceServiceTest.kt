@@ -5,8 +5,10 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Instant
 
 class BinanceServiceTest {
   private val binanceClient: BinanceClient = mockk()
@@ -42,5 +44,34 @@ class BinanceServiceTest {
     val prices = binanceService.getDailyPricesAsync("BTCEUR")
 
     expect(prices.size).toEqual(2)
+  }
+
+  @Test
+  fun `should fetch hourly prices and return close prices keyed by truncated hour`() {
+    val klines =
+      listOf(
+        listOf("1705312800000", "42000.00", "43000.00", "41000.00", "42500.00", "100.5"),
+        listOf("1705316400000", "42500.00", "44000.00", "42000.00", "43500.00", "120.7"),
+      )
+    every { binanceClient.getKlines("BTCEUR", "1h", any(), any(), 1000) } returns klines
+
+    val prices = binanceService.getHourlyPrices("BTCEUR", 48)
+
+    expect(prices.size).toEqual(2)
+    val entries = prices.entries.toList()
+    expect(entries[0].key).toEqual(Instant.parse("2024-01-15T10:00:00Z"))
+    expect(entries[0].value).toEqualNumerically(BigDecimal("42500.00"))
+    expect(entries[1].key).toEqual(Instant.parse("2024-01-15T11:00:00Z"))
+    expect(entries[1].value).toEqualNumerically(BigDecimal("43500.00"))
+    verify { binanceClient.getKlines("BTCEUR", "1h", any(), any(), 1000) }
+  }
+
+  @Test
+  fun `should return empty map when no hourly klines available`() {
+    every { binanceClient.getKlines("BTCEUR", "1h", any(), any(), 1000) } returns emptyList()
+
+    val prices = binanceService.getHourlyPrices("BTCEUR", 48)
+
+    expect(prices.size).toEqual(0)
   }
 }

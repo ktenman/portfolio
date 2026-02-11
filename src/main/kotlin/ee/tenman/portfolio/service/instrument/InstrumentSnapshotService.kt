@@ -15,7 +15,7 @@ import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
-import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceChangeService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -30,7 +30,7 @@ class InstrumentSnapshotService(
   private val instrumentRepository: InstrumentRepository,
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val investmentMetricsService: InvestmentMetricsService,
-  private val dailyPriceService: DailyPriceService,
+  private val priceChangeService: PriceChangeService,
   private val xirrCalculationService: XirrCalculationService,
   private val holdingsCalculationService: HoldingsCalculationService,
   private val clock: Clock,
@@ -160,7 +160,7 @@ class InstrumentSnapshotService(
     val earliestTransaction = transactions.minBy { it.transactionDate }
     val holdingPeriodDays = ChronoUnit.DAYS.between(earliestTransaction.transactionDate, context.calculationDate)
     return if (holdingPeriodDays >= context.priceChangePeriod.days) {
-      dailyPriceService.getPriceChange(instrument, context.priceChangePeriod)
+      priceChangeService.getPriceChange(instrument, context.priceChangePeriod)
     } else {
       calculatePriceChangeSincePurchase(instrument, transactions)
     }

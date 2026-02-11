@@ -27,6 +27,7 @@ class RedisConfiguration {
     cacheConfigurations[LOGO_NAME_SEARCH_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[DIVERSIFICATION_ETFS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[DIVERSIFICATION_CONFIG_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+    cacheConfigurations[SNAPSHOT_BACKFILL_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(2))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
       .builder(connectionFactory)
@@ -48,6 +49,7 @@ class RedisConfiguration {
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v3"
     const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs-v3"
     const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config-v3"
+    const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }
