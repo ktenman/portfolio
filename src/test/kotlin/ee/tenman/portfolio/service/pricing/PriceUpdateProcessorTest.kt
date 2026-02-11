@@ -4,11 +4,15 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.slf4j.Logger
@@ -22,10 +26,12 @@ class PriceUpdateProcessorTest {
   private val marketPhaseDetectionService = mockk<MarketPhaseDetectionService>()
   private val instrumentService = mockk<InstrumentService>()
   private val dailyPriceService = mockk<DailyPriceService>()
+  private val priceSnapshotService = mockk<PriceSnapshotService>()
   private val clock = Clock.fixed(Instant.parse("2024-01-15T12:00:00Z"), ZoneId.systemDefault())
   private val log = mockk<Logger>(relaxed = true)
 
-  private val processor = PriceUpdateProcessor(marketPhaseDetectionService, clock, instrumentService, dailyPriceService)
+  private val processor =
+    PriceUpdateProcessor(marketPhaseDetectionService, clock, instrumentService, dailyPriceService, priceSnapshotService)
 
   @Test
   fun `processPriceUpdates should process all symbols successfully on weekday`() {
@@ -134,5 +140,36 @@ class PriceUpdateProcessorTest {
     )
 
     verify { log.warn(match { it.contains("Updated current prices for 2/3 instruments") && it.contains("1 failed") }) }
+  }
+
+  @Test
+  fun `processSymbolUpdate should save price snapshot`() {
+    val instrument = createInstrument()
+    val price = BigDecimal("155.00")
+    val today = LocalDate.of(2024, 1, 15)
+    every { instrumentService.findBySymbol("AAPL") } returns instrument
+    every { instrumentService.updateCurrentPrice(1L, price) } just runs
+    every { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) } just runs
+    every { dailyPriceService.saveDailyPrice(any()) } just runs
+
+    val result = processor.processSymbolUpdate("AAPL", price, false, today, ProviderName.FT)
+
+    expect(result).toEqual(ProcessResult.SUCCESS_WITH_DAILY_PRICE)
+    verify(exactly = 1) { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) }
+  }
+
+  @Test
+  fun `processSymbolUpdate should continue when snapshot save fails`() {
+    val instrument = createInstrument()
+    val price = BigDecimal("155.00")
+    val today = LocalDate.of(2024, 1, 15)
+    every { instrumentService.findBySymbol("AAPL") } returns instrument
+    every { instrumentService.updateCurrentPrice(1L, price) } just runs
+    every { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) } throws RuntimeException("DB error")
+    every { dailyPriceService.saveDailyPrice(any()) } just runs
+
+    val result = processor.processSymbolUpdate("AAPL", price, false, today, ProviderName.FT)
+
+    expect(result).toEqual(ProcessResult.SUCCESS_WITH_DAILY_PRICE)
   }
 }

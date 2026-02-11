@@ -20,7 +20,7 @@ import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
-import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceChangeService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -36,7 +36,7 @@ class InstrumentSnapshotServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val portfolioTransactionRepository = mockk<PortfolioTransactionRepository>()
   private val investmentMetricsService = mockk<InvestmentMetricsService>()
-  private val dailyPriceService = mockk<DailyPriceService>()
+  private val priceChangeService = mockk<PriceChangeService>()
   private val xirrCalculationService = mockk<XirrCalculationService>()
   private val holdingsCalculationService = mockk<HoldingsCalculationService>()
   private val clock = mockk<Clock>()
@@ -68,7 +68,7 @@ class InstrumentSnapshotServiceTest {
         instrumentRepository,
         portfolioTransactionRepository,
         investmentMetricsService,
-        dailyPriceService,
+        priceChangeService,
         xirrCalculationService,
         holdingsCalculationService,
         clock,
@@ -83,7 +83,7 @@ class InstrumentSnapshotServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every { investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, any(), any()) } returns metrics
-    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns PriceChange(BigDecimal("5.00"), 3.5)
+    every { priceChangeService.getPriceChange(testInstrument, any()) } returns PriceChange(BigDecimal("5.00"), 3.5)
 
     val result = instrumentSnapshotService.getAllSnapshots()
 
@@ -102,7 +102,7 @@ class InstrumentSnapshotServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(lhvTransaction, lightyearTransaction)
     every { investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, listOf(lhvTransaction), any()) } returns metrics
-    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
+    every { priceChangeService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentSnapshotService.getAllSnapshots(listOf("lhv"))
 
@@ -150,7 +150,7 @@ class InstrumentSnapshotServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every { investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, any(), any()) } returns zeroMetrics
-    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
+    every { priceChangeService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentSnapshotService.getAllSnapshots(listOf("lhv"))
 
@@ -166,7 +166,7 @@ class InstrumentSnapshotServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every { investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, any(), any()) } returns metrics
-    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns priceChange
+    every { priceChangeService.getPriceChange(testInstrument, any()) } returns priceChange
 
     val result = instrumentSnapshotService.getAllSnapshots()
 
@@ -197,7 +197,7 @@ class InstrumentSnapshotServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every { investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, listOf(transaction), any()) } returns metrics
-    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
+    every { priceChangeService.getPriceChange(testInstrument, any()) } returns null
 
     val result = instrumentSnapshotService.getAllSnapshots(listOf("Lhv"))
 
@@ -212,7 +212,7 @@ class InstrumentSnapshotServiceTest {
     every { instrumentRepository.findAll() } returns listOf(testInstrument)
     every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
     every { investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, any(), testDate) } returns metrics
-    every { dailyPriceService.getPriceChange(testInstrument, any()) } returns null
+    every { priceChangeService.getPriceChange(testInstrument, any()) } returns null
 
     instrumentSnapshotService.getAllSnapshots()
 

@@ -19,6 +19,7 @@ class PriceUpdateProcessor(
   private val clock: Clock,
   private val instrumentService: InstrumentService,
   private val dailyPriceService: DailyPriceService,
+  private val priceSnapshotService: PriceSnapshotService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -75,6 +76,8 @@ class PriceUpdateProcessor(
     runCatching {
       val instrument = instrumentService.findBySymbol(symbol)
       instrumentService.updateCurrentPrice(instrument.id, price)
+      runCatching { priceSnapshotService.saveSnapshot(instrument, price, provider) }
+        .onFailure { log.warn("Failed to save price snapshot for $symbol: ${it.message}") }
       log.debug("Updated current price for $symbol: $price")
       if (isWeekend) return@runCatching ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
       val dailyPrice =
