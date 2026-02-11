@@ -57,29 +57,22 @@ class PriceSnapshotServiceTest {
   fun `should not call upsert when hourly prices map is empty`() {
     service.saveSnapshots(1L, ProviderName.BINANCE, TreeMap())
 
-    verify(exactly = 0) { priceSnapshotRepository.upsertBatch(any(), any(), any(), any(), any()) }
+    verify(exactly = 0) { priceSnapshotRepository.upsert(any(), any(), any(), any()) }
   }
 
   @Test
-  fun `should save batch of snapshots via single batch upsert`() {
+  fun `should save each hourly price via individual upsert`() {
     val hour1 = Instant.parse("2024-01-15T08:00:00Z")
     val hour2 = Instant.parse("2024-01-15T09:00:00Z")
     val hourlyPrices = TreeMap<Instant, BigDecimal>()
     hourlyPrices[hour1] = BigDecimal("49000.00")
     hourlyPrices[hour2] = BigDecimal("50000.00")
-    every { priceSnapshotRepository.upsertBatch(any(), any(), any(), any(), any()) } just runs
+    every { priceSnapshotRepository.upsert(any(), any(), any(), any()) } just runs
 
     service.saveSnapshots(1L, ProviderName.BINANCE, hourlyPrices)
 
-    verify(exactly = 1) {
-      priceSnapshotRepository.upsertBatch(
-        arrayOf(1L, 1L),
-        arrayOf("BINANCE", "BINANCE"),
-        arrayOf(hour1, hour2),
-        arrayOf(BigDecimal("49000.00"), BigDecimal("50000.00")),
-        2,
-      )
-    }
+    verify(exactly = 1) { priceSnapshotRepository.upsert(1L, "BINANCE", hour1, BigDecimal("49000.00")) }
+    verify(exactly = 1) { priceSnapshotRepository.upsert(1L, "BINANCE", hour2, BigDecimal("50000.00")) }
   }
 
   @Test

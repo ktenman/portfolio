@@ -40,14 +40,14 @@ class PriceSnapshotService(
     hourlyPrices: SortedMap<Instant, BigDecimal>,
   ) {
     if (hourlyPrices.isEmpty()) return
-    val entries = hourlyPrices.entries.toList()
-    priceSnapshotRepository.upsertBatch(
-      instrumentIds = Array(entries.size) { instrumentId },
-      providerNames = Array(entries.size) { providerName.name },
-      snapshotHours = entries.map { it.key }.toTypedArray(),
-      prices = entries.map { it.value }.toTypedArray(),
-      size = entries.size,
-    )
+    hourlyPrices.forEach { (hour, price) ->
+      priceSnapshotRepository.upsert(
+        instrumentId = instrumentId,
+        providerName = providerName.name,
+        snapshotHour = hour,
+        price = price,
+      )
+    }
   }
 
   @Transactional(readOnly = true)

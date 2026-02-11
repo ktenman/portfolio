@@ -60,32 +60,6 @@ interface PriceSnapshotRepository : JpaRepository<PriceSnapshot, Long> {
     targetHour: Instant,
   ): PriceSnapshot?
 
-  @Modifying
-  @Query(
-    """
-    INSERT INTO price_snapshot (instrument_id, provider_name, snapshot_hour, price, created_at, updated_at, version)
-    SELECT * FROM UNNEST(
-      :instrumentIds,
-      :providerNames,
-      :snapshotHours,
-      :prices,
-      ARRAY_FILL(NOW()::timestamptz, ARRAY[:size]),
-      ARRAY_FILL(NOW()::timestamptz, ARRAY[:size]),
-      ARRAY_FILL(0::bigint, ARRAY[:size])
-    ) AS t(instrument_id, provider_name, snapshot_hour, price, created_at, updated_at, version)
-    ON CONFLICT (instrument_id, provider_name, snapshot_hour)
-    DO UPDATE SET price = EXCLUDED.price, updated_at = NOW(), version = price_snapshot.version + 1
-    """,
-    nativeQuery = true,
-  )
-  fun upsertBatch(
-    instrumentIds: Array<Long>,
-    providerNames: Array<String>,
-    snapshotHours: Array<Instant>,
-    prices: Array<BigDecimal>,
-    size: Int,
-  )
-
   @Modifying(clearAutomatically = true)
   @Query(
     """
