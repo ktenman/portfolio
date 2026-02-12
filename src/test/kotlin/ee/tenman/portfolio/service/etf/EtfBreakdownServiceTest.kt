@@ -22,6 +22,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.jpa.domain.Specification
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -135,7 +136,7 @@ class EtfBreakdownServiceTest {
 
   @Test
   fun `should return empty list when no etfs found`() {
-    every { instrumentRepository.findByProviderNameIn(any()) } returns emptyList()
+    every { instrumentRepository.findAll(any<Specification<Instrument>>()) } returns emptyList()
     every { etfPositionRepository.findLatestPositionsByEtfIds(any()) } returns emptyList()
 
     val result = etfBreakdownService.getHoldingsBreakdown()
@@ -172,7 +173,7 @@ class EtfBreakdownServiceTest {
     val position2 = createPosition(etf2, holdingBitcoinSynthetic, BigDecimal("50.0000"), testDate)
     val transaction1 = createCashFlow(etf1, BigDecimal("10"), BigDecimal("100"))
     val btcTransaction = createCashFlow(btcInstrument, BigDecimal("1"), BigDecimal("50000"))
-    every { instrumentRepository.findByProviderNameIn(any()) } returns listOf(etf1, etf2)
+    every { instrumentRepository.findAll(any<Specification<Instrument>>()) } returns listOf(etf1, etf2)
     every { etfPositionRepository.findLatestPositionsByEtfIds(any()) } returns listOf(position1, position2)
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position2)
     every { transactionRepository.findAllByInstrumentIds(listOf(1L, 2L)) } returns listOf(transaction1)
@@ -280,9 +281,13 @@ class EtfBreakdownServiceTest {
     positions: List<EtfPosition>,
     transactions: List<PortfolioTransaction>,
   ) {
-    every { instrumentRepository.findByProviderNameIn(any()) } returns instruments
+    every { instrumentRepository.findAll(any<Specification<Instrument>>()) } returns instruments
     every { etfPositionRepository.findLatestPositionsByEtfIds(any()) } returns positions
     every { transactionRepository.findAllByInstrumentIds(any()) } returns transactions
+    every { transactionRepository.findAllByPlatformsAndInstrumentIds(any(), any()) } answers {
+      val platforms = firstArg<List<Platform>>()
+      transactions.filter { it.platform in platforms }
+    }
     every { dailyPriceService.getCurrentPrice(any()) } answers {
       val instrument = firstArg<Instrument>()
       instrument.currentPrice ?: BigDecimal("100")

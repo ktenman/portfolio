@@ -149,6 +149,11 @@ export interface EtfDetailDto extends Serializable {
     currentPrice: number | null;
 }
 
+export interface AvailableEtfsDto {
+    etfSymbols: string[];
+    platforms: string[];
+}
+
 export interface Serializable {
 }
 

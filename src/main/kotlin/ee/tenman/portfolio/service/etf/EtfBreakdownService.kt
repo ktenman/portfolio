@@ -63,11 +63,7 @@ class EtfBreakdownService(
     return aggregateByHolding(holdingsMap, actualPortfolioTotal)
   }
 
-  private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? {
-    if (platforms.isNullOrEmpty()) return null
-    val parsed = platforms.mapNotNull { Platform.fromStringOrNull(it) }
-    return parsed.toSet().takeIf { it.isNotEmpty() }
-  }
+  private fun parsePlatformFilters(platforms: List<String>?): Set<Platform>? = Platform.parseFrom(platforms)
 
   fun evictBreakdownCache() {
     cacheInvalidationService.evictEtfBreakdownCache()

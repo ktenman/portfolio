@@ -3,6 +3,7 @@ package ee.tenman.portfolio.repository
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -10,7 +11,9 @@ import java.math.BigDecimal
 import java.util.*
 
 @Repository
-interface InstrumentRepository : JpaRepository<Instrument, Long> {
+interface InstrumentRepository :
+  JpaRepository<Instrument, Long>,
+  JpaSpecificationExecutor<Instrument> {
   fun findBySymbol(symbol: String): Optional<Instrument>
 
   fun findBySymbolIn(symbols: List<String>): List<Instrument>

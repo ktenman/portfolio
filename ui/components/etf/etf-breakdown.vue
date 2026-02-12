@@ -127,29 +127,8 @@ const selectedEtfs = useLocalStorage<string[]>('portfolio_selected_etfs', [])
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_etf_breakdown_platforms', [])
 const searchQuery = useLocalStorage<string>('portfolio_etf_search', '')
 const debouncedSearchQuery = refDebounced(searchQuery, 200)
-
-const etfPlatformMetadata = computed(() => {
-  if (masterHoldings.value.length === 0) return { etfs: [], platforms: [] }
-  const etfSet = new Set<string>()
-  const platformSet = new Set<string>()
-  masterHoldings.value.forEach(holding => {
-    holding.inEtfs.split(',').forEach(etf => {
-      const trimmed = etf.trim()
-      if (trimmed) etfSet.add(trimmed)
-    })
-    if (holding.platforms) {
-      holding.platforms.split(',').forEach(p => {
-        const trimmed = p.trim()
-        if (trimmed) platformSet.add(trimmed)
-      })
-    }
-  })
-  return { etfs: Array.from(etfSet).sort(), platforms: Array.from(platformSet).sort() }
-})
-
-const availablePlatforms = computed(() => etfPlatformMetadata.value.platforms)
-
-const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
+const availableEtfs = ref<string[]>([])
+const availablePlatforms = ref<string[]>([])
 
 watch(
   availableEtfs,
@@ -219,16 +198,20 @@ const getEtfsParam = (): string[] | undefined =>
 const getPlatformsParam = (): string[] | undefined =>
   getFilterParam(selectedPlatforms.value, availablePlatforms.value)
 
-const loadBreakdown = async (refreshMaster = false) => {
+const refreshAvailableEtfs = async () => {
+  const data = await etfBreakdownService.getAvailableEtfs(getPlatformsParam())
+  availableEtfs.value = data.etfSymbols
+  availablePlatforms.value = data.platforms
+}
+
+const loadBreakdown = async () => {
   isLoading.value = true
   isError.value = false
   errorMessage.value = ''
-
   try {
-    const needsMaster = refreshMaster || masterHoldings.value.length === 0
+    const needsMaster = masterHoldings.value.length === 0
     const platformsParam = getPlatformsParam()
     const etfsParam = getEtfsParam()
-
     if (needsMaster) {
       const [master, filtered] = await Promise.all([
         etfBreakdownService.getBreakdown(undefined, undefined),
@@ -249,13 +232,16 @@ const loadBreakdown = async (refreshMaster = false) => {
 
 const debouncedLoadBreakdown = useDebounceFn(() => loadBreakdown(), 300)
 
+const onPlatformChange = useDebounceFn(async () => {
+  await refreshAvailableEtfs()
+  await loadBreakdown()
+}, 300)
+
 watch(selectedEtfs, debouncedLoadBreakdown)
 
-watch(selectedPlatforms, debouncedLoadBreakdown)
+watch(selectedPlatforms, onPlatformChange)
 
-const isEtfSelected = (etf: string): boolean => {
-  return selectedEtfs.value.includes(etf)
-}
+const isEtfSelected = (etf: string): boolean => selectedEtfs.value.includes(etf)
 
 const toggleEtf = (etf: string) => {
   const index = selectedEtfs.value.indexOf(etf)
@@ -274,17 +260,13 @@ const toggleAllEtfs = () => {
   }
 }
 
-const getSymbolOnly = (fullSymbol: string): string => {
-  return fullSymbol.split(':')[0]
-}
+const getSymbolOnly = (fullSymbol: string): string => fullSymbol.split(':')[0]
 
 const clearSearch = () => {
   searchQuery.value = ''
 }
 
-const isPlatformSelected = (platform: string): boolean => {
-  return selectedPlatforms.value.includes(platform)
-}
+const isPlatformSelected = (platform: string): boolean => selectedPlatforms.value.includes(platform)
 
 const togglePlatform = (platform: string) => {
   const index = selectedPlatforms.value.indexOf(platform)
@@ -313,6 +295,9 @@ const prefetchLogoCandidates = () => {
 }
 
 onMounted(async () => {
+  const initialData = await etfBreakdownService.getAvailableEtfs()
+  availableEtfs.value = initialData.etfSymbols
+  availablePlatforms.value = initialData.platforms
   await loadBreakdown()
   prefetchLogoCandidates()
 })
