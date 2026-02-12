@@ -14,5 +14,10 @@ enum class Platform {
 
   companion object {
     fun fromStringOrNull(value: String): Platform? = runCatching { valueOf(value.uppercase()) }.getOrNull()
+
+    fun parseFrom(platforms: List<String>?): Set<Platform>? {
+      if (platforms.isNullOrEmpty()) return null
+      return platforms.mapNotNull { fromStringOrNull(it) }.toSet().takeIf { it.isNotEmpty() }
+    }
   }
 }

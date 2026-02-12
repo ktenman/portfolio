@@ -127,11 +127,8 @@ const selectedEtfs = useLocalStorage<string[]>('portfolio_selected_etfs', [])
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_etf_breakdown_platforms', [])
 const searchQuery = useLocalStorage<string>('portfolio_etf_search', '')
 const debouncedSearchQuery = refDebounced(searchQuery, 200)
-const availableEtfSymbols = ref<string[]>([])
-const allPlatformNames = ref<string[]>([])
-
-const availableEtfs = computed(() => availableEtfSymbols.value)
-const availablePlatforms = computed(() => allPlatformNames.value)
+const availableEtfs = ref<string[]>([])
+const availablePlatforms = ref<string[]>([])
 
 watch(
   availableEtfs,
@@ -202,9 +199,8 @@ const getPlatformsParam = (): string[] | undefined =>
   getFilterParam(selectedPlatforms.value, availablePlatforms.value)
 
 const refreshAvailableEtfs = async () => {
-  const platformsParam = getPlatformsParam()
-  const data = await etfBreakdownService.getAvailableEtfs(platformsParam)
-  availableEtfSymbols.value = data.etfSymbols
+  const data = await etfBreakdownService.getAvailableEtfs(getPlatformsParam())
+  availableEtfs.value = data.etfSymbols
 }
 
 const loadBreakdown = async () => {
@@ -299,8 +295,8 @@ const prefetchLogoCandidates = () => {
 
 onMounted(async () => {
   const initialData = await etfBreakdownService.getAvailableEtfs()
-  availableEtfSymbols.value = initialData.etfSymbols
-  allPlatformNames.value = initialData.platforms
+  availableEtfs.value = initialData.etfSymbols
+  availablePlatforms.value = initialData.platforms
   await loadBreakdown()
   prefetchLogoCandidates()
 })
