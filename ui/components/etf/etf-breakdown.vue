@@ -201,6 +201,7 @@ const getPlatformsParam = (): string[] | undefined =>
 const refreshAvailableEtfs = async () => {
   const data = await etfBreakdownService.getAvailableEtfs(getPlatformsParam())
   availableEtfs.value = data.etfSymbols
+  availablePlatforms.value = data.platforms
 }
 
 const loadBreakdown = async () => {

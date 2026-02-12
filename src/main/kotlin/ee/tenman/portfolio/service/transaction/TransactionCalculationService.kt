@@ -61,10 +61,10 @@ class TransactionCalculationService(
   private fun loadTransactions(
     instrumentIds: Collection<Long>,
     platformFilter: Set<Platform>?,
-  ): List<PortfolioTransaction> {
-    if (platformFilter == null) return transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
-    return transactionRepository.findAllByPlatformsAndInstrumentIds(platformFilter.toList(), instrumentIds.toList())
-  }
+  ): List<PortfolioTransaction> =
+    platformFilter
+      ?.let { transactionRepository.findAllByPlatformsAndInstrumentIds(it.toList(), instrumentIds.toList()) }
+      ?: transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
 
   fun getTransactionStats(instrumentId: Long): TransactionStats {
     val transactions = transactionRepository.findAllByInstrumentId(instrumentId)
