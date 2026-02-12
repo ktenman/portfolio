@@ -199,6 +199,7 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
       "ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto",
       "ee.tenman.portfolio.dto.DiversificationCalculatorResponseDto",
       "ee.tenman.portfolio.dto.EtfDetailDto",
+      "ee.tenman.portfolio.dto.AvailableEtfsDto",
       "ee.tenman.portfolio.domain.Platform",
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",

@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -147,6 +147,11 @@ export interface EtfDetailDto extends Serializable {
     ter: number | null;
     annualReturn: number | null;
     currentPrice: number | null;
+}
+
+export interface AvailableEtfsDto {
+    etfSymbols: string[];
+    platforms: string[];
 }
 
 export interface Serializable {

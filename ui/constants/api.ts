@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   PORTFOLIO_SUMMARY_CURRENT: '/portfolio-summary/current',
   PORTFOLIO_SUMMARY_RECALCULATE: '/portfolio-summary/recalculate',
   ETF_BREAKDOWN: '/etf-breakdown',
+  ETF_BREAKDOWN_AVAILABLE: '/etf-breakdown/available-etfs',
   DIVERSIFICATION: '/diversification',
   ENUMS: '/enums',
   LOGOS: '/logos',

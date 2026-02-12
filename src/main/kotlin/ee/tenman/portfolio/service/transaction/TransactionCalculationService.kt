@@ -38,9 +38,12 @@ class TransactionCalculationService(
     }
   }
 
-  fun batchCalculateAll(instrumentIds: Collection<Long>): Map<Long, InstrumentTransactionData> {
+  fun batchCalculateAll(
+    instrumentIds: Collection<Long>,
+    platformFilter: Set<Platform>? = null,
+  ): Map<Long, InstrumentTransactionData> {
     if (instrumentIds.isEmpty()) return emptyMap()
-    val allTransactions = transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
+    val allTransactions = loadTransactions(instrumentIds, platformFilter)
     return instrumentIds.associateWith { id ->
       val txs = allTransactions.filter { it.instrument.id == id }
       val quantityByPlatform =
@@ -53,6 +56,14 @@ class TransactionCalculationService(
         quantityByPlatform = quantityByPlatform,
       )
     }
+  }
+
+  private fun loadTransactions(
+    instrumentIds: Collection<Long>,
+    platformFilter: Set<Platform>?,
+  ): List<PortfolioTransaction> {
+    if (platformFilter == null) return transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
+    return transactionRepository.findAllByPlatformsAndInstrumentIds(platformFilter.toList(), instrumentIds.toList())
   }
 
   fun getTransactionStats(instrumentId: Long): TransactionStats {
