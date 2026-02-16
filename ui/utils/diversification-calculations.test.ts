@@ -5,6 +5,7 @@ import {
   calculateRebalanceDifference,
   calculateUnitsFromAmount,
   formatEuroAmount,
+  calculateBudgetConstrainedRebalance,
 } from './diversification-calculations'
 
 describe('diversification-calculations', () => {
@@ -111,6 +112,113 @@ describe('diversification-calculations', () => {
 
     it('should handle small amounts', () => {
       expect(formatEuroAmount(0.01)).toBe('€0.01')
+    })
+  })
+
+  describe('calculateBudgetConstrainedRebalance', () => {
+    it('should return null when total buy needs fit within budget', () => {
+      const entries = [
+        { id: 1, price: 50, difference: 200, isBuy: true },
+        { id: 2, price: 30, difference: 100, isBuy: true },
+      ]
+      const result = calculateBudgetConstrainedRebalance(entries, 500, false)
+      expect(result).toBeNull()
+    })
+
+    it('should return null when no buy entries exist', () => {
+      const entries = [{ id: 1, price: 50, difference: -200, isBuy: false }]
+      const result = calculateBudgetConstrainedRebalance(entries, 100, false)
+      expect(result).toBeNull()
+    })
+
+    it('should constrain buys proportionally when total exceeds budget', () => {
+      const entries = [
+        { id: 1, price: 14.24, difference: 94.18, isBuy: true },
+        { id: 2, price: 8.54, difference: 32.82, isBuy: true },
+        { id: 3, price: 6.44, difference: 84.46, isBuy: true },
+      ]
+      const result = calculateBudgetConstrainedRebalance(entries, 100, false)
+      expect(result).not.toBeNull()
+      const totalSpent = Array.from(result!.allocations.values()).reduce(
+        (sum, a) =>
+          sum +
+          a.units *
+            entries.find(
+              e => e.id === Array.from(result!.allocations.entries()).find(([, v]) => v === a)?.[0]
+            )!.price,
+        0
+      )
+      expect(totalSpent).toBeLessThanOrEqual(100)
+    })
+
+    it('should not exceed budget with real-world scenario from screenshot', () => {
+      const entries = [
+        { id: 1, price: 14.24, difference: 94.18, isBuy: true },
+        { id: 2, price: 8.54, difference: 32.82, isBuy: true },
+        { id: 3, price: 6.44, difference: 84.46, isBuy: true },
+      ]
+      const result = calculateBudgetConstrainedRebalance(entries, 100, false)!
+      let spent = 0
+      for (const [id, data] of result.allocations) {
+        const entry = entries.find(e => e.id === id)!
+        spent += data.units * entry.price
+      }
+      expect(spent).toBeLessThanOrEqual(100)
+      expect(spent + result.totalRemaining).toBeCloseTo(100, 1)
+    })
+
+    it('should allocate more units with optimize enabled', () => {
+      const entries = [
+        { id: 1, price: 14.24, difference: 94.18, isBuy: true },
+        { id: 2, price: 8.54, difference: 32.82, isBuy: true },
+        { id: 3, price: 6.44, difference: 84.46, isBuy: true },
+      ]
+      const withoutOptimize = calculateBudgetConstrainedRebalance(entries, 100, false)!
+      const withOptimize = calculateBudgetConstrainedRebalance(entries, 100, true)!
+      const unitsWithout = Array.from(withoutOptimize.allocations.values()).reduce(
+        (sum, a) => sum + a.units,
+        0
+      )
+      const unitsWith = Array.from(withOptimize.allocations.values()).reduce(
+        (sum, a) => sum + a.units,
+        0
+      )
+      expect(unitsWith).toBeGreaterThanOrEqual(unitsWithout)
+      expect(withOptimize.totalRemaining).toBeLessThanOrEqual(withoutOptimize.totalRemaining)
+    })
+
+    it('should account for sell proceeds when constraining buys', () => {
+      const entries = [
+        { id: 1, price: 120.5, difference: -1000, isBuy: false },
+        { id: 2, price: 95.3, difference: 2000, isBuy: true },
+      ]
+      const result = calculateBudgetConstrainedRebalance(entries, 1000, false)
+      expect(result).not.toBeNull()
+      const buyData = result!.allocations.get(2)!
+      expect(buyData.units).toBe(20)
+    })
+
+    it('should return null when sell proceeds plus budget cover all buys', () => {
+      const entries = [
+        { id: 1, price: 100, difference: -500, isBuy: false },
+        { id: 2, price: 50, difference: 300, isBuy: true },
+      ]
+      const result = calculateBudgetConstrainedRebalance(entries, 200, false)
+      expect(result).toBeNull()
+    })
+
+    it('should handle single buy entry exceeding budget', () => {
+      const entries = [{ id: 1, price: 200, difference: 1000, isBuy: true }]
+      const result = calculateBudgetConstrainedRebalance(entries, 100, false)!
+      expect(result.allocations.get(1)!.units).toBe(0)
+      expect(result.totalRemaining).toBe(100)
+    })
+
+    it('should handle optimize with single buy entry exceeding budget', () => {
+      const entries = [{ id: 1, price: 50, difference: 500, isBuy: true }]
+      const result = calculateBudgetConstrainedRebalance(entries, 100, true)!
+      expect(result.allocations.get(1)!.units).toBe(2)
+      expect(result.totalRemaining).toBe(0)
     })
   })
 })
