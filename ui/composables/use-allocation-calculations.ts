@@ -6,6 +6,8 @@ import {
   calculateInvestmentAmount,
   calculateUnitsFromAmount,
   calculateBudgetConstrainedRebalance,
+  optimizeRebalanceUnits,
+  optimizeInvestmentAllocation,
   formatEuroAmount,
 } from '../utils/diversification-calculations'
 
@@ -98,36 +100,11 @@ export function useAllocationCalculations(props: AllocationProps) {
     if (budgetAwareRebalance.value) return emptyResult
     const validAllocations = props.allocations.filter(a => a.instrumentId > 0 && a.value > 0)
     if (validAllocations.length === 0) return emptyResult
-    const buyAllocations = validAllocations
-      .map(a => ({ ...getBaseRebalanceData(a), id: a.instrumentId }))
-      .filter(d => d.isBuy && d.difference > 0)
-    if (buyAllocations.length === 0) {
-      const result = new Map(
-        validAllocations.map(a => {
-          const base = getBaseRebalanceData(a)
-          return [a.instrumentId, { units: base.units, isBuy: base.isBuy }]
-        })
-      )
-      return { allocations: result, totalRemaining: 0 }
-    }
-    let totalUnusedAmount = buyAllocations.reduce((sum, d) => sum + d.unused, 0)
-    const result = new Map(
-      validAllocations.map(a => {
-        const base = getBaseRebalanceData(a)
-        return [a.instrumentId, { units: base.units, isBuy: base.isBuy }]
-      })
-    )
-    const sortedByRemainder = [...buyAllocations]
-      .filter(d => d.price && d.price > 0)
-      .sort((a, b) => b.unused - a.unused)
-    for (const fund of sortedByRemainder) {
-      if (fund.price && fund.price <= totalUnusedAmount) {
-        const current = result.get(fund.id)!
-        result.set(fund.id, { ...current, units: current.units + 1 })
-        totalUnusedAmount -= fund.price
-      }
-    }
-    return { allocations: result, totalRemaining: Math.max(0, totalUnusedAmount) }
+    const entries = validAllocations.map(a => ({
+      ...getBaseRebalanceData(a),
+      id: a.instrumentId,
+    }))
+    return optimizeRebalanceUnits(entries)
   })
 
   const optimizedRebalance = computed(() => optimizedRebalanceResult.value.allocations)
@@ -189,60 +166,12 @@ export function useAllocationCalculations(props: AllocationProps) {
     if (!showInvestmentColumns.value || !props.optimizeEnabled) return new Map<number, number>()
     const validAllocations = props.allocations.filter(a => a.instrumentId > 0 && a.value > 0)
     if (validAllocations.length === 0) return new Map<number, number>()
-    const fundData = validAllocations.map(allocation => {
-      const price = getEtfPrice(allocation.instrumentId) ?? 0
-      const allocated = calculateInvestmentAmount(props.totalInvestment, allocation.value)
-      const exactUnits = price > 0 ? allocated / price : 0
-      const baseUnits = Math.floor(exactUnits)
-      return {
-        id: allocation.instrumentId,
-        price,
-        baseUnits,
-        remainder: exactUnits - baseUnits,
-        currentUnits: baseUnits,
-      }
-    })
-    let totalSpent = fundData.reduce((sum, f) => sum + f.currentUnits * f.price, 0)
-    let remaining = props.totalInvestment - totalSpent
-    const sortedByRemainder = [...fundData]
-      .filter(f => f.price > 0)
-      .sort((a, b) => b.remainder - a.remainder)
-    for (const fund of sortedByRemainder) {
-      if (fund.price <= remaining) {
-        fund.currentUnits++
-        remaining -= fund.price
-        totalSpent += fund.price
-      }
-    }
-    let improved = true
-    while (improved && remaining > 0) {
-      improved = false
-      let bestFund: (typeof fundData)[0] | null = null
-      let bestDeficit = -Infinity
-      for (const fund of fundData) {
-        if (fund.price <= 0 || fund.price > remaining) continue
-        const currentPercent =
-          totalSpent > 0 ? ((fund.currentUnits * fund.price) / totalSpent) * 100 : 0
-        const totalPercent = validAllocations.reduce((sum, a) => sum + a.value, 0)
-        const targetPercent =
-          ((validAllocations.find(a => a.instrumentId === fund.id)?.value ?? 0) / totalPercent) *
-          100
-        const deficit = targetPercent - currentPercent
-        if (deficit > bestDeficit) {
-          bestDeficit = deficit
-          bestFund = fund
-        }
-      }
-      if (bestFund) {
-        bestFund.currentUnits++
-        remaining -= bestFund.price
-        totalSpent += bestFund.price
-        improved = true
-      }
-    }
-    const result = new Map<number, number>()
-    fundData.forEach(f => result.set(f.id, f.currentUnits))
-    return result
+    const entries = validAllocations.map(a => ({
+      id: a.instrumentId,
+      price: getEtfPrice(a.instrumentId) ?? 0,
+      percentage: a.value,
+    }))
+    return optimizeInvestmentAllocation(entries, props.totalInvestment)
   })
 
   const getUnits = (instrumentId: number, percentage: number, price: number | null): number => {
@@ -308,7 +237,6 @@ export function useAllocationCalculations(props: AllocationProps) {
   })
 
   return {
-    findEtf,
     getEtfName,
     getEtfPrice,
     getEtfTer,

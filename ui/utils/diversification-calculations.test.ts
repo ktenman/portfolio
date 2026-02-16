@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   calculateTargetValue,
   calculateInvestmentAmount,
-  calculateRebalanceDifference,
   calculateUnitsFromAmount,
   formatEuroAmount,
   calculateBudgetConstrainedRebalance,
@@ -46,28 +45,6 @@ describe('diversification-calculations', () => {
 
     it('should handle fractional percentages', () => {
       expect(calculateInvestmentAmount(10000, 33.33)).toBeCloseTo(3333, 0)
-    })
-  })
-
-  describe('calculateRebalanceDifference', () => {
-    it('should return positive difference when target exceeds current', () => {
-      expect(calculateRebalanceDifference(1000, 1500)).toBe(500)
-    })
-
-    it('should return positive difference when current exceeds target', () => {
-      expect(calculateRebalanceDifference(1500, 1000)).toBe(500)
-    })
-
-    it('should return zero when values are equal', () => {
-      expect(calculateRebalanceDifference(1000, 1000)).toBe(0)
-    })
-
-    it('should handle zero current value', () => {
-      expect(calculateRebalanceDifference(0, 1000)).toBe(1000)
-    })
-
-    it('should handle zero target value', () => {
-      expect(calculateRebalanceDifference(1000, 0)).toBe(1000)
     })
   })
 
@@ -137,17 +114,13 @@ describe('diversification-calculations', () => {
         { id: 2, price: 8.54, difference: 32.82, isBuy: true },
         { id: 3, price: 6.44, difference: 84.46, isBuy: true },
       ]
-      const result = calculateBudgetConstrainedRebalance(entries, 100, false)
+      const result = calculateBudgetConstrainedRebalance(entries, 100, false)!
       expect(result).not.toBeNull()
-      const totalSpent = Array.from(result!.allocations.values()).reduce(
-        (sum, a) =>
-          sum +
-          a.units *
-            entries.find(
-              e => e.id === Array.from(result!.allocations.entries()).find(([, v]) => v === a)?.[0]
-            )!.price,
-        0
-      )
+      let totalSpent = 0
+      for (const [id, data] of result.allocations) {
+        const entry = entries.find(e => e.id === id)!
+        totalSpent += data.units * entry.price
+      }
       expect(totalSpent).toBeLessThanOrEqual(100)
     })
 
