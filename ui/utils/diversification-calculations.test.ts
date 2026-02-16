@@ -4,6 +4,8 @@ import {
   calculateInvestmentAmount,
   calculateUnitsFromAmount,
   formatEuroAmount,
+  optimizeRebalanceUnits,
+  optimizeInvestmentAllocation,
   calculateBudgetConstrainedRebalance,
 } from './diversification-calculations'
 
@@ -92,6 +94,96 @@ describe('diversification-calculations', () => {
     })
   })
 
+  describe('optimizeRebalanceUnits', () => {
+    it('should return base units when no buy entries exist', () => {
+      const entries = [{ id: 1, units: 5, isBuy: false, difference: -200, unused: 0, price: 40 }]
+      const result = optimizeRebalanceUnits(entries)
+      expect(result.allocations.get(1)!.units).toBe(5)
+      expect(result.allocations.get(1)!.isBuy).toBe(false)
+      expect(result.totalRemaining).toBe(0)
+    })
+
+    it('should redistribute unused amounts to buy entries', () => {
+      const entries = [
+        { id: 1, units: 3, isBuy: true, difference: 150, unused: 20, price: 40 },
+        { id: 2, units: 5, isBuy: true, difference: 100, unused: 15, price: 10 },
+      ]
+      const result = optimizeRebalanceUnits(entries)
+      const fund1 = result.allocations.get(1)!
+      const fund2 = result.allocations.get(2)!
+      expect(fund1.units + fund2.units).toBeGreaterThanOrEqual(3 + 5)
+    })
+
+    it('should handle empty entries array', () => {
+      const result = optimizeRebalanceUnits([])
+      expect(result.allocations.size).toBe(0)
+      expect(result.totalRemaining).toBe(0)
+    })
+
+    it('should not add units when unused is less than any price', () => {
+      const entries = [{ id: 1, units: 2, isBuy: true, difference: 500, unused: 5, price: 100 }]
+      const result = optimizeRebalanceUnits(entries)
+      expect(result.allocations.get(1)!.units).toBe(2)
+      expect(result.totalRemaining).toBe(5)
+    })
+
+    it('should handle entries with null price', () => {
+      const entries = [{ id: 1, units: 0, isBuy: true, difference: 100, unused: 50, price: null }]
+      const result = optimizeRebalanceUnits(entries)
+      expect(result.allocations.get(1)!.units).toBe(0)
+    })
+  })
+
+  describe('optimizeInvestmentAllocation', () => {
+    it('should allocate units proportionally to percentages', () => {
+      const entries = [
+        { id: 1, price: 50, percentage: 60 },
+        { id: 2, price: 30, percentage: 40 },
+      ]
+      const result = optimizeInvestmentAllocation(entries, 1000)
+      const fund1Units = result.get(1)!
+      const fund2Units = result.get(2)!
+      expect(fund1Units * 50 + fund2Units * 30).toBeLessThanOrEqual(1000)
+      expect(fund1Units).toBeGreaterThan(0)
+      expect(fund2Units).toBeGreaterThan(0)
+    })
+
+    it('should return empty map for empty entries', () => {
+      const result = optimizeInvestmentAllocation([], 1000)
+      expect(result.size).toBe(0)
+    })
+
+    it('should handle zero price entries', () => {
+      const entries = [
+        { id: 1, price: 0, percentage: 50 },
+        { id: 2, price: 25, percentage: 50 },
+      ]
+      const result = optimizeInvestmentAllocation(entries, 100)
+      expect(result.get(1)).toBe(0)
+      expect(result.get(2)!).toBe(4)
+    })
+
+    it('should maximize allocation when remainders allow extra units', () => {
+      const entries = [
+        { id: 1, price: 33, percentage: 50 },
+        { id: 2, price: 33, percentage: 50 },
+      ]
+      const result = optimizeInvestmentAllocation(entries, 100)
+      const totalSpent = (result.get(1)! + result.get(2)!) * 33
+      expect(totalSpent).toBeLessThanOrEqual(100)
+      expect(result.get(1)! + result.get(2)!).toBe(3)
+    })
+
+    it('should respect target percentages when distributing extra units', () => {
+      const entries = [
+        { id: 1, price: 10, percentage: 70 },
+        { id: 2, price: 10, percentage: 30 },
+      ]
+      const result = optimizeInvestmentAllocation(entries, 100)
+      expect(result.get(1)!).toBeGreaterThan(result.get(2)!)
+    })
+  })
+
   describe('calculateBudgetConstrainedRebalance', () => {
     it('should return null when total buy needs fit within budget', () => {
       const entries = [
@@ -108,7 +200,7 @@ describe('diversification-calculations', () => {
       expect(result).toBeNull()
     })
 
-    it('should constrain buys proportionally when total exceeds budget', () => {
+    it('should constrain buys proportionally and account for full budget', () => {
       const entries = [
         { id: 1, price: 14.24, difference: 94.18, isBuy: true },
         { id: 2, price: 8.54, difference: 32.82, isBuy: true },
@@ -116,21 +208,6 @@ describe('diversification-calculations', () => {
       ]
       const result = calculateBudgetConstrainedRebalance(entries, 100, false)!
       expect(result).not.toBeNull()
-      let totalSpent = 0
-      for (const [id, data] of result.allocations) {
-        const entry = entries.find(e => e.id === id)!
-        totalSpent += data.units * entry.price
-      }
-      expect(totalSpent).toBeLessThanOrEqual(100)
-    })
-
-    it('should not exceed budget with real-world scenario from screenshot', () => {
-      const entries = [
-        { id: 1, price: 14.24, difference: 94.18, isBuy: true },
-        { id: 2, price: 8.54, difference: 32.82, isBuy: true },
-        { id: 3, price: 6.44, difference: 84.46, isBuy: true },
-      ]
-      const result = calculateBudgetConstrainedRebalance(entries, 100, false)!
       let spent = 0
       for (const [id, data] of result.allocations) {
         const entry = entries.find(e => e.id === id)!
