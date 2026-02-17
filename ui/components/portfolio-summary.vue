@@ -36,6 +36,8 @@
 
       <portfolio-chart :key="chartKey" :data="processedChartData" />
 
+      <return-predictions class="mt-3" />
+
       <data-table
         :items="sortedItems"
         :columns="summaryColumns"
@@ -67,6 +69,7 @@ import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import { useSortableTable } from '../composables/use-sortable-table'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
+import ReturnPredictions from './portfolio/return-predictions.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import {
