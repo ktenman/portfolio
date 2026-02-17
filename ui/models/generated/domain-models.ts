@@ -149,6 +149,24 @@ export interface EtfDetailDto extends Serializable {
     currentPrice: number | null;
 }
 
+export interface ReturnPredictionDto extends Serializable {
+    currentValue: number;
+    xirrAnnualReturn: number;
+    dailyVolatility: number;
+    dataPointCount: number;
+    predictions: HorizonPredictionDto[];
+}
+
+export interface HorizonPredictionDto extends Serializable {
+    horizon: string;
+    horizonDays: number;
+    targetDate: DateAsString;
+    xirrProjectedValue: number;
+    expectedValue: number;
+    optimisticValue: number;
+    pessimisticValue: number;
+}
+
 export interface Serializable {
 }
 
