@@ -40,6 +40,7 @@ class ReturnPredictionService(
       "3M" to 91,
       "6M" to 183,
       "1Y" to 365,
+      "2Y" to 730,
     )
   }
 

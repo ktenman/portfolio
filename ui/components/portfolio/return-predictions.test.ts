@@ -66,6 +66,15 @@ const fourPredictions = [
     pessimisticValue: 46000,
     contributions: 6000,
   },
+  {
+    horizon: '2Y',
+    horizonDays: 730,
+    targetDate: '2028-02-17',
+    expectedValue: 62000,
+    optimisticValue: 78000,
+    pessimisticValue: 49000,
+    contributions: 12000,
+  },
 ]
 
 describe('return-predictions', () => {
@@ -106,8 +115,8 @@ describe('return-predictions', () => {
     mockReturnPredictions.currentValue.value = 50000
     mockReturnPredictions.predictions.value = fourPredictions
     const wrapper = mount(ReturnPredictions)
-    const cards = wrapper.findAll('.col-6.col-lg-3')
-    expect(cards).toHaveLength(4)
+    const cards = wrapper.findAll('.col-6.col-lg')
+    expect(cards).toHaveLength(5)
   })
 
   it('should display correct horizon labels', () => {
@@ -120,6 +129,7 @@ describe('return-predictions', () => {
     expect(titles[1].text()).toBe('3 Months')
     expect(titles[2].text()).toBe('6 Months')
     expect(titles[3].text()).toBe('1 Year')
+    expect(titles[4].text()).toBe('2 Years')
   })
 
   it('should show data point count in header', () => {

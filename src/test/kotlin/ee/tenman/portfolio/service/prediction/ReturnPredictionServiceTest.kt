@@ -11,10 +11,10 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
-import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import ee.tenman.portfolio.service.summary.SummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryService
 import ee.tenman.portfolio.service.transaction.TransactionCacheService
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
@@ -55,16 +55,17 @@ class ReturnPredictionServiceTest {
   }
 
   @Test
-  fun `should return four horizon predictions with sufficient data`() {
+  fun `should return five horizon predictions with sufficient data`() {
     val summaries = createGrowingSummaries(60, BigDecimal("10000"), 0.0003)
     every { summaryCacheService.getAllDailySummaries() } returns summaries
     every { summaryService.getCurrentDaySummary() } returns summaries.last()
     val result = service.predict()
-    expect(result.predictions).toHaveSize(4)
+    expect(result.predictions).toHaveSize(5)
     expect(result.predictions[0].horizon).toEqual("1M")
     expect(result.predictions[1].horizon).toEqual("3M")
     expect(result.predictions[2].horizon).toEqual("6M")
     expect(result.predictions[3].horizon).toEqual("1Y")
+    expect(result.predictions[4].horizon).toEqual("2Y")
   }
 
   @Test
@@ -97,6 +98,7 @@ class ReturnPredictionServiceTest {
     expect(ranges[1]).toBeGreaterThan(ranges[0])
     expect(ranges[2]).toBeGreaterThan(ranges[1])
     expect(ranges[3]).toBeGreaterThan(ranges[2])
+    expect(ranges[4]).toBeGreaterThan(ranges[3])
   }
 
   @Test
@@ -105,7 +107,7 @@ class ReturnPredictionServiceTest {
     every { summaryCacheService.getAllDailySummaries() } returns summaries
     every { summaryService.getCurrentDaySummary() } returns summaries.last()
     val result = service.predict()
-    expect(result.predictions).toHaveSize(4)
+    expect(result.predictions).toHaveSize(5)
     result.predictions.forEach { prediction ->
       expect(prediction.expectedValue).toEqualNumerically(prediction.optimisticValue)
       expect(prediction.expectedValue).toEqualNumerically(prediction.pessimisticValue)
@@ -140,6 +142,7 @@ class ReturnPredictionServiceTest {
     expect(result.predictions[1].targetDate).toEqual(today.plusDays(91))
     expect(result.predictions[2].targetDate).toEqual(today.plusDays(183))
     expect(result.predictions[3].targetDate).toEqual(today.plusDays(365))
+    expect(result.predictions[4].targetDate).toEqual(today.plusDays(730))
   }
 
   @Test
@@ -156,7 +159,7 @@ class ReturnPredictionServiceTest {
     every { summaryCacheService.getAllDailySummaries() } returns summaries
     every { summaryService.getCurrentDaySummary() } returns summaries.last()
     val result = service.predict()
-    expect(result.predictions).toHaveSize(4)
+    expect(result.predictions).toHaveSize(5)
   }
 
   @Test
