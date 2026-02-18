@@ -24,7 +24,7 @@
       </div>
       <div v-else>
         <div class="row g-2">
-          <div v-for="prediction in predictions" :key="prediction.horizon" class="col-6 col-lg-3">
+          <div v-for="prediction in predictions" :key="prediction.horizon" class="col-6 col-lg">
             <div class="card h-100 prediction-card">
               <div class="card-body text-center p-2">
                 <h6 class="card-title text-muted mb-2">
@@ -93,6 +93,7 @@ const HORIZON_LABELS: Record<string, string> = {
   '3M': '3 Months',
   '6M': '6 Months',
   '1Y': '1 Year',
+  '2Y': '2 Years',
 }
 
 const formatHorizonLabel = (horizon: string): string => HORIZON_LABELS[horizon] ?? horizon
