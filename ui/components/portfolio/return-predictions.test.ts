@@ -7,6 +7,8 @@ const mockReturnPredictions = {
   predictions: ref([] as any[]),
   hasSufficientData: ref(false),
   dataPointCount: ref(0),
+  currentValue: ref(0),
+  monthlyInvestment: ref(0),
   isLoading: ref(false),
   error: ref(null as string | null),
 }
@@ -19,42 +21,50 @@ vi.mock('../../utils/formatters', () => ({
   formatCurrencyWithSymbol: vi.fn((v: number) => `€${v?.toFixed(2) ?? '0.00'}`),
 }))
 
+vi.mock('vue-chartjs', () => ({
+  Line: {
+    name: 'Line',
+    template: '<canvas data-testid="prediction-chart"></canvas>',
+    props: ['data', 'options'],
+  },
+}))
+
 const fourPredictions = [
   {
     horizon: '1M',
     horizonDays: 30,
     targetDate: '2026-03-19',
-    xirrProjectedValue: 50493,
     expectedValue: 50400,
     optimisticValue: 52800,
     pessimisticValue: 48100,
+    contributions: 500,
   },
   {
     horizon: '3M',
     horizonDays: 91,
     targetDate: '2026-05-19',
-    xirrProjectedValue: 51500,
     expectedValue: 51200,
     optimisticValue: 55000,
     pessimisticValue: 47500,
+    contributions: 1500,
   },
   {
     horizon: '6M',
     horizonDays: 183,
     targetDate: '2026-08-18',
-    xirrProjectedValue: 53000,
     expectedValue: 52500,
     optimisticValue: 58000,
     pessimisticValue: 47000,
+    contributions: 3000,
   },
   {
     horizon: '1Y',
     horizonDays: 365,
     targetDate: '2027-02-17',
-    xirrProjectedValue: 56000,
     expectedValue: 55000,
     optimisticValue: 65000,
     pessimisticValue: 46000,
+    contributions: 6000,
   },
 ]
 
@@ -63,6 +73,8 @@ describe('return-predictions', () => {
     mockReturnPredictions.isLoading.value = false
     mockReturnPredictions.hasSufficientData.value = false
     mockReturnPredictions.dataPointCount.value = 0
+    mockReturnPredictions.currentValue.value = 0
+    mockReturnPredictions.monthlyInvestment.value = 0
     mockReturnPredictions.predictions.value = []
     mockReturnPredictions.error.value = null
   })
@@ -91,6 +103,7 @@ describe('return-predictions', () => {
   it('should render four prediction cards when data is available', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.dataPointCount.value = 120
+    mockReturnPredictions.currentValue.value = 50000
     mockReturnPredictions.predictions.value = fourPredictions
     const wrapper = mount(ReturnPredictions)
     const cards = wrapper.findAll('.col-6.col-lg-3')
@@ -99,6 +112,7 @@ describe('return-predictions', () => {
 
   it('should display correct horizon labels', () => {
     mockReturnPredictions.hasSufficientData.value = true
+    mockReturnPredictions.currentValue.value = 50000
     mockReturnPredictions.predictions.value = fourPredictions
     const wrapper = mount(ReturnPredictions)
     const titles = wrapper.findAll('.card-title')
@@ -111,8 +125,60 @@ describe('return-predictions', () => {
   it('should show data point count in header', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.dataPointCount.value = 250
+    mockReturnPredictions.currentValue.value = 50000
     mockReturnPredictions.predictions.value = [fourPredictions[0]]
     const wrapper = mount(ReturnPredictions)
     expect(wrapper.find('.card-header').text()).toContain('250 days')
+  })
+
+  it('should render prediction chart when data is available', () => {
+    mockReturnPredictions.hasSufficientData.value = true
+    mockReturnPredictions.currentValue.value = 50000
+    mockReturnPredictions.predictions.value = fourPredictions
+    const wrapper = mount(ReturnPredictions)
+    expect(wrapper.findComponent({ name: 'Line' }).exists()).toBe(true)
+  })
+
+  it('should not render chart when insufficient data', () => {
+    mockReturnPredictions.dataPointCount.value = 15
+    const wrapper = mount(ReturnPredictions)
+    expect(wrapper.findComponent({ name: 'Line' }).exists()).toBe(false)
+  })
+
+  it('should show percentage change on cards', () => {
+    mockReturnPredictions.hasSufficientData.value = true
+    mockReturnPredictions.currentValue.value = 50000
+    mockReturnPredictions.predictions.value = fourPredictions
+    const wrapper = mount(ReturnPredictions)
+    const changes = wrapper.findAll('.text-success')
+    expect(changes.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('should show negative percentage for declining predictions', () => {
+    mockReturnPredictions.hasSufficientData.value = true
+    mockReturnPredictions.currentValue.value = 55000
+    mockReturnPredictions.predictions.value = [fourPredictions[0]]
+    const wrapper = mount(ReturnPredictions)
+    expect(wrapper.find('.text-danger').exists()).toBe(true)
+  })
+
+  it('should show monthly investment in header when available', () => {
+    mockReturnPredictions.hasSufficientData.value = true
+    mockReturnPredictions.dataPointCount.value = 120
+    mockReturnPredictions.currentValue.value = 50000
+    mockReturnPredictions.monthlyInvestment.value = 500
+    mockReturnPredictions.predictions.value = [fourPredictions[0]]
+    const wrapper = mount(ReturnPredictions)
+    expect(wrapper.find('.card-header').text()).toContain('€500.00')
+    expect(wrapper.find('.card-header').text()).toContain('/mo invested')
+  })
+
+  it('should show contributions on cards when present', () => {
+    mockReturnPredictions.hasSufficientData.value = true
+    mockReturnPredictions.currentValue.value = 50000
+    mockReturnPredictions.predictions.value = fourPredictions
+    const wrapper = mount(ReturnPredictions)
+    expect(wrapper.text()).toContain('incl.')
+    expect(wrapper.text()).toContain('invested')
   })
 })

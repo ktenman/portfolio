@@ -8,6 +8,7 @@ data class ReturnPredictionDto(
   val xirrAnnualReturn: BigDecimal,
   val dailyVolatility: BigDecimal,
   val dataPointCount: Int,
+  val monthlyInvestment: BigDecimal,
   val predictions: List<HorizonPredictionDto>,
 ) : Serializable {
   companion object {

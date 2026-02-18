@@ -167,6 +167,7 @@ export interface ReturnPredictionDto extends Serializable {
     xirrAnnualReturn: number;
     dailyVolatility: number;
     dataPointCount: number;
+    monthlyInvestment: number;
     predictions: HorizonPredictionDto[];
 }
 
@@ -174,10 +175,10 @@ export interface HorizonPredictionDto extends Serializable {
     horizon: string;
     horizonDays: number;
     targetDate: DateAsString;
-    xirrProjectedValue: number;
     expectedValue: number;
     optimisticValue: number;
     pessimisticValue: number;
+    contributions: number;
 }
 
 export interface Serializable {

@@ -6,9 +6,15 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import ee.tenman.portfolio.service.summary.SummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryService
+import ee.tenman.portfolio.service.transaction.TransactionCacheService
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
@@ -23,6 +29,7 @@ import java.time.ZonedDateTime
 class ReturnPredictionServiceTest {
   private val summaryCacheService = mockk<SummaryCacheService>()
   private val summaryService = mockk<SummaryService>()
+  private val transactionCacheService = mockk<TransactionCacheService>()
   private val clock = mockk<Clock>()
   private lateinit var service: ReturnPredictionService
 
@@ -30,10 +37,11 @@ class ReturnPredictionServiceTest {
 
   @BeforeEach
   fun setup() {
-    service = ReturnPredictionService(summaryCacheService, summaryService, clock)
+    service = ReturnPredictionService(summaryCacheService, summaryService, transactionCacheService, clock)
     val fixedInstant = ZonedDateTime.of(2025, 6, 15, 12, 0, 0, 0, ZoneId.systemDefault()).toInstant()
     every { clock.instant() } returns fixedInstant
     every { clock.zone } returns ZoneId.systemDefault()
+    every { transactionCacheService.getAllTransactions() } returns emptyList()
   }
 
   @Test
@@ -60,7 +68,7 @@ class ReturnPredictionServiceTest {
   }
 
   @Test
-  fun `should calculate xirr projected value using compound growth`() {
+  fun `should calculate expected value using xirr compound growth`() {
     val summaries = createGrowingSummaries(60, BigDecimal("10000"), 0.0003)
     val currentSummary =
       PortfolioDailySummary(
@@ -75,7 +83,7 @@ class ReturnPredictionServiceTest {
     val result = service.predict()
     val oneYearPrediction = result.predictions.first { it.horizon == "1Y" }
     val expectedXirr = currentSummary.totalValue.toDouble() * Math.pow(1.10, 365.0 / 365.25)
-    expect(oneYearPrediction.xirrProjectedValue.setScale(0, RoundingMode.HALF_UP))
+    expect(oneYearPrediction.expectedValue.setScale(0, RoundingMode.HALF_UP))
       .toEqualNumerically(BigDecimal(expectedXirr).setScale(0, RoundingMode.HALF_UP))
   }
 
@@ -119,7 +127,7 @@ class ReturnPredictionServiceTest {
     every { summaryService.getCurrentDaySummary() } returns currentSummary
     val result = service.predict()
     val oneYearPrediction = result.predictions.first { it.horizon == "1Y" }
-    expect(oneYearPrediction.xirrProjectedValue).toBeLessThan(currentSummary.totalValue)
+    expect(oneYearPrediction.expectedValue).toBeLessThan(currentSummary.totalValue)
   }
 
   @Test
@@ -150,6 +158,50 @@ class ReturnPredictionServiceTest {
     val result = service.predict()
     expect(result.predictions).toHaveSize(4)
   }
+
+  @Test
+  fun `should include monthly contributions in predictions`() {
+    val summaries = createGrowingSummaries(60, BigDecimal("10000"), 0.0003)
+    val instrument = TransactionFixtures.createInstrument(symbol = "VWCE", name = "Vanguard FTSE All-World")
+    val transactions = createMonthlyBuyTransactions(instrument, BigDecimal("500"), 3)
+    every { summaryCacheService.getAllDailySummaries() } returns summaries
+    every { summaryService.getCurrentDaySummary() } returns summaries.last()
+    every { transactionCacheService.getAllTransactions() } returns transactions
+    val result = service.predict()
+    expect(result.monthlyInvestment.toDouble()).toBeGreaterThan(0.0)
+    expect(
+      result.predictions
+      .first { it.horizon == "1Y" }
+      .contributions
+      .toDouble(),
+        ).toBeGreaterThan(0.0)
+  }
+
+  @Test
+  fun `should return zero monthly investment when no transactions`() {
+    val summaries = createGrowingSummaries(60, BigDecimal("10000"), 0.0003)
+    every { summaryCacheService.getAllDailySummaries() } returns summaries
+    every { summaryService.getCurrentDaySummary() } returns summaries.last()
+    val result = service.predict()
+    expect(result.monthlyInvestment).toEqualNumerically(BigDecimal.ZERO)
+    result.predictions.forEach { expect(it.contributions).toEqualNumerically(BigDecimal.ZERO) }
+  }
+
+  private fun createMonthlyBuyTransactions(
+    instrument: Instrument,
+    amount: BigDecimal,
+    months: Int,
+  ): List<PortfolioTransaction> =
+    (0 until months).map { i ->
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal.ONE,
+        price = amount,
+        transactionDate = today.minusMonths((months - i).toLong()),
+        platform = Platform.LIGHTYEAR,
+      )
+    }
 
   private fun createSummaries(
     count: Int,

@@ -4,6 +4,9 @@
       <h6 class="mb-0">Return Predictions</h6>
       <small v-if="hasSufficientData" class="text-muted">
         Based on {{ dataPointCount }} days of data
+        <span v-if="monthlyInvestment > 0">
+          | Avg. {{ formatCurrencyWithSymbol(monthlyInvestment) }}/mo invested
+        </span>
       </small>
     </div>
     <div class="card-body p-2">
@@ -19,38 +22,47 @@
         }}
         days available).
       </div>
-      <div v-else class="row g-2">
-        <div v-for="prediction in predictions" :key="prediction.horizon" class="col-6 col-lg-3">
-          <div class="card h-100 border">
-            <div class="card-body text-center p-2">
-              <h6 class="card-title text-muted mb-2">
-                {{ formatHorizonLabel(prediction.horizon) }}
-              </h6>
-              <div class="mb-1">
-                <div class="fw-bold">{{ formatCurrencyWithSymbol(prediction.expectedValue) }}</div>
-                <small class="text-muted">Expected</small>
-              </div>
-              <div class="d-flex justify-content-between mt-2">
-                <div>
-                  <div class="text-success small">
-                    {{ formatCurrencyWithSymbol(prediction.optimisticValue) }}
+      <div v-else>
+        <div class="row g-2">
+          <div v-for="prediction in predictions" :key="prediction.horizon" class="col-6 col-lg-3">
+            <div class="card h-100 prediction-card">
+              <div class="card-body text-center p-2">
+                <h6 class="card-title text-muted mb-2">
+                  {{ formatHorizonLabel(prediction.horizon) }}
+                </h6>
+                <div class="mb-2">
+                  <div class="fs-5 fw-bold">
+                    {{ formatCurrencyWithSymbol(prediction.expectedValue) }}
                   </div>
-                  <small class="text-muted">Best</small>
+                  <small :class="changeTextClass(prediction.expectedValue)">
+                    {{ formatChange(prediction.expectedValue) }}
+                  </small>
                 </div>
-                <div>
-                  <div class="text-danger small">
-                    {{ formatCurrencyWithSymbol(prediction.pessimisticValue) }}
+                <div class="d-flex justify-content-between border-top pt-2">
+                  <div>
+                    <div class="text-success small fw-semibold">
+                      {{ formatCurrencyWithSymbol(prediction.optimisticValue) }}
+                    </div>
+                    <small class="text-muted">Best</small>
                   </div>
-                  <small class="text-muted">Worst</small>
+                  <div>
+                    <div class="text-danger small fw-semibold">
+                      {{ formatCurrencyWithSymbol(prediction.pessimisticValue) }}
+                    </div>
+                    <small class="text-muted">Worst</small>
+                  </div>
                 </div>
-              </div>
-              <div class="mt-2 border-top pt-2">
-                <small class="text-muted">
-                  XIRR: {{ formatCurrencyWithSymbol(prediction.xirrProjectedValue) }}
-                </small>
+                <div v-if="prediction.contributions > 0" class="border-top pt-1 mt-2">
+                  <small class="text-muted">
+                    incl. {{ formatCurrencyWithSymbol(prediction.contributions) }} invested
+                  </small>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+        <div class="mt-3 prediction-chart-container">
+          <Line :data="chartData" :options="chartOptions" />
         </div>
       </div>
     </div>
@@ -58,11 +70,23 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
+import { Line } from 'vue-chartjs'
+import type { ChartData, ChartOptions } from 'chart.js'
 import { useReturnPredictions } from '../../composables/use-return-predictions'
 import { formatCurrencyWithSymbol } from '../../utils/formatters'
 import SkeletonLoader from '../shared/skeleton-loader.vue'
+import '../../plugins/chart'
 
-const { predictions, hasSufficientData, dataPointCount, isLoading, error } = useReturnPredictions()
+const {
+  predictions,
+  hasSufficientData,
+  dataPointCount,
+  currentValue,
+  monthlyInvestment,
+  isLoading,
+  error,
+} = useReturnPredictions()
 
 const HORIZON_LABELS: Record<string, string> = {
   '1M': '1 Month',
@@ -72,4 +96,116 @@ const HORIZON_LABELS: Record<string, string> = {
 }
 
 const formatHorizonLabel = (horizon: string): string => HORIZON_LABELS[horizon] ?? horizon
+
+const formatChange = (value: number): string => {
+  const cv = currentValue.value
+  if (cv === 0) return '+0.0%'
+  const pct = ((value - cv) / cv) * 100
+  const sign = pct >= 0 ? '+' : ''
+  return `${sign}${pct.toFixed(1)}%`
+}
+
+const changeTextClass = (value: number): string => {
+  const cv = currentValue.value
+  return value >= cv ? 'text-success' : 'text-danger'
+}
+
+const formatCompactCurrency = (value: number): string => {
+  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}k`
+  return `€${value.toFixed(0)}`
+}
+
+const chartData = computed<ChartData<'line'>>(() => {
+  const labels = ['Now', ...predictions.value.map(p => p.horizon)]
+  const cv = currentValue.value
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Optimistic',
+        data: [cv, ...predictions.value.map(p => p.optimisticValue)],
+        borderColor: '#198754',
+        borderDash: [5, 5],
+        borderWidth: 1.5,
+        pointRadius: 3,
+        pointStyle: 'circle' as const,
+        tension: 0.3,
+        fill: 2,
+        backgroundColor: 'rgba(13, 110, 253, 0.06)',
+      },
+      {
+        label: 'Expected',
+        data: [cv, ...predictions.value.map(p => p.expectedValue)],
+        borderColor: '#0d6efd',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointStyle: 'circle' as const,
+        tension: 0.3,
+        fill: false,
+      },
+      {
+        label: 'Pessimistic',
+        data: [cv, ...predictions.value.map(p => p.pessimisticValue)],
+        borderColor: '#dc3545',
+        borderDash: [5, 5],
+        borderWidth: 1.5,
+        pointRadius: 3,
+        pointStyle: 'circle' as const,
+        tension: 0.3,
+        fill: false,
+      },
+    ],
+  }
+})
+
+const chartOptions = computed<ChartOptions<'line'>>(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  interaction: { mode: 'index' as const, intersect: false },
+  plugins: {
+    legend: {
+      position: 'bottom' as const,
+      labels: {
+        usePointStyle: true,
+        pointStyleWidth: 10,
+        padding: 16,
+      },
+    },
+    filler: { propagate: false },
+    tooltip: {
+      callbacks: {
+        label: (ctx: any) => `${ctx.dataset.label}: ${formatCurrencyWithSymbol(ctx.parsed.y)}`,
+      },
+    },
+  },
+  scales: {
+    y: {
+      ticks: {
+        maxTicksLimit: 6,
+        callback: (value: any) => formatCompactCurrency(Number(value)),
+      },
+      grid: { color: 'rgba(0, 0, 0, 0.05)' },
+    },
+    x: {
+      grid: { display: false },
+    },
+  },
+}))
 </script>
+
+<style lang="scss" scoped>
+.prediction-card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.15s ease-in-out;
+
+  &:hover {
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.08);
+  }
+}
+
+.prediction-chart-container {
+  height: 22rem;
+}
+</style>

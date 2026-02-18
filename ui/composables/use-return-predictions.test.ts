@@ -39,23 +39,27 @@ describe('useReturnPredictions', () => {
       xirrAnnualReturn: 0.12,
       dailyVolatility: 0.008,
       dataPointCount: 120,
+      monthlyInvestment: 500,
       predictions: [
         {
           horizon: '1M',
           horizonDays: 30,
           targetDate: '2026-03-19',
-          xirrProjectedValue: 50493,
           expectedValue: 50400,
           optimisticValue: 52800,
           pessimisticValue: 48100,
+          contributions: 500,
         },
       ],
     }
     await nextTick()
-    const { predictions, hasSufficientData, dataPointCount } = useReturnPredictions()
+    const { predictions, hasSufficientData, dataPointCount, currentValue, monthlyInvestment } =
+      useReturnPredictions()
     expect(predictions.value).toHaveLength(1)
     expect(hasSufficientData.value).toBe(true)
     expect(dataPointCount.value).toBe(120)
+    expect(currentValue.value).toBe(50000)
+    expect(monthlyInvestment.value).toBe(500)
   })
 
   it('should return insufficient data when predictions list is empty', async () => {
