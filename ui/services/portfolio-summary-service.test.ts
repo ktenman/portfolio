@@ -149,10 +149,10 @@ describe('portfolioSummaryService', () => {
             horizon: '1M',
             horizonDays: 30,
             targetDate: '2026-03-19',
-            xirrProjectedValue: 50493,
             expectedValue: 50400,
             optimisticValue: 52800,
             pessimisticValue: 48100,
+            contributions: 500,
           },
         ],
       }

@@ -8,10 +8,10 @@ data class HorizonPredictionDto(
   val horizon: String,
   val horizonDays: Int,
   val targetDate: LocalDate,
-  val xirrProjectedValue: BigDecimal,
   val expectedValue: BigDecimal,
   val optimisticValue: BigDecimal,
   val pessimisticValue: BigDecimal,
+  val contributions: BigDecimal,
 ) : Serializable {
   companion object {
     private const val serialVersionUID: Long = 1L

@@ -16,11 +16,15 @@ export function useReturnPredictions() {
   const predictions = computed(() => data.value?.predictions ?? [])
   const hasSufficientData = computed(() => predictions.value.length > 0)
   const dataPointCount = computed(() => data.value?.dataPointCount ?? 0)
+  const currentValue = computed(() => data.value?.currentValue ?? 0)
+  const monthlyInvestment = computed(() => data.value?.monthlyInvestment ?? 0)
 
   return {
     predictions,
     hasSufficientData,
     dataPointCount,
+    currentValue,
+    monthlyInvestment,
     isLoading,
     error: computed(() => error.value?.message ?? null),
   }
