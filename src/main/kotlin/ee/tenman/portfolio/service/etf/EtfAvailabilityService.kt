@@ -26,8 +26,12 @@ class EtfAvailabilityService(
     if (instruments.isEmpty()) return AvailableEtfsDto(emptyList(), emptyList())
     val (syntheticInstruments, regularInstruments) = instruments.partition { it.providerName == ProviderName.SYNTHETIC }
     val transactionData = transactionCalculationService.batchCalculateAll(regularInstruments.map { it.id }, platformFilter)
-    val activeRegular = regularInstruments.filter { transactionData[it.id]?.netQuantity?.let { qty -> qty > BigDecimal.ZERO } == true }
-    val activeSynthetic = syntheticInstruments.filter { syntheticEtfCalculationService.hasActiveHoldings(it.id) }
+    val activeRegular =
+      regularInstruments
+      .filter { transactionData[it.id]?.netQuantity?.let { qty -> qty > BigDecimal.ZERO } == true }
+    val activeSynthetic =
+      syntheticInstruments
+      .filter { syntheticEtfCalculationService.hasActiveHoldings(it.id, platformFilter) }
     val activePlatforms = transactionData.values.flatMapTo(mutableSetOf()) { it.platforms }
     return AvailableEtfsDto(
       etfSymbols = (activeRegular + activeSynthetic).map { it.symbol }.sorted(),

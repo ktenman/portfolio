@@ -2,28 +2,10 @@
   <div class="etf-breakdown-container">
     <div class="mb-4">
       <h2 class="mb-0">ETF Breakdown</h2>
-      <div v-if="availableEtfs.length > 0" class="etf-filter-container mt-2">
-        <div class="etf-buttons">
-          <button
-            v-for="etf in availableEtfs"
-            :key="etf"
-            class="etf-btn"
-            :class="{ active: isEtfSelected(etf) }"
-            @click="toggleEtf(etf)"
-            type="button"
-          >
-            {{ getSymbolOnly(etf) }}
-          </button>
-          <span class="etf-separator"></span>
-          <button class="etf-btn" @click="toggleAllEtfs" type="button">
-            {{ selectedEtfs.length === availableEtfs.length ? 'Clear All' : 'Select All' }}
-          </button>
-        </div>
-      </div>
-      <div v-if="availablePlatforms.length > 1" class="platform-filter-container mt-2">
+      <div v-if="allPlatforms.length > 1" class="platform-filter-container mt-2">
         <div class="platform-buttons">
           <button
-            v-for="platform in availablePlatforms"
+            v-for="platform in allPlatforms"
             :key="platform"
             class="platform-btn"
             :class="{ active: isPlatformSelected(platform) }"
@@ -34,9 +16,26 @@
           </button>
           <span class="platform-separator"></span>
           <button class="platform-btn" @click="toggleAllPlatforms" type="button">
-            {{
-              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-            }}
+            {{ selectedPlatforms.length === allPlatforms.length ? 'Clear All' : 'Select All' }}
+          </button>
+        </div>
+      </div>
+      <div v-if="allEtfs.length > 0" class="etf-filter-container mt-2">
+        <div class="etf-buttons">
+          <button
+            v-for="etf in allEtfs"
+            :key="etf"
+            class="etf-btn"
+            :class="{ active: isEtfSelected(etf), disabled: !isEtfAvailable(etf) }"
+            :disabled="!isEtfAvailable(etf)"
+            @click="toggleEtf(etf)"
+            type="button"
+          >
+            {{ getSymbolOnly(etf) }}
+          </button>
+          <span class="etf-separator"></span>
+          <button class="etf-btn" @click="toggleAllEtfs" type="button">
+            {{ selectedEtfs.length === availableEtfs.length ? 'Clear All' : 'Select All' }}
           </button>
         </div>
       </div>
@@ -127,8 +126,11 @@ const selectedEtfs = useLocalStorage<string[]>('portfolio_selected_etfs', [])
 const selectedPlatforms = useLocalStorage<string[]>('portfolio_etf_breakdown_platforms', [])
 const searchQuery = useLocalStorage<string>('portfolio_etf_search', '')
 const debouncedSearchQuery = refDebounced(searchQuery, 200)
+const allEtfs = ref<string[]>([])
+const allPlatforms = ref<string[]>([])
 const availableEtfs = ref<string[]>([])
-const availablePlatforms = ref<string[]>([])
+
+const isEtfAvailable = (etf: string): boolean => availableEtfs.value.includes(etf)
 
 watch(
   availableEtfs,
@@ -136,29 +138,7 @@ watch(
     if (newEtfs.length > 0 && selectedEtfs.value.length === 0) {
       selectedEtfs.value = [...newEtfs]
     } else if (newEtfs.length > 0) {
-      const validEtfs = selectedEtfs.value.filter(e => newEtfs.includes(e))
-      if (validEtfs.length === 0) {
-        selectedEtfs.value = [...newEtfs]
-      } else if (validEtfs.length !== selectedEtfs.value.length) {
-        selectedEtfs.value = validEtfs
-      }
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  availablePlatforms,
-  newPlatforms => {
-    if (newPlatforms.length > 0 && selectedPlatforms.value.length === 0) {
-      selectedPlatforms.value = [...newPlatforms]
-    } else if (newPlatforms.length > 0) {
-      const validPlatforms = selectedPlatforms.value.filter(p => newPlatforms.includes(p))
-      if (validPlatforms.length === 0) {
-        selectedPlatforms.value = [...newPlatforms]
-      } else if (validPlatforms.length !== selectedPlatforms.value.length) {
-        selectedPlatforms.value = validPlatforms
-      }
+      selectedEtfs.value = selectedEtfs.value.filter(e => newEtfs.includes(e))
     }
   },
   { immediate: true }
@@ -196,12 +176,11 @@ const getEtfsParam = (): string[] | undefined =>
   getFilterParam(selectedEtfs.value, availableEtfs.value)
 
 const getPlatformsParam = (): string[] | undefined =>
-  getFilterParam(selectedPlatforms.value, availablePlatforms.value)
+  getFilterParam(selectedPlatforms.value, allPlatforms.value)
 
 const refreshAvailableEtfs = async () => {
   const data = await etfBreakdownService.getAvailableEtfs(getPlatformsParam())
   availableEtfs.value = data.etfSymbols
-  availablePlatforms.value = data.platforms
 }
 
 const loadBreakdown = async () => {
@@ -253,10 +232,11 @@ const toggleEtf = (etf: string) => {
 }
 
 const toggleAllEtfs = () => {
-  if (selectedEtfs.value.length === availableEtfs.value.length) {
+  const currentAvailable = availableEtfs.value
+  if (selectedEtfs.value.length === currentAvailable.length) {
     selectedEtfs.value = []
   } else {
-    selectedEtfs.value = [...availableEtfs.value]
+    selectedEtfs.value = [...currentAvailable]
   }
 }
 
@@ -278,10 +258,10 @@ const togglePlatform = (platform: string) => {
 }
 
 const toggleAllPlatforms = () => {
-  if (selectedPlatforms.value.length === availablePlatforms.value.length) {
+  if (selectedPlatforms.value.length === allPlatforms.value.length) {
     selectedPlatforms.value = []
   } else {
-    selectedPlatforms.value = [...availablePlatforms.value]
+    selectedPlatforms.value = [...allPlatforms.value]
   }
 }
 
@@ -296,8 +276,9 @@ const prefetchLogoCandidates = () => {
 
 onMounted(async () => {
   const initialData = await etfBreakdownService.getAvailableEtfs()
+  allEtfs.value = initialData.etfSymbols
+  allPlatforms.value = initialData.platforms
   availableEtfs.value = initialData.etfSymbols
-  availablePlatforms.value = initialData.platforms
   await loadBreakdown()
   prefetchLogoCandidates()
 })
@@ -366,6 +347,17 @@ onMounted(async () => {
   background: #374151;
   border-color: #374151;
   color: white;
+}
+
+.etf-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.etf-btn.disabled:hover {
+  background: white;
+  border-color: #e2e8f0;
+  color: #6b7280;
 }
 
 .platform-filter-container {

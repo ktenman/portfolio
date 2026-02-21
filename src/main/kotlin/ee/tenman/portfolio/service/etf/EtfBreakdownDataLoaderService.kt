@@ -21,19 +21,15 @@ class EtfBreakdownDataLoaderService(
     etfSymbols: List<String>?,
     platformFilter: Set<Platform>?,
   ): EtfBreakdownData {
-    val instruments = findInstruments(etfSymbols)
+    val instruments = findInstruments(etfSymbols, platformFilter)
     val instrumentIds = instruments.map { it.id }
     val allPositions = loadPositionsForInstruments(instrumentIds)
-    val allTransactionData = transactionCalculationService.batchCalculateAll(instrumentIds)
-    val filteredTransactionData =
-      platformFilter?.let {
-      transactionCalculationService.batchCalculateAll(instrumentIds, it)
-    } ?: allTransactionData
+    val transactionData = transactionCalculationService.batchCalculateAll(instrumentIds, platformFilter)
     return EtfBreakdownData(
       instruments = instruments,
       positionsByEtfId = allPositions.groupBy { it.etfInstrument.id },
-      transactionDataByInstrumentId = filteredTransactionData,
-      allTransactionData = allTransactionData,
+      transactionDataByInstrumentId = transactionData,
+      platformFilter = platformFilter,
     )
   }
 
@@ -49,14 +45,21 @@ class EtfBreakdownDataLoaderService(
     )
   }
 
-  private fun findInstruments(etfSymbols: List<String>?): List<Instrument> {
-    val spec = InstrumentSpecifications.hasProviderNameIn(ETF_PROVIDERS)
-    val filtered =
-      etfSymbols
-        ?.takeIf { it.isNotEmpty() }
-      ?.let { spec.and(InstrumentSpecifications.hasSymbolIn(it)) }
-      ?: spec
-    return instrumentRepository.findAll(filtered)
+  private fun findInstruments(
+    etfSymbols: List<String>?,
+    platformFilter: Set<Platform>?,
+  ): List<Instrument> {
+    var spec = InstrumentSpecifications.hasProviderNameIn(ETF_PROVIDERS)
+    if (platformFilter != null) {
+      spec =
+        spec.and(
+        InstrumentSpecifications
+          .hasTransactionsOnPlatforms(platformFilter)
+          .or(InstrumentSpecifications.hasProviderNameIn(listOf(ProviderName.SYNTHETIC))),
+      )
+    }
+    etfSymbols?.takeIf { it.isNotEmpty() }?.let { spec = spec.and(InstrumentSpecifications.hasSymbolIn(it)) }
+    return instrumentRepository.findAll(spec)
   }
 
   private fun loadPositionsForInstruments(instrumentIds: List<Long>): List<EtfPosition> =

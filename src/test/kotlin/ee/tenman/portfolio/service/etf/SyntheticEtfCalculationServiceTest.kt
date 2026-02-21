@@ -75,8 +75,15 @@ class SyntheticEtfCalculationServiceTest {
       val instrument = createInstrument("AAPL", BigDecimal("150.00"))
       every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position)
       every { instrumentRepository.findBySymbolIn(listOf("AAPL")) } returns listOf(instrument)
-      every { transactionCalculationService.batchCalculateNetQuantities(listOf(instrument.id)) } returns
-        mapOf(instrument.id to BigDecimal("10"))
+      every { transactionCalculationService.batchCalculateAll(listOf(instrument.id), null) } returns
+        mapOf(
+          instrument.id to
+            InstrumentTransactionData(
+            BigDecimal("10"),
+            setOf(Platform.BINANCE),
+            mapOf(Platform.BINANCE to BigDecimal("10")),
+          ),
+            )
 
       val result = service.hasActiveHoldings(1L)
 
@@ -90,8 +97,8 @@ class SyntheticEtfCalculationServiceTest {
       val instrument = createInstrument("AAPL", BigDecimal("150.00"))
       every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position)
       every { instrumentRepository.findBySymbolIn(listOf("AAPL")) } returns listOf(instrument)
-      every { transactionCalculationService.batchCalculateNetQuantities(listOf(instrument.id)) } returns
-        mapOf(instrument.id to BigDecimal.ZERO)
+      every { transactionCalculationService.batchCalculateAll(listOf(instrument.id), null) } returns
+        mapOf(instrument.id to InstrumentTransactionData(BigDecimal.ZERO, emptySet(), emptyMap()))
 
       val result = service.hasActiveHoldings(1L)
 

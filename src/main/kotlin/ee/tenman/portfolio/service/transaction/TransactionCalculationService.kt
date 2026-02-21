@@ -29,15 +29,6 @@ class TransactionCalculationService(
     return platformFilter?.let { filter -> transactions.filter { it.platform in filter } } ?: transactions
   }
 
-  fun batchCalculateNetQuantities(instrumentIds: Collection<Long>): Map<Long, BigDecimal> {
-    if (instrumentIds.isEmpty()) return emptyMap()
-    val allTransactions = transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
-    return instrumentIds.associateWith { id ->
-      val txs = allTransactions.filter { it.instrument.id == id }
-      calculateNetQuantityFromTransactions(txs)
-    }
-  }
-
   fun batchCalculateAll(
     instrumentIds: Collection<Long>,
     platformFilter: Set<Platform>? = null,

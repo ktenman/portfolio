@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentCategory
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.model.holding.InternalHoldingData
 import ee.tenman.portfolio.model.holding.SyntheticHoldingValue
 import ee.tenman.portfolio.repository.EtfPositionRepository
@@ -20,14 +21,17 @@ class SyntheticEtfCalculationService(
   private val transactionCalculationService: TransactionCalculationService,
   private val dailyPriceService: DailyPriceService,
 ) {
-  fun hasActiveHoldings(syntheticEtfId: Long): Boolean {
+  fun hasActiveHoldings(
+    syntheticEtfId: Long,
+    platformFilter: Set<Platform>? = null,
+  ): Boolean {
     val positions = etfPositionRepository.findLatestPositionsByEtfId(syntheticEtfId)
     val tickers = positions.mapNotNull { it.holding.ticker }
     if (tickers.isEmpty()) return false
     val instruments = instrumentRepository.findBySymbolIn(tickers)
     if (instruments.isEmpty()) return false
-    val quantities = transactionCalculationService.batchCalculateNetQuantities(instruments.map { it.id })
-    return quantities.values.any { it > BigDecimal.ZERO }
+    val data = transactionCalculationService.batchCalculateAll(instruments.map { it.id }, platformFilter)
+    return data.values.any { it.netQuantity > BigDecimal.ZERO }
   }
 
   fun buildHoldings(
