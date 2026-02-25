@@ -136,4 +136,43 @@ describe('portfolioSummaryService', () => {
       )
     })
   })
+
+  describe('getPredictions', () => {
+    it('should fetch prediction data', async () => {
+      const mockPredictions = {
+        currentValue: 50000,
+        xirrAnnualReturn: 0.12,
+        dailyVolatility: 0.008,
+        dataPointCount: 120,
+        predictions: [
+          {
+            horizon: '1M',
+            horizonDays: 30,
+            targetDate: '2026-03-19',
+            expectedValue: 50400,
+            optimisticValue: 52800,
+            pessimisticValue: 48100,
+            contributions: 500,
+          },
+        ],
+      }
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPredictions)
+
+      const result = await portfolioSummaryService.getPredictions()
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/predictions', {
+        params: undefined,
+      })
+      expect(result).toEqual(mockPredictions)
+    })
+
+    it('should propagate errors on getPredictions', async () => {
+      const error = new Error('Failed to fetch predictions')
+      vi.mocked(httpClient.get).mockRejectedValueOnce(error)
+
+      await expect(portfolioSummaryService.getPredictions()).rejects.toThrow(
+        'Failed to fetch predictions'
+      )
+    })
+  })
 })

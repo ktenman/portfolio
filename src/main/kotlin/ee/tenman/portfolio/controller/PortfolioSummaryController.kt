@@ -3,6 +3,8 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
+import ee.tenman.portfolio.dto.ReturnPredictionDto
+import ee.tenman.portfolio.service.prediction.ReturnPredictionService
 import ee.tenman.portfolio.service.summary.SummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryService
 import org.slf4j.LoggerFactory
@@ -23,6 +25,7 @@ import java.time.LocalDate
 class PortfolioSummaryController(
   private val summaryService: SummaryService,
   private val summaryCacheService: SummaryCacheService,
+  private val returnPredictionService: ReturnPredictionService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -53,6 +56,12 @@ class PortfolioSummaryController(
     val lookup = buildSummaryLookup(summaries.content)
     return summaries.map { it.toDto(lookup) }
   }
+
+  @GetMapping("/predictions")
+  @Loggable
+  fun getReturnPredictions(
+    @RequestParam(required = false) monthlyContribution: BigDecimal?,
+  ): ReturnPredictionDto = returnPredictionService.predict(monthlyContribution)
 
   @GetMapping("/current")
   @Loggable
