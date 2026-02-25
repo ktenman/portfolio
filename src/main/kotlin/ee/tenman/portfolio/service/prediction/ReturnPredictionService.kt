@@ -44,11 +44,11 @@ class ReturnPredictionService(
     )
   }
 
-  fun predict(): ReturnPredictionDto {
+  fun predict(monthlyContribution: BigDecimal? = null): ReturnPredictionDto {
     val currentSummary = summaryService.getCurrentDaySummary()
     val summaries = summaryCacheService.getAllDailySummaries().sortedBy { it.entryDate }
     val values = summaries.map { it.totalValue }
-    val monthlyInvestment = calculateTypicalMonthlyInvestment()
+    val monthlyInvestment = monthlyContribution ?: calculateTypicalMonthlyInvestment()
     if (values.size < MINIMUM_DATA_POINTS) {
       log.info("Insufficient data for predictions: ${values.size} data points")
       return emptyPrediction(currentSummary.totalValue, currentSummary.xirrAnnualReturn, monthlyInvestment, values.size)

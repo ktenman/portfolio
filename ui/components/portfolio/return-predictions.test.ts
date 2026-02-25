@@ -13,6 +13,10 @@ const mockReturnPredictions = {
   error: ref(null as string | null),
 }
 
+vi.mock('@vueuse/core', () => ({
+  useLocalStorage: vi.fn((_key: string, defaultValue: any) => ref(defaultValue)),
+}))
+
 vi.mock('../../composables/use-return-predictions', () => ({
   useReturnPredictions: vi.fn(() => mockReturnPredictions),
 }))
@@ -172,15 +176,14 @@ describe('return-predictions', () => {
     expect(wrapper.find('.text-danger').exists()).toBe(true)
   })
 
-  it('should show monthly investment in header when available', () => {
+  it('should show monthly contribution input in header when data available', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.dataPointCount.value = 120
     mockReturnPredictions.currentValue.value = 50000
-    mockReturnPredictions.monthlyInvestment.value = 500
     mockReturnPredictions.predictions.value = [fourPredictions[0]]
     const wrapper = mount(ReturnPredictions)
-    expect(wrapper.find('.card-header').text()).toContain('€500.00')
-    expect(wrapper.find('.card-header').text()).toContain('/mo invested')
+    expect(wrapper.find('.card-header').text()).toContain('€/mo')
+    expect(wrapper.find('input[type="number"]').exists()).toBe(true)
   })
 
   it('should show contributions on cards when present', () => {

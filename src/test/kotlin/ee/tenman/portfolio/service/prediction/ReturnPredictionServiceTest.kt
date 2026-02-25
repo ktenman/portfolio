@@ -181,6 +181,17 @@ class ReturnPredictionServiceTest {
   }
 
   @Test
+  fun `should use custom monthly contribution when provided`() {
+    val summaries = createGrowingSummaries(60, BigDecimal("10000"), 0.0003)
+    every { summaryCacheService.getAllDailySummaries() } returns summaries
+    every { summaryService.getCurrentDaySummary() } returns summaries.last()
+    val result = service.predict(BigDecimal("1000"))
+    expect(result.monthlyInvestment).toEqualNumerically(BigDecimal("1000"))
+    val oneYearContributions = result.predictions.first { it.horizon == "1Y" }.contributions
+    expect(oneYearContributions.toDouble()).toBeGreaterThan(11000.0)
+  }
+
+  @Test
   fun `should return zero monthly investment when no transactions`() {
     val summaries = createGrowingSummaries(60, BigDecimal("10000"), 0.0003)
     every { summaryCacheService.getAllDailySummaries() } returns summaries

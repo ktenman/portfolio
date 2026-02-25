@@ -59,7 +59,9 @@ class PortfolioSummaryController(
 
   @GetMapping("/predictions")
   @Loggable
-  fun getReturnPredictions(): ReturnPredictionDto = returnPredictionService.predict()
+  fun getReturnPredictions(
+    @RequestParam(required = false) monthlyContribution: BigDecimal?,
+  ): ReturnPredictionDto = returnPredictionService.predict(monthlyContribution)
 
   @GetMapping("/current")
   @Loggable

@@ -16,6 +16,8 @@ export const portfolioSummaryService = {
       timeout: 60000,
     }),
 
-  getPredictions: () =>
-    httpClient.get<ReturnPredictionDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_PREDICTIONS),
+  getPredictions: (monthlyContribution?: number) =>
+    httpClient.get<ReturnPredictionDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_PREDICTIONS, {
+      params: monthlyContribution !== undefined ? { monthlyContribution } : undefined,
+    }),
 }

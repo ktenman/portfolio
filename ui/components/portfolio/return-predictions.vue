@@ -2,12 +2,20 @@
   <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center py-2">
       <h6 class="mb-0">Return Predictions</h6>
-      <small v-if="hasSufficientData" class="text-muted">
-        Based on {{ dataPointCount }} days of data
-        <span v-if="monthlyInvestment > 0">
-          | Avg. {{ formatCurrencyWithSymbol(monthlyInvestment) }}/mo invested
-        </span>
-      </small>
+      <div v-if="hasSufficientData" class="d-flex align-items-center gap-2">
+        <small class="text-muted">Based on {{ dataPointCount }} days</small>
+        <div class="input-group input-group-sm" style="width: 160px">
+          <span class="input-group-text">€/mo</span>
+          <input
+            v-model.number="monthlyInput"
+            type="number"
+            class="form-control form-control-sm"
+            min="0"
+            step="100"
+            placeholder="Auto"
+          />
+        </div>
+      </div>
     </div>
     <div class="card-body p-2">
       <div v-if="isLoading">
@@ -71,6 +79,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { Line } from 'vue-chartjs'
 import type { ChartData, ChartOptions } from 'chart.js'
 import { useReturnPredictions } from '../../composables/use-return-predictions'
@@ -78,15 +87,16 @@ import { formatCurrencyWithSymbol } from '../../utils/formatters'
 import SkeletonLoader from '../shared/skeleton-loader.vue'
 import '../../plugins/chart'
 
-const {
-  predictions,
-  hasSufficientData,
-  dataPointCount,
-  currentValue,
-  monthlyInvestment,
-  isLoading,
-  error,
-} = useReturnPredictions()
+const monthlyInput = useLocalStorage<number | undefined>(
+  'portfolio_monthly_contribution',
+  undefined
+)
+const customContribution = computed(() =>
+  monthlyInput.value !== undefined && monthlyInput.value >= 0 ? monthlyInput.value : undefined
+)
+
+const { predictions, hasSufficientData, dataPointCount, currentValue, isLoading, error } =
+  useReturnPredictions(customContribution)
 
 const HORIZON_LABELS: Record<string, string> = {
   '1M': '1 Month',

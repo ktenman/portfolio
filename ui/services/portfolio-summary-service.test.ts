@@ -160,7 +160,9 @@ describe('portfolioSummaryService', () => {
 
       const result = await portfolioSummaryService.getPredictions()
 
-      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/predictions')
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/predictions', {
+        params: undefined,
+      })
       expect(result).toEqual(mockPredictions)
     })
 
