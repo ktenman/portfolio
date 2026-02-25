@@ -15,6 +15,7 @@ const mockReturnPredictions = {
 
 vi.mock('@vueuse/core', () => ({
   useLocalStorage: vi.fn((_key: string, defaultValue: any) => ref(defaultValue)),
+  refDebounced: vi.fn((source: any) => source),
 }))
 
 vi.mock('../../composables/use-return-predictions', () => ({

@@ -79,7 +79,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { useLocalStorage } from '@vueuse/core'
+import { useLocalStorage, refDebounced } from '@vueuse/core'
 import { Line } from 'vue-chartjs'
 import type { ChartData, ChartOptions } from 'chart.js'
 import { useReturnPredictions } from '../../composables/use-return-predictions'
@@ -94,9 +94,10 @@ const monthlyInput = useLocalStorage<number | undefined>(
 const customContribution = computed(() =>
   monthlyInput.value !== undefined && monthlyInput.value >= 0 ? monthlyInput.value : undefined
 )
+const debouncedContribution = refDebounced(customContribution, 500)
 
 const { predictions, hasSufficientData, dataPointCount, currentValue, isLoading, error } =
-  useReturnPredictions(customContribution)
+  useReturnPredictions(debouncedContribution)
 
 const HORIZON_LABELS: Record<string, string> = {
   '1M': '1 Month',

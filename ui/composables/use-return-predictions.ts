@@ -6,13 +6,11 @@ import { useAuthState } from './use-auth-state'
 export function useReturnPredictions(customMonthlyContribution?: Ref<number | undefined>) {
   const { isAuthenticated } = useAuthState()
 
+  const contributionValue = computed(() => customMonthlyContribution?.value)
+
   const { data, isLoading, error } = useQuery({
-    queryKey: computed(() => [
-      'portfolio-summary',
-      'predictions',
-      customMonthlyContribution?.value,
-    ]),
-    queryFn: () => portfolioSummaryService.getPredictions(customMonthlyContribution?.value),
+    queryKey: ['portfolio-summary', 'predictions', contributionValue] as const,
+    queryFn: () => portfolioSummaryService.getPredictions(contributionValue.value),
     enabled: isAuthenticated,
     staleTime: 3 * 60 * 1000,
   })
