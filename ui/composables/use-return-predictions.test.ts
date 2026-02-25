@@ -8,8 +8,11 @@ const mockQueryReturn = {
   error: ref(null as any),
 }
 
+const mockInvalidateQueries = vi.fn()
+
 vi.mock('@tanstack/vue-query', () => ({
   useQuery: vi.fn(() => mockQueryReturn),
+  useQueryClient: vi.fn(() => ({ invalidateQueries: mockInvalidateQueries })),
 }))
 
 vi.mock('./use-auth-state', () => ({
@@ -25,6 +28,7 @@ describe('useReturnPredictions', () => {
     mockQueryReturn.data.value = null
     mockQueryReturn.isLoading.value = false
     mockQueryReturn.error.value = null
+    mockInvalidateQueries.mockClear()
   })
 
   it('should return empty predictions when data is null', () => {
@@ -81,5 +85,15 @@ describe('useReturnPredictions', () => {
     await nextTick()
     const { error } = useReturnPredictions()
     expect(error.value).toBe('Network error')
+  })
+
+  it('should invalidate queries when monthly contribution changes', async () => {
+    const contribution = ref<number | undefined>(undefined)
+    useReturnPredictions(contribution)
+    contribution.value = 1000
+    await nextTick()
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['portfolio-summary', 'predictions'],
+    })
   })
 })

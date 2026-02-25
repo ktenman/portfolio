@@ -7,7 +7,7 @@
         <div class="input-group input-group-sm" style="width: 160px">
           <span class="input-group-text">€/mo</span>
           <input
-            v-model.number="monthlyInput"
+            v-model="monthlyInput"
             type="number"
             class="form-control form-control-sm"
             min="0"
@@ -87,14 +87,12 @@ import { formatCurrencyWithSymbol } from '../../utils/formatters'
 import SkeletonLoader from '../shared/skeleton-loader.vue'
 import '../../plugins/chart'
 
-const monthlyInput = useLocalStorage<number | undefined>(
-  'portfolio_monthly_contribution',
-  undefined
-)
-const customContribution = computed(() =>
-  monthlyInput.value !== undefined && monthlyInput.value >= 0 ? monthlyInput.value : undefined
-)
-const debouncedContribution = refDebounced(customContribution, 500)
+const monthlyInput = useLocalStorage('portfolio_monthly_contribution', '')
+const parsedContribution = computed(() => {
+  const num = Number(monthlyInput.value)
+  return monthlyInput.value !== '' && !isNaN(num) && num >= 0 ? num : undefined
+})
+const debouncedContribution = refDebounced(parsedContribution, 500)
 
 const { predictions, hasSufficientData, dataPointCount, currentValue, isLoading, error } =
   useReturnPredictions(debouncedContribution)

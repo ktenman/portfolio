@@ -1,16 +1,23 @@
-import { computed, type Ref } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
+import { computed, ref, watch, type Ref } from 'vue'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
 import { useAuthState } from './use-auth-state'
 
-export function useReturnPredictions(customMonthlyContribution?: Ref<number | undefined>) {
+export function useReturnPredictions(monthlyContribution?: Ref<number | undefined>) {
   const { isAuthenticated } = useAuthState()
+  const queryClient = useQueryClient()
+  const activeContribution = ref(monthlyContribution?.value)
 
-  const contributionValue = computed(() => customMonthlyContribution?.value)
+  if (monthlyContribution) {
+    watch(monthlyContribution, value => {
+      activeContribution.value = value
+      queryClient.invalidateQueries({ queryKey: ['portfolio-summary', 'predictions'] })
+    })
+  }
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['portfolio-summary', 'predictions', contributionValue] as const,
-    queryFn: () => portfolioSummaryService.getPredictions(contributionValue.value),
+    queryKey: ['portfolio-summary', 'predictions'],
+    queryFn: () => portfolioSummaryService.getPredictions(activeContribution.value),
     enabled: isAuthenticated,
     staleTime: 3 * 60 * 1000,
   })
