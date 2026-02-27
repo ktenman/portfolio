@@ -1,9 +1,7 @@
 <template>
   <div class="allocation-section">
     <div class="header-section mb-3">
-      <div class="header-row">
-        <h5 class="mb-0">ETF Allocation</h5>
-      </div>
+      <h5 class="mb-0">ETF Allocation</h5>
       <div class="investment-row">
         <div v-if="availablePlatforms.length > 0" class="platform-selector">
           <label class="d-none d-md-inline">Platform</label>
@@ -91,13 +89,7 @@
                 getEtfPrice(allocation.instrumentId)
               )
         "
-        :computed-amount="
-          showRebalanceColumns
-            ? actionDisplayMode === 'amount'
-              ? getRebalanceFractionalAmount(allocation)
-              : getRebalanceAmount(allocation)
-            : calculateInvestmentAmount(totalInvestment, allocation.value)
-        "
+        :computed-amount="getComputedAmount(allocation)"
         :computed-unused="
           showRebalanceColumns
             ? undefined
@@ -481,6 +473,13 @@ const availableEtfsForRow = (rowIndex: number) => {
   return props.availableEtfs.filter(etf => !selectedIds.includes(etf.instrumentId))
 }
 
+const getComputedAmount = (allocation: AllocationInput): number => {
+  if (!showRebalanceColumns.value)
+    return calculateInvestmentAmount(props.totalInvestment, allocation.value)
+  if (props.actionDisplayMode === 'amount') return getRebalanceFractionalAmount(allocation)
+  return getRebalanceAmount(allocation)
+}
+
 const getActionSortValue = (a: AllocationInput, base: ReturnType<typeof getBaseRebalanceData>) => {
   if (showRebalanceColumns.value) return base.difference
   if (props.actionDisplayMode === 'amount') {
@@ -571,13 +570,6 @@ const onTotalInvestmentChange = (event: Event) => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
 }
 
 .investment-row {
@@ -906,11 +898,6 @@ const onTotalInvestmentChange = (event: Event) => {
 @media (max-width: 767.98px) {
   .allocation-section {
     padding: 1rem;
-  }
-
-  .header-row {
-    flex-wrap: wrap;
-    gap: 0.5rem;
   }
 
   .investment-row {
