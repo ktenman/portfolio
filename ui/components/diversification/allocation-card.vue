@@ -166,6 +166,11 @@ const actionLabel = computed(() => {
 
 const actionColorClass = computed(() => {
   if (!props.showRebalanceMode) return ''
+  if (props.actionDisplayMode === 'amount') {
+    const amount = props.computedAmount ?? 0
+    if (amount <= 0) return ''
+    return props.isBuy ? 'text-success' : 'text-danger'
+  }
   const units = props.computedUnits ?? localInvestmentCalc.value.units
   if (units === 0) return ''
   return props.isBuy ? 'text-success' : 'text-danger'

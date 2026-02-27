@@ -114,7 +114,9 @@
         "
         :computed-amount="
           showRebalanceColumns
-            ? getRebalanceAmount(allocation)
+            ? actionDisplayMode === 'amount'
+              ? getRebalanceFractionalAmount(allocation)
+              : getRebalanceAmount(allocation)
             : calculateInvestmentAmount(totalInvestment, allocation.value)
         "
         :computed-unused="
@@ -291,7 +293,7 @@
             <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="small">
               <template v-if="showRebalanceColumns">
                 <span
-                  v-if="getRebalanceData(allocation).units > 0"
+                  v-if="hasRebalanceAction(allocation)"
                   :class="getRebalanceData(allocation).isBuy ? 'text-success' : 'text-danger'"
                 >
                   {{ getRebalanceData(allocation).isBuy ? 'Buy' : 'Sell' }}
@@ -490,6 +492,8 @@ const {
   getUnits,
   getUnused,
   getRebalanceAmount,
+  getRebalanceFractionalAmount,
+  hasRebalanceAction,
   formatActionValue,
   formatAction,
   formatUnused,
@@ -517,6 +521,14 @@ const availableEtfsForRow = (rowIndex: number) => {
   return props.availableEtfs.filter(etf => !selectedIds.includes(etf.instrumentId))
 }
 
+const getActionSortValue = (a: AllocationInput, base: ReturnType<typeof getBaseRebalanceData>) => {
+  if (showRebalanceColumns.value) return base.difference
+  if (props.actionDisplayMode === 'amount') {
+    return calculateInvestmentAmount(props.totalInvestment, a.value)
+  }
+  return base.units
+}
+
 const allocationsWithData = computed<AllocationWithData[]>(() =>
   props.allocations.map(a => {
     const base = getBaseRebalanceData(a)
@@ -528,7 +540,7 @@ const allocationsWithData = computed<AllocationWithData[]>(() =>
       ter: getEtfTer(a.instrumentId),
       annualReturn: getEtfReturn(a.instrumentId),
       currentPercent: base.currentPercent,
-      units: base.units,
+      units: getActionSortValue(a, base),
       afterPercent: getAfterPercentForSort(a),
     }
   })
