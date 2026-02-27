@@ -33,7 +33,6 @@ describe('AllocationTable', () => {
 
   const defaultProps = {
     allocations: defaultAllocations,
-    inputMode: 'percentage' as const,
     availableEtfs: defaultEtfs,
     isLoadingPortfolio: false,
     totalInvestment: 0,
@@ -64,46 +63,6 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
       const headers = wrapper.findAll('th')
       expect(headers[5].text()).toContain('Allocation %')
-    })
-
-    it('should show Amount EUR header in amount mode', () => {
-      const wrapper = mount(AllocationTable, {
-        props: { ...defaultProps, inputMode: 'amount' },
-      })
-      const headers = wrapper.findAll('th')
-      expect(headers[5].text()).toContain('Amount EUR')
-    })
-  })
-
-  describe('mode buttons', () => {
-    it('should highlight percentage button when in percentage mode', () => {
-      const wrapper = mount(AllocationTable, { props: defaultProps })
-      const buttons = wrapper.findAll('.mode-btn')
-      expect(buttons[0].classes()).toContain('active')
-      expect(buttons[1].classes()).not.toContain('active')
-    })
-
-    it('should highlight amount button when in amount mode', () => {
-      const wrapper = mount(AllocationTable, {
-        props: { ...defaultProps, inputMode: 'amount' },
-      })
-      const buttons = wrapper.findAll('.mode-btn')
-      expect(buttons[0].classes()).not.toContain('active')
-      expect(buttons[1].classes()).toContain('active')
-    })
-
-    it('should emit update:inputMode when clicking percentage button', async () => {
-      const wrapper = mount(AllocationTable, {
-        props: { ...defaultProps, inputMode: 'amount' },
-      })
-      await wrapper.findAll('.mode-btn')[0].trigger('click')
-      expect(wrapper.emitted('update:inputMode')).toEqual([['percentage']])
-    })
-
-    it('should emit update:inputMode when clicking amount button', async () => {
-      const wrapper = mount(AllocationTable, { props: defaultProps })
-      await wrapper.findAll('.mode-btn')[1].trigger('click')
-      expect(wrapper.emitted('update:inputMode')).toEqual([['amount']])
     })
   })
 
@@ -290,17 +249,6 @@ describe('AllocationTable', () => {
         },
       })
       expect(wrapper.text()).toContain('(should be 100%)')
-    })
-
-    it('should show total as valid in amount mode when sum is greater than 0', () => {
-      const wrapper = mount(AllocationTable, {
-        props: {
-          ...defaultProps,
-          inputMode: 'amount',
-          allocations: [{ instrumentId: 1, value: 1000 }],
-        },
-      })
-      expect(wrapper.find('.total-value.valid').exists()).toBe(true)
     })
   })
 
@@ -637,13 +585,6 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
       expect(wrapper.find('.total-investment-input').exists()).toBe(true)
       expect(wrapper.text()).toContain('Total to invest')
-    })
-
-    it('should not show total to invest input in amount mode', () => {
-      const wrapper = mount(AllocationTable, {
-        props: { ...defaultProps, inputMode: 'amount' },
-      })
-      expect(wrapper.find('.total-investment-input').exists()).toBe(false)
     })
   })
 

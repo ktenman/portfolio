@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.infrastructure
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_ETFS_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_BREAKDOWN_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
@@ -56,6 +57,11 @@ class CacheInvalidationService(
   fun evictEtfBreakdownCache() {
     evictAllCacheKeys(ETF_BREAKDOWN_CACHE)
     log.debug("Evicted ETF breakdown cache")
+  }
+
+  fun evictDiversificationEtfsCache() {
+    evictAllCacheKeys(DIVERSIFICATION_ETFS_CACHE)
+    log.debug("Evicted diversification ETFs cache")
   }
 
   private fun evictAllCacheKeys(cacheName: String) {

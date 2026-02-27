@@ -9,7 +9,16 @@
           <span v-else-if="saveStatus === 'error'" class="save-status text-danger">
             Save failed
           </span>
-          <div v-if="lastUpdatedText" class="last-updated">Updated {{ lastUpdatedText }}</div>
+          <div
+            v-if="lastUpdatedText"
+            class="last-updated clickable"
+            :class="{ refreshing: isRefreshing }"
+            role="button"
+            title="Click to refresh prices"
+            @click="handlePriceRefresh"
+          >
+            {{ isRefreshing ? 'Refreshing...' : `Updated ${lastUpdatedText}` }}
+          </div>
         </div>
       </div>
     </div>
@@ -23,7 +32,6 @@
     <template v-else>
       <AllocationTable
         :allocations="allocations"
-        :input-mode="inputMode"
         :available-etfs="etfList"
         :is-loading-portfolio="isLoadingPortfolio"
         :total-investment="totalInvestment"
@@ -33,7 +41,6 @@
         :optimize-enabled="optimizeEnabled"
         :action-display-mode="actionDisplayMode"
         class="mb-4"
-        @update:input-mode="onInputModeChange"
         @update:allocation="updateAllocation"
         @update:total-investment="onTotalInvestmentChange"
         @update:selected-platform="onPlatformChange"
@@ -102,7 +109,8 @@
 <script lang="ts" setup>
 import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
 import { useDebounceFn, useNow, useLocalStorage } from '@vueuse/core'
-import { useQuery } from '@tanstack/vue-query'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useToast } from '../../composables/use-toast'
 import { diversificationService } from '../../services/diversification-service'
 import { instrumentsService } from '../../services/instruments-service'
 import { REFETCH_INTERVALS } from '../../constants'
@@ -135,8 +143,33 @@ const lastUpdatedText = computed(() => {
   return formatRelativeTime(dataUpdatedAt.value, now.value.getTime())
 })
 
+const queryClient = useQueryClient()
+const toast = useToast()
+const isRefreshing = ref(false)
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+const handlePriceRefresh = async () => {
+  if (isRefreshing.value) return
+  isRefreshing.value = true
+  try {
+    await instrumentsService.refreshPrices()
+    await sleep(3000)
+    await queryClient.invalidateQueries({ queryKey: ['diversification-etfs'] })
+    await queryClient.invalidateQueries({ queryKey: ['instruments'] })
+    if (selectedPlatform.value) {
+      await loadCurrentValues(selectedPlatform.value)
+    }
+    debouncedCalculate()
+    toast.success('Prices refreshed')
+  } catch {
+    toast.error('Failed to refresh prices')
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
 const allocations = ref<AllocationInput[]>([{ instrumentId: 0, value: 0 }])
-const inputMode = ref<'percentage' | 'amount'>('percentage')
 const totalInvestment = ref<number>(0)
 const selectedPlatform = ref<string | null>(null)
 const optimizeEnabled = ref(false)
@@ -192,7 +225,7 @@ const currentHoldingsTotal = computed(() =>
 
 const currentConfig = computed(() => ({
   allocations: allocations.value,
-  inputMode: inputMode.value,
+  inputMode: 'percentage' as const,
   selectedPlatform: selectedPlatform.value,
   optimizeEnabled: optimizeEnabled.value,
   totalInvestment: totalInvestment.value,
@@ -274,7 +307,7 @@ const saveToDatabase = async () => {
   try {
     await diversificationService.saveConfig({
       allocations: allocations.value,
-      inputMode: inputMode.value,
+      inputMode: 'percentage',
       selectedPlatform: selectedPlatform.value,
       optimizeEnabled: optimizeEnabled.value,
       totalInvestment: totalInvestment.value,
@@ -293,13 +326,6 @@ const saveToDatabase = async () => {
 const debouncedSave = useDebounceFn(saveToDatabase, 1000)
 
 const onAllocationChange = () => {
-  hasUnsavedChanges.value = true
-  debouncedSave()
-  debouncedCalculate()
-}
-
-const onInputModeChange = (mode: 'percentage' | 'amount') => {
-  inputMode.value = mode
   hasUnsavedChanges.value = true
   debouncedSave()
   debouncedCalculate()
@@ -326,10 +352,7 @@ const loadFromPortfolio = async () => {
       .filter((i): i is typeof i & { id: number } => i.id !== null)
       .map(i => ({
         instrumentId: i.id,
-        value:
-          inputMode.value === 'percentage'
-            ? Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10
-            : Math.round(i.currentValue ?? 0),
+        value: Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10,
         currentValue: selectedPlatform.value ? (i.currentValue ?? 0) : undefined,
       }))
     hasUnsavedChanges.value = true
@@ -392,7 +415,6 @@ const onExportComplete = () => {
 
 const onImportComplete = async (data: CachedState) => {
   allocations.value = data.allocations
-  inputMode.value = data.inputMode
   selectedPlatform.value = data.selectedPlatform ?? null
   optimizeEnabled.value = data.optimizeEnabled ?? false
   totalInvestment.value = data.totalInvestment ?? 0
@@ -438,7 +460,6 @@ watch(
       instrumentId: Number(a.instrumentId),
       value: Number(a.value),
     }))
-    inputMode.value = dbConfig.inputMode
     selectedPlatform.value = dbConfig.selectedPlatform ?? null
     optimizeEnabled.value = dbConfig.optimizeEnabled ?? false
     totalInvestment.value = dbConfig.totalInvestment ?? 0
@@ -454,7 +475,7 @@ watch(
 
 <style scoped>
 .diversification-container {
-  max-width: min(1350px, 91vw);
+  max-width: min(1600px, 95vw);
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -466,6 +487,22 @@ watch(
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   white-space: nowrap;
+}
+
+.last-updated.clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.last-updated.clickable:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.last-updated.refreshing {
+  color: var(--bs-primary);
+  background: #eff6ff;
+  pointer-events: none;
 }
 
 .save-status {
