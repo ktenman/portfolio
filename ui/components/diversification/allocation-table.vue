@@ -3,28 +3,8 @@
     <div class="header-section mb-3">
       <div class="header-row">
         <h5 class="mb-0">ETF Allocation</h5>
-        <div class="mode-buttons">
-          <button
-            type="button"
-            class="mode-btn"
-            :class="{ active: inputMode === 'percentage' }"
-            @click="$emit('update:inputMode', 'percentage')"
-          >
-            <span class="d-none d-sm-inline">Percentage</span>
-            <span class="d-sm-none">%</span>
-          </button>
-          <button
-            type="button"
-            class="mode-btn"
-            :class="{ active: inputMode === 'amount' }"
-            @click="$emit('update:inputMode', 'amount')"
-          >
-            <span class="d-none d-sm-inline">Amount (EUR)</span>
-            <span class="d-sm-none">EUR</span>
-          </button>
-        </div>
       </div>
-      <div v-if="inputMode === 'percentage'" class="investment-row">
+      <div class="investment-row">
         <div v-if="availablePlatforms.length > 0" class="platform-selector">
           <label class="d-none d-md-inline">Platform</label>
           <select
@@ -97,7 +77,6 @@
         :key="index"
         :allocation="allocation"
         :available-etfs="availableEtfsForRow(index)"
-        :input-mode="inputMode"
         :total-investment="totalInvestment"
         :disable-remove="allocations.length <= 1"
         :show-rebalance-mode="!!showRebalanceColumns"
@@ -200,13 +179,7 @@
             </th>
             <th class="sortable" style="width: 150px" @click="toggleSort('value')">
               <span class="th-content">
-                {{
-                  inputMode === 'percentage'
-                    ? showRebalanceColumns
-                      ? 'Target %'
-                      : 'Allocation %'
-                    : 'Amount EUR'
-                }}
+                {{ showRebalanceColumns ? 'Target %' : 'Allocation %' }}
                 <span class="sort-indicator" :class="getSortIndicatorClass('value')">
                   <i class="sort-arrow-up">▲</i>
                   <i class="sort-arrow-down">▼</i>
@@ -230,7 +203,7 @@
             <th
               v-if="showInvestmentColumns || showRebalanceActionColumn"
               class="sortable"
-              style="width: 90px"
+              style="width: 90px; white-space: nowrap"
               @click="toggleSort('afterPercent')"
             >
               <span class="th-content">
@@ -285,8 +258,8 @@
                 type="number"
                 class="form-control form-control-sm"
                 min="0"
-                :max="inputMode === 'percentage' ? 100 : undefined"
-                :step="inputMode === 'percentage' ? 1 : 100"
+                max="100"
+                step="1"
                 @input="onValueChange(getOriginalIndex(allocation), $event)"
               />
             </td>
@@ -407,14 +380,8 @@
         <div class="total-row">
           <span class="total-label">Total</span>
           <span class="total-value" :class="{ invalid: !isValidTotal, valid: isValidTotal }">
-            {{
-              inputMode === 'percentage'
-                ? `${totalAllocation.toFixed(1)}%`
-                : formatCurrencyWithSymbol(totalAllocation)
-            }}
-            <span v-if="inputMode === 'percentage' && !isValidTotal" class="total-hint">
-              (should be 100%)
-            </span>
+            {{ `${totalAllocation.toFixed(1)}%` }}
+            <span v-if="!isValidTotal" class="total-hint">(should be 100%)</span>
           </span>
         </div>
         <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="total-row">
@@ -428,7 +395,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { formatTer, formatReturn, formatCurrencyWithSymbol } from '../../utils/formatters'
+import { formatTer, formatReturn } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { calculateInvestmentAmount } from '../../utils/diversification-calculations'
 import { useSortableTable } from '../../composables/use-sortable-table'
@@ -450,7 +417,6 @@ interface AllocationWithData extends AllocationInput {
 
 const props = defineProps<{
   allocations: AllocationInput[]
-  inputMode: 'percentage' | 'amount'
   availableEtfs: EtfDetailDto[]
   isLoadingPortfolio: boolean
   totalInvestment: number
@@ -462,7 +428,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:inputMode': ['percentage' | 'amount']
   'update:allocation': [index: number, allocation: AllocationInput]
   'update:totalInvestment': [value: number]
   'update:selectedPlatform': [value: string | null]
@@ -506,12 +471,7 @@ const totalAllocation = computed(() =>
   props.allocations.reduce((sum, a) => sum + (a.value || 0), 0)
 )
 
-const isValidTotal = computed(() => {
-  if (props.inputMode === 'percentage') {
-    return Math.abs(totalAllocation.value - 100) < 0.1
-  }
-  return totalAllocation.value > 0
-})
+const isValidTotal = computed(() => Math.abs(totalAllocation.value - 100) < 0.1)
 
 const availableEtfsForRow = (rowIndex: number) => {
   const selectedIds = props.allocations
@@ -788,44 +748,6 @@ const onTotalInvestmentChange = (event: Event) => {
   background: #fef2f2;
   border-color: #fecaca;
   color: var(--bs-danger);
-}
-
-.mode-buttons {
-  display: flex;
-  gap: 0;
-}
-
-.mode-btn {
-  padding: 0.3125rem 0.625rem;
-  border: 1px solid var(--bs-gray-300);
-  background: var(--bs-white);
-  color: var(--bs-gray-600);
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-}
-
-.mode-btn:first-child {
-  border-radius: 0.375rem 0 0 0.375rem;
-  border-right: none;
-}
-
-.mode-btn:last-child {
-  border-radius: 0 0.375rem 0.375rem 0;
-}
-
-.mode-btn:hover:not(.active) {
-  background: var(--bs-gray-100);
-  border-color: var(--bs-gray-400);
-  color: var(--bs-gray-700);
-}
-
-.mode-btn.active {
-  background: var(--bs-gray-700);
-  color: var(--bs-white);
-  border-color: var(--bs-gray-700);
 }
 
 .platform-selector {

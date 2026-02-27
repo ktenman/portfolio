@@ -30,7 +30,6 @@ interface AllocationProps {
   readonly selectedPlatform: string | null
   readonly optimizeEnabled: boolean
   readonly actionDisplayMode: ActionDisplayMode
-  readonly inputMode: 'percentage' | 'amount'
 }
 
 export function useAllocationCalculations(props: AllocationProps) {
@@ -42,9 +41,7 @@ export function useAllocationCalculations(props: AllocationProps) {
   const getEtfPrice = (instrumentId: number) => findEtf(instrumentId)?.currentPrice ?? null
   const getEtfSymbol = (instrumentId: number) => findEtf(instrumentId)?.symbol || ''
 
-  const showInvestmentColumns = computed(
-    () => props.inputMode === 'percentage' && props.totalInvestment > 0
-  )
+  const showInvestmentColumns = computed(() => props.totalInvestment > 0)
   const showRebalanceColumns = computed(() => !!props.selectedPlatform)
   const showRebalanceActionColumn = computed(
     () =>

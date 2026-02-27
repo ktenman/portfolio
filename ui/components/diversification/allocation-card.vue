@@ -49,8 +49,8 @@
         type="number"
         class="form-control form-control-sm"
         min="0"
-        :max="inputMode === 'percentage' ? 100 : undefined"
-        :step="inputMode === 'percentage' ? 1 : 100"
+        max="100"
+        step="1"
         @input="onValueChange"
       />
     </div>
@@ -81,7 +81,6 @@ import type { AllocationInput, ActionDisplayMode } from './types'
 const props = defineProps<{
   allocation: AllocationInput
   availableEtfs: EtfDetailDto[]
-  inputMode: 'percentage' | 'amount'
   totalInvestment: number
   disableRemove: boolean
   showRebalanceMode?: boolean
@@ -113,9 +112,7 @@ const formattedTer = computed(() => formatTer(selectedEtf.value?.ter ?? null))
 
 const formattedReturn = computed(() => formatReturn(selectedEtf.value?.annualReturn ?? null))
 
-const showInvestmentInfo = computed(
-  () => props.inputMode === 'percentage' && (props.totalInvestment > 0 || props.showRebalanceMode)
-)
+const showInvestmentInfo = computed(() => props.totalInvestment > 0 || props.showRebalanceMode)
 
 const localInvestmentCalc = computed(() => {
   const price = selectedEtf.value?.currentPrice
@@ -154,10 +151,7 @@ const formattedAfterPercent = computed(() => {
   return `${props.afterPercent.toFixed(1)}%`
 })
 
-const inputLabel = computed(() => {
-  if (props.inputMode === 'amount') return 'Amount EUR'
-  return props.showRebalanceMode ? 'Target %' : 'Allocation %'
-})
+const inputLabel = computed(() => (props.showRebalanceMode ? 'Target %' : 'Allocation %'))
 
 const actionLabel = computed(() => {
   if (!props.showRebalanceMode) return 'Units'
