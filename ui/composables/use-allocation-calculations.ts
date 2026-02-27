@@ -33,8 +33,8 @@ interface AllocationProps {
 }
 
 export function useAllocationCalculations(props: AllocationProps) {
-  const findEtf = (instrumentId: number) =>
-    props.availableEtfs.find(e => e.instrumentId === instrumentId)
+  const etfMap = computed(() => new Map(props.availableEtfs.map(e => [e.instrumentId, e])))
+  const findEtf = (instrumentId: number) => etfMap.value.get(instrumentId)
   const getEtfName = (instrumentId: number) => findEtf(instrumentId)?.name || ''
   const getEtfTer = (instrumentId: number) => findEtf(instrumentId)?.ter ?? null
   const getEtfReturn = (instrumentId: number) => findEtf(instrumentId)?.annualReturn ?? null
@@ -162,9 +162,12 @@ export function useAllocationCalculations(props: AllocationProps) {
   }
 
   const calcAfterValue = (allocation: AllocationInput, data: RebalanceData): number => {
-    const currentValue = allocation.currentValue ?? 0
-    const tradeValue = data.units * (data.price ?? 0)
-    return data.isBuy ? currentValue + tradeValue : currentValue - tradeValue
+    const currentVal = allocation.currentValue ?? 0
+    const tradeAmount =
+      props.actionDisplayMode === 'amount'
+        ? getRebalanceFractionalAmount(allocation)
+        : data.units * (data.price ?? 0)
+    return data.isBuy ? currentVal + tradeAmount : currentVal - tradeAmount
   }
 
   const totalAfterValue = computed(() =>
@@ -176,17 +179,17 @@ export function useAllocationCalculations(props: AllocationProps) {
   )
 
   const getAfterPercent = (allocation: AllocationInput): number => {
-    if (props.actionDisplayMode === 'amount') return allocation.value
     if (totalAfterValue.value <= 0) return 0
-    const afterValue = calcAfterValue(allocation, getRebalanceData(allocation))
-    return (afterValue / totalAfterValue.value) * 100
+    return (calcAfterValue(allocation, getRebalanceData(allocation)) / totalAfterValue.value) * 100
   }
 
   const getAfterPercentForSort = (allocation: AllocationInput): number => {
-    if (props.actionDisplayMode === 'amount') return allocation.value
     if (totalAfterValueForSort.value <= 0) return 0
-    const afterValue = calcAfterValue(allocation, getBaseRebalanceData(allocation))
-    return (afterValue / totalAfterValueForSort.value) * 100
+    return (
+      (calcAfterValue(allocation, getBaseRebalanceData(allocation)) /
+        totalAfterValueForSort.value) *
+      100
+    )
   }
 
   const calculateBaseInvestmentData = (percentage: number, price: number | null) => {
@@ -273,6 +276,27 @@ export function useAllocationCalculations(props: AllocationProps) {
     }, 0)
   })
 
+  const getComputedAmount = (allocation: AllocationInput): number => {
+    if (!showRebalanceColumns.value)
+      return calculateInvestmentAmount(props.totalInvestment, allocation.value)
+    if (props.actionDisplayMode === 'amount') return getRebalanceFractionalAmount(allocation)
+    return getRebalanceAmount(allocation)
+  }
+
+  const getActionSortValue = (allocation: AllocationInput): number => {
+    const base = getBaseRebalanceData(allocation)
+    if (showRebalanceColumns.value) {
+      if (props.actionDisplayMode === 'amount') {
+        const amount = getRebalanceFractionalAmount(allocation)
+        return base.isBuy ? amount : -amount
+      }
+      return base.difference
+    }
+    if (props.actionDisplayMode === 'amount')
+      return calculateInvestmentAmount(props.totalInvestment, allocation.value)
+    return base.units
+  }
+
   return {
     getEtfName,
     getEtfPrice,
@@ -295,5 +319,7 @@ export function useAllocationCalculations(props: AllocationProps) {
     formatAction,
     formatUnused,
     totalUnused,
+    getComputedAmount,
+    getActionSortValue,
   }
 }

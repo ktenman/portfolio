@@ -9,7 +9,16 @@
           <span v-else-if="saveStatus === 'error'" class="save-status text-danger">
             Save failed
           </span>
-          <div v-if="lastUpdatedText" class="last-updated">Updated {{ lastUpdatedText }}</div>
+          <div
+            v-if="lastUpdatedText"
+            class="last-updated clickable"
+            :class="{ refreshing: isRefreshing }"
+            role="button"
+            title="Click to refresh prices"
+            @click="handlePriceRefresh"
+          >
+            {{ isRefreshing ? 'Refreshing...' : `Updated ${lastUpdatedText}` }}
+          </div>
         </div>
       </div>
     </div>
@@ -100,7 +109,8 @@
 <script lang="ts" setup>
 import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
 import { useDebounceFn, useNow, useLocalStorage } from '@vueuse/core'
-import { useQuery } from '@tanstack/vue-query'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useToast } from '../../composables/use-toast'
 import { diversificationService } from '../../services/diversification-service'
 import { instrumentsService } from '../../services/instruments-service'
 import { REFETCH_INTERVALS } from '../../constants'
@@ -132,6 +142,32 @@ const lastUpdatedText = computed(() => {
   if (!dataUpdatedAt.value) return ''
   return formatRelativeTime(dataUpdatedAt.value, now.value.getTime())
 })
+
+const queryClient = useQueryClient()
+const toast = useToast()
+const isRefreshing = ref(false)
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+const handlePriceRefresh = async () => {
+  if (isRefreshing.value) return
+  isRefreshing.value = true
+  try {
+    await instrumentsService.refreshPrices()
+    await sleep(3000)
+    await queryClient.invalidateQueries({ queryKey: ['diversification-etfs'] })
+    await queryClient.invalidateQueries({ queryKey: ['instruments'] })
+    if (selectedPlatform.value) {
+      await loadCurrentValues(selectedPlatform.value)
+    }
+    debouncedCalculate()
+    toast.success('Prices refreshed')
+  } catch {
+    toast.error('Failed to refresh prices')
+  } finally {
+    isRefreshing.value = false
+  }
+}
 
 const allocations = ref<AllocationInput[]>([{ instrumentId: 0, value: 0 }])
 const totalInvestment = ref<number>(0)
@@ -451,6 +487,22 @@ watch(
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   white-space: nowrap;
+}
+
+.last-updated.clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.last-updated.clickable:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.last-updated.refreshing {
+  color: var(--bs-primary);
+  background: #eff6ff;
+  pointer-events: none;
 }
 
 .save-status {

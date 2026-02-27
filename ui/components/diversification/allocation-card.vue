@@ -114,35 +114,23 @@ const formattedReturn = computed(() => formatReturn(selectedEtf.value?.annualRet
 
 const showInvestmentInfo = computed(() => props.totalInvestment > 0 || props.showRebalanceMode)
 
-const localInvestmentCalc = computed(() => {
-  const price = selectedEtf.value?.currentPrice
-  const percentage = props.allocation.value
-  if (!percentage || !price || price <= 0 || props.totalInvestment <= 0) {
-    return { units: 0, unused: 0 }
-  }
-  const allocated = (props.totalInvestment * percentage) / 100
-  const units = Math.floor(allocated / price)
-  const unused = allocated - units * price
-  return { units, unused }
-})
-
 const formattedUnits = computed(() => {
   if (props.actionDisplayMode === 'amount') {
     const amount = props.computedAmount ?? 0
     if (amount === 0) return '-'
     return `€${amount.toFixed(2)}`
   }
-  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  const units = props.computedUnits ?? 0
   if (units === 0) return '-'
   return units.toString()
 })
 
 const formattedUnused = computed(() => {
   if (props.actionDisplayMode === 'amount') return '-'
-  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  const units = props.computedUnits ?? 0
   if (units === 0) return '-'
   if (props.showRebalanceMode && props.computedUnused === undefined) return '-'
-  const unused = props.computedUnused ?? localInvestmentCalc.value.unused
+  const unused = props.computedUnused ?? 0
   return `€${unused.toFixed(2)}`
 })
 
@@ -165,7 +153,7 @@ const actionColorClass = computed(() => {
     if (amount <= 0) return ''
     return props.isBuy ? 'text-success' : 'text-danger'
   }
-  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  const units = props.computedUnits ?? 0
   if (units === 0) return ''
   return props.isBuy ? 'text-success' : 'text-danger'
 })

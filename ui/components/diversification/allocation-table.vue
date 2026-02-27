@@ -389,7 +389,6 @@
 import { computed } from 'vue'
 import { formatTer, formatReturn } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
-import { calculateInvestmentAmount } from '../../utils/diversification-calculations'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAllocationCalculations } from '../../composables/use-allocation-calculations'
 import AllocationCard from './allocation-card.vue'
@@ -448,13 +447,13 @@ const {
   getAfterPercentForSort,
   getUnits,
   getUnused,
-  getRebalanceAmount,
-  getRebalanceFractionalAmount,
   hasRebalanceAction,
   formatActionValue,
   formatAction,
   formatUnused,
   totalUnused,
+  getComputedAmount,
+  getActionSortValue,
 } = useAllocationCalculations(props)
 
 const formatEtfPrice = (value: number | null) => (value === null ? '-' : `€${value.toFixed(2)}`)
@@ -473,36 +472,18 @@ const availableEtfsForRow = (rowIndex: number) => {
   return props.availableEtfs.filter(etf => !selectedIds.includes(etf.instrumentId))
 }
 
-const getComputedAmount = (allocation: AllocationInput): number => {
-  if (!showRebalanceColumns.value)
-    return calculateInvestmentAmount(props.totalInvestment, allocation.value)
-  if (props.actionDisplayMode === 'amount') return getRebalanceFractionalAmount(allocation)
-  return getRebalanceAmount(allocation)
-}
-
-const getActionSortValue = (a: AllocationInput, base: ReturnType<typeof getBaseRebalanceData>) => {
-  if (showRebalanceColumns.value) return base.difference
-  if (props.actionDisplayMode === 'amount') {
-    return calculateInvestmentAmount(props.totalInvestment, a.value)
-  }
-  return base.units
-}
-
 const allocationsWithData = computed<AllocationWithData[]>(() =>
-  props.allocations.map(a => {
-    const base = getBaseRebalanceData(a)
-    return {
-      ...a,
-      symbol: getEtfSymbol(a.instrumentId),
-      name: getEtfName(a.instrumentId),
-      price: getEtfPrice(a.instrumentId),
-      ter: getEtfTer(a.instrumentId),
-      annualReturn: getEtfReturn(a.instrumentId),
-      currentPercent: base.currentPercent,
-      units: getActionSortValue(a, base),
-      afterPercent: getAfterPercentForSort(a),
-    }
-  })
+  props.allocations.map(a => ({
+    ...a,
+    symbol: getEtfSymbol(a.instrumentId),
+    name: getEtfName(a.instrumentId),
+    price: getEtfPrice(a.instrumentId),
+    ter: getEtfTer(a.instrumentId),
+    annualReturn: getEtfReturn(a.instrumentId),
+    currentPercent: getBaseRebalanceData(a).currentPercent,
+    units: getActionSortValue(a),
+    afterPercent: getAfterPercentForSort(a),
+  }))
 )
 
 const { sortedItems, sortState, toggleSort } = useSortableTable(
