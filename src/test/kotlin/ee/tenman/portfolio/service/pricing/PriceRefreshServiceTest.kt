@@ -54,6 +54,7 @@ class PriceRefreshServiceTest {
 
     verify { cacheInvalidationService.evictAllRelatedCaches(null, null) }
     verify { cacheInvalidationService.evictEtfBreakdownCache() }
+    verify { cacheInvalidationService.evictDiversificationEtfsCache() }
   }
 
   @Test

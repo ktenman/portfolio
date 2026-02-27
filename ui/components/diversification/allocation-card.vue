@@ -49,8 +49,8 @@
         type="number"
         class="form-control form-control-sm"
         min="0"
-        :max="inputMode === 'percentage' ? 100 : undefined"
-        :step="inputMode === 'percentage' ? 1 : 100"
+        max="100"
+        step="1"
         @input="onValueChange"
       />
     </div>
@@ -81,7 +81,6 @@ import type { AllocationInput, ActionDisplayMode } from './types'
 const props = defineProps<{
   allocation: AllocationInput
   availableEtfs: EtfDetailDto[]
-  inputMode: 'percentage' | 'amount'
   totalInvestment: number
   disableRemove: boolean
   showRebalanceMode?: boolean
@@ -113,21 +112,7 @@ const formattedTer = computed(() => formatTer(selectedEtf.value?.ter ?? null))
 
 const formattedReturn = computed(() => formatReturn(selectedEtf.value?.annualReturn ?? null))
 
-const showInvestmentInfo = computed(
-  () => props.inputMode === 'percentage' && (props.totalInvestment > 0 || props.showRebalanceMode)
-)
-
-const localInvestmentCalc = computed(() => {
-  const price = selectedEtf.value?.currentPrice
-  const percentage = props.allocation.value
-  if (!percentage || !price || price <= 0 || props.totalInvestment <= 0) {
-    return { units: 0, unused: 0 }
-  }
-  const allocated = (props.totalInvestment * percentage) / 100
-  const units = Math.floor(allocated / price)
-  const unused = allocated - units * price
-  return { units, unused }
-})
+const showInvestmentInfo = computed(() => props.totalInvestment > 0 || props.showRebalanceMode)
 
 const formattedUnits = computed(() => {
   if (props.actionDisplayMode === 'amount') {
@@ -135,17 +120,17 @@ const formattedUnits = computed(() => {
     if (amount === 0) return '-'
     return `€${amount.toFixed(2)}`
   }
-  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  const units = props.computedUnits ?? 0
   if (units === 0) return '-'
   return units.toString()
 })
 
 const formattedUnused = computed(() => {
   if (props.actionDisplayMode === 'amount') return '-'
-  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  const units = props.computedUnits ?? 0
   if (units === 0) return '-'
   if (props.showRebalanceMode && props.computedUnused === undefined) return '-'
-  const unused = props.computedUnused ?? localInvestmentCalc.value.unused
+  const unused = props.computedUnused ?? 0
   return `€${unused.toFixed(2)}`
 })
 
@@ -154,10 +139,7 @@ const formattedAfterPercent = computed(() => {
   return `${props.afterPercent.toFixed(1)}%`
 })
 
-const inputLabel = computed(() => {
-  if (props.inputMode === 'amount') return 'Amount EUR'
-  return props.showRebalanceMode ? 'Target %' : 'Allocation %'
-})
+const inputLabel = computed(() => (props.showRebalanceMode ? 'Target %' : 'Allocation %'))
 
 const actionLabel = computed(() => {
   if (!props.showRebalanceMode) return 'Units'
@@ -166,7 +148,12 @@ const actionLabel = computed(() => {
 
 const actionColorClass = computed(() => {
   if (!props.showRebalanceMode) return ''
-  const units = props.computedUnits ?? localInvestmentCalc.value.units
+  if (props.actionDisplayMode === 'amount') {
+    const amount = props.computedAmount ?? 0
+    if (amount <= 0) return ''
+    return props.isBuy ? 'text-success' : 'text-danger'
+  }
+  const units = props.computedUnits ?? 0
   if (units === 0) return ''
   return props.isBuy ? 'text-success' : 'text-danger'
 })

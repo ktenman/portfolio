@@ -28,6 +28,9 @@ vi.mock('@tanstack/vue-query', () => ({
     isLoading: ref(false),
     dataUpdatedAt: ref(Date.now()),
   })),
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
 }))
 
 vi.mock('../../services/diversification-service', () => ({
@@ -42,6 +45,7 @@ vi.mock('../../services/diversification-service', () => ({
 vi.mock('../../services/instruments-service', () => ({
   instrumentsService: {
     getAll: vi.fn(),
+    refreshPrices: vi.fn().mockResolvedValue({ status: 'ok' }),
   },
 }))
 

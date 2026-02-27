@@ -44,6 +44,7 @@ class PriceRefreshService(
   private fun clearAllCaches() {
     cacheInvalidationService.evictAllRelatedCaches(null, null)
     cacheInvalidationService.evictEtfBreakdownCache()
+    cacheInvalidationService.evictDiversificationEtfsCache()
   }
 
   private fun recalculateTransactionProfits() {

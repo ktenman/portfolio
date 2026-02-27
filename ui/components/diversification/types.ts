@@ -8,7 +8,7 @@ export type ActionDisplayMode = 'units' | 'amount'
 
 export interface CachedState {
   allocations: AllocationInput[]
-  inputMode: 'percentage' | 'amount'
+  inputMode: 'percentage'
   selectedPlatform?: string | null
   optimizeEnabled?: boolean
   totalInvestment?: number
