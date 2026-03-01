@@ -29,7 +29,7 @@ minio = "8.6.0"
 jollyday = "1.8.1"
 pitest = "1.17.4"
 pitestPlugin = "1.19.0-rc.3"
-kotest = "6.1.2"
+kotest = "6.1.4"
 
 [libraries]
 # Spring Boot
