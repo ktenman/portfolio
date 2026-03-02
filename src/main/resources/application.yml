@@ -209,6 +209,8 @@ scraping:
         uuid: "1efffda3-1025-6a5a-b5c1-0d0aba27fa65"
       - symbol: "VWCG:GER:EUR"
         uuid: "1eda4008-ca32-66dc-b60a-654bcfbd8ac3"
+      - symbol: "QDVF:GER:EUR"
+        uuid: "1edb2311-1f7c-6b55-8923-ad904e77bd1a"
 
 cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}
