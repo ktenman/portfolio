@@ -1,0 +1,17 @@
+INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, price, transaction_date, platform, commission)
+VALUES
+    ((SELECT id FROM instrument WHERE symbol = 'IS3S:GER:EUR'), 'SELL', 22.438311688, 1243.98 / 22.438311688, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'QDVF:GER:EUR'), 'SELL', 242.826589596, 2477.31 / 242.826589596, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'CSX5:AEX:EUR'), 'SELL', 16.478895865, 3731.65 / 16.478895865, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'VWCG:GER:EUR'), 'SELL', 66.52543569, 3740.06 / 66.52543569, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'ESIF:GER:EUR'), 'BUY', 349.346360805, 5029.21 / 349.346360805, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'CEMS:GER:EUR'), 'BUY', 198.294348508, 2526.27 / 198.294348508, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'EXUS:GER:EUR'), 'BUY', 34.501543002, 1285.70 / 34.501543002, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'XAIX:GER:EUR'), 'BUY', 3.351998417, 508.23 / 3.351998417, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'VNRA:GER:EUR'), 'BUY', 3.153290639, 462.84 / 3.153290639, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'XNAS:GER:EUR'), 'BUY', 9.148299042, 449.09 / 9.148299042, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'QDVE:GER:EUR'), 'BUY', 12.998793364, 439.88 / 12.998793364, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'AIFS:GER:EUR'), 'BUY', 66.609423435, 438.27 / 66.609423435, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'EUDF:GER:EUR'), 'BUY', 1.250429799, 43.64 / 1.250429799, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'DFEN:GER:EUR'), 'BUY', 0.086970372, 5.46 / 0.086970372, '2026-03-03', 'LIGHTYEAR', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'DFND:PAR:EUR'), 'BUY', 0.481967213, 4.41 / 0.481967213, '2026-03-03', 'LIGHTYEAR', 0);
