@@ -14,8 +14,6 @@ services:
       timeout: 1s
       retries: 5
     restart: always
-    ports:
-      - '5432:5432'
 
   redis:
     container_name: redis
