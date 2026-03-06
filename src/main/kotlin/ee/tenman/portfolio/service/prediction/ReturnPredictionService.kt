@@ -59,15 +59,18 @@ class ReturnPredictionService(
     }
     val mu = calculateMean(logReturns)
     val sigma = calculateStdDev(logReturns, mu)
-    val stats = VolatilityStats(mu, sigma)
-    val today = LocalDate.now(clock)
-    val predictions =
-      HORIZONS.map { (label, days) ->
-      projectHorizon(currentSummary.totalValue, currentSummary.xirrAnnualReturn, stats, days, label, today, monthlyInvestment)
-    }
-    return ReturnPredictionDto(
+    val context =
+      PredictionContext(
       currentValue = currentSummary.totalValue,
       xirrAnnualReturn = currentSummary.xirrAnnualReturn,
+      monthlyInvestment = monthlyInvestment,
+      stats = VolatilityStats(mu, sigma),
+      today = LocalDate.now(clock),
+    )
+    val predictions = HORIZONS.map { (label, days) -> projectHorizon(context, days, label) }
+    return ReturnPredictionDto(
+      currentValue = context.currentValue,
+      xirrAnnualReturn = context.xirrAnnualReturn,
       dailyVolatility = BigDecimal(sigma).setScale(SCALE, RoundingMode.HALF_UP),
       dataPointCount = values.size,
       monthlyInvestment = monthlyInvestment,
@@ -79,15 +82,15 @@ class ReturnPredictionService(
     val transactions = transactionCacheService.getAllTransactions()
     val buyTransactions =
       transactions
-      .filter { it.transactionType == TransactionType.BUY }
-      .filterNot { it.instrument.isCash() }
+        .filter { it.transactionType == TransactionType.BUY }
+        .filterNot { it.instrument.isCash() }
     if (buyTransactions.isEmpty()) return BigDecimal.ZERO
     val sorted =
       buyTransactions
-      .groupBy { YearMonth.from(it.transactionDate) }
-      .mapValues { (_, txs) -> txs.sumOf { it.quantity.multiply(it.price).add(it.commission) } }
-      .values
-      .sortedBy { it }
+        .groupBy { YearMonth.from(it.transactionDate) }
+        .mapValues { (_, txs) -> txs.sumOf { it.quantity.multiply(it.price).add(it.commission) } }
+        .values
+        .sortedBy { it }
     if (sorted.size < 3) return BigDecimal.ZERO
     return sorted[sorted.size / 4].setScale(SCALE, RoundingMode.HALF_UP)
   }
@@ -110,20 +113,16 @@ class ReturnPredictionService(
   }
 
   private fun projectHorizon(
-    currentValue: BigDecimal,
-    xirrAnnualReturn: BigDecimal,
-    stats: VolatilityStats,
+    context: PredictionContext,
     horizonDays: Int,
     label: String,
-    today: LocalDate,
-    monthlyInvestment: BigDecimal,
   ): HorizonPredictionDto {
     val t = horizonDays.toDouble()
-    val xirrRate = xirrAnnualReturn.toDouble()
+    val xirrRate = context.xirrAnnualReturn.toDouble()
     val months = t / DAYS_PER_MONTH
-    val contributions = monthlyInvestment.toDouble() * months
-    val expected = currentValue.toDouble() * (1 + xirrRate).pow(t / DAYS_PER_YEAR) + contributions
-    val annualizedSigma = minOf(stats.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
+    val contributions = context.monthlyInvestment.toDouble() * months
+    val expected = context.currentValue.toDouble() * (1 + xirrRate).pow(t / DAYS_PER_YEAR) + contributions
+    val annualizedSigma = minOf(context.stats.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
     val timeInYears = t / DAYS_PER_YEAR
     val diffusion = CONFIDENCE_Z_SCORE * annualizedSigma * sqrt(timeInYears)
     val optimistic = expected * exp(diffusion)
@@ -131,7 +130,7 @@ class ReturnPredictionService(
     return HorizonPredictionDto(
       horizon = label,
       horizonDays = horizonDays,
-      targetDate = today.plusDays(horizonDays.toLong()),
+      targetDate = context.today.plusDays(horizonDays.toLong()),
       expectedValue = BigDecimal(expected).setScale(SCALE, RoundingMode.HALF_UP),
       optimisticValue = BigDecimal(optimistic).setScale(SCALE, RoundingMode.HALF_UP),
       pessimisticValue = BigDecimal(pessimistic).setScale(SCALE, RoundingMode.HALF_UP),
@@ -145,11 +144,11 @@ class ReturnPredictionService(
     monthlyInvestment: BigDecimal,
     dataPointCount: Int,
   ) = ReturnPredictionDto(
-      currentValue = currentValue,
-      xirrAnnualReturn = xirrAnnualReturn,
-      dailyVolatility = BigDecimal.ZERO,
-      dataPointCount = dataPointCount,
-      monthlyInvestment = monthlyInvestment,
-      predictions = emptyList(),
-    )
+    currentValue = currentValue,
+    xirrAnnualReturn = xirrAnnualReturn,
+    dailyVolatility = BigDecimal.ZERO,
+    dataPointCount = dataPointCount,
+    monthlyInvestment = monthlyInvestment,
+    predictions = emptyList(),
+  )
 }
