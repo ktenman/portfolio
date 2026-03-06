@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
@@ -59,12 +59,12 @@ describe('usePortfolioSummaryQuery', () => {
     vi.mocked(portfolioSummaryService.getCurrent).mockResolvedValue(mockCurrentSummary)
   })
 
-  const setupQuery = () => {
+  const setupQuery = (platforms?: Ref<string[]>) => {
     let queryResult: ReturnType<typeof usePortfolioSummaryQuery> | null = null
 
     const TestComponent = {
       setup() {
-        queryResult = usePortfolioSummaryQuery()
+        queryResult = usePortfolioSummaryQuery(platforms)
         return { queryResult }
       },
       template: '<div>{{ queryResult.isLoading.value ? "Loading" : "Loaded" }}</div>',
@@ -269,6 +269,33 @@ describe('usePortfolioSummaryQuery', () => {
 
       expect(queryResult.summaries.value).toHaveLength(1)
       expect(queryResult.summaries.value[0]).toEqual(mockCurrentSummary)
+    })
+  })
+
+  describe('platform filtering', () => {
+    it('should pass platforms to service calls when provided', async () => {
+      const platforms = ref(['LIGHTYEAR', 'TRADING212'])
+      const { queryResult } = setupQuery(platforms)
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      expect(portfolioSummaryService.getHistorical).toHaveBeenCalledWith(0, 186, [
+        'LIGHTYEAR',
+        'TRADING212',
+      ])
+      expect(portfolioSummaryService.getCurrent).toHaveBeenCalledWith(['LIGHTYEAR', 'TRADING212'])
+    })
+
+    it('should not pass platforms when array is empty', async () => {
+      const platforms = ref<string[]>([])
+      const { queryResult } = setupQuery(platforms)
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      expect(portfolioSummaryService.getHistorical).toHaveBeenCalledWith(0, 186, undefined)
+      expect(portfolioSummaryService.getCurrent).toHaveBeenCalledWith(undefined)
     })
   })
 

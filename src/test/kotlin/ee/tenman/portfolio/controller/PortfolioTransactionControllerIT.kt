@@ -436,6 +436,46 @@ class PortfolioTransactionControllerIT {
   }
 
   @Test
+  fun `should return distinct platforms`() {
+    val instrument = setupInstrument()
+    portfolioTransactionRepository.saveAll(
+      listOf(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = testDate,
+          platform = Platform.BINANCE,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("5"),
+          price = BigDecimal("50"),
+          transactionDate = testDate,
+          platform = Platform.LHV,
+        ),
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.SELL,
+          quantity = BigDecimal("3"),
+          price = BigDecimal("60"),
+          transactionDate = testDate,
+          platform = Platform.BINANCE,
+        ),
+      ),
+    )
+
+    mockMvc
+      .perform(get("/api/transactions/platforms").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[0]").value("BINANCE"))
+      .andExpect(jsonPath("$[1]").value("LHV"))
+  }
+
+  @Test
   fun `should delete a transaction by ID`() {
     val instrument = setupInstrument()
     val transaction =

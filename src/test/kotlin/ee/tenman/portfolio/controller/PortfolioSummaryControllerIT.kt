@@ -166,7 +166,7 @@ class PortfolioSummaryControllerIT {
     expect(summary3.totalValue.compareTo(BigDecimal("9500.00"))).toEqual(0)
 
     expect(output.out).toContain("getHistoricalPortfolioSummary")
-    expect(output.out).toContain("entered with arguments: [0,3]")
+    expect(output.out).toContain("entered with arguments: [0,3,null]")
     expect(output.out).toContain("exited with result:")
     expect(output.out).toContain("\"content\":")
   }
@@ -231,7 +231,7 @@ class PortfolioSummaryControllerIT {
       .andExpect(jsonPath("$.earningsPerDay").value(closeTo(0.033, 0.01)))
       .andExpect(jsonPath("$.earningsPerMonth").value(closeTo(1.01, 0.1)))
     expect(output.out).toContain("getCurrentPortfolioSummary")
-    expect(output.out).toContain("entered with arguments: []")
+    expect(output.out).toContain("entered with arguments: [null]")
     expect(output.out).toContain("exited with result:")
     expect(output.out).toContain("\"date\":")
   }

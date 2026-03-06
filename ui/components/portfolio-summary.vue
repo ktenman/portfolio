@@ -6,6 +6,25 @@
       @recalculate="handleRecalculate"
     />
 
+    <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2 mb-3">
+      <div class="platform-buttons">
+        <button
+          v-for="platform in availablePlatforms"
+          :key="platform"
+          class="platform-btn"
+          :class="{ active: isPlatformSelected(platform) }"
+          @click="togglePlatform(platform)"
+          type="button"
+        >
+          {{ formatPlatformName(platform) }}
+        </button>
+        <span class="platform-separator"></span>
+        <button class="platform-btn" @click="toggleAllPlatforms" type="button">
+          {{ selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All' }}
+        </button>
+      </div>
+    </div>
+
     <div v-if="viewState === 'LOADING'">
       <skeleton-loader type="card" class="mb-4" />
       <skeleton-loader type="table" :rows="10" :columns="5" />
@@ -36,6 +55,8 @@
 
       <portfolio-chart :key="chartKey" :data="processedChartData" />
 
+      <return-predictions class="mt-3" />
+
       <data-table
         :items="sortedItems"
         :columns="summaryColumns"
@@ -62,13 +83,21 @@
 <script lang="ts" setup>
 import { defineAsyncComponent, computed, ref, watch } from 'vue'
 import { useInfiniteScroll, useWindowSize } from '@vueuse/core'
+import { useQuery } from '@tanstack/vue-query'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
 import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import { useSortableTable } from '../composables/use-sortable-table'
+import { usePlatformFilter } from '../composables/use-platform-filter'
+import { useAuthState } from '../composables/use-auth-state'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
+import ReturnPredictions from './portfolio/return-predictions.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
+import { formatPlatformName } from '../utils/platform-utils'
+import { transactionsService } from '../services/transactions-service'
+import { STORAGE_KEYS } from '../constants'
+import { REFETCH_INTERVALS } from '../constants/api'
 import {
   formatCurrencyWithSymbol,
   formatDate,
@@ -78,6 +107,20 @@ import {
 const PortfolioChart = defineAsyncComponent(() => import('./portfolio/portfolio-chart.vue'))
 
 type ViewState = 'LOADING' | 'ERROR' | 'EMPTY' | 'SUCCESS'
+
+const { isAuthenticated } = useAuthState()
+
+const { data: platformsData } = useQuery({
+  queryKey: ['transaction-platforms'],
+  queryFn: () => transactionsService.getPlatforms(),
+  enabled: isAuthenticated,
+  refetchInterval: REFETCH_INTERVALS.PLATFORMS,
+})
+
+const availablePlatforms = computed(() => platformsData.value ?? [])
+
+const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter(STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS, availablePlatforms)
 
 const {
   summaries,
@@ -90,7 +133,7 @@ const {
   recalculate,
   fetchSummaries,
   hasMoreData,
-} = usePortfolioSummaryQuery()
+} = usePortfolioSummaryQuery(selectedPlatforms)
 
 const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 

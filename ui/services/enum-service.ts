@@ -1,14 +1,7 @@
 import { httpClient } from '../utils/http-client'
+import type { EnumsResponse } from '../models/generated/domain-models'
 import { API_ENDPOINTS } from '../constants'
 
-interface EnumValues {
-  platforms: string[]
-  providers: string[]
-  transactionTypes: string[]
-  categories: string[]
-  currencies: string[]
-}
-
 export const enumService = {
-  getAll: () => httpClient.get<EnumValues>(API_ENDPOINTS.ENUMS),
+  getAll: () => httpClient.get<EnumsResponse>(API_ENDPOINTS.ENUMS),
 }

@@ -961,6 +961,78 @@ class SummaryServiceTest {
     verify { summaryCacheService.findByEntryDate(previousDate) }
   }
 
+  @Test
+  fun `should getCurrentDaySummaryForPlatforms return summary for filtered platforms`() {
+    val fixedInstant = testDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
+    every { clock.instant() } returns fixedInstant
+    every { clock.zone } returns ZoneId.systemDefault()
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = testDate.minusDays(5),
+        platform = Platform.LIGHTYEAR,
+      )
+    every { transactionService.getAllTransactions(listOf("LIGHTYEAR")) } returns listOf(testTransaction)
+    val portfolioMetrics =
+      PortfolioMetrics(
+        totalValue = BigDecimal("1200.00"),
+        totalProfit = BigDecimal("200.00"),
+        xirrCashFlows = mutableListOf(),
+      )
+    every { investmentMetricsService.calculatePortfolioMetrics(any(), testDate) } returns portfolioMetrics
+    every { xirrCalculationService.calculateAdjustedXirr(any(), testDate) } returns 0.08
+    val result = summaryService.getCurrentDaySummaryForPlatforms(listOf(Platform.LIGHTYEAR))
+    expect(result.totalValue).toEqualNumerically(BigDecimal("1200.00"))
+    expect(result.totalProfit).toEqualNumerically(BigDecimal("200.00"))
+    verify { transactionService.getAllTransactions(listOf("LIGHTYEAR")) }
+  }
+
+  @Test
+  fun `should getHistoricalSummariesForPlatforms return paginated summaries`() {
+    val today = LocalDate.of(2025, 5, 10)
+    val fixedInstant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
+    every { clock.instant() } returns fixedInstant
+    every { clock.zone } returns ZoneId.systemDefault()
+    val testTransaction =
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.of(2025, 5, 6),
+        platform = Platform.LIGHTYEAR,
+      )
+    every { transactionService.getAllTransactions(listOf("LIGHTYEAR")) } returns listOf(testTransaction)
+    val portfolioMetrics =
+      PortfolioMetrics(
+        totalValue = BigDecimal("1100.00"),
+        totalProfit = BigDecimal("100.00"),
+        xirrCashFlows = mutableListOf(),
+      )
+    every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns portfolioMetrics
+    every { xirrCalculationService.calculateAdjustedXirr(any(), any()) } returns 0.05
+    val result = summaryService.getHistoricalSummariesForPlatforms(listOf(Platform.LIGHTYEAR), 0, 10)
+    expect(result.totalElements).toEqual(4L)
+    expect(result.content).toHaveSize(4)
+    expect(result.content.first().entryDate).toEqual(LocalDate.of(2025, 5, 9))
+    expect(result.content.last().entryDate).toEqual(LocalDate.of(2025, 5, 6))
+  }
+
+  @Test
+  fun `should getHistoricalSummariesForPlatforms return empty page when no transactions`() {
+    val today = LocalDate.of(2025, 5, 10)
+    val fixedInstant = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
+    every { clock.instant() } returns fixedInstant
+    every { clock.zone } returns ZoneId.systemDefault()
+    every { transactionService.getAllTransactions(listOf("LIGHTYEAR")) } returns emptyList()
+    val result = summaryService.getHistoricalSummariesForPlatforms(listOf(Platform.LIGHTYEAR), 0, 10)
+    expect(result.isEmpty).toEqual(true)
+    expect(result.totalElements).toEqual(0L)
+  }
+
   companion object {
     @JvmStatic
     fun earningsPerDayCalculationParams(): Stream<Arguments> =

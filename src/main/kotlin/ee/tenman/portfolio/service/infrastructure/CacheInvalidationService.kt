@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFIC
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_BREAKDOWN_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.PLATFORM_SUMMARY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import org.slf4j.LoggerFactory
@@ -36,6 +37,7 @@ class CacheInvalidationService(
 
   fun evictSummaryCaches() {
     evictAllCacheKeys(SUMMARY_CACHE)
+    evictAllCacheKeys(PLATFORM_SUMMARY_CACHE)
     log.debug("Evicted all summary caches")
   }
 

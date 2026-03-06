@@ -111,21 +111,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { useLocalStorage } from '@vueuse/core'
 import { Dropdown } from 'bootstrap'
 import TransactionTable from './transaction-table.vue'
 import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
-import { STORAGE_KEYS } from '../../constants'
+import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 import {
   useQuickDates,
   QUICK_DATE_OPTIONS,
   type QuickDatePreset,
 } from '../../composables/use-quick-dates'
 import { useAuthState } from '../../composables/use-auth-state'
-
-const selectedPlatforms = useLocalStorage<string[]>(STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS, [])
+import { usePlatformFilter } from '../../composables/use-platform-filter'
 const { isAuthenticated } = useAuthState()
 const quickDateDropdown = ref<HTMLElement | null>(null)
 
@@ -143,11 +141,17 @@ const { fromDate, untilDate, selectedQuickDate, setQuickDate, clearDates } = use
   onDateSet: closeDropdown,
 })
 
-const { data: allTransactionsResponse } = useQuery({
-  queryKey: ['transactions'],
-  queryFn: () => transactionsService.getAll(),
+const { data: platformsData } = useQuery({
+  queryKey: ['transaction-platforms'],
+  queryFn: () => transactionsService.getPlatforms(),
   enabled: isAuthenticated,
+  refetchInterval: REFETCH_INTERVALS.PLATFORMS,
 })
+
+const availablePlatforms = computed(() => platformsData.value ?? [])
+
+const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter(STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS, availablePlatforms)
 
 const { data: transactionsResponse, isLoading } = useQuery({
   queryKey: ['transactions', selectedPlatforms, fromDate, untilDate],
@@ -161,19 +165,6 @@ const { data: transactionsResponse, isLoading } = useQuery({
 })
 
 const transactions = computed(() => transactionsResponse.value?.transactions)
-
-const availablePlatforms = computed(() => {
-  if (!allTransactionsResponse.value) return []
-
-  const platformSet = new Set<string>()
-  allTransactionsResponse.value.transactions.forEach(transaction => {
-    if (transaction.platform) {
-      platformSet.add(transaction.platform)
-    }
-  })
-
-  return Array.from(platformSet).sort()
-})
 
 const realizedProfitSum = computed(() => {
   return transactionsResponse.value?.summary.totalRealizedProfit || 0
@@ -190,27 +181,6 @@ const totalProfitSum = computed(() => {
 const totalInvested = computed(() => {
   return transactionsResponse.value?.summary.totalInvested || 0
 })
-
-const isPlatformSelected = (platform: string): boolean => {
-  return selectedPlatforms.value.includes(platform)
-}
-
-const togglePlatform = (platform: string) => {
-  const index = selectedPlatforms.value.indexOf(platform)
-  if (index > -1) {
-    selectedPlatforms.value = selectedPlatforms.value.filter(p => p !== platform)
-  } else {
-    selectedPlatforms.value = [...selectedPlatforms.value, platform]
-  }
-}
-
-const toggleAllPlatforms = () => {
-  if (selectedPlatforms.value.length === availablePlatforms.value.length) {
-    selectedPlatforms.value = []
-  } else {
-    selectedPlatforms.value = [...availablePlatforms.value]
-  }
-}
 
 const handleQuickDateSelect = (preset: QuickDatePreset) => {
   setQuickDate(preset)
@@ -293,64 +263,6 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
   color: #1a1a1a;
 }
 
-.platform-filter-container {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  background: transparent;
-}
-
-.platform-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.platform-separator {
-  width: 1px;
-  height: 1.25rem;
-  background-color: #d1d5db;
-  display: inline-block;
-}
-
-.platform-btn {
-  padding: 0.3125rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #6b7280;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-}
-
-.platform-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #4b5563;
-}
-
-.platform-btn:active {
-  background: #f1f5f9;
-  transform: scale(0.98);
-}
-
-.platform-btn.active {
-  background: #4b5563;
-  color: white;
-  border-color: #4b5563;
-  font-weight: 500;
-}
-
-.platform-btn.active:hover {
-  background: #374151;
-  border-color: #374151;
-  color: white;
-}
-
 .date-actions {
   display: flex;
   gap: 0.375rem;
@@ -421,26 +333,6 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
   .date-actions-row .platform-btn,
   .date-actions-row .dropdown {
     width: 110px;
-  }
-
-  .platform-filter-container {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.375rem;
-  }
-
-  .platform-buttons {
-    width: 100%;
-  }
-
-  .platform-separator {
-    display: none;
-  }
-}
-
-@media (min-width: 769px) {
-  .platform-filter-container {
-    align-items: center;
   }
 }
 

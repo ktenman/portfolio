@@ -1,18 +1,14 @@
 import { ref, computed } from 'vue'
 import { enumService } from '../services/enum-service'
+import type { EnumsResponse } from '../models/generated/domain-models'
+import { setPlatformDisplayNames } from '../utils/platform-utils'
 
 interface SelectOption {
   value: string
   text: string
 }
 
-const enumCache = ref<{
-  platforms: string[]
-  providers: string[]
-  transactionTypes: string[]
-  categories: string[]
-  currencies: string[]
-} | null>(null)
+const enumCache = ref<EnumsResponse | null>(null)
 
 const loading = ref(false)
 const error = ref<Error | null>(null)
@@ -62,6 +58,7 @@ export function useEnumValues() {
     loading.value = true
     try {
       enumCache.value = await enumService.getAll()
+      setPlatformDisplayNames(enumCache.value.platforms)
     } catch (e) {
       error.value = e as Error
     } finally {
@@ -69,9 +66,13 @@ export function useEnumValues() {
     }
   }
 
-  const platformOptions = computed(() =>
-    enumCache.value ? toSelectOptions(enumCache.value.platforms) : []
-  )
+  const platformOptions = computed(() => {
+    if (!enumCache.value) return []
+    return enumCache.value.platforms.map(p => ({
+      value: p.name,
+      text: p.displayName,
+    }))
+  })
 
   const providerOptions = computed(() =>
     enumCache.value ? toSelectOptions(enumCache.value.providers) : []

@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -147,6 +147,38 @@ export interface EtfDetailDto extends Serializable {
     ter: number | null;
     annualReturn: number | null;
     currentPrice: number | null;
+}
+
+export interface PlatformDto {
+    name: string;
+    displayName: string;
+}
+
+export interface EnumsResponse {
+    platforms: PlatformDto[];
+    providers: string[];
+    transactionTypes: string[];
+    categories: string[];
+    currencies: string[];
+}
+
+export interface ReturnPredictionDto extends Serializable {
+    currentValue: number;
+    xirrAnnualReturn: number;
+    dailyVolatility: number;
+    dataPointCount: number;
+    monthlyInvestment: number;
+    predictions: HorizonPredictionDto[];
+}
+
+export interface HorizonPredictionDto extends Serializable {
+    horizon: string;
+    horizonDays: number;
+    targetDate: DateAsString;
+    expectedValue: number;
+    optimisticValue: number;
+    pessimisticValue: number;
+    contributions: number;
 }
 
 export interface Serializable {
