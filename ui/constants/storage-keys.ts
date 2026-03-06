@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   TRANSACTIONS_FROM_DATE: 'portfolio_transactions_from_date',
   TRANSACTIONS_UNTIL_DATE: 'portfolio_transactions_until_date',
   SHOW_ACTIVE_ONLY: 'portfolio_show_active_only',
+  SELECTED_SUMMARY_PLATFORMS: 'portfolio_selected_summary_platforms',
 } as const

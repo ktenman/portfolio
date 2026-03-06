@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { mount } from '@vue/test-utils'
 import InstrumentTable from './instrument-table.vue'
 import { ProviderName } from '../../models/generated/domain-models'
 import { createInstrumentDto } from '../../tests/fixtures'
+import { setPlatformDisplayNames } from '../../utils/platform-utils'
 
 vi.mock('../shared/data-table.vue', () => ({
   default: {
@@ -29,6 +30,20 @@ vi.mock('../shared/data-table.vue', () => ({
 }))
 
 describe('InstrumentTable', () => {
+  beforeAll(() => {
+    setPlatformDisplayNames([
+      { name: 'AVIVA', displayName: 'Aviva' },
+      { name: 'BINANCE', displayName: 'Binance' },
+      { name: 'COINBASE', displayName: 'Coinbase' },
+      { name: 'IBKR', displayName: 'IBKR' },
+      { name: 'LHV', displayName: 'LHV' },
+      { name: 'LIGHTYEAR', displayName: 'Lightyear' },
+      { name: 'SWEDBANK', displayName: 'Swedbank' },
+      { name: 'TRADING212', displayName: 'Trading 212' },
+      { name: 'UNKNOWN', displayName: 'Unknown' },
+    ])
+  })
+
   const mockInstruments = [
     createInstrumentDto({
       id: 1,

@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
+import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryService
 import org.slf4j.LoggerFactory
@@ -23,6 +25,7 @@ import java.time.LocalDate
 class PortfolioSummaryController(
   private val summaryService: SummaryService,
   private val summaryCacheService: SummaryCacheService,
+  private val platformSummaryCacheService: PlatformSummaryCacheService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -47,7 +50,10 @@ class PortfolioSummaryController(
   fun getHistoricalPortfolioSummary(
     @RequestParam page: Int,
     @RequestParam size: Int,
+    @RequestParam(required = false) platforms: List<String>?,
   ): Page<PortfolioSummaryDto> {
+    val platformEnums = Platform.parseList(platforms)
+    if (platformEnums != null) return getFilteredHistoricalSummaries(platformEnums, page, size)
     val summaries = summaryCacheService.getAllDailySummaries(page, size)
     if (summaries.isEmpty) return Page.empty(PageRequest.of(page, size))
     val lookup = buildSummaryLookup(summaries.content)
@@ -56,10 +62,40 @@ class PortfolioSummaryController(
 
   @GetMapping("/current")
   @Loggable
-  fun getCurrentPortfolioSummary(): PortfolioSummaryDto {
+  fun getCurrentPortfolioSummary(
+    @RequestParam(required = false) platforms: List<String>?,
+  ): PortfolioSummaryDto {
+    val platformEnums = Platform.parseList(platforms)
+    if (platformEnums != null) return getFilteredCurrentSummary(platformEnums)
     val summary = summaryService.getCurrentDaySummary()
     val profitChange24h = summaryCacheService.calculate24hProfitChange(summary)
     return summary.toDto(profitChange24h)
+  }
+
+  private fun getFilteredCurrentSummary(platforms: List<Platform>): PortfolioSummaryDto {
+    val summary = platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
+    val yesterdaySummary =
+      platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, summary.entryDate.minusDays(1))
+    val profitChange24h = summary.totalProfit.subtract(yesterdaySummary.totalProfit)
+    return summary.toDto(profitChange24h)
+  }
+
+  private fun getFilteredHistoricalSummaries(
+    platforms: List<Platform>,
+    page: Int,
+    size: Int,
+  ): Page<PortfolioSummaryDto> {
+    val summaries = platformSummaryCacheService.getHistoricalSummariesForPlatforms(platforms, page, size)
+    if (summaries.isEmpty) return Page.empty(PageRequest.of(page, size))
+    val oldestDate = summaries.content.minOf { it.entryDate }
+    val previousDaySummary =
+      platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, oldestDate.minusDays(1))
+    val lookup =
+      buildMap {
+        summaries.content.forEach { put(it.entryDate, it) }
+        put(previousDaySummary.entryDate, previousDaySummary)
+      }
+    return summaries.map { it.toDto(lookup) }
   }
 
   private fun buildSummaryLookup(summaries: List<PortfolioDailySummary>): Map<LocalDate, PortfolioDailySummary> {
@@ -77,16 +113,16 @@ class PortfolioSummaryController(
 
   private fun PortfolioDailySummary.toDto(profitChange24h: BigDecimal?) =
     PortfolioSummaryDto(
-    date = entryDate,
-    totalValue = totalValue,
-    xirrAnnualReturn = xirrAnnualReturn,
-    realizedProfit = realizedProfit,
-    unrealizedProfit = unrealizedProfit,
-    totalProfit = totalProfit,
-    earningsPerDay = earningsPerDay,
-    earningsPerMonth = earningsPerDay.multiply(DAYS_PER_MONTH),
-    totalProfitChange24h = profitChange24h,
-  )
+      date = entryDate,
+      totalValue = totalValue,
+      xirrAnnualReturn = xirrAnnualReturn,
+      realizedProfit = realizedProfit,
+      unrealizedProfit = unrealizedProfit,
+      totalProfit = totalProfit,
+      earningsPerDay = earningsPerDay,
+      earningsPerMonth = earningsPerDay.multiply(DAYS_PER_MONTH),
+      totalProfitChange24h = profitChange24h,
+    )
 
   companion object {
     private val DAYS_PER_MONTH = BigDecimal(365.25 / 12)

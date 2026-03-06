@@ -3,6 +3,7 @@ package ee.tenman.portfolio.controller
 import ch.tutteli.atrium.api.fluent.en_GB.inOrder
 import ch.tutteli.atrium.api.fluent.en_GB.only
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.fluent.en_GB.values
 import ch.tutteli.atrium.api.verbs.expect
@@ -71,9 +72,13 @@ class EnumControllerIT {
 
     val response = objectMapper.readValue(result.response.contentAsString, EnumsResponse::class.java)
 
-    expect(response.platforms)
+    val platformNames = response.platforms.map { it.name }
+    expect(platformNames)
       .toHaveSize(Platform.entries.size)
       .toContain(Platform.BINANCE.name, Platform.TRADING212.name)
+
+    val binancePlatform = response.platforms.first { it.name == Platform.BINANCE.name }
+    expect(binancePlatform.displayName).toEqual(Platform.BINANCE.displayName)
 
     expect(response.providers)
       .toHaveSize(ProviderName.entries.size)

@@ -7,6 +7,7 @@ import { instrumentsService } from '../../services/instruments-service'
 import type { InstrumentsResponse, Platform } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
 import { createInstrumentDto } from '../../tests/fixtures'
+import { setPlatformDisplayNames } from '../../utils/platform-utils'
 
 const mockShow = vi.fn()
 const mockHide = vi.fn()
@@ -156,6 +157,17 @@ describe('InstrumentsView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(instrumentsService.getAll).mockResolvedValue(mockResponse)
+    setPlatformDisplayNames([
+      { name: 'AVIVA', displayName: 'Aviva' },
+      { name: 'BINANCE', displayName: 'Binance' },
+      { name: 'COINBASE', displayName: 'Coinbase' },
+      { name: 'IBKR', displayName: 'IBKR' },
+      { name: 'LHV', displayName: 'LHV' },
+      { name: 'LIGHTYEAR', displayName: 'Lightyear' },
+      { name: 'SWEDBANK', displayName: 'Swedbank' },
+      { name: 'TRADING212', displayName: 'Trading 212' },
+      { name: 'UNKNOWN', displayName: 'Unknown' },
+    ])
   })
 
   afterEach(() => {

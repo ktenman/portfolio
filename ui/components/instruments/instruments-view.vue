@@ -72,14 +72,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
-import { useLocalStorage } from '@vueuse/core'
 import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import { usePriceChangePeriod } from '../../composables/use-price-change-period'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAuthState } from '../../composables/use-auth-state'
+import { usePlatformFilter } from '../../composables/use-platform-filter'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
@@ -89,7 +90,6 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
 const selectedItem = ref<InstrumentDto | null>(null)
-const selectedPlatforms = useLocalStorage<string[]>(STORAGE_KEYS.SELECTED_PLATFORMS, [])
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
 const { selectedPeriod, periods } = usePriceChangePeriod()
@@ -123,22 +123,8 @@ const availablePlatforms = computed(() => {
   return Array.from(platformSet).sort()
 })
 
-watch(
-  availablePlatforms,
-  newPlatforms => {
-    if (newPlatforms.length > 0 && selectedPlatforms.value.length === 0) {
-      selectedPlatforms.value = [...newPlatforms]
-    } else if (newPlatforms.length > 0) {
-      const validPlatforms = selectedPlatforms.value.filter(p => newPlatforms.includes(p))
-      if (validPlatforms.length === 0) {
-        selectedPlatforms.value = [...newPlatforms]
-      } else if (validPlatforms.length !== selectedPlatforms.value.length) {
-        selectedPlatforms.value = validPlatforms
-      }
-    }
-  },
-  { immediate: true }
-)
+const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter(STORAGE_KEYS.SELECTED_PLATFORMS, availablePlatforms)
 
 const {
   data: rawItems,
@@ -198,27 +184,6 @@ const saveMutation = useMutation({
   },
 })
 
-const isPlatformSelected = (platform: string): boolean => {
-  return selectedPlatforms.value.includes(platform)
-}
-
-const togglePlatform = (platform: string) => {
-  const index = selectedPlatforms.value.indexOf(platform)
-  if (index > -1) {
-    selectedPlatforms.value = selectedPlatforms.value.filter(p => p !== platform)
-  } else {
-    selectedPlatforms.value = [...selectedPlatforms.value, platform]
-  }
-}
-
-const toggleAllPlatforms = () => {
-  if (selectedPlatforms.value.length === availablePlatforms.value.length) {
-    selectedPlatforms.value = []
-  } else {
-    selectedPlatforms.value = [...availablePlatforms.value]
-  }
-}
-
 const openAddModal = () => {
   selectedItem.value = null
   showModal()
@@ -245,64 +210,9 @@ const handleTitleClick = async () => {
 
 <style scoped>
 .platform-filter-container {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  background: transparent;
   gap: 1rem;
   width: 100%;
   position: relative;
-}
-
-.platform-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.platform-separator {
-  width: 1px;
-  height: 1.25rem;
-  background-color: #d1d5db;
-  display: inline-block;
-}
-
-.platform-btn {
-  padding: 0.3125rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #6b7280;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-}
-
-.platform-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #4b5563;
-}
-
-.platform-btn:active {
-  background: #f1f5f9;
-  transform: scale(0.98);
-}
-
-.platform-btn.active {
-  background: #4b5563;
-  color: white;
-  border-color: #4b5563;
-  font-weight: 500;
-}
-
-.platform-btn.active:hover {
-  background: #374151;
-  border-color: #374151;
-  color: white;
 }
 
 .controls-row {
@@ -412,17 +322,7 @@ const handleTitleClick = async () => {
 
 @media (max-width: 768px) {
   .platform-filter-container {
-    flex-direction: column;
-    align-items: flex-start;
     gap: 0.75rem;
-  }
-
-  .platform-buttons {
-    width: 100%;
-  }
-
-  .platform-separator {
-    display: none;
   }
 
   .controls-row {
@@ -435,12 +335,6 @@ const handleTitleClick = async () => {
 
   .period-select {
     flex: 1;
-  }
-}
-
-@media (min-width: 769px) {
-  .platform-filter-container {
-    align-items: center;
   }
 }
 

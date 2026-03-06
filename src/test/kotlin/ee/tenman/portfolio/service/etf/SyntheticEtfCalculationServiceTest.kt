@@ -61,7 +61,6 @@ class SyntheticEtfCalculationServiceTest {
       val holding = createHolding(null, "Apple Inc")
       val position = createPosition(holding)
       every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position)
-      every { instrumentRepository.findBySymbolIn(emptyList()) } returns emptyList()
 
       val result = service.hasActiveHoldings(1L)
 
@@ -75,8 +74,15 @@ class SyntheticEtfCalculationServiceTest {
       val instrument = createInstrument("AAPL", BigDecimal("150.00"))
       every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position)
       every { instrumentRepository.findBySymbolIn(listOf("AAPL")) } returns listOf(instrument)
-      every { transactionCalculationService.batchCalculateNetQuantities(listOf(instrument.id)) } returns
-        mapOf(instrument.id to BigDecimal("10"))
+      every { transactionCalculationService.batchCalculateAll(listOf(instrument.id)) } returns
+        mapOf(
+          instrument.id to
+            InstrumentTransactionData(
+              netQuantity = BigDecimal("10"),
+              platforms = setOf(Platform.BINANCE),
+              quantityByPlatform = mapOf(Platform.BINANCE to BigDecimal("10")),
+            ),
+        )
 
       val result = service.hasActiveHoldings(1L)
 
@@ -90,12 +96,63 @@ class SyntheticEtfCalculationServiceTest {
       val instrument = createInstrument("AAPL", BigDecimal("150.00"))
       every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position)
       every { instrumentRepository.findBySymbolIn(listOf("AAPL")) } returns listOf(instrument)
-      every { transactionCalculationService.batchCalculateNetQuantities(listOf(instrument.id)) } returns
-        mapOf(instrument.id to BigDecimal.ZERO)
+      every { transactionCalculationService.batchCalculateAll(listOf(instrument.id)) } returns
+        mapOf(
+          instrument.id to
+            InstrumentTransactionData(
+              netQuantity = BigDecimal.ZERO,
+              platforms = emptySet(),
+              quantityByPlatform = emptyMap(),
+            ),
+        )
 
       val result = service.hasActiveHoldings(1L)
 
       expect(result).toEqual(false)
+    }
+
+    @Test
+    fun `should return false when platform filter excludes all holdings`() {
+      val holding = createHolding("AAPL", "Apple Inc")
+      val position = createPosition(holding)
+      val instrument = createInstrument("AAPL", BigDecimal("150.00"))
+      every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position)
+      every { instrumentRepository.findBySymbolIn(listOf("AAPL")) } returns listOf(instrument)
+      every { transactionCalculationService.batchCalculateAll(listOf(instrument.id)) } returns
+        mapOf(
+          instrument.id to
+            InstrumentTransactionData(
+              netQuantity = BigDecimal("10"),
+              platforms = setOf(Platform.BINANCE),
+              quantityByPlatform = mapOf(Platform.BINANCE to BigDecimal("10")),
+            ),
+        )
+
+      val result = service.hasActiveHoldings(1L, setOf(Platform.LHV))
+
+      expect(result).toEqual(false)
+    }
+
+    @Test
+    fun `should return true when platform filter matches holdings`() {
+      val holding = createHolding("AAPL", "Apple Inc")
+      val position = createPosition(holding)
+      val instrument = createInstrument("AAPL", BigDecimal("150.00"))
+      every { etfPositionRepository.findLatestPositionsByEtfId(1L) } returns listOf(position)
+      every { instrumentRepository.findBySymbolIn(listOf("AAPL")) } returns listOf(instrument)
+      every { transactionCalculationService.batchCalculateAll(listOf(instrument.id)) } returns
+        mapOf(
+          instrument.id to
+            InstrumentTransactionData(
+              netQuantity = BigDecimal("10"),
+              platforms = setOf(Platform.BINANCE),
+              quantityByPlatform = mapOf(Platform.BINANCE to BigDecimal("10")),
+            ),
+        )
+
+      val result = service.hasActiveHoldings(1L, setOf(Platform.BINANCE))
+
+      expect(result).toEqual(true)
     }
 
     @Test

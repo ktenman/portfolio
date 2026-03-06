@@ -7,6 +7,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PlatformDto
 import ee.tenman.portfolio.domain.ProviderName
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -23,8 +24,9 @@ class EnumServiceTest {
   fun `should return all enum values in sorted order when retrieving enums`() {
     val response = enumService.getAllEnums()
 
-    expect(response.platforms)
-      .toEqual(response.platforms.sorted())
+    val platformNames = response.platforms.map { it.name }
+    expect(platformNames)
+      .toEqual(platformNames.sorted())
       .toHaveSize(Platform.entries.size)
 
     expect(response.providers)
@@ -46,8 +48,15 @@ class EnumServiceTest {
   fun `should return expected enum values when retrieving enums`() {
     val response = enumService.getAllEnums()
 
-    expect(response.platforms)
+    val platformNames = response.platforms.map { it.name }
+    expect(platformNames)
       .toContainExactly("AVIVA", "BINANCE", "COINBASE", "IBKR", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
+
+    val binance = response.platforms.first { it.name == "BINANCE" }
+    expect(binance).toEqual(PlatformDto(name = "BINANCE", displayName = "Binance"))
+
+    val trading212 = response.platforms.first { it.name == "TRADING212" }
+    expect(trading212).toEqual(PlatformDto(name = "TRADING212", displayName = "Trading 212"))
 
     expect(response.providers).toContainExactly("BINANCE", "FT", "LIGHTYEAR", "MANUAL", "SYNTHETIC", "TRADING212")
 

@@ -1,13 +1,21 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import AllocationTable from './allocation-table.vue'
+import { setPlatformDisplayNames } from '../../utils/platform-utils'
 
 vi.mock('@vueuse/core', () => ({
   useLocalStorage: vi.fn(<T>(_key: string, defaultValue: T) => ref(defaultValue)),
 }))
 
 describe('AllocationTable', () => {
+  beforeAll(() => {
+    setPlatformDisplayNames([
+      { name: 'LHV', displayName: 'LHV' },
+      { name: 'LIGHTYEAR', displayName: 'Lightyear' },
+      { name: 'TRADING212', displayName: 'Trading 212' },
+    ])
+  })
   const defaultEtfs = [
     {
       instrumentId: 1,

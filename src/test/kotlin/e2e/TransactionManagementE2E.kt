@@ -146,11 +146,12 @@ class TransactionManagementE2E {
 
     val platformButtons = elements(className("platform-btn"))
     val binanceButton = platformButtons.findBy(text("Binance"))
+    val initialActiveState = binanceButton.getAttribute("class")?.contains("active") ?: false
     binanceButton.click()
     Thread.sleep(500)
 
-    val binanceActive = binanceButton.getAttribute("class")?.contains("active") ?: false
-    expect(binanceActive).toEqual(true)
+    val newActiveState = binanceButton.getAttribute("class")?.contains("active") ?: false
+    expect(newActiveState).toEqual(!initialActiveState)
   }
 
   @Test
@@ -158,17 +159,17 @@ class TransactionManagementE2E {
     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
     Thread.sleep(500)
 
-    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All"))
-    selectAllButton.shouldBe(visible).click()
-    Thread.sleep(500)
-
     val clearAllButton = elements(className("platform-btn")).findBy(text("Clear All"))
-    expect(clearAllButton.isDisplayed).toEqual(true)
-
-    clearAllButton.click()
+    clearAllButton.shouldBe(visible).click()
     Thread.sleep(500)
 
-    val selectAllButtonAgain = elements(className("platform-btn")).findBy(text("Select All"))
-    expect(selectAllButtonAgain.isDisplayed).toEqual(true)
+    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All"))
+    expect(selectAllButton.isDisplayed).toEqual(true)
+
+    selectAllButton.click()
+    Thread.sleep(500)
+
+    val clearAllButtonAgain = elements(className("platform-btn")).findBy(text("Clear All"))
+    expect(clearAllButtonAgain.isDisplayed).toEqual(true)
   }
 }

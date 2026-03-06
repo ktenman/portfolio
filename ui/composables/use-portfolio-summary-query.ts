@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/vue-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
 import {
@@ -8,11 +8,16 @@ import {
 } from '../services/summary-aggregator'
 import { useAuthState } from './use-auth-state'
 
-export function usePortfolioSummaryQuery() {
+export function usePortfolioSummaryQuery(selectedPlatforms?: Ref<string[]>) {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
   const pageSize = 186
   const { isAuthenticated } = useAuthState()
+
+  const platformsKey = computed(() => selectedPlatforms?.value ?? [])
+  const activePlatforms = computed(() =>
+    platformsKey.value.length > 0 ? platformsKey.value : undefined
+  )
 
   const {
     data: historicalData,
@@ -22,8 +27,9 @@ export function usePortfolioSummaryQuery() {
     isLoading: isLoadingHistorical,
     error: historicalError,
   } = useInfiniteQuery({
-    queryKey: ['portfolio-summary', 'historical'],
-    queryFn: ({ pageParam = 0 }) => portfolioSummaryService.getHistorical(pageParam, pageSize),
+    queryKey: ['portfolio-summary', 'historical', platformsKey],
+    queryFn: ({ pageParam = 0 }) =>
+      portfolioSummaryService.getHistorical(pageParam, pageSize, activePlatforms.value),
     getNextPageParam: (lastPage, allPages) => {
       if (allPages.length < lastPage.totalPages) {
         return allPages.length
@@ -35,8 +41,8 @@ export function usePortfolioSummaryQuery() {
   })
 
   const { data: currentSummary, isLoading: isLoadingCurrent } = useQuery({
-    queryKey: ['portfolio-summary', 'current'],
-    queryFn: portfolioSummaryService.getCurrent,
+    queryKey: ['portfolio-summary', 'current', platformsKey],
+    queryFn: () => portfolioSummaryService.getCurrent(activePlatforms.value),
     enabled: isAuthenticated,
   })
 

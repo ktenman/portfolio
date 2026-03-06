@@ -70,6 +70,42 @@ describe('portfolioSummaryService', () => {
       expect(result).toEqual(mockPage)
     })
 
+    it('should pass platforms as query params when provided', async () => {
+      const mockPage: Page<PortfolioSummaryDto> = {
+        content: [mockPortfolioSummary],
+        totalElements: 1,
+        totalPages: 1,
+        size: 10,
+        number: 0,
+      }
+
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPage)
+
+      await portfolioSummaryService.getHistorical(0, 10, ['LIGHTYEAR', 'TRADING212'])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/historical', {
+        params: { page: 0, size: 10, platforms: ['LIGHTYEAR', 'TRADING212'] },
+      })
+    })
+
+    it('should not include platforms param when array is empty', async () => {
+      const mockPage: Page<PortfolioSummaryDto> = {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+      }
+
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPage)
+
+      await portfolioSummaryService.getHistorical(0, 10, [])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/historical', {
+        params: { page: 0, size: 10 },
+      })
+    })
+
     it('should propagate errors on getHistorical', async () => {
       const error = new Error('Failed to fetch historical data')
       vi.mocked(httpClient.get).mockRejectedValueOnce(error)
@@ -86,8 +122,30 @@ describe('portfolioSummaryService', () => {
 
       const result = await portfolioSummaryService.getCurrent()
 
-      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/current')
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/current', {
+        params: {},
+      })
       expect(result).toEqual(mockPortfolioSummary)
+    })
+
+    it('should pass platforms as query params when provided', async () => {
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPortfolioSummary)
+
+      await portfolioSummaryService.getCurrent(['LIGHTYEAR'])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/current', {
+        params: { platforms: ['LIGHTYEAR'] },
+      })
+    })
+
+    it('should not include platforms param when array is empty', async () => {
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPortfolioSummary)
+
+      await portfolioSummaryService.getCurrent([])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/current', {
+        params: {},
+      })
     })
 
     it('should propagate errors on getCurrent', async () => {

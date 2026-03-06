@@ -2,15 +2,21 @@ package ee.tenman.portfolio.service.summary
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Service
 class SummaryService(
@@ -25,6 +31,8 @@ class SummaryService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  private val transactionSortOrder = compareBy<PortfolioTransaction>({ it.transactionDate }, { it.id })
+
   @Transactional
   fun deleteAllDailySummaries() {
     log.info("Deleting all portfolio daily summaries")
@@ -38,7 +46,7 @@ class SummaryService(
     val transactions =
       transactionService
         .getAllTransactions()
-        .sortedWith(compareBy({ it.transactionDate }, { it.id }))
+        .sortedWith(transactionSortOrder)
     if (transactions.isEmpty()) {
       log.info("No transactions found. Nothing to recalculate")
       return 0
@@ -53,6 +61,67 @@ class SummaryService(
     log.info("Successfully recalculated and saved $summariesSaved daily summaries (excluding current day)")
     clearAllCaches()
     return summariesSaved
+  }
+
+  fun getSummaryForPlatformsOnDate(
+    platforms: List<Platform>,
+    date: LocalDate,
+  ): PortfolioDailySummary {
+    val transactions = fetchFilteredTransactions(platforms, date)
+    return dailySummaryCalculator.calculateFromTransactions(transactions, date)
+  }
+
+  fun getCurrentDaySummaryForPlatforms(platforms: List<Platform>): PortfolioDailySummary =
+    getSummaryForPlatformsOnDate(platforms, LocalDate.now(clock))
+
+  fun getHistoricalSummariesForPlatforms(
+    platforms: List<Platform>,
+    page: Int,
+    size: Int,
+  ): Page<PortfolioDailySummary> {
+    val pageRequest = PageRequest.of(page, size)
+    val sortedTransactions =
+      transactionService
+        .getAllTransactions(platforms.map { it.name })
+        .sortedWith(transactionSortOrder)
+    val yesterday = LocalDate.now(clock).minusDays(1)
+    val firstDate = sortedTransactions.firstOrNull()?.transactionDate
+    if (firstDate == null || firstDate.isAfter(yesterday)) return Page.empty(pageRequest)
+    val totalDates = ChronoUnit.DAYS.between(firstDate, yesterday).toInt() + 1
+    val start = page * size
+    if (start >= totalDates) return Page.empty(pageRequest)
+    val end = minOf(start + size, totalDates)
+    val pageStartDate = yesterday.minusDays(end.toLong() - 1)
+    val pageEndDate = yesterday.minusDays(start.toLong())
+    val pageDates = generateDateRange(pageStartDate, pageEndDate)
+    val summaries = calculateSummariesForDates(pageDates, sortedTransactions)
+    return PageImpl(summaries.reversed(), pageRequest, totalDates.toLong())
+  }
+
+  private fun fetchFilteredTransactions(
+    platforms: List<Platform>,
+    upToDate: LocalDate,
+  ): List<PortfolioTransaction> =
+    transactionService
+      .getAllTransactions(platforms.map { it.name })
+      .filter { !it.transactionDate.isAfter(upToDate) }
+      .sortedWith(transactionSortOrder)
+
+  private fun calculateSummariesForDates(
+    sortedDates: List<LocalDate>,
+    sortedTransactions: List<PortfolioTransaction>,
+  ): List<PortfolioDailySummary> {
+    var transactionIndex = 0
+    val accumulated = mutableListOf<PortfolioTransaction>()
+    return sortedDates.map { date ->
+      while (transactionIndex < sortedTransactions.size &&
+        !sortedTransactions[transactionIndex].transactionDate.isAfter(date)
+      ) {
+        accumulated.add(sortedTransactions[transactionIndex])
+        transactionIndex++
+      }
+      dailySummaryCalculator.calculateFromTransactions(accumulated.toList(), date)
+    }
   }
 
   private fun clearAllCaches() {
@@ -118,14 +187,7 @@ class SummaryService(
       transactionService
       .getAllTransactions()
       .filter { it.transactionDate.isEqual(date) }
-
-    if (transactionsOnDate.isEmpty()) {
-      val previousSummary = tryUsePreviousDaySummary(date)
-      if (previousSummary != null) {
-        return previousSummary
-      }
-    }
-
+    if (transactionsOnDate.isEmpty()) return tryUsePreviousDaySummary(date) ?: calculateSummaryDetailsForDate(date)
     return calculateSummaryDetailsForDate(date)
   }
 
@@ -151,7 +213,7 @@ class SummaryService(
       transactionService
         .getAllTransactions()
         .filter { !it.transactionDate.isAfter(date) }
-        .sortedWith(compareBy({ it.transactionDate }, { it.id }))
+        .sortedWith(transactionSortOrder)
     return dailySummaryCalculator.calculateFromTransactions(transactions, date)
   }
 

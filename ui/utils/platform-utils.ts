@@ -1,15 +1,10 @@
-export const formatPlatformName = (platform: string): string => {
-  const platformMap: Record<string, string> = {
-    TRADING212: 'Trading 212',
-    LIGHTYEAR: 'Lightyear',
-    SWEDBANK: 'Swedbank',
-    BINANCE: 'Binance',
-    COINBASE: 'Coinbase',
-    LHV: 'LHV',
-    AVIVA: 'Aviva',
-    IBKR: 'IBKR',
-    UNKNOWN: 'Unknown',
-  }
+import type { PlatformDto } from '../models/generated/domain-models'
 
-  return platformMap[platform] || platform
+let platformDisplayNames: Record<string, string> = {}
+
+export const setPlatformDisplayNames = (platforms: PlatformDto[]) => {
+  platformDisplayNames = Object.fromEntries(platforms.map(p => [p.name, p.displayName]))
 }
+
+export const formatPlatformName = (platform: string): string =>
+  platformDisplayNames[platform] || platform
