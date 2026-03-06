@@ -21,6 +21,8 @@ export const transactionsService = {
     return httpClient.get<TransactionsWithSummaryDto>(API_ENDPOINTS.TRANSACTIONS, { params })
   },
 
+  getPlatforms: () => httpClient.get<string[]>(API_ENDPOINTS.TRANSACTIONS_PLATFORMS),
+
   create: (data: Partial<TransactionRequestDto>) =>
     httpClient.post<TransactionResponseDto>(API_ENDPOINTS.TRANSACTIONS, data),
 

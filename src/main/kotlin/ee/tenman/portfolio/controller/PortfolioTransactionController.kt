@@ -53,6 +53,10 @@ class PortfolioTransactionController(
     return TransactionResponseDto.fromEntity(savedTransaction)
   }
 
+  @GetMapping("/platforms")
+  @Loggable
+  fun getDistinctPlatforms(): List<String> = transactionService.getDistinctPlatforms().map { it.name }
+
   @GetMapping
   @Loggable
   fun getAllTransactions(

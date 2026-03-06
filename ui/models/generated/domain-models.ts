@@ -149,6 +149,19 @@ export interface EtfDetailDto extends Serializable {
     currentPrice: number | null;
 }
 
+export interface PlatformDto {
+    name: string;
+    displayName: string;
+}
+
+export interface EnumsResponse {
+    platforms: PlatformDto[];
+    providers: string[];
+    transactionTypes: string[];
+    categories: string[];
+    currencies: string[];
+}
+
 export interface Serializable {
 }
 

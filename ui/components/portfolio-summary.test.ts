@@ -1,7 +1,80 @@
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect } from 'vitest'
 import { formatCurrencyWithSymbol } from '../utils/formatters'
+import { formatPlatformName, setPlatformDisplayNames } from '../utils/platform-utils'
 
 describe('PortfolioSummary', () => {
+  describe('platform filter', () => {
+    const availablePlatforms = [
+      'AVIVA',
+      'BINANCE',
+      'COINBASE',
+      'IBKR',
+      'LHV',
+      'LIGHTYEAR',
+      'SWEDBANK',
+      'TRADING212',
+    ]
+
+    beforeEach(() => {
+      setPlatformDisplayNames([
+        { name: 'AVIVA', displayName: 'Aviva' },
+        { name: 'BINANCE', displayName: 'Binance' },
+        { name: 'COINBASE', displayName: 'Coinbase' },
+        { name: 'IBKR', displayName: 'IBKR' },
+        { name: 'LHV', displayName: 'LHV' },
+        { name: 'LIGHTYEAR', displayName: 'Lightyear' },
+        { name: 'SWEDBANK', displayName: 'Swedbank' },
+        { name: 'TRADING212', displayName: 'Trading 212' },
+      ])
+    })
+
+    it('should format all available platform names', () => {
+      const formatted = availablePlatforms.map(formatPlatformName)
+      expect(formatted).toContain('Trading 212')
+      expect(formatted).toContain('Lightyear')
+      expect(formatted).toContain('Binance')
+      expect(formatted).toContain('LHV')
+    })
+
+    it('should toggle platform selection correctly', () => {
+      let selected: string[] = []
+      const toggle = (platform: string) => {
+        const index = selected.indexOf(platform)
+        if (index > -1) {
+          selected = selected.filter(p => p !== platform)
+        } else {
+          selected = [...selected, platform]
+        }
+      }
+
+      toggle('LIGHTYEAR')
+      expect(selected).toEqual(['LIGHTYEAR'])
+
+      toggle('TRADING212')
+      expect(selected).toEqual(['LIGHTYEAR', 'TRADING212'])
+
+      toggle('LIGHTYEAR')
+      expect(selected).toEqual(['TRADING212'])
+    })
+
+    it('should toggle all platforms', () => {
+      let selected: string[] = []
+      const toggleAll = () => {
+        if (selected.length === availablePlatforms.length) {
+          selected = []
+        } else {
+          selected = [...availablePlatforms]
+        }
+      }
+
+      toggleAll()
+      expect(selected).toHaveLength(availablePlatforms.length)
+
+      toggleAll()
+      expect(selected).toHaveLength(0)
+    })
+  })
+
   describe('format24hChange', () => {
     const format24hChange = (value: number | null) => {
       if (value === null || value === 0 || Math.abs(value) <= 0.01) {

@@ -5,7 +5,11 @@ vi.mock('../services/enum-service')
 
 describe('useEnumValues', () => {
   const mockEnumData = {
-    platforms: ['DEGIRO', 'TRADING212', 'BINANCE'],
+    platforms: [
+      { name: 'DEGIRO', displayName: 'Degiro' },
+      { name: 'TRADING212', displayName: 'Trading 212' },
+      { name: 'BINANCE', displayName: 'Binance' },
+    ],
     providers: ['BINANCE', 'FT', 'LIGHTYEAR', 'TRADING212'],
     transactionTypes: ['BUY', 'SELL'],
     categories: ['STOCK', 'ETF', 'CRYPTO'],
@@ -31,7 +35,7 @@ describe('useEnumValues', () => {
       // NOTE: Testing the business logic of enum transformation
       expect(platformOptions.value).toEqual([
         { value: 'DEGIRO', text: 'Degiro' },
-        { value: 'TRADING212', text: 'Trading212' },
+        { value: 'TRADING212', text: 'Trading 212' },
         { value: 'BINANCE', text: 'Binance' },
       ])
 
@@ -63,10 +67,13 @@ describe('useEnumValues', () => {
       expect(enumService.getAll).toHaveBeenCalledTimes(1)
     })
 
-    it('should handle special formatting for underscored values', async () => {
+    it('should use display names from PlatformDto', async () => {
       vi.mocked(enumService.getAll).mockResolvedValue({
         ...mockEnumData,
-        platforms: ['TEST_PLATFORM_NAME', 'ANOTHER_TEST'],
+        platforms: [
+          { name: 'TEST_PLATFORM', displayName: 'Test Platform' },
+          { name: 'ANOTHER_TEST', displayName: 'Another Test' },
+        ],
       })
 
       vi.resetModules()
@@ -74,9 +81,8 @@ describe('useEnumValues', () => {
       const { loadAll, platformOptions } = freshUseEnumValues()
       await loadAll()
 
-      // NOTE: Business requirement - format underscored enum values for display
       expect(platformOptions.value).toEqual([
-        { value: 'TEST_PLATFORM_NAME', text: 'Test Platform Name' },
+        { value: 'TEST_PLATFORM', text: 'Test Platform' },
         { value: 'ANOTHER_TEST', text: 'Another Test' },
       ])
     })

@@ -18,7 +18,9 @@ class RedisConfiguration {
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(1))
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(3))
     cacheConfigurations[TRANSACTION_CACHE] =
-      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(1))
+      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5))
+    cacheConfigurations[PLATFORM_SUMMARY_CACHE] =
+      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[ETF_LOGOS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     cacheConfigurations[EASTER_HOLIDAYS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     cacheConfigurations[ETF_BREAKDOWN_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(2))
@@ -49,6 +51,7 @@ class RedisConfiguration {
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v3"
     const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs-v3"
     const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config-v3"
+    const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v3"
     const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
