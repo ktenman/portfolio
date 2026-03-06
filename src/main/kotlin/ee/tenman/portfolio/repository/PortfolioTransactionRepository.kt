@@ -87,4 +87,7 @@ interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, L
     """,
   )
   fun findAllByInstrumentIds(instrumentIds: List<Long>): List<PortfolioTransaction>
+
+  @Query("SELECT DISTINCT pt.platform FROM PortfolioTransaction pt ORDER BY pt.platform")
+  fun findDistinctPlatforms(): List<Platform>
 }

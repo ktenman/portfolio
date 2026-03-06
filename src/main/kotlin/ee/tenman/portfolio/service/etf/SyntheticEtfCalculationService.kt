@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentCategory
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.model.holding.InternalHoldingData
 import ee.tenman.portfolio.model.holding.SyntheticHoldingValue
 import ee.tenman.portfolio.repository.EtfPositionRepository
@@ -20,21 +21,25 @@ class SyntheticEtfCalculationService(
   private val transactionCalculationService: TransactionCalculationService,
   private val dailyPriceService: DailyPriceService,
 ) {
-  fun hasActiveHoldings(syntheticEtfId: Long): Boolean {
+  fun hasActiveHoldings(
+    syntheticEtfId: Long,
+    platformFilter: Set<Platform>? = null,
+  ): Boolean {
     val positions = etfPositionRepository.findLatestPositionsByEtfId(syntheticEtfId)
     val tickers = positions.mapNotNull { it.holding.ticker }
     if (tickers.isEmpty()) return false
     val instruments = instrumentRepository.findBySymbolIn(tickers)
     if (instruments.isEmpty()) return false
-    val quantities = transactionCalculationService.batchCalculateNetQuantities(instruments.map { it.id })
-    return quantities.values.any { it > BigDecimal.ZERO }
+    val transactionData = transactionCalculationService.batchCalculateAll(instruments.map { it.id })
+    return transactionData.values.any { it.quantityForPlatforms(platformFilter) > BigDecimal.ZERO }
   }
 
   fun buildHoldings(
     positions: List<EtfPosition>,
     etfSymbol: String,
+    platformFilter: Set<Platform>? = null,
   ): List<InternalHoldingData> {
-    val (holdingValues, instrumentsByTicker) = calculateHoldingValuesWithInstruments(positions)
+    val (holdingValues, instrumentsByTicker) = calculateHoldingValuesWithInstruments(positions, platformFilter)
     return holdingValues.map { h ->
       val holding = h.position.holding
       val ticker = holding.ticker
@@ -63,11 +68,14 @@ class SyntheticEtfCalculationService(
         ?.takeIf { it.equals(InstrumentCategory.CRYPTO.name, ignoreCase = true) }
         ?.let { IndustrySector.CRYPTOCURRENCY.displayName }
 
-  fun calculateHoldingValues(positions: List<EtfPosition>): List<SyntheticHoldingValue> =
-    calculateHoldingValuesWithInstruments(positions).first
+  fun calculateHoldingValues(
+    positions: List<EtfPosition>,
+    platformFilter: Set<Platform>? = null,
+  ): List<SyntheticHoldingValue> = calculateHoldingValuesWithInstruments(positions, platformFilter).first
 
   private fun calculateHoldingValuesWithInstruments(
     positions: List<EtfPosition>,
+    platformFilter: Set<Platform>? = null,
   ): Pair<List<SyntheticHoldingValue>, Map<String, Instrument>> {
     val tickers = positions.mapNotNull { it.holding.ticker }
     if (tickers.isEmpty()) return Pair(emptyList(), emptyMap())
@@ -78,20 +86,26 @@ class SyntheticEtfCalculationService(
         val ticker = pos.holding.ticker ?: return@mapNotNull null
         val instrument = instrumentsByTicker[ticker] ?: return@mapNotNull null
         val data = transactionData[instrument.id] ?: return@mapNotNull null
+        val quantity = data.quantityForPlatforms(platformFilter)
+        if (quantity <= BigDecimal.ZERO) return@mapNotNull null
         val price = dailyPriceService.getCurrentPrice(instrument)
-        val value = data.netQuantity.multiply(price)
-        SyntheticHoldingValue(pos, value, data.platforms)
+        val value = quantity.multiply(price)
+        val platforms = data.platformsForFilter(platformFilter)
+        SyntheticHoldingValue(pos, value, platforms)
       }
     return Pair(holdingValues, instrumentsByTicker)
   }
 
-  fun calculateTotalValue(etfs: List<Instrument>): BigDecimal {
+  fun calculateTotalValue(
+    etfs: List<Instrument>,
+    platformFilter: Set<Platform>? = null,
+  ): BigDecimal {
     if (etfs.isEmpty()) return BigDecimal.ZERO
     val allPositions = etfPositionRepository.findLatestPositionsByEtfIds(etfs.map { it.id })
     val positionsByEtfId = allPositions.groupBy { it.etfInstrument.id }
     return etfs.fold(BigDecimal.ZERO) { acc, etf ->
       val positions = positionsByEtfId[etf.id] ?: emptyList()
-      val holdingValues = calculateHoldingValues(positions)
+      val holdingValues = calculateHoldingValues(positions, platformFilter)
       val syntheticValue = holdingValues.fold(BigDecimal.ZERO) { sum, h -> sum.add(h.value) }
       acc.add(syntheticValue)
     }

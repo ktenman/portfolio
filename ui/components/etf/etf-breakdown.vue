@@ -103,6 +103,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
+import { usePlatformFilter } from '../../composables/use-platform-filter'
 import { etfBreakdownService } from '../../services/etf-breakdown-service'
 import { logoService } from '../../services/logo-service'
 import {
@@ -124,7 +125,6 @@ const isLoading = ref(false)
 const isError = ref(false)
 const errorMessage = ref('')
 const selectedEtfs = useLocalStorage<string[]>('portfolio_selected_etfs', [])
-const selectedPlatforms = useLocalStorage<string[]>('portfolio_etf_breakdown_platforms', [])
 const searchQuery = useLocalStorage<string>('portfolio_etf_search', '')
 const debouncedSearchQuery = refDebounced(searchQuery, 200)
 
@@ -149,6 +149,9 @@ const etfPlatformMetadata = computed(() => {
 
 const availablePlatforms = computed(() => etfPlatformMetadata.value.platforms)
 
+const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter('portfolio_etf_breakdown_platforms', availablePlatforms)
+
 const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
 
 watch(
@@ -162,23 +165,6 @@ watch(
         selectedEtfs.value = [...newEtfs]
       } else if (validEtfs.length !== selectedEtfs.value.length) {
         selectedEtfs.value = validEtfs
-      }
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  availablePlatforms,
-  newPlatforms => {
-    if (newPlatforms.length > 0 && selectedPlatforms.value.length === 0) {
-      selectedPlatforms.value = [...newPlatforms]
-    } else if (newPlatforms.length > 0) {
-      const validPlatforms = selectedPlatforms.value.filter(p => newPlatforms.includes(p))
-      if (validPlatforms.length === 0) {
-        selectedPlatforms.value = [...newPlatforms]
-      } else if (validPlatforms.length !== selectedPlatforms.value.length) {
-        selectedPlatforms.value = validPlatforms
       }
     }
   },
@@ -282,27 +268,6 @@ const clearSearch = () => {
   searchQuery.value = ''
 }
 
-const isPlatformSelected = (platform: string): boolean => {
-  return selectedPlatforms.value.includes(platform)
-}
-
-const togglePlatform = (platform: string) => {
-  const index = selectedPlatforms.value.indexOf(platform)
-  if (index > -1) {
-    selectedPlatforms.value = selectedPlatforms.value.filter(p => p !== platform)
-  } else {
-    selectedPlatforms.value = [...selectedPlatforms.value, platform]
-  }
-}
-
-const toggleAllPlatforms = () => {
-  if (selectedPlatforms.value.length === availablePlatforms.value.length) {
-    selectedPlatforms.value = []
-  } else {
-    selectedPlatforms.value = [...availablePlatforms.value]
-  }
-}
-
 const prefetchLogoCandidates = () => {
   const uuids = masterHoldings.value
     .map(h => h.holdingUuid)
@@ -383,62 +348,14 @@ onMounted(async () => {
   color: white;
 }
 
-.platform-filter-container {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  background: transparent;
-}
-
-.platform-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.platform-separator {
-  width: 1px;
-  height: 1.25rem;
-  background-color: #d1d5db;
-  display: inline-block;
-}
-
-.platform-btn {
-  padding: 0.3125rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #6b7280;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-}
-
-.platform-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #4b5563;
-}
-
-.platform-btn:active {
-  background: #f1f5f9;
-  transform: scale(0.98);
-}
-
 .platform-btn.active {
   background: #0072b2;
-  color: white;
   border-color: #0072b2;
-  font-weight: 500;
 }
 
 .platform-btn.active:hover {
   background: #005a8c;
   border-color: #005a8c;
-  color: white;
 }
 
 .search-container {
@@ -513,20 +430,6 @@ onMounted(async () => {
   }
 
   .etf-separator {
-    display: none;
-  }
-
-  .platform-filter-container {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.375rem;
-  }
-
-  .platform-buttons {
-    width: 100%;
-  }
-
-  .platform-separator {
     display: none;
   }
 

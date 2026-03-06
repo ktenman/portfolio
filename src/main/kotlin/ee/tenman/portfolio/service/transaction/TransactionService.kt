@@ -85,6 +85,9 @@ class TransactionService(
     }.getOrThrow()
 
   @Transactional(readOnly = true)
+  fun getDistinctPlatforms(): List<Platform> = portfolioTransactionRepository.findDistinctPlatforms()
+
+  @Transactional(readOnly = true)
   fun getAllTransactions(): List<PortfolioTransaction> = transactionCacheService.getAllTransactions()
 
   @Transactional(readOnly = true)

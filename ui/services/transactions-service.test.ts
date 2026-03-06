@@ -96,6 +96,27 @@ describe('transactionsService', () => {
     })
   })
 
+  describe('getPlatforms', () => {
+    it('should fetch distinct platform names', async () => {
+      const mockPlatforms = ['BINANCE', 'LHV', 'LIGHTYEAR']
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockPlatforms)
+
+      const result = await transactionsService.getPlatforms()
+
+      expect(httpClient.get).toHaveBeenCalledWith('/transactions/platforms')
+      expect(result).toEqual(mockPlatforms)
+    })
+
+    it('should handle empty platform list', async () => {
+      vi.mocked(httpClient.get).mockResolvedValueOnce([])
+
+      const result = await transactionsService.getPlatforms()
+
+      expect(httpClient.get).toHaveBeenCalledWith('/transactions/platforms')
+      expect(result).toEqual([])
+    })
+  })
+
   describe('create', () => {
     it('should create a new transaction', async () => {
       const newTransaction = {
