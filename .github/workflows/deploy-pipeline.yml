@@ -103,7 +103,7 @@ jobs:
               docker compose pull && break || { echo \"Pull attempt \$i failed, retrying in 15s...\"; sleep 15; }; \
             done && \
             echo 'Starting containers...' && \
-            docker compose up -d --build --force-recreate --remove-orphans && \
+            docker compose up -d --remove-orphans && \
             echo 'Waiting for services to become healthy...' && \
             for i in \$(seq 1 30); do \
               HEALTHY=\$(docker ps --filter 'health=healthy' --format '{{.Names}}' | wc -l); \
