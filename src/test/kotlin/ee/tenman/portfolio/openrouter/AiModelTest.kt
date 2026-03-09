@@ -14,24 +14,17 @@ class AiModelTest {
   }
 
   @Test
-  fun `should return GEMINI_2_5_FLASH for matching model id`() {
-    val result = AiModel.fromModelId("google/gemini-2.5-flash")
+  fun `should return CLAUDE_SONNET_4_6 for matching model id`() {
+    val result = AiModel.fromModelId("anthropic/claude-sonnet-4.6")
 
-    expect(result).toEqual(AiModel.GEMINI_2_5_FLASH)
+    expect(result).toEqual(AiModel.CLAUDE_SONNET_4_6)
   }
 
   @Test
-  fun `should return CLAUDE_SONNET_4_5 for matching model id`() {
-    val result = AiModel.fromModelId("anthropic/claude-sonnet-4.5")
+  fun `should return CLAUDE_OPUS_4_6 for matching model id`() {
+    val result = AiModel.fromModelId("anthropic/claude-opus-4.6")
 
-    expect(result).toEqual(AiModel.CLAUDE_SONNET_4_5)
-  }
-
-  @Test
-  fun `should return CLAUDE_OPUS_4_5 for matching model id`() {
-    val result = AiModel.fromModelId("anthropic/claude-opus-4.5")
-
-    expect(result).toEqual(AiModel.CLAUDE_OPUS_4_5)
+    expect(result).toEqual(AiModel.CLAUDE_OPUS_4_6)
   }
 
   @Test
@@ -39,6 +32,13 @@ class AiModelTest {
     val result = AiModel.fromModelId("deepseek/deepseek-v3.2")
 
     expect(result).toEqual(AiModel.DEEPSEEK_V3_2)
+  }
+
+  @Test
+  fun `should return GPT_5_4 for matching model id`() {
+    val result = AiModel.fromModelId("openai/gpt-5.4")
+
+    expect(result).toEqual(AiModel.GPT_5_4)
   }
 
   @Test
@@ -50,9 +50,9 @@ class AiModelTest {
 
   @Test
   fun `should match model id case insensitively`() {
-    val result = AiModel.fromModelId("GOOGLE/GEMINI-2.5-FLASH")
+    val result = AiModel.fromModelId("GOOGLE/GEMINI-3-FLASH-PREVIEW")
 
-    expect(result).toEqual(AiModel.GEMINI_2_5_FLASH)
+    expect(result).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
 
   @Test
@@ -61,18 +61,13 @@ class AiModelTest {
   }
 
   @Test
-  fun `should have correct rate limits for GEMINI_2_5_FLASH`() {
-    expect(AiModel.GEMINI_2_5_FLASH.rateLimitPerMinute).toEqual(400)
+  fun `should have correct rate limits for CLAUDE_SONNET_4_6`() {
+    expect(AiModel.CLAUDE_SONNET_4_6.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
-  fun `should have correct rate limits for CLAUDE_SONNET_4_5`() {
-    expect(AiModel.CLAUDE_SONNET_4_5.rateLimitPerMinute).toEqual(240)
-  }
-
-  @Test
-  fun `should have correct rate limits for CLAUDE_OPUS_4_5`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.rateLimitPerMinute).toEqual(240)
+  fun `should have correct rate limits for CLAUDE_OPUS_4_6`() {
+    expect(AiModel.CLAUDE_OPUS_4_6.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
@@ -81,49 +76,56 @@ class AiModelTest {
   }
 
   @Test
+  fun `should have correct rate limits for GPT_5_4`() {
+    expect(AiModel.GPT_5_4.rateLimitPerMinute).toEqual(240)
+  }
+
+  @Test
   fun `should have correct sector fallback tiers`() {
     expect(AiModel.GEMINI_3_FLASH_PREVIEW.sectorFallbackTier).toEqual(0)
-    expect(AiModel.CLAUDE_OPUS_4_5.sectorFallbackTier).toEqual(1)
-    expect(AiModel.CLAUDE_SONNET_4_5.sectorFallbackTier).toEqual(2)
-    expect(AiModel.GEMINI_2_5_FLASH.sectorFallbackTier).toEqual(3)
-    expect(AiModel.DEEPSEEK_V3_2.sectorFallbackTier).toEqual(4)
+    expect(AiModel.CLAUDE_SONNET_4_6.sectorFallbackTier).toEqual(1)
+    expect(AiModel.DEEPSEEK_V3_2.sectorFallbackTier).toEqual(2)
+    expect(AiModel.GPT_5_4.sectorFallbackTier).toEqual(3)
+    expect(AiModel.CLAUDE_OPUS_4_6.sectorFallbackTier).toEqual(4)
   }
 
   @Test
   fun `should return next sector fallback model for GEMINI_3_FLASH_PREVIEW`() {
-    expect(AiModel.GEMINI_3_FLASH_PREVIEW.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_5)
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_4_6)
   }
 
   @Test
-  fun `should return next sector fallback model for CLAUDE_OPUS_4_5`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_4_5)
+  fun `should return next sector fallback model for CLAUDE_SONNET_4_6`() {
+    expect(AiModel.CLAUDE_SONNET_4_6.nextSectorFallbackModel()).toEqual(AiModel.DEEPSEEK_V3_2)
   }
 
   @Test
-  fun `should return next sector fallback model for CLAUDE_SONNET_4_5`() {
-    expect(AiModel.CLAUDE_SONNET_4_5.nextSectorFallbackModel()).toEqual(AiModel.GEMINI_2_5_FLASH)
+  fun `should return next sector fallback model for DEEPSEEK_V3_2`() {
+    expect(AiModel.DEEPSEEK_V3_2.nextSectorFallbackModel()).toEqual(AiModel.GPT_5_4)
   }
 
   @Test
-  fun `should return next sector fallback model for GEMINI_2_5_FLASH`() {
-    expect(AiModel.GEMINI_2_5_FLASH.nextSectorFallbackModel()).toEqual(AiModel.DEEPSEEK_V3_2)
+  fun `should return next sector fallback model for GPT_5_4`() {
+    expect(AiModel.GPT_5_4.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_6)
   }
 
   @Test
-  fun `should return null for DEEPSEEK_V3_2 as last sector fallback`() {
-    expect(AiModel.DEEPSEEK_V3_2.nextSectorFallbackModel()).toEqual(null)
+  fun `should return null for CLAUDE_OPUS_4_6 as last sector fallback`() {
+    expect(AiModel.CLAUDE_OPUS_4_6.nextSectorFallbackModel()).toEqual(null)
   }
 
   @Test
   fun `should have correct country fallback tiers`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.countryFallbackTier).toEqual(0)
+    expect(AiModel.CLAUDE_SONNET_4_6.countryFallbackTier).toEqual(0)
     expect(AiModel.GEMINI_3_FLASH_PREVIEW.countryFallbackTier).toEqual(1)
     expect(AiModel.DEEPSEEK_V3_2.countryFallbackTier).toEqual(2)
+    expect(AiModel.GPT_5_4.countryFallbackTier).toEqual(3)
+    expect(AiModel.CLAUDE_OPUS_4_6.countryFallbackTier).toEqual(4)
   }
 
   @Test
-  fun `should return next country fallback model for CLAUDE_OPUS_4_5`() {
-    expect(AiModel.CLAUDE_OPUS_4_5.nextCountryFallbackModel()).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+  fun `should return next country fallback model for CLAUDE_SONNET_4_6`() {
+    expect(AiModel.CLAUDE_SONNET_4_6.nextCountryFallbackModel()).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
 
   @Test
@@ -132,8 +134,18 @@ class AiModelTest {
   }
 
   @Test
-  fun `should return null for DEEPSEEK_V3_2 as last country fallback`() {
-    expect(AiModel.DEEPSEEK_V3_2.nextCountryFallbackModel()).toEqual(null)
+  fun `should return next country fallback model for DEEPSEEK_V3_2`() {
+    expect(AiModel.DEEPSEEK_V3_2.nextCountryFallbackModel()).toEqual(AiModel.GPT_5_4)
+  }
+
+  @Test
+  fun `should return next country fallback model for GPT_5_4`() {
+    expect(AiModel.GPT_5_4.nextCountryFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_6)
+  }
+
+  @Test
+  fun `should return null for CLAUDE_OPUS_4_6 as last country fallback`() {
+    expect(AiModel.CLAUDE_OPUS_4_6.nextCountryFallbackModel()).toEqual(null)
   }
 
   @Test
@@ -151,6 +163,6 @@ class AiModelTest {
 
   @Test
   fun `should return primary country model`() {
-    expect(AiModel.primaryCountryModel()).toEqual(AiModel.CLAUDE_OPUS_4_5)
+    expect(AiModel.primaryCountryModel()).toEqual(AiModel.CLAUDE_SONNET_4_6)
   }
 }

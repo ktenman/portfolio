@@ -116,7 +116,7 @@ class OpenRouterClientIT {
 
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Healthcare")
-    expect(result?.model).toEqual(AiModel.CLAUDE_OPUS_4_5)
+    expect(result?.model).toEqual(AiModel.CLAUDE_SONNET_4_6)
   }
 
   private fun createSuccessResponse(content: String): String =
