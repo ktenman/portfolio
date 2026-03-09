@@ -51,7 +51,7 @@ class IndustryClassificationService(
       log.warn("No fallback available after ${failedModel.modelId}")
       return null
     }
-    val model = nextModel ?: AiModel.CLAUDE_OPUS_4_5
+    val model = nextModel ?: AiModel.CLAUDE_SONNET_4_6
     log.info("Retrying classification with cascading fallback starting from ${model.modelId} for: $sanitizedName")
     val response =
       openRouterClient.classifyWithCascadingFallback(prompt, model) ?: run {
