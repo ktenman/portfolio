@@ -79,9 +79,10 @@ class CountryClassificationAccuracyIT {
 
     val MODELS_TO_TEST =
       listOf(
-        AiModel.CLAUDE_OPUS_4_5,
-        AiModel.CLAUDE_SONNET_4_5,
+        AiModel.CLAUDE_OPUS_4_6,
+        AiModel.CLAUDE_SONNET_4_6,
         AiModel.DEEPSEEK_V3_2,
+        AiModel.GPT_5_4,
       )
   }
 
