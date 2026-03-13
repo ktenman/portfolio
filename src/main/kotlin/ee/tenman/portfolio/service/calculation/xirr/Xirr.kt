@@ -72,18 +72,11 @@ class Xirr(
 
   private fun createXirrFunction(): UnivariateDifferentiableFunction {
     return object : UnivariateDifferentiableFunction {
-      override fun value(x: Double): Double {
-        val npv = netPresentValue(x)
-        log.debug("NPV for rate $x: $npv")
-        return npv
-      }
+      override fun value(x: Double): Double = netPresentValue(x)
 
       override fun value(t: DerivativeStructure): DerivativeStructure {
         val x = t.value
-        val value = netPresentValue(x)
-        val derivative = netPresentValueDerivative(x)
-        log.debug("NPV for rate $x: $value, Derivative: $derivative")
-        return DerivativeStructure(t.freeParameters, t.order, value, derivative)
+        return DerivativeStructure(t.freeParameters, t.order, netPresentValue(x), netPresentValueDerivative(x))
       }
     }
   }
