@@ -12,9 +12,10 @@ const CHROME_USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 
 async function fetchHandler(req: Request, res: Response): Promise<void> {
-  const path = validateParam(req, res, 'path', 'query')
-  if (!path) return
+  const rawPath = validateParam(req, res, 'path', 'query')
+  if (!rawPath) return
 
+  const path = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
   logger.info(`Fetching data for path: ${sanitizeLogInput(path)}`)
 
   await handleProxyRequest(req, res, {
