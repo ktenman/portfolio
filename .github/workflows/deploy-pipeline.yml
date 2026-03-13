@@ -104,11 +104,12 @@ jobs:
             done && \
             echo 'Starting containers...' && \
             docker compose up -d --remove-orphans && \
-            echo 'Waiting for services to become healthy...' && \
-            for i in \$(seq 1 30); do \
+            echo 'Waiting for all services to become healthy...' && \
+            for i in \$(seq 1 40); do \
               HEALTHY=\$(docker ps --filter 'health=healthy' --format '{{.Names}}' | wc -l); \
-              echo \"Health check \$i/30: \$HEALTHY services healthy\"; \
-              if [ \"\$HEALTHY\" -ge 8 ]; then echo 'All core services healthy!'; break; fi; \
+              RUNNING=\$(docker compose ps --format '{{.Name}}' | wc -l); \
+              echo \"Health check \$i/40: \$HEALTHY/\$RUNNING services healthy\"; \
+              if [ \"\$HEALTHY\" -ge 8 ] && [ \"\$RUNNING\" -ge 9 ]; then echo 'All services healthy and running!'; break; fi; \
               sleep 10; \
             done && \
             docker ps --format 'table {{.Names}}\t{{.Status}}' && \
