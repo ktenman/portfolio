@@ -4,6 +4,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
+      - '**/*.java'
+      - '**/*.kt'
       - '**/*.js'
       - '**/*.ts'
       - '**/*.vue'
@@ -13,6 +15,8 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
+      - '**/*.java'
+      - '**/*.kt'
       - '**/*.js'
       - '**/*.ts'
       - '**/*.vue'
@@ -38,6 +42,8 @@ jobs:
         include:
           - language: actions
             build-mode: none
+          - language: java-kotlin
+            build-mode: autobuild
           - language: javascript-typescript
             build-mode: none
           - language: python
@@ -58,7 +64,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-codeql-${{ matrix.language }}-
 
-      # For JavaScript/TypeScript: Set up Node.js
+      - name: Set up Java
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Gradle
+        if: matrix.language == 'java-kotlin'
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Set up Node.js
         if: matrix.language == 'javascript-typescript'
         uses: actions/setup-node@v6
@@ -66,7 +82,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # For Python: Set up Python
       - name: Set up Python
         if: matrix.language == 'python'
         uses: actions/setup-python@v6
