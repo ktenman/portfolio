@@ -107,8 +107,8 @@ jobs:
             echo 'Waiting for all services to become healthy...' && \
             for i in \$(seq 1 40); do \
               HEALTHY=\$(docker ps --filter 'health=healthy' --format '{{.Names}}' | wc -l); \
-              RUNNING=\$(docker compose ps --format '{{.Name}}' | wc -l); \
-              echo \"Health check \$i/40: \$HEALTHY/\$RUNNING services healthy\"; \
+              RUNNING=\$(docker ps --filter 'status=running' --format '{{.Names}}' | wc -l); \
+              echo \"Health check \$i/40: \$HEALTHY healthy, \$RUNNING running\"; \
               if [ \"\$HEALTHY\" -ge 8 ] && [ \"\$RUNNING\" -ge 9 ]; then echo 'All services healthy and running!'; break; fi; \
               sleep 10; \
             done && \
