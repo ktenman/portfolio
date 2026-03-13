@@ -28,78 +28,55 @@ class Xirr(
   operator fun invoke(): Double = calculate()
 
   fun calculate(): Double {
-    log.info("Starting XIRR calculation with ${cashFlows.size} cash flows")
-    log.info("Start date: $startDate, End date: $endDate")
+    log.debug("Starting XIRR calculation with ${cashFlows.size} cash flows")
 
     require(cashFlows.size >= 2) { "Must have at least two cash flows" }
     require(cashFlows.any { it.amount > 0 } && cashFlows.any { it.amount < 0 }) {
       "Need both positive and negative cash flows"
     }
 
-    if (startDate == endDate) {
-      log.info("All cash flows are on the same day. Calculating simple return.")
-      return calculateSimpleReturn()
-    }
-    val guess = estimateInitialRate()
-    log.info("Initial guess for XIRR: $guess")
+    if (startDate == endDate) return calculateSimpleReturn()
 
+    val guess = estimateInitialRate()
     return trySequentialCalculation(guess)
   }
 
   private fun trySequentialCalculation(guess: Double): Double =
     try {
-      log.info("Attempting XIRR calculation with Newton-Raphson solver.")
       calculateXirrWithNewtonRaphson(guess)
     } catch (e: Exception) {
-      log.warn("Newton-Raphson method failed: ${e.message}. Falling back to Bisection solver.")
+      log.debug("Newton-Raphson method failed: ${e.message}. Falling back to Bisection solver.")
       try {
         calculateXirrWithBisection()
       } catch (bisectionError: Exception) {
-        log.error("Both Newton-Raphson and Bisection methods failed.")
+        log.error("Both Newton-Raphson and Bisection methods failed")
         throw XirrCalculationException("XIRR calculation failed using both methods", bisectionError)
       }
     }
 
   private fun calculateXirrWithNewtonRaphson(guess: Double): Double {
     val solver = NewtonRaphsonSolver()
-    log.info("Newton-Raphson solver configuration: maxEvaluations=$MAX_ELEVATIONS")
-
-    val result = solver.solve(MAX_ELEVATIONS, createXirrFunction(), -0.99, 0.99, guess)
-    log.info("XIRR calculation result (Newton-Raphson): $result")
-    return result
+    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), -0.99, 0.99, guess)
   }
 
   private fun calculateXirrWithBisection(): Double {
     val solver = BisectionSolver()
-    log.info("Bisection solver configuration: maxEvaluations=$MAX_ELEVATIONS")
-
-    val result = solver.solve(MAX_ELEVATIONS, createXirrFunction(), -0.99, 0.99)
-    log.info("XIRR calculation result (Bisection): $result")
-    return result
+    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), -0.99, 0.99)
   }
 
   private fun calculateSimpleReturn(): Double {
     val initialInvestment = -cashFlows.first { it.amount < 0 }.amount
     val finalValue = cashFlows.last { it.amount > 0 }.amount
-    val simpleReturn = (finalValue - initialInvestment) / initialInvestment
-    log.info("Simple return: $simpleReturn")
-    return simpleReturn
+    return (finalValue - initialInvestment) / initialInvestment
   }
 
   private fun createXirrFunction(): UnivariateDifferentiableFunction {
     return object : UnivariateDifferentiableFunction {
-      override fun value(x: Double): Double {
-        val npv = netPresentValue(x)
-        log.debug("NPV for rate $x: $npv")
-        return npv
-      }
+      override fun value(x: Double): Double = netPresentValue(x)
 
       override fun value(t: DerivativeStructure): DerivativeStructure {
         val x = t.value
-        val value = netPresentValue(x)
-        val derivative = netPresentValueDerivative(x)
-        log.debug("NPV for rate $x: $value, Derivative: $derivative")
-        return DerivativeStructure(t.freeParameters, t.order, value, derivative)
+        return DerivativeStructure(t.freeParameters, t.order, netPresentValue(x), netPresentValueDerivative(x))
       }
     }
   }
