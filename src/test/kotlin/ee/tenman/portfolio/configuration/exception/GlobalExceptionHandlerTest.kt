@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.validation.BindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.multipart.MultipartException
 
 class GlobalExceptionHandlerTest {
   private val globalExceptionHandler = GlobalExceptionHandler()
@@ -74,6 +75,17 @@ class GlobalExceptionHandlerTest {
     expect(response.body?.debugMessage).toEqual("One or more fields have an error")
     expect(response.body?.validationErrors?.get("field1")).toEqual("Field 1 is invalid")
     expect(response.body?.validationErrors?.get("field2")).toEqual("Field 2 is invalid")
+  }
+
+  @Test
+  fun `should return bad request when handling multipart exception`() {
+    val exception = MultipartException("Failed to parse multipart servlet request")
+
+    val response = globalExceptionHandler.handleMultipartException(exception)
+
+    expect(response.statusCode).toEqual(HttpStatus.BAD_REQUEST)
+    expect(response.body?.message).toEqual("Invalid request")
+    expect(response.body?.debugMessage).toEqual("Malformed multipart request")
   }
 
   @Test

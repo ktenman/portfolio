@@ -8,6 +8,7 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.multipart.MultipartException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @ControllerAdvice
@@ -23,6 +24,18 @@ class GlobalExceptionHandler {
     @Suppress("unused", "UNUSED_PARAMETER")
     exception: NoResourceFoundException,
   ): ResponseEntity<Void> = ResponseEntity.notFound().build()
+
+  @ExceptionHandler(MultipartException::class)
+  fun handleMultipartException(exception: MultipartException): ResponseEntity<ApiError> {
+    log.warn("Rejected malformed multipart request: ${exception.message}")
+    val apiError =
+      ApiError(
+        status = HttpStatus.BAD_REQUEST,
+        message = "Invalid request",
+        debugMessage = "Malformed multipart request",
+      )
+    return ResponseEntity(apiError, apiError.status)
+  }
 
   @ExceptionHandler(Exception::class)
   fun handleAllExceptions(exception: Exception): ResponseEntity<ApiError> {
