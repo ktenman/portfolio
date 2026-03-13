@@ -6,22 +6,20 @@ import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
 import { execCurl } from '../utils/curl-executor'
 
-const LIGHTYEAR_FETCH_URL = 'https://lightyear.com/fetch'
+const LIGHTYEAR_PROXY_URL = 'https://lightyear.com/proxy'
 const LIGHTYEAR_BATCH_URL = 'https://api.lightyear.com/v1/instrument/batch'
 const CHROME_USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 
 async function fetchHandler(req: Request, res: Response): Promise<void> {
-  const path = validateParam(req, res, 'path', 'query')
-  if (!path) return
+  const rawPath = validateParam(req, res, 'path', 'query')
+  if (!rawPath) return
 
-  const encodedPath = Buffer.from(path).toString('base64').replace(/=+$/, '')
-
+  const path = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
   logger.info(`Fetching data for path: ${sanitizeLogInput(path)}`)
-  logger.debug(`Encoded path: ${encodedPath}`)
 
   await handleProxyRequest(req, res, {
-    url: `${LIGHTYEAR_FETCH_URL}?path=${encodedPath}&withAPIKey=true`,
+    url: `${LIGHTYEAR_PROXY_URL}${path}`,
     timeout: 10000,
     maxBuffer: 1024 * 1024,
     responseType: ResponseType.JSON,
@@ -129,9 +127,7 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
 
   let result: string
   try {
-    const searchPath = `/v1/instrument/search?value=${encodeURIComponent(ticker)}`
-    const encodedPath = Buffer.from(searchPath).toString('base64').replace(/=+$/, '')
-    const searchUrl = `${LIGHTYEAR_FETCH_URL}?path=${encodedPath}&withAPIKey=true`
+    const searchUrl = `${LIGHTYEAR_PROXY_URL}/v1/instrument/search?value=${encodeURIComponent(ticker)}`
     result = await execCurl({
       url: searchUrl,
       timeout: 10000,

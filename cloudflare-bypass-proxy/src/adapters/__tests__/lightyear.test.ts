@@ -25,7 +25,7 @@ describe('Lightyear Adapter', () => {
     expect(response.body).toEqual({ error: 'Missing path parameter' })
   })
 
-  it('should successfully fetch price data with base64 encoded path', async () => {
+  it('should successfully fetch price data via proxy URL', async () => {
     const mockResponse = {
       timestamp: '2025-11-14T16:00:00Z',
       price: 36.26,
@@ -45,9 +45,8 @@ describe('Lightyear Adapter', () => {
     expect(response.status).toBe(200)
     expect(response.body).toEqual(mockResponse)
 
-    const expectedEncodedPath = Buffer.from(path).toString('base64').replace(/=+$/, '')
     expect(executeCurl).toHaveBeenCalledWith({
-      url: `https://lightyear.com/fetch?path=${expectedEncodedPath}&withAPIKey=true`,
+      url: `https://lightyear.com/proxy${path}`,
       timeout: 10000,
       maxBuffer: 1024 * 1024,
       headers: {
@@ -60,7 +59,7 @@ describe('Lightyear Adapter', () => {
     })
   })
 
-  it('should encode path without padding characters', async () => {
+  it('should pass path directly to proxy URL without encoding', async () => {
     executeCurl.mockResolvedValue({
       stdout: JSON.stringify({ price: 100 }),
       duration: 100,
@@ -70,9 +69,7 @@ describe('Lightyear Adapter', () => {
     await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
 
     const callArgs = executeCurl.mock.calls[0][0]
-    const encodedPath = callArgs.url.match(/path=([^&]+)/)[1]
-
-    expect(encodedPath).not.toContain('=')
+    expect(callArgs.url).toBe(`https://lightyear.com/proxy${path}`)
   })
 
   it('should successfully fetch chart data with query parameters', async () => {

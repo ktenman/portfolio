@@ -18,8 +18,8 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
     jest.clearAllMocks()
   })
 
-  describe('Base64 Encoding', () => {
-    it('should correctly encode path to base64 without padding', async () => {
+  describe('Proxy URL Construction', () => {
+    it('should construct correct proxy URL from path', async () => {
       executeCurl.mockResolvedValue({
         stdout: JSON.stringify({ price: 50 }),
         duration: 100,
@@ -29,16 +29,10 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
       await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
 
       const callArgs = executeCurl.mock.calls[0][0]
-      const expectedEncoded =
-        'L3YxL21hcmtldC1kYXRhLzFlZjI3ZjlhLWJkZTYtNmRkYS1hODczLTM5NDZjYTg2YmQ1Yy9wcmljZQ'
-
-      expect(callArgs.url).toContain(`path=${expectedEncoded}`)
-      expect(callArgs.url).not.toContain(
-        'path=L3YxL21hcmtldC1kYXRhLzFlZjI3ZjlhLWJkZTYtNmRkYS1hODczLTM5NDZjYTg2YmQ1Yy9wcmljZQ=='
-      )
+      expect(callArgs.url).toBe(`https://lightyear.com/proxy${path}`)
     })
 
-    it('should handle query parameters in path encoding', async () => {
+    it('should handle query parameters in path', async () => {
       executeCurl.mockResolvedValue({
         stdout: JSON.stringify({ data: 'ok' }),
         duration: 100,
@@ -48,9 +42,7 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
       await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
 
       const callArgs = executeCurl.mock.calls[0][0]
-      const expectedEncoded = Buffer.from(path).toString('base64').replace(/=+$/, '')
-
-      expect(callArgs.url).toContain(`path=${expectedEncoded}`)
+      expect(callArgs.url).toBe(`https://lightyear.com/proxy${path}`)
     })
 
     it('should handle special characters in path', async () => {
@@ -63,7 +55,7 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
       await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
 
       const callArgs = executeCurl.mock.calls[0][0]
-      expect(callArgs.url).toMatch(/path=[A-Za-z0-9+/]+(?!%3D)&withAPIKey=true/)
+      expect(callArgs.url).toBe(`https://lightyear.com/proxy${path}`)
     })
   })
 
@@ -122,7 +114,7 @@ describe('Lightyear Adapter - Enhanced Tests', () => {
       await request(app).get('/lightyear/fetch?path=/v1/test')
 
       expect(executeCurl).toHaveBeenCalledWith({
-        url: expect.stringContaining('https://lightyear.com/fetch?path='),
+        url: 'https://lightyear.com/proxy/v1/test',
         timeout: 10000,
         maxBuffer: 1024 * 1024,
         headers: {
