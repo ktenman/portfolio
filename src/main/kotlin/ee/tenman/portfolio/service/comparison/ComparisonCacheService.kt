@@ -11,7 +11,7 @@ class ComparisonCacheService(
 ) {
   @Cacheable(
     value = [COMPARISON_CACHE],
-    key = "'compare-' + #instrumentIds.sorted().toString() + '-' + #period",
+    key = "'compare-' + #instrumentIds.stream().sorted().toList().toString() + '-' + #period",
   )
   fun getComparisonData(
     instrumentIds: List<Long>,

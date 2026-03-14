@@ -23,7 +23,7 @@ class InstrumentComparisonService(
   companion object {
     private const val MAX_DATA_POINTS = 250
     private val HUNDRED = BigDecimal(100)
-    private val YEAR_PERIOD_PATTERN = Regex("""(\d)Y""")
+    private val YEAR_PERIOD_PATTERN = Regex("""(\d+)Y""")
   }
 
   fun getComparisonData(
