@@ -82,9 +82,7 @@ class ReturnPredictionService(
   private fun calculateTypicalMonthlyInvestment(): BigDecimal {
     val transactions = transactionCacheService.getAllTransactions()
     val buyTransactions =
-      transactions
-        .filter { it.transactionType == TransactionType.BUY }
-        .filterNot { it.instrument.isCash() }
+      transactions.filter { it.transactionType == TransactionType.BUY && !it.instrument.isCash() }
     if (buyTransactions.isEmpty()) return BigDecimal.ZERO
     val sorted =
       buyTransactions
