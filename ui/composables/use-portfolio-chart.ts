@@ -9,7 +9,7 @@ interface ChartDataPoint {
   earningsValues: number[]
 }
 
-function sampleDataPoints<T>(array: T[], maxPoints: number): T[] {
+export function sampleDataPoints<T>(array: T[], maxPoints: number): T[] {
   if (array.length <= maxPoints) return array
 
   const step = (array.length - 1) / (maxPoints - 1)

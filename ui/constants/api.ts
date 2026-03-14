@@ -1,11 +1,13 @@
 export const API_ENDPOINTS = {
   INSTRUMENTS: '/instruments',
   INSTRUMENTS_REFRESH_PRICES: '/instruments/refresh-prices',
+  INSTRUMENTS_COMPARE: '/instruments/compare',
   TRANSACTIONS: '/transactions',
   TRANSACTIONS_PLATFORMS: '/transactions/platforms',
   PORTFOLIO_SUMMARY_HISTORICAL: '/portfolio-summary/historical',
   PORTFOLIO_SUMMARY_CURRENT: '/portfolio-summary/current',
   PORTFOLIO_SUMMARY_RECALCULATE: '/portfolio-summary/recalculate',
+  PORTFOLIO_SUMMARY_PREDICTIONS: '/portfolio-summary/predictions',
   ETF_BREAKDOWN: '/etf-breakdown',
   DIVERSIFICATION: '/diversification',
   ENUMS: '/enums',

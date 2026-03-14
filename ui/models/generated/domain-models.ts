@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -160,6 +160,45 @@ export interface EnumsResponse {
     transactionTypes: string[];
     categories: string[];
     currencies: string[];
+}
+
+export interface ReturnPredictionDto extends Serializable {
+    currentValue: number;
+    xirrAnnualReturn: number;
+    dailyVolatility: number;
+    dataPointCount: number;
+    monthlyInvestment: number;
+    predictions: HorizonPredictionDto[];
+}
+
+export interface HorizonPredictionDto extends Serializable {
+    horizon: string;
+    horizonDays: number;
+    targetDate: DateAsString;
+    expectedValue: number;
+    optimisticValue: number;
+    pessimisticValue: number;
+    contributions: number;
+}
+
+export interface ComparisonResponse extends Serializable {
+    instruments: InstrumentComparisonDto[];
+    startDate: DateAsString;
+    endDate: DateAsString;
+}
+
+export interface InstrumentComparisonDto extends Serializable {
+    instrumentId: number;
+    symbol: string;
+    name: string;
+    currentPrice: number | null;
+    totalChangePercent: number;
+    dataPoints: ComparisonDataPointDto[];
+}
+
+export interface ComparisonDataPointDto extends Serializable {
+    date: DateAsString;
+    percentageChange: number;
 }
 
 export interface Serializable {
