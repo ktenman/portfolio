@@ -151,10 +151,11 @@ onClickOutside(dropdownRef, () => {
 })
 
 const queryEnabled = computed(() => selectedIds.value.length >= 2)
+const sortedIds = computed(() => [...selectedIds.value].sort((a, b) => a - b))
 
 const { data, isLoading, isError } = useQuery({
-  queryKey: computed(() => ['instrument-comparison', selectedIds.value, period.value]),
-  queryFn: () => instrumentsService.compare(selectedIds.value, period.value),
+  queryKey: computed(() => ['instrument-comparison', sortedIds.value, period.value]),
+  queryFn: () => instrumentsService.compare(sortedIds.value, period.value),
   enabled: queryEnabled,
   staleTime: 30000,
 })
