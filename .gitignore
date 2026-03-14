@@ -74,3 +74,9 @@ scripts/train_captcha_model.py
 scripts/*.keras
 scripts/*.png
 scripts/*.jpg
+
+### Python ###
+__pycache__/
+
+### Iterative Improvement ###
+.improve-loop/
