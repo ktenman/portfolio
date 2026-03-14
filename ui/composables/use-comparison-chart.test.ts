@@ -115,7 +115,7 @@ describe('useComparisonChart', () => {
     const response = ref(createResponse())
     const { chartOptions } = useComparisonChart(response)
 
-    expect(chartOptions.value.scales?.y?.title?.text).toBe('% Change')
+    expect(chartOptions.scales?.y?.title?.text).toBe('% Change')
   })
 
   it('should react to response changes', () => {

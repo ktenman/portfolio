@@ -50,14 +50,14 @@ export function usePredictionChart(
     }
   })
 
-  const chartOptions = computed<ChartOptions<'line'>>(() => ({
+  const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
-    interaction: { mode: 'index' as const, intersect: false },
+    interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: {
-        position: 'bottom' as const,
+        position: 'bottom',
         labels: {
           usePointStyle: true,
           pointStyleWidth: 10,
@@ -84,7 +84,7 @@ export function usePredictionChart(
         grid: { display: false },
       },
     },
-  }))
+  }
 
   return { chartData, chartOptions }
 }

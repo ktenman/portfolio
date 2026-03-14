@@ -13,9 +13,9 @@ export function useComparisonChart(response: Ref<ComparisonResponse | null | und
   const chartData = computed<ChartData<'line'> | null>(() => {
     if (!response.value || response.value.instruments.length === 0) return null
 
-    const allDates = new Set<string>()
-    response.value.instruments.forEach(inst => inst.dataPoints.forEach(dp => allDates.add(dp.date)))
-    const sortedDates = Array.from(allDates).sort()
+    const sortedDates = [
+      ...new Set(response.value.instruments.flatMap(inst => inst.dataPoints.map(dp => dp.date))),
+    ].sort()
     const maxPoints = Math.min(width.value >= 1000 ? 120 : 60, sortedDates.length)
     const sampledDates = sampleDataPoints(sortedDates, maxPoints)
 
@@ -37,7 +37,7 @@ export function useComparisonChart(response: Ref<ComparisonResponse | null | und
     }
   })
 
-  const chartOptions = computed<ChartOptions<'line'>>(() => ({
+  const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
@@ -79,7 +79,7 @@ export function useComparisonChart(response: Ref<ComparisonResponse | null | und
         },
       },
     },
-  }))
+  }
 
   return { chartData, chartOptions, colors: CHART_COLORS }
 }
