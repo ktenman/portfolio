@@ -29,6 +29,9 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
 
   fun existsByInstrument(instrument: Instrument): Boolean
 
+  @Query("SELECT dp FROM DailyPrice dp WHERE dp.instrument.id IN :instrumentIds AND dp.entryDate BETWEEN :startDate AND :endDate ORDER BY dp.entryDate")
+  fun findAllByInstrumentIdInAndEntryDateBetween(instrumentIds: List<Long>, startDate: LocalDate, endDate: LocalDate): List<DailyPrice>
+
   @Modifying
   @Query(
     """
