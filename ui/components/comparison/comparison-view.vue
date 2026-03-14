@@ -117,9 +117,12 @@ const filteredInstruments = computed(() => {
   const query = searchQuery.value.toLowerCase()
   const selected = new Set(selectedIds.value)
   return allInstruments.value
-    .filter(i => i.id !== null && !selected.has(i.id!) && !EXCLUDED_CATEGORIES.has(i.category))
     .filter(
-      i => !query || i.name.toLowerCase().includes(query) || i.symbol.toLowerCase().includes(query)
+      i =>
+        i.id !== null &&
+        !selected.has(i.id!) &&
+        !EXCLUDED_CATEGORIES.has(i.category) &&
+        (!query || i.name.toLowerCase().includes(query) || i.symbol.toLowerCase().includes(query))
     )
     .sort((a, b) => a.name.localeCompare(b.name))
 })

@@ -34,7 +34,7 @@ class ReturnPredictionService(
     private const val CONFIDENCE_Z_SCORE = 1.28
     private const val MAX_ANNUAL_VOLATILITY = 0.30
     private const val DAYS_PER_YEAR = 365.25
-    private const val DAYS_PER_MONTH = 30.44
+    private const val DAYS_PER_MONTH = DAYS_PER_YEAR / 12
     private const val SCALE = 10
     private val HORIZONS =
       listOf(
