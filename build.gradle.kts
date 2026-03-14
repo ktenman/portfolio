@@ -239,6 +239,11 @@ tasks.named("generateTypeScript") {
       // Remove export from DateAsString (internal type)
       content = content.replace("export type DateAsString = string", "type DateAsString = string")
 
+      // Ensure eslint-disable is present after tslint-disable
+      if (!content.contains("/* eslint-disable */")) {
+        content = content.replace("/* tslint:disable */", "/* tslint:disable */\n/* eslint-disable */")
+      }
+
       generatedFile.writeText(content)
       println("Post-processed: Removed timestamp and export from DateAsString")
     }

@@ -45,11 +45,10 @@ export function useTruncationDetection(
     if (!data.value || !isTruncated.value) return new Set()
     const dataStart = data.value.startDate
     return new Set(
-      periods.filter(
-        p =>
-          resolveRequestedStart(p) < dataStart &&
-          daysBetween(dataStart, resolveRequestedStart(p)) > TRUNCATION_TOLERANCE_DAYS
-      )
+      periods.filter(p => {
+        const start = resolveRequestedStart(p)
+        return start < dataStart && daysBetween(dataStart, start) > TRUNCATION_TOLERANCE_DAYS
+      })
     )
   })
 

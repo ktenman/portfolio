@@ -49,9 +49,8 @@ class InstrumentComparisonService(
     prices: List<DailyPrice>?,
     commonStartDate: LocalDate?,
   ): InstrumentComparisonDto? {
-    val filtered = prices
-      ?.filter { commonStartDate == null || !it.entryDate.isBefore(commonStartDate) }
-      ?: return null
+    if (prices.isNullOrEmpty()) return null
+    val filtered = if (commonStartDate != null) prices.filter { !it.entryDate.isBefore(commonStartDate) } else prices
     if (filtered.isEmpty()) return null
     val basePrice = filtered.first().closePrice
     return InstrumentComparisonDto(

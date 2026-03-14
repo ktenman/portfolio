@@ -109,7 +109,7 @@ const showDropdown = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
 const { data: instrumentsResponse } = useQuery({
-  queryKey: ['instruments-for-compare'],
+  queryKey: ['instruments'],
   queryFn: () => instrumentsService.getAll(),
   staleTime: 60000,
 })
