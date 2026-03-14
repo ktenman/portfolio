@@ -11,6 +11,7 @@ import ee.tenman.portfolio.service.pricing.PriceRefreshService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -104,7 +105,7 @@ class InstrumentController(
   @Loggable
   fun compareInstruments(
     @RequestParam @Size(min = 2, max = 10) instrumentIds: List<Long>,
-    @RequestParam(defaultValue = "1Y") period: String,
+    @RequestParam(defaultValue = "1Y") @Pattern(regexp = "^(1M|6M|YTD|\\d+Y|MAX)$") period: String,
   ): ComparisonResponse = comparisonCacheService.getComparisonData(instrumentIds, period)
 
   @PostMapping("/classify-etf-holdings")
