@@ -29,10 +29,7 @@ class PortfolioSummaryMappingService(
   ): Page<PortfolioSummaryDto> {
     if (platforms != null) return getFilteredHistoricalSummaries(platforms, page, size)
     val summaries = summaryCacheService.getAllDailySummaries(page, size)
-    if (summaries.isEmpty) return Page.empty(PageRequest.of(page, size))
-    val previousDaySummary = summaryCacheService.findByEntryDate(summaries.content.minOf { it.entryDate }.minusDays(1))
-    val lookup = buildSummaryLookup(summaries.content, previousDaySummary)
-    return summaries.map { it.toDto(lookup) }
+    return toDtoPage(summaries, page, size) { date -> summaryCacheService.findByEntryDate(date) }
   }
 
   private fun getFilteredCurrentSummary(platforms: List<Platform>): PortfolioSummaryDto {
@@ -49,10 +46,20 @@ class PortfolioSummaryMappingService(
     size: Int,
   ): Page<PortfolioSummaryDto> {
     val summaries = platformSummaryCacheService.getHistoricalSummariesForPlatforms(platforms, page, size)
+    return toDtoPage(summaries, page, size) { date ->
+      platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, date)
+    }
+  }
+
+  private fun toDtoPage(
+    summaries: Page<PortfolioDailySummary>,
+    page: Int,
+    size: Int,
+    previousDayResolver: (LocalDate) -> PortfolioDailySummary?,
+  ): Page<PortfolioSummaryDto> {
     if (summaries.isEmpty) return Page.empty(PageRequest.of(page, size))
     val oldestDate = summaries.content.minOf { it.entryDate }
-    val previousDaySummary =
-      platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, oldestDate.minusDays(1))
+    val previousDaySummary = previousDayResolver(oldestDate.minusDays(1))
     val lookup = buildSummaryLookup(summaries.content, previousDaySummary)
     return summaries.map { it.toDto(lookup) }
   }

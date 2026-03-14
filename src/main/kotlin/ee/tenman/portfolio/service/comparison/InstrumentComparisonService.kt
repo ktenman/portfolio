@@ -99,7 +99,7 @@ class InstrumentComparisonService(
     current: BigDecimal,
     base: BigDecimal,
   ): Double {
-    if (base.compareTo(BigDecimal.ZERO) == 0) return 0.0
+    if (base.signum() == 0) return 0.0
     return current
       .subtract(base)
       .multiply(HUNDRED)
