@@ -86,7 +86,6 @@ class ReturnPredictionService(
     val transactions = transactionCacheService.getAllTransactions()
     val buyTransactions =
       transactions.filter { it.transactionType == TransactionType.BUY && !it.instrument.isCash() }
-    if (buyTransactions.isEmpty()) return BigDecimal.ZERO
     val sorted =
       buyTransactions
         .groupBy { YearMonth.from(it.transactionDate) }

@@ -23,10 +23,11 @@ export function useComparisonChart(response: Ref<ComparisonResponse | null | und
       labels: sampledDates.map(d => formatDate(d)),
       datasets: response.value.instruments.map((inst, i) => {
         const pointMap = new Map(inst.dataPoints.map(dp => [dp.date, dp.percentageChange]))
+        const color = CHART_COLORS[i % CHART_COLORS.length]
         return {
           label: shortSymbol(inst.symbol),
-          borderColor: CHART_COLORS[i % CHART_COLORS.length],
-          backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
+          borderColor: color,
+          backgroundColor: color,
           data: sampledDates.map(d => pointMap.get(d) ?? null),
           pointRadius: 0,
           borderWidth: 2,
@@ -51,7 +52,8 @@ export function useComparisonChart(response: Ref<ComparisonResponse | null | und
       },
       tooltip: {
         callbacks: {
-          label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2)}%`,
+          label: ctx =>
+            ctx.parsed.y != null ? `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%` : '',
         },
       },
     },

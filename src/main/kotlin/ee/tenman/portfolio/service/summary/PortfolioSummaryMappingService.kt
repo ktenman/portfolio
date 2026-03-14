@@ -60,11 +60,7 @@ class PortfolioSummaryMappingService(
   private fun buildSummaryLookup(
     summaries: List<PortfolioDailySummary>,
     previousDaySummary: PortfolioDailySummary?,
-  ): Map<LocalDate, PortfolioDailySummary> =
-    buildMap {
-    summaries.forEach { put(it.entryDate, it) }
-    previousDaySummary?.let { put(it.entryDate, it) }
-  }
+  ): Map<LocalDate, PortfolioDailySummary> = (summaries + listOfNotNull(previousDaySummary)).associateBy { it.entryDate }
 
   private fun PortfolioDailySummary.toDto(lookup: Map<LocalDate, PortfolioDailySummary>): PortfolioSummaryDto {
     val profitChange24h = lookup[entryDate.minusDays(1)]?.let { totalProfit.subtract(it.totalProfit) }

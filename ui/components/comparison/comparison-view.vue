@@ -127,7 +127,7 @@ const filteredInstruments = computed(() => {
     .filter(
       i =>
         i.id !== null &&
-        !selected.has(i.id!) &&
+        !selected.has(i.id) &&
         !EXCLUDED_CATEGORIES.has(i.category) &&
         (!query || i.name.toLowerCase().includes(query) || i.symbol.toLowerCase().includes(query))
     )
