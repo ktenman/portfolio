@@ -37,7 +37,7 @@ class ReturnPredictionService(
     private const val CONFIDENCE_Z_SCORE = 1.28
     private const val MAX_ANNUAL_VOLATILITY = 0.30
     private const val DAYS_PER_YEAR = 365.25
-    private const val DAYS_PER_MONTH = DAYS_PER_YEAR / 12
+    private const val MONTHS_PER_YEAR = 12
     private const val SCALE = 10
     private val HORIZONS =
       listOf(
@@ -115,10 +115,9 @@ class ReturnPredictionService(
     horizonDays: Int,
     label: String,
   ): HorizonPredictionDto {
-    val t = horizonDays.toDouble()
-    val timeInYears = t / DAYS_PER_YEAR
+    val timeInYears = horizonDays / DAYS_PER_YEAR
     val xirrRate = maxOf(context.xirrAnnualReturn.toDouble(), -0.99)
-    val contributions = context.monthlyInvestment.toDouble() * (t / DAYS_PER_MONTH)
+    val contributions = context.monthlyInvestment.toDouble() * timeInYears * MONTHS_PER_YEAR
     val expected = context.currentValue.toDouble() * (1 + xirrRate).pow(timeInYears) + contributions
     val annualizedSigma = minOf(context.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
     val diffusion = CONFIDENCE_Z_SCORE * annualizedSigma * sqrt(timeInYears)

@@ -37,7 +37,7 @@
         :key="p"
         type="button"
         class="period-btn"
-        :class="[{ active: period === p }, { capped: cappedPeriods.has(p) && period !== p }]"
+        :class="{ active: period === p, capped: cappedPeriods.has(p) && period !== p }"
         @click="period = p"
       >
         {{ p }}
