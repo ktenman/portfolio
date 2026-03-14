@@ -83,7 +83,8 @@ class ReturnPredictionService(
 
   private fun calculateTypicalMonthlyInvestment(): BigDecimal {
     val sorted =
-      transactionCacheService.getAllTransactions()
+      transactionCacheService
+        .getAllTransactions()
         .filter { it.transactionType == TransactionType.BUY && !it.instrument.isCash() }
         .groupBy { YearMonth.from(it.transactionDate) }
         .mapValues { (_, txs) -> txs.sumOf { it.quantity.multiply(it.price).add(it.commission) } }
