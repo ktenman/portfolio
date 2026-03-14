@@ -52,14 +52,14 @@ class InstrumentComparisonService(
     if (prices.isNullOrEmpty()) return null
     val filtered = if (commonStartDate != null) prices.filter { !it.entryDate.isBefore(commonStartDate) } else prices
     if (filtered.isEmpty()) return null
-    val basePrice = filtered.first().closePrice
+    val normalized = normalizeToPercentage(filtered, filtered.first().closePrice)
     return InstrumentComparisonDto(
       instrumentId = instrument.id!!,
       symbol = instrument.symbol,
       name = instrument.name,
       currentPrice = instrument.currentPrice,
-      totalChangePercent = calculatePercentageChange(filtered.last().closePrice, basePrice),
-      dataPoints = sampleDataPoints(normalizeToPercentage(filtered, basePrice)),
+      totalChangePercent = normalized.last().percentageChange,
+      dataPoints = sampleDataPoints(normalized),
     )
   }
 
