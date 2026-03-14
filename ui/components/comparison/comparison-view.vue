@@ -81,6 +81,10 @@
     <div v-else-if="selectedIds.length < 2" class="text-muted text-center py-4">
       Select at least 2 instruments to compare
     </div>
+
+    <div v-else-if="data && data.instruments.length === 0" class="text-muted text-center py-4">
+      No price data available for the selected instruments in this period.
+    </div>
   </div>
 </template>
 

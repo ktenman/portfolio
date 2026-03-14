@@ -27,7 +27,10 @@ class ReturnPredictionService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  private fun Double.toScaledBigDecimal(): BigDecimal = BigDecimal(this).setScale(SCALE, RoundingMode.HALF_UP)
+  private fun Double.toScaledBigDecimal(): BigDecimal {
+    if (isNaN() || isInfinite()) return BigDecimal.ZERO
+    return BigDecimal(this).setScale(SCALE, RoundingMode.HALF_UP)
+  }
 
   companion object {
     private const val MINIMUM_DATA_POINTS = 30
