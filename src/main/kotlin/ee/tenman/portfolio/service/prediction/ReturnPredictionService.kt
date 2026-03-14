@@ -118,11 +118,12 @@ class ReturnPredictionService(
     val timeInYears = horizonDays / DAYS_PER_YEAR
     val xirrRate = maxOf(context.xirrAnnualReturn.toDouble(), -0.99)
     val contributions = context.monthlyInvestment.toDouble() * timeInYears * MONTHS_PER_YEAR
-    val expected = context.currentValue.toDouble() * (1 + xirrRate).pow(timeInYears) + contributions
+    val growth = context.currentValue.toDouble() * (1 + xirrRate).pow(timeInYears)
+    val expected = growth + contributions
     val annualizedSigma = minOf(context.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
     val diffusion = CONFIDENCE_Z_SCORE * annualizedSigma * sqrt(timeInYears)
-    val optimistic = expected * exp(diffusion)
-    val pessimistic = expected * exp(-diffusion)
+    val optimistic = growth * exp(diffusion) + contributions
+    val pessimistic = growth * exp(-diffusion) + contributions
     return HorizonPredictionDto(
       horizon = label,
       horizonDays = horizonDays,
