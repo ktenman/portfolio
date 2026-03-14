@@ -50,6 +50,8 @@
       </div>
     </div>
 
+    <div v-else-if="isError" class="alert alert-danger">Failed to load comparison data.</div>
+
     <div v-else-if="data && data.instruments.length > 0">
       <div class="text-muted small mb-2">
         {{ data.startDate }} &mdash; {{ data.endDate }}
@@ -129,6 +131,7 @@ const filteredInstruments = computed(() => {
 
 const selectInstrument = (inst: InstrumentDto) => {
   if (inst.id === null || selectedIds.value.includes(inst.id)) return
+  if (selectedIds.value.length >= MAX_INSTRUMENTS) return
   selectedIds.value = [...selectedIds.value, inst.id]
   searchQuery.value = ''
   showDropdown.value = false
@@ -144,7 +147,9 @@ onClickOutside(dropdownRef, () => {
 
 const queryEnabled = computed(() => selectedIds.value.length >= 2)
 
-const { data, isLoading } = useQuery({
+const MAX_INSTRUMENTS = 10
+
+const { data, isLoading, isError } = useQuery({
   queryKey: computed(() => ['instrument-comparison', selectedIds.value, period.value]),
   queryFn: () => instrumentsService.compare(selectedIds.value, period.value),
   enabled: queryEnabled,
