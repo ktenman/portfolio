@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
+import signal
 import subprocess
 import sys
 import time
@@ -21,6 +23,26 @@ CI_APPEAR_TIMEOUT = 180
 CI_RUN_TIMEOUT = 900
 
 logger = logging.getLogger("improve")
+
+_active_process: subprocess.Popen | None = None
+_state_ref: LoopState | None = None
+_loop_start: float = 0.0
+
+
+def _shutdown(signum, frame):
+    logger.info("signal] Caught %s, shutting down...", signal.Signals(signum).name)
+    if _active_process and _active_process.poll() is None:
+        logger.info("signal] Terminating active subprocess...")
+        _active_process.terminate()
+        try:
+            _active_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _active_process.kill()
+    if _state_ref:
+        _state_ref.save()
+        elapsed = time.monotonic() - _loop_start if _loop_start else 0
+        print_summary(_state_ref, elapsed)
+    sys.exit(130)
 
 
 def setup_logging():
@@ -85,6 +107,19 @@ def git_has_conflicts() -> bool:
 def git_conflict_files() -> list[str]:
     result = run(["git", "diff", "--name-only", "--diff-filter=U"])
     return [f for f in result.stdout.strip().split("\n") if f]
+
+
+def git_stage_tracked_changes():
+    result = run(["git", "diff", "--name-only"])
+    modified = [f for f in result.stdout.strip().split("\n") if f]
+    result = run(["git", "diff", "--name-only", "--cached"])
+    staged = [f for f in result.stdout.strip().split("\n") if f]
+    result = run(["git", "ls-files", "--others", "--exclude-standard"])
+    untracked = [f for f in result.stdout.strip().split("\n") if f]
+    all_files = list(set(modified + staged + untracked))
+    safe = [f for f in all_files if not f.startswith(".env") and f != "credentials.json"]
+    if safe:
+        run(["git", "add"] + safe, check=True)
 
 
 def sync_with_main(branch: str) -> bool:
@@ -161,7 +196,7 @@ def resolve_conflicts(branch: str) -> bool:
 
 
 def git_commit_and_push(message: str, branch: str) -> bool:
-    run(["git", "add", "-A"], check=True)
+    git_stage_tracked_changes()
     commit = run(["git", "commit", "-m", message])
     if commit.returncode != 0:
         logger.warning("git] Commit failed: %s", commit.stderr.strip())
@@ -194,9 +229,9 @@ def wait_for_new_run(branch: str, previous_id: int | None) -> int | None:
     return None
 
 
-def wait_for_ci(branch: str) -> tuple[bool, str, float]:
+def wait_for_ci(branch: str, known_previous_id: int | None = None) -> tuple[bool, str, float]:
     start = time.monotonic()
-    previous_id = get_latest_run_id(branch)
+    previous_id = known_previous_id if known_previous_id is not None else get_latest_run_id(branch)
     logger.info("ci] Waiting for CI run...")
 
     run_id = wait_for_new_run(branch, previous_id)
@@ -248,6 +283,7 @@ def _summarize_tool_input(tool: str, raw_json: str) -> str:
 
 
 def run_claude(prompt: str) -> tuple[str, float]:
+    global _active_process
     logger.info("claude] Running...")
     logger.debug("claude] prompt length: %d chars", len(prompt))
     start = time.monotonic()
@@ -264,6 +300,7 @@ def run_claude(prompt: str) -> tuple[str, float]:
         stderr=subprocess.PIPE,
         text=True,
     )
+    _active_process = process
     process.stdin.write(prompt)
     process.stdin.close()
 
@@ -272,46 +309,54 @@ def run_claude(prompt: str) -> tuple[str, float]:
     current_tool = ""
     tool_input_chunks: list[str] = []
 
-    for line in process.stdout:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            event = json.loads(line)
-            event_type = event.get("type", "")
+    try:
+        for line in process.stdout:
+            if time.monotonic() - start > CLAUDE_TIMEOUT:
+                logger.warning("claude] Timeout after %ds, terminating", CLAUDE_TIMEOUT)
+                process.terminate()
+                break
 
-            if event_type == "stream_event":
-                inner = event.get("event", {})
-                delta = inner.get("delta", {})
-                inner_type = inner.get("type", "")
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+                event_type = event.get("type", "")
 
-                if delta.get("type") == "text_delta":
-                    sys.stdout.write(delta["text"])
-                    sys.stdout.flush()
-                    has_streamed = True
+                if event_type == "stream_event":
+                    inner = event.get("event", {})
+                    delta = inner.get("delta", {})
+                    inner_type = inner.get("type", "")
 
-                elif inner_type == "content_block_start":
-                    block = inner.get("content_block", {})
-                    if block.get("type") == "tool_use":
-                        if has_streamed:
-                            sys.stdout.write("\n")
-                            has_streamed = False
-                        current_tool = block.get("name", "?")
-                        tool_input_chunks = []
+                    if delta.get("type") == "text_delta":
+                        sys.stdout.write(delta["text"])
+                        sys.stdout.flush()
+                        has_streamed = True
 
-                elif delta.get("type") == "input_json_delta":
-                    tool_input_chunks.append(delta.get("partial_json", ""))
+                    elif inner_type == "content_block_start":
+                        block = inner.get("content_block", {})
+                        if block.get("type") == "tool_use":
+                            if has_streamed:
+                                sys.stdout.write("\n")
+                                has_streamed = False
+                            current_tool = block.get("name", "?")
+                            tool_input_chunks = []
 
-                elif inner_type == "content_block_stop" and current_tool:
-                    detail = _summarize_tool_input(current_tool, "".join(tool_input_chunks))
-                    logger.info("claude] %s", detail)
-                    current_tool = ""
+                    elif delta.get("type") == "input_json_delta":
+                        tool_input_chunks.append(delta.get("partial_json", ""))
 
-            elif event_type == "result":
-                result_text = event.get("result", "")
+                    elif inner_type == "content_block_stop" and current_tool:
+                        detail = _summarize_tool_input(current_tool, "".join(tool_input_chunks))
+                        logger.info("claude] %s", detail)
+                        current_tool = ""
 
-        except json.JSONDecodeError:
-            logger.debug("claude] unparseable line")
+                elif event_type == "result":
+                    result_text = event.get("result", "")
+
+            except json.JSONDecodeError:
+                logger.debug("claude] unparseable line")
+    finally:
+        _active_process = None
 
     if has_streamed:
         sys.stdout.write("\n")
@@ -431,6 +476,7 @@ class PhaseResult:
 class LoopState:
     branch: str
     started_at: str
+    iteration: int = 0
     results: list[dict] = field(default_factory=list)
 
     def add(self, result: PhaseResult):
@@ -445,6 +491,22 @@ class LoopState:
     def save(self):
         STATE_DIR.mkdir(exist_ok=True)
         STATE_FILE.write_text(json.dumps(asdict(self), indent=2))
+
+    @staticmethod
+    def load() -> LoopState | None:
+        if not STATE_FILE.exists():
+            return None
+        try:
+            data = json.loads(STATE_FILE.read_text())
+            state = LoopState(
+                branch=data["branch"],
+                started_at=data["started_at"],
+                iteration=data.get("iteration", 0),
+                results=data.get("results", []),
+            )
+            return state
+        except (json.JSONDecodeError, KeyError):
+            return None
 
 
 def run_phase(phase: str, iteration: int, state: LoopState, skip_ci: bool) -> PhaseResult:
@@ -534,17 +596,23 @@ def print_summary(state: LoopState, total_elapsed: float):
 
 
 def main():
+    global _state_ref, _loop_start
+
     parser = argparse.ArgumentParser(
         description="Iterative code improvement with CI monitoring"
     )
     parser.add_argument("-n", "--iterations", type=int, default=10)
     parser.add_argument("--ci-timeout", type=int, default=15, help="CI timeout in minutes")
     parser.add_argument("--skip-ci", action="store_true")
-    parser.add_argument("--batch", action="store_true", help="Combine simplify+review into one Claude call per iteration (faster)")
+    parser.add_argument("--batch", action="store_true", help="Run simplify+review then check CI once per iteration (faster)")
+    parser.add_argument("--resume", action="store_true", help="Resume from saved state")
     args = parser.parse_args()
 
     setup_logging()
     require_tools()
+
+    signal.signal(signal.SIGINT, _shutdown)
+    signal.signal(signal.SIGTERM, _shutdown)
 
     global CI_RUN_TIMEOUT
     CI_RUN_TIMEOUT = args.ci_timeout * 60
@@ -554,39 +622,56 @@ def main():
         logger.error("loop] Cannot run on main/master, switch to a feature branch")
         sys.exit(1)
 
-    state = LoopState(branch=branch, started_at=datetime.now().isoformat())
+    start_iteration = 1
+    if args.resume:
+        prev = LoopState.load()
+        if prev and prev.branch == branch:
+            state = prev
+            start_iteration = prev.iteration + 1
+            logger.info("loop] Resumed from iteration %d (%d previous results)", prev.iteration, len(prev.results))
+        else:
+            logger.info("loop] No matching state to resume, starting fresh")
+            state = LoopState(branch=branch, started_at=datetime.now().isoformat())
+    else:
+        state = LoopState(branch=branch, started_at=datetime.now().isoformat())
+
+    _state_ref = state
 
     mode = "batch" if args.batch else "simplify+review"
     header = (
         f"\n{'=' * 50}\n"
         f"  Iterative Improvement Loop\n"
         f"  Branch:     {branch}\n"
-        f"  Iterations: {args.iterations}\n"
+        f"  Iterations: {start_iteration}-{args.iterations}\n"
         f"  Mode:       {mode}\n"
         f"  CI:         {'skip' if args.skip_ci else f'{args.ci_timeout}m timeout'}\n"
         f"{'=' * 50}"
     )
     print(header)
     logger.info(
-        "loop] Started: branch=%s iterations=%d skip_ci=%s batch=%s",
-        branch, args.iterations, args.skip_ci, args.batch,
+        "loop] Started: branch=%s iterations=%d-%d skip_ci=%s batch=%s",
+        branch, start_iteration, args.iterations, args.skip_ci, args.batch,
     )
 
     if not sync_with_main(branch):
         logger.error("loop] Cannot sync with main, aborting")
         sys.exit(1)
 
-    loop_start = time.monotonic()
+    _loop_start = time.monotonic()
 
-    for i in range(1, args.iterations + 1):
+    for i in range(start_iteration, args.iterations + 1):
         print(f"\n--- Iteration {i}/{args.iterations} ---")
         logger.info("loop] === Iteration %d/%d ===", i, args.iterations)
+        state.iteration = i
+        state.save()
 
         if not sync_with_main(branch):
             logger.error("loop] Merge conflict could not be resolved, stopping")
             break
 
         if args.batch:
+            ci_snapshot = get_latest_run_id(branch)
+
             simplify = run_phase("simplify", i, state, skip_ci=True)
             state.add(simplify)
             state.save()
@@ -600,7 +685,7 @@ def main():
                 break
 
             if not args.skip_ci:
-                ci_passed, ci_errors, ci_time = wait_for_ci(branch)
+                ci_passed, ci_errors, ci_time = wait_for_ci(branch, known_previous_id=ci_snapshot)
                 retries = 0
                 while not ci_passed and retries < MAX_CI_RETRIES:
                     retries += 1
@@ -635,7 +720,7 @@ def main():
                 logger.info("loop] Converged: no changes in either phase")
                 break
 
-    total = time.monotonic() - loop_start
+    total = time.monotonic() - _loop_start
     logger.info("loop] Finished in %s", format_duration(total))
     print_summary(state, total)
 
