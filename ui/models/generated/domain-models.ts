@@ -181,13 +181,13 @@ export interface HorizonPredictionDto extends Serializable {
     contributions: number;
 }
 
-export interface ComparisonResponse {
+export interface ComparisonResponse extends Serializable {
     instruments: InstrumentComparisonDto[];
     startDate: DateAsString;
     endDate: DateAsString;
 }
 
-export interface InstrumentComparisonDto {
+export interface InstrumentComparisonDto extends Serializable {
     instrumentId: number;
     symbol: string;
     name: string;
@@ -196,7 +196,7 @@ export interface InstrumentComparisonDto {
     dataPoints: ComparisonDataPointDto[];
 }
 
-export interface ComparisonDataPointDto {
+export interface ComparisonDataPointDto extends Serializable {
     date: DateAsString;
     percentageChange: number;
 }
