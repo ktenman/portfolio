@@ -105,7 +105,7 @@ class InstrumentController(
   @Loggable
   fun compareInstruments(
     @RequestParam @Size(min = 2, max = 10) instrumentIds: List<Long>,
-    @RequestParam(defaultValue = "1Y") @Pattern(regexp = "^(1M|6M|YTD|\\d+Y|MAX)$") period: String,
+    @RequestParam(defaultValue = "1Y") @Pattern(regexp = "^(1M|6M|YTD|[1-9]\\d?Y|MAX)$") period: String,
   ): ComparisonResponse = comparisonCacheService.getComparisonData(instrumentIds, period)
 
   @PostMapping("/classify-etf-holdings")
