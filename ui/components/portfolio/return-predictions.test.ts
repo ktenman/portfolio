@@ -29,7 +29,7 @@ vi.mock('vue-chartjs', () => ({
   },
 }))
 
-const fourPredictions = [
+const samplePredictions = [
   {
     horizon: '1M',
     horizonDays: 30,
@@ -109,11 +109,11 @@ describe('return-predictions', () => {
     expect(wrapper.find('.alert-info').text()).toContain('15 days available')
   })
 
-  it('should render four prediction cards when data is available', () => {
+  it('should render prediction cards when data is available', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.dataPointCount.value = 120
     mockReturnPredictions.currentValue.value = 50000
-    mockReturnPredictions.predictions.value = fourPredictions
+    mockReturnPredictions.predictions.value = samplePredictions
     const wrapper = mount(ReturnPredictions)
     const cards = wrapper.findAll('.col-6.col-lg')
     expect(cards).toHaveLength(5)
@@ -122,7 +122,7 @@ describe('return-predictions', () => {
   it('should display correct horizon labels', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.currentValue.value = 50000
-    mockReturnPredictions.predictions.value = fourPredictions
+    mockReturnPredictions.predictions.value = samplePredictions
     const wrapper = mount(ReturnPredictions)
     const titles = wrapper.findAll('.card-title')
     expect(titles[0].text()).toBe('1 Month')
@@ -136,7 +136,7 @@ describe('return-predictions', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.dataPointCount.value = 250
     mockReturnPredictions.currentValue.value = 50000
-    mockReturnPredictions.predictions.value = [fourPredictions[0]]
+    mockReturnPredictions.predictions.value = [samplePredictions[0]]
     const wrapper = mount(ReturnPredictions)
     expect(wrapper.find('.card-header').text()).toContain('250 days')
   })
@@ -144,7 +144,7 @@ describe('return-predictions', () => {
   it('should render prediction chart when data is available', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.currentValue.value = 50000
-    mockReturnPredictions.predictions.value = fourPredictions
+    mockReturnPredictions.predictions.value = samplePredictions
     const wrapper = mount(ReturnPredictions)
     expect(wrapper.findComponent({ name: 'Line' }).exists()).toBe(true)
   })
@@ -158,7 +158,7 @@ describe('return-predictions', () => {
   it('should show percentage change on cards', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.currentValue.value = 50000
-    mockReturnPredictions.predictions.value = fourPredictions
+    mockReturnPredictions.predictions.value = samplePredictions
     const wrapper = mount(ReturnPredictions)
     const changes = wrapper.findAll('.text-success')
     expect(changes.length).toBeGreaterThanOrEqual(4)
@@ -167,7 +167,7 @@ describe('return-predictions', () => {
   it('should show negative percentage for declining predictions', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.currentValue.value = 55000
-    mockReturnPredictions.predictions.value = [fourPredictions[0]]
+    mockReturnPredictions.predictions.value = [samplePredictions[0]]
     const wrapper = mount(ReturnPredictions)
     expect(wrapper.find('.text-danger').exists()).toBe(true)
   })
@@ -177,7 +177,7 @@ describe('return-predictions', () => {
     mockReturnPredictions.dataPointCount.value = 120
     mockReturnPredictions.currentValue.value = 50000
     mockReturnPredictions.monthlyInvestment.value = 500
-    mockReturnPredictions.predictions.value = [fourPredictions[0]]
+    mockReturnPredictions.predictions.value = [samplePredictions[0]]
     const wrapper = mount(ReturnPredictions)
     expect(wrapper.find('.card-header').text()).toContain('€500.00')
     expect(wrapper.find('.card-header').text()).toContain('/mo invested')
@@ -186,7 +186,7 @@ describe('return-predictions', () => {
   it('should show contributions on cards when present', () => {
     mockReturnPredictions.hasSufficientData.value = true
     mockReturnPredictions.currentValue.value = 50000
-    mockReturnPredictions.predictions.value = fourPredictions
+    mockReturnPredictions.predictions.value = samplePredictions
     const wrapper = mount(ReturnPredictions)
     expect(wrapper.text()).toContain('incl.')
     expect(wrapper.text()).toContain('invested')

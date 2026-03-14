@@ -116,12 +116,11 @@ class ReturnPredictionService(
     label: String,
   ): HorizonPredictionDto {
     val t = horizonDays.toDouble()
-    val xirrRate = maxOf(context.xirrAnnualReturn.toDouble(), -0.99)
-    val months = t / DAYS_PER_MONTH
-    val contributions = context.monthlyInvestment.toDouble() * months
-    val expected = context.currentValue.toDouble() * (1 + xirrRate).pow(t / DAYS_PER_YEAR) + contributions
-    val annualizedSigma = minOf(context.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
     val timeInYears = t / DAYS_PER_YEAR
+    val xirrRate = maxOf(context.xirrAnnualReturn.toDouble(), -0.99)
+    val contributions = context.monthlyInvestment.toDouble() * (t / DAYS_PER_MONTH)
+    val expected = context.currentValue.toDouble() * (1 + xirrRate).pow(timeInYears) + contributions
+    val annualizedSigma = minOf(context.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
     val diffusion = CONFIDENCE_Z_SCORE * annualizedSigma * sqrt(timeInYears)
     val optimistic = expected * exp(diffusion)
     val pessimistic = expected * exp(-diffusion)

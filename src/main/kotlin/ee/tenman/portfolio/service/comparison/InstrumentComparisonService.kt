@@ -41,8 +41,7 @@ class InstrumentComparisonService(
         val instrument = instruments[id] ?: return@mapNotNull null
         buildComparison(instrument, pricesByInstrument[id], commonStartDate)
       }
-    val effectiveStart = commonStartDate ?: startDate
-    return ComparisonResponse(instruments = comparisons, startDate = effectiveStart, endDate = today)
+    return ComparisonResponse(instruments = comparisons, startDate = commonStartDate ?: startDate, endDate = today)
   }
 
   private fun buildComparison(
@@ -80,12 +79,10 @@ class InstrumentComparisonService(
     }
   }
 
-  private fun findCommonStartDate(pricesByInstrument: Map<Long, List<DailyPrice>>): LocalDate? {
-    if (pricesByInstrument.isEmpty()) return null
-    return pricesByInstrument.values
+  private fun findCommonStartDate(pricesByInstrument: Map<Long, List<DailyPrice>>): LocalDate? =
+    pricesByInstrument.values
       .mapNotNull { prices -> prices.minByOrNull { it.entryDate }?.entryDate }
       .maxOrNull()
-  }
 
   private fun normalizeToPercentage(
     prices: List<DailyPrice>,
