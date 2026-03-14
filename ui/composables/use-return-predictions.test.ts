@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
 import { useReturnPredictions } from './use-return-predictions'
 
 const mockQueryReturn = {
@@ -33,7 +33,7 @@ describe('useReturnPredictions', () => {
     expect(hasSufficientData.value).toBe(false)
   })
 
-  it('should return predictions when data is available', async () => {
+  it('should return predictions when data is available', () => {
     mockQueryReturn.data.value = {
       currentValue: 50000,
       xirrAnnualReturn: 0.12,
@@ -52,7 +52,6 @@ describe('useReturnPredictions', () => {
         },
       ],
     }
-    await nextTick()
     const { predictions, hasSufficientData, dataPointCount, currentValue, monthlyInvestment } =
       useReturnPredictions()
     expect(predictions.value).toHaveLength(1)
@@ -62,7 +61,7 @@ describe('useReturnPredictions', () => {
     expect(monthlyInvestment.value).toBe(500)
   })
 
-  it('should return insufficient data when predictions list is empty', async () => {
+  it('should return insufficient data when predictions list is empty', () => {
     mockQueryReturn.data.value = {
       currentValue: 50000,
       xirrAnnualReturn: 0.12,
@@ -70,15 +69,13 @@ describe('useReturnPredictions', () => {
       dataPointCount: 10,
       predictions: [],
     }
-    await nextTick()
     const { hasSufficientData, dataPointCount } = useReturnPredictions()
     expect(hasSufficientData.value).toBe(false)
     expect(dataPointCount.value).toBe(10)
   })
 
-  it('should map error message correctly', async () => {
+  it('should map error message correctly', () => {
     mockQueryReturn.error.value = { message: 'Network error' }
-    await nextTick()
     const { error } = useReturnPredictions()
     expect(error.value).toBe('Network error')
   })

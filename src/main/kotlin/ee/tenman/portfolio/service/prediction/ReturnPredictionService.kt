@@ -51,8 +51,7 @@ class ReturnPredictionService(
 
   fun predict(): ReturnPredictionDto {
     val currentSummary = summaryService.getCurrentDaySummary()
-    val summaries = summaryCacheService.getAllDailySummaries()
-    val values = summaries.map { it.totalValue }
+    val values = summaryCacheService.getAllDailySummaries().map { it.totalValue }
     val monthlyInvestment = calculateTypicalMonthlyInvestment()
     if (values.size < MINIMUM_DATA_POINTS) {
       log.info("Insufficient data for predictions: ${values.size} data points")
@@ -83,11 +82,9 @@ class ReturnPredictionService(
   }
 
   private fun calculateTypicalMonthlyInvestment(): BigDecimal {
-    val transactions = transactionCacheService.getAllTransactions()
-    val buyTransactions =
-      transactions.filter { it.transactionType == TransactionType.BUY && !it.instrument.isCash() }
     val sorted =
-      buyTransactions
+      transactionCacheService.getAllTransactions()
+        .filter { it.transactionType == TransactionType.BUY && !it.instrument.isCash() }
         .groupBy { YearMonth.from(it.transactionDate) }
         .mapValues { (_, txs) -> txs.sumOf { it.quantity.multiply(it.price).add(it.commission) } }
         .values
