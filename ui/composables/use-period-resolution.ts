@@ -18,7 +18,7 @@ function resolveRequestedStart(period: string): string {
   const m = now.getMonth()
   const d = now.getDate()
   const upper = period.toUpperCase()
-  const yearMatch = upper.match(/^(\d)Y$/)
+  const yearMatch = upper.match(/^(\d+)Y$/)
   if (yearMatch) return toDateString(new Date(y - +yearMatch[1], m, d))
   if (upper === '1M') return toDateString(new Date(y, m - 1, d))
   if (upper === '6M') return toDateString(new Date(y, m - 6, d))
