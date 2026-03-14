@@ -343,14 +343,6 @@ def build_phase_prompt(phase: str, branch_diff: str, context: str) -> str:
             "- Performance issues\n"
             "- Missing edge case handling"
         ),
-        "batch": (
-            "BOTH simplification AND quality issues in a single pass:\n"
-            "- Duplicated or overly complex code\n"
-            "- Bugs, security, and correctness problems\n"
-            "- Performance issues and inefficient patterns\n"
-            "- Missing edge case handling\n"
-            "- Dead or unreachable code"
-        ),
     }[phase]
 
     return (
@@ -595,17 +587,33 @@ def main():
             break
 
         if args.batch:
-            result = run_phase("batch", i, state, args.skip_ci)
-            state.add(result)
+            simplify = run_phase("simplify", i, state, skip_ci=True)
+            state.add(simplify)
             state.save()
 
-            if not result.ci_passed:
-                logger.warning("loop] Stopping: CI failed after batch")
+            review = run_phase("review", i, state, skip_ci=True)
+            state.add(review)
+            state.save()
+
+            if not simplify.changes_made and not review.changes_made:
+                logger.info("loop] Converged: no changes in either phase")
                 break
 
-            if not result.changes_made:
-                logger.info("loop] Converged: no changes needed")
-                break
+            if not args.skip_ci:
+                ci_passed, ci_errors, ci_time = wait_for_ci(branch)
+                retries = 0
+                while not ci_passed and retries < MAX_CI_RETRIES:
+                    retries += 1
+                    logger.info("ci-fix] Attempt %d/%d...", retries, MAX_CI_RETRIES)
+                    run_claude(build_ci_fix_prompt(ci_errors))
+                    if not git_has_changes():
+                        logger.info("ci-fix] No fix produced")
+                        break
+                    git_commit_and_push(f"Fix CI (attempt {retries})", branch)
+                    ci_passed, ci_errors, ci_time = wait_for_ci(branch)
+                if not ci_passed:
+                    logger.warning("loop] Stopping: CI failed")
+                    break
         else:
             simplify = run_phase("simplify", i, state, args.skip_ci)
             state.add(simplify)
