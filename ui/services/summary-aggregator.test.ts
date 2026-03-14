@@ -172,5 +172,18 @@ describe('summary-aggregator', () => {
       const result = flattenPages(pages)
       expect(result).toHaveLength(1)
     })
+
+    it('should return empty array when pages contain non-object entries', () => {
+      const pages = ['<html>some error page</html>'] as any
+      const result = flattenPages(pages)
+      expect(result).toEqual([])
+    })
+
+    it('should skip pages with missing content property', () => {
+      const pages = [{ content: [createSummary('2024-01-01')] }, { noContent: 'bad page' } as any]
+      const result = flattenPages(pages)
+      expect(result).toHaveLength(1)
+      expect(result[0].date).toBe('2024-01-01')
+    })
   })
 })

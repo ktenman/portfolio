@@ -35,16 +35,23 @@ axiosInstance.interceptors.response.use(
   }
 )
 
+function ensureJsonResponse<T>(data: unknown, url?: string): T {
+  if (typeof data === 'string' && data.trimStart().startsWith('<')) {
+    throw new ApiError(502, 'Received HTML instead of JSON', `Non-JSON response from: ${url}`, {})
+  }
+  return data as T
+}
+
 export const httpClient = {
   get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
-    axiosInstance.get<T>(url, config).then(res => res.data),
+    axiosInstance.get<T>(url, config).then(res => ensureJsonResponse<T>(res.data, url)),
 
   post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
-    axiosInstance.post<T>(url, data, config).then(res => res.data),
+    axiosInstance.post<T>(url, data, config).then(res => ensureJsonResponse<T>(res.data, url)),
 
   put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
-    axiosInstance.put<T>(url, data, config).then(res => res.data),
+    axiosInstance.put<T>(url, data, config).then(res => ensureJsonResponse<T>(res.data, url)),
 
   delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
-    axiosInstance.delete<T>(url, config).then(res => res.data),
+    axiosInstance.delete<T>(url, config).then(res => ensureJsonResponse<T>(res.data, url)),
 }

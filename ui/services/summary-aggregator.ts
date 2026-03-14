@@ -38,5 +38,6 @@ export function findSummaryByDate(
 export function flattenPages<T extends { content: PortfolioSummaryDto[] }>(
   pages: T[] | undefined
 ): PortfolioSummaryDto[] {
-  return pages?.flatMap(page => page.content) ?? []
+  if (!Array.isArray(pages)) return []
+  return pages.flatMap(page => (Array.isArray(page?.content) ? page.content : []))
 }

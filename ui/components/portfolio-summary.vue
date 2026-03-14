@@ -114,7 +114,9 @@ const { data: platformsData } = useQuery({
   refetchInterval: REFETCH_INTERVALS.PLATFORMS,
 })
 
-const availablePlatforms = computed(() => platformsData.value ?? [])
+const availablePlatforms = computed(() =>
+  Array.isArray(platformsData.value) ? platformsData.value : []
+)
 
 const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
   usePlatformFilter(STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS, availablePlatforms)

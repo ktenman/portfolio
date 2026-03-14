@@ -66,6 +66,30 @@ describe('httpClient', () => {
     })
   })
 
+  describe('ensureJsonResponse', () => {
+    it('should be used by httpClient methods to reject HTML responses', async () => {
+      const { httpClient } = await import('./http-client')
+      const axiosInstance = mockCreate.mock.results[0].value
+
+      axiosInstance.get = vi.fn().mockResolvedValue({
+        data: '<html><body>Login page</body></html>',
+      })
+
+      await expect(httpClient.get('/test')).rejects.toThrow('Received HTML instead of JSON')
+    })
+
+    it('should pass through valid JSON data', async () => {
+      const { httpClient } = await import('./http-client')
+      const axiosInstance = mockCreate.mock.results[0].value
+      const jsonData = { message: 'success' }
+
+      axiosInstance.get = vi.fn().mockResolvedValue({ data: jsonData })
+
+      const result = await httpClient.get('/test')
+      expect(result).toEqual(jsonData)
+    })
+  })
+
   describe('response interceptor', () => {
     let successHandler: any
     let errorHandler: any
