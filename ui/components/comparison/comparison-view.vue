@@ -117,6 +117,7 @@ const allInstruments = computed<InstrumentDto[]>(() => instrumentsResponse.value
 
 const instrumentNameMap = computed(() => new Map(allInstruments.value.map(i => [i.id, i.name])))
 
+const MAX_INSTRUMENTS = 10
 const EXCLUDED_CATEGORIES = new Set(['CASH', 'CRYPTO'])
 
 const filteredInstruments = computed(() => {
@@ -150,8 +151,6 @@ onClickOutside(dropdownRef, () => {
 })
 
 const queryEnabled = computed(() => selectedIds.value.length >= 2)
-
-const MAX_INSTRUMENTS = 10
 
 const { data, isLoading, isError } = useQuery({
   queryKey: computed(() => ['instrument-comparison', selectedIds.value, period.value]),

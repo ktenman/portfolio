@@ -19,6 +19,7 @@ CLAUDE_TIMEOUT = 600
 CI_POLL_INTERVAL = 10
 CI_APPEAR_TIMEOUT = 180
 CI_RUN_TIMEOUT = 900
+MAX_DIFF_CHARS = 12000
 
 logger = logging.getLogger("improve")
 
@@ -247,18 +248,31 @@ def _summarize_tool_input(tool: str, raw_json: str) -> str:
         return tool
 
 
-def run_claude(prompt: str) -> tuple[str, float]:
+def git_diff_content() -> str:
+    result = run(["git", "diff", "main...HEAD"], timeout=30)
+    diff = result.stdout.strip()
+    if len(diff) > MAX_DIFF_CHARS:
+        return diff[:MAX_DIFF_CHARS] + f"\n\n... (truncated, {len(diff)} total chars)"
+    return diff
+
+
+def run_claude(prompt: str, model: str = "", fast: bool = False) -> tuple[str, float]:
     logger.info("claude] Running...")
     logger.debug("claude] prompt length: %d chars", len(prompt))
     start = time.monotonic()
+    cmd = [
+        "claude", "-p",
+        "--output-format", "stream-json",
+        "--include-partial-messages",
+        "--dangerously-skip-permissions",
+        "--effort", "max",
+    ]
+    if model:
+        cmd.extend(["--model", model])
+    if fast:
+        cmd.append("--fast")
     process = subprocess.Popen(
-        [
-            "claude", "-p",
-            "--output-format", "stream-json",
-            "--include-partial-messages",
-            "--dangerously-skip-permissions",
-            "--effort", "max",
-        ],
+        cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -327,7 +341,7 @@ def run_claude(prompt: str) -> tuple[str, float]:
     return result_text, elapsed
 
 
-def build_phase_prompt(phase: str, branch_diff: str, context: str) -> str:
+def build_phase_prompt(phase: str, branch_diff: str, context: str, diff_content: str = "") -> str:
     focus = {
         "simplify": (
             "simplification opportunities:\n"
@@ -343,11 +357,29 @@ def build_phase_prompt(phase: str, branch_diff: str, context: str) -> str:
             "- Performance issues\n"
             "- Missing edge case handling"
         ),
+        "batch": (
+            "BOTH simplification AND quality issues in a single pass:\n"
+            "Simplification:\n"
+            "- Duplicated code that can be extracted\n"
+            "- Overly complex logic that can be simplified\n"
+            "- Inefficient patterns\n"
+            "- Dead or unreachable code\n"
+            "Quality:\n"
+            "- Bugs and correctness problems\n"
+            "- Security vulnerabilities\n"
+            "- Performance issues\n"
+            "- Missing edge case handling"
+        ),
     }[phase]
+
+    diff_section = ""
+    if diff_content:
+        diff_section = f"\nDiff content (for reference, read full files before editing):\n```\n{diff_content}\n```\n"
 
     return (
         f"Review the code changed on this branch (vs main) for {focus}\n\n"
-        f"Files changed on this branch:\n{branch_diff}\n\n"
+        f"Files changed on this branch:\n{branch_diff}\n"
+        f"{diff_section}\n"
         f"Previous iterations already addressed:\n{context}\n\n"
         "Instructions:\n"
         "- Focus on NEW issues not already fixed\n"
@@ -447,14 +479,18 @@ class LoopState:
         STATE_FILE.write_text(json.dumps(asdict(self), indent=2))
 
 
-def run_phase(phase: str, iteration: int, state: LoopState, skip_ci: bool) -> PhaseResult:
+def run_phase(
+    phase: str, iteration: int, state: LoopState, skip_ci: bool,
+    model: str = "", fast: bool = False,
+) -> PhaseResult:
     phase_start = time.monotonic()
     total_claude = 0.0
     total_ci = 0.0
-    prompt = build_phase_prompt(phase, git_diff_vs_main(), state.context())
+    diff_content = git_diff_content()
+    prompt = build_phase_prompt(phase, git_diff_vs_main(), state.context(), diff_content)
 
     logger.info("%s] Running %s...", phase, phase)
-    output, claude_time = run_claude(prompt)
+    output, claude_time = run_claude(prompt, model=model, fast=fast)
     total_claude += claude_time
 
     if not git_has_changes():
@@ -482,7 +518,7 @@ def run_phase(phase: str, iteration: int, state: LoopState, skip_ci: bool) -> Ph
     while not ci_passed and retries < MAX_CI_RETRIES:
         retries += 1
         logger.info("ci-fix] Attempt %d/%d...", retries, MAX_CI_RETRIES)
-        _, fix_claude_time = run_claude(build_ci_fix_prompt(ci_errors))
+        _, fix_claude_time = run_claude(build_ci_fix_prompt(ci_errors), model=model, fast=fast)
         total_claude += fix_claude_time
 
         if not git_has_changes():
@@ -540,6 +576,9 @@ def main():
     parser.add_argument("-n", "--iterations", type=int, default=10)
     parser.add_argument("--ci-timeout", type=int, default=15, help="CI timeout in minutes")
     parser.add_argument("--skip-ci", action="store_true")
+    parser.add_argument("--batch", action="store_true", help="Combine simplify+review into one Claude call per iteration (faster)")
+    parser.add_argument("--model", type=str, default="", help="Claude model override (e.g., sonnet for speed)")
+    parser.add_argument("--fast", action="store_true", help="Use Claude fast output mode")
     args = parser.parse_args()
 
     setup_logging()
@@ -555,22 +594,30 @@ def main():
 
     state = LoopState(branch=branch, started_at=datetime.now().isoformat())
 
+    mode = "batch" if args.batch else "simplify+review"
     header = (
         f"\n{'=' * 50}\n"
         f"  Iterative Improvement Loop\n"
         f"  Branch:     {branch}\n"
         f"  Iterations: {args.iterations}\n"
+        f"  Mode:       {mode}\n"
         f"  CI:         {'skip' if args.skip_ci else f'{args.ci_timeout}m timeout'}\n"
+        f"  Model:      {args.model or 'default'}\n"
+        f"  Fast:       {args.fast}\n"
         f"{'=' * 50}"
     )
     print(header)
-    logger.info("loop] Started: branch=%s iterations=%d skip_ci=%s", branch, args.iterations, args.skip_ci)
+    logger.info(
+        "loop] Started: branch=%s iterations=%d skip_ci=%s batch=%s model=%s fast=%s",
+        branch, args.iterations, args.skip_ci, args.batch, args.model or "default", args.fast,
+    )
 
     if not sync_with_main(branch):
         logger.error("loop] Cannot sync with main, aborting")
         sys.exit(1)
 
     loop_start = time.monotonic()
+    claude_opts = {"model": args.model, "fast": args.fast}
 
     for i in range(1, args.iterations + 1):
         print(f"\n--- Iteration {i}/{args.iterations} ---")
@@ -580,25 +627,38 @@ def main():
             logger.error("loop] Merge conflict could not be resolved, stopping")
             break
 
-        simplify = run_phase("simplify", i, state, args.skip_ci)
-        state.add(simplify)
-        state.save()
+        if args.batch:
+            result = run_phase("batch", i, state, args.skip_ci, **claude_opts)
+            state.add(result)
+            state.save()
 
-        if not simplify.ci_passed:
-            logger.warning("loop] Stopping: CI failed after simplify")
-            break
+            if not result.ci_passed:
+                logger.warning("loop] Stopping: CI failed after batch")
+                break
 
-        review = run_phase("review", i, state, args.skip_ci)
-        state.add(review)
-        state.save()
+            if not result.changes_made:
+                logger.info("loop] Converged: no changes needed")
+                break
+        else:
+            simplify = run_phase("simplify", i, state, args.skip_ci, **claude_opts)
+            state.add(simplify)
+            state.save()
 
-        if not review.ci_passed:
-            logger.warning("loop] Stopping: CI failed after review")
-            break
+            if not simplify.ci_passed:
+                logger.warning("loop] Stopping: CI failed after simplify")
+                break
 
-        if not simplify.changes_made and not review.changes_made:
-            logger.info("loop] Converged: no changes in either phase")
-            break
+            review = run_phase("review", i, state, args.skip_ci, **claude_opts)
+            state.add(review)
+            state.save()
+
+            if not review.ci_passed:
+                logger.warning("loop] Stopping: CI failed after review")
+                break
+
+            if not simplify.changes_made and not review.changes_made:
+                logger.info("loop] Converged: no changes in either phase")
+                break
 
     total = time.monotonic() - loop_start
     logger.info("loop] Finished in %s", format_duration(total))
