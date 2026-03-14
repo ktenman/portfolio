@@ -14,7 +14,7 @@ from pathlib import Path
 STATE_DIR = Path(".improve-loop")
 STATE_FILE = STATE_DIR / "state.json"
 LOG_FILE = STATE_DIR / "run.log"
-MAX_CI_RETRIES = 3
+MAX_CI_RETRIES = 5
 CLAUDE_TIMEOUT = 600
 CI_POLL_INTERVAL = 10
 CI_APPEAR_TIMEOUT = 180
