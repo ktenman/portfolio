@@ -95,6 +95,8 @@ import { onClickOutside, useLocalStorage } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { instrumentsService } from '../../services/instruments-service'
 import { useComparisonChart } from '../../composables/use-comparison-chart'
+import { useInstrumentColors } from '../../composables/use-instrument-colors'
+import { useTruncationDetection } from '../../composables/use-period-resolution'
 import { shortSymbol } from '../../utils/instrument-formatters'
 import ComparisonChart from './comparison-chart.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
@@ -167,74 +169,8 @@ const instrumentColorMap = computed(() => {
   return map
 })
 
-const tagColorFor = (id: number): string => {
-  const fromChart = instrumentColorMap.value.get(id)
-  if (fromChart) return fromChart
-  const idx = selectedIds.value.indexOf(id)
-  return colors[Math.max(0, idx) % colors.length]
-}
-
-const isLightColor = (hex: string): boolean => {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55
-}
-
-const tagTextColor = (id: number): string => (isLightColor(tagColorFor(id)) ? '#1a1a1a' : 'white')
-
-const tagStyle = (id: number) => {
-  const bg = tagColorFor(id)
-  return { backgroundColor: bg, color: isLightColor(bg) ? '#1a1a1a' : 'white' }
-}
-
-const resolveRequestedStart = (p: string): string => {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = now.getMonth()
-  const d = now.getDate()
-  const upper = p.toUpperCase()
-  const yearMatch = upper.match(/^(\d)Y$/)
-  if (yearMatch) return toDateString(new Date(y - +yearMatch[1], m, d))
-  if (upper === '1M') return toDateString(new Date(y, m - 1, d))
-  if (upper === '6M') return toDateString(new Date(y, m - 6, d))
-  if (upper === 'YTD') return toDateString(new Date(y, 0, 1))
-  if (upper === 'MAX') return '2000-01-01'
-  return toDateString(new Date(y - 1, m, d))
-}
-
-const toDateString = (date: Date): string => {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-const TRUNCATION_TOLERANCE_DAYS = 7
-
-const daysBetween = (a: string, b: string): number =>
-  Math.abs(new Date(a).getTime() - new Date(b).getTime()) / 86_400_000
-
-const isTruncated = computed(() => {
-  if (!data.value) return false
-  const requested = resolveRequestedStart(period.value)
-  return (
-    data.value.startDate > requested &&
-    daysBetween(data.value.startDate, requested) > TRUNCATION_TOLERANCE_DAYS
-  )
-})
-
-const cappedPeriods = computed<Set<string>>(() => {
-  if (!data.value || !isTruncated.value) return new Set()
-  const dataStart = data.value.startDate
-  return new Set(
-    periods.filter(
-      p =>
-        resolveRequestedStart(p) < dataStart &&
-        daysBetween(dataStart, resolveRequestedStart(p)) > TRUNCATION_TOLERANCE_DAYS
-    )
-  )
-})
+const { tagStyle, tagTextColor } = useInstrumentColors(selectedIds, instrumentColorMap, colors)
+const { isTruncated, cappedPeriods } = useTruncationDetection(data, period, periods)
 </script>
 
 <style scoped>

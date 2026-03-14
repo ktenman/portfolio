@@ -10,3 +10,7 @@ export function calculatePortfolioWeight(instrumentValue: number, totalValue: nu
   const weight = (instrumentValue / totalValue) * 100
   return `${weight.toFixed(2)}%`
 }
+
+export function shortSymbol(symbol: string): string {
+  return symbol.split(':')[0]
+}

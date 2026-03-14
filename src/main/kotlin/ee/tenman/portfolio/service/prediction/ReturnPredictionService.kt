@@ -34,8 +34,7 @@ class ReturnPredictionService(
     private const val DAYS_PER_YEAR = 365.25
     private const val DAYS_PER_MONTH = 30.44
     private const val SCALE = 10
-    private val HORIZONS =
-      listOf(
+    private val HORIZONS = listOf(
       "1M" to 30,
       "3M" to 91,
       "6M" to 183,

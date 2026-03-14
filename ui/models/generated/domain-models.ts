@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -179,6 +179,26 @@ export interface HorizonPredictionDto extends Serializable {
     optimisticValue: number;
     pessimisticValue: number;
     contributions: number;
+}
+
+export interface ComparisonResponse {
+    instruments: InstrumentComparisonDto[];
+    startDate: DateAsString;
+    endDate: DateAsString;
+}
+
+export interface InstrumentComparisonDto {
+    instrumentId: number;
+    symbol: string;
+    name: string;
+    currentPrice: number | null;
+    totalChangePercent: number;
+    dataPoints: ComparisonDataPointDto[];
+}
+
+export interface ComparisonDataPointDto {
+    date: DateAsString;
+    percentageChange: number;
 }
 
 export interface Serializable {

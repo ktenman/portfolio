@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.dto.ComparisonResponse
 import ee.tenman.portfolio.dto.InstrumentDto
 import ee.tenman.portfolio.dto.InstrumentsResponse
+import ee.tenman.portfolio.service.comparison.InstrumentComparisonService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.integration.IndustryClassificationService
 import ee.tenman.portfolio.service.pricing.PriceRefreshService
@@ -30,6 +32,7 @@ class InstrumentController(
   private val instrumentService: InstrumentService,
   private val priceRefreshService: PriceRefreshService,
   private val industryClassificationService: IndustryClassificationService,
+  private val instrumentComparisonService: InstrumentComparisonService,
 ) {
   @PostMapping
   @Loggable
@@ -95,6 +98,13 @@ class InstrumentController(
       "sectorCode" to sector?.name,
     )
   }
+
+  @GetMapping("/compare")
+  @Loggable
+  fun compareInstruments(
+    @RequestParam instrumentIds: List<Long>,
+    @RequestParam(defaultValue = "1Y") period: String,
+  ): ComparisonResponse = instrumentComparisonService.getComparisonData(instrumentIds, period)
 
   @PostMapping("/classify-etf-holdings")
   @Operation(summary = "Trigger ETF holdings classification job")

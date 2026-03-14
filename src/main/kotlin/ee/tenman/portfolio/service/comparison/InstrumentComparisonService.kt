@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.comparison
 
 import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.dto.ComparisonDataPointDto
 import ee.tenman.portfolio.dto.ComparisonResponse
 import ee.tenman.portfolio.dto.InstrumentComparisonDto
@@ -35,28 +36,32 @@ class InstrumentComparisonService(
     val allPrices = dailyPriceRepository.findAllByInstrumentIdInAndEntryDateBetween(instrumentIds, startDate, today)
     val pricesByInstrument = allPrices.groupBy { it.instrument.id!! }
     val commonStartDate = findCommonStartDate(pricesByInstrument)
-    val comparisons =
-      instrumentIds.mapNotNull { id ->
+    val comparisons = instrumentIds.mapNotNull { id ->
       val instrument = instruments[id] ?: return@mapNotNull null
-      val prices =
-        pricesByInstrument[id]
-        ?.filter { commonStartDate == null || !it.entryDate.isBefore(commonStartDate) }
-        ?: return@mapNotNull null
-      if (prices.isEmpty()) return@mapNotNull null
-      val basePrice = prices.first().closePrice
-      val dataPoints = sampleDataPoints(normalizeToPercentage(prices, basePrice))
-      val totalChange = calculatePercentageChange(prices.last().closePrice, basePrice)
-      InstrumentComparisonDto(
-        instrumentId = id,
-        symbol = instrument.symbol,
-        name = instrument.name,
-        currentPrice = instrument.currentPrice,
-        totalChangePercent = totalChange,
-        dataPoints = dataPoints,
-      )
+      buildComparison(instrument, pricesByInstrument[id], commonStartDate)
     }
     val effectiveStart = commonStartDate ?: startDate
     return ComparisonResponse(instruments = comparisons, startDate = effectiveStart, endDate = today)
+  }
+
+  private fun buildComparison(
+    instrument: Instrument,
+    prices: List<DailyPrice>?,
+    commonStartDate: LocalDate?,
+  ): InstrumentComparisonDto? {
+    val filtered = prices
+      ?.filter { commonStartDate == null || !it.entryDate.isBefore(commonStartDate) }
+      ?: return null
+    if (filtered.isEmpty()) return null
+    val basePrice = filtered.first().closePrice
+    return InstrumentComparisonDto(
+      instrumentId = instrument.id!!,
+      symbol = instrument.symbol,
+      name = instrument.name,
+      currentPrice = instrument.currentPrice,
+      totalChangePercent = calculatePercentageChange(filtered.last().closePrice, basePrice),
+      dataPoints = sampleDataPoints(normalizeToPercentage(filtered, basePrice)),
+    )
   }
 
   internal fun resolveStartDate(

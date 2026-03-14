@@ -207,6 +207,9 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
       "ee.tenman.portfolio.domain.PriceChangePeriod",
       "ee.tenman.portfolio.dto.ReturnPredictionDto",
       "ee.tenman.portfolio.dto.HorizonPredictionDto",
+      "ee.tenman.portfolio.dto.ComparisonResponse",
+      "ee.tenman.portfolio.dto.InstrumentComparisonDto",
+      "ee.tenman.portfolio.dto.ComparisonDataPointDto",
     )
   outputKind = cz.habarta.typescript.generator.TypeScriptOutputKind.module
   outputFileType = cz.habarta.typescript.generator.TypeScriptFileType.implementationFile

@@ -1,6 +1,7 @@
 export const API_ENDPOINTS = {
   INSTRUMENTS: '/instruments',
   INSTRUMENTS_REFRESH_PRICES: '/instruments/refresh-prices',
+  INSTRUMENTS_COMPARE: '/instruments/compare',
   TRANSACTIONS: '/transactions',
   TRANSACTIONS_PLATFORMS: '/transactions/platforms',
   PORTFOLIO_SUMMARY_HISTORICAL: '/portfolio-summary/historical',
