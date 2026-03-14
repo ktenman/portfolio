@@ -45,7 +45,7 @@ class ReturnPredictionService(
 
   fun predict(): ReturnPredictionDto {
     val currentSummary = summaryService.getCurrentDaySummary()
-    val summaries = summaryCacheService.getAllDailySummaries().sortedBy { it.entryDate }
+    val summaries = summaryCacheService.getAllDailySummaries()
     val values = summaries.map { it.totalValue }
     val monthlyInvestment = calculateTypicalMonthlyInvestment()
     if (values.size < MINIMUM_DATA_POINTS) {

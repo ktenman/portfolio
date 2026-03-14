@@ -4,13 +4,14 @@ import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.dto.ComparisonResponse
 import ee.tenman.portfolio.dto.InstrumentDto
 import ee.tenman.portfolio.dto.InstrumentsResponse
-import ee.tenman.portfolio.service.comparison.InstrumentComparisonService
+import ee.tenman.portfolio.service.comparison.ComparisonCacheService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.integration.IndustryClassificationService
 import ee.tenman.portfolio.service.pricing.PriceRefreshService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -32,7 +33,7 @@ class InstrumentController(
   private val instrumentService: InstrumentService,
   private val priceRefreshService: PriceRefreshService,
   private val industryClassificationService: IndustryClassificationService,
-  private val instrumentComparisonService: InstrumentComparisonService,
+  private val comparisonCacheService: ComparisonCacheService,
 ) {
   @PostMapping
   @Loggable
@@ -102,9 +103,9 @@ class InstrumentController(
   @GetMapping("/compare")
   @Loggable
   fun compareInstruments(
-    @RequestParam instrumentIds: List<Long>,
+    @RequestParam @Size(max = 10) instrumentIds: List<Long>,
     @RequestParam(defaultValue = "1Y") period: String,
-  ): ComparisonResponse = instrumentComparisonService.getComparisonData(instrumentIds, period)
+  ): ComparisonResponse = comparisonCacheService.getComparisonData(instrumentIds, period)
 
   @PostMapping("/classify-etf-holdings")
   @Operation(summary = "Trigger ETF holdings classification job")

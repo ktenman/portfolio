@@ -1,4 +1,5 @@
-import { computed, Ref } from 'vue'
+import { computed, type Ref } from 'vue'
+import { useWindowSize } from '@vueuse/core'
 import type { ChartData, ChartOptions } from 'chart.js'
 import type { ComparisonResponse } from '../models/generated/domain-models'
 import { formatDate } from '../utils/formatters'
@@ -7,13 +8,15 @@ import { CHART_COLORS } from '../constants/chart-colors'
 import { sampleDataPoints } from './use-portfolio-chart'
 
 export function useComparisonChart(response: Ref<ComparisonResponse | null | undefined>) {
+  const { width } = useWindowSize()
+
   const chartData = computed<ChartData<'line'> | null>(() => {
     if (!response.value || response.value.instruments.length === 0) return null
 
     const allDates = new Set<string>()
     response.value.instruments.forEach(inst => inst.dataPoints.forEach(dp => allDates.add(dp.date)))
     const sortedDates = Array.from(allDates).sort()
-    const maxPoints = Math.min(window.innerWidth >= 1000 ? 120 : 60, sortedDates.length)
+    const maxPoints = Math.min(width.value >= 1000 ? 120 : 60, sortedDates.length)
     const sampledDates = sampleDataPoints(sortedDates, maxPoints)
 
     return {
