@@ -29,7 +29,7 @@ class ReturnPredictionService(
 
   companion object {
     private const val MINIMUM_DATA_POINTS = 30
-    private const val CONFIDENCE_Z_SCORE = 1.0
+    private const val CONFIDENCE_Z_SCORE = 1.28
     private const val MAX_ANNUAL_VOLATILITY = 0.30
     private const val DAYS_PER_YEAR = 365.25
     private const val DAYS_PER_MONTH = 30.44
@@ -57,14 +57,14 @@ class ReturnPredictionService(
     if (logReturns.isEmpty()) {
       return emptyPrediction(currentSummary.totalValue, currentSummary.xirrAnnualReturn, monthlyInvestment, values.size)
     }
-    val mu = calculateMean(logReturns)
-    val sigma = calculateStdDev(logReturns, mu)
+    val mean = calculateMean(logReturns)
+    val sigma = calculateStdDev(logReturns, mean)
     val context =
       PredictionContext(
       currentValue = currentSummary.totalValue,
       xirrAnnualReturn = currentSummary.xirrAnnualReturn,
       monthlyInvestment = monthlyInvestment,
-      stats = VolatilityStats(mu, sigma),
+      sigma = sigma,
       today = LocalDate.now(clock),
     )
     val predictions = HORIZONS.map { (label, days) -> projectHorizon(context, days, label) }
@@ -92,7 +92,7 @@ class ReturnPredictionService(
         .values
         .sortedBy { it }
     if (sorted.size < 3) return BigDecimal.ZERO
-    return sorted[sorted.size / 4].setScale(SCALE, RoundingMode.HALF_UP)
+    return sorted[sorted.size / 2].setScale(SCALE, RoundingMode.HALF_UP)
   }
 
   private fun calculateLogReturns(values: List<BigDecimal>): List<Double> =
@@ -122,7 +122,7 @@ class ReturnPredictionService(
     val months = t / DAYS_PER_MONTH
     val contributions = context.monthlyInvestment.toDouble() * months
     val expected = context.currentValue.toDouble() * (1 + xirrRate).pow(t / DAYS_PER_YEAR) + contributions
-    val annualizedSigma = minOf(context.stats.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
+    val annualizedSigma = minOf(context.sigma * sqrt(DAYS_PER_YEAR), MAX_ANNUAL_VOLATILITY)
     val timeInYears = t / DAYS_PER_YEAR
     val diffusion = CONFIDENCE_Z_SCORE * annualizedSigma * sqrt(timeInYears)
     val optimistic = expected * exp(diffusion)

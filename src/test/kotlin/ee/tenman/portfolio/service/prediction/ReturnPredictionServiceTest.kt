@@ -102,7 +102,7 @@ class ReturnPredictionServiceTest {
   }
 
   @Test
-  fun `should handle zero volatility without error`() {
+  fun `should collapse confidence interval to expected value with zero volatility`() {
     val summaries = createSummaries(60, BigDecimal("10000"), BigDecimal("0.10"))
     every { summaryCacheService.getAllDailySummaries() } returns summaries
     every { summaryService.getCurrentDaySummary() } returns summaries.last()

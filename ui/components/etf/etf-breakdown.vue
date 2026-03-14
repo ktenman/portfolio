@@ -348,16 +348,6 @@ onMounted(async () => {
   color: white;
 }
 
-.platform-btn.active {
-  background: #0072b2;
-  border-color: #0072b2;
-}
-
-.platform-btn.active:hover {
-  background: #005a8c;
-  border-color: #005a8c;
-}
-
 .search-container {
   display: flex;
   align-items: center;

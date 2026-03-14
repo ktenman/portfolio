@@ -7,6 +7,6 @@ data class PredictionContext(
   val currentValue: BigDecimal,
   val xirrAnnualReturn: BigDecimal,
   val monthlyInvestment: BigDecimal,
-  val stats: VolatilityStats,
+  val sigma: Double,
   val today: LocalDate,
 )
