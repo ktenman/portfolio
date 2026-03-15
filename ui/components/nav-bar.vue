@@ -35,6 +35,7 @@ const routes = ref([
   { path: '/transactions', name: 'Transactions' },
   { path: '/etf-breakdown', name: 'ETF Breakdown' },
   { path: '/diversification', name: 'Diversification' },
+  { path: '/comparison', name: 'Comparison' },
 ])
 
 const { data: buildInfo } = useQuery({
