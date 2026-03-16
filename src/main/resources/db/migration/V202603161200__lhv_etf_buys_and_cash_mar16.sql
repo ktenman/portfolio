@@ -12,4 +12,4 @@ VALUES
     ((SELECT id FROM instrument WHERE symbol = 'AIFS:GER:EUR'), 'BUY', 73, 6.638, '2026-03-16', 'LHV', 0),
     ((SELECT id FROM instrument WHERE symbol = 'EXUS:GER:EUR'), 'BUY', 15, 36.50, '2026-03-16', 'LHV', 0),
     ((SELECT id FROM instrument WHERE symbol = 'EUR'), 'SELL', 2788.25, 1, '2026-03-16', 'SWEDBANK', 0),
-    ((SELECT id FROM instrument WHERE symbol = 'EUR'), 'SELL', 7.67, 1, '2026-03-16', 'LHV', 0);
+    ((SELECT id FROM instrument WHERE symbol = 'EUR'), 'SELL', 5.95, 1, '2026-03-16', 'LHV', 0);
