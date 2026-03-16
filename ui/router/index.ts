@@ -5,6 +5,7 @@ import PortfolioSummaryDto from '../components/portfolio-summary.vue'
 import Calculator from '../components/calculator.vue'
 import EtfBreakdown from '../components/etf/etf-breakdown.vue'
 import DiversificationCalculator from '../components/diversification/diversification-calculator.vue'
+import ComparisonView from '../components/comparison/comparison-view.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -31,6 +32,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/diversification',
     name: 'Diversification',
     component: DiversificationCalculator,
+  },
+  {
+    path: '/comparison',
+    name: 'Comparison',
+    component: ComparisonView,
   },
   {
     path: '/calculator',
