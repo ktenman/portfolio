@@ -37,9 +37,7 @@ dependencies {
   implementation(libs.spring.cloud.starter.openfeign)
   implementation(libs.jackson.module.kotlin)
 
-  // Security fixes for CVEs
   implementation(libs.commons.fileupload)
-  implementation(libs.commons.lang3)
   implementation(libs.spring.boot.starter.actuator)
   implementation(libs.spring.boot.starter.aspectj)
   implementation(libs.micrometer.registry.prometheus)
@@ -50,7 +48,6 @@ dependencies {
   implementation(libs.resilience4j.circuitbreaker)
   implementation(libs.resilience4j.retry)
   implementation(libs.resilience4j.kotlin)
-  implementation(libs.guava)
   implementation(libs.commons.math3)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.telegrambots)

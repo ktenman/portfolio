@@ -11,10 +11,8 @@ detekt = "2.0.0-alpha.2"
 typescriptGenerator = "3.2.1263"
 selenide = "7.14.0"
 resilience4j = "2.3.0"
-guava = "33.5.0-jre"
 commonsMath = "3.6.1"
 commonsFileupload = "1.6.0"
-commonsLang3 = "3.20.0"
 jsoup = "1.22.1"
 telegramBots = "6.9.7.1"
 googleCloudVision = "3.84.0"
@@ -77,10 +75,8 @@ resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", v
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 
 # Utilities
-guava = { module = "com.google.guava:guava", version.ref = "guava" }
 commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath" }
 commons-fileupload = { module = "commons-fileupload:commons-fileupload", version.ref = "commonsFileupload" }
-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commonsLang3" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 
 # Selenium
