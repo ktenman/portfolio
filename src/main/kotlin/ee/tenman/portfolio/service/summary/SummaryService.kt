@@ -88,11 +88,11 @@ class SummaryService(
     val firstDate = sortedTransactions.firstOrNull()?.transactionDate
     if (firstDate == null || firstDate.isAfter(yesterday)) return Page.empty(pageRequest)
     val totalDates = ChronoUnit.DAYS.between(firstDate, yesterday).toInt() + 1
-    val start = page * size
+    val start = page.toLong() * size.toLong()
     if (start >= totalDates) return Page.empty(pageRequest)
-    val end = minOf(start + size, totalDates)
-    val pageStartDate = yesterday.minusDays(end.toLong() - 1)
-    val pageEndDate = yesterday.minusDays(start.toLong())
+    val end = minOf(start + size.toLong(), totalDates.toLong())
+    val pageStartDate = yesterday.minusDays(end - 1)
+    val pageEndDate = yesterday.minusDays(start)
     val pageDates = generateDateRange(pageStartDate, pageEndDate)
     val summaries = calculateSummariesForDates(pageDates, sortedTransactions)
     return PageImpl(summaries.reversed(), pageRequest, totalDates.toLong())
