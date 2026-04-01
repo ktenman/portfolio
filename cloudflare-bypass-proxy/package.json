@@ -14,7 +14,7 @@
   "dependencies": {
     "cheerio": "^1.2.0",
     "express": "5.2.1",
-    "express-rate-limit": "8.2.2",
+    "express-rate-limit": "8.3.2",
     "express-request-id": "^3.0.0",
     "onnxruntime-node": "^1.24.3",
     "pngjs": "^7.0.0"
