@@ -50,7 +50,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
 
