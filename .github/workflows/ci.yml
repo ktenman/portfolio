@@ -317,7 +317,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
         if: steps.check.outputs.should_build == 'true'
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ matrix.image }}
