@@ -51,7 +51,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
       - name: Add fov.ee SSH fingerprint to known hosts
