@@ -243,6 +243,12 @@ export const formatPriceChange = (item: InstrumentDto): string => {
   return `<span class="${colorClass}">${formattedAmount} / ${formattedPercent}%</span>`
 }
 
+export const formatCompactCurrency = (value: number): string => {
+  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}k`
+  return `€${value.toFixed(0)}`
+}
+
 export const formatPercentage = (value: number): string => `${value.toFixed(2)}%`
 
 export const formatTer = (value: number | null, decimals: number = 2): string => {
