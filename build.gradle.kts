@@ -253,7 +253,7 @@ tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
 }
 
 pitest {
-  junit5PluginVersion.set("1.2.1")
+  junit5PluginVersion.set("1.2.3")
   pitestVersion.set(libs.versions.pitest.get())
   targetClasses.set(
     listOf(
