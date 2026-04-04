@@ -117,7 +117,7 @@ describe('NavBar', () => {
     })
 
     it('should handle date constructor throwing error', () => {
-      const originalDate = global.Date
+      const originalDate = globalThis.Date
       const dateSpy = vi.fn().mockImplementation(arg => {
         if (arg === undefined) {
           return originalDate()
@@ -131,7 +131,7 @@ describe('NavBar', () => {
         UTC: originalDate.UTC,
       })
 
-      global.Date = dateSpy as any
+      globalThis.Date = dateSpy as any
 
       mockBuildInfo.value = {
         hash: 'test123',
@@ -141,7 +141,7 @@ describe('NavBar', () => {
       const wrapper = createWrapper()
       expect(wrapper.text()).toContain('throwing-error')
 
-      global.Date = originalDate
+      globalThis.Date = originalDate
     })
 
     it('should handle empty date string', () => {
