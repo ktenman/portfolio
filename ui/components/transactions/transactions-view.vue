@@ -116,7 +116,7 @@ import TransactionTable from './transaction-table.vue'
 import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
-import { STORAGE_KEYS } from '../../constants'
+import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 import {
   useQuickDates,
   QUICK_DATE_OPTIONS,
@@ -141,24 +141,14 @@ const { fromDate, untilDate, selectedQuickDate, setQuickDate, clearDates } = use
   onDateSet: closeDropdown,
 })
 
-const { data: allTransactionsResponse } = useQuery({
-  queryKey: ['transactions'],
-  queryFn: () => transactionsService.getAll(),
+const { data: platformsData } = useQuery({
+  queryKey: ['transaction-platforms'],
+  queryFn: () => transactionsService.getPlatforms(),
   enabled: isAuthenticated,
+  refetchInterval: REFETCH_INTERVALS.PLATFORMS,
 })
 
-const availablePlatforms = computed(() => {
-  if (!allTransactionsResponse.value) return []
-
-  const platformSet = new Set<string>()
-  allTransactionsResponse.value.transactions.forEach(transaction => {
-    if (transaction.platform) {
-      platformSet.add(transaction.platform)
-    }
-  })
-
-  return Array.from(platformSet).sort()
-})
+const availablePlatforms = computed(() => platformsData.value ?? [])
 
 const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
   usePlatformFilter(STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS, availablePlatforms)

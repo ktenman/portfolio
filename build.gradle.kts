@@ -202,6 +202,11 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",
       "ee.tenman.portfolio.domain.PriceChangePeriod",
+      "ee.tenman.portfolio.dto.ReturnPredictionDto",
+      "ee.tenman.portfolio.dto.HorizonPredictionDto",
+      "ee.tenman.portfolio.dto.ComparisonResponse",
+      "ee.tenman.portfolio.dto.InstrumentComparisonDto",
+      "ee.tenman.portfolio.dto.ComparisonDataPointDto",
     )
   outputKind = cz.habarta.typescript.generator.TypeScriptOutputKind.module
   outputFileType = cz.habarta.typescript.generator.TypeScriptFileType.implementationFile
@@ -230,6 +235,11 @@ tasks.named("generateTypeScript") {
 
       // Remove export from DateAsString (internal type)
       content = content.replace("export type DateAsString = string", "type DateAsString = string")
+
+      // Ensure eslint-disable is present after tslint-disable
+      if (!content.contains("/* eslint-disable */")) {
+        content = content.replace("/* tslint:disable */", "/* tslint:disable */\n/* eslint-disable */")
+      }
 
       generatedFile.writeText(content)
       println("Post-processed: Removed timestamp and export from DateAsString")
