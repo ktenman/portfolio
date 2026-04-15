@@ -39,7 +39,7 @@
     "@guolao/vue-monaco-editor": "^1.6.0",
     "@tanstack/vue-query": "^5.96.1",
     "@vueuse/core": "^14.2.1",
-    "axios": "^1.14.0",
+    "axios": "^1.15.0",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",
     "monaco-editor": "^0.55.1",
@@ -69,8 +69,8 @@
     "knip": "^6.2.0",
     "prettier": "^3.8.1",
     "sass": "1.70.0",
-    "typescript": "5.9.3",
-    "vite": "^7.3.2",
+    "typescript": "6.0.2",
+    "vite": "^8.0.3",
     "vitest": "^4.0.14",
     "vue-tsc": "^3.2.6"
   }

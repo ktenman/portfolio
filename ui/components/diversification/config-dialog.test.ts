@@ -78,8 +78,8 @@ describe('ConfigDialog', () => {
     it('should emit export and update:modelValue when download is clicked', async () => {
       const createObjectURL = vi.fn(() => 'blob:test')
       const revokeObjectURL = vi.fn()
-      global.URL.createObjectURL = createObjectURL
-      global.URL.revokeObjectURL = revokeObjectURL
+      globalThis.URL.createObjectURL = createObjectURL
+      globalThis.URL.revokeObjectURL = revokeObjectURL
 
       wrapper = mount(ConfigDialog, { props: { ...defaultProps, modelValue: true } })
       const downloadBtn = wrapper.findAll('button').find(b => b.text() === 'Download')
