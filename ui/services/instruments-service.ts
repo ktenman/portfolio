@@ -2,6 +2,7 @@ import { httpClient } from '../utils/http-client'
 import {
   type InstrumentDto,
   type InstrumentsResponse,
+  type ComparisonResponse,
   PriceChangePeriod,
 } from '../models/generated/domain-models'
 import { API_ENDPOINTS } from '../constants'
@@ -23,4 +24,9 @@ export const instrumentsService = {
 
   refreshPrices: () =>
     httpClient.post<{ status: string }>(API_ENDPOINTS.INSTRUMENTS_REFRESH_PRICES),
+
+  compare: (instrumentIds: number[], period: string) =>
+    httpClient.get<ComparisonResponse>(API_ENDPOINTS.INSTRUMENTS_COMPARE, {
+      params: { instrumentIds, period },
+    }),
 }

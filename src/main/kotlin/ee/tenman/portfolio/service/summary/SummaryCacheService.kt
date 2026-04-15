@@ -20,7 +20,8 @@ class SummaryCacheService(
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [SUMMARY_CACHE], key = "'summaries'", unless = "#result.isEmpty()")
-  fun getAllDailySummaries(): List<PortfolioDailySummary> = portfolioDailySummaryRepository.findAll()
+  fun getAllDailySummaries(): List<PortfolioDailySummary> =
+    portfolioDailySummaryRepository.findAll(Sort.by(Sort.Direction.ASC, "entryDate"))
 
   @Transactional(readOnly = true)
   @Cacheable(
