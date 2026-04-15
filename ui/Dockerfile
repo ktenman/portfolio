@@ -1,9 +1,9 @@
-FROM node:lts-iron as build
+FROM node:20 as build
 
 WORKDIR /app
 # Copying files separately can help in utilizing Docker's cache mechanism efficiently.
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci --include=optional
 
 # Copying the rest of the files after npm install ensures that a change in the source
 # does not invalidate the Docker cache from the npm install layer.
