@@ -35,7 +35,14 @@ class EtfHoldingPersistenceService(
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
     val savedHoldings = mutableMapOf<String, EtfHolding>()
     holdings.forEach { holdingData ->
-      val holding = findOrCreateHolding(holdingData.name, holdingData.ticker, holdingData.sector)
+      val holding =
+        findOrCreateHolding(
+          holdingData.name,
+          holdingData.ticker,
+          holdingData.sector,
+          holdingData.countryCode,
+          holdingData.countryName,
+        )
       savedHoldings[holdingData.name] = holding
       val existingPosition =
         etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
@@ -66,11 +73,14 @@ class EtfHoldingPersistenceService(
     name: String,
     ticker: String?,
     sector: String? = null,
+    countryCode: String? = null,
+    countryName: String? = null,
   ): EtfHolding {
     val existing = etfHoldingRepository.findByNameIgnoreCase(name)
     if (existing != null) {
       updateTickerIfMissing(existing, ticker)
       updateSectorFromSourceIfMissing(existing, sector)
+      updateCountryFromSourceIfMissing(existing, countryCode, countryName)
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
@@ -80,6 +90,8 @@ class EtfHoldingPersistenceService(
         ticker = ticker,
         sector = sector,
         sectorSource = sector?.let { SectorSource.LIGHTYEAR },
+        countryCode = countryCode,
+        countryName = countryName,
       ),
     )
   }
@@ -99,13 +111,13 @@ class EtfHoldingPersistenceService(
   @Transactional(readOnly = true)
   fun findUnclassifiedHoldingIds(): List<Long> =
     etfHoldingRepository
-      .findUnclassifiedSectorHoldingsForCurrentPortfolio()
+      .findUnclassifiedSectorHoldings()
       .map { it.id }
 
   @Transactional(readOnly = true)
   fun findUnclassifiedByCountryHoldingIds(maxAttempts: Int = MAX_COUNTRY_FETCH_ATTEMPTS): List<Long> =
     etfHoldingRepository
-      .findUnclassifiedCountryHoldingsForCurrentPortfolio(maxAttempts)
+      .findUnclassifiedCountryHoldings(maxAttempts)
       .map { it.id }
 
   companion object {
@@ -182,6 +194,18 @@ class EtfHoldingPersistenceService(
       holding.sector = sourceSector
       holding.sectorSource = SectorSource.LIGHTYEAR
     }
+  }
+
+  private fun updateCountryFromSourceIfMissing(
+    holding: EtfHolding,
+    sourceCountryCode: String?,
+    sourceCountryName: String?,
+  ) {
+    if (!holding.countryCode.isNullOrBlank()) return
+    if (sourceCountryCode.isNullOrBlank() || sourceCountryName.isNullOrBlank()) return
+    log.info("Updating country from source for '${holding.name}': $sourceCountryCode ($sourceCountryName)")
+    holding.countryCode = sourceCountryCode
+    holding.countryName = sourceCountryName
   }
 
   private fun updateTickerIfMissing(

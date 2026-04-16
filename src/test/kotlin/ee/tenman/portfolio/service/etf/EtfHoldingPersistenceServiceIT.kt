@@ -254,6 +254,124 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
+  fun `should saveHoldings persist country on new holding when provided`() {
+    val date = LocalDate.of(2024, 7, 1)
+    val holdings =
+      listOf(
+        HoldingData(
+          name = "Banco Santander",
+          ticker = "SAN",
+          sector = null,
+          weight = BigDecimal("13.94"),
+          rank = 1,
+          countryCode = "ES",
+          countryName = "Spain",
+        ),
+      )
+
+    etfHoldingPersistenceService.saveHoldings("VWCE", date, holdings)
+
+    val saved = etfHoldingRepository.findAll().first()
+    expect(saved.countryCode).toEqual("ES")
+    expect(saved.countryName).toEqual("Spain")
+  }
+
+  @Test
+  fun `cannot overwrite existing country on saveHoldings when already set`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(
+          name = "Banco Santander",
+          ticker = "SAN",
+          sector = null,
+          weight = BigDecimal("13.94"),
+          rank = 1,
+          countryCode = "ES",
+          countryName = "Spain",
+        ),
+      ),
+    )
+
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date.plusDays(1),
+      listOf(
+        HoldingData(
+          name = "Banco Santander",
+          ticker = "SAN",
+          sector = null,
+          weight = BigDecimal("13.94"),
+          rank = 1,
+          countryCode = "XX",
+          countryName = "Wrongland",
+        ),
+      ),
+    )
+
+    val saved = etfHoldingRepository.findAll().first()
+    expect(saved.countryCode).toEqual("ES")
+    expect(saved.countryName).toEqual("Spain")
+  }
+
+  @Test
+  fun `should backfill country on existing holding when previously missing`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(
+          name = "Banco Santander",
+          ticker = "SAN",
+          sector = null,
+          weight = BigDecimal("13.94"),
+          rank = 1,
+        ),
+      ),
+    )
+
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date.plusDays(1),
+      listOf(
+        HoldingData(
+          name = "Banco Santander",
+          ticker = "SAN",
+          sector = null,
+          weight = BigDecimal("13.94"),
+          rank = 1,
+          countryCode = "ES",
+          countryName = "Spain",
+        ),
+      ),
+    )
+
+    val saved = etfHoldingRepository.findAll().first()
+    expect(saved.countryCode).toEqual("ES")
+    expect(saved.countryName).toEqual("Spain")
+  }
+
+  @Test
+  fun `should findUnclassifiedCountryHoldings return holdings without portfolio positions`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(name = "Orphan Co", ticker = "ORPH", sector = null, weight = BigDecimal("5"), rank = 1),
+      ),
+    )
+
+    val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedByCountryHoldingIds()
+
+    val orphanId = etfHoldingRepository.findAll().first { it.name == "Orphan Co" }.id
+    expect(unclassifiedIds).toContainExactly(orphanId)
+  }
+
+  @Test
   fun `should saveHoldings handle large number of holdings`() {
     val date = LocalDate.of(2024, 7, 1)
     val holdings =

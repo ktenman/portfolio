@@ -55,6 +55,8 @@ class ArchitectureTest {
         "..openrouter..",
         "..lightyear..",
         "..veego..",
+        "..trading212..",
+        "..openfigi..",
       ).layer("Configuration")
       .definedBy("..configuration..")
       .layer("Jobs")
@@ -367,7 +369,7 @@ class ArchitectureTest {
       .areAnnotatedWith(CachePut::class.java)
       .should()
       .beDeclaredInClassesThat()
-      .resideInAnyPackage("..service..", "..lightyear..", "..binance..", "..ft..", "..openrouter..")
+      .resideInAnyPackage("..service..", "..lightyear..", "..binance..", "..ft..", "..openrouter..", "..trading212..")
       .because("Caching is a service or infrastructure layer concern")
 
   @ArchTest

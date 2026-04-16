@@ -111,6 +111,10 @@ springdoc:
 binance:
   url: https://api.binance.com
 
+openfigi:
+  url: ${OPENFIGI_URL:https://api.openfigi.com}
+  default-exchange-code: IM
+
 auth:
   url: http://auth:8083
 
@@ -229,6 +233,27 @@ trading212:
   proxy:
     url: ${TRADING212_PROXY_URL:${cloudflare-bypass-proxy.url}}
   batch-size: ${TRADING212_BATCH_SIZE:15}
+  api:
+    base-url: ${TRADING212_API_BASE_URL:https://live.trading212.com}
+    key-id: ${TRADING212_API_KEY_ID:}
+    key-secret: ${TRADING212_API_KEY_SECRET:}
+
+trading212-scraping:
+  symbols:
+    - symbol: WTAI:MIL:EUR
+      ticker: WTAIm_EQ
+    - symbol: VUAA:GER:EUR
+      ticker: VUAAm_EQ
+    - symbol: SPYL:GER:EUR
+      ticker: SPYLa_EQ
+    - symbol: QDVE:GER:EUR
+      ticker: QDVEd_EQ
+    - symbol: XAIX:GER:EUR
+      ticker: XAIXd_EQ
+    - symbol: CSX5:AEX:EUR
+      ticker: CSX5a_EQ
+    - symbol: BNKE:PAR:EUR
+      ticker: BNKEp_EQ
 
 
 

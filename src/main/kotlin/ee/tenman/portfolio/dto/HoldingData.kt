@@ -9,4 +9,6 @@ data class HoldingData(
   val weight: BigDecimal,
   val rank: Int,
   val logoUrl: String? = null,
+  val countryCode: String? = null,
+  val countryName: String? = null,
 )
