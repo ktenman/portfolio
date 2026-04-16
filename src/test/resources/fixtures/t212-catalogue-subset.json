@@ -1,0 +1,186 @@
+[
+  {
+    "ticker": "SANe_EQ",
+    "type": "STOCK",
+    "isin": "ES0113900J37",
+    "currencyCode": "EUR",
+    "name": "Banco Santander",
+    "shortName": "SAN"
+  },
+  {
+    "ticker": "BBVAe_EQ",
+    "type": "STOCK",
+    "isin": "ES0113211835",
+    "currencyCode": "EUR",
+    "name": "Banco Bilbao Vizcaya Argentaria",
+    "shortName": "BBVA"
+  },
+  {
+    "ticker": "BNPp_EQ",
+    "type": "STOCK",
+    "isin": "FR0000131104",
+    "currencyCode": "EUR",
+    "name": "BNP Paribas",
+    "shortName": "BNP"
+  },
+  {
+    "ticker": "IESd_EQ",
+    "type": "STOCK",
+    "isin": "IT0000072618",
+    "currencyCode": "EUR",
+    "name": "Intesa Sanpaolo",
+    "shortName": "IES"
+  },
+  {
+    "ticker": "INGAa_EQ",
+    "type": "STOCK",
+    "isin": "NL0011821202",
+    "currencyCode": "EUR",
+    "name": "ING Groep",
+    "shortName": "INGA"
+  },
+  {
+    "ticker": "04Qd_EQ",
+    "type": "STOCK",
+    "isin": "FI4000297767",
+    "currencyCode": "EUR",
+    "name": "Nordea Bank",
+    "shortName": "04Q"
+  },
+  {
+    "ticker": "DBKd_EQ",
+    "type": "STOCK",
+    "isin": "DE0005140008",
+    "currencyCode": "EUR",
+    "name": "Deutsche Bank",
+    "shortName": "DBK"
+  },
+  {
+    "ticker": "GLEp_EQ",
+    "type": "STOCK",
+    "isin": "FR0000130809",
+    "currencyCode": "EUR",
+    "name": "Societe Generale",
+    "shortName": "GLE"
+  },
+  {
+    "ticker": "CABKe_EQ",
+    "type": "STOCK",
+    "isin": "ES0140609019",
+    "currencyCode": "EUR",
+    "name": "CaixaBank",
+    "shortName": "CABK"
+  },
+  {
+    "ticker": "EBS_AT_EQ",
+    "type": "STOCK",
+    "isin": "AT0000652011",
+    "currencyCode": "EUR",
+    "name": "Erste Group Bank",
+    "shortName": "EBS"
+  },
+  {
+    "ticker": "KBC_BE_EQ",
+    "type": "STOCK",
+    "isin": "BE0003565737",
+    "currencyCode": "EUR",
+    "name": "KBC Group",
+    "shortName": "KBC"
+  },
+  {
+    "ticker": "CBKd_EQ",
+    "type": "STOCK",
+    "isin": "DE000CBK1001",
+    "currencyCode": "EUR",
+    "name": "Commerzbank",
+    "shortName": "CBK"
+  },
+  {
+    "ticker": "AIBGl_EQ",
+    "type": "STOCK",
+    "isin": "IE00BF0L3536",
+    "currencyCode": "GBX",
+    "name": "AIB Group",
+    "shortName": "AIBG"
+  },
+  {
+    "ticker": "ACAp_EQ",
+    "type": "STOCK",
+    "isin": "FR0000045072",
+    "currencyCode": "EUR",
+    "name": "Credit Agricole",
+    "shortName": "ACA"
+  },
+  {
+    "ticker": "ABNa_EQ",
+    "type": "STOCK",
+    "isin": "NL0011540547",
+    "currencyCode": "EUR",
+    "name": "ABN AMRO Bank",
+    "shortName": "ABN"
+  },
+  {
+    "ticker": "SABe_EQ",
+    "type": "STOCK",
+    "isin": "ES0113860A34",
+    "currencyCode": "EUR",
+    "name": "Banco de Sabadell",
+    "shortName": "SAB"
+  },
+  {
+    "ticker": "BIRG1l_EQ",
+    "type": "STOCK",
+    "isin": "IE00BD1RP616",
+    "currencyCode": "EUR",
+    "name": "Bank of Ireland",
+    "shortName": "BIRG1"
+  },
+  {
+    "ticker": "BG_AT_EQ",
+    "type": "STOCK",
+    "isin": "AT0000BAWAG2",
+    "currencyCode": "EUR",
+    "name": "BAWAG",
+    "shortName": "BG"
+  },
+  {
+    "ticker": "BKTe_EQ",
+    "type": "STOCK",
+    "isin": "ES0113679I37",
+    "currencyCode": "EUR",
+    "name": "Bankinter",
+    "shortName": "BKT"
+  },
+  {
+    "ticker": "BCP_PT_EQ",
+    "type": "STOCK",
+    "isin": "PTBCP0AM0015",
+    "currencyCode": "EUR",
+    "name": "Banco Comercial Portugues",
+    "shortName": "BCP"
+  },
+  {
+    "ticker": "RBI_AT_EQ",
+    "type": "STOCK",
+    "isin": "AT0000606306",
+    "currencyCode": "EUR",
+    "name": "Raiffeisen Bank International",
+    "shortName": "RBI"
+  },
+  {
+    "ticker": "UNIe_EQ",
+    "type": "STOCK",
+    "isin": "ES0180907000",
+    "currencyCode": "EUR",
+    "name": "Unicaja Banco",
+    "shortName": "UNI"
+  },
+  {
+    "ticker": "KBCA_BE_EQ",
+    "type": "STOCK",
+    "isin": "BE0003867844",
+    "currencyCode": "EUR",
+    "name": "KBC Ancora",
+    "shortName": "KBCA"
+  }
+]

@@ -396,6 +396,8 @@ jobs:
       MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
       MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      TRADING212_API_KEY_ID: ${{ secrets.TRADING212_API_KEY_ID }}
+      TRADING212_API_KEY_SECRET: ${{ secrets.TRADING212_API_KEY_SECRET }}
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot

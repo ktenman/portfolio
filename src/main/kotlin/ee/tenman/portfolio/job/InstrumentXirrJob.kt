@@ -108,7 +108,9 @@ class InstrumentXirrJob(
         }
       }.toMutableList()
     if (totalQuantity > BigDecimal.ZERO) {
-      val currentPrice = instrument.currentPrice ?: sortedPrices.last().closePrice
+      val currentPrice =
+        instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
+          ?: sortedPrices.last().closePrice
       cashFlows.add(CashFlow(totalQuantity.multiply(currentPrice).toDouble(), endDate))
     }
     return cashFlows
@@ -134,7 +136,7 @@ class InstrumentXirrJob(
 
   companion object {
     private val MONTHLY_INVESTMENT = BigDecimal("1000")
-    private const val STARTUP_DELAY_MS = 120_000L
+    private const val STARTUP_DELAY_MS = 360_000L
     private const val MAX_PRICE_OFFSET_DAYS = 7
   }
 }

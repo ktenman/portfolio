@@ -67,6 +67,8 @@ services:
       TRADING212_ENABLED: true
       CLOUDFLARE_BYPASS_PROXY_URL: http://cloudflare-bypass-proxy:3000
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      TRADING212_API_KEY_ID: ${TRADING212_API_KEY_ID}
+      TRADING212_API_KEY_SECRET: ${TRADING212_API_KEY_SECRET}
     image: ktenman/portfolio-be:latest
     ports:
       - '8080:8080'

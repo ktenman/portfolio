@@ -37,6 +37,7 @@ class InstrumentPriceGapFillingJobTest {
       jobExecutionService,
       taskScheduler,
     )
+    every { instrumentService.getInstrumentsByProvider(ProviderName.TRADING212) } returns emptyList()
   }
 
   @Test
