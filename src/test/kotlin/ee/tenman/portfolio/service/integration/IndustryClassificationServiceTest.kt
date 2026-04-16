@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.integration
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
@@ -195,6 +196,143 @@ class IndustryClassificationServiceTest {
     val result = service.classifyCompany("Unknown Corp")
 
     expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should return empty map for empty batch input`() {
+    val result = service.classifyBatch(emptyList())
+    expect(result.keys).toHaveSize(0)
+  }
+
+  @Test
+  fun `should classify batch of 3 companies`() {
+    every { properties.enabled } returns true
+    val companies =
+      listOf(
+        CompanyClassificationInput(holdingId = 1L, name = "Nvidia", ticker = "NVDA"),
+        CompanyClassificationInput(holdingId = 2L, name = "JPMorgan", ticker = "JPM"),
+        CompanyClassificationInput(holdingId = 3L, name = "Pfizer", ticker = "PFE"),
+      )
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+      OpenRouterClassificationResult(
+        content = "1. Semiconductors\n2. Finance\n3. Health",
+        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+      )
+
+    val result = service.classifyBatch(companies)
+
+    expect(result.keys).toHaveSize(3)
+    expect(result[1L]!!.sector).toEqual(IndustrySector.SEMICONDUCTORS)
+    expect(result[2L]!!.sector).toEqual(IndustrySector.FINANCE)
+    expect(result[3L]!!.sector).toEqual(IndustrySector.HEALTH)
+  }
+
+  @Test
+  fun `should skip blank names in batch`() {
+    every { properties.enabled } returns true
+    val companies =
+      listOf(
+        CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"),
+        CompanyClassificationInput(holdingId = 2L, name = "", ticker = "BLANK"),
+        CompanyClassificationInput(holdingId = 3L, name = "Microsoft", ticker = "MSFT"),
+      )
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+      OpenRouterClassificationResult(
+        content = "1. Semiconductors\n2. Software & Cloud Services",
+        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+      )
+
+    val result = service.classifyBatch(companies)
+
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]!!.sector).toEqual(IndustrySector.SEMICONDUCTORS)
+    expect(result[3L]!!.sector).toEqual(IndustrySector.SOFTWARE_CLOUD_SERVICES)
+    expect(result[2L]).toEqual(null)
+  }
+
+  @Test
+  fun `should return partial results when response has only some lines`() {
+    every { properties.enabled } returns true
+    val companies =
+      (1..5).map {
+        CompanyClassificationInput(holdingId = it.toLong(), name = "Company $it", ticker = "C$it")
+      }
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+      OpenRouterClassificationResult(
+        content = "1. Semiconductors\n3. Finance",
+        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+      )
+
+    val result = service.classifyBatch(companies)
+
+    expect(result.keys).toHaveSize(2)
+    expect(result[1L]!!.sector).toEqual(IndustrySector.SEMICONDUCTORS)
+    expect(result[3L]!!.sector).toEqual(IndustrySector.FINANCE)
+  }
+
+  @Test
+  fun `should return empty map when all fallback models fail`() {
+    every { properties.enabled } returns true
+    val companies =
+      listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns null
+
+    val result = service.classifyBatch(companies)
+
+    expect(result.keys).toHaveSize(0)
+  }
+
+  @Test
+  fun `should strip trailing commentary after sector name`() {
+    every { properties.enabled } returns true
+    val companies =
+      listOf(
+        CompanyClassificationInput(holdingId = 1L, name = "Banco Santander", ticker = "SAN"),
+        CompanyClassificationInput(holdingId = 2L, name = "Apple", ticker = "AAPL"),
+      )
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+      OpenRouterClassificationResult(
+        content = "1. Finance (large cap banks)\n2. Semiconductors - chip design",
+        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+      )
+
+    val result = service.classifyBatch(companies)
+
+    expect(result[1L]!!.sector).toEqual(IndustrySector.FINANCE)
+    expect(result[2L]!!.sector).toEqual(IndustrySector.SEMICONDUCTORS)
+  }
+
+  @Test
+  fun `should skip line with unknown sector name`() {
+    every { properties.enabled } returns true
+    val companies =
+      listOf(
+        CompanyClassificationInput(holdingId = 1L, name = "Valid Corp", ticker = "VC"),
+        CompanyClassificationInput(holdingId = 2L, name = "Mystery Corp", ticker = "MC"),
+      )
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+      OpenRouterClassificationResult(
+        content = "1. Finance\n2. Quantum Computing",
+        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+      )
+
+    val result = service.classifyBatch(companies)
+
+    expect(result.keys).toHaveSize(1)
+    expect(result[1L]!!.sector).toEqual(IndustrySector.FINANCE)
+    expect(result[2L]).toEqual(null)
+  }
+
+  @Test
+  fun `should return empty map when classification disabled via properties`() {
+    every { properties.enabled } returns false
+    val companies =
+      listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
+
+    val result = service.classifyBatch(companies)
+
+    expect(result.keys).toHaveSize(0)
+    verify(exactly = 0) { openRouterClient.classifyWithCascadingFallback(any(), any()) }
   }
 
   @Test

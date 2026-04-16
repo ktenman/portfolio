@@ -30,7 +30,7 @@ class InstrumentPriceGapFillingJob(
 
   @PostConstruct
   fun scheduleInitialRun() {
-    log.info("Scheduling initial instrument price gap filling job to run in 240 seconds")
+    log.info("Scheduling initial instrument price gap filling job to run in $INITIAL_DELAY_SECONDS seconds")
     taskScheduler.schedule(
       { runScheduledJob() },
       Instant.now(clock).plus(Duration.ofSeconds(INITIAL_DELAY_SECONDS)),
@@ -55,12 +55,14 @@ class InstrumentPriceGapFillingJob(
     }
     try {
       log.info("Starting instrument price gap filling execution")
-      val instruments = instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR)
+      val instruments =
+        instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) +
+          instrumentService.getInstrumentsByProvider(ProviderName.TRADING212)
       if (instruments.isEmpty()) {
-        log.info("No LIGHTYEAR instruments found to fill gaps")
+        log.info("No instruments found to fill gaps")
         return
       }
-      log.info("Found ${instruments.size} LIGHTYEAR instruments to process for gap filling")
+      log.info("Found ${instruments.size} LIGHTYEAR+TRADING212 instruments to process for gap filling")
       var totalSaved = 0
       instruments.forEach { instrument ->
         val saved = fillGapsForInstrument(instrument)
@@ -110,6 +112,6 @@ class InstrumentPriceGapFillingJob(
   }
 
   companion object {
-    private const val INITIAL_DELAY_SECONDS = 240L
+    private const val INITIAL_DELAY_SECONDS = 60L
   }
 }

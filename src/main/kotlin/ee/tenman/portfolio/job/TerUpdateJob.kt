@@ -1,11 +1,14 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -20,6 +23,8 @@ class TerUpdateJob(
   private val instrumentRepository: InstrumentRepository,
   private val lightyearPriceService: LightyearPriceService,
   private val instrumentService: InstrumentService,
+  private val trading212HoldingsService: Trading212HoldingsService,
+  private val scrapingProperties: Trading212ScrapingProperties,
   private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -69,12 +74,45 @@ class TerUpdateJob(
   }
 
   private fun updateAllTers(): String {
-    val lightyearInstruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR)
-    log.info("Found ${lightyearInstruments.size} Lightyear instruments to update TERs")
+    val lyResult =
+      processProvider(
+        instruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR),
+        providerLabel = "Lightyear",
+      ) { instrument ->
+        TER_OVERRIDES[instrument.symbol] ?: lightyearPriceService.fetchFundInfo(instrument.symbol)
+      }
+    val t212Result =
+      processProvider(
+        instruments = instrumentRepository.findByProviderName(ProviderName.TRADING212),
+        providerLabel = "Trading212",
+      ) { instrument ->
+        resolveTrading212Ter(instrument)
+      }
+    return "$lyResult; $t212Result"
+  }
+
+  private fun resolveTrading212Ter(instrument: Instrument): BigDecimal? {
+    val ticker = scrapingProperties.findTickerBySymbol(instrument.symbol)
+    if (ticker == null) {
+      log.warn("No Trading212 ticker mapping for symbol ${instrument.symbol}, skipping TER update")
+      return null
+    }
+    return runCatching { trading212HoldingsService.fetchTer(ticker) }.getOrElse {
+      log.error("Failed to fetch TER for ${instrument.symbol} via Trading212", it)
+      null
+    }
+  }
+
+  private fun processProvider(
+    instruments: List<Instrument>,
+    providerLabel: String,
+    terFetcher: (Instrument) -> BigDecimal?,
+  ): String {
+    log.info("Found ${instruments.size} $providerLabel instruments to update TERs")
     var updated = 0
     var noData = 0
-    lightyearInstruments.forEach { instrument ->
-      val ter = TER_OVERRIDES[instrument.symbol] ?: lightyearPriceService.fetchFundInfo(instrument.symbol)
+    instruments.forEach { instrument ->
+      val ter = terFetcher(instrument)
       if (ter != null) {
         instrumentService.updateTer(instrument.id, ter)
         updated++
@@ -84,7 +122,7 @@ class TerUpdateJob(
         log.debug("No TER data for ${instrument.symbol}")
       }
     }
-    val resultMessage = "Updated $updated/${lightyearInstruments.size} TERs, $noData with no data"
+    val resultMessage = "$providerLabel: updated $updated/${instruments.size}, $noData with no data"
     log.info(resultMessage)
     return resultMessage
   }
