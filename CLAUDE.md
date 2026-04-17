@@ -93,8 +93,6 @@ Auto-generates TypeScript types from Kotlin DTOs to `ui/models/generated/domain-
 
 ## Behavioral Principles
 
-https://x.com/karpathy/status/2015883857489522876
-
 ### 1. Think Before Coding
 
 Don't assume. Don't hide confusion. Don't reflexively agree.
@@ -104,6 +102,7 @@ Don't assume. Don't hide confusion. Don't reflexively agree.
 - If a simpler approach exists, say so. Push back when warranted, even against the user.
 - If something is unclear, stop. Name what's confusing. Ask.
 - Surface tradeoffs and inconsistencies instead of agreeing reflexively.
+- For non-trivial work, state the plan before editing code (use plan mode or inline).
 
 ### 2. Simplicity First
 
