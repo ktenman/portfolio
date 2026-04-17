@@ -93,7 +93,7 @@ Auto-generates TypeScript types from Kotlin DTOs to `ui/models/generated/domain-
 
 ## Behavioral Principles
 
-Four principles to reduce common coding mistakes (adapted from [Karpathy's observations](https://x.com/karpathy/status/2015883857489522876)). Bias toward caution over speed — use judgment on trivial tasks.
+https://x.com/karpathy/status/2015883857489522876
 
 ### 1. Think Before Coding
 
