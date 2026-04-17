@@ -122,7 +122,6 @@ Test: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 Touch only what you must. Clean up only your own mess.
 
 - Don't "improve" adjacent code, comments, or formatting as part of an unrelated change.
-- Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - Don't change or remove code/comments you don't understand, even if they look orthogonal.
 - If you notice unrelated dead code, mention it — don't delete it.
@@ -152,7 +151,6 @@ Strong success criteria let the agent loop independently via tools (tests, type 
 
 ## Core Development Philosophy
 
-Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.
@@ -234,8 +232,6 @@ ALWAYS follow the existing file naming patterns in the codebase:
 
 - All CI workflows must pass before code changes may be reviewed
 - The existing code structure must not be changed without a strong reason
-- Every bug must be reproduced by a unit test before being fixed
-- Every new feature must be covered by a unit test before it is implemented
 - Minor inconsistencies and typos in the existing code may be fixed
 
 ## Git Commit Conventions
