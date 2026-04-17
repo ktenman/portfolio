@@ -66,7 +66,6 @@ class Trading212DataRetrievalJobTest {
     val bnke =
       TransactionFixtures.createInstrument(
         symbol = "BNKE:PAR:EUR",
-        name = "BNKE:PAR:EUR",
         category = InstrumentCategory.ETF.name,
         baseCurrency = "EUR",
         providerName = ProviderName.TRADING212,
@@ -111,5 +110,4 @@ class Trading212DataRetrievalJobTest {
 
     verify { trading212Service.fetchCurrentPrices(emptySet()) }
   }
-
 }
