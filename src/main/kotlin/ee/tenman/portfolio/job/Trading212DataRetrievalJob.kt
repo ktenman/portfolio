@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import ee.tenman.portfolio.service.pricing.Trading212PriceUpdateService
@@ -19,6 +21,7 @@ class Trading212DataRetrievalJob(
   private val trading212Service: Trading212Service,
   private val trading212PriceUpdateService: Trading212PriceUpdateService,
   private val priceUpdateProcessor: PriceUpdateProcessor,
+  private val instrumentRepository: InstrumentRepository,
   private val taskScheduler: TaskScheduler,
   private val clock: Clock,
 ) : Job {
@@ -41,10 +44,15 @@ class Trading212DataRetrievalJob(
   }
 
   override fun execute() {
+    val eligibleSymbols =
+      instrumentRepository
+        .findByProviderName(ProviderName.TRADING212)
+        .map { it.symbol }
+        .toSet()
     priceUpdateProcessor.processPriceUpdates(
       platform = Platform.TRADING212,
       log = log,
-      fetchPrices = { trading212Service.fetchCurrentPrices() },
+      fetchPrices = { trading212Service.fetchCurrentPrices(eligibleSymbols) },
       processSymbol = trading212PriceUpdateService::processSymbol,
     )
   }
