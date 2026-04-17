@@ -96,7 +96,9 @@ Auto-generates TypeScript types from Kotlin DTOs to `ui/models/generated/domain-
 Four principles to reduce common coding mistakes (adapted from [Karpathy's observations](https://x.com/karpathy/status/2015883857489522876)). Bias toward caution over speed — use judgment on trivial tasks.
 
 ### 1. Think Before Coding
+
 Don't assume. Don't hide confusion. Don't reflexively agree.
+
 - State assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them — don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted, even against the user.
@@ -104,7 +106,9 @@ Don't assume. Don't hide confusion. Don't reflexively agree.
 - Surface tradeoffs and inconsistencies instead of agreeing reflexively.
 
 ### 2. Simplicity First
+
 Minimum code that solves the problem. Nothing speculative.
+
 - No features beyond what was asked.
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
@@ -115,7 +119,9 @@ Minimum code that solves the problem. Nothing speculative.
 Test: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
 ### 3. Surgical Changes
+
 Touch only what you must. Clean up only your own mess.
+
 - Don't "improve" adjacent code, comments, or formatting as part of an unrelated change.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
@@ -126,7 +132,9 @@ Touch only what you must. Clean up only your own mess.
 Test: Every changed line should trace directly to the user's request.
 
 ### 4. Goal-Driven Execution (Declarative > Imperative)
+
 Define success criteria. Loop until verified. Use stamina as leverage.
+
 - "Add validation" → "Write tests for invalid inputs, then make them pass"
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
