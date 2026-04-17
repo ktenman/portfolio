@@ -96,7 +96,7 @@ Auto-generates TypeScript types from Kotlin DTOs to `ui/models/generated/domain-
 Four principles to reduce common coding mistakes (adapted from [Karpathy's observations](https://x.com/karpathy/status/2015883857489522876)). Bias toward caution over speed — use judgment on trivial tasks.
 
 ### 1. Think Before Coding
-Don't assume. Don't hide confusion. Don't be sycophantic.
+Don't assume. Don't hide confusion. Don't reflexively agree.
 - State assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them — don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted, even against the user.
@@ -116,7 +116,7 @@ Test: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
 ### 3. Surgical Changes
 Touch only what you must. Clean up only your own mess.
-- Don't "improve" adjacent code, comments, or formatting.
+- Don't "improve" adjacent code, comments, or formatting as part of an unrelated change.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - Don't change or remove code/comments you don't understand, even if they look orthogonal.
@@ -141,7 +141,7 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let the agent loop independently via tools (tests, type checkers, browser MCP, lint). Weak criteria ("make it work") require constant clarification.
 
-**Anti-pattern examples:** See `~/.claude/docs/karpathy-examples.md` for concrete before/after code diffs.
+**Anti-pattern examples (optional):** See `~/.claude/docs/karpathy-examples.md` for concrete before/after code diffs. Maintainer-local reference — not required to follow the principles above.
 
 ## Core Development Philosophy
 
