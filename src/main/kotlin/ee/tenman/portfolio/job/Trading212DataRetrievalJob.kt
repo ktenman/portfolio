@@ -5,13 +5,13 @@ import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import ee.tenman.portfolio.service.pricing.Trading212PriceUpdateService
 import ee.tenman.portfolio.trading212.Trading212Service
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
+import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
-import java.time.DayOfWeek
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.Duration
+import java.time.Instant
 
 @ScheduledJob
 class Trading212DataRetrievalJob(
@@ -19,35 +19,25 @@ class Trading212DataRetrievalJob(
   private val trading212Service: Trading212Service,
   private val trading212PriceUpdateService: Trading212PriceUpdateService,
   private val priceUpdateProcessor: PriceUpdateProcessor,
+  private val taskScheduler: TaskScheduler,
   private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
-  private val estonianZone = ZoneId.of("Europe/Tallinn")
+
+  @PostConstruct
+  fun scheduleInitialRun() {
+    log.info("Scheduling initial Trading212 price update job to run in $INITIAL_DELAY_SECONDS seconds")
+    taskScheduler.schedule(
+      { runJob() },
+      Instant.now(clock).plus(Duration.ofSeconds(INITIAL_DELAY_SECONDS)),
+    )
+  }
 
   @Scheduled(fixedDelayString = "\${scheduling.jobs.trading212-interval:60000}")
   fun runJob() {
-    if (!isWithinTradingHours()) {
-      log.debug("Skipping Trading212 job - outside trading hours (10:00-18:30 EET/EEST on workdays)")
-      return
-    }
     log.info("Running Trading212 price update job")
     jobExecutionService.executeJob(this)
     log.info("Completed Trading212 price update job")
-  }
-
-  private fun isWithinTradingHours(): Boolean {
-    val estonianTime = ZonedDateTime.now(clock.withZone(estonianZone))
-    val dayOfWeek = estonianTime.dayOfWeek
-    val currentTime = estonianTime.toLocalTime()
-
-    if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
-      return false
-    }
-
-    val startTime = LocalTime.of(10, 0)
-    val endTime = LocalTime.of(18, 30)
-
-    return !currentTime.isBefore(startTime) && !currentTime.isAfter(endTime)
   }
 
   override fun execute() {
@@ -57,5 +47,9 @@ class Trading212DataRetrievalJob(
       fetchPrices = { trading212Service.fetchCurrentPrices() },
       processSymbol = trading212PriceUpdateService::processSymbol,
     )
+  }
+
+  companion object {
+    private const val INITIAL_DELAY_SECONDS = 15L
   }
 }
