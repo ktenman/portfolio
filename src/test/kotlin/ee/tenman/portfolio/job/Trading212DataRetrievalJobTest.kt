@@ -2,7 +2,6 @@ package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
@@ -10,6 +9,7 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import ee.tenman.portfolio.service.pricing.Trading212PriceUpdateService
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import ee.tenman.portfolio.trading212.Trading212Service
 import io.mockk.every
 import io.mockk.mockk
@@ -63,7 +63,14 @@ class Trading212DataRetrievalJobTest {
 
   @Test
   fun `execute asks the Trading212 service only for instruments whose provider is Trading212`() {
-    val bnke = instrumentWithSymbol("BNKE:PAR:EUR", ProviderName.TRADING212)
+    val bnke =
+      TransactionFixtures.createInstrument(
+        symbol = "BNKE:PAR:EUR",
+        name = "BNKE:PAR:EUR",
+        category = InstrumentCategory.ETF.name,
+        baseCurrency = "EUR",
+        providerName = ProviderName.TRADING212,
+      )
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns listOf(bnke)
     val eligibleSymbolsSlot = slot<() -> Map<String, BigDecimal>>()
     every {
@@ -105,15 +112,4 @@ class Trading212DataRetrievalJobTest {
     verify { trading212Service.fetchCurrentPrices(emptySet()) }
   }
 
-  private fun instrumentWithSymbol(
-    symbol: String,
-    provider: ProviderName,
-  ): Instrument =
-    Instrument(
-      symbol = symbol,
-      name = symbol,
-      category = InstrumentCategory.ETF.name,
-      baseCurrency = "EUR",
-      providerName = provider,
-    )
 }

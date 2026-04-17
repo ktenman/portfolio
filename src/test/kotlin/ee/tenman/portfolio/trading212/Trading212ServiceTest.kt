@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.trading212
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
@@ -38,8 +39,7 @@ class Trading212ServiceTest {
     val prices = service.fetchCurrentPrices(setOf("BNKE:PAR:EUR"))
 
     expect(prices.size).toEqual(1)
-    expect(prices["BNKE:PAR:EUR"]!!).toEqualNumerically(BigDecimal("330.77"))
-    expect(prices["VUAA:GER:EUR"]).toEqual(null)
+    expect(prices["BNKE:PAR:EUR"]).notToEqualNull().toEqualNumerically(BigDecimal("330.77"))
     verify { client.getPrices("BNKEp_EQ") }
   }
 

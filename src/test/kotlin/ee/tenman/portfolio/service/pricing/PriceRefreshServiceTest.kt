@@ -107,7 +107,6 @@ class PriceRefreshServiceTest {
   fun `refreshAllPrices triggers the Trading212 price retrieval job`() {
     priceRefreshService.refreshAllPrices()
 
-    Thread.sleep(100)
-    verify { trading212DataRetrievalJob.execute() }
+    verify(timeout = 1000) { trading212DataRetrievalJob.execute() }
   }
 }
