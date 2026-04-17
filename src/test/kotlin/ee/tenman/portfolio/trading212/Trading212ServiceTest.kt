@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.trading212
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
@@ -25,35 +26,45 @@ class Trading212ServiceTest {
   private val service = Trading212Service(client, properties)
 
   @Test
-  fun `should map prices from config-driven ticker list`() {
+  fun `should map prices only for eligible Trading212-provider symbols`() {
     val response =
       Trading212Response(
         data =
           mapOf(
             "BNKEp_EQ" to Trading212PriceData(bid = BigDecimal("330.77"), spread = BigDecimal("0.05"), timestamp = "2026-04-16T10:00:00Z"),
-            "VUAAm_EQ" to Trading212PriceData(bid = BigDecimal("100.50"), spread = BigDecimal("0.02"), timestamp = "2026-04-16T10:00:00Z"),
           ),
       )
-    every { client.getPrices("BNKEp_EQ,VUAAm_EQ") } returns response
-    val prices = service.fetchCurrentPrices()
-    expect(prices.size).toEqual(2)
-    expect(prices["BNKE:PAR:EUR"]!!).toEqualNumerically(BigDecimal("330.77"))
-    expect(prices["VUAA:GER:EUR"]!!).toEqualNumerically(BigDecimal("100.50"))
-    verify { client.getPrices("BNKEp_EQ,VUAAm_EQ") }
+    every { client.getPrices("BNKEp_EQ") } returns response
+
+    val prices = service.fetchCurrentPrices(setOf("BNKE:PAR:EUR"))
+
+    expect(prices.size).toEqual(1)
+    expect(prices["BNKE:PAR:EUR"]).notToEqualNull().toEqualNumerically(BigDecimal("330.77"))
+    verify { client.getPrices("BNKEp_EQ") }
   }
 
   @Test
-  fun `should return empty map when properties have no symbols`() {
-    val emptyProperties = Trading212ScrapingProperties()
-    val emptyService = Trading212Service(client, emptyProperties)
-    val prices = emptyService.fetchCurrentPrices()
+  fun `cannot call upstream when eligible symbol set is empty`() {
+    val prices = service.fetchCurrentPrices(emptySet())
+
     expect(prices.size).toEqual(0)
+    verify(exactly = 0) { client.getPrices(any()) }
+  }
+
+  @Test
+  fun `cannot call upstream when none of the eligible symbols are configured`() {
+    val prices = service.fetchCurrentPrices(setOf("UNKNOWN:PAR:EUR"))
+
+    expect(prices.size).toEqual(0)
+    verify(exactly = 0) { client.getPrices(any()) }
   }
 
   @Test
   fun `cannot return price when ticker missing from upstream response`() {
     every { client.getPrices(any()) } returns Trading212Response(data = emptyMap())
-    val prices = service.fetchCurrentPrices()
+
+    val prices = service.fetchCurrentPrices(setOf("BNKE:PAR:EUR", "VUAA:GER:EUR"))
+
     expect(prices.size).toEqual(0)
   }
 }

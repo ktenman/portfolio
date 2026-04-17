@@ -15,10 +15,14 @@ class Trading212Service(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
-  fun fetchCurrentPrices(): Map<String, BigDecimal> {
-    val entries = scrapingProperties.symbols
+  fun fetchCurrentPrices(eligibleSymbols: Set<String>): Map<String, BigDecimal> {
+    if (eligibleSymbols.isEmpty()) {
+      log.info("No Trading212-provider instruments to price, skipping fetch")
+      return emptyMap()
+    }
+    val entries = scrapingProperties.symbols.filter { it.symbol in eligibleSymbols }
     if (entries.isEmpty()) {
-      log.warn("No Trading212 symbols configured, skipping price fetch")
+      log.warn("No Trading212 symbols configured for eligible instruments: $eligibleSymbols")
       return emptyMap()
     }
     val tickers = entries.joinToString(",") { it.ticker }
