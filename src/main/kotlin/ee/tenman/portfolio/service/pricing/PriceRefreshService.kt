@@ -4,6 +4,7 @@ import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
+import ee.tenman.portfolio.job.Trading212DataRetrievalJob
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +17,7 @@ class PriceRefreshService(
   private val binanceDataRetrievalJob: BinanceDataRetrievalJob?,
   private val lightyearHistoricalDataRetrievalJob: LightyearHistoricalDataRetrievalJob?,
   private val lightyearPriceRetrievalJob: LightyearPriceRetrievalJob?,
+  private val trading212DataRetrievalJob: Trading212DataRetrievalJob?,
   private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob?,
   private val cacheInvalidationService: CacheInvalidationService,
   private val transactionService: TransactionService,
@@ -39,6 +41,7 @@ class PriceRefreshService(
     binanceDataRetrievalJob?.let { job -> launchJob { job.execute() } }
     lightyearHistoricalDataRetrievalJob?.let { job -> launchJob { job.execute() } }
     lightyearPriceRetrievalJob?.let { job -> launchJob { job.execute() } }
+    trading212DataRetrievalJob?.let { job -> launchJob { job.execute() } }
   }
 
   private fun clearAllCaches() {

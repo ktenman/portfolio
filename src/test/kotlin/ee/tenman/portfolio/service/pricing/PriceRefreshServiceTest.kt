@@ -6,6 +6,7 @@ import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.EtfHoldingsClassificationJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
+import ee.tenman.portfolio.job.Trading212DataRetrievalJob
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import io.mockk.coEvery
@@ -19,6 +20,7 @@ class PriceRefreshServiceTest {
   private val binanceDataRetrievalJob = mockk<BinanceDataRetrievalJob>(relaxed = true)
   private val lightyearHistoricalDataRetrievalJob = mockk<LightyearHistoricalDataRetrievalJob>(relaxed = true)
   private val lightyearPriceRetrievalJob = mockk<LightyearPriceRetrievalJob>(relaxed = true)
+  private val trading212DataRetrievalJob = mockk<Trading212DataRetrievalJob>(relaxed = true)
   private val etfHoldingsClassificationJob = mockk<EtfHoldingsClassificationJob>(relaxed = true)
   private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private val transactionService = mockk<TransactionService>()
@@ -35,6 +37,7 @@ class PriceRefreshServiceTest {
         binanceDataRetrievalJob = binanceDataRetrievalJob,
         lightyearHistoricalDataRetrievalJob = lightyearHistoricalDataRetrievalJob,
         lightyearPriceRetrievalJob = lightyearPriceRetrievalJob,
+        trading212DataRetrievalJob = trading212DataRetrievalJob,
         etfHoldingsClassificationJob = etfHoldingsClassificationJob,
         cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
@@ -71,6 +74,7 @@ class PriceRefreshServiceTest {
         binanceDataRetrievalJob = null,
         lightyearHistoricalDataRetrievalJob = null,
         lightyearPriceRetrievalJob = null,
+        trading212DataRetrievalJob = null,
         etfHoldingsClassificationJob = null,
         cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
@@ -88,6 +92,7 @@ class PriceRefreshServiceTest {
         binanceDataRetrievalJob = null,
         lightyearHistoricalDataRetrievalJob = null,
         lightyearPriceRetrievalJob = null,
+        trading212DataRetrievalJob = null,
         etfHoldingsClassificationJob = null,
         cacheInvalidationService = cacheInvalidationService,
         transactionService = transactionService,
@@ -96,5 +101,12 @@ class PriceRefreshServiceTest {
     val result = serviceWithoutJobs.refreshAllPrices()
 
     expect(result).toEqual("Jobs triggered, caches cleared, and transaction profits recalculated")
+  }
+
+  @Test
+  fun `refreshAllPrices triggers the Trading212 price retrieval job`() {
+    priceRefreshService.refreshAllPrices()
+
+    verify(timeout = 1000) { trading212DataRetrievalJob.execute() }
   }
 }

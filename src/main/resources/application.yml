@@ -240,22 +240,8 @@ trading212:
 
 trading212-scraping:
   symbols:
-    - symbol: WTAI:MIL:EUR
-      ticker: WTAIm_EQ
-    - symbol: VUAA:GER:EUR
-      ticker: VUAAm_EQ
-    - symbol: SPYL:GER:EUR
-      ticker: SPYLa_EQ
-    - symbol: QDVE:GER:EUR
-      ticker: QDVEd_EQ
-    - symbol: XAIX:GER:EUR
-      ticker: XAIXd_EQ
-    - symbol: CSX5:AEX:EUR
-      ticker: CSX5a_EQ
     - symbol: BNKE:PAR:EUR
       ticker: BNKEp_EQ
-
-
 
 openrouter:
   api-key: ${OPENROUTER_API_KEY}

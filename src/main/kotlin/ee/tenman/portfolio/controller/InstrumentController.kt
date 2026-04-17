@@ -80,7 +80,7 @@ class InstrumentController(
 
   @PostMapping("/refresh-prices")
   @Loggable
-  @Operation(summary = "Refresh prices from Binance and Lightyear providers")
+  @Operation(summary = "Refresh prices from Binance, Lightyear, and Trading212 providers")
   fun refreshPrices(): Map<String, String> = mapOf("status" to priceRefreshService.refreshAllPrices())
 
   @GetMapping("/classify-industry")
