@@ -71,17 +71,7 @@ class Trading212DataRetrievalJobTest {
         providerName = ProviderName.TRADING212,
       )
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns listOf(bnke)
-    val eligibleSymbolsSlot = slot<() -> Map<String, BigDecimal>>()
-    every {
-      priceUpdateProcessor.processPriceUpdates(
-        platform = Platform.TRADING212,
-        log = any(),
-        fetchPrices = capture(eligibleSymbolsSlot),
-        processSymbol = any(),
-      )
-    } answers {
-      eligibleSymbolsSlot.captured.invoke()
-    }
+    invokeFetchPricesWhenProcessed()
     every { trading212Service.fetchCurrentPrices(setOf("BNKE:PAR:EUR")) } returns
       mapOf("BNKE:PAR:EUR" to BigDecimal("327.23"))
 
@@ -93,21 +83,25 @@ class Trading212DataRetrievalJobTest {
   @Test
   fun `execute passes an empty filter when no Trading212 instruments exist`() {
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns emptyList()
-    val eligibleSymbolsSlot = slot<() -> Map<String, BigDecimal>>()
-    every {
-      priceUpdateProcessor.processPriceUpdates(
-        platform = Platform.TRADING212,
-        log = any(),
-        fetchPrices = capture(eligibleSymbolsSlot),
-        processSymbol = any(),
-      )
-    } answers {
-      eligibleSymbolsSlot.captured.invoke()
-    }
+    invokeFetchPricesWhenProcessed()
     every { trading212Service.fetchCurrentPrices(emptySet()) } returns emptyMap()
 
     job.execute()
 
     verify { trading212Service.fetchCurrentPrices(emptySet()) }
+  }
+
+  private fun invokeFetchPricesWhenProcessed() {
+    val fetchPricesSlot = slot<() -> Map<String, BigDecimal>>()
+    every {
+      priceUpdateProcessor.processPriceUpdates(
+        platform = Platform.TRADING212,
+        log = any(),
+        fetchPrices = capture(fetchPricesSlot),
+        processSymbol = any(),
+      )
+    } answers {
+      fetchPricesSlot.captured.invoke()
+    }
   }
 }

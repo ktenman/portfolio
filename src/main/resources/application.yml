@@ -243,8 +243,6 @@ trading212-scraping:
     - symbol: BNKE:PAR:EUR
       ticker: BNKEp_EQ
 
-
-
 openrouter:
   api-key: ${OPENROUTER_API_KEY}
   circuit-breaker:
