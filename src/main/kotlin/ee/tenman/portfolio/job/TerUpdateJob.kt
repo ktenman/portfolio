@@ -4,9 +4,11 @@ import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.lightyear.LightyearFundInfoData
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.service.instrument.FundCurrencyResolverService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import jakarta.annotation.PostConstruct
@@ -25,6 +27,7 @@ class TerUpdateJob(
   private val instrumentService: InstrumentService,
   private val trading212HoldingsService: Trading212HoldingsService,
   private val scrapingProperties: Trading212ScrapingProperties,
+  private val fundCurrencyResolver: FundCurrencyResolverService,
   private val clock: Clock,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -51,7 +54,7 @@ class TerUpdateJob(
     var status = JobStatus.SUCCESS
     var message: String? = null
     try {
-      message = updateAllTers()
+      message = updateAll()
       log.info("Completed TER update job successfully")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
@@ -70,25 +73,60 @@ class TerUpdateJob(
   }
 
   override fun execute() {
-    updateAllTers()
+    updateAll()
   }
 
-  private fun updateAllTers(): String {
+  private fun updateAll(): String {
     val lyResult =
-      processProvider(
-        instruments = instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR),
-        providerLabel = "Lightyear",
-      ) { instrument ->
-        TER_OVERRIDES[instrument.symbol] ?: lightyearPriceService.fetchFundInfo(instrument.symbol)
+      processProvider(ProviderName.LIGHTYEAR, "Lightyear") { instrument ->
+        val lightyearData = fetchLightyearData(instrument)
+        (TER_OVERRIDES[instrument.symbol] ?: lightyearData?.ter) to lightyearData
       }
     val t212Result =
-      processProvider(
-        instruments = instrumentRepository.findByProviderName(ProviderName.TRADING212),
-        providerLabel = "Trading212",
-      ) { instrument ->
-        resolveTrading212Ter(instrument)
+      processProvider(ProviderName.TRADING212, "Trading212") { instrument ->
+        resolveTrading212Ter(instrument) to null
       }
     return "$lyResult; $t212Result"
+  }
+
+  private fun processProvider(
+    provider: ProviderName,
+    label: String,
+    fetcher: (Instrument) -> Pair<BigDecimal?, LightyearFundInfoData?>,
+  ): String {
+    val instruments = instrumentRepository.findByProviderName(provider)
+    log.info("Found ${instruments.size} $label instruments to update TERs")
+    var updated = 0
+    var noData = 0
+    instruments.forEach { instrument ->
+      val (ter, lightyearData) = fetcher(instrument)
+      if (ter != null) {
+        instrumentService.updateTer(instrument.id, ter)
+        updated++
+        log.debug("Updated TER for ${instrument.symbol}: $ter")
+      } else {
+        noData++
+      }
+      persistFundCurrency(instrument, lightyearData)
+    }
+    return "$label: updated $updated/${instruments.size}, $noData with no data"
+  }
+
+  private fun fetchLightyearData(instrument: Instrument): LightyearFundInfoData? =
+    runCatching { lightyearPriceService.fetchFundInfo(instrument.symbol) }.getOrElse {
+      log.error("Failed to fetch Lightyear fund info for ${instrument.symbol}", it)
+      null
+    }
+
+  private fun persistFundCurrency(
+    instrument: Instrument,
+    lightyearData: LightyearFundInfoData?,
+  ) {
+    val resolved = fundCurrencyResolver.resolve(instrument, lightyearData)
+    if (resolved != null && resolved != instrument.fundCurrency) {
+      instrumentService.updateFundCurrency(instrument.id, resolved)
+      log.info("Updated fundCurrency for ${instrument.symbol}: $resolved")
+    }
   }
 
   private fun resolveTrading212Ter(instrument: Instrument): BigDecimal? {
@@ -101,29 +139,5 @@ class TerUpdateJob(
       log.error("Failed to fetch TER for ${instrument.symbol} via Trading212", it)
       null
     }
-  }
-
-  private fun processProvider(
-    instruments: List<Instrument>,
-    providerLabel: String,
-    terFetcher: (Instrument) -> BigDecimal?,
-  ): String {
-    log.info("Found ${instruments.size} $providerLabel instruments to update TERs")
-    var updated = 0
-    var noData = 0
-    instruments.forEach { instrument ->
-      val ter = terFetcher(instrument)
-      if (ter != null) {
-        instrumentService.updateTer(instrument.id, ter)
-        updated++
-        log.debug("Updated TER for ${instrument.symbol}: $ter")
-      } else {
-        noData++
-        log.debug("No TER data for ${instrument.symbol}")
-      }
-    }
-    val resultMessage = "$providerLabel: updated $updated/${instruments.size}, $noData with no data"
-    log.info(resultMessage)
-    return resultMessage
   }
 }

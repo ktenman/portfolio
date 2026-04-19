@@ -8,9 +8,11 @@ import ee.tenman.portfolio.configuration.Trading212SymbolEntry
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.lightyear.LightyearFundInfoData
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.service.instrument.FundCurrencyResolverService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import io.mockk.every
@@ -33,6 +35,7 @@ class TerUpdateJobTest {
   private val instrumentService = mockk<InstrumentService>()
   private val trading212HoldingsService = mockk<Trading212HoldingsService>()
   private val scrapingProperties = Trading212ScrapingProperties()
+  private val fundCurrencyResolver = mockk<FundCurrencyResolverService>()
   private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
   private lateinit var job: TerUpdateJob
 
@@ -41,6 +44,7 @@ class TerUpdateJobTest {
     every { jobTransactionService.saveJobExecution(any(), any(), any(), any(), any()) } returns mockk()
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns emptyList()
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns emptyList()
+    every { fundCurrencyResolver.resolve(any(), any()) } returns null
     job =
       TerUpdateJob(
         jobTransactionService,
@@ -49,6 +53,7 @@ class TerUpdateJobTest {
         instrumentService,
         trading212HoldingsService,
         scrapingProperties,
+        fundCurrencyResolver,
         clock,
       )
   }
@@ -58,8 +63,8 @@ class TerUpdateJobTest {
     val instrument1 = createInstrument(1L, "VUAA", ProviderName.LIGHTYEAR)
     val instrument2 = createInstrument(2L, "VWCE", ProviderName.LIGHTYEAR)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(instrument1, instrument2)
-    every { lightyearPriceService.fetchFundInfo("VUAA") } returns BigDecimal("0.07")
-    every { lightyearPriceService.fetchFundInfo("VWCE") } returns BigDecimal("0.22")
+    every { lightyearPriceService.fetchFundInfo("VUAA") } returns LightyearFundInfoData(ter = BigDecimal("0.07"), fundCurrency = null)
+    every { lightyearPriceService.fetchFundInfo("VWCE") } returns LightyearFundInfoData(ter = BigDecimal("0.22"), fundCurrency = null)
     every { instrumentService.updateTer(any(), any()) } just runs
 
     job.execute()
@@ -73,7 +78,7 @@ class TerUpdateJobTest {
     val instrument1 = createInstrument(1L, "VUAA", ProviderName.LIGHTYEAR)
     val instrument2 = createInstrument(2L, "BTCEUR", ProviderName.LIGHTYEAR)
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(instrument1, instrument2)
-    every { lightyearPriceService.fetchFundInfo("VUAA") } returns BigDecimal("0.07")
+    every { lightyearPriceService.fetchFundInfo("VUAA") } returns LightyearFundInfoData(ter = BigDecimal("0.07"), fundCurrency = null)
     every { lightyearPriceService.fetchFundInfo("BTCEUR") } returns null
     every { instrumentService.updateTer(any(), any()) } just runs
 
@@ -177,7 +182,7 @@ class TerUpdateJobTest {
     scrapingProperties.symbols.add(Trading212SymbolEntry(symbol = "BNKE:PAR:EUR", ticker = "BNKEp_EQ"))
     every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(lyInstrument)
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns listOf(bnke)
-    every { lightyearPriceService.fetchFundInfo("VUAA") } returns BigDecimal("0.07")
+    every { lightyearPriceService.fetchFundInfo("VUAA") } returns LightyearFundInfoData(ter = BigDecimal("0.07"), fundCurrency = null)
     every { trading212HoldingsService.fetchTer("BNKEp_EQ") } returns BigDecimal("0.3")
     every { instrumentService.updateTer(any(), any()) } just runs
 

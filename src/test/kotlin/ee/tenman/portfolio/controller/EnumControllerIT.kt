@@ -93,7 +93,7 @@ class EnumControllerIT {
       .toContain(InstrumentCategory.CRYPTO.name, InstrumentCategory.ETF.name)
 
     expect(response.currencies)
-      .toContain.inOrder.only
-      .values(Currency.EUR.name)
+      .toHaveSize(Currency.entries.size)
+      .toContain(Currency.EUR.name, Currency.USD.name)
   }
 }

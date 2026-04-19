@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import AllocationTable from './allocation-table.vue'
 import { setPlatformDisplayNames } from '../../utils/platform-utils'
+import { Currency } from '../../models/generated/domain-models'
 
 vi.mock('@vueuse/core', () => ({
   useLocalStorage: vi.fn(<T>(_key: string, defaultValue: T) => ref(defaultValue)),
@@ -25,6 +26,7 @@ describe('AllocationTable', () => {
       ter: 0.22,
       annualReturn: 0.12,
       currentPrice: 120.5,
+      fundCurrency: null,
     },
     {
       instrumentId: 2,
@@ -34,6 +36,7 @@ describe('AllocationTable', () => {
       ter: 0.07,
       annualReturn: 0.15,
       currentPrice: 95.3,
+      fundCurrency: null,
     },
   ]
 
@@ -765,6 +768,35 @@ describe('AllocationTable', () => {
         },
       })
       expect(wrapper.text()).toContain('€0.00')
+    })
+  })
+
+  describe('fund currency flag', () => {
+    it('shows currency flag in Name column when ETF has fundCurrency', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          allocations: [{ instrumentId: 1, value: 100 }],
+          availableEtfs: [
+            {
+              instrumentId: 1,
+              symbol: 'VWCE',
+              name: 'Vanguard FTSE All-World',
+              allocation: 0,
+              ter: 0.22,
+              annualReturn: 0.12,
+              currentPrice: 120.5,
+              fundCurrency: Currency.USD,
+            },
+          ],
+        },
+      })
+
+      const nameCell = wrapper.find('tbody tr td:nth-child(2)')
+      expect(nameCell.exists()).toBe(true)
+      const flag = nameCell.find('img')
+      expect(flag.exists()).toBe(true)
+      expect(flag.attributes('src')).toContain('/us.svg')
     })
   })
 })

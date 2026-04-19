@@ -22,6 +22,7 @@
       </button>
     </div>
     <div v-if="etfName" class="allocation-card-name">
+      <currency-flag :currency="fundCurrency" :size="14" />
       {{ etfName }}
     </div>
     <div v-if="allocation.instrumentId > 0" class="allocation-card-metrics">
@@ -75,6 +76,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { formatTer, formatReturn } from '../../utils/formatters'
+import CurrencyFlag from '../shared/currency-flag.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
 import type { AllocationInput, ActionDisplayMode } from './types'
 
@@ -83,6 +85,7 @@ const props = defineProps<{
   availableEtfs: EtfDetailDto[]
   totalInvestment: number
   disableRemove: boolean
+  fundCurrency?: string | null
   showRebalanceMode?: boolean
   actionDisplayMode?: ActionDisplayMode
   isBuy?: boolean
@@ -200,6 +203,9 @@ const onValueChange = (event: Event) => {
 }
 
 .allocation-card-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: 0.8125rem;
   color: var(--bs-gray-600);
   margin-bottom: 0.5rem;

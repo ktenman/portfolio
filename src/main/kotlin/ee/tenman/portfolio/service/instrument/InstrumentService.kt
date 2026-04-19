@@ -4,6 +4,7 @@ import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.common.orNotFoundBySymbol
 import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
+import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.InstrumentSnapshot
@@ -99,6 +100,15 @@ class InstrumentService(
     ter: BigDecimal?,
   ) {
     instrumentRepository.updateTer(instrumentId, ter)
+  }
+
+  @Transactional
+  fun updateFundCurrency(
+    instrumentId: Long,
+    fundCurrency: Currency?,
+  ) {
+    instrumentRepository.updateFundCurrency(instrumentId, fundCurrency)
+    cacheInvalidationService.evictDiversificationEtfsCache()
   }
 
   @Transactional

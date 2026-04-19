@@ -118,6 +118,40 @@ class OpenRouterClient(
     return null
   }
 
+  fun classifyWithOnlineSearch(
+    model: AiModel,
+    prompt: String,
+    maxTokens: Int = 1500,
+    temperature: Double = 0.1,
+  ): String? {
+    if (openRouterProperties.apiKey.isBlank()) {
+      log.warn("OpenRouter API key is not configured")
+      return null
+    }
+    if (!circuitBreaker.tryAcquireForModel(model)) {
+      log.warn("Rate limit exceeded for model ${model.modelId}:online, skipping request")
+      return null
+    }
+    val request =
+      OpenRouterRequest(
+        model = "${model.modelId}:online",
+        messages = listOf(OpenRouterRequest.Message(role = "user", content = prompt)),
+        maxTokens = maxTokens,
+        temperature = temperature,
+      )
+    return runCatching {
+      log.info("Calling OpenRouter (online) with model: ${model.modelId}:online")
+      val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
+      val content = response.extractContent()
+      log.debug("OpenRouter online response: '$content'")
+      circuitBreaker.recordSuccess()
+      content
+    }.onFailure { throwable ->
+      log.error("Error calling OpenRouter online with ${model.modelId}: ${throwable.message}", throwable)
+      circuitBreaker.recordFailure(throwable)
+    }.getOrNull()
+  }
+
   companion object {
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3

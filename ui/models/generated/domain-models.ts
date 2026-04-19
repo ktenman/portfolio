@@ -11,6 +11,7 @@ export interface InstrumentDto {
     name: string;
     category: string;
     baseCurrency: string;
+    fundCurrency: Currency | null;
     currentPrice: number | null;
     quantity: number | null;
     providerName: string;
@@ -147,6 +148,7 @@ export interface EtfDetailDto extends Serializable {
     ter: number | null;
     annualReturn: number | null;
     currentPrice: number | null;
+    fundCurrency: Currency | null;
 }
 
 export interface PlatformDto {
@@ -204,6 +206,21 @@ export interface LargestPositionDto extends Serializable {
 }
 
 type DateAsString = string;
+
+export enum Currency {
+    EUR = "EUR",
+    USD = "USD",
+    GBP = "GBP",
+    CHF = "CHF",
+    JPY = "JPY",
+    CAD = "CAD",
+    AUD = "AUD",
+    SEK = "SEK",
+    NOK = "NOK",
+    DKK = "DKK",
+    HKD = "HKD",
+    SGD = "SGD",
+}
 
 export enum Platform {
     AVIVA = "AVIVA",

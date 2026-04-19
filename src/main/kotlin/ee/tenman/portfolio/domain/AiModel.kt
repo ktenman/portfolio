@@ -11,6 +11,7 @@ enum class AiModel(
   DEEPSEEK_V3_2("deepseek/deepseek-v3.2", 240, sectorFallbackTier = 2, countryFallbackTier = 2),
   GPT_5_4("openai/gpt-5.4", 240, sectorFallbackTier = 3, countryFallbackTier = 3),
   CLAUDE_OPUS_4_6("anthropic/claude-opus-4.6", 240, sectorFallbackTier = 4, countryFallbackTier = 4),
+  GPT_5_4_NANO("openai/gpt-5.4-nano", 240),
   ;
 
   fun nextSectorFallbackModel(): AiModel? = entries.find { it.sectorFallbackTier == this.sectorFallbackTier + 1 }

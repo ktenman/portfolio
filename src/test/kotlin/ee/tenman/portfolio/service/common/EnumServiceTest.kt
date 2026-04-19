@@ -64,6 +64,7 @@ class EnumServiceTest {
 
     expect(response.categories).toContainExactly("CASH", "CRYPTO", "ETF")
 
-    expect(response.currencies).toContainExactly("EUR")
+    expect(response.currencies)
+      .toContainExactly("AUD", "CAD", "CHF", "DKK", "EUR", "GBP", "HKD", "JPY", "NOK", "SEK", "SGD", "USD")
   }
 }

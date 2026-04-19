@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.dto
 
+import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.InstrumentSnapshot
@@ -19,6 +20,7 @@ data class InstrumentDto(
   val category: String,
   @field:NotBlank(message = "Base currency must not be blank")
   val baseCurrency: String,
+  val fundCurrency: Currency? = null,
   val currentPrice: BigDecimal? = null,
   val quantity: BigDecimal? = BigDecimal.ZERO,
   @field:NotBlank(message = "Provider name must not be blank")
@@ -44,6 +46,7 @@ data class InstrumentDto(
       baseCurrency = baseCurrency,
       currentPrice = currentPrice,
       providerName = ProviderName.valueOf(providerName),
+      fundCurrency = fundCurrency,
     ).apply {
       this.id = id
     }
@@ -56,6 +59,7 @@ data class InstrumentDto(
         name = instrument.name,
         category = instrument.category,
         baseCurrency = instrument.baseCurrency,
+        fundCurrency = instrument.fundCurrency,
         currentPrice = instrument.currentPrice,
         quantity = BigDecimal.ZERO,
         providerName = instrument.providerName.name,
@@ -79,6 +83,7 @@ data class InstrumentDto(
         name = snapshot.instrument.name,
         category = snapshot.instrument.category,
         baseCurrency = snapshot.instrument.baseCurrency,
+        fundCurrency = snapshot.instrument.fundCurrency,
         currentPrice = snapshot.instrument.currentPrice,
         quantity = snapshot.quantity,
         providerName = snapshot.instrument.providerName.name,

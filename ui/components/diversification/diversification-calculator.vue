@@ -62,6 +62,12 @@
           :top10-percentage="result.concentration.top10Percentage"
         />
 
+        <div v-if="currencySplit.length > 0" class="row g-3 mb-4">
+          <div class="col-md-4 col-lg-3">
+            <CurrencySplitCard label="Fund Currency" :entries="currencySplit" />
+          </div>
+        </div>
+
         <div class="row g-4">
           <div class="col-lg-4">
             <BreakdownCard title="Top Holdings" :items="holdingsBreakdown" />
@@ -118,6 +124,7 @@ import { formatRelativeTime } from '../../utils/formatters'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
+import CurrencySplitCard from '../shared/currency-split-card.vue'
 import type {
   DiversificationCalculatorResponseDto,
   InstrumentDto,
@@ -245,6 +252,19 @@ const toBreakdown = <T extends { percentage: number }>(
 const holdingsBreakdown = computed(() => toBreakdown(result.value?.holdings, h => h.name))
 const sectorsBreakdown = computed(() => toBreakdown(result.value?.sectors, s => s.sector))
 const countriesBreakdown = computed(() => toBreakdown(result.value?.countries, c => c.countryName))
+
+const etfById = computed(() => new Map(etfList.value.map(e => [e.instrumentId, e])))
+
+const currencySplit = computed(() => {
+  const byCurrency = new Map<string, number>()
+  for (const a of allocations.value) {
+    if (a.instrumentId <= 0 || a.value <= 0) continue
+    const etf = etfById.value.get(a.instrumentId)
+    if (!etf?.fundCurrency) continue
+    byCurrency.set(etf.fundCurrency, (byCurrency.get(etf.fundCurrency) ?? 0) + a.value)
+  }
+  return Array.from(byCurrency.entries()).map(([currency, value]) => ({ currency, value }))
+})
 
 const addAllocation = () => {
   allocations.value.push({ instrumentId: 0, value: 0 })

@@ -49,7 +49,7 @@ class RedisConfiguration {
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid-v3"
     const val LOGO_CANDIDATES_CACHE: String = "logo-candidates-v3"
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v3"
-    const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs-v3"
+    const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs-v4"
     const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config-v3"
     const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v3"
     const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"

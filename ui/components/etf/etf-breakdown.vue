@@ -12,6 +12,7 @@
             @click="toggleEtf(etf)"
             type="button"
           >
+            <currency-flag :currency="symbolToFundCurrency.get(etf)" :size="14" />
             {{ getSymbolOnly(etf) }}
           </button>
           <span class="etf-separator"></span>
@@ -48,6 +49,7 @@
       :unique-holdings="filteredHoldings.length"
       :selected-etfs="selectedEtfs"
       :available-etfs="availableEtfs"
+      :currency-split="currencySplit"
     />
 
     <div v-if="!isLoading && filteredHoldings.length > 0" class="charts-section mb-4">
@@ -105,6 +107,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
 import { etfBreakdownService } from '../../services/etf-breakdown-service'
+import { instrumentsService } from '../../services/instruments-service'
 import { logoService } from '../../services/logo-service'
 import {
   buildSectorChartData,
@@ -113,14 +116,24 @@ import {
   getFilterParam,
   type ChartDataItem,
 } from '../../services/etf-chart-service'
-import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-models'
+import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
 import EtfBreakdownHeader from './etf-breakdown-header.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
+import CurrencyFlag from '../shared/currency-flag.vue'
 import { formatPlatformName } from '../../utils/platform-utils'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
 const masterHoldings = ref<EtfHoldingBreakdownDto[]>([])
+const allInstruments = ref<InstrumentDto[]>([])
+const platformInstruments = ref<InstrumentDto[]>([])
+const symbolToFundCurrency = computed(() => {
+  const m = new Map<string, string>()
+  for (const inst of allInstruments.value) {
+    if (inst.fundCurrency) m.set(inst.symbol, inst.fundCurrency)
+  }
+  return m
+})
 const isLoading = ref(false)
 const isError = ref(false)
 const errorMessage = ref('')
@@ -237,7 +250,10 @@ const debouncedLoadBreakdown = useDebounceFn(() => loadBreakdown(), 300)
 
 watch(selectedEtfs, debouncedLoadBreakdown)
 
-watch(selectedPlatforms, debouncedLoadBreakdown)
+watch(selectedPlatforms, () => {
+  debouncedLoadBreakdown()
+  loadPlatformInstruments()
+})
 
 const isEtfSelected = (etf: string): boolean => {
   return selectedEtfs.value.includes(etf)
@@ -277,9 +293,43 @@ const prefetchLogoCandidates = () => {
   }
 }
 
+const loadAllInstruments = async () => {
+  try {
+    const response = await instrumentsService.getAll()
+    allInstruments.value = response.instruments
+  } catch {
+    allInstruments.value = []
+  }
+}
+
+const loadPlatformInstruments = async () => {
+  try {
+    const platformsParam = getPlatformsParam()
+    const response = await instrumentsService.getAll(platformsParam)
+    platformInstruments.value = response.instruments
+  } catch {
+    platformInstruments.value = []
+  }
+}
+
+const currencySplit = computed(() => {
+  const selected = new Set(selectedEtfs.value)
+  const byCurrency = new Map<string, number>()
+  for (const inst of platformInstruments.value) {
+    if (!inst.fundCurrency) continue
+    if (!selected.has(inst.symbol)) continue
+    const value = inst.currentValue ?? 0
+    if (value <= 0) continue
+    byCurrency.set(inst.fundCurrency, (byCurrency.get(inst.fundCurrency) ?? 0) + value)
+  }
+  return Array.from(byCurrency.entries()).map(([currency, value]) => ({ currency, value }))
+})
+
 onMounted(async () => {
   await loadBreakdown()
   prefetchLogoCandidates()
+  loadAllInstruments()
+  loadPlatformInstruments()
 })
 </script>
 
@@ -322,6 +372,9 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.12s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .etf-btn:hover {

@@ -40,6 +40,8 @@ export function useAllocationCalculations(props: AllocationProps) {
   const getEtfReturn = (instrumentId: number) => findEtf(instrumentId)?.annualReturn ?? null
   const getEtfPrice = (instrumentId: number) => findEtf(instrumentId)?.currentPrice ?? null
   const getEtfSymbol = (instrumentId: number) => findEtf(instrumentId)?.symbol || ''
+  const getEtfFundCurrency = (instrumentId: number): string | null =>
+    findEtf(instrumentId)?.fundCurrency ?? null
 
   const showInvestmentColumns = computed(() => props.totalInvestment > 0)
   const showRebalanceColumns = computed(() => !!props.selectedPlatform)
@@ -303,6 +305,7 @@ export function useAllocationCalculations(props: AllocationProps) {
     getEtfTer,
     getEtfReturn,
     getEtfSymbol,
+    getEtfFundCurrency,
     showInvestmentColumns,
     showRebalanceColumns,
     showRebalanceActionColumn,
