@@ -42,6 +42,14 @@ class AiModelTest {
   }
 
   @Test
+  fun `should return GPT_5_4_NANO for matching model id`() {
+    val result = AiModel.fromModelId("openai/gpt-5.4-nano")
+
+    expect(result).toEqual(AiModel.GPT_5_4_NANO)
+    expect(AiModel.GPT_5_4_NANO.modelId).toEqual("openai/gpt-5.4-nano")
+  }
+
+  @Test
   fun `should return null for unknown model id`() {
     val result = AiModel.fromModelId("unknown/model")
 

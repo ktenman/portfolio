@@ -24,6 +24,7 @@ const createInstrument = (overrides: Partial<InstrumentDto> = {}): InstrumentDto
   ter: null,
   xirrAnnualReturn: null,
   firstTransactionDate: '2024-01-01',
+  fundCurrency: null,
   ...overrides,
 })
 

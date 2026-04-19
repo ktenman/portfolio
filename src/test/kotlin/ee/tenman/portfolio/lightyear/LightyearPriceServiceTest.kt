@@ -7,6 +7,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
+import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.instrument.InstrumentService
@@ -424,14 +425,16 @@ class LightyearPriceServiceTest {
     )
 
   @Test
-  fun `should fetch fund info and return TER`() {
-    val response = LightyearFundInfoResponse(ter = BigDecimal("0.40"))
+  fun `should fetch fund info and return ter and fundCurrency`() {
+    val response = LightyearFundInfoResponse(ter = BigDecimal("0.40"), fundCurrency = "USD")
     every { properties.findUuidBySymbol("VUAA") } returns "test-uuid"
     every { lightyearPriceClient.getFundInfo("/v1/market-data/test-uuid/fund-info") } returns response
 
     val result = service.fetchFundInfo("VUAA")
 
-    expect(result).notToEqualNull().toEqualNumerically(BigDecimal("0.40"))
+    expect(result).notToEqualNull()
+    expect(result!!.ter).notToEqualNull().toEqualNumerically(BigDecimal("0.40"))
+    expect(result.fundCurrency).toEqual(Currency.USD)
   }
 
   @Test
@@ -456,14 +459,16 @@ class LightyearPriceServiceTest {
   }
 
   @Test
-  fun `should return null when fund info has no TER`() {
-    val response = LightyearFundInfoResponse(ter = null, aum = BigDecimal("1000"))
+  fun `should return data with null ter and null fundCurrency when both missing`() {
+    val response = LightyearFundInfoResponse(ter = null, aum = BigDecimal("1000"), fundCurrency = null)
     every { properties.findUuidBySymbol("STOCK") } returns "stock-uuid"
     every { lightyearPriceClient.getFundInfo("/v1/market-data/stock-uuid/fund-info") } returns response
 
     val result = service.fetchFundInfo("STOCK")
 
-    expect(result).toEqual(null)
+    expect(result).notToEqualNull()
+    expect(result!!.ter).toEqual(null)
+    expect(result.fundCurrency).toEqual(null)
   }
 
   @Test
