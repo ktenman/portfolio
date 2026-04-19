@@ -14,16 +14,26 @@
         <div class="stat-label">Unique Holdings</div>
         <div class="stat-value">{{ uniqueHoldings }}</div>
       </div>
+      <CurrencySplitCard
+        v-if="currencySplit && currencySplit.length > 0"
+        label="Fund Currency"
+        :entries="currencySplit"
+        :show-value="true"
+        :format-value="formatCurrency"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+import CurrencySplitCard from '../shared/currency-split-card.vue'
+
 const props = defineProps<{
   totalValue: number
   uniqueHoldings: number
   selectedEtfs: string[]
   availableEtfs: string[]
+  currencySplit?: Array<{ currency: string; value: number }>
 }>()
 
 const getSymbolOnly = (fullSymbol: string): string => {

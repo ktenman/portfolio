@@ -77,6 +77,7 @@
         :available-etfs="availableEtfsForRow(index)"
         :total-investment="totalInvestment"
         :disable-remove="allocations.length <= 1"
+        :fund-currency="getEtfFundCurrency(allocation.instrumentId)"
         :show-rebalance-mode="!!showRebalanceColumns"
         :action-display-mode="actionDisplayMode"
         :is-buy="showRebalanceColumns ? getRebalanceData(allocation).isBuy : true"
@@ -230,7 +231,10 @@
                 </option>
               </select>
             </td>
-            <td class="text-muted small">{{ getEtfName(allocation.instrumentId) }}</td>
+            <td class="text-muted small">
+              <currency-flag :currency="getEtfFundCurrency(allocation.instrumentId)" :size="14" />
+              {{ getEtfName(allocation.instrumentId) }}
+            </td>
             <td class="text-muted small">
               {{ formatEtfPrice(getEtfPrice(allocation.instrumentId)) }}
             </td>
@@ -392,6 +396,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAllocationCalculations } from '../../composables/use-allocation-calculations'
 import AllocationCard from './allocation-card.vue'
+import CurrencyFlag from '../shared/currency-flag.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
 import type { AllocationInput, ActionDisplayMode } from './types'
 
@@ -438,6 +443,7 @@ const {
   getEtfTer,
   getEtfReturn,
   getEtfSymbol,
+  getEtfFundCurrency,
   showInvestmentColumns,
   showRebalanceColumns,
   showRebalanceActionColumn,

@@ -29,6 +29,9 @@ class Instrument(
   var ter: BigDecimal? = null,
   @Column(name = "xirr_annual_return", nullable = true)
   var xirrAnnualReturn: BigDecimal? = null,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "fund_currency", nullable = true)
+  var fundCurrency: Currency? = null,
 ) : BaseEntity() {
   fun isCash(): Boolean = category == InstrumentCategory.CASH.name
 

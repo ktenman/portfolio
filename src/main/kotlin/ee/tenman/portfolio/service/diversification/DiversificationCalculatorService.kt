@@ -67,6 +67,7 @@ class DiversificationCalculatorService(
           ter = instrument.ter,
           annualReturn = instrument.xirrAnnualReturn,
           currentPrice = instrument.currentPrice,
+          fundCurrency = instrument.fundCurrency,
         )
       }.sortedBy { it.symbol }
   }
@@ -107,6 +108,7 @@ class DiversificationCalculatorService(
         ter = instrument.ter,
         annualReturn = instrument.xirrAnnualReturn,
         currentPrice = instrument.currentPrice,
+        fundCurrency = instrument.fundCurrency,
       )
     }
 

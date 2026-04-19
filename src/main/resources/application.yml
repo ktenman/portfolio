@@ -28,6 +28,8 @@ management:
     env:
       enabled: true
 spring:
+  config:
+    import: "optional:classpath:fund-currency-overrides.yml"
   application:
     name: portfolio
   docker:

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.repository
 
+import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import org.springframework.data.jpa.repository.JpaRepository
@@ -40,6 +41,13 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
   fun updateTer(
     id: Long,
     ter: BigDecimal?,
+  )
+
+  @Modifying(clearAutomatically = true)
+  @Query("UPDATE Instrument i SET i.fundCurrency = :fundCurrency WHERE i.id = :id")
+  fun updateFundCurrency(
+    id: Long,
+    fundCurrency: Currency?,
   )
 
   @Modifying(clearAutomatically = true)

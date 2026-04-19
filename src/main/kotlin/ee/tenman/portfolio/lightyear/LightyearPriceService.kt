@@ -2,6 +2,7 @@ package ee.tenman.portfolio.lightyear
 
 import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
+import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.instrument.InstrumentService
@@ -136,7 +137,7 @@ class LightyearPriceService(
   }
 
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
-  fun fetchFundInfo(symbol: String): BigDecimal? {
+  fun fetchFundInfo(symbol: String): LightyearFundInfoData? {
     val uuid = resolveUuid(symbol)
     if (uuid == null) {
       log.warn("No UUID found for symbol: $symbol")
@@ -145,8 +146,9 @@ class LightyearPriceService(
     return runCatching {
       val path = "/v1/market-data/$uuid/fund-info"
       val response = lightyearPriceClient.getFundInfo(path)
-      log.debug("Fetched TER for $symbol: ${response.ter}")
-      response.ter
+      val currency = Currency.fromCodeOrNull(response.fundCurrency)
+      log.debug("Fetched fund info for $symbol: ter=${response.ter}, fundCurrency=$currency")
+      LightyearFundInfoData(ter = response.ter, fundCurrency = currency)
     }.onFailure { e ->
       log.warn("Failed to fetch fund info for symbol: $symbol", e)
     }.getOrNull()
