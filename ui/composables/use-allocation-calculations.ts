@@ -27,8 +27,9 @@ interface AllocationProps {
   readonly availableEtfs: EtfDetailDto[]
   readonly totalInvestment: number
   readonly currentHoldingsTotal: number
-  readonly selectedPlatform: string | null
+  readonly selectedPlatforms: string[]
   readonly optimizeEnabled: boolean
+  readonly buyOnlyEnabled: boolean
   readonly actionDisplayMode: ActionDisplayMode
 }
 
@@ -44,11 +45,16 @@ export function useAllocationCalculations(props: AllocationProps) {
     findEtf(instrumentId)?.fundCurrency ?? null
 
   const showInvestmentColumns = computed(() => props.totalInvestment > 0)
-  const showRebalanceColumns = computed(() => !!props.selectedPlatform)
+  const showRebalanceColumns = computed(() => props.selectedPlatforms.length > 0)
   const showRebalanceActionColumn = computed(
     () =>
       showRebalanceColumns.value && (props.totalInvestment > 0 || props.currentHoldingsTotal > 0)
   )
+
+  const applyBuyOnlyClamp = (rawDifference: number): number => {
+    if (props.buyOnlyEnabled && (rawDifference < 0 || props.totalInvestment <= 0)) return 0
+    return rawDifference
+  }
 
   const getBaseRebalanceData = (allocation: AllocationInput): RebalanceData => {
     const price = getEtfPrice(allocation.instrumentId)
@@ -60,7 +66,7 @@ export function useAllocationCalculations(props: AllocationProps) {
       props.totalInvestment,
       allocation.value
     )
-    const difference = targetValue - currentValue
+    const difference = applyBuyOnlyClamp(targetValue - currentValue)
     const isBuy = difference >= 0
     const absoluteDifference = Math.abs(difference)
     const units = calculateUnitsFromAmount(absoluteDifference, price ?? 0)
@@ -80,7 +86,7 @@ export function useAllocationCalculations(props: AllocationProps) {
         props.totalInvestment,
         a.value
       )
-      const difference = targetValue - currentValue
+      const difference = applyBuyOnlyClamp(targetValue - currentValue)
       return { id: a.instrumentId, price, difference, isBuy: difference >= 0 }
     })
     return calculateBudgetConstrainedRebalance(

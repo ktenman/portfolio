@@ -1,9 +1,11 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.domain.DiversificationConfigData
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.SerializationFeature
 import tools.jackson.databind.cfg.DateTimeFeature
 import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.module.SimpleModule
 import tools.jackson.module.kotlin.KotlinModule
 
 private const val MAX_LENGTH = 300
@@ -13,7 +15,12 @@ object JsonMapperFactory {
     JsonMapper
       .builder()
       .addModule(KotlinModule.Builder().build())
-      .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+      .addModule(
+        SimpleModule().addDeserializer(
+          DiversificationConfigData::class.java,
+          DiversificationConfigDataDeserializer(),
+        ),
+      ).disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
       .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
       .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
       .build()

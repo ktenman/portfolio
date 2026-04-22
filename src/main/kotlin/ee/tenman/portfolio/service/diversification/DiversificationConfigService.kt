@@ -36,10 +36,11 @@ class DiversificationConfigService(
     DiversificationConfigDto(
       allocations = configData.allocations.map { it.toDto() },
       inputMode = configData.inputMode.name.lowercase(),
-      selectedPlatform = configData.selectedPlatform,
+      selectedPlatforms = configData.selectedPlatforms,
       optimizeEnabled = configData.optimizeEnabled,
       totalInvestment = configData.totalInvestment,
       actionDisplayMode = configData.actionDisplayMode.name.lowercase(),
+      buyOnlyEnabled = configData.buyOnlyEnabled,
     )
 
   private fun DiversificationAllocationData.toDto() =
@@ -52,10 +53,11 @@ class DiversificationConfigService(
     DiversificationConfigData(
       allocations = allocations.map { it.toAllocationData() },
       inputMode = InputMode.fromString(inputMode),
-      selectedPlatform = selectedPlatform,
+      selectedPlatforms = selectedPlatforms,
       optimizeEnabled = optimizeEnabled,
       totalInvestment = totalInvestment,
       actionDisplayMode = ActionDisplayMode.fromString(actionDisplayMode),
+      buyOnlyEnabled = buyOnlyEnabled,
     )
 
   private fun DiversificationConfigAllocationDto.toAllocationData() =

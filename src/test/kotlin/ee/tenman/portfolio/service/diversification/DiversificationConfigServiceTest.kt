@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.diversification
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toBeAnInstanceOf
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -149,5 +150,47 @@ class DiversificationConfigServiceTest {
     expect(savedConfig.allocations[0].instrumentId).toEqual(5L)
     expect(savedConfig.allocations[0].value).toEqualNumerically(BigDecimal("50.5"))
     expect(savedConfig.inputMode).toEqual(InputMode.PERCENTAGE)
+  }
+
+  @Test
+  fun `should round-trip multiple selected platforms through save and get`() {
+    val dto =
+      DiversificationConfigDto(
+        allocations =
+          listOf(
+            DiversificationConfigAllocationDto(instrumentId = 1L, value = BigDecimal("100")),
+          ),
+        inputMode = "percentage",
+        selectedPlatforms = listOf("LHV", "SWEDBANK"),
+      )
+    val savedSlot = slot<DiversificationConfig>()
+    every { repository.findConfig() } returns null
+    every { repository.save(capture(savedSlot)) } answers { savedSlot.captured.apply { id = 42L } }
+
+    val result = service.saveConfig(dto)
+
+    expect(savedSlot.captured.configData.selectedPlatforms).toContainExactly("LHV", "SWEDBANK")
+    expect(result.selectedPlatforms).toContainExactly("LHV", "SWEDBANK")
+  }
+
+  @Test
+  fun `should round-trip buyOnlyEnabled through save and get`() {
+    val dto =
+      DiversificationConfigDto(
+        allocations =
+          listOf(
+            DiversificationConfigAllocationDto(instrumentId = 1L, value = BigDecimal("100")),
+          ),
+        inputMode = "percentage",
+        buyOnlyEnabled = true,
+      )
+    val savedSlot = slot<DiversificationConfig>()
+    every { repository.findConfig() } returns null
+    every { repository.save(capture(savedSlot)) } answers { savedSlot.captured.apply { id = 42L } }
+
+    val result = service.saveConfig(dto)
+
+    expect(savedSlot.captured.configData.buyOnlyEnabled).toEqual(true)
+    expect(result.buyOnlyEnabled).toEqual(true)
   }
 }

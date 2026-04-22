@@ -8,7 +8,7 @@
       >
         <option :value="0" disabled>Select ETF</option>
         <option v-for="etf in availableEtfs" :key="etf.instrumentId" :value="etf.instrumentId">
-          {{ etf.symbol }}
+          {{ formatTickerSymbol(etf.symbol) }}
         </option>
       </select>
       <button
@@ -76,6 +76,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { formatTer, formatReturn } from '../../utils/formatters'
+import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
 import type { AllocationInput, ActionDisplayMode } from './types'
@@ -144,20 +145,19 @@ const formattedAfterPercent = computed(() => {
 
 const inputLabel = computed(() => (props.showRebalanceMode ? 'Target %' : 'Allocation %'))
 
+const hasAction = computed(() => {
+  if (props.actionDisplayMode === 'amount') return (props.computedAmount ?? 0) > 0.01
+  return (props.computedUnits ?? 0) > 0
+})
+
 const actionLabel = computed(() => {
   if (!props.showRebalanceMode) return 'Units'
+  if (!hasAction.value) return 'Action'
   return props.isBuy ? 'Buy' : 'Sell'
 })
 
 const actionColorClass = computed(() => {
-  if (!props.showRebalanceMode) return ''
-  if (props.actionDisplayMode === 'amount') {
-    const amount = props.computedAmount ?? 0
-    if (amount <= 0) return ''
-    return props.isBuy ? 'text-success' : 'text-danger'
-  }
-  const units = props.computedUnits ?? 0
-  if (units === 0) return ''
+  if (!props.showRebalanceMode || !hasAction.value) return ''
   return props.isBuy ? 'text-success' : 'text-danger'
 })
 

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import DiversificationCalculator from './diversification-calculator.vue'
+import type { InstrumentDto } from '../../models/generated/domain-models'
 
 vi.mock('@tanstack/vue-query', () => ({
   useQuery: vi.fn(() => ({
@@ -122,5 +123,39 @@ describe('DiversificationCalculator', () => {
       const wrapper = mount(DiversificationCalculator)
       expect(wrapper.findComponent({ name: 'AllocationTable' }).exists()).toBe(true)
     })
+  })
+
+  it('passes all selected platforms to instrumentsService when loading from portfolio', async () => {
+    const instrumentsService = (await import('../../services/instruments-service'))
+      .instrumentsService
+    const diversificationService = (await import('../../services/diversification-service'))
+      .diversificationService
+
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [
+        {
+          id: 1,
+          symbol: 'VWCE',
+          name: 'Vanguard FTSE All-World',
+          platforms: ['LHV', 'SWEDBANK'],
+          currentValue: 500,
+        } as unknown as InstrumentDto,
+      ],
+      portfolioXirr: null,
+    })
+    vi.mocked(diversificationService.getConfig).mockResolvedValue({
+      allocations: [{ instrumentId: 1, value: 100 }],
+      inputMode: 'percentage',
+      selectedPlatforms: ['LHV', 'SWEDBANK'],
+    })
+
+    const wrapper = mount(DiversificationCalculator)
+    await flushPromises()
+
+    const loadBtn = wrapper.find('[aria-label="Load from Portfolio"]')
+    await loadBtn.trigger('click')
+    await flushPromises()
+
+    expect(instrumentsService.getAll).toHaveBeenCalledWith(['LHV', 'SWEDBANK'])
   })
 })

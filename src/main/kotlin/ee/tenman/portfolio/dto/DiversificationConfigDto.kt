@@ -11,11 +11,12 @@ data class DiversificationConfigDto(
   val allocations: List<DiversificationConfigAllocationDto>,
   @field:Pattern(regexp = "percentage|amount", message = "Input mode must be 'percentage' or 'amount'")
   val inputMode: String,
-  val selectedPlatform: String? = null,
+  val selectedPlatforms: List<String> = emptyList(),
   val optimizeEnabled: Boolean = false,
   val totalInvestment: Double = 0.0,
   @field:Pattern(regexp = "units|amount", message = "Action display mode must be 'units' or 'amount'")
   val actionDisplayMode: String = "units",
+  val buyOnlyEnabled: Boolean = false,
 ) : Serializable {
   companion object {
     private const val serialVersionUID: Long = 1L
