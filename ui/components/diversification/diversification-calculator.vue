@@ -170,7 +170,7 @@ const handlePriceRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['diversification-etfs'] })
     await queryClient.invalidateQueries({ queryKey: ['instruments'] })
     if (selectedPlatforms.value.length > 0) {
-      await loadCurrentValues(selectedPlatforms.value)
+      await syncCurrentValues()
     }
     debouncedCalculate()
     toast.success('Prices refreshed')
@@ -225,7 +225,7 @@ const {
   selectedPlatforms,
   togglePlatform,
   toggleAllPlatforms,
-  loadCurrentValues,
+  syncCurrentValues,
   setPlatforms,
   applyFirstTimeDefault,
 } = useDiversificationPlatforms({

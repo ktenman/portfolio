@@ -78,7 +78,7 @@ export function useDiversificationPlatforms(args: UseDiversificationPlatformsArg
     selectedPlatforms,
     togglePlatform,
     toggleAllPlatforms,
-    loadCurrentValues,
+    syncCurrentValues,
     setPlatforms,
     applyFirstTimeDefault,
   }

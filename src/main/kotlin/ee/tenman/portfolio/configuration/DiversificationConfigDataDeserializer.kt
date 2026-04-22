@@ -51,15 +51,10 @@ class DiversificationConfigDataDeserializer : ValueDeserializer<DiversificationC
 
   private fun readSelectedPlatforms(node: JsonNode): List<String> {
     val listNode = node.get("selectedPlatforms")
-    if (listNode != null && listNode.isArray) {
-      return listNode.values().map { it.asString() }
-    }
+    if (listNode?.isArray == true) return listNode.values().map { it.asString() }
     val legacy = node.get("selectedPlatform")
-    if (legacy != null && !legacy.isNull) {
-      val value = legacy.asString()
-      if (value.isNotBlank()) return listOf(value)
-    }
-    return emptyList()
+    val value = if (legacy == null || legacy.isNull) "" else legacy.asString()
+    return if (value.isNotBlank()) listOf(value) else emptyList()
   }
 
   private fun readActionDisplayMode(node: JsonNode): ActionDisplayMode =
