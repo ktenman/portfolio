@@ -32,13 +32,17 @@ export function useDiversificationPlatforms(args: UseDiversificationPlatformsArg
     }
   }
 
-  const applySelectionChange = async () => {
-    args.onChanged()
+  const syncCurrentValues = async () => {
     if (selectedPlatforms.value.length === 0) {
       resetCurrentValues(undefined)
       return
     }
     await loadCurrentValues(selectedPlatforms.value)
+  }
+
+  const setPlatforms = async (platforms: string[]) => {
+    selectedPlatforms.value = [...platforms]
+    await syncCurrentValues()
   }
 
   const togglePlatform = async (platform: string) => {
@@ -47,28 +51,25 @@ export function useDiversificationPlatforms(args: UseDiversificationPlatformsArg
     } else {
       selectedPlatforms.value = [...selectedPlatforms.value, platform]
     }
-    await applySelectionChange()
+    args.onChanged()
+    await syncCurrentValues()
   }
 
   const toggleAllPlatforms = async () => {
     const allSelected = selectedPlatforms.value.length === args.availablePlatforms.value.length
     selectedPlatforms.value = allSelected ? [] : [...args.availablePlatforms.value]
-    await applySelectionChange()
-  }
-
-  const seedFromAvailable = async (platforms: string[]) => {
-    selectedPlatforms.value = [...platforms]
-    await loadCurrentValues(selectedPlatforms.value)
+    args.onChanged()
+    await syncCurrentValues()
   }
 
   const applyFirstTimeDefault = async () => {
     if (args.availablePlatforms.value.length > 0) {
-      await seedFromAvailable(args.availablePlatforms.value)
+      await setPlatforms(args.availablePlatforms.value)
       return
     }
     const stop = watch(args.availablePlatforms, async newPlatforms => {
       if (newPlatforms.length === 0) return
-      await seedFromAvailable(newPlatforms)
+      await setPlatforms(newPlatforms)
       stop()
     })
   }
@@ -78,6 +79,7 @@ export function useDiversificationPlatforms(args: UseDiversificationPlatformsArg
     togglePlatform,
     toggleAllPlatforms,
     loadCurrentValues,
+    setPlatforms,
     applyFirstTimeDefault,
   }
 }

@@ -226,6 +226,7 @@ const {
   togglePlatform,
   toggleAllPlatforms,
   loadCurrentValues,
+  setPlatforms,
   applyFirstTimeDefault,
 } = useDiversificationPlatforms({
   allocations,
@@ -407,14 +408,11 @@ const onExportComplete = () => {
 
 const onImportComplete = async (data: CachedState) => {
   allocations.value = data.allocations
-  selectedPlatforms.value = data.selectedPlatforms ?? []
   optimizeEnabled.value = data.optimizeEnabled ?? false
   buyOnlyEnabled.value = data.buyOnlyEnabled ?? false
   totalInvestment.value = data.totalInvestment ?? 0
   actionDisplayMode.value = data.actionDisplayMode ?? 'units'
-  if (selectedPlatforms.value.length > 0) {
-    await loadCurrentValues(selectedPlatforms.value)
-  }
+  await setPlatforms(data.selectedPlatforms ?? [])
   markDirty()
   debouncedCalculate()
 }
@@ -439,14 +437,11 @@ watch(
         value: Number(a.value),
       }))
     }
-    selectedPlatforms.value = dbConfig.selectedPlatforms ?? []
     optimizeEnabled.value = dbConfig.optimizeEnabled ?? false
     buyOnlyEnabled.value = dbConfig.buyOnlyEnabled ?? false
     totalInvestment.value = dbConfig.totalInvestment ?? 0
     actionDisplayMode.value = dbConfig.actionDisplayMode ?? 'units'
-    if (selectedPlatforms.value.length > 0) {
-      await loadCurrentValues(selectedPlatforms.value)
-    }
+    await setPlatforms(dbConfig.selectedPlatforms ?? [])
     debouncedCalculate()
   },
   { immediate: true }
