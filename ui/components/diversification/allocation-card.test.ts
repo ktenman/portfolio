@@ -40,7 +40,6 @@ describe('AllocationCard action label', () => {
       props: {
         ...baseProps,
         showRebalanceMode: true,
-        hasAction: true,
         isBuy: true,
         computedUnits: 3,
       },
@@ -54,7 +53,6 @@ describe('AllocationCard action label', () => {
       props: {
         ...baseProps,
         showRebalanceMode: true,
-        hasAction: true,
         isBuy: false,
         computedUnits: 2,
       },
@@ -68,7 +66,6 @@ describe('AllocationCard action label', () => {
       props: {
         ...baseProps,
         showRebalanceMode: true,
-        hasAction: false,
         isBuy: true,
         computedUnits: 0,
       },

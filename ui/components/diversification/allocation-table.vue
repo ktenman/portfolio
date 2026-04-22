@@ -99,7 +99,6 @@
         :show-rebalance-mode="!!showRebalanceColumns"
         :action-display-mode="actionDisplayMode"
         :is-buy="showRebalanceColumns ? getRebalanceData(allocation).isBuy : true"
-        :has-action="showRebalanceColumns ? hasRebalanceAction(allocation) : true"
         :computed-units="
           showRebalanceColumns
             ? getRebalanceData(allocation).units

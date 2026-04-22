@@ -126,6 +126,7 @@ import { diversificationService } from '../../services/diversification-service'
 import { instrumentsService } from '../../services/instruments-service'
 import { REFETCH_INTERVALS } from '../../constants'
 import { formatRelativeTime } from '../../utils/formatters'
+import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
@@ -347,7 +348,7 @@ const loadFromPortfolio = async () => {
     if (portfolioEtfs.length === 0) {
       error.value =
         selectedPlatforms.value.length > 0
-          ? `No ETFs found on ${selectedPlatforms.value.join(', ')}`
+          ? `No ETFs found on ${selectedPlatforms.value.map(formatPlatformName).join(', ')}`
           : 'No ETFs found in your portfolio'
       return
     }

@@ -90,7 +90,6 @@ const props = defineProps<{
   showRebalanceMode?: boolean
   actionDisplayMode?: ActionDisplayMode
   isBuy?: boolean
-  hasAction?: boolean
   computedUnits?: number
   computedAmount?: number
   computedUnused?: number
@@ -146,21 +145,19 @@ const formattedAfterPercent = computed(() => {
 
 const inputLabel = computed(() => (props.showRebalanceMode ? 'Target %' : 'Allocation %'))
 
+const hasAction = computed(() => {
+  if (props.actionDisplayMode === 'amount') return (props.computedAmount ?? 0) > 0.01
+  return (props.computedUnits ?? 0) > 0
+})
+
 const actionLabel = computed(() => {
   if (!props.showRebalanceMode) return 'Units'
-  if (props.hasAction === false) return 'Action'
+  if (!hasAction.value) return 'Action'
   return props.isBuy ? 'Buy' : 'Sell'
 })
 
 const actionColorClass = computed(() => {
-  if (!props.showRebalanceMode) return ''
-  if (props.actionDisplayMode === 'amount') {
-    const amount = props.computedAmount ?? 0
-    if (amount <= 0) return ''
-    return props.isBuy ? 'text-success' : 'text-danger'
-  }
-  const units = props.computedUnits ?? 0
-  if (units === 0) return ''
+  if (!props.showRebalanceMode || !hasAction.value) return ''
   return props.isBuy ? 'text-success' : 'text-danger'
 })
 
