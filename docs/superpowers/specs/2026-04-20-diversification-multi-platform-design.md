@@ -33,11 +33,11 @@ Today: "rebalance mode" (shows current holdings, Buy/Sell actions) activates onl
 
 New: The platform filter **is** the mode selector.
 
-| Selection state                     | Mode                     | `currentValue` captured? |
-|-------------------------------------|--------------------------|--------------------------|
-| All available platforms (default)   | Rebalance (whole portfolio) | Yes                   |
-| Subset (e.g., LHV + Swedbank)       | Rebalance (scoped)       | Yes                      |
-| Empty (user clicked "Clear All")    | New investment planning  | No                       |
+| Selection state                   | Mode                        | `currentValue` captured? |
+| --------------------------------- | --------------------------- | ------------------------ |
+| All available platforms (default) | Rebalance (whole portfolio) | Yes                      |
+| Subset (e.g., LHV + Swedbank)     | Rebalance (scoped)          | Yes                      |
+| Empty (user clicked "Clear All")  | New investment planning     | No                       |
 
 First-time users land in rebalance-whole-portfolio mode. To return to the old "new investment" default, they click "Clear All".
 
@@ -85,8 +85,7 @@ Rationale: Matches the convention of every other platform-filtered view in the a
 **New utility `ui/utils/ticker-symbol.ts`:**
 
 ```ts
-export const formatTickerSymbol = (symbol: string): string =>
-  symbol.split(':')[0]
+export const formatTickerSymbol = (symbol: string): string => symbol.split(':')[0]
 ```
 
 Pure function: `AIFS:GER:EUR → AIFS`, `VUAA → VUAA`, `'' → ''`.

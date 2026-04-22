@@ -15,12 +15,14 @@
 ## File Inventory
 
 **Create:**
+
 - `ui/utils/ticker-symbol.ts` — pure `formatTickerSymbol` utility
 - `ui/utils/ticker-symbol.test.ts` — utility tests
 - `src/main/kotlin/ee/tenman/portfolio/configuration/DiversificationConfigDataDeserializer.kt` — Jackson deserializer that migrates legacy `selectedPlatform` → `selectedPlatforms`
 - `src/test/kotlin/ee/tenman/portfolio/configuration/DiversificationConfigDataDeserializerTest.kt` — deserializer tests
 
 **Modify:**
+
 - `src/main/kotlin/ee/tenman/portfolio/domain/DiversificationConfigData.kt` — rename field, add `@JsonDeserialize` annotation
 - `src/main/kotlin/ee/tenman/portfolio/dto/DiversificationConfigDto.kt` — rename field
 - `src/main/kotlin/ee/tenman/portfolio/service/diversification/DiversificationConfigService.kt` — update mappers
@@ -38,6 +40,7 @@
 ## Task 1: Ticker symbol utility (pure function, TDD)
 
 **Files:**
+
 - Create: `ui/utils/ticker-symbol.ts`
 - Test: `ui/utils/ticker-symbol.test.ts`
 
@@ -102,6 +105,7 @@ git commit -m "Add formatTickerSymbol utility for diversification display"
 ## Task 2: Apply ticker formatting in allocation-table dropdown
 
 **Files:**
+
 - Modify: `ui/components/diversification/allocation-table.vue:230`
 - Test: `ui/components/diversification/allocation-table.test.ts`
 
@@ -110,25 +114,25 @@ git commit -m "Add formatTickerSymbol utility for diversification display"
 Open `ui/components/diversification/allocation-table.test.ts` and add this test inside the existing top-level `describe('AllocationTable', () => { ... })` block. Keep all existing tests. Add near the top of the describe body (after the `mount` helper is available — if there's already a `createWrapper` helper, use it with the default `availableEtfs` prop and inject a prop override for `availableEtfs` that includes an ETF with a colon-suffixed symbol):
 
 ```ts
-  it('renders ETF dropdown options with the ticker stripped of exchange suffix', () => {
-    const wrapper = createWrapper({
-      availableEtfs: [
-        {
-          instrumentId: 10,
-          symbol: 'AIFS:GER:EUR',
-          name: 'Amundi AI Fund',
-          ter: 0.25,
-          annualReturn: 12,
-          currentPrice: 100,
-          fundCurrency: 'EUR',
-        },
-      ],
-    })
-
-    const optionTexts = wrapper.findAll('tbody select option').map(o => o.text())
-    expect(optionTexts).toContain('AIFS')
-    expect(optionTexts).not.toContain('AIFS:GER:EUR')
+it('renders ETF dropdown options with the ticker stripped of exchange suffix', () => {
+  const wrapper = createWrapper({
+    availableEtfs: [
+      {
+        instrumentId: 10,
+        symbol: 'AIFS:GER:EUR',
+        name: 'Amundi AI Fund',
+        ter: 0.25,
+        annualReturn: 12,
+        currentPrice: 100,
+        fundCurrency: 'EUR',
+      },
+    ],
   })
+
+  const optionTexts = wrapper.findAll('tbody select option').map(o => o.text())
+  expect(optionTexts).toContain('AIFS')
+  expect(optionTexts).not.toContain('AIFS:GER:EUR')
+})
 ```
 
 If `createWrapper` does not exist, first read the top of the test file to find the existing mount pattern, and adapt the assertion to match. Do NOT add a new helper; reuse what's there.
@@ -145,13 +149,13 @@ Open `ui/components/diversification/allocation-table.vue`.
 At line 230 (inside the `<tbody>` `<select>`), change:
 
 ```vue
-                  {{ etf.symbol }}
+{{ etf.symbol }}
 ```
 
 to:
 
 ```vue
-                  {{ formatTickerSymbol(etf.symbol) }}
+{{ formatTickerSymbol(etf.symbol) }}
 ```
 
 Add the import in the `<script>` section near the other utility imports (around line 397–401):
@@ -177,6 +181,7 @@ git commit -m "Strip exchange suffix from ETF ticker in diversification table"
 ## Task 3: Apply ticker formatting in allocation-card dropdown
 
 **Files:**
+
 - Modify: `ui/components/diversification/allocation-card.vue:11`
 
 - [ ] **Step 1: Update the template**
@@ -186,13 +191,13 @@ Open `ui/components/diversification/allocation-card.vue`.
 At line 11 (inside the mobile card's `<select>`), change:
 
 ```vue
-          {{ etf.symbol }}
+{{ etf.symbol }}
 ```
 
 to:
 
 ```vue
-          {{ formatTickerSymbol(etf.symbol) }}
+{{ formatTickerSymbol(etf.symbol) }}
 ```
 
 Add the import in the `<script setup>` section near line 78 (next to `formatTer, formatReturn`):
@@ -218,6 +223,7 @@ git commit -m "Strip exchange suffix from ETF ticker in diversification mobile c
 ## Task 4: Backend — Custom Jackson deserializer for legacy config migration
 
 **Files:**
+
 - Create: `src/main/kotlin/ee/tenman/portfolio/configuration/DiversificationConfigDataDeserializer.kt`
 - Create: `src/test/kotlin/ee/tenman/portfolio/configuration/DiversificationConfigDataDeserializerTest.kt`
 - Modify: `src/main/kotlin/ee/tenman/portfolio/domain/DiversificationConfigData.kt`
@@ -471,6 +477,7 @@ git commit -m "Add multi-platform selectedPlatforms field with legacy deserializ
 ## Task 5: Backend — DTO rename and service mapper update
 
 **Files:**
+
 - Modify: `src/main/kotlin/ee/tenman/portfolio/dto/DiversificationConfigDto.kt`
 - Modify: `src/main/kotlin/ee/tenman/portfolio/service/diversification/DiversificationConfigService.kt`
 - Modify: `src/test/kotlin/ee/tenman/portfolio/service/diversification/DiversificationConfigServiceTest.kt`
@@ -578,6 +585,7 @@ git commit -m "Rename selectedPlatform to selectedPlatforms in diversification D
 ## Task 6: Frontend — Update CachedState type
 
 **Files:**
+
 - Modify: `ui/components/diversification/types.ts`
 
 - [ ] **Step 1: Update the interface**
@@ -613,6 +621,7 @@ git commit -m "Update CachedState to use selectedPlatforms array"
 ## Task 7: Frontend — Update useAllocationCalculations composable
 
 **Files:**
+
 - Modify: `ui/composables/use-allocation-calculations.ts`
 
 - [ ] **Step 1: Update the prop type and rebalance-mode check**
@@ -634,13 +643,13 @@ with:
 At line 47, replace:
 
 ```ts
-  const showRebalanceColumns = computed(() => !!props.selectedPlatform)
+const showRebalanceColumns = computed(() => !!props.selectedPlatform)
 ```
 
 with:
 
 ```ts
-  const showRebalanceColumns = computed(() => props.selectedPlatforms.length > 0)
+const showRebalanceColumns = computed(() => props.selectedPlatforms.length > 0)
 ```
 
 - [ ] **Step 2: Compile check**
@@ -660,6 +669,7 @@ git commit -m "Use selectedPlatforms array in allocation calculations composable
 ## Task 8: Frontend — allocation-table.vue multi-select pills and props/emits
 
 **Files:**
+
 - Modify: `ui/components/diversification/allocation-table.vue`
 
 - [ ] **Step 1: Replace the select dropdown with button pills in the template**
@@ -669,7 +679,7 @@ Open `ui/components/diversification/allocation-table.vue`.
 Replace lines 6–18 (the entire `<div v-if="availablePlatforms.length > 0" class="platform-selector">` block):
 
 ```vue
-        <div v-if="availablePlatforms.length > 0" class="platform-selector">
+<div v-if="availablePlatforms.length > 0" class="platform-selector">
           <label class="d-none d-md-inline">Platform</label>
           <select
             class="form-select form-select-sm"
@@ -718,7 +728,7 @@ with:
 At line 419, replace:
 
 ```ts
-  selectedPlatform: string | null
+selectedPlatform: string | null
 ```
 
 with:
@@ -815,6 +825,7 @@ git commit -m "Replace single platform select with multi-select pill buttons"
 ## Task 9: Frontend — diversification-calculator.vue wiring
 
 **Files:**
+
 - Modify: `ui/components/diversification/diversification-calculator.vue`
 
 - [ ] **Step 1: Update the state declaration**
@@ -838,26 +849,25 @@ const selectedPlatforms = ref<string[]>([])
 At lines 38 and 46, replace:
 
 ```vue
-        :selected-platform="selectedPlatform"
+:selected-platform="selectedPlatform"
 ```
 
 with:
 
 ```vue
-        :selected-platforms="selectedPlatforms"
+:selected-platforms="selectedPlatforms"
 ```
 
 Replace:
 
 ```vue
-        @update:selected-platform="onPlatformChange"
+@update:selected-platform="onPlatformChange"
 ```
 
 with:
 
 ```vue
-        @toggle-platform="togglePlatform"
-        @toggle-all-platforms="toggleAllPlatforms"
+@toggle-platform="togglePlatform" @toggle-all-platforms="toggleAllPlatforms"
 ```
 
 - [ ] **Step 3: Update the `handlePriceRefresh` branch**
@@ -865,17 +875,17 @@ with:
 At lines 167–169, replace:
 
 ```ts
-    if (selectedPlatform.value) {
-      await loadCurrentValues(selectedPlatform.value)
-    }
+if (selectedPlatform.value) {
+  await loadCurrentValues(selectedPlatform.value)
+}
 ```
 
 with:
 
 ```ts
-    if (selectedPlatforms.value.length > 0) {
-      await loadCurrentValues(selectedPlatforms.value)
-    }
+if (selectedPlatforms.value.length > 0) {
+  await loadCurrentValues(selectedPlatforms.value)
+}
 ```
 
 - [ ] **Step 4: Update `currentConfig`**
@@ -915,8 +925,7 @@ const loadFromPortfolio = async () => {
   isLoadingPortfolio.value = true
   error.value = ''
   try {
-    const platforms =
-      selectedPlatforms.value.length > 0 ? selectedPlatforms.value : undefined
+    const platforms = selectedPlatforms.value.length > 0 ? selectedPlatforms.value : undefined
     const response = await instrumentsService.getAll(platforms)
     const etfIds = new Set(etfList.value.map(e => e.instrumentId))
     const portfolioEtfs = response.instruments.filter(
@@ -935,8 +944,7 @@ const loadFromPortfolio = async () => {
       .map(i => ({
         instrumentId: i.id,
         value: Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10,
-        currentValue:
-          selectedPlatforms.value.length > 0 ? (i.currentValue ?? 0) : undefined,
+        currentValue: selectedPlatforms.value.length > 0 ? (i.currentValue ?? 0) : undefined,
       }))
     hasUnsavedChanges.value = true
     debouncedSave()
@@ -1099,6 +1107,7 @@ git commit -m "Wire multi-platform selection through diversification calculator"
 ## Task 10: Frontend — Update diversification-calculator.test.ts
 
 **Files:**
+
 - Modify: `ui/components/diversification/diversification-calculator.test.ts`
 
 - [ ] **Step 1: Read the current test file**
@@ -1108,6 +1117,7 @@ First, read `ui/components/diversification/diversification-calculator.test.ts` i
 - [ ] **Step 2: Update any test that references `selectedPlatform` on a mock config**
 
 For every location where a mock DB config or `saveConfig` call is constructed with `selectedPlatform: 'X'` or `selectedPlatform: null`, change to:
+
 - `selectedPlatform: 'X'` → `selectedPlatforms: ['X']`
 - `selectedPlatform: null` → `selectedPlatforms: []` (or remove the field entirely)
 
@@ -1118,34 +1128,34 @@ For every assertion that checks `selectedPlatform` on the saved payload, rewrite
 Add this test inside the main `describe` block (after existing tests):
 
 ```ts
-  it('passes all selected platforms to instrumentsService when loading from portfolio', async () => {
-    const { instrumentsService } = await import('../../services/instruments-service')
-    vi.mocked(instrumentsService.getAll).mockResolvedValue({
-      instruments: [
-        {
-          id: 1,
-          symbol: 'VWCE',
-          name: 'Vanguard FTSE All-World',
-          platforms: ['LHV', 'SWEDBANK'],
-          currentValue: 500,
-        } as unknown as InstrumentDto,
-      ],
-    })
-    vi.mocked(diversificationService.getConfig).mockResolvedValue({
-      allocations: [{ instrumentId: 1, value: 100 }],
-      inputMode: 'percentage',
-      selectedPlatforms: ['LHV', 'SWEDBANK'],
-    })
-
-    const wrapper = mount(DiversificationCalculator)
-    await flushPromises()
-
-    const loadBtn = wrapper.find('[aria-label="Load from Portfolio"]')
-    await loadBtn.trigger('click')
-    await flushPromises()
-
-    expect(instrumentsService.getAll).toHaveBeenCalledWith(['LHV', 'SWEDBANK'])
+it('passes all selected platforms to instrumentsService when loading from portfolio', async () => {
+  const { instrumentsService } = await import('../../services/instruments-service')
+  vi.mocked(instrumentsService.getAll).mockResolvedValue({
+    instruments: [
+      {
+        id: 1,
+        symbol: 'VWCE',
+        name: 'Vanguard FTSE All-World',
+        platforms: ['LHV', 'SWEDBANK'],
+        currentValue: 500,
+      } as unknown as InstrumentDto,
+    ],
   })
+  vi.mocked(diversificationService.getConfig).mockResolvedValue({
+    allocations: [{ instrumentId: 1, value: 100 }],
+    inputMode: 'percentage',
+    selectedPlatforms: ['LHV', 'SWEDBANK'],
+  })
+
+  const wrapper = mount(DiversificationCalculator)
+  await flushPromises()
+
+  const loadBtn = wrapper.find('[aria-label="Load from Portfolio"]')
+  await loadBtn.trigger('click')
+  await flushPromises()
+
+  expect(instrumentsService.getAll).toHaveBeenCalledWith(['LHV', 'SWEDBANK'])
+})
 ```
 
 Ensure `flushPromises` and `InstrumentDto` are imported (add imports if not already present):
@@ -1176,6 +1186,7 @@ git commit -m "Update diversification calculator tests for multi-platform select
 ## Task 11: Frontend — Update allocation-table.test.ts
 
 **Files:**
+
 - Modify: `ui/components/diversification/allocation-table.test.ts`
 
 - [ ] **Step 1: Read the current test file**
@@ -1185,12 +1196,14 @@ Read `ui/components/diversification/allocation-table.test.ts` in full (it's ~800
 - [ ] **Step 2: Update prop defaults and test data**
 
 Wherever test code creates props for `AllocationTable`:
+
 - Replace `selectedPlatform: null` → remove entirely (the new prop `selectedPlatforms: string[]` defaults to `[]`, or pass `selectedPlatforms: []`).
 - Replace `selectedPlatform: 'LHV'` → `selectedPlatforms: ['LHV']`.
 
 - [ ] **Step 3: Update platform-selection assertions**
 
 For tests that emit or assert on `update:selectedPlatform`, rewrite in terms of the new events:
+
 - If the old test verified clicking an option emitted `update:selectedPlatform`, rewrite to click a `.platform-btn` and assert on emitted `togglePlatform`.
 - If the old test verified the `<select>` rendered specific options, rewrite to assert on `.platform-btn` text.
 
@@ -1201,17 +1214,17 @@ For the "Select All" / "Clear All" toggle, add (or adapt) a test that clicks the
 Add inside the existing describe block:
 
 ```ts
-  it('marks selected platforms as active and unselected as inactive', () => {
-    const wrapper = createWrapper({
-      availablePlatforms: ['LHV', 'SWEDBANK'],
-      selectedPlatforms: ['LHV'],
-    })
-    const pills = wrapper.findAll('.platform-btn')
-    const lhv = pills.find(p => p.text() === 'LHV')
-    const swedbank = pills.find(p => p.text() === 'Swedbank')
-    expect(lhv?.classes()).toContain('active')
-    expect(swedbank?.classes()).not.toContain('active')
+it('marks selected platforms as active and unselected as inactive', () => {
+  const wrapper = createWrapper({
+    availablePlatforms: ['LHV', 'SWEDBANK'],
+    selectedPlatforms: ['LHV'],
   })
+  const pills = wrapper.findAll('.platform-btn')
+  const lhv = pills.find(p => p.text() === 'LHV')
+  const swedbank = pills.find(p => p.text() === 'Swedbank')
+  expect(lhv?.classes()).toContain('active')
+  expect(swedbank?.classes()).not.toContain('active')
+})
 ```
 
 Reuse the existing `createWrapper` helper if present; otherwise follow the existing mount pattern.
@@ -1257,6 +1270,7 @@ Expected: SUCCESS, no unexpected TS diff in `ui/models/generated/domain-models.t
 Start the dev server: `npm run dev`
 
 Open http://localhost:61234/diversification and verify:
+
 1. Platform filter shows button pills (not a dropdown).
 2. All available platforms are selected by default (first-time user) — or the previously-saved selection is restored.
 3. Clicking a platform pill toggles its active state. The `Select All`/`Clear All` button appears and toggles correctly.
