@@ -442,19 +442,19 @@ describe('AllocationTable', () => {
   })
 
   describe('platform rebalancing', () => {
-    it('should show platform pill group when platforms are available', () => {
+    it('should show platform buttons when platforms are available', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
           availablePlatforms: ['LHV', 'LIGHTYEAR'],
         },
       })
-      expect(wrapper.find('.platform-pill-group').exists()).toBe(true)
+      expect(wrapper.find('.platform-buttons').exists()).toBe(true)
     })
 
-    it('should not show platform pill group when no platforms available', () => {
+    it('should not show platform buttons when no platforms available', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
-      expect(wrapper.find('.platform-pill-group').exists()).toBe(false)
+      expect(wrapper.find('.platform-buttons').exists()).toBe(false)
     })
 
     it('should format platform names correctly', () => {

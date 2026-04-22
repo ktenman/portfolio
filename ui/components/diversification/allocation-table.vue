@@ -3,28 +3,26 @@
     <div class="header-section mb-3">
       <h5 class="mb-0">ETF Allocation</h5>
       <div class="investment-row">
-        <div v-if="availablePlatforms.length > 0" class="platform-pill-group">
-          <div class="platform-buttons">
-            <button
-              v-for="p in availablePlatforms"
-              :key="p"
-              type="button"
-              class="platform-btn"
-              :class="{ active: selectedPlatforms.includes(p) }"
-              @click="$emit('togglePlatform', p)"
-            >
-              {{ formatPlatformName(p) }}
-            </button>
-            <button
-              type="button"
-              class="platform-btn platform-btn-toggle-all"
-              @click="$emit('toggleAllPlatforms')"
-            >
-              {{
-                selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-              }}
-            </button>
-          </div>
+        <div v-if="availablePlatforms.length > 0" class="platform-buttons">
+          <button
+            v-for="p in availablePlatforms"
+            :key="p"
+            type="button"
+            class="platform-btn"
+            :class="{ active: selectedPlatforms.includes(p) }"
+            @click="$emit('togglePlatform', p)"
+          >
+            {{ formatPlatformName(p) }}
+          </button>
+          <button
+            type="button"
+            class="platform-btn platform-btn-toggle-all"
+            @click="$emit('toggleAllPlatforms')"
+          >
+            {{
+              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
+            }}
+          </button>
         </div>
         <div v-if="showRebalanceColumns" class="current-holdings">
           <label class="d-none d-md-inline">Current</label>
@@ -956,15 +954,9 @@ const onTotalInvestmentChange = (event: Event) => {
   }
 }
 
-.platform-pill-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
 .platform-buttons {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 0.25rem;
 }

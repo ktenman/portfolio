@@ -11,6 +11,10 @@ interface UseDiversificationPlatformsArgs {
 export function useDiversificationPlatforms(args: UseDiversificationPlatformsArgs) {
   const selectedPlatforms = ref<string[]>([])
 
+  const resetCurrentValues = (value: number | undefined) => {
+    args.allocations.value = args.allocations.value.map(a => ({ ...a, currentValue: value }))
+  }
+
   const loadCurrentValues = async (platforms: string[]) => {
     try {
       const response = await instrumentsService.getAll(platforms)
@@ -24,49 +28,47 @@ export function useDiversificationPlatforms(args: UseDiversificationPlatformsArg
         currentValue: valueMap.get(a.instrumentId) ?? 0,
       }))
     } catch {
-      args.allocations.value = args.allocations.value.map(a => ({ ...a, currentValue: 0 }))
+      resetCurrentValues(0)
     }
   }
 
   const applySelectionChange = async () => {
     args.onChanged()
     if (selectedPlatforms.value.length === 0) {
-      args.allocations.value = args.allocations.value.map(a => ({
-        ...a,
-        currentValue: undefined,
-      }))
+      resetCurrentValues(undefined)
       return
     }
     await loadCurrentValues(selectedPlatforms.value)
   }
 
   const togglePlatform = async (platform: string) => {
-    const idx = selectedPlatforms.value.indexOf(platform)
-    selectedPlatforms.value =
-      idx > -1
-        ? selectedPlatforms.value.filter(p => p !== platform)
-        : [...selectedPlatforms.value, platform]
+    if (selectedPlatforms.value.includes(platform)) {
+      selectedPlatforms.value = selectedPlatforms.value.filter(p => p !== platform)
+    } else {
+      selectedPlatforms.value = [...selectedPlatforms.value, platform]
+    }
     await applySelectionChange()
   }
 
   const toggleAllPlatforms = async () => {
-    selectedPlatforms.value =
-      selectedPlatforms.value.length === args.availablePlatforms.value.length
-        ? []
-        : [...args.availablePlatforms.value]
+    const allSelected = selectedPlatforms.value.length === args.availablePlatforms.value.length
+    selectedPlatforms.value = allSelected ? [] : [...args.availablePlatforms.value]
     await applySelectionChange()
+  }
+
+  const seedFromAvailable = async (platforms: string[]) => {
+    selectedPlatforms.value = [...platforms]
+    await loadCurrentValues(selectedPlatforms.value)
   }
 
   const applyFirstTimeDefault = async () => {
     if (args.availablePlatforms.value.length > 0) {
-      selectedPlatforms.value = [...args.availablePlatforms.value]
-      await loadCurrentValues(selectedPlatforms.value)
+      await seedFromAvailable(args.availablePlatforms.value)
       return
     }
     const stop = watch(args.availablePlatforms, async newPlatforms => {
       if (newPlatforms.length === 0) return
-      selectedPlatforms.value = [...newPlatforms]
-      await loadCurrentValues(selectedPlatforms.value)
+      await seedFromAvailable(newPlatforms)
       stop()
     })
   }

@@ -8,6 +8,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 export function useDiversificationConfig(getConfig: () => CachedState) {
   const hasUnsavedChanges = ref(false)
   const saveStatus = ref<SaveStatus>('idle')
+  let resetTimer: ReturnType<typeof setTimeout> | null = null
 
   const saveToDatabase = async () => {
     saveStatus.value = 'saving'
@@ -15,8 +16,10 @@ export function useDiversificationConfig(getConfig: () => CachedState) {
       await diversificationService.saveConfig(getConfig())
       saveStatus.value = 'saved'
       hasUnsavedChanges.value = false
-      setTimeout(() => {
+      if (resetTimer !== null) clearTimeout(resetTimer)
+      resetTimer = setTimeout(() => {
         if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+        resetTimer = null
       }, 2000)
     } catch {
       saveStatus.value = 'error'
@@ -38,12 +41,13 @@ export function useDiversificationConfig(getConfig: () => CachedState) {
   }
 
   onMounted(() => window.addEventListener('beforeunload', handleBeforeUnload))
-  onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload))
+  onUnmounted(() => {
+    window.removeEventListener('beforeunload', handleBeforeUnload)
+    if (resetTimer !== null) clearTimeout(resetTimer)
+  })
 
   return {
-    hasUnsavedChanges,
     saveStatus,
-    debouncedSave,
     markDirty,
   }
 }
