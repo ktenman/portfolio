@@ -15,6 +15,7 @@ describe('AllocationTable', () => {
       { name: 'LHV', displayName: 'LHV' },
       { name: 'LIGHTYEAR', displayName: 'Lightyear' },
       { name: 'TRADING212', displayName: 'Trading 212' },
+      { name: 'SWEDBANK', displayName: 'Swedbank' },
     ])
   })
   const defaultEtfs = [
@@ -47,12 +48,37 @@ describe('AllocationTable', () => {
     availableEtfs: defaultEtfs,
     isLoadingPortfolio: false,
     totalInvestment: 0,
-    selectedPlatform: null,
+    selectedPlatforms: [] as string[],
     availablePlatforms: [] as string[],
     currentHoldingsTotal: 0,
     optimizeEnabled: false,
+    buyOnlyEnabled: false,
     actionDisplayMode: 'units' as const,
   }
+
+  it('renders ETF dropdown options with the ticker stripped of exchange suffix', () => {
+    const wrapper = mount(AllocationTable, {
+      props: {
+        ...defaultProps,
+        availableEtfs: [
+          {
+            instrumentId: 10,
+            symbol: 'AIFS:GER:EUR',
+            name: 'Amundi AI Fund',
+            allocation: 0,
+            ter: 0.25,
+            annualReturn: 12,
+            currentPrice: 100,
+            fundCurrency: Currency.EUR,
+          },
+        ],
+      },
+    })
+
+    const optionTexts = wrapper.findAll('tbody select option').map(o => o.text())
+    expect(optionTexts).toContain('AIFS')
+    expect(optionTexts).not.toContain('AIFS:GER:EUR')
+  })
 
   describe('rendering', () => {
     it('should render allocation table', () => {
@@ -416,19 +442,19 @@ describe('AllocationTable', () => {
   })
 
   describe('platform rebalancing', () => {
-    it('should show platform selector when platforms are available', () => {
+    it('should show platform pill group when platforms are available', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
           availablePlatforms: ['LHV', 'LIGHTYEAR'],
         },
       })
-      expect(wrapper.find('.platform-selector').exists()).toBe(true)
+      expect(wrapper.find('.platform-pill-group').exists()).toBe(true)
     })
 
-    it('should not show platform selector when no platforms available', () => {
+    it('should not show platform pill group when no platforms available', () => {
       const wrapper = mount(AllocationTable, { props: defaultProps })
-      expect(wrapper.find('.platform-selector').exists()).toBe(false)
+      expect(wrapper.find('.platform-pill-group').exists()).toBe(false)
     })
 
     it('should format platform names correctly', () => {
@@ -438,28 +464,56 @@ describe('AllocationTable', () => {
           availablePlatforms: ['LHV', 'LIGHTYEAR'],
         },
       })
-      const options = wrapper.find('.platform-selector select').findAll('option')
-      expect(options[1].text()).toBe('LHV')
-      expect(options[2].text()).toBe('Lightyear')
+      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-toggle-all)')
+      expect(pills).toHaveLength(2)
+      expect(pills[0].text()).toBe('LHV')
+      expect(pills[1].text()).toBe('Lightyear')
     })
 
-    it('should emit update:selectedPlatform when platform changes', async () => {
+    it('should emit togglePlatform when a platform pill is clicked', async () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
           availablePlatforms: ['LHV', 'LIGHTYEAR'],
         },
       })
-      const select = wrapper.find('.platform-selector select')
-      await select.setValue('LHV')
-      expect(wrapper.emitted('update:selectedPlatform')).toEqual([['LHV']])
+      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-toggle-all)')
+      await pills[0].trigger('click')
+      expect(wrapper.emitted('togglePlatform')).toEqual([['LHV']])
+    })
+
+    it('should emit toggleAllPlatforms when the Select All / Clear All button is clicked', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          availablePlatforms: ['LHV', 'LIGHTYEAR'],
+        },
+      })
+      const toggleAllBtn = wrapper.find('.platform-btn-toggle-all')
+      await toggleAllBtn.trigger('click')
+      expect(wrapper.emitted('toggleAllPlatforms')).toHaveLength(1)
+    })
+
+    it('marks selected platforms as active and unselected as inactive', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          availablePlatforms: ['LHV', 'SWEDBANK'],
+          selectedPlatforms: ['LHV'],
+        },
+      })
+      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-toggle-all)')
+      const lhv = pills.find(p => p.text() === 'LHV')
+      const swedbank = pills.find(p => p.text() === 'Swedbank')
+      expect(lhv?.classes()).toContain('active')
+      expect(swedbank?.classes()).not.toContain('active')
     })
 
     it('should show current holdings when platform is selected and has holdings', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
-          selectedPlatform: 'LHV',
+          selectedPlatforms: ['LHV'],
           availablePlatforms: ['LHV'],
           currentHoldingsTotal: 5000,
         },
@@ -483,7 +537,7 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
-          selectedPlatform: 'LHV',
+          selectedPlatforms: ['LHV'],
           availablePlatforms: ['LHV'],
           currentHoldingsTotal: 5000,
           allocations: [{ instrumentId: 1, value: 100, currentValue: 5000 }],
@@ -498,7 +552,7 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
-          selectedPlatform: 'LHV',
+          selectedPlatforms: ['LHV'],
           availablePlatforms: ['LHV'],
           currentHoldingsTotal: 5000,
           allocations: [{ instrumentId: 1, value: 100, currentValue: 5000 }],
@@ -512,7 +566,7 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
-          selectedPlatform: 'LHV',
+          selectedPlatforms: ['LHV'],
           availablePlatforms: ['LHV'],
           currentHoldingsTotal: 5000,
           totalInvestment: 1000,
@@ -528,7 +582,7 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
-          selectedPlatform: 'LHV',
+          selectedPlatforms: ['LHV'],
           availablePlatforms: ['LHV'],
           currentHoldingsTotal: 5000,
         },
@@ -540,7 +594,7 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
-          selectedPlatform: 'LHV',
+          selectedPlatforms: ['LHV'],
           availablePlatforms: ['LHV'],
           currentHoldingsTotal: 5000,
           totalInvestment: 1000,
@@ -554,7 +608,7 @@ describe('AllocationTable', () => {
       const wrapper = mount(AllocationTable, {
         props: {
           ...defaultProps,
-          selectedPlatform: 'LHV',
+          selectedPlatforms: ['LHV'],
           availablePlatforms: ['LHV'],
           currentHoldingsTotal: 3000,
           totalInvestment: 1000,
@@ -768,6 +822,46 @@ describe('AllocationTable', () => {
         },
       })
       expect(wrapper.text()).toContain('€0.00')
+    })
+  })
+
+  describe('buy only toggle', () => {
+    it('renders Buy only toggle when rebalance action column is visible', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatforms: ['LHV'],
+          currentHoldingsTotal: 1000,
+          allocations: [{ instrumentId: 1, value: 100, currentValue: 1000 }],
+        },
+      })
+      expect(wrapper.find('#buyOnlyAllocation').exists()).toBe(true)
+    })
+
+    it('does not render Buy only toggle in new-investment mode', () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatforms: [],
+          totalInvestment: 1000,
+        },
+      })
+      expect(wrapper.find('#buyOnlyAllocation').exists()).toBe(false)
+    })
+
+    it('emits update:buyOnlyEnabled when toggle is clicked', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: {
+          ...defaultProps,
+          selectedPlatforms: ['LHV'],
+          currentHoldingsTotal: 1000,
+          allocations: [{ instrumentId: 1, value: 100, currentValue: 1000 }],
+        },
+      })
+      await wrapper.find('#buyOnlyAllocation').setValue(true)
+      const events = wrapper.emitted('update:buyOnlyEnabled')
+      expect(events).toBeTruthy()
+      expect(events?.[0]).toEqual([true])
     })
   })
 

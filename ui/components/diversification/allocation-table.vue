@@ -3,18 +3,28 @@
     <div class="header-section mb-3">
       <h5 class="mb-0">ETF Allocation</h5>
       <div class="investment-row">
-        <div v-if="availablePlatforms.length > 0" class="platform-selector">
-          <label class="d-none d-md-inline">Platform</label>
-          <select
-            class="form-select form-select-sm"
-            :value="selectedPlatform ?? ''"
-            @change="onPlatformChange"
-          >
-            <option value="">All platforms</option>
-            <option v-for="p in availablePlatforms" :key="p" :value="p">
+        <div v-if="availablePlatforms.length > 0" class="platform-pill-group">
+          <div class="platform-buttons">
+            <button
+              v-for="p in availablePlatforms"
+              :key="p"
+              type="button"
+              class="platform-btn"
+              :class="{ active: selectedPlatforms.includes(p) }"
+              @click="$emit('togglePlatform', p)"
+            >
               {{ formatPlatformName(p) }}
-            </option>
-          </select>
+            </button>
+            <button
+              type="button"
+              class="platform-btn platform-btn-toggle-all"
+              @click="$emit('toggleAllPlatforms')"
+            >
+              {{
+                selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
+              }}
+            </button>
+          </div>
         </div>
         <div v-if="showRebalanceColumns" class="current-holdings">
           <label class="d-none d-md-inline">Current</label>
@@ -37,7 +47,7 @@
             />
           </div>
         </div>
-        <div v-if="showInvestmentColumns" class="optimize-toggle">
+        <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="optimize-toggle">
           <input
             id="optimizeAllocation"
             :checked="optimizeEnabled"
@@ -46,6 +56,16 @@
             @change="emit('update:optimizeEnabled', ($event.target as HTMLInputElement).checked)"
           />
           <label for="optimizeAllocation" class="form-check-label">Optimize</label>
+        </div>
+        <div v-if="showRebalanceActionColumn" class="buy-only-toggle">
+          <input
+            id="buyOnlyAllocation"
+            :checked="buyOnlyEnabled"
+            type="checkbox"
+            class="form-check-input"
+            @change="emit('update:buyOnlyEnabled', ($event.target as HTMLInputElement).checked)"
+          />
+          <label for="buyOnlyAllocation" class="form-check-label">Buy only</label>
         </div>
         <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="display-mode-toggle">
           <button
@@ -81,6 +101,7 @@
         :show-rebalance-mode="!!showRebalanceColumns"
         :action-display-mode="actionDisplayMode"
         :is-buy="showRebalanceColumns ? getRebalanceData(allocation).isBuy : true"
+        :has-action="showRebalanceColumns ? hasRebalanceAction(allocation) : true"
         :computed-units="
           showRebalanceColumns
             ? getRebalanceData(allocation).units
@@ -227,7 +248,7 @@
                   :key="etf.instrumentId"
                   :value="etf.instrumentId"
                 >
-                  {{ etf.symbol }}
+                  {{ formatTickerSymbol(etf.symbol) }}
                 </option>
               </select>
             </td>
@@ -393,6 +414,7 @@
 import { computed } from 'vue'
 import { formatTer, formatReturn } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
+import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAllocationCalculations } from '../../composables/use-allocation-calculations'
 import AllocationCard from './allocation-card.vue'
@@ -416,18 +438,21 @@ const props = defineProps<{
   availableEtfs: EtfDetailDto[]
   isLoadingPortfolio: boolean
   totalInvestment: number
-  selectedPlatform: string | null
+  selectedPlatforms: string[]
   availablePlatforms: string[]
   currentHoldingsTotal: number
   optimizeEnabled: boolean
+  buyOnlyEnabled: boolean
   actionDisplayMode: ActionDisplayMode
 }>()
 
 const emit = defineEmits<{
   'update:allocation': [index: number, allocation: AllocationInput]
   'update:totalInvestment': [value: number]
-  'update:selectedPlatform': [value: string | null]
+  togglePlatform: [platform: string]
+  toggleAllPlatforms: []
   'update:optimizeEnabled': [value: boolean]
+  'update:buyOnlyEnabled': [value: boolean]
   'update:actionDisplayMode': [value: ActionDisplayMode]
   add: []
   remove: [index: number]
@@ -513,11 +538,6 @@ const getSortIndicatorClass = (key: string) => ({
 
 const getOriginalIndex = (allocation: AllocationInput): number =>
   props.allocations.findIndex(a => a.instrumentId === allocation.instrumentId || a === allocation)
-
-const onPlatformChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement
-  emit('update:selectedPlatform', target.value || null)
-}
 
 const onInstrumentChange = (index: number, event: Event) => {
   const target = event.target as HTMLSelectElement
@@ -729,23 +749,6 @@ const onTotalInvestmentChange = (event: Event) => {
   color: var(--bs-danger);
 }
 
-.platform-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.platform-selector label {
-  font-size: 0.75rem;
-  color: var(--bs-gray-600);
-  white-space: nowrap;
-}
-
-.platform-selector .form-select {
-  width: 130px;
-  font-size: 0.875rem;
-}
-
 .current-holdings {
   display: flex;
   align-items: center;
@@ -794,18 +797,21 @@ const onTotalInvestmentChange = (event: Event) => {
   font-size: 0.875rem;
 }
 
-.optimize-toggle {
+.optimize-toggle,
+.buy-only-toggle {
   display: flex;
   align-items: center;
   gap: 0.375rem;
 }
 
-.optimize-toggle .form-check-input {
+.optimize-toggle .form-check-input,
+.buy-only-toggle .form-check-input {
   margin: 0;
   cursor: pointer;
 }
 
-.optimize-toggle .form-check-label {
+.optimize-toggle .form-check-label,
+.buy-only-toggle .form-check-label {
   font-size: 0.75rem;
   color: var(--bs-gray-600);
   cursor: pointer;
@@ -892,15 +898,6 @@ const onTotalInvestmentChange = (event: Event) => {
     gap: 0.75rem;
   }
 
-  .platform-selector {
-    flex: 1;
-    min-width: 120px;
-  }
-
-  .platform-selector .form-select {
-    width: 100%;
-  }
-
   .current-holdings {
     flex-shrink: 0;
   }
@@ -919,7 +916,8 @@ const onTotalInvestmentChange = (event: Event) => {
     flex-wrap: nowrap;
   }
 
-  .optimize-toggle {
+  .optimize-toggle,
+  .buy-only-toggle {
     flex-shrink: 0;
   }
 
@@ -942,11 +940,6 @@ const onTotalInvestmentChange = (event: Event) => {
     gap: 0.5rem;
   }
 
-  .platform-selector {
-    flex-basis: calc(50% - 0.25rem);
-    min-width: 0;
-  }
-
   .current-holdings {
     flex-basis: calc(50% - 0.25rem);
     justify-content: flex-end;
@@ -956,9 +949,49 @@ const onTotalInvestmentChange = (event: Event) => {
     flex-basis: calc(70% - 0.25rem);
   }
 
-  .optimize-toggle {
+  .optimize-toggle,
+  .buy-only-toggle {
     flex-basis: calc(30% - 0.25rem);
     justify-content: flex-end;
   }
+}
+
+.platform-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.platform-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.platform-btn {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  border: 1px solid var(--bs-gray-300);
+  background: var(--bs-white);
+  color: var(--bs-gray-700);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.platform-btn:hover {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+}
+
+.platform-btn.active {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: var(--bs-white);
+}
+
+.platform-btn-toggle-all {
+  font-weight: 500;
 }
 </style>
