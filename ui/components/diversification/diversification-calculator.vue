@@ -35,16 +35,19 @@
         :available-etfs="etfList"
         :is-loading-portfolio="isLoadingPortfolio"
         :total-investment="totalInvestment"
-        :selected-platform="selectedPlatform"
+        :selected-platforms="selectedPlatforms"
         :available-platforms="availablePlatforms"
         :current-holdings-total="currentHoldingsTotal"
         :optimize-enabled="optimizeEnabled"
+        :buy-only-enabled="buyOnlyEnabled"
         :action-display-mode="actionDisplayMode"
         class="mb-4"
         @update:allocation="updateAllocation"
         @update:total-investment="onTotalInvestmentChange"
-        @update:selected-platform="onPlatformChange"
+        @toggle-platform="togglePlatform"
+        @toggle-all-platforms="toggleAllPlatforms"
         @update:optimize-enabled="onOptimizeChange"
+        @update:buy-only-enabled="onBuyOnlyChange"
         @update:action-display-mode="onActionDisplayModeChange"
         @add="addAllocation"
         @remove="removeAllocation"
@@ -113,14 +116,17 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, defineAsyncComponent, onMounted } from 'vue'
 import { useDebounceFn, useNow, useLocalStorage } from '@vueuse/core'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
+import { useDiversificationPlatforms } from '../../composables/use-diversification-platforms'
+import { useDiversificationConfig } from '../../composables/use-diversification-config'
 import { diversificationService } from '../../services/diversification-service'
 import { instrumentsService } from '../../services/instruments-service'
 import { REFETCH_INTERVALS } from '../../constants'
 import { formatRelativeTime } from '../../utils/formatters'
+import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
@@ -164,8 +170,8 @@ const handlePriceRefresh = async () => {
     await sleep(3000)
     await queryClient.invalidateQueries({ queryKey: ['diversification-etfs'] })
     await queryClient.invalidateQueries({ queryKey: ['instruments'] })
-    if (selectedPlatform.value) {
-      await loadCurrentValues(selectedPlatform.value)
+    if (selectedPlatforms.value.length > 0) {
+      await syncCurrentValues()
     }
     debouncedCalculate()
     toast.success('Prices refreshed')
@@ -178,8 +184,8 @@ const handlePriceRefresh = async () => {
 
 const allocations = ref<AllocationInput[]>([{ instrumentId: 0, value: 0 }])
 const totalInvestment = ref<number>(0)
-const selectedPlatform = ref<string | null>(null)
 const optimizeEnabled = ref(false)
+const buyOnlyEnabled = ref(false)
 const actionDisplayMode = useLocalStorage<ActionDisplayMode>(
   'portfolio_action_display_mode',
   'units'
@@ -192,28 +198,14 @@ const result = ref<DiversificationCalculatorResponseDto | null>(null)
 const isInitialized = ref(false)
 const showExportDialog = ref(false)
 const showImportDialog = ref(false)
-const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
-const hasUnsavedChanges = ref(false)
-
-const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-  if (hasUnsavedChanges.value) {
-    e.preventDefault()
-    e.returnValue = ''
-  }
-}
 
 onMounted(async () => {
-  window.addEventListener('beforeunload', handleBeforeUnload)
   try {
     const response = await instrumentsService.getAll()
     portfolioInstruments.value = response.instruments
   } catch {
     portfolioInstruments.value = []
   }
-})
-
-onUnmounted(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 
 const etfList = computed(() => availableEtfs.value ?? [])
@@ -230,14 +222,30 @@ const currentHoldingsTotal = computed(() =>
   allocations.value.reduce((sum, a) => sum + (a.currentValue ?? 0), 0)
 )
 
+const {
+  selectedPlatforms,
+  togglePlatform,
+  toggleAllPlatforms,
+  syncCurrentValues,
+  setPlatforms,
+  applyFirstTimeDefault,
+} = useDiversificationPlatforms({
+  allocations,
+  availablePlatforms,
+  onChanged: () => markDirty(),
+})
+
 const currentConfig = computed(() => ({
   allocations: allocations.value,
   inputMode: 'percentage' as const,
-  selectedPlatform: selectedPlatform.value,
+  selectedPlatforms: selectedPlatforms.value,
   optimizeEnabled: optimizeEnabled.value,
+  buyOnlyEnabled: buyOnlyEnabled.value,
   totalInvestment: totalInvestment.value,
   actionDisplayMode: actionDisplayMode.value,
 }))
+
+const { saveStatus, markDirty } = useDiversificationConfig(() => currentConfig.value)
 
 const toBreakdown = <T extends { percentage: number }>(
   items: T[] | undefined,
@@ -322,32 +330,8 @@ const calculateDiversification = async () => {
 
 const debouncedCalculate = useDebounceFn(calculateDiversification, 500)
 
-const saveToDatabase = async () => {
-  saveStatus.value = 'saving'
-  try {
-    await diversificationService.saveConfig({
-      allocations: allocations.value,
-      inputMode: 'percentage',
-      selectedPlatform: selectedPlatform.value,
-      optimizeEnabled: optimizeEnabled.value,
-      totalInvestment: totalInvestment.value,
-      actionDisplayMode: actionDisplayMode.value,
-    })
-    saveStatus.value = 'saved'
-    hasUnsavedChanges.value = false
-    setTimeout(() => {
-      if (saveStatus.value === 'saved') saveStatus.value = 'idle'
-    }, 2000)
-  } catch {
-    saveStatus.value = 'error'
-  }
-}
-
-const debouncedSave = useDebounceFn(saveToDatabase, 1000)
-
 const onAllocationChange = () => {
-  hasUnsavedChanges.value = true
-  debouncedSave()
+  markDirty()
   debouncedCalculate()
 }
 
@@ -355,16 +339,17 @@ const loadFromPortfolio = async () => {
   isLoadingPortfolio.value = true
   error.value = ''
   try {
-    const platforms = selectedPlatform.value ? [selectedPlatform.value] : undefined
+    const platforms = selectedPlatforms.value.length > 0 ? selectedPlatforms.value : undefined
     const response = await instrumentsService.getAll(platforms)
     const etfIds = new Set(etfList.value.map(e => e.instrumentId))
     const portfolioEtfs = response.instruments.filter(
       i => i.id !== null && etfIds.has(i.id) && (i.currentValue ?? 0) > 0
     )
     if (portfolioEtfs.length === 0) {
-      error.value = selectedPlatform.value
-        ? `No ETFs found on ${selectedPlatform.value}`
-        : 'No ETFs found in your portfolio'
+      error.value =
+        selectedPlatforms.value.length > 0
+          ? `No ETFs found on ${selectedPlatforms.value.map(formatPlatformName).join(', ')}`
+          : 'No ETFs found in your portfolio'
       return
     }
     const totalValue = portfolioEtfs.reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
@@ -373,10 +358,9 @@ const loadFromPortfolio = async () => {
       .map(i => ({
         instrumentId: i.id,
         value: Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10,
-        currentValue: selectedPlatform.value ? (i.currentValue ?? 0) : undefined,
+        currentValue: selectedPlatforms.value.length > 0 ? (i.currentValue ?? 0) : undefined,
       }))
-    hasUnsavedChanges.value = true
-    debouncedSave()
+    markDirty()
     debouncedCalculate()
   } catch (e) {
     error.value = getErrorMessage(e)
@@ -388,37 +372,27 @@ const loadFromPortfolio = async () => {
 const clearAllocations = () => {
   allocations.value = [{ instrumentId: 0, value: 0 }]
   result.value = null
-  hasUnsavedChanges.value = true
-  debouncedSave()
-}
-
-const onPlatformChange = async (platform: string | null) => {
-  selectedPlatform.value = platform
-  hasUnsavedChanges.value = true
-  debouncedSave()
-  if (!platform) {
-    allocations.value = allocations.value.map(a => ({ ...a, currentValue: undefined }))
-    return
-  }
-  await loadCurrentValues(platform)
+  markDirty()
 }
 
 const onOptimizeChange = (enabled: boolean) => {
   optimizeEnabled.value = enabled
-  hasUnsavedChanges.value = true
-  debouncedSave()
+  markDirty()
+}
+
+const onBuyOnlyChange = (enabled: boolean) => {
+  buyOnlyEnabled.value = enabled
+  markDirty()
 }
 
 const onActionDisplayModeChange = (mode: ActionDisplayMode) => {
   actionDisplayMode.value = mode
-  hasUnsavedChanges.value = true
-  debouncedSave()
+  markDirty()
 }
 
 const onTotalInvestmentChange = (value: number) => {
   totalInvestment.value = value
-  hasUnsavedChanges.value = true
-  debouncedSave()
+  markDirty()
 }
 
 const exportConfiguration = () => {
@@ -435,33 +409,13 @@ const onExportComplete = () => {
 
 const onImportComplete = async (data: CachedState) => {
   allocations.value = data.allocations
-  selectedPlatform.value = data.selectedPlatform ?? null
   optimizeEnabled.value = data.optimizeEnabled ?? false
+  buyOnlyEnabled.value = data.buyOnlyEnabled ?? false
   totalInvestment.value = data.totalInvestment ?? 0
   actionDisplayMode.value = data.actionDisplayMode ?? 'units'
-  hasUnsavedChanges.value = true
-  if (selectedPlatform.value) {
-    await loadCurrentValues(selectedPlatform.value)
-  }
-  debouncedSave()
+  await setPlatforms(data.selectedPlatforms ?? [])
+  markDirty()
   debouncedCalculate()
-}
-
-const loadCurrentValues = async (platform: string) => {
-  try {
-    const response = await instrumentsService.getAll([platform])
-    const valueMap = new Map(
-      response.instruments
-        .filter((i): i is typeof i & { id: number } => i.id !== null)
-        .map(i => [i.id, i.currentValue ?? 0])
-    )
-    allocations.value = allocations.value.map(a => ({
-      ...a,
-      currentValue: valueMap.get(a.instrumentId) ?? 0,
-    }))
-  } catch {
-    allocations.value = allocations.value.map(a => ({ ...a, currentValue: 0 }))
-  }
 }
 
 watch(
@@ -471,22 +425,24 @@ watch(
     isInitialized.value = true
     const validIds = new Set(newEtfs.map(e => e.instrumentId))
     const dbConfig = await diversificationService.getConfig()
-    if (!dbConfig) return
+    if (!dbConfig) {
+      await applyFirstTimeDefault()
+      return
+    }
     const validAllocations = dbConfig.allocations.filter(
       a => a.instrumentId === 0 || validIds.has(a.instrumentId)
     )
-    if (validAllocations.length === 0) return
-    allocations.value = validAllocations.map(a => ({
-      instrumentId: Number(a.instrumentId),
-      value: Number(a.value),
-    }))
-    selectedPlatform.value = dbConfig.selectedPlatform ?? null
+    if (validAllocations.length > 0) {
+      allocations.value = validAllocations.map(a => ({
+        instrumentId: Number(a.instrumentId),
+        value: Number(a.value),
+      }))
+    }
     optimizeEnabled.value = dbConfig.optimizeEnabled ?? false
+    buyOnlyEnabled.value = dbConfig.buyOnlyEnabled ?? false
     totalInvestment.value = dbConfig.totalInvestment ?? 0
     actionDisplayMode.value = dbConfig.actionDisplayMode ?? 'units'
-    if (selectedPlatform.value) {
-      await loadCurrentValues(selectedPlatform.value)
-    }
+    await setPlatforms(dbConfig.selectedPlatforms ?? [])
     debouncedCalculate()
   },
   { immediate: true }
