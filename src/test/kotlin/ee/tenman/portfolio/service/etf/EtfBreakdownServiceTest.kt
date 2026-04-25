@@ -253,6 +253,27 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
+  fun `should include TRADING212-provider etfs in breakdown`() {
+    val etf = createInstrument(1L, "BNKE:PAR:EUR", ProviderName.TRADING212, BigDecimal("317.71"))
+    val holding = createHolding(1L, "JPM", "JPMorgan Chase", "Banks")
+    val position = createPosition(etf, holding, BigDecimal("100.0000"), testDate)
+    val transaction = createCashFlow(etf, BigDecimal("10"), BigDecimal("300"), Platform.TRADING212)
+    every { instrumentRepository.findByProviderNameIn(match { ProviderName.TRADING212 in it }) } returns listOf(etf)
+    every { instrumentRepository.findByProviderNameIn(match { ProviderName.TRADING212 !in it }) } returns emptyList()
+    every { etfPositionRepository.findLatestPositionsByEtfIds(any()) } returns listOf(position)
+    every { transactionRepository.findAllByInstrumentIds(any()) } returns listOf(transaction)
+    every { dailyPriceService.getCurrentPrice(any()) } answers {
+      firstArg<Instrument>().currentPrice ?: BigDecimal("100")
+    }
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result).toHaveSize(1)
+    expect(result[0].holdingTicker).toEqual("JPM")
+    expect(result[0].totalValueEur).toEqualNumerically(BigDecimal("3177.10"))
+  }
+
+  @Test
   fun `should combine etf symbols and platform filters with AND logic`() {
     val etf1 = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val etf2 = createInstrument(2L, "ETF2", ProviderName.LIGHTYEAR, BigDecimal("100"))
