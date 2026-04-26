@@ -258,13 +258,7 @@ class EtfBreakdownServiceTest {
     val holding = createHolding(1L, "JPM", "JPMorgan Chase", "Banks")
     val position = createPosition(etf, holding, BigDecimal("100.0000"), testDate)
     val transaction = createCashFlow(etf, BigDecimal("10"), BigDecimal("300"), Platform.TRADING212)
-    every { instrumentRepository.findByProviderNameIn(match { ProviderName.TRADING212 in it }) } returns listOf(etf)
-    every { instrumentRepository.findByProviderNameIn(match { ProviderName.TRADING212 !in it }) } returns emptyList()
-    every { etfPositionRepository.findLatestPositionsByEtfIds(any()) } returns listOf(position)
-    every { transactionRepository.findAllByInstrumentIds(any()) } returns listOf(transaction)
-    every { dailyPriceService.getCurrentPrice(any()) } answers {
-      firstArg<Instrument>().currentPrice ?: BigDecimal("100")
-    }
+    setupMocksForBatchLoading(listOf(etf), listOf(position), listOf(transaction))
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
