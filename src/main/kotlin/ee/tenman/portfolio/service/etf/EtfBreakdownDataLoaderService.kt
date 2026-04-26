@@ -16,12 +16,18 @@ class EtfBreakdownDataLoaderService(
   private val etfPositionRepository: EtfPositionRepository,
   private val transactionCalculationService: TransactionCalculationService,
 ) {
+  companion object {
+    private val BREAKDOWN_PROVIDERS =
+      listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.TRADING212, ProviderName.SYNTHETIC)
+    private val DIAGNOSTIC_PROVIDERS =
+      listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.TRADING212)
+  }
+
   fun loadBreakdownData(
     etfSymbols: List<String>?,
     platformFilter: Set<Platform>?,
   ): EtfBreakdownData {
-    val providers = listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.TRADING212, ProviderName.SYNTHETIC)
-    val allInstruments = instrumentRepository.findByProviderNameIn(providers)
+    val allInstruments = instrumentRepository.findByProviderNameIn(BREAKDOWN_PROVIDERS)
     val filteredInstruments =
       etfSymbols?.let { symbols -> allInstruments.filter { it.symbol in symbols } } ?: allInstruments
     val instrumentIds = filteredInstruments.map { it.id }
@@ -37,8 +43,7 @@ class EtfBreakdownDataLoaderService(
   }
 
   fun loadDiagnosticData(): DiagnosticData {
-    val providers = listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.TRADING212)
-    val allInstruments = instrumentRepository.findByProviderNameIn(providers)
+    val allInstruments = instrumentRepository.findByProviderNameIn(DIAGNOSTIC_PROVIDERS)
     val instrumentIds = allInstruments.map { it.id }
     val allPositions = loadPositionsForInstruments(instrumentIds)
     val transactionData = transactionCalculationService.batchCalculateAll(instrumentIds)
