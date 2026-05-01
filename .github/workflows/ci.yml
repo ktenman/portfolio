@@ -325,7 +325,7 @@ jobs:
           tags: type=raw,value=latest
       - id: docker_build
         if: steps.check.outputs.should_build == 'true'
-        uses: docker/build-push-action@v7.0.0
+        uses: docker/build-push-action@v7.1.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -343,7 +343,7 @@ jobs:
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
       - id: docker_build_retry
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
-        uses: docker/build-push-action@v7.0.0
+        uses: docker/build-push-action@v7.1.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -360,7 +360,7 @@ jobs:
       - run: sleep 15
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
       - if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
-        uses: docker/build-push-action@v7.0.0
+        uses: docker/build-push-action@v7.1.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
