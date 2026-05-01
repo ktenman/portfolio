@@ -87,7 +87,7 @@ jobs:
 
     steps:
       - name: Create issue for critical vulnerabilities
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = `🚨 Critical vulnerabilities found in Docker images`;
