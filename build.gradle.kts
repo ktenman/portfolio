@@ -91,7 +91,7 @@ dependencies {
 
 configurations.all {
   resolutionStrategy {
-    force("io.grpc:grpc-netty-shaded:1.80.0")
+    force("io.grpc:grpc-netty-shaded:1.81.0")
   }
 }
 
