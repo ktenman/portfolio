@@ -36,7 +36,7 @@ jobs:
             type=raw,value=firefox
             type=raw,value=latest
       - name: Build and push base image
-        uses: docker/build-push-action@v7.0.0
+        uses: docker/build-push-action@v7.1.0
         with:
           context: ./src
           file: ./src/Dockerfile.base

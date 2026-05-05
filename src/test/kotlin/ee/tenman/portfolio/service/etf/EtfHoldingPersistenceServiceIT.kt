@@ -78,7 +78,8 @@ class EtfHoldingPersistenceServiceIT {
     expect(savedHoldings).toHaveSize(2)
     val positions = etfPositionRepository.findAll()
     expect(positions).toHaveSize(2)
-    val applePosition = positions.first { it.holding.name == "Apple Inc" }
+    val appleHolding = savedHoldings.first { it.name == "Apple Inc" }
+    val applePosition = positions.first { it.holding.id == appleHolding.id }
     expect(applePosition.weightPercentage).toEqualNumerically(BigDecimal("5.50"))
     expect(applePosition.positionRank).toEqual(1)
   }
