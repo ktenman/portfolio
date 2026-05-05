@@ -43,7 +43,7 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         if: matrix.lint-type == 'backend'
-        uses: gradle/actions/setup-gradle@v6.1.0
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         with:
           gradle-home-cache-cleanup: true
       - name: Run ktlint check
@@ -106,7 +106,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@v6.1.0
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         if: matrix.type == 'backend' || matrix.type == 'e2e'
         with:
           gradle-home-cache-cleanup: true
@@ -289,7 +289,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@v6.1.0
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
         with:
           gradle-home-cache-cleanup: true
@@ -325,7 +325,7 @@ jobs:
           tags: type=raw,value=latest
       - id: docker_build
         if: steps.check.outputs.should_build == 'true'
-        uses: docker/build-push-action@v7.1.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -343,7 +343,7 @@ jobs:
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
       - id: docker_build_retry
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
-        uses: docker/build-push-action@v7.1.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -360,7 +360,7 @@ jobs:
       - run: sleep 15
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
       - if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
-        uses: docker/build-push-action@v7.1.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
@@ -408,7 +408,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: fastify/github-action-merge-dependabot@v3.12.0
+      - uses: fastify/github-action-merge-dependabot@30c3f8f14a4f7b315ba38dbc1b793d27128fef82 # v3.12.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target: minor
