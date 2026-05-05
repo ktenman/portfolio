@@ -179,9 +179,9 @@ configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
   }
 }
 
-tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeScript") {
-  jsonLibrary = cz.habarta.typescript.generator.JsonLibrary.jackson2
-  classes =
+configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
+  jsonLibrary.set(cz.habarta.typescript.generator.JsonLibrary.jackson2)
+  classes.set(
     listOf(
       "ee.tenman.portfolio.dto.InstrumentDto",
       "ee.tenman.portfolio.dto.InstrumentsResponse",
@@ -203,13 +203,14 @@ tasks.named<cz.habarta.typescript.generator.gradle.GenerateTask>("generateTypeSc
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",
       "ee.tenman.portfolio.domain.PriceChangePeriod",
-    )
-  outputKind = cz.habarta.typescript.generator.TypeScriptOutputKind.module
-  outputFileType = cz.habarta.typescript.generator.TypeScriptFileType.implementationFile
-  outputFile = "ui/models/generated/domain-models.ts"
-  mapEnum = cz.habarta.typescript.generator.EnumMapping.asEnum
-  mapDate = cz.habarta.typescript.generator.DateMapping.asString
-  nonConstEnums = true
+    ),
+  )
+  outputKind.set(cz.habarta.typescript.generator.TypeScriptOutputKind.module)
+  outputFileType.set(cz.habarta.typescript.generator.TypeScriptFileType.implementationFile)
+  outputFile.set("ui/models/generated/domain-models.ts")
+  mapEnum.set(cz.habarta.typescript.generator.EnumMapping.asEnum)
+  mapDate.set(cz.habarta.typescript.generator.DateMapping.asString)
+  nonConstEnums.set(true)
 }
 
 tasks.named("compileKotlin") {
