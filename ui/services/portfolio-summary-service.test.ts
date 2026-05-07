@@ -158,6 +158,78 @@ describe('portfolioSummaryService', () => {
     })
   })
 
+  describe('getXirrWindows', () => {
+    it('should fetch xirr windows without platforms', async () => {
+      const mockResult = {
+        windows: [{ period: '1M', fromDate: '2026-04-06', xirr: 0.05 }],
+      }
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockResult)
+
+      const result = await portfolioSummaryService.getXirrWindows()
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/xirr-windows', {
+        params: {},
+      })
+      expect(result).toEqual(mockResult)
+    })
+
+    it('should pass platforms when provided', async () => {
+      vi.mocked(httpClient.get).mockResolvedValueOnce({ windows: [] })
+
+      await portfolioSummaryService.getXirrWindows(['LIGHTYEAR', 'TRADING212'])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/xirr-windows', {
+        params: { platforms: ['LIGHTYEAR', 'TRADING212'] },
+      })
+    })
+
+    it('should omit platforms param when array is empty', async () => {
+      vi.mocked(httpClient.get).mockResolvedValueOnce({ windows: [] })
+
+      await portfolioSummaryService.getXirrWindows([])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/xirr-windows', {
+        params: {},
+      })
+    })
+  })
+
+  describe('getAnnualWindows', () => {
+    it('should fetch annual windows without platforms', async () => {
+      const mockResult = {
+        windows: [{ period: '1M', fromDate: '2026-04-06', annualReturn: 0.42 }],
+      }
+      vi.mocked(httpClient.get).mockResolvedValueOnce(mockResult)
+
+      const result = await portfolioSummaryService.getAnnualWindows()
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/annual-windows', {
+        params: {},
+      })
+      expect(result).toEqual(mockResult)
+    })
+
+    it('should pass platforms when provided', async () => {
+      vi.mocked(httpClient.get).mockResolvedValueOnce({ windows: [] })
+
+      await portfolioSummaryService.getAnnualWindows(['LIGHTYEAR'])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/annual-windows', {
+        params: { platforms: ['LIGHTYEAR'] },
+      })
+    })
+
+    it('should omit platforms param when array is empty', async () => {
+      vi.mocked(httpClient.get).mockResolvedValueOnce({ windows: [] })
+
+      await portfolioSummaryService.getAnnualWindows([])
+
+      expect(httpClient.get).toHaveBeenCalledWith('/portfolio-summary/annual-windows', {
+        params: {},
+      })
+    })
+  })
+
   describe('recalculate', () => {
     it('should trigger portfolio recalculation', async () => {
       const mockResponse = { message: 'Portfolio recalculation started' }

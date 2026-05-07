@@ -62,11 +62,18 @@
         :selected-period="selectedPeriod"
         :sort-state="sortState"
         :on-sort="toggleSort"
+        @show-xirr-windows="showXirrWindowsModal"
+        @show-annual-windows="showAnnualWindowsModal"
       />
     </template>
 
     <template #modals>
       <instrument-modal :instrument="selectedItem || {}" @save="onSave" />
+      <xirr-windows-modal :open="isXirrWindowsModalOpen" :platforms="effectivePlatformsForXirr" />
+      <annual-windows-modal
+        :open="isAnnualWindowsModalOpen"
+        :platforms="effectivePlatformsForXirr"
+      />
     </template>
   </crud-layout>
 </template>
@@ -84,6 +91,8 @@ import { usePlatformFilter } from '../../composables/use-platform-filter'
 import CrudLayout from '../shared/crud-layout.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
+import XirrWindowsModal from './xirr-windows-modal.vue'
+import AnnualWindowsModal from './annual-windows-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { formatPlatformName } from '../../utils/platform-utils'
@@ -92,6 +101,10 @@ import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 const selectedItem = ref<InstrumentDto | null>(null)
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
 const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
+const { show: showXirrWindowsModal, isVisible: isXirrWindowsModalOpen } =
+  useBootstrapModal('xirrWindowsModal')
+const { show: showAnnualWindowsModal, isVisible: isAnnualWindowsModalOpen } =
+  useBootstrapModal('annualWindowsModal')
 const { selectedPeriod, periods } = usePriceChangePeriod()
 const queryClient = useQueryClient()
 const toast = useToast()
@@ -163,6 +176,12 @@ const {
 } = useSortableTable(filteredItems, 'currentValue', 'desc')
 
 const portfolioXirr = computed(() => rawItems.value?.portfolioXirr ?? null)
+
+const effectivePlatformsForXirr = computed<string[]>(() => {
+  const selected = selectedPlatforms.value
+  if (selected.length === 0 || selected.length === availablePlatforms.value.length) return []
+  return selected
+})
 
 const saveMutation = useMutation({
   mutationFn: (data: Partial<InstrumentDto>) => {

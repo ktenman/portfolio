@@ -47,12 +47,31 @@
           </span>
         </td>
         <td class="fw-bold text-nowrap">
-          <span :class="getTotalsChangeClass('totalXirr')">
+          <button
+            type="button"
+            class="xirr-trigger"
+            :class="getTotalsChangeClass('totalXirr')"
+            :disabled="totalXirr === null"
+            :title="totalXirr === null ? '' : 'Show XIRR over 1M / 3M / 6M / 1Y / 2Y / 3Y'"
+            @click="emit('show-xirr-windows')"
+          >
             {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}
-          </span>
+          </button>
         </td>
         <td class="fw-bold text-nowrap d-none d-xl-table-cell">
-          {{ totalAnnualReturn === null ? '-' : formatAnnualReturn(animatedTotalAnnualReturn) }}
+          <button
+            type="button"
+            class="xirr-trigger"
+            :disabled="totalAnnualReturn === null"
+            :title="
+              totalAnnualReturn === null
+                ? ''
+                : 'Show buy-and-hold annualized return over 1M / 3M / 6M / 1Y / 2Y / 3Y'
+            "
+            @click="emit('show-annual-windows')"
+          >
+            {{ totalAnnualReturn === null ? '-' : formatAnnualReturn(animatedTotalAnnualReturn) }}
+          </button>
         </td>
         <td class="fw-bold text-nowrap d-none d-xl-table-cell">100.00%</td>
         <td class="fw-bold text-nowrap d-none d-xl-table-cell">{{ formatTer(totalTer) }}</td>
@@ -186,9 +205,15 @@
           </div>
           <div class="total-item">
             <span class="total-label">XIRR</span>
-            <span class="total-value" :class="getTotalsChangeClass('totalXirr')">
+            <button
+              type="button"
+              class="total-value xirr-trigger-mobile"
+              :class="getTotalsChangeClass('totalXirr')"
+              :disabled="totalXirr === null"
+              @click="emit('show-xirr-windows')"
+            >
               {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}
-            </span>
+            </button>
           </div>
           <div class="total-item">
             <span class="total-label">TER</span>
@@ -330,6 +355,11 @@ const props = withDefaults(defineProps<Props>(), {
   selectedPeriod: '24h',
 })
 
+const emit = defineEmits<{
+  (e: 'show-xirr-windows'): void
+  (e: 'show-annual-windows'): void
+}>()
+
 const instrumentsRef = toRef(props, 'instruments')
 const { getChangeClass, trackTotalsChange, getTotalsChangeClass } =
   useValueChangeAnimation(instrumentsRef)
@@ -420,6 +450,46 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
       font-size: 0.875rem;
       letter-spacing: 0.025em;
     }
+  }
+}
+
+.xirr-trigger {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2rem;
+
+  &:hover:not(:disabled) {
+    color: var(--bs-primary);
+  }
+
+  &:disabled {
+    cursor: default;
+    text-decoration: none;
+  }
+}
+
+.xirr-trigger-mobile {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2rem;
+
+  &:hover:not(:disabled) {
+    color: var(--bs-primary);
+  }
+
+  &:disabled {
+    cursor: default;
+    text-decoration: none;
   }
 }
 

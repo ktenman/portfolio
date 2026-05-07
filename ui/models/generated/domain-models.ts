@@ -91,6 +91,26 @@ export interface PortfolioSummaryDto {
     totalProfitChange24h: number | null;
 }
 
+export interface XirrWindowDto {
+    period: string;
+    fromDate: DateAsString | null;
+    xirr: number | null;
+}
+
+export interface XirrWindowsDto {
+    windows: XirrWindowDto[];
+}
+
+export interface AnnualWindowDto {
+    period: string;
+    fromDate: DateAsString | null;
+    annualReturn: number | null;
+}
+
+export interface AnnualWindowsDto {
+    windows: AnnualWindowDto[];
+}
+
 export interface EtfHoldingBreakdownDto extends Serializable {
     holdingUuid: string | null;
     holdingTicker: string | null;
