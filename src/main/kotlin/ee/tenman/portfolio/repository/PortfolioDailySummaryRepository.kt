@@ -19,4 +19,6 @@ interface PortfolioDailySummaryRepository : JpaRepository<PortfolioDailySummary,
   ): List<PortfolioDailySummary>
 
   fun findByEntryDate(entryDate: LocalDate): PortfolioDailySummary?
+
+  fun findFirstByEntryDateLessThanEqualOrderByEntryDateDesc(entryDate: LocalDate): PortfolioDailySummary?
 }

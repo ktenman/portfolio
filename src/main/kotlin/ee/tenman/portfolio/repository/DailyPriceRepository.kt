@@ -27,6 +27,13 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
     entryDate: LocalDate,
   ): DailyPrice?
 
+  fun findFirstByInstrumentAndEntryDateLessThanEqualOrderByEntryDateDesc(
+    instrument: Instrument,
+    entryDate: LocalDate,
+  ): DailyPrice?
+
+  fun findFirstByInstrumentOrderByEntryDateAsc(instrument: Instrument): DailyPrice?
+
   fun existsByInstrument(instrument: Instrument): Boolean
 
   @Modifying

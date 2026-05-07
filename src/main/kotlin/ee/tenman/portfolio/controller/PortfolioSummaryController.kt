@@ -3,8 +3,12 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.dto.AnnualWindowsDto
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
+import ee.tenman.portfolio.dto.XirrWindowsDto
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
+import ee.tenman.portfolio.service.summary.PortfolioAnnualWindowService
+import ee.tenman.portfolio.service.summary.PortfolioXirrWindowService
 import ee.tenman.portfolio.service.summary.SummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryService
 import org.slf4j.LoggerFactory
@@ -26,6 +30,8 @@ class PortfolioSummaryController(
   private val summaryService: SummaryService,
   private val summaryCacheService: SummaryCacheService,
   private val platformSummaryCacheService: PlatformSummaryCacheService,
+  private val xirrWindowService: PortfolioXirrWindowService,
+  private val annualWindowService: PortfolioAnnualWindowService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -71,6 +77,18 @@ class PortfolioSummaryController(
     val profitChange24h = summaryCacheService.calculate24hProfitChange(summary)
     return summary.toDto(profitChange24h)
   }
+
+  @GetMapping("/xirr-windows")
+  @Loggable
+  fun getXirrWindows(
+    @RequestParam(required = false) platforms: List<String>?,
+  ): XirrWindowsDto = xirrWindowService.calculate(Platform.parseList(platforms))
+
+  @GetMapping("/annual-windows")
+  @Loggable
+  fun getAnnualWindows(
+    @RequestParam(required = false) platforms: List<String>?,
+  ): AnnualWindowsDto = annualWindowService.calculate(Platform.parseList(platforms))
 
   private fun getFilteredCurrentSummary(platforms: List<Platform>): PortfolioSummaryDto {
     val summary = platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
