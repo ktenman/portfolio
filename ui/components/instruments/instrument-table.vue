@@ -216,6 +216,17 @@
             </button>
           </div>
           <div class="total-item">
+            <span class="total-label">ANNUAL</span>
+            <button
+              type="button"
+              class="total-value xirr-trigger-mobile"
+              :disabled="totalAnnualReturn === null"
+              @click="emit('show-annual-windows')"
+            >
+              {{ totalAnnualReturn === null ? '-' : formatAnnualReturn(animatedTotalAnnualReturn) }}
+            </button>
+          </div>
+          <div class="total-item">
             <span class="total-label">TER</span>
             <span class="total-value">{{ formatTer(totalTer) }}</span>
           </div>
