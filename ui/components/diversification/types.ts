@@ -14,4 +14,7 @@ export interface CachedState {
   totalInvestment?: number
   actionDisplayMode?: ActionDisplayMode
   buyOnlyEnabled?: boolean
+  driftingThresholdRel?: number
+  rebalanceThresholdRel?: number
+  rebalanceThresholdAbs?: number
 }
