@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.telegram
 
 import ee.tenman.portfolio.configuration.TimeUtility
+import ee.tenman.portfolio.domain.DetectionProvider
 import ee.tenman.portfolio.service.LicensePlateDetectionService
 import ee.tenman.portfolio.service.VehicleInfoService
 import org.slf4j.LoggerFactory
@@ -107,6 +108,8 @@ class CarTelegramBot(
     val detectionResult = licensePlateDetectionService.detectPlateNumber(imageFile)
     log.debug("Detection result: ${objectMapper.writeValueAsString(detectionResult)}")
     when {
+      detectionResult.provider == DetectionProvider.ALL_FAILED ->
+        sendMessage(chatId, "License plate detection unavailable, please try again later.", replyToMessageId)
       !detectionResult.hasCar -> sendMessage(chatId, "No car detected.", replyToMessageId)
       detectionResult.plateNumber == null ->
         sendMessage(chatId, "No license plate detected (provider: ${detectionResult.provider}).", replyToMessageId)

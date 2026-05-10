@@ -3,7 +3,6 @@ package ee.tenman.portfolio.service
 import ee.tenman.portfolio.domain.DetectionProvider
 import ee.tenman.portfolio.domain.VisionModel
 import ee.tenman.portfolio.dto.DetectionResult
-import ee.tenman.portfolio.googlevision.GoogleVisionService
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
@@ -18,7 +17,6 @@ import java.util.UUID
 
 @Service
 class LicensePlateDetectionService(
-  private val googleVisionService: GoogleVisionService,
   private val openRouterVisionService: OpenRouterVisionService,
   private val openRouterProperties: OpenRouterProperties,
   private val calculationDispatcher: CoroutineDispatcher,
@@ -42,27 +40,18 @@ class LicensePlateDetectionService(
     base64Image: String,
     uuid: UUID,
   ): DetectionResult {
-    log.info("Starting parallel license plate detection")
-    val jobs = mutableListOf<kotlinx.coroutines.Deferred<DetectionResult?>>()
-    val scope =
-      kotlinx.coroutines.coroutineScope {
-      val googleVisionJob =
-        async {
-        tryGoogleVision(base64Image, uuid)
-      }
-      jobs.add(googleVisionJob)
-      if (openRouterProperties.apiKey.isNotBlank()) {
-        VisionModel.openRouterModels().forEach { model ->
-          val job =
-            async {
-            tryVisionModel(model, base64Image)
-          }
-          jobs.add(job)
-        }
+    log.info("Starting parallel license plate detection for $uuid")
+    if (openRouterProperties.apiKey.isBlank()) {
+      log.warn("OpenRouter API key is blank, no detection providers available")
+      return DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.ALL_FAILED)
+    }
+    return kotlinx.coroutines.coroutineScope {
+      val jobs =
+        VisionModel.openRouterModels().map { model ->
+        async { tryVisionModel(model, base64Image) }
       }
       selectFirstSuccessful(jobs)
     }
-    return scope
   }
 
   private suspend fun selectFirstSuccessful(jobs: List<kotlinx.coroutines.Deferred<DetectionResult?>>): DetectionResult {
@@ -89,28 +78,6 @@ class LicensePlateDetectionService(
     log.warn("All providers exhausted, no plate detected")
     return DetectionResult(plateNumber = null, hasCar = lastHasCar, provider = DetectionProvider.ALL_FAILED)
   }
-
-  private fun tryGoogleVision(
-    base64Image: String,
-    uuid: UUID,
-  ): DetectionResult? =
-    runCatching {
-      log.info("Attempting detection with Google Vision")
-      val startTime = System.currentTimeMillis()
-      val result = googleVisionService.getPlateNumber(base64Image, uuid)
-      val elapsedMs = System.currentTimeMillis() - startTime
-      val hasCar = result["hasCar"]?.toBoolean() ?: false
-      val plateNumber = result["plateNumber"]
-      if (plateNumber != null) {
-        log.info("Google Vision detected plate: $plateNumber in ${elapsedMs}ms")
-        return DetectionResult(plateNumber = plateNumber, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
-      }
-      log.info("Google Vision: no plate found in ${elapsedMs}ms, hasCar=$hasCar")
-      DetectionResult(plateNumber = null, hasCar = hasCar, provider = DetectionProvider.GOOGLE_VISION)
-    }.getOrElse { e ->
-      log.error("Google Vision failed: ${e.message}")
-      null
-    }
 
   private fun tryVisionModel(
     model: VisionModel,
@@ -140,15 +107,15 @@ class LicensePlateDetectionService(
 
   private fun extractPlateNumber(response: String): String? {
     val cleaned = response.replace("\\s".toRegex(), "").uppercase()
-    return if (GoogleVisionService.CAR_PLATE_NUMBER_PATTERN.containsMatchIn(cleaned)) {
-      GoogleVisionService.CAR_PLATE_NUMBER_PATTERN.find(cleaned)?.value
-    } else {
-      null
-    }
+    return PLATE_NUMBER_PATTERN.find(cleaned)?.value
   }
 
   private fun encodeFileToBase64(file: File): String =
     java.util.Base64
       .getEncoder()
       .encodeToString(file.readBytes())
+
+  companion object {
+    private val PLATE_NUMBER_PATTERN = Regex("\\b\\d{3}\\s?[A-Z]{3}\\b", RegexOption.IGNORE_CASE)
+  }
 }

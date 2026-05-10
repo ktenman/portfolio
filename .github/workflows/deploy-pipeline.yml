@@ -21,8 +21,6 @@ on:
         required: true
       ALLOWED_EMAILS:
         required: true
-      VISION_BASE64_ENCODED_KEY:
-        required: true
       TELEGRAM_BOT_TOKEN:
         required: true
       MINIO_ROOT_USER:
@@ -70,7 +68,6 @@ jobs:
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
           echo "HEALTHCHECK_URL=${{ secrets.HEALTHCHECK_URL }}" >> .env
           echo "ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}" >> .env
-          echo "VISION_BASE64_ENCODED_KEY=${{ secrets.VISION_BASE64_ENCODED_KEY }}" >> .env
           echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
           echo "MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}" >> .env
           echo "MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}" >> .env

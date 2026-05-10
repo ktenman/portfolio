@@ -3,8 +3,8 @@ package ee.tenman.portfolio.domain
 enum class VisionModel(
   val modelId: String,
 ) {
-  LLAMA_90B_VISION("meta-llama/llama-3.2-90b-vision-instruct"),
-  PIXTRAL_12B("mistralai/pixtral-12b"),
+  LLAMA_4_SCOUT("meta-llama/llama-4-scout"),
+  NOVA_LITE("amazon/nova-lite-v1"),
   ;
 
   companion object {

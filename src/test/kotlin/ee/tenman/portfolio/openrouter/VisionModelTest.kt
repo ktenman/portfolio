@@ -12,14 +12,14 @@ class VisionModelTest {
     val models = VisionModel.openRouterModels()
 
     expect(models).toContainExactly(
-      VisionModel.LLAMA_90B_VISION,
-      VisionModel.PIXTRAL_12B,
+      VisionModel.LLAMA_4_SCOUT,
+      VisionModel.NOVA_LITE,
     )
   }
 
   @Test
   fun `should have correct model ids`() {
-    expect(VisionModel.LLAMA_90B_VISION.modelId).toEqual("meta-llama/llama-3.2-90b-vision-instruct")
-    expect(VisionModel.PIXTRAL_12B.modelId).toEqual("mistralai/pixtral-12b")
+    expect(VisionModel.LLAMA_4_SCOUT.modelId).toEqual("meta-llama/llama-4-scout")
+    expect(VisionModel.NOVA_LITE.modelId).toEqual("amazon/nova-lite-v1")
   }
 }
