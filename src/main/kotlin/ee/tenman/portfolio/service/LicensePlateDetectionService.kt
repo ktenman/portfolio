@@ -1,18 +1,19 @@
 package ee.tenman.portfolio.service
 
-import ee.tenman.portfolio.domain.DetectionProvider
 import ee.tenman.portfolio.domain.VisionModel
 import ee.tenman.portfolio.dto.DetectionResult
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.selects.select
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.File
+import java.util.Base64
 import java.util.UUID
 
 @Service
@@ -33,50 +34,37 @@ class LicensePlateDetectionService(
     uuid: UUID,
   ): DetectionResult =
     runBlocking(calculationDispatcher) {
-    detectPlateNumberAsync(base64Image, uuid)
-  }
-
-  private suspend fun detectPlateNumberAsync(
-    base64Image: String,
-    uuid: UUID,
-  ): DetectionResult {
-    log.info("Starting parallel license plate detection for $uuid")
-    if (openRouterProperties.apiKey.isBlank()) {
-      log.warn("OpenRouter API key is blank, no detection providers available")
-      return DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.ALL_FAILED)
-    }
-    return kotlinx.coroutines.coroutineScope {
-      val jobs =
-        VisionModel.openRouterModels().map { model ->
-        async { tryVisionModel(model, base64Image) }
+      log.info("Starting parallel license plate detection for $uuid")
+      if (openRouterProperties.apiKey.isBlank()) {
+        log.warn("OpenRouter API key is blank, no detection providers available")
+        return@runBlocking DetectionResult()
       }
+      val jobs =
+        VisionModel.entries.map { model ->
+          async { tryVisionModel(model, base64Image) }
+        }
       selectFirstSuccessful(jobs)
     }
-  }
 
-  private suspend fun selectFirstSuccessful(jobs: List<kotlinx.coroutines.Deferred<DetectionResult?>>): DetectionResult {
+  private suspend fun selectFirstSuccessful(jobs: List<Deferred<DetectionResult?>>): DetectionResult {
     val remainingJobs = jobs.toMutableList()
-    var lastHasCar = false
     while (remainingJobs.isNotEmpty()) {
       val completedDeferred =
-        select<kotlinx.coroutines.Deferred<DetectionResult?>> {
+        select<Deferred<DetectionResult?>> {
           remainingJobs.forEach { deferred ->
             deferred.onAwait { deferred }
           }
         }
       val result = completedDeferred.await()
       remainingJobs.remove(completedDeferred)
-      if (result != null) {
-        if (result.plateNumber != null) {
-          log.info("Plate detected by ${result.provider}, cancelling remaining jobs")
-          remainingJobs.forEach { it.cancel() }
-          return result
-        }
-        lastHasCar = lastHasCar || result.hasCar
+      if (result?.plateNumber != null) {
+        log.info("Plate detected by ${result.provider}, cancelling remaining jobs")
+        remainingJobs.forEach { it.cancel() }
+        return result
       }
     }
     log.warn("All providers exhausted, no plate detected")
-    return DetectionResult(plateNumber = null, hasCar = lastHasCar, provider = DetectionProvider.ALL_FAILED)
+    return DetectionResult()
   }
 
   private fun tryVisionModel(
@@ -91,31 +79,29 @@ class LicensePlateDetectionService(
       val elapsedMs = System.currentTimeMillis() - startTime
       if (response.isNullOrBlank()) {
         log.info("${model.modelId}: empty response in ${elapsedMs}ms")
-        return DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
+        return@runCatching DetectionResult(provider = model)
       }
       val plateNumber = extractPlateNumber(response)
       if (plateNumber != null) {
         log.info("${model.modelId} detected plate: $plateNumber in ${elapsedMs}ms")
-        return DetectionResult(plateNumber = plateNumber, hasCar = true, provider = DetectionProvider.fromVisionModel(model))
+        return@runCatching DetectionResult(plateNumber = plateNumber, provider = model)
       }
       log.info("${model.modelId}: response '$response' did not match pattern in ${elapsedMs}ms")
-      DetectionResult(plateNumber = null, hasCar = false, provider = DetectionProvider.fromVisionModel(model))
+      DetectionResult(provider = model)
     }.getOrElse { e ->
-      log.error("${model.modelId} failed: ${e.message}")
+      log.error("${model.modelId} failed", e)
       null
     }
 
   private fun extractPlateNumber(response: String): String? {
-    val cleaned = response.replace("\\s".toRegex(), "").uppercase()
+    val cleaned = response.replace(WHITESPACE, "").uppercase()
     return PLATE_NUMBER_PATTERN.find(cleaned)?.value
   }
 
-  private fun encodeFileToBase64(file: File): String =
-    java.util.Base64
-      .getEncoder()
-      .encodeToString(file.readBytes())
+  private fun encodeFileToBase64(file: File): String = Base64.getEncoder().encodeToString(file.readBytes())
 
   companion object {
-    private val PLATE_NUMBER_PATTERN = Regex("\\b\\d{3}\\s?[A-Z]{3}\\b", RegexOption.IGNORE_CASE)
+    private val PLATE_NUMBER_PATTERN = Regex("\\b\\d{3}[A-Z]{3}\\b", RegexOption.IGNORE_CASE)
+    private val WHITESPACE = Regex("\\s")
   }
 }

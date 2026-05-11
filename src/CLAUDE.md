@@ -375,7 +375,7 @@ _ETF Holdings:_ LightyearDataFetchJob, EtfHoldingsClassificationJob, EtfCountryC
 
 _JPA Entities:_ Instrument, PortfolioTransaction, DailyPrice, PortfolioDailySummary, EtfHolding, EtfPosition, JobExecution
 
-_Enums:_ Platform, ProviderName, TransactionType, InstrumentCategory, Currency, IndustrySector, JobStatus, PriceChangePeriod, SectorSource, VisionModel, DetectionProvider, AiModel, LogoSource
+_Enums:_ Platform, ProviderName, TransactionType, InstrumentCategory, Currency, IndustrySector, JobStatus, PriceChangePeriod, SectorSource, VisionModel, AiModel, LogoSource
 
 ### Database Schema
 

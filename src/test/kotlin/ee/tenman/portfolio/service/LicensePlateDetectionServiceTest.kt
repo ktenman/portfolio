@@ -3,7 +3,7 @@ package ee.tenman.portfolio.service
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.domain.DetectionProvider
+import ee.tenman.portfolio.domain.VisionModel
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
 import io.mockk.every
@@ -23,26 +23,25 @@ class LicensePlateDetectionServiceTest {
 
   @BeforeEach
   fun setUp() {
+    every { openRouterProperties.apiKey } returns "test-api-key"
     service =
       LicensePlateDetectionService(
-      openRouterVisionService,
-      openRouterProperties,
-      dispatcher,
-    )
+        openRouterVisionService,
+        openRouterProperties,
+        dispatcher,
+      )
   }
 
   @Test
   fun `should return plate when OpenRouter succeeds`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterProperties.apiKey } returns "test-api-key"
     every { openRouterVisionService.extractText(any()) } returns "123ABC"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
     expect(result.plateNumber).toEqual("123ABC")
-    expect(result.hasCar).toEqual(true)
-    expect(result.provider).notToEqual(DetectionProvider.ALL_FAILED)
+    expect(result.provider).notToEqual(null)
   }
 
   @Test
@@ -54,8 +53,7 @@ class LicensePlateDetectionServiceTest {
     val result = service.detectPlateNumber(base64Image, uuid)
 
     expect(result.plateNumber).toEqual(null)
-    expect(result.hasCar).toEqual(false)
-    expect(result.provider).toEqual(DetectionProvider.ALL_FAILED)
+    expect(result.provider).toEqual(null)
     verify(exactly = 0) { openRouterVisionService.extractText(any()) }
   }
 
@@ -63,21 +61,18 @@ class LicensePlateDetectionServiceTest {
   fun `should return no plate when all providers fail`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterProperties.apiKey } returns "test-api-key"
     every { openRouterVisionService.extractText(any()) } returns null
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
     expect(result.plateNumber).toEqual(null)
-    expect(result.hasCar).toEqual(false)
-    expect(result.provider).toEqual(DetectionProvider.ALL_FAILED)
+    expect(result.provider).toEqual(null)
   }
 
   @Test
   fun `should extract plate number from response with spaces`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterProperties.apiKey } returns "test-api-key"
     every { openRouterVisionService.extractText(any()) } returns "678 WKS"
 
     val result = service.detectPlateNumber(base64Image, uuid)
@@ -89,7 +84,6 @@ class LicensePlateDetectionServiceTest {
   fun `should handle lowercase plate response`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterProperties.apiKey } returns "test-api-key"
     every { openRouterVisionService.extractText(any()) } returns "123abc"
 
     val result = service.detectPlateNumber(base64Image, uuid)
@@ -101,10 +95,9 @@ class LicensePlateDetectionServiceTest {
   fun `should continue with other providers when one throws exception`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterProperties.apiKey } returns "test-api-key"
-    every { openRouterVisionService.extractText(match { it.model == "meta-llama/llama-4-scout" }) } throws
+    every { openRouterVisionService.extractText(match { it.model == VisionModel.LLAMA_4_SCOUT.modelId }) } throws
       RuntimeException("API error")
-    every { openRouterVisionService.extractText(match { it.model == "amazon/nova-lite-v1" }) } returns "333CCC"
+    every { openRouterVisionService.extractText(match { it.model == VisionModel.NOVA_LITE.modelId }) } returns "333CCC"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
@@ -115,24 +108,22 @@ class LicensePlateDetectionServiceTest {
   fun `should return null when response does not match plate pattern`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterProperties.apiKey } returns "test-api-key"
     every { openRouterVisionService.extractText(any()) } returns "No plate visible"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
     expect(result.plateNumber).toEqual(null)
-    expect(result.provider).toEqual(DetectionProvider.ALL_FAILED)
+    expect(result.provider).toEqual(null)
   }
 
   @Test
   fun `should run all OpenRouter models in parallel`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterProperties.apiKey } returns "test-api-key"
     every { openRouterVisionService.extractText(any()) } returns null
 
     service.detectPlateNumber(base64Image, uuid)
 
-    verify(exactly = 2) { openRouterVisionService.extractText(any()) }
+    verify(exactly = VisionModel.entries.size) { openRouterVisionService.extractText(any()) }
   }
 }
