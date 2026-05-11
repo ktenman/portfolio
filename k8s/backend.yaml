@@ -51,16 +51,9 @@ spec:
             - name: SPRING_PROFILES_ACTIVE
               value: "default"
 
-            # Vision and Telegram configuration
-            - name: VISION_ENABLED
-              value: "true"
+            # Telegram configuration
             - name: TELEGRAM_BOT_ENABLED
               value: "true"
-            - name: VISION_BASE64_ENCODED_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: VISION_BASE64_ENCODED_KEY
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:
                 secretKeyRef:

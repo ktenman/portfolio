@@ -106,11 +106,11 @@ class CarTelegramBot(
   ) = try {
     val detectionResult = licensePlateDetectionService.detectPlateNumber(imageFile)
     log.debug("Detection result: ${objectMapper.writeValueAsString(detectionResult)}")
-    when {
-      !detectionResult.hasCar -> sendMessage(chatId, "No car detected.", replyToMessageId)
-      detectionResult.plateNumber == null ->
-        sendMessage(chatId, "No license plate detected (provider: ${detectionResult.provider}).", replyToMessageId)
-      else -> lookupAndSendCarPrice(detectionResult.plateNumber, chatId, replyToMessageId, startTime)
+    val plateNumber = detectionResult.plateNumber
+    if (plateNumber == null) {
+      sendMessage(chatId, "License plate detection unavailable, please try again later.", replyToMessageId)
+    } else {
+      lookupAndSendCarPrice(plateNumber, chatId, replyToMessageId, startTime)
     }
   } finally {
     imageFile.delete()

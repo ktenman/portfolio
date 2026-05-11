@@ -28,7 +28,6 @@ repositories {
 
 dependencies {
   implementation(libs.springdoc.openapi.starter.webmvc.ui)
-  implementation(libs.grpc.netty.shaded)
   implementation(libs.jsoup)
   implementation(libs.spring.boot.starter.data.jpa)
   implementation(libs.spring.boot.starter.validation)
@@ -53,9 +52,6 @@ dependencies {
   implementation(libs.telegrambots)
   implementation(libs.telegrambots.spring.boot.starter)
 
-  implementation(libs.google.cloud.vision) {
-    exclude(group = "commons-logging", module = "commons-logging")
-  }
   implementation(libs.minio)
   implementation(libs.jollyday.core)
   runtimeOnly(libs.jollyday.jaxb)
@@ -87,12 +83,6 @@ dependencies {
   testImplementation(libs.selenide)
   testRuntimeOnly(libs.junit.platform.launcher)
   testRuntimeOnly(libs.junit.jupiter.engine)
-}
-
-configurations.all {
-  resolutionStrategy {
-    force("io.grpc:grpc-netty-shaded:1.81.0")
-  }
 }
 
 dependencyManagement {

@@ -1,9 +1,8 @@
 package ee.tenman.portfolio.dto
 
-import ee.tenman.portfolio.domain.DetectionProvider
+import ee.tenman.portfolio.domain.VisionModel
 
 data class DetectionResult(
-  val plateNumber: String?,
-  val hasCar: Boolean,
-  val provider: DetectionProvider,
+  val plateNumber: String? = null,
+  val provider: VisionModel? = null,
 )

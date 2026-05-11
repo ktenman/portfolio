@@ -141,10 +141,6 @@ ft:
     enabled: ${FT_ADAPTIVE_SCHEDULING_ENABLED:false}
     minimum-interval-seconds: 60
 
-vision:
-  enabled: ${VISION_ENABLED:false}
-  base64EncodedKey: ${VISION_BASE64_ENCODED_KEY:}
-
 telegram:
   bot:
     enabled: ${TELEGRAM_BOT_ENABLED:false}
