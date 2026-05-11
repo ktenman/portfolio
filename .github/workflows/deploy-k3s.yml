@@ -19,8 +19,6 @@ on:
         required: true
       ALLOWED_EMAILS:
         required: true
-      VISION_BASE64_ENCODED_KEY:
-        required: true
       TELEGRAM_BOT_TOKEN:
         required: true
       HEALTHCHECK_URL:
@@ -76,7 +74,6 @@ jobs:
             export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
             export GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}'
             export ALLOWED_EMAILS='${{ secrets.ALLOWED_EMAILS }}'
-            export VISION_BASE64_ENCODED_KEY='${{ secrets.VISION_BASE64_ENCODED_KEY }}'
             export TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
             export HEALTHCHECK_URL='${{ secrets.HEALTHCHECK_URL }}'
             export MINIO_ROOT_USER='${{ secrets.MINIO_ROOT_USER }}'
