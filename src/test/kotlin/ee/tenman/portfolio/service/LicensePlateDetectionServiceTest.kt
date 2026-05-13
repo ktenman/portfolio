@@ -84,6 +84,19 @@ class LicensePlateDetectionServiceTest {
   }
 
   @Test
+  fun `should extract plate from Google Vision multi-line response surrounded by other text`() {
+    val base64Image = "dGVzdA=="
+    val uuid = UUID.randomUUID()
+    every { openRouterProperties.apiKey } returns ""
+    every { googleVisionService.extractText(any()) } returns "00\n8\nEST\n471 GWJ\n000"
+
+    val result = service.detectPlateNumber(base64Image, uuid)
+
+    expect(result.plateNumber).toEqual("471GWJ")
+    expect(result.provider).toEqual(VisionModel.GOOGLE_VISION)
+  }
+
+  @Test
   fun `should handle lowercase plate response`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
