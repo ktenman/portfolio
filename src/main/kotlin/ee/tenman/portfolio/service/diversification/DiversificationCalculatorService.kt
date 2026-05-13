@@ -52,7 +52,7 @@ class DiversificationCalculatorService(
   }
 
   @Transactional(readOnly = true)
-  @Cacheable(value = [DIVERSIFICATION_ETFS_CACHE], key = "'available-etfs'", unless = "#result.isEmpty()")
+  @Cacheable(value = [DIVERSIFICATION_ETFS_CACHE], key = "'available-etfs'")
   fun getAvailableEtfs(): List<EtfDetailDto> {
     val etfIds = etfPositionRepository.findDistinctEtfInstrumentIds()
     val instruments = instrumentRepository.findAllById(etfIds)
