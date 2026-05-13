@@ -8,8 +8,10 @@ import ee.tenman.portfolio.openrouter.OpenRouterVisionService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.selects.select
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -80,14 +82,14 @@ class LicensePlateDetectionService(
     return openRouterVisionService.extractText(request)
   }
 
-  private fun runProvider(
+  private suspend fun runProvider(
     model: VisionModel,
     call: () -> String?,
   ): DetectionResult? =
     runCatching {
       log.info("Attempting detection with ${model.modelId}")
       val startTime = System.currentTimeMillis()
-      val response = call()
+      val response = runInterruptible(Dispatchers.IO) { call() }
       val elapsedMs = System.currentTimeMillis() - startTime
       if (response.isNullOrBlank()) {
         log.info("${model.modelId}: empty response in ${elapsedMs}ms")
@@ -107,14 +109,13 @@ class LicensePlateDetectionService(
     }
 
   private fun extractPlateNumber(response: String): String? {
-    val cleaned = response.replace(WHITESPACE, "").uppercase()
-    return PLATE_NUMBER_PATTERN.find(cleaned)?.value
+    val match = PLATE_NUMBER_PATTERN.find(response.uppercase()) ?: return null
+    return match.groupValues[1] + match.groupValues[2]
   }
 
   private fun encodeFileToBase64(file: File): String = Base64.getEncoder().encodeToString(file.readBytes())
 
   companion object {
-    private val PLATE_NUMBER_PATTERN = Regex("\\b\\d{3}[A-Z]{3}\\b", RegexOption.IGNORE_CASE)
-    private val WHITESPACE = Regex("\\s")
+    private val PLATE_NUMBER_PATTERN = Regex("\\b(\\d{3})\\s*([A-Z]{3})\\b")
   }
 }
