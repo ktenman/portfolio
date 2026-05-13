@@ -7,9 +7,12 @@ import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.selects.select
@@ -36,22 +39,26 @@ class LicensePlateDetectionService(
   fun detectPlateNumber(
     base64Image: String,
     uuid: UUID,
-  ): DetectionResult =
-    runBlocking(calculationDispatcher) {
-      log.info("Starting parallel license plate detection for $uuid")
-      val jobs =
-        buildList<Deferred<DetectionResult?>> {
-          VisionModel.entries.forEach { model ->
-            when {
-              !model.isOpenRouter ->
-                add(async { runProvider(model) { googleVisionService.extractText(base64Image) } })
-              openRouterProperties.apiKey.isNotBlank() ->
-                add(async { runProvider(model) { callOpenRouter(model, base64Image) } })
-            }
+  ): DetectionResult {
+    log.info("Starting parallel license plate detection for $uuid")
+    val providerScope = CoroutineScope(SupervisorJob() + calculationDispatcher)
+    val jobs =
+      buildList<Deferred<DetectionResult?>> {
+        VisionModel.entries.forEach { model ->
+          when {
+            !model.isOpenRouter ->
+              add(providerScope.async { runProvider(model) { googleVisionService.extractText(base64Image) } })
+            openRouterProperties.apiKey.isNotBlank() ->
+              add(providerScope.async { runProvider(model) { callOpenRouter(model, base64Image) } })
           }
         }
-      selectFirstSuccessful(jobs)
+      }
+    return try {
+      runBlocking(calculationDispatcher) { selectFirstSuccessful(jobs) }
+    } finally {
+      providerScope.cancel()
     }
+  }
 
   private suspend fun selectFirstSuccessful(jobs: List<Deferred<DetectionResult?>>): DetectionResult {
     val remainingJobs = jobs.toMutableList()
