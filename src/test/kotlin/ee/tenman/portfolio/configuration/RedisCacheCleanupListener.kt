@@ -4,7 +4,7 @@ import io.mockk.clearMocks
 import io.mockk.isMockKMock
 import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
-import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.test.context.TestContext
 import org.springframework.test.context.support.AbstractTestExecutionListener
 import java.time.Clock
@@ -18,8 +18,7 @@ class RedisCacheCleanupListener : AbstractTestExecutionListener() {
       cacheManager.getCache(cacheName)?.clear()
     }
 
-    val redisTemplate = testContext.applicationContext.getBean(RedisTemplate::class.java) as RedisTemplate<String, Any>
-    val connectionFactory = checkNotNull(redisTemplate.connectionFactory) { "Redis connectionFactory missing for test cleanup" }
+    val connectionFactory = testContext.applicationContext.getBean(RedisConnectionFactory::class.java)
     connectionFactory.connection.use { connection ->
       connection.serverCommands().flushAll()
     }
