@@ -41,6 +41,10 @@ trading212:
     key-id: ${TRADING212_API_KEY_ID:}
     key-secret: ${TRADING212_API_KEY_SECRET:}
 
+google:
+  vision:
+    api-key: ${GOOGLE_VISION_API_KEY:}
+
 trading212-scraping:
   symbols:
     - symbol: WTAI:MIL:EUR

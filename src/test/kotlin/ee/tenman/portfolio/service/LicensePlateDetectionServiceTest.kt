@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.service
 
-import ch.tutteli.atrium.api.fluent.en_GB.notToEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.VisionModel
@@ -17,6 +16,7 @@ import java.util.UUID
 class LicensePlateDetectionServiceTest {
   private val openRouterVisionService = mockk<OpenRouterVisionService>()
   private val openRouterProperties = mockk<OpenRouterProperties>()
+  private val googleVisionService = mockk<GoogleVisionService>()
   private val dispatcher = Dispatchers.Default
 
   private lateinit var service: LicensePlateDetectionService
@@ -24,10 +24,12 @@ class LicensePlateDetectionServiceTest {
   @BeforeEach
   fun setUp() {
     every { openRouterProperties.apiKey } returns "test-api-key"
+    every { googleVisionService.extractText(any()) } returns null
     service =
       LicensePlateDetectionService(
         openRouterVisionService,
         openRouterProperties,
+        googleVisionService,
         dispatcher,
       )
   }
@@ -41,19 +43,19 @@ class LicensePlateDetectionServiceTest {
     val result = service.detectPlateNumber(base64Image, uuid)
 
     expect(result.plateNumber).toEqual("123ABC")
-    expect(result.provider).notToEqual(null)
   }
 
   @Test
-  fun `should return all failed when OpenRouter API key is blank`() {
+  fun `should still detect via Google Vision when OpenRouter API key is blank`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
     every { openRouterProperties.apiKey } returns ""
+    every { googleVisionService.extractText(any()) } returns "678 WKS"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
-    expect(result.plateNumber).toEqual(null)
-    expect(result.provider).toEqual(null)
+    expect(result.plateNumber).toEqual("678WKS")
+    expect(result.provider).toEqual("google-vision")
     verify(exactly = 0) { openRouterVisionService.extractText(any()) }
   }
 
@@ -62,6 +64,7 @@ class LicensePlateDetectionServiceTest {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
     every { openRouterVisionService.extractText(any()) } returns null
+    every { googleVisionService.extractText(any()) } returns null
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
@@ -109,6 +112,7 @@ class LicensePlateDetectionServiceTest {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
     every { openRouterVisionService.extractText(any()) } returns "No plate visible"
+    every { googleVisionService.extractText(any()) } returns "No plate visible"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
@@ -125,5 +129,6 @@ class LicensePlateDetectionServiceTest {
     service.detectPlateNumber(base64Image, uuid)
 
     verify(exactly = VisionModel.entries.size) { openRouterVisionService.extractText(any()) }
+    verify(exactly = 1) { googleVisionService.extractText(any()) }
   }
 }

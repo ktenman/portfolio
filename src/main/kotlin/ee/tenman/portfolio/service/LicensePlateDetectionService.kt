@@ -20,6 +20,7 @@ import java.util.UUID
 class LicensePlateDetectionService(
   private val openRouterVisionService: OpenRouterVisionService,
   private val openRouterProperties: OpenRouterProperties,
+  private val googleVisionService: GoogleVisionService,
   private val calculationDispatcher: CoroutineDispatcher,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -35,14 +36,15 @@ class LicensePlateDetectionService(
   ): DetectionResult =
     runBlocking(calculationDispatcher) {
       log.info("Starting parallel license plate detection for $uuid")
-      if (openRouterProperties.apiKey.isBlank()) {
-        log.warn("OpenRouter API key is blank, no detection providers available")
-        return@runBlocking DetectionResult()
-      }
       val jobs =
-        VisionModel.entries.map { model ->
-          async { tryVisionModel(model, base64Image) }
+        buildList<Deferred<DetectionResult?>> {
+        if (openRouterProperties.apiKey.isNotBlank()) {
+          VisionModel.entries.forEach { model ->
+            add(async { tryVisionModel(model, base64Image) })
+          }
         }
+        add(async { tryGoogleVision(base64Image) })
+      }
       selectFirstSuccessful(jobs)
     }
 
@@ -79,17 +81,39 @@ class LicensePlateDetectionService(
       val elapsedMs = System.currentTimeMillis() - startTime
       if (response.isNullOrBlank()) {
         log.info("${model.modelId}: empty response in ${elapsedMs}ms")
-        return@runCatching DetectionResult(provider = model)
+        return@runCatching DetectionResult(provider = model.modelId)
       }
       val plateNumber = extractPlateNumber(response)
       if (plateNumber != null) {
         log.info("${model.modelId} detected plate: $plateNumber in ${elapsedMs}ms")
-        return@runCatching DetectionResult(plateNumber = plateNumber, provider = model)
+        return@runCatching DetectionResult(plateNumber = plateNumber, provider = model.modelId)
       }
       log.info("${model.modelId}: response '$response' did not match pattern in ${elapsedMs}ms")
-      DetectionResult(provider = model)
+      DetectionResult(provider = model.modelId)
     }.getOrElse { e ->
       log.error("${model.modelId} failed", e)
+      null
+    }
+
+  private fun tryGoogleVision(base64Image: String): DetectionResult? =
+    runCatching {
+      log.info("Attempting detection with google-vision")
+      val startTime = System.currentTimeMillis()
+      val response = googleVisionService.extractText(base64Image)
+      val elapsedMs = System.currentTimeMillis() - startTime
+      if (response.isNullOrBlank()) {
+        log.info("google-vision: empty response in ${elapsedMs}ms")
+        return@runCatching DetectionResult(provider = GOOGLE_VISION)
+      }
+      val plateNumber = extractPlateNumber(response)
+      if (plateNumber != null) {
+        log.info("google-vision detected plate: $plateNumber in ${elapsedMs}ms")
+        return@runCatching DetectionResult(plateNumber = plateNumber, provider = GOOGLE_VISION)
+      }
+      log.info("google-vision: response '$response' did not match pattern in ${elapsedMs}ms")
+      DetectionResult(provider = GOOGLE_VISION)
+    }.getOrElse { e ->
+      log.error("google-vision failed", e)
       null
     }
 
@@ -101,6 +125,7 @@ class LicensePlateDetectionService(
   private fun encodeFileToBase64(file: File): String = Base64.getEncoder().encodeToString(file.readBytes())
 
   companion object {
+    private const val GOOGLE_VISION = "google-vision"
     private val PLATE_NUMBER_PATTERN = Regex("\\b\\d{3}[A-Z]{3}\\b", RegexOption.IGNORE_CASE)
     private val WHITESPACE = Regex("\\s")
   }
