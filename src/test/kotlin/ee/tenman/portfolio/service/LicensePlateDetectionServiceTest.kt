@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.VisionModel
@@ -131,6 +132,28 @@ class LicensePlateDetectionServiceTest {
 
     expect(result.plateNumber).toEqual(null)
     expect(result.provider).toEqual(null)
+  }
+
+  @Test
+  fun `should return as soon as one provider wins without waiting for slow losers`() {
+    val base64Image = "dGVzdA=="
+    val uuid = UUID.randomUUID()
+    every { googleVisionService.extractText(any()) } answers {
+      val deadlineNs = System.nanoTime() + 2_000_000_000L
+      while (System.nanoTime() < deadlineNs) {
+        Thread.yield()
+      }
+      null
+    }
+    every { openRouterVisionService.extractText(any()) } returns "471 GWJ"
+
+    val elapsedMs =
+      kotlin.system.measureTimeMillis {
+        val result = service.detectPlateNumber(base64Image, uuid)
+        expect(result.plateNumber).toEqual("471GWJ")
+      }
+
+    expect(elapsedMs).toBeLessThan(1000L)
   }
 
   @Test
