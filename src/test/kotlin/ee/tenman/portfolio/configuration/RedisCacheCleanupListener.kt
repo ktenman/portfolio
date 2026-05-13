@@ -18,13 +18,10 @@ class RedisCacheCleanupListener : AbstractTestExecutionListener() {
       cacheManager.getCache(cacheName)?.clear()
     }
 
-    try {
-      val redisTemplate = testContext.applicationContext.getBean(RedisTemplate::class.java) as RedisTemplate<String, Any>
-      redisTemplate.connectionFactory?.connection?.use { connection ->
-        connection.serverCommands().flushAll()
-      }
-    } catch (e: Exception) {
-      log.trace("Redis flush failed, may not be available in this test context", e)
+    val redisTemplate = testContext.applicationContext.getBean(RedisTemplate::class.java) as RedisTemplate<String, Any>
+    val connectionFactory = checkNotNull(redisTemplate.connectionFactory) { "Redis connectionFactory missing for test cleanup" }
+    connectionFactory.connection.use { connection ->
+      connection.serverCommands().flushAll()
     }
 
     try {
