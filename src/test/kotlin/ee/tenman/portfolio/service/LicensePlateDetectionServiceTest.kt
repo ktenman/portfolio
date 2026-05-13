@@ -55,7 +55,7 @@ class LicensePlateDetectionServiceTest {
     val result = service.detectPlateNumber(base64Image, uuid)
 
     expect(result.plateNumber).toEqual("678WKS")
-    expect(result.provider).toEqual("google-vision")
+    expect(result.provider).toEqual(VisionModel.GOOGLE_VISION)
     verify(exactly = 0) { openRouterVisionService.extractText(any()) }
   }
 
@@ -128,7 +128,7 @@ class LicensePlateDetectionServiceTest {
 
     service.detectPlateNumber(base64Image, uuid)
 
-    verify(exactly = VisionModel.entries.size) { openRouterVisionService.extractText(any()) }
+    verify(exactly = VisionModel.entries.count { it.isOpenRouter }) { openRouterVisionService.extractText(any()) }
     verify(exactly = 1) { googleVisionService.extractText(any()) }
   }
 }

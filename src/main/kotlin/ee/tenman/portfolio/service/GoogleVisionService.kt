@@ -11,9 +11,9 @@ import tools.jackson.databind.JsonNode
 @Service
 class GoogleVisionService(
   @Value("\${google.vision.api-key:}") private val apiKey: String,
+  private val restClient: RestClient,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
-  private val restClient = RestClient.create()
 
   fun extractText(base64Image: String): String? {
     if (apiKey.isBlank()) {
