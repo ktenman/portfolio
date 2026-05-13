@@ -6,18 +6,21 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.VisionModel
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
+import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.io.File
 import java.util.UUID
 
 class LicensePlateDetectionServiceTest {
   private val openRouterVisionService = mockk<OpenRouterVisionService>()
   private val openRouterProperties = mockk<OpenRouterProperties>()
   private val googleVisionService = mockk<GoogleVisionService>()
+  private val imageProcessingService = mockk<ImageProcessingService>()
   private val dispatcher = Dispatchers.Default
 
   private lateinit var service: LicensePlateDetectionService
@@ -31,6 +34,7 @@ class LicensePlateDetectionServiceTest {
         openRouterVisionService,
         openRouterProperties,
         googleVisionService,
+        imageProcessingService,
         dispatcher,
       )
   }
@@ -154,6 +158,23 @@ class LicensePlateDetectionServiceTest {
       }
 
     expect(elapsedMs).toBeLessThan(1000L)
+  }
+
+  @Test
+  fun `should resize photo bytes before detection when called with file`() {
+    val tempFile = File.createTempFile("plate-test-", ".jpg")
+    tempFile.writeBytes(byteArrayOf(1, 2, 3, 4))
+    try {
+      every { imageProcessingService.resizeForPlateDetection(any()) } returns byteArrayOf(9, 8, 7)
+      every { openRouterVisionService.extractText(any()) } returns "123ABC"
+
+      val result = service.detectPlateNumber(tempFile)
+
+      expect(result.plateNumber).toEqual("123ABC")
+      verify { imageProcessingService.resizeForPlateDetection(any()) }
+    } finally {
+      tempFile.delete()
+    }
   }
 
   @Test

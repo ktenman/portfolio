@@ -5,6 +5,7 @@ import ee.tenman.portfolio.dto.DetectionResult
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
+import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -27,12 +28,14 @@ class LicensePlateDetectionService(
   private val openRouterVisionService: OpenRouterVisionService,
   private val openRouterProperties: OpenRouterProperties,
   private val googleVisionService: GoogleVisionService,
+  private val imageProcessingService: ImageProcessingService,
   private val calculationDispatcher: CoroutineDispatcher,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun detectPlateNumber(photoFile: File): DetectionResult {
-    val base64Image = encodeFileToBase64(photoFile)
+    val resized = imageProcessingService.resizeForPlateDetection(photoFile.readBytes())
+    val base64Image = Base64.getEncoder().encodeToString(resized)
     return detectPlateNumber(base64Image, UUID.randomUUID())
   }
 
@@ -119,8 +122,6 @@ class LicensePlateDetectionService(
     val match = PLATE_NUMBER_PATTERN.find(response.uppercase()) ?: return null
     return match.groupValues[1] + match.groupValues[2]
   }
-
-  private fun encodeFileToBase64(file: File): String = Base64.getEncoder().encodeToString(file.readBytes())
 
   companion object {
     private val PLATE_NUMBER_PATTERN = Regex("\\b(\\d{3})\\s*([A-Z]{3})\\b")

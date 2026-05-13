@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.infrastructure
 
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
@@ -82,11 +83,88 @@ class ImageProcessingServiceTest {
     expect(result).toEqual(invalidData)
   }
 
+  @Test
+  fun `should not resize plate image already within plate bounds`() {
+    val imageData = createTestImage(800, 600)
+
+    val result = service.resizeForPlateDetection(imageData)
+
+    expect(result).toEqual(imageData)
+  }
+
+  @Test
+  fun `should scale down oversized plate image to 800 max dimension`() {
+    val imageData = createTestImage(4000, 3000)
+
+    val result = service.resizeForPlateDetection(imageData)
+    val (width, height) = getImageDimensions(result)
+
+    expect(width).toBeLessThanOrEqualTo(800)
+    expect(height).toBeLessThanOrEqualTo(800)
+    expect(width).toEqual(800)
+  }
+
+  @Test
+  fun `should preserve aspect ratio when downscaling plate image`() {
+    val imageData = createTestImage(4000, 2000)
+
+    val result = service.resizeForPlateDetection(imageData)
+    val (width, height) = getImageDimensions(result)
+
+    expect(width).toEqual(800)
+    expect(height).toEqual(400)
+  }
+
+  @Test
+  fun `should not upscale small plate images`() {
+    val imageData = createTestImage(400, 300)
+
+    val result = service.resizeForPlateDetection(imageData)
+
+    expect(result).toEqual(imageData)
+  }
+
+  @Test
+  fun `should produce smaller byte payload after downscaling a large photo`() {
+    val imageData = createPhotoLikeImage(4000, 3000)
+
+    val result = service.resizeForPlateDetection(imageData)
+
+    expect(result.size).toBeLessThan(imageData.size)
+  }
+
+  @Test
+  fun `should return original data when plate image cannot be read`() {
+    val invalidData = byteArrayOf(9, 8, 7, 6)
+
+    val result = service.resizeForPlateDetection(invalidData)
+
+    expect(result).toEqual(invalidData)
+  }
+
   private fun createTestImage(
     width: Int,
     height: Int,
   ): ByteArray {
     val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    val outputStream = ByteArrayOutputStream()
+    ImageIO.write(image, "PNG", outputStream)
+    return outputStream.toByteArray()
+  }
+
+  private fun createPhotoLikeImage(
+    width: Int,
+    height: Int,
+  ): ByteArray {
+    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+    for (y in 0 until height) {
+      for (x in 0 until width) {
+        val r = (x * 255 / width) and 0xFF
+        val g = (y * 255 / height) and 0xFF
+        val b = ((x + y) * 255 / (width + height)) and 0xFF
+        image.setRGB(x, y, (r shl 16) or (g shl 8) or b)
+      }
+    }
     val outputStream = ByteArrayOutputStream()
     ImageIO.write(image, "PNG", outputStream)
     return outputStream.toByteArray()
