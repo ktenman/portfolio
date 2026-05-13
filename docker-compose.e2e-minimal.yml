@@ -74,6 +74,7 @@ services:
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - GOOGLE_VISION_API_KEY=${GOOGLE_VISION_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
