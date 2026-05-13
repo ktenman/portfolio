@@ -17,7 +17,6 @@ class GoogleVisionServiceLiveTest {
     val service = GoogleVisionService(apiKey, RestClient.create())
     val image = Base64.getEncoder().encodeToString(File("/tmp/plate-test.png").readBytes())
     val text = service.extractText(image)
-    println("Detected text: $text")
     expect(text).notToEqualNull().toContain("678", "WKS")
   }
 }
