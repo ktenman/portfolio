@@ -249,6 +249,10 @@ openrouter:
     failure-threshold: 3
     recovery-timeout-seconds: 60
 
+google:
+  vision:
+    api-key: ${GOOGLE_VISION_API_KEY:}
+
 industry-classification:
   enabled: true
 

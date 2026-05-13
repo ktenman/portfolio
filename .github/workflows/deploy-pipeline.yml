@@ -23,6 +23,8 @@ on:
         required: true
       TELEGRAM_BOT_TOKEN:
         required: true
+      GOOGLE_VISION_API_KEY:
+        required: true
       MINIO_ROOT_USER:
         required: true
       MINIO_ROOT_PASSWORD:
@@ -69,6 +71,7 @@ jobs:
           echo "HEALTHCHECK_URL=${{ secrets.HEALTHCHECK_URL }}" >> .env
           echo "ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}" >> .env
           echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "GOOGLE_VISION_API_KEY=${{ secrets.GOOGLE_VISION_API_KEY }}" >> .env
           echo "MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}" >> .env
           echo "MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}" >> .env
           echo "MINIO_BUCKET_NAME=${{ secrets.MINIO_BUCKET_NAME || 'portfolio-logos' }}" >> .env

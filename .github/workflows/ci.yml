@@ -156,6 +156,7 @@ jobs:
         if: matrix.type == 'e2e'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
           MINIO_ROOT_USER: minioadmin
           MINIO_ROOT_PASSWORD: minioadmin
           MINIO_BUCKET_NAME: portfolio-logos
@@ -390,6 +391,7 @@ jobs:
       HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
       ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
       MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
       MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
       MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}

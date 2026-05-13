@@ -21,6 +21,8 @@ on:
         required: true
       TELEGRAM_BOT_TOKEN:
         required: true
+      GOOGLE_VISION_API_KEY:
+        required: true
       HEALTHCHECK_URL:
         required: false
       MINIO_ROOT_USER:
@@ -75,6 +77,7 @@ jobs:
             export GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}'
             export ALLOWED_EMAILS='${{ secrets.ALLOWED_EMAILS }}'
             export TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+            export GOOGLE_VISION_API_KEY='${{ secrets.GOOGLE_VISION_API_KEY }}'
             export HEALTHCHECK_URL='${{ secrets.HEALTHCHECK_URL }}'
             export MINIO_ROOT_USER='${{ secrets.MINIO_ROOT_USER }}'
             export MINIO_ROOT_PASSWORD='${{ secrets.MINIO_ROOT_PASSWORD }}'

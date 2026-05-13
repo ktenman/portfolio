@@ -60,6 +60,13 @@ spec:
                   name: portfolio-secrets
                   key: TELEGRAM_BOT_TOKEN
 
+            # Google Vision API key
+            - name: GOOGLE_VISION_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: GOOGLE_VISION_API_KEY
+
             # BUILD INFORMATION - This is the key fix for your missing git hash!
             # These environment variables will be substituted by envsubst in the deployment script
             - name: BUILD_HASH

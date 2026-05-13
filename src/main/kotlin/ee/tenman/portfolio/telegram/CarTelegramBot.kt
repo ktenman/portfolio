@@ -40,7 +40,8 @@ class CarTelegramBot(
   private val objectMapper: ObjectMapper,
 ) : TelegramLongPollingBot(botToken) {
   private val log = LoggerFactory.getLogger(javaClass)
-  private val commandRegex = Regex("^(ark|car)\\s+([0-9]{3}[A-Za-z]{3})\\b", RegexOption.IGNORE_CASE)
+  private val commandRegex = Regex("^(ark|car)\\s+(\\S.*)$", RegexOption.IGNORE_CASE)
+  private val nonAlphanumeric = Regex("[^A-Za-z0-9]")
   private val supportedImageTypes = setOf("image/jpeg", "image/png")
 
   companion object {
@@ -89,10 +90,17 @@ class CarTelegramBot(
         processImageOrDocument(downloadTelegramFile(message.document.fileId), chatId, messageId, startTime)
 
       message.hasText() ->
-        commandRegex.find(message.text)?.groupValues?.get(2)?.uppercase()?.let { plateNumber ->
-          log.info("Processing plate number: $plateNumber")
-          lookupAndSendCarPrice(plateNumber, chatId, messageId, startTime)
-        }
+        commandRegex
+          .find(message.text)
+          ?.groupValues
+          ?.get(2)
+          ?.replace(nonAlphanumeric, "")
+          ?.uppercase()
+          ?.takeIf { it.isNotEmpty() }
+          ?.let { plateNumber ->
+            log.info("Processing plate number: $plateNumber")
+            lookupAndSendCarPrice(plateNumber, chatId, messageId, startTime)
+          }
 
       else -> sendMessage(chatId, "Unsupported message type. Send an image or use 'car XXX123' command.", messageId)
     }
