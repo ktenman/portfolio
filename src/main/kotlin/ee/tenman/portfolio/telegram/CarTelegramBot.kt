@@ -11,6 +11,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Message
+import org.telegram.telegrambots.meta.api.objects.PhotoSize
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import tools.jackson.databind.ObjectMapper
@@ -46,6 +47,14 @@ class CarTelegramBot(
 
   companion object {
     private const val BOT_DISABLED_MESSAGE = "Telegram bot is disabled. No token provided."
+    private const val MIN_PHOTO_DIMENSION = 1000
+
+    internal fun pickPhotoForPlateDetection(photos: List<PhotoSize>): PhotoSize? {
+      if (photos.isEmpty()) return null
+      val largeEnough = photos.filter { maxOf(it.width, it.height) >= MIN_PHOTO_DIMENSION }
+      if (largeEnough.isNotEmpty()) return largeEnough.minBy { maxOf(it.width, it.height) }
+      return photos.maxBy { maxOf(it.width, it.height) }
+    }
   }
 
   private fun isBotDisabled() =
@@ -82,7 +91,7 @@ class CarTelegramBot(
 
     when {
       message.hasPhoto() ->
-        message.photo.maxByOrNull { it.fileSize }?.let { photo ->
+        pickPhotoForPlateDetection(message.photo)?.let { photo ->
           processImageOrDocument(downloadTelegramFile(photo.fileId), chatId, messageId, startTime)
         }
 

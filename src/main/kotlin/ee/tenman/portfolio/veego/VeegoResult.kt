@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.veego
 
+import java.io.Serializable
 import java.math.BigDecimal
 
 data class VeegoResult(
@@ -14,7 +15,7 @@ data class VeegoResult(
   val weight: Int? = null,
   val error: String? = null,
   val durationSeconds: Double? = null,
-) {
+) : Serializable {
   companion object {
     fun fromResponse(
       response: VeegoTaxResponse,
