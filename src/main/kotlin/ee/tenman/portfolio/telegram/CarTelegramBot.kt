@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.PhotoSize
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -127,7 +128,14 @@ class CarTelegramBot(
     if (plateNumber == null) {
       sendMessage(chatId, "License plate detection unavailable, please try again later.", replyToMessageId)
     } else {
-      lookupAndSendCarPrice(plateNumber, chatId, replyToMessageId, startTime)
+      val detectionSeconds = TimeUtility.durationInSeconds(startTime)
+      val acknowledgement =
+        sendMessage(
+          chatId,
+          "🚗 Plate detected: $plateNumber (in $detectionSeconds seconds)\nFetching tax & market data…",
+          replyToMessageId,
+        )
+      lookupAndSendCarPrice(plateNumber, chatId, replyToMessageId, startTime, acknowledgement?.messageId)
     }
   } finally {
     imageFile.delete()
@@ -138,11 +146,16 @@ class CarTelegramBot(
     chatId: String,
     replyToMessageId: Int,
     startTime: Long,
-  ): Any? {
+    acknowledgementMessageId: Int? = null,
+  ) {
     val result = vehicleInfoService.getVehicleInfo(plateNumber)
     val duration = TimeUtility.durationInSeconds(startTime)
     val responseText = "${result.formattedText}\n\n⏱️  Duration: $duration seconds"
-    return sendMessage(chatId, responseText, replyToMessageId)
+    if (acknowledgementMessageId != null) {
+      editMessage(chatId, acknowledgementMessageId, responseText)
+      return
+    }
+    sendMessage(chatId, responseText, replyToMessageId)
   }
 
   private fun downloadTelegramFile(fileId: String): File {
@@ -183,15 +196,33 @@ class CarTelegramBot(
     chatId: String,
     text: String,
     replyToMessageId: Int? = null,
+  ): Message? =
+    try {
+      execute(
+        SendMessage().apply {
+          this.chatId = chatId
+          this.text = text
+          replyToMessageId?.let { this.replyToMessageId = it }
+        },
+      )
+    } catch (e: TelegramApiException) {
+      log.error("Failed to send message: $text", e)
+      null
+    }
+
+  private fun editMessage(
+    chatId: String,
+    messageId: Int,
+    text: String,
   ) = try {
     execute(
-      SendMessage().apply {
+      EditMessageText().apply {
         this.chatId = chatId
+        this.messageId = messageId
         this.text = text
-        replyToMessageId?.let { this.replyToMessageId = it }
       },
     )
   } catch (e: TelegramApiException) {
-    log.error("Failed to send message: $text", e)
+    log.error("Failed to edit message $messageId: $text", e)
   }
 }
