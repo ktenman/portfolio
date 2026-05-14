@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.veego
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.VEEGO_TAX_CACHE
 import ee.tenman.portfolio.configuration.TimeUtility
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
@@ -12,6 +14,7 @@ class VeegoService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  @Cacheable(value = [VEEGO_TAX_CACHE], key = "#plateNumber", unless = "#result.error != null")
   @Retryable(backoff = Backoff(delay = 1000))
   fun getTaxInfo(plateNumber: String): VeegoResult {
     log.info("Fetching tax info for plate: $plateNumber")

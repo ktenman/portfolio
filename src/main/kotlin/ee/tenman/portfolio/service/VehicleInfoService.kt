@@ -21,12 +21,13 @@ class VehicleInfoService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun getVehicleInfo(plateNumber: String): VehicleInfoResponse {
-    log.info("Fetching vehicle info for plate: $plateNumber")
+    val normalized = plateNumber.uppercase()
+    log.info("Fetching vehicle info for plate: $normalized")
     val startTime = System.nanoTime()
-    val (auto24Result, veegoResult) = fetchInParallel(plateNumber)
+    val (auto24Result, veegoResult) = fetchInParallel(normalized)
     val totalDuration = TimeUtility.durationInSeconds(startTime).toDouble()
-    log.info("Vehicle info fetched for $plateNumber in ${totalDuration}s")
-    return buildResponse(plateNumber, auto24Result, veegoResult, totalDuration)
+    log.info("Vehicle info fetched for $normalized in ${totalDuration}s")
+    return buildResponse(normalized, auto24Result, veegoResult, totalDuration)
   }
 
   private fun fetchInParallel(plateNumber: String): Pair<CarPriceResult, VeegoResult> =

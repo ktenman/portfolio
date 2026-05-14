@@ -230,6 +230,18 @@ class VehicleInfoServiceTest {
   }
 
   @Test
+  fun `should uppercase plate before delegating so REST and Telegram callers share cache keys`() {
+    every { auto24Service.findCarPrice("876BCH") } returns CarPriceResult(price = "5000 €", durationSeconds = 1.0)
+    every { veegoService.getTaxInfo("876BCH") } returns createSuccessfulVeegoResult()
+
+    val result = vehicleInfoService.getVehicleInfo("876bch")
+
+    expect(result.plateNumber).toEqual("876BCH")
+    verify(exactly = 1) { auto24Service.findCarPrice("876BCH") }
+    verify(exactly = 1) { veegoService.getTaxInfo("876BCH") }
+  }
+
+  @Test
   fun `should propagate auto24 error to response`() {
     val plateNumber = "876BCH"
     every { auto24Service.findCarPrice(plateNumber) } returns
