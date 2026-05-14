@@ -52,12 +52,9 @@ class CarTelegramBot(
     private const val BOT_DISABLED_MESSAGE = "Telegram bot is disabled. No token provided."
     private const val MIN_PHOTO_DIMENSION = 1000
 
-    internal fun pickPhotoForPlateDetection(photos: List<PhotoSize>): PhotoSize? {
-      if (photos.isEmpty()) return null
-      val largeEnough = photos.filter { it.longestEdge() >= MIN_PHOTO_DIMENSION }
-      if (largeEnough.isNotEmpty()) return largeEnough.minBy { it.longestEdge() }
-      return photos.maxBy { it.longestEdge() }
-    }
+    internal fun pickPhotoForPlateDetection(photos: List<PhotoSize>): PhotoSize? =
+      photos.filter { it.longestEdge() >= MIN_PHOTO_DIMENSION }.minByOrNull { it.longestEdge() }
+        ?: photos.maxByOrNull { it.longestEdge() }
 
     private fun PhotoSize.longestEdge(): Int = maxOf(width, height)
   }
@@ -154,9 +151,9 @@ class CarTelegramBot(
       )
     val result = vehicleInfoFuture.join()
     val responseText = buildFinalResponseText(result, startTime)
-    val acknowledgementMessageId = acknowledgement?.messageId
-    if (acknowledgementMessageId != null) {
-      editMessage(chatId, acknowledgementMessageId, responseText)
+    val ackMessageId = acknowledgement?.messageId
+    if (ackMessageId != null) {
+      editMessage(chatId, ackMessageId, responseText)
       return
     }
     sendMessage(chatId, responseText, replyToMessageId)
@@ -237,15 +234,18 @@ class CarTelegramBot(
     chatId: String,
     messageId: Int,
     text: String,
-  ) = try {
-    execute(
-      EditMessageText().apply {
-        this.chatId = chatId
-        this.messageId = messageId
-        this.text = text
-      },
-    )
-  } catch (e: TelegramApiException) {
-    log.error("Failed to edit message $messageId: $text", e)
+  ) {
+    try {
+      execute(
+        EditMessageText().apply {
+          this.chatId = chatId
+          this.messageId = messageId
+          this.text = text
+        },
+      )
+    } catch (e: TelegramApiException) {
+      log.error("Failed to edit message $messageId, falling back to fresh send: $text", e)
+      sendMessage(chatId, text, null)
+    }
   }
 }
