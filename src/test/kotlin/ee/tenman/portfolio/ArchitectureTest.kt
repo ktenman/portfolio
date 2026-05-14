@@ -376,6 +376,7 @@ class ArchitectureTest {
         "..openrouter..",
         "..trading212..",
         "..veego..",
+        "..auto24..",
       ).because("Caching is a service or infrastructure layer concern")
 
   @ArchTest

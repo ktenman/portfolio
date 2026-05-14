@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.telegram
 
 import ee.tenman.portfolio.configuration.TimeUtility
+import ee.tenman.portfolio.dto.VehicleInfoResponse
 import ee.tenman.portfolio.service.LicensePlateDetectionService
 import ee.tenman.portfolio.service.VehicleInfoService
 import org.slf4j.LoggerFactory
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.PhotoSize
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -19,6 +21,7 @@ import java.io.File
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermission
+import java.util.concurrent.CompletableFuture
 
 /**
  * Telegram bot for processing car-related queries and images.
@@ -51,10 +54,12 @@ class CarTelegramBot(
 
     internal fun pickPhotoForPlateDetection(photos: List<PhotoSize>): PhotoSize? {
       if (photos.isEmpty()) return null
-      val largeEnough = photos.filter { maxOf(it.width, it.height) >= MIN_PHOTO_DIMENSION }
-      if (largeEnough.isNotEmpty()) return largeEnough.minBy { maxOf(it.width, it.height) }
-      return photos.maxBy { maxOf(it.width, it.height) }
+      val largeEnough = photos.filter { it.longestEdge() >= MIN_PHOTO_DIMENSION }
+      if (largeEnough.isNotEmpty()) return largeEnough.minBy { it.longestEdge() }
+      return photos.maxBy { it.longestEdge() }
     }
+
+    private fun PhotoSize.longestEdge(): Int = maxOf(width, height)
   }
 
   private fun isBotDisabled() =
@@ -127,10 +132,34 @@ class CarTelegramBot(
     if (plateNumber == null) {
       sendMessage(chatId, "License plate detection unavailable, please try again later.", replyToMessageId)
     } else {
-      lookupAndSendCarPrice(plateNumber, chatId, replyToMessageId, startTime)
+      acknowledgeAndEnrich(plateNumber, chatId, replyToMessageId, startTime)
     }
   } finally {
     imageFile.delete()
+  }
+
+  private fun acknowledgeAndEnrich(
+    plateNumber: String,
+    chatId: String,
+    replyToMessageId: Int,
+    startTime: Long,
+  ) {
+    val vehicleInfoFuture = CompletableFuture.supplyAsync { vehicleInfoService.getVehicleInfo(plateNumber) }
+    val detectionSeconds = TimeUtility.durationInSeconds(startTime)
+    val acknowledgement =
+      sendMessage(
+        chatId,
+        "🚗 Plate detected: $plateNumber (in $detectionSeconds seconds)\nFetching tax & market data…",
+        replyToMessageId,
+      )
+    val result = vehicleInfoFuture.join()
+    val responseText = buildFinalResponseText(result, startTime)
+    val acknowledgementMessageId = acknowledgement?.messageId
+    if (acknowledgementMessageId != null) {
+      editMessage(chatId, acknowledgementMessageId, responseText)
+      return
+    }
+    sendMessage(chatId, responseText, replyToMessageId)
   }
 
   private fun lookupAndSendCarPrice(
@@ -138,11 +167,18 @@ class CarTelegramBot(
     chatId: String,
     replyToMessageId: Int,
     startTime: Long,
-  ): Any? {
+  ) {
     val result = vehicleInfoService.getVehicleInfo(plateNumber)
+    val responseText = buildFinalResponseText(result, startTime)
+    sendMessage(chatId, responseText, replyToMessageId)
+  }
+
+  private fun buildFinalResponseText(
+    result: VehicleInfoResponse,
+    startTime: Long,
+  ): String {
     val duration = TimeUtility.durationInSeconds(startTime)
-    val responseText = "${result.formattedText}\n\n⏱️  Duration: $duration seconds"
-    return sendMessage(chatId, responseText, replyToMessageId)
+    return "${result.formattedText}\n\n⏱️  Duration: $duration seconds"
   }
 
   private fun downloadTelegramFile(fileId: String): File {
@@ -183,15 +219,33 @@ class CarTelegramBot(
     chatId: String,
     text: String,
     replyToMessageId: Int? = null,
+  ): Message? =
+    try {
+      execute(
+        SendMessage().apply {
+          this.chatId = chatId
+          this.text = text
+          replyToMessageId?.let { this.replyToMessageId = it }
+        },
+      )
+    } catch (e: TelegramApiException) {
+      log.error("Failed to send message: $text", e)
+      null
+    }
+
+  private fun editMessage(
+    chatId: String,
+    messageId: Int,
+    text: String,
   ) = try {
     execute(
-      SendMessage().apply {
+      EditMessageText().apply {
         this.chatId = chatId
+        this.messageId = messageId
         this.text = text
-        replyToMessageId?.let { this.replyToMessageId = it }
       },
     )
   } catch (e: TelegramApiException) {
-    log.error("Failed to send message: $text", e)
+    log.error("Failed to edit message $messageId: $text", e)
   }
 }
