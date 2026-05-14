@@ -14,7 +14,7 @@ class VeegoService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Cacheable(value = [VEEGO_TAX_CACHE], key = "#plateNumber.toUpperCase()", unless = "#result.error != null")
+  @Cacheable(value = [VEEGO_TAX_CACHE], key = "#plateNumber", unless = "#result.error != null")
   @Retryable(backoff = Backoff(delay = 1000))
   fun getTaxInfo(plateNumber: String): VeegoResult {
     log.info("Fetching tax info for plate: $plateNumber")

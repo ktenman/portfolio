@@ -46,18 +46,6 @@ class VeegoServiceIT {
   }
 
   @Test
-  fun `should share cache entry across plate casings`() {
-    stubVeegoSuccess("471GWJ")
-
-    val upper = veegoService.getTaxInfo("471GWJ")
-    val lower = veegoService.getTaxInfo("471gwj")
-
-    expect(upper.make).toEqual("Bentley")
-    expect(lower.make).toEqual("Bentley")
-    verify(exactly(1), postRequestedFor(urlPathEqualTo("/vehicles/471GWJ/tax")))
-  }
-
-  @Test
   fun `should not cache error responses so a later success can populate the cache`() {
     stubVeegoError("999ZZZ")
 
