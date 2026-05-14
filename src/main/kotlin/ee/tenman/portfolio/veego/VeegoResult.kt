@@ -17,6 +17,8 @@ data class VeegoResult(
   val durationSeconds: Double? = null,
 ) : Serializable {
   companion object {
+    private const val serialVersionUID: Long = 1L
+
     fun fromResponse(
       response: VeegoTaxResponse,
       durationSeconds: Double,
