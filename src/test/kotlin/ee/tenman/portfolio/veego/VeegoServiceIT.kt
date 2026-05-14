@@ -4,6 +4,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.client.WireMock.exactly
@@ -14,6 +15,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
 import ee.tenman.portfolio.configuration.IntegrationTest
 import jakarta.annotation.Resource
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -25,6 +27,11 @@ import java.math.BigDecimal
 class VeegoServiceIT {
   @Resource
   private lateinit var veegoService: VeegoService
+
+  @BeforeEach
+  fun resetWireMock() {
+    WireMock.reset()
+  }
 
   @Test
   fun `should serve second call for same plate from cache without invoking the client`() {
