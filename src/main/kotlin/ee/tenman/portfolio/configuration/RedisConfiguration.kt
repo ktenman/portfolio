@@ -30,6 +30,8 @@ class RedisConfiguration {
     cacheConfigurations[DIVERSIFICATION_ETFS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[DIVERSIFICATION_CONFIG_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[SNAPSHOT_BACKFILL_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(2))
+    cacheConfigurations[VEEGO_TAX_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
+    cacheConfigurations[AUTO24_PRICE_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(6))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
       .builder(connectionFactory)
@@ -53,6 +55,8 @@ class RedisConfiguration {
     const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config-v3"
     const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v3"
     const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"
+    const val VEEGO_TAX_CACHE: String = "veego-tax-v1"
+    const val AUTO24_PRICE_CACHE: String = "auto24-price-v1"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }

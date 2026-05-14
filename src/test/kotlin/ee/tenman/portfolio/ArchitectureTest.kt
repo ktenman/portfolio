@@ -368,8 +368,16 @@ class ArchitectureTest {
       .areAnnotatedWith(CachePut::class.java)
       .should()
       .beDeclaredInClassesThat()
-      .resideInAnyPackage("..service..", "..lightyear..", "..binance..", "..ft..", "..openrouter..", "..trading212..")
-      .because("Caching is a service or infrastructure layer concern")
+      .resideInAnyPackage(
+        "..service..",
+        "..lightyear..",
+        "..binance..",
+        "..ft..",
+        "..openrouter..",
+        "..trading212..",
+        "..veego..",
+        "..auto24..",
+      ).because("Caching is a service or infrastructure layer concern")
 
   @ArchTest
   val `interfaces should not have I prefix`: ArchRule =
