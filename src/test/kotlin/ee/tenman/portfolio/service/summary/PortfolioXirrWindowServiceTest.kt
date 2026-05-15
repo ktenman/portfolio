@@ -43,7 +43,7 @@ class PortfolioXirrWindowServiceTest {
 
     val result = service.calculate(platforms = null)
 
-    expect(result.windows).toHaveSize(6)
+    expect(result.windows).toHaveSize(7)
     result.windows.forEach { window ->
       expect(window.xirr).toEqual(null)
       expect(window.fromDate).toEqual(null)
@@ -67,6 +67,22 @@ class PortfolioXirrWindowServiceTest {
     expect(oneMonthRow.xirr).notToEqualNull()
     expect(captured.captured.first().amount).toEqual(-10000.0)
     expect(captured.captured.last().amount).toEqual(11000.0)
+  }
+
+  @Test
+  fun `ytd window starts on january first of current year`() {
+    val ytdStart = LocalDate.of(today.year, 1, 1)
+    every { summaryService.getCurrentDaySummary() } returns summary(today, BigDecimal("12000"))
+    every { summaryRepository.findFirstByEntryDateLessThanEqualOrderByEntryDateDesc(any()) } returns
+      summary(ytdStart, BigDecimal("9000"))
+    every { transactionRepository.findAllByDateRangeWithInstruments(any(), any()) } returns emptyList()
+    every { xirrCalculationService.calculateAdjustedXirr(any(), today) } returns 0.33
+
+    val result = service.calculate(platforms = null)
+
+    val ytdRow = result.windows.first { it.period == "YTD" }
+    expect(ytdRow.fromDate).toEqual(ytdStart)
+    expect(ytdRow.xirr).notToEqualNull()
   }
 
   @Test

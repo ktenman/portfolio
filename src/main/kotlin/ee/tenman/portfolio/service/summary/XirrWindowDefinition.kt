@@ -1,8 +1,8 @@
 package ee.tenman.portfolio.service.summary
 
-import java.time.Period
+import java.time.LocalDate
 
 data class XirrWindowDefinition(
   val label: String,
-  val length: Period,
+  val startDateFor: (LocalDate) -> LocalDate,
 )

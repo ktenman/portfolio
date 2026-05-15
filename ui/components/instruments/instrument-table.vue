@@ -52,7 +52,7 @@
             class="xirr-trigger"
             :class="getTotalsChangeClass('totalXirr')"
             :disabled="totalXirr === null"
-            :title="totalXirr === null ? '' : 'Show XIRR over 1M / 3M / 6M / 1Y / 2Y / 3Y'"
+            :title="totalXirr === null ? '' : 'Show XIRR over 1M / 3M / 6M / YTD / 1Y / 2Y / 3Y'"
             @click="emit('show-xirr-windows')"
           >
             {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}

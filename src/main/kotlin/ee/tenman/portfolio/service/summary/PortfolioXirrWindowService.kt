@@ -14,7 +14,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
-import java.time.Period
 
 @Service
 class PortfolioXirrWindowService(
@@ -26,12 +25,13 @@ class PortfolioXirrWindowService(
 ) {
   private val windows: List<XirrWindowDefinition> =
     listOf(
-      XirrWindowDefinition("1M", Period.ofMonths(1)),
-      XirrWindowDefinition("3M", Period.ofMonths(3)),
-      XirrWindowDefinition("6M", Period.ofMonths(6)),
-      XirrWindowDefinition("1Y", Period.ofYears(1)),
-      XirrWindowDefinition("2Y", Period.ofYears(2)),
-      XirrWindowDefinition("3Y", Period.ofYears(3)),
+      XirrWindowDefinition("1M") { it.minusMonths(1) },
+      XirrWindowDefinition("3M") { it.minusMonths(3) },
+      XirrWindowDefinition("6M") { it.minusMonths(6) },
+      XirrWindowDefinition("YTD") { LocalDate.of(it.year, 1, 1) },
+      XirrWindowDefinition("1Y") { it.minusYears(1) },
+      XirrWindowDefinition("2Y") { it.minusYears(2) },
+      XirrWindowDefinition("3Y") { it.minusYears(3) },
     )
 
   @Transactional(readOnly = true)
@@ -48,7 +48,7 @@ class PortfolioXirrWindowService(
     currentValue: BigDecimal,
     platforms: List<Platform>?,
   ): XirrWindowDto {
-    val targetStart = today.minus(window.length)
+    val targetStart = window.startDateFor(today)
     val opening = lookupOpening(platforms, targetStart) ?: return notAvailable(window.label)
     if (currentValue <= BigDecimal.ZERO || opening.totalValue <= BigDecimal.ZERO) {
       return notAvailable(window.label)
