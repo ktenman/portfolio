@@ -5,7 +5,9 @@ import java.math.BigDecimal
 import java.util.UUID
 
 data class InternalHoldingData(
+  val holdingId: Long?,
   val holdingUuid: UUID?,
+  val canonicalHoldingId: Long?,
   val ticker: String?,
   val name: String,
   val sector: String?,

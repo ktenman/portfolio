@@ -42,4 +42,6 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "logo_source", length = 20)
   var logoSource: LogoSource? = null,
+  @Column(name = "canonical_holding_id")
+  var canonicalHoldingId: Long? = null,
 ) : BaseEntity()

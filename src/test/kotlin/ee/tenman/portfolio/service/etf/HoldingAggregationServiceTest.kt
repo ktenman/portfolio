@@ -167,9 +167,13 @@ class HoldingAggregationServiceTest {
     value: BigDecimal,
     etfSymbol: String,
     platforms: Set<Platform> = setOf(Platform.TRADING212),
+    holdingId: Long? = null,
+    canonicalHoldingId: Long? = null,
   ): InternalHoldingData =
     InternalHoldingData(
+      holdingId = holdingId,
       holdingUuid = UUID.randomUUID(),
+      canonicalHoldingId = canonicalHoldingId,
       ticker = ticker,
       name = name,
       sector = null,

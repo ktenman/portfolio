@@ -14,7 +14,11 @@ class HoldingAggregationService {
       .entries
       .associate { (_, groupedHoldings) -> buildHoldingEntry(groupedHoldings) }
 
-  private fun buildHoldingGroupKey(holding: InternalHoldingData): String = "name:${normalizeHoldingName(holding.name)}"
+  private fun buildHoldingGroupKey(holding: InternalHoldingData): String {
+    val canonicalId = holding.canonicalHoldingId ?: holding.holdingId
+    if (canonicalId != null) return "id:$canonicalId"
+    return "name:${normalizeHoldingName(holding.name)}"
+  }
 
   fun normalizeHoldingName(name: String): String =
     name

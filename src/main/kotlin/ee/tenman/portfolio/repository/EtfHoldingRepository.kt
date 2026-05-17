@@ -75,4 +75,7 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   """,
   )
   fun findHoldingsWithoutLogosForCurrentPortfolio(): List<EtfHolding>
+
+  @Query("SELECT h FROM EtfHolding h WHERE h.canonicalHoldingId IS NULL ORDER BY h.id ASC")
+  fun findCanonicalCandidates(): List<EtfHolding>
 }

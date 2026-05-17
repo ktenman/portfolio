@@ -143,7 +143,9 @@ class EtfBreakdownService(
     etfSymbol: String,
     etfPlatforms: Set<Platform>,
   ) = InternalHoldingData(
+    holdingId = position.holding.id,
     holdingUuid = position.holding.uuid,
+    canonicalHoldingId = position.holding.canonicalHoldingId,
     ticker =
       position.holding.ticker
         ?.uppercase()
