@@ -14,9 +14,11 @@ import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.VEEGO_TAX_CACHE
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.cache.CacheManager
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.context.TestPropertySource
@@ -28,6 +30,9 @@ class VeegoServiceIT {
   @Resource
   private lateinit var veegoService: VeegoService
 
+  @Resource
+  private lateinit var cacheManager: CacheManager
+
   @BeforeEach
   fun resetWireMock() {
     WireMock.reset()
@@ -38,11 +43,22 @@ class VeegoServiceIT {
     stubVeegoSuccess("471GWJ")
 
     val first = veegoService.getTaxInfo("471GWJ")
+    awaitCachePopulated("471GWJ")
     val second = veegoService.getTaxInfo("471GWJ")
 
     expect(first.annualTax).notToEqualNull().toEqualNumerically(BigDecimal("369.03"))
     expect(second.annualTax).notToEqualNull().toEqualNumerically(BigDecimal("369.03"))
     verify(exactly(1), postRequestedFor(urlPathEqualTo("/vehicles/471GWJ/tax")))
+  }
+
+  private fun awaitCachePopulated(plateNumber: String) {
+    val cache = cacheManager.getCache(VEEGO_TAX_CACHE) ?: error("$VEEGO_TAX_CACHE not configured")
+    val deadline = System.currentTimeMillis() + 2_000L
+    while (System.currentTimeMillis() < deadline) {
+      if (cache.get(plateNumber) != null) return
+      Thread.sleep(10)
+    }
+    error("Cache $VEEGO_TAX_CACHE was not populated for $plateNumber within 2s")
   }
 
   @Test
