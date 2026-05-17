@@ -8,13 +8,23 @@ import java.math.BigDecimal
 
 @Service
 class HoldingAggregationService {
-  fun aggregateHoldings(holdings: List<InternalHoldingData>): Map<HoldingKey, HoldingValue> =
-    holdings
-      .groupBy { holding -> buildHoldingGroupKey(holding) }
+  fun aggregateHoldings(holdings: List<InternalHoldingData>): Map<HoldingKey, HoldingValue> {
+    val referencedCanonicalIds = holdings.mapNotNull { it.canonicalHoldingId }.toSet()
+    return holdings
+      .groupBy { holding -> buildHoldingGroupKey(holding, referencedCanonicalIds) }
       .entries
       .associate { (_, groupedHoldings) -> buildHoldingEntry(groupedHoldings) }
+  }
 
-  private fun buildHoldingGroupKey(holding: InternalHoldingData): String = "name:${normalizeHoldingName(holding.name)}"
+  private fun buildHoldingGroupKey(
+    holding: InternalHoldingData,
+    referencedCanonicalIds: Set<Long>,
+  ): String {
+    val linkedCanonicalId = holding.canonicalHoldingId
+    if (linkedCanonicalId != null) return "id:$linkedCanonicalId"
+    if (holding.holdingId != null && holding.holdingId in referencedCanonicalIds) return "id:${holding.holdingId}"
+    return "name:${normalizeHoldingName(holding.name)}"
+  }
 
   fun normalizeHoldingName(name: String): String =
     name

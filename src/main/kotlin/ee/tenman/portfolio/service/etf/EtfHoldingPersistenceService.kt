@@ -169,6 +169,24 @@ class EtfHoldingPersistenceService(
     etfHoldingRepository.save(holding)
   }
 
+  @Transactional(readOnly = true)
+  fun findCanonicalCandidateHoldings(): List<EtfHolding> = etfHoldingRepository.findCanonicalCandidates()
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun linkCanonical(
+    holdingId: Long,
+    canonicalHoldingId: Long,
+  ) {
+    if (holdingId == canonicalHoldingId) {
+      log.warn("Refusing to link holding $holdingId to itself")
+      return
+    }
+    val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
+    holding.canonicalHoldingId = canonicalHoldingId
+    etfHoldingRepository.save(holding)
+    log.info("Linked holding $holdingId to canonical $canonicalHoldingId")
+  }
+
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun incrementCountryFetchAttempts(holdingId: Long) {
     val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)

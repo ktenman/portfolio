@@ -45,7 +45,9 @@ class SyntheticEtfCalculationService(
       val ticker = holding.ticker
       val instrument = ticker?.let { instrumentsByTicker[it] }
       InternalHoldingData(
+        holdingId = holding.id,
         holdingUuid = holding.uuid,
+        canonicalHoldingId = holding.canonicalHoldingId,
         ticker = ticker?.uppercase()?.trim()?.takeIf { it.isNotBlank() },
         name = holding.name.trim(),
         sector = resolveSector(holding.sector, instrument),

@@ -101,6 +101,35 @@ class HoldingAggregationServiceTest {
       val entry = result.entries.first()
       expect(entry.value.platforms.size).toEqual(2)
     }
+
+    @Test
+    fun `should merge linked duplicate with its canonical row`() {
+      val holdings =
+        listOf(
+          createHolding("Apple Inc", "AAPL", BigDecimal("100.00"), "VWCE", holdingId = 1L),
+          createHolding("Apple", "AAPL", BigDecimal("50.00"), "VUAA", holdingId = 2L, canonicalHoldingId = 1L),
+        )
+
+      val result = service.aggregateHoldings(holdings)
+
+      expect(result.size).toEqual(1)
+      val entry = result.entries.first()
+      expect(entry.value.totalValue).toEqualNumerically(BigDecimal("150.00"))
+    }
+
+    @Test
+    fun `should not merge unrelated holdings sharing a name when canonical link covers one of them`() {
+      val holdings =
+        listOf(
+          createHolding("Apple Inc", "AAPL", BigDecimal("100.00"), "VWCE", holdingId = 1L),
+          createHolding("Apple", "AAPL", BigDecimal("50.00"), "VUAA", holdingId = 2L, canonicalHoldingId = 1L),
+          createHolding("Apple Inc", "AAPL", BigDecimal("30.00"), "IWDA", holdingId = 3L),
+        )
+
+      val result = service.aggregateHoldings(holdings)
+
+      expect(result.size).toEqual(2)
+    }
   }
 
   @Nested
@@ -167,9 +196,13 @@ class HoldingAggregationServiceTest {
     value: BigDecimal,
     etfSymbol: String,
     platforms: Set<Platform> = setOf(Platform.TRADING212),
+    holdingId: Long? = null,
+    canonicalHoldingId: Long? = null,
   ): InternalHoldingData =
     InternalHoldingData(
+      holdingId = holdingId,
       holdingUuid = UUID.randomUUID(),
+      canonicalHoldingId = canonicalHoldingId,
       ticker = ticker,
       name = name,
       sector = null,
