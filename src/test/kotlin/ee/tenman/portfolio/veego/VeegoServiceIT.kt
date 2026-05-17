@@ -16,6 +16,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.verify
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.VEEGO_TAX_CACHE
 import jakarta.annotation.Resource
+import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.cache.CacheManager
@@ -23,6 +24,7 @@ import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.context.TestPropertySource
 import java.math.BigDecimal
+import java.time.Duration
 
 @IntegrationTest
 @TestPropertySource(properties = ["veego.url=http://localhost:\${wiremock.server.port}"])
@@ -53,12 +55,10 @@ class VeegoServiceIT {
 
   private fun awaitCachePopulated(plateNumber: String) {
     val cache = cacheManager.getCache(VEEGO_TAX_CACHE) ?: error("$VEEGO_TAX_CACHE not configured")
-    val deadline = System.currentTimeMillis() + 2_000L
-    while (System.currentTimeMillis() < deadline) {
-      if (cache.get(plateNumber) != null) return
-      Thread.sleep(10)
-    }
-    error("Cache $VEEGO_TAX_CACHE was not populated for $plateNumber within 2s")
+    await()
+      .atMost(Duration.ofSeconds(2))
+      .pollInterval(Duration.ofMillis(10))
+      .until { cache.get(plateNumber) != null }
   }
 
   @Test
