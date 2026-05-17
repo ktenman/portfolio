@@ -103,7 +103,10 @@ class HoldingDeduplicationService(
       val rootB = findRoot(parent, pair.secondHoldingId)
       if (rootA != rootB) parent[rootA] = rootB
     }
-    return parent.keys.groupBy { findRoot(parent, it) }.values.map { it.toSet() }
+    return parent.keys
+      .groupBy { findRoot(parent, it) }
+      .values
+      .map { it.toSet() }
   }
 
   private fun findRoot(
