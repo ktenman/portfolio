@@ -277,3 +277,9 @@ export enum PriceChangePeriod {
     P30D = "P30D",
     P1Y = "P1Y",
 }
+
+export enum RebalanceStatus {
+    OK = "OK",
+    DRIFTING = "DRIFTING",
+    REBALANCE = "REBALANCE",
+}

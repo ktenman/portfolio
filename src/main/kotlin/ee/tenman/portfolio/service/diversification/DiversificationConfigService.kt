@@ -41,6 +41,9 @@ class DiversificationConfigService(
       totalInvestment = configData.totalInvestment,
       actionDisplayMode = configData.actionDisplayMode.name.lowercase(),
       buyOnlyEnabled = configData.buyOnlyEnabled,
+      driftingThresholdRel = configData.driftingThresholdRel,
+      rebalanceThresholdRel = configData.rebalanceThresholdRel,
+      rebalanceThresholdAbs = configData.rebalanceThresholdAbs,
     )
 
   private fun DiversificationAllocationData.toDto() =
@@ -58,6 +61,9 @@ class DiversificationConfigService(
       totalInvestment = totalInvestment,
       actionDisplayMode = ActionDisplayMode.fromString(actionDisplayMode),
       buyOnlyEnabled = buyOnlyEnabled,
+      driftingThresholdRel = driftingThresholdRel,
+      rebalanceThresholdRel = rebalanceThresholdRel,
+      rebalanceThresholdAbs = rebalanceThresholdAbs,
     )
 
   private fun DiversificationConfigAllocationDto.toAllocationData() =
