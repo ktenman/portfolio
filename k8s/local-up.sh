@@ -45,6 +45,7 @@ kubectl apply -f k8s/frontend.yaml
 kubectl apply -f k8s/auth.yaml
 kubectl apply -f k8s/caddy-config.local.yaml
 kubectl apply -f k8s/caddy.yaml
+kubectl apply -f k8s/healthcheck-cronjob.yaml
 
 kubectl -n portfolio patch deployment backend -p '{"spec":{"template":{"spec":{"containers":[{"name":"backend","imagePullPolicy":"Never"}]}}}}'
 kubectl -n portfolio patch deployment frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"frontend","imagePullPolicy":"Never"}]}}}}'
