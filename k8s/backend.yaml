@@ -50,6 +50,47 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: SPRING_PROFILES_ACTIVE
               value: "default"
+            - name: SPRING_FLYWAY_ENABLED
+              value: "true"
+
+            # Object storage (MinIO)
+            - name: MINIO_ENDPOINT
+              value: "http://minio:9000"
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: MINIO_ROOT_USER
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: MINIO_ROOT_PASSWORD
+            - name: MINIO_BUCKET_NAME
+              value: "portfolio-logos"
+
+            # Cloudflare bypass proxy + Trading212
+            - name: CLOUDFLARE_BYPASS_PROXY_URL
+              value: "http://cloudflare-bypass-proxy:3000"
+            - name: TRADING212_ENABLED
+              value: "true"
+            - name: TRADING212_API_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: TRADING212_API_KEY_ID
+            - name: TRADING212_API_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: TRADING212_API_KEY_SECRET
+
+            # OpenRouter (ETF sector classification)
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secrets
+                  key: OPENROUTER_API_KEY
 
             # Telegram configuration
             - name: TELEGRAM_BOT_ENABLED
