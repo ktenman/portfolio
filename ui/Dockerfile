@@ -1,4 +1,4 @@
-FROM node:20 as build
+FROM --platform=$BUILDPLATFORM node:20 as build
 
 WORKDIR /app
 # Copying files separately can help in utilizing Docker's cache mechanism efficiently.
