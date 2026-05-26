@@ -1,0 +1,31 @@
+# Portfolio Management System
+
+> Full-stack application for tracking investment portfolios with automated market-price updates and XIRR (money-weighted return) calculations across multiple brokers and asset classes.
+
+Kotlin 2.3 / Spring Boot 4.0 backend (Java 21) with a Vue 3.5 + TypeScript single-page app, backed by PostgreSQL 17 and Redis 8. Scheduled jobs pull prices from external providers (FT, Binance, Trading212, Lightyear); ETF holdings are enriched (sector, country, logos) via AI services. See AGENTS.md for build/test commands and contributor conventions.
+
+## Documentation
+
+- [README](README.md): Introduction, key features, technical stack, setup, deployment, monitoring, and security
+- [AGENTS.md](AGENTS.md): Project overview, essential commands, git/commit conventions, and the context map (imports the per-area rules below)
+- [Backend rules](src/AGENTS.md): Kotlin/Spring conventions, clean-architecture enforcement, caching/transaction pitfalls, component inventory, database schema, testing standards (Atrium/MockK/Kotest)
+- [Frontend rules](ui/AGENTS.md): Vue 3 + TypeScript standards, composables, Knip unused-code detection, Vitest testing
+- [Proxy rules](cloudflare-bypass-proxy/AGENTS.md): curl-impersonate TLS-fingerprint bypass service used by the Trading212 and Lightyear integrations
+
+## Architecture
+
+- [System context](docs/architecture/system-context.puml): C4 context diagram — external systems and integrations
+- [Container diagram](docs/architecture/container-diagram.puml): Web app, API, database, cache, object storage
+- [Component diagram](docs/architecture/component-diagram.puml): Controllers, services, and repositories inside the API
+- [Database ERD](docs/architecture/database-erd.puml): Core entities and their relationships
+- [Price update sequence](docs/architecture/price-update-sequence.puml): Scheduled price-retrieval job flow with upsert idempotency
+- [XIRR calculation sequence](docs/architecture/xirr-calculation-sequence.puml): Parallel XIRR computation with Kotlin coroutines
+- [Frontend architecture](docs/architecture/frontend-architecture.puml): Vue component hierarchy and state management
+
+## Optional
+
+- [build.gradle.kts](build.gradle.kts): Gradle build, ktlint/detekt, PITest, and Kotlin-to-TypeScript type generation
+- [Version catalog](gradle/libs.versions.toml): Pinned backend dependency and plugin versions
+- [package.json](package.json): Frontend and tooling scripts (dev, lint-format, test, build)
+- [Docker Compose (local stack)](docker-compose.local.yml): Full local stack — PostgreSQL, Redis, and services
+- [LICENSE](LICENSE): Apache License 2.0
