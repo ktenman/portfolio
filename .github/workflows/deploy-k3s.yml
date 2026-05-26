@@ -69,6 +69,7 @@ jobs:
         run: |
           ssh githubuser@fov.ee "rm -rf ~/k8s-deploy && mkdir -p ~/k8s-deploy"
           scp k8s/*.yaml githubuser@fov.ee:~/k8s-deploy/
+          ssh githubuser@fov.ee "rm -f ~/k8s-deploy/*.local.yaml"
 
       - name: Deploy to K3s cluster
         run: |
@@ -117,6 +118,7 @@ jobs:
             kubectl apply -f ~/k8s-deploy/healthcheck-cronjob.yaml
             kubectl rollout status deployment/backend -n portfolio --timeout=300s
             kubectl rollout status deployment/frontend -n portfolio --timeout=300s
+            kubectl rollout status deployment/auth -n portfolio --timeout=240s
             kubectl rollout status deployment/caddy -n portfolio --timeout=180s
 
             echo '✅ Deployment complete with build info: Hash=' \$BUILD_HASH ' Time=' \$BUILD_TIME
