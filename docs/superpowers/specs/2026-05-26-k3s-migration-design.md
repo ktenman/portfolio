@@ -29,17 +29,17 @@ rollback.
 
 **Stack (9 Compose services, live RSS from `docker stats`):**
 
-| Service | Image | RSS now | Notes |
-|---|---|---|---|
-| backend | `ktenman/portfolio-be:latest` | 832 MiB | Spring Boot, `mem_limit 2g` |
-| redis | `redis:8-alpine` | **974 MiB** | **no `maxmemory` set — runaway** |
-| auth | `ktenman/auth:latest` | 383 MiB | Spring Boot, sessions in Redis |
-| minio | `minio/minio` | 106 MiB | logo storage |
-| postgres | `postgres:17-alpine` | 88 MiB | primary datastore |
-| cloudflare-bypass-proxy | `ktenman/cloudflare-bypass-proxy` | 42 MiB | Trading212/Lightyear |
-| app (Caddy) | `caddy:2.10-alpine` | 24 MiB | edge, owns 80/443 |
-| frontend | `ktenman/portfolio-fe:latest` | 6 MiB | nginx SPA |
-| healthcheck | `alpine` | 4.5 MiB | docker.sock polling script |
+| Service                 | Image                             | RSS now     | Notes                            |
+| ----------------------- | --------------------------------- | ----------- | -------------------------------- |
+| backend                 | `ktenman/portfolio-be:latest`     | 832 MiB     | Spring Boot, `mem_limit 2g`      |
+| redis                   | `redis:8-alpine`                  | **974 MiB** | **no `maxmemory` set — runaway** |
+| auth                    | `ktenman/auth:latest`             | 383 MiB     | Spring Boot, sessions in Redis   |
+| minio                   | `minio/minio`                     | 106 MiB     | logo storage                     |
+| postgres                | `postgres:17-alpine`              | 88 MiB      | primary datastore                |
+| cloudflare-bypass-proxy | `ktenman/cloudflare-bypass-proxy` | 42 MiB      | Trading212/Lightyear             |
+| app (Caddy)             | `caddy:2.10-alpine`               | 24 MiB      | edge, owns 80/443                |
+| frontend                | `ktenman/portfolio-fe:latest`     | 6 MiB       | nginx SPA                        |
+| healthcheck             | `alpine`                          | 4.5 MiB     | docker.sock polling script       |
 
 Total ≈ **2.46 GiB**.
 
@@ -60,16 +60,16 @@ Total ≈ **2.46 GiB**.
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Distribution | **k3s** (single node) | kubeadm's control plane alone wants ~2 GiB; k3s (sqlite-backed, single binary) fits a 3.7 GiB box. |
-| Manifest layout | **Flat manifests + envsubst** (not Helm/Kustomize) | Minimum-change directive. Reuses existing `k8s/` + the envsubst flow the deploy workflows already use. Helm/Kustomize is an optional "v2" refactor later. |
-| Edge | **Keep Caddy** | It does sophisticated `forward_auth` routing; reimplementing as Traefik + cert-manager + forward-auth would be a large rewrite. Disable k3s Traefik. |
-| Service exposure | **Caddy `type: LoadBalancer` via k3s servicelb (klipper)** | Already in `caddy.yaml`; klipper binds host 80/443. No extra components. |
-| Local domain | **`fov.test`** (RFC 6761 reserved) | Keeps real `fov.ee` reachable and unambiguous; never collides with a real domain. |
-| Local TLS | **Caddy `tls internal`** | No public reachability ⇒ no Let's Encrypt for any local domain. Self-signed from Caddy's CA; `curl -k` or one-time `caddy trust`. |
-| Redis memory | **Cap `--maxmemory 384mb --maxmemory-policy allkeys-lru`** | Reclaims ~600 MiB; this is what makes k3s + the stack fit. Cap is high enough that tiny, hot auth-session keys are not evicted before stale cache. |
-| Healthcheck | **Drop the pod; add a small CronJob** pinging `HEALTHCHECK_URL` | k8s liveness/readiness probes already replace the per-service polling; only the external dead-man's-switch ping is worth keeping. |
+| Decision         | Choice                                                          | Rationale                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Distribution     | **k3s** (single node)                                           | kubeadm's control plane alone wants ~2 GiB; k3s (sqlite-backed, single binary) fits a 3.7 GiB box.                                                        |
+| Manifest layout  | **Flat manifests + envsubst** (not Helm/Kustomize)              | Minimum-change directive. Reuses existing `k8s/` + the envsubst flow the deploy workflows already use. Helm/Kustomize is an optional "v2" refactor later. |
+| Edge             | **Keep Caddy**                                                  | It does sophisticated `forward_auth` routing; reimplementing as Traefik + cert-manager + forward-auth would be a large rewrite. Disable k3s Traefik.      |
+| Service exposure | **Caddy `type: LoadBalancer` via k3s servicelb (klipper)**      | Already in `caddy.yaml`; klipper binds host 80/443. No extra components.                                                                                  |
+| Local domain     | **`fov.test`** (RFC 6761 reserved)                              | Keeps real `fov.ee` reachable and unambiguous; never collides with a real domain.                                                                         |
+| Local TLS        | **Caddy `tls internal`**                                        | No public reachability ⇒ no Let's Encrypt for any local domain. Self-signed from Caddy's CA; `curl -k` or one-time `caddy trust`.                         |
+| Redis memory     | **Cap `--maxmemory 384mb --maxmemory-policy allkeys-lru`**      | Reclaims ~600 MiB; this is what makes k3s + the stack fit. Cap is high enough that tiny, hot auth-session keys are not evicted before stale cache.        |
+| Healthcheck      | **Drop the pod; add a small CronJob** pinging `HEALTHCHECK_URL` | k8s liveness/readiness probes already replace the per-service polling; only the external dead-man's-switch ping is worth keeping.                         |
 
 ## Work Breakdown — fixing the stale manifests
 
@@ -93,20 +93,20 @@ Total ≈ **2.46 GiB**.
 
 ## Memory Budget (post-migration estimate)
 
-| Component | Request | Limit | Expected RSS |
-|---|---|---|---|
-| backend | 512 Mi | 1.3 Gi | ~830 Mi |
-| redis (capped) | 128 Mi | 512 Mi | ~384 Mi |
-| auth | 256 Mi | 512 Mi | ~383 Mi |
-| minio | 64 Mi | 256 Mi | ~106 Mi |
-| postgres | 128 Mi | 512 Mi | ~90 Mi |
-| caddy | 32 Mi | 128 Mi | ~24 Mi |
-| proxy | 64 Mi | 256 Mi | ~42 Mi |
-| frontend | 32 Mi | 64 Mi | ~6 Mi |
-| **workloads** | | | **~1.86 GiB** |
-| k3s control plane + system pods | | | ~0.6–0.7 GiB |
-| OS + containerd | | | ~0.3 GiB |
-| **total** | | | **~2.9 GiB of 3.73 GiB** |
+| Component                       | Request | Limit  | Expected RSS             |
+| ------------------------------- | ------- | ------ | ------------------------ |
+| backend                         | 512 Mi  | 1.3 Gi | ~830 Mi                  |
+| redis (capped)                  | 128 Mi  | 512 Mi | ~384 Mi                  |
+| auth                            | 256 Mi  | 512 Mi | ~383 Mi                  |
+| minio                           | 64 Mi   | 256 Mi | ~106 Mi                  |
+| postgres                        | 128 Mi  | 512 Mi | ~90 Mi                   |
+| caddy                           | 32 Mi   | 128 Mi | ~24 Mi                   |
+| proxy                           | 64 Mi   | 256 Mi | ~42 Mi                   |
+| frontend                        | 32 Mi   | 64 Mi  | ~6 Mi                    |
+| **workloads**                   |         |        | **~1.86 GiB**            |
+| k3s control plane + system pods |         |        | ~0.6–0.7 GiB             |
+| OS + containerd                 |         |        | ~0.3 GiB                 |
+| **total**                       |         |        | **~2.9 GiB of 3.73 GiB** |
 
 Comfortable, with 4 GiB swap as the safety net. The Redis cap is the decisive lever.
 
@@ -157,7 +157,7 @@ stay in-cluster on local-path PVCs.
 ## Open Risks / To Verify
 
 - **Transmission route under k3s:** the prod `t.fov.ee → 172.17.0.1:9091` route
-  assumes the *Docker* bridge IP. k3s uses containerd; `172.17.0.1` will not
+  assumes the _Docker_ bridge IP. k3s uses containerd; `172.17.0.1` will not
   exist. Caddy must reach host transmission via the node's real IP. Verify what
   transmission binds to (`0.0.0.0:9091` vs `172.17.0.1:9091`) and repoint.
 - **Redis eviction vs auth sessions:** confirm session keys survive under

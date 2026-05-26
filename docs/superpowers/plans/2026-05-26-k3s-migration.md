@@ -59,6 +59,7 @@ Expected: one node `Ready`; "traefik correctly disabled".
 ### Task 2: Namespace, local hosts entries, local env file
 
 **Files:**
+
 - Use: `k8s/namespace.yaml` (unchanged)
 - Create (gitignored): `.env.local`
 
@@ -120,6 +121,7 @@ Expected: prints `.env.local` then `ignored, safe`. **Do not commit `.env.local`
 ### Task 3: Extend secrets manifest with the missing keys
 
 **Files:**
+
 - Modify: `k8s/secrets.yaml`
 
 - [ ] **Step 1: Add MinIO, OpenRouter, and Trading212 keys**
@@ -129,30 +131,30 @@ Replace the `stringData:` block in `k8s/secrets.yaml` with:
 ```yaml
 stringData:
   # Database credentials
-  POSTGRES_USER: "${POSTGRES_USER}"
-  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+  POSTGRES_USER: '${POSTGRES_USER}'
+  POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
 
   # OAuth credentials
-  GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
-  GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
-  GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID}"
-  GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET}"
+  GOOGLE_CLIENT_ID: '${GOOGLE_CLIENT_ID}'
+  GOOGLE_CLIENT_SECRET: '${GOOGLE_CLIENT_SECRET}'
+  GITHUB_CLIENT_ID: '${GITHUB_CLIENT_ID}'
+  GITHUB_CLIENT_SECRET: '${GITHUB_CLIENT_SECRET}'
 
   # Application secrets
-  ALLOWED_EMAILS: "${ALLOWED_EMAILS}"
-  TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN}"
-  GOOGLE_VISION_API_KEY: "${GOOGLE_VISION_API_KEY}"
-  HEALTHCHECK_URL: "${HEALTHCHECK_URL}"
+  ALLOWED_EMAILS: '${ALLOWED_EMAILS}'
+  TELEGRAM_BOT_TOKEN: '${TELEGRAM_BOT_TOKEN}'
+  GOOGLE_VISION_API_KEY: '${GOOGLE_VISION_API_KEY}'
+  HEALTHCHECK_URL: '${HEALTHCHECK_URL}'
 
   # Object storage (MinIO)
-  MINIO_ROOT_USER: "${MINIO_ROOT_USER}"
-  MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
-  MINIO_BUCKET_NAME: "${MINIO_BUCKET_NAME}"
+  MINIO_ROOT_USER: '${MINIO_ROOT_USER}'
+  MINIO_ROOT_PASSWORD: '${MINIO_ROOT_PASSWORD}'
+  MINIO_BUCKET_NAME: '${MINIO_BUCKET_NAME}'
 
   # AI + broker integrations
-  OPENROUTER_API_KEY: "${OPENROUTER_API_KEY}"
-  TRADING212_API_KEY_ID: "${TRADING212_API_KEY_ID}"
-  TRADING212_API_KEY_SECRET: "${TRADING212_API_KEY_SECRET}"
+  OPENROUTER_API_KEY: '${OPENROUTER_API_KEY}'
+  TRADING212_API_KEY_ID: '${TRADING212_API_KEY_ID}'
+  TRADING212_API_KEY_SECRET: '${TRADING212_API_KEY_SECRET}'
 ```
 
 - [ ] **Step 2: Apply locally via envsubst and verify keys exist**
@@ -177,6 +179,7 @@ git commit -m "Add MinIO, OpenRouter, Trading212 secret keys"
 ### Task 4: Postgres — add resource requests/limits
 
 **Files:**
+
 - Modify: `k8s/postgres.yaml`
 
 - [ ] **Step 1: Add a `resources` block to the postgres container**
@@ -184,13 +187,13 @@ git commit -m "Add MinIO, OpenRouter, Trading212 secret keys"
 In `k8s/postgres.yaml`, after the `volumeMounts:` block of the `postgres` container (before the `volumes:` key), add:
 
 ```yaml
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "1000m"
+resources:
+  requests:
+    memory: '128Mi'
+    cpu: '100m'
+  limits:
+    memory: '512Mi'
+    cpu: '1000m'
 ```
 
 - [ ] **Step 2: Validate, apply, wait ready**
@@ -215,6 +218,7 @@ git commit -m "Add resource limits to postgres"
 ### Task 5: Redis — cap memory and add resources
 
 **Files:**
+
 - Modify: `k8s/redis.yaml`
 
 - [ ] **Step 1: Add `command` (memory cap) and `resources` to the redis container**
@@ -222,29 +226,29 @@ git commit -m "Add resource limits to postgres"
 In `k8s/redis.yaml`, inside the `redis` container spec (after `image: redis:8-alpine`), add `command` and `resources` so the container block reads:
 
 ```yaml
-        - name: redis
-          image: redis:8-alpine
-          command:
-            - "redis-server"
-            - "--maxmemory"
-            - "384mb"
-            - "--maxmemory-policy"
-            - "allkeys-lru"
-            - "--save"
-            - "900"
-            - "1"
-          ports:
-            - containerPort: 6379
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "50m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-          volumeMounts:
-            - name: redis-data
-              mountPath: /data
+- name: redis
+  image: redis:8-alpine
+  command:
+    - 'redis-server'
+    - '--maxmemory'
+    - '384mb'
+    - '--maxmemory-policy'
+    - 'allkeys-lru'
+    - '--save'
+    - '900'
+    - '1'
+  ports:
+    - containerPort: 6379
+  resources:
+    requests:
+      memory: '128Mi'
+      cpu: '50m'
+    limits:
+      memory: '512Mi'
+      cpu: '500m'
+  volumeMounts:
+    - name: redis-data
+      mountPath: /data
 ```
 
 - [ ] **Step 2: Validate, apply, wait, confirm the cap took effect**
@@ -270,6 +274,7 @@ git commit -m "Cap redis memory at 384mb with lru eviction"
 ### Task 6: MinIO — new manifest
 
 **Files:**
+
 - Create: `k8s/minio.yaml`
 
 - [ ] **Step 1: Create `k8s/minio.yaml`**
@@ -293,7 +298,7 @@ spec:
       containers:
         - name: minio
           image: minio/minio:latest
-          args: ["server", "/data", "--console-address", ":9001"]
+          args: ['server', '/data', '--console-address', ':9001']
           ports:
             - containerPort: 9000
               name: api
@@ -324,11 +329,11 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "50m"
+              memory: '64Mi'
+              cpu: '50m'
             limits:
-              memory: "256Mi"
-              cpu: "500m"
+              memory: '256Mi'
+              cpu: '500m'
           volumeMounts:
             - name: minio-data
               mountPath: /data
@@ -388,6 +393,7 @@ git commit -m "Add MinIO deployment, PVC, and service"
 ### Task 7: Cloudflare-bypass-proxy — new manifest
 
 **Files:**
+
 - Create: `k8s/cloudflare-bypass-proxy.yaml`
 
 - [ ] **Step 1: Create `k8s/cloudflare-bypass-proxy.yaml`**
@@ -415,7 +421,7 @@ spec:
             - containerPort: 3000
           env:
             - name: NODE_ENV
-              value: "production"
+              value: 'production'
           readinessProbe:
             httpGet:
               path: /health
@@ -430,11 +436,11 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "50m"
+              memory: '64Mi'
+              cpu: '50m'
             limits:
-              memory: "256Mi"
-              cpu: "500m"
+              memory: '256Mi'
+              cpu: '500m'
 ---
 apiVersion: v1
 kind: Service
@@ -457,7 +463,7 @@ kubectl apply -f k8s/cloudflare-bypass-proxy.yaml
 kubectl -n portfolio rollout status deployment/cloudflare-bypass-proxy --timeout=180s
 ```
 
-Expected: rollout success. **Apple Silicon note:** the image is `linux/amd64`-only; if the pod is slow/crashlooping under qemu, it is *not* on the local smoke-test path (Trading212 is disabled locally), so proceed — it will run natively on the amd64 prod box.
+Expected: rollout success. **Apple Silicon note:** the image is `linux/amd64`-only; if the pod is slow/crashlooping under qemu, it is _not_ on the local smoke-test path (Trading212 is disabled locally), so proceed — it will run natively on the amd64 prod box.
 
 - [ ] **Step 3: Commit**
 
@@ -471,6 +477,7 @@ git commit -m "Add cloudflare-bypass-proxy deployment and service"
 ### Task 8: Backend — add missing env vars, lower memory limit
 
 **Files:**
+
 - Modify: `k8s/backend.yaml`
 
 - [ ] **Step 1: Add the missing env vars**
@@ -478,47 +485,47 @@ git commit -m "Add cloudflare-bypass-proxy deployment and service"
 In `k8s/backend.yaml`, immediately after the `SPRING_PROFILES_ACTIVE` env entry (line ~52), insert:
 
 ```yaml
-            - name: SPRING_FLYWAY_ENABLED
-              value: "true"
+- name: SPRING_FLYWAY_ENABLED
+  value: 'true'
 
-            # Object storage
-            - name: MINIO_ENDPOINT
-              value: "http://minio:9000"
-            - name: MINIO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: MINIO_ROOT_USER
-            - name: MINIO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: MINIO_ROOT_PASSWORD
-            - name: MINIO_BUCKET_NAME
-              value: "portfolio-logos"
+# Object storage
+- name: MINIO_ENDPOINT
+  value: 'http://minio:9000'
+- name: MINIO_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: portfolio-secrets
+      key: MINIO_ROOT_USER
+- name: MINIO_SECRET_KEY
+  valueFrom:
+    secretKeyRef:
+      name: portfolio-secrets
+      key: MINIO_ROOT_PASSWORD
+- name: MINIO_BUCKET_NAME
+  value: 'portfolio-logos'
 
-            # Cloudflare bypass proxy + Trading212
-            - name: CLOUDFLARE_BYPASS_PROXY_URL
-              value: "http://cloudflare-bypass-proxy:3000"
-            - name: TRADING212_ENABLED
-              value: "true"
-            - name: TRADING212_API_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: TRADING212_API_KEY_ID
-            - name: TRADING212_API_KEY_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: TRADING212_API_KEY_SECRET
+# Cloudflare bypass proxy + Trading212
+- name: CLOUDFLARE_BYPASS_PROXY_URL
+  value: 'http://cloudflare-bypass-proxy:3000'
+- name: TRADING212_ENABLED
+  value: 'true'
+- name: TRADING212_API_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      name: portfolio-secrets
+      key: TRADING212_API_KEY_ID
+- name: TRADING212_API_KEY_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: portfolio-secrets
+      key: TRADING212_API_KEY_SECRET
 
-            # OpenRouter (ETF sector classification)
-            - name: OPENROUTER_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: OPENROUTER_API_KEY
+# OpenRouter (ETF sector classification)
+- name: OPENROUTER_API_KEY
+  valueFrom:
+    secretKeyRef:
+      name: portfolio-secrets
+      key: OPENROUTER_API_KEY
 ```
 
 - [ ] **Step 2: Lower the memory limit from 2Gi to 1300Mi**
@@ -526,17 +533,17 @@ In `k8s/backend.yaml`, immediately after the `SPRING_PROFILES_ACTIVE` env entry 
 In the `resources.limits` block of `k8s/backend.yaml`, change:
 
 ```yaml
-            limits:
-              memory: "2Gi"
-              cpu: "1000m"
+limits:
+  memory: '2Gi'
+  cpu: '1000m'
 ```
 
 to:
 
 ```yaml
-            limits:
-              memory: "1300Mi"
-              cpu: "1000m"
+limits:
+  memory: '1300Mi'
+  cpu: '1000m'
 ```
 
 - [ ] **Step 3: Validate + apply + wait + confirm health UP**
@@ -567,6 +574,7 @@ git commit -m "Wire MinIO, Trading212, OpenRouter env into backend"
 ### Task 9: Frontend — apply unchanged manifest
 
 **Files:**
+
 - Use: `k8s/frontend.yaml` (no edits)
 
 - [ ] **Step 1: Apply + wait ready**
@@ -585,6 +593,7 @@ Expected: rollout success.
 ### Task 10: Auth — add GitHub creds and resources
 
 **Files:**
+
 - Modify: `k8s/auth.yaml`
 
 - [ ] **Step 1: Add GitHub OAuth creds + resources to match Compose**
@@ -592,28 +601,28 @@ Expected: rollout success.
 In `k8s/auth.yaml`, after the `GOOGLE_CLIENT_SECRET` env entry, add:
 
 ```yaml
-            - name: GITHUB_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: GITHUB_CLIENT_ID
-            - name: GITHUB_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: portfolio-secrets
-                  key: GITHUB_CLIENT_SECRET
+- name: GITHUB_CLIENT_ID
+  valueFrom:
+    secretKeyRef:
+      name: portfolio-secrets
+      key: GITHUB_CLIENT_ID
+- name: GITHUB_CLIENT_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: portfolio-secrets
+      key: GITHUB_CLIENT_SECRET
 ```
 
 And add a `resources` block to the `auth` container (after the `SERVER_PORT` env entry):
 
 ```yaml
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "750m"
+resources:
+  requests:
+    memory: '256Mi'
+    cpu: '100m'
+  limits:
+    memory: '512Mi'
+    cpu: '750m'
 ```
 
 - [ ] **Step 2: Validate, apply, wait ready**
@@ -638,6 +647,7 @@ git commit -m "Add GitHub creds and resources to auth"
 ### Task 11: Caddy — local config variant + resources
 
 **Files:**
+
 - Create: `k8s/caddy-config.local.yaml`
 - Modify: `k8s/caddy.yaml`
 
@@ -729,13 +739,13 @@ data:
 After the `readinessProbe` block of the `caddy` container (before `volumes:`), add:
 
 ```yaml
-          resources:
-            requests:
-              memory: "32Mi"
-              cpu: "50m"
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
+resources:
+  requests:
+    memory: '32Mi'
+    cpu: '50m'
+  limits:
+    memory: '128Mi'
+    cpu: '500m'
 ```
 
 - [ ] **Step 3: Apply the LOCAL config + caddy, wait ready**
@@ -762,6 +772,7 @@ git commit -m "Add local Caddy config and caddy resources"
 ### Task 12: Local convenience script + disable prod-only integrations
 
 **Files:**
+
 - Create: `k8s/local-up.sh`
 
 - [ ] **Step 1: Create `k8s/local-up.sh`** (reproducible local bring-up)
@@ -868,6 +879,7 @@ Expected: `302` (redirect to `/login`) — confirms `forward_auth` is active.
 ### Task 14: Repair `deploy-k3s.yml` and replace the healthcheck
 
 **Files:**
+
 - Create: `k8s/healthcheck-cronjob.yaml`
 - Delete: `k8s/healthcheck.yaml`
 - Modify: `.github/workflows/deploy-k3s.yml`
@@ -881,7 +893,7 @@ metadata:
   name: healthcheck-ping
   namespace: portfolio
 spec:
-  schedule: "*/5 * * * *"
+  schedule: '*/5 * * * *'
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
@@ -894,8 +906,8 @@ spec:
             - name: ping
               image: curlimages/curl:8.11.1
               command:
-                - "/bin/sh"
-                - "-c"
+                - '/bin/sh'
+                - '-c'
                 - |
                   set -e
                   STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 http://backend:8080/actuator/health/readiness)
@@ -913,11 +925,11 @@ spec:
                       optional: true
               resources:
                 requests:
-                  memory: "16Mi"
-                  cpu: "10m"
+                  memory: '16Mi'
+                  cpu: '10m'
                 limits:
-                  memory: "64Mi"
-                  cpu: "100m"
+                  memory: '64Mi'
+                  cpu: '100m'
 ```
 
 - [ ] **Step 2: Delete the broken healthcheck Deployment**
@@ -931,12 +943,12 @@ git rm k8s/healthcheck.yaml
 In the `secrets:` block under `workflow_call:`, add:
 
 ```yaml
-      OPENROUTER_API_KEY:
-        required: true
-      TRADING212_API_KEY_ID:
-        required: true
-      TRADING212_API_KEY_SECRET:
-        required: true
+OPENROUTER_API_KEY:
+  required: true
+TRADING212_API_KEY_ID:
+  required: true
+TRADING212_API_KEY_SECRET:
+  required: true
 ```
 
 In the "Deploy to K3s cluster" step, add these exports alongside the existing ones:
@@ -1089,6 +1101,7 @@ Expected: a transaction count matching production (sanity check).
 ### Task 18: Resolve the torrent/transmission wiring for prod Caddy
 
 **Files:**
+
 - Modify: `k8s/caddy-config.yaml` (prod), `k8s/caddy.yaml` (hostPath for `/srv/torrents`)
 
 - [ ] **Step 1: Discover what transmission binds to and the node IP**
@@ -1145,18 +1158,18 @@ And `f.fov.ee` (served from a hostPath mount — see Step 3):
 Add to the caddy container `volumeMounts`:
 
 ```yaml
-            - name: torrents
-              mountPath: /srv/torrents
-              readOnly: true
+- name: torrents
+  mountPath: /srv/torrents
+  readOnly: true
 ```
 
 Add to the pod `volumes`:
 
 ```yaml
-        - name: torrents
-          hostPath:
-            path: /srv/torrents
-            type: Directory
+- name: torrents
+  hostPath:
+    path: /srv/torrents
+    type: Directory
 ```
 
 - [ ] **Step 4: Validate the prod Caddyfile syntax locally**
@@ -1223,6 +1236,7 @@ Expected: Compose stack returns; site restored. DNS unchanged throughout.
 ### Task 20: Cut CI over from Compose to k3s
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml`
 
 - [ ] **Step 1: Point the deploy job at the k3s workflow**
