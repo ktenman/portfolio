@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config
+  namespace: portfolio
+data:
+  Caddyfile: |
+    {
+        local_certs
+    }
+
+    # Host-agnostic health endpoint so the caddy probe (Host: fov.ee) succeeds
+    :80 {
+        handle_path /healthz {
+            respond "OK" 200
+        }
+        handle {
+            redir https://{host}{uri} permanent
+        }
+    }
+
+    calculator.fov.test {
+        encode gzip
+        handle_path /healthz {
+            respond "OK" 200
+        }
+        handle / {
+            redir /calculator permanent
+        }
+        handle /calculator* {
+            reverse_proxy frontend:80
+        }
+        handle /api/calculator {
+            reverse_proxy backend:8080
+        }
+        handle {
+            reverse_proxy frontend:80
+        }
+    }
+
+    fov.test {
+        encode gzip
+        handle_path /healthz {
+            respond "OK" 200
+        }
+        # Local variant: the auth service image is amd64-only and uses prod
+        # OAuth (REDIRECT_URI=https://fov.ee), so it cannot run on the local
+        # arm64 cluster. forward_auth is intentionally bypassed here; the prod
+        # caddy-config.yaml keeps the full authentication gateway.
+        handle /api/* {
+            reverse_proxy backend:8080
+        }
+        handle {
+            reverse_proxy frontend:80
+        }
+    }
