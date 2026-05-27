@@ -29,8 +29,6 @@ on:
         required: true
       MINIO_ROOT_PASSWORD:
         required: true
-      MINIO_BUCKET_NAME:
-        required: false
       OPENROUTER_API_KEY:
         required: true
       TRADING212_API_KEY_ID:
@@ -92,7 +90,6 @@ jobs:
             export HEALTHCHECK_URL='${{ secrets.HEALTHCHECK_URL }}'
             export MINIO_ROOT_USER='${{ secrets.MINIO_ROOT_USER }}'
             export MINIO_ROOT_PASSWORD='${{ secrets.MINIO_ROOT_PASSWORD }}'
-            export MINIO_BUCKET_NAME='${{ secrets.MINIO_BUCKET_NAME || 'portfolio-logos' }}'
             export OPENROUTER_API_KEY='${{ secrets.OPENROUTER_API_KEY }}'
             export TRADING212_API_KEY_ID='${{ secrets.TRADING212_API_KEY_ID }}'
             export TRADING212_API_KEY_SECRET='${{ secrets.TRADING212_API_KEY_SECRET }}'

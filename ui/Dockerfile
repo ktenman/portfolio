@@ -26,9 +26,6 @@ RUN apk update && \
     apk add --no-cache curl && \
     rm -rf /var/cache/apk/*
 
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY ui/frontend-nginx.conf /etc/nginx/conf.d/default.conf
-
 # Run as the unprivileged nginx user (101): grant the binary the bind capability
 # so it can still listen on :80, move the pid to a writable path, and own the cache.
 RUN apk add --no-cache --virtual .setcap libcap && \
@@ -36,6 +33,9 @@ RUN apk add --no-cache --virtual .setcap libcap && \
     apk del .setcap && \
     sed -i 's|^pid .*|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf && \
     chown -R 101:101 /var/cache/nginx
+
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY ui/frontend-nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
