@@ -116,9 +116,11 @@ jobs:
             kubectl apply -f ~/k8s-deploy/caddy-config.yaml
             kubectl apply -f ~/k8s-deploy/caddy.yaml
             kubectl apply -f ~/k8s-deploy/healthcheck-cronjob.yaml
+            kubectl rollout restart deployment/frontend deployment/auth deployment/cloudflare-bypass-proxy -n portfolio
             kubectl rollout status deployment/backend -n portfolio --timeout=300s
             kubectl rollout status deployment/frontend -n portfolio --timeout=300s
             kubectl rollout status deployment/auth -n portfolio --timeout=240s
+            kubectl rollout status deployment/cloudflare-bypass-proxy -n portfolio --timeout=180s
             kubectl rollout status deployment/caddy -n portfolio --timeout=180s
 
             echo '✅ Deployment complete with build info: Hash=' \$BUILD_HASH ' Time=' \$BUILD_TIME

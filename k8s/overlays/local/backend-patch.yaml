@@ -21,8 +21,6 @@ spec:
           env:
             - name: TELEGRAM_BOT_ENABLED
               value: "false"
-            - name: TRADING212_ENABLED
-              value: "false"
             - name: BUILD_HASH
               value: "local"
             - name: BUILD_TIME

@@ -72,8 +72,6 @@ spec:
             # Cloudflare bypass proxy + Trading212
             - name: CLOUDFLARE_BYPASS_PROXY_URL
               value: "http://cloudflare-bypass-proxy:3000"
-            - name: TRADING212_ENABLED
-              value: "true"
             - name: TRADING212_API_KEY_ID
               valueFrom:
                 secretKeyRef:

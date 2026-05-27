@@ -52,6 +52,8 @@ spec:
               value: "redis"
             - name: SERVER_PORT
               value: "8083"
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: "true"
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -62,7 +64,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/liveness
               port: 8083
             initialDelaySeconds: 40
             periodSeconds: 20

@@ -20,7 +20,6 @@ spec:
                 - "/bin/sh"
                 - "-c"
                 - |
-                  set -e
                   STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 http://backend:8080/actuator/health/readiness)
                   if [ "$STATUS" = "200" ] && [ -n "$HEALTHCHECK_URL" ]; then
                     curl -fsS --max-time 20 "$HEALTHCHECK_URL" >/dev/null && echo "pinged monitor"
