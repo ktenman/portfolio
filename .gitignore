@@ -74,4 +74,8 @@ scripts/train_captcha_model.py
 scripts/*.keras
 scripts/*.png
 scripts/*.jpg
+scripts/*.ipynb
 .worktrees/
+
+### Superpowers (local planning docs) ###
+docs/superpowers/
