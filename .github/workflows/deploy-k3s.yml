@@ -74,6 +74,10 @@ jobs:
       - name: Deploy to K3s cluster
         run: |
           ssh githubuser@fov.ee "
+            # Abort on the first failed command so a broken apply or rollout
+            # fails the job instead of falling through to a misleading success message
+            set -e
+
             # Use the K3s-generated kubeconfig that already exists on the server
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
