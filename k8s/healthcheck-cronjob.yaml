@@ -40,3 +40,9 @@ spec:
                 limits:
                   memory: "64Mi"
                   cpu: "100m"
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                capabilities:
+                  drop:
+                    - ALL

@@ -304,7 +304,6 @@ jib {
         "-XX:+UseG1GC",
         "-XX:+UseStringDeduplication",
         "-Duser.timezone=Europe/Tallinn",
-        "-XX:MaxRAMPercentage=80",
         "-XX:+UseContainerSupport",
         "-XX:+ExitOnOutOfMemoryError",
       )
