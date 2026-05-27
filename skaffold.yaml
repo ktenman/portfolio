@@ -1,0 +1,40 @@
+apiVersion: skaffold/v4beta14
+kind: Config
+metadata:
+  name: portfolio
+build:
+  local:
+    push: false
+    useBuildkit: true
+  artifacts:
+    - image: ktenman/portfolio-be
+      context: .
+      jib: {}
+      platforms:
+        - linux/arm64
+    - image: ktenman/portfolio-fe
+      context: .
+      docker:
+        dockerfile: ui/Dockerfile
+    # cloudflare-bypass-proxy ships amd64-only (curl-impersonate). The local
+    # arm64 k3d node only schedules an arm64-labelled image, so relabel the
+    # published amd64 image as arm64 (buildx --platform linux/arm64 over an
+    # amd64 base) and let the kernel qemu/binfmt handler emulate it at runtime.
+    # Prod still builds the real amd64 image from cloudflare-bypass-proxy/Dockerfile.
+    - image: ktenman/cloudflare-bypass-proxy
+      context: k8s/overlays/local/proxy
+      docker:
+        dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+manifests:
+  kustomize:
+    paths:
+      - k8s/overlays/local
+    buildArgs:
+      - "--load-restrictor=LoadRestrictionsNone"
+deploy:
+  kubectl:
+    defaultNamespace: portfolio
+  statusCheck: true
+  statusCheckDeadlineSeconds: 300

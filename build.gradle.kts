@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.detekt)
   alias(libs.plugins.typescript.generator)
   alias(libs.plugins.pitest)
+  alias(libs.plugins.jib)
 }
 
 group = "ee.tenman"
@@ -278,4 +279,34 @@ pitest {
       "ee.tenman.portfolio.service.*IntegrationTest",
     ),
   )
+}
+
+jib {
+  from {
+    image = "bellsoft/liberica-openjre-alpine-musl:21"
+  }
+  to {
+    image = "ktenman/portfolio-be"
+  }
+  container {
+    mainClass = "ee.tenman.portfolio.PortfolioApplicationKt"
+    ports = listOf("8080")
+    user = "1000"
+    environment =
+      mapOf(
+        "SERVER_PORT" to "8080",
+        "SPRING_DOCKER_COMPOSE_ENABLED" to "false",
+      )
+    jvmFlags =
+      listOf(
+        "-Xms512m",
+        "-Xmx1024m",
+        "-XX:+UseG1GC",
+        "-XX:+UseStringDeduplication",
+        "-Duser.timezone=Europe/Tallinn",
+        "-XX:MaxRAMPercentage=80",
+        "-XX:+UseContainerSupport",
+        "-XX:+ExitOnOutOfMemoryError",
+      )
+  }
 }
