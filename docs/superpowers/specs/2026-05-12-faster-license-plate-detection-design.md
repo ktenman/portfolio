@@ -63,6 +63,7 @@ Tier 2 (fallback):  Downscale image to 640px,
 ## Component Changes
 
 ### New: `PlateRecognizerClient` (Feign)
+
 ```
 @FeignClient(name = "plate-recognizer", url = "${plate-recognizer.url:https://api.platerecognizer.com/v1}")
 interface PlateRecognizerClient {
@@ -82,16 +83,19 @@ Feign multipart requires `io.github.openfeign.form:feign-form-spring` on the cla
 ### New: `PlateRecognizerProperties` (`@ConfigurationProperties("plate-recognizer")` — `url`, `apiKey`, `minScore=0.6`, `regions=ee`, `timeoutMs=500`)
 
 ### New: `PlateRecognizerService`
+
 - Single `detect(photoFile: File): DetectionResult?` method
 - Returns `null` (not empty) when API unavailable so caller can distinguish failure from "no plate"
 - Network I/O outside any transaction (no DB writes; trivially satisfied)
 
 ### New: `ImageDownscaler`
+
 - Pure function: `downscale(bytes: ByteArray, maxEdgePx: Int): ByteArray`
 - Uses `ImageIO` + `AffineTransformOp`; preserves JPEG quality
 - Returns original bytes if image is already ≤ maxEdgePx
 
 ### Modified: `VisionModel` enum
+
 ```
 enum class VisionModel(val modelId: String) {
   LLAMA_3_2_11B_VISION("meta-llama/llama-3.2-11b-vision-instruct"),
@@ -100,6 +104,7 @@ enum class VisionModel(val modelId: String) {
 ```
 
 ### Modified: `LicensePlateDetectionService`
+
 - Constructor gains `PlateRecognizerService` + `ImageDownscaler`
 - New entry path:
   1. `plateRecognizerService.detect(photoFile)?.let { return it }`
@@ -108,6 +113,7 @@ enum class VisionModel(val modelId: String) {
   4. Race `VisionModel.entries` (existing logic)
 
 ### Modified: `application.yml`
+
 ```
 plate-recognizer:
   url: https://api.platerecognizer.com/v1
@@ -127,6 +133,7 @@ spring:
 ```
 
 ### Modified: secrets / deployment
+
 - Add `PLATE_RECOGNIZER_TOKEN` to:
   - `docker-compose.yml`
   - `k8s/secrets.yaml`
@@ -135,30 +142,33 @@ spring:
 
 ## Failure Handling
 
-| Failure mode | Behavior |
-|---|---|
-| `PLATE_RECOGNIZER_TOKEN` blank | Skip Tier 1, go directly to Tier 2 (logged once at startup) |
-| Tier 1 HTTP 4xx/5xx | Log + fall through to Tier 2 |
-| Tier 1 timeout (500 ms) | Cancel + fall through to Tier 2 |
-| Tier 1 returns plate with score < 0.6 | Treat as "uncertain", fall through to Tier 2 |
+| Failure mode                                       | Behavior                                                       |
+| -------------------------------------------------- | -------------------------------------------------------------- |
+| `PLATE_RECOGNIZER_TOKEN` blank                     | Skip Tier 1, go directly to Tier 2 (logged once at startup)    |
+| Tier 1 HTTP 4xx/5xx                                | Log + fall through to Tier 2                                   |
+| Tier 1 timeout (500 ms)                            | Cancel + fall through to Tier 2                                |
+| Tier 1 returns plate with score < 0.6              | Treat as "uncertain", fall through to Tier 2                   |
 | Tier 2: both LLMs fail or return non-matching text | Return `DetectionResult()` (empty), bot says "No car detected" |
-| Image downscale throws | Use original bytes, log warning |
+| Image downscale throws                             | Use original bytes, log warning                                |
 
 Rationale for falling through on low-confidence Tier 1: PlateRecognizer occasionally hallucinates plates from background text. LLM second-opinion catches this.
 
 ## Testing
 
 ### Unit
+
 - `PlateRecognizerServiceTest`: WireMock the API; cover success, 401, 500, timeout, low-score, malformed-plate cases.
 - `ImageDownscalerTest`: synthetic image, verify dimensions + that "already small enough" passes through unchanged.
 - `LicensePlateDetectionServiceTest` (extend existing): verify Tier 1 success skips Tier 2; Tier 1 failure invokes Tier 2; both fail returns empty.
 - `VisionModelTest`: update to new model IDs.
 
 ### Integration
+
 - New `PlateRecognizerServiceIT` modelled after `OpenRouterClientIT` — opt-in (skipped without API token), real network call against a known plate image fixture.
 - No new database migrations; existing integration test infrastructure unaffected.
 
 ### Manual smoke
+
 - Run `LicensePlateDetectionService` against `/Users/tenman/Downloads/2026-05-10 15.28.24.jpg`, verify result = `003HWV` and total elapsed < 500 ms on Tier 1, < 1.2 s on Tier 2 fallback.
 
 ## Rollout
@@ -166,12 +176,14 @@ Rationale for falling through on low-confidence Tier 1: PlateRecognizer occasion
 Two PRs, shipped independently to de-risk:
 
 ### PR 1 — Tier 2 only (LLM swap + downscale)
+
 - Adds `ImageDownscaler` and downscale step
 - Replaces `VisionModel` entries with `LLAMA_3_2_11B_VISION` + `MINISTRAL_8B`
 - Expected latency drop: 1.3–3.4 s → 0.7–1.2 s. Standalone win.
 - Zero new external dependencies; safe to ship today.
 
 ### PR 2 — Tier 1 (PlateRecognizer)
+
 - Adds client, service, properties, secret plumbing
 - Wires Tier 1 in front of Tier 2 in `LicensePlateDetectionService`
 - Requires PlateRecognizer account + token added to secrets before merge
@@ -179,20 +191,21 @@ Two PRs, shipped independently to de-risk:
 
 ## Empirical Data (benchmark of test image, plate = `003 HWV`)
 
-| Model | Image size | Latency (5–7 runs) | Accuracy |
-|---|---|---|---|
-| `llama-4-scout` (current) | full 554KB | 3351 ms (1 run) | wrong: "HW" |
-| `nova-lite-v1` (current) | full 554KB | 2031–2741 ms | correct |
-| **`llama-3.2-11b-vision-instruct`** | **640 px** | **707–920 ms** | **7/7 correct** |
-| `llama-3.2-11b-vision-instruct` | 1024 px | 888–2250 ms (1 outlier) | 5/5 correct |
-| `ministral-8b-2512` | 1024 px | 814–1160 ms | 5/5 correct |
-| `ministral-3b-2512` | 1024 px | 669–1478 ms | 5/5 correct |
-| `gemini-2.5-flash-lite` | 1024 px | 1575–1907 ms | correct |
-| PlateRecognizer (per docs) | — | ~290 ms | — |
+| Model                               | Image size | Latency (5–7 runs)      | Accuracy        |
+| ----------------------------------- | ---------- | ----------------------- | --------------- |
+| `llama-4-scout` (current)           | full 554KB | 3351 ms (1 run)         | wrong: "HW"     |
+| `nova-lite-v1` (current)            | full 554KB | 2031–2741 ms            | correct         |
+| **`llama-3.2-11b-vision-instruct`** | **640 px** | **707–920 ms**          | **7/7 correct** |
+| `llama-3.2-11b-vision-instruct`     | 1024 px    | 888–2250 ms (1 outlier) | 5/5 correct     |
+| `ministral-8b-2512`                 | 1024 px    | 814–1160 ms             | 5/5 correct     |
+| `ministral-3b-2512`                 | 1024 px    | 669–1478 ms             | 5/5 correct     |
+| `gemini-2.5-flash-lite`             | 1024 px    | 1575–1907 ms            | correct         |
+| PlateRecognizer (per docs)          | —          | ~290 ms                 | —               |
 
 ## Cost Estimate
 
 Assuming 200 plate detections/month (high estimate for personal bot):
+
 - Tier 1 (PlateRecognizer): 200 lookups / 2,500 free = **$0/month**
 - Tier 2 fallback (~5% of calls): ~10 × $0.0003 = **<$0.01/month**
 - Total: **effectively free**

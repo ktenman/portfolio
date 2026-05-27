@@ -29,32 +29,32 @@ Expected: `On branch feature/faster-plate-detection`
 
 ### Phase 1 (PR 1 — Tier 2: LLM swap + downscale)
 
-| File | Action | Responsibility |
-|---|---|---|
-| `src/main/kotlin/ee/tenman/portfolio/service/ImageDownscaler.kt` | Create | Pure JPEG downscaler component |
-| `src/test/kotlin/ee/tenman/portfolio/service/ImageDownscalerTest.kt` | Create | Unit tests with synthetic JPEGs |
-| `src/main/kotlin/ee/tenman/portfolio/domain/VisionModel.kt` | Modify | New model IDs |
-| `src/test/kotlin/ee/tenman/portfolio/openrouter/VisionModelTest.kt` | Modify | Updated assertions |
-| `src/main/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionService.kt` | Modify | Inject `ImageDownscaler`, downscale in `detectPlateNumber(File)` |
-| `src/test/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionServiceTest.kt` | Modify | Add downscale assertion |
+| File                                                                              | Action | Responsibility                                                   |
+| --------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------- |
+| `src/main/kotlin/ee/tenman/portfolio/service/ImageDownscaler.kt`                  | Create | Pure JPEG downscaler component                                   |
+| `src/test/kotlin/ee/tenman/portfolio/service/ImageDownscalerTest.kt`              | Create | Unit tests with synthetic JPEGs                                  |
+| `src/main/kotlin/ee/tenman/portfolio/domain/VisionModel.kt`                       | Modify | New model IDs                                                    |
+| `src/test/kotlin/ee/tenman/portfolio/openrouter/VisionModelTest.kt`               | Modify | Updated assertions                                               |
+| `src/main/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionService.kt`     | Modify | Inject `ImageDownscaler`, downscale in `detectPlateNumber(File)` |
+| `src/test/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionServiceTest.kt` | Modify | Add downscale assertion                                          |
 
 ### Phase 2 (PR 2 — Tier 1: PlateRecognizer)
 
-| File | Action | Responsibility |
-|---|---|---|
-| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerProperties.kt` | Create | `@ConfigurationProperties("plate-recognizer")` |
-| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerResponse.kt` | Create | DTO matching API response |
-| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerResult.kt` | Create | Inner DTO (separate file per src/CLAUDE.md) |
-| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerConfig.kt` | Create | `RestClient` bean with timeout |
-| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerService.kt` | Create | Tier 1 detection |
-| `src/test/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerServiceTest.kt` | Create | WireMock-based tests |
-| `src/main/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionService.kt` | Modify | Wire Tier 1 before Tier 2 |
-| `src/test/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionServiceTest.kt` | Modify | Tier 1 success / fallthrough tests |
-| `src/main/resources/application.yml` | Modify | `plate-recognizer:` section |
-| `src/test/resources/application.yml` | Modify | Test config |
-| `docker-compose.yml` | Modify | `PLATE_RECOGNIZER_TOKEN` env |
-| `k8s/secrets.yaml` | Modify | Secret entry |
-| `.github/workflows/ci.yml`, `deploy-k3s.yml`, `deploy-pipeline.yml` | Modify | Workflow secret plumbing |
+| File                                                                                | Action | Responsibility                                 |
+| ----------------------------------------------------------------------------------- | ------ | ---------------------------------------------- |
+| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerProperties.kt`  | Create | `@ConfigurationProperties("plate-recognizer")` |
+| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerResponse.kt`    | Create | DTO matching API response                      |
+| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerResult.kt`      | Create | Inner DTO (separate file per src/CLAUDE.md)    |
+| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerConfig.kt`      | Create | `RestClient` bean with timeout                 |
+| `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerService.kt`     | Create | Tier 1 detection                               |
+| `src/test/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerServiceTest.kt` | Create | WireMock-based tests                           |
+| `src/main/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionService.kt`       | Modify | Wire Tier 1 before Tier 2                      |
+| `src/test/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionServiceTest.kt`   | Modify | Tier 1 success / fallthrough tests             |
+| `src/main/resources/application.yml`                                                | Modify | `plate-recognizer:` section                    |
+| `src/test/resources/application.yml`                                                | Modify | Test config                                    |
+| `docker-compose.yml`                                                                | Modify | `PLATE_RECOGNIZER_TOKEN` env                   |
+| `k8s/secrets.yaml`                                                                  | Modify | Secret entry                                   |
+| `.github/workflows/ci.yml`, `deploy-k3s.yml`, `deploy-pipeline.yml`                 | Modify | Workflow secret plumbing                       |
 
 ---
 
@@ -63,6 +63,7 @@ Expected: `On branch feature/faster-plate-detection`
 ## Task 1: ImageDownscaler
 
 **Files:**
+
 - Create: `src/main/kotlin/ee/tenman/portfolio/service/ImageDownscaler.kt`
 - Test: `src/test/kotlin/ee/tenman/portfolio/service/ImageDownscalerTest.kt`
 
@@ -208,6 +209,7 @@ git commit -m "Add ImageDownscaler for in-process JPEG resizing"
 ## Task 2: Update VisionModel enum to faster models
 
 **Files:**
+
 - Modify: `src/main/kotlin/ee/tenman/portfolio/domain/VisionModel.kt`
 - Modify: `src/test/kotlin/ee/tenman/portfolio/openrouter/VisionModelTest.kt`
 - Modify: `src/test/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionServiceTest.kt:98-100`
@@ -298,6 +300,7 @@ git commit -m "Swap LLM vision models to faster Llama 3.2 11B and Ministral 8B"
 ## Task 3: Wire ImageDownscaler into LicensePlateDetectionService
 
 **Files:**
+
 - Modify: `src/main/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionService.kt:19-30,101`
 - Modify: `src/test/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionServiceTest.kt`
 
@@ -593,6 +596,7 @@ Expected: JSON with `results[0].plate = "003hwv"` (lowercase) and `results[0].sc
 ## Task 6: PlateRecognizerProperties
 
 **Files:**
+
 - Create: `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerProperties.kt`
 
 - [ ] **Step 1: Implement**
@@ -632,6 +636,7 @@ git commit -m "Add PlateRecognizerProperties"
 ## Task 7: PlateRecognizerResult and PlateRecognizerResponse DTOs
 
 **Files:**
+
 - Create: `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerResult.kt`
 - Create: `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerResponse.kt`
 
@@ -677,6 +682,7 @@ git commit -m "Add PlateRecognizer response DTOs"
 ## Task 8: PlateRecognizerConfig (RestClient bean)
 
 **Files:**
+
 - Create: `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerConfig.kt`
 
 - [ ] **Step 1: Implement**
@@ -730,6 +736,7 @@ git commit -m "Add PlateRecognizer RestClient configuration"
 ## Task 9: PlateRecognizerService
 
 **Files:**
+
 - Create: `src/main/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerService.kt`
 - Test: `src/test/kotlin/ee/tenman/portfolio/platerecognizer/PlateRecognizerServiceTest.kt`
 
@@ -996,6 +1003,7 @@ git commit -m "Add PlateRecognizerService for Tier 1 detection"
 ## Task 10: Wire Tier 1 into LicensePlateDetectionService
 
 **Files:**
+
 - Modify: `src/main/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionService.kt`
 - Modify: `src/test/kotlin/ee/tenman/portfolio/service/LicensePlateDetectionServiceTest.kt`
 
@@ -1150,6 +1158,7 @@ git commit -m "Wire PlateRecognizer Tier 1 in front of LLM Tier 2"
 ## Task 11: Configuration plumbing
 
 **Files:**
+
 - Modify: `src/main/resources/application.yml`
 - Modify: `src/test/resources/application.yml`
 - Modify: `docker-compose.yml`
@@ -1175,7 +1184,7 @@ Append to `src/test/resources/application.yml`:
 ```yaml
 plate-recognizer:
   url: http://localhost:0
-  api-key: ""
+  api-key: ''
   min-score: 0.6
   regions: ee
   timeout-ms: 500
@@ -1188,7 +1197,7 @@ plate-recognizer:
 Locate the `app:` (or `portfolio:`) service `environment:` block (where `OPENROUTER_API_KEY` is set, around line 50–60). Add:
 
 ```yaml
-      PLATE_RECOGNIZER_TOKEN: ${PLATE_RECOGNIZER_TOKEN}
+PLATE_RECOGNIZER_TOKEN: ${PLATE_RECOGNIZER_TOKEN}
 ```
 
 - [ ] **Step 4: k8s/secrets.yaml**
@@ -1196,7 +1205,7 @@ Locate the `app:` (or `portfolio:`) service `environment:` block (where `OPENROU
 In the `stringData:` block, after `TELEGRAM_BOT_TOKEN`, add:
 
 ```yaml
-  PLATE_RECOGNIZER_TOKEN: "${PLATE_RECOGNIZER_TOKEN}"
+PLATE_RECOGNIZER_TOKEN: '${PLATE_RECOGNIZER_TOKEN}'
 ```
 
 - [ ] **Step 5: Verify config loads**
@@ -1220,6 +1229,7 @@ git commit -m "Wire PLATE_RECOGNIZER_TOKEN through config and deployment"
 ## Task 12: GitHub Actions workflow secrets
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml`
 - Modify: `.github/workflows/deploy-k3s.yml`
 - Modify: `.github/workflows/deploy-pipeline.yml`
@@ -1227,6 +1237,7 @@ git commit -m "Wire PLATE_RECOGNIZER_TOKEN through config and deployment"
 - [ ] **Step 1: Add repo secret in GitHub UI**
 
 Settings → Secrets and variables → Actions → New repository secret:
+
 - Name: `PLATE_RECOGNIZER_TOKEN`
 - Value: token from PlateRecognizer dashboard
 
@@ -1235,7 +1246,7 @@ Settings → Secrets and variables → Actions → New repository secret:
 For each of the three workflow files, find the `env:` block of the backend test/build job (where `OPENROUTER_API_KEY` is set). Add:
 
 ```yaml
-          PLATE_RECOGNIZER_TOKEN: ${{ secrets.PLATE_RECOGNIZER_TOKEN }}
+PLATE_RECOGNIZER_TOKEN: ${{ secrets.PLATE_RECOGNIZER_TOKEN }}
 ```
 
 (Same indentation as the existing `OPENROUTER_API_KEY` line.)
@@ -1266,6 +1277,7 @@ PLATE_RECOGNIZER_TOKEN="$PLATE_RECOGNIZER_TOKEN" \
 Trigger plate detection through the Telegram bot (or whatever entry point exists) using `/Users/tenman/Downloads/2026-05-10 15.28.24.jpg`.
 
 Expected:
+
 - Result plate: `003HWV`
 - Total latency: < 500 ms (Tier 1 success path)
 
