@@ -79,3 +79,6 @@ scripts/*.ipynb
 
 ### Superpowers (local planning docs) ###
 docs/superpowers/
+
+### Improve loop (local run artifacts) ###
+.improve-loop/
