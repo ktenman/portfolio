@@ -192,6 +192,32 @@ class TerUpdateJobTest {
     verify { instrumentService.updateTer(42L, BigDecimal("0.3")) }
   }
 
+  @Test
+  fun `should retry startup until a lightyear ter is updated`() {
+    val instrument = createInstrument(1L, "VUAA", ProviderName.LIGHTYEAR)
+    val fundInfo = LightyearFundInfoData(ter = BigDecimal("0.07"), fundCurrency = null)
+    every { instrumentRepository.findByProviderName(ProviderName.LIGHTYEAR) } returns listOf(instrument)
+    every { lightyearPriceService.fetchFundInfo("VUAA") } returnsMany listOf(null, fundInfo)
+    every { instrumentService.updateTer(any(), any()) } just runs
+    val retryingJob =
+      TerUpdateJob(
+        jobTransactionService,
+        instrumentRepository,
+        lightyearPriceService,
+        instrumentService,
+        trading212HoldingsService,
+        scrapingProperties,
+        fundCurrencyResolver,
+        clock,
+        startupMaxAttempts = 3,
+        startupRetryDelayMillis = 0,
+      )
+
+    retryingJob.retryUntilUpdated()
+
+    verify(exactly = 2) { lightyearPriceService.fetchFundInfo("VUAA") }
+  }
+
   private fun createInstrument(
     id: Long,
     symbol: String,

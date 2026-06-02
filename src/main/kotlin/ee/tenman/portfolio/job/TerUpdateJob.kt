@@ -13,6 +13,7 @@ import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import java.math.BigDecimal
 import java.time.Clock
@@ -29,6 +30,10 @@ class TerUpdateJob(
   private val scrapingProperties: Trading212ScrapingProperties,
   private val fundCurrencyResolver: FundCurrencyResolverService,
   private val clock: Clock,
+  @Value("\${ter.startup.max-attempts:5}")
+  private val startupMaxAttempts: Int = 5,
+  @Value("\${ter.startup.retry-delay-millis:10000}")
+  private val startupRetryDelayMillis: Long = 10000,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -43,18 +48,35 @@ class TerUpdateJob(
   fun onStartup() {
     CompletableFuture.runAsync {
       log.info("Running TER update job on startup")
-      runJob()
+      retryUntilUpdated()
+    }
+  }
+
+  internal fun retryUntilUpdated() {
+    repeat(startupMaxAttempts) { attempt ->
+      if (executeWithTracking() > 0) return
+      if (attempt < startupMaxAttempts - 1) {
+        log.warn("TER startup attempt ${attempt + 1} updated nothing, retrying in ${startupRetryDelayMillis}ms")
+        Thread.sleep(startupRetryDelayMillis)
+      }
     }
   }
 
   @Scheduled(cron = "0 0 3 * * SUN")
   fun runJob() {
+    executeWithTracking()
+  }
+
+  private fun executeWithTracking(): Int {
     log.info("Running TER update job")
     val startTime = Instant.now(clock)
     var status = JobStatus.SUCCESS
     var message: String? = null
+    var updated = 0
     try {
-      message = updateAll()
+      val (count, summary) = updateAll()
+      updated = count
+      message = summary
       log.info("Completed TER update job successfully")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
@@ -70,30 +92,31 @@ class TerUpdateJob(
         message = message,
       )
     }
+    return updated
   }
 
   override fun execute() {
     updateAll()
   }
 
-  private fun updateAll(): String {
-    val lyResult =
+  private fun updateAll(): Pair<Int, String> {
+    val (lyCount, lyResult) =
       processProvider(ProviderName.LIGHTYEAR, "Lightyear") { instrument ->
         val lightyearData = fetchLightyearData(instrument)
         (TER_OVERRIDES[instrument.symbol] ?: lightyearData?.ter) to lightyearData
       }
-    val t212Result =
+    val (t212Count, t212Result) =
       processProvider(ProviderName.TRADING212, "Trading212") { instrument ->
         resolveTrading212Ter(instrument) to null
       }
-    return "$lyResult; $t212Result"
+    return (lyCount + t212Count) to "$lyResult; $t212Result"
   }
 
   private fun processProvider(
     provider: ProviderName,
     label: String,
     fetcher: (Instrument) -> Pair<BigDecimal?, LightyearFundInfoData?>,
-  ): String {
+  ): Pair<Int, String> {
     val instruments = instrumentRepository.findByProviderName(provider)
     log.info("Found ${instruments.size} $label instruments to update TERs")
     var updated = 0
@@ -109,7 +132,7 @@ class TerUpdateJob(
       }
       persistFundCurrency(instrument, lightyearData)
     }
-    return "$label: updated $updated/${instruments.size}, $noData with no data"
+    return updated to "$label: updated $updated/${instruments.size}, $noData with no data"
   }
 
   private fun fetchLightyearData(instrument: Instrument): LightyearFundInfoData? =

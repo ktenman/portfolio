@@ -29,8 +29,12 @@ on:
         required: true
       MINIO_ROOT_PASSWORD:
         required: true
-      MINIO_BUCKET_NAME:
-        required: false
+      OPENROUTER_API_KEY:
+        required: true
+      TRADING212_API_KEY_ID:
+        required: true
+      TRADING212_API_KEY_SECRET:
+        required: true
   workflow_dispatch:
     inputs:
       deploy:
@@ -63,10 +67,15 @@ jobs:
         run: |
           ssh githubuser@fov.ee "rm -rf ~/k8s-deploy && mkdir -p ~/k8s-deploy"
           scp k8s/*.yaml githubuser@fov.ee:~/k8s-deploy/
+          ssh githubuser@fov.ee "rm -f ~/k8s-deploy/*.local.yaml"
 
       - name: Deploy to K3s cluster
         run: |
           ssh githubuser@fov.ee "
+            # Abort on the first failed command so a broken apply or rollout
+            # fails the job instead of falling through to a misleading success message
+            set -e
+
             # Use the K3s-generated kubeconfig that already exists on the server
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
@@ -81,7 +90,9 @@ jobs:
             export HEALTHCHECK_URL='${{ secrets.HEALTHCHECK_URL }}'
             export MINIO_ROOT_USER='${{ secrets.MINIO_ROOT_USER }}'
             export MINIO_ROOT_PASSWORD='${{ secrets.MINIO_ROOT_PASSWORD }}'
-            export MINIO_BUCKET_NAME='${{ secrets.MINIO_BUCKET_NAME || 'portfolio-logos' }}'
+            export OPENROUTER_API_KEY='${{ secrets.OPENROUTER_API_KEY }}'
+            export TRADING212_API_KEY_ID='${{ secrets.TRADING212_API_KEY_ID }}'
+            export TRADING212_API_KEY_SECRET='${{ secrets.TRADING212_API_KEY_SECRET }}'
 
             # NEW: Set up build information - this is the key fix for the missing git hash
             export BUILD_HASH=\$(git -C ~/k8s-deploy rev-parse --short HEAD 2>/dev/null || echo 'unknown')
@@ -94,27 +105,24 @@ jobs:
 
             echo \"Deploying with BUILD_HASH: \$BUILD_HASH and BUILD_TIME: \$BUILD_TIME\"
 
-            # Create namespace and apply secrets
             kubectl create namespace portfolio --dry-run=client -o yaml | kubectl apply -f -
             envsubst < ~/k8s-deploy/secrets.yaml | kubectl apply -f -
-
-            # Deploy all applications with environment variable substitution
             kubectl apply -f ~/k8s-deploy/postgres.yaml
             kubectl apply -f ~/k8s-deploy/redis.yaml
-
-            # Apply backend with build info substitution - this is crucial
+            kubectl apply -f ~/k8s-deploy/minio.yaml
+            kubectl apply -f ~/k8s-deploy/cloudflare-bypass-proxy.yaml
             envsubst < ~/k8s-deploy/backend.yaml | kubectl apply -f -
-
             kubectl apply -f ~/k8s-deploy/frontend.yaml
             kubectl apply -f ~/k8s-deploy/auth.yaml
-            kubectl apply -f ~/k8s-deploy/market-tracker.yaml
-            kubectl apply -f ~/k8s-deploy/healthcheck.yaml
             kubectl apply -f ~/k8s-deploy/caddy-config.yaml
             kubectl apply -f ~/k8s-deploy/caddy.yaml
-
-            # Wait for deployments to be ready
+            kubectl apply -f ~/k8s-deploy/healthcheck-cronjob.yaml
+            kubectl rollout restart deployment/frontend deployment/auth deployment/cloudflare-bypass-proxy -n portfolio
             kubectl rollout status deployment/backend -n portfolio --timeout=300s
             kubectl rollout status deployment/frontend -n portfolio --timeout=300s
+            kubectl rollout status deployment/auth -n portfolio --timeout=240s
+            kubectl rollout status deployment/cloudflare-bypass-proxy -n portfolio --timeout=180s
+            kubectl rollout status deployment/caddy -n portfolio --timeout=180s
 
             echo '✅ Deployment complete with build info: Hash=' \$BUILD_HASH ' Time=' \$BUILD_TIME
           "

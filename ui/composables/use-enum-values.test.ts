@@ -32,7 +32,6 @@ describe('useEnumValues', () => {
       const { loadAll, platformOptions, transactionTypeOptions } = useEnumValues()
       await loadAll()
 
-      // NOTE: Testing the business logic of enum transformation
       expect(platformOptions.value).toEqual([
         { value: 'DEGIRO', text: 'Degiro' },
         { value: 'TRADING212', text: 'Trading 212' },
@@ -63,7 +62,6 @@ describe('useEnumValues', () => {
       await loadAll()
       await loadAll()
 
-      // NOTE: Important business logic - caching prevents unnecessary API calls
       expect(enumService.getAll).toHaveBeenCalledTimes(1)
     })
 

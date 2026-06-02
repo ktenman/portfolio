@@ -179,6 +179,13 @@ AVOID all forms of code comments including:
 
 The only exception is TypeScript triple-slash directives (///) which are required for type definitions.
 
+This is enforced, not just documented. ESLint runs `no-comments/disallowComments` at `error`
+over the frontend (`ui/**` `.ts`/`.vue`), so a stray comment fails `npm run lint:check` and CI.
+Only functional directives pass, never prose: `///`, `eslint-disable` / `global` directives, and
+`@ts-*` / `@vite-*` pragmas. `npm run lint` (`--fix`) strips an offending comment locally; CI runs
+the check-only `npm run lint:check` and fails on it. The Kotlin backend follows the same no-comments
+rule by convention (Detekt does not gate it).
+
 ### Method Design Principles
 
 ALWAYS write methods that:

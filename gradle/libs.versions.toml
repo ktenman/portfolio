@@ -26,6 +26,7 @@ jollyday = "2.7.0"
 pitest = "1.23.0"
 pitestPlugin = "1.19.0-rc.3"
 kotest = "6.1.11"
+jib = "3.5.3"
 
 [libraries]
 # Spring Boot
@@ -122,3 +123,4 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 typescript-generator = { id = "cz.habarta.typescript-generator", version.ref = "typescriptGenerator" }
 pitest = { id = "info.solidsoft.pitest", version.ref = "pitestPlugin" }
+jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }

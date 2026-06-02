@@ -129,14 +129,16 @@ spec:
 
           # Security context for better security
           securityContext:
-            allowPrivilegeEscalation: false
             runAsNonRoot: true
-            runAsUser: 101  # nginx user
+            runAsUser: 101
             runAsGroup: 101
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
+              add:
+                - NET_BIND_SERVICE
 
       # Mount the nginx configuration from our ConfigMap
       volumes:

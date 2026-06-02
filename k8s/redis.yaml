@@ -5,6 +5,8 @@ metadata:
   namespace: portfolio
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: redis
@@ -16,8 +18,24 @@ spec:
       containers:
         - name: redis
           image: redis:8-alpine
+          command:
+            - "redis-server"
+            - "--maxmemory"
+            - "384mb"
+            - "--maxmemory-policy"
+            - "allkeys-lru"
+            - "--save"
+            - "900"
+            - "1"
           ports:
             - containerPort: 6379
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "768Mi"
+              cpu: "500m"
           volumeMounts:
             - name: redis-data
               mountPath: /data

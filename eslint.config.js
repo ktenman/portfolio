@@ -5,9 +5,14 @@ import typescriptEslintParser from '@typescript-eslint/parser'
 import typescriptEslintPlugin from '@typescript-eslint/eslint-plugin'
 import prettierPlugin from 'eslint-plugin-prettier'
 import unusedImportsPlugin from 'eslint-plugin-unused-imports'
+import noCommentsPlugin from 'eslint-plugin-no-comments'
 import * as espree from 'espree'
 
 export default [
+  {
+    ignores: ['ui/models/generated/**'],
+  },
+
   // Global defaults for all files
   {
     languageOptions: {
@@ -35,10 +40,15 @@ export default [
     plugins: {
       vue: vuePlugin,
       'unused-imports': unusedImportsPlugin,
+      'no-comments': noCommentsPlugin,
     },
     rules: {
       // Example: disable the multi-word component names rule
       'vue/multi-word-component-names': 'off',
+      'no-comments/disallowComments': [
+        'error',
+        { allow: ['/', 'eslint', 'global', '@ts', '@vite'] },
+      ],
       // Unused imports detection
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
@@ -71,8 +81,13 @@ export default [
       '@typescript-eslint': typescriptEslintPlugin,
       prettier: prettierPlugin,
       'unused-imports': unusedImportsPlugin,
+      'no-comments': noCommentsPlugin,
     },
     rules: {
+      'no-comments/disallowComments': [
+        'error',
+        { allow: ['/', 'eslint', 'global', '@ts', '@vite'] },
+      ],
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off', // Using unused-imports plugin instead
       'unused-imports/no-unused-imports': 'error',
