@@ -58,7 +58,7 @@
     "@vitest/coverage-v8": "^4.1.8",
     "@vitest/ui": "^4.0.14",
     "@vue/test-utils": "^2.4.10",
-    "concurrently": "^9.2.1",
+    "concurrently": "^10.0.3",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-no-comments": "^1.2.1",
