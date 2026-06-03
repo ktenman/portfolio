@@ -27,7 +27,7 @@
     "@types/supertest": "^7.2.0",
     "jest": "^30.3.0",
     "supertest": "^7.2.2",
-    "ts-jest": "^29.4.9",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
