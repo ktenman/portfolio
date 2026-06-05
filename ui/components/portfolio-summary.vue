@@ -67,6 +67,7 @@
         <template #cell-totalProfitChange24h="{ value, item }">
           <span v-if="value && Math.abs(value) > 0.01" :class="getProfitChangeClass(value)">
             {{ format24hChange(item.totalProfitChange24h) }}
+            <span class="change-percentage">{{ format24hChangePercentage(item) }}</span>
           </span>
         </template>
       </data-table>
@@ -100,6 +101,7 @@ import {
   formatDate,
   formatPercentageFromDecimal,
 } from '../utils/formatters'
+import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
 const PortfolioChart = defineAsyncComponent(() => import('./portfolio/portfolio-chart.vue'))
 
@@ -159,6 +161,20 @@ const format24hChange = (value: number | null) => {
     return ''
   }
   return formatCurrencyWithSymbol(value)
+}
+
+const format24hChangePercentage = (summary: PortfolioSummaryDto) => {
+  const change = summary.totalProfitChange24h
+  if (change === null || Math.abs(change) <= 0.01) {
+    return ''
+  }
+  const previousValue = summary.totalValue - change
+  if (previousValue <= 0) {
+    return ''
+  }
+  const percentage = (change / previousValue) * 100
+  const sign = percentage >= 0 ? '+' : ''
+  return `(${sign}${percentage.toFixed(2)}%)`
 }
 
 const summaryColumns: ColumnDefinition[] = [
@@ -223,6 +239,11 @@ const handleRecalculate = async () => {
 </script>
 
 <style scoped>
+.change-percentage {
+  margin-left: 0.25rem;
+  font-size: 0.85em;
+}
+
 @media (max-width: 575px) {
   :deep(.table) {
     font-size: 12px;
