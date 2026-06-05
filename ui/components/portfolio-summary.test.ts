@@ -124,6 +124,62 @@ describe('PortfolioSummary', () => {
     })
   })
 
+  describe('format24hChangePercentage', () => {
+    const format24hChangePercentage = (summary: {
+      totalProfitChange24h: number | null
+      totalValue: number
+    }) => {
+      const change = summary.totalProfitChange24h
+      if (change === null || Math.abs(change) <= 0.01) {
+        return ''
+      }
+      const previousValue = summary.totalValue - change
+      if (previousValue <= 0) {
+        return ''
+      }
+      const percentage = (change / previousValue) * 100
+      const sign = percentage >= 0 ? '+' : ''
+      return `(${sign}${percentage.toFixed(2)}%)`
+    }
+
+    it('should format negative percentage relative to previous day value', () => {
+      const result = format24hChangePercentage({
+        totalProfitChange24h: -2966.96,
+        totalValue: 103752.22,
+      })
+      expect(result).toBe('(-2.78%)')
+    })
+
+    it('should format positive percentage with a plus sign', () => {
+      const result = format24hChangePercentage({
+        totalProfitChange24h: 2783.24,
+        totalValue: 102783.24,
+      })
+      expect(result).toBe('(+2.78%)')
+    })
+
+    it('should return empty string for null 24h change', () => {
+      const result = format24hChangePercentage({
+        totalProfitChange24h: null,
+        totalValue: 103752.22,
+      })
+      expect(result).toBe('')
+    })
+
+    it('should return empty string for near-zero 24h change', () => {
+      const result = format24hChangePercentage({
+        totalProfitChange24h: 0.005,
+        totalValue: 103752.22,
+      })
+      expect(result).toBe('')
+    })
+
+    it('should return empty string when previous value is not positive', () => {
+      const result = format24hChangePercentage({ totalProfitChange24h: 100, totalValue: 100 })
+      expect(result).toBe('')
+    })
+  })
+
   describe('getProfitChangeClass', () => {
     const getProfitChangeClass = (value: number) => {
       if (value > 0) return 'text-success'
