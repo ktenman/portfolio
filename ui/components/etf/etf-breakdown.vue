@@ -46,13 +46,13 @@
     <etf-breakdown-header
       v-if="!isLoading"
       :total-value="totalValue"
-      :unique-holdings="filteredHoldings.length"
+      :unique-holdings="holdings.length"
       :selected-etfs="selectedEtfs"
       :available-etfs="availableEtfs"
       :currency-split="currencySplit"
     />
 
-    <div v-if="!isLoading && filteredHoldings.length > 0" class="charts-section mb-4">
+    <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-4">
       <div class="row g-3">
         <div class="col-lg-4 col-md-6">
           <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
@@ -196,21 +196,13 @@ const filteredHoldings = computed(() => {
   )
 })
 
-const totalValue = computed(() =>
-  filteredHoldings.value.reduce((sum, h) => sum + h.totalValueEur, 0)
-)
+const totalValue = computed(() => holdings.value.reduce((sum, h) => sum + h.totalValueEur, 0))
 
-const sectorChartData = computed<ChartDataItem[]>(() =>
-  buildSectorChartData(filteredHoldings.value)
-)
+const sectorChartData = computed<ChartDataItem[]>(() => buildSectorChartData(holdings.value))
 
-const companyChartData = computed<ChartDataItem[]>(() =>
-  buildCompanyChartData(filteredHoldings.value)
-)
+const companyChartData = computed<ChartDataItem[]>(() => buildCompanyChartData(holdings.value))
 
-const countryChartData = computed<ChartDataItem[]>(() =>
-  buildCountryChartData(filteredHoldings.value)
-)
+const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(holdings.value))
 
 const getEtfsParam = (): string[] | undefined =>
   getFilterParam(selectedEtfs.value, availableEtfs.value)
