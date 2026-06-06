@@ -705,6 +705,11 @@
     animation-duration: 0.75s !important;
     animation-iteration-count: infinite !important;
   }
+
+  .value-increase,
+  .value-decrease {
+    animation-duration: 3s !important;
+  }
 }
 
 // ========================================
