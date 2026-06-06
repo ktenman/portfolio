@@ -46,6 +46,7 @@ class LoggingAspect {
 
   @Throws(Throwable::class)
   private fun logEntry(joinPoint: ProceedingJoinPoint) {
+    if (!log.isInfoEnabled) return
     val argsJson = JsonMapperFactory.instance.writeValueAsString(joinPoint.args)
     log.info("${joinPoint.signature.toShortString()} entered with arguments: $argsJson")
   }
@@ -56,7 +57,8 @@ class LoggingAspect {
     result: Any,
     startTime: Long,
   ) {
-    val resultJson = JsonMapperFactory.truncateJson(JsonMapperFactory.instance.writeValueAsString(result))
+    if (!log.isInfoEnabled) return
+    val resultJson = JsonMapperFactory.truncatedJson(result)
     val duration = TimeUtility.durationInSeconds(startTime)
     log.info("${joinPoint.signature.toShortString()} exited with result: $resultJson in $duration seconds")
   }
