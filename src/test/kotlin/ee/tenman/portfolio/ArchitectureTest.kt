@@ -49,6 +49,7 @@ class ArchitectureTest {
       .definedBy(
         "..repository..",
         "..binance..",
+        "..ecb..",
         "..ft..",
         "..telegram..",
         "..openrouter..",
