@@ -28,7 +28,7 @@ class Trading212HoldingEnricherTest {
       )
     val result = enricher.enrich(Trading212EtfHolding(ticker = "SANe_EQ", percentage = BigDecimal("13.94"), externalName = null), rank = 1)
     expect(result.name).toEqual("Banco Santander")
-    expect(result.ticker).toEqual("SANe_EQ")
+    expect(result.ticker).toEqual("SAN")
     expect(result.weight).toEqualNumerically(BigDecimal("13.94"))
     expect(result.rank).toEqual(1)
     expect(result.logoUrl).toEqual("https://trading212equities.s3.eu-central-1.amazonaws.com/SANe_EQ.png")
@@ -133,6 +133,29 @@ class Trading212HoldingEnricherTest {
     every { openFigiResolver.resolveName("UCG") } returns "UNICREDIT SPA"
     val result = enricher.enrich(Trading212EtfHolding(ticker = "UCG", percentage = BigDecimal("9.18"), externalName = null), rank = 3)
     expect(result.name).toEqual("UNICREDIT SPA")
+  }
+
+  @Test
+  fun `should fall back to raw ticker when catalogue entry is missing`() {
+    every { catalogueService.getInstrumentByTicker("UCG") } returns null
+    every { openFigiResolver.resolveName("UCG") } returns "UNICREDIT SPA"
+    val result = enricher.enrich(Trading212EtfHolding(ticker = "UCG", percentage = BigDecimal("9.18"), externalName = null), rank = 3)
+    expect(result.ticker).toEqual("UCG")
+  }
+
+  @Test
+  fun `should fall back to raw ticker when shortName is blank`() {
+    every { catalogueService.getInstrumentByTicker("ABCe_EQ") } returns
+      Trading212Instrument(
+        ticker = "ABCe_EQ",
+        type = "STOCK",
+        isin = "ES0113900J37",
+        currencyCode = "EUR",
+        name = "Some Bank",
+        shortName = "",
+      )
+    val result = enricher.enrich(Trading212EtfHolding(ticker = "ABCe_EQ", percentage = BigDecimal("1.0"), externalName = null), rank = 9)
+    expect(result.ticker).toEqual("ABCe_EQ")
   }
 
   @Test
