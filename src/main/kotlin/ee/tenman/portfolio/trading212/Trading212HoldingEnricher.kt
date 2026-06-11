@@ -23,7 +23,7 @@ class Trading212HoldingEnricher(
     val countryCode = resolveCountryCode(instrument?.isin)
     return HoldingData(
       name = resolveName(holding, instrument),
-      ticker = holding.ticker,
+      ticker = resolveTicker(holding, instrument),
       sector = null,
       weight = holding.percentage,
       rank = rank,
@@ -41,6 +41,11 @@ class Trading212HoldingEnricher(
       ?: holding.externalName?.takeIf { it.isNotBlank() }
       ?: openFigiResolver.resolveName(holding.ticker)?.takeIf { it.isNotBlank() }
       ?: holding.ticker
+
+  private fun resolveTicker(
+    holding: Trading212EtfHolding,
+    instrument: Trading212Instrument?,
+  ): String = instrument?.shortName?.takeIf { it.isNotBlank() } ?: holding.ticker
 
   private fun resolveCountryCode(isin: String?): String? =
     isin
