@@ -105,6 +105,7 @@ println("E2E environment variable: $isE2ETestEnvironmentEnabled")
 
 val test by tasks.getting(Test::class) {
   useJUnitPlatform()
+  configurePodmanSocketOverride()
   if (isE2ETestEnvironmentEnabled) {
     configureE2ETestEnvironment()
   } else {
@@ -126,6 +127,12 @@ val test by tasks.getting(Test::class) {
     showStackTraces = true
     exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
   }
+}
+
+fun Test.configurePodmanSocketOverride() {
+  if (System.getenv("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE") != null) return
+  if (System.getenv("DOCKER_HOST")?.contains("podman") != true) return
+  environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/run/user/501/podman/podman.sock")
 }
 
 fun Test.configureE2ETestEnvironment() {
