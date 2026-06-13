@@ -13,8 +13,7 @@ class BlackRockCsvParserTest {
   private val header =
     "Ticker,Name,Sector,Asset Class,Market Value,Weight (%),Notional Value,Shares,Price,Location,Exchange,Market Currency"
 
-  private fun csv(vararg rows: String): String =
-    listOf("Fund Holdings as of,\"11/Jun/2026\"", " ", header, *rows).joinToString("\n")
+  private fun csv(vararg rows: String): String = listOf("Fund Holdings as of,\"11/Jun/2026\"", " ", header, *rows).joinToString("\n")
 
   @Test
   fun `should parse equity holdings skipping preamble`() {

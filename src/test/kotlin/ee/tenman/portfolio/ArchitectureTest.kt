@@ -49,6 +49,7 @@ class ArchitectureTest {
       .definedBy(
         "..repository..",
         "..binance..",
+        "..blackrock..",
         "..ecb..",
         "..ft..",
         "..telegram..",
