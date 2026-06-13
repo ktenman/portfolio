@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 class AvivaPensionTransactionsMigrationTest {
   private val sql =
-    requireNotNull(javaClass.getResourceAsStream("/db/migration/V202606111010__aviva_pension_transactions.sql"))
+    requireNotNull(javaClass.getResourceAsStream("/db/migration/V202606111302__aviva_pension_transactions.sql"))
       .bufferedReader()
       .use { it.readText() }
 
