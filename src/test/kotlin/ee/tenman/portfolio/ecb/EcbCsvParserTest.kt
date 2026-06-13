@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.ecb
 
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -56,5 +58,14 @@ class EcbCsvParserTest {
     val rates = EcbCsvParser.parse(csv)
 
     expect(rates).toContainExactly(EcbDailyRate(LocalDate.of(2026, 6, 10), BigDecimal("0.86228")))
+  }
+
+  @Test
+  fun `should throw when header lacks required columns`() {
+    val csv = listOf("KEY,FREQ,CURRENCY,WRONG_DATE,WRONG_VALUE", "EXR.D.GBP,D,GBP,2026-06-10,0.86").joinToString("\n")
+
+    expect {
+      EcbCsvParser.parse(csv)
+    }.toThrow<IllegalStateException>().messageToContain("OBS_VALUE")
   }
 }

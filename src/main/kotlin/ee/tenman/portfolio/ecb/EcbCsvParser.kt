@@ -13,7 +13,7 @@ object EcbCsvParser {
     val columns = lines.first().split(",")
     val dateIndex = columns.indexOf("TIME_PERIOD")
     val rateIndex = columns.indexOf("OBS_VALUE")
-    if (dateIndex < 0 || rateIndex < 0) return emptyList()
+    check(dateIndex >= 0 && rateIndex >= 0) { "ECB CSV header missing TIME_PERIOD or OBS_VALUE columns, found: ${lines.first()}" }
     return lines.drop(1).mapNotNull { parseRow(it, dateIndex, rateIndex) }
   }
 
