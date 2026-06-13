@@ -98,6 +98,50 @@ class CurrencyConversionServiceTest {
   }
 
   @Test
+  fun `should return amount unchanged when converting eur to eur for a date`() {
+    val converted = currencyConversionService.convertToEur(BigDecimal("11.74"), Currency.EUR, tuesday)
+
+    expect(converted).toEqualNumerically(BigDecimal("11.74"))
+    verify(exactly = 0) {
+      exchangeRateRepository.findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(
+        any(),
+        any(),
+        any(),
+      )
+    }
+  }
+
+  @Test
+  fun `should divide amount by rate effective on or before the date when converting gbp to eur`() {
+    every {
+      exchangeRateRepository.findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(
+        Currency.EUR,
+        Currency.GBP,
+        wednesday,
+      )
+    } returns rate(tuesday, "0.85")
+
+    val converted = currencyConversionService.convertToEur(BigDecimal("11.74"), Currency.GBP, wednesday)
+
+    expect(converted).toEqualNumerically(BigDecimal("13.8117647059"))
+  }
+
+  @Test
+  fun `should throw when converting an amount and no rate exists on or before the date`() {
+    every {
+      exchangeRateRepository.findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(
+        Currency.EUR,
+        Currency.GBP,
+        tuesday,
+      )
+    } returns null
+
+    expect {
+      currencyConversionService.convertToEur(BigDecimal("11.74"), Currency.GBP, tuesday)
+    }.toThrow<IllegalStateException>().messageToContain("GBP")
+  }
+
+  @Test
   fun `should fall back to repository lookup when rate is older than loaded range`() {
     every {
       exchangeRateRepository.findAllByBaseCurrencyAndQuoteCurrencyAndEntryDateBetween(Currency.EUR, Currency.GBP, any(), any())

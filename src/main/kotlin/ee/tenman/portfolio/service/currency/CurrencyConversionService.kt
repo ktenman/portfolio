@@ -30,6 +30,16 @@ class CurrencyConversionService(
     return prices.mapValues { (date, data) -> convert(data, findRate(rates, date, currency)) }
   }
 
+  @Transactional(readOnly = true)
+  fun convertToEur(
+    amount: BigDecimal,
+    currency: Currency,
+    date: LocalDate,
+  ): BigDecimal {
+    if (currency == Currency.EUR) return amount
+    return amount.divide(rateOn(currency, date), SCALE, RoundingMode.HALF_UP)
+  }
+
   private fun loadRates(
     currency: Currency,
     startDate: LocalDate,
@@ -49,11 +59,15 @@ class CurrencyConversionService(
     rates: TreeMap<LocalDate, BigDecimal>,
     date: LocalDate,
     currency: Currency,
+  ): BigDecimal = rates.floorEntry(date)?.value ?: rateOn(currency, date)
+
+  private fun rateOn(
+    currency: Currency,
+    date: LocalDate,
   ): BigDecimal =
-    rates.floorEntry(date)?.value
-      ?: exchangeRateRepository
-        .findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(Currency.EUR, currency, date)
-        ?.rate
+    exchangeRateRepository
+      .findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(Currency.EUR, currency, date)
+      ?.rate
       ?: throw IllegalStateException("No exchange rate found for $currency on or before $date")
 
   private fun convert(
