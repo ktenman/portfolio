@@ -21,6 +21,7 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: './tests/setup.ts',
+    disableConsoleIntercept: true,
     reporters: ['default', 'html', 'junit'],
     outputFile: {
       junit: '../test-results/junit.xml',
