@@ -263,5 +263,8 @@ industry-classification:
 ecb:
   url: https://data-api.ecb.europa.eu
 
+blackrock:
+  url: https://www.blackrock.com
+
 veego:
   url: https://api.veego.ee/api
