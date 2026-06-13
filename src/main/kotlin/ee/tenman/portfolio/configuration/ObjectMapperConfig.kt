@@ -23,6 +23,9 @@ class ObjectMapperConfig {
     val mapper = JsonMapperFactory.instance
     return Decoder { response: Response, type: Type ->
       if (response.body() == null) return@Decoder null
+      if (type == String::class.java) {
+        return@Decoder response.body().asInputStream().use { stream -> stream.readBytes().toString(StandardCharsets.UTF_8) }
+      }
       runCatching<Any?> {
         response.body().asInputStream().use { stream -> mapper.readValue<Any>(stream, mapper.constructType(type)) }
       }.getOrElse { throw DecodeException(response.status(), "Failed to decode response", response.request(), it) }

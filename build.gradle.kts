@@ -1,3 +1,5 @@
+import java.util.concurrent.TimeUnit
+
 plugins {
   alias(libs.plugins.spring.boot)
   alias(libs.plugins.spring.dependency.management)
@@ -105,6 +107,7 @@ println("E2E environment variable: $isE2ETestEnvironmentEnabled")
 
 val test by tasks.getting(Test::class) {
   useJUnitPlatform()
+  configurePodmanSocketOverride()
   if (isE2ETestEnvironmentEnabled) {
     configureE2ETestEnvironment()
   } else {
@@ -127,6 +130,30 @@ val test by tasks.getting(Test::class) {
     exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
   }
 }
+
+fun Test.configurePodmanSocketOverride() {
+  if (System.getenv("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE") != null) return
+  val client = System.getenv("DOCKER_HOST")?.removePrefix("unix://") ?: return
+  val machine = podman("machine", "inspect", "--format", "{{.ConnectionInfo.PodmanSocket.Path}}") ?: return
+  if (client != machine) return
+  val daemon = podman("info", "--format", "{{.Host.RemoteSocket.Path}}") ?: return
+  environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", daemon.removePrefix("unix://"))
+}
+
+fun podman(vararg args: String): String? =
+  runCatching {
+    val process = ProcessBuilder("podman", *args).start()
+    if (!process.waitFor(10, TimeUnit.SECONDS)) {
+      process.destroyForcibly()
+      return@runCatching null
+    }
+    val output =
+      process.inputStream
+        .bufferedReader()
+        .readText()
+        .trim()
+    if (process.exitValue() == 0 && output.isNotEmpty()) output else null
+  }.getOrNull()
 
 fun Test.configureE2ETestEnvironment() {
   include("**/e2e/**")

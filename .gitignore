@@ -75,3 +75,7 @@ scripts/*.keras
 scripts/*.png
 scripts/*.jpg
 .worktrees/
+
+### Working docs (keep architecture diagrams) ###
+docs/*
+!docs/architecture/

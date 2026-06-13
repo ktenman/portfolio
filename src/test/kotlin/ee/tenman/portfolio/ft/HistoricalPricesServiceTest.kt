@@ -7,8 +7,15 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.common.DailyPriceData
+import ee.tenman.portfolio.common.DailyPriceDataImpl
+import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.domain.ExchangeRate
+import ee.tenman.portfolio.repository.ExchangeRateRepository
+import ee.tenman.portfolio.service.currency.CurrencyConversionService
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -21,17 +28,21 @@ import java.time.ZoneId
 class HistoricalPricesServiceTest {
   private lateinit var historicalPricesClient: HistoricalPricesClient
 
+  private lateinit var currencyConversionService: CurrencyConversionService
+
   private lateinit var service: HistoricalPricesService
 
   @BeforeEach
   fun setUp() {
     historicalPricesClient = mockk()
+    currencyConversionService = mockk()
+    every { currencyConversionService.convertDailyPricesToEur(any(), any()) } answers { firstArg() }
     val clock =
       Clock.fixed(
       LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
       ZoneId.of("UTC"),
     )
-    service = HistoricalPricesService(historicalPricesClient, clock)
+    service = HistoricalPricesService(historicalPricesClient, currencyConversionService, clock)
   }
 
   @ParameterizedTest
@@ -307,6 +318,104 @@ class HistoricalPricesServiceTest {
     expect(data?.low).notToEqualNull().toEqualNumerically(BigDecimal("1230.00"))
     expect(data?.close).notToEqualNull().toEqualNumerically(BigDecimal("1238.50"))
     expect(data?.volume).toEqual(123456L)
+  }
+
+  @Test
+  fun `should convert merged prices to eur when symbol lists in gbp`() {
+    val date = LocalDate.of(2025, 1, 17)
+    val converted =
+      mapOf<LocalDate, DailyPriceData>(
+        date to
+          DailyPriceDataImpl(
+            open = BigDecimal("13.57"),
+            high = BigDecimal("13.69"),
+            low = BigDecimal("13.51"),
+            close = BigDecimal("13.6151"),
+            volume = 1000,
+          ),
+      )
+    every {
+      historicalPricesClient.getHistoricalPrices(any(), any(), "543017012")
+    } returns
+      HistoricalPricesResponse(
+        html =
+          """<tr>
+          <td class="mod-ui-table__cell--text">
+            <span class="mod-ui-hide-small-below">Friday, January 17, 2025</span>
+          </td>
+          <td>11.70</td>
+          <td>11.80</td>
+          <td>11.65</td>
+          <td>11.74</td>
+          <td>1000</td>
+        </tr>""",
+      )
+    every { currencyConversionService.convertDailyPricesToEur(any(), Currency.GBP) } returns converted
+
+    val result = service.fetchPrices("GB00B0ZDNB53:GBP")
+
+    expect(result[date]?.close).notToEqualNull().toEqualNumerically(BigDecimal("13.6151"))
+  }
+
+  @Test
+  fun `should convert ft pounds close to eur using real conversion service`() {
+    val exchangeRateRepository = mockk<ExchangeRateRepository>()
+    every {
+      exchangeRateRepository.findAllByBaseCurrencyAndQuoteCurrencyAndEntryDateBetween(
+        Currency.EUR,
+        Currency.GBP,
+        any(),
+        any(),
+      )
+    } returns listOf(ExchangeRate(LocalDate.of(2025, 1, 17), Currency.EUR, Currency.GBP, BigDecimal("0.85")))
+    val realConversionService = CurrencyConversionService(exchangeRateRepository)
+    val gbpClock =
+      Clock.fixed(LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
+    val serviceWithRealConversion = HistoricalPricesService(historicalPricesClient, realConversionService, gbpClock)
+    every {
+      historicalPricesClient.getHistoricalPrices(any(), any(), "543017012")
+    } returns
+      HistoricalPricesResponse(
+        html =
+          """<tr>
+          <td class="mod-ui-table__cell--text">
+            <span class="mod-ui-hide-small-below">Friday, January 17, 2025</span>
+          </td>
+          <td>11.70</td>
+          <td>11.80</td>
+          <td>11.65</td>
+          <td>11.74</td>
+          <td>1000</td>
+        </tr>""",
+      )
+
+    val result = serviceWithRealConversion.fetchPrices("GB00B0ZDNB53:GBP")
+
+    expect(result[LocalDate.of(2025, 1, 17)]?.close).notToEqualNull().toEqualNumerically(BigDecimal("13.8117647059"))
+  }
+
+  @Test
+  fun `should treat symbols without currency suffix as eur`() {
+    every {
+      historicalPricesClient.getHistoricalPrices(any(), any(), "93501088")
+    } returns
+      HistoricalPricesResponse(
+        html =
+          """<tr>
+          <td class="mod-ui-table__cell--text">
+            <span class="mod-ui-hide-small-below">Friday, January 17, 2025</span>
+          </td>
+          <td>100.00</td>
+          <td>105.00</td>
+          <td>99.50</td>
+          <td>104.75</td>
+          <td>1000</td>
+        </tr>""",
+      )
+
+    service.fetchPrices("QDVE.DEX")
+
+    verify(exactly = 1) { currencyConversionService.convertDailyPricesToEur(any(), Currency.EUR) }
   }
 
   @Test

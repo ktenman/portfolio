@@ -2,6 +2,8 @@ package ee.tenman.portfolio.ft
 
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.common.DailyPriceDataImpl
+import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.service.currency.CurrencyConversionService
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -61,6 +63,7 @@ private val REQUEST_DATE_FORMATTER: DateTimeFormatter =
 @Service
 class HistoricalPricesService(
   private val historicalPricesClient: HistoricalPricesClient,
+  private val currencyConversionService: CurrencyConversionService,
   private val clock: Clock,
   @Value("\${ft.parallel.threads:5}") private val parallelThreads: Int = 5,
 ) {
@@ -97,8 +100,10 @@ class HistoricalPricesService(
         mergedResult.putAll(partialResult)
       }
 
-      mergedResult
+      currencyConversionService.convertDailyPricesToEur(mergedResult, listingCurrency(symbol))
     }
+
+  private fun listingCurrency(symbol: String): Currency = Currency.fromCodeOrNull(symbol.substringAfterLast(':')) ?: Currency.EUR
 
   fun fetchAndParsePrices(
     startDate: String,
