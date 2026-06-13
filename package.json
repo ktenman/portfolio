@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "predev": "docker stop $(docker ps -q) 2>/dev/null; docker ps -aq | xargs -r docker rm 2>/dev/null; lsof -ti:8081,61234 | xargs kill -9 2>/dev/null; echo 'Cleanup complete'",
+    "predev": "docker stop $(docker ps -q) 2>/dev/null; docker ps -aq | xargs -r docker rm 2>/dev/null; lsof -ti:8081,61234 | xargs kill -9 2>/dev/null; echo 'Cleanup complete' && npm run --silent docker:build-proxy",
     "dev": "concurrently -k -p '[{name}]' -n 'BACKEND,FRONTEND' -c 'blue,green' 'npm run dev:backend' 'npm run dev:ui'",
     "dev:ui": "vite",
     "dev:backend": "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew bootRun",
@@ -32,6 +32,7 @@
     "test:setup": "npm run test:cleanup 2>/dev/null; docker compose -f compose.yaml up -d && sleep 5 && (SCHEDULING_ENABLED=false ./gradlew bootRun > /tmp/portfolio-backend.log 2>&1 &) && (CI=true npm run dev:ui > /tmp/portfolio-frontend.log 2>&1 &) && npm run test:wait",
     "test:wait": "echo 'Waiting for services...' && for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do sleep 2 && curl -s http://localhost:8081/actuator/health > /dev/null 2>&1 && curl -s http://localhost:61234 > /dev/null 2>&1 && echo 'E2E environment ready' && exit 0; done; echo 'Setup timed out' && exit 1",
     "test:cleanup": "pkill -f 'bootRun|vite' 2>/dev/null; docker compose -f compose.yaml down 2>/dev/null; true",
+    "docker:build-proxy": "docker build --platform linux/amd64 -t portfolio-cloudflare-bypass-proxy:latest ./cloudflare-bypass-proxy",
     "docker:up": "docker compose -f compose.yaml up -d",
     "docker:down": "docker compose -f compose.yaml down"
   },

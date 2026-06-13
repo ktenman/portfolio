@@ -17,6 +17,9 @@ server:
 binance:
   url: http://localhost:${wiremock.server.port}
 
+ecb:
+  url: http://localhost:${wiremock.server.port}
+
 openfigi:
   url: http://localhost:${wiremock.server.port}
   default-exchange-code: IM
