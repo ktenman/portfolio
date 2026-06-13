@@ -19,7 +19,7 @@ class AvivaPensionMigrationIT {
       jdbcTemplate.queryForObject(
         "SELECT COUNT(*) FROM flyway_schema_history WHERE version = ? AND success = true",
         Int::class.java,
-        "202606111000",
+        "202606111301",
       )
     expect(applied).toEqual(1)
   }
@@ -30,7 +30,7 @@ class AvivaPensionMigrationIT {
       jdbcTemplate.queryForObject(
         "SELECT COUNT(*) FROM flyway_schema_history WHERE version = ? AND success = true",
         Int::class.java,
-        "202606111010",
+        "202606111302",
       )
     expect(applied).toEqual(1)
   }
