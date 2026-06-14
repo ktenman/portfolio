@@ -10,6 +10,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.EtfHoldingRepository
@@ -211,7 +212,7 @@ class DiversificationCalculatorControllerIT {
   fun `should aggregate holdings from multiple etfs with same holding`() {
     val etf1 = createAndSaveInstrument("VWCE", "Vanguard FTSE All-World")
     val etf2 = createAndSaveInstrument("VUAA", "Vanguard S&P 500")
-    val appleHolding = createAndSaveHolding("AAPL", "Apple Inc", "Technology", "US", "United States")
+    val appleHolding = createAndSaveHolding("AAPL", "Apple Inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     createPosition(etf1, appleHolding, BigDecimal("5.0"))
     createPosition(etf2, appleHolding, BigDecimal("10.0"))
 
@@ -239,9 +240,9 @@ class DiversificationCalculatorControllerIT {
   @Test
   fun `should aggregate sectors correctly`() {
     val etf = createAndSaveInstrument("VWCE", "Vanguard FTSE All-World")
-    val holding1 = createAndSaveHolding("AAPL", "Apple Inc", "Technology", "US", "United States")
-    val holding2 = createAndSaveHolding("MSFT", "Microsoft", "Technology", "US", "United States")
-    val holding3 = createAndSaveHolding("JPM", "JPMorgan", "Financials", "US", "United States")
+    val holding1 = createAndSaveHolding("AAPL", "Apple Inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding2 = createAndSaveHolding("MSFT", "Microsoft", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding3 = createAndSaveHolding("JPM", "JPMorgan", IndustrySector.FINANCE, "US", "United States")
     createPosition(etf, holding1, BigDecimal("30.0"))
     createPosition(etf, holding2, BigDecimal("20.0"))
     createPosition(etf, holding3, BigDecimal("10.0"))
@@ -262,7 +263,7 @@ class DiversificationCalculatorControllerIT {
           ),
       ).andExpect(status().isOk)
       .andExpect(jsonPath("$.sectors.length()").value(2))
-      .andExpect(jsonPath("$.sectors[0].sector").value("Technology"))
+      .andExpect(jsonPath("$.sectors[0].sector").value("Digital Hardware"))
       .andExpect(jsonPath("$.sectors[0].percentage").value(50.0))
   }
 
@@ -291,7 +292,7 @@ class DiversificationCalculatorControllerIT {
   private fun createAndSaveHolding(
     ticker: String?,
     name: String,
-    sector: String?,
+    sector: IndustrySector?,
     countryCode: String?,
     countryName: String?,
   ): EtfHolding {
@@ -326,7 +327,7 @@ class DiversificationCalculatorControllerIT {
       createAndSaveHolding(
         "${etf.symbol}-HOLD",
         "${etf.name} Holding",
-        "Technology",
+        IndustrySector.DIGITAL_HARDWARE,
         "US",
         "United States",
       )

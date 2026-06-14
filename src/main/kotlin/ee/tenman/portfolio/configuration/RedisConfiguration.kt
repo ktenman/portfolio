@@ -32,6 +32,7 @@ class RedisConfiguration {
     cacheConfigurations[SNAPSHOT_BACKFILL_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(2))
     cacheConfigurations[VEEGO_TAX_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[AUTO24_PRICE_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(6))
+    cacheConfigurations[HOLDING_IDENTITY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
       .builder(connectionFactory)
@@ -57,6 +58,7 @@ class RedisConfiguration {
     const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"
     const val VEEGO_TAX_CACHE: String = "veego-tax-v1"
     const val AUTO24_PRICE_CACHE: String = "auto24-price-v1"
+    const val HOLDING_IDENTITY_CACHE: String = "holding-identity-v1"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }
 }
