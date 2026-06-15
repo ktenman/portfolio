@@ -7,8 +7,10 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
@@ -170,14 +172,48 @@ class EtfHoldingPersistenceServiceIT {
 
   @Test
   fun `should findOrCreateHolding create new holding when not exists`() {
-    val result = etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", "Technology")
+    val result = etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", "Digital Hardware")
 
     expect(result.id).toBeGreaterThan(0L)
     expect(result.name).toEqual("Apple Inc")
     expect(result.ticker).toEqual("AAPL")
-    expect(result.sector).toEqual("Technology")
+    expect(result.sector).toEqual(IndustrySector.DIGITAL_HARDWARE)
     val holdings = etfHoldingRepository.findAll()
     expect(holdings).toHaveSize(1)
+  }
+
+  @Test
+  fun `cannot store non canonical provider sector and nulls it for reclassification`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(name = "NVIDIA Corp", ticker = "NVDA", sector = "Information Technology", weight = BigDecimal("7.00"), rank = 1),
+      ),
+    )
+
+    val saved = etfHoldingRepository.findAll().first { it.name == "NVIDIA Corp" }
+
+    expect(saved.sector).toEqual(null)
+    expect(saved.sectorSource).toEqual(null)
+  }
+
+  @Test
+  fun `should store canonical provider sector with lightyear source`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(name = "Caterpillar Inc", ticker = "CAT", sector = "Industrials", weight = BigDecimal("3.00"), rank = 1),
+      ),
+    )
+
+    val saved = etfHoldingRepository.findAll().first { it.name == "Caterpillar Inc" }
+
+    expect(saved.sector).toEqual(IndustrySector.INDUSTRIALS)
+    expect(saved.sectorSource).toEqual(SectorSource.LIGHTYEAR)
   }
 
   @Test
@@ -248,10 +284,10 @@ class EtfHoldingPersistenceServiceIT {
   fun `should updateSector update holding sector`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", null)
 
-    etfHoldingPersistenceService.updateSector(holding.id, "Information Technology")
+    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.SOFTWARE_CLOUD_SERVICES)
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
-    expect(updated.sector).toEqual("Information Technology")
+    expect(updated.sector).toEqual(IndustrySector.SOFTWARE_CLOUD_SERVICES)
   }
 
   @Test
@@ -353,6 +389,26 @@ class EtfHoldingPersistenceServiceIT {
     val saved = etfHoldingRepository.findAll().first()
     expect(saved.countryCode).toEqual("ES")
     expect(saved.countryName).toEqual("Spain")
+  }
+
+  @Test
+  fun `should findUnclassifiedHoldingIds include lightyear sourced sectors and exclude llm classified`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(name = "NVIDIA Corp", ticker = "NVDA", sector = "Industrials", weight = BigDecimal("7.00"), rank = 1),
+        HoldingData(name = "Microsoft Corp", ticker = "MSFT", sector = "Industrials", weight = BigDecimal("6.00"), rank = 2),
+      ),
+    )
+    val microsoftId = etfHoldingRepository.findAll().first { it.name == "Microsoft Corp" }.id
+    etfHoldingPersistenceService.updateSector(microsoftId, IndustrySector.SOFTWARE_CLOUD_SERVICES)
+
+    val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
+
+    val nvidiaId = etfHoldingRepository.findAll().first { it.name == "NVIDIA Corp" }.id
+    expect(unclassifiedIds).toContainExactly(nvidiaId)
   }
 
   @Test

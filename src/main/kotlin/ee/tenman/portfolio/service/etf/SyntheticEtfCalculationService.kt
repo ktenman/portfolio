@@ -48,7 +48,7 @@ class SyntheticEtfCalculationService(
         holdingUuid = holding.uuid,
         ticker = ticker?.uppercase()?.trim()?.takeIf { it.isNotBlank() },
         name = holding.name.trim(),
-        sector = resolveSector(holding.sector, instrument),
+        sector = resolveSector(holding.sector?.displayName, instrument),
         countryCode = holding.countryCode?.trim()?.takeIf { it.isNotBlank() },
         countryName = holding.countryName?.trim()?.takeIf { it.isNotBlank() },
         value = h.value,

@@ -8,6 +8,7 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.integration.CompanyClassificationInput
 import ee.tenman.portfolio.service.integration.IndustryClassificationService
@@ -25,6 +26,7 @@ class EtfHoldingsClassificationJobTest {
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val circuitBreaker: OpenRouterCircuitBreaker = mockk()
   private val properties: IndustryClassificationProperties = mockk(relaxed = true)
+  private val cacheInvalidationService: CacheInvalidationService = mockk(relaxed = true)
 
   private lateinit var job: EtfHoldingsClassificationJob
 
@@ -40,6 +42,7 @@ class EtfHoldingsClassificationJobTest {
         jobExecutionService = jobExecutionService,
         circuitBreaker = circuitBreaker,
         properties = properties,
+        cacheInvalidationService = cacheInvalidationService,
       )
   }
 
@@ -90,8 +93,8 @@ class EtfHoldingsClassificationJobTest {
 
     job.execute()
 
-    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, "Semiconductors", AiModel.GEMINI_3_FLASH_PREVIEW) }
-    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(2L, "Finance", AiModel.GEMINI_3_FLASH_PREVIEW) }
+    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, IndustrySector.SEMICONDUCTORS, AiModel.GEMINI_3_FLASH_PREVIEW) }
+    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(2L, IndustrySector.FINANCE, AiModel.GEMINI_3_FLASH_PREVIEW) }
   }
 
   @Test
@@ -107,7 +110,7 @@ class EtfHoldingsClassificationJobTest {
 
     job.execute()
 
-    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, "Semiconductors", AiModel.GEMINI_3_FLASH_PREVIEW) }
+    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, IndustrySector.SEMICONDUCTORS, AiModel.GEMINI_3_FLASH_PREVIEW) }
     verify(exactly = 0) { etfHoldingPersistenceService.updateSector(2L, any(), any()) }
   }
 
@@ -123,6 +126,32 @@ class EtfHoldingsClassificationJobTest {
     job.execute()
 
     expect(batchSlot.captured.map { it.holdingId }).toEqual(listOf(1L))
+  }
+
+  @Test
+  fun `should evict etf breakdown caches when classification succeeds`() {
+    val holding = createHolding(1L, "Apple Inc", "AAPL")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
+    every { industryClassificationService.classifyBatch(any()) } returns
+      mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW))
+
+    job.execute()
+
+    verify(exactly = 1) { cacheInvalidationService.evictEtfBreakdownCache() }
+    verify(exactly = 1) { cacheInvalidationService.evictDiversificationEtfsCache() }
+  }
+
+  @Test
+  fun `should not evict caches when no holdings classified`() {
+    val holding = createHolding(1L, "Apple Inc", "AAPL")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
+    every { industryClassificationService.classifyBatch(any()) } returns emptyMap()
+
+    job.execute()
+
+    verify(exactly = 0) { cacheInvalidationService.evictEtfBreakdownCache() }
   }
 
   @Test

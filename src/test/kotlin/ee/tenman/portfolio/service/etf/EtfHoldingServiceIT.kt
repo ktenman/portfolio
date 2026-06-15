@@ -1,13 +1,18 @@
 package ee.tenman.portfolio.service.etf
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
+import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
+import io.mockk.every
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,6 +23,9 @@ import java.time.LocalDate
 class EtfHoldingServiceIT {
   @Resource
   private lateinit var etfHoldingService: EtfHoldingService
+
+  @MockkBean(relaxed = true)
+  private lateinit var holdingIdentityService: HoldingIdentityService
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
@@ -92,7 +100,7 @@ class EtfHoldingServiceIT {
         HoldingData(
           name = "Google Inc",
           ticker = "GOOGL",
-          sector = "Technology",
+          sector = "Digital Hardware",
           weight = BigDecimal("10.0"),
           rank = 1,
           logoUrl = null,
@@ -101,7 +109,7 @@ class EtfHoldingServiceIT {
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithSector)
 
     val updatedHolding = etfHoldingRepository.findAll().first()
-    expect(updatedHolding.sector).toEqual("Technology")
+    expect(updatedHolding.sector).toEqual(IndustrySector.DIGITAL_HARDWARE)
     expect(updatedHolding.classifiedByModel).toEqual(null)
   }
 
@@ -112,7 +120,7 @@ class EtfHoldingServiceIT {
         HoldingData(
           name = "Facebook Inc",
           ticker = "FB",
-          sector = "Technology",
+          sector = "Digital Hardware",
           weight = BigDecimal("10.0"),
           rank = 1,
           logoUrl = null,
@@ -120,7 +128,7 @@ class EtfHoldingServiceIT {
       )
     etfHoldingService.saveHoldings("IITU", testDate, holdingsWithSector)
     val savedWithSector = etfHoldingRepository.findAll().first()
-    expect(savedWithSector.sector).toEqual("Technology")
+    expect(savedWithSector.sector).toEqual(IndustrySector.DIGITAL_HARDWARE)
 
     val holdingsWithDifferentSector =
       listOf(
@@ -136,7 +144,7 @@ class EtfHoldingServiceIT {
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithDifferentSector)
 
     val unchangedHolding = etfHoldingRepository.findAll().first()
-    expect(unchangedHolding.sector).toEqual("Technology")
+    expect(unchangedHolding.sector).toEqual(IndustrySector.DIGITAL_HARDWARE)
   }
 
   @Test
@@ -172,6 +180,121 @@ class EtfHoldingServiceIT {
     expect(allHoldings.size).toEqual(2)
     expect(allHoldings.map { it.name }.toSet()).toEqual(setOf("Merck & Co.", "Merck KGaA"))
     expect(allHoldings.all { it.ticker == "MRK" }).toEqual(true)
+  }
+
+  @Test
+  fun `should reuse holding when identity service confirms same company under shared ticker`() {
+    val abbreviatedName =
+      listOf(
+        HoldingData(
+          name = "Amazon",
+          ticker = "AMZN",
+          sector = "Consumer Cyclical",
+          weight = BigDecimal("10.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate, abbreviatedName)
+    val originalId = etfHoldingRepository.findAll().first().id
+    every { holdingIdentityService.isSameCompany("Amazon", "Amazon.com Inc", "AMZN") } returns true
+
+    val legalName =
+      listOf(
+        HoldingData(
+          name = "Amazon.com Inc",
+          ticker = "AMZN",
+          sector = "Consumer Cyclical",
+          weight = BigDecimal("9.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), legalName)
+
+    val allHoldings = etfHoldingRepository.findAll()
+    expect(allHoldings.size).toEqual(1)
+    expect(allHoldings.first().id).toEqual(originalId)
+  }
+
+  @Test
+  fun `should reuse holding via block key without shared ticker and backfill missing fields`() {
+    val barePosition =
+      listOf(
+        HoldingData(
+          name = "Micron Technology",
+          ticker = null,
+          sector = null,
+          weight = BigDecimal("10.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate, barePosition)
+    val originalId = etfHoldingRepository.findAll().first().id
+    every { holdingIdentityService.isSameCompany("Micron Technology", "Micron Technology Inc", "MU") } returns true
+
+    val richerPosition =
+      listOf(
+        HoldingData(
+          name = "Micron Technology Inc",
+          ticker = "MU",
+          sector = "Digital Hardware",
+          weight = BigDecimal("9.0"),
+          rank = 1,
+          logoUrl = null,
+        ),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), richerPosition)
+
+    val reusedHolding = etfHoldingRepository.findAll().single()
+    expect(reusedHolding.id).toEqual(originalId)
+    expect(reusedHolding.ticker).toEqual("MU")
+    expect(reusedHolding.sector).toEqual(IndustrySector.DIGITAL_HARDWARE)
+  }
+
+  @Test
+  fun `should attach position to exact name row instead of fuzzy sibling when both already exist`() {
+    val nvidia =
+      listOf(
+        HoldingData(name = "NVIDIA", ticker = null, sector = null, weight = BigDecimal("10.0"), rank = 1, logoUrl = null),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate, nvidia)
+    val nvidiaCorp =
+      listOf(
+        HoldingData(name = "NVIDIA CORP", ticker = null, sector = null, weight = BigDecimal("9.0"), rank = 1, logoUrl = null),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), nvidiaCorp)
+    val corpId = etfHoldingRepository.findAll().first { it.name == "NVIDIA CORP" }.id
+    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", null) } returns true
+
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(2), nvidiaCorp)
+
+    val exactRowPosition =
+      etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(testEtf, corpId, testDate.plusDays(2))
+    expect(etfHoldingRepository.findAll().size).toEqual(2)
+    expect(exactRowPosition).notToEqualNull()
+  }
+
+  @Test
+  fun `should not collapse two distinct share classes onto one position within a single snapshot`() {
+    val legacy =
+      listOf(
+        HoldingData(name = "Alphabet", ticker = null, sector = null, weight = BigDecimal("10.0"), rank = 1, logoUrl = null),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate, legacy)
+    every { holdingIdentityService.isSameCompany("Alphabet", "Alphabet Class A", "GOOGL") } returns true
+    every { holdingIdentityService.isSameCompany("Alphabet", "Alphabet Class C", "GOOG") } returns true
+
+    val shareClasses =
+      listOf(
+        HoldingData(name = "Alphabet Class A", ticker = "GOOGL", sector = null, weight = BigDecimal("6.0"), rank = 1, logoUrl = null),
+        HoldingData(name = "Alphabet Class C", ticker = "GOOG", sector = null, weight = BigDecimal("4.0"), rank = 2, logoUrl = null),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), shareClasses)
+
+    val snapshotPositions = etfPositionRepository.findAll().filter { it.snapshotDate == testDate.plusDays(1) }
+    expect(snapshotPositions).toHaveSize(2)
   }
 
   @Test

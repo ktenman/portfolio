@@ -4,6 +4,8 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.PrePersist
+import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.util.UUID
@@ -23,7 +25,7 @@ class EtfHolding(
   @Column(nullable = false, length = 255)
   var name: String,
   @Column(length = 150)
-  var sector: String? = null,
+  var sector: IndustrySector? = null,
   @Enumerated(EnumType.STRING)
   @Column(name = "classified_by_model", length = 100)
   var classifiedByModel: AiModel? = null,
@@ -42,4 +44,12 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "logo_source", length = 20)
   var logoSource: LogoSource? = null,
-) : BaseEntity()
+  @Column(name = "name_block_key", length = 255)
+  var nameBlockKey: String? = null,
+) : BaseEntity() {
+  @PrePersist
+  @PreUpdate
+  fun applyNameBlockKey() {
+    nameBlockKey = HoldingBlockKey.of(name)
+  }
+}

@@ -5,6 +5,8 @@ import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.HoldingBlockKey
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
@@ -30,42 +32,65 @@ class EtfHoldingPersistenceService(
     etfSymbol: String,
     date: LocalDate,
     holdings: List<HoldingData>,
+    reuseHints: Map<Int, Long> = emptyMap(),
   ): Map<String, EtfHolding> {
     val etf = findOrCreateEtf(etfSymbol)
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
     val savedHoldings = mutableMapOf<String, EtfHolding>()
-    holdings.forEach { holdingData ->
-      val holding =
-        findOrCreateHolding(
-          holdingData.name,
-          holdingData.ticker,
-          holdingData.sector,
-          holdingData.countryCode,
-          holdingData.countryName,
-        )
+    val claimedHoldingIds = mutableSetOf<Long>()
+    holdings.forEachIndexed { index, holdingData ->
+      val holding = resolveHolding(holdingData, reuseHints[index]?.takeIf { it !in claimedHoldingIds })
+      claimedHoldingIds.add(holding.id)
       savedHoldings[holdingData.name] = holding
-      val existingPosition =
-        etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
-          etfInstrument = etf,
-          holdingId = holding.id,
-          snapshotDate = date,
-        )
-      val position =
-        existingPosition ?: EtfPosition(
-          etfInstrument = etf,
-          holding = holding,
-          snapshotDate = date,
-          weightPercentage = holdingData.weight,
-          positionRank = holdingData.rank,
-        )
-      if (existingPosition != null) {
-        position.weightPercentage = holdingData.weight
-        position.positionRank = holdingData.rank
-      }
-      etfPositionRepository.save(position)
+      upsertPosition(etf, holding, date, holdingData)
     }
     log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
     return savedHoldings
+  }
+
+  private fun resolveHolding(
+    holdingData: HoldingData,
+    reuseHoldingId: Long?,
+  ): EtfHolding {
+    val hinted = reuseHoldingId?.let { etfHoldingRepository.findById(it).orNull() }
+    if (hinted != null) {
+      applyMissingFields(hinted, holdingData.ticker, holdingData.sector, holdingData.countryCode, holdingData.countryName)
+      return hinted
+    }
+    return findOrCreateHolding(
+      holdingData.name,
+      holdingData.ticker,
+      holdingData.sector,
+      holdingData.countryCode,
+      holdingData.countryName,
+    )
+  }
+
+  private fun upsertPosition(
+    etf: Instrument,
+    holding: EtfHolding,
+    date: LocalDate,
+    holdingData: HoldingData,
+  ) {
+    val existingPosition =
+      etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
+        etfInstrument = etf,
+        holdingId = holding.id,
+        snapshotDate = date,
+      )
+    val position =
+      existingPosition ?: EtfPosition(
+        etfInstrument = etf,
+        holding = holding,
+        snapshotDate = date,
+        weightPercentage = holdingData.weight,
+        positionRank = holdingData.rank,
+      )
+    if (existingPosition != null) {
+      position.weightPercentage = holdingData.weight
+      position.positionRank = holdingData.rank
+    }
+    etfPositionRepository.save(position)
   }
 
   @Transactional
@@ -78,22 +103,43 @@ class EtfHoldingPersistenceService(
   ): EtfHolding {
     val existing = etfHoldingRepository.findByNameIgnoreCase(name)
     if (existing != null) {
-      updateTickerIfMissing(existing, ticker)
-      updateSectorFromSourceIfMissing(existing, sector)
-      updateCountryFromSourceIfMissing(existing, countryCode, countryName)
+      applyMissingFields(existing, ticker, sector, countryCode, countryName)
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
+    val canonicalSector = sector?.let { IndustrySector.fromDisplayName(it) }
     return etfHoldingRepository.save(
       EtfHolding(
         name = name,
         ticker = ticker,
-        sector = sector,
-        sectorSource = sector?.let { SectorSource.LIGHTYEAR },
+        sector = canonicalSector,
+        sectorSource = canonicalSector?.let { SectorSource.LIGHTYEAR },
         countryCode = countryCode,
         countryName = countryName,
       ),
     )
+  }
+
+  @Transactional(readOnly = true)
+  fun findByNameBlockKey(name: String): List<EtfHolding> {
+    val blockKey = HoldingBlockKey.of(name)
+    if (blockKey.isEmpty()) return emptyList()
+    return etfHoldingRepository.findByNameBlockKey(blockKey)
+  }
+
+  @Transactional(readOnly = true)
+  fun findByTicker(ticker: String): List<EtfHolding> = etfHoldingRepository.findByTicker(ticker)
+
+  private fun applyMissingFields(
+    holding: EtfHolding,
+    ticker: String?,
+    sector: String?,
+    countryCode: String?,
+    countryName: String?,
+  ) {
+    updateTickerIfMissing(holding, ticker)
+    updateSectorFromSourceIfMissing(holding, sector)
+    updateCountryFromSourceIfMissing(holding, countryCode, countryName)
   }
 
   fun hasHoldingsForDate(
@@ -145,7 +191,7 @@ class EtfHoldingPersistenceService(
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun updateSector(
     holdingId: Long,
-    sector: String,
+    sector: IndustrySector,
     classifiedByModel: AiModel? = null,
   ) {
     val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
@@ -189,11 +235,11 @@ class EtfHoldingPersistenceService(
     holding: EtfHolding,
     sourceSector: String?,
   ) {
-    if (holding.sector.isNullOrBlank() && !sourceSector.isNullOrBlank()) {
-      log.info("Updating sector from source for '${holding.name}': $sourceSector")
-      holding.sector = sourceSector
-      holding.sectorSource = SectorSource.LIGHTYEAR
-    }
+    if (holding.sector != null) return
+    val canonicalSector = sourceSector?.let { IndustrySector.fromDisplayName(it) } ?: return
+    log.info("Updating sector from source for '${holding.name}': ${canonicalSector.displayName}")
+    holding.sector = canonicalSector
+    holding.sectorSource = SectorSource.LIGHTYEAR
   }
 
   private fun updateCountryFromSourceIfMissing(

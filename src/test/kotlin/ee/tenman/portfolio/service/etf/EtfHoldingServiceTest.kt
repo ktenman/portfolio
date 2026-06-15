@@ -19,6 +19,7 @@ import java.util.UUID
 
 class EtfHoldingServiceTest {
   private val etfHoldingPersistenceService = mockk<EtfHoldingPersistenceService>()
+  private val holdingIdentityService = mockk<HoldingIdentityService>(relaxed = true)
   private val logoCacheService = mockk<LogoCacheService>()
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val imageProcessingService = mockk<ImageProcessingService>()
@@ -27,9 +28,12 @@ class EtfHoldingServiceTest {
 
   @BeforeEach
   fun setup() {
+    every { etfHoldingPersistenceService.findByTicker(any()) } returns emptyList()
+    every { etfHoldingPersistenceService.findByNameBlockKey(any()) } returns emptyList()
     service =
       EtfHoldingService(
         etfHoldingPersistenceService,
+        holdingIdentityService,
         logoCacheService,
         imageDownloadService,
         imageProcessingService,
@@ -92,7 +96,8 @@ class EtfHoldingServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("NVIDIA Corp" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData), emptyMap()) } returns
+      mapOf("NVIDIA Corp" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
     every { logoCacheService.saveLogo(holdingUuid, processedImage) } returns processedImage
@@ -109,7 +114,8 @@ class EtfHoldingServiceTest {
   fun `should skip logo download when logoUrl is null via saveHoldings`() {
     val holding = createHolding(1L, "AAPL", "Apple Inc")
     val holdingData = createHoldingData("Apple Inc", "AAPL", null)
-    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData), emptyMap()) } returns
+      mapOf("Apple Inc" to holding)
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
@@ -129,7 +135,8 @@ class EtfHoldingServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData), emptyMap()) } returns
+      mapOf("Apple Inc" to holding)
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
@@ -151,7 +158,8 @@ class EtfHoldingServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/logo.png",
       )
-    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Apple Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData), emptyMap()) } returns
+      mapOf("Apple Inc" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
     every { logoCacheService.saveLogo(holdingUuid, processedImage) } returns processedImage
@@ -176,7 +184,8 @@ class EtfHoldingServiceTest {
         rank = 1,
         logoUrl = "https://lightyear.com/tesla.png",
       )
-    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData)) } returns mapOf("Tesla Inc" to holding)
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(holdingData), emptyMap()) } returns
+      mapOf("Tesla Inc" to holding)
     every { imageDownloadService.download("https://lightyear.com/tesla.png") } throws RuntimeException("Network error")
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))

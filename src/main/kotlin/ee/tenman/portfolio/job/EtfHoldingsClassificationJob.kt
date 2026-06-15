@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.model.ClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.integration.CompanyClassificationInput
 import ee.tenman.portfolio.service.integration.IndustryClassificationService
@@ -20,6 +21,7 @@ class EtfHoldingsClassificationJob(
   private val jobExecutionService: JobExecutionService,
   private val circuitBreaker: OpenRouterCircuitBreaker,
   private val properties: IndustryClassificationProperties,
+  private val cacheInvalidationService: CacheInvalidationService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -46,6 +48,10 @@ class EtfHoldingsClassificationJob(
     val holdings = loadHoldingsMap(holdingIds)
     log.info("Loaded ${holdings.size} holdings")
     val result = processInBatches(holdingIds, holdings)
+    if (result.success > 0) {
+      cacheInvalidationService.evictEtfBreakdownCache()
+      cacheInvalidationService.evictDiversificationEtfsCache()
+    }
     log.info("Sector classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 
@@ -108,7 +114,7 @@ class EtfHoldingsClassificationJob(
     inputs.forEach { input ->
       val result = results[input.holdingId]
       if (result != null) {
-        etfHoldingPersistenceService.updateSector(input.holdingId, result.sector.displayName, result.model)
+        etfHoldingPersistenceService.updateSector(input.holdingId, result.sector, result.model)
         successCount++
       } else {
         failureCount++

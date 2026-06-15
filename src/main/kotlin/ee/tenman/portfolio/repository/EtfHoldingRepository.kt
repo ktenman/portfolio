@@ -16,11 +16,15 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     @Param("name") name: String,
   ): EtfHolding?
 
+  fun findByNameBlockKey(nameBlockKey: String): List<EtfHolding>
+
+  fun findByTicker(ticker: String): List<EtfHolding>
+
   @Query(
     """
     SELECT h FROM EtfHolding h
     JOIN EtfPosition ep ON ep.holding.id = h.id
-    WHERE (h.sector IS NULL OR h.sector = '')
+    WHERE h.sectorSource IS NULL OR h.sectorSource <> ee.tenman.portfolio.domain.SectorSource.LLM
     GROUP BY h.id
     ORDER BY MAX(ep.weightPercentage) DESC
   """,
