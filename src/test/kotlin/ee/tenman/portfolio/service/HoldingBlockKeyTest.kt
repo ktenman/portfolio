@@ -1,7 +1,8 @@
-package ee.tenman.portfolio.domain
+package ee.tenman.portfolio.service
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.HoldingBlockKey
 import org.junit.jupiter.api.Test
 
 class HoldingBlockKeyTest {

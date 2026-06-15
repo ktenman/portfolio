@@ -33,10 +33,8 @@ class HoldingIdentityService(
     val response = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel()) ?: return false
     val verdict = response.content?.trim()?.startsWith("YES", ignoreCase = true) ?: false
     log.info(
-      "Holding identity check '{}' vs '{}' resolved to {}",
-      LogSanitizerUtil.sanitize(existingName),
-      LogSanitizerUtil.sanitize(candidateName),
-      verdict,
+      "Holding identity check '${LogSanitizerUtil.sanitize(existingName)}' " +
+        "vs '${LogSanitizerUtil.sanitize(candidateName)}' resolved to $verdict",
     )
     return verdict
   }
