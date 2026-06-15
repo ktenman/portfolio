@@ -150,10 +150,7 @@ class EtfBreakdownService(
         ?.trim()
         ?.takeIf { it.isNotBlank() },
     name = position.holding.name.trim(),
-    sector =
-      position.holding.sector
-        ?.trim()
-        ?.takeIf { it.isNotBlank() },
+    sector = position.holding.sector?.displayName,
     countryCode =
       position.holding.countryCode
         ?.trim()

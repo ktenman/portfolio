@@ -157,7 +157,7 @@ class DiversificationCalculatorService(
             AggregatedHolding(
               name = position.holding.name,
               ticker = position.holding.ticker,
-              sector = position.holding.sector,
+              sector = position.holding.sector?.displayName,
               countryCode = position.holding.countryCode,
               countryName = position.holding.countryName,
               percentage = weightedPercentage,

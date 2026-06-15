@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
@@ -239,7 +240,7 @@ class SyntheticEtfCalculationServiceTest {
   inner class BuildHoldings {
     @Test
     fun `should build internal holding data from positions`() {
-      val holding = createHolding("AAPL", "Apple Inc", "Technology", "US", "United States")
+      val holding = createHolding("AAPL", "Apple Inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
       val position = createPosition(holding)
       val instrument = createInstrument("AAPL", BigDecimal("150.00"))
       every { instrumentRepository.findBySymbolIn(listOf("AAPL")) } returns listOf(instrument)
@@ -257,7 +258,7 @@ class SyntheticEtfCalculationServiceTest {
       expect(result).toHaveSize(1)
       expect(result[0].ticker).toEqual("AAPL")
       expect(result[0].name).toEqual("Apple Inc")
-      expect(result[0].sector).toEqual("Technology")
+      expect(result[0].sector).toEqual("Digital Hardware")
       expect(result[0].countryCode).toEqual("US")
       expect(result[0].countryName).toEqual("United States")
       expect(result[0].etfSymbol).toEqual("CRYPTO-ETF")
@@ -307,7 +308,7 @@ class SyntheticEtfCalculationServiceTest {
   private fun createHolding(
     ticker: String?,
     name: String,
-    sector: String? = null,
+    sector: IndustrySector? = null,
     countryCode: String? = null,
     countryName: String? = null,
   ): EtfHolding =

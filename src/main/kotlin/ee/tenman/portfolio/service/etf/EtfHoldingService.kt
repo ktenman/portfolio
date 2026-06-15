@@ -17,6 +17,7 @@ import java.time.LocalDate
 @Service
 class EtfHoldingService(
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService,
+  private val holdingIdentityService: HoldingIdentityService,
   private val logoCacheService: LogoCacheService,
   private val imageDownloadService: ImageDownloadService,
   private val imageProcessingService: ImageProcessingService,
@@ -40,11 +41,36 @@ class EtfHoldingService(
     date: LocalDate,
     holdings: List<HoldingData>,
   ) {
-    val savedHoldings = etfHoldingPersistenceService.saveHoldings(etfSymbol, date, holdings)
+    val reuseHints = resolveReuseHints(holdings)
+    val savedHoldings = etfHoldingPersistenceService.saveHoldings(etfSymbol, date, holdings, reuseHints)
     holdings.forEach { holdingData ->
       val holding = savedHoldings[holdingData.name] ?: return@forEach
       downloadLightyearLogo(holding, holdingData.logoUrl)
     }
+  }
+
+  private fun resolveReuseHints(holdings: List<HoldingData>): Map<Int, Long> =
+    holdings
+      .withIndex()
+      .mapNotNull { (index, holdingData) -> resolveMatchingHoldingId(holdingData)?.let { index to it } }
+      .toMap()
+
+  private fun resolveMatchingHoldingId(holdingData: HoldingData): Long? {
+    val candidates = collectCandidates(holdingData)
+    if (candidates.any { it.name.equals(holdingData.name, ignoreCase = true) }) return null
+    return candidates
+      .firstOrNull { holdingIdentityService.isSameCompany(it.name, holdingData.name, holdingData.ticker) }
+      ?.id
+  }
+
+  private fun collectCandidates(holdingData: HoldingData): List<EtfHolding> {
+    val byTicker =
+      holdingData.ticker
+        ?.takeIf { it.isNotBlank() }
+        ?.let { etfHoldingPersistenceService.findByTicker(it) }
+        ?: emptyList()
+    val byBlockKey = etfHoldingPersistenceService.findByNameBlockKey(holdingData.name)
+    return (byTicker + byBlockKey).distinctBy { it.id }.sortedBy { it.id }
   }
 
   fun findOrCreateHolding(

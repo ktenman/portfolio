@@ -10,6 +10,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.dto.AllocationDto
@@ -36,7 +37,7 @@ class DiversificationCalculatorServiceTest {
   @Test
   fun `should calculate weighted ter for single etf`() {
     val etf = createInstrument(1L, "VWCE", ter = BigDecimal("0.22"))
-    val holding = createHolding(1L, "AAPL", "Apple Inc", "Technology", "US", "United States")
+    val holding = createHolding(1L, "AAPL", "Apple Inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position = createPosition(etf, holding, BigDecimal("10.0000"))
     setupMocks(listOf(etf), listOf(position))
     val request = createRequest(AllocationDto(1L, BigDecimal("100")))
@@ -50,8 +51,8 @@ class DiversificationCalculatorServiceTest {
   fun `should calculate weighted ter for multiple etfs`() {
     val etf1 = createInstrument(1L, "VWCE", ter = BigDecimal("0.22"))
     val etf2 = createInstrument(2L, "VUAA", ter = BigDecimal("0.07"))
-    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology", "US", "United States")
-    val holding2 = createHolding(2L, "MSFT", "Microsoft", "Technology", "US", "United States")
+    val holding1 = createHolding(1L, "AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding2 = createHolding(2L, "MSFT", "Microsoft", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"))
     val position2 = createPosition(etf2, holding2, BigDecimal("100.0000"))
     setupMocks(listOf(etf1, etf2), listOf(position1, position2))
@@ -70,8 +71,8 @@ class DiversificationCalculatorServiceTest {
   fun `should calculate weighted annual return`() {
     val etf1 = createInstrument(1L, "VWCE", annualReturn = BigDecimal("0.12"))
     val etf2 = createInstrument(2L, "VUAA", annualReturn = BigDecimal("0.15"))
-    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology", "US", "United States")
-    val holding2 = createHolding(2L, "MSFT", "Microsoft", "Technology", "US", "United States")
+    val holding1 = createHolding(1L, "AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding2 = createHolding(2L, "MSFT", "Microsoft", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"))
     val position2 = createPosition(etf2, holding2, BigDecimal("100.0000"))
     setupMocks(listOf(etf1, etf2), listOf(position1, position2))
@@ -90,8 +91,8 @@ class DiversificationCalculatorServiceTest {
   fun `should aggregate holdings from multiple etfs`() {
     val etf1 = createInstrument(1L, "VWCE")
     val etf2 = createInstrument(2L, "VUAA")
-    val appleHolding1 = createHolding(1L, "AAPL", "Apple Inc", "Technology", "US", "United States")
-    val appleHolding2 = createHolding(2L, "AAPL", "Apple Inc", "Technology", "US", "United States")
+    val appleHolding1 = createHolding(1L, "AAPL", "Apple Inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val appleHolding2 = createHolding(2L, "AAPL", "Apple Inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position1 = createPosition(etf1, appleHolding1, BigDecimal("5.0000"))
     val position2 = createPosition(etf2, appleHolding2, BigDecimal("10.0000"))
     setupMocks(listOf(etf1, etf2), listOf(position1, position2))
@@ -113,9 +114,9 @@ class DiversificationCalculatorServiceTest {
   @Test
   fun `should aggregate sectors correctly`() {
     val etf = createInstrument(1L, "VWCE")
-    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology", "US", "United States")
-    val holding2 = createHolding(2L, "MSFT", "Microsoft", "Technology", "US", "United States")
-    val holding3 = createHolding(3L, "JPM", "JPMorgan", "Financials", "US", "United States")
+    val holding1 = createHolding(1L, "AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding2 = createHolding(2L, "MSFT", "Microsoft", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding3 = createHolding(3L, "JPM", "JPMorgan", IndustrySector.FINANCE, "US", "United States")
     val position1 = createPosition(etf, holding1, BigDecimal("30.0000"))
     val position2 = createPosition(etf, holding2, BigDecimal("20.0000"))
     val position3 = createPosition(etf, holding3, BigDecimal("10.0000"))
@@ -125,7 +126,7 @@ class DiversificationCalculatorServiceTest {
     val result = service.calculate(request)
 
     expect(result.sectors).toHaveSize(2)
-    val techSector = result.sectors.find { it.sector == "Technology" }
+    val techSector = result.sectors.find { it.sector == "Digital Hardware" }
     expect(techSector).notToEqualNull()
     expect(techSector!!.percentage).toEqualNumerically(BigDecimal("50.0000"))
   }
@@ -133,8 +134,8 @@ class DiversificationCalculatorServiceTest {
   @Test
   fun `should aggregate countries correctly`() {
     val etf = createInstrument(1L, "VWCE")
-    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology", "US", "United States")
-    val holding2 = createHolding(2L, "ASML", "ASML", "Technology", "NL", "Netherlands")
+    val holding1 = createHolding(1L, "AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding2 = createHolding(2L, "ASML", "ASML", IndustrySector.DIGITAL_HARDWARE, "NL", "Netherlands")
     val position1 = createPosition(etf, holding1, BigDecimal("60.0000"))
     val position2 = createPosition(etf, holding2, BigDecimal("40.0000"))
     setupMocks(listOf(etf), listOf(position1, position2))
@@ -153,7 +154,7 @@ class DiversificationCalculatorServiceTest {
     val etf = createInstrument(1L, "VWCE")
     val holdings =
       (1..15).map { i ->
-      createHolding(i.toLong(), "TICK$i", "Company $i", "Technology", "US", "United States")
+      createHolding(i.toLong(), "TICK$i", "Company $i", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     }
     val positions =
       holdings.mapIndexed { index, holding ->
@@ -173,8 +174,8 @@ class DiversificationCalculatorServiceTest {
   fun `should normalize allocations to 100 percent`() {
     val etf1 = createInstrument(1L, "VWCE", ter = BigDecimal("0.22"))
     val etf2 = createInstrument(2L, "VUAA", ter = BigDecimal("0.07"))
-    val holding1 = createHolding(1L, "AAPL", "Apple", "Technology", "US", "United States")
-    val holding2 = createHolding(2L, "MSFT", "Microsoft", "Technology", "US", "United States")
+    val holding1 = createHolding(1L, "AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding2 = createHolding(2L, "MSFT", "Microsoft", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position1 = createPosition(etf1, holding1, BigDecimal("100.0000"))
     val position2 = createPosition(etf2, holding2, BigDecimal("100.0000"))
     setupMocks(listOf(etf1, etf2), listOf(position1, position2))
@@ -192,7 +193,7 @@ class DiversificationCalculatorServiceTest {
   @Test
   fun `should return zero weighted ter when no etfs have ter`() {
     val etf = createInstrument(1L, "VWCE", ter = null)
-    val holding = createHolding(1L, "AAPL", "Apple", "Technology", "US", "United States")
+    val holding = createHolding(1L, "AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position = createPosition(etf, holding, BigDecimal("100.0000"))
     setupMocks(listOf(etf), listOf(position))
     val request = createRequest(AllocationDto(1L, BigDecimal("100")))
@@ -205,7 +206,7 @@ class DiversificationCalculatorServiceTest {
   @Test
   fun `should return zero weighted annual return when no etfs have return`() {
     val etf = createInstrument(1L, "VWCE", annualReturn = null)
-    val holding = createHolding(1L, "AAPL", "Apple", "Technology", "US", "United States")
+    val holding = createHolding(1L, "AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position = createPosition(etf, holding, BigDecimal("100.0000"))
     setupMocks(listOf(etf), listOf(position))
     val request = createRequest(AllocationDto(1L, BigDecimal("100")))
@@ -271,7 +272,7 @@ class DiversificationCalculatorServiceTest {
   @Test
   fun `should handle holdings with unknown country`() {
     val etf = createInstrument(1L, "VWCE")
-    val holding = createHolding(1L, "XYZ", "Unknown Corp", "Technology", null, null)
+    val holding = createHolding(1L, "XYZ", "Unknown Corp", IndustrySector.DIGITAL_HARDWARE, null, null)
     val position = createPosition(etf, holding, BigDecimal("100.0000"))
     setupMocks(listOf(etf), listOf(position))
     val request = createRequest(AllocationDto(1L, BigDecimal("100")))
@@ -286,8 +287,8 @@ class DiversificationCalculatorServiceTest {
   fun `should normalize holding names for deduplication`() {
     val etf1 = createInstrument(1L, "VWCE")
     val etf2 = createInstrument(2L, "VUAA")
-    val holding1 = createHolding(1L, "AAPL", "Apple Inc", "Technology", "US", "United States")
-    val holding2 = createHolding(2L, "AAPL", "apple inc", "Technology", "US", "United States")
+    val holding1 = createHolding(1L, "AAPL", "Apple Inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
+    val holding2 = createHolding(2L, "AAPL", "apple inc", IndustrySector.DIGITAL_HARDWARE, "US", "United States")
     val position1 = createPosition(etf1, holding1, BigDecimal("50.0000"))
     val position2 = createPosition(etf2, holding2, BigDecimal("50.0000"))
     setupMocks(listOf(etf1, etf2), listOf(position1, position2))
@@ -360,7 +361,7 @@ class DiversificationCalculatorServiceTest {
     id: Long,
     ticker: String?,
     name: String,
-    sector: String?,
+    sector: IndustrySector?,
     countryCode: String?,
     countryName: String?,
   ): EtfHolding =
