@@ -9,6 +9,7 @@ enum class Platform(
   IBKR("IBKR"),
   LHV("LHV"),
   LIGHTYEAR("Lightyear"),
+  LIGHTYEAR_BUSINESS("Lightyear Business"),
   SWEDBANK("Swedbank"),
   TRADING212("Trading 212"),
   UNKNOWN("Unknown"),
