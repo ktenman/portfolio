@@ -50,7 +50,18 @@ class EnumServiceTest {
 
     val platformNames = response.platforms.map { it.name }
     expect(platformNames)
-      .toContainExactly("AVIVA", "BINANCE", "COINBASE", "IBKR", "LHV", "LIGHTYEAR", "SWEDBANK", "TRADING212", "UNKNOWN")
+      .toContainExactly(
+        "AVIVA",
+        "BINANCE",
+        "COINBASE",
+        "IBKR",
+        "LHV",
+        "LIGHTYEAR",
+        "LIGHTYEAR_BUSINESS",
+        "SWEDBANK",
+        "TRADING212",
+        "UNKNOWN",
+      )
 
     val binance = response.platforms.first { it.name == "BINANCE" }
     expect(binance).toEqual(PlatformDto(name = "BINANCE", displayName = "Binance"))
