@@ -18,6 +18,16 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
 
   fun findByNameBlockKey(nameBlockKey: String): List<EtfHolding>
 
+  @Query(
+    """
+    SELECT h.nameBlockKey FROM EtfHolding h
+    WHERE h.nameBlockKey IS NOT NULL AND h.nameBlockKey <> ''
+    GROUP BY h.nameBlockKey
+    HAVING COUNT(h.id) > 1
+  """,
+  )
+  fun findDuplicateBlockKeys(): List<String>
+
   fun findByTicker(ticker: String): List<EtfHolding>
 
   @Query(
