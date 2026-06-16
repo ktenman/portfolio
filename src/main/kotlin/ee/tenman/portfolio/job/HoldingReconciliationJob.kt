@@ -12,7 +12,7 @@ class HoldingReconciliationJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 240000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(cron = "\${scheduling.jobs.holding-reconciliation-cron:0 0 3 1 1,4,7,10 *}")
   fun runJob() {
     if (!properties.enabled) return
     log.info("Running holding reconciliation job (dryRun=${properties.dryRun})")
