@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.common.orNotFound
-import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
@@ -23,7 +22,7 @@ class HoldingMergeService(
   ) {
     if (duplicateIds.isEmpty()) return
     val canonical = etfHoldingRepository.findById(canonicalId).orNotFound(canonicalId)
-    val duplicates = duplicateIds.mapNotNull { etfHoldingRepository.findById(it).orNull() }
+    val duplicates = etfHoldingRepository.findAllById(duplicateIds).sortedBy { it.id }
     repointPositions(canonical, duplicates)
     duplicates.forEach { etfHoldingRepository.delete(it) }
     etfHoldingRepository.flush()
@@ -39,17 +38,13 @@ class HoldingMergeService(
     val owned =
       etfPositionRepository
         .findByHoldingId(canonical.id)
-        .map { it.etfInstrument.id to it.snapshotDate }
-        .toMutableSet()
+        .mapTo(mutableSetOf()) { it.etfInstrument.id to it.snapshotDate }
+    val positionsByDuplicate = etfPositionRepository.findByHoldingIdIn(duplicates.map { it.id }).groupBy { it.holding.id }
     duplicates.forEach { duplicate ->
-      etfPositionRepository.findByHoldingId(duplicate.id).forEach { position ->
+      positionsByDuplicate[duplicate.id].orEmpty().forEach { position ->
         val key = position.etfInstrument.id to position.snapshotDate
-        if (owned.add(key)) {
-          position.holding = canonical
-          etfPositionRepository.save(position)
-        } else {
-          etfPositionRepository.delete(position)
-        }
+        if (!owned.add(key)) return@forEach etfPositionRepository.delete(position)
+        position.holding = canonical
       }
     }
   }
