@@ -2,11 +2,13 @@ package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 
 @Service
 class HoldingMergeService(
@@ -35,18 +37,32 @@ class HoldingMergeService(
     canonical: EtfHolding,
     duplicates: List<EtfHolding>,
   ) {
-    val owned =
+    val retainedWeights =
       etfPositionRepository
         .findByHoldingId(canonical.id)
-        .mapTo(mutableSetOf()) { it.etfInstrument.id to it.snapshotDate }
+        .associateTo(mutableMapOf()) { (it.etfInstrument.id to it.snapshotDate) to it.weightPercentage }
     val positionsByDuplicate = etfPositionRepository.findByHoldingIdIn(duplicates.map { it.id }).groupBy { it.holding.id }
     duplicates.forEach { duplicate ->
       positionsByDuplicate[duplicate.id].orEmpty().forEach { position ->
         val key = position.etfInstrument.id to position.snapshotDate
-        if (!owned.add(key)) return@forEach etfPositionRepository.delete(position)
+        val retained = retainedWeights.putIfAbsent(key, position.weightPercentage)
+        if (retained != null) return@forEach discardCollidingPosition(position, retained)
         position.holding = canonical
       }
     }
+  }
+
+  private fun discardCollidingPosition(
+    position: EtfPosition,
+    retainedWeight: BigDecimal,
+  ) {
+    if (position.weightPercentage.compareTo(retainedWeight) != 0) {
+      log.warn(
+        "Discarding colliding holding position weight=${position.weightPercentage} keeping=$retainedWeight " +
+          "for etf=${position.etfInstrument.id} date=${position.snapshotDate}",
+      )
+    }
+    etfPositionRepository.delete(position)
   }
 
   private fun applyMissingFields(

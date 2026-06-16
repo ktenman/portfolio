@@ -87,6 +87,34 @@ class HoldingMergeServiceIT {
   }
 
   @Test
+  fun `should backfill missing country onto canonical and delete duplicate`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
+    val duplicate =
+      etfHoldingRepository.save(
+        EtfHolding(name = "NVIDIA CORP", ticker = "NVDA", countryCode = "US", countryName = "United States"),
+      )
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.countryCode to surviving.countryName).toEqual("US" to "United States")
+  }
+
+  @Test
+  fun `should keep lower id duplicate position when two duplicates collide on same date`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "Beta"))
+    val firstDuplicate = etfHoldingRepository.save(EtfHolding(name = "Beta Corp", ticker = "BTA"))
+    val secondDuplicate = etfHoldingRepository.save(EtfHolding(name = "Beta Inc", ticker = "BTB"))
+    savePosition(firstDuplicate, firstDate, BigDecimal("7.0"))
+    savePosition(secondDuplicate, firstDate, BigDecimal("8.0"))
+
+    holdingMergeService.merge(canonical.id, listOf(firstDuplicate.id, secondDuplicate.id))
+
+    val surviving = etfPositionRepository.findAll().single()
+    expect(surviving.holding.id to surviving.weightPercentage.compareTo(BigDecimal("7.0"))).toEqual(canonical.id to 0)
+  }
+
+  @Test
   fun `cannot merge when duplicate list is empty`() {
     val canonical = etfHoldingRepository.save(EtfHolding(name = "Apple Inc", ticker = "AAPL"))
 
