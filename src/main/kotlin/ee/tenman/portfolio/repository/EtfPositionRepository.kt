@@ -18,6 +18,8 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
 
   fun findByHoldingId(holdingId: Long): List<EtfPosition>
 
+  fun findByHoldingIdIn(holdingIds: List<Long>): List<EtfPosition>
+
   @Query(
     """
     SELECT COUNT(p) FROM EtfPosition p
