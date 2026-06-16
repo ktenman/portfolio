@@ -96,6 +96,31 @@ class HoldingReconciliationServiceIT {
   }
 
   @Test
+  fun `should collapse a transitive duplicate cluster when a holding matches a non representative`() {
+    etfHoldingRepository.save(EtfHolding(name = "Beta"))
+    etfHoldingRepository.save(EtfHolding(name = "Beta Corp"))
+    etfHoldingRepository.save(EtfHolding(name = "Beta Industries"))
+    every { holdingIdentityService.isSameCompany("Beta", "Beta Corp", any()) } returns true
+    every { holdingIdentityService.isSameCompany("Beta", "Beta Industries", any()) } returns false
+    every { holdingIdentityService.isSameCompany("Beta Corp", "Beta Industries", any()) } returns true
+
+    holdingReconciliationService.reconcile(dryRun = false)
+
+    expect(etfHoldingRepository.findAll().map { it.name }).toContainExactly("Beta")
+  }
+
+  @Test
+  fun `should report would be merges in dry run mode without mutating`() {
+    etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
+    etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
+    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns true
+
+    val result = holdingReconciliationService.reconcile(dryRun = true)
+
+    expect(result.mergedGroups to result.mergedDuplicates).toEqual(1 to 1)
+  }
+
+  @Test
   fun `should report no merges when no block key has duplicates`() {
     etfHoldingRepository.save(EtfHolding(name = "Apple Inc", ticker = "AAPL"))
 
