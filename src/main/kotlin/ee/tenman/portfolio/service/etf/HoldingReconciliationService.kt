@@ -22,9 +22,16 @@ class HoldingReconciliationService(
     log.info("Reconciling ${blockKeys.size} candidate duplicate block keys (dryRun=$dryRun)")
     val plans = blockKeys.flatMap { planMergesForBlock(it) }
     plans.forEach { logPlan(it) }
-    if (!dryRun) plans.forEach { holdingMergeService.merge(it.canonicalId, it.duplicateIds) }
-    return ReconciliationResult(mergedGroups = plans.size, mergedDuplicates = plans.sumOf { it.duplicateIds.size })
+    val merged = if (dryRun) plans else executeMerges(plans)
+    return ReconciliationResult(mergedGroups = merged.size, mergedDuplicates = merged.sumOf { it.duplicateIds.size })
   }
+
+  private fun executeMerges(plans: List<HoldingMergePlan>): List<HoldingMergePlan> =
+    plans.filter { plan ->
+      runCatching { holdingMergeService.merge(plan.canonicalId, plan.duplicateIds) }
+        .onFailure { log.error("Failed to merge holding group canonical=${plan.canonicalId} duplicates=${plan.duplicateIds}", it) }
+        .isSuccess
+    }
 
   private fun planMergesForBlock(blockKey: String): List<HoldingMergePlan> {
     val holdings = etfHoldingRepository.findByNameBlockKey(blockKey).sortedBy { it.id }
@@ -43,7 +50,7 @@ class HoldingReconciliationService(
   private fun clusterByIdentity(holdings: List<EtfHolding>): List<List<EtfHolding>> {
     val clusters = mutableListOf<MutableList<EtfHolding>>()
     holdings.forEach { holding ->
-      val cluster = clusters.firstOrNull { sameCompany(it.first(), holding) }
+      val cluster = clusters.firstOrNull { members -> members.any { sameCompany(it, holding) } }
       if (cluster != null) cluster.add(holding) else clusters.add(mutableListOf(holding))
     }
     return clusters
