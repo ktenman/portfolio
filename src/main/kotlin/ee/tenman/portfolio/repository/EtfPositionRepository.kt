@@ -16,6 +16,8 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
     snapshotDate: LocalDate,
   ): EtfPosition?
 
+  fun findByHoldingId(holdingId: Long): List<EtfPosition>
+
   @Query(
     """
     SELECT COUNT(p) FROM EtfPosition p
