@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.dto.AnnualWindowsDto
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.dto.XirrWindowsDto
+import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.summary.PortfolioAnnualWindowService
 import ee.tenman.portfolio.service.summary.PortfolioXirrWindowService
@@ -29,6 +30,7 @@ import java.time.LocalDate
 class PortfolioSummaryController(
   private val summaryService: SummaryService,
   private val summaryCacheService: SummaryCacheService,
+  private val currentDaySummaryCacheService: CurrentDaySummaryCacheService,
   private val platformSummaryCacheService: PlatformSummaryCacheService,
   private val xirrWindowService: PortfolioXirrWindowService,
   private val annualWindowService: PortfolioAnnualWindowService,
@@ -73,7 +75,7 @@ class PortfolioSummaryController(
   ): PortfolioSummaryDto {
     val platformEnums = Platform.parseList(platforms)
     if (platformEnums != null) return getFilteredCurrentSummary(platformEnums)
-    val summary = summaryService.getCurrentDaySummary()
+    val summary = currentDaySummaryCacheService.getCurrentDaySummary()
     val profitChange24h = summaryCacheService.calculate24hProfitChange(summary)
     return summary.toDto(profitChange24h)
   }
