@@ -1,7 +1,7 @@
 name: Trivy Container Scan
 
 permissions:
-  contents: write
+  contents: read
   security-events: write
   actions: read
 
@@ -148,69 +148,3 @@ jobs:
           name: sbom-files
           path: '*-sbom.json'
           retention-days: 30
-
-  update-security-dashboard:
-    name: Update Security Dashboard
-    runs-on: ubuntu-latest
-    needs: [scan-docker-images, scan-with-sbom]
-    if: always()
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate security report
-        run: |
-          mkdir -p .github/security-reports
-
-          SCAN_DATE=$(date -u +'%Y-%m-%d')
-          SCAN_TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-
-          cat > .github/security-reports/container-scan-report.md << EOF
-          # Container Security Scan Report
-
-          Last updated: ${SCAN_TIMESTAMP}
-
-          ## Scan Status
-
-          | Image | Status | Last Scan |
-          |-------|--------|-----------|
-          | portfolio-be | ✅ Scanned | ${SCAN_TIMESTAMP} |
-          | portfolio-fe | ✅ Scanned | ${SCAN_TIMESTAMP} |
-
-          ## Actions
-
-          - View detailed results in the [Security tab](https://github.com/ktenman/portfolio/security/code-scanning)
-          - Check [workflow runs](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml)
-          - Download [SBOM artifacts](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml) from the latest run
-
-          ## Automated Scanning
-
-          - **Trigger:** After each successful CI build
-          - **Schedule:** Daily at 2 AM UTC
-          - **Scope:** All production Docker images
-          - **Severity Levels:** CRITICAL, HIGH, MEDIUM
-
-          EOF
-
-      - name: Commit security report
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          if [[ -n $(git status -s) ]]; then
-            # Stage the changes first
-            git add .github/security-reports/
-
-            # Stash any changes, pull latest, then apply stash
-            git stash
-            git pull origin main --rebase
-            git stash pop || true
-
-            # Commit and push
-            git add .github/security-reports/
-            git commit -m "chore: update container security scan report [skip ci]"
-            git push
-          fi
