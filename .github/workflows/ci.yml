@@ -43,7 +43,7 @@ jobs:
           distribution: 'temurin'
       - name: Setup Gradle
         if: matrix.lint-type == 'backend'
-        uses: gradle/actions/setup-gradle@v6.1.0
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         with:
           gradle-home-cache-cleanup: true
       - name: Run ktlint check
@@ -106,7 +106,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@v6.1.0
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         if: matrix.type == 'backend' || matrix.type == 'e2e'
         with:
           gradle-home-cache-cleanup: true
@@ -148,7 +148,7 @@ jobs:
       - name: Build base image
         if: matrix.type == 'e2e'
         run: docker build -t ghcr.io/ktenman/portfolio-base:firefox -f src/Dockerfile.base src/
-      - uses: ScribeMD/docker-cache@0.5.0
+      - uses: ScribeMD/docker-cache@fb28c93772363301b8d0a6072ce850224b73f74e # 0.5.0
         if: matrix.type == 'e2e'
         with:
           key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.e2e-minimal.yml', 'src/Dockerfile.e2e', 'src/Dockerfile.base') }}
@@ -165,7 +165,7 @@ jobs:
           timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do sleep 2; done'
       - name: Run E2E tests
         if: matrix.type == 'e2e'
-        uses: Wandalen/wretry.action@v3.8.0
+        uses: Wandalen/wretry.action@e68c23e6309f2871ca8ae4763e7629b9c258e1ea # v3.8.0
         with:
           command: |
             export E2E=true
@@ -212,7 +212,7 @@ jobs:
       cloudflare-bypass-proxy: ${{ steps.filter.outputs.cloudflare-bypass-proxy }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
           filters: |
@@ -289,7 +289,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@v6.1.0
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
         with:
           gradle-home-cache-cleanup: true
@@ -300,16 +300,16 @@ jobs:
         run: |
           echo "COMMIT_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
-      - uses: docker/setup-buildx-action@v4.1.0
+      - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
         if: steps.check.outputs.should_build == 'true'
         with:
           buildkitd-flags: --debug
-      - uses: docker/login-action@v4.2.0
+      - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         if: steps.check.outputs.should_build == 'true'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - uses: docker/login-action@v4.2.0
+      - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         if: steps.check.outputs.should_build == 'true'
         with:
           registry: ghcr.io
@@ -317,7 +317,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
         if: steps.check.outputs.should_build == 'true'
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
         with:
           images: |
             ${{ matrix.image }}
@@ -325,7 +325,7 @@ jobs:
           tags: type=raw,value=latest
       - id: docker_build
         if: steps.check.outputs.should_build == 'true'
-        uses: docker/build-push-action@v7.2.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -343,7 +343,7 @@ jobs:
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
       - id: docker_build_retry
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
-        uses: docker/build-push-action@v7.2.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -360,7 +360,7 @@ jobs:
       - run: sleep 15
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
       - if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
-        uses: docker/build-push-action@v7.2.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
@@ -408,7 +408,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: fastify/github-action-merge-dependabot@v3.12.0
+      - uses: fastify/github-action-merge-dependabot@30c3f8f14a4f7b315ba38dbc1b793d27128fef82 # v3.12.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target: minor
