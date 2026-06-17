@@ -13,7 +13,7 @@ import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.File
+import java.nio.file.Files
 import java.util.UUID
 
 class LicensePlateDetectionServiceTest {
@@ -162,7 +162,7 @@ class LicensePlateDetectionServiceTest {
 
   @Test
   fun `should resize photo bytes before detection when called with file`() {
-    val tempFile = File.createTempFile("plate-test-", ".jpg")
+    val tempFile = Files.createTempFile("plate-test-", ".jpg").toFile()
     tempFile.writeBytes(byteArrayOf(1, 2, 3, 4))
     try {
       every { imageProcessingService.resizeForPlateDetection(any()) } returns byteArrayOf(9, 8, 7)

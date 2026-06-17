@@ -44,7 +44,7 @@ class GoogleVisionService(
         ?.path("textAnnotations")
         ?.path(0)
         ?.path("description")
-        ?.textValue()
+        ?.asString(null)
         ?.takeIf { it.isNotBlank() }
     }.onFailure { log.error("Google Vision call failed", it) }.getOrNull()
   }
