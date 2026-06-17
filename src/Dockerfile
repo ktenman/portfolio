@@ -10,9 +10,9 @@ ENV BUILD_HASH=${BUILD_HASH} \
 
 COPY build/libs/*.jar app.jar
 
-# Update packages to fix CVE-2024-58251 and CVE-2025-46394
+# Update packages to fix CVE-2024-58251, CVE-2025-46394, and openssl CVEs (libssl3/libcrypto3)
 RUN apk update && \
-    apk upgrade --no-cache busybox busybox-binsh ssl_client && \
+    apk upgrade --no-cache busybox busybox-binsh ssl_client libcrypto3 libssl3 && \
     apk add --no-cache curl && \
     rm -rf /var/cache/apk/* && \
     adduser -D -s /bin/sh appuser && \
