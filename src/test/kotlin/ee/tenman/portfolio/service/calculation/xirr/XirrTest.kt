@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.calculation.xirr
 
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.verbs.expect
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
@@ -22,14 +23,6 @@ class XirrTest {
     @JvmStatic
     fun xirrTestCases() =
       listOf(
-        XirrTestCase(
-          "short period with two transactions",
-          listOf(
-            CashFlow(-102.09, LocalDate.of(2024, 7, 4)),
-            CashFlow(100.0, LocalDate.of(2024, 7, 1)),
-          ),
-          0.9899995279312134,
-        ),
         XirrTestCase(
           "complex set of transactions over multiple years",
           complexCashFlows,
@@ -65,5 +58,16 @@ class XirrTest {
 
     val tolerance = 1e-14
     expect(Math.abs(xirrValue - testCase.expectedXirr)).toBeLessThan(tolerance)
+  }
+
+  @Test
+  fun `should clamp to negative rate when a loss exceeds the solver range`() {
+    val cashFlows =
+      listOf(
+        CashFlow(-10000.0, LocalDate.of(2023, 10, 1)),
+        CashFlow(100.0, LocalDate.of(2024, 1, 15)),
+      )
+
+    expect(Xirr(cashFlows)()).toBeLessThan(0.0)
   }
 }

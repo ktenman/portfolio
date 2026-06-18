@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.calculation
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
@@ -59,6 +60,28 @@ class FinancialCalculationEdgeCaseTest {
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
       expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
+    }
+
+    @Test
+    fun `should return negative value for short span loss exceeding solver bounds`() {
+      val transactions =
+        listOf(
+        CashFlow(-1000.0, LocalDate.now(clock).minusDays(1)),
+        CashFlow(500.0, LocalDate.now(clock)),
+      )
+      val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
+      expect(xirr).notToEqualNull().toBeLessThan(0.0)
+    }
+
+    @Test
+    fun `should return negative value for moderate loss with computable rate`() {
+      val transactions =
+        listOf(
+        CashFlow(-1000.0, LocalDate.now(clock).minusDays(30)),
+        CashFlow(990.0, LocalDate.now(clock)),
+      )
+      val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
+      expect(xirr).notToEqualNull().toBeLessThan(0.0)
     }
   }
 
