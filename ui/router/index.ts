@@ -1,10 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import InstrumentsView from '../components/instruments/instruments-view.vue'
-import TransactionsView from '../components/transactions/transactions-view.vue'
 import PortfolioSummaryDto from '../components/portfolio-summary.vue'
-import Calculator from '../components/calculator.vue'
-import EtfBreakdown from '../components/etf/etf-breakdown.vue'
-import DiversificationCalculator from '../components/diversification/diversification-calculator.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -15,27 +10,27 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/transactions',
     name: 'Transactions',
-    component: TransactionsView,
+    component: () => import('../components/transactions/transactions-view.vue'),
   },
   {
     path: '/instruments',
     name: 'Instruments',
-    component: InstrumentsView,
+    component: () => import('../components/instruments/instruments-view.vue'),
   },
   {
     path: '/etf-breakdown',
     name: 'ETF Breakdown',
-    component: EtfBreakdown,
+    component: () => import('../components/etf/etf-breakdown.vue'),
   },
   {
     path: '/diversification',
     name: 'Diversification',
-    component: DiversificationCalculator,
+    component: () => import('../components/diversification/diversification-calculator.vue'),
   },
   {
     path: '/calculator',
     name: 'Calculator',
-    component: Calculator,
+    component: () => import('../components/calculator.vue'),
   },
   {
     path: '/:pathMatch(.*)*',

@@ -110,19 +110,7 @@ class SummaryService(
   private fun calculateSummariesForDates(
     sortedDates: List<LocalDate>,
     sortedTransactions: List<PortfolioTransaction>,
-  ): List<PortfolioDailySummary> {
-    var transactionIndex = 0
-    val accumulated = mutableListOf<PortfolioTransaction>()
-    return sortedDates.map { date ->
-      while (transactionIndex < sortedTransactions.size &&
-        !sortedTransactions[transactionIndex].transactionDate.isAfter(date)
-      ) {
-        accumulated.add(sortedTransactions[transactionIndex])
-        transactionIndex++
-      }
-      dailySummaryCalculator.calculateFromTransactions(accumulated.toList(), date)
-    }
-  }
+  ): List<PortfolioDailySummary> = summaryBatchProcessor.calculateSummaries(sortedDates, sortedTransactions)
 
   private fun clearAllCaches() {
     cacheManager.getCache(INSTRUMENT_CACHE)?.clear()

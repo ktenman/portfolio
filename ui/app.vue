@@ -30,12 +30,13 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue'
+import { defineAsyncComponent, onMounted } from 'vue'
 import NavBar from './components/nav-bar.vue'
-import ConfirmDialog from './components/shared/confirm-dialog.vue'
 import { provideConfirm } from './composables/use-confirm'
 import { useAuthState } from './composables/use-auth-state'
 import { useEnumValues } from './composables/use-enum-values'
+
+const ConfirmDialog = defineAsyncComponent(() => import('./components/shared/confirm-dialog.vue'))
 
 const currentYear = new Date().getFullYear()
 const confirmState = provideConfirm()

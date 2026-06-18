@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
+import ee.tenman.portfolio.service.pricing.PriceLookup
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -19,18 +20,20 @@ class DailySummaryCalculator(
   fun calculateFromTransactions(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
+    priceLookup: PriceLookup? = null,
   ): PortfolioDailySummary {
     if (transactions.isEmpty()) return createEmptySummary(date)
     val instrumentGroups = transactions.groupBy { it.instrument }
-    return calculateFromInstrumentGroups(instrumentGroups, date)
+    return calculateFromInstrumentGroups(instrumentGroups, date, priceLookup)
   }
 
   fun calculateFromInstrumentGroups(
     instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
     date: LocalDate,
+    priceLookup: PriceLookup? = null,
   ): PortfolioDailySummary {
     if (instrumentGroups.isEmpty()) return createEmptySummary(date)
-    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, date)
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, date, priceLookup)
     return buildSummary(date, metrics)
   }
 
