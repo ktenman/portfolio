@@ -37,20 +37,8 @@ class PortfolioSummaryWarmupTest {
   }
 
   @Test
-  fun `should warm up platform filtered summary endpoints the frontend requests on application ready`() {
+  fun `should warm up filtered and unfiltered summary endpoints the frontend requests on application ready`() {
     every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR, Platform.TRADING212)
-    val environment = MockEnvironment().withProperty("server.port", server.address.port.toString())
-    val warmup = PortfolioSummaryWarmup(environment, transactionService)
-    warmup.warmUp()
-    expect(requestedPaths.toSet()).toContain(
-      "/api/portfolio-summary/historical?page=0&size=186&platforms=LIGHTYEAR&platforms=TRADING212",
-      "/api/portfolio-summary/current?platforms=LIGHTYEAR&platforms=TRADING212",
-    )
-  }
-
-  @Test
-  fun `should warm up unfiltered summary endpoints alongside the filtered ones`() {
-    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR)
     val environment = MockEnvironment().withProperty("server.port", server.address.port.toString())
     val warmup = PortfolioSummaryWarmup(environment, transactionService)
     warmup.warmUp()
@@ -58,6 +46,8 @@ class PortfolioSummaryWarmupTest {
       "/api/transactions/platforms",
       "/api/portfolio-summary/historical?page=0&size=186",
       "/api/portfolio-summary/current",
+      "/api/portfolio-summary/historical?page=0&size=186&platforms=LIGHTYEAR&platforms=TRADING212",
+      "/api/portfolio-summary/current?platforms=LIGHTYEAR&platforms=TRADING212",
     )
   }
 
