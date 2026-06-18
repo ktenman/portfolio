@@ -14,6 +14,8 @@ import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
+import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceLookup
 import ee.tenman.portfolio.service.transaction.TransactionService
 import io.mockk.every
 import io.mockk.mockk
@@ -44,6 +46,7 @@ class SummaryServiceTest {
   private val summaryDeletionService = mockk<SummaryDeletionService>(relaxed = true)
   private val summaryCacheService = mockk<SummaryCacheService>(relaxed = true)
   private val dailySummaryCalculator = DailySummaryCalculator(investmentMetricsService, xirrCalculationService)
+  private val dailyPriceService = mockk<DailyPriceService>()
 
   private lateinit var summaryService: SummaryService
 
@@ -66,6 +69,7 @@ class SummaryServiceTest {
         summaryDeletionService,
         summaryCacheService,
         dailySummaryCalculator,
+        dailyPriceService,
       )
 
     testDate = LocalDate.of(2025, 5, 10)
@@ -76,7 +80,9 @@ class SummaryServiceTest {
 
     every { portfolioDailySummaryRepository.findByEntryDate(any()) } returns null
 
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns
+    every { dailyPriceService.buildPriceLookup(any()) } returns PriceLookup(emptyList())
+
+    every { investmentMetricsService.calculatePortfolioMetrics(any(), any(), any()) } returns
       PortfolioMetrics(
         totalValue = BigDecimal.ZERO,
         totalProfit = BigDecimal.ZERO,
@@ -1012,7 +1018,7 @@ class SummaryServiceTest {
         totalProfit = BigDecimal("100.00"),
         xirrCashFlows = mutableListOf(),
       )
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), any()) } returns portfolioMetrics
+    every { investmentMetricsService.calculatePortfolioMetrics(any(), any(), any()) } returns portfolioMetrics
     every { xirrCalculationService.calculateAdjustedXirr(any(), any()) } returns 0.05
     val result = summaryService.getHistoricalSummariesForPlatforms(listOf(Platform.LIGHTYEAR), 0, 10)
     expect(result.totalElements).toEqual(4L)

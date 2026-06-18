@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
+import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
@@ -28,6 +29,7 @@ class SummaryService(
   private val summaryDeletionService: SummaryDeletionService,
   private val summaryCacheService: SummaryCacheService,
   private val dailySummaryCalculator: DailySummaryCalculator,
+  private val dailyPriceService: DailyPriceService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -111,6 +113,7 @@ class SummaryService(
     sortedDates: List<LocalDate>,
     sortedTransactions: List<PortfolioTransaction>,
   ): List<PortfolioDailySummary> {
+    val priceLookup = dailyPriceService.buildPriceLookup(sortedTransactions.map { it.instrument }.distinct())
     var transactionIndex = 0
     val accumulated = mutableListOf<PortfolioTransaction>()
     return sortedDates.map { date ->
@@ -120,7 +123,7 @@ class SummaryService(
         accumulated.add(sortedTransactions[transactionIndex])
         transactionIndex++
       }
-      dailySummaryCalculator.calculateFromTransactions(accumulated.toList(), date)
+      dailySummaryCalculator.calculateFromTransactions(accumulated.toList(), date, priceLookup)
     }
   }
 

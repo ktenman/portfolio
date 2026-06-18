@@ -11,6 +11,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -20,10 +21,12 @@ import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceLookup
 import ee.tenman.portfolio.service.transaction.TransactionService
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createCashInstrument
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -442,6 +445,26 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
+  fun `should calculatePortfolioMetrics with price lookup matches database price path`() {
+    val transactions = listOf(createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")))
+    val instrumentGroups = mapOf(testInstrument to transactions)
+    every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("150")
+    val databaseValue = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate).totalValue
+    val lookup = PriceLookup(listOf(createDailyPrice(testInstrument, testDate, BigDecimal("150"))))
+    val lookupValue = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate, lookup).totalValue
+    expect(lookupValue).toEqualNumerically(databaseValue)
+  }
+
+  @Test
+  fun `should calculatePortfolioMetrics with price lookup avoids database query`() {
+    val transactions = listOf(createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")))
+    val instrumentGroups = mapOf(testInstrument to transactions)
+    val lookup = PriceLookup(listOf(createDailyPrice(testInstrument, testDate, BigDecimal("150"))))
+    investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate, lookup)
+    verify(exactly = 0) { dailyPriceService.getPrice(any(), any()) }
+  }
+
+  @Test
   fun `should calculatePortfolioMetrics with multiple instruments`() {
     val instrument2 =
       Instrument(
@@ -524,6 +547,22 @@ class InvestmentMetricsServiceTest {
       transactionDate = date,
       platform = platform,
       commission = commission,
+    )
+
+  private fun createDailyPrice(
+    instrument: Instrument,
+    date: LocalDate,
+    closePrice: BigDecimal,
+  ): DailyPrice =
+    DailyPrice(
+      instrument = instrument,
+      entryDate = date,
+      providerName = ProviderName.FT,
+      openPrice = null,
+      highPrice = null,
+      lowPrice = null,
+      closePrice = closePrice,
+      volume = null,
     )
 
   @Test

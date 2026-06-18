@@ -19,6 +19,8 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
 
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice>
 
+  fun findAllByInstrumentIn(instruments: Collection<Instrument>): List<DailyPrice>
+
   @Query("SELECT DISTINCT dp.entryDate FROM DailyPrice dp WHERE dp.instrument = :instrument")
   fun findAllEntryDatesByInstrument(instrument: Instrument): Set<LocalDate>
 
