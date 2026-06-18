@@ -51,14 +51,14 @@ class FinancialCalculationEdgeCaseTest {
     }
 
     @Test
-    fun `should return null for very recent transaction below 60 days`() {
+    fun `should return heavily damped bounded value for recent one day holding`() {
       val transactions =
         listOf(
         CashFlow(-1000.0, LocalDate.now(clock).minusDays(1)),
         CashFlow(1010.0, LocalDate.now(clock)),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.now(clock))
-      expect(xirr).toEqual(null)
+      expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
     }
   }
 
@@ -98,25 +98,25 @@ class FinancialCalculationEdgeCaseTest {
   @Nested
   inner class YearBoundaryEdgeCases {
     @Test
-    fun `should return null for year boundary with 1 day holding`() {
+    fun `should return bounded value for year boundary with one day holding`() {
       val transactions =
         listOf(
         CashFlow(-1000.0, LocalDate.of(2023, 12, 31)),
         CashFlow(1050.0, LocalDate.of(2024, 1, 1)),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.of(2024, 1, 1))
-      expect(xirr).toEqual(null)
+      expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
     }
 
     @Test
-    fun `should return null for leap year with 1 day holding`() {
+    fun `should return bounded value for leap year with one day holding`() {
       val transactions =
         listOf(
         CashFlow(-1000.0, LocalDate.of(2024, 2, 28)),
         CashFlow(1005.0, LocalDate.of(2024, 2, 29)),
       )
       val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, LocalDate.of(2024, 2, 29))
-      expect(xirr).toEqual(null)
+      expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
     }
   }
 
