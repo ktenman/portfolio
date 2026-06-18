@@ -45,9 +45,10 @@ class PortfolioSummaryWarmup(
     }
   }
 
-  fun warmupPaths(): List<String> {
-    val platformQuery = transactionService.getDistinctPlatforms().joinToString("&") { "platforms=${it.name}" }
-    if (platformQuery.isEmpty()) return BASE_PATHS
+  private fun warmupPaths(): List<String> {
+    val platforms = transactionService.getDistinctPlatforms()
+    if (platforms.isEmpty()) return BASE_PATHS
+    val platformQuery = platforms.joinToString("&") { "platforms=${it.name}" }
     return BASE_PATHS +
       listOf(
         "/api/portfolio-summary/historical?page=0&size=$HISTORICAL_PAGE_SIZE&$platformQuery",
