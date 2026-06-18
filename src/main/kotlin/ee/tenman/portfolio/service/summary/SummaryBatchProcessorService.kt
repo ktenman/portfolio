@@ -27,6 +27,24 @@ class SummaryBatchProcessorService(
       processBatch(batch, summaryCalculator)
     }
 
+  fun calculateSummaries(
+    sortedDates: List<LocalDate>,
+    sortedTransactions: List<PortfolioTransaction>,
+  ): List<PortfolioDailySummary> {
+    val priceLookup = dailyPriceService.buildPriceLookup(sortedTransactions.map { it.instrument }.distinct())
+    var transactionIndex = 0
+    val accumulated = mutableListOf<PortfolioTransaction>()
+    return sortedDates.map { date ->
+      while (transactionIndex < sortedTransactions.size &&
+        !sortedTransactions[transactionIndex].transactionDate.isAfter(date)
+      ) {
+        accumulated.add(sortedTransactions[transactionIndex])
+        transactionIndex++
+      }
+      dailySummaryCalculator.calculateFromTransactions(accumulated.toList(), date, priceLookup)
+    }
+  }
+
   fun processSummariesWithTransactions(
     dates: List<LocalDate>,
     allTransactions: List<PortfolioTransaction>,
