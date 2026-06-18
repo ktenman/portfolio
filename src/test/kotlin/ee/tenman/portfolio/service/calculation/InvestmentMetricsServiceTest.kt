@@ -268,6 +268,20 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
+  fun `should return heavily damped bounded value when weighted investment age is below two days`() {
+    val transactions =
+      listOf(
+        CashFlow(-5000.0, testDate.minusDays(2)),
+        CashFlow(-5000.0, testDate.minusDays(1)),
+        CashFlow(10200.0, testDate),
+      )
+
+    val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
+
+    expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
+  }
+
+  @Test
   fun `should calculateAdjustedXirr with fewer than 2 transactions returns null`() {
     val transactions = listOf(CashFlow(-1000.0, testDate))
 
@@ -569,7 +583,7 @@ class InvestmentMetricsServiceTest {
   }
 
   @Test
-  fun `should calculateAdjustedXirr with very short investment period returns null`() {
+  fun `should calculateAdjustedXirr with very short investment period returns damped bounded value`() {
     val transactions =
       listOf(
         CashFlow(-1000.0, testDate.minusDays(1)),
@@ -578,7 +592,7 @@ class InvestmentMetricsServiceTest {
 
     val xirr = xirrCalculationService.calculateAdjustedXirr(transactions, testDate)
 
-    expect(xirr).toEqual(null)
+    expect(xirr).notToEqualNull().toBeGreaterThanOrEqualTo(-10.0).toBeLessThanOrEqualTo(10.0)
   }
 
   @Test
