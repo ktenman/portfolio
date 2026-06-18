@@ -59,6 +59,18 @@ class CurrentDaySummaryCacheServiceIT {
     expect(servedAfterRefresh.entryDate).toEqual(LocalDate.of(2024, 3, 12))
   }
 
+  @Test
+  fun `should keep serving the refreshed day from cache after the clock advances again`() {
+    stubClockAt(LocalDate.of(2024, 3, 11))
+    seedPortfolio(LocalDate.of(2024, 3, 11))
+    currentDaySummaryCacheService.getCurrentDaySummary()
+    stubClockAt(LocalDate.of(2024, 3, 12))
+    currentDaySummaryCacheService.refreshCurrentDaySummary()
+    stubClockAt(LocalDate.of(2024, 3, 13))
+    val servedFromCache = currentDaySummaryCacheService.getCurrentDaySummary()
+    expect(servedFromCache.entryDate).toEqual(LocalDate.of(2024, 3, 12))
+  }
+
   private fun stubClockAt(date: LocalDate) {
     every { clock.instant() } returns Instant.parse("${date}T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone
