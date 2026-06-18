@@ -8,6 +8,7 @@ import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlin.math.abs
 import kotlin.math.pow
 
 class Xirr(
@@ -15,6 +16,8 @@ class Xirr(
 ) {
   companion object {
     private const val MAX_ELEVATIONS = 1_000
+    private const val SEARCH_LOWER_BOUND = -0.99
+    private const val SEARCH_UPPER_BOUND = 0.99
   }
 
   private val log = LoggerFactory.getLogger(javaClass)
@@ -56,12 +59,17 @@ class Xirr(
 
   private fun calculateXirrWithNewtonRaphson(guess: Double): Double {
     val solver = NewtonRaphsonSolver()
-    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), -0.99, 0.99, guess)
+    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), SEARCH_LOWER_BOUND, SEARCH_UPPER_BOUND, guess)
   }
 
   private fun calculateXirrWithBisection(): Double {
+    val lowerValue = netPresentValue(SEARCH_LOWER_BOUND)
+    val upperValue = netPresentValue(SEARCH_UPPER_BOUND)
+    if (lowerValue * upperValue > 0) {
+      return if (abs(lowerValue) < abs(upperValue)) SEARCH_LOWER_BOUND else SEARCH_UPPER_BOUND
+    }
     val solver = BisectionSolver()
-    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), -0.99, 0.99)
+    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), SEARCH_LOWER_BOUND, SEARCH_UPPER_BOUND)
   }
 
   private fun calculateSimpleReturn(): Double {
