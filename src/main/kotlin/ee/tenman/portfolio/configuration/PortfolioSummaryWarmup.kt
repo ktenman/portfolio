@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -14,6 +15,7 @@ import java.time.Duration
 @Component
 class PortfolioSummaryWarmup(
   private val environment: Environment,
+  private val transactionService: TransactionService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -23,8 +25,9 @@ class PortfolioSummaryWarmup(
     runCatching {
       val baseUrl = "http://localhost:${resolvePort()}"
       val client = HttpClient.newBuilder().connectTimeout(REQUEST_TIMEOUT).build()
+      val paths = warmupPaths()
       repeat(WARMUP_ROUNDS) {
-        WARMUP_PATHS.forEach { path ->
+        paths.forEach { path ->
           client.send(
             HttpRequest
               .newBuilder(URI.create(baseUrl + path))
@@ -42,6 +45,16 @@ class PortfolioSummaryWarmup(
     }
   }
 
+  fun warmupPaths(): List<String> {
+    val platformQuery = transactionService.getDistinctPlatforms().joinToString("&") { "platforms=${it.name}" }
+    if (platformQuery.isEmpty()) return BASE_PATHS
+    return BASE_PATHS +
+      listOf(
+        "/api/portfolio-summary/historical?page=0&size=$HISTORICAL_PAGE_SIZE&$platformQuery",
+        "/api/portfolio-summary/current?$platformQuery",
+      )
+  }
+
   private fun resolvePort(): String =
     environment.getProperty("local.server.port")
       ?: environment.getProperty("server.port")
@@ -50,11 +63,12 @@ class PortfolioSummaryWarmup(
   companion object {
     private const val DEFAULT_PORT = "8081"
     private const val WARMUP_ROUNDS = 2
+    private const val HISTORICAL_PAGE_SIZE = 186
     private val REQUEST_TIMEOUT = Duration.ofSeconds(30)
-    private val WARMUP_PATHS =
+    private val BASE_PATHS =
       listOf(
         "/api/transactions/platforms",
-        "/api/portfolio-summary/historical?page=0&size=186",
+        "/api/portfolio-summary/historical?page=0&size=$HISTORICAL_PAGE_SIZE",
         "/api/portfolio-summary/current",
       )
   }
