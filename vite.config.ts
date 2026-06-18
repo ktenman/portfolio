@@ -16,6 +16,7 @@ export default defineConfig({
   build: {
     outDir: '../dist', // This will output the build artifacts to /app/dist when the root is /app/ui
     sourcemap: true,
+    target: 'esnext',
   },
   test: {
     environment: 'happy-dom',

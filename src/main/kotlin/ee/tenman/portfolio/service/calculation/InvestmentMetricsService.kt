@@ -6,6 +6,7 @@ import ee.tenman.portfolio.model.holding.CurrentHoldings
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceLookup
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -83,15 +84,16 @@ class InvestmentMetricsService(
   fun calculatePortfolioMetrics(
     instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
     date: LocalDate,
+    priceLookup: PriceLookup? = null,
   ): PortfolioMetrics {
     val metrics = PortfolioMetrics()
     transactionService.calculateTransactionProfits(instrumentGroups.values.flatten())
     instrumentGroups.forEach { (instrument, transactions) ->
       runCatching {
-        processInstrumentWithUnifiedCalculation(instrument, transactions, date, metrics)
+        processInstrumentWithUnifiedCalculation(instrument, transactions, date, metrics, priceLookup)
       }.onFailure {
         log.warn("Unified calculation failed, using fallback: ${it.message}")
-        processInstrumentWithFallback(instrument, transactions, date, metrics)
+        processInstrumentWithFallback(instrument, transactions, date, metrics, priceLookup)
       }
     }
     return metrics
@@ -102,10 +104,11 @@ class InvestmentMetricsService(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
     metrics: PortfolioMetrics,
+    priceLookup: PriceLookup?,
   ) {
     val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
     val realizedProfit = calculateRealizedProfit(transactions)
-    val currentValue = calculateCurrentValueForDate(aggregated.totalQuantity, instrument, date)
+    val currentValue = calculateCurrentValueForDate(aggregated.totalQuantity, instrument, date, priceLookup)
     val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
     if (currentValue <= BigDecimal.ZERO && realizedProfit <= BigDecimal.ZERO) return
     updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
@@ -117,13 +120,14 @@ class InvestmentMetricsService(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
     metrics: PortfolioMetrics,
+    priceLookup: PriceLookup?,
   ) {
     val netQuantity = holdingsCalculationService.calculateNetQuantity(transactions)
     if (netQuantity <= BigDecimal.ZERO) {
       processZeroQuantityFallback(transactions, date, metrics)
       return
     }
-    val price = getEffectivePriceForDate(instrument, date) ?: return
+    val price = getEffectivePriceForDate(instrument, date, priceLookup) ?: return
     val currentValue = netQuantity.multiply(price)
     val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, currentValue)
     if (currentValue <= BigDecimal.ZERO && realizedProfit <= BigDecimal.ZERO) return
@@ -134,9 +138,10 @@ class InvestmentMetricsService(
   private fun getEffectivePriceForDate(
     instrument: Instrument,
     date: LocalDate,
+    priceLookup: PriceLookup?,
   ): BigDecimal? =
     instrument.cashPriceOrNull()
-      ?: runCatching { dailyPriceService.getPrice(instrument, date) }
+      ?: runCatching { resolvePrice(instrument, date, priceLookup) }
         .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
         .getOrNull()
 
@@ -155,13 +160,22 @@ class InvestmentMetricsService(
     currentHoldings: BigDecimal,
     instrument: Instrument,
     date: LocalDate,
+    priceLookup: PriceLookup?,
   ): BigDecimal =
     when {
       currentHoldings <= BigDecimal.ZERO -> BigDecimal.ZERO
       instrument.isCash() -> currentHoldings
       isToday(date) -> currentHoldings.multiply(instrument.currentPrice ?: BigDecimal.ZERO)
-      else -> currentHoldings.multiply(dailyPriceService.getPrice(instrument, date))
+      else -> currentHoldings.multiply(resolvePrice(instrument, date, priceLookup))
     }
+
+  private fun resolvePrice(
+    instrument: Instrument,
+    date: LocalDate,
+    priceLookup: PriceLookup?,
+  ): BigDecimal =
+    priceLookup?.priceOnOrBefore(instrument.id, date)
+      ?: dailyPriceService.getPrice(instrument, date)
 
   private fun calculateRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
     InvestmentMath.calculateRealizedProfit(transactions)

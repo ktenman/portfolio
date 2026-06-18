@@ -7,6 +7,8 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.PriceLookup
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -22,13 +24,14 @@ class SummaryBatchProcessorServiceTest {
   private val summaryPersistenceService = mockk<SummaryPersistenceService>(relaxed = true)
   private val entityManager = mockk<EntityManager>(relaxUnitFun = true)
   private val dailySummaryCalculator = mockk<DailySummaryCalculator>()
+  private val dailyPriceService = mockk<DailyPriceService>()
 
   private lateinit var service: SummaryBatchProcessorService
   private lateinit var instrument: Instrument
 
   @BeforeEach
   fun setup() {
-    service = SummaryBatchProcessorService(summaryPersistenceService, entityManager, dailySummaryCalculator)
+    service = SummaryBatchProcessorService(summaryPersistenceService, entityManager, dailySummaryCalculator, dailyPriceService)
     instrument =
       Instrument(
       symbol = "TEST",
@@ -37,6 +40,7 @@ class SummaryBatchProcessorServiceTest {
       baseCurrency = "EUR",
       currentPrice = BigDecimal("100.00"),
     ).apply { id = 1L }
+    every { dailyPriceService.buildPriceLookup(any()) } returns PriceLookup(emptyList())
   }
 
   @Nested
@@ -51,7 +55,7 @@ class SummaryBatchProcessorServiceTest {
     @Test
     fun `should return zero when all calculations fail`() {
       val dates = listOf(LocalDate.of(2024, 7, 1))
-      every { dailySummaryCalculator.calculateFromTransactions(any(), any()) } throws RuntimeException("Calculation failed")
+      every { dailySummaryCalculator.calculateFromTransactions(any(), any(), any()) } throws RuntimeException("Calculation failed")
       val result = service.processSummariesWithTransactions(dates, emptyList())
       expect(result).toEqual(0)
     }
@@ -60,7 +64,7 @@ class SummaryBatchProcessorServiceTest {
     fun `should process single date with empty transactions`() {
       val date = LocalDate.of(2024, 7, 1)
       val summary = createSummary(date, BigDecimal.ZERO)
-      every { dailySummaryCalculator.calculateFromTransactions(emptyList(), date) } returns summary
+      every { dailySummaryCalculator.calculateFromTransactions(emptyList(), date, any()) } returns summary
       every { summaryPersistenceService.saveSummaries(any()) } returns 1
       val result = service.processSummariesWithTransactions(listOf(date), emptyList())
       expect(result).toEqual(1)
@@ -77,7 +81,7 @@ class SummaryBatchProcessorServiceTest {
       val allTransactions = listOf(tx1, tx2, tx3)
       val transactionsCaptor = slot<List<PortfolioTransaction>>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(capture(transactionsCaptor), any())
+        dailySummaryCalculator.calculateFromTransactions(capture(transactionsCaptor), any(), any())
       } answers {
         val txList = transactionsCaptor.captured
         createSummary(secondArg(), txList.sumOf { it.price })
@@ -97,7 +101,7 @@ class SummaryBatchProcessorServiceTest {
       val allTransactions = listOf(txBeforeDate, txOnDate, txAfterDate)
       val capturedTransactions = mutableListOf<List<PortfolioTransaction>>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), baseDate)
+        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), baseDate, any())
       } answers {
         createSummary(baseDate, BigDecimal("300"))
       }
@@ -121,7 +125,7 @@ class SummaryBatchProcessorServiceTest {
       val tx3 = createTransaction(date3, BigDecimal("300"))
       val transactionCounts = mutableMapOf<LocalDate, Int>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(any(), any())
+        dailySummaryCalculator.calculateFromTransactions(any(), any(), any())
       } answers {
         val txList: List<PortfolioTransaction> = firstArg()
         val date: LocalDate = secondArg()
@@ -144,7 +148,7 @@ class SummaryBatchProcessorServiceTest {
       val tx2 = createTransaction(LocalDate.of(2024, 7, 2), BigDecimal("200"))
       val transactionCounts = mutableMapOf<LocalDate, Int>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(any(), any())
+        dailySummaryCalculator.calculateFromTransactions(any(), any(), any())
       } answers {
         val txList: List<PortfolioTransaction> = firstArg()
         val date: LocalDate = secondArg()
@@ -166,7 +170,7 @@ class SummaryBatchProcessorServiceTest {
       val tx3 = createTransaction(LocalDate.of(2024, 7, 2), BigDecimal("200"))
       val capturedTransactions = mutableListOf<List<PortfolioTransaction>>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), date)
+        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), date, any())
       } returns createSummary(date, BigDecimal("600"))
       every { summaryPersistenceService.saveSummaries(any()) } returns 1
       service.processSummariesWithTransactions(listOf(date), listOf(tx1, tx2, tx3))
@@ -178,7 +182,7 @@ class SummaryBatchProcessorServiceTest {
       val dates = (1..35).map { LocalDate.of(2024, 7, 1).plusDays(it.toLong()) }
       val tx = createTransaction(LocalDate.of(2024, 7, 1), BigDecimal("100"))
       every {
-        dailySummaryCalculator.calculateFromTransactions(any(), any())
+        dailySummaryCalculator.calculateFromTransactions(any(), any(), any())
       } answers {
         createSummary(secondArg(), BigDecimal("100"))
       }
@@ -195,7 +199,7 @@ class SummaryBatchProcessorServiceTest {
       val futureTx = createTransaction(LocalDate.of(2024, 7, 15), BigDecimal("500"))
       val capturedTransactions = mutableListOf<List<PortfolioTransaction>>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), date)
+        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), date, any())
       } returns createSummary(date, BigDecimal.ZERO)
       every { summaryPersistenceService.saveSummaries(any()) } returns 1
       service.processSummariesWithTransactions(listOf(date), listOf(futureTx))
@@ -210,7 +214,7 @@ class SummaryBatchProcessorServiceTest {
       val tx3 = createTransaction(date, BigDecimal("300"))
       val capturedTransactions = mutableListOf<List<PortfolioTransaction>>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), date)
+        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), date, any())
       } returns createSummary(date, BigDecimal("600"))
       every { summaryPersistenceService.saveSummaries(any()) } returns 1
       service.processSummariesWithTransactions(listOf(date), listOf(tx1, tx2, tx3))
@@ -224,7 +228,7 @@ class SummaryBatchProcessorServiceTest {
       val txOnBoundary = createTransaction(boundaryDate, BigDecimal("100"))
       val capturedTransactions = mutableListOf<List<PortfolioTransaction>>()
       every {
-        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), boundaryDate)
+        dailySummaryCalculator.calculateFromTransactions(capture(capturedTransactions), boundaryDate, any())
       } returns createSummary(boundaryDate, BigDecimal("100"))
       every { summaryPersistenceService.saveSummaries(any()) } returns 1
       service.processSummariesWithTransactions(listOf(boundaryDate), listOf(txOnBoundary))
