@@ -1,8 +1,13 @@
 package ee.tenman.portfolio.configuration
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import com.sun.net.httpserver.HttpServer
+import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.service.transaction.TransactionService
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -12,6 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 class PortfolioSummaryWarmupTest {
   private val requestedPaths = ConcurrentLinkedQueue<String>()
+  private val transactionService = mockk<TransactionService>()
   private lateinit var server: HttpServer
 
   @BeforeEach
@@ -31,9 +37,35 @@ class PortfolioSummaryWarmupTest {
   }
 
   @Test
-  fun `should warm up every portfolio summary endpoint over http on application ready`() {
+  fun `should warm up platform filtered summary endpoints the frontend requests on application ready`() {
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR, Platform.TRADING212)
     val environment = MockEnvironment().withProperty("server.port", server.address.port.toString())
-    val warmup = PortfolioSummaryWarmup(environment)
+    val warmup = PortfolioSummaryWarmup(environment, transactionService)
+    warmup.warmUp()
+    expect(requestedPaths.toSet()).toContain(
+      "/api/portfolio-summary/historical?page=0&size=186&platforms=LIGHTYEAR&platforms=TRADING212",
+      "/api/portfolio-summary/current?platforms=LIGHTYEAR&platforms=TRADING212",
+    )
+  }
+
+  @Test
+  fun `should warm up unfiltered summary endpoints alongside the filtered ones`() {
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR)
+    val environment = MockEnvironment().withProperty("server.port", server.address.port.toString())
+    val warmup = PortfolioSummaryWarmup(environment, transactionService)
+    warmup.warmUp()
+    expect(requestedPaths.toSet()).toContain(
+      "/api/transactions/platforms",
+      "/api/portfolio-summary/historical?page=0&size=186",
+      "/api/portfolio-summary/current",
+    )
+  }
+
+  @Test
+  fun `should warm up only unfiltered endpoints when no platforms exist`() {
+    every { transactionService.getDistinctPlatforms() } returns emptyList()
+    val environment = MockEnvironment().withProperty("server.port", server.address.port.toString())
+    val warmup = PortfolioSummaryWarmup(environment, transactionService)
     warmup.warmUp()
     expect(requestedPaths.toSet()).toEqual(
       setOf(
@@ -46,8 +78,9 @@ class PortfolioSummaryWarmupTest {
 
   @Test
   fun `should not propagate failures when the warmup target is unreachable`() {
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR)
     val environment = MockEnvironment().withProperty("server.port", "1")
-    val warmup = PortfolioSummaryWarmup(environment)
+    val warmup = PortfolioSummaryWarmup(environment, transactionService)
     warmup.warmUp()
     expect(requestedPaths.size).toEqual(0)
   }
