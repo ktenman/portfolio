@@ -14,6 +14,7 @@ vi.mock('chart.js', () => {
 
   return {
     Chart: mockChart,
+    PieController: vi.fn(),
     ArcElement: vi.fn(),
     Tooltip: vi.fn(),
     Legend: vi.fn(),
