@@ -22,11 +22,10 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
+<script lang="ts">
+import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js'
 
-Chart.register(ArcElement, Tooltip, Legend)
+Chart.register(PieController, ArcElement, Tooltip, Legend)
 
 export interface ChartDataItem {
   label: string
@@ -35,6 +34,10 @@ export interface ChartDataItem {
   color: string
   code?: string
 }
+</script>
+
+<script lang="ts" setup>
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 
 const props = defineProps<{
   title: string
