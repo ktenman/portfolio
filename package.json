@@ -57,7 +57,7 @@
     "@typescript-eslint/parser": "^8.60.1",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-v8": "^4.1.8",
-    "@vitest/ui": "^4.0.14",
+    "@vitest/ui": "^4.1.9",
     "@vue/test-utils": "^2.4.10",
     "concurrently": "^10.0.3",
     "eslint": "^9.39.4",
