@@ -40,7 +40,7 @@
     "@guolao/vue-monaco-editor": "^1.6.0",
     "@tanstack/vue-query": "^5.101.0",
     "@vueuse/core": "^14.3.0",
-    "axios": "^1.16.1",
+    "axios": "^1.18.1",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",
     "monaco-editor": "^0.55.1",
