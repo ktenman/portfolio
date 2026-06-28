@@ -16,7 +16,7 @@
     "express": "5.2.1",
     "express-rate-limit": "8.5.2",
     "express-request-id": "^3.0.0",
-    "onnxruntime-node": "^1.26.0",
+    "onnxruntime-node": "^1.27.0",
     "pngjs": "^7.0.0"
   },
   "devDependencies": {
