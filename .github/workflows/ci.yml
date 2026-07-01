@@ -325,7 +325,7 @@ jobs:
           tags: type=raw,value=latest
       - id: docker_build
         if: steps.check.outputs.should_build == 'true'
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -343,7 +343,7 @@ jobs:
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
       - id: docker_build_retry
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure'
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         continue-on-error: true
         with:
           context: ${{ matrix.context }}
@@ -360,7 +360,7 @@ jobs:
       - run: sleep 15
         if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
       - if: steps.check.outputs.should_build == 'true' && steps.docker_build.outcome == 'failure' && steps.docker_build_retry.outcome == 'failure'
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
