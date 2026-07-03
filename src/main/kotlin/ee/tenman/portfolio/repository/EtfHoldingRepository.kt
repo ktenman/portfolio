@@ -41,7 +41,7 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   """,
   )
   fun findUnclassifiedSectorHoldings(
-    @Param("maxAttempts") maxAttempts: Int = 3,
+    @Param("maxAttempts") maxAttempts: Int,
   ): List<EtfHolding>
 
   @Query(
