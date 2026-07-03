@@ -422,7 +422,7 @@ class EtfHoldingPersistenceServiceIT {
       ),
     )
     val stubbornId = etfHoldingRepository.findAll().first { it.name == "Stubborn Oü" }.id
-    repeat(3) { etfHoldingPersistenceService.incrementSectorFetchAttempts(stubbornId) }
+    repeat(EtfHoldingPersistenceService.MAX_SECTOR_FETCH_ATTEMPTS) { etfHoldingPersistenceService.incrementSectorFetchAttempts(stubbornId) }
 
     val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
 

@@ -22,8 +22,8 @@ enum class AiModel(
   companion object {
     fun fromModelId(modelId: String): AiModel? = entries.find { it.modelId.equals(modelId, ignoreCase = true) }
 
-    fun primarySectorModel(): AiModel = DEEPSEEK_V4_FLASH
+    fun primarySectorModel(): AiModel = entries.first { it.sectorFallbackTier == 0 }
 
-    fun primaryCountryModel(): AiModel = DEEPSEEK_V4_FLASH
+    fun primaryCountryModel(): AiModel = entries.first { it.countryFallbackTier == 0 }
   }
 }

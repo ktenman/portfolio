@@ -46,12 +46,7 @@ class IndustryClassificationService(
     sanitizedName: String,
     failedModel: AiModel? = null,
   ): SectorClassificationResult? {
-    val nextModel = failedModel?.nextSectorFallbackModel()
-    if (failedModel != null && nextModel == null) {
-      log.warn("No fallback available after ${failedModel.modelId}")
-      return null
-    }
-    val model = nextModel ?: AiModel.GEMINI_3_FLASH_PREVIEW
+    val model = resolveRetryModel(failedModel) ?: return null
     log.info("Retrying classification with cascading fallback starting from ${model.modelId} for: $sanitizedName")
     val response =
       openRouterClient.classifyWithCascadingFallback(prompt, model) ?: run {
@@ -59,6 +54,13 @@ class IndustryClassificationService(
         return null
       }
     return parseResponse(response, sanitizedName, logUnknownSector = true)
+  }
+
+  private fun resolveRetryModel(failedModel: AiModel?): AiModel? {
+    if (failedModel == null) return AiModel.primarySectorModel().nextSectorFallbackModel()
+    val nextModel = failedModel.nextSectorFallbackModel()
+    if (nextModel == null) log.warn("No fallback available after ${failedModel.modelId}")
+    return nextModel
   }
 
   private fun parseResponse(

@@ -14,26 +14,26 @@ class OpenRouterClient(
 
   fun classify(
     prompt: String,
-    maxTokens: Int = 4000,
+    maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.1,
   ): String? = classifyWithModel(prompt, maxTokens, temperature)?.content
 
   fun classifyWithModel(
     prompt: String,
-    maxTokens: Int = 4000,
+    maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.1,
   ): OpenRouterClassificationResult? = executeWithSelection(circuitBreaker.selectModel(), prompt, maxTokens, temperature)
 
   fun classifyWithFallback(
     prompt: String,
-    maxTokens: Int = 4000,
+    maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.1,
   ): OpenRouterClassificationResult? = executeWithSelection(circuitBreaker.selectFallbackModel(), prompt, maxTokens, temperature)
 
   fun classifyWithCascadingFallback(
     prompt: String,
     startingModel: AiModel,
-    maxTokens: Int = 4000,
+    maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.1,
   ): OpenRouterClassificationResult? {
     if (openRouterProperties.apiKey.isBlank()) {
@@ -57,7 +57,7 @@ class OpenRouterClient(
 
   fun classifyWithCountryFallback(
     prompt: String,
-    maxTokens: Int = 4000,
+    maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.0,
   ): OpenRouterClassificationResult? {
     if (openRouterProperties.apiKey.isBlank()) {
@@ -153,6 +153,7 @@ class OpenRouterClient(
   }
 
   companion object {
+    private const val DEFAULT_MAX_TOKENS = 4000
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3
   }

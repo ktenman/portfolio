@@ -30,8 +30,7 @@ class HoldingIdentityService(
     if (existingName.isBlank() || candidateName.isBlank()) return null
     if (existingName.equals(candidateName, ignoreCase = true)) return true
     val prompt = buildPrompt(existingName, candidateName, ticker)
-    val response = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel()) ?: return null
-    val content = response.content ?: return null
+    val content = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel())?.content ?: return null
     val verdict = content.trim().startsWith("YES", ignoreCase = true)
     log.info(
       "Holding identity check '${LogSanitizerUtil.sanitize(existingName)}' " +
