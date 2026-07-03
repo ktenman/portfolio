@@ -28,7 +28,7 @@ class EtfCountryClassificationJob(
   }
 
   @Scheduled(initialDelay = 300000, fixedDelay = Long.MAX_VALUE)
-  @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 */4 * * *}")
+  @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 4 * * *}")
   fun runJob() {
     log.info("Running ETF country classification job")
     jobExecutionService.executeJob(this)

@@ -19,19 +19,20 @@ class HoldingIdentityService(
   @Cacheable(
     value = [HOLDING_IDENTITY_CACHE],
     key = "#existingName + '|' + #candidateName + '|' + (#ticker ?: '')",
-    unless = "#result == false",
+    unless = "#result == null",
   )
   fun isSameCompany(
     existingName: String,
     candidateName: String,
     ticker: String?,
-  ): Boolean {
-    if (!properties.enabled) return false
-    if (existingName.isBlank() || candidateName.isBlank()) return false
+  ): Boolean? {
+    if (!properties.enabled) return null
+    if (existingName.isBlank() || candidateName.isBlank()) return null
     if (existingName.equals(candidateName, ignoreCase = true)) return true
     val prompt = buildPrompt(existingName, candidateName, ticker)
-    val response = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel()) ?: return false
-    val verdict = response.content?.trim()?.startsWith("YES", ignoreCase = true) ?: false
+    val response = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel()) ?: return null
+    val content = response.content ?: return null
+    val verdict = content.trim().startsWith("YES", ignoreCase = true)
     log.info(
       "Holding identity check '${LogSanitizerUtil.sanitize(existingName)}' " +
         "vs '${LogSanitizerUtil.sanitize(candidateName)}' resolved to $verdict",

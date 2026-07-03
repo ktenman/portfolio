@@ -303,6 +303,16 @@ class CountryClassificationServiceTest {
   }
 
   @Test
+  fun `should request 4000 max tokens for country batch classification`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+      OpenRouterClassificationResult("1. DE", AiModel.GEMINI_3_FLASH_PREVIEW)
+    val companies = listOf(CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()))
+    service.classifyBatch(companies)
+    verify { openRouterClient.classifyWithCountryFallback(any(), 4000, any()) }
+  }
+
+  @Test
   fun `should skip non-company holdings in batch`() {
     val companies =
       listOf(

@@ -155,9 +155,9 @@ class EtfHoldingPersistenceService(
   fun saveHolding(holding: EtfHolding): EtfHolding = etfHoldingRepository.save(holding)
 
   @Transactional(readOnly = true)
-  fun findUnclassifiedHoldingIds(): List<Long> =
+  fun findUnclassifiedHoldingIds(maxAttempts: Int = MAX_SECTOR_FETCH_ATTEMPTS): List<Long> =
     etfHoldingRepository
-      .findUnclassifiedSectorHoldings()
+      .findUnclassifiedSectorHoldings(maxAttempts)
       .map { it.id }
 
   @Transactional(readOnly = true)
@@ -168,6 +168,7 @@ class EtfHoldingPersistenceService(
 
   companion object {
     const val MAX_COUNTRY_FETCH_ATTEMPTS = 3
+    const val MAX_SECTOR_FETCH_ATTEMPTS = 3
   }
 
   @Transactional(readOnly = true)
@@ -221,6 +222,14 @@ class EtfHoldingPersistenceService(
     holding.countryFetchAttempts++
     etfHoldingRepository.save(holding)
     log.info("Incremented country fetch attempts for holding id=$holdingId to ${holding.countryFetchAttempts}")
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun incrementSectorFetchAttempts(holdingId: Long) {
+    val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
+    holding.sectorFetchAttempts++
+    etfHoldingRepository.save(holding)
+    log.info("Incremented sector fetch attempts for holding id=$holdingId to ${holding.sectorFetchAttempts}")
   }
 
   private fun findOrCreateEtf(symbol: String): Instrument =

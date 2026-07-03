@@ -412,6 +412,24 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
+  fun `should findUnclassifiedHoldingIds exclude holdings that exhausted sector fetch attempts`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(name = "Stubborn Oü", ticker = "STUB", sector = null, weight = BigDecimal("3.00"), rank = 1),
+      ),
+    )
+    val stubbornId = etfHoldingRepository.findAll().first { it.name == "Stubborn Oü" }.id
+    repeat(3) { etfHoldingPersistenceService.incrementSectorFetchAttempts(stubbornId) }
+
+    val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
+
+    expect(unclassifiedIds).toEqual(emptyList())
+  }
+
+  @Test
   fun `should findUnclassifiedCountryHoldings return holdings without portfolio positions`() {
     val date = LocalDate.of(2024, 7, 1)
     etfHoldingPersistenceService.saveHoldings(

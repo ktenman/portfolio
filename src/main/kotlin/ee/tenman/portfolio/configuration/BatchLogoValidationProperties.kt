@@ -8,7 +8,7 @@ data class BatchLogoValidationProperties(
   val enabled: Boolean = true,
   val model: AiModel = AiModel.GEMINI_3_FLASH_PREVIEW,
   val batchSize: Int = 25,
-  val imagesPerCompany: Int = 10,
+  val imagesPerCompany: Int = 4,
   val maxTokens: Int = 2000,
   val temperature: Double = 0.0,
   val downloadTimeoutMs: Long = 5000,

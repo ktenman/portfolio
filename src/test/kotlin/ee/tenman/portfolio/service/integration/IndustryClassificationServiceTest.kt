@@ -213,7 +213,7 @@ class IndustryClassificationServiceTest {
         CompanyClassificationInput(holdingId = 2L, name = "JPMorgan", ticker = "JPM"),
         CompanyClassificationInput(holdingId = 3L, name = "Pfizer", ticker = "PFE"),
       )
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Semiconductors\n2. Finance\n3. Health",
         model = AiModel.GEMINI_3_FLASH_PREVIEW,
@@ -228,6 +228,19 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
+  fun `should request 4000 max tokens for batch classification`() {
+    every { properties.enabled } returns true
+    val companies =
+      listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "1. Semiconductors", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+
+    service.classifyBatch(companies)
+
+    verify { openRouterClient.classifyWithCascadingFallback(any(), any(), 4000, any()) }
+  }
+
+  @Test
   fun `should skip blank names in batch`() {
     every { properties.enabled } returns true
     val companies =
@@ -236,7 +249,7 @@ class IndustryClassificationServiceTest {
         CompanyClassificationInput(holdingId = 2L, name = "", ticker = "BLANK"),
         CompanyClassificationInput(holdingId = 3L, name = "Microsoft", ticker = "MSFT"),
       )
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Semiconductors\n2. Software & Cloud Services",
         model = AiModel.GEMINI_3_FLASH_PREVIEW,
@@ -257,7 +270,7 @@ class IndustryClassificationServiceTest {
       (1..5).map {
         CompanyClassificationInput(holdingId = it.toLong(), name = "Company $it", ticker = "C$it")
       }
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Semiconductors\n3. Finance",
         model = AiModel.GEMINI_3_FLASH_PREVIEW,
@@ -275,7 +288,7 @@ class IndustryClassificationServiceTest {
     every { properties.enabled } returns true
     val companies =
       listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns null
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns null
 
     val result = service.classifyBatch(companies)
 
@@ -290,7 +303,7 @@ class IndustryClassificationServiceTest {
         CompanyClassificationInput(holdingId = 1L, name = "Banco Santander", ticker = "SAN"),
         CompanyClassificationInput(holdingId = 2L, name = "Apple", ticker = "AAPL"),
       )
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Finance (large cap banks)\n2. Semiconductors - chip design",
         model = AiModel.GEMINI_3_FLASH_PREVIEW,
@@ -310,7 +323,7 @@ class IndustryClassificationServiceTest {
         CompanyClassificationInput(holdingId = 1L, name = "Valid Corp", ticker = "VC"),
         CompanyClassificationInput(holdingId = 2L, name = "Mystery Corp", ticker = "MC"),
       )
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Finance\n2. Quantum Computing",
         model = AiModel.GEMINI_3_FLASH_PREVIEW,

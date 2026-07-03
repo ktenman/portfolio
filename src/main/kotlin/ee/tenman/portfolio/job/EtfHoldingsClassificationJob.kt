@@ -30,7 +30,7 @@ class EtfHoldingsClassificationJob(
   }
 
   @Scheduled(initialDelay = 180000, fixedDelay = Long.MAX_VALUE)
-  @Scheduled(cron = "\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * *}")
+  @Scheduled(cron = "\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}")
   fun runJob() {
     log.info("Running ETF holdings classification job")
     jobExecutionService.executeJob(this)
@@ -117,6 +117,7 @@ class EtfHoldingsClassificationJob(
         etfHoldingPersistenceService.updateSector(input.holdingId, result.sector, result.model)
         successCount++
       } else {
+        etfHoldingPersistenceService.incrementSectorFetchAttempts(input.holdingId)
         failureCount++
       }
     }

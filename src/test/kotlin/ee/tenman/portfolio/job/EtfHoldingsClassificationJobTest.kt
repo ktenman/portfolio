@@ -155,6 +155,31 @@ class EtfHoldingsClassificationJobTest {
   }
 
   @Test
+  fun `should increment sector fetch attempts when classification fails`() {
+    val holding = createHolding(1L, "Mystery Corp", "XXX")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
+    every { industryClassificationService.classifyBatch(any()) } returns emptyMap()
+
+    job.execute()
+
+    verify(exactly = 1) { etfHoldingPersistenceService.incrementSectorFetchAttempts(1L) }
+  }
+
+  @Test
+  fun `should not increment sector fetch attempts when classification succeeds`() {
+    val holding = createHolding(1L, "Apple Inc", "AAPL")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
+    every { industryClassificationService.classifyBatch(any()) } returns
+      mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW))
+
+    job.execute()
+
+    verify(exactly = 0) { etfHoldingPersistenceService.incrementSectorFetchAttempts(any()) }
+  }
+
+  @Test
   fun `should have correct job name`() {
     expect(job.getName()).toEqual("EtfHoldingsClassificationJob")
   }
