@@ -266,7 +266,7 @@ class CountryClassificationServiceTest {
 
   @Test
   fun `should return empty map for empty batch`() {
-    val result = service.classifyBatch(emptyList())
+    val result = service.classifyBatch(emptyList()).results
     expect(result).toEqual(emptyMap())
   }
 
@@ -277,7 +277,7 @@ class CountryClassificationServiceTest {
         CompanyClassificationInput(1L, "Apple Inc", "AAPL", listOf("S&P 500 ETF")),
         CompanyClassificationInput(2L, "Microsoft Corp", "MSFT", listOf("S&P 500 Index")),
       )
-    val result = service.classifyBatch(companies)
+    val result = service.classifyBatch(companies).results
     expect(result.keys).toHaveSize(2)
     expect(result[1L]?.countryCode).toEqual("US")
     expect(result[2L]?.countryCode).toEqual("US")
@@ -295,7 +295,7 @@ class CountryClassificationServiceTest {
         CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()),
         CompanyClassificationInput(2L, "LVMH", "MC", emptyList()),
       )
-    val result = service.classifyBatch(companies)
+    val result = service.classifyBatch(companies).results
     expect(result.keys).toHaveSize(2)
     expect(result[1L]?.countryCode).toEqual("DE")
     expect(result[2L]?.countryCode).toEqual("FR")
@@ -319,7 +319,7 @@ class CountryClassificationServiceTest {
         CompanyClassificationInput(1L, "Bitcoin", null, emptyList()),
         CompanyClassificationInput(2L, "USD Cash", null, emptyList()),
       )
-    val result = service.classifyBatch(companies)
+    val result = service.classifyBatch(companies).results
     expect(result).toEqual(emptyMap())
     verify(exactly = 0) { openRouterClient.classifyWithCountryFallback(any()) }
   }
@@ -334,11 +334,43 @@ class CountryClassificationServiceTest {
         CompanyClassificationInput(1L, "Apple Inc", "AAPL", listOf("S&P 500 ETF")),
         CompanyClassificationInput(2L, "Toyota Motor", "TM", emptyList()),
       )
-    val result = service.classifyBatch(companies)
+    val result = service.classifyBatch(companies).results
     expect(result.keys).toHaveSize(2)
     expect(result[1L]?.countryCode).toEqual("US")
     expect(result[1L]?.model).toEqual(null)
     expect(result[2L]?.countryCode).toEqual("JP")
     expect(result[2L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+  }
+
+  @Test
+  fun `should report model gave no answer when country cascade fails`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithCountryFallback(any()) } returns null
+    val companies = listOf(CompanyClassificationInput(1L, "Škoda Auto", "SKODA", emptyList()))
+
+    val outcome = service.classifyBatch(companies)
+
+    expect(outcome.llmAnswered).toEqual(false)
+  }
+
+  @Test
+  fun `should report model gave no answer when all companies auto-assigned`() {
+    val companies = listOf(CompanyClassificationInput(1L, "Apple Inc", "AAPL", listOf("S&P 500 ETF")))
+
+    val outcome = service.classifyBatch(companies)
+
+    expect(outcome.llmAnswered).toEqual(false)
+  }
+
+  @Test
+  fun `should report model answered when country batch lines parse`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+      OpenRouterClassificationResult("1. DE", AiModel.GEMINI_3_FLASH_PREVIEW)
+    val companies = listOf(CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()))
+
+    val outcome = service.classifyBatch(companies)
+
+    expect(outcome.llmAnswered).toEqual(true)
   }
 }

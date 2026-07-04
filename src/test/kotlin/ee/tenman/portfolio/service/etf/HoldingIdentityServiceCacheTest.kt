@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service.etf
 
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.HoldingIdentityCacheTestConfiguration
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.domain.AiModel
@@ -56,6 +58,20 @@ class HoldingIdentityServiceCacheTest {
     holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", "NVDA")
 
     verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `cannot reuse cached verdict across different name splits with same concatenation`() {
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returnsMany
+      listOf(
+        OpenRouterClassificationResult(content = "YES", model = AiModel.DEEPSEEK_V4_FLASH),
+        OpenRouterClassificationResult(content = "NO", model = AiModel.DEEPSEEK_V4_FLASH),
+      )
+
+    holdingIdentityService.isSameCompany("Apple|Inc", "Corp", null)
+    val second = holdingIdentityService.isSameCompany("Apple", "Inc|Corp", null)
+
+    expect(second).toEqual(false)
   }
 
   @Test

@@ -175,8 +175,12 @@ class OpenRouterClient(
       log.info("Calling OpenRouter API with model: ${selection.modelId} (tier: ${selection.fallbackTier})")
       val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
       val content = response.extractContent()
-      log.info("OpenRouter response successful, content: '$content'")
       circuitBreaker.recordSuccess()
+      if (content == null) {
+        log.warn("OpenRouter response contained no content for model ${selection.modelId}")
+        return@runCatching null
+      }
+      log.info("OpenRouter response successful, content: '$content'")
       OpenRouterClassificationResult(content = content, model = AiModel.fromModelId(selection.modelId))
     }.onFailure { throwable ->
       log.error("Error calling OpenRouter API with model ${selection.modelId}: ${throwable.message}", throwable)

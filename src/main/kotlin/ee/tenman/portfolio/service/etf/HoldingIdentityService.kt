@@ -18,7 +18,7 @@ class HoldingIdentityService(
 
   @Cacheable(
     value = [HOLDING_IDENTITY_CACHE],
-    key = "#existingName + '|' + #candidateName + '|' + (#ticker ?: '')",
+    key = "#existingName.length() + '|' + #existingName + '|' + #candidateName.length() + '|' + #candidateName + '|' + (#ticker ?: '')",
     unless = "#result == null",
   )
   fun isSameCompany(
@@ -31,12 +31,28 @@ class HoldingIdentityService(
     if (existingName.equals(candidateName, ignoreCase = true)) return true
     val prompt = buildPrompt(existingName, candidateName, ticker)
     val content = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel())?.content ?: return null
-    val verdict = content.trim().startsWith("YES", ignoreCase = true)
+    val verdict = parseVerdict(content)
+    if (verdict == null) {
+      log.warn(
+        "Holding identity answer for '${LogSanitizerUtil.sanitize(existingName)}' " +
+          "vs '${LogSanitizerUtil.sanitize(candidateName)}' was not a clear YES or NO",
+      )
+      return null
+    }
     log.info(
       "Holding identity check '${LogSanitizerUtil.sanitize(existingName)}' " +
         "vs '${LogSanitizerUtil.sanitize(candidateName)}' resolved to $verdict",
     )
     return verdict
+  }
+
+  private fun parseVerdict(content: String): Boolean? {
+    val normalized = content.trim()
+    return when {
+      normalized.startsWith("YES", ignoreCase = true) -> true
+      normalized.startsWith("NO", ignoreCase = true) -> false
+      else -> null
+    }
   }
 
   private fun buildPrompt(

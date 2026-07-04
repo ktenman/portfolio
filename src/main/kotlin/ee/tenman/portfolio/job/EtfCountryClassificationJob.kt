@@ -27,7 +27,6 @@ class EtfCountryClassificationJob(
     private const val BATCH_SIZE = 100
   }
 
-  @Scheduled(initialDelay = 300000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-country-classification-cron:0 30 4 * * *}")
   fun runJob() {
     log.info("Running ETF country classification job")
@@ -36,6 +35,10 @@ class EtfCountryClassificationJob(
   }
 
   override fun execute() {
+    if (!properties.enabled) {
+      log.info("Country classification disabled, skipping job")
+      return
+    }
     log.info("Starting ETF country classification with batch size $BATCH_SIZE")
     val holdingIds = etfHoldingPersistenceService.findUnclassifiedByCountryHoldingIds()
     if (holdingIds.isEmpty()) {
@@ -47,6 +50,7 @@ class EtfCountryClassificationJob(
     val etfNamesMap = etfHoldingPersistenceService.findEtfNamesForHoldings(holdingIds)
     log.info("Loaded ${holdings.size} holdings and ETF names")
     val result = processInBatches(holdingIds, holdings, etfNamesMap)
+    check(result.success > 0 || result.failure == 0) { "Country classification failed for all ${result.failure} holdings" }
     log.info("Country classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 
@@ -112,17 +116,21 @@ class EtfCountryClassificationJob(
     if (inputs.isEmpty()) {
       return ClassificationResult(success = 0, failure = 0, skipped = skippedIds.size)
     }
-    val results = countryClassificationService.classifyBatch(inputs)
+    val outcome = countryClassificationService.classifyBatch(inputs)
     var successCount = 0
     var failureCount = 0
     inputs.forEach { input ->
-      val result = results[input.holdingId]
-      if (result != null) {
-        etfHoldingPersistenceService.updateCountry(input.holdingId, result.countryCode, result.countryName, result.model)
-        successCount++
-      } else {
-        etfHoldingPersistenceService.incrementCountryFetchAttempts(input.holdingId)
-        failureCount++
+      val result = outcome.results[input.holdingId]
+      when {
+        result != null -> {
+          etfHoldingPersistenceService.updateCountry(input.holdingId, result.countryCode, result.countryName, result.model)
+          successCount++
+        }
+        outcome.llmAnswered -> {
+          etfHoldingPersistenceService.incrementCountryFetchAttempts(input.holdingId)
+          failureCount++
+        }
+        else -> failureCount++
       }
     }
     return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedIds.size)

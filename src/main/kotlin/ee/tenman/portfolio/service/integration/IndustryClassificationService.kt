@@ -78,28 +78,29 @@ class IndustryClassificationService(
     return SectorClassificationResult(sector = sector, model = response.model)
   }
 
-  fun classifyBatch(companies: List<CompanyClassificationInput>): Map<Long, SectorClassificationResult> {
-    if (companies.isEmpty()) return emptyMap()
+  fun classifyBatch(companies: List<CompanyClassificationInput>): BatchClassificationOutcome<SectorClassificationResult> {
+    if (companies.isEmpty()) return BatchClassificationOutcome(emptyMap(), false)
     val validCompanies = companies.filter { it.name.isNotBlank() }
-    if (validCompanies.isEmpty()) return emptyMap()
+    if (validCompanies.isEmpty()) return BatchClassificationOutcome(emptyMap(), false)
     return classifyValidBatch(validCompanies, companies.size)
   }
 
   private fun classifyValidBatch(
     validCompanies: List<CompanyClassificationInput>,
     totalCount: Int,
-  ): Map<Long, SectorClassificationResult> {
+  ): BatchClassificationOutcome<SectorClassificationResult> {
     if (!properties.enabled) {
       log.warn("Classification disabled, skipping batch of $totalCount")
-      return emptyMap()
+      return BatchClassificationOutcome(emptyMap(), false)
     }
     val prompt = buildBatchPrompt(validCompanies)
     val response =
       openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel()) ?: run {
         log.warn("Batch sector classification failed for ${validCompanies.size} companies")
-        return emptyMap()
+        return BatchClassificationOutcome(emptyMap(), false)
       }
-    return parseBatchResponse(response.content, validCompanies, response.model)
+    val results = parseBatchResponse(response.content, validCompanies, response.model)
+    return BatchClassificationOutcome(results, results.isNotEmpty())
   }
 
   private fun buildBatchPrompt(companies: List<CompanyClassificationInput>): String {
