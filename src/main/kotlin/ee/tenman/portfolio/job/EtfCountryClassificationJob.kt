@@ -50,7 +50,7 @@ class EtfCountryClassificationJob(
     val etfNamesMap = etfHoldingPersistenceService.findEtfNamesForHoldings(holdingIds)
     log.info("Loaded ${holdings.size} holdings and ETF names")
     val result = processInBatches(holdingIds, holdings, etfNamesMap)
-    check(result.success > 0 || result.failure == 0) { "Country classification failed for all ${result.failure} holdings" }
+    result.requireAnySuccess("Country")
     log.info("Country classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 

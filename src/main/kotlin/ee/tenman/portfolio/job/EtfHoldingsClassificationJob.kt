@@ -55,7 +55,7 @@ class EtfHoldingsClassificationJob(
       cacheInvalidationService.evictEtfBreakdownCache()
       cacheInvalidationService.evictDiversificationEtfsCache()
     }
-    check(result.success > 0 || result.failure == 0) { "Sector classification failed for all ${result.failure} holdings" }
+    result.requireAnySuccess("Sector")
     log.info("Sector classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 

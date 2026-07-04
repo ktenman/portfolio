@@ -16,15 +16,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Compare AiModel entries against OpenRouter catalog
-        env:
-          EXTRA_MODELS: openai/gpt-5.4-nano
         run: |
           python3 - <<'EOF'
-          import json, os, re, urllib.request
+          import json, re, urllib.request
 
           source = open("src/main/kotlin/ee/tenman/portfolio/domain/AiModel.kt").read()
-          active = re.findall(r'"([\w.-]+/[\w.-]+)"[^\n]*FallbackTier', source)
-          active += [m for m in os.environ.get("EXTRA_MODELS", "").split(",") if m]
+          retired = {"anthropic/claude-sonnet-4.6", "deepseek/deepseek-v3.2", "openai/gpt-5.4", "anthropic/claude-opus-4.6"}
+          active = [m for m in re.findall(r'"([\w.-]+/[\w.-]+)"', source) if m not in retired]
+          if not active:
+              raise SystemExit("no model ids found in AiModel.kt")
 
           with urllib.request.urlopen("https://openrouter.ai/api/v1/models") as response:
               catalog = {m["id"] for m in json.load(response)["data"]}
@@ -32,7 +32,7 @@ jobs:
           def parse(model_id):
               tokens = re.findall(r"\d+(?:\.\d+)*", model_id)
               key = re.sub(r"\d+(?:\.\d+)*", "{v}", model_id)
-              version = tuple(tuple(int(p) for p in t.split(".")) for t in tokens)
+              version = tuple(int(p) for t in tokens for p in t.split("."))
               return key, version
 
           families = {}
@@ -62,7 +62,6 @@ jobs:
           EOF
 
       - name: Create or update tracking issue
-        if: ${{ hashFiles('report.md') != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

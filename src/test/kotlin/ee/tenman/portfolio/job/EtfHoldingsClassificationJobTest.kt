@@ -264,21 +264,15 @@ class EtfHoldingsClassificationJobTest {
   }
 
   @Test
-  fun `should schedule runs only through weekly cron trigger`() {
-    val schedules = EtfHoldingsClassificationJob::class.java.getMethod("runJob").getAnnotationsByType(Scheduled::class.java)
-
-    expect(schedules.map { it.cron }).toEqual(listOf("\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}"))
-  }
-
-  @Test
-  fun `should use parseable default cron expression`() {
-    val schedule =
+  fun `should schedule runs only through weekly cron trigger with parseable default`() {
+    val cron =
       EtfHoldingsClassificationJob::class.java
-      .getMethod("runJob")
-      .getAnnotationsByType(Scheduled::class.java)
-      .single()
-    val cron = schedule.cron.substringAfter(":").removeSuffix("}")
+        .getMethod("runJob")
+        .getAnnotationsByType(Scheduled::class.java)
+        .single()
+        .cron
+    CronExpression.parse(cron.substringAfter(":").removeSuffix("}"))
 
-    expect(CronExpression.parse(cron).toString()).toEqual("0 0 3 * * SUN")
+    expect(cron).toEqual("\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}")
   }
 }
