@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
@@ -426,7 +427,7 @@ class EtfHoldingPersistenceServiceIT {
 
     val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
 
-    expect(unclassifiedIds).toEqual(emptyList())
+    expect(unclassifiedIds).toBeEmpty()
   }
 
   @Test

@@ -155,9 +155,9 @@ class EtfHoldingPersistenceService(
   fun saveHolding(holding: EtfHolding): EtfHolding = etfHoldingRepository.save(holding)
 
   @Transactional(readOnly = true)
-  fun findUnclassifiedHoldingIds(maxAttempts: Int = MAX_SECTOR_FETCH_ATTEMPTS): List<Long> =
+  fun findUnclassifiedHoldingIds(): List<Long> =
     etfHoldingRepository
-      .findUnclassifiedSectorHoldings(maxAttempts)
+      .findUnclassifiedSectorHoldings(MAX_SECTOR_FETCH_ATTEMPTS)
       .map { it.id }
 
   @Transactional(readOnly = true)
