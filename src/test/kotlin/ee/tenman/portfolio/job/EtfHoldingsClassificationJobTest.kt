@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToThrow
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
@@ -233,6 +234,16 @@ class EtfHoldingsClassificationJobTest {
     every { industryClassificationService.classifyBatch(any()) } returns BatchClassificationOutcome(emptyMap(), false)
 
     expect { job.execute() }.toThrow<IllegalStateException>()
+  }
+
+  @Test
+  fun `cannot fail job when every holding is skipped for blank name`() {
+    val holding1 = createHolding(1L, "", "B1")
+    val holding2 = createHolding(2L, " ", "B2")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L, 2L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
+
+    expect { job.execute() }.notToThrow()
   }
 
   @Test

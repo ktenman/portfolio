@@ -55,6 +55,7 @@ class TestConfiguration {
         .maxAttempts(3)
         .waitDuration(Duration.ofSeconds(2))
         .retryExceptions(Exception::class.java)
+        .ignoreExceptions(IllegalStateException::class.java)
         .build()
 
     return RetryRegistry.of(config)

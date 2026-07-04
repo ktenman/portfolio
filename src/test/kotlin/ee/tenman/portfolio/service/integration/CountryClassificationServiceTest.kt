@@ -373,4 +373,26 @@ class CountryClassificationServiceTest {
 
     expect(outcome.llmAnswered).toEqual(true)
   }
+
+  @Test
+  fun `should report model answered when country batch response parses no lines`() {
+    every { properties.enabled } returns true
+    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+      OpenRouterClassificationResult("Töötlemata vastus ilma koodideta", AiModel.GEMINI_3_FLASH_PREVIEW)
+    val companies = listOf(CompanyClassificationInput(1L, "Škoda Auto", "SKODA", emptyList()))
+
+    val outcome = service.classifyBatch(companies)
+
+    expect(outcome.llmAnswered).toEqual(true)
+  }
+
+  @Test
+  fun `cannot report model answered when classification disabled`() {
+    every { properties.enabled } returns false
+    val companies = listOf(CompanyClassificationInput(1L, "Nokia Oyj", "NOK", emptyList()))
+
+    val outcome = service.classifyBatch(companies)
+
+    expect(outcome.llmAnswered).toEqual(false)
+  }
 }

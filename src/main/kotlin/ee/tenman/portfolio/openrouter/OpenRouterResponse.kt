@@ -17,9 +17,11 @@ data class OpenRouterResponse(
     val reasoning: String? = null,
   )
 
-  fun extractContent(): String? {
-    val message = choices?.firstOrNull()?.message
-    return message?.content?.trim()?.takeIf { it.isNotBlank() }
-      ?: message?.reasoning?.trim()?.takeIf { it.isNotBlank() }
-  }
+  fun extractContent(): String? =
+    choices
+      ?.firstOrNull()
+      ?.message
+      ?.content
+      ?.trim()
+      ?.takeIf { it.isNotBlank() }
 }

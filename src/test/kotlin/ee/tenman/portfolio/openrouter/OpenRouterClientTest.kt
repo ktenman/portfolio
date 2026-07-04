@@ -83,6 +83,16 @@ class OpenRouterClientTest {
   }
 
   @Test
+  fun `should cascade to next model when response carries only reasoning text`() {
+    every { feignClient.chatCompletion(any(), any()) } returnsMany
+      listOf(reasoningResponse("Hmm, Äpfel AG makes hardware so maybe"), okResponse("Finance"))
+
+    val result = client.classifyWithCascadingFallback("prompt", AiModel.primarySectorModel())
+
+    expect(result?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+  }
+
+  @Test
   fun `returns null when feign call throws`() {
     every { feignClient.chatCompletion(any(), any()) } throws RuntimeException("boom")
     every { circuitBreaker.recordFailure(any()) } just runs
@@ -102,4 +112,14 @@ class OpenRouterClientTest {
         ),
       ),
         )
+
+  private fun reasoningResponse(reasoning: String) =
+    OpenRouterResponse(
+      choices =
+        listOf(
+          OpenRouterResponse.Choice(
+            message = OpenRouterResponse.Message(content = null, reasoning = reasoning),
+          ),
+        ),
+    )
 }

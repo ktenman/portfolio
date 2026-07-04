@@ -100,7 +100,7 @@ class IndustryClassificationService(
         return BatchClassificationOutcome(emptyMap(), false)
       }
     val results = parseBatchResponse(response.content, validCompanies, response.model)
-    return BatchClassificationOutcome(results, results.isNotEmpty())
+    return BatchClassificationOutcome(results, true)
   }
 
   private fun buildBatchPrompt(companies: List<CompanyClassificationInput>): String {

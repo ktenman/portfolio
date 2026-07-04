@@ -383,7 +383,7 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should report model gave no answer when batch response parses no lines`() {
+  fun `should report model answered when batch response parses no lines`() {
     every { properties.enabled } returns true
     val companies = listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
@@ -391,7 +391,7 @@ class IndustryClassificationServiceTest {
 
     val outcome = service.classifyBatch(companies)
 
-    expect(outcome.llmAnswered).toEqual(false)
+    expect(outcome.llmAnswered).toEqual(true)
   }
 
   @Test

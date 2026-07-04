@@ -82,22 +82,22 @@ class CountryClassificationService(
       return BatchClassificationOutcome(autoAssigned, false)
     }
     log.info("Batch classifying ${needsLlm.size} companies (${autoAssigned.size} auto-assigned)")
-    val llmResults = classifyBatchWithLlm(needsLlm)
-    return BatchClassificationOutcome(autoAssigned + llmResults, llmResults.isNotEmpty())
+    val outcome = classifyBatchWithLlm(needsLlm)
+    return BatchClassificationOutcome(autoAssigned + outcome.results, outcome.llmAnswered)
   }
 
-  private fun classifyBatchWithLlm(companies: List<CompanyClassificationInput>): Map<Long, CountryClassificationResult> {
+  private fun classifyBatchWithLlm(companies: List<CompanyClassificationInput>): BatchClassificationOutcome<CountryClassificationResult> {
     if (!properties.enabled) {
       log.warn("LLM classification disabled")
-      return emptyMap()
+      return BatchClassificationOutcome(emptyMap(), false)
     }
     val prompt = buildBatchPrompt(companies)
     val response = openRouterClient.classifyWithCountryFallback(prompt)
     if (response == null) {
       log.warn("Batch country classification failed for ${companies.size} companies")
-      return emptyMap()
+      return BatchClassificationOutcome(emptyMap(), false)
     }
-    return parseBatchResponse(response.content, companies, response.model)
+    return BatchClassificationOutcome(parseBatchResponse(response.content, companies, response.model), true)
   }
 
   private fun buildBatchPrompt(companies: List<CompanyClassificationInput>): String {
