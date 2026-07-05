@@ -59,7 +59,7 @@ class EtfHoldingService(
     val candidates = collectCandidates(holdingData)
     if (candidates.any { it.name.equals(holdingData.name, ignoreCase = true) }) return null
     return candidates
-      .firstOrNull { holdingIdentityService.isSameCompany(it.name, holdingData.name, holdingData.ticker) }
+      .firstOrNull { holdingIdentityService.isSameCompany(it.name, holdingData.name, holdingData.ticker) == true }
       ?.id
   }
 

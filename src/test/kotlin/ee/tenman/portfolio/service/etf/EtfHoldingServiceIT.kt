@@ -218,6 +218,24 @@ class EtfHoldingServiceIT {
   }
 
   @Test
+  fun `should create separate holding when identity verdict is unavailable`() {
+    val abbreviatedName =
+      listOf(
+        HoldingData(name = "Amazon", ticker = "AMZN", sector = null, weight = BigDecimal("10.0"), rank = 1, logoUrl = null),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate, abbreviatedName)
+    every { holdingIdentityService.isSameCompany("Amazon", "Amazon.com Inc", "AMZN") } returns null
+
+    val legalName =
+      listOf(
+        HoldingData(name = "Amazon.com Inc", ticker = "AMZN", sector = null, weight = BigDecimal("9.0"), rank = 1, logoUrl = null),
+      )
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), legalName)
+
+    expect(etfHoldingRepository.findAll()).toHaveSize(2)
+  }
+
+  @Test
   fun `should reuse holding via block key without shared ticker and backfill missing fields`() {
     val barePosition =
       listOf(

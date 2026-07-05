@@ -59,7 +59,7 @@ class HoldingReconciliationService(
   private fun sameCompany(
     representative: EtfHolding,
     candidate: EtfHolding,
-  ): Boolean = holdingIdentityService.isSameCompany(representative.name, candidate.name, candidate.ticker ?: representative.ticker)
+  ): Boolean = holdingIdentityService.isSameCompany(representative.name, candidate.name, candidate.ticker ?: representative.ticker) == true
 
   private fun logPlan(plan: HoldingMergePlan) {
     log.info(

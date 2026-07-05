@@ -34,12 +34,15 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     """
     SELECT h FROM EtfHolding h
     JOIN EtfPosition ep ON ep.holding.id = h.id
-    WHERE h.sectorSource IS NULL OR h.sectorSource <> ee.tenman.portfolio.domain.SectorSource.LLM
+    WHERE (h.sectorSource IS NULL OR h.sectorSource <> ee.tenman.portfolio.domain.SectorSource.LLM)
+      AND h.sectorFetchAttempts < :maxAttempts
     GROUP BY h.id
     ORDER BY MAX(ep.weightPercentage) DESC
   """,
   )
-  fun findUnclassifiedSectorHoldings(): List<EtfHolding>
+  fun findUnclassifiedSectorHoldings(
+    @Param("maxAttempts") maxAttempts: Int,
+  ): List<EtfHolding>
 
   @Query(
     """

@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToThrow
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
@@ -10,6 +12,7 @@ import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.integration.BatchClassificationOutcome
 import ee.tenman.portfolio.service.integration.CompanyClassificationInput
 import ee.tenman.portfolio.service.integration.IndustryClassificationService
 import ee.tenman.portfolio.service.integration.SectorClassificationResult
@@ -19,6 +22,8 @@ import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.scheduling.support.CronExpression
 
 class EtfHoldingsClassificationJobTest {
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService = mockk(relaxed = true)
@@ -35,6 +40,7 @@ class EtfHoldingsClassificationJobTest {
     every { circuitBreaker.getWaitTimeMs(any()) } returns 0L
     every { circuitBreaker.isUsingFallback() } returns false
     every { properties.rateLimitBufferMs } returns 100L
+    every { properties.enabled } returns true
     job =
       EtfHoldingsClassificationJob(
         etfHoldingPersistenceService = etfHoldingPersistenceService,
@@ -71,7 +77,10 @@ class EtfHoldingsClassificationJobTest {
     val invokedSizes: MutableList<Int> = mutableListOf()
     every { industryClassificationService.classifyBatch(capture(batchSlot)) } answers {
       invokedSizes.add(batchSlot.captured.size)
-      emptyMap()
+      BatchClassificationOutcome(
+        batchSlot.captured.associate { it.holdingId to SectorClassificationResult(sector = IndustrySector.FINANCE, model = null) },
+        true,
+      )
     }
 
     job.execute()
@@ -86,9 +95,12 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L, 2L)
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
     every { industryClassificationService.classifyBatch(any()) } returns
-      mapOf(
-        1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW),
-        2L to SectorClassificationResult(sector = IndustrySector.FINANCE, model = AiModel.GEMINI_3_FLASH_PREVIEW),
+      BatchClassificationOutcome(
+        mapOf(
+          1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW),
+          2L to SectorClassificationResult(sector = IndustrySector.FINANCE, model = AiModel.GEMINI_3_FLASH_PREVIEW),
+        ),
+        true,
       )
 
     job.execute()
@@ -104,8 +116,9 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L, 2L)
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
     every { industryClassificationService.classifyBatch(any()) } returns
-      mapOf(
-        1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW),
+      BatchClassificationOutcome(
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW)),
+        true,
       )
 
     job.execute()
@@ -121,7 +134,12 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L, 2L)
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
     val batchSlot = slot<List<CompanyClassificationInput>>()
-    every { industryClassificationService.classifyBatch(capture(batchSlot)) } returns emptyMap()
+    every { industryClassificationService.classifyBatch(capture(batchSlot)) } answers {
+      BatchClassificationOutcome(
+        batchSlot.captured.associate { it.holdingId to SectorClassificationResult(sector = IndustrySector.FINANCE, model = null) },
+        true,
+      )
+    }
 
     job.execute()
 
@@ -134,7 +152,10 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
     every { industryClassificationService.classifyBatch(any()) } returns
-      mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW))
+      BatchClassificationOutcome(
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW)),
+        true,
+      )
 
     job.execute()
 
@@ -147,15 +168,122 @@ class EtfHoldingsClassificationJobTest {
     val holding = createHolding(1L, "Apple Inc", "AAPL")
     every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
-    every { industryClassificationService.classifyBatch(any()) } returns emptyMap()
+    every { industryClassificationService.classifyBatch(any()) } returns BatchClassificationOutcome(emptyMap(), false)
 
-    job.execute()
+    runCatching { job.execute() }
 
     verify(exactly = 0) { cacheInvalidationService.evictEtfBreakdownCache() }
   }
 
   @Test
+  fun `should increment sector fetch attempts only for holdings missing from an answered batch`() {
+    val holding1 = createHolding(1L, "Apple Inc", "AAPL")
+    val holding2 = createHolding(2L, "Mystery Corp", "XXX")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L, 2L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
+    every { industryClassificationService.classifyBatch(any()) } returns
+      BatchClassificationOutcome(
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW)),
+        true,
+      )
+
+    job.execute()
+
+    verify(exactly = 1) { etfHoldingPersistenceService.incrementSectorFetchAttempts(2L) }
+    verify(exactly = 0) { etfHoldingPersistenceService.incrementSectorFetchAttempts(1L) }
+  }
+
+  @Test
+  fun `should not increment sector fetch attempts when classification succeeds`() {
+    val holding = createHolding(1L, "Apple Inc", "AAPL")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
+    every { industryClassificationService.classifyBatch(any()) } returns
+      BatchClassificationOutcome(
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_FLASH_PREVIEW)),
+        true,
+      )
+
+    job.execute()
+
+    verify(exactly = 0) { etfHoldingPersistenceService.incrementSectorFetchAttempts(any()) }
+  }
+
+  @Test
   fun `should have correct job name`() {
     expect(job.getName()).toEqual("EtfHoldingsClassificationJob")
+  }
+
+  @Test
+  fun `cannot increment sector fetch attempts when model gives no answer`() {
+    val holding = createHolding(1L, "Mystery Corp", "XXX")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
+    every { industryClassificationService.classifyBatch(any()) } returns BatchClassificationOutcome(emptyMap(), false)
+
+    runCatching { job.execute() }
+
+    verify(exactly = 0) { etfHoldingPersistenceService.incrementSectorFetchAttempts(any()) }
+  }
+
+  @Test
+  fun `should fail job when classification produces no successes`() {
+    val holding = createHolding(1L, "Mystery Corp", "XXX")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
+    every { industryClassificationService.classifyBatch(any()) } returns BatchClassificationOutcome(emptyMap(), false)
+
+    expect { job.execute() }.toThrow<IllegalStateException>()
+  }
+
+  @Test
+  fun `cannot fail job when every holding is skipped for blank name`() {
+    val holding1 = createHolding(1L, "", "B1")
+    val holding2 = createHolding(2L, " ", "B2")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L, 2L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
+
+    expect { job.execute() }.notToThrow()
+  }
+
+  @Test
+  fun `should skip job entirely when classification disabled`() {
+    every { properties.enabled } returns false
+
+    job.execute()
+
+    verify(exactly = 0) { etfHoldingPersistenceService.findUnclassifiedHoldingIds() }
+  }
+
+  @Test
+  fun `should skip holdings with blank name without incrementing attempts`() {
+    val holding1 = createHolding(1L, "Apple", "AAPL")
+    val holding2 = createHolding(2L, "", "BLANK")
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L, 2L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
+    every { industryClassificationService.classifyBatch(any()) } answers {
+      val inputs = firstArg<List<CompanyClassificationInput>>()
+      BatchClassificationOutcome(
+        inputs.associate { it.holdingId to SectorClassificationResult(sector = IndustrySector.FINANCE, model = null) },
+        true,
+      )
+    }
+
+    job.execute()
+
+    verify(exactly = 0) { etfHoldingPersistenceService.incrementSectorFetchAttempts(any()) }
+  }
+
+  @Test
+  fun `should schedule runs only through weekly cron trigger with parseable default`() {
+    val cron =
+      EtfHoldingsClassificationJob::class.java
+        .getMethod("runJob")
+        .getAnnotationsByType(Scheduled::class.java)
+        .single()
+        .cron
+    CronExpression.parse(cron.substringAfter(":").removeSuffix("}"))
+
+    expect(cron).toEqual("\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}")
   }
 }

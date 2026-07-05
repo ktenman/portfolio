@@ -18,25 +18,41 @@ class HoldingIdentityService(
 
   @Cacheable(
     value = [HOLDING_IDENTITY_CACHE],
-    key = "#existingName + '|' + #candidateName + '|' + (#ticker ?: '')",
-    unless = "#result == false",
+    key = "#existingName.length() + '|' + #existingName + '|' + #candidateName.length() + '|' + #candidateName + '|' + (#ticker ?: '')",
+    unless = "#result == null",
   )
   fun isSameCompany(
     existingName: String,
     candidateName: String,
     ticker: String?,
-  ): Boolean {
-    if (!properties.enabled) return false
-    if (existingName.isBlank() || candidateName.isBlank()) return false
+  ): Boolean? {
+    if (!properties.enabled) return null
+    if (existingName.isBlank() || candidateName.isBlank()) return null
     if (existingName.equals(candidateName, ignoreCase = true)) return true
     val prompt = buildPrompt(existingName, candidateName, ticker)
-    val response = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel()) ?: return false
-    val verdict = response.content?.trim()?.startsWith("YES", ignoreCase = true) ?: false
+    val content = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel())?.content ?: return null
+    val verdict = parseVerdict(content)
+    if (verdict == null) {
+      log.warn(
+        "Holding identity answer for '${LogSanitizerUtil.sanitize(existingName)}' " +
+          "vs '${LogSanitizerUtil.sanitize(candidateName)}' was not a clear YES or NO",
+      )
+      return null
+    }
     log.info(
       "Holding identity check '${LogSanitizerUtil.sanitize(existingName)}' " +
         "vs '${LogSanitizerUtil.sanitize(candidateName)}' resolved to $verdict",
     )
     return verdict
+  }
+
+  private fun parseVerdict(content: String): Boolean? {
+    val normalized = content.trim()
+    return when {
+      normalized.startsWith("YES", ignoreCase = true) -> true
+      normalized.startsWith("NO", ignoreCase = true) -> false
+      else -> null
+    }
   }
 
   private fun buildPrompt(

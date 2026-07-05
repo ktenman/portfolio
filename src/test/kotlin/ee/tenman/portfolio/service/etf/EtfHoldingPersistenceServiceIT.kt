@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
@@ -409,6 +410,24 @@ class EtfHoldingPersistenceServiceIT {
 
     val nvidiaId = etfHoldingRepository.findAll().first { it.name == "NVIDIA Corp" }.id
     expect(unclassifiedIds).toContainExactly(nvidiaId)
+  }
+
+  @Test
+  fun `should findUnclassifiedHoldingIds exclude holdings that exhausted sector fetch attempts`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(
+        HoldingData(name = "Stubborn Oü", ticker = "STUB", sector = null, weight = BigDecimal("3.00"), rank = 1),
+      ),
+    )
+    val stubbornId = etfHoldingRepository.findAll().first { it.name == "Stubborn Oü" }.id
+    repeat(EtfHoldingPersistenceService.MAX_SECTOR_FETCH_ATTEMPTS) { etfHoldingPersistenceService.incrementSectorFetchAttempts(stubbornId) }
+
+    val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
+
+    expect(unclassifiedIds).toBeEmpty()
   }
 
   @Test

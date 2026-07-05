@@ -48,24 +48,36 @@ class HoldingIdentityServiceTest {
   }
 
   @Test
-  fun `should reject identity when model returns no response`() {
+  fun `should return no verdict when answer is not a clear yes or no`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "Well, they might be the same entity", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
+
+    val result = service.isSameCompany("ASML Holding", "ASML Hōldings NV", "ASML")
+
+    expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should return no verdict when model returns no response`() {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
     val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
     val result = service.isSameCompany("Micron", "Micron Technology Inc", "MU")
 
-    expect(result).toEqual(false)
+    expect(result).toEqual(null)
   }
 
   @Test
-  fun `should reject identity without consulting model when classification is disabled`() {
+  fun `should return no verdict without consulting model when classification is disabled`() {
     val openRouterClient = mockk<OpenRouterClient>()
     val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = false))
 
     val result = service.isSameCompany("Alphabet", "Alphabet Inc", "GOOGL")
 
-    expect(result).toEqual(false)
+    expect(result).toEqual(null)
   }
 
   @Test
@@ -79,12 +91,12 @@ class HoldingIdentityServiceTest {
   }
 
   @Test
-  fun `should reject identity without consulting model when existing name is blank`() {
+  fun `should return no verdict without consulting model when existing name is blank`() {
     val openRouterClient = mockk<OpenRouterClient>()
     val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
     val result = service.isSameCompany("   ", "Apple Inc", "AAPL")
 
-    expect(result).toEqual(false)
+    expect(result).toEqual(null)
   }
 }
