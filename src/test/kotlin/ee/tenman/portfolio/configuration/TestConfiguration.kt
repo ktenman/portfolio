@@ -5,7 +5,6 @@ import ee.tenman.portfolio.job.FtDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
-import io.github.resilience4j.retry.RetryConfig
 import io.github.resilience4j.retry.RetryRegistry
 import io.mockk.mockk
 import org.springframework.boot.test.context.TestConfiguration
@@ -48,15 +47,5 @@ class TestConfiguration {
 
   @Bean
   @Primary
-  fun retryRegistry(): RetryRegistry {
-    val config =
-      RetryConfig
-        .custom<Any>()
-        .maxAttempts(3)
-        .waitDuration(Duration.ofSeconds(2))
-        .retryExceptions(Exception::class.java)
-        .build()
-
-    return RetryRegistry.of(config)
-  }
+  fun retryRegistry(): RetryRegistry = Resilience4jConfiguration().retryRegistry()
 }

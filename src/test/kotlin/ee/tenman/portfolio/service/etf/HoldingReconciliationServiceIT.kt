@@ -72,6 +72,17 @@ class HoldingReconciliationServiceIT {
   }
 
   @Test
+  fun `cannot merge holdings when identity verdict is unavailable`() {
+    etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
+    etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
+    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns null
+
+    holdingReconciliationService.reconcile(dryRun = false)
+
+    expect(etfHoldingRepository.findAll()).toHaveSize(2)
+  }
+
+  @Test
   fun `dont modify holdings when reconciling in dry run mode`() {
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))

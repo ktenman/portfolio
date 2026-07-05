@@ -59,13 +59,13 @@ class CountryClassificationService(
     return tryAutoAssign(etfNames, sanitizedName) ?: classifyWithLlm(companyName, ticker, etfNames, sanitizedName)
   }
 
-  fun classifyBatch(companies: List<CompanyClassificationInput>): Map<Long, CountryClassificationResult> {
-    if (companies.isEmpty()) return emptyMap()
+  fun classifyBatch(companies: List<CompanyClassificationInput>): BatchClassificationOutcome<CountryClassificationResult> {
+    if (companies.isEmpty()) return BatchClassificationOutcome(emptyMap(), false)
     val validCompanies =
       companies.filter { !it.name.isBlank() && !isNonCompanyHolding(it.name) }
     if (validCompanies.isEmpty()) {
       log.info("No valid companies to classify in batch")
-      return emptyMap()
+      return BatchClassificationOutcome(emptyMap(), false)
     }
     val autoAssigned = mutableMapOf<Long, CountryClassificationResult>()
     val needsLlm = mutableListOf<CompanyClassificationInput>()
@@ -79,25 +79,25 @@ class CountryClassificationService(
     }
     if (needsLlm.isEmpty()) {
       log.info("All ${autoAssigned.size} companies auto-assigned")
-      return autoAssigned
+      return BatchClassificationOutcome(autoAssigned, false)
     }
     log.info("Batch classifying ${needsLlm.size} companies (${autoAssigned.size} auto-assigned)")
-    val llmResults = classifyBatchWithLlm(needsLlm)
-    return autoAssigned + llmResults
+    val outcome = classifyBatchWithLlm(needsLlm)
+    return BatchClassificationOutcome(autoAssigned + outcome.results, outcome.llmAnswered)
   }
 
-  private fun classifyBatchWithLlm(companies: List<CompanyClassificationInput>): Map<Long, CountryClassificationResult> {
+  private fun classifyBatchWithLlm(companies: List<CompanyClassificationInput>): BatchClassificationOutcome<CountryClassificationResult> {
     if (!properties.enabled) {
       log.warn("LLM classification disabled")
-      return emptyMap()
+      return BatchClassificationOutcome(emptyMap(), false)
     }
     val prompt = buildBatchPrompt(companies)
     val response = openRouterClient.classifyWithCountryFallback(prompt)
     if (response == null) {
       log.warn("Batch country classification failed for ${companies.size} companies")
-      return emptyMap()
+      return BatchClassificationOutcome(emptyMap(), false)
     }
-    return parseBatchResponse(response.content, companies, response.model)
+    return BatchClassificationOutcome(parseBatchResponse(response.content, companies, response.model), true)
   }
 
   private fun buildBatchPrompt(companies: List<CompanyClassificationInput>): String {

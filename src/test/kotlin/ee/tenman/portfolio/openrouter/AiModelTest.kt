@@ -14,31 +14,38 @@ class AiModelTest {
   }
 
   @Test
-  fun `should return CLAUDE_SONNET_4_6 for matching model id`() {
-    val result = AiModel.fromModelId("anthropic/claude-sonnet-4.6")
+  fun `should return CLAUDE_SONNET_5 for matching model id`() {
+    val result = AiModel.fromModelId("anthropic/claude-sonnet-5")
 
-    expect(result).toEqual(AiModel.CLAUDE_SONNET_4_6)
+    expect(result).toEqual(AiModel.CLAUDE_SONNET_5)
   }
 
   @Test
-  fun `should return CLAUDE_OPUS_4_6 for matching model id`() {
-    val result = AiModel.fromModelId("anthropic/claude-opus-4.6")
+  fun `should return CLAUDE_OPUS_4_8 for matching model id`() {
+    val result = AiModel.fromModelId("anthropic/claude-opus-4.8")
 
-    expect(result).toEqual(AiModel.CLAUDE_OPUS_4_6)
+    expect(result).toEqual(AiModel.CLAUDE_OPUS_4_8)
   }
 
   @Test
-  fun `should return DEEPSEEK_V3_2 for matching model id`() {
-    val result = AiModel.fromModelId("deepseek/deepseek-v3.2")
+  fun `should return DEEPSEEK_V4_PRO for matching model id`() {
+    val result = AiModel.fromModelId("deepseek/deepseek-v4-pro")
 
-    expect(result).toEqual(AiModel.DEEPSEEK_V3_2)
+    expect(result).toEqual(AiModel.DEEPSEEK_V4_PRO)
   }
 
   @Test
-  fun `should return GPT_5_4 for matching model id`() {
-    val result = AiModel.fromModelId("openai/gpt-5.4")
+  fun `should return DEEPSEEK_V4_FLASH for matching model id`() {
+    val result = AiModel.fromModelId("deepseek/deepseek-v4-flash")
 
-    expect(result).toEqual(AiModel.GPT_5_4)
+    expect(result).toEqual(AiModel.DEEPSEEK_V4_FLASH)
+  }
+
+  @Test
+  fun `should return GPT_5_5 for matching model id`() {
+    val result = AiModel.fromModelId("openai/gpt-5.5")
+
+    expect(result).toEqual(AiModel.GPT_5_5)
   }
 
   @Test
@@ -64,96 +71,127 @@ class AiModelTest {
   }
 
   @Test
+  fun `should keep retired model names resolvable for stored classifications`() {
+    val retired = listOf("CLAUDE_SONNET_4_6", "DEEPSEEK_V3_2", "GPT_5_4", "CLAUDE_OPUS_4_6")
+
+    expect(retired.map { AiModel.valueOf(it).sectorFallbackTier }.toSet()).toEqual(setOf(-1))
+  }
+
+  @Test
+  fun `should keep retired model names out of country cascade`() {
+    val retired = listOf("CLAUDE_SONNET_4_6", "DEEPSEEK_V3_2", "GPT_5_4", "CLAUDE_OPUS_4_6")
+
+    expect(retired.map { AiModel.valueOf(it).countryFallbackTier }.toSet()).toEqual(setOf(-1))
+  }
+
+  @Test
   fun `should have correct rate limits for GEMINI_3_FLASH_PREVIEW`() {
     expect(AiModel.GEMINI_3_FLASH_PREVIEW.rateLimitPerMinute).toEqual(400)
   }
 
   @Test
-  fun `should have correct rate limits for CLAUDE_SONNET_4_6`() {
-    expect(AiModel.CLAUDE_SONNET_4_6.rateLimitPerMinute).toEqual(240)
+  fun `should have correct rate limits for CLAUDE_SONNET_5`() {
+    expect(AiModel.CLAUDE_SONNET_5.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
-  fun `should have correct rate limits for CLAUDE_OPUS_4_6`() {
-    expect(AiModel.CLAUDE_OPUS_4_6.rateLimitPerMinute).toEqual(240)
+  fun `should have correct rate limits for CLAUDE_OPUS_4_8`() {
+    expect(AiModel.CLAUDE_OPUS_4_8.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
-  fun `should have correct rate limits for DEEPSEEK_V3_2`() {
-    expect(AiModel.DEEPSEEK_V3_2.rateLimitPerMinute).toEqual(240)
+  fun `should have correct rate limits for DEEPSEEK_V4_PRO`() {
+    expect(AiModel.DEEPSEEK_V4_PRO.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
-  fun `should have correct rate limits for GPT_5_4`() {
-    expect(AiModel.GPT_5_4.rateLimitPerMinute).toEqual(240)
+  fun `should have correct rate limits for GPT_5_5`() {
+    expect(AiModel.GPT_5_5.rateLimitPerMinute).toEqual(240)
+  }
+
+  @Test
+  fun `should have correct rate limits for DEEPSEEK_V4_FLASH`() {
+    expect(AiModel.DEEPSEEK_V4_FLASH.rateLimitPerMinute).toEqual(240)
   }
 
   @Test
   fun `should have correct sector fallback tiers`() {
-    expect(AiModel.GEMINI_3_FLASH_PREVIEW.sectorFallbackTier).toEqual(0)
-    expect(AiModel.CLAUDE_SONNET_4_6.sectorFallbackTier).toEqual(1)
-    expect(AiModel.DEEPSEEK_V3_2.sectorFallbackTier).toEqual(2)
-    expect(AiModel.GPT_5_4.sectorFallbackTier).toEqual(3)
-    expect(AiModel.CLAUDE_OPUS_4_6.sectorFallbackTier).toEqual(4)
+    expect(AiModel.DEEPSEEK_V4_FLASH.sectorFallbackTier).toEqual(0)
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.sectorFallbackTier).toEqual(1)
+    expect(AiModel.CLAUDE_SONNET_5.sectorFallbackTier).toEqual(2)
+    expect(AiModel.DEEPSEEK_V4_PRO.sectorFallbackTier).toEqual(3)
+    expect(AiModel.GPT_5_5.sectorFallbackTier).toEqual(4)
+    expect(AiModel.CLAUDE_OPUS_4_8.sectorFallbackTier).toEqual(5)
+  }
+
+  @Test
+  fun `should return next sector fallback model for DEEPSEEK_V4_FLASH`() {
+    expect(AiModel.DEEPSEEK_V4_FLASH.nextSectorFallbackModel()).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
 
   @Test
   fun `should return next sector fallback model for GEMINI_3_FLASH_PREVIEW`() {
-    expect(AiModel.GEMINI_3_FLASH_PREVIEW.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_4_6)
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_5)
   }
 
   @Test
-  fun `should return next sector fallback model for CLAUDE_SONNET_4_6`() {
-    expect(AiModel.CLAUDE_SONNET_4_6.nextSectorFallbackModel()).toEqual(AiModel.DEEPSEEK_V3_2)
+  fun `should return next sector fallback model for CLAUDE_SONNET_5`() {
+    expect(AiModel.CLAUDE_SONNET_5.nextSectorFallbackModel()).toEqual(AiModel.DEEPSEEK_V4_PRO)
   }
 
   @Test
-  fun `should return next sector fallback model for DEEPSEEK_V3_2`() {
-    expect(AiModel.DEEPSEEK_V3_2.nextSectorFallbackModel()).toEqual(AiModel.GPT_5_4)
+  fun `should return next sector fallback model for DEEPSEEK_V4_PRO`() {
+    expect(AiModel.DEEPSEEK_V4_PRO.nextSectorFallbackModel()).toEqual(AiModel.GPT_5_5)
   }
 
   @Test
-  fun `should return next sector fallback model for GPT_5_4`() {
-    expect(AiModel.GPT_5_4.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_6)
+  fun `should return next sector fallback model for GPT_5_5`() {
+    expect(AiModel.GPT_5_5.nextSectorFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_8)
   }
 
   @Test
-  fun `should return null for CLAUDE_OPUS_4_6 as last sector fallback`() {
-    expect(AiModel.CLAUDE_OPUS_4_6.nextSectorFallbackModel()).toEqual(null)
+  fun `should return null for CLAUDE_OPUS_4_8 as last sector fallback`() {
+    expect(AiModel.CLAUDE_OPUS_4_8.nextSectorFallbackModel()).toEqual(null)
   }
 
   @Test
   fun `should have correct country fallback tiers`() {
-    expect(AiModel.CLAUDE_SONNET_4_6.countryFallbackTier).toEqual(0)
-    expect(AiModel.GEMINI_3_FLASH_PREVIEW.countryFallbackTier).toEqual(1)
-    expect(AiModel.DEEPSEEK_V3_2.countryFallbackTier).toEqual(2)
-    expect(AiModel.GPT_5_4.countryFallbackTier).toEqual(3)
-    expect(AiModel.CLAUDE_OPUS_4_6.countryFallbackTier).toEqual(4)
+    expect(AiModel.DEEPSEEK_V4_FLASH.countryFallbackTier).toEqual(0)
+    expect(AiModel.CLAUDE_SONNET_5.countryFallbackTier).toEqual(1)
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.countryFallbackTier).toEqual(2)
+    expect(AiModel.DEEPSEEK_V4_PRO.countryFallbackTier).toEqual(3)
+    expect(AiModel.GPT_5_5.countryFallbackTier).toEqual(4)
+    expect(AiModel.CLAUDE_OPUS_4_8.countryFallbackTier).toEqual(5)
   }
 
   @Test
-  fun `should return next country fallback model for CLAUDE_SONNET_4_6`() {
-    expect(AiModel.CLAUDE_SONNET_4_6.nextCountryFallbackModel()).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+  fun `should return next country fallback model for DEEPSEEK_V4_FLASH`() {
+    expect(AiModel.DEEPSEEK_V4_FLASH.nextCountryFallbackModel()).toEqual(AiModel.CLAUDE_SONNET_5)
+  }
+
+  @Test
+  fun `should return next country fallback model for CLAUDE_SONNET_5`() {
+    expect(AiModel.CLAUDE_SONNET_5.nextCountryFallbackModel()).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
   }
 
   @Test
   fun `should return next country fallback model for GEMINI_3_FLASH_PREVIEW`() {
-    expect(AiModel.GEMINI_3_FLASH_PREVIEW.nextCountryFallbackModel()).toEqual(AiModel.DEEPSEEK_V3_2)
+    expect(AiModel.GEMINI_3_FLASH_PREVIEW.nextCountryFallbackModel()).toEqual(AiModel.DEEPSEEK_V4_PRO)
   }
 
   @Test
-  fun `should return next country fallback model for DEEPSEEK_V3_2`() {
-    expect(AiModel.DEEPSEEK_V3_2.nextCountryFallbackModel()).toEqual(AiModel.GPT_5_4)
+  fun `should return next country fallback model for DEEPSEEK_V4_PRO`() {
+    expect(AiModel.DEEPSEEK_V4_PRO.nextCountryFallbackModel()).toEqual(AiModel.GPT_5_5)
   }
 
   @Test
-  fun `should return next country fallback model for GPT_5_4`() {
-    expect(AiModel.GPT_5_4.nextCountryFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_6)
+  fun `should return next country fallback model for GPT_5_5`() {
+    expect(AiModel.GPT_5_5.nextCountryFallbackModel()).toEqual(AiModel.CLAUDE_OPUS_4_8)
   }
 
   @Test
-  fun `should return null for CLAUDE_OPUS_4_6 as last country fallback`() {
-    expect(AiModel.CLAUDE_OPUS_4_6.nextCountryFallbackModel()).toEqual(null)
+  fun `should return null for CLAUDE_OPUS_4_8 as last country fallback`() {
+    expect(AiModel.CLAUDE_OPUS_4_8.nextCountryFallbackModel()).toEqual(null)
   }
 
   @Test
@@ -166,11 +204,11 @@ class AiModelTest {
 
   @Test
   fun `should return primary sector model`() {
-    expect(AiModel.primarySectorModel()).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+    expect(AiModel.primarySectorModel()).toEqual(AiModel.DEEPSEEK_V4_FLASH)
   }
 
   @Test
   fun `should return primary country model`() {
-    expect(AiModel.primaryCountryModel()).toEqual(AiModel.CLAUDE_SONNET_4_6)
+    expect(AiModel.primaryCountryModel()).toEqual(AiModel.DEEPSEEK_V4_FLASH)
   }
 }

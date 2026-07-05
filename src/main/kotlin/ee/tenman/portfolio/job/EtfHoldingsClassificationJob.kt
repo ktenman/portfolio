@@ -29,8 +29,7 @@ class EtfHoldingsClassificationJob(
     private const val BATCH_SIZE = 100
   }
 
-  @Scheduled(initialDelay = 180000, fixedDelay = Long.MAX_VALUE)
-  @Scheduled(cron = "\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * *}")
+  @Scheduled(cron = "\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}")
   fun runJob() {
     log.info("Running ETF holdings classification job")
     jobExecutionService.executeJob(this)
@@ -38,6 +37,10 @@ class EtfHoldingsClassificationJob(
   }
 
   override fun execute() {
+    if (!properties.enabled) {
+      log.info("Sector classification disabled, skipping job")
+      return
+    }
     log.info("Starting ETF holdings classification with batch size $BATCH_SIZE")
     val holdingIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
     if (holdingIds.isEmpty()) {
@@ -52,6 +55,7 @@ class EtfHoldingsClassificationJob(
       cacheInvalidationService.evictEtfBreakdownCache()
       cacheInvalidationService.evictDiversificationEtfsCache()
     }
+    result.requireAnySuccess("Sector")
     log.info("Sector classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 
@@ -108,16 +112,21 @@ class EtfHoldingsClassificationJob(
     if (inputs.isEmpty()) {
       return ClassificationResult(success = 0, failure = 0, skipped = skippedIds.size)
     }
-    val results = industryClassificationService.classifyBatch(inputs)
+    val outcome = industryClassificationService.classifyBatch(inputs)
     var successCount = 0
     var failureCount = 0
     inputs.forEach { input ->
-      val result = results[input.holdingId]
-      if (result != null) {
-        etfHoldingPersistenceService.updateSector(input.holdingId, result.sector, result.model)
-        successCount++
-      } else {
-        failureCount++
+      val result = outcome.results[input.holdingId]
+      when {
+        result != null -> {
+          etfHoldingPersistenceService.updateSector(input.holdingId, result.sector, result.model)
+          successCount++
+        }
+        outcome.llmAnswered -> {
+          etfHoldingPersistenceService.incrementSectorFetchAttempts(input.holdingId)
+          failureCount++
+        }
+        else -> failureCount++
       }
     }
     return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedIds.size)
