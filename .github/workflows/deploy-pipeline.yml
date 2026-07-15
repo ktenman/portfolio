@@ -109,7 +109,12 @@ jobs:
               docker compose pull && break || { echo \"Pull attempt \$i failed, retrying in 15s...\"; sleep 15; }; \
             done && \
             echo 'Starting containers...' && \
-            docker compose up -d --remove-orphans && \
+            for i in 1 2 3; do \
+              docker compose up -d --remove-orphans && break; \
+              if [ \"\$i\" -eq 3 ]; then echo 'Failed to start containers after 3 attempts'; exit 1; fi; \
+              echo \"Start attempt \$i failed, retrying in 10s...\"; \
+              sleep 10; \
+            done && \
             echo 'Waiting for all services to become healthy...' && \
             for i in \$(seq 1 40); do \
               HEALTHY=\$(docker ps --filter 'health=healthy' --format '{{.Names}}' | wc -l); \
