@@ -51,6 +51,7 @@ class ExchangeRateRetrievalJob(
 
   override fun execute() {
     retrieveRates(Currency.GBP)
+    retrieveRates(Currency.USD)
   }
 
   private fun retrieveRates(currency: Currency) {

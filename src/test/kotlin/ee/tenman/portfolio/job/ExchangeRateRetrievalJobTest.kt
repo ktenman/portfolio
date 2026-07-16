@@ -8,6 +8,7 @@ import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.scheduling.TaskScheduler
 import java.math.BigDecimal
@@ -40,6 +41,11 @@ class ExchangeRateRetrievalJobTest {
   private val csv =
     header + "\n" +
       "EXR.D.GBP.EUR.SP00.A,D,GBP,EUR,SP00,A,2026-06-10,0.86228,A,F,,,P1D,,A,,,,,,,99Q1=100,,,5,,4F0,,title,compl,GBP,0"
+
+  @BeforeEach
+  fun stubUsd() {
+    every { ecbClient.fetchDailyRates("USD", any(), "csvdata") } returns ""
+  }
 
   @Test
   fun `should backfill from december 2014 when no rates are stored`() {

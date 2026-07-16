@@ -10,6 +10,7 @@ import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.currency.CurrencyConversionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import io.mockk.every
 import io.mockk.just
@@ -19,6 +20,10 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.Optional
 
 class LightyearPriceServiceTest {
@@ -27,6 +32,8 @@ class LightyearPriceServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val instrumentService = mockk<InstrumentService>()
   private val uuidCacheService = mockk<LightyearUuidCacheService>()
+  private val currencyConversionService = mockk<CurrencyConversionService>()
+  private val clock = Clock.fixed(Instant.parse("2026-07-16T12:00:00Z"), ZoneOffset.UTC)
   private lateinit var service: LightyearPriceService
 
   @BeforeEach
@@ -34,7 +41,16 @@ class LightyearPriceServiceTest {
     every { uuidCacheService.getCachedUuid(any()) } returns null
     every { uuidCacheService.cacheUuid(any(), any()) } answers { secondArg() }
     setupExchangeMapping()
-    service = LightyearPriceService(lightyearPriceClient, properties, instrumentRepository, instrumentService, uuidCacheService)
+    service =
+      LightyearPriceService(
+        lightyearPriceClient,
+        properties,
+        instrumentRepository,
+        instrumentService,
+        uuidCacheService,
+        currencyConversionService,
+        clock,
+      )
   }
 
   private fun setupExchangeMapping() {
@@ -299,6 +315,32 @@ class LightyearPriceServiceTest {
   }
 
   @Test
+  fun `should convert non-eur price to eur using exchange rate`() {
+    every { properties.getAllSymbols() } returns listOf("GOOGL:NSQ:USD")
+    every { properties.findUuidBySymbol("GOOGL:NSQ:USD") } returns "googl-uuid"
+    every { lightyearPriceClient.getPrice("/v1/market-data/googl-uuid/price") } returns createPriceResponse(BigDecimal("356.70"), "USD")
+    every {
+      currencyConversionService.convertToEur(BigDecimal("356.70"), Currency.USD, LocalDate.of(2026, 7, 16))
+    } returns BigDecimal("312.07")
+
+    val result = service.fetchCurrentPrices()
+
+    expect(result["GOOGL:NSQ:USD"]).notToEqualNull().toEqualNumerically(BigDecimal("312.07"))
+  }
+
+  @Test
+  fun `should not convert price already denominated in eur`() {
+    every { properties.getAllSymbols() } returns listOf("VUAA:GER:EUR")
+    every { properties.findUuidBySymbol("VUAA:GER:EUR") } returns "vuaa-uuid"
+    every { lightyearPriceClient.getPrice("/v1/market-data/vuaa-uuid/price") } returns createPriceResponse(BigDecimal("100.50"), "EUR")
+
+    val result = service.fetchCurrentPrices()
+
+    expect(result["VUAA:GER:EUR"]).notToEqualNull().toEqualNumerically(BigDecimal("100.50"))
+    verify(exactly = 0) { currencyConversionService.convertToEur(any(), any(), any()) }
+  }
+
+  @Test
   fun `should resolve UUID from web lookup when not in config`() {
     every { properties.findUuidBySymbol("NEWETF:GER:EUR") } returns null
     every { instrumentRepository.findBySymbol("NEWETF:GER:EUR") } returns Optional.empty()
@@ -415,14 +457,16 @@ class LightyearPriceServiceTest {
     verify { instrumentService.updateProviderExternalId("NOID:GER:EUR", "new-uuid") }
   }
 
-  private fun createPriceResponse(price: BigDecimal) =
-    LightyearPriceResponse(
-      timestamp = "2025-01-01T00:00:00Z",
-      price = price,
-      change = BigDecimal.ZERO,
-      changePercent = BigDecimal.ZERO,
-      currency = "EUR",
-    )
+  private fun createPriceResponse(
+    price: BigDecimal,
+    currency: String = "EUR",
+  ) = LightyearPriceResponse(
+    timestamp = "2025-01-01T00:00:00Z",
+    price = price,
+    change = BigDecimal.ZERO,
+    changePercent = BigDecimal.ZERO,
+    currency = currency,
+  )
 
   @Test
   fun `should fetch fund info and return ter and fundCurrency`() {
