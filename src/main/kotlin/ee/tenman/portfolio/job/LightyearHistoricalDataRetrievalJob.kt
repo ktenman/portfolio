@@ -94,7 +94,9 @@ class LightyearHistoricalDataRetrievalJob(
       log.warn("No historical data found for instrument: ${instrument.symbol}")
       return
     }
-    val pricesInEur = currencyConversionService.convertDailyPricesToEur(historicalData, instrument.fundCurrency ?: Currency.EUR)
+    val pricesInEur = currencyConversionService.convertDailyPricesToEur(historicalData, listingCurrency(instrument.symbol))
     dataProcessingUtil.processDailyData(instrument, pricesInEur, ProviderName.LIGHTYEAR)
   }
+
+  private fun listingCurrency(symbol: String): Currency = Currency.fromCodeOrNull(symbol.substringAfterLast(':')) ?: Currency.EUR
 }
