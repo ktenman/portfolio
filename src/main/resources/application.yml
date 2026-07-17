@@ -178,6 +178,8 @@ scraping:
         uuid: "1eda4008-c9e6-6bde-b60a-654bcfbd8ac3"
       - symbol: "QDVE:GER:EUR"
         uuid: "1ef27f9a-bde6-6dda-a873-3946ca86bd5c"
+      - symbol: "GOOGL:NSQ:USD"
+        uuid: "1ebd2c81-298a-6e15-a6ac-f7176e74a812"
       - symbol: "XAIX:GER:EUR"
         uuid: "1ef66ace-af0a-6d81-ab3f-c9f7567377e0"
       - symbol: "SPYL:GER:EUR"

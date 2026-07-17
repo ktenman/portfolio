@@ -48,6 +48,15 @@ class ExchangeRateRetrievalJobIT {
   @BeforeEach
   fun setUp() {
     wireMockServer.resetAll()
+    wireMockServer.stubFor(
+      get(urlPathEqualTo("/service/data/EXR/D.USD.EUR.SP00.A"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "text/csv")
+            .withBody(header),
+        ),
+    )
   }
 
   @Test

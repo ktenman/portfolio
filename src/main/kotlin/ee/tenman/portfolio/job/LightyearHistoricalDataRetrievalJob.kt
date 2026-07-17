@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
+import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
+import ee.tenman.portfolio.service.currency.CurrencyConversionService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import jakarta.annotation.PostConstruct
@@ -18,6 +20,7 @@ class LightyearHistoricalDataRetrievalJob(
   private val instrumentService: InstrumentService,
   private val lightyearHistoricalPricesService: LightyearHistoricalPricesService,
   private val dataProcessingUtil: DataProcessingUtil,
+  private val currencyConversionService: CurrencyConversionService,
   private val jobExecutionService: JobExecutionService,
   private val taskScheduler: TaskScheduler,
   private val lightyearProperties: LightyearScrapingProperties,
@@ -91,6 +94,7 @@ class LightyearHistoricalDataRetrievalJob(
       log.warn("No historical data found for instrument: ${instrument.symbol}")
       return
     }
-    dataProcessingUtil.processDailyData(instrument, historicalData, ProviderName.LIGHTYEAR)
+    val pricesInEur = currencyConversionService.convertDailyPricesToEur(historicalData, instrument.fundCurrency ?: Currency.EUR)
+    dataProcessingUtil.processDailyData(instrument, pricesInEur, ProviderName.LIGHTYEAR)
   }
 }
