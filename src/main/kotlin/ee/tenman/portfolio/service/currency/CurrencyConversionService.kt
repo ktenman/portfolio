@@ -4,6 +4,7 @@ import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.common.DailyPriceDataImpl
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.repository.ExchangeRateRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -20,6 +21,8 @@ class CurrencyConversionService(
     private const val RATE_LOOKBACK_DAYS = 10L
   }
 
+  private val log = LoggerFactory.getLogger(javaClass)
+
   @Transactional(readOnly = true)
   fun convertDailyPricesToEur(
     prices: Map<LocalDate, DailyPriceData>,
@@ -27,7 +30,17 @@ class CurrencyConversionService(
   ): Map<LocalDate, DailyPriceData> {
     if (currency == Currency.EUR || prices.isEmpty()) return prices
     val rates = loadRates(currency, prices.keys.min(), prices.keys.max())
-    return prices.mapValues { (date, data) -> convert(data, findRate(rates, date, currency)) }
+    val fallback = lazy { latestRate(currency, prices.keys.min()) }
+    val converted =
+      prices.entries
+        .mapNotNull { (date, data) ->
+          val rate = rates.floorEntry(date)?.value ?: fallback.value ?: return@mapNotNull null
+          date to convert(data, rate)
+        }.toMap()
+    if (converted.size < prices.size) {
+      log.warn("Skipped ${prices.size - converted.size} of ${prices.size} $currency prices with no exchange rate")
+    }
+    return converted
   }
 
   @Transactional(readOnly = true)
@@ -55,19 +68,19 @@ class CurrencyConversionService(
     return TreeMap(loaded.associate { it.entryDate to it.rate })
   }
 
-  private fun findRate(
-    rates: TreeMap<LocalDate, BigDecimal>,
-    date: LocalDate,
+  private fun latestRate(
     currency: Currency,
-  ): BigDecimal = rates.floorEntry(date)?.value ?: rateOn(currency, date)
+    date: LocalDate,
+  ): BigDecimal? =
+    exchangeRateRepository
+      .findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(Currency.EUR, currency, date)
+      ?.rate
 
   private fun rateOn(
     currency: Currency,
     date: LocalDate,
   ): BigDecimal =
-    exchangeRateRepository
-      .findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(Currency.EUR, currency, date)
-      ?.rate
+    latestRate(currency, date)
       ?: throw IllegalStateException("No exchange rate found for $currency on or before $date")
 
   private fun convert(

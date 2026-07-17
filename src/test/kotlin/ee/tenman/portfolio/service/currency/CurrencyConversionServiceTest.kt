@@ -79,7 +79,7 @@ class CurrencyConversionServiceTest {
   }
 
   @Test
-  fun `should throw when no rate exists at or before a price date`() {
+  fun `should skip prices when no rate exists at or before any date`() {
     every {
       exchangeRateRepository.findAllByBaseCurrencyAndQuoteCurrencyAndEntryDateBetween(Currency.EUR, Currency.GBP, any(), any())
     } returns emptyList()
@@ -92,9 +92,28 @@ class CurrencyConversionServiceTest {
     } returns null
     val prices = mapOf(tuesday to priceData("11.74"))
 
-    expect {
-      currencyConversionService.convertDailyPricesToEur(prices, Currency.GBP)
-    }.toThrow<IllegalStateException>().messageToContain("GBP")
+    val converted = currencyConversionService.convertDailyPricesToEur(prices, Currency.GBP)
+
+    expect(converted).toEqual(emptyMap())
+  }
+
+  @Test
+  fun `should skip prices before first available rate and convert the rest`() {
+    every {
+      exchangeRateRepository.findAllByBaseCurrencyAndQuoteCurrencyAndEntryDateBetween(Currency.EUR, Currency.GBP, any(), any())
+    } returns listOf(rate(wednesday, "0.5"))
+    every {
+      exchangeRateRepository.findFirstByBaseCurrencyAndQuoteCurrencyAndEntryDateLessThanEqualOrderByEntryDateDesc(
+        Currency.EUR,
+        Currency.GBP,
+        tuesday,
+      )
+    } returns null
+    val prices = mapOf(tuesday to priceData("11.74"), wednesday to priceData("11.74"))
+
+    val converted = currencyConversionService.convertDailyPricesToEur(prices, Currency.GBP)
+
+    expect(converted.keys).toEqual(setOf(wednesday))
   }
 
   @Test
