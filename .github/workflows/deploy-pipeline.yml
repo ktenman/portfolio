@@ -116,13 +116,15 @@ jobs:
               sleep 10; \
             done && \
             echo 'Waiting for all services to become healthy...' && \
+            OK=0 && \
             for i in \$(seq 1 40); do \
               HEALTHY=\$(docker ps --filter 'health=healthy' --format '{{.Names}}' | wc -l); \
               RUNNING=\$(docker ps --filter 'status=running' --format '{{.Names}}' | wc -l); \
               echo \"Health check \$i/40: \$HEALTHY healthy, \$RUNNING running\"; \
-              if [ \"\$HEALTHY\" -ge 8 ] && [ \"\$RUNNING\" -ge 9 ]; then echo 'All services healthy and running!'; break; fi; \
+              if [ \"\$HEALTHY\" -ge 8 ] && [ \"\$RUNNING\" -ge 9 ]; then OK=1; echo 'All services healthy and running!'; break; fi; \
               sleep 10; \
             done && \
+            if [ \"\$OK\" -ne 1 ]; then echo 'Services failed to become healthy after 40 checks'; docker ps; exit 1; fi && \
             docker ps --format 'table {{.Names}}\t{{.Status}}' && \
             echo 'Pruning unused Docker images...' && \
             docker image prune -af"
