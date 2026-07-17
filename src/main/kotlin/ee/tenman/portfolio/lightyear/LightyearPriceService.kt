@@ -5,12 +5,15 @@ import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.currency.CurrencyConversionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.LocalDate
 
 @Service
 class LightyearPriceService(
@@ -19,6 +22,8 @@ class LightyearPriceService(
   private val instrumentRepository: InstrumentRepository,
   private val instrumentService: InstrumentService,
   private val uuidCacheService: LightyearUuidCacheService,
+  private val currencyConversionService: CurrencyConversionService,
+  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -40,14 +45,24 @@ class LightyearPriceService(
       runCatching {
         val path = "/v1/market-data/$uuid/price"
         val response = lightyearPriceClient.getPrice(path)
-        prices[symbol] = response.price
-        log.debug("Fetched price for $symbol: ${response.price}")
+        val priceInEur = toEur(response.price, response.currency)
+        prices[symbol] = priceInEur
+        log.debug("Fetched price for $symbol: $priceInEur (${response.price} ${response.currency})")
       }.onFailure { e ->
         log.warn("Failed to fetch price for symbol: $symbol", e)
       }
     }
     log.info("Successfully fetched prices for ${prices.size}/${symbols.size} instruments")
     return prices
+  }
+
+  private fun toEur(
+    price: BigDecimal,
+    currencyCode: String,
+  ): BigDecimal {
+    val currency = Currency.fromCodeOrNull(currencyCode) ?: Currency.EUR
+    if (currency == Currency.EUR) return price
+    return currencyConversionService.convertToEur(price, currency, LocalDate.now(clock))
   }
 
   @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
