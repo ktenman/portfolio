@@ -18,16 +18,19 @@ jobs:
       - name: Compare AiModel entries against OpenRouter catalog
         run: |
           python3 - <<'EOF'
-          import json, re, urllib.request
+          import json, re, time, urllib.request
 
           source = open("src/main/kotlin/ee/tenman/portfolio/domain/AiModel.kt").read()
           retired = {"anthropic/claude-sonnet-4.6", "deepseek/deepseek-v3.2", "openai/gpt-5.4", "anthropic/claude-opus-4.6"}
-          active = [m for m in re.findall(r'"([\w.-]+/[\w.-]+)"', source) if m not in retired]
+          ids = re.findall(r'"([\w.-]+/[\w.-]+)"', source)
+          active = [m for m in ids if m not in retired]
           if not active:
               raise SystemExit("no model ids found in AiModel.kt")
 
           with urllib.request.urlopen("https://openrouter.ai/api/v1/models") as response:
-              catalog = {m["id"] for m in json.load(response)["data"]}
+              data = json.load(response)["data"]
+          catalog = {m["id"] for m in data}
+          created = {m["id"]: m.get("created", 0) for m in data}
 
           def parse(model_id):
               tokens = re.findall(r"\d+(?:\.\d+)*", model_id)
@@ -50,6 +53,11 @@ jobs:
               if newer:
                   outdated.append((model, newer))
 
+          known = set(ids) | retired
+          vendors = {m.split("/")[0] for m in active}
+          cutoff = time.time() - 60 * 86400
+          arrivals = sorted(m["id"] for m in data if m["id"].split("/")[0] in vendors and m["id"] not in known and m.get("created", 0) >= cutoff)
+
           lines = []
           if missing:
               lines.append("## Models no longer on OpenRouter (cascade will break)")
@@ -57,6 +65,16 @@ jobs:
           if outdated:
               lines.append("## Newer versions available")
               lines += [f"- `{m}` -> {', '.join(f'`{n}`' for n in newer)}" for m, newer in outdated]
+          if arrivals:
+              lines.append("## New models on OpenRouter (last 60 days, not in AiModel.kt)")
+              for model in arrivals:
+                  when = time.strftime("%Y-%m-%d", time.gmtime(created[model]))
+                  lines.append(f"- `{model}` listed {when}")
+          if lines:
+              lines.append("## Current AiModel.kt lineup")
+              for model in active:
+                  info = time.strftime("listed %Y-%m-%d", time.gmtime(created[model])) if created.get(model) else "not on OpenRouter"
+                  lines.append(f"- `{model}` {info}")
           open("report.md", "w").write("\n".join(lines))
           print("\n".join(lines) or "All models current")
           EOF
