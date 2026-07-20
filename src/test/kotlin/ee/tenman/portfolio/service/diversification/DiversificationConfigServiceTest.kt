@@ -193,4 +193,46 @@ class DiversificationConfigServiceTest {
     expect(savedSlot.captured.configData.buyOnlyEnabled).toEqual(true)
     expect(result.buyOnlyEnabled).toEqual(true)
   }
+
+  @Test
+  fun `should round-trip rebalance thresholds through save and load`() {
+    val saved = slot<DiversificationConfig>()
+    every { repository.findConfig() } returns null
+    every { repository.save(capture(saved)) } answers { saved.captured.apply { id = 1L } }
+    val dto =
+      DiversificationConfigDto(
+        allocations = listOf(DiversificationConfigAllocationDto(instrumentId = 1L, value = BigDecimal("100"))),
+        inputMode = "percentage",
+        driftingThresholdRel = 7.5,
+        rebalanceThresholdRel = 20.0,
+        rebalanceThresholdAbs = 3.0,
+      )
+
+    val result = service.saveConfig(dto)
+
+    expect(result.driftingThresholdRel).toEqual(7.5)
+    expect(result.rebalanceThresholdRel).toEqual(20.0)
+    expect(result.rebalanceThresholdAbs).toEqual(3.0)
+    expect(saved.captured.configData.driftingThresholdRel).toEqual(7.5)
+    expect(saved.captured.configData.rebalanceThresholdRel).toEqual(20.0)
+    expect(saved.captured.configData.rebalanceThresholdAbs).toEqual(3.0)
+  }
+
+  @Test
+  fun `should default thresholds to 10 25 5 when reading config without them`() {
+    val configData =
+      DiversificationConfigData(
+        allocations = emptyList(),
+        inputMode = InputMode.PERCENTAGE,
+      )
+    val config = DiversificationConfig(configData = configData).apply { id = 1L }
+    every { repository.findConfig() } returns config
+
+    val result = service.getConfig()
+
+    expect(result).notToEqualNull()
+    expect(result!!.driftingThresholdRel).toEqual(10.0)
+    expect(result.rebalanceThresholdRel).toEqual(25.0)
+    expect(result.rebalanceThresholdAbs).toEqual(5.0)
+  }
 }

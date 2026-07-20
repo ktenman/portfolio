@@ -224,6 +224,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",
       "ee.tenman.portfolio.domain.PriceChangePeriod",
+      "ee.tenman.portfolio.domain.RebalanceStatus",
     ),
   )
   outputKind.set(cz.habarta.typescript.generator.TypeScriptOutputKind.module)

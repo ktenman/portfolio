@@ -64,6 +64,10 @@ vi.mock('../../utils/formatters', () => ({
   ),
   formatCurrencyWithSymbol: vi.fn((value: number) => `€${value.toFixed(2)}`),
   formatPercentage: vi.fn((value: number) => `${value.toFixed(2)}%`),
+  formatRelDrift: vi.fn((value: number) => {
+    const sign = value >= 0 ? '+' : ''
+    return `${sign}${value.toFixed(0)}%`
+  }),
 }))
 
 vi.mock('bootstrap', () => ({

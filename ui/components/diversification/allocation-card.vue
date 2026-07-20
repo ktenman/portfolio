@@ -1,5 +1,5 @@
 <template>
-  <div class="allocation-card">
+  <div class="allocation-card" :class="cardStatusClass">
     <div class="allocation-card-header">
       <select
         :value="allocation.instrumentId"
@@ -42,6 +42,16 @@
         <span class="metric-value">€{{ (allocation.currentValue ?? 0).toFixed(0) }}</span>
         <span class="metric-label">Current</span>
       </div>
+      <div
+        v-if="showRebalanceMode && rebalanceStatus && rebalanceStatus !== RebalanceStatus.OK"
+        class="metric-group drift-metric"
+        :class="
+          rebalanceStatus === RebalanceStatus.REBALANCE ? 'drift-rebalance' : 'drift-drifting'
+        "
+      >
+        <span class="metric-value">{{ formatRelDrift(relDrift ?? 0) }}</span>
+        <span class="metric-label">Drift</span>
+      </div>
     </div>
     <div class="allocation-card-input">
       <label>{{ inputLabel }}</label>
@@ -75,10 +85,11 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { formatTer, formatReturn } from '../../utils/formatters'
+import { formatTer, formatReturn, formatRelDrift } from '../../utils/formatters'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
+import { RebalanceStatus } from '../../models/generated/domain-models'
 import type { AllocationInput, ActionDisplayMode } from './types'
 
 const props = defineProps<{
@@ -94,12 +105,21 @@ const props = defineProps<{
   computedAmount?: number
   computedUnused?: number
   afterPercent?: number
+  rebalanceStatus?: RebalanceStatus
+  relDrift?: number
 }>()
 
 const emit = defineEmits<{
   'update:allocation': [allocation: AllocationInput]
   remove: []
 }>()
+
+const cardStatusClass = computed(() => {
+  if (!props.showRebalanceMode || !props.rebalanceStatus) return ''
+  if (props.rebalanceStatus === RebalanceStatus.REBALANCE) return 'card-rebalance'
+  if (props.rebalanceStatus === RebalanceStatus.DRIFTING) return 'card-drifting'
+  return ''
+})
 
 const selectedEtf = computed(() =>
   props.availableEtfs.find(e => e.instrumentId === props.allocation.instrumentId)
@@ -314,5 +334,23 @@ const onValueChange = (event: Event) => {
 .remove-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.allocation-card.card-drifting {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.4);
+}
+
+.allocation-card.card-rebalance {
+  background: rgba(220, 53, 69, 0.08);
+  border-color: rgba(220, 53, 69, 0.4);
+}
+
+.drift-metric.drift-drifting .metric-value {
+  color: #b45309;
+}
+
+.drift-metric.drift-rebalance .metric-value {
+  color: #b91c1c;
 }
 </style>
