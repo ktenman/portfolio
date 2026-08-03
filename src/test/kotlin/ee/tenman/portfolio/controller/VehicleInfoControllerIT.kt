@@ -80,6 +80,7 @@ class VehicleInfoControllerIT {
       .andExpect(jsonPath("$.auto24Error").value("Vehicle not found"))
       .andExpect(jsonPath("$.annualTax").value(94.14))
       .andExpect(jsonPath("$.veegoError").doesNotExist())
+      .andExpect(jsonPath("$.formattedText").value(containsString("🚗 Subaru Forester (999ZZZ)")))
       .andExpect(jsonPath("$.formattedText").value(not(containsString("Market Price"))))
   }
 
@@ -150,7 +151,6 @@ class VehicleInfoControllerIT {
               {
                 "registrationNumber": "$plateNumber",
                 "marketPrice": null,
-                "vehicleName": null,
                 "error": "Vehicle not found",
                 "attempts": 1,
                 "durationSeconds": 0.5
