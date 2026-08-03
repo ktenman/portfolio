@@ -218,6 +218,30 @@ class VehicleInfoServiceTest {
   }
 
   @Test
+  fun `should prefer auto24 vehicle name over veego make and drop the trailing year`() {
+    val plateNumber = "401HHB"
+    every { auto24Service.findCarPrice(plateNumber) } returns
+      CarPriceResult(price = null, error = "Price not available", vehicleName = "Škoda Superb Combi, 2015")
+    every { veegoService.getTaxInfo(plateNumber) } returns createSuccessfulVeegoResult().copy(model = null)
+
+    val result = vehicleInfoService.getVehicleInfo(plateNumber)
+
+    expect(result.formattedText).toContain("🚗 Škoda Superb Combi (401HHB)")
+  }
+
+  @Test
+  fun `should fall back to veego make when auto24 has no vehicle name`() {
+    val plateNumber = "876BCH"
+    every { auto24Service.findCarPrice(plateNumber) } returns
+      CarPriceResult(price = null, error = "Vehicle not found", durationSeconds = 0.5)
+    every { veegoService.getTaxInfo(plateNumber) } returns createSuccessfulVeegoResult().copy(model = null)
+
+    val result = vehicleInfoService.getVehicleInfo(plateNumber)
+
+    expect(result.formattedText).toContain("🚗 Subaru (876BCH)")
+  }
+
+  @Test
   fun `should call both services in parallel`() {
     val plateNumber = "876BCH"
     every { auto24Service.findCarPrice(plateNumber) } returns CarPriceResult(price = "5000 €", durationSeconds = 1.0)

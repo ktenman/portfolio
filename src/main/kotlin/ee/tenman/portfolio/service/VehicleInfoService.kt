@@ -19,6 +19,7 @@ class VehicleInfoService(
   private val calculationDispatcher: CoroutineDispatcher,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+  private val trailingYear = Regex(""",\s*\d{4}$""")
 
   fun getVehicleInfo(plateNumber: String): VehicleInfoResponse {
     val normalized = plateNumber.uppercase()
@@ -51,6 +52,7 @@ class VehicleInfoService(
     totalDuration: Double,
   ): VehicleInfoResponse {
     val marketPrice = extractMarketPrice(auto24Result)
+    val name = vehicleName(veegoResult, auto24Result)
     return VehicleInfoResponse(
       plateNumber = plateNumber,
       marketPrice = marketPrice,
@@ -66,19 +68,18 @@ class VehicleInfoService(
       auto24Error = auto24Result.error,
       veegoError = veegoResult.error,
       totalDurationSeconds = totalDuration,
-      formattedText = buildFormattedText(plateNumber, veegoResult, marketPrice),
+      formattedText = buildFormattedText(plateNumber, veegoResult, name, marketPrice),
     )
   }
 
   private fun buildFormattedText(
     plateNumber: String,
     veegoResult: VeegoResult,
+    name: String?,
     marketPrice: String?,
   ): String {
     val sb = StringBuilder()
-    if (veegoResult.make != null && veegoResult.model != null) {
-      sb.append("🚗 ${veegoResult.make} ${veegoResult.model} ($plateNumber)\n\n")
-    }
+    name?.let { sb.append("🚗 $it ($plateNumber)\n\n") }
     sb.append("📋 Details:\n")
     veegoResult.fuel?.let { sb.append("• Engine: $it\n") }
     veegoResult.year?.let { sb.append("• First registration: $it\n") }
@@ -93,6 +94,13 @@ class VehicleInfoService(
     }
     return sb.toString().trimEnd()
   }
+
+  private fun vehicleName(
+    veegoResult: VeegoResult,
+    auto24Result: CarPriceResult,
+  ): String? =
+    auto24Result.vehicleName?.replace(trailingYear, "")
+      ?: listOfNotNull(veegoResult.make, veegoResult.model).joinToString(" ").ifEmpty { null }
 
   private fun extractMarketPrice(result: CarPriceResult): String? = result.price?.replace(" kuni ", " to ")
 }
