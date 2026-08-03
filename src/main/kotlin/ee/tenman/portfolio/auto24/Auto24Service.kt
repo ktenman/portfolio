@@ -19,7 +19,7 @@ class Auto24Service(
   fun findCarPrice(regNr: String): CarPriceResult {
     log.info("Fetching market price for registration number: $regNr")
     val response = auto24Client.getMarketPrice(regNr)
-    return handleResponse(regNr, response)
+    return handleResponse(regNr, response).copy(vehicleName = response.vehicleName)
   }
 
   private fun handleResponse(
