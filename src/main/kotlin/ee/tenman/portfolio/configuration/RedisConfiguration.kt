@@ -57,7 +57,7 @@ class RedisConfiguration {
     const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v3"
     const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"
     const val VEEGO_TAX_CACHE: String = "veego-tax-v1"
-    const val AUTO24_PRICE_CACHE: String = "auto24-price-v1"
+    const val AUTO24_PRICE_CACHE: String = "auto24-price-v2"
     const val HOLDING_IDENTITY_CACHE: String = "holding-identity-v1"
     private val DEFAULT_TTL: Duration = Duration.ofMinutes(5)
   }

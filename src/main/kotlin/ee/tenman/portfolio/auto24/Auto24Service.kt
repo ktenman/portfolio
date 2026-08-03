@@ -26,19 +26,31 @@ class Auto24Service(
     regNr: String,
     response: Auto24PriceResponse,
   ): CarPriceResult {
-    if (response.error != null) return handleError(regNr, response.error, response.durationSeconds)
+    if (response.error != null) {
+      return handleError(regNr, response.error, response.durationSeconds, response.vehicleName)
+    }
     if (response.marketPrice == null) {
       log.warn("No price found for registration number: $regNr")
-      return CarPriceResult(price = null, error = "Price not available", durationSeconds = response.durationSeconds)
+      return CarPriceResult(
+        price = null,
+        error = "Price not available",
+        durationSeconds = response.durationSeconds,
+        vehicleName = response.vehicleName,
+      )
     }
     log.info("Market price for $regNr: ${response.marketPrice} (attempt ${response.attempts}, duration ${response.durationSeconds}s)")
-    return CarPriceResult(price = response.marketPrice, durationSeconds = response.durationSeconds)
+    return CarPriceResult(
+      price = response.marketPrice,
+      durationSeconds = response.durationSeconds,
+      vehicleName = response.vehicleName,
+    )
   }
 
   private fun handleError(
     regNr: String,
     error: String,
     durationSeconds: Double?,
+    vehicleName: String?,
   ): CarPriceResult =
     when {
       error.contains("Vehicle not found") -> {
@@ -47,7 +59,12 @@ class Auto24Service(
       }
       error.contains("Price not available") -> {
         log.info("Price not available for registration number: $regNr")
-        CarPriceResult(price = null, error = "Price not available", durationSeconds = durationSeconds)
+        CarPriceResult(
+          price = null,
+          error = "Price not available",
+          durationSeconds = durationSeconds,
+          vehicleName = vehicleName,
+        )
       }
       else -> {
         log.error("Failed to fetch price: $error")

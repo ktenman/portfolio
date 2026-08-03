@@ -21,6 +21,7 @@ const MAX_RETRIES = 10
 interface Auto24PriceResult {
   registrationNumber: string
   marketPrice: string | null
+  vehicleName: string | null
   error: string | null
   attempts?: number
   durationSeconds?: number
@@ -33,6 +34,14 @@ interface LookupResult {
   isInvalidCaptcha: boolean
   vehicleNotFound: boolean
   noPriceData?: boolean
+  vehicleName?: string | null
+}
+
+export function extractVehicleName($: cheerio.CheerioAPI): string | null {
+  return (
+    $('div.vehicl_price_request .result .row').first().contents().not('.label').text().trim() ||
+    null
+  )
 }
 
 async function executeCurlWithCookies(
@@ -187,6 +196,7 @@ async function attemptPriceLookup(
 
   const priceElement = price$('b.color')
   const marketPrice = priceElement.first().text().trim() || null
+  const vehicleName = extractVehicleName(price$)
 
   if (marketPrice) {
     return {
@@ -195,6 +205,7 @@ async function attemptPriceLookup(
       error: null,
       isInvalidCaptcha: false,
       vehicleNotFound: false,
+      vehicleName,
     }
   }
 
@@ -214,6 +225,7 @@ async function attemptPriceLookup(
       isInvalidCaptcha: false,
       vehicleNotFound: false,
       noPriceData: true,
+      vehicleName,
     }
   }
 
@@ -263,6 +275,7 @@ async function handler(req: Request, res: Response): Promise<void> {
         res.json({
           registrationNumber: sanitizedRegNumber,
           marketPrice: null,
+          vehicleName: null,
           error: 'Vehicle not found',
           attempts: attempt,
           durationSeconds: getDuration(),
@@ -275,6 +288,7 @@ async function handler(req: Request, res: Response): Promise<void> {
         res.json({
           registrationNumber: sanitizedRegNumber,
           marketPrice: null,
+          vehicleName: result.vehicleName ?? null,
           error: 'Price not available',
           attempts: attempt,
           durationSeconds: getDuration(),
@@ -289,6 +303,7 @@ async function handler(req: Request, res: Response): Promise<void> {
         res.json({
           registrationNumber: sanitizedRegNumber,
           marketPrice: result.marketPrice,
+          vehicleName: result.vehicleName ?? null,
           error: null,
           attempts: attempt,
           durationSeconds: getDuration(),
@@ -321,6 +336,7 @@ async function handler(req: Request, res: Response): Promise<void> {
   res.status(500).json({
     registrationNumber: sanitizedRegNumber,
     marketPrice: null,
+    vehicleName: null,
     error: `Failed after ${MAX_RETRIES} attempts: ${lastError}`,
     attempts: attempt,
     durationSeconds: getDuration(),
