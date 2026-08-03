@@ -52,6 +52,7 @@ class VehicleInfoService(
     totalDuration: Double,
   ): VehicleInfoResponse {
     val marketPrice = extractMarketPrice(auto24Result)
+    val name = vehicleName(veegoResult, auto24Result)
     return VehicleInfoResponse(
       plateNumber = plateNumber,
       marketPrice = marketPrice,
@@ -67,18 +68,18 @@ class VehicleInfoService(
       auto24Error = auto24Result.error,
       veegoError = veegoResult.error,
       totalDurationSeconds = totalDuration,
-      formattedText = buildFormattedText(plateNumber, veegoResult, auto24Result, marketPrice),
+      formattedText = buildFormattedText(plateNumber, veegoResult, name, marketPrice),
     )
   }
 
   private fun buildFormattedText(
     plateNumber: String,
     veegoResult: VeegoResult,
-    auto24Result: CarPriceResult,
+    name: String?,
     marketPrice: String?,
   ): String {
     val sb = StringBuilder()
-    vehicleName(veegoResult, auto24Result)?.let { sb.append("🚗 $it ($plateNumber)\n\n") }
+    name?.let { sb.append("🚗 $it ($plateNumber)\n\n") }
     sb.append("📋 Details:\n")
     veegoResult.fuel?.let { sb.append("• Engine: $it\n") }
     veegoResult.year?.let { sb.append("• First registration: $it\n") }

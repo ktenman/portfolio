@@ -218,23 +218,11 @@ class VehicleInfoServiceTest {
   }
 
   @Test
-  fun `should use auto24 vehicle name in header when veego omits make and model`() {
-    val plateNumber = "401HHB"
-    every { auto24Service.findCarPrice(plateNumber) } returns
-      CarPriceResult(price = "34400 € kuni 38200 €", durationSeconds = 1.0, vehicleName = "Audi e-tron, 2022")
-    every { veegoService.getTaxInfo(plateNumber) } returns createVeegoResultWithoutMakeModel()
-
-    val result = vehicleInfoService.getVehicleInfo(plateNumber)
-
-    expect(result.formattedText).toContain("🚗 Audi e-tron (401HHB)")
-  }
-
-  @Test
-  fun `should use auto24 vehicle name in header when veego knows only the make`() {
+  fun `should prefer auto24 vehicle name over veego make and drop the trailing year`() {
     val plateNumber = "401HHB"
     every { auto24Service.findCarPrice(plateNumber) } returns
       CarPriceResult(price = null, error = "Price not available", vehicleName = "Škoda Superb Combi, 2015")
-    every { veegoService.getTaxInfo(plateNumber) } returns createVeegoResultWithoutMakeModel().copy(make = "Škoda")
+    every { veegoService.getTaxInfo(plateNumber) } returns createSuccessfulVeegoResult().copy(model = null)
 
     val result = vehicleInfoService.getVehicleInfo(plateNumber)
 
@@ -246,7 +234,7 @@ class VehicleInfoServiceTest {
     val plateNumber = "876BCH"
     every { auto24Service.findCarPrice(plateNumber) } returns
       CarPriceResult(price = null, error = "Vehicle not found", durationSeconds = 0.5)
-    every { veegoService.getTaxInfo(plateNumber) } returns createVeegoResultWithoutMakeModel().copy(make = "Subaru")
+    every { veegoService.getTaxInfo(plateNumber) } returns createSuccessfulVeegoResult().copy(model = null)
 
     val result = vehicleInfoService.getVehicleInfo(plateNumber)
 

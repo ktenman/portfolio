@@ -106,7 +106,7 @@ class VehicleInfoControllerIT {
     mockMvc
       .perform(mvcGet("/api/vehicle/info").param("plateNumber", "876BCH").cookie(AUTH_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$.formattedText").value(containsString("🚗 Subaru Forester")))
+      .andExpect(jsonPath("$.formattedText").value(containsString("🚗 Subaru Forester XT (876BCH)")))
       .andExpect(jsonPath("$.formattedText").value(containsString("📋 Details:")))
       .andExpect(jsonPath("$.formattedText").value(containsString("💰 Tax Information:")))
       .andExpect(jsonPath("$.formattedText").value(containsString("💵 Market Price:")))
@@ -127,6 +127,7 @@ class VehicleInfoControllerIT {
               {
                 "registrationNumber": "$plateNumber",
                 "marketPrice": "$price",
+                "vehicleName": "Subaru Forester XT, 2009",
                 "error": null,
                 "attempts": 1,
                 "durationSeconds": 1.5
@@ -149,6 +150,7 @@ class VehicleInfoControllerIT {
               {
                 "registrationNumber": "$plateNumber",
                 "marketPrice": null,
+                "vehicleName": null,
                 "error": "Vehicle not found",
                 "attempts": 1,
                 "durationSeconds": 0.5
