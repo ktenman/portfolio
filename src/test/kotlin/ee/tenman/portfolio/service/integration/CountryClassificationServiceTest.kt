@@ -289,7 +289,7 @@ class CountryClassificationServiceTest {
   fun `should classify batch with LLM when not auto-assignable`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithCountryFallback(any()) } returns
-      OpenRouterClassificationResult("1. DE\n2. FR", AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult("1. DE\n2. FR", AiModel.GEMINI_3_5_FLASH_LITE)
     val companies =
       listOf(
         CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()),
@@ -299,14 +299,14 @@ class CountryClassificationServiceTest {
     expect(result.keys).toHaveSize(2)
     expect(result[1L]?.countryCode).toEqual("DE")
     expect(result[2L]?.countryCode).toEqual("FR")
-    expect(result[1L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+    expect(result[1L]?.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
   }
 
   @Test
   fun `should request 4000 max tokens for country batch classification`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithCountryFallback(any()) } returns
-      OpenRouterClassificationResult("1. DE", AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult("1. DE", AiModel.GEMINI_3_5_FLASH_LITE)
     val companies = listOf(CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()))
     service.classifyBatch(companies)
     verify { openRouterClient.classifyWithCountryFallback(any(), 4000, any()) }
@@ -328,7 +328,7 @@ class CountryClassificationServiceTest {
   fun `should combine auto-assigned and LLM classified in batch`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithCountryFallback(any()) } returns
-      OpenRouterClassificationResult("1. JP", AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult("1. JP", AiModel.GEMINI_3_5_FLASH_LITE)
     val companies =
       listOf(
         CompanyClassificationInput(1L, "Apple Inc", "AAPL", listOf("S&P 500 ETF")),
@@ -339,7 +339,7 @@ class CountryClassificationServiceTest {
     expect(result[1L]?.countryCode).toEqual("US")
     expect(result[1L]?.model).toEqual(null)
     expect(result[2L]?.countryCode).toEqual("JP")
-    expect(result[2L]?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+    expect(result[2L]?.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
   }
 
   @Test
@@ -366,7 +366,7 @@ class CountryClassificationServiceTest {
   fun `should report model answered when country batch lines parse`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithCountryFallback(any()) } returns
-      OpenRouterClassificationResult("1. DE", AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult("1. DE", AiModel.GEMINI_3_5_FLASH_LITE)
     val companies = listOf(CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()))
 
     val outcome = service.classifyBatch(companies)
@@ -378,7 +378,7 @@ class CountryClassificationServiceTest {
   fun `should report model answered when country batch response parses no lines`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithCountryFallback(any()) } returns
-      OpenRouterClassificationResult("Töötlemata vastus ilma koodideta", AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult("Töötlemata vastus ilma koodideta", AiModel.GEMINI_3_5_FLASH_LITE)
     val companies = listOf(CompanyClassificationInput(1L, "Škoda Auto", "SKODA", emptyList()))
 
     val outcome = service.classifyBatch(companies)

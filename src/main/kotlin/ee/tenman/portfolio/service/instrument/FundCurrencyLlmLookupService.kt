@@ -17,7 +17,7 @@ class FundCurrencyLlmLookupService(
 
   fun lookup(instrument: Instrument): Currency? {
     val prompt = buildPrompt(instrument)
-    val raw = openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, prompt) ?: return null
+    val raw = openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, prompt) ?: return null
     return parseAndValidate(raw, instrument.symbol)
   }
 

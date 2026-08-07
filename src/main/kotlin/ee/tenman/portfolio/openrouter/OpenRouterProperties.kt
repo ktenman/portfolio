@@ -9,7 +9,7 @@ data class OpenRouterProperties(
   val url: String = "https://openrouter.ai/api/v1",
   val primaryModel: AiModel = AiModel.primarySectorModel(),
   val fallbackModel: AiModel = AiModel.CLAUDE_SONNET_5,
-  val visionModel: String = "google/gemini-3-flash-preview",
+  val visionModel: String = AiModel.GEMINI_3_5_FLASH_LITE.modelId,
   val circuitBreaker: CircuitBreakerProperties = CircuitBreakerProperties(),
   val apiTimeoutMs: Long = 30000,
 )

@@ -232,30 +232,30 @@ class OpenRouterCircuitBreakerTest {
   }
 
   @Test
-  fun `should block CLAUDE_OPUS_4_8 after first request and allow after rate limit period`() {
-    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)).toEqual(true)
-    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)).toEqual(false)
-    clock.advance((MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_4_8.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS)
-    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)).toEqual(true)
+  fun `should block CLAUDE_OPUS_5 after first request and allow after rate limit period`() {
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)).toEqual(false)
+    clock.advance((MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)).toEqual(true)
   }
 
   @Test
   fun `should track rate limits independently for each model`() {
-    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_FLASH_PREVIEW)).toEqual(true)
-    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)).toEqual(true)
-    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_FLASH_PREVIEW)).toEqual(false)
-    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)).toEqual(false)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)).toEqual(false)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)).toEqual(false)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_5)).toEqual(false)
     expect(circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)).toEqual(false)
   }
 
   @Test
-  fun `should return correct wait time for CLAUDE_OPUS_4_8`() {
-    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)
-    val waitTime = circuitBreaker.getWaitTimeMsForModel(AiModel.CLAUDE_OPUS_4_8)
-    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_4_8.rateLimitPerMinute
+  fun `should return correct wait time for CLAUDE_OPUS_5`() {
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)
+    val waitTime = circuitBreaker.getWaitTimeMsForModel(AiModel.CLAUDE_OPUS_5)
+    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_OPUS_5.rateLimitPerMinute
     expect(waitTime).toEqual(expectedMs)
   }
 
@@ -268,11 +268,11 @@ class OpenRouterCircuitBreakerTest {
     val tier4 = circuitBreaker.selectModelByTier(4)
     val tier5 = circuitBreaker.selectModelByTier(5)
     expect(tier0.model).toEqual(AiModel.DEEPSEEK_V4_FLASH)
-    expect(tier1.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+    expect(tier1.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
     expect(tier2.model).toEqual(AiModel.CLAUDE_SONNET_5)
     expect(tier3.model).toEqual(AiModel.DEEPSEEK_V4_PRO)
-    expect(tier4.model).toEqual(AiModel.GPT_5_5)
-    expect(tier5.model).toEqual(AiModel.CLAUDE_OPUS_4_8)
+    expect(tier4.model).toEqual(AiModel.GPT_5_6_TERRA)
+    expect(tier5.model).toEqual(AiModel.CLAUDE_OPUS_5)
   }
 
   @Test
@@ -283,13 +283,13 @@ class OpenRouterCircuitBreakerTest {
 
   @Test
   fun `should reset all model rate limits`() {
-    circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_FLASH_PREVIEW)
-    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)
+    circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)
+    circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)
     circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_5)
     circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)
     circuitBreaker.resetRateLimits()
-    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_FLASH_PREVIEW)).toEqual(true)
-    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_4_8)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_SONNET_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)).toEqual(true)
   }

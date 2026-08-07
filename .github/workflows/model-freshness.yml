@@ -21,11 +21,12 @@ jobs:
           import json, re, time, urllib.request
 
           source = open("src/main/kotlin/ee/tenman/portfolio/domain/AiModel.kt").read()
-          retired = {"anthropic/claude-sonnet-4.6", "deepseek/deepseek-v3.2", "openai/gpt-5.4", "anthropic/claude-opus-4.6"}
           ids = re.findall(r'"([\w.-]+/[\w.-]+)"', source)
-          active = [m for m in ids if m not in retired]
-          if not active:
-              raise SystemExit("no model ids found in AiModel.kt")
+          cascade = set(re.findall(r'"([\w.-]+/[\w.-]+)".*FallbackTier', source))
+          online = {"openai/gpt-5.6-luna"}
+          if not cascade:
+              raise SystemExit("no cascade model ids found in AiModel.kt")
+          active = [m for m in ids if m in cascade or m in online]
 
           with urllib.request.urlopen("https://openrouter.ai/api/v1/models") as response:
               data = json.load(response)["data"]
@@ -53,7 +54,7 @@ jobs:
               if newer:
                   outdated.append((model, newer))
 
-          known = set(ids) | retired
+          known = set(ids)
           vendors = {m.split("/")[0] for m in active}
           cutoff = time.time() - 60 * 86400
           arrivals = sorted(m["id"] for m in data if m["id"].split("/")[0] in vendors and m["id"] not in known and m.get("created", 0) >= cutoff)
