@@ -15,7 +15,7 @@ class HoldingIdentityServiceTest {
   fun `should confirm same company when model answers yes`() {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
     val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
     val result = service.isSameCompany("NVIDIA", "NVIDIA CORP", "NVDA")
@@ -27,7 +27,7 @@ class HoldingIdentityServiceTest {
   fun `should reject different companies when model answers no`() {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_3_5_FLASH_LITE)
     val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
     val result = service.isSameCompany("Merck & Co.", "Merck KGaA", "MRK")
@@ -39,7 +39,7 @@ class HoldingIdentityServiceTest {
   fun `should treat affirmative answer with surrounding whitespace and lowercase as yes`() {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "  yes, identical entity\n", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "  yes, identical entity\n", model = AiModel.GEMINI_3_5_FLASH_LITE)
     val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
     val result = service.isSameCompany("Amazon", "Amazon.com Inc", "AMZN")
@@ -51,7 +51,7 @@ class HoldingIdentityServiceTest {
   fun `should return no verdict when answer is not a clear yes or no`() {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "Well, they might be the same entity", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "Well, they might be the same entity", model = AiModel.GEMINI_3_5_FLASH_LITE)
     val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
     val result = service.isSameCompany("ASML Holding", "ASML Hōldings NV", "ASML")

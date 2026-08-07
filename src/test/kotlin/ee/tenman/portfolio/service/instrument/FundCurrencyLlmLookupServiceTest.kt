@@ -23,7 +23,7 @@ class FundCurrencyLlmLookupServiceTest {
 
   @Test
   fun `returns valid allowlist currency from clean json response`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, any()) } returns "{\"currency\":\"EUR\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, any()) } returns "{\"currency\":\"EUR\"}"
 
     val result = service.lookup(instrument())
 
@@ -32,35 +32,35 @@ class FundCurrencyLlmLookupServiceTest {
 
   @Test
   fun `returns null when llm returns explicit null`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, any()) } returns "{\"currency\":null}"
+    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, any()) } returns "{\"currency\":null}"
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `returns null for non-allowlist currency`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, any()) } returns "{\"currency\":\"XYZ\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, any()) } returns "{\"currency\":\"XYZ\"}"
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `returns null when json is malformed`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, any()) } returns "not json at all"
+    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, any()) } returns "not json at all"
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `returns null when llm call returns null`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, any()) } returns null
+    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, any()) } returns null
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `normalizes lowercase code to uppercase`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, any()) } returns "{\"currency\":\"usd\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, any()) } returns "{\"currency\":\"usd\"}"
 
     expect(service.lookup(instrument())).toEqual(Currency.USD)
   }
@@ -68,7 +68,7 @@ class FundCurrencyLlmLookupServiceTest {
   @Test
   fun `prompt includes symbol and name`() {
     val captured = slot<String>()
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_4_NANO, capture(captured)) } returns "{\"currency\":\"EUR\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_5_6_LUNA, capture(captured)) } returns "{\"currency\":\"EUR\"}"
 
     service.lookup(instrument(symbol = "VWCE:GER:EUR", name = "Vanguard FTSE All-World"))
 
