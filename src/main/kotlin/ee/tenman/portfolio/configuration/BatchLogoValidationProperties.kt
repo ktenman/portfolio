@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 @ConfigurationProperties(prefix = "batch-logo-validation")
 data class BatchLogoValidationProperties(
   val enabled: Boolean = true,
-  val model: AiModel = AiModel.GEMINI_3_FLASH_PREVIEW,
+  val model: AiModel = AiModel.GEMINI_3_5_FLASH_LITE,
   val batchSize: Int = 25,
   val imagesPerCompany: Int = 10,
   val maxTokens: Int = 2000,

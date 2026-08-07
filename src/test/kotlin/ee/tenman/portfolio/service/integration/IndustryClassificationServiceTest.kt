@@ -60,7 +60,7 @@ class IndustryClassificationServiceTest {
   fun `should return null when OpenRouter response has null content`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = null, model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = null, model = AiModel.GEMINI_3_5_FLASH_LITE)
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
 
     val result = service.classifyCompanyWithModel("Apple Inc")
@@ -72,7 +72,7 @@ class IndustryClassificationServiceTest {
   fun `should retry with cascading fallback when primary model returns unknown sector`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_5_FLASH_LITE)
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.CLAUDE_SONNET_5, any(), any()) } returns
       OpenRouterClassificationResult(content = "Software & Cloud Services", model = AiModel.CLAUDE_SONNET_5)
 
@@ -88,7 +88,7 @@ class IndustryClassificationServiceTest {
   fun `should return null when all cascading fallbacks return unknown sector`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_5_FLASH_LITE)
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "Still Unknown", model = AiModel.DEEPSEEK_V4_PRO)
 
@@ -115,7 +115,7 @@ class IndustryClassificationServiceTest {
   fun `should return null when cascading fallback returns no response`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_5_FLASH_LITE)
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
 
     val result = service.classifyCompanyWithModel("Apple Inc")
@@ -139,48 +139,48 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should cascade from DEEPSEEK_V4_PRO to GPT_5_5 when DEEPSEEK returns unknown sector`() {
+  fun `should cascade from DEEPSEEK_V4_PRO to GPT_5_6_TERRA when DEEPSEEK returns unknown sector`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
       OpenRouterClassificationResult(content = "Unknown", model = AiModel.DEEPSEEK_V4_PRO)
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GPT_5_5, any(), any()) } returns
-      OpenRouterClassificationResult(content = "Finance", model = AiModel.GPT_5_5)
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GPT_5_6_TERRA, any(), any()) } returns
+      OpenRouterClassificationResult(content = "Finance", model = AiModel.GPT_5_6_TERRA)
 
     val result = service.classifyCompanyWithModel("JPMorgan")
 
     expect(result?.sector).toEqual(IndustrySector.FINANCE)
-    expect(result?.model).toEqual(AiModel.GPT_5_5)
+    expect(result?.model).toEqual(AiModel.GPT_5_6_TERRA)
   }
 
   @Test
   fun `should return sector classification result for valid response`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Semiconductors", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "Semiconductors", model = AiModel.GEMINI_3_5_FLASH_LITE)
 
     val result = service.classifyCompanyWithModel("Nvidia")
 
     expect(result?.sector).toEqual(IndustrySector.SEMICONDUCTORS)
-    expect(result?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+    expect(result?.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
   }
 
   @Test
   fun `should return sector classification result with fallback model`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Finance", model = AiModel.CLAUDE_OPUS_4_8)
+      OpenRouterClassificationResult(content = "Finance", model = AiModel.CLAUDE_OPUS_5)
 
     val result = service.classifyCompanyWithModel("JPMorgan Chase")
 
     expect(result?.sector).toEqual(IndustrySector.FINANCE)
-    expect(result?.model).toEqual(AiModel.CLAUDE_OPUS_4_8)
+    expect(result?.model).toEqual(AiModel.CLAUDE_OPUS_5)
   }
 
   @Test
   fun `should return only sector when using classifyCompany`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Health", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "Health", model = AiModel.GEMINI_3_5_FLASH_LITE)
 
     val result = service.classifyCompany("Pfizer")
 
@@ -216,7 +216,7 @@ class IndustryClassificationServiceTest {
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Semiconductors\n2. Finance\n3. Health",
-        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+        model = AiModel.GEMINI_3_5_FLASH_LITE,
       )
 
     val result = service.classifyBatch(companies).results
@@ -233,7 +233,7 @@ class IndustryClassificationServiceTest {
     val companies =
       listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "1. Semiconductors", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "1. Semiconductors", model = AiModel.GEMINI_3_5_FLASH_LITE)
 
     service.classifyBatch(companies)
 
@@ -252,7 +252,7 @@ class IndustryClassificationServiceTest {
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Semiconductors\n2. Software & Cloud Services",
-        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+        model = AiModel.GEMINI_3_5_FLASH_LITE,
       )
 
     val result = service.classifyBatch(companies).results
@@ -273,7 +273,7 @@ class IndustryClassificationServiceTest {
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Semiconductors\n3. Finance",
-        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+        model = AiModel.GEMINI_3_5_FLASH_LITE,
       )
 
     val result = service.classifyBatch(companies).results
@@ -306,7 +306,7 @@ class IndustryClassificationServiceTest {
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Finance (large cap banks)\n2. Semiconductors - chip design",
-        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+        model = AiModel.GEMINI_3_5_FLASH_LITE,
       )
 
     val result = service.classifyBatch(companies).results
@@ -326,7 +326,7 @@ class IndustryClassificationServiceTest {
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
       OpenRouterClassificationResult(
         content = "1. Finance\n2. Quantum Computing",
-        model = AiModel.GEMINI_3_FLASH_PREVIEW,
+        model = AiModel.GEMINI_3_5_FLASH_LITE,
       )
 
     val result = service.classifyBatch(companies).results
@@ -352,7 +352,7 @@ class IndustryClassificationServiceTest {
   fun `should return null when last model in chain fails with unknown sector`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Unknown", model = AiModel.CLAUDE_OPUS_4_8)
+      OpenRouterClassificationResult(content = "Unknown", model = AiModel.CLAUDE_OPUS_5)
 
     val result = service.classifyCompanyWithModel("Test Corp")
 
@@ -387,7 +387,7 @@ class IndustryClassificationServiceTest {
     every { properties.enabled } returns true
     val companies = listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
-      OpenRouterClassificationResult(content = "I cannot classify these companies", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "I cannot classify these companies", model = AiModel.GEMINI_3_5_FLASH_LITE)
 
     val outcome = service.classifyBatch(companies)
 
@@ -399,7 +399,7 @@ class IndustryClassificationServiceTest {
     every { properties.enabled } returns true
     val companies = listOf(CompanyClassificationInput(holdingId = 1L, name = "Apple", ticker = "AAPL"))
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.DEEPSEEK_V4_FLASH) } returns
-      OpenRouterClassificationResult(content = "1. Semiconductors", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+      OpenRouterClassificationResult(content = "1. Semiconductors", model = AiModel.GEMINI_3_5_FLASH_LITE)
 
     val outcome = service.classifyBatch(companies)
 
@@ -410,11 +410,11 @@ class IndustryClassificationServiceTest {
   fun `should start cascade at gemini flash when primary model gives no response`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns null
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_FLASH_PREVIEW) } returns
-      OpenRouterClassificationResult(content = "Finance", model = AiModel.GEMINI_3_FLASH_PREVIEW)
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.GEMINI_3_5_FLASH_LITE) } returns
+      OpenRouterClassificationResult(content = "Finance", model = AiModel.GEMINI_3_5_FLASH_LITE)
 
     val result = service.classifyCompanyWithModel("Apple Inc")
 
-    expect(result?.model).toEqual(AiModel.GEMINI_3_FLASH_PREVIEW)
+    expect(result?.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
   }
 }
