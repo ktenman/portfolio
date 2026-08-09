@@ -1,12 +1,30 @@
 <template>
-  <div v-if="entries.length > 0" class="currency-split-card">
-    <div class="currency-split-label">{{ label }}</div>
-    <div class="currency-split-rows">
-      <div v-for="row in rows" :key="row.currency" class="currency-split-row">
+  <div
+    v-if="entries.length > 0"
+    class="currency-split-card tw:min-w-40 tw:rounded-container tw:border tw:border-hairline tw:bg-surface tw:px-4 tw:py-3 tw:shadow-card tw:max-md:px-3.5 tw:max-md:py-2.5"
+  >
+    <div
+      class="currency-split-label tw:mb-2 tw:text-xs tw:font-medium tw:tracking-wider tw:text-gray-600 tw:uppercase"
+    >
+      {{ label }}
+    </div>
+    <div class="tw:flex tw:flex-col tw:gap-1">
+      <div
+        v-for="row in rows"
+        :key="row.currency"
+        class="currency-split-row tw:flex tw:items-center tw:gap-2 tw:text-sm tw:text-ink"
+      >
         <CurrencyFlag :currency="row.currency" :size="14" />
-        <span class="currency-code">{{ row.currency }}</span>
-        <span class="currency-percent">{{ formatPercent(row.pct) }}</span>
-        <span v-if="showValue" class="currency-value">{{ formatValue(row.value) }}</span>
+        <span class="tw:min-w-10 tw:font-semibold">{{ row.currency }}</span>
+        <span class="tw:ml-auto tw:font-semibold" data-testid="currency-split-pct">
+          {{ formatPercent(row.pct) }}
+        </span>
+        <span
+          v-if="showValue"
+          class="currency-value tw:min-w-16 tw:text-right tw:text-2xs tw:text-gray-600"
+        >
+          {{ formatValue(row.value) }}
+        </span>
       </div>
     </div>
   </div>
@@ -44,60 +62,3 @@ const rows = computed(() =>
 
 const formatPercent = (pct: number) => `${pct.toFixed(1)}%`
 </script>
-
-<style scoped>
-.currency-split-card {
-  background: white;
-  border: 1px solid #e0e0e0;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  min-width: 160px;
-}
-
-.currency-split-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #6c757d;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.currency-split-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.currency-split-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #1a1a1a;
-}
-
-.currency-code {
-  font-weight: 600;
-  min-width: 2.5rem;
-}
-
-.currency-percent {
-  font-weight: 600;
-  margin-left: auto;
-}
-
-.currency-value {
-  color: #6c757d;
-  font-size: 0.8125rem;
-  min-width: 4rem;
-  text-align: right;
-}
-
-@media (max-width: 768px) {
-  .currency-split-card {
-    padding: 0.625rem 0.875rem;
-  }
-}
-</style>

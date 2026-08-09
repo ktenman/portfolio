@@ -1,0 +1,226 @@
+import { test, expect, type Locator, type Page } from '@playwright/test'
+import { API_ENDPOINTS } from '../../constants/api'
+import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
+import { MODAL_VOLATILE_SELECTORS } from './volatile'
+import {
+  freeze,
+  freezeBehindOverlay,
+  masks,
+  openRoute,
+  waitForBoxHeightToSettle,
+  waitForScrollHeightToSettle,
+  waitForValueToSettle,
+} from './settle'
+import { apiRoute, type RouteStub } from './stub'
+import { stubEtfBreakdown } from './etf-fixture'
+import { stubInstruments } from './instruments-fixture'
+import { stubPortfolioSummary } from './summary-fixture'
+import { stubTransactions } from './transactions-fixture'
+
+const MODAL_CONTENT_TIMEOUT_MS = 60000
+const STATE_TIMEOUT_MS = 30000
+const TOAST_MODULE_PATH = '/composables/use-toast.ts'
+const LOADING_HOLD_MS = 20000
+
+const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
+  transactions: [],
+  summary: {
+    totalRealizedProfit: 0,
+    totalUnrealizedProfit: 0,
+    totalProfit: 0,
+    totalInvested: 0,
+  },
+}
+
+async function waitForBackdropToSettle(page: Page): Promise<void> {
+  const backdrop = page.locator('.modal-backdrop.show')
+  await expect(backdrop).toBeVisible()
+  await waitForValueToSettle(page, 'Backdrop opacity', async () =>
+    Number(await backdrop.evaluate(element => getComputedStyle(element).opacity))
+  )
+}
+
+async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
+  const content = page.locator('.modal.show .modal-content')
+  await expect(content).toBeVisible()
+  await expect(page.locator('.modal.show .modal-title')).toHaveText(title)
+  await expect(
+    page.locator('.modal.show .spinner-border, .modal.show .loading-spinner')
+  ).toHaveCount(0, { timeout: MODAL_CONTENT_TIMEOUT_MS })
+  await Promise.all([waitForBoxHeightToSettle(page, content), waitForBackdropToSettle(page)])
+}
+
+function visibleTotalsTriggers(page: Page): Locator {
+  return page.locator('.xirr-trigger, .xirr-trigger-mobile').filter({ visible: true })
+}
+
+async function openInstrumentModal(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const trigger = document.createElement('div')
+    trigger.dataset.bsToggle = 'modal'
+    trigger.dataset.bsTarget = '#instrumentModal'
+    trigger.style.display = 'none'
+    document.body.append(trigger)
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    trigger.remove()
+  })
+}
+
+const MODALS: {
+  name: string
+  route: string
+  title: string | RegExp
+  open: (page: Page) => Promise<void>
+  stub?: RouteStub
+}[] = [
+  {
+    name: 'instrument',
+    route: '/instruments',
+    title: 'Add New Instrument',
+    open: openInstrumentModal,
+    stub: stubInstruments,
+  },
+  {
+    name: 'xirr-windows',
+    route: '/instruments',
+    title: 'Annualized return over time',
+    open: page => visibleTotalsTriggers(page).nth(0).click(),
+    stub: stubInstruments,
+  },
+  {
+    name: 'annual-windows',
+    route: '/instruments',
+    title: 'Buy-and-hold annualized return',
+    open: page => visibleTotalsTriggers(page).nth(1).click(),
+    stub: stubInstruments,
+  },
+  {
+    name: 'logo-replacement',
+    route: '/etf-breakdown',
+    title: /^Replace Logo: /,
+    open: page => page.locator('.company-logo.clickable').filter({ visible: true }).first().click(),
+    stub: stubEtfBreakdown,
+  },
+  {
+    name: 'config-export',
+    route: '/diversification',
+    title: 'Export Configuration',
+    open: page => page.click('button[aria-label="Export"]'),
+  },
+  {
+    name: 'config-import',
+    route: '/diversification',
+    title: 'Import Configuration',
+    open: page => page.click('button[aria-label="Import"]'),
+  },
+]
+
+test.describe('modals', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name === 'tablet')
+  })
+
+  for (const modal of MODALS) {
+    test(`modal ${modal.name}`, async ({ page }) => {
+      await modal.stub?.(page)
+      await openRoute(page, modal.route)
+      await modal.open(page)
+      await waitForModal(page, modal.title)
+      await freezeBehindOverlay(page)
+      await expect(page).toHaveScreenshot(
+        `modal-${modal.name}.png`,
+        masks(page, MODAL_VOLATILE_SELECTORS)
+      )
+    })
+  }
+
+  test('modal confirm', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await page.route('**/api/portfolio-summary/recalculate**', route => route.abort())
+    await openRoute(page, '/')
+    await page.click('button:has-text("Recalculate Data")')
+    await waitForModal(page, 'Recalculate Portfolio Data')
+    await freezeBehindOverlay(page)
+    await expect(page).toHaveScreenshot('modal-confirm.png', masks(page, MODAL_VOLATILE_SELECTORS))
+    await page.click('[data-testid="confirmDialogCancelButton"]')
+    await expect(page.locator('.modal.show')).toHaveCount(0)
+  })
+})
+
+test.describe('desktop states', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop')
+  })
+
+  test('dropdown quick dates', async ({ page }) => {
+    await stubTransactions(page)
+    await openRoute(page, '/transactions')
+    await page.click('[data-bs-toggle="dropdown"]')
+    await expect(page.locator('.dropdown-menu.show')).toBeVisible()
+    await freezeBehindOverlay(page)
+    await expect(page).toHaveScreenshot('dropdown-quick-dates.png')
+  })
+
+  for (const variant of ['success', 'error', 'info', 'warning'] as const) {
+    test(`toast ${variant}`, async ({ page }) => {
+      await stubPortfolioSummary(page)
+      await openRoute(page, '/')
+      await freeze(page)
+      await page.evaluate(
+        async ({ modulePath, kind }) => {
+          const toasts = await import(modulePath)
+          toasts.useToast()[kind](`Baseline ${kind} message`)
+        },
+        { modulePath: TOAST_MODULE_PATH, kind: variant }
+      )
+      await expect(page.locator('.toast.show')).toBeVisible()
+      await expect(page).toHaveScreenshot(`toast-${variant}.png`, masks(page))
+    })
+  }
+
+  test('state loading skeleton', async ({ page }) => {
+    await page.route('**/api/portfolio-summary/**', async route => {
+      await new Promise(resolve => setTimeout(resolve, LOADING_HOLD_MS))
+      await route.abort().catch(() => undefined)
+    })
+    await page.goto('/')
+    await waitForScrollHeightToSettle(page)
+    await freeze(page)
+    await expect(page.locator('.skeleton').first()).toBeVisible()
+    await expect(page).toHaveScreenshot('state-loading.png', masks(page))
+  })
+
+  test('state spinner', async ({ page }) => {
+    await page.route(apiRoute(API_ENDPOINTS.ETF_BREAKDOWN), async route => {
+      await new Promise(resolve => setTimeout(resolve, LOADING_HOLD_MS))
+      await route.abort().catch(() => undefined)
+    })
+    await page.goto('/etf-breakdown')
+    await waitForScrollHeightToSettle(page)
+    await freeze(page)
+    await expect(page.locator('.loading-spinner').first()).toBeVisible()
+    await expect(page).toHaveScreenshot('state-spinner.png', masks(page))
+  })
+
+  test('state empty table', async ({ page }) => {
+    await page.route(apiRoute(API_ENDPOINTS.TRANSACTIONS), route =>
+      route.fulfill({ json: EMPTY_TRANSACTIONS })
+    )
+    await openRoute(page, '/transactions')
+    await freeze(page)
+    await expect(page.locator('.alert-info')).toBeVisible()
+    await expect(page).toHaveScreenshot('state-empty.png', masks(page))
+  })
+
+  test('state error alert', async ({ page }) => {
+    await page.route(apiRoute(API_ENDPOINTS.INSTRUMENTS), route =>
+      route.fulfill({ status: 500, body: '' })
+    )
+    await page.goto('/instruments')
+    const alert = page.locator('.alert-danger')
+    await expect(alert).toBeVisible({ timeout: STATE_TIMEOUT_MS })
+    await expect(alert).toHaveScreenshot('state-error.png', {
+      timeout: STATE_TIMEOUT_MS,
+    })
+  })
+})

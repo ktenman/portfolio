@@ -1,0 +1,31 @@
+export const VOLATILE_SELECTORS: string[] = [
+  '.build-info-text',
+  '#initialWorth',
+  '[data-testid="year-summary-table"]',
+  '.profit-column',
+  '.unrealized-column',
+  '.price-change-column',
+  '.current-price-column',
+  '.weight-column',
+  'td[data-label="Value"]',
+  'td[data-label="XIRR"]',
+  'td[data-label="Annual"]',
+  '[data-testid="instruments-totals-row"]',
+  '.total-value',
+  '.metric-value',
+  '.value-amount',
+  'td[data-label="Profit"]',
+  '.stat-value',
+  'tr:first-child:has(td[data-label="24h Change"])',
+  '.mobile-card:first-child:has(.label:text-is("24h Change"))',
+  '[data-testid="summary-chart"]',
+  '.currency-value',
+  '[data-testid="currency-split-pct"]',
+]
+
+export const MODAL_VOLATILE_SELECTORS: string[] = [
+  '#xirrWindowsModal tbody td.text-end',
+  '#annualWindowsModal tbody td.text-end',
+  '#logoReplacementModal .modal-title',
+  '#logoReplacementModal .modal-body',
+]

@@ -34,7 +34,9 @@
     "test:cleanup": "pkill -f 'bootRun|vite' 2>/dev/null; docker compose -f compose.yaml down 2>/dev/null; true",
     "docker:build-proxy": "docker build --platform linux/amd64 -t portfolio-cloudflare-bypass-proxy:latest ./cloudflare-bypass-proxy",
     "docker:up": "docker compose -f compose.yaml up -d",
-    "docker:down": "docker compose -f compose.yaml down"
+    "docker:down": "docker compose -f compose.yaml down",
+    "visual": "playwright test",
+    "visual:update": "playwright test --update-snapshots"
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.6.0",
@@ -50,6 +52,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@testing-library/vue": "^8.1.0",
     "@types/bootstrap": "^5.2.11",
     "@types/node": "^26.1.0",
@@ -70,6 +74,7 @@
     "knip": "^6.23.0",
     "prettier": "^3.8.3",
     "sass": "1.70.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "6.0.3",
     "vite": "^8.1.2",
     "vitest": "^4.0.14",

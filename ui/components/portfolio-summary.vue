@@ -6,24 +6,14 @@
       @recalculate="handleRecalculate"
     />
 
-    <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2 mb-3">
-      <div class="platform-buttons">
-        <button
-          v-for="platform in availablePlatforms"
-          :key="platform"
-          class="platform-btn"
-          :class="{ active: isPlatformSelected(platform) }"
-          @click="togglePlatform(platform)"
-          type="button"
-        >
-          {{ formatPlatformName(platform) }}
-        </button>
-        <span class="platform-separator"></span>
-        <button class="platform-btn" @click="toggleAllPlatforms" type="button">
-          {{ selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All' }}
-        </button>
-      </div>
-    </div>
+    <platform-filter
+      v-if="availablePlatforms.length > 0"
+      class="mt-2 mb-3"
+      :available="availablePlatforms"
+      :selected="selectedPlatforms"
+      @toggle="togglePlatform"
+      @toggle-all="toggleAllPlatforms"
+    />
 
     <div v-if="viewState === 'LOADING'">
       <skeleton-loader type="card" class="mb-4" />
@@ -92,7 +82,7 @@ import { useAuthState } from '../composables/use-auth-state'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
-import { formatPlatformName } from '../utils/platform-utils'
+import PlatformFilter from './shared/platform-filter.vue'
 import { transactionsService } from '../services/transactions-service'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
@@ -118,8 +108,10 @@ const { data: platformsData } = useQuery({
 
 const availablePlatforms = computed(() => platformsData.value ?? [])
 
-const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
-  usePlatformFilter(STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS, availablePlatforms)
+const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
+  STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS,
+  availablePlatforms
+)
 
 const {
   summaries,
