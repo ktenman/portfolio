@@ -54,26 +54,13 @@
             </button>
           </div>
         </div>
-        <div v-if="availablePlatforms.length > 0" class="platform-filter-container">
-          <div class="platform-buttons">
-            <button
-              v-for="platform in availablePlatforms"
-              :key="platform"
-              class="platform-btn"
-              :class="{ active: isPlatformSelected(platform) }"
-              @click="togglePlatform(platform)"
-              type="button"
-            >
-              {{ formatPlatformName(platform) }}
-            </button>
-            <span class="platform-separator"></span>
-            <button class="platform-btn" @click="toggleAllPlatforms" type="button">
-              {{
-                selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-              }}
-            </button>
-          </div>
-        </div>
+        <platform-filter
+          v-if="availablePlatforms.length > 0"
+          :available="availablePlatforms"
+          :selected="selectedPlatforms"
+          @toggle="togglePlatform"
+          @toggle-all="toggleAllPlatforms"
+        />
       </div>
     </div>
 
@@ -113,9 +100,9 @@ import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { Dropdown } from 'bootstrap'
 import TransactionTable from './transaction-table.vue'
+import PlatformFilter from '../shared/platform-filter.vue'
 import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
-import { formatPlatformName } from '../../utils/platform-utils'
 import { STORAGE_KEYS } from '../../constants'
 import {
   useQuickDates,
@@ -160,8 +147,10 @@ const availablePlatforms = computed(() => {
   return Array.from(platformSet).sort()
 })
 
-const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
-  usePlatformFilter(STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS, availablePlatforms)
+const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
+  STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS,
+  availablePlatforms
+)
 
 const { data: transactionsResponse, isLoading } = useQuery({
   queryKey: ['transactions', selectedPlatforms, fromDate, untilDate],
@@ -330,7 +319,7 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
     padding: 0.375rem 0.5rem;
   }
 
-  .platform-btn {
+  :deep(.platform-btn) {
     font-size: 0.75rem;
     padding: 0.375rem 0.5rem;
   }

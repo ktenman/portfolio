@@ -69,7 +69,11 @@
     <div class="row mt-4">
       <div class="col-12">
         <h5>Year-by-Year Summary</h5>
-        <data-table :items="yearSummary" :columns="summaryColumns" />
+        <data-table
+          :items="yearSummary"
+          :columns="summaryColumns"
+          data-testid="year-summary-table"
+        />
       </div>
     </div>
   </div>

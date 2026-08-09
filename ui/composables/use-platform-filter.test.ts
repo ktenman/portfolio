@@ -36,25 +36,6 @@ describe('usePlatformFilter', () => {
     })
   })
 
-  describe('isPlatformSelected', () => {
-    it('should return true for selected platform', async () => {
-      platforms.value = ['LIGHTYEAR', 'TRADING212']
-      const { isPlatformSelected } = usePlatformFilter('test-key', platforms)
-      await nextTick()
-
-      expect(isPlatformSelected('LIGHTYEAR')).toBe(true)
-    })
-
-    it('should return false for unselected platform', async () => {
-      platforms.value = ['LIGHTYEAR']
-      const { selectedPlatforms, isPlatformSelected } = usePlatformFilter('test-key', platforms)
-      await nextTick()
-      selectedPlatforms.value = []
-
-      expect(isPlatformSelected('BINANCE')).toBe(false)
-    })
-  })
-
   describe('togglePlatform', () => {
     it('should remove platform when already selected', async () => {
       platforms.value = ['LIGHTYEAR', 'TRADING212']

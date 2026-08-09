@@ -8,25 +8,14 @@
     @title-click="handleTitleClick"
   >
     <template #subtitle>
-      <div v-if="availablePlatforms.length > 0" class="platform-filter-container mt-2">
-        <div class="platform-buttons">
-          <button
-            v-for="platform in availablePlatforms"
-            :key="platform"
-            class="platform-btn"
-            :class="{ active: isPlatformSelected(platform) }"
-            @click="togglePlatform(platform)"
-            type="button"
-          >
-            {{ formatPlatformName(platform) }}
-          </button>
-          <span class="platform-separator"></span>
-          <button class="platform-btn" @click="toggleAllPlatforms" type="button">
-            {{
-              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-            }}
-          </button>
-        </div>
+      <platform-filter
+        v-if="availablePlatforms.length > 0"
+        class="mt-2"
+        :available="availablePlatforms"
+        :selected="selectedPlatforms"
+        @toggle="togglePlatform"
+        @toggle-all="toggleAllPlatforms"
+      >
         <div class="controls-row">
           <div class="period-selector-container">
             <label class="period-label d-none d-md-inline">Period:</label>
@@ -49,7 +38,7 @@
             </label>
           </div>
         </div>
-      </div>
+      </platform-filter>
     </template>
 
     <template #content>
@@ -89,13 +78,13 @@ import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAuthState } from '../../composables/use-auth-state'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
 import CrudLayout from '../shared/crud-layout.vue'
+import PlatformFilter from '../shared/platform-filter.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
 import AnnualWindowsModal from './annual-windows-modal.vue'
 import { instrumentsService } from '../../services/instruments-service'
 import { InstrumentDto } from '../../models/generated/domain-models'
-import { formatPlatformName } from '../../utils/platform-utils'
 import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
 const selectedItem = ref<InstrumentDto | null>(null)
@@ -136,8 +125,10 @@ const availablePlatforms = computed(() => {
   return Array.from(platformSet).sort()
 })
 
-const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
-  usePlatformFilter(STORAGE_KEYS.SELECTED_PLATFORMS, availablePlatforms)
+const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
+  STORAGE_KEYS.SELECTED_PLATFORMS,
+  availablePlatforms
+)
 
 const {
   data: rawItems,
