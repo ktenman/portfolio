@@ -12,6 +12,7 @@ import {
   waitForValueToSettle,
 } from './settle'
 import { apiRoute, type RouteStub } from './stub'
+import { stubDiversification } from './diversification-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
@@ -106,12 +107,14 @@ const MODALS: {
     route: '/diversification',
     title: 'Export Configuration',
     open: page => page.click('button[aria-label="Export"]'),
+    stub: stubDiversification,
   },
   {
     name: 'config-import',
     route: '/diversification',
     title: 'Import Configuration',
     open: page => page.click('button[aria-label="Import"]'),
+    stub: stubDiversification,
   },
 ]
 

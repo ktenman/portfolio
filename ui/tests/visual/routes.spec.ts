@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { freeze, masks, openRoute } from './settle'
 import { type RouteStub } from './stub'
+import { stubCalculator } from './calculator-fixture'
+import { stubDiversification } from './diversification-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
@@ -11,8 +13,8 @@ const ROUTES: { path: string; name: string; stub?: RouteStub }[] = [
   { path: '/transactions', name: 'transactions', stub: stubTransactions },
   { path: '/instruments', name: 'instruments', stub: stubInstruments },
   { path: '/etf-breakdown', name: 'etf-breakdown', stub: stubEtfBreakdown },
-  { path: '/diversification', name: 'diversification' },
-  { path: '/calculator', name: 'calculator' },
+  { path: '/diversification', name: 'diversification', stub: stubDiversification },
+  { path: '/calculator', name: 'calculator', stub: stubCalculator },
 ]
 
 for (const route of ROUTES) {
