@@ -11,7 +11,11 @@
     :on-sort="onSort"
   >
     <template #footer>
-      <tr v-if="instruments.length > 0" class="table-footer-totals d-none d-md-table-row">
+      <tr
+        v-if="instruments.length > 0"
+        class="table-footer-totals d-none d-md-table-row"
+        data-testid="instruments-totals-row"
+      >
         <td class="fw-bold">Total</td>
         <td></td>
         <td></td>

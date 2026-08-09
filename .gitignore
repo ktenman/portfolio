@@ -79,3 +79,4 @@ scripts/*.jpg
 ### Working docs (keep architecture diagrams) ###
 docs/*
 !docs/architecture/
+!docs/superpowers/

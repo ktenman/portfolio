@@ -9,7 +9,7 @@ import {
 export const instrumentColumns: ColumnDefinition[] = [
   { key: 'instrument', label: 'Instrument', sortKey: 'name' },
   { key: 'quantity', label: 'Quantity', formatter: formatQuantity },
-  { key: 'currentPrice', label: 'Price', formatter: formatCurrency },
+  { key: 'currentPrice', label: 'Price', formatter: formatCurrency, class: 'current-price-column' },
   { key: 'currentValue', label: 'Value', formatter: formatCurrency },
   {
     key: 'totalInvestment',
@@ -40,7 +40,7 @@ export const instrumentColumns: ColumnDefinition[] = [
   {
     key: 'portfolioWeight',
     label: 'Weight',
-    class: 'd-none d-xl-table-cell',
+    class: 'd-none d-xl-table-cell weight-column',
     sortKey: 'currentValue',
   },
   { key: 'ter', label: 'TER', class: 'd-none d-xl-table-cell' },

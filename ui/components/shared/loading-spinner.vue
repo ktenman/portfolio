@@ -1,9 +1,9 @@
 <template>
-  <div class="d-flex justify-content-center align-items-center" :class="containerClass">
+  <div class="tw:flex tw:justify-center tw:items-center" :class="containerClass">
     <div class="loading-spinner" :class="[spinnerClass, sizeClass]" role="status">
       <span class="visually-hidden">{{ message }}</span>
     </div>
-    <span v-if="showMessage" class="ms-2">{{ message }}</span>
+    <span v-if="showMessage" class="tw:ml-2">{{ message }}</span>
   </div>
 </template>
 

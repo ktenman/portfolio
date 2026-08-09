@@ -21,26 +21,14 @@
           </button>
         </div>
       </div>
-      <div v-if="availablePlatforms.length > 1" class="platform-filter-container mt-2">
-        <div class="platform-buttons">
-          <button
-            v-for="platform in availablePlatforms"
-            :key="platform"
-            class="platform-btn"
-            :class="{ active: isPlatformSelected(platform) }"
-            @click="togglePlatform(platform)"
-            type="button"
-          >
-            {{ formatPlatformName(platform) }}
-          </button>
-          <span class="platform-separator"></span>
-          <button class="platform-btn" @click="toggleAllPlatforms" type="button">
-            {{
-              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-            }}
-          </button>
-        </div>
-      </div>
+      <platform-filter
+        v-if="availablePlatforms.length > 1"
+        class="mt-2"
+        :available="availablePlatforms"
+        :selected="selectedPlatforms"
+        @toggle="togglePlatform"
+        @toggle-all="toggleAllPlatforms"
+      />
     </div>
 
     <etf-breakdown-header
@@ -121,7 +109,7 @@ import EtfBreakdownHeader from './etf-breakdown-header.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
-import { formatPlatformName } from '../../utils/platform-utils'
+import PlatformFilter from '../shared/platform-filter.vue'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
 const masterHoldings = ref<EtfHoldingBreakdownDto[]>([])
@@ -162,8 +150,10 @@ const etfPlatformMetadata = computed(() => {
 
 const availablePlatforms = computed(() => etfPlatformMetadata.value.platforms)
 
-const { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms } =
-  usePlatformFilter('portfolio_etf_breakdown_platforms', availablePlatforms)
+const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
+  'portfolio_etf_breakdown_platforms',
+  availablePlatforms
+)
 
 const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
 
@@ -393,12 +383,12 @@ onMounted(async () => {
   color: white;
 }
 
-.platform-btn.active {
+:deep(.platform-btn.active) {
   background: #0072b2;
   border-color: #0072b2;
 }
 
-.platform-btn.active:hover {
+:deep(.platform-btn.active:hover) {
   background: #005a8c;
   border-color: #005a8c;
 }

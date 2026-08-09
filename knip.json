@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["ui/main.ts", "ui/index.html"],
+  "entry": ["ui/main.ts", "ui/index.html", "ui/tests/visual/*.spec.ts"],
   "project": ["ui/**/*.{ts,tsx,vue,js}"],
   "rules": {
     "types": "off"
@@ -18,7 +18,7 @@
     "cloudflare-bypass-proxy/**"
   ],
   "ignoreUnresolved": ["./tests/setup.ts"],
-  "ignoreDependencies": ["vue-eslint-parser", "espree", "eslint-plugin-no-comments"],
+  "ignoreDependencies": ["vue-eslint-parser", "espree", "eslint-plugin-no-comments", "tailwindcss"],
   "ignoreExportsUsedInFile": false,
   "includeEntryExports": true,
   "vue": {

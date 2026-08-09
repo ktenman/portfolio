@@ -22,12 +22,8 @@ export function usePlatformFilter(storageKey: string, availablePlatforms: Ref<st
     { immediate: true }
   )
 
-  const isPlatformSelected = (platform: string): boolean =>
-    selectedPlatforms.value.includes(platform)
-
   const togglePlatform = (platform: string) => {
-    const index = selectedPlatforms.value.indexOf(platform)
-    if (index > -1) {
+    if (selectedPlatforms.value.includes(platform)) {
       selectedPlatforms.value = selectedPlatforms.value.filter(p => p !== platform)
     } else {
       selectedPlatforms.value = [...selectedPlatforms.value, platform]
@@ -42,5 +38,5 @@ export function usePlatformFilter(storageKey: string, availablePlatforms: Ref<st
     }
   }
 
-  return { selectedPlatforms, isPlatformSelected, togglePlatform, toggleAllPlatforms }
+  return { selectedPlatforms, togglePlatform, toggleAllPlatforms }
 }
