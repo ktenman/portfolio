@@ -292,6 +292,7 @@ Create `ui/components/shared/modal-shell.vue`:
 <template>
   <dialog
     ref="dialogEl"
+    tabindex="-1"
     :id="modalId"
     class="modal"
     :aria-labelledby="`${modalId}Label`"
@@ -319,7 +320,7 @@ Create `ui/components/shared/modal-shell.vue`:
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 interface Props {
   open: boolean
@@ -374,20 +375,21 @@ const onClose = () => {
   emit('update:open', false)
 }
 
-watch(
-  () => props.open,
-  isOpen => {
-    const dialog = dialogEl.value
-    if (!dialog) return
-    if (isOpen && !dialog.open) {
-      dialog.showModal()
-      lockScroll()
-      return
-    }
-    if (!isOpen && dialog.open) dialog.close()
-  },
-  { immediate: true, flush: 'post' }
-)
+const sync = (isOpen: boolean) => {
+  const dialog = dialogEl.value
+  if (!dialog) return
+  if (isOpen && !dialog.open) {
+    dialog.showModal()
+    dialog.focus()
+    lockScroll()
+    return
+  }
+  if (!isOpen && dialog.open) dialog.close()
+}
+
+watch(() => props.open, sync, { flush: 'post' })
+
+onMounted(() => sync(props.open))
 
 onBeforeUnmount(() => {
   unlockScroll()
@@ -649,6 +651,18 @@ describe('ConfirmDialog', () => {
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
     })
 
+    it('dont emit cancel when the parent closes the dialog after confirming', async () => {
+      const wrapper = createWrapper({ modelValue: true })
+
+      await wrapper
+        .findAll('button')
+        .filter(b => b.text() === 'Confirm')[0]
+        .trigger('click')
+      await wrapper.setProps({ modelValue: false })
+
+      expect(wrapper.emitted('cancel')).toBeFalsy()
+    })
+
     it('should not emit cancel when clicking modal content', async () => {
       const wrapper = createWrapper({ modelValue: true })
 
@@ -719,7 +733,7 @@ interface Props {
   confirmClass?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   modalId: 'confirmModal',
   title: 'Confirm',
   message: 'Are you sure?',
@@ -745,12 +759,15 @@ const cancel = () => {
 }
 
 const onDialogClosed = () => {
+  if (!props.modelValue) return
   cancel()
 }
 </script>
 ```
 
 `onDialogClosed` fires for the close button and backdrop click, which is exactly the old `cancel()` path — the old component wired both to `cancel` too. The explicit `@click="cancel"` on the footer button emits `cancel` and closes via the parent's `modelValue` flip.
+
+The `if (!props.modelValue) return` guard is load-bearing. After **confirm**, the parent flips `modelValue` to false, the shell closes the dialog, and `update:open` fires — without the guard that would emit a second, spurious `cancel` after `confirm`. The old `hidden.bs.modal` handler emitted only `update:modelValue`, never `cancel`, so the guard is what preserves the old semantics. Covered by `dont emit cancel when the parent closes the dialog after confirming`.
 
 - [ ] **Step 4: Run the test to verify it passes**
 

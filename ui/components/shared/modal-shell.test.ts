@@ -35,6 +35,12 @@ describe('ModalShell', () => {
     expect(wrapper.find('dialog').element.open).toBe(true)
   })
 
+  it('moves focus to the dialog rather than the close button', () => {
+    const wrapper = mountShell({ open: true })
+
+    expect(document.activeElement).toBe(wrapper.find('dialog').element)
+  })
+
   it('closes the native dialog when open becomes false', async () => {
     const wrapper = mountShell({ open: true })
 

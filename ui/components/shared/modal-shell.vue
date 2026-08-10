@@ -1,6 +1,7 @@
 <template>
   <dialog
     ref="dialogEl"
+    tabindex="-1"
     :id="modalId"
     class="modal"
     :aria-labelledby="`${modalId}Label`"
@@ -88,6 +89,7 @@ const sync = (isOpen: boolean) => {
   if (!dialog) return
   if (isOpen && !dialog.open) {
     dialog.showModal()
+    dialog.focus()
     lockScroll()
     return
   }
