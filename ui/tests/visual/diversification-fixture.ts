@@ -190,7 +190,7 @@ const CALCULATION: DiversificationCalculatorResponseDto = {
     { countryCode: 'DK', countryName: 'Denmark', percentage: 3.5648 },
     { countryCode: 'FR', countryName: 'France', percentage: 3.0192 },
     { countryCode: 'JP', countryName: 'Japan', percentage: 2.7415 },
-    { countryCode: null, countryName: 'Other', percentage: 1.9510 },
+    { countryCode: null, countryName: 'Other', percentage: 1.951 },
   ],
   concentration: {
     top10Percentage: 30.2373,

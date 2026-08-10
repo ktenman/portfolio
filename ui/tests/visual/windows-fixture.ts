@@ -1,7 +1,4 @@
-import {
-  type AnnualWindowsDto,
-  type XirrWindowsDto,
-} from '../../models/generated/domain-models'
+import { type AnnualWindowsDto, type XirrWindowsDto } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
 import { apiRoute, type RouteStub } from './stub'
 

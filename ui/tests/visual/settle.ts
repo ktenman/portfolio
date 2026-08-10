@@ -1,5 +1,4 @@
 import { type Locator, type Page } from '@playwright/test'
-import { VOLATILE_SELECTORS } from './volatile'
 
 const SETTLE_POLL_INTERVAL_MS = 400
 const SETTLE_REQUIRED_SAMPLES = 4
@@ -57,13 +56,4 @@ export async function freeze(page: Page): Promise<void> {
 export async function freezeBehindOverlay(page: Page): Promise<void> {
   await waitForScrollHeightToSettle(page)
   await freeze(page)
-  await page
-    .locator(VOLATILE_SELECTORS.join(', '))
-    .evaluateAll(elements =>
-      elements.forEach(element => ((element as HTMLElement).style.visibility = 'hidden'))
-    )
-}
-
-export function masks(page: Page, selectors: string[] = VOLATILE_SELECTORS): { mask: Locator[] } {
-  return { mask: selectors.map(s => page.locator(s)) }
 }

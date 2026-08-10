@@ -1,11 +1,9 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
-import { MODAL_VOLATILE_SELECTORS } from './volatile'
 import {
   freeze,
   freezeBehindOverlay,
-  masks,
   openRoute,
   waitForBoxHeightToSettle,
   waitForScrollHeightToSettle,
@@ -141,10 +139,7 @@ test.describe('modals', () => {
       await modal.open(page)
       await waitForModal(page, modal.title)
       await freezeBehindOverlay(page)
-      await expect(page).toHaveScreenshot(
-        `modal-${modal.name}.png`,
-        masks(page, MODAL_VOLATILE_SELECTORS)
-      )
+      await expect(page).toHaveScreenshot(`modal-${modal.name}.png`)
     })
   }
 
@@ -155,7 +150,7 @@ test.describe('modals', () => {
     await page.click('button:has-text("Recalculate Data")')
     await waitForModal(page, 'Recalculate Portfolio Data')
     await freezeBehindOverlay(page)
-    await expect(page).toHaveScreenshot('modal-confirm.png', masks(page, MODAL_VOLATILE_SELECTORS))
+    await expect(page).toHaveScreenshot('modal-confirm.png')
     await page.click('[data-testid="confirmDialogCancelButton"]')
     await expect(page.locator('.modal.show')).toHaveCount(0)
   })
@@ -188,7 +183,7 @@ test.describe('desktop states', () => {
         { modulePath: TOAST_MODULE_PATH, kind: variant }
       )
       await expect(page.locator('.toast.show')).toBeVisible()
-      await expect(page).toHaveScreenshot(`toast-${variant}.png`, masks(page))
+      await expect(page).toHaveScreenshot(`toast-${variant}.png`)
     })
   }
 
@@ -201,7 +196,7 @@ test.describe('desktop states', () => {
     await waitForScrollHeightToSettle(page)
     await freeze(page)
     await expect(page.locator('.skeleton').first()).toBeVisible()
-    await expect(page).toHaveScreenshot('state-loading.png', masks(page))
+    await expect(page).toHaveScreenshot('state-loading.png')
   })
 
   test('state spinner', async ({ page }) => {
@@ -213,7 +208,7 @@ test.describe('desktop states', () => {
     await waitForScrollHeightToSettle(page)
     await freeze(page)
     await expect(page.locator('.loading-spinner').first()).toBeVisible()
-    await expect(page).toHaveScreenshot('state-spinner.png', masks(page))
+    await expect(page).toHaveScreenshot('state-spinner.png')
   })
 
   test('state empty table', async ({ page }) => {
@@ -223,7 +218,7 @@ test.describe('desktop states', () => {
     await openRoute(page, '/transactions')
     await freeze(page)
     await expect(page.locator('.alert-info')).toBeVisible()
-    await expect(page).toHaveScreenshot('state-empty.png', masks(page))
+    await expect(page).toHaveScreenshot('state-empty.png')
   })
 
   test('state error alert', async ({ page }) => {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { freeze, masks, openRoute } from './settle'
+import { freeze, openRoute } from './settle'
 import { type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubCalculator } from './calculator-fixture'
@@ -27,9 +27,6 @@ for (const route of ROUTES) {
     await route.stub?.(page)
     await openRoute(page, route.path)
     await freeze(page)
-    await expect(page).toHaveScreenshot(`route-${route.name}.png`, {
-      fullPage: true,
-      ...masks(page),
-    })
+    await expect(page).toHaveScreenshot(`route-${route.name}.png`, { fullPage: true })
   })
 }
