@@ -1,13 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
-import {
-  freeze,
-  openRoute,
-  settleAndFreeze,
-  waitForBoxHeightToSettle,
-  waitForValueToSettle,
-} from './settle'
+import { freeze, openRoute, settleAndFreeze, waitForBoxHeightToSettle } from './settle'
 import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubDiversification } from './diversification-fixture'
@@ -33,16 +27,7 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
   },
 }
 
-const OPEN_MODAL = ':is(.modal.show, dialog.modal[open])'
-
-async function waitForBackdropToSettle(page: Page): Promise<void> {
-  const bootstrapBackdrop = page.locator('.modal-backdrop.show')
-  if ((await bootstrapBackdrop.count()) === 0) return
-  await expect(bootstrapBackdrop).toBeVisible()
-  await waitForValueToSettle(page, 'Backdrop opacity', async () =>
-    Number(await bootstrapBackdrop.evaluate(element => getComputedStyle(element).opacity))
-  )
-}
+const OPEN_MODAL = 'dialog.modal[open]'
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
   const content = page.locator(`${OPEN_MODAL} .modal-content`)
@@ -51,7 +36,7 @@ async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
   await expect(
     page.locator(`${OPEN_MODAL} .spinner-border, ${OPEN_MODAL} .loading-spinner`)
   ).toHaveCount(0, { timeout: MODAL_CONTENT_TIMEOUT_MS })
-  await Promise.all([waitForBoxHeightToSettle(page, content), waitForBackdropToSettle(page)])
+  await waitForBoxHeightToSettle(page, content)
 }
 
 function visibleTotalsTriggers(page: Page): Locator {
