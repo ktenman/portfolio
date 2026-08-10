@@ -1,70 +1,58 @@
 <template>
-  <div
-    class="modal fade"
-    :id="modalId"
-    tabindex="-1"
-    :aria-labelledby="`${modalId}Label`"
-    aria-hidden="true"
-    @click.self="close"
+  <modal-shell
+    :open="modelValue"
+    modal-id="logoReplacementModal"
+    :title="`Replace Logo: ${holdingName}`"
+    size="lg"
+    :close-on-esc="false"
+    body-class="modal-body-scroll"
+    @update:open="close"
   >
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title" :id="`${modalId}Label`">Replace Logo: {{ holdingName }}</h5>
-          <button type="button" class="btn-close" @click="close" aria-label="Close"></button>
-        </div>
-        <div class="modal-body modal-body-scroll">
-          <loading-spinner v-if="isLoading" class="my-4" />
-          <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
-          <div
-            v-else-if="hasFetched && candidates.length === 0"
-            class="text-center text-muted py-4"
-          >
-            No logo candidates found
-          </div>
-          <div v-else class="logo-grid">
-            <div
-              v-for="candidate in candidates"
-              :key="candidate.index"
-              class="logo-candidate"
-              :class="{ selected: selectedIndex === candidate.index }"
-              @click="selectCandidate(candidate.index)"
-            >
-              <img
-                :src="candidate.imageDataUrl || candidate.thumbnailUrl"
-                :alt="candidate.title"
-                class="candidate-image"
-                @error="handleImageError"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <div v-if="!holdingUuid" class="text-muted small me-auto">
-            Logo preview only - no holding record to save to
-          </div>
-          <button type="button" class="btn btn-secondary" @click="close" :disabled="isReplacing">
-            {{ holdingUuid ? 'Cancel' : 'Close' }}
-          </button>
-          <button
-            v-if="holdingUuid"
-            type="button"
-            class="btn btn-primary"
-            @click="confirmReplacement"
-            :disabled="selectedIndex === null || isReplacing"
-          >
-            <span v-if="isReplacing" class="btn-spinner me-1"></span>
-            {{ isReplacing ? 'Replacing...' : 'Use This Logo' }}
-          </button>
-        </div>
+    <loading-spinner v-if="isLoading" class="my-4" />
+    <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+    <div v-else-if="hasFetched && candidates.length === 0" class="text-center text-muted py-4">
+      No logo candidates found
+    </div>
+    <div v-else class="logo-grid">
+      <div
+        v-for="candidate in candidates"
+        :key="candidate.index"
+        class="logo-candidate"
+        :class="{ selected: selectedIndex === candidate.index }"
+        @click="selectCandidate(candidate.index)"
+      >
+        <img
+          :src="candidate.imageDataUrl || candidate.thumbnailUrl"
+          :alt="candidate.title"
+          class="candidate-image"
+          @error="handleImageError"
+        />
       </div>
     </div>
-  </div>
+    <template #footer>
+      <div v-if="!holdingUuid" class="text-muted small me-auto">
+        Logo preview only - no holding record to save to
+      </div>
+      <button type="button" class="btn btn-secondary" @click="close" :disabled="isReplacing">
+        {{ holdingUuid ? 'Cancel' : 'Close' }}
+      </button>
+      <button
+        v-if="holdingUuid"
+        type="button"
+        class="btn btn-primary"
+        @click="confirmReplacement"
+        :disabled="selectedIndex === null || isReplacing"
+      >
+        <span v-if="isReplacing" class="btn-spinner me-1"></span>
+        {{ isReplacing ? 'Replacing...' : 'Use This Logo' }}
+      </button>
+    </template>
+  </modal-shell>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { Modal } from 'bootstrap'
+import { ref, watch } from 'vue'
+import ModalShell from '../shared/modal-shell.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
 import { logoService, type LogoCandidateDto } from '../../services/logo-service'
 
@@ -72,12 +60,9 @@ interface Props {
   modelValue: boolean
   holdingUuid: string | null
   holdingName: string
-  modalId?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  modalId: 'logoReplacementModal',
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
@@ -91,32 +76,14 @@ const isReplacing = ref(false)
 const error = ref<string | null>(null)
 const hasFetched = ref(false)
 
-let modalInstance: Modal | null = null
-
-onMounted(() => {
-  const modalElement = document.getElementById(props.modalId)
-  if (modalElement) {
-    modalInstance = new Modal(modalElement, { backdrop: 'static', keyboard: false })
-    modalElement.addEventListener('hidden.bs.modal', () => {
-      emit('update:modelValue', false)
-    })
-  }
-})
-
-onUnmounted(() => {
-  modalInstance?.dispose()
-})
-
 watch(
   () => props.modelValue,
   async newValue => {
     if (newValue && (props.holdingUuid || props.holdingName)) {
-      modalInstance?.show()
       await loadCandidates()
-    } else {
-      modalInstance?.hide()
-      resetState()
+      return
     }
+    resetState()
   }
 )
 
@@ -185,7 +152,7 @@ const handleImageError = (event: Event) => {
 </script>
 
 <style scoped>
-.modal-body-scroll {
+:deep(.modal-body-scroll) {
   max-height: 60vh;
   overflow-y: auto;
 }
