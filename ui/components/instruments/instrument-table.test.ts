@@ -182,7 +182,7 @@ describe('InstrumentTable', () => {
   describe('profit display', () => {
     it('should display positive profit without plus sign and green color', () => {
       const wrapper = createWrapper()
-      const profitCell = wrapper.find('[class*="tw:text-gain"]')
+      const profitCell = wrapper.find('.tw\\:text-gain')
 
       expect(profitCell.text()).toBe('$5,050.00')
       expect(profitCell.classes()).toContain('tw:text-gain')
@@ -192,7 +192,7 @@ describe('InstrumentTable', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const secondRow = rows[1]
-      const profitCell = secondRow.find('[class*="tw:text-loss"]')
+      const profitCell = secondRow.find('.tw\\:text-loss')
 
       expect(profitCell.text()).toBe('-€2,000.00')
       expect(profitCell.classes()).toContain('tw:text-loss')
@@ -202,7 +202,7 @@ describe('InstrumentTable', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const thirdRow = rows[2]
-      const profitCell = thirdRow.find('[class*="tw:text-gain"]')
+      const profitCell = thirdRow.find('.tw\\:text-gain')
 
       expect(profitCell.text()).toBe('$0.00')
       expect(profitCell.classes()).toContain('tw:text-gain')
