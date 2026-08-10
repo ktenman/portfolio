@@ -18,6 +18,7 @@ import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
+import { stubWindows } from './windows-fixture'
 
 const MODAL_CONTENT_TIMEOUT_MS = 60000
 const STATE_TIMEOUT_MS = 30000
@@ -56,6 +57,11 @@ function visibleTotalsTriggers(page: Page): Locator {
   return page.locator('.xirr-trigger, .xirr-trigger-mobile').filter({ visible: true })
 }
 
+const stubInstrumentsWithWindows: RouteStub = async page => {
+  await stubInstruments(page)
+  await stubWindows(page)
+}
+
 async function openInstrumentModal(page: Page): Promise<void> {
   await page.evaluate(() => {
     const trigger = document.createElement('div')
@@ -87,14 +93,14 @@ const MODALS: {
     route: '/instruments',
     title: 'Annualized return over time',
     open: page => visibleTotalsTriggers(page).nth(0).click(),
-    stub: stubInstruments,
+    stub: stubInstrumentsWithWindows,
   },
   {
     name: 'annual-windows',
     route: '/instruments',
     title: 'Buy-and-hold annualized return',
     open: page => visibleTotalsTriggers(page).nth(1).click(),
-    stub: stubInstruments,
+    stub: stubInstrumentsWithWindows,
   },
   {
     name: 'logo-replacement',
