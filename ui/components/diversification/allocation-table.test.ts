@@ -54,6 +54,11 @@ describe('AllocationTable', () => {
     optimizeEnabled: false,
     buyOnlyEnabled: false,
     actionDisplayMode: 'units' as const,
+    rebalanceThresholds: {
+      driftingThresholdRel: 10,
+      rebalanceThresholdRel: 25,
+      rebalanceThresholdAbs: 5,
+    },
   }
 
   it('renders ETF dropdown options with the ticker stripped of exchange suffix', () => {
@@ -891,6 +896,59 @@ describe('AllocationTable', () => {
       const flag = nameCell.find('img')
       expect(flag.exists()).toBe(true)
       expect(flag.attributes('src')).toContain('/us.svg')
+    })
+  })
+
+  describe('rebalance status row rendering', () => {
+    it('applies row-rebalance class to <tr> when allocation is REBALANCE', () => {
+      const props = {
+        ...defaultProps,
+        selectedPlatforms: ['LHV'],
+        currentHoldingsTotal: 1000,
+        allocations: [
+          { instrumentId: 1, value: 50, currentValue: 700 },
+          { instrumentId: 2, value: 50, currentValue: 300 },
+        ],
+      }
+      const wrapper = mount(AllocationTable, { props })
+      const rows = wrapper.findAll('tbody tr')
+      const overTargetRow = rows.find(r => r.classes().includes('row-rebalance'))
+      expect(overTargetRow).toBeDefined()
+    })
+
+    it('renders inline drift line on non-OK rows only', () => {
+      const props = {
+        ...defaultProps,
+        selectedPlatforms: ['LHV'],
+        currentHoldingsTotal: 1000,
+        allocations: [
+          { instrumentId: 1, value: 50, currentValue: 700 },
+          { instrumentId: 2, value: 50, currentValue: 300 },
+        ],
+      }
+      const wrapper = mount(AllocationTable, { props })
+      const driftLines = wrapper.findAll('.drift-line')
+      expect(driftLines.length).toBeGreaterThan(0)
+      const text = driftLines.map(d => d.text()).join(' ')
+      expect(text).toMatch(/Drift [+-]?\d+%/)
+    })
+
+    it('does not apply row-rebalance/row-drifting classes on balanced allocations', () => {
+      const props = {
+        ...defaultProps,
+        selectedPlatforms: ['LHV'],
+        currentHoldingsTotal: 1000,
+        allocations: [
+          { instrumentId: 1, value: 50, currentValue: 510 },
+          { instrumentId: 2, value: 50, currentValue: 490 },
+        ],
+      }
+      const wrapper = mount(AllocationTable, { props })
+      const rows = wrapper.findAll('tbody tr')
+      const tinted = rows.filter(
+        r => r.classes().includes('row-rebalance') || r.classes().includes('row-drifting')
+      )
+      expect(tinted).toHaveLength(0)
     })
   })
 })

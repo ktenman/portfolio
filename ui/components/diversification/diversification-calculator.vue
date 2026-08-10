@@ -30,6 +30,11 @@
     </div>
 
     <template v-else>
+      <RebalanceStatusCard
+        :rows="statusCardRows"
+        :current-holdings-total="currentHoldingsTotal"
+        @open-config="showThresholdsModal = true"
+      />
       <AllocationTable
         :allocations="allocations"
         :available-etfs="etfList"
@@ -41,6 +46,7 @@
         :optimize-enabled="optimizeEnabled"
         :buy-only-enabled="buyOnlyEnabled"
         :action-display-mode="actionDisplayMode"
+        :rebalance-thresholds="rebalanceThresholds"
         class="mb-4"
         @update:allocation="updateAllocation"
         @update:total-investment="onTotalInvestmentChange"
@@ -112,6 +118,13 @@
       modal-id="importConfigDialog"
       @import="onImportComplete"
     />
+
+    <RebalanceThresholdsModal
+      v-model="rebalanceThresholds"
+      :open="showThresholdsModal"
+      @update:open="showThresholdsModal = $event"
+      @save="onThresholdsSave"
+    />
   </div>
 </template>
 
@@ -131,6 +144,14 @@ import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
 import CurrencySplitCard from '../shared/currency-split-card.vue'
+import RebalanceStatusCard from './rebalance-status-card.vue'
+import RebalanceThresholdsModal from './rebalance-thresholds-modal.vue'
+import {
+  getRebalanceStatus,
+  DEFAULT_REBALANCE_THRESHOLDS,
+  mergeRebalanceThresholds,
+} from '../../composables/use-allocation-calculations'
+import type { RebalanceThresholds } from '../../composables/use-allocation-calculations'
 import type {
   DiversificationCalculatorResponseDto,
   InstrumentDto,
@@ -198,6 +219,8 @@ const result = ref<DiversificationCalculatorResponseDto | null>(null)
 const isInitialized = ref(false)
 const showExportDialog = ref(false)
 const showImportDialog = ref(false)
+const rebalanceThresholds = ref<RebalanceThresholds>({ ...DEFAULT_REBALANCE_THRESHOLDS })
+const showThresholdsModal = ref(false)
 
 onMounted(async () => {
   try {
@@ -243,6 +266,9 @@ const currentConfig = computed(() => ({
   buyOnlyEnabled: buyOnlyEnabled.value,
   totalInvestment: totalInvestment.value,
   actionDisplayMode: actionDisplayMode.value,
+  driftingThresholdRel: rebalanceThresholds.value.driftingThresholdRel,
+  rebalanceThresholdRel: rebalanceThresholds.value.rebalanceThresholdRel,
+  rebalanceThresholdAbs: rebalanceThresholds.value.rebalanceThresholdAbs,
 }))
 
 const { saveStatus, markDirty } = useDiversificationConfig(() => currentConfig.value)
@@ -273,6 +299,21 @@ const currencySplit = computed(() => {
   }
   return Array.from(byCurrency.entries()).map(([currency, value]) => ({ currency, value }))
 })
+
+const statusCardRows = computed(() =>
+  allocations.value
+    .filter(a => a.instrumentId > 0 && (a.value > 0 || (a.currentValue ?? 0) > 0))
+    .map(a => {
+      const etf = etfById.value.get(a.instrumentId)
+      const currentValue = a.currentValue ?? 0
+      const currentPercent =
+        currentHoldingsTotal.value > 0 ? (currentValue / currentHoldingsTotal.value) * 100 : 0
+      return {
+        symbol: etf?.symbol ?? '',
+        status: getRebalanceStatus(currentPercent, a.value, rebalanceThresholds.value),
+      }
+    })
+)
 
 const addAllocation = () => {
   allocations.value.push({ instrumentId: 0, value: 0 })
@@ -413,9 +454,15 @@ const onImportComplete = async (data: CachedState) => {
   buyOnlyEnabled.value = data.buyOnlyEnabled ?? false
   totalInvestment.value = data.totalInvestment ?? 0
   actionDisplayMode.value = data.actionDisplayMode ?? 'units'
+  rebalanceThresholds.value = mergeRebalanceThresholds(data)
   await setPlatforms(data.selectedPlatforms ?? [])
   markDirty()
   debouncedCalculate()
+}
+
+const onThresholdsSave = (next: RebalanceThresholds) => {
+  rebalanceThresholds.value = next
+  markDirty()
 }
 
 watch(
@@ -442,6 +489,7 @@ watch(
     buyOnlyEnabled.value = dbConfig.buyOnlyEnabled ?? false
     totalInvestment.value = dbConfig.totalInvestment ?? 0
     actionDisplayMode.value = dbConfig.actionDisplayMode ?? 'units'
+    rebalanceThresholds.value = mergeRebalanceThresholds(dbConfig)
     await setPlatforms(dbConfig.selectedPlatforms ?? [])
     debouncedCalculate()
   },

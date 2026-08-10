@@ -255,6 +255,11 @@ export const formatReturn = (value: number | null): string => {
   return `${(value * 100).toFixed(2)}%`
 }
 
+export const formatRelDrift = (relDrift: number): string => {
+  const sign = relDrift >= 0 ? '+' : ''
+  return `${sign}${relDrift.toFixed(0)}%`
+}
+
 export const formatRelativeTime = (timestampMs: number, nowMs: number): string => {
   const diffMs = nowMs - timestampMs
   const diffMinutes = Math.floor(diffMs / 60000)

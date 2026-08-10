@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import type { EtfDetailDto } from '../models/generated/domain-models'
+import { RebalanceStatus } from '../models/generated/domain-models'
 import type { AllocationInput, ActionDisplayMode } from '../components/diversification/types'
 import {
   calculateTargetValue,
@@ -11,6 +12,58 @@ import {
   formatEuroAmount,
 } from '../utils/diversification-calculations'
 
+export interface RebalanceThresholds {
+  driftingThresholdRel: number
+  rebalanceThresholdRel: number
+  rebalanceThresholdAbs: number
+}
+
+export const DEFAULT_REBALANCE_THRESHOLDS: RebalanceThresholds = {
+  driftingThresholdRel: 10,
+  rebalanceThresholdRel: 25,
+  rebalanceThresholdAbs: 5,
+}
+
+export function mergeRebalanceThresholds(
+  source: Partial<RebalanceThresholds> | null | undefined
+): RebalanceThresholds {
+  return {
+    driftingThresholdRel:
+      source?.driftingThresholdRel ?? DEFAULT_REBALANCE_THRESHOLDS.driftingThresholdRel,
+    rebalanceThresholdRel:
+      source?.rebalanceThresholdRel ?? DEFAULT_REBALANCE_THRESHOLDS.rebalanceThresholdRel,
+    rebalanceThresholdAbs:
+      source?.rebalanceThresholdAbs ?? DEFAULT_REBALANCE_THRESHOLDS.rebalanceThresholdAbs,
+  }
+}
+
+function computeRelDrift(currentPercent: number, targetPercent: number): number {
+  if (targetPercent !== 0) return ((currentPercent - targetPercent) / targetPercent) * 100
+  return currentPercent === 0 ? 0 : 100
+}
+
+export function getRebalanceStatus(
+  currentPercent: number,
+  targetPercent: number,
+  thresholds: RebalanceThresholds
+): RebalanceStatus {
+  if (targetPercent === 0) {
+    return currentPercent > 0 ? RebalanceStatus.REBALANCE : RebalanceStatus.OK
+  }
+  const absDrift = Math.abs(currentPercent - targetPercent)
+  const relDrift = (absDrift / targetPercent) * 100
+  if (
+    absDrift >= thresholds.rebalanceThresholdAbs ||
+    relDrift >= thresholds.rebalanceThresholdRel
+  ) {
+    return RebalanceStatus.REBALANCE
+  }
+  if (relDrift >= thresholds.driftingThresholdRel) {
+    return RebalanceStatus.DRIFTING
+  }
+  return RebalanceStatus.OK
+}
+
 export interface RebalanceData {
   currentValue: number
   currentPercent: number
@@ -20,6 +73,8 @@ export interface RebalanceData {
   units: number
   unused: number
   price: number | null
+  status: RebalanceStatus
+  relDrift: number
 }
 
 interface AllocationProps {
@@ -31,6 +86,7 @@ interface AllocationProps {
   readonly optimizeEnabled: boolean
   readonly buyOnlyEnabled: boolean
   readonly actionDisplayMode: ActionDisplayMode
+  readonly rebalanceThresholds: RebalanceThresholds
 }
 
 export function useAllocationCalculations(props: AllocationProps) {
@@ -71,7 +127,20 @@ export function useAllocationCalculations(props: AllocationProps) {
     const absoluteDifference = Math.abs(difference)
     const units = calculateUnitsFromAmount(absoluteDifference, price ?? 0)
     const unused = absoluteDifference - units * (price ?? 0)
-    return { currentValue, currentPercent, targetValue, difference, isBuy, units, unused, price }
+    const status = getRebalanceStatus(currentPercent, allocation.value, props.rebalanceThresholds)
+    const relDrift = computeRelDrift(currentPercent, allocation.value)
+    return {
+      currentValue,
+      currentPercent,
+      targetValue,
+      difference,
+      isBuy,
+      units,
+      unused,
+      price,
+      status,
+      relDrift,
+    }
   }
 
   const budgetAwareRebalance = computed(() => {

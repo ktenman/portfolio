@@ -17,6 +17,9 @@ data class DiversificationConfigDto(
   @field:Pattern(regexp = "units|amount", message = "Action display mode must be 'units' or 'amount'")
   val actionDisplayMode: String = "units",
   val buyOnlyEnabled: Boolean = false,
+  val driftingThresholdRel: Double = 10.0,
+  val rebalanceThresholdRel: Double = 25.0,
+  val rebalanceThresholdAbs: Double = 5.0,
 ) : Serializable {
   companion object {
     private const val serialVersionUID: Long = 1L

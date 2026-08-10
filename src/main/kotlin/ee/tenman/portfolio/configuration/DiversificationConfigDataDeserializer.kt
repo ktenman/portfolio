@@ -22,6 +22,9 @@ class DiversificationConfigDataDeserializer : ValueDeserializer<DiversificationC
     val totalInvestment = node.get("totalInvestment")?.asDouble() ?: 0.0
     val actionDisplayMode = readActionDisplayMode(node)
     val buyOnlyEnabled = node.get("buyOnlyEnabled")?.asBoolean() ?: false
+    val driftingThresholdRel = node.get("driftingThresholdRel")?.asDouble() ?: 10.0
+    val rebalanceThresholdRel = node.get("rebalanceThresholdRel")?.asDouble() ?: 25.0
+    val rebalanceThresholdAbs = node.get("rebalanceThresholdAbs")?.asDouble() ?: 5.0
     return DiversificationConfigData(
       allocations,
       inputMode,
@@ -30,6 +33,9 @@ class DiversificationConfigDataDeserializer : ValueDeserializer<DiversificationC
       totalInvestment,
       actionDisplayMode,
       buyOnlyEnabled,
+      driftingThresholdRel,
+      rebalanceThresholdRel,
+      rebalanceThresholdAbs,
     )
   }
 

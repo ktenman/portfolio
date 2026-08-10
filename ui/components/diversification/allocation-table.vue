@@ -98,10 +98,10 @@
         :fund-currency="getEtfFundCurrency(allocation.instrumentId)"
         :show-rebalance-mode="!!showRebalanceColumns"
         :action-display-mode="actionDisplayMode"
-        :is-buy="showRebalanceColumns ? getRebalanceData(allocation).isBuy : true"
+        :is-buy="showRebalanceColumns ? rebalanceFor(allocation).isBuy : true"
         :computed-units="
           showRebalanceColumns
-            ? getRebalanceData(allocation).units
+            ? rebalanceFor(allocation).units
             : getUnits(
                 allocation.instrumentId,
                 allocation.value,
@@ -119,6 +119,8 @@
               )
         "
         :after-percent="showRebalanceColumns ? getAfterPercent(allocation) : undefined"
+        :rebalance-status="showRebalanceColumns ? rebalanceFor(allocation).status : undefined"
+        :rel-drift="showRebalanceColumns ? rebalanceFor(allocation).relDrift : undefined"
         @update:allocation="updateAllocationAtIndex(index, $event)"
         @remove="$emit('remove', index)"
       />
@@ -232,6 +234,7 @@
           <tr
             v-for="allocation in sortedAllocations"
             :key="allocation.instrumentId || getOriginalIndex(allocation)"
+            :class="rowClass(allocation)"
           >
             <td>
               <select
@@ -263,7 +266,7 @@
             <td v-if="showRebalanceColumns" class="text-muted small">
               €{{ (allocation.currentValue ?? 0).toFixed(2) }}
               <span class="current-percent">
-                ({{ getRebalanceData(allocation).currentPercent.toFixed(1) }}%)
+                ({{ rebalanceFor(allocation).currentPercent.toFixed(1) }}%)
               </span>
             </td>
             <td>
@@ -279,11 +282,22 @@
             </td>
             <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="small">
               <template v-if="showRebalanceColumns">
+                <div
+                  v-if="rebalanceFor(allocation).status !== RebalanceStatus.OK"
+                  class="drift-line"
+                  :class="
+                    rebalanceFor(allocation).status === RebalanceStatus.REBALANCE
+                      ? 'drift-rebalance'
+                      : 'drift-drifting'
+                  "
+                >
+                  Drift {{ formatRelDrift(rebalanceFor(allocation).relDrift) }}
+                </div>
                 <span
                   v-if="hasRebalanceAction(allocation)"
-                  :class="getRebalanceData(allocation).isBuy ? 'text-success' : 'text-danger'"
+                  :class="rebalanceFor(allocation).isBuy ? 'text-success' : 'text-danger'"
                 >
-                  {{ getRebalanceData(allocation).isBuy ? 'Buy' : 'Sell' }}
+                  {{ rebalanceFor(allocation).isBuy ? 'Buy' : 'Sell' }}
                   {{ formatActionValue(allocation) }}
                 </span>
                 <span v-else class="text-muted">-</span>
@@ -409,14 +423,19 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { formatTer, formatReturn } from '../../utils/formatters'
+import { formatTer, formatReturn, formatRelDrift } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import { useSortableTable } from '../../composables/use-sortable-table'
-import { useAllocationCalculations } from '../../composables/use-allocation-calculations'
+import {
+  useAllocationCalculations,
+  type RebalanceData,
+  type RebalanceThresholds,
+} from '../../composables/use-allocation-calculations'
 import AllocationCard from './allocation-card.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
+import { RebalanceStatus } from '../../models/generated/domain-models'
 import type { AllocationInput, ActionDisplayMode } from './types'
 
 interface AllocationWithData extends AllocationInput {
@@ -441,6 +460,7 @@ const props = defineProps<{
   optimizeEnabled: boolean
   buyOnlyEnabled: boolean
   actionDisplayMode: ActionDisplayMode
+  rebalanceThresholds: RebalanceThresholds
 }>()
 
 const emit = defineEmits<{
@@ -483,6 +503,17 @@ const {
   getComputedAmount,
   getActionSortValue,
 } = useAllocationCalculations(props)
+
+const rebalanceDataMap = computed(() => {
+  const map = new Map<AllocationInput, RebalanceData>()
+  for (const allocation of props.allocations) {
+    map.set(allocation, getRebalanceData(allocation))
+  }
+  return map
+})
+
+const rebalanceFor = (allocation: AllocationInput) =>
+  rebalanceDataMap.value.get(allocation) ?? getRebalanceData(allocation)
 
 const formatEtfPrice = (value: number | null) => (value === null ? '-' : `€${value.toFixed(2)}`)
 
@@ -535,6 +566,14 @@ const getSortIndicatorClass = (key: string) => ({
 
 const getOriginalIndex = (allocation: AllocationInput): number =>
   props.allocations.findIndex(a => a.instrumentId === allocation.instrumentId || a === allocation)
+
+const rowClass = (allocation: AllocationInput): string => {
+  if (!showRebalanceColumns.value) return ''
+  const status = rebalanceFor(allocation).status
+  if (status === RebalanceStatus.REBALANCE) return 'row-rebalance'
+  if (status === RebalanceStatus.DRIFTING) return 'row-drifting'
+  return ''
+}
 
 const onInstrumentChange = (index: number, event: Event) => {
   const target = event.target as HTMLSelectElement
@@ -984,5 +1023,27 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .platform-btn-toggle-all {
   font-weight: 500;
+}
+
+.allocation-table tbody tr.row-drifting {
+  background-color: rgba(255, 193, 7, 0.12) !important;
+}
+
+.allocation-table tbody tr.row-rebalance {
+  background-color: rgba(220, 53, 69, 0.12) !important;
+}
+
+.drift-line {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.125rem;
+}
+
+.drift-line.drift-drifting {
+  color: #b45309;
+}
+
+.drift-line.drift-rebalance {
+  color: #b91c1c;
 }
 </style>

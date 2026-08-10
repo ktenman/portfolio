@@ -166,4 +166,49 @@ class DiversificationConfigDataDeserializerTest {
 
     expect(result.buyOnlyEnabled).toEqual(false)
   }
+
+  @Test
+  fun `should deserialize threshold fields when present`() {
+    val json =
+      """
+      {
+        "allocations": [],
+        "inputMode": "PERCENTAGE",
+        "selectedPlatforms": [],
+        "optimizeEnabled": false,
+        "totalInvestment": 0.0,
+        "actionDisplayMode": "UNITS",
+        "driftingThresholdRel": 7.5,
+        "rebalanceThresholdRel": 20.0,
+        "rebalanceThresholdAbs": 3.0
+      }
+    """.trimIndent()
+
+    val result = mapper.readValue(json, DiversificationConfigData::class.java)
+
+    expect(result.driftingThresholdRel).toEqual(7.5)
+    expect(result.rebalanceThresholdRel).toEqual(20.0)
+    expect(result.rebalanceThresholdAbs).toEqual(3.0)
+  }
+
+  @Test
+  fun `should default thresholds to 10 25 5 when fields missing`() {
+    val json =
+      """
+      {
+        "allocations": [],
+        "inputMode": "PERCENTAGE",
+        "selectedPlatforms": [],
+        "optimizeEnabled": false,
+        "totalInvestment": 0.0,
+        "actionDisplayMode": "UNITS"
+      }
+    """.trimIndent()
+
+    val result = mapper.readValue(json, DiversificationConfigData::class.java)
+
+    expect(result.driftingThresholdRel).toEqual(10.0)
+    expect(result.rebalanceThresholdRel).toEqual(25.0)
+    expect(result.rebalanceThresholdAbs).toEqual(5.0)
+  }
 }
