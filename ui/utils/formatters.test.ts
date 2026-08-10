@@ -14,7 +14,9 @@ import {
   formatDate,
   formatQuantity,
   formatScientific,
+  formatPriceChange,
 } from './formatters'
+import type { InstrumentDto } from '../models/generated/domain-models'
 
 describe('formatCurrencyWithSymbol', () => {
   it('should format positive numbers with EUR symbol', () => {
@@ -304,15 +306,15 @@ describe('formatTransactionAmount', () => {
 })
 
 describe('getProfitClass', () => {
-  it('should return success class for positive values', () => {
-    expect(getProfitClass(100)).toBe('text-success')
-    expect(getProfitClass(0.01)).toBe('text-success')
-    expect(getProfitClass(0)).toBe('text-success')
+  it('should return gain token for positive values', () => {
+    expect(getProfitClass(100)).toBe('tw:text-gain')
+    expect(getProfitClass(0.01)).toBe('tw:text-gain')
+    expect(getProfitClass(0)).toBe('tw:text-gain')
   })
 
-  it('should return danger class for negative values', () => {
-    expect(getProfitClass(-100)).toBe('text-danger')
-    expect(getProfitClass(-0.01)).toBe('text-danger')
+  it('should return loss token for negative values', () => {
+    expect(getProfitClass(-100)).toBe('tw:text-loss')
+    expect(getProfitClass(-0.01)).toBe('tw:text-loss')
   })
 
   it('should handle null and undefined values', () => {
@@ -322,17 +324,37 @@ describe('getProfitClass', () => {
 })
 
 describe('getAmountClass', () => {
-  it('should return success class for BUY type', () => {
-    expect(getAmountClass('BUY')).toBe('text-success')
+  it('should return gain token for BUY type', () => {
+    expect(getAmountClass('BUY')).toBe('tw:text-gain')
   })
 
-  it('should return danger class for SELL type', () => {
-    expect(getAmountClass('SELL')).toBe('text-danger')
+  it('should return loss token for SELL type', () => {
+    expect(getAmountClass('SELL')).toBe('tw:text-loss')
   })
 
   it('should handle other transaction types', () => {
-    expect(getAmountClass('OTHER')).toBe('text-danger')
-    expect(getAmountClass('')).toBe('text-danger')
+    expect(getAmountClass('OTHER')).toBe('tw:text-loss')
+    expect(getAmountClass('')).toBe('tw:text-loss')
+  })
+})
+
+describe('formatPriceChange', () => {
+  const item = {
+    priceChangeAmount: 1.23,
+    priceChangePercent: 4.56,
+    baseCurrency: 'EUR',
+  } as InstrumentDto
+
+  it('should return text without markup', () => {
+    expect(formatPriceChange(item)).not.toContain('<')
+  })
+
+  it('should format the absolute amount and percent', () => {
+    expect(formatPriceChange(item)).toBe('€1.23 / 4.56%')
+  })
+
+  it('should return a dash when the change is unknown', () => {
+    expect(formatPriceChange({ ...item, priceChangeAmount: null })).toBe('-')
   })
 })
 

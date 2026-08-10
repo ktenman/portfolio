@@ -268,9 +268,13 @@
 
     <template #cell-priceChange="{ item }">
       <span
-        :class="getChangeClass(item.id, 'priceChangeAmount')"
-        v-html="formatPriceChange(item)"
-      ></span>
+        :class="[
+          getChangeClass(item.id, 'priceChangeAmount'),
+          getProfitClass(item.priceChangeAmount),
+        ]"
+      >
+        {{ formatPriceChange(item) }}
+      </span>
     </template>
 
     <template #cell-totalInvestment="{ item }">
