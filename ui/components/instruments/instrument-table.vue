@@ -42,7 +42,9 @@
             {{ formatProfit(animatedTotalUnrealizedProfit, 'EUR') }}
           </span>
         </td>
-        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:lg:table-cell! price-change-column">
+        <td
+          class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:lg:table-cell! price-change-column"
+        >
           <span
             :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
           >
@@ -78,7 +80,9 @@
           </button>
         </td>
         <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:xl:table-cell!">100.00%</td>
-        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:xl:table-cell!">{{ formatTer(totalTer) }}</td>
+        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:xl:table-cell!">
+          {{ formatTer(totalTer) }}
+        </td>
       </tr>
     </template>
     <template #mobile-card="{ item }">

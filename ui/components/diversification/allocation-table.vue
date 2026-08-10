@@ -256,7 +256,9 @@
             <td class="tw:text-gray-600! small">
               {{ formatEtfPrice(getEtfPrice(allocation.instrumentId)) }}
             </td>
-            <td class="tw:text-gray-600! small">{{ formatTer(getEtfTer(allocation.instrumentId)) }}</td>
+            <td class="tw:text-gray-600! small">
+              {{ formatTer(getEtfTer(allocation.instrumentId)) }}
+            </td>
             <td class="tw:text-gray-600! small">
               {{ formatReturn(getEtfReturn(allocation.instrumentId)) }}
             </td>
@@ -298,7 +300,10 @@
                 }}
               </template>
             </td>
-            <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="tw:text-gray-600! small">
+            <td
+              v-if="showInvestmentColumns || showRebalanceActionColumn"
+              class="tw:text-gray-600! small"
+            >
               <template v-if="showRebalanceColumns">
                 {{ getAfterPercent(allocation).toFixed(1) }}%
               </template>
