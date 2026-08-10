@@ -58,6 +58,14 @@ describe('ModalShell', () => {
     expect(wrapper.emitted('update:open')?.[0]).toEqual([false])
   })
 
+  it('dont emit update:open when the parent already closed the dialog', async () => {
+    const wrapper = mountShell({ open: true })
+
+    await wrapper.setProps({ open: false })
+
+    expect(wrapper.emitted('update:open')).toBeFalsy()
+  })
+
   it('closes when the close button is clicked', async () => {
     const wrapper = mountShell({ open: true })
 

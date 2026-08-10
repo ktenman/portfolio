@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import InstrumentModal from './instrument-modal.vue'
 import InstrumentForm from './instrument-form.vue'
 import { ProviderName } from '../../models/generated/domain-models'
@@ -18,6 +18,8 @@ vi.mock('./instrument-form.vue', () => ({
     },
   },
 }))
+
+enableAutoUnmount(afterEach)
 
 describe('InstrumentModal', () => {
   const mockInstrument = createInstrumentDto({

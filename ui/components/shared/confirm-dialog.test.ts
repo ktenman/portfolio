@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, afterEach } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import ConfirmDialog from './confirm-dialog.vue'
+
+enableAutoUnmount(afterEach)
 
 const createWrapper = (props = {}) =>
   mount(ConfirmDialog, { props: { modelValue: false, ...props }, attachTo: document.body })

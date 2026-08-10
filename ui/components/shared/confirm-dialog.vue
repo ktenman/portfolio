@@ -4,7 +4,7 @@
     :modal-id="modalId"
     :title="title"
     :close-on-esc="false"
-    @update:open="onDialogClosed"
+    @update:open="cancel"
   >
     <p>{{ message }}</p>
     <template #footer>
@@ -45,7 +45,7 @@ interface Props {
   confirmClass?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   modalId: 'confirmModal',
   title: 'Confirm',
   message: 'Are you sure?',
@@ -68,10 +68,5 @@ const confirm = () => {
 const cancel = () => {
   emit('cancel')
   emit('update:modelValue', false)
-}
-
-const onDialogClosed = () => {
-  if (!props.modelValue) return
-  cancel()
 }
 </script>

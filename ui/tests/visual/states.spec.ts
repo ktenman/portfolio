@@ -123,6 +123,8 @@ test.describe('modals', () => {
       await waitForModal(page, modal.title)
       await settleAndFreeze(page)
       await expect(page).toHaveScreenshot(`modal-${modal.name}.png`)
+      await page.locator(`${OPEN_MODAL} .btn-close`).click()
+      await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
     })
   }
 
@@ -137,19 +139,6 @@ test.describe('modals', () => {
     await page.click('[data-testid="confirmDialogCancelButton"]')
     await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
   })
-
-  for (const modal of MODALS) {
-    test(`modal ${modal.name} dismisses`, async ({ page }) => {
-      await modal.stub(page)
-      await openRoute(page, modal.route)
-      await modal.open(page)
-      await waitForModal(page, modal.title)
-
-      await page.locator(`${OPEN_MODAL} .btn-close`).click()
-
-      await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
-    })
-  }
 
   test('modal escape closes a dismissable modal', async ({ page }) => {
     await stubInstrumentsWithWindows(page)

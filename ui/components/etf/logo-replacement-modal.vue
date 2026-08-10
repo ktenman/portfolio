@@ -5,7 +5,6 @@
     :title="`Replace Logo: ${holdingName}`"
     size="lg"
     :close-on-esc="false"
-    body-class="modal-body-scroll"
     @update:open="close"
   >
     <loading-spinner v-if="isLoading" class="my-4" />
@@ -152,7 +151,7 @@ const handleImageError = (event: Event) => {
 </script>
 
 <style scoped>
-:deep(.modal-body-scroll) {
+:deep(.modal-body) {
   max-height: 60vh;
   overflow-y: auto;
 }

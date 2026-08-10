@@ -12,12 +12,10 @@
     <div class="modal-dialog" :class="dialogClasses">
       <div class="modal-content" autofocus tabindex="-1" @click.stop>
         <div class="modal-header">
-          <h5 class="modal-title" :id="`${modalId}Label`">
-            <slot name="title">{{ title }}</slot>
-          </h5>
+          <h5 class="modal-title" :id="`${modalId}Label`">{{ title }}</h5>
           <button type="button" class="btn-close" aria-label="Close" @click="requestClose"></button>
         </div>
-        <div class="modal-body" :class="bodyClass">
+        <div class="modal-body">
           <slot />
         </div>
         <div class="modal-footer">
@@ -38,7 +36,6 @@ interface Props {
   size?: 'lg'
   centered?: boolean
   closeOnEsc?: boolean
-  bodyClass?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -46,7 +43,6 @@ const props = withDefaults(defineProps<Props>(), {
   size: undefined,
   centered: false,
   closeOnEsc: true,
-  bodyClass: '',
 })
 
 const emit = defineEmits<{
@@ -81,7 +77,7 @@ const onCancel = (event: Event) => {
 
 const onClose = () => {
   unlockScroll()
-  emit('update:open', false)
+  if (props.open) emit('update:open', false)
 }
 
 const sync = (isOpen: boolean) => {
