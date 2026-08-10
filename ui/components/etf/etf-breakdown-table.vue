@@ -1,8 +1,8 @@
 <template>
   <div class="card shadow-sm border-0">
-    <div class="card-body p-0">
-      <loading-spinner v-if="isLoading" class="my-5" />
-      <div v-else-if="isError" class="alert alert-danger m-4 mb-0">
+    <div class="card-body tw:p-0!">
+      <loading-spinner v-if="isLoading" class="tw:my-12!" />
+      <div v-else-if="isError" class="alert alert-danger tw:m-6! tw:mb-0!">
         <strong>Error:</strong>
         {{ errorMessage }}
       </div>
@@ -110,22 +110,22 @@
         </template>
         <template #footer>
           <tr v-if="hasMore" class="load-more-row">
-            <td colspan="7" class="text-center py-2">
-              <div ref="loadMoreTrigger" class="d-flex align-items-center justify-content-center">
-                <div class="spinner-border spinner-border-sm text-secondary me-2" role="status">
+            <td colspan="7" class="tw:text-center! tw:py-2!">
+              <div ref="loadMoreTrigger" class="tw:flex tw:items-center tw:justify-center">
+                <div class="spinner-border spinner-border-sm text-secondary tw:mr-2" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
-                <span class="text-muted small">
+                <span class="tw:text-gray-600 small">
                   Loading more... ({{ displayedHoldings.length }} of {{ holdings.length }})
                 </span>
               </div>
             </td>
           </tr>
           <tr v-if="holdings.length > 0" class="table-footer-totals">
-            <td class="fw-bold ps-3">Total</td>
+            <td class="tw:font-bold tw:pl-4!">Total</td>
             <td></td>
-            <td class="fw-bold text-end">100.0000%</td>
-            <td class="fw-bold text-end">{{ formatCurrency(totalValue) }}</td>
+            <td class="tw:font-bold tw:text-right!">100.0000%</td>
+            <td class="tw:font-bold tw:text-right!">{{ formatCurrency(totalValue) }}</td>
             <td colspan="3"></td>
           </tr>
         </template>
@@ -341,7 +341,7 @@ const columns: ColumnDefinition[] = [
     key: 'holdingTicker',
     label: 'Ticker',
     sortable: true,
-    class: 'fw-semibold',
+    class: 'tw:font-semibold',
   },
   {
     key: 'holdingName',
@@ -353,14 +353,14 @@ const columns: ColumnDefinition[] = [
     label: '% of Total',
     sortable: true,
     formatter: formatPercentage,
-    class: 'text-end',
+    class: 'tw:text-right!',
   },
   {
     key: 'totalValueEur',
     label: 'VALUE',
     sortable: true,
     formatter: formatCurrency,
-    class: 'text-end fw-semibold',
+    class: 'tw:text-right! tw:font-semibold',
   },
   {
     key: 'holdingSector',
@@ -378,7 +378,7 @@ const columns: ColumnDefinition[] = [
     key: 'inEtfs',
     label: 'Found in ETFs',
     sortable: false,
-    class: 'text-muted small',
+    class: 'tw:text-gray-600! small',
     formatter: (value: string | null) => {
       if (!value) return '-'
       return value

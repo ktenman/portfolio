@@ -176,14 +176,16 @@ const summaryColumns: ColumnDefinition[] = [
     key: 'earningsPerDay',
     label: 'Earnings Per Day',
     formatter: formatCurrencyWithSymbol,
-    class: 'd-none d-md-table-cell',
+    class: 'tw:hidden! tw:md:table-cell!',
+    hideOnMobile: true,
   },
   { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrencyWithSymbol },
   {
     key: 'unrealizedProfit',
     label: 'Unrealized Profit',
     formatter: formatCurrencyWithSymbol,
-    class: 'd-none d-md-table-cell',
+    class: 'tw:hidden! tw:md:table-cell!',
+    hideOnMobile: true,
   },
   { key: 'totalProfit', label: 'Total Profit', formatter: formatCurrencyWithSymbol },
   {
