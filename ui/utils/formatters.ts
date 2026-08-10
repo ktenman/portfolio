@@ -1,4 +1,3 @@
-import { styleClasses } from './style-classes'
 import type { InstrumentDto } from '../models/generated/domain-models'
 
 const SUPERSCRIPT_DIGITS: Record<string, string> = {
@@ -193,11 +192,11 @@ export const formatTransactionAmount = (
 
 export const getProfitClass = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return ''
-  return value >= 0 ? styleClasses.text.success : styleClasses.text.danger
+  return value >= 0 ? 'tw:text-gain' : 'tw:text-loss'
 }
 
 export const getAmountClass = (type: string): string => {
-  return type === 'BUY' ? styleClasses.text.success : styleClasses.text.danger
+  return type === 'BUY' ? 'tw:text-gain' : 'tw:text-loss'
 }
 
 export const formatDate = (dateString: string): string => {
@@ -234,13 +233,10 @@ export const formatPriceChange = (item: InstrumentDto): string => {
   }
 
   const currency = item.baseCurrency || 'EUR'
-  const isPositive = amount >= 0
-  const colorClass = isPositive ? styleClasses.text.success : styleClasses.text.danger
-
   const formattedAmount = formatCurrencyWithSign(Math.abs(amount), currency)
   const formattedPercent = Math.abs(percent).toFixed(2)
 
-  return `<span class="${colorClass}">${formattedAmount} / ${formattedPercent}%</span>`
+  return `${formattedAmount} / ${formattedPercent}%`
 }
 
 export const formatPercentage = (value: number): string => `${value.toFixed(2)}%`

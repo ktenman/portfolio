@@ -95,7 +95,7 @@
           <span class="ticker-landscape">{{ extractBaseSymbol(item.symbol) }}</span>
           <span class="name-default">{{ item.name }}</span>
         </div>
-        <div v-if="item.platform" class="platform-tags mt-1">
+        <div v-if="item.platform" class="platform-tags tw:mt-1">
           <span class="badge bg-secondary text-white">
             {{ formatPlatformName(item.platform) }}
           </span>
@@ -105,7 +105,7 @@
 
     <template #cell-quantityInfo="{ item }">
       <span>
-        <span class="d-block">{{ formatQuantity(item.quantity) }}</span>
+        <span class="tw:block">{{ formatQuantity(item.quantity) }}</span>
         <small
           v-if="
             item.transactionType === 'BUY' &&
@@ -113,7 +113,7 @@
             item.remainingQuantity !== item.quantity &&
             item.remainingQuantity > 0
           "
-          class="d-block text-muted"
+          class="tw:block tw:text-gray-600"
         >
           Remaining: {{ formatQuantity(item.remainingQuantity) }}
         </small>
@@ -122,8 +122,8 @@
 
     <template #cell-price="{ item }">
       <span>
-        <span class="d-block">{{ formatCurrencyWithSign(item.price, item.currency) }}</span>
-        <small v-if="item.currency && item.currency !== 'EUR'" class="d-block text-muted">
+        <span class="tw:block">{{ formatCurrencyWithSign(item.price, item.currency) }}</span>
+        <small v-if="item.currency && item.currency !== 'EUR'" class="tw:block tw:text-gray-600">
           {{ item.currency }}
         </small>
       </span>
@@ -140,7 +140,7 @@
             false
           )
         }}
-        <small v-if="item.commission && item.commission > 0" class="d-block text-muted">
+        <small v-if="item.commission && item.commission > 0" class="tw:block tw:text-gray-600">
           Fee: {{ formatCurrencyWithSign(item.commission, item.currency) }}
         </small>
       </span>
@@ -297,11 +297,11 @@ const extractBaseSymbol = (symbol: string): string => {
         color: var(--bs-gray-900);
         margin-bottom: 0.125rem;
 
-        &.text-success {
+        &.tw\:text-gain {
           color: #22c55e;
         }
 
-        &.text-danger {
+        &.tw\:text-loss {
           color: #ef4444;
         }
       }
@@ -336,11 +336,11 @@ const extractBaseSymbol = (symbol: string): string => {
       font-weight: 700;
       color: var(--bs-gray-900);
 
-      &.text-success {
+      &.tw\:text-gain {
         color: #22c55e;
       }
 
-      &.text-danger {
+      &.tw\:text-loss {
         color: #ef4444;
       }
     }

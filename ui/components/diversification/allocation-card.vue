@@ -158,7 +158,7 @@ const actionLabel = computed(() => {
 
 const actionColorClass = computed(() => {
   if (!props.showRebalanceMode || !hasAction.value) return ''
-  return props.isBuy ? 'text-success' : 'text-danger'
+  return props.isBuy ? 'tw:text-gain!' : 'tw:text-loss!'
 })
 
 const onInstrumentChange = (event: Event) => {

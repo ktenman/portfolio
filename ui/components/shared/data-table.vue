@@ -28,7 +28,7 @@
           <slot name="mobile-card" :item="item" :index="index" :columns="columns">
             <div class="mobile-card-body">
               <div
-                v-for="column in columns.filter(col => !col.class?.includes('d-none'))"
+                v-for="column in columns.filter(col => !col.hideOnMobile)"
                 :key="column.key"
                 class="mobile-card-item"
               >
@@ -131,6 +131,7 @@ export interface ColumnDefinition {
   label: string
   formatter?: (value: any, item?: any) => string
   class?: string
+  hideOnMobile?: boolean
   sortable?: boolean
   sortKey?: string
 }

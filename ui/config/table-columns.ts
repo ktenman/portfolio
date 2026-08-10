@@ -15,7 +15,8 @@ export const instrumentColumns: ColumnDefinition[] = [
     key: 'totalInvestment',
     label: 'Invested',
     formatter: formatCurrency,
-    class: 'd-none d-md-table-cell',
+    class: 'tw:hidden! tw:md:table-cell!',
+    hideOnMobile: true,
   },
   { key: 'profit', label: 'Profit', formatter: formatCurrency, class: 'profit-column' },
   {
@@ -27,7 +28,8 @@ export const instrumentColumns: ColumnDefinition[] = [
   {
     key: 'priceChange',
     label: '24H',
-    class: 'd-none d-lg-table-cell price-change-column',
+    class: 'tw:hidden! tw:lg:table-cell! price-change-column',
+    hideOnMobile: true,
     sortKey: 'priceChangeAmount',
   },
   { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal },
@@ -35,15 +37,17 @@ export const instrumentColumns: ColumnDefinition[] = [
     key: 'xirrAnnualReturn',
     label: 'Annual',
     formatter: formatPercentageFromDecimal,
-    class: 'd-none d-xl-table-cell',
+    class: 'tw:hidden! tw:xl:table-cell!',
+    hideOnMobile: true,
   },
   {
     key: 'portfolioWeight',
     label: 'Weight',
-    class: 'd-none d-xl-table-cell weight-column',
+    class: 'tw:hidden! tw:xl:table-cell! weight-column',
+    hideOnMobile: true,
     sortKey: 'currentValue',
   },
-  { key: 'ter', label: 'TER', class: 'd-none d-xl-table-cell' },
+  { key: 'ter', label: 'TER', class: 'tw:hidden! tw:xl:table-cell!', hideOnMobile: true },
 ]
 
 export const transactionColumns: ColumnDefinition[] = [
@@ -57,6 +61,7 @@ export const transactionColumns: ColumnDefinition[] = [
     key: 'averageCost',
     label: 'Average Cost',
     formatter: formatCurrency,
-    class: 'd-none d-sm-table-cell',
+    class: 'tw:hidden! tw:sm:table-cell!',
+    hideOnMobile: true,
   },
 ]

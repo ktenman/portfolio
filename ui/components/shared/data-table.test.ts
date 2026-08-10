@@ -320,5 +320,32 @@ describe('DataTable', () => {
       expect(cells[2].attributes('data-label')).toBe('Price')
       expect(cells[3].attributes('data-label')).toBe('Category')
     })
+
+    it('should omit columns marked hideOnMobile from mobile cards', () => {
+      const wrapper = mount(DataTable, {
+        props: {
+          items: mockItems.slice(0, 1),
+          columns: [
+            { key: 'name', label: 'Name' },
+            { key: 'price', label: 'Price', hideOnMobile: true },
+          ] as ColumnDefinition[],
+        },
+      })
+
+      const labels = wrapper.findAll('.mobile-card-item .label').map(node => node.text())
+      expect(labels).toEqual(['Name'])
+    })
+
+    it('should keep columns whose class merely mentions a hidden breakpoint', () => {
+      const wrapper = mount(DataTable, {
+        props: {
+          items: mockItems.slice(0, 1),
+          columns: [{ key: 'name', label: 'Name', class: 'tw:md:hidden' }] as ColumnDefinition[],
+        },
+      })
+
+      const labels = wrapper.findAll('.mobile-card-item .label').map(node => node.text())
+      expect(labels).toEqual(['Name'])
+    })
   })
 })
