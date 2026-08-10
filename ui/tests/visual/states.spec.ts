@@ -33,20 +33,23 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
   },
 }
 
+const OPEN_MODAL = ':is(.modal.show, dialog.modal[open])'
+
 async function waitForBackdropToSettle(page: Page): Promise<void> {
-  const backdrop = page.locator('.modal-backdrop.show')
-  await expect(backdrop).toBeVisible()
+  const bootstrapBackdrop = page.locator('.modal-backdrop.show')
+  if ((await bootstrapBackdrop.count()) === 0) return
+  await expect(bootstrapBackdrop).toBeVisible()
   await waitForValueToSettle(page, 'Backdrop opacity', async () =>
-    Number(await backdrop.evaluate(element => getComputedStyle(element).opacity))
+    Number(await bootstrapBackdrop.evaluate(element => getComputedStyle(element).opacity))
   )
 }
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
-  const content = page.locator('.modal.show .modal-content')
+  const content = page.locator(`${OPEN_MODAL} .modal-content`)
   await expect(content).toBeVisible()
-  await expect(page.locator('.modal.show .modal-title')).toHaveText(title)
+  await expect(page.locator(`${OPEN_MODAL} .modal-title`)).toHaveText(title)
   await expect(
-    page.locator('.modal.show .spinner-border, .modal.show .loading-spinner')
+    page.locator(`${OPEN_MODAL} .spinner-border, ${OPEN_MODAL} .loading-spinner`)
   ).toHaveCount(0, { timeout: MODAL_CONTENT_TIMEOUT_MS })
   await Promise.all([waitForBoxHeightToSettle(page, content), waitForBackdropToSettle(page)])
 }
@@ -153,7 +156,7 @@ test.describe('modals', () => {
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('modal-confirm.png')
     await page.click('[data-testid="confirmDialogCancelButton"]')
-    await expect(page.locator('.modal.show')).toHaveCount(0)
+    await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
   })
 })
 
