@@ -1,21 +1,21 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
-import { MODAL_VOLATILE_SELECTORS } from './volatile'
 import {
   freeze,
-  freezeBehindOverlay,
-  masks,
   openRoute,
+  settleAndFreeze,
   waitForBoxHeightToSettle,
-  waitForScrollHeightToSettle,
   waitForValueToSettle,
 } from './settle'
 import { apiRoute, type RouteStub } from './stub'
+import { stubBuildInfo } from './build-info-fixture'
+import { stubDiversification } from './diversification-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
+import { stubWindows } from './windows-fixture'
 
 const MODAL_CONTENT_TIMEOUT_MS = 60000
 const STATE_TIMEOUT_MS = 30000
@@ -54,6 +54,11 @@ function visibleTotalsTriggers(page: Page): Locator {
   return page.locator('.xirr-trigger, .xirr-trigger-mobile').filter({ visible: true })
 }
 
+const stubInstrumentsWithWindows: RouteStub = async page => {
+  await stubInstruments(page)
+  await stubWindows(page)
+}
+
 async function openInstrumentModal(page: Page): Promise<void> {
   await page.evaluate(() => {
     const trigger = document.createElement('div')
@@ -85,14 +90,14 @@ const MODALS: {
     route: '/instruments',
     title: 'Annualized return over time',
     open: page => visibleTotalsTriggers(page).nth(0).click(),
-    stub: stubInstruments,
+    stub: stubInstrumentsWithWindows,
   },
   {
     name: 'annual-windows',
     route: '/instruments',
     title: 'Buy-and-hold annualized return',
     open: page => visibleTotalsTriggers(page).nth(1).click(),
-    stub: stubInstruments,
+    stub: stubInstrumentsWithWindows,
   },
   {
     name: 'logo-replacement',
@@ -106,12 +111,14 @@ const MODALS: {
     route: '/diversification',
     title: 'Export Configuration',
     open: page => page.click('button[aria-label="Export"]'),
+    stub: stubDiversification,
   },
   {
     name: 'config-import',
     route: '/diversification',
     title: 'Import Configuration',
     open: page => page.click('button[aria-label="Import"]'),
+    stub: stubDiversification,
   },
 ]
 
@@ -120,17 +127,18 @@ test.describe('modals', () => {
     test.skip(testInfo.project.name === 'tablet')
   })
 
+  test.beforeEach(async ({ page }) => {
+    await stubBuildInfo(page)
+  })
+
   for (const modal of MODALS) {
     test(`modal ${modal.name}`, async ({ page }) => {
       await modal.stub?.(page)
       await openRoute(page, modal.route)
       await modal.open(page)
       await waitForModal(page, modal.title)
-      await freezeBehindOverlay(page)
-      await expect(page).toHaveScreenshot(
-        `modal-${modal.name}.png`,
-        masks(page, MODAL_VOLATILE_SELECTORS)
-      )
+      await settleAndFreeze(page)
+      await expect(page).toHaveScreenshot(`modal-${modal.name}.png`)
     })
   }
 
@@ -140,8 +148,8 @@ test.describe('modals', () => {
     await openRoute(page, '/')
     await page.click('button:has-text("Recalculate Data")')
     await waitForModal(page, 'Recalculate Portfolio Data')
-    await freezeBehindOverlay(page)
-    await expect(page).toHaveScreenshot('modal-confirm.png', masks(page, MODAL_VOLATILE_SELECTORS))
+    await settleAndFreeze(page)
+    await expect(page).toHaveScreenshot('modal-confirm.png')
     await page.click('[data-testid="confirmDialogCancelButton"]')
     await expect(page.locator('.modal.show')).toHaveCount(0)
   })
@@ -152,12 +160,16 @@ test.describe('desktop states', () => {
     test.skip(testInfo.project.name !== 'desktop')
   })
 
+  test.beforeEach(async ({ page }) => {
+    await stubBuildInfo(page)
+  })
+
   test('dropdown quick dates', async ({ page }) => {
     await stubTransactions(page)
     await openRoute(page, '/transactions')
     await page.click('[data-bs-toggle="dropdown"]')
     await expect(page.locator('.dropdown-menu.show')).toBeVisible()
-    await freezeBehindOverlay(page)
+    await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('dropdown-quick-dates.png')
   })
 
@@ -174,7 +186,7 @@ test.describe('desktop states', () => {
         { modulePath: TOAST_MODULE_PATH, kind: variant }
       )
       await expect(page.locator('.toast.show')).toBeVisible()
-      await expect(page).toHaveScreenshot(`toast-${variant}.png`, masks(page))
+      await expect(page).toHaveScreenshot(`toast-${variant}.png`)
     })
   }
 
@@ -184,10 +196,9 @@ test.describe('desktop states', () => {
       await route.abort().catch(() => undefined)
     })
     await page.goto('/')
-    await waitForScrollHeightToSettle(page)
-    await freeze(page)
+    await settleAndFreeze(page)
     await expect(page.locator('.skeleton').first()).toBeVisible()
-    await expect(page).toHaveScreenshot('state-loading.png', masks(page))
+    await expect(page).toHaveScreenshot('state-loading.png')
   })
 
   test('state spinner', async ({ page }) => {
@@ -196,10 +207,9 @@ test.describe('desktop states', () => {
       await route.abort().catch(() => undefined)
     })
     await page.goto('/etf-breakdown')
-    await waitForScrollHeightToSettle(page)
-    await freeze(page)
+    await settleAndFreeze(page)
     await expect(page.locator('.loading-spinner').first()).toBeVisible()
-    await expect(page).toHaveScreenshot('state-spinner.png', masks(page))
+    await expect(page).toHaveScreenshot('state-spinner.png')
   })
 
   test('state empty table', async ({ page }) => {
@@ -209,7 +219,7 @@ test.describe('desktop states', () => {
     await openRoute(page, '/transactions')
     await freeze(page)
     await expect(page.locator('.alert-info')).toBeVisible()
-    await expect(page).toHaveScreenshot('state-empty.png', masks(page))
+    await expect(page).toHaveScreenshot('state-empty.png')
   })
 
   test('state error alert', async ({ page }) => {
