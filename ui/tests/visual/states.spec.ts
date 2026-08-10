@@ -12,6 +12,7 @@ import {
   waitForValueToSettle,
 } from './settle'
 import { apiRoute, type RouteStub } from './stub'
+import { stubBuildInfo } from './build-info-fixture'
 import { stubDiversification } from './diversification-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
@@ -117,6 +118,10 @@ const MODALS: {
     stub: stubDiversification,
   },
 ]
+
+test.beforeEach(async ({ page }) => {
+  await stubBuildInfo(page)
+})
 
 test.describe('modals', () => {
   test.beforeEach(({}, testInfo) => {
