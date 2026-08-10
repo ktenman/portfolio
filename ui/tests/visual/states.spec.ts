@@ -3,10 +3,9 @@ import { API_ENDPOINTS } from '../../constants/api'
 import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
 import {
   freeze,
-  freezeBehindOverlay,
   openRoute,
+  settleAndFreeze,
   waitForBoxHeightToSettle,
-  waitForScrollHeightToSettle,
   waitForValueToSettle,
 } from './settle'
 import { apiRoute, type RouteStub } from './stub'
@@ -123,13 +122,13 @@ const MODALS: {
   },
 ]
 
-test.beforeEach(async ({ page }) => {
-  await stubBuildInfo(page)
-})
-
 test.describe('modals', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name === 'tablet')
+  })
+
+  test.beforeEach(async ({ page }) => {
+    await stubBuildInfo(page)
   })
 
   for (const modal of MODALS) {
@@ -138,7 +137,7 @@ test.describe('modals', () => {
       await openRoute(page, modal.route)
       await modal.open(page)
       await waitForModal(page, modal.title)
-      await freezeBehindOverlay(page)
+      await settleAndFreeze(page)
       await expect(page).toHaveScreenshot(`modal-${modal.name}.png`)
     })
   }
@@ -149,7 +148,7 @@ test.describe('modals', () => {
     await openRoute(page, '/')
     await page.click('button:has-text("Recalculate Data")')
     await waitForModal(page, 'Recalculate Portfolio Data')
-    await freezeBehindOverlay(page)
+    await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('modal-confirm.png')
     await page.click('[data-testid="confirmDialogCancelButton"]')
     await expect(page.locator('.modal.show')).toHaveCount(0)
@@ -161,12 +160,16 @@ test.describe('desktop states', () => {
     test.skip(testInfo.project.name !== 'desktop')
   })
 
+  test.beforeEach(async ({ page }) => {
+    await stubBuildInfo(page)
+  })
+
   test('dropdown quick dates', async ({ page }) => {
     await stubTransactions(page)
     await openRoute(page, '/transactions')
     await page.click('[data-bs-toggle="dropdown"]')
     await expect(page.locator('.dropdown-menu.show')).toBeVisible()
-    await freezeBehindOverlay(page)
+    await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('dropdown-quick-dates.png')
   })
 
@@ -193,8 +196,7 @@ test.describe('desktop states', () => {
       await route.abort().catch(() => undefined)
     })
     await page.goto('/')
-    await waitForScrollHeightToSettle(page)
-    await freeze(page)
+    await settleAndFreeze(page)
     await expect(page.locator('.skeleton').first()).toBeVisible()
     await expect(page).toHaveScreenshot('state-loading.png')
   })
@@ -205,8 +207,7 @@ test.describe('desktop states', () => {
       await route.abort().catch(() => undefined)
     })
     await page.goto('/etf-breakdown')
-    await waitForScrollHeightToSettle(page)
-    await freeze(page)
+    await settleAndFreeze(page)
     await expect(page.locator('.loading-spinner').first()).toBeVisible()
     await expect(page).toHaveScreenshot('state-spinner.png')
   })

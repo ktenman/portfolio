@@ -30,7 +30,7 @@ export async function waitForValueToSettle(
   }
 }
 
-export function waitForScrollHeightToSettle(page: Page): Promise<void> {
+function waitForScrollHeightToSettle(page: Page): Promise<void> {
   return waitForValueToSettle(page, 'Page height in px', () =>
     page.evaluate(() => document.documentElement.scrollHeight)
   )
@@ -53,7 +53,7 @@ export async function freeze(page: Page): Promise<void> {
   await page.addStyleTag({ content: FREEZE_STYLES })
 }
 
-export async function freezeBehindOverlay(page: Page): Promise<void> {
+export async function settleAndFreeze(page: Page): Promise<void> {
   await waitForScrollHeightToSettle(page)
   await freeze(page)
 }
