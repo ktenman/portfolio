@@ -51,8 +51,8 @@
         :selected-period="selectedPeriod"
         :sort-state="sortState"
         :on-sort="toggleSort"
-        @show-xirr-windows="showXirrWindowsModal"
-        @show-annual-windows="showAnnualWindowsModal"
+        @show-xirr-windows="isXirrWindowsModalOpen = true"
+        @show-annual-windows="isAnnualWindowsModalOpen = true"
       />
     </template>
 
@@ -62,9 +62,12 @@
         :instrument="selectedItem || {}"
         @save="onSave"
       />
-      <xirr-windows-modal :open="isXirrWindowsModalOpen" :platforms="effectivePlatformsForXirr" />
+      <xirr-windows-modal
+        v-model:open="isXirrWindowsModalOpen"
+        :platforms="effectivePlatformsForXirr"
+      />
       <annual-windows-modal
-        :open="isAnnualWindowsModalOpen"
+        v-model:open="isAnnualWindowsModalOpen"
         :platforms="effectivePlatformsForXirr"
       />
     </template>
@@ -76,7 +79,6 @@ import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
-import { useBootstrapModal } from '../../composables/use-bootstrap-modal'
 import { usePriceChangePeriod } from '../../composables/use-price-change-period'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAuthState } from '../../composables/use-auth-state'
@@ -94,10 +96,8 @@ import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 const selectedItem = ref<InstrumentDto | null>(null)
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
 const isInstrumentModalOpen = ref(false)
-const { show: showXirrWindowsModal, isVisible: isXirrWindowsModalOpen } =
-  useBootstrapModal('xirrWindowsModal')
-const { show: showAnnualWindowsModal, isVisible: isAnnualWindowsModalOpen } =
-  useBootstrapModal('annualWindowsModal')
+const isXirrWindowsModalOpen = ref(false)
+const isAnnualWindowsModalOpen = ref(false)
 const { selectedPeriod, periods } = usePriceChangePeriod()
 const queryClient = useQueryClient()
 const toast = useToast()

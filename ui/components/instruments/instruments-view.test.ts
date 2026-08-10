@@ -9,7 +9,6 @@ import { ProviderName } from '../../models/generated/domain-models'
 import { createInstrumentDto } from '../../tests/fixtures'
 import { setPlatformDisplayNames } from '../../utils/platform-utils'
 
-const mockShow = vi.fn()
 const mockToastSuccess = vi.fn()
 const mockToastError = vi.fn()
 
@@ -25,11 +24,6 @@ vi.mock('../../composables/use-toast', () => ({
   useToast: () => ({
     success: mockToastSuccess,
     error: mockToastError,
-  }),
-}))
-vi.mock('../../composables/use-bootstrap-modal', () => ({
-  useBootstrapModal: () => ({
-    show: mockShow,
   }),
 }))
 vi.mock('@vueuse/core', () => ({
