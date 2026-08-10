@@ -3,7 +3,7 @@
     <div class="allocation-card-header">
       <select
         :value="allocation.instrumentId"
-        class="form-select form-select-sm flex-grow-1"
+        class="form-select form-select-sm tw:grow"
         @change="onInstrumentChange"
       >
         <option :value="0" disabled>Select ETF</option>

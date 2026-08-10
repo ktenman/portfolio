@@ -1,25 +1,25 @@
 <template>
-  <div class="summary-cards mb-4">
-    <div class="row g-3">
-      <div class="col-md-3 col-6">
+  <div class="summary-cards tw:mb-6">
+    <div class="tw:grid tw:grid-cols-2 tw:gap-4 tw:md:grid-cols-4">
+      <div>
         <div class="stat-card">
           <div class="stat-label">Weighted TER</div>
           <div class="stat-value">{{ formatTer(weightedTer, 3) }}</div>
         </div>
       </div>
-      <div class="col-md-3 col-6">
+      <div>
         <div class="stat-card">
           <div class="stat-label">Weighted Return</div>
           <div class="stat-value">{{ formatReturn(weightedAnnualReturn) }}</div>
         </div>
       </div>
-      <div class="col-md-3 col-6">
+      <div>
         <div class="stat-card">
           <div class="stat-label">Unique Holdings</div>
           <div class="stat-value">{{ totalUniqueHoldings.toLocaleString() }}</div>
         </div>
       </div>
-      <div class="col-md-3 col-6">
+      <div>
         <div class="stat-card">
           <div class="stat-label">Top 10 Concentration</div>
           <div class="stat-value">{{ formatPercentage(top10Percentage) }}</div>
