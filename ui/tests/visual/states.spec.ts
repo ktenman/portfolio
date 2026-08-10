@@ -65,13 +65,7 @@ const stubInstrumentsWithWindows: RouteStub = async page => {
 
 async function openInstrumentModal(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const trigger = document.createElement('div')
-    trigger.dataset.bsToggle = 'modal'
-    trigger.dataset.bsTarget = '#instrumentModal'
-    trigger.style.display = 'none'
-    document.body.append(trigger)
-    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    trigger.remove()
+    document.querySelector<HTMLDialogElement>('#instrumentModal')?.showModal()
   })
 }
 

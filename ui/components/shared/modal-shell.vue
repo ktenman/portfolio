@@ -10,7 +10,7 @@
     @close="onClose"
   >
     <div class="modal-dialog" :class="dialogClasses">
-      <div class="modal-content" @click.stop>
+      <div class="modal-content" autofocus tabindex="-1" @click.stop>
         <div class="modal-header">
           <h5 class="modal-title" :id="`${modalId}Label`">
             <slot name="title">{{ title }}</slot>
@@ -89,7 +89,6 @@ const sync = (isOpen: boolean) => {
   if (!dialog) return
   if (isOpen && !dialog.open) {
     dialog.showModal()
-    dialog.focus()
     lockScroll()
     return
   }

@@ -10,7 +10,6 @@ import { createInstrumentDto } from '../../tests/fixtures'
 import { setPlatformDisplayNames } from '../../utils/platform-utils'
 
 const mockShow = vi.fn()
-const mockHide = vi.fn()
 const mockToastSuccess = vi.fn()
 const mockToastError = vi.fn()
 
@@ -31,7 +30,6 @@ vi.mock('../../composables/use-toast', () => ({
 vi.mock('../../composables/use-bootstrap-modal', () => ({
   useBootstrapModal: () => ({
     show: mockShow,
-    hide: mockHide,
   }),
 }))
 vi.mock('@vueuse/core', () => ({
@@ -68,7 +66,7 @@ const InstrumentTableStub = {
 
 const InstrumentModalStub = {
   name: 'InstrumentModal',
-  props: ['instrument'],
+  props: ['instrument', 'open'],
   emits: ['save'],
   setup(props: any, { emit }: any) {
     const handleSave = (data: any) => emit('save', data)
@@ -77,6 +75,7 @@ const InstrumentModalStub = {
         'div',
         {
           id: 'stub-modal',
+          'data-open': String(props.open),
           'data-instrument': JSON.stringify(props.instrument || {}),
         },
         [
@@ -195,7 +194,7 @@ describe('InstrumentsView', () => {
       const modal = wrapper.find('#stub-modal')
       const instrumentData = JSON.parse(modal.attributes('data-instrument') || '{}')
       expect(instrumentData).toEqual({})
-      expect(mockShow).toHaveBeenCalled()
+      expect(modal.attributes('data-open')).toBe('true')
     })
   })
 
@@ -223,7 +222,7 @@ describe('InstrumentsView', () => {
       expect(instrumentsService.update).not.toHaveBeenCalled()
       expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
       expect(mockToastSuccess).toHaveBeenCalledWith('InstrumentDto created successfully')
-      expect(mockHide).toHaveBeenCalled()
+      expect(wrapper.find('#stub-modal').attributes('data-open')).toBe('false')
     })
 
     it('should handle create error and show error message', async () => {
@@ -240,7 +239,7 @@ describe('InstrumentsView', () => {
       await flushPromises()
 
       expect(mockToastError).toHaveBeenCalledWith(`Failed to save instrument: ${error.message}`)
-      expect(mockHide).not.toHaveBeenCalled()
+      expect(wrapper.find('#stub-modal').attributes('data-open')).toBe('true')
     })
   })
 

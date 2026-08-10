@@ -57,7 +57,11 @@
     </template>
 
     <template #modals>
-      <instrument-modal :instrument="selectedItem || {}" @save="onSave" />
+      <instrument-modal
+        v-model:open="isInstrumentModalOpen"
+        :instrument="selectedItem || {}"
+        @save="onSave"
+      />
       <xirr-windows-modal :open="isXirrWindowsModalOpen" :platforms="effectivePlatformsForXirr" />
       <annual-windows-modal
         :open="isAnnualWindowsModalOpen"
@@ -89,7 +93,7 @@ import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
 const selectedItem = ref<InstrumentDto | null>(null)
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
-const { show: showModal, hide: hideModal } = useBootstrapModal('instrumentModal')
+const isInstrumentModalOpen = ref(false)
 const { show: showXirrWindowsModal, isVisible: isXirrWindowsModalOpen } =
   useBootstrapModal('xirrWindowsModal')
 const { show: showAnnualWindowsModal, isVisible: isAnnualWindowsModalOpen } =
@@ -186,7 +190,7 @@ const saveMutation = useMutation({
     queryClient.invalidateQueries({ queryKey: ['summaries'] })
     queryClient.invalidateQueries({ queryKey: ['transactions'] })
     toast.success(`InstrumentDto ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
-    hideModal()
+    isInstrumentModalOpen.value = false
     selectedItem.value = null
   },
   onError: (error: Error) => {
@@ -196,7 +200,7 @@ const saveMutation = useMutation({
 
 const openAddModal = () => {
   selectedItem.value = null
-  showModal()
+  isInstrumentModalOpen.value = true
 }
 
 const onSave = (instrument: Partial<InstrumentDto>) => {

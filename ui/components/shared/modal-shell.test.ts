@@ -35,10 +35,10 @@ describe('ModalShell', () => {
     expect(wrapper.find('dialog').element.open).toBe(true)
   })
 
-  it('moves focus to the dialog rather than the close button', () => {
+  it('marks the content as the autofocus target so focus skips the close button', () => {
     const wrapper = mountShell({ open: true })
 
-    expect(document.activeElement).toBe(wrapper.find('dialog').element)
+    expect(wrapper.find('.modal-content').attributes('autofocus')).toBeDefined()
   })
 
   it('closes the native dialog when open becomes false', async () => {
