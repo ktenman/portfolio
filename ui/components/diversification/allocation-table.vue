@@ -283,7 +283,7 @@
               <template v-if="showRebalanceColumns">
                 <span
                   v-if="hasRebalanceAction(allocation)"
-                  :class="getRebalanceData(allocation).isBuy ? 'text-success' : 'text-danger'"
+                  :class="getRebalanceData(allocation).isBuy ? 'tw:text-gain' : 'tw:text-loss'"
                 >
                   {{ getRebalanceData(allocation).isBuy ? 'Buy' : 'Sell' }}
                   {{ formatActionValue(allocation) }}
