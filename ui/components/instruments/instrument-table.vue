@@ -567,11 +567,11 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
         color: var(--bs-gray-900);
         line-height: 1.2;
 
-        &.text-success {
+        &.tw\:text-gain {
           color: #22c55e;
         }
 
-        &.text-danger {
+        &.tw\:text-loss {
           color: #ef4444;
         }
       }
@@ -645,11 +645,11 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
         color: var(--bs-gray-900);
         margin-bottom: 0.125rem;
 
-        &.text-success {
+        &.tw\:text-gain {
           color: #22c55e;
         }
 
-        &.text-danger {
+        &.tw\:text-loss {
           color: #ef4444;
         }
       }

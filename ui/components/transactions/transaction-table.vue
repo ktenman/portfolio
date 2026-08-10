@@ -297,11 +297,11 @@ const extractBaseSymbol = (symbol: string): string => {
         color: var(--bs-gray-900);
         margin-bottom: 0.125rem;
 
-        &.text-success {
+        &.tw\:text-gain {
           color: #22c55e;
         }
 
-        &.text-danger {
+        &.tw\:text-loss {
           color: #ef4444;
         }
       }
@@ -336,11 +336,11 @@ const extractBaseSymbol = (symbol: string): string => {
       font-weight: 700;
       color: var(--bs-gray-900);
 
-      &.text-success {
+      &.tw\:text-gain {
         color: #22c55e;
       }
 
-      &.text-danger {
+      &.tw\:text-loss {
         color: #ef4444;
       }
     }
