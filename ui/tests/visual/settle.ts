@@ -9,7 +9,7 @@ const FREEZE_STYLES = [
   '.monaco-editor .lines-content .core-guide-indent.indent-active { box-shadow: 1px 0 0 0 var(--indent-color) inset; }',
 ].join('\n')
 
-export async function waitForValueToSettle(
+async function waitForValueToSettle(
   page: Page,
   label: string,
   measure: () => Promise<number>
