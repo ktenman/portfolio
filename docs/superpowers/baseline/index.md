@@ -5,10 +5,15 @@ Pre-migration reference screenshots for the Bootstrap → Tailwind migration
 
 Produced by `npm run visual:update`, verified by `npm run visual`. The harness is
 `playwright.config.ts` plus `ui/tests/visual/{routes,states}.spec.ts`; shared helpers live in
-`ui/tests/visual/settle.ts`, the masked-selector list in `ui/tests/visual/volatile.ts`, and the
-route stubs in `ui/tests/visual/etf-fixture.ts` (`/etf-breakdown`),
+`ui/tests/visual/settle.ts` and the stubs in `ui/tests/visual/etf-fixture.ts` (`/etf-breakdown`),
 `ui/tests/visual/instruments-fixture.ts` (`/instruments`), `ui/tests/visual/summary-fixture.ts`
-(`/`) and `ui/tests/visual/transactions-fixture.ts` (`/transactions`).
+(`/`), `ui/tests/visual/transactions-fixture.ts` (`/transactions`),
+`ui/tests/visual/diversification-fixture.ts` (`/diversification`),
+`ui/tests/visual/calculator-fixture.ts` (`/calculator`), `ui/tests/visual/windows-fixture.ts` (the
+two XIRR dialogs) and `ui/tests/visual/build-info-fixture.ts` (the navbar version string, installed
+on every capture).
+
+Every capture is fixture-backed and **nothing is masked**.
 
 Viewports: **mobile** 390×844, **tablet** 768×1024, **desktop** 1440×900. All at `scale: 'css'`,
 `animations: 'disabled'`, `caret: 'hide'`, `maxDiffPixels: 0`.
@@ -54,17 +59,21 @@ yields Bootstrap's `.px-3` at 16px, not 0.
 
 ## Volatility handling
 
-- **Route, toast and state captures** pass `VOLATILE_SELECTORS` to Playwright's `mask` option.
-- **Modal and dropdown captures** are viewport screenshots with an overlay on top, and Playwright
-  paints masks at `z-index: 2147483646` — masking the page would bury the dialog. The page behind is
-  instead neutralised by setting `visibility: hidden` on every `VOLATILE_SELECTORS` match through a
-  Playwright locator (layout preserved, values gone), and `mask` is reserved for volatile content
-  _inside_ the overlay: the XIRR/annual value columns, and the logo dialog's title and candidate
-  grid. The hiding goes through locators rather than an injected stylesheet so that the list may
-  contain Playwright selector-engine pseudo-classes, which a browser stylesheet would silently drop.
-- **`/etf-breakdown` is served a fixture, not the database.** It cannot be masked into stability:
-  the page shows 200 of 3300+ holdings sorted by value, background jobs enrich those holdings while
-  the suite runs, and the row order — therefore the page height — moves with them. `stubEtfBreakdown`
+Every endpoint that reaches a capture is stubbed, so no capture is masked. The two mask lists
+(`VOLATILE_SELECTORS` and `MODAL_VOLATILE_SELECTORS`, formerly `ui/tests/visual/volatile.ts`) and
+the `visibility: hidden` pass that neutralised the page behind an overlay were deleted once the last
+live route was stubbed: with the data fixed, every selector on those lists pointed at deterministic
+content, and masking it hid exactly what the migration changes — gain/loss colour, numeric-cell
+typography, and the calculator's Year-by-Year table. Masking was never a complete answer anyway.
+Playwright paints masks at `z-index: 2147483646`, so masking the page behind a dialog buries the
+dialog; and a mask hides pixels but not the box, so content that re-renders at a different width
+still moves every baseline at once — measured, when `/api/build-info` was stubbed: a one-pixel shift
+in the mask's left edge turned 14 captures red at 26 pixels each.
+
+- **`/etf-breakdown` is served a fixture, not the database.** It could not have been masked into
+  stability: the page shows 200 of 3300+ holdings sorted by value, background jobs enrich those
+  holdings while the suite runs, and the row order — therefore the page height — moves with them.
+  `stubEtfBreakdown`
   (`ui/tests/visual/etf-fixture.ts`) fulfils five endpoints:
 
   | Pattern                                      | Response                          |
@@ -98,11 +107,11 @@ yields Bootstrap's `.px-3` at 16px, not 0.
   omitting the card. A later task that fixes the overflow turns this baseline red on purpose and
   must re-record it deliberately.
 
-- **`/instruments` is served a fixture, not the database.** It cannot be masked into stability
-  either. The table sorts by `currentValue`, so a price tick reorders rows, and the rendered row
-  _set_ moves too because `showActiveOnly` (default on) keeps only `currentValue > 0`. Masking the
-  value cells leaves the ordering unmasked, and re-recording buys days rather than a gate — the
-  captures agree to the pixel only while markets are closed. `stubInstruments`
+- **`/instruments` is served a fixture, not the database.** It could not have been masked into
+  stability either. The table sorts by `currentValue`, so a price tick reorders rows, and the
+  rendered row _set_ moves too because `showActiveOnly` (default on) keeps only `currentValue > 0`.
+  Masking the value cells left the ordering unmasked, and re-recording buys days rather than a gate —
+  the captures agree to the pixel only while markets are closed. `stubInstruments`
   (`ui/tests/visual/instruments-fixture.ts`) fulfils one endpoint:
 
   | Pattern                                    | Response                                           |
@@ -130,9 +139,9 @@ yields Bootstrap's `.px-3` at 16px, not 0.
   `/api/enums` is deliberately _not_ stubbed: the platform badge and filter-button labels
   ("Lightyear Business", "Trading 212") come from it, and enum values change only on deploy.
 
-- **`/` is served a fixture, not the database.** Masking cannot stabilise it: a new daily summary row
-  appears every midnight, the table grows by one row, and everything below it shifts. Row _count_ is
-  not inside any mask, so the whole full-page capture moves. `stubPortfolioSummary`
+- **`/` is served a fixture, not the database.** Masking could not have stabilised it: a new daily
+  summary row appears every midnight, the table grows by one row, and everything below it shifts. Row
+  _count_ was inside no mask, so the whole full-page capture moved. `stubPortfolioSummary`
   (`ui/tests/visual/summary-fixture.ts`) fulfils three endpoints:
 
   | Pattern                                         | Response                                              |
@@ -159,15 +168,17 @@ yields Bootstrap's `.px-3` at 16px, not 0.
   Every fixture date is a fixed literal in the past, so no row is ever "today". Changing the fixture
   re-records eight baselines.
 
-- **`/transactions` is served a fixture, not the database.** Masking cannot stabilise it either,
-  and the mechanism is not the one the row-count argument predicts. Measured on the live database:
-  six of 673 rows changed `unrealizedProfit` inside four minutes, yet re-rendering that drift moved
-  **0 pixels** on mobile and 0 on desktop — the profit masks absorb it. Forcing every row's
-  `unrealizedProfit` up 13% moved 14 mobile pixels. What actually moves the capture is
-  **structure**: appending one transaction moved 13,761,300 mobile pixels and grew the page 148040 →
-  148283, and re-deriving FIFO state changes the unmasked `remainingQuantity` text — perturbing the
-  193 rows that render a "Remaining" line by 3% moved 23,311 pixels. So the exposure is a new
-  transaction or a new sell, not the tick-by-tick quote drift `/` had. `stubTransactions`
+- **`/transactions` is served a fixture, not the database.** Masking could not have stabilised it
+  either, and the mechanism is not the one the row-count argument predicts. Measured on the live
+  database while the masks still existed: six of 673 rows changed `unrealizedProfit` inside four
+  minutes, yet re-rendering that drift moved **0 pixels** on mobile and 0 on desktop — the profit
+  masks absorbed it, which is another way of saying they were absorbing the gain/loss rendering the
+  migration changes. Forcing every row's `unrealizedProfit` up 13% moved 14 mobile pixels. What moved
+  the capture even through the masks was **structure**: appending one transaction moved 13,761,300
+  mobile pixels and grew the page 148040 → 148283, and re-deriving FIFO state changes the
+  `remainingQuantity` text — perturbing the 193 rows that render a "Remaining" line by 3% moved
+  23,311 pixels. So the exposure is a new transaction or a new sell, not the tick-by-tick quote drift
+  `/` had. `stubTransactions`
   (`ui/tests/visual/transactions-fixture.ts`) fulfils one endpoint:
 
   | Pattern                        | Response                                          |
@@ -198,18 +209,81 @@ null` and three `averageCost: null` rows (all render `0.00`), three quantities b
   Playwright matches most-recently-registered first, hoisting the stub into a `beforeEach` would
   win over it and delete the state. Changing the fixture re-records four baselines.
 
-- **Today's row in the portfolio summary table is always masked**, on both the desktop table
-  (`tr:first-child:has(td[data-label="24h Change"])`) and the mobile card list
-  (`.mobile-card:first-child:has(.label:text-is("24h Change"))`). `portfolio-summary.vue` marks that
-  row `.font-weight-bold` — already masked — but decides "today" with
-  `new Date().toISOString()`, which is UTC, so between local midnight and UTC midnight the class is
-  absent while the row's values keep moving. The two selectors mask the same box unconditionally.
-  Since `/` became fixture-driven the class never applies at all, so the bold-today rendering is
-  no longer covered by any baseline; the two selectors still mask the first row unconditionally.
+- **`/diversification` is served a fixture, not the database.** It is the one fixture that does
+  **not** reproduce today's live page, deliberately. The dev database holds no persisted
+  `DiversificationConfig` row, so `/api/diversification/config` answers `204`, the live page is a
+  single blank "Select ETF" row, and the pre-fixture baseline gated almost nothing — no allocation
+  table, no stats cards, no breakdown tables, which is most of what Phase 3 migrates.
+  `stubDiversification` (`ui/tests/visual/diversification-fixture.ts`) fulfils three endpoints and
+  delegates to `stubInstruments`:
+
+  | Pattern                                           | Response                                 |
+  | ------------------------------------------------- | ---------------------------------------- |
+  | `/\/api\/diversification\/available-etfs(\?\|$)/` | twelve `EtfDetailDto` entries            |
+  | `/\/api\/diversification\/config(\?\|$)/`         | a `CachedState` with five allocations    |
+  | `/\/api\/diversification\/calculate(\?\|$)/`      | ten holdings, ten sectors, ten countries |
+
+  `diversification-calculator.vue:204` also calls `instrumentsService.getAll()` on mount, so the
+  stub layers `stubInstruments` underneath; without it the platform filter buttons and the Current
+  column are database-backed. The twelve available ETFs cover the branches the components have — a
+  `null` `ter`, a `null` `currentPrice`, EUR/USD/GBP `fundCurrency` so the Fund Currency card
+  renders three rows, and a non-ASCII name. The live endpoint returns thirty, but only allocated
+  rows render and every capture leaves the `<select>` closed. The `/config` stub also intercepts the
+  `PUT` that `use-diversification-config.ts:16` fires, which is why the capture can no longer write
+  to the developer's database. Changing the fixture re-records seven baselines.
+
+- **`/calculator` is served a fixture, not the database.** The route looked inert because
+  `calculator.vue` imports no service; the fetch sits one level down, where `use-calculator.ts:44`
+  sets `queryFn: utilityService.getCalculationResult` and `utility-service.ts:11` resolves that to
+  `API_ENDPOINTS.CALCULATOR`. `stubCalculator` (`ui/tests/visual/calculator-fixture.ts`) fulfils it:
+
+  | Pattern                      | Response                                            |
+  | ---------------------------- | --------------------------------------------------- |
+  | `/\/api\/calculator(\?\|$)/` | 139 cash flows plus `median`, `average` and `total` |
+
+  The response drives three things the baseline renders: `#annualReturnRate`, which the composable
+  overwrites with `calculationResult.median` on a fresh load; `#initialWorth`, set from `total`; and
+  the rolling-XIRR bar chart, which plots `cashFlows` directly and gains a bar per new flow. The
+  fixture mirrors the live payload's shape — 139 flows on a 28-day cadence from `2016-01-08`, an
+  exponential ramp from about −74 to +24 — and carries **full-precision doubles**: `median` lands in
+  an `<input>` verbatim, so a round number would not render the digit string the app shows. Changing
+  the fixture re-records three baselines.
+
+- **The two XIRR window dialogs are served a fixture, not the database.**
+  `xirr-windows-modal.vue:83` and `annual-windows-modal.vue:83` call
+  `portfolioSummaryService.getXirrWindows(...)` / `getAnnualWindows(...)`, and `stubInstruments` —
+  anchored to `/\/api\/instruments(\?|$)/` — structurally cannot match those paths, so both dialogs
+  were live-data-backed even though the page behind them was not. Worse, each row's `fromDate` is
+  computed relative to today, so the Since column changed daily. `stubWindows`
+  (`ui/tests/visual/windows-fixture.ts`) fulfils both:
+
+  | Pattern                                             | Response                         |
+  | --------------------------------------------------- | -------------------------------- |
+  | `/\/api\/portfolio-summary\/xirr-windows(\?\|$)/`   | six periods with `xirr`          |
+  | `/\/api\/portfolio-summary\/annual-windows(\?\|$)/` | the same six with `annualReturn` |
+
+  One negative value per dialog is deliberate: it is the only coverage of `returnClass`'s loss
+  branch, which sat under a mask until the masks came off. The `3Y` row carries a `null` `fromDate`
+  to cover the `—` fallback the dialog's own footnote describes. Changing the fixture re-records
+  four baselines.
+
+- **`/api/build-info` is served a fixture on every capture**, through a file-scoped `test.beforeEach`
+  in both spec files rather than a per-capture stub. That hoisting is safe here precisely where it
+  is not safe for the route fixtures: no capture registers a competing handler for that path, so
+  there is no most-recently-registered-wins interaction to get wrong. `nav-bar.vue:17` renders
+  `buildInfo.hash.substring(0, 7)` and `formatDate(buildInfo.time)`, and the live endpoint answers
+  `{"hash":"unknown","time":"<now>"}` — the timestamp is the moment of the request. Changing the
+  fixture re-records every baseline that shows the navbar.
+
+- **The portfolio summary's "today" row is never rendered as today.** `portfolio-summary.vue` marks
+  that row `.font-weight-bold` but decides "today" with `new Date().toISOString()`, which is UTC.
+  Every fixture date is a fixed literal in the past, so the class never applies and the bold-today
+  rendering is covered by no baseline.
 
 ## Routes — `ui/tests/visual/routes.spec.ts`
 
-Full-page (`fullPage: true`), masked with `VOLATILE_SELECTORS`, no interaction.
+Full-page (`fullPage: true`), unmasked, no interaction. Every route carries a stub, and
+`stubBuildInfo` runs for all six through a file-scoped `beforeEach`.
 
 | File                                | Route              | Viewport |
 | ----------------------------------- | ------------------ | -------- |
@@ -271,17 +345,17 @@ mount, and `selectedItem` is already `null` on a fresh load.
 
 Desktop only.
 
-| File                               | State                              | Interaction                                                                                         |
-| ---------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `dropdown-quick-dates-desktop.png` | `/transactions` "Quick Dates" open | click `[data-bs-toggle="dropdown"]`, await `.dropdown-menu.show`; viewport shot, page behind hidden |
-| `toast-success-desktop.png`        | `/` + success toast                | `import('/composables/use-toast.ts')` then `useToast().success('Baseline success message')`         |
-| `toast-error-desktop.png`          | `/` + error toast                  | same, `.error(...)`                                                                                 |
-| `toast-info-desktop.png`           | `/` + info toast                   | same, `.info(...)`                                                                                  |
-| `toast-warning-desktop.png`        | `/` + warning toast                | same, `.warning(...)`                                                                               |
-| `state-loading-desktop.png`        | `/` loading skeleton               | `**/api/portfolio-summary/**` held 20 s, then assert `.skeleton`; no summary fixture, deliberately  |
-| `state-spinner-desktop.png`        | `/etf-breakdown` loading spinner   | `**/api/etf-breakdown**` held 20 s, then assert the first `.loading-spinner`                        |
-| `state-empty-desktop.png`          | `/transactions` empty              | `**/api/transactions**` stubbed with an empty transaction list, then assert `.alert-info`           |
-| `state-error-desktop.png`          | `/instruments` error               | `**/api/instruments**` stubbed 500; **element-scoped to `.alert-danger`**                           |
+| File                               | State                              | Interaction                                                                                                   |
+| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `dropdown-quick-dates-desktop.png` | `/transactions` "Quick Dates" open | click `[data-bs-toggle="dropdown"]`, await `.dropdown-menu.show`; viewport shot over the fixture-backed table |
+| `toast-success-desktop.png`        | `/` + success toast                | `import('/composables/use-toast.ts')` then `useToast().success('Baseline success message')`                   |
+| `toast-error-desktop.png`          | `/` + error toast                  | same, `.error(...)`                                                                                           |
+| `toast-info-desktop.png`           | `/` + info toast                   | same, `.info(...)`                                                                                            |
+| `toast-warning-desktop.png`        | `/` + warning toast                | same, `.warning(...)`                                                                                         |
+| `state-loading-desktop.png`        | `/` loading skeleton               | `**/api/portfolio-summary/**` held 20 s, then assert `.skeleton`; no summary fixture, deliberately            |
+| `state-spinner-desktop.png`        | `/etf-breakdown` loading spinner   | `**/api/etf-breakdown**` held 20 s, then assert the first `.loading-spinner`                                  |
+| `state-empty-desktop.png`          | `/transactions` empty              | `**/api/transactions**` stubbed with an empty transaction list, then assert `.alert-info`                     |
+| `state-error-desktop.png`          | `/instruments` error               | `**/api/instruments**` stubbed 500; **element-scoped to `.alert-danger`**                                     |
 
 Toasts are fired _after_ the freeze, because they auto-hide in 4000–7500 ms while the settle gate
 needs ≥1.6 s. `/transactions` cannot produce an error state at all (`transactions-view.vue` never
@@ -296,36 +370,18 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
 - **`state-loading` is timing-coupled.** The 20 s route hold must outlast the ≥1.6 s settle plus the
   capture. If it ever doesn't, `--update-snapshots` records a half-transitioned page without
   failing, because the `.skeleton` assertion has already passed.
-- **`VOLATILE_SELECTORS` has gaps.** Amount/percent cells rendered as bare `td`s or `span`s on
-  `/transactions`, `/` and `/diversification` are neither masked nor hidden, so they sit in the route
-  baselines and — since modal captures are now viewport shots — in the modal baselines too. A capture
-  that fails on a value-only pixel delta with no layout shift is a missing selector, not a
-  regression: add the selector and re-record. `/etf-breakdown` and `/instruments` are exempt: their
-  values come from a fixture, so an unmasked delta there _is_ a regression. The masks the two
-  fixture routes still carry are therefore redundant; they are left in place because removing a
-  selector from `VOLATILE_SELECTORS` re-records every capture that uses it.
-- **The two windows dialogs are still live-data-backed**, even though `/instruments` behind them is
-  not. The `xirr-windows` and `annual-windows` captures are taken on `/instruments` behind
-  `stubInstruments`, but their _content_ does not come from that stub:
-  `xirr-windows-modal.vue:83` and `annual-windows-modal.vue:83` call
-  `portfolioSummaryService.getXirrWindows(props.platforms)` / `getAnnualWindows(...)`, and
-  `stubInstruments` — anchored to `/\/api\/instruments(\?|$)/` — deliberately cannot match
-  `/api/portfolio-summary/{xirr,annual}-windows`. Their numeric cells are masked:
-  `MODAL_VOLATILE_SELECTORS` in `states.spec.ts` covers `#xirrWindowsModal tbody td.text-end` and
-  `#annualWindowsModal tbody td.text-end`, so value drift is absorbed. **Row count and labels are
-  not masked** — the period label is a `td.fw-semibold` — so a change in how many windows the
-  backend returns still turns these red, and with it the dialog height. It is a far slower failure
-  mode than the price-driven drift this task fixed: the annual dialog is one row per year, so it
-  moves at a calendar-year boundary. Documented rather than stubbed for that reason — if
-  `modal-annual-windows-*` goes red in January, that is the new row, not a regression. Stubbing
-  both endpoints is a reasonable follow-up.
+- **Every pixel is now gated, which cuts both ways.** With the masks gone, a capture that fails on a
+  value-only delta with no layout shift is a real regression — a fixture-backed number rendered
+  differently — not a missing selector. There is no longer a way to absorb a diff without either
+  changing the fixture or re-recording, and both are visible in review.
 - **`state-error` never reaches the real `/api/instruments` either.** It installs its own 500 on that
   path, so it is neither fixture-driven nor live — it is independent of `stubInstruments` in both
   directions and will not notice a fixture change.
 - **`modal-logo-replacement` no longer varies in height.** The stub returns an empty candidate list,
   so the body is always the single "No logo candidates found" line, and `.first()` always picks the
-  fixture's first holding. Title and body stay masked: the title carries the holding name and the
-  body would carry provider imagery if the stub were ever removed.
+  fixture's first holding. Both the title — which carries the holding name — and the body are now
+  gated; removing the empty-candidates stub would put provider imagery in frame and turn both
+  captures red.
 - **Scroll offset follows the fixture** for the XIRR/annual captures: clicking a totals-row trigger
   scrolls it into view, so the page behind is framed by the row count. That count is now fixed at
   fourteen, but adding or removing a fixture row moves the framing and re-records both captures.
@@ -333,31 +389,20 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
   clamp is `scrollHeight - innerHeight`, currently 1501 px on desktop. `modal-xirr-windows-desktop`
   and `modal-annual-windows-desktop` predated step 2 and were recorded mid-growth at 1480 and 1435;
   they were re-recorded at the settled 1501 and now agree with each other.
-- **Masking hides pixels, not boxes.** It cannot catch height-neutral content mutation inside a
-  masked element.
-- **`/diversification` and `/calculator` both still read the live database.** `/instruments` and
-  `/etf-breakdown` were fixture-driven from the start, `/` was stubbed in Task 9b, and
-  `/transactions` in Task 9c; `routes.spec.ts:14` and `:15` list these two with no stub.
-  `diversification-calculator.vue:148` polls `diversificationService.getAvailableEtfs` on a
-  `refetchInterval`, `:204` calls `instrumentsService.getAll()` on mount, and `:427` loads the
-  persisted `DiversificationConfig` row and renders allocations, `optimizeEnabled` and
-  `totalInvestment` from it. `/calculator` fetches too, despite `calculator.vue` importing no
-  service — the call sits one level down in the composable, where `use-calculator.ts:44` sets
-  `queryFn: utilityService.getCalculationResult` and `utility-service.ts:11` resolves that to
-  `API_ENDPOINTS.CALCULATOR`. Masking covers only part of where that response lands: `.stat-value`,
-  `[data-testid="year-summary-table"]` and the `#initialWorth` input are in `VOLATILE_SELECTORS`,
-  but the `#annualReturnRate` input — which the composable overwrites with
-  `calculationResult.median` on a fresh load — is not, and neither chart is either, because
-  `ui/components/charts/{line,bar}-chart.vue` render a bare `<canvas>` carrying no class or test id.
-  Six route baselines — and the four `modal-config-*` captures taken on `/diversification` — can
-  still go stale from the developer's database moving underneath them, exactly the way
-  `/transactions` did before Task 9c. Stubbing both is unfinished work, not a solved problem.
-- **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the masked chart fills the
+- **The Chart.js canvases are gated on the animation finishing inside the settle window.** They were
+  never masked — `ui/components/charts/{line,bar}-chart.vue` render a bare `<canvas>` carrying no
+  class or test id, so no selector could have reached them — but the freeze pass that ran before
+  every capture used to hide the page behind an overlay, and nothing proved the charts were complete
+  in the shots that did include them. They are now gated directly. The ≥1.6 s
+  `waitForScrollHeightToSettle` outlasts Chart.js's default animation, verified by re-shooting
+  `[data-testid="summary-chart"]` on three consecutive isolated runs and getting byte-identical
+  output. A chart whose animation ever outran the settle would flake rather than fail cleanly, so a
+  single-capture red on a canvas is worth re-running before re-recording.
+- **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the chart fills the
   viewport below the platform filter, so no table row is visible behind the backdrop and the capture
   was byte-identical before and after `/` became fixture-driven. Only the mobile confirm capture,
   whose smaller chart leaves cards visible, moved. Do not assume a `/`-based viewport capture is
   covered by the fixture — check whether the table is actually in frame.
-- **`/api/build-info` and `/api/enums` are still live on every route**, `/` included. Enum values
-  change only on deploy; build info is masked (`.build-info-text`) but its bounding box is not, so a
-  version string of a different rendered width would move every baseline at once. That has been
-  accepted branch-wide rather than stubbed.
+- **`/api/enums` is still live on every route**, `/` included. It supplies the platform badge and
+  filter-button labels ("Lightyear Business", "Trading 212"), which change only on deploy. That is
+  the last unstubbed endpoint any capture reaches, and it has been accepted branch-wide.
