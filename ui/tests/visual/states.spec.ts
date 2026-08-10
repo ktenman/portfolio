@@ -1,16 +1,11 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
-import {
-  freeze,
-  openRoute,
-  settleAndFreeze,
-  waitForBoxHeightToSettle,
-  waitForValueToSettle,
-} from './settle'
+import { freeze, openRoute, settleAndFreeze, waitForBoxHeightToSettle } from './settle'
 import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubDiversification } from './diversification-fixture'
+import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
@@ -32,22 +27,16 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
   },
 }
 
-async function waitForBackdropToSettle(page: Page): Promise<void> {
-  const backdrop = page.locator('.modal-backdrop.show')
-  await expect(backdrop).toBeVisible()
-  await waitForValueToSettle(page, 'Backdrop opacity', async () =>
-    Number(await backdrop.evaluate(element => getComputedStyle(element).opacity))
-  )
-}
+const OPEN_MODAL = 'dialog.modal[open]'
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
-  const content = page.locator('.modal.show .modal-content')
+  const content = page.locator(`${OPEN_MODAL} .modal-content`)
   await expect(content).toBeVisible()
-  await expect(page.locator('.modal.show .modal-title')).toHaveText(title)
+  await expect(page.locator(`${OPEN_MODAL} .modal-title`)).toHaveText(title)
   await expect(
-    page.locator('.modal.show .spinner-border, .modal.show .loading-spinner')
+    page.locator(`${OPEN_MODAL} .spinner-border, ${OPEN_MODAL} .loading-spinner`)
   ).toHaveCount(0, { timeout: MODAL_CONTENT_TIMEOUT_MS })
-  await Promise.all([waitForBoxHeightToSettle(page, content), waitForBackdropToSettle(page)])
+  await waitForBoxHeightToSettle(page, content)
 }
 
 function visibleTotalsTriggers(page: Page): Locator {
@@ -61,13 +50,7 @@ const stubInstrumentsWithWindows: RouteStub = async page => {
 
 async function openInstrumentModal(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const trigger = document.createElement('div')
-    trigger.dataset.bsToggle = 'modal'
-    trigger.dataset.bsTarget = '#instrumentModal'
-    trigger.style.display = 'none'
-    document.body.append(trigger)
-    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    trigger.remove()
+    document.querySelector<HTMLDialogElement>('#instrumentModal')?.showModal()
   })
 }
 
@@ -129,6 +112,7 @@ test.describe('modals', () => {
 
   test.beforeEach(async ({ page }) => {
     await stubBuildInfo(page)
+    await stubEnums(page)
   })
 
   for (const modal of MODALS) {
@@ -139,6 +123,8 @@ test.describe('modals', () => {
       await waitForModal(page, modal.title)
       await settleAndFreeze(page)
       await expect(page).toHaveScreenshot(`modal-${modal.name}.png`)
+      await page.locator(`${OPEN_MODAL} .btn-close`).click()
+      await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
     })
   }
 
@@ -151,7 +137,31 @@ test.describe('modals', () => {
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('modal-confirm.png')
     await page.click('[data-testid="confirmDialogCancelButton"]')
-    await expect(page.locator('.modal.show')).toHaveCount(0)
+    await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
+  })
+
+  test('modal escape closes a dismissable modal', async ({ page }) => {
+    await stubInstrumentsWithWindows(page)
+    await openRoute(page, '/instruments')
+    await visibleTotalsTriggers(page).nth(0).click()
+    await waitForModal(page, 'Annualized return over time')
+
+    await page.keyboard.press('Escape')
+
+    await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
+  })
+
+  test('modal escape dont close the confirm dialog', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await page.route('**/api/portfolio-summary/recalculate**', route => route.abort())
+    await openRoute(page, '/')
+    await page.click('button:has-text("Recalculate Data")')
+    await waitForModal(page, 'Recalculate Portfolio Data')
+
+    await page.keyboard.press('Escape')
+
+    await expect(page.locator(OPEN_MODAL)).toHaveCount(1)
+    await page.click('[data-testid="confirmDialogCancelButton"]')
   })
 })
 
@@ -162,6 +172,7 @@ test.describe('desktop states', () => {
 
   test.beforeEach(async ({ page }) => {
     await stubBuildInfo(page)
+    await stubEnums(page)
   })
 
   test('dropdown quick dates', async ({ page }) => {

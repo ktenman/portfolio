@@ -1,17 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, VueWrapper } from '@vue/test-utils'
 import { h } from 'vue'
 import ConfigDialog from './config-dialog.vue'
-
-vi.mock('bootstrap', () => {
-  return {
-    Modal: class {
-      show = vi.fn()
-      hide = vi.fn()
-      dispose = vi.fn()
-    },
-  }
-})
 
 vi.mock('@guolao/vue-monaco-editor', () => ({
   VueMonacoEditor: {
@@ -39,39 +29,34 @@ describe('ConfigDialog', () => {
     mode: 'export' as const,
     config: defaultConfig,
     validEtfIds,
-    modalId: 'testModal',
   }
 
   let wrapper: VueWrapper
 
-  beforeEach(() => {
-    const modalElement = document.createElement('div')
-    modalElement.id = 'testModal'
-    document.body.appendChild(modalElement)
-  })
+  const createWrapper = (props = {}) =>
+    mount(ConfigDialog, {
+      props: { ...defaultProps, ...props },
+      attachTo: document.body,
+    })
 
   afterEach(() => {
     wrapper?.unmount()
-    const modalElement = document.getElementById('testModal')
-    if (modalElement) {
-      document.body.removeChild(modalElement)
-    }
   })
 
   describe('export mode', () => {
     it('should render export title', () => {
-      wrapper = mount(ConfigDialog, { props: defaultProps })
+      wrapper = createWrapper()
       expect(wrapper.text()).toContain('Export Configuration')
     })
 
     it('should show config preview in export mode', () => {
-      wrapper = mount(ConfigDialog, { props: defaultProps })
+      wrapper = createWrapper()
       expect(wrapper.find('.editor-container').exists()).toBe(true)
       expect(wrapper.find('.mock-monaco-editor').text()).toContain('instrumentId')
     })
 
     it('should render Download button in export mode', () => {
-      wrapper = mount(ConfigDialog, { props: defaultProps })
+      wrapper = createWrapper()
       expect(wrapper.text()).toContain('Download')
     })
 
@@ -81,7 +66,7 @@ describe('ConfigDialog', () => {
       globalThis.URL.createObjectURL = createObjectURL
       globalThis.URL.revokeObjectURL = revokeObjectURL
 
-      wrapper = mount(ConfigDialog, { props: { ...defaultProps, modelValue: true } })
+      wrapper = createWrapper({ modelValue: true })
       const downloadBtn = wrapper.findAll('button').find(b => b.text() === 'Download')
       await downloadBtn?.trigger('click')
 
@@ -91,34 +76,32 @@ describe('ConfigDialog', () => {
   })
 
   describe('import mode', () => {
-    const importProps = { ...defaultProps, mode: 'import' as const }
-
     it('should render import title', () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       expect(wrapper.text()).toContain('Import Configuration')
     })
 
     it('should show file drop zone initially', () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       expect(wrapper.find('.file-drop-zone').exists()).toBe(true)
       expect(wrapper.text()).toContain('Click to select or drag a JSON file here')
     })
 
     it('should have hidden file input', () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       const fileInput = wrapper.find('input[type="file"]')
       expect(fileInput.exists()).toBe(true)
       expect(fileInput.attributes('accept')).toBe('.json')
     })
 
     it('should render Import button disabled initially', () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       const importBtn = wrapper.findAll('button').find(b => b.text() === 'Import')
       expect(importBtn?.attributes('disabled')).toBeDefined()
     })
 
     it('should process valid JSON file', async () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       const fileInput = wrapper.find('input[type="file"]')
 
       const testData = {
@@ -135,7 +118,7 @@ describe('ConfigDialog', () => {
     })
 
     it('should show error for invalid JSON', async () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       const fileInput = wrapper.find('input[type="file"]')
 
       const file = new File(['invalid json'], 'test.json', { type: 'application/json' })
@@ -147,7 +130,7 @@ describe('ConfigDialog', () => {
     })
 
     it('should show error when JSON is missing required fields', async () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       const fileInput = wrapper.find('input[type="file"]')
 
       const file = new File(['{"someField": "value"}'], 'test.json', { type: 'application/json' })
@@ -160,9 +143,7 @@ describe('ConfigDialog', () => {
 
     it('should show warning when some ETFs are not available', async () => {
       const limitedValidIds = new Set([1])
-      wrapper = mount(ConfigDialog, {
-        props: { ...importProps, validEtfIds: limitedValidIds },
-      })
+      wrapper = createWrapper({ mode: 'import', validEtfIds: limitedValidIds })
       const fileInput = wrapper.find('input[type="file"]')
 
       const testData = {
@@ -181,7 +162,7 @@ describe('ConfigDialog', () => {
     })
 
     it('should emit import event with data when Import is clicked', async () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       const fileInput = wrapper.find('input[type="file"]')
 
       const testData = {
@@ -201,7 +182,7 @@ describe('ConfigDialog', () => {
     })
 
     it('should reset import state when Choose Different File is clicked', async () => {
-      wrapper = mount(ConfigDialog, { props: importProps })
+      wrapper = createWrapper({ mode: 'import' })
       const fileInput = wrapper.find('input[type="file"]')
 
       const testData = {
@@ -225,7 +206,7 @@ describe('ConfigDialog', () => {
 
   describe('common functionality', () => {
     it('should emit update:modelValue false when Cancel is clicked', async () => {
-      wrapper = mount(ConfigDialog, { props: defaultProps })
+      wrapper = createWrapper()
       const cancelBtn = wrapper.findAll('button').find(b => b.text() === 'Cancel')
       await cancelBtn?.trigger('click')
 
@@ -233,11 +214,37 @@ describe('ConfigDialog', () => {
     })
 
     it('should emit update:modelValue false when close button is clicked', async () => {
-      wrapper = mount(ConfigDialog, { props: defaultProps })
+      wrapper = createWrapper({ modelValue: true })
       const closeBtn = wrapper.find('.btn-close')
       await closeBtn.trigger('click')
 
       expect(wrapper.emitted('update:modelValue')).toContainEqual([false])
+    })
+
+    it('opens the dialog when modelValue becomes true', async () => {
+      wrapper = createWrapper()
+
+      await wrapper.setProps({ modelValue: true })
+
+      expect(wrapper.find('dialog').element.open).toBe(true)
+    })
+
+    it('closes the dialog when modelValue becomes false', async () => {
+      wrapper = createWrapper({ modelValue: true })
+
+      await wrapper.setProps({ modelValue: false })
+
+      expect(wrapper.find('dialog').element.open).toBe(false)
+    })
+
+    it('dont close on escape', async () => {
+      wrapper = createWrapper({ modelValue: true })
+
+      const event = new Event('cancel', { cancelable: true })
+      wrapper.find('dialog').element.dispatchEvent(event)
+      await wrapper.vm.$nextTick()
+
+      expect(event.defaultPrevented).toBe(true)
     })
   })
 })
