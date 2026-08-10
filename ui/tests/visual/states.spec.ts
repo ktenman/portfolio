@@ -11,6 +11,7 @@ import {
 import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubDiversification } from './diversification-fixture'
+import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
@@ -129,6 +130,7 @@ test.describe('modals', () => {
 
   test.beforeEach(async ({ page }) => {
     await stubBuildInfo(page)
+    await stubEnums(page)
   })
 
   for (const modal of MODALS) {
@@ -162,6 +164,7 @@ test.describe('desktop states', () => {
 
   test.beforeEach(async ({ page }) => {
     await stubBuildInfo(page)
+    await stubEnums(page)
   })
 
   test('dropdown quick dates', async ({ page }) => {

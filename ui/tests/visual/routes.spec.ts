@@ -4,6 +4,7 @@ import { type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubCalculator } from './calculator-fixture'
 import { stubDiversification } from './diversification-fixture'
+import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
@@ -20,6 +21,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
 
 test.beforeEach(async ({ page }) => {
   await stubBuildInfo(page)
+  await stubEnums(page)
 })
 
 for (const route of ROUTES) {
