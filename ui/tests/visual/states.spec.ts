@@ -76,7 +76,7 @@ const MODALS: {
   route: string
   title: string | RegExp
   open: (page: Page) => Promise<void>
-  stub?: RouteStub
+  stub: RouteStub
 }[] = [
   {
     name: 'instrument',
@@ -133,7 +133,7 @@ test.describe('modals', () => {
 
   for (const modal of MODALS) {
     test(`modal ${modal.name}`, async ({ page }) => {
-      await modal.stub?.(page)
+      await modal.stub(page)
       await openRoute(page, modal.route)
       await modal.open(page)
       await waitForModal(page, modal.title)
