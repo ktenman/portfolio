@@ -9,7 +9,7 @@ import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 
-const ROUTES: { path: string; name: string; stub?: RouteStub }[] = [
+const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/', name: 'summary', stub: stubPortfolioSummary },
   { path: '/transactions', name: 'transactions', stub: stubTransactions },
   { path: '/instruments', name: 'instruments', stub: stubInstruments },
@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 
 for (const route of ROUTES) {
   test(`route ${route.name}`, async ({ page }) => {
-    await route.stub?.(page)
+    await route.stub(page)
     await openRoute(page, route.path)
     await freeze(page)
     await expect(page).toHaveScreenshot(`route-${route.name}.png`, { fullPage: true })

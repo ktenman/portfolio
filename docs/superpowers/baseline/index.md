@@ -267,10 +267,16 @@ null` and three `averageCost: null` rows (all render `0.00`), three quantities b
   to cover the `—` fallback the dialog's own footnote describes. Changing the fixture re-records
   four baselines.
 
-- **`/api/build-info` is served a fixture on every capture**, through a file-scoped `test.beforeEach`
-  in both spec files rather than a per-capture stub. That hoisting is safe here precisely where it
-  is not safe for the route fixtures: no capture registers a competing handler for that path, so
-  there is no most-recently-registered-wins interaction to get wrong. `nav-bar.vue:17` renders
+- **`/api/build-info` is served a fixture on every capture**, through a `test.beforeEach` rather than
+  a per-capture stub — file-scoped in `routes.spec.ts`, and in `states.spec.ts` one hook per
+  `describe`, declared immediately after that block's skip hook. That hoisting is safe here precisely
+  where it is not safe for the route fixtures: no capture registers a competing handler for that
+  path, so there is no most-recently-registered-wins interaction to get wrong. It cannot be hoisted
+  any further in `states.spec.ts`, though, and the reason is easy to miss: Playwright resolves
+  fixtures per hook, so a hook that asks for `page` ahead of the skip hook builds a browser context
+  for all 25 skipped tests. Measured on a 12-skip probe, the `page` fixture is built 0 times in the
+  current order and 12 times reversed. Merging the two hooks into one has the same cost as hoisting,
+  for the same reason. `nav-bar.vue:17` renders
   `buildInfo.hash.substring(0, 7)` and `formatDate(buildInfo.time)`, and the live endpoint answers
   `{"hash":"unknown","time":"<now>"}` — the timestamp is the moment of the request. Changing the
   fixture re-records every baseline that shows the navbar.

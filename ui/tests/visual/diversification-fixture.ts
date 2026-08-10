@@ -194,7 +194,7 @@ const CALCULATION: DiversificationCalculatorResponseDto = {
   ],
   concentration: {
     top10Percentage: 30.2373,
-    largestPosition: { name: 'NVIDIA', percentage: 6.4821 },
+    largestPosition: null,
   },
 }
 
