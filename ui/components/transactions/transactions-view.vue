@@ -25,18 +25,18 @@
             </div>
           </div>
           <div class="date-actions-row">
-            <div class="dropdown">
+            <div class="dropdown" ref="quickDateDropdown">
               <button
-                ref="quickDateDropdown"
                 class="platform-btn dropdown-toggle"
                 :class="{ active: selectedQuickDate }"
                 type="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
+                data-testid="quickDatesToggle"
+                :aria-expanded="isDropdownOpen"
+                @click="isDropdownOpen = !isDropdownOpen"
               >
                 {{ selectedQuickDate || 'Quick Dates' }}
               </button>
-              <ul class="dropdown-menu">
+              <ul class="dropdown-menu" :class="{ show: isDropdownOpen }">
                 <li v-for="option in QUICK_DATE_OPTIONS" :key="option.preset">
                   <a class="dropdown-item" @click="handleQuickDateSelect(option.preset)">
                     {{ option.label }}
@@ -98,7 +98,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { Dropdown } from 'bootstrap'
+import { onClickOutside, onKeyStroke } from '@vueuse/core'
 import TransactionTable from './transaction-table.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import { transactionsService } from '../../services/transactions-service'
@@ -113,13 +113,14 @@ import { useAuthState } from '../../composables/use-auth-state'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
 const { isAuthenticated } = useAuthState()
 const quickDateDropdown = ref<HTMLElement | null>(null)
+const isDropdownOpen = ref(false)
 
 const closeDropdown = () => {
-  if (quickDateDropdown.value) {
-    const dropdownInstance = Dropdown.getInstance(quickDateDropdown.value)
-    dropdownInstance?.hide()
-  }
+  isDropdownOpen.value = false
 }
+
+onClickOutside(quickDateDropdown, closeDropdown)
+onKeyStroke('Escape', closeDropdown)
 
 const { fromDate, untilDate, selectedQuickDate, setQuickDate, clearDates } = useQuickDates({
   fromDateKey: STORAGE_KEYS.TRANSACTIONS_FROM_DATE,
@@ -275,6 +276,12 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
 
 .date-actions-row .dropdown-toggle {
   width: 100%;
+}
+
+.dropdown-menu {
+  top: 100%;
+  left: 0;
+  margin-top: 0.125rem;
 }
 
 .dropdown-item {

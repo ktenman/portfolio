@@ -26,12 +26,14 @@
       @confirm="confirmState.handleConfirm"
       @cancel="confirmState.handleCancel"
     />
+    <ToastContainer />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { defineAsyncComponent, onMounted } from 'vue'
 import NavBar from './components/nav-bar.vue'
+import ToastContainer from './components/shared/toast-container.vue'
 import { provideConfirm } from './composables/use-confirm'
 import { useAuthState } from './composables/use-auth-state'
 import { useEnumValues } from './composables/use-enum-values'
