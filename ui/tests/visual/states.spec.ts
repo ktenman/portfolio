@@ -152,6 +152,43 @@ test.describe('modals', () => {
     await page.click('[data-testid="confirmDialogCancelButton"]')
     await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
   })
+
+  for (const modal of MODALS) {
+    test(`modal ${modal.name} dismisses`, async ({ page }) => {
+      await modal.stub(page)
+      await openRoute(page, modal.route)
+      await modal.open(page)
+      await waitForModal(page, modal.title)
+
+      await page.locator(`${OPEN_MODAL} .btn-close`).click()
+
+      await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
+    })
+  }
+
+  test('modal escape closes a dismissable modal', async ({ page }) => {
+    await stubInstrumentsWithWindows(page)
+    await openRoute(page, '/instruments')
+    await visibleTotalsTriggers(page).nth(0).click()
+    await waitForModal(page, 'Annualized return over time')
+
+    await page.keyboard.press('Escape')
+
+    await expect(page.locator(OPEN_MODAL)).toHaveCount(0)
+  })
+
+  test('modal escape dont close the confirm dialog', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await page.route('**/api/portfolio-summary/recalculate**', route => route.abort())
+    await openRoute(page, '/')
+    await page.click('button:has-text("Recalculate Data")')
+    await waitForModal(page, 'Recalculate Portfolio Data')
+
+    await page.keyboard.press('Escape')
+
+    await expect(page.locator(OPEN_MODAL)).toHaveCount(1)
+    await page.click('[data-testid="confirmDialogCancelButton"]')
+  })
 })
 
 test.describe('desktop states', () => {
