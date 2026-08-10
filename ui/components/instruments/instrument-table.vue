@@ -13,26 +13,26 @@
     <template #footer>
       <tr
         v-if="instruments.length > 0"
-        class="table-footer-totals d-none d-md-table-row"
+        class="table-footer-totals tw:hidden! tw:md:table-row!"
         data-testid="instruments-totals-row"
       >
-        <td class="fw-bold">Total</td>
+        <td class="tw:font-bold">Total</td>
         <td></td>
         <td></td>
-        <td class="fw-bold text-nowrap">
+        <td class="tw:font-bold tw:whitespace-nowrap">
           <span :class="getTotalsChangeClass('totalValue')">
             {{ formatCurrencyWithSign(animatedTotalValue, 'EUR') }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap d-none d-md-table-cell">
+        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:md:table-cell!">
           {{ formatCurrencyWithSign(totalInvested, 'EUR') }}
         </td>
-        <td class="fw-bold text-nowrap profit-column">
+        <td class="tw:font-bold tw:whitespace-nowrap profit-column">
           <span :class="[getProfitClass(totalProfit), getTotalsChangeClass('totalProfit')]">
             {{ formatProfit(animatedTotalProfit, 'EUR') }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap unrealized-column">
+        <td class="tw:font-bold tw:whitespace-nowrap unrealized-column">
           <span
             :class="[
               getProfitClass(totalUnrealizedProfit),
@@ -42,7 +42,7 @@
             {{ formatProfit(animatedTotalUnrealizedProfit, 'EUR') }}
           </span>
         </td>
-        <td class="fw-bold text-nowrap d-none d-lg-table-cell price-change-column">
+        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:lg:table-cell! price-change-column">
           <span
             :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
           >
@@ -50,7 +50,7 @@
             {{ Math.abs(animatedTotalChangePercent).toFixed(2) }}%
           </span>
         </td>
-        <td class="fw-bold text-nowrap">
+        <td class="tw:font-bold tw:whitespace-nowrap">
           <button
             type="button"
             class="xirr-trigger"
@@ -62,7 +62,7 @@
             {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}
           </button>
         </td>
-        <td class="fw-bold text-nowrap d-none d-xl-table-cell">
+        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:xl:table-cell!">
           <button
             type="button"
             class="xirr-trigger"
@@ -77,8 +77,8 @@
             {{ totalAnnualReturn === null ? '-' : formatAnnualReturn(animatedTotalAnnualReturn) }}
           </button>
         </td>
-        <td class="fw-bold text-nowrap d-none d-xl-table-cell">100.00%</td>
-        <td class="fw-bold text-nowrap d-none d-xl-table-cell">{{ formatTer(totalTer) }}</td>
+        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:xl:table-cell!">100.00%</td>
+        <td class="tw:font-bold tw:whitespace-nowrap tw:hidden! tw:xl:table-cell!">{{ formatTer(totalTer) }}</td>
       </tr>
     </template>
     <template #mobile-card="{ item }">
@@ -87,11 +87,11 @@
           <div class="instrument-title">
             <h6 class="instrument-name">{{ item.name }}</h6>
             <span class="instrument-symbol">{{ item.symbol }}</span>
-            <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
+            <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags tw:mt-1">
               <span
                 v-for="platform in item.platforms"
                 :key="platform"
-                class="badge bg-secondary me-1 text-white"
+                class="badge bg-secondary tw:mr-1 text-white"
               >
                 {{ formatPlatformName(platform) }}
               </span>
@@ -241,14 +241,14 @@
     <template #cell-instrument="{ item }">
       <div class="instrument-info">
         <div>
-          <span class="d-block instrument-name">{{ item.name }}</span>
-          <small class="d-block text-muted instrument-symbol">{{ item.symbol }}</small>
+          <span class="tw:block instrument-name">{{ item.name }}</span>
+          <small class="tw:block tw:text-gray-600 instrument-symbol">{{ item.symbol }}</small>
         </div>
-        <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
+        <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags tw:mt-1">
           <span
             v-for="platform in item.platforms"
             :key="platform"
-            class="badge bg-secondary me-1 text-white"
+            class="badge bg-secondary tw:mr-1 text-white"
           >
             {{ formatPlatformName(platform) }}
           </span>
@@ -293,7 +293,7 @@
           getProfitClass(item.profit || 0),
           getChangeClass(item.id, 'profit'),
           'profit-display',
-          'text-nowrap',
+          'tw:whitespace-nowrap',
         ]"
       >
         {{ formatProfit(item.profit || 0, item.baseCurrency) }}
@@ -306,7 +306,7 @@
           getProfitClass(item.unrealizedProfit || 0),
           getChangeClass(item.id, 'unrealizedProfit'),
           'profit-display',
-          'text-nowrap',
+          'tw:whitespace-nowrap',
         ]"
       >
         {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
@@ -320,17 +320,17 @@
     </template>
 
     <template #cell-xirrAnnualReturn="{ item }">
-      <span class="text-nowrap">
+      <span class="tw:whitespace-nowrap">
         {{ formatAnnualReturn(item.xirrAnnualReturn) }}
       </span>
     </template>
 
     <template #cell-portfolioWeight="{ item }">
-      <span class="text-nowrap">{{ getPortfolioWeight(item) }}</span>
+      <span class="tw:whitespace-nowrap">{{ getPortfolioWeight(item) }}</span>
     </template>
 
     <template #cell-ter="{ item }">
-      <span class="text-nowrap">{{ formatTer(item.ter) }}</span>
+      <span class="tw:whitespace-nowrap">{{ formatTer(item.ter) }}</span>
     </template>
   </data-table>
 </template>
