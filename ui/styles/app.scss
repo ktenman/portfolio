@@ -14,11 +14,6 @@ body {
   min-height: 100vh;
 }
 
-.container,
-.container-fluid {
-  max-width: min(1350px, 91vw);
-}
-
 .alert-dismissible {
   @include transition(opacity, 0.3s);
 }

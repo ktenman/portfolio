@@ -10,8 +10,6 @@
 @import 'bootstrap/scss/root';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/type';
-@import 'bootstrap/scss/containers';
-@import 'bootstrap/scss/grid';
 @import 'bootstrap/scss/tables';
 @import 'bootstrap/scss/forms';
 @import 'bootstrap/scss/buttons';
@@ -69,8 +67,4 @@
 
 .modal-content {
   background-color: #f8f9fa;
-}
-
-.text-primary {
-  color: vars.$primary-color !important;
 }
