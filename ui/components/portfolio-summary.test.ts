@@ -182,19 +182,19 @@ describe('PortfolioSummary', () => {
 
   describe('getProfitChangeClass', () => {
     const getProfitChangeClass = (value: number) => {
-      if (value > 0) return 'text-success'
-      if (value < 0) return 'text-danger'
+      if (value > 0) return 'tw:text-gain'
+      if (value < 0) return 'tw:text-loss'
       return ''
     }
 
-    it('should return text-success for positive values', () => {
-      expect(getProfitChangeClass(100)).toBe('text-success')
-      expect(getProfitChangeClass(0.01)).toBe('text-success')
+    it('should return the gain class for positive values', () => {
+      expect(getProfitChangeClass(100)).toBe('tw:text-gain')
+      expect(getProfitChangeClass(0.01)).toBe('tw:text-gain')
     })
 
-    it('should return text-danger for negative values', () => {
-      expect(getProfitChangeClass(-100)).toBe('text-danger')
-      expect(getProfitChangeClass(-0.01)).toBe('text-danger')
+    it('should return the loss class for negative values', () => {
+      expect(getProfitChangeClass(-100)).toBe('tw:text-loss')
+      expect(getProfitChangeClass(-0.01)).toBe('tw:text-loss')
     })
 
     it('should return empty string for zero', () => {

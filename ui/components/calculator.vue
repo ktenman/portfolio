@@ -1,13 +1,13 @@
 <template>
-  <div class="container mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="mb-0">Investment Calculator</h2>
+  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-app tw:px-3 tw:pb-20 tw:md:pb-0">
+    <div class="tw:mb-6 tw:flex tw:items-center tw:justify-between">
+      <h2 class="tw:mb-0">Investment Calculator</h2>
     </div>
 
-    <div class="row">
-      <div class="col-md-4">
+    <div class="tw:grid tw:grid-cols-12 tw:gap-x-6">
+      <div class="tw:col-span-12 tw:md:col-span-4">
         <form @submit.prevent>
-          <div v-for="(field, key) in formFields" :key="key" class="mb-3">
+          <div v-for="(field, key) in formFields" :key="key" class="tw:mb-4">
             <label :for="key" class="form-label">{{ field.label }}:</label>
             <input
               v-model.number="form[key as keyof typeof form]"
@@ -26,7 +26,7 @@
           </div>
         </form>
       </div>
-      <div class="col-md-8">
+      <div class="tw:col-span-12 tw:md:col-span-8">
         <LoadingSpinner v-if="isLoading" />
         <LineChart
           v-if="!isLoading && portfolioData.length > 0"
@@ -35,14 +35,14 @@
           x-axis-label="Year"
           y-axis-label="Worth (€)"
         />
-        <div v-if="!isLoading && calculationResult" class="card mt-3 xirr-stats-card">
-          <div class="card-body py-2">
-            <div class="row text-center">
-              <div class="col-6">
+        <div v-if="!isLoading && calculationResult" class="card tw:mt-4 xirr-stats-card">
+          <div class="card-body tw:py-2!">
+            <div class="tw:grid tw:grid-cols-2 tw:gap-x-6 tw:text-center">
+              <div>
                 <div class="stat-label">Median XIRR</div>
                 <div class="stat-value">{{ formatPercentage(calculationResult.median) }}</div>
               </div>
-              <div class="col-6">
+              <div>
                 <div class="stat-label">Average XIRR</div>
                 <div class="stat-value">{{ formatPercentage(calculationResult.average) }}</div>
               </div>
@@ -55,7 +55,7 @@
           title="XIRR Rolling Result (ASAP)"
           x-axis-label="Date"
           y-axis-label="XIRR (%)"
-          class="mt-3"
+          class="tw:mt-4"
         />
       </div>
     </div>
@@ -66,15 +66,9 @@
       </button>
     </div>
 
-    <div class="row mt-4">
-      <div class="col-12">
-        <h5>Year-by-Year Summary</h5>
-        <data-table
-          :items="yearSummary"
-          :columns="summaryColumns"
-          data-testid="year-summary-table"
-        />
-      </div>
+    <div class="tw:mt-6">
+      <h5>Year-by-Year Summary</h5>
+      <data-table :items="yearSummary" :columns="summaryColumns" data-testid="year-summary-table" />
     </div>
   </div>
 </template>
@@ -218,10 +212,6 @@ canvas {
         padding: 0.625rem 1.5rem;
       }
     }
-  }
-
-  .container {
-    padding-bottom: rem(80px);
   }
 }
 </style>

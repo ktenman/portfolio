@@ -1,8 +1,8 @@
 <template>
-  <div class="container mt-3">
-    <div class="mb-4">
-      <h2 class="mb-0">Transactions</h2>
-      <div class="filters-container mt-2">
+  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-app tw:px-3">
+    <div class="tw:mb-6">
+      <h2 class="tw:mb-0">Transactions</h2>
+      <div class="filters-container tw:mt-2">
         <div class="date-filters">
           <div class="date-inputs-row">
             <div class="date-input-group">
@@ -64,22 +64,25 @@
       </div>
     </div>
 
-    <div v-if="transactions?.length" class="stats-container mb-4">
+    <div v-if="transactions?.length" class="stats-container tw:mb-6">
       <div class="stat-card">
         <div class="stat-label">Total Realized Profit</div>
-        <div class="stat-value" :class="realizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
+        <div class="stat-value" :class="realizedProfitSum >= 0 ? 'tw:text-gain!' : 'tw:text-loss!'">
           {{ formatCurrency(realizedProfitSum) }}
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total Unrealized Profit</div>
-        <div class="stat-value" :class="unrealizedProfitSum >= 0 ? 'text-success' : 'text-danger'">
+        <div
+          class="stat-value"
+          :class="unrealizedProfitSum >= 0 ? 'tw:text-gain!' : 'tw:text-loss!'"
+        >
           {{ formatCurrency(unrealizedProfitSum) }}
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total Profit</div>
-        <div class="stat-value" :class="totalProfitSum >= 0 ? 'text-success' : 'text-danger'">
+        <div class="stat-value" :class="totalProfitSum >= 0 ? 'tw:text-gain!' : 'tw:text-loss!'">
           {{ formatCurrency(totalProfitSum) }}
         </div>
       </div>
