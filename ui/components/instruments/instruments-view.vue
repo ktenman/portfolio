@@ -10,7 +10,7 @@
     <template #subtitle>
       <platform-filter
         v-if="availablePlatforms.length > 0"
-        class="mt-2"
+        class="tw:mt-2"
         :available="availablePlatforms"
         :selected="selectedPlatforms"
         @toggle="togglePlatform"
@@ -18,7 +18,7 @@
       >
         <div class="controls-row">
           <div class="period-selector-container">
-            <label class="period-label d-none d-md-inline">Period:</label>
+            <label class="period-label tw:hidden tw:md:inline">Period:</label>
             <select v-model="selectedPeriod" class="period-select">
               <option v-for="p in periods" :key="p.value" :value="p.value">
                 {{ p.label }}
