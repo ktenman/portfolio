@@ -1,5 +1,5 @@
 <template>
-  <div class="container mt-3">
+  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-app tw:px-3">
     <portfolio-actions
       :is-loading="isLoading"
       :is-recalculating="isRecalculating"
@@ -8,7 +8,7 @@
 
     <platform-filter
       v-if="availablePlatforms.length > 0"
-      class="mt-2 mb-3"
+      class="tw:mt-2 tw:mb-4"
       :available="availablePlatforms"
       :selected="selectedPlatforms"
       @toggle="togglePlatform"
@@ -16,7 +16,7 @@
     />
 
     <div v-if="viewState === 'LOADING'">
-      <skeleton-loader type="card" class="mb-4" />
+      <skeleton-loader type="card" class="tw:mb-6" />
       <skeleton-loader type="table" :rows="10" :columns="5" />
     </div>
 
@@ -31,7 +31,7 @@
     <template v-else>
       <div
         v-if="showRecalculationMessage"
-        class="alert alert-info alert-dismissible fade show mt-3"
+        class="alert alert-info alert-dismissible fade show tw:mt-4"
         role="alert"
       >
         {{ recalculationMessage }}
@@ -52,7 +52,7 @@
         :sortable="true"
         :sort-state="sortState"
         :on-sort="toggleSort"
-        class="mt-3"
+        class="tw:mt-4"
       >
         <template #cell-totalProfitChange24h="{ value, item }">
           <span v-if="value && Math.abs(value) > 0.01" :class="getProfitChangeClass(value)">
@@ -62,7 +62,7 @@
         </template>
       </data-table>
 
-      <div v-if="isFetching" class="text-center mt-3">
+      <div v-if="isFetching" class="tw:mt-4 tw:text-center">
         <skeleton-loader type="text" :lines="2" />
       </div>
     </template>
@@ -202,8 +202,8 @@ const getSummaryRowClass = (summary: any, index: number) => {
 }
 
 const getProfitChangeClass = (value: number) => {
-  if (value > 0) return 'text-success'
-  if (value < 0) return 'text-danger'
+  if (value > 0) return 'tw:text-gain'
+  if (value < 0) return 'tw:text-loss'
   return ''
 }
 

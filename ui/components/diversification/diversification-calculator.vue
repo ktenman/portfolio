@@ -1,12 +1,14 @@
 <template>
   <div class="diversification-container">
-    <div class="mb-4">
-      <div class="d-flex justify-content-between align-items-center">
-        <h2 class="mb-0">Diversification</h2>
-        <div class="d-flex align-items-center gap-2">
-          <span v-if="saveStatus === 'saving'" class="save-status text-muted">Saving...</span>
-          <span v-else-if="saveStatus === 'saved'" class="save-status text-success">Saved</span>
-          <span v-else-if="saveStatus === 'error'" class="save-status text-danger">
+    <div class="tw:mb-6">
+      <div class="tw:flex tw:items-center tw:justify-between">
+        <h2 class="tw:mb-0">Diversification</h2>
+        <div class="tw:flex tw:items-center tw:gap-2">
+          <span v-if="saveStatus === 'saving'" class="save-status tw:text-body-secondary">
+            Saving...
+          </span>
+          <span v-else-if="saveStatus === 'saved'" class="save-status tw:text-gain">Saved</span>
+          <span v-else-if="saveStatus === 'error'" class="save-status tw:text-loss">
             Save failed
           </span>
           <div
@@ -23,9 +25,9 @@
       </div>
     </div>
 
-    <div v-if="isLoadingEtfs" class="text-center py-4">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+    <div v-if="isLoadingEtfs" class="tw:py-6 tw:text-center">
+      <div class="spinner-border tw:text-signal-indigo" role="status">
+        <span class="tw:sr-only">Loading...</span>
       </div>
     </div>
 
@@ -41,7 +43,7 @@
         :optimize-enabled="optimizeEnabled"
         :buy-only-enabled="buyOnlyEnabled"
         :action-display-mode="actionDisplayMode"
-        class="mb-4"
+        class="tw:mb-6"
         @update:allocation="updateAllocation"
         @update:total-investment="onTotalInvestmentChange"
         @toggle-platform="togglePlatform"
@@ -65,32 +67,35 @@
           :top10-percentage="result.concentration.top10Percentage"
         />
 
-        <div v-if="currencySplit.length > 0" class="row g-3 mb-4">
-          <div class="col-md-4 col-lg-3">
+        <div
+          v-if="currencySplit.length > 0"
+          class="tw:mb-6 tw:grid tw:grid-cols-1 tw:gap-4 tw:md:grid-cols-3 tw:lg:grid-cols-4"
+        >
+          <div>
             <CurrencySplitCard label="Fund Currency" :entries="currencySplit" />
           </div>
         </div>
 
-        <div class="row g-4">
-          <div class="col-lg-4">
+        <div class="tw:grid tw:grid-cols-1 tw:gap-6 tw:lg:grid-cols-3">
+          <div>
             <BreakdownCard title="Top Holdings" :items="holdingsBreakdown" />
           </div>
-          <div class="col-lg-4">
+          <div>
             <BreakdownCard title="Sectors" :items="sectorsBreakdown" />
           </div>
-          <div class="col-lg-4">
+          <div>
             <BreakdownCard title="Countries" :items="countriesBreakdown" />
           </div>
         </div>
       </div>
 
-      <div v-if="isCalculating" class="text-center py-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Calculating...</span>
+      <div v-if="isCalculating" class="tw:py-6 tw:text-center">
+        <div class="spinner-border tw:text-signal-indigo" role="status">
+          <span class="tw:sr-only">Calculating...</span>
         </div>
       </div>
 
-      <div v-if="error" class="alert alert-danger mt-3">
+      <div v-if="error" class="alert alert-danger tw:mt-4">
         {{ error }}
       </div>
     </template>

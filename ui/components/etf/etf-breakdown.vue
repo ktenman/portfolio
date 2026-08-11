@@ -1,8 +1,8 @@
 <template>
   <div class="etf-breakdown-container">
-    <div class="mb-4">
-      <h2 class="mb-0">ETF Breakdown</h2>
-      <div v-if="availableEtfs.length > 0" class="etf-filter-container mt-2">
+    <div class="tw:mb-6">
+      <h2 class="tw:mb-0">ETF Breakdown</h2>
+      <div v-if="availableEtfs.length > 0" class="etf-filter-container tw:mt-2">
         <div class="etf-buttons">
           <button
             v-for="etf in availableEtfs"
@@ -23,7 +23,7 @@
       </div>
       <platform-filter
         v-if="availablePlatforms.length > 1"
-        class="mt-2"
+        class="tw:mt-2"
         :available="availablePlatforms"
         :selected="selectedPlatforms"
         @toggle="togglePlatform"
@@ -40,21 +40,21 @@
       :currency-split="currencySplit"
     />
 
-    <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-4">
-      <div class="row g-3">
-        <div class="col-lg-4 col-md-6">
+    <div v-if="!isLoading && holdings.length > 0" class="charts-section tw:mb-6">
+      <div class="tw:grid tw:grid-cols-1 tw:gap-4 tw:md:grid-cols-2 tw:lg:grid-cols-3">
+        <div>
           <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
         </div>
-        <div class="col-lg-4 col-md-6">
+        <div>
           <etf-breakdown-chart title="Top Companies" :chart-data="companyChartData" />
         </div>
-        <div class="col-lg-4 col-md-6">
+        <div>
           <etf-breakdown-chart title="Country Allocation" :chart-data="countryChartData" />
         </div>
       </div>
     </div>
 
-    <div class="search-container mb-3">
+    <div class="search-container tw:mb-4">
       <div class="search-input-wrapper">
         <input
           v-model="searchQuery"

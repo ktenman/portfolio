@@ -5,7 +5,7 @@
   <div v-else class="tw:flex tw:min-h-screen tw:flex-col">
     <NavBar />
     <main class="tw:grow">
-      <div class="tw:mx-auto tw:w-full tw:max-w-[min(1350px,91vw)] tw:px-3 tw:py-2">
+      <div class="tw:mx-auto tw:w-full tw:max-w-app tw:px-3 tw:py-2">
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" />

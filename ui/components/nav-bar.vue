@@ -1,10 +1,8 @@
 <template>
   <nav
-    class="navbar navbar-expand navbar-light tw:border-b tw:border-gray-300 tw:bg-white navbar-sticky"
+    class="navbar navbar-expand navbar-light tw:border-b tw:border-hairline-strong tw:bg-surface navbar-sticky"
   >
-    <div
-      class="tw:mx-auto tw:flex tw:w-full tw:max-w-[min(1350px,91vw)] tw:flex-nowrap tw:items-center tw:justify-between tw:px-3"
-    >
+    <div class="tw:mx-auto tw:w-full tw:max-w-app tw:px-3">
       <div class="navbar-scroll-container">
         <div class="navbar-content">
           <ul class="navbar-nav">
