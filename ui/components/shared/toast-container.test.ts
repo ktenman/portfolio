@@ -90,25 +90,16 @@ describe('ToastContainer', () => {
   })
 
   it.each(Object.entries(DURATIONS) as [ToastType, number][])(
-    'keeps a %s toast until %i ms have passed',
+    'dismisses a %s toast at %i ms and not a tick earlier',
     async (type, duration) => {
       const wrapper = mount(ToastContainer)
       useToast()[type]('Teade')
 
       vi.advanceTimersByTime(duration - 1)
       await wrapper.vm.$nextTick()
-
       expect(wrapper.findAll('.toast')).toHaveLength(1)
-    }
-  )
 
-  it.each(Object.entries(DURATIONS) as [ToastType, number][])(
-    'dismisses a %s toast after %i ms',
-    async (type, duration) => {
-      const wrapper = mount(ToastContainer)
-      useToast()[type]('Teade')
-
-      vi.advanceTimersByTime(duration)
+      vi.advanceTimersByTime(1)
       await wrapper.vm.$nextTick()
 
       expect(wrapper.findAll('.toast')).toHaveLength(0)

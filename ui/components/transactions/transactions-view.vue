@@ -281,7 +281,7 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
 .dropdown-menu {
   top: 100%;
   left: 0;
-  margin-top: 0.125rem;
+  margin-top: var(--bs-dropdown-spacer);
 }
 
 .dropdown-item {
