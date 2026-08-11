@@ -1,5 +1,7 @@
 <template>
-  <nav class="navbar navbar-expand navbar-light tw:border-b tw:border-gray-300 tw:bg-white navbar-sticky">
+  <nav
+    class="navbar navbar-expand navbar-light tw:border-b tw:border-gray-300 tw:bg-white navbar-sticky"
+  >
     <div
       class="tw:mx-auto tw:flex tw:w-full tw:max-w-[min(1350px,91vw)] tw:flex-nowrap tw:items-center tw:justify-between tw:px-3"
     >
