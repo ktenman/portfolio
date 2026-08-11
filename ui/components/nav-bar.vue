@@ -1,6 +1,8 @@
 <template>
-  <nav class="navbar navbar-expand navbar-light bg-white border-bottom navbar-sticky">
-    <div class="container-fluid">
+  <nav class="navbar navbar-expand navbar-light tw:border-b tw:border-gray-300 tw:bg-white navbar-sticky">
+    <div
+      class="tw:mx-auto tw:flex tw:w-full tw:max-w-[min(1350px,91vw)] tw:flex-nowrap tw:items-center tw:justify-between tw:px-3"
+    >
       <div class="navbar-scroll-container">
         <div class="navbar-content">
           <ul class="navbar-nav">
@@ -13,7 +15,7 @@
           </ul>
           <!-- Build info display -->
           <div class="build-info" v-if="buildInfo">
-            <span class="text-muted build-info-text">
+            <span class="tw:text-body-secondary build-info-text">
               {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
             </span>
           </div>
