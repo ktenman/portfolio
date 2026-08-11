@@ -28,6 +28,8 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
 }
 
 const OPEN_MODAL = 'dialog.modal[open]'
+const OPEN_DROPDOWN = '.dropdown-menu.show'
+const QUICK_DATES_TOGGLE = '[data-testid="quickDatesToggle"]'
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
   const content = page.locator(`${OPEN_MODAL} .modal-content`)
@@ -52,6 +54,13 @@ async function openInstrumentModal(page: Page): Promise<void> {
   await page.evaluate(() => {
     document.querySelector<HTMLDialogElement>('#instrumentModal')?.showModal()
   })
+}
+
+async function openQuickDates(page: Page): Promise<void> {
+  await stubTransactions(page)
+  await openRoute(page, '/transactions')
+  await page.click(QUICK_DATES_TOGGLE)
+  await expect(page.locator(OPEN_DROPDOWN)).toBeVisible()
 }
 
 const MODALS: {
@@ -176,12 +185,35 @@ test.describe('desktop states', () => {
   })
 
   test('dropdown quick dates', async ({ page }) => {
-    await stubTransactions(page)
-    await openRoute(page, '/transactions')
-    await page.click('[data-bs-toggle="dropdown"]')
-    await expect(page.locator('.dropdown-menu.show')).toBeVisible()
+    await openQuickDates(page)
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('dropdown-quick-dates.png')
+  })
+
+  test('dropdown selecting a quick date applies it and closes', async ({ page }) => {
+    await openQuickDates(page)
+
+    await page.click(`${OPEN_DROPDOWN} .dropdown-item:has-text("Last 7 Days")`)
+
+    await expect(page.locator(OPEN_DROPDOWN)).toHaveCount(0)
+    await expect(page.locator(QUICK_DATES_TOGGLE)).toHaveText('Last 7 Days')
+    await expect(page.locator('#fromDate')).not.toHaveValue('')
+  })
+
+  test('dropdown escape closes the quick dates menu', async ({ page }) => {
+    await openQuickDates(page)
+
+    await page.keyboard.press('Escape')
+
+    await expect(page.locator(OPEN_DROPDOWN)).toHaveCount(0)
+  })
+
+  test('dropdown clicking outside closes the quick dates menu', async ({ page }) => {
+    await openQuickDates(page)
+
+    await page.click('h2:has-text("Transactions")')
+
+    await expect(page.locator(OPEN_DROPDOWN)).toHaveCount(0)
   })
 
   for (const variant of ['success', 'error', 'info', 'warning'] as const) {
