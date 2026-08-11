@@ -1,7 +1,7 @@
 <template>
-  <div class="page-header mb-4">
+  <div class="page-header tw:mb-6">
     <div>
-      <p class="page-subtitle text-muted">
+      <p class="page-subtitle tw:text-body-secondary">
         {{ getDescription() }}
       </p>
     </div>
