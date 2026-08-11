@@ -59,6 +59,7 @@ jobs:
           name: Detekt Reports
           path: |
             build/reports/detekt/
+          retention-days: 14
       - name: Use Node.js
         if: matrix.lint-type == 'frontend'
         uses: actions/setup-node@v6
@@ -180,6 +181,7 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
             build/reports/jacoco/test/html/
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'frontend'
         with:
@@ -187,11 +189,13 @@ jobs:
           path: |
             coverage/
             test-results/
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'cloudflare'
         with:
           name: Cloudflare Bypass Proxy Test Reports
           path: cloudflare-bypass-proxy/coverage/
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'e2e'
         with:
@@ -201,6 +205,7 @@ jobs:
             build/test-results/test/
             build/reports/selenide/
             build/reports/jacoco/test/html/
+          retention-days: 14
 
   detect-changes:
     name: 🔍 Detect Changes
