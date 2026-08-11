@@ -66,14 +66,6 @@ vi.mock('../../utils/formatters', () => ({
   formatPercentage: vi.fn((value: number) => `${value.toFixed(2)}%`),
 }))
 
-vi.mock('bootstrap', () => ({
-  Modal: vi.fn().mockImplementation(() => ({
-    show: vi.fn(),
-    hide: vi.fn(),
-    dispose: vi.fn(),
-  })),
-}))
-
 describe('DiversificationCalculator', () => {
   beforeEach(() => {
     vi.clearAllMocks()
