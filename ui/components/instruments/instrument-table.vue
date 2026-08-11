@@ -92,11 +92,7 @@
             <h6 class="instrument-name">{{ item.name }}</h6>
             <span class="instrument-symbol">{{ item.symbol }}</span>
             <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags tw:mt-1">
-              <span
-                v-for="platform in item.platforms"
-                :key="platform"
-                class="badge bg-secondary tw:mr-1 text-white"
-              >
+              <span v-for="platform in item.platforms" :key="platform" class="badge tw:mr-1">
                 {{ formatPlatformName(platform) }}
               </span>
             </div>
@@ -246,14 +242,10 @@
       <div class="instrument-info">
         <div>
           <span class="tw:block instrument-name">{{ item.name }}</span>
-          <small class="tw:block tw:text-gray-600 instrument-symbol">{{ item.symbol }}</small>
+          <small class="tw:block instrument-symbol">{{ item.symbol }}</small>
         </div>
         <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags tw:mt-1">
-          <span
-            v-for="platform in item.platforms"
-            :key="platform"
-            class="badge bg-secondary tw:mr-1 text-white"
-          >
+          <span v-for="platform in item.platforms" :key="platform" class="badge tw:mr-1">
             {{ formatPlatformName(platform) }}
           </span>
         </div>
@@ -445,288 +437,258 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
 }
 </script>
 
-<style scoped lang="scss">
-@import '../../styles/shared-table.scss';
-
-.platform-tags {
-  .badge {
-    color: white !important;
-    background-color: #6b7280 !important;
-    font-weight: 500;
-  }
+<style scoped>
+.platform-tags .badge {
+  font-weight: 500;
+  background-color: var(--color-ink-muted);
 }
 
 .table-footer-totals {
-  background-color: var(--bs-gray-100);
-  border-top: 2px solid var(--bs-border-color);
-
-  td {
-    padding: 1rem 0.75rem;
-    font-weight: 600;
-    color: var(--bs-gray-700);
-    vertical-align: middle;
-
-    &:first-child {
-      color: var(--bs-gray-800);
-      font-weight: 700;
-      text-transform: uppercase;
-      font-size: 0.875rem;
-      letter-spacing: 0.025em;
-    }
-  }
+  background-color: var(--color-gray-100);
+  border-top: 2px solid var(--color-hairline-strong);
 }
 
-.xirr-trigger {
+.table-footer-totals td {
+  padding: 1rem 0.75rem;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  vertical-align: middle;
+}
+
+.table-footer-totals td:first-child {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--color-gray-800);
+}
+
+.xirr-trigger,
+.xirr-trigger-mobile {
+  margin: 0;
+  padding: 0;
   background: none;
   border: none;
-  padding: 0;
-  margin: 0;
   font: inherit;
   color: inherit;
-  cursor: pointer;
   text-decoration: underline dotted;
   text-underline-offset: 0.2rem;
-
-  &:hover:not(:disabled) {
-    color: var(--bs-primary);
-  }
-
-  &:disabled {
-    cursor: default;
-    text-decoration: none;
-  }
-}
-
-.xirr-trigger-mobile {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
   cursor: pointer;
-  text-decoration: underline dotted;
-  text-underline-offset: 0.2rem;
-
-  &:hover:not(:disabled) {
-    color: var(--bs-primary);
-  }
-
-  &:disabled {
-    cursor: default;
-    text-decoration: none;
-  }
 }
 
-// Mobile totals card
+.xirr-trigger:hover:not(:disabled),
+.xirr-trigger-mobile:hover:not(:disabled) {
+  color: var(--color-signal-indigo);
+}
+
+.xirr-trigger:disabled,
+.xirr-trigger-mobile:disabled {
+  text-decoration: none;
+  cursor: default;
+}
+
 .mobile-totals-card {
   margin-bottom: 0.75rem;
   padding: 1rem;
-  background: white;
-  border: 1px solid var(--bs-gray-200);
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-  .totals-header {
-    text-align: center;
-    margin-bottom: 0.5rem;
-
-    .totals-title {
-      margin: 0;
-      font-size: 0.875rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      color: var(--bs-gray-800);
-    }
-  }
-
-  .totals-divider {
-    margin: 0.75rem 0;
-    border: 0;
-    border-top: 1px solid var(--bs-gray-200);
-    opacity: 1;
-  }
-
-  .totals-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-
-    .total-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 0.25rem;
-
-      .total-label {
-        font-size: 0.6875rem;
-        font-weight: 500;
-        color: var(--bs-gray-600);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .total-value {
-        font-size: 1.125rem;
-        font-weight: 700;
-        color: var(--bs-gray-900);
-        line-height: 1.2;
-
-        &.tw\:text-gain {
-          color: #22c55e;
-        }
-
-        &.tw\:text-loss {
-          color: #ef4444;
-        }
-      }
-    }
-  }
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-card);
 }
 
-// Mobile card styles
+.totals-header {
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.totals-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-gray-800);
+}
+
+.totals-divider {
+  margin: 0.75rem 0;
+  border: 0;
+  border-top: 1px solid var(--color-gray-200);
+  opacity: 1;
+}
+
+.totals-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.total-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.total-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-gray-600);
+}
+
+.total-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-gray-900);
+}
+
+.total-value.tw\:text-gain {
+  color: #22c55e;
+}
+
+.total-value.tw\:text-loss {
+  color: #ef4444;
+}
+
 .mobile-instrument-card {
   padding: 0.75rem;
-
-  .instrument-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.75rem;
-
-    .instrument-title {
-      flex: 1;
-
-      .instrument-name {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 600;
-        line-height: 1.2;
-        color: var(--bs-gray-900);
-      }
-
-      .instrument-symbol {
-        font-size: 0.75rem;
-        color: var(--bs-gray-600);
-        font-weight: 500;
-      }
-    }
-
-    .btn-link {
-      color: var(--bs-gray-600);
-      opacity: 0.7;
-      transition: opacity 0.2s;
-
-      &:hover {
-        opacity: 1;
-      }
-    }
-  }
-
-  .instrument-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--bs-gray-200);
-    gap: 0.75rem 0.5rem;
-
-    &.secondary-metrics {
-      margin-bottom: 0.75rem;
-      padding-bottom: 0;
-      border-bottom: none;
-    }
-
-    .metric-group {
-      text-align: center;
-      flex: 1;
-      min-width: 0;
-
-      .metric-value {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: var(--bs-gray-900);
-        margin-bottom: 0.125rem;
-
-        &.tw\:text-gain {
-          color: #22c55e;
-        }
-
-        &.tw\:text-loss {
-          color: #ef4444;
-        }
-      }
-
-      .metric-label {
-        display: block;
-        font-size: 0.6875rem;
-        color: var(--bs-gray-600);
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-      }
-    }
-  }
-
-  .instrument-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-
-    .value-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      .value-label {
-        font-size: 0.75rem;
-        color: var(--bs-gray-600);
-      }
-
-      .value-amount {
-        font-size: 0.9375rem;
-        font-weight: 600;
-        color: var(--bs-gray-900);
-      }
-    }
-  }
 }
 
-// Desktop styles
+.mobile-instrument-card .instrument-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.mobile-instrument-card .instrument-title {
+  flex: 1;
+}
+
+.mobile-instrument-card .instrument-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-gray-900);
+}
+
+.mobile-instrument-card .instrument-symbol {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+.mobile-instrument-card .instrument-header .btn-link {
+  color: var(--color-gray-600);
+  opacity: 0.7;
+  transition: opacity var(--transition-base);
+}
+
+.mobile-instrument-card .instrument-header .btn-link:hover {
+  opacity: 1;
+}
+
+.mobile-instrument-card .instrument-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.mobile-instrument-card .instrument-metrics.secondary-metrics {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.mobile-instrument-card .metric-group {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.mobile-instrument-card .metric-value {
+  display: block;
+  margin-bottom: 0.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.mobile-instrument-card .metric-value.tw\:text-gain {
+  color: #22c55e;
+}
+
+.mobile-instrument-card .metric-value.tw\:text-loss {
+  color: #ef4444;
+}
+
+.mobile-instrument-card .metric-label {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--color-gray-600);
+}
+
+.mobile-instrument-card .instrument-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mobile-instrument-card .value-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-instrument-card .value-label {
+  font-size: 0.75rem;
+  color: var(--color-gray-600);
+}
+
+.mobile-instrument-card .value-amount {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
 @media (max-width: 992px) {
   .instrument-info > div:first-child {
     word-break: break-word;
   }
 }
 
-// Mobile landscape: hide profit and price change columns from desktop table
 @media (max-width: 992px) and (orientation: landscape) {
   :deep(.profit-column),
   :deep(.price-change-column) {
     display: none !important;
   }
 
-  .mobile-totals-card {
-    .total-profit-item,
-    .total-price-change-item {
-      display: none !important;
-    }
+  .mobile-totals-card .total-profit-item,
+  .mobile-totals-card .total-price-change-item {
+    display: none !important;
   }
 }
 
-// Also hide on short screens (likely landscape mobile)
 @media (max-height: 500px) {
   :deep(.profit-column),
   :deep(.price-change-column) {
     display: none !important;
   }
 
-  .mobile-totals-card {
-    .total-profit-item,
-    .total-price-change-item {
-      display: none !important;
-    }
+  .mobile-totals-card .total-profit-item,
+  .mobile-totals-card .total-price-change-item {
+    display: none !important;
   }
 }
 
@@ -734,9 +696,11 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
   0% {
     background-color: transparent;
   }
+
   50% {
-    background-color: rgba(34, 197, 94, 0.2);
+    background-color: rgb(33 197 93 / 0.2);
   }
+
   100% {
     background-color: transparent;
   }
@@ -746,9 +710,11 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
   0% {
     background-color: transparent;
   }
+
   50% {
-    background-color: rgba(239, 68, 68, 0.2);
+    background-color: rgb(220 53 69 / 0.2);
   }
+
   100% {
     background-color: transparent;
   }

@@ -180,8 +180,8 @@ const onValueChange = (event: Event) => {
 
 <style scoped>
 .allocation-card {
-  background: var(--bs-gray-100);
-  border: 1px solid var(--bs-gray-300);
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-300);
   border-radius: 0.5rem;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
@@ -207,7 +207,7 @@ const onValueChange = (event: Event) => {
   align-items: center;
   gap: 0.3rem;
   font-size: 0.8125rem;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   margin-bottom: 0.5rem;
   white-space: nowrap;
   overflow: hidden;
@@ -217,8 +217,8 @@ const onValueChange = (event: Event) => {
 .allocation-card-metrics {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid var(--bs-gray-300);
-  border-bottom: 1px solid var(--bs-gray-300);
+  border-top: 1px solid var(--color-gray-300);
+  border-bottom: 1px solid var(--color-gray-300);
   padding: 0.5rem 0;
   margin-bottom: 0.5rem;
 }
@@ -233,14 +233,14 @@ const onValueChange = (event: Event) => {
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--bs-gray-800);
+  color: var(--color-gray-800);
   margin-bottom: 0.125rem;
 }
 
 .allocation-card-metrics .metric-label {
   display: block;
   font-size: 0.6875rem;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
@@ -253,7 +253,7 @@ const onValueChange = (event: Event) => {
 
 .allocation-card-input label {
   font-size: 0.75rem;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   white-space: nowrap;
 }
 
@@ -267,7 +267,7 @@ const onValueChange = (event: Event) => {
   gap: 1rem;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px dashed var(--bs-gray-300);
+  border-top: 1px dashed var(--color-gray-300);
 }
 
 .allocation-card-investment .investment-item {
@@ -278,23 +278,23 @@ const onValueChange = (event: Event) => {
 
 .allocation-card-investment label {
   font-size: 0.75rem;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   white-space: nowrap;
 }
 
 .allocation-card-investment .investment-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--bs-gray-700);
+  color: var(--color-gray-700);
 }
 
 .remove-btn {
   width: 1.5rem;
   height: 1.5rem;
   padding: 0;
-  border: 1px solid var(--bs-gray-300);
-  background: var(--bs-white);
-  color: var(--bs-gray-500);
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-surface);
+  color: var(--color-gray-500);
   border-radius: 0.25rem;
   font-size: 1rem;
   line-height: 1;

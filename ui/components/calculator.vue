@@ -136,82 +136,67 @@ const summaryColumns: ColumnDefinition[] = [
 ]
 </script>
 
-<style lang="scss" scoped>
-@use '../styles/config' as *;
-
+<style scoped>
 canvas {
   width: 100% !important;
   height: auto !important;
 }
 
-.table {
-  font-size: rem(14.4px);
+.xirr-stats-card .card-body {
+  padding: 0.75rem 1rem;
 }
 
-.xirr-stats-card {
-  box-shadow: 0 1px 3px rgba($black, 0.1);
+.stat-label {
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-gray-600);
+}
 
-  .card-body {
-    padding: 0.75rem 1rem;
-  }
-
-  .stat-label {
-    font-size: rem(12px);
-    color: $gray-600;
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .stat-value {
-    font-size: rem(20px);
-    font-weight: 600;
-    color: rgb(75, 192, 192);
-  }
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(75, 192, 192);
 }
 
 .calculator-buttons-desktop {
   display: flex;
-  margin-top: $spacing-md;
-  margin-bottom: $spacing-lg;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .calculator-buttons-mobile {
   display: none;
 }
 
-@include media-breakpoint-down(md) {
-  .table {
-    font-size: rem(12.8px);
-  }
-
+@media (max-width: 767.98px) {
   .calculator-buttons-desktop {
     display: none;
   }
 
   .calculator-buttons-mobile {
-    display: flex;
     position: fixed;
+    right: 0;
     bottom: 0;
     left: 0;
-    right: 0;
-    background-color: $white;
-    padding: $spacing-md;
-    box-shadow: 0 -2px $spacing-sm rgba($black, 0.1);
-    z-index: $zindex-sticky;
+    z-index: var(--z-sticky);
+    display: flex;
     justify-content: center;
+    padding: 1rem;
+    background-color: var(--color-surface);
+    box-shadow: 0 -2px 8px rgb(0 0 0 / 0.08);
+  }
 
-    .btn {
-      width: 100%;
-      max-width: 400px;
-      padding: $spacing-sm $spacing-lg;
-      font-size: $font-size-base;
+  .calculator-buttons-mobile .btn {
+    width: 100%;
+    max-width: 400px;
+    font-size: 1rem;
+  }
 
-      &.btn-ghost {
-        padding: 0.625rem 1.5rem;
-      }
-    }
+  .calculator-buttons-mobile .btn.btn-ghost {
+    padding: 0.625rem 1.5rem;
   }
 }
 </style>

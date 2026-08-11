@@ -245,7 +245,7 @@ const handleTitleClick = async () => {
 .toggle-label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--color-ink-muted);
   white-space: nowrap;
 }
 
@@ -306,7 +306,7 @@ const handleTitleClick = async () => {
 .period-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--color-ink-muted);
   margin: 0;
 }
 

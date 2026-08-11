@@ -31,7 +31,7 @@
     <template v-else>
       <div
         v-if="showRecalculationMessage"
-        class="alert alert-info alert-dismissible fade show tw:mt-4"
+        class="alert alert-info alert-dismissible tw:mt-4"
         role="alert"
       >
         {{ recalculationMessage }}

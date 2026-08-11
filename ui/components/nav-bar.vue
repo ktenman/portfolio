@@ -1,7 +1,5 @@
 <template>
-  <nav
-    class="navbar navbar-expand navbar-light tw:border-b tw:border-hairline-strong tw:bg-surface navbar-sticky"
-  >
+  <nav class="navbar tw:border-b tw:border-hairline-strong tw:bg-surface navbar-sticky">
     <div class="tw:mx-auto tw:w-full tw:max-w-app tw:px-3">
       <div class="navbar-scroll-container">
         <div class="navbar-content">
@@ -61,23 +59,31 @@ function formatDate(dateString: string): string {
 }
 </script>
 
-<style lang="scss" scoped>
-@use '../styles/config' as *;
-
+<style scoped>
 .navbar-scroll-container {
+  width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  width: 100%;
-  @include custom-scrollbar;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-muted) transparent;
+}
 
-  @include media-breakpoint-down(md) {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+.navbar-scroll-container::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
 
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
+.navbar-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navbar-scroll-container::-webkit-scrollbar-thumb {
+  background-color: var(--color-ink-muted);
+  border-radius: var(--radius-control);
+}
+
+.navbar-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-ink);
 }
 
 .navbar-content {
@@ -103,16 +109,16 @@ function formatDate(dateString: string): string {
 
 .nav-link {
   position: relative;
-  @include transition(color);
+  transition: color var(--transition-slow);
+}
 
-  &:hover {
-    color: $primary-color;
-  }
+.nav-link:hover,
+.nav-link.active {
+  color: var(--color-signal-indigo);
+}
 
-  &.active {
-    color: $primary-color;
-    font-weight: bold;
-  }
+.nav-link.active {
+  font-weight: bold;
 }
 
 .nav-indicator {
@@ -121,9 +127,9 @@ function formatDate(dateString: string): string {
   left: 0;
   width: 100%;
   height: 0.125rem;
-  background-color: $primary-color;
+  background-color: var(--color-signal-indigo);
   transform: scaleX(0);
-  @include transition(transform);
+  transition: transform var(--transition-slow);
 }
 
 .nav-link:hover .nav-indicator,
@@ -132,11 +138,11 @@ function formatDate(dateString: string): string {
 }
 
 .build-info {
-  font-size: 0.75rem;
-  padding: 0 0.625rem;
   display: flex;
   align-items: center;
   margin-left: 1.25rem;
+  padding: 0 0.625rem;
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -144,31 +150,36 @@ function formatDate(dateString: string): string {
   padding: 0.25rem 0.5rem;
 }
 
-.navbar-sticky {
-  @include media-breakpoint-up(lg) {
+@media (min-width: 992px) {
+  .navbar-sticky {
     position: sticky;
     top: 0;
-    z-index: 1020;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    z-index: var(--z-sticky);
+    box-shadow: var(--shadow-nav);
   }
 }
 
-@include media-breakpoint-down(md) {
+@media (max-width: 767.98px) {
+  .navbar-scroll-container {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .navbar-scroll-container::-webkit-scrollbar {
+    display: none;
+  }
+
   .navbar-content {
-    padding-right: $spacing-sm * 2;
-    gap: $spacing-sm;
+    gap: 0.5rem;
+    padding-right: 1rem;
   }
 
   .navbar-nav {
-    gap: $spacing-sm;
-  }
-
-  .build-info-text {
-    font-size: 0.7rem;
+    gap: 0.5rem;
   }
 
   .build-info {
-    margin-left: $spacing-lg * 2;
+    margin-left: 3rem;
   }
 }
 </style>
