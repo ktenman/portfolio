@@ -54,6 +54,7 @@ jobs:
         run: ./gradlew detekt
       - name: Upload Detekt reports
         if: always() && matrix.lint-type == 'backend'
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: Detekt Reports
@@ -175,6 +176,7 @@ jobs:
           attempt_delay: 30000
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'backend'
+        continue-on-error: true
         with:
           name: Backend Unit Test Reports
           path: |
@@ -184,6 +186,7 @@ jobs:
           retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'frontend'
+        continue-on-error: true
         with:
           name: Frontend Unit Test Reports
           path: |
@@ -192,12 +195,14 @@ jobs:
           retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'cloudflare'
+        continue-on-error: true
         with:
           name: Cloudflare Bypass Proxy Test Reports
           path: cloudflare-bypass-proxy/coverage/
           retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'e2e'
+        continue-on-error: true
         with:
           name: E2E Test Reports
           path: |
