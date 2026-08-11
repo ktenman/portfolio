@@ -1,5 +1,5 @@
 <template>
-  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-[min(1350px,91vw)] tw:px-3">
+  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-app tw:px-3">
     <div class="tw:mb-6 tw:flex tw:items-start tw:justify-between">
       <div class="tw:grow">
         <div class="tw:flex tw:items-center tw:justify-between">
