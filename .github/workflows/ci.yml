@@ -42,13 +42,13 @@ jobs:
           fetch-depth: 1
       - name: Set up JDK 21
         if: matrix.lint-type == 'backend'
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v5.7.0
         with:
           java-version: '21'
           distribution: 'temurin'
       - name: Setup Gradle
         if: matrix.lint-type == 'backend'
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           gradle-home-cache-cleanup: true
       - name: Run ktlint check
@@ -68,7 +68,7 @@ jobs:
           retention-days: 14
       - name: Use Node.js
         if: matrix.lint-type == 'frontend'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 'lts/iron'
           cache: 'npm'
@@ -108,16 +108,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
-      - uses: actions/setup-java@v5.4.0
+      - uses: actions/setup-java@v5.7.0
         if: matrix.type == 'backend' || matrix.type == 'e2e'
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         if: matrix.type == 'backend' || matrix.type == 'e2e'
         with:
           gradle-home-cache-cleanup: true
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         if: matrix.type == 'frontend' || matrix.type == 'cloudflare'
         with:
           node-version: 'lts/iron'
@@ -221,7 +221,7 @@ jobs:
       cloudflare-bypass-proxy: ${{ steps.filter.outputs.cloudflare-bypass-proxy }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
           filters: |
@@ -288,12 +288,12 @@ jobs:
         if: steps.check.outputs.should_build == 'true'
         with:
           fetch-depth: 1
-      - uses: actions/setup-java@v5.4.0
+      - uses: actions/setup-java@v5.7.0
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend'
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend'
         with:
           gradle-home-cache-cleanup: true
@@ -304,16 +304,16 @@ jobs:
         run: |
           echo "COMMIT_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
-      - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
         if: steps.check.outputs.should_build == 'true'
         with:
           buildkitd-flags: --debug
-      - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         if: steps.check.outputs.should_build == 'true'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         if: steps.check.outputs.should_build == 'true'
         with:
           registry: ghcr.io
@@ -321,7 +321,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
         if: steps.check.outputs.should_build == 'true'
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
           images: |
             ${{ matrix.image }}
@@ -412,7 +412,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: fastify/github-action-merge-dependabot@30c3f8f14a4f7b315ba38dbc1b793d27128fef82 # v3.12.0
+      - uses: fastify/github-action-merge-dependabot@73ec4cbb5e56df5591eae286972d5b2201ffe90f # v3.15.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target: minor
