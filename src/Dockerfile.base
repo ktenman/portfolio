@@ -34,7 +34,11 @@ RUN ARCH=$(uname -m); \
     esac && \
     GECKODRIVER_VERSION="v0.36.0" && \
     echo "Downloading geckodriver ${GECKODRIVER_VERSION} for ${GECKODRIVER_ARCH}" && \
-    curl -sL "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz" | tar -xz -C /usr/bin/ && \
+    curl -fsSL --retry 5 --connect-timeout 15 \
+        -o /tmp/geckodriver.tar.gz \
+        "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-${GECKODRIVER_ARCH}.tar.gz" && \
+    tar -xzf /tmp/geckodriver.tar.gz -C /usr/bin/ && \
+    rm /tmp/geckodriver.tar.gz && \
     chmod +x /usr/bin/geckodriver && \
     geckodriver --version
 
