@@ -958,35 +958,6 @@ const onTotalInvestmentChange = (event: Event) => {
   }
 }
 
-.platform-buttons {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.platform-btn {
-  padding: 0.25rem 0.625rem;
-  font-size: 0.8125rem;
-  border: 1px solid var(--color-gray-300);
-  background: var(--color-surface);
-  color: var(--color-gray-700);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.platform-btn:hover {
-  border-color: var(--color-signal-indigo);
-  color: var(--color-signal-indigo);
-}
-
-.platform-btn.active {
-  background: var(--color-signal-indigo);
-  border-color: var(--color-signal-indigo);
-  color: var(--color-surface);
-}
-
 .platform-btn-toggle-all {
   font-weight: 500;
 }
