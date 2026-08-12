@@ -9,6 +9,8 @@ colors:
   gain: '#21c55d'
   loss: '#dc3545'
   loss-deep: '#c82333'
+  loss-wash: '#fef2f2'
+  loss-wash-deep: '#fecaca'
   warning: '#d97706'
   legacy-primary: '#007bff'
   status-success: '#28a745'
@@ -236,17 +238,16 @@ A nine-step neutral ramp (`gray-100` `#f8f9fa` → `gray-900` `#212529`) backs t
 
 **The Signed-Number Rule.** Green and red are reserved for the sign of a value and for destructive intent. Never use them for status chips, category badges, brand accent, or emphasis. A red pixel on this interface means "you lost money" or "this will delete something", and it must never mean anything else.
 
-**The Single-Source Rule.** Every color in the system is declared once, in the `@theme static` block of `ui/styles/theme.css`, and consumed as `var(--color-*)` or as a Tailwind utility derived from it. There is no second palette layer to reconcile against. A hardcoded near-miss hex in a component — `#ef4444` beside Loss Red, `#0d6efd` beside Signal Indigo — is not a shortcut, it is a fork; the four sites that still do it are drift, not precedent.
+**The Single-Source Rule.** Every color in the system is declared once, in the `@theme static` block of `ui/styles/theme.css`, and consumed as `var(--color-*)` or as a Tailwind utility derived from it. There is no second palette layer to reconcile against. A hardcoded near-miss hex in a component — an `#ef4444` beside Loss Red, an `#0d6efd` beside Signal Indigo — is not a shortcut, it is a fork. The pixel gate cannot police this: a near-miss green measures far below the comparator's threshold and passes silently, so the only defense is that the literal never gets written.
 
 ## Typography
 
-**Body Font:** Avenir (with Helvetica, Arial, sans-serif)
-**Declared Token Stack:** system UI stack (`-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ...`)
+**Body Font:** Avenir (with Helvetica, Arial, sans-serif) — declared once as `--font-sans` and set on `body`
 **Mono Font:** `ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas` — used only inside the diversification config editor
 
 **Character:** Geometric-humanist and quiet. Avenir's even, wide-aperture forms hold up at 12px, which is where most of this interface lives. There is no display face and no type personality by design — the type's job is to be legible at density and to disappear behind the number it's setting.
 
-Two stacks are declared and they do not agree. `body` sets the system stack; `#app` sets Avenir and wins because it is the deeper element, so what actually renders depends on the OS: Avenir on macOS, Arial nearly everywhere else. This is drift, not intent — consolidate to one stack rather than adding a third. The mono stack is declared as `--font-mono` but the one place that needs it, the Monaco config editor, passes its own literal copy of the same list; wire that to the token rather than letting the two versions diverge.
+One stack is declared and it is set on `body`, so everything inherits it — including the toast layer, which teleports out of `#app` and would otherwise render in a different face than the app behind it. The mono stack is declared as `--font-mono` but the one place that needs it, the Monaco config editor, passes its own literal copy of the same list. That copy stays literal on purpose: Monaco measures glyph widths in a canvas context, where a `var()` does not resolve.
 
 ### Hierarchy
 
@@ -406,8 +407,8 @@ Loading states are shape-matched placeholders, never spinners-in-place: table, l
 ### Don't:
 
 - **Don't** use green or red for anything other than the sign of a value or a destructive action. No green "active" chips, no red "new" badges.
-- **Don't** hardcode a near-miss hex. `#ef4444` beside Loss Red and `#0d6efd` beside Signal Indigo are the existing drift, and every one of them is a color the theme already names.
-- **Don't** introduce a third font stack. Two are already declared and disagree (`#app`'s Avenir wins over `body`'s system stack); consolidate rather than add.
+- **Don't** hardcode a near-miss hex. An `#ef4444` beside Loss Red or an `#0d6efd` beside Signal Indigo is always a color the theme already names, and the screenshot gate will not catch it.
+- **Don't** introduce a second font stack. One is declared, on `body`, and everything inherits it.
 - **Don't** add a new radius value. Controls are `0.375rem`, containers are `0.5rem`.
 - **Don't** add a font size that isn't already in `typography.scale`. The twenty-one recorded steps are a measurement of existing drift, not an invitation to widen it.
 - **Don't** re-add shadows to buttons or table wrappers beyond `--shadow-control` and `--shadow-card`. The flatness is the material.
