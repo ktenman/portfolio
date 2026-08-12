@@ -125,7 +125,7 @@ jobs:
         if: matrix.type == 'backend'
         run: ./gradlew bootJar --build-cache
       - uses: actions/upload-artifact@v7
-        if: matrix.type == 'backend'
+        if: matrix.type == 'backend' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: backend-jar
           path: build/libs/*.jar
