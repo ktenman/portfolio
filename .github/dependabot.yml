@@ -17,9 +17,6 @@ updates:
     schedule:
       interval: quarterly
     open-pull-requests-limit: 30
-    ignore:
-      - dependency-name: "sass"
-        versions: [ ">1.70.0" ]
 
   - package-ecosystem: 'npm'
     directory: '/cloudflare-bypass-proxy'
