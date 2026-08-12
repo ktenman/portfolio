@@ -57,7 +57,7 @@
 
       <!-- Desktop Table View -->
       <div class="desktop-table-wrapper tw:hidden tw:md:block table-responsive">
-        <table class="table table-striped table-hover">
+        <table class="table table-striped">
           <thead>
             <tr>
               <th
@@ -199,124 +199,74 @@ const handleSort = (column: ColumnDefinition) => {
 }
 </script>
 
-<style scoped lang="scss">
-.mobile-cards-wrapper {
-  .mobile-card {
-    background: var(--bs-white);
-    border: 1px solid var(--bs-gray-200);
-    border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
-    overflow: hidden;
-    transition: all var(--transition-fast);
-
-    &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .mobile-card-body {
-      padding: 1rem;
-
-      .mobile-card-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 0;
-        gap: 0.5rem;
-
-        &:not(:last-child) {
-          border-bottom: 1px solid var(--bs-gray-100);
-        }
-
-        &:first-child {
-          padding-top: 0;
-        }
-
-        &:last-child {
-          padding-bottom: 0;
-        }
-
-        .label {
-          color: var(--bs-gray-600);
-          font-size: 0.8125rem;
-          font-weight: 500;
-          flex: 0 0 auto;
-          min-width: 80px;
-        }
-
-        .value {
-          font-weight: 600;
-          text-align: right;
-          flex: 1;
-          word-break: break-word;
-          margin-left: auto;
-
-          &.text-success {
-            color: var(--modern-success);
-          }
-
-          &.text-danger {
-            color: var(--modern-danger);
-          }
-
-          &.text-end {
-            text-align: right;
-          }
-
-          // Special styling for instrument info
-          .instrument-info {
-            > span:first-child {
-              font-weight: 600;
-              margin-bottom: 0.125rem;
-              font-size: 0.95rem;
-              color: var(--bs-gray-900) !important;
-            }
-
-            small {
-              opacity: 1;
-              font-weight: 500;
-              font-size: 0.8125rem;
-              color: var(--bs-gray-600) !important;
-            }
-          }
-        }
-      }
-    }
-
-    .mobile-card-actions {
-      margin-top: 0.25rem;
-      padding: 0.25rem 1rem 1rem;
-      border-top: 1px solid var(--bs-gray-200);
-      display: flex;
-      gap: 0.75rem;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-
-      .btn {
-        flex: 0 0 auto;
-      }
-    }
-  }
-}
-.desktop-table-wrapper {
-  border: 1px solid #dee2e6;
-  border-radius: 0.5rem;
+<style scoped>
+.mobile-cards-wrapper .mobile-card {
+  margin-bottom: 0.5rem;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-container);
+  transition: all var(--transition-fast);
+}
+
+.mobile-cards-wrapper .mobile-card:hover {
+  box-shadow: var(--shadow-lifted);
+}
+
+.mobile-cards-wrapper .mobile-card .mobile-card-body {
+  padding: 1rem;
+}
+
+.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item:not(:last-child) {
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item:first-child {
+  padding-top: 0;
+}
+
+.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item:last-child {
+  padding-bottom: 0;
+}
+
+.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item .label {
+  flex: 0 0 auto;
+  min-width: 80px;
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item .value {
+  flex: 1;
+  margin-left: auto;
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
+
+.desktop-table-wrapper {
+  overflow: hidden;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-card);
 }
 
 .table {
-  font-size: 0.9rem;
   margin-bottom: 0;
-}
-
-.table th,
-.table td {
-  vertical-align: middle;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 666px) {
   .table {
-    font-size: 2.8vw;
     display: block;
     width: 100%;
     overflow: hidden;
@@ -335,28 +285,27 @@ const handleSort = (column: ColumnDefinition) => {
 
   .table tr {
     margin-bottom: 1rem;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--color-hairline-strong);
   }
 
   .table td {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 0.5rem;
     font-size: 1rem;
     text-align: left;
   }
 
-  .table td[data-label]:before {
+  .table td[data-label]::before {
     content: attr(data-label);
-    font-weight: bold;
-    color: #6c757d;
-    margin-right: 0.5rem;
-    width: 50%;
     flex-shrink: 0;
+    width: 50%;
+    margin-right: 0.5rem;
+    font-weight: bold;
+    color: var(--color-gray-600);
   }
 
-  .table td.text-end,
   .table td.tw\:text-right\! {
     justify-content: flex-end;
   }
@@ -365,10 +314,10 @@ const handleSort = (column: ColumnDefinition) => {
 .sortable {
   cursor: pointer;
   user-select: none;
+}
 
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-  }
+.sortable:hover {
+  background-color: rgb(0 0 0 / 0.02);
 }
 
 .th-content {
@@ -384,33 +333,27 @@ const handleSort = (column: ColumnDefinition) => {
   font-size: 0.65rem;
   line-height: 0.5;
   opacity: 0.3;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-base);
+}
 
-  &.active {
-    opacity: 1;
-  }
+.sort-indicator.active {
+  opacity: 1;
+}
 
-  .sort-arrow-up,
-  .sort-arrow-down {
-    display: block;
-    height: 0.5rem;
-  }
+.sort-arrow-up,
+.sort-arrow-down {
+  display: block;
+  height: 0.5rem;
+}
 
-  &.asc .sort-arrow-up {
-    color: var(--bs-primary);
-  }
+.sort-indicator.asc .sort-arrow-up,
+.sort-indicator.desc .sort-arrow-down {
+  color: var(--color-signal-indigo);
+}
 
-  &.asc .sort-arrow-down {
-    opacity: 0.3;
-  }
-
-  &.desc .sort-arrow-down {
-    color: var(--bs-primary);
-  }
-
-  &.desc .sort-arrow-up {
-    opacity: 0.3;
-  }
+.sort-indicator.asc .sort-arrow-down,
+.sort-indicator.desc .sort-arrow-up {
+  opacity: 0.3;
 }
 
 @media (orientation: landscape) and (max-width: 767px) {

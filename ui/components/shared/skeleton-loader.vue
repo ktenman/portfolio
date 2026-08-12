@@ -58,88 +58,77 @@ withDefaults(defineProps<Props>(), {
 })
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .skeleton-wrapper {
   width: 100%;
 }
 
-.skeleton-table {
-  .skeleton-header {
-    height: 40px;
-    margin-bottom: 1rem;
-    border-radius: var(--radius-base);
-  }
-
-  .skeleton-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-
-    .skeleton-cell {
-      flex: 1;
-      height: 20px;
-      border-radius: var(--radius-sm);
-    }
-  }
+.skeleton-header {
+  height: 40px;
+  margin-bottom: 1rem;
 }
 
-.skeleton-list {
-  .skeleton-list-item {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-
-    .skeleton-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-base);
-      flex-shrink: 0;
-    }
-
-    .skeleton-content {
-      flex: 1;
-
-      .skeleton-title {
-        height: 20px;
-        width: 60%;
-        margin-bottom: 0.5rem;
-      }
-
-      .skeleton-text {
-        height: 16px;
-        width: 90%;
-      }
-    }
-  }
+.skeleton-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
 }
 
-.skeleton-form {
-  .skeleton-form-group {
-    margin-bottom: 1.5rem;
-
-    .skeleton-label {
-      height: 16px;
-      width: 30%;
-      margin-bottom: 0.5rem;
-      border-radius: var(--radius-sm);
-    }
-
-    .skeleton-input {
-      height: 38px;
-      border-radius: var(--radius-base);
-    }
-  }
+.skeleton-cell {
+  flex: 1;
+  height: 20px;
+  border-radius: var(--radius-control);
 }
 
-.skeleton-text-block {
-  .skeleton-text {
-    height: 16px;
-    margin-bottom: 0.5rem;
+.skeleton-list-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
+.skeleton-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.skeleton-content {
+  flex: 1;
+}
+
+.skeleton-content .skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-content .skeleton-text {
+  height: 16px;
+  width: 90%;
+}
+
+.skeleton-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.skeleton-label {
+  height: 16px;
+  width: 30%;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius-control);
+}
+
+.skeleton-input {
+  height: 38px;
+}
+
+.skeleton-text-block .skeleton-text {
+  height: 16px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-text-block .skeleton-text:last-child {
+  margin-bottom: 0;
 }
 
 .skeleton-custom {

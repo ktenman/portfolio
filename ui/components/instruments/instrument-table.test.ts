@@ -308,12 +308,9 @@ describe('InstrumentTable', () => {
       const wrapper = createWrapper()
       const firstRow = wrapper.find('tbody tr')
 
-      expect(firstRow.text()).toContain('Trading 212')
-
       const badges = firstRow.findAll('.badge')
-      expect(badges.length).toBe(1)
-      expect(badges[0].classes()).toContain('bg-secondary')
-      expect(badges[0].classes()).toContain('text-white')
+
+      expect(badges.map(badge => badge.text())).toEqual(['Trading 212'])
     })
 
     it('should display multiple platform badges', () => {

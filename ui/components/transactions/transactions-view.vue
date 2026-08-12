@@ -284,7 +284,7 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
 .dropdown-menu {
   top: 100%;
   left: 0;
-  margin-top: var(--bs-dropdown-spacer);
+  margin-top: 0.125rem;
 }
 
 .dropdown-item {
@@ -362,12 +362,6 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
 
   .stat-value {
     font-size: 1.5rem;
-  }
-}
-
-@media (max-width: 768px) {
-  :deep(.mobile-card-actions) {
-    display: none !important;
   }
 }
 </style>

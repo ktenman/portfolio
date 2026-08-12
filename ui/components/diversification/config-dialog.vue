@@ -8,7 +8,7 @@
     @update:open="onDialogClosed"
   >
     <template v-if="mode === 'export'">
-      <p class="text-muted small mb-2">
+      <p class="tw:mb-2 tw:text-[0.875em] tw:text-body-secondary">
         Download your current ETF allocation configuration as a JSON file.
       </p>
       <div class="editor-container">
@@ -22,7 +22,7 @@
     </template>
     <template v-else>
       <div v-if="!importedData" class="import-area">
-        <p class="text-muted small mb-3">
+        <p class="tw:mb-4 tw:text-[0.875em] tw:text-body-secondary">
           Select a JSON configuration file to import your ETF allocation.
         </p>
         <div
@@ -35,7 +35,7 @@
             ref="fileInput"
             type="file"
             accept=".json"
-            class="d-none"
+            class="tw:hidden"
             @change="onFileSelected"
           />
           <div class="drop-content">
@@ -43,12 +43,14 @@
             <div>Click to select or drag a JSON file here</div>
           </div>
         </div>
-        <div v-if="importError" class="alert alert-danger mt-3 mb-0">
+        <div v-if="importError" class="alert alert-danger tw:mt-4 tw:mb-0">
           {{ importError }}
         </div>
       </div>
       <div v-else class="import-preview">
-        <p class="text-muted small mb-2">Preview of configuration to import:</p>
+        <p class="tw:mb-2 tw:text-[0.875em] tw:text-body-secondary">
+          Preview of configuration to import:
+        </p>
         <div class="editor-container">
           <VueMonacoEditor
             v-model:value="importContent"
@@ -57,7 +59,7 @@
             theme="vs"
           />
         </div>
-        <div v-if="validationWarning" class="alert alert-warning mt-3 mb-0">
+        <div v-if="validationWarning" class="alert alert-warning tw:mt-4 tw:mb-0">
           {{ validationWarning }}
         </div>
       </div>
@@ -239,7 +241,7 @@ const confirmImport = () => {
 }
 
 .file-drop-zone:hover {
-  border-color: #0d6efd;
+  border-color: var(--color-signal-indigo);
   background: #f8f9fa;
 }
 

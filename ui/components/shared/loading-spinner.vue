@@ -1,7 +1,7 @@
 <template>
   <div class="tw:flex tw:justify-center tw:items-center" :class="containerClass">
     <div class="loading-spinner" :class="[spinnerClass, sizeClass]" role="status">
-      <span class="visually-hidden">{{ message }}</span>
+      <span class="tw:sr-only">{{ message }}</span>
     </div>
     <span v-if="showMessage" class="tw:ml-2">{{ message }}</span>
   </div>
@@ -53,7 +53,7 @@ const sizeClass = computed(() => {
 .loading-spinner {
   display: inline-block;
   border: 3px solid #e9ecef;
-  border-top-color: #0d6efd;
+  border-top-color: var(--color-signal-indigo);
   border-radius: 50%;
   animation: spinner-rotate 0.75s linear infinite;
 }

@@ -7,9 +7,12 @@
     :close-on-esc="false"
     @update:open="close"
   >
-    <loading-spinner v-if="isLoading" class="my-4" />
+    <loading-spinner v-if="isLoading" class="tw:my-6" />
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
-    <div v-else-if="hasFetched && candidates.length === 0" class="text-center text-muted py-4">
+    <div
+      v-else-if="hasFetched && candidates.length === 0"
+      class="tw:py-6 tw:text-center tw:text-body-secondary"
+    >
       No logo candidates found
     </div>
     <div v-else class="logo-grid">
@@ -29,7 +32,7 @@
       </div>
     </div>
     <template #footer>
-      <div v-if="!holdingUuid" class="text-muted small me-auto">
+      <div v-if="!holdingUuid" class="tw:me-auto tw:text-[0.875em] tw:text-body-secondary">
         Logo preview only - no holding record to save to
       </div>
       <button type="button" class="btn btn-secondary" @click="close" :disabled="isReplacing">
@@ -42,7 +45,7 @@
         @click="confirmReplacement"
         :disabled="selectedIndex === null || isReplacing"
       >
-        <span v-if="isReplacing" class="btn-spinner me-1"></span>
+        <span v-if="isReplacing" class="btn-spinner tw:me-1"></span>
         {{ isReplacing ? 'Replacing...' : 'Use This Logo' }}
       </button>
     </template>
@@ -179,7 +182,7 @@ const handleImageError = (event: Event) => {
 }
 
 .logo-candidate.selected {
-  border-color: #0d6efd;
+  border-color: var(--color-signal-indigo);
   background-color: #e7f1ff;
 }
 

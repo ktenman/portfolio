@@ -100,13 +100,3 @@ const chartOptions: ChartOptions<'line'> = {
   },
 }
 </script>
-
-<style lang="scss" scoped>
-@use '../../styles/config' as *;
-
-.chart-container {
-  @media (min-width: $breakpoint-lg) {
-    //height: 45rem;
-  }
-}
-</style>

@@ -463,7 +463,7 @@ watch(
 
 .last-updated {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-ink-muted);
   background: #f9fafb;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
@@ -481,7 +481,7 @@ watch(
 }
 
 .last-updated.refreshing {
-  color: var(--bs-primary);
+  color: var(--color-signal-indigo);
   background: #eff6ff;
   pointer-events: none;
 }

@@ -56,17 +56,17 @@ describe('ToastContainer', () => {
   })
 
   it.each([
-    ['success', 'bg-success'],
-    ['error', 'bg-danger'],
-    ['info', 'bg-info'],
-    ['warning', 'bg-warning'],
-  ] as const)('styles a %s toast with %s', async (type, background) => {
+    ['success', 'toast-success'],
+    ['error', 'toast-error'],
+    ['info', 'toast-info'],
+    ['warning', 'toast-warning'],
+  ] as const)('styles a %s toast with %s', async (type, accent) => {
     const wrapper = mount(ToastContainer)
 
     useToast()[type]('Teade')
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('.toast').classes()).toContain(background)
+    expect(wrapper.find('.toast').classes()).toContain(accent)
   })
 
   it('renders every queued toast', async () => {

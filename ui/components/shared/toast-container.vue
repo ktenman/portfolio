@@ -1,23 +1,23 @@
 <template>
   <teleport to="body">
-    <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div class="toast-container">
       <div
         v-for="toast in toasts"
         :key="toast.id"
-        class="toast show align-items-center text-white border-0"
-        :class="TOAST_STYLES[toast.type].bg"
+        class="toast show"
+        :class="TOAST_STYLES[toast.type].accent"
         role="alert"
         aria-live="assertive"
         aria-atomic="true"
       >
-        <div class="d-flex">
+        <div class="tw:flex tw:items-center">
           <div class="toast-body">
             <strong>{{ TOAST_STYLES[toast.type].label }}</strong>
             {{ toast.message }}
           </div>
           <button
             type="button"
-            class="btn-close btn-close-white me-2 m-auto"
+            class="btn-close tw:me-2 tw:m-auto"
             aria-label="Close"
             @click="dismissToast(toast.id)"
           ></button>
@@ -30,10 +30,10 @@
 <script setup lang="ts">
 import { dismissToast, toasts, type ToastType } from '../../composables/use-toast'
 
-const TOAST_STYLES: Record<ToastType, { bg: string; label: string }> = {
-  success: { bg: 'bg-success', label: '✓ Success:' },
-  error: { bg: 'bg-danger', label: '✕ Error:' },
-  info: { bg: 'bg-info', label: 'ℹ Info:' },
-  warning: { bg: 'bg-warning', label: '⚠ Warning:' },
+const TOAST_STYLES: Record<ToastType, { accent: string; label: string }> = {
+  success: { accent: 'toast-success', label: '✓ Success:' },
+  error: { accent: 'toast-error', label: '✕ Error:' },
+  info: { accent: 'toast-info', label: 'ℹ Info:' },
+  warning: { accent: 'toast-warning', label: '⚠ Warning:' },
 }
 </script>

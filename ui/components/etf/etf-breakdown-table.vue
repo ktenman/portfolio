@@ -1,5 +1,5 @@
 <template>
-  <div class="card shadow-sm border-0">
+  <div class="card tw:border-0! tw:shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
     <div class="card-body tw:p-0!">
       <loading-spinner v-if="isLoading" class="tw:my-12!" />
       <div v-else-if="isError" class="alert alert-danger tw:m-6! tw:mb-0!">
@@ -112,10 +112,13 @@
           <tr v-if="hasMore" class="load-more-row">
             <td colspan="7" class="tw:text-center! tw:py-2!">
               <div ref="loadMoreTrigger" class="tw:flex tw:items-center tw:justify-center">
-                <div class="spinner-border spinner-border-sm text-secondary tw:mr-2" role="status">
-                  <span class="visually-hidden">Loading...</span>
+                <div
+                  class="spinner-border spinner-border-sm tw:mr-2 tw:text-gray-600"
+                  role="status"
+                >
+                  <span class="tw:sr-only">Loading...</span>
                 </div>
-                <span class="tw:text-gray-600 small">
+                <span class="small tw:text-gray-600">
                   Loading more... ({{ displayedHoldings.length }} of {{ holdings.length }})
                 </span>
               </div>
@@ -412,7 +415,7 @@ const columns: ColumnDefinition[] = [
 }
 
 .empty-state-subtitle {
-  color: #6b7280;
+  color: var(--color-ink-muted);
   font-size: 0.9rem;
   max-width: 400px;
   margin: 0;
@@ -502,7 +505,7 @@ const columns: ColumnDefinition[] = [
 .flag-fallback {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-ink-muted);
   background-color: #f3f4f6;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
@@ -591,7 +594,7 @@ const columns: ColumnDefinition[] = [
     border: none;
     border-radius: 0;
     margin-bottom: 0;
-    border-bottom: 1px solid var(--bs-gray-200);
+    border-bottom: 1px solid var(--color-gray-200);
   }
 
   .card :deep(.mobile-card:first-child) {

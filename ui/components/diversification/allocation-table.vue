@@ -249,20 +249,20 @@
                 </option>
               </select>
             </td>
-            <td class="tw:text-gray-600! small">
+            <td class="tw:text-gray-600! tw:text-[0.875em]">
               <currency-flag :currency="getEtfFundCurrency(allocation.instrumentId)" :size="14" />
               {{ getEtfName(allocation.instrumentId) }}
             </td>
-            <td class="tw:text-gray-600! small">
+            <td class="tw:text-gray-600! tw:text-[0.875em]">
               {{ formatEtfPrice(getEtfPrice(allocation.instrumentId)) }}
             </td>
-            <td class="tw:text-gray-600! small">
+            <td class="tw:text-gray-600! tw:text-[0.875em]">
               {{ formatTer(getEtfTer(allocation.instrumentId)) }}
             </td>
-            <td class="tw:text-gray-600! small">
+            <td class="tw:text-gray-600! tw:text-[0.875em]">
               {{ formatReturn(getEtfReturn(allocation.instrumentId)) }}
             </td>
-            <td v-if="showRebalanceColumns" class="tw:text-gray-600! small">
+            <td v-if="showRebalanceColumns" class="tw:text-gray-600! tw:text-[0.875em]">
               €{{ (allocation.currentValue ?? 0).toFixed(2) }}
               <span class="current-percent">
                 ({{ getRebalanceData(allocation).currentPercent.toFixed(1) }}%)
@@ -279,7 +279,7 @@
                 @input="onValueChange(getOriginalIndex(allocation), $event)"
               />
             </td>
-            <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="small">
+            <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="tw:text-[0.875em]">
               <template v-if="showRebalanceColumns">
                 <span
                   v-if="hasRebalanceAction(allocation)"
@@ -302,7 +302,7 @@
             </td>
             <td
               v-if="showInvestmentColumns || showRebalanceActionColumn"
-              class="tw:text-gray-600! small"
+              class="tw:text-gray-600! tw:text-[0.875em]"
             >
               <template v-if="showRebalanceColumns">
                 {{ getAfterPercent(allocation).toFixed(1) }}%
@@ -569,8 +569,8 @@ const onTotalInvestmentChange = (event: Event) => {
 
 <style scoped>
 .allocation-section {
-  background: var(--bs-white);
-  border: 1px solid var(--bs-gray-300);
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray-300);
   border-radius: 0.5rem;
   padding: 1.5rem;
 }
@@ -597,7 +597,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .allocation-table th.sortable:hover {
-  background-color: var(--bs-gray-100);
+  background-color: var(--color-gray-100);
 }
 
 .th-content {
@@ -643,9 +643,9 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .allocation-table th {
   font-weight: 500;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   font-size: 0.875rem;
-  border-bottom: 2px solid var(--bs-gray-300);
+  border-bottom: 2px solid var(--color-gray-300);
 }
 
 .allocation-table td {
@@ -653,11 +653,11 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .allocation-table tbody tr:nth-child(odd) {
-  background-color: var(--bs-gray-100);
+  background-color: var(--color-gray-100);
 }
 
 .allocation-table tbody tr:nth-child(even) {
-  background-color: var(--bs-white);
+  background-color: var(--color-surface);
 }
 
 .allocation-footer {
@@ -667,7 +667,7 @@ const onTotalInvestmentChange = (event: Event) => {
   flex-wrap: wrap;
   gap: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--bs-gray-300);
+  border-top: 1px solid var(--color-gray-300);
 }
 
 .totals-section {
@@ -685,7 +685,7 @@ const onTotalInvestmentChange = (event: Event) => {
 .total-label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -693,15 +693,15 @@ const onTotalInvestmentChange = (event: Event) => {
 .total-value {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--bs-gray-900);
+  color: var(--color-gray-900);
 }
 
 .total-value.valid {
-  color: var(--bs-success);
+  color: var(--color-gain);
 }
 
 .total-value.invalid {
-  color: var(--bs-danger);
+  color: var(--color-loss);
 }
 
 .total-hint {
@@ -718,9 +718,9 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .action-btn {
   padding: 0.3125rem 0.625rem;
-  border: 1px solid var(--bs-gray-300);
-  background: var(--bs-white);
-  color: var(--bs-gray-600);
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-surface);
+  color: var(--color-gray-600);
   border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 500;
@@ -730,13 +730,13 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--bs-gray-100);
-  border-color: var(--bs-gray-400);
-  color: var(--bs-gray-700);
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-400);
+  color: var(--color-gray-700);
 }
 
 .action-btn:active:not(:disabled) {
-  background: var(--bs-gray-200);
+  background: var(--color-gray-200);
   transform: scale(0.98);
 }
 
@@ -748,7 +748,7 @@ const onTotalInvestmentChange = (event: Event) => {
 .action-btn.danger:hover:not(:disabled) {
   background: #fef2f2;
   border-color: #fecaca;
-  color: var(--bs-danger);
+  color: var(--color-loss);
 }
 
 .current-holdings {
@@ -759,18 +759,18 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .current-holdings label {
   font-size: 0.75rem;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   white-space: nowrap;
 }
 
 .holdings-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--bs-gray-800);
+  color: var(--color-gray-800);
 }
 
 .current-percent {
-  color: var(--bs-gray-500);
+  color: var(--color-gray-500);
   margin-left: 0.25rem;
 }
 
@@ -782,7 +782,7 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .total-investment-input label {
   font-size: 0.75rem;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   white-space: nowrap;
 }
 
@@ -815,7 +815,7 @@ const onTotalInvestmentChange = (event: Event) => {
 .optimize-toggle .form-check-label,
 .buy-only-toggle .form-check-label {
   font-size: 0.75rem;
-  color: var(--bs-gray-600);
+  color: var(--color-gray-600);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -827,9 +827,9 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .display-mode-btn {
   padding: 0.25rem 0.5rem;
-  border: 1px solid var(--bs-gray-300);
-  background: var(--bs-white);
-  color: var(--bs-gray-600);
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-surface);
+  color: var(--color-gray-600);
   font-size: 0.6875rem;
   font-weight: 500;
   cursor: pointer;
@@ -847,24 +847,24 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .display-mode-btn:hover:not(.active) {
-  background: var(--bs-gray-100);
-  border-color: var(--bs-gray-400);
-  color: var(--bs-gray-700);
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-400);
+  color: var(--color-gray-700);
 }
 
 .display-mode-btn.active {
-  background: var(--bs-gray-700);
-  color: var(--bs-white);
-  border-color: var(--bs-gray-700);
+  background: var(--color-gray-700);
+  color: var(--color-surface);
+  border-color: var(--color-gray-700);
 }
 
 .remove-btn {
   width: 1.5rem;
   height: 1.5rem;
   padding: 0;
-  border: 1px solid var(--bs-gray-300);
-  background: var(--bs-white);
-  color: var(--bs-gray-500);
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-surface);
+  color: var(--color-gray-500);
   border-radius: 0.25rem;
   font-size: 1rem;
   line-height: 1;
@@ -878,7 +878,7 @@ const onTotalInvestmentChange = (event: Event) => {
 .remove-btn:hover:not(:disabled) {
   background: #fef2f2;
   border-color: #fecaca;
-  color: var(--bs-danger);
+  color: var(--color-loss);
 }
 
 .remove-btn:disabled {
@@ -968,23 +968,23 @@ const onTotalInvestmentChange = (event: Event) => {
 .platform-btn {
   padding: 0.25rem 0.625rem;
   font-size: 0.8125rem;
-  border: 1px solid var(--bs-gray-300);
-  background: var(--bs-white);
-  color: var(--bs-gray-700);
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-surface);
+  color: var(--color-gray-700);
   border-radius: 999px;
   cursor: pointer;
   transition: all 0.12s ease;
 }
 
 .platform-btn:hover {
-  border-color: var(--bs-primary);
-  color: var(--bs-primary);
+  border-color: var(--color-signal-indigo);
+  color: var(--color-signal-indigo);
 }
 
 .platform-btn.active {
-  background: var(--bs-primary);
-  border-color: var(--bs-primary);
-  color: var(--bs-white);
+  background: var(--color-signal-indigo);
+  border-color: var(--color-signal-indigo);
+  color: var(--color-surface);
 }
 
 .platform-btn-toggle-all {

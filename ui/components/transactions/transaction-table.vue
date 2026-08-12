@@ -14,7 +14,7 @@
               <span class="name-default">{{ item.name }}</span>
             </h6>
             <div class="transaction-meta">
-              <span v-if="item.platform" class="badge bg-secondary text-white">
+              <span v-if="item.platform" class="badge">
                 {{ formatPlatformName(item.platform) }}
               </span>
               <span class="transaction-date">
@@ -96,7 +96,7 @@
           <span class="name-default">{{ item.name }}</span>
         </div>
         <div v-if="item.platform" class="platform-tags tw:mt-1">
-          <span class="badge bg-secondary text-white">
+          <span class="badge">
             {{ formatPlatformName(item.platform) }}
           </span>
         </div>
@@ -233,118 +233,111 @@ const extractBaseSymbol = (symbol: string): string => {
 }
 </script>
 
-<style scoped lang="scss">
-@import '../../styles/shared-table.scss';
-
-.platform-tags {
-  .badge {
-    color: white !important;
-    background-color: #6b7280 !important;
-    font-weight: 500;
-  }
+<style scoped>
+.platform-tags .badge {
+  font-weight: 500;
+  background-color: var(--color-ink-muted);
 }
 
 .mobile-transaction-card {
   padding: 0.75rem;
+}
 
-  .transaction-header {
-    margin-bottom: 0.75rem;
+.transaction-header {
+  margin-bottom: 0.75rem;
+}
 
-    .transaction-title {
-      .instrument-name {
-        margin: 0 0 0.25rem 0;
-        font-size: 1rem;
-        font-weight: 600;
-        line-height: 1.2;
-        color: var(--bs-gray-900);
-      }
+.instrument-name {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-gray-900);
+}
 
-      .transaction-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
+.transaction-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
 
-        .transaction-date {
-          font-size: 0.75rem;
-          color: var(--bs-gray-600);
-          font-weight: 500;
-        }
-      }
-    }
-  }
+.transaction-date {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
 
-  .transaction-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--bs-gray-200);
-    gap: 0.75rem 0.5rem;
+.transaction-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-gray-200);
+}
 
-    .metric-group {
-      text-align: center;
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
+.metric-group {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  text-align: center;
+}
 
-      .metric-value {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: var(--bs-gray-900);
-        margin-bottom: 0.125rem;
+.metric-value {
+  display: block;
+  margin-bottom: 0.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
 
-        &.tw\:text-gain {
-          color: #22c55e;
-        }
+.metric-value.tw\:text-gain {
+  color: #22c55e;
+}
 
-        &.tw\:text-loss {
-          color: #ef4444;
-        }
-      }
+.metric-value.tw\:text-loss {
+  color: #ef4444;
+}
 
-      .metric-label {
-        display: block;
-        font-size: 0.6875rem;
-        color: var(--bs-gray-600);
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-        margin-bottom: 0.125rem;
-      }
+.metric-label {
+  display: block;
+  margin-bottom: 0.125rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--color-gray-600);
+}
 
-      .metric-remaining,
-      .metric-currency {
-        display: block;
-        font-size: 0.625rem;
-        color: var(--bs-gray-500);
-        font-weight: 500;
-        margin-top: 0.125rem;
-      }
-    }
-  }
+.metric-remaining,
+.metric-currency {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--color-gray-500);
+}
 
-  .transaction-footer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.transaction-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    .amount-value {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: var(--bs-gray-900);
+.amount-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
 
-      &.tw\:text-gain {
-        color: #22c55e;
-      }
+.amount-value.tw\:text-gain {
+  color: #22c55e;
+}
 
-      &.tw\:text-loss {
-        color: #ef4444;
-      }
-    }
-  }
+.amount-value.tw\:text-loss {
+  color: #ef4444;
 }
 
 .ticker-landscape {

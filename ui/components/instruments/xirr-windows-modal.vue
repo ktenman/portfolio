@@ -6,32 +6,32 @@
     centered
     @update:open="emit('update:open', $event)"
   >
-    <div v-if="isLoading" class="text-center py-3">
+    <div v-if="isLoading" class="tw:text-center tw:py-4">
       <div class="spinner-border" role="status" />
     </div>
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-else>
-      <table class="table table-sm mb-0">
+      <table class="table table-sm tw:mb-0">
         <thead>
           <tr>
             <th>Window</th>
-            <th class="text-end">Annualized XIRR</th>
-            <th class="d-none d-sm-table-cell text-end">Since</th>
+            <th class="tw:text-right">Annualized XIRR</th>
+            <th class="tw:hidden tw:sm:table-cell tw:text-right">Since</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in windows" :key="row.period">
-            <td class="fw-semibold">{{ row.period }}</td>
-            <td class="text-end" :class="returnClass(row.xirr)">
+            <td class="tw:font-semibold">{{ row.period }}</td>
+            <td class="tw:text-right" :class="returnClass(row.xirr)">
               {{ formatXirr(row.xirr) }}
             </td>
-            <td class="d-none d-sm-table-cell text-end text-muted">
+            <td class="tw:hidden tw:sm:table-cell tw:text-right tw:text-body-secondary">
               {{ row.fromDate ?? '—' }}
             </td>
           </tr>
         </tbody>
       </table>
-      <p class="text-muted small fst-italic mt-3 mb-0">
+      <p class="tw:mt-4 tw:mb-0 tw:text-[0.875em] tw:italic tw:text-body-secondary">
         Synthetic open at window start (portfolio value), real cash flows during the window,
         synthetic close today. Rows show "—" when the window predates your earliest portfolio
         snapshot.
@@ -97,8 +97,8 @@ const formatXirr = (value: number | null | undefined): string => {
 
 const returnClass = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return ''
-  if (value > 0) return 'text-success'
-  if (value < 0) return 'text-danger'
+  if (value > 0) return 'tw:text-gain'
+  if (value < 0) return 'tw:text-loss'
   return ''
 }
 </script>
