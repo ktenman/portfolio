@@ -64,26 +64,11 @@ function formatDate(dateString: string): string {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-ink-muted) transparent;
+  scrollbar-width: none;
 }
 
 .navbar-scroll-container::-webkit-scrollbar {
-  width: 0.5rem;
-  height: 0.5rem;
-}
-
-.navbar-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.navbar-scroll-container::-webkit-scrollbar-thumb {
-  background-color: var(--color-ink-muted);
-  border-radius: var(--radius-control);
-}
-
-.navbar-scroll-container::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-ink);
+  display: none;
 }
 
 .navbar-content {
@@ -160,15 +145,6 @@ function formatDate(dateString: string): string {
 }
 
 @media (max-width: 767.98px) {
-  .navbar-scroll-container {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .navbar-scroll-container::-webkit-scrollbar {
-    display: none;
-  }
-
   .navbar-content {
     gap: 0.5rem;
     padding-right: 1rem;

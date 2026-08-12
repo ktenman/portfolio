@@ -436,6 +436,10 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
 </script>
 
 <style scoped>
+.instrument-name {
+  text-wrap: pretty;
+}
+
 .platform-tags .badge {
   font-weight: 500;
   background-color: var(--color-ink-muted);

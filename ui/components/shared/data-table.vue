@@ -252,7 +252,7 @@ const handleSort = (column: ColumnDefinition) => {
 }
 
 .desktop-table-wrapper {
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--radius-container);
   box-shadow: var(--shadow-card);

@@ -231,27 +231,24 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
 }
 
 .stats-container {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
 .stat-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
   padding: 1rem 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  flex: 1;
-  min-width: 200px;
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-card);
 }
 
 .stat-label {
   font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #6c757d;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-muted);
   font-weight: 500;
   margin-bottom: 0.25rem;
 }
@@ -260,7 +257,8 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.2;
-  color: #1a1a1a;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .date-actions {
@@ -295,12 +293,11 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
 
 @media (max-width: 768px) {
   .stats-container {
-    flex-direction: column;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .stat-card {
     padding: 0.75rem 1rem;
-    min-width: unset;
   }
 
   .stat-value {
@@ -339,26 +336,6 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
   .date-actions-row .platform-btn,
   .date-actions-row .dropdown {
     width: 110px;
-  }
-}
-
-@media (max-width: 926px) and (orientation: landscape) {
-  .stats-container {
-    flex-direction: row;
-    justify-content: center;
-  }
-
-  .stat-card {
-    padding: 1.25rem 2rem;
-    min-width: 200px;
-  }
-
-  .stat-label {
-    font-size: 0.8rem;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
   }
 }
 </style>

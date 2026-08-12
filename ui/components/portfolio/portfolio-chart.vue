@@ -32,24 +32,28 @@ const chartData = computed(() => {
       {
         label: 'Total Value',
         borderColor: '#8884d8',
+        backgroundColor: '#8884d8',
         data: props.data.totalValues,
         yAxisID: 'y',
       },
       {
         label: 'Total Profit',
         borderColor: '#ffc658',
+        backgroundColor: '#ffc658',
         data: props.data.profitValues,
         yAxisID: 'y',
       },
       {
         label: 'XIRR Annual Return',
         borderColor: '#82ca9d',
+        backgroundColor: '#82ca9d',
         data: props.data.xirrValues,
         yAxisID: 'y1',
       },
       {
         label: 'Earnings Per Month',
         borderColor: '#ff7300',
+        backgroundColor: '#ff7300',
         data: props.data.earningsValues,
         yAxisID: 'y',
       },
@@ -63,6 +67,28 @@ const chartOptions: ChartOptions<'line'> = {
   interaction: {
     mode: 'index',
     intersect: false,
+  },
+  elements: {
+    point: {
+      radius: 0,
+      hoverRadius: 4,
+    },
+    line: {
+      tension: 0.15,
+      borderWidth: 2,
+    },
+  },
+  plugins: {
+    legend: {
+      labels: {
+        boxWidth: 8,
+        boxHeight: 8,
+        padding: 12,
+        font: {
+          size: 11,
+        },
+      },
+    },
   },
   scales: {
     x: {
