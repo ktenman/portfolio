@@ -4,22 +4,34 @@ updates:
     directory: '/'
     schedule:
       interval: quarterly
-    open-pull-requests-limit: 30
+    open-pull-requests-limit: 5
+    groups:
+      gradle:
+        patterns: ['*']
 
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
       interval: quarterly
-    open-pull-requests-limit: 30
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ['*']
 
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: quarterly
-    open-pull-requests-limit: 30
+    open-pull-requests-limit: 5
+    groups:
+      npm:
+        patterns: ['*']
 
   - package-ecosystem: 'npm'
     directory: '/cloudflare-bypass-proxy'
     schedule:
       interval: quarterly
-    open-pull-requests-limit: 30
+    open-pull-requests-limit: 5
+    groups:
+      proxy-npm:
+        patterns: ['*']
