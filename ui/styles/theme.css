@@ -1,10 +1,10 @@
 @layer theme, base, components, utilities;
 
-@import 'tailwindcss/theme.css' layer(theme) prefix(tw);
+@import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/preflight.css' layer(base);
 @import './base.css' layer(base);
 @import './components.css' layer(components);
-@import 'tailwindcss/utilities.css' prefix(tw);
+@import 'tailwindcss/utilities.css';
 
 @source '../**/*.{vue,ts}';
 
@@ -76,50 +76,4 @@
   --breakpoint-lg: 992px;
   --breakpoint-xl: 1200px;
   --breakpoint-2xl: 1400px;
-}
-
-:root {
-  --color-white: var(--tw-color-white);
-  --color-primary: var(--tw-color-primary);
-  --color-signal-indigo: var(--tw-color-signal-indigo);
-  --color-signal-indigo-deep: var(--tw-color-signal-indigo-deep);
-  --color-control-graphite: var(--tw-color-control-graphite);
-  --color-control-graphite-deep: var(--tw-color-control-graphite-deep);
-  --color-gain: var(--tw-color-gain);
-  --color-loss: var(--tw-color-loss);
-  --color-loss-deep: var(--tw-color-loss-deep);
-  --color-warning: var(--tw-color-warning);
-  --color-status-success: var(--tw-color-status-success);
-  --color-status-danger: var(--tw-color-status-danger);
-  --color-status-info: var(--tw-color-status-info);
-  --color-status-warning: var(--tw-color-status-warning);
-  --color-ink: var(--tw-color-ink);
-  --color-ink-muted: var(--tw-color-ink-muted);
-  --color-hairline: var(--tw-color-hairline);
-  --color-control-border: var(--tw-color-control-border);
-  --color-hairline-strong: var(--tw-color-hairline-strong);
-  --color-surface: var(--tw-color-surface);
-  --color-surface-hover: var(--tw-color-surface-hover);
-  --color-surface-subtle: var(--tw-color-surface-subtle);
-  --color-paper: var(--tw-color-paper);
-  --color-gray-100: var(--tw-color-gray-100);
-  --color-gray-200: var(--tw-color-gray-200);
-  --color-gray-300: var(--tw-color-gray-300);
-  --color-gray-400: var(--tw-color-gray-400);
-  --color-gray-500: var(--tw-color-gray-500);
-  --color-gray-600: var(--tw-color-gray-600);
-  --color-gray-700: var(--tw-color-gray-700);
-  --color-gray-800: var(--tw-color-gray-800);
-  --color-gray-900: var(--tw-color-gray-900);
-  --font-sans: var(--tw-font-sans);
-  --font-system: var(--tw-font-system);
-  --text-2xs: var(--tw-text-2xs);
-  --radius-control: var(--tw-radius-control);
-  --radius-container: var(--tw-radius-container);
-  --shadow-card: var(--tw-shadow-card);
-  --shadow-control: var(--tw-shadow-control);
-  --shadow-lifted: var(--tw-shadow-lifted);
-  --shadow-nav: var(--tw-shadow-nav);
-  --shadow-overlay: var(--tw-shadow-overlay);
-  --ease-standard: var(--tw-ease-standard);
 }

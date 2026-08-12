@@ -1,28 +1,25 @@
 <template>
   <div
     v-if="entries.length > 0"
-    class="currency-split-card tw:min-w-40 tw:rounded-container tw:border tw:border-hairline tw:bg-surface tw:px-4 tw:py-3 tw:shadow-card tw:max-md:px-3.5 tw:max-md:py-2.5"
+    class="currency-split-card min-w-40 rounded-container border border-hairline bg-surface px-4 py-3 shadow-card max-md:px-3.5 max-md:py-2.5"
   >
     <div
-      class="currency-split-label tw:mb-2 tw:text-xs tw:font-medium tw:tracking-wider tw:text-gray-600 tw:uppercase"
+      class="currency-split-label mb-2 text-xs font-medium tracking-wider text-gray-600 uppercase"
     >
       {{ label }}
     </div>
-    <div class="tw:flex tw:flex-col tw:gap-1">
+    <div class="flex flex-col gap-1">
       <div
         v-for="row in rows"
         :key="row.currency"
-        class="currency-split-row tw:flex tw:items-center tw:gap-2 tw:text-sm tw:text-ink"
+        class="currency-split-row flex items-center gap-2 text-sm text-ink"
       >
         <CurrencyFlag :currency="row.currency" :size="14" />
-        <span class="tw:min-w-10 tw:font-semibold">{{ row.currency }}</span>
-        <span class="tw:ml-auto tw:font-semibold" data-testid="currency-split-pct">
+        <span class="min-w-10 font-semibold">{{ row.currency }}</span>
+        <span class="ml-auto font-semibold" data-testid="currency-split-pct">
           {{ formatPercent(row.pct) }}
         </span>
-        <span
-          v-if="showValue"
-          class="currency-value tw:min-w-16 tw:text-right tw:text-2xs tw:text-gray-600"
-        >
+        <span v-if="showValue" class="currency-value min-w-16 text-right text-2xs text-gray-600">
           {{ formatValue(row.value) }}
         </span>
       </div>

@@ -7,11 +7,11 @@
     :close-on-esc="false"
     @update:open="close"
   >
-    <loading-spinner v-if="isLoading" class="tw:my-6" />
+    <loading-spinner v-if="isLoading" class="my-6" />
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
     <div
       v-else-if="hasFetched && candidates.length === 0"
-      class="tw:py-6 tw:text-center tw:text-body-secondary"
+      class="py-6 text-center text-body-secondary"
     >
       No logo candidates found
     </div>
@@ -32,7 +32,7 @@
       </div>
     </div>
     <template #footer>
-      <div v-if="!holdingUuid" class="tw:me-auto tw:text-[0.875em] tw:text-body-secondary">
+      <div v-if="!holdingUuid" class="me-auto text-[0.875em] text-body-secondary">
         Logo preview only - no holding record to save to
       </div>
       <button type="button" class="btn btn-secondary" @click="close" :disabled="isReplacing">
@@ -45,7 +45,7 @@
         @click="confirmReplacement"
         :disabled="selectedIndex === null || isReplacing"
       >
-        <span v-if="isReplacing" class="btn-spinner tw:me-1"></span>
+        <span v-if="isReplacing" class="btn-spinner me-1"></span>
         {{ isReplacing ? 'Replacing...' : 'Use This Logo' }}
       </button>
     </template>

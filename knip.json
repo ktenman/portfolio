@@ -18,13 +18,7 @@
     "cloudflare-bypass-proxy/**"
   ],
   "ignoreUnresolved": ["./tests/setup.ts"],
-  "ignoreDependencies": [
-    "vue-eslint-parser",
-    "espree",
-    "eslint-plugin-no-comments",
-    "tailwindcss",
-    "bootstrap"
-  ],
+  "ignoreDependencies": ["vue-eslint-parser", "espree", "eslint-plugin-no-comments", "tailwindcss"],
   "ignoreExportsUsedInFile": false,
   "includeEntryExports": true,
   "vue": {

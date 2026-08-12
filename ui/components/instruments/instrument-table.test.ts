@@ -182,30 +182,30 @@ describe('InstrumentTable', () => {
   describe('profit display', () => {
     it('should display positive profit without plus sign and green color', () => {
       const wrapper = createWrapper()
-      const profitCell = wrapper.find('.tw\\:text-gain')
+      const profitCell = wrapper.find('.text-gain')
 
       expect(profitCell.text()).toBe('$5,050.00')
-      expect(profitCell.classes()).toContain('tw:text-gain')
+      expect(profitCell.classes()).toContain('text-gain')
     })
 
     it('should display negative profit with minus sign and red color', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const secondRow = rows[1]
-      const profitCell = secondRow.find('.tw\\:text-loss')
+      const profitCell = secondRow.find('.text-loss')
 
       expect(profitCell.text()).toBe('-€2,000.00')
-      expect(profitCell.classes()).toContain('tw:text-loss')
+      expect(profitCell.classes()).toContain('text-loss')
     })
 
     it('should display zero profit without plus sign and success color', () => {
       const wrapper = createWrapper()
       const rows = wrapper.findAll('tbody tr')
       const thirdRow = rows[2]
-      const profitCell = thirdRow.find('.tw\\:text-gain')
+      const profitCell = thirdRow.find('.text-gain')
 
       expect(profitCell.text()).toBe('$0.00')
-      expect(profitCell.classes()).toContain('tw:text-gain')
+      expect(profitCell.classes()).toContain('text-gain')
     })
 
     it('should display $0.00 when profit is undefined (fallback behavior)', () => {
