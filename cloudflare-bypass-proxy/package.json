@@ -14,7 +14,7 @@
   "dependencies": {
     "cheerio": "^1.2.0",
     "express": "5.2.1",
-    "express-rate-limit": "8.5.2",
+    "express-rate-limit": "8.6.2",
     "express-request-id": "^3.0.0",
     "onnxruntime-node": "^1.27.0",
     "pngjs": "^7.0.0"
@@ -22,14 +22,14 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.2.0",
     "@types/pngjs": "^6.0.5",
-    "@types/supertest": "^7.2.0",
+    "@types/supertest": "^7.2.1",
     "jest": "^30.4.2",
     "supertest": "^7.2.2",
-    "ts-jest": "^29.4.11",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "tsx": "^4.23.11",
+    "typescript": "^7.0.2"
   }
 }
