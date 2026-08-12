@@ -295,11 +295,11 @@ const extractBaseSymbol = (symbol: string): string => {
 }
 
 .metric-value.text-gain {
-  color: #22c55e;
+  color: var(--color-gain);
 }
 
 .metric-value.text-loss {
-  color: #ef4444;
+  color: var(--color-loss);
 }
 
 .metric-label {
@@ -333,11 +333,11 @@ const extractBaseSymbol = (symbol: string): string => {
 }
 
 .amount-value.text-gain {
-  color: #22c55e;
+  color: var(--color-gain);
 }
 
 .amount-value.text-loss {
-  color: #ef4444;
+  color: var(--color-loss);
 }
 
 .ticker-landscape {

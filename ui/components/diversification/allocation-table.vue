@@ -746,8 +746,8 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .action-btn.danger:hover:not(:disabled) {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: var(--color-loss-wash);
+  border-color: var(--color-loss-wash-deep);
   color: var(--color-loss);
 }
 
@@ -876,8 +876,8 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .remove-btn:hover:not(:disabled) {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: var(--color-loss-wash);
+  border-color: var(--color-loss-wash-deep);
   color: var(--color-loss);
 }
 

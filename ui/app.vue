@@ -57,13 +57,13 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f8f9fa;
+  background-color: var(--color-gray-100);
 }
 .auth-spinner {
   width: 3rem;
   height: 3rem;
-  border: 0.25rem solid #e9ecef;
-  border-top-color: #0d6efd;
+  border: 0.25rem solid var(--color-gray-200);
+  border-top-color: var(--color-signal-indigo);
   border-radius: 50%;
   animation: auth-spin 1s linear infinite;
 }

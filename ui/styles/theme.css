@@ -25,6 +25,8 @@
   --color-gain: #21c55d;
   --color-loss: #dc3545;
   --color-loss-deep: #c82333;
+  --color-loss-wash: #fef2f2;
+  --color-loss-wash-deep: #fecaca;
   --color-warning: #d97706;
 
   --color-status-success: #28a745;
@@ -54,8 +56,6 @@
   --color-gray-900: #212529;
 
   --font-sans: Avenir, Helvetica, Arial, sans-serif;
-  --font-system:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
   --text-2xs: 0.8125rem;

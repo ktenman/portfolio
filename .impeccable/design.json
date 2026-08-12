@@ -109,6 +109,36 @@
           "#f9e7e9"
         ]
       },
+      "loss-wash": {
+        "role": "negative-wash",
+        "displayName": "Loss Wash",
+        "canonical": "#fef2f2",
+        "tonalRamp": [
+          "#2e2c2c",
+          "#4a4646",
+          "#726d6d",
+          "#9d9696",
+          "#c6bdbd",
+          "#fef2f2",
+          "#fef8f8",
+          "#fffefe"
+        ]
+      },
+      "loss-wash-deep": {
+        "role": "negative-wash-border",
+        "displayName": "Loss Wash Border",
+        "canonical": "#fecaca",
+        "tonalRamp": [
+          "#2e2424",
+          "#4a3b3b",
+          "#725b5b",
+          "#9d7d7d",
+          "#c69e9e",
+          "#fecaca",
+          "#fee3e3",
+          "#fff9f9"
+        ]
+      },
       "ink": {
         "role": "text",
         "displayName": "Ink",
@@ -502,7 +532,7 @@
       },
       {
         "name": "The Single-Source Rule",
-        "body": "Every color in the system is declared once, in the @theme static block of ui/styles/theme.css, and consumed as var(--color-*) or as a Tailwind utility derived from it. There is no second palette layer to reconcile against. A hardcoded near-miss hex in a component (#ef4444 beside Loss Red, #0d6efd beside Signal Indigo) is not a shortcut, it is a fork; the four sites that still do it are drift, not precedent.",
+        "body": "Every color in the system is declared once, in the @theme static block of ui/styles/theme.css, and consumed as var(--color-*) or as a Tailwind utility derived from it. There is no second palette layer to reconcile against. A hardcoded near-miss hex in a component — an #ef4444 beside Loss Red, an #0d6efd beside Signal Indigo — is not a shortcut, it is a fork. The pixel gate cannot police this: a near-miss green measures far below the comparator threshold and passes silently, so the only defense is that the literal never gets written.",
         "section": "colors"
       },
       {
@@ -550,8 +580,8 @@
     ],
     "donts": [
       "Don't use green or red for anything other than the sign of a value or a destructive action. No green active chips, no red new badges.",
-      "Don't hardcode a near-miss hex. #ef4444 beside Loss Red and #0d6efd beside Signal Indigo are the existing drift, and every one of them is a color the theme already names.",
-      "Don't introduce a third font stack. Two are already declared and disagree (#app's Avenir wins over body's system stack); consolidate rather than add.",
+      "Don't hardcode a near-miss hex. An #ef4444 beside Loss Red or an #0d6efd beside Signal Indigo is always a color the theme already names, and the screenshot gate will not catch it.",
+      "Don't introduce a second font stack. One is declared, on body, and everything inherits it.",
       "Don't add a new radius value. Controls are 0.375rem, containers are 0.5rem.",
       "Don't add a font size that isn't already in typography.scale. The twenty-one recorded steps are a measurement of existing drift, not an invitation to widen it.",
       "Don't re-add shadows to buttons or table wrappers beyond shadow-control and shadow-card. The flatness is the material.",

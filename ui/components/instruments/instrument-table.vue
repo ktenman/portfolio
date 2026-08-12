@@ -544,11 +544,11 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
 }
 
 .total-value.text-gain {
-  color: #22c55e;
+  color: var(--color-gain);
 }
 
 .total-value.text-loss {
-  color: #ef4444;
+  color: var(--color-loss);
 }
 
 .mobile-instrument-card {
@@ -621,11 +621,11 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
 }
 
 .mobile-instrument-card .metric-value.text-gain {
-  color: #22c55e;
+  color: var(--color-gain);
 }
 
 .mobile-instrument-card .metric-value.text-loss {
-  color: #ef4444;
+  color: var(--color-loss);
 }
 
 .mobile-instrument-card .metric-label {
