@@ -253,46 +253,6 @@ const handleSort = (column: ColumnDefinition) => {
   word-break: break-word;
 }
 
-.mobile-cards-wrapper
-  .mobile-card
-  .mobile-card-body
-  .mobile-card-item
-  .value
-  .instrument-info
-  > span:first-child {
-  margin-bottom: 0.125rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
-
-.mobile-cards-wrapper
-  .mobile-card
-  .mobile-card-body
-  .mobile-card-item
-  .value
-  .instrument-info
-  small {
-  font-size: var(--text-2xs);
-  font-weight: 500;
-  color: var(--color-gray-600);
-  opacity: 1;
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
-  padding: 0.25rem 1rem 1rem;
-  border-top: 1px solid var(--color-gray-200);
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-actions .btn {
-  flex: 0 0 auto;
-}
-
 .desktop-table-wrapper {
   overflow: hidden;
   border: 1px solid var(--color-hairline-strong);

@@ -364,10 +364,4 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
     font-size: 1.5rem;
   }
 }
-
-@media (max-width: 768px) {
-  :deep(.mobile-card-actions) {
-    display: none !important;
-  }
-}
 </style>
