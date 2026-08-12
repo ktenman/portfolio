@@ -124,12 +124,6 @@ jobs:
       - name: Build JAR
         if: matrix.type == 'backend'
         run: ./gradlew bootJar --build-cache
-      - uses: actions/upload-artifact@v7
-        if: matrix.type == 'backend' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        with:
-          name: backend-jar
-          path: build/libs/*.jar
-          retention-days: 1
       - name: Install Node dependencies
         if: matrix.type == 'frontend' || matrix.type == 'cloudflare'
         run: npm ci
@@ -289,22 +283,17 @@ jobs:
         if: steps.check.outputs.should_build == 'true'
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v8
-        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name != 'workflow_dispatch'
-        with:
-          name: backend-jar
-          path: build/libs/
       - uses: actions/setup-java@v5.4.0
-        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
+        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend'
         with:
           java-version: '21'
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
-        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
+        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend'
         with:
           gradle-home-cache-cleanup: true
       - run: ./gradlew bootJar --build-cache
-        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && github.event_name == 'workflow_dispatch'
+        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend'
       - name: Set build info
         if: steps.check.outputs.should_build == 'true'
         run: |
