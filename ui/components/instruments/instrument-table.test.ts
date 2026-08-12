@@ -11,6 +11,12 @@ vi.mock('../shared/data-table.vue', () => ({
     props: ['items', 'columns', 'isLoading', 'isError', 'errorMessage', 'emptyMessage'],
     template: `
       <div>
+        <div class="mobile-cards-wrapper">
+          <div v-for="item in items" :key="item.id" class="mobile-card">
+            <slot name="mobile-card" :item="item" />
+          </div>
+          <slot name="mobile-footer" />
+        </div>
         <table>
           <tbody>
             <tr v-for="item in items" :key="item.id">
@@ -182,7 +188,7 @@ describe('InstrumentTable', () => {
   describe('profit display', () => {
     it('should display positive profit without plus sign and green color', () => {
       const wrapper = createWrapper()
-      const profitCell = wrapper.find('.text-gain')
+      const profitCell = wrapper.findAll('tbody tr')[0].find('.text-gain')
 
       expect(profitCell.text()).toBe('$5,050.00')
       expect(profitCell.classes()).toContain('text-gain')
@@ -355,13 +361,10 @@ describe('InstrumentTable', () => {
 
     it('should display platform badges in mobile view', () => {
       const wrapper = createWrapper()
-      const mobileCard = wrapper.find('.mobile-instrument-card')
+      const mobileCards = wrapper.findAll('.mobile-instrument-card')
 
-      if (mobileCard.exists()) {
-        const badges = mobileCard.findAll('.platform-tags .badge')
-        expect(badges.length).toBeGreaterThan(0)
-        expect(badges[0].classes()).toContain('bg-secondary')
-      }
+      const badges = mobileCards[1].findAll('.platform-tags .badge')
+      expect(badges.map(badge => badge.text())).toEqual(['Binance', 'Coinbase'])
     })
 
     it('should handle undefined platforms gracefully', () => {
@@ -478,25 +481,21 @@ describe('InstrumentTable', () => {
       const wrapper = createWrapper()
       const mobileCard = wrapper.find('.mobile-instrument-card')
 
-      if (mobileCard.exists()) {
-        expect(mobileCard.find('.instrument-header').exists()).toBe(true)
-        expect(mobileCard.find('.instrument-metrics').exists()).toBe(true)
-        expect(mobileCard.find('.instrument-footer').exists()).toBe(true)
-      }
+      expect(mobileCard.find('.instrument-header').exists()).toBe(true)
+      expect(mobileCard.find('.instrument-metrics').exists()).toBe(true)
+      expect(mobileCard.find('.instrument-footer').exists()).toBe(true)
     })
 
     it('should display mobile totals card', () => {
       const wrapper = createWrapper()
       const mobileTotals = wrapper.find('.mobile-totals-card')
 
-      if (mobileTotals.exists()) {
-        expect(mobileTotals.find('.totals-header').exists()).toBe(true)
-        expect(mobileTotals.find('.totals-content').exists()).toBe(true)
-        expect(mobileTotals.text()).toContain('TOTAL')
-        expect(mobileTotals.text()).toContain('VALUE')
-        expect(mobileTotals.text()).toContain('INVESTED')
-        expect(mobileTotals.text()).toContain('PROFIT')
-      }
+      expect(mobileTotals.find('.totals-header').exists()).toBe(true)
+      expect(mobileTotals.find('.totals-content').exists()).toBe(true)
+      expect(mobileTotals.text()).toContain('TOTAL')
+      expect(mobileTotals.text()).toContain('VALUE')
+      expect(mobileTotals.text()).toContain('INVESTED')
+      expect(mobileTotals.text()).toContain('PROFIT')
     })
   })
 
@@ -526,22 +525,16 @@ describe('InstrumentTable', () => {
       })
       const mobileCard = wrapper.find('.mobile-instrument-card')
 
-      if (mobileCard.exists()) {
-        const metricLabels = mobileCard.findAll('.metric-label')
-        const periodLabel = metricLabels.find(label => label.text() === '30D')
-        expect(periodLabel).toBeDefined()
-      }
+      const metricLabels = mobileCard.findAll('.metric-label')
+      expect(metricLabels.map(label => label.text())).toContain('30D')
     })
 
     it('should display selected period in mobile totals card', () => {
       const wrapper = createWrapper({ selectedPeriod: '1y' })
       const mobileTotals = wrapper.find('.mobile-totals-card')
 
-      if (mobileTotals.exists()) {
-        const totalLabels = mobileTotals.findAll('.total-label')
-        const periodLabel = totalLabels.find(label => label.text() === '1Y')
-        expect(periodLabel).toBeDefined()
-      }
+      const totalLabels = mobileTotals.findAll('.total-label')
+      expect(totalLabels.map(label => label.text())).toContain('1Y')
     })
 
     it('should use default period when set to 24h', () => {
