@@ -347,7 +347,7 @@ onMounted(async () => {
   padding: 0.3125rem 0.625rem;
   border: 1px solid #e2e8f0;
   background: white;
-  color: #6b7280;
+  color: var(--color-ink-muted);
   border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 500;
@@ -445,7 +445,7 @@ onMounted(async () => {
 
 .search-results-count {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-ink-muted);
   white-space: nowrap;
 }
 

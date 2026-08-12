@@ -1,5 +1,5 @@
 <template>
-  <div class="card shadow-sm border-0">
+  <div class="card tw:border-0! tw:shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
     <div class="card-body tw:p-6!">
       <h5 class="chart-title tw:mb-4!">{{ title }}</h5>
       <div class="chart-container">

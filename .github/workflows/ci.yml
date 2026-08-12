@@ -54,11 +54,13 @@ jobs:
         run: ./gradlew detekt
       - name: Upload Detekt reports
         if: always() && matrix.lint-type == 'backend'
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: Detekt Reports
           path: |
             build/reports/detekt/
+          retention-days: 14
       - name: Use Node.js
         if: matrix.lint-type == 'frontend'
         uses: actions/setup-node@v6
@@ -123,7 +125,7 @@ jobs:
         if: matrix.type == 'backend'
         run: ./gradlew bootJar --build-cache
       - uses: actions/upload-artifact@v7
-        if: matrix.type == 'backend'
+        if: matrix.type == 'backend' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: backend-jar
           path: build/libs/*.jar
@@ -174,26 +176,33 @@ jobs:
           attempt_delay: 30000
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'backend'
+        continue-on-error: true
         with:
           name: Backend Unit Test Reports
           path: |
             build/reports/tests/test/
             build/test-results/test/
             build/reports/jacoco/test/html/
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'frontend'
+        continue-on-error: true
         with:
           name: Frontend Unit Test Reports
           path: |
             coverage/
             test-results/
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'cloudflare'
+        continue-on-error: true
         with:
           name: Cloudflare Bypass Proxy Test Reports
           path: cloudflare-bypass-proxy/coverage/
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: always() && matrix.type == 'e2e'
+        continue-on-error: true
         with:
           name: E2E Test Reports
           path: |
@@ -201,6 +210,7 @@ jobs:
             build/test-results/test/
             build/reports/selenide/
             build/reports/jacoco/test/html/
+          retention-days: 14
 
   detect-changes:
     name: 🔍 Detect Changes
