@@ -1,5 +1,5 @@
 <template>
-  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-app tw:px-3">
+  <div class="mx-auto mt-4 w-full max-w-app px-3">
     <portfolio-actions
       :is-loading="isLoading"
       :is-recalculating="isRecalculating"
@@ -8,7 +8,7 @@
 
     <platform-filter
       v-if="availablePlatforms.length > 0"
-      class="tw:mt-2 tw:mb-4"
+      class="mt-2 mb-4"
       :available="availablePlatforms"
       :selected="selectedPlatforms"
       @toggle="togglePlatform"
@@ -16,7 +16,7 @@
     />
 
     <div v-if="viewState === 'LOADING'">
-      <skeleton-loader type="card" class="tw:mb-6" />
+      <skeleton-loader type="card" class="mb-6" />
       <skeleton-loader type="table" :rows="10" :columns="5" />
     </div>
 
@@ -31,7 +31,7 @@
     <template v-else>
       <div
         v-if="showRecalculationMessage"
-        class="alert alert-info alert-dismissible tw:mt-4"
+        class="alert alert-info alert-dismissible mt-4"
         role="alert"
       >
         {{ recalculationMessage }}
@@ -52,7 +52,7 @@
         :sortable="true"
         :sort-state="sortState"
         :on-sort="toggleSort"
-        class="tw:mt-4"
+        class="mt-4"
       >
         <template #cell-totalProfitChange24h="{ value, item }">
           <span v-if="value && Math.abs(value) > 0.01" :class="getProfitChangeClass(value)">
@@ -62,7 +62,7 @@
         </template>
       </data-table>
 
-      <div v-if="isFetching" class="tw:mt-4 tw:text-center">
+      <div v-if="isFetching" class="mt-4 text-center">
         <skeleton-loader type="text" :lines="2" />
       </div>
     </template>
@@ -176,7 +176,7 @@ const summaryColumns: ColumnDefinition[] = [
     key: 'earningsPerDay',
     label: 'Earnings Per Day',
     formatter: formatCurrencyWithSymbol,
-    class: 'tw:hidden! tw:md:table-cell!',
+    class: 'hidden! md:table-cell!',
     hideOnMobile: true,
   },
   { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrencyWithSymbol },
@@ -184,7 +184,7 @@ const summaryColumns: ColumnDefinition[] = [
     key: 'unrealizedProfit',
     label: 'Unrealized Profit',
     formatter: formatCurrencyWithSymbol,
-    class: 'tw:hidden! tw:md:table-cell!',
+    class: 'hidden! md:table-cell!',
     hideOnMobile: true,
   },
   { key: 'totalProfit', label: 'Total Profit', formatter: formatCurrencyWithSymbol },
@@ -202,8 +202,8 @@ const getSummaryRowClass = (summary: any, index: number) => {
 }
 
 const getProfitChangeClass = (value: number) => {
-  if (value > 0) return 'tw:text-gain'
-  if (value < 0) return 'tw:text-loss'
+  if (value > 0) return 'text-gain'
+  if (value < 0) return 'text-loss'
   return ''
 }
 

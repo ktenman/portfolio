@@ -10,14 +10,14 @@
         aria-live="assertive"
         aria-atomic="true"
       >
-        <div class="tw:flex tw:items-center">
+        <div class="flex items-center">
           <div class="toast-body">
             <strong>{{ TOAST_STYLES[toast.type].label }}</strong>
             {{ toast.message }}
           </div>
           <button
             type="button"
-            class="btn-close tw:me-2 tw:m-auto"
+            class="btn-close me-2 m-auto"
             aria-label="Close"
             @click="dismissToast(toast.id)"
           ></button>

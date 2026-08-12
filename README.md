@@ -17,7 +17,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 - **Multi-Provider Data Sync**: Fetch data from Financial Times (stocks/ETFs) and Binance (crypto)
 - **Advanced Caching**: Redis-based caching with Spring Cache annotations for optimal performance
 - **OAuth 2.0 Authentication**: Secure login via Google and GitHub with session management
-- **Responsive UI**: Vue.js 3 SPA with Bootstrap 5 for desktop and mobile
+- **Responsive UI**: Vue.js 3 SPA with Tailwind CSS 4 for desktop and mobile
 - **Automated Jobs**: Scheduled tasks for price updates and portfolio calculations
 - **Telegram Bot Integration**: Notifications and alerts via Telegram
 - **Public Calculator**: Standalone XIRR calculator available at calculator.fov.ee
@@ -36,7 +36,7 @@ The Portfolio Management System is a production-ready, full-stack application fo
 
 - Vue.js 3.5
 - TypeScript 5.9
-- Bootstrap 5.3
+- Tailwind CSS 4.3
 - Vite 7.3
 - Vue Router 4.6
 - Chart.js 4.5

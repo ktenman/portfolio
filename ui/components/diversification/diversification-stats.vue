@@ -1,6 +1,6 @@
 <template>
-  <div class="summary-cards tw:mb-6">
-    <div class="tw:grid tw:grid-cols-2 tw:gap-4 tw:md:grid-cols-4">
+  <div class="summary-cards mb-6">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
       <div>
         <div class="stat-card">
           <div class="stat-label">Weighted TER</div>

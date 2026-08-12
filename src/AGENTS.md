@@ -297,7 +297,7 @@ The system follows a clean microservices architecture:
 
 1. **API Gateway (Caddy)** - Reverse proxy with SSL termination and routing
 2. **Auth Service** - OAuth 2.0 authentication (different in dev vs prod)
-3. **Frontend (Vue.js SPA)** - Responsive UI with Bootstrap 5
+3. **Frontend (Vue.js SPA)** - Responsive UI with Tailwind CSS 4
 4. **Backend API (Spring Boot)** - RESTful API with comprehensive business logic
 5. **PostgreSQL** - Primary data store with optimized indexes and constraints
 6. **Redis** - Multi-level caching reducing DB load by ~70%

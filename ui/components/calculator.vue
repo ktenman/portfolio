@@ -1,13 +1,13 @@
 <template>
-  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-app tw:px-3 tw:pb-20 tw:md:pb-0">
-    <div class="tw:mb-6 tw:flex tw:items-center tw:justify-between">
-      <h2 class="tw:mb-0">Investment Calculator</h2>
+  <div class="mx-auto mt-4 w-full max-w-app px-3 pb-20 md:pb-0">
+    <div class="mb-6 flex items-center justify-between">
+      <h2 class="mb-0">Investment Calculator</h2>
     </div>
 
-    <div class="tw:grid tw:grid-cols-12 tw:gap-x-6">
-      <div class="tw:col-span-12 tw:md:col-span-4">
+    <div class="grid grid-cols-12 gap-x-6">
+      <div class="col-span-12 md:col-span-4">
         <form @submit.prevent>
-          <div v-for="(field, key) in formFields" :key="key" class="tw:mb-4">
+          <div v-for="(field, key) in formFields" :key="key" class="mb-4">
             <label :for="key" class="form-label">{{ field.label }}:</label>
             <input
               v-model.number="form[key as keyof typeof form]"
@@ -26,7 +26,7 @@
           </div>
         </form>
       </div>
-      <div class="tw:col-span-12 tw:md:col-span-8">
+      <div class="col-span-12 md:col-span-8">
         <LoadingSpinner v-if="isLoading" />
         <LineChart
           v-if="!isLoading && portfolioData.length > 0"
@@ -35,9 +35,9 @@
           x-axis-label="Year"
           y-axis-label="Worth (€)"
         />
-        <div v-if="!isLoading && calculationResult" class="card tw:mt-4 xirr-stats-card">
-          <div class="card-body tw:py-2!">
-            <div class="tw:grid tw:grid-cols-2 tw:gap-x-6 tw:text-center">
+        <div v-if="!isLoading && calculationResult" class="card mt-4 xirr-stats-card">
+          <div class="card-body py-2!">
+            <div class="grid grid-cols-2 gap-x-6 text-center">
               <div>
                 <div class="stat-label">Median XIRR</div>
                 <div class="stat-value">{{ formatPercentage(calculationResult.median) }}</div>
@@ -55,7 +55,7 @@
           title="XIRR Rolling Result (ASAP)"
           x-axis-label="Date"
           y-axis-label="XIRR (%)"
-          class="tw:mt-4"
+          class="mt-4"
         />
       </div>
     </div>
@@ -66,7 +66,7 @@
       </button>
     </div>
 
-    <div class="tw:mt-6">
+    <div class="mt-6">
       <h5>Year-by-Year Summary</h5>
       <data-table :items="yearSummary" :columns="summaryColumns" data-testid="year-summary-table" />
     </div>
