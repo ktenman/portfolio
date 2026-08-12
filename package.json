@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.6.0",
-    "@tanstack/vue-query": "^5.101.2",
+    "@tanstack/vue-query": "^5.101.4",
     "@vueuse/core": "^14.3.0",
     "axios": "^1.18.1",
     "chart.js": "^4.5.1",
