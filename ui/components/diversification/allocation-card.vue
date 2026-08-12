@@ -306,9 +306,9 @@ const onValueChange = (event: Event) => {
 }
 
 .remove-btn:hover:not(:disabled) {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
+  background: var(--color-loss-wash);
+  border-color: var(--color-loss-wash-deep);
+  color: var(--color-loss);
 }
 
 .remove-btn:disabled {
