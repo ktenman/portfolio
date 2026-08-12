@@ -26,7 +26,9 @@
   margin-left: 0.375rem;
 }
 
-.btn:focus-visible {
+.btn:focus-visible,
+.btn-close:focus-visible,
+.form-check-input:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-signal-indigo) 40%, transparent);
   outline-offset: 2px;
 }
@@ -187,8 +189,6 @@
 
 .btn-close:focus-visible {
   opacity: 1;
-  outline: 2px solid color-mix(in srgb, var(--color-signal-indigo) 40%, transparent);
-  outline-offset: 2px;
 }
 
 @media (min-width: 768px) and (max-width: 844px) {
@@ -335,11 +335,6 @@
   vertical-align: middle;
   accent-color: var(--color-signal-indigo);
   cursor: pointer;
-}
-
-.form-check-input:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--color-signal-indigo) 40%, transparent);
-  outline-offset: 2px;
 }
 
 .form-check-label {

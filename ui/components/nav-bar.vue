@@ -65,7 +65,6 @@ function formatDate(dateString: string): string {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 .navbar-scroll-container::-webkit-scrollbar {
