@@ -7,6 +7,10 @@ permissions:
   pull-requests: read
   deployments: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -16,6 +20,7 @@ on:
         type: boolean
         default: true
   push:
+    branches: [main]
   pull_request:
 
 jobs:
