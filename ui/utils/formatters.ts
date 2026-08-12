@@ -192,11 +192,11 @@ export const formatTransactionAmount = (
 
 export const getProfitClass = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return ''
-  return value >= 0 ? 'tw:text-gain' : 'tw:text-loss'
+  return value >= 0 ? 'text-gain' : 'text-loss'
 }
 
 export const getAmountClass = (type: string): string => {
-  return type === 'BUY' ? 'tw:text-gain' : 'tw:text-loss'
+  return type === 'BUY' ? 'text-gain' : 'text-loss'
 }
 
 export const formatDate = (dateString: string): string => {

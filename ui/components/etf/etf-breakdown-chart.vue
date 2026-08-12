@@ -1,11 +1,11 @@
 <template>
-  <div class="card tw:border-0! tw:shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
-    <div class="card-body tw:p-6!">
-      <h5 class="chart-title tw:mb-4!">{{ title }}</h5>
+  <div class="card border-0! shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
+    <div class="card-body p-6!">
+      <h5 class="chart-title mb-4!">{{ title }}</h5>
       <div class="chart-container">
         <canvas ref="chartCanvas"></canvas>
       </div>
-      <div class="chart-legend tw:mt-4">
+      <div class="chart-legend mt-4">
         <div v-for="item in chartData" :key="item.label" class="legend-item">
           <img
             v-if="item.code"

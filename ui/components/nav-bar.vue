@@ -1,6 +1,6 @@
 <template>
-  <nav class="navbar tw:border-b tw:border-hairline-strong tw:bg-surface navbar-sticky">
-    <div class="tw:mx-auto tw:w-full tw:max-w-app tw:px-3">
+  <nav class="navbar border-b border-hairline-strong bg-surface navbar-sticky">
+    <div class="mx-auto w-full max-w-app px-3">
       <div class="navbar-scroll-container">
         <div class="navbar-content">
           <ul class="navbar-nav">
@@ -13,7 +13,7 @@
           </ul>
           <!-- Build info display -->
           <div class="build-info" v-if="buildInfo">
-            <span class="tw:text-body-secondary build-info-text">
+            <span class="text-body-secondary build-info-text">
               {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
             </span>
           </div>

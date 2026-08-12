@@ -8,7 +8,7 @@
     @update:open="onDialogClosed"
   >
     <template v-if="mode === 'export'">
-      <p class="tw:mb-2 tw:text-[0.875em] tw:text-body-secondary">
+      <p class="mb-2 text-[0.875em] text-body-secondary">
         Download your current ETF allocation configuration as a JSON file.
       </p>
       <div class="editor-container">
@@ -22,7 +22,7 @@
     </template>
     <template v-else>
       <div v-if="!importedData" class="import-area">
-        <p class="tw:mb-4 tw:text-[0.875em] tw:text-body-secondary">
+        <p class="mb-4 text-[0.875em] text-body-secondary">
           Select a JSON configuration file to import your ETF allocation.
         </p>
         <div
@@ -35,7 +35,7 @@
             ref="fileInput"
             type="file"
             accept=".json"
-            class="tw:hidden"
+            class="hidden"
             @change="onFileSelected"
           />
           <div class="drop-content">
@@ -43,14 +43,12 @@
             <div>Click to select or drag a JSON file here</div>
           </div>
         </div>
-        <div v-if="importError" class="alert alert-danger tw:mt-4 tw:mb-0">
+        <div v-if="importError" class="alert alert-danger mt-4 mb-0">
           {{ importError }}
         </div>
       </div>
       <div v-else class="import-preview">
-        <p class="tw:mb-2 tw:text-[0.875em] tw:text-body-secondary">
-          Preview of configuration to import:
-        </p>
+        <p class="mb-2 text-[0.875em] text-body-secondary">Preview of configuration to import:</p>
         <div class="editor-container">
           <VueMonacoEditor
             v-model:value="importContent"
@@ -59,7 +57,7 @@
             theme="vs"
           />
         </div>
-        <div v-if="validationWarning" class="alert alert-warning tw:mt-4 tw:mb-0">
+        <div v-if="validationWarning" class="alert alert-warning mt-4 mb-0">
           {{ validationWarning }}
         </div>
       </div>

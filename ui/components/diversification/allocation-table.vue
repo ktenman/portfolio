@@ -1,7 +1,7 @@
 <template>
   <div class="allocation-section">
-    <div class="header-section tw:mb-4">
-      <h5 class="tw:mb-0">ETF Allocation</h5>
+    <div class="header-section mb-4">
+      <h5 class="mb-0">ETF Allocation</h5>
       <div class="investment-row">
         <div v-if="availablePlatforms.length > 0" class="platform-buttons">
           <button
@@ -25,11 +25,11 @@
           </button>
         </div>
         <div v-if="showRebalanceColumns" class="current-holdings">
-          <label class="tw:hidden tw:md:inline">Current</label>
+          <label class="hidden md:inline">Current</label>
           <span class="holdings-value">€{{ currentHoldingsTotal.toFixed(2) }}</span>
         </div>
         <div class="total-investment-input">
-          <label class="tw:hidden tw:md:inline">
+          <label class="hidden md:inline">
             {{ showRebalanceColumns ? 'New investment' : 'Total to invest' }}
           </label>
           <div class="input-group input-group-sm">
@@ -87,7 +87,7 @@
     </div>
 
     <!-- Mobile Card View -->
-    <div class="mobile-cards-wrapper tw:block tw:md:hidden">
+    <div class="mobile-cards-wrapper block md:hidden">
       <AllocationCard
         v-for="(allocation, index) in allocations"
         :key="index"
@@ -125,7 +125,7 @@
     </div>
 
     <!-- Desktop Table View -->
-    <div class="tw:hidden tw:md:block table-responsive">
+    <div class="hidden md:block table-responsive">
       <table class="table table-sm allocation-table">
         <thead>
           <tr>
@@ -249,20 +249,20 @@
                 </option>
               </select>
             </td>
-            <td class="tw:text-gray-600! tw:text-[0.875em]">
+            <td class="text-gray-600! text-[0.875em]">
               <currency-flag :currency="getEtfFundCurrency(allocation.instrumentId)" :size="14" />
               {{ getEtfName(allocation.instrumentId) }}
             </td>
-            <td class="tw:text-gray-600! tw:text-[0.875em]">
+            <td class="text-gray-600! text-[0.875em]">
               {{ formatEtfPrice(getEtfPrice(allocation.instrumentId)) }}
             </td>
-            <td class="tw:text-gray-600! tw:text-[0.875em]">
+            <td class="text-gray-600! text-[0.875em]">
               {{ formatTer(getEtfTer(allocation.instrumentId)) }}
             </td>
-            <td class="tw:text-gray-600! tw:text-[0.875em]">
+            <td class="text-gray-600! text-[0.875em]">
               {{ formatReturn(getEtfReturn(allocation.instrumentId)) }}
             </td>
-            <td v-if="showRebalanceColumns" class="tw:text-gray-600! tw:text-[0.875em]">
+            <td v-if="showRebalanceColumns" class="text-gray-600! text-[0.875em]">
               €{{ (allocation.currentValue ?? 0).toFixed(2) }}
               <span class="current-percent">
                 ({{ getRebalanceData(allocation).currentPercent.toFixed(1) }}%)
@@ -279,16 +279,16 @@
                 @input="onValueChange(getOriginalIndex(allocation), $event)"
               />
             </td>
-            <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="tw:text-[0.875em]">
+            <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="text-[0.875em]">
               <template v-if="showRebalanceColumns">
                 <span
                   v-if="hasRebalanceAction(allocation)"
-                  :class="getRebalanceData(allocation).isBuy ? 'tw:text-gain' : 'tw:text-loss'"
+                  :class="getRebalanceData(allocation).isBuy ? 'text-gain' : 'text-loss'"
                 >
                   {{ getRebalanceData(allocation).isBuy ? 'Buy' : 'Sell' }}
                   {{ formatActionValue(allocation) }}
                 </span>
-                <span v-else class="tw:text-gray-600">-</span>
+                <span v-else class="text-gray-600">-</span>
               </template>
               <template v-else>
                 {{
@@ -302,7 +302,7 @@
             </td>
             <td
               v-if="showInvestmentColumns || showRebalanceActionColumn"
-              class="tw:text-gray-600! tw:text-[0.875em]"
+              class="text-gray-600! text-[0.875em]"
             >
               <template v-if="showRebalanceColumns">
                 {{ getAfterPercent(allocation).toFixed(1) }}%
@@ -342,8 +342,8 @@
           aria-label="Add ETF"
           @click="$emit('add')"
         >
-          <span class="tw:hidden tw:sm:inline">+ Add ETF</span>
-          <span class="tw:sm:hidden">+</span>
+          <span class="hidden sm:inline">+ Add ETF</span>
+          <span class="sm:hidden">+</span>
         </button>
         <button
           type="button"
@@ -359,8 +359,8 @@
             role="status"
           ></span>
           <template v-else>
-            <span class="tw:sm:hidden">↓</span>
-            <span class="tw:hidden tw:sm:inline">Load from Portfolio</span>
+            <span class="sm:hidden">↓</span>
+            <span class="hidden sm:inline">Load from Portfolio</span>
           </template>
         </button>
         <button
@@ -370,8 +370,8 @@
           aria-label="Export"
           @click="$emit('export')"
         >
-          <span class="tw:hidden tw:sm:inline">Export</span>
-          <span class="tw:sm:hidden">↗</span>
+          <span class="hidden sm:inline">Export</span>
+          <span class="sm:hidden">↗</span>
         </button>
         <button
           type="button"
@@ -380,8 +380,8 @@
           aria-label="Import"
           @click="$emit('import')"
         >
-          <span class="tw:hidden tw:sm:inline">Import</span>
-          <span class="tw:sm:hidden">↙</span>
+          <span class="hidden sm:inline">Import</span>
+          <span class="sm:hidden">↙</span>
         </button>
         <button
           type="button"
@@ -391,8 +391,8 @@
           :disabled="allocations.length === 1 && allocations[0].instrumentId === 0"
           @click="$emit('clear')"
         >
-          <span class="tw:hidden tw:sm:inline">Clear</span>
-          <span class="tw:sm:hidden">✕</span>
+          <span class="hidden sm:inline">Clear</span>
+          <span class="sm:hidden">✕</span>
         </button>
       </div>
       <div class="totals-section">
@@ -405,7 +405,7 @@
         </div>
         <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="total-row">
           <span class="total-label">Total Unused</span>
-          <span class="total-value tw:text-gray-600!">€{{ totalUnused.toFixed(2) }}</span>
+          <span class="total-value text-gray-600!">€{{ totalUnused.toFixed(2) }}</span>
         </div>
       </div>
     </div>

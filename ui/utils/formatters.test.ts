@@ -307,14 +307,14 @@ describe('formatTransactionAmount', () => {
 
 describe('getProfitClass', () => {
   it('should return gain token for positive values', () => {
-    expect(getProfitClass(100)).toBe('tw:text-gain')
-    expect(getProfitClass(0.01)).toBe('tw:text-gain')
-    expect(getProfitClass(0)).toBe('tw:text-gain')
+    expect(getProfitClass(100)).toBe('text-gain')
+    expect(getProfitClass(0.01)).toBe('text-gain')
+    expect(getProfitClass(0)).toBe('text-gain')
   })
 
   it('should return loss token for negative values', () => {
-    expect(getProfitClass(-100)).toBe('tw:text-loss')
-    expect(getProfitClass(-0.01)).toBe('tw:text-loss')
+    expect(getProfitClass(-100)).toBe('text-loss')
+    expect(getProfitClass(-0.01)).toBe('text-loss')
   })
 
   it('should handle null and undefined values', () => {
@@ -325,16 +325,16 @@ describe('getProfitClass', () => {
 
 describe('getAmountClass', () => {
   it('should return gain token for BUY type', () => {
-    expect(getAmountClass('BUY')).toBe('tw:text-gain')
+    expect(getAmountClass('BUY')).toBe('text-gain')
   })
 
   it('should return loss token for SELL type', () => {
-    expect(getAmountClass('SELL')).toBe('tw:text-loss')
+    expect(getAmountClass('SELL')).toBe('text-loss')
   })
 
   it('should handle other transaction types', () => {
-    expect(getAmountClass('OTHER')).toBe('tw:text-loss')
-    expect(getAmountClass('')).toBe('tw:text-loss')
+    expect(getAmountClass('OTHER')).toBe('text-loss')
+    expect(getAmountClass('')).toBe('text-loss')
   })
 })
 

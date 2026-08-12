@@ -340,7 +340,7 @@ describe('DataTable', () => {
       const wrapper = mount(DataTable, {
         props: {
           items: mockItems.slice(0, 1),
-          columns: [{ key: 'name', label: 'Name', class: 'tw:md:hidden' }] as ColumnDefinition[],
+          columns: [{ key: 'name', label: 'Name', class: 'md:hidden' }] as ColumnDefinition[],
         },
       })
 

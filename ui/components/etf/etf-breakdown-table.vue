@@ -1,8 +1,8 @@
 <template>
-  <div class="card tw:border-0! tw:shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
-    <div class="card-body tw:p-0!">
-      <loading-spinner v-if="isLoading" class="tw:my-12!" />
-      <div v-else-if="isError" class="alert alert-danger tw:m-6! tw:mb-0!">
+  <div class="card border-0! shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
+    <div class="card-body p-0!">
+      <loading-spinner v-if="isLoading" class="my-12!" />
+      <div v-else-if="isError" class="alert alert-danger m-6! mb-0!">
         <strong>Error:</strong>
         {{ errorMessage }}
       </div>
@@ -110,25 +110,22 @@
         </template>
         <template #footer>
           <tr v-if="hasMore" class="load-more-row">
-            <td colspan="7" class="tw:text-center! tw:py-2!">
-              <div ref="loadMoreTrigger" class="tw:flex tw:items-center tw:justify-center">
-                <div
-                  class="spinner-border spinner-border-sm tw:mr-2 tw:text-gray-600"
-                  role="status"
-                >
-                  <span class="tw:sr-only">Loading...</span>
+            <td colspan="7" class="text-center! py-2!">
+              <div ref="loadMoreTrigger" class="flex items-center justify-center">
+                <div class="spinner-border spinner-border-sm mr-2 text-gray-600" role="status">
+                  <span class="sr-only">Loading...</span>
                 </div>
-                <span class="small tw:text-gray-600">
+                <span class="small text-gray-600">
                   Loading more... ({{ displayedHoldings.length }} of {{ holdings.length }})
                 </span>
               </div>
             </td>
           </tr>
           <tr v-if="holdings.length > 0" class="table-footer-totals">
-            <td class="tw:font-bold tw:pl-4!">Total</td>
+            <td class="font-bold pl-4!">Total</td>
             <td></td>
-            <td class="tw:font-bold tw:text-right!">100.0000%</td>
-            <td class="tw:font-bold tw:text-right!">{{ formatCurrency(totalValue) }}</td>
+            <td class="font-bold text-right!">100.0000%</td>
+            <td class="font-bold text-right!">{{ formatCurrency(totalValue) }}</td>
             <td colspan="3"></td>
           </tr>
         </template>
@@ -344,7 +341,7 @@ const columns: ColumnDefinition[] = [
     key: 'holdingTicker',
     label: 'Ticker',
     sortable: true,
-    class: 'tw:font-semibold',
+    class: 'font-semibold',
   },
   {
     key: 'holdingName',
@@ -356,14 +353,14 @@ const columns: ColumnDefinition[] = [
     label: '% of Total',
     sortable: true,
     formatter: formatPercentage,
-    class: 'tw:text-right!',
+    class: 'text-right!',
   },
   {
     key: 'totalValueEur',
     label: 'VALUE',
     sortable: true,
     formatter: formatCurrency,
-    class: 'tw:text-right! tw:font-semibold',
+    class: 'text-right! font-semibold',
   },
   {
     key: 'holdingSector',
@@ -381,7 +378,7 @@ const columns: ColumnDefinition[] = [
     key: 'inEtfs',
     label: 'Found in ETFs',
     sortable: false,
-    class: 'tw:text-gray-600! small',
+    class: 'text-gray-600! small',
     formatter: (value: string | null) => {
       if (!value) return '-'
       return value

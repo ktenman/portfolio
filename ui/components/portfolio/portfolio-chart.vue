@@ -1,5 +1,5 @@
 <template>
-  <div class="tw:mb-4 chart-container" data-testid="summary-chart" v-if="chartData">
+  <div class="mb-4 chart-container" data-testid="summary-chart" v-if="chartData">
     <Line :data="chartData" :options="chartOptions" />
   </div>
 </template>

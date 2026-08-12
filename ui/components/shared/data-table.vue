@@ -18,7 +18,7 @@
 
     <template v-else>
       <!-- Mobile Card View -->
-      <div class="mobile-cards-wrapper tw:block tw:md:hidden">
+      <div class="mobile-cards-wrapper block md:hidden">
         <div
           v-for="(item, index) in items"
           :key="getItemKey(item, index)"
@@ -56,7 +56,7 @@
       </div>
 
       <!-- Desktop Table View -->
-      <div class="desktop-table-wrapper tw:hidden tw:md:block table-responsive">
+      <div class="desktop-table-wrapper hidden md:block table-responsive">
         <table class="table table-striped">
           <thead>
             <tr>
@@ -82,9 +82,7 @@
                   </span>
                 </span>
               </th>
-              <th v-if="$slots.actions" class="tw:hidden! tw:text-right! tw:md:table-cell!">
-                Actions
-              </th>
+              <th v-if="$slots.actions" class="hidden! text-right! md:table-cell!">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +103,7 @@
               </td>
               <td
                 v-if="$slots.actions"
-                class="tw:hidden! tw:text-right! tw:md:table-cell!"
+                class="hidden! text-right! md:table-cell!"
                 data-label="Actions"
               >
                 <slot name="actions" :item="item" :index="index"></slot>
@@ -306,7 +304,7 @@ const handleSort = (column: ColumnDefinition) => {
     color: var(--color-gray-600);
   }
 
-  .table td.tw\:text-right\! {
+  .table td.text-right\! {
     justify-content: flex-end;
   }
 }

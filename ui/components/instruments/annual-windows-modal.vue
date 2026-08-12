@@ -6,32 +6,32 @@
     centered
     @update:open="emit('update:open', $event)"
   >
-    <div v-if="isLoading" class="tw:text-center tw:py-4">
+    <div v-if="isLoading" class="text-center py-4">
       <div class="spinner-border" role="status" />
     </div>
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-else>
-      <table class="table table-sm tw:mb-0">
+      <table class="table table-sm mb-0">
         <thead>
           <tr>
             <th>Window</th>
-            <th class="tw:text-right">Annualized return</th>
-            <th class="tw:hidden tw:sm:table-cell tw:text-right">Since</th>
+            <th class="text-right">Annualized return</th>
+            <th class="hidden sm:table-cell text-right">Since</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in windows" :key="row.period">
-            <td class="tw:font-semibold">{{ row.period }}</td>
-            <td class="tw:text-right" :class="returnClass(row.annualReturn)">
+            <td class="font-semibold">{{ row.period }}</td>
+            <td class="text-right" :class="returnClass(row.annualReturn)">
               {{ formatReturn(row.annualReturn) }}
             </td>
-            <td class="tw:hidden tw:sm:table-cell tw:text-right tw:text-body-secondary">
+            <td class="hidden sm:table-cell text-right text-body-secondary">
               {{ row.fromDate ?? '—' }}
             </td>
           </tr>
         </tbody>
       </table>
-      <p class="tw:mt-4 tw:mb-0 tw:text-[0.875em] tw:italic tw:text-body-secondary">
+      <p class="mt-4 mb-0 text-[0.875em] italic text-body-secondary">
         Synthetic buy-and-hold using current shares × historical close price at window start vs
         current value. Real transactions during the window are ignored. "Since" clamps to the
         earliest available price when history is shorter than the window.
@@ -97,8 +97,8 @@ const formatReturn = (value: number | null | undefined): string => {
 
 const returnClass = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return ''
-  if (value > 0) return 'tw:text-gain'
-  if (value < 0) return 'tw:text-loss'
+  if (value > 0) return 'text-gain'
+  if (value < 0) return 'text-loss'
   return ''
 }
 </script>

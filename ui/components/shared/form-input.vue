@@ -1,5 +1,5 @@
 <template>
-  <div class="tw:mb-4">
+  <div class="mb-4">
     <label v-if="label" :for="inputId" class="form-label">{{ label }}</label>
     <select
       v-if="type === 'select'"

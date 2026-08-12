@@ -18,7 +18,7 @@ Person(user, "User", "End user of the Portfolio Management System")
 System_Boundary(portfolio_system, "Portfolio Management System") {
   Container(caddy, "Caddy", "Web Server", "Reverse proxy, routes auth and protected requests")
   Container(auth, "Auth Service", "Kotlin, Spring Boot", "OAuth2 authentication, session management, email/login whitelist", $sprite="spring")
-  Container(frontend, "Frontend", "Vue.js, Bootstrap", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
+  Container(frontend, "Frontend", "Vue.js, Tailwind CSS", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
   Container(backend, "Backend", "Kotlin, Spring Boot", "Handles API requests, processes data, and manages business logic", $sprite="kotlin")
   ContainerDb(database, "Database", "PostgreSQL", "Stores portfolio and financial data", $sprite="postgresql")
   ContainerDb(cache, "Cache", "Redis", "Caches session data and portfolio summaries", $sprite="redis")

@@ -2,10 +2,10 @@
   <div v-if="isAuthChecking" class="auth-loading">
     <div class="auth-spinner"></div>
   </div>
-  <div v-else class="tw:flex tw:min-h-screen tw:flex-col">
+  <div v-else class="flex min-h-screen flex-col">
     <NavBar />
-    <main class="tw:grow">
-      <div class="tw:mx-auto tw:w-full tw:max-w-app tw:px-3 tw:py-2">
+    <main class="grow">
+      <div class="mx-auto w-full max-w-app px-3 py-2">
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" />
@@ -13,7 +13,7 @@
         </router-view>
       </div>
     </main>
-    <footer class="tw:bg-gray-100 tw:py-2 tw:text-center">
+    <footer class="bg-gray-100 py-2 text-center">
       <small>&copy; {{ currentYear }} Portfolio Manager</small>
     </footer>
     <ConfirmDialog

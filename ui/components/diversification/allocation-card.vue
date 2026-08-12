@@ -3,7 +3,7 @@
     <div class="allocation-card-header">
       <select
         :value="allocation.instrumentId"
-        class="form-select form-select-sm tw:grow"
+        class="form-select form-select-sm grow"
         @change="onInstrumentChange"
       >
         <option :value="0" disabled>Select ETF</option>
@@ -158,7 +158,7 @@ const actionLabel = computed(() => {
 
 const actionColorClass = computed(() => {
   if (!props.showRebalanceMode || !hasAction.value) return ''
-  return props.isBuy ? 'tw:text-gain!' : 'tw:text-loss!'
+  return props.isBuy ? 'text-gain!' : 'text-loss!'
 })
 
 const onInstrumentChange = (event: Event) => {

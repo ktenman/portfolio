@@ -1,22 +1,22 @@
 <template>
-  <div class="tw:mx-auto tw:mt-4 tw:w-full tw:max-w-app tw:px-3">
-    <div class="tw:mb-6 tw:flex tw:items-start tw:justify-between">
-      <div class="tw:grow">
-        <div class="tw:flex tw:items-center tw:justify-between">
-          <h2 class="tw:mb-0" @click="$emit('title-click')">{{ title }}</h2>
-          <div class="tw:flex tw:items-center tw:gap-4">
+  <div class="mx-auto mt-4 w-full max-w-app px-3">
+    <div class="mb-6 flex items-start justify-between">
+      <div class="grow">
+        <div class="flex items-center justify-between">
+          <h2 class="mb-0" @click="$emit('title-click')">{{ title }}</h2>
+          <div class="flex items-center gap-4">
             <slot name="toolbar" />
             <button
               v-if="showAddButton"
               :id="addButtonId"
-              class="btn btn-primary btn-add-new tw:hidden tw:md:block"
+              class="btn btn-primary btn-add-new hidden md:block"
               @click="$emit('add')"
             >
               {{ addButtonText }}
             </button>
           </div>
         </div>
-        <div class="tw:flex tw:items-center tw:justify-between">
+        <div class="flex items-center justify-between">
           <slot name="subtitle" />
           <slot name="subtitle-end" />
         </div>
