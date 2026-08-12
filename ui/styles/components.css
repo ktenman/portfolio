@@ -26,7 +26,9 @@
   margin-left: 0.375rem;
 }
 
-.btn:focus-visible {
+.btn:focus-visible,
+.btn-close:focus-visible,
+.form-check-input:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-signal-indigo) 40%, transparent);
   outline-offset: 2px;
 }
@@ -187,8 +189,6 @@
 
 .btn-close:focus-visible {
   opacity: 1;
-  outline: 2px solid color-mix(in srgb, var(--color-signal-indigo) 40%, transparent);
-  outline-offset: 2px;
 }
 
 @media (min-width: 768px) and (max-width: 844px) {
@@ -252,20 +252,12 @@
   border-bottom: 2px solid var(--color-gray-200);
 }
 
-.table tbody tr {
-  transition: background-color var(--transition-fast);
-}
-
-.table tbody tr:hover {
-  background-color: rgb(67 97 238 / 0.02);
-}
-
 .table-striped > tbody > tr:nth-of-type(odd) > * {
-  background-color: rgb(0 0 0 / 0.07);
+  background-color: var(--color-surface-band);
 }
 
 .table-responsive {
-  overflow: hidden;
+  overflow-x: auto;
   border-radius: var(--radius-container);
 }
 
@@ -341,26 +333,8 @@
   width: 1rem;
   height: 1rem;
   vertical-align: middle;
-  appearance: none;
-  background-color: var(--color-surface-subtle);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  border: 1px solid var(--color-hairline-strong);
-  border-radius: 0.25em;
+  accent-color: var(--color-signal-indigo);
   cursor: pointer;
-}
-
-.form-check-input:checked {
-  background-color: var(--color-primary);
-  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/></svg>");
-  border-color: var(--color-primary);
-}
-
-.form-check-input:focus {
-  border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-white));
-  outline: 0;
-  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .form-check-label {

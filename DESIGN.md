@@ -26,6 +26,7 @@ colors:
   surface: '#ffffff'
   surface-hover: '#f8fafc'
   surface-subtle: '#fcfcfd'
+  surface-band: 'rgb(0 0 0 / 0.07)'
   paper: '#fafafa'
   white: '#ffffff'
   black: '#000000'
@@ -201,7 +202,7 @@ A machined neutral field — paper, white, and slate hairlines — punctuated by
 
 ### Primary
 
-- **Signal Indigo** (`#4361ee`): The single brand accent. It marks the active navigation item and its 2px underline indicator, fills the primary action button, draws every focus ring, and appears at 2–8% opacity as row-hover and ghost-button-hover tint. It is never used for decoration, never for a background field, and never for text that isn't interactive.
+- **Signal Indigo** (`#4361ee`): The single brand accent. It marks the active navigation item and its 2px underline indicator, fills the primary action button, tints the native checkbox via `accent-color`, draws every focus ring, and appears at 2–8% opacity as ghost-button-hover tint. It is never used for decoration, never for a background field, and never for text that isn't interactive.
 - **Signal Indigo Deep** (`#3651d4`): The hover terminus. Primary buttons carry a 135° gradient between the two indigos and reverse the gradient direction on hover — the button appears to tilt rather than to brighten.
 
 ### Secondary
@@ -355,7 +356,7 @@ Groups of controls are spaced, not joined: adjacent ghost buttons take a flat `0
 - **Focus:** Border shifts to Signal Indigo and a `2px` indigo-at-20% outline appears at `2px` offset. This system outlines, it does not glow.
 - **Error:** `.is-invalid` swaps the border to Loss Red and reveals a `0.875em` Loss Red message beneath.
 - **Transition:** `border-color` and `box-shadow` at 150ms.
-- **Checkbox:** The one survivor of the pre-Tailwind palette — `--color-primary` (`#007bff`) fills the checked box and nothing else in the system uses it.
+- **Checkbox:** The native control, tinted with `accent-color: var(--color-signal-indigo)` rather than redrawn from a background SVG. Focus is the system's `:focus-visible` outline in indigo-at-40%, matching the field rule above rather than the old glow.
 
 ### Navigation
 
@@ -375,7 +376,7 @@ The confirm dialog does not use the main button vocabulary. Its buttons are `0.8
 
 ### Data Table (signature)
 
-The defining surface. Column headers are `0.75rem`/600 uppercase with `0.05em` tracking in Muted Ink, `1rem 0.75rem` padding, over a 2px `gray-200` bottom rule. Body cells share the same padding at `0.9rem`, vertically centered, on the Surface Subtle fill. Rows tint to `rgb(67 97 238 / 0.02)` on hover — a 2% wash, the faintest deliberate color in the system. Sortable headers carry a two-arrow indicator at `0.65rem` that sits at 30% opacity until the column is active. The whole table sits in a `0.5rem` rounded wrapper with a Hairline Strong border and `overflow: hidden`, so the corners clip the header rule cleanly.
+The defining surface. Column headers are `0.75rem`/600 uppercase with `0.05em` tracking in Muted Ink, `1rem 0.75rem` padding, over a 2px `gray-200` bottom rule. Body cells share the same padding at `0.9rem`, vertically centered, on the Surface Subtle fill. Row tracking is carried by banding, not by hover: `.table-striped` tints odd rows with `--color-surface-band` (`rgb(0 0 0 / 0.07)`) and tables that opt out get a flat field. Rows have no hover state — they are not clickable, and a hover tint on top of a band reads as a selection. Sortable headers carry a two-arrow indicator at `0.65rem` that sits at 30% opacity until the column is active. The whole table sits in a `0.5rem` rounded wrapper with a Hairline Strong border and `overflow-x: auto`, so wide tables scroll instead of clipping their last column.
 
 ### Mobile Data Card (signature)
 
@@ -388,6 +389,10 @@ When a price or portfolio value changes, its cell animates `pulse-increase` or `
 ### Skeleton Loading
 
 Loading states are shape-matched placeholders, never spinners-in-place: table, list, form, and text-block variants that mirror the real layout's dimensions (40px headers, 20px cells, 38px inputs, 48px icons). A 1.5s gradient pulse sweeps them. The layout does not move when real data arrives.
+
+### Charts
+
+Series carry no point markers at rest (`radius: 0`, `hoverRadius: 4`) so a 30–61 point line reads as a trend rather than a beaded rope, at `borderWidth: 2` and `tension: 0.15` — enough curvature to smooth sampling noise, not enough to invent data between points. Every dataset sets `backgroundColor` equal to its `borderColor`; without it Chart.js fills legend swatches with its default grey and the key stops matching the lines. The legend is deliberately quiet: solid `8px` boxes at `11px` with `12px` padding, so at desktop width it collapses to a single line above the plot and the chart leads.
 
 ## Do's and Don'ts
 
