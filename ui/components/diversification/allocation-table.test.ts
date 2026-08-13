@@ -464,7 +464,7 @@ describe('AllocationTable', () => {
           availablePlatforms: ['LHV', 'LIGHTYEAR'],
         },
       })
-      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-toggle-all)')
+      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-ghost)')
       expect(pills).toHaveLength(2)
       expect(pills[0].text()).toBe('LHV')
       expect(pills[1].text()).toBe('Lightyear')
@@ -477,7 +477,7 @@ describe('AllocationTable', () => {
           availablePlatforms: ['LHV', 'LIGHTYEAR'],
         },
       })
-      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-toggle-all)')
+      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-ghost)')
       await pills[0].trigger('click')
       expect(wrapper.emitted('togglePlatform')).toEqual([['LHV']])
     })
@@ -489,7 +489,7 @@ describe('AllocationTable', () => {
           availablePlatforms: ['LHV', 'LIGHTYEAR'],
         },
       })
-      const toggleAllBtn = wrapper.find('.platform-btn-toggle-all')
+      const toggleAllBtn = wrapper.find('.platform-btn-ghost')
       await toggleAllBtn.trigger('click')
       expect(wrapper.emitted('toggleAllPlatforms')).toHaveLength(1)
     })
@@ -502,7 +502,7 @@ describe('AllocationTable', () => {
           selectedPlatforms: ['LHV'],
         },
       })
-      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-toggle-all)')
+      const pills = wrapper.findAll('.platform-btn:not(.platform-btn-ghost)')
       const lhv = pills.find(p => p.text() === 'LHV')
       const swedbank = pills.find(p => p.text() === 'Swedbank')
       expect(lhv?.classes()).toContain('active')
@@ -519,7 +519,7 @@ describe('AllocationTable', () => {
         },
       })
       expect(wrapper.find('.current-holdings').exists()).toBe(true)
-      expect(wrapper.text()).toContain('€5000.00')
+      expect(wrapper.text()).toContain('€5,000.00')
     })
 
     it('should not show current holdings when no platform selected', () => {

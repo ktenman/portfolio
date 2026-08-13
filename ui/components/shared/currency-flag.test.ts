@@ -8,7 +8,7 @@ describe('currency-flag', () => {
     const img = wrapper.find('img')
     expect(img.exists()).toBe(true)
     expect(img.attributes('src')).toBe('https://hatscripts.github.io/circle-flags/flags/us.svg')
-    expect(img.attributes('title')).toBe('USD')
+    expect(img.attributes('alt')).toBe('USD')
   })
 
   it('renders nothing when currency is null', () => {

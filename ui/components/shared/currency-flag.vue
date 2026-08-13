@@ -2,7 +2,6 @@
   <img
     v-if="flagUrl"
     :src="flagUrl"
-    :title="normalizedCurrency"
     :alt="normalizedCurrency"
     :width="size"
     :height="size"

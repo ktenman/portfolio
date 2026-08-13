@@ -52,7 +52,7 @@ const sizeClass = computed(() => {
 
 .loading-spinner {
   display: inline-block;
-  border: 3px solid #e9ecef;
+  border: 3px solid var(--color-hairline);
   border-top-color: var(--color-signal-indigo);
   border-radius: 50%;
   animation: spinner-rotate 0.75s linear infinite;

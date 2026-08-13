@@ -152,13 +152,13 @@ canvas {
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--color-gray-600);
+  color: var(--color-ink-soft);
 }
 
 .stat-value {
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgb(75, 192, 192);
+  color: var(--color-brass-deep);
 }
 
 .calculator-buttons-desktop {

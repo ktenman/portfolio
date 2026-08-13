@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PortfolioChart from './portfolio-chart.vue'
+import { CHART_COLORS } from '../../constants/chart-colors'
 
 vi.mock('vue-chartjs', () => ({
   Line: {
@@ -62,28 +63,40 @@ describe('PortfolioChart', () => {
       expect(chartData.datasets).toHaveLength(4)
       expect(chartData.datasets[0]).toMatchObject({
         label: 'Total Value',
-        borderColor: '#8884d8',
+        borderColor: CHART_COLORS[0],
         data: mockChartData.totalValues,
         yAxisID: 'y',
       })
       expect(chartData.datasets[1]).toMatchObject({
         label: 'Total Profit',
-        borderColor: '#ffc658',
+        borderColor: CHART_COLORS[1],
         data: mockChartData.profitValues,
         yAxisID: 'y',
       })
       expect(chartData.datasets[2]).toMatchObject({
         label: 'XIRR Annual Return',
-        borderColor: '#82ca9d',
+        borderColor: CHART_COLORS[3],
         data: mockChartData.xirrValues,
         yAxisID: 'y1',
       })
       expect(chartData.datasets[3]).toMatchObject({
         label: 'Earnings Per Month',
-        borderColor: '#ff7300',
+        borderColor: CHART_COLORS[5],
         data: mockChartData.earningsValues,
         yAxisID: 'y',
       })
+    })
+
+    it('should fill the area under the total value series only', () => {
+      const wrapper = createWrapper()
+      const chartData = JSON.parse(wrapper.find('.mock-chart').text())
+
+      expect(chartData.datasets.map((dataset: { fill?: boolean }) => dataset.fill)).toEqual([
+        true,
+        undefined,
+        undefined,
+        undefined,
+      ])
     })
   })
 
@@ -105,10 +118,41 @@ describe('PortfolioChart', () => {
       const options = chart.props('options')
 
       expect(options.scales.y.position).toBe('left')
-      expect(options.scales.y.title.text).toBe('Amount (€)')
       expect(options.scales.y1.position).toBe('right')
-      expect(options.scales.y1.title.text).toBe('XIRR (%)')
       expect(options.scales.y1.grid.drawOnChartArea).toBe(false)
+    })
+
+    it('should label the left axis with compact euro amounts', () => {
+      const wrapper = createWrapper()
+      const chart = wrapper.findComponent({ name: 'Line' })
+      const options = chart.props('options')
+
+      expect(options.scales.y.ticks.callback(50000)).toBe('€50K')
+    })
+
+    it('should label the right axis with percentages', () => {
+      const wrapper = createWrapper()
+      const chart = wrapper.findComponent({ name: 'Line' })
+      const options = chart.props('options')
+
+      expect(options.scales.y1.ticks.callback(12)).toBe('12%')
+    })
+
+    it('should place the legend below the plot with round markers', () => {
+      const wrapper = createWrapper()
+      const chart = wrapper.findComponent({ name: 'Line' })
+      const options = chart.props('options')
+
+      expect(options.plugins.legend.position).toBe('bottom')
+      expect(options.plugins.legend.labels.pointStyle).toBe('circle')
+    })
+
+    it('should draw horizontal gridlines only', () => {
+      const wrapper = createWrapper()
+      const chart = wrapper.findComponent({ name: 'Line' })
+      const options = chart.props('options')
+
+      expect(options.scales.x.grid.display).toBe(false)
     })
 
     it('should limit ticks on axes', () => {

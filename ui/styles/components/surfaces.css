@@ -1,0 +1,63 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: var(--color-surface);
+  background-clip: border-box;
+  border: 1px solid rgb(0 0 0 / 0.05);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-card);
+}
+
+.card-body {
+  flex: 1 1 auto;
+  padding: 1.25rem;
+}
+
+.card-shell {
+  padding: 0.75rem 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-card);
+}
+
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  background-color: var(--color-surface);
+  border-color: var(--color-hairline-strong);
+}
+
+.table th,
+.table td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+  background-color: var(--color-surface-subtle);
+  border-bottom: 1px solid var(--color-hairline-strong);
+}
+
+.table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-brass-deep);
+  border-bottom: 1px solid var(--color-hairline-strong);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--color-surface-band);
+}
+
+.table-responsive {
+  overflow-x: auto;
+  border-radius: var(--radius-container);
+}
+
+.table-responsive .table {
+  margin-bottom: 0;
+}

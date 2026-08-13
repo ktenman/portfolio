@@ -116,7 +116,7 @@ const editorOptions = {
   folding: true,
   automaticLayout: true,
   fontSize: 13,
-  fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace",
+  fontFamily: 'var(--font-mono)',
   renderLineHighlight: 'none' as const,
   stickyScroll: { enabled: false },
   overviewRulerLanes: 0,
@@ -224,13 +224,13 @@ const confirmImport = () => {
 <style scoped>
 .editor-container {
   height: 400px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--color-hairline);
   border-radius: 6px;
   overflow: hidden;
 }
 
 .file-drop-zone {
-  border: 2px dashed #dee2e6;
+  border: 2px dashed var(--color-hairline-strong);
   border-radius: 0.5rem;
   padding: 2rem;
   text-align: center;
@@ -240,17 +240,17 @@ const confirmImport = () => {
 
 .file-drop-zone:hover {
   border-color: var(--color-signal-indigo);
-  background: #f8f9fa;
+  background: var(--color-surface-sunken);
 }
 
 .drop-content {
-  color: #6c757d;
+  color: var(--color-ink-soft);
 }
 
 .drop-icon {
   font-size: 2rem;
   font-weight: 300;
-  color: #adb5bd;
+  color: var(--color-ink-faint);
   margin-bottom: 0.5rem;
 }
 </style>

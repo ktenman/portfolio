@@ -94,6 +94,8 @@ function formatDate(dateString: string): string {
 
 .nav-link {
   position: relative;
+  font-size: var(--text-base);
+  letter-spacing: -0.01em;
   transition: color var(--transition-slow);
 }
 
