@@ -5,7 +5,9 @@
 <script setup lang="ts">
 import { ref, toRef } from 'vue'
 import { useChartLifecycle } from '../../composables/use-chart-lifecycle'
-import { formatCurrency } from '../../utils/formatters'
+import { crosshair, tooltipStyle } from '../../plugins/chart'
+import { formatCurrency, formatCurrencyWithSymbol } from '../../utils/formatters'
+import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 
 interface ChartProps {
   data: number[]
@@ -20,14 +22,15 @@ const props = withDefaults(defineProps<ChartProps>(), {
   title: 'Line Chart',
   xAxisLabel: 'X Axis',
   yAxisLabel: 'Y Axis',
-  borderColor: 'rgba(75, 192, 192, 1)',
-  backgroundColor: 'rgba(75, 192, 192, 0.2)',
+  borderColor: CHART_COLORS[0],
+  backgroundColor: withAlpha(CHART_COLORS[0], 0.12),
 })
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 
 useChartLifecycle(chartCanvas, toRef(props, 'data'), () => ({
   type: 'line',
+  plugins: [crosshair],
   data: {
     labels: Array.from({ length: props.data.length }, (_, i) => i + 1),
     datasets: [
@@ -37,12 +40,19 @@ useChartLifecycle(chartCanvas, toRef(props, 'data'), () => ({
         borderColor: props.borderColor,
         backgroundColor: props.backgroundColor,
         borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHitRadius: 10,
         fill: false,
       },
     ],
   },
   options: {
     responsive: true,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
     scales: {
       x: {
         title: { display: true, text: props.xAxisLabel },
@@ -59,6 +69,14 @@ useChartLifecycle(chartCanvas, toRef(props, 'data'), () => ({
     plugins: {
       title: { display: true, text: props.title, font: { size: 16 } },
       legend: { display: false },
+      tooltip: {
+        ...tooltipStyle,
+        callbacks: {
+          title: items => `${props.xAxisLabel} ${items[0].label}`,
+          label: context =>
+            ` ${props.yAxisLabel.includes('€') ? formatCurrencyWithSymbol(context.parsed.y) : context.parsed.y}`,
+        },
+      },
     },
   },
 }))

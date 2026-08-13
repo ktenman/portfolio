@@ -3,11 +3,11 @@ import { Chart } from 'chart.js'
 import './etf-breakdown-chart.vue'
 
 describe('EtfBreakdownChart chart.js registration', () => {
-  it('should register the pie controller so the pie chart renders', () => {
-    expect(() => Chart.registry.getController('pie')).not.toThrow()
+  it('should register the doughnut controller so the donut chart renders', () => {
+    expect(() => Chart.registry.getController('doughnut')).not.toThrow()
   })
 
-  it('should register the arc element used by pie slices', () => {
+  it('should register the arc element used by donut segments', () => {
     expect(() => Chart.registry.getElement('arc')).not.toThrow()
   })
 })

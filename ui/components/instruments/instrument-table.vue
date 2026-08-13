@@ -440,11 +440,6 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
   text-wrap: pretty;
 }
 
-.platform-tags .badge {
-  font-weight: 500;
-  background-color: var(--color-ink-muted);
-}
-
 .table-footer-totals {
   background-color: var(--color-gray-100);
   border-top: 2px solid var(--color-hairline-strong);
@@ -700,7 +695,7 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
   }
 
   50% {
-    background-color: rgb(33 197 93 / 0.2);
+    background-color: var(--color-gain-wash);
   }
 
   100% {
@@ -714,7 +709,7 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
   }
 
   50% {
-    background-color: rgb(220 53 69 / 0.2);
+    background-color: var(--color-loss-wash);
   }
 
   100% {

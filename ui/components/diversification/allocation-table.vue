@@ -1,51 +1,48 @@
 <template>
   <div class="allocation-section">
-    <div class="header-section mb-4">
-      <h5 class="mb-0">ETF Allocation</h5>
-      <div class="investment-row">
-        <div v-if="availablePlatforms.length > 0" class="platform-buttons">
-          <button
-            v-for="p in availablePlatforms"
-            :key="p"
-            type="button"
-            class="platform-btn"
-            :class="{ active: selectedPlatforms.includes(p) }"
-            @click="$emit('togglePlatform', p)"
-          >
-            {{ formatPlatformName(p) }}
-          </button>
-          <button
-            type="button"
-            class="platform-btn platform-btn-toggle-all"
-            @click="$emit('toggleAllPlatforms')"
-          >
-            {{
-              selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All'
-            }}
-          </button>
+    <div class="investment-row mb-4">
+      <div v-if="availablePlatforms.length > 0" class="platform-buttons">
+        <button
+          v-for="p in availablePlatforms"
+          :key="p"
+          type="button"
+          class="platform-btn"
+          :class="{ active: selectedPlatforms.includes(p) }"
+          @click="$emit('togglePlatform', p)"
+        >
+          {{ formatPlatformName(p) }}
+        </button>
+        <button
+          type="button"
+          class="platform-btn platform-btn-ghost"
+          @click="$emit('toggleAllPlatforms')"
+        >
+          {{ selectedPlatforms.length === availablePlatforms.length ? 'Clear All' : 'Select All' }}
+        </button>
+      </div>
+      <div v-if="showRebalanceColumns" class="current-holdings">
+        <label>Current</label>
+        <span class="holdings-value">{{ formatCurrencyWithSymbol(currentHoldingsTotal) }}</span>
+      </div>
+      <div class="total-investment-input">
+        <label>
+          {{ showRebalanceColumns ? 'New investment' : 'Total to invest' }}
+        </label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text">€</span>
+          <input
+            :value="totalInvestment"
+            type="number"
+            class="form-control"
+            min="0"
+            step="1000"
+            placeholder="10000"
+            @input="onTotalInvestmentChange"
+          />
         </div>
-        <div v-if="showRebalanceColumns" class="current-holdings">
-          <label class="hidden md:inline">Current</label>
-          <span class="holdings-value">€{{ currentHoldingsTotal.toFixed(2) }}</span>
-        </div>
-        <div class="total-investment-input">
-          <label class="hidden md:inline">
-            {{ showRebalanceColumns ? 'New investment' : 'Total to invest' }}
-          </label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text">€</span>
-            <input
-              :value="totalInvestment"
-              type="number"
-              class="form-control"
-              min="0"
-              step="1000"
-              placeholder="10000"
-              @input="onTotalInvestmentChange"
-            />
-          </div>
-        </div>
-        <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="optimize-toggle">
+      </div>
+      <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="allocation-toggles">
+        <div class="optimize-toggle">
           <input
             id="optimizeAllocation"
             :checked="optimizeEnabled"
@@ -65,24 +62,24 @@
           />
           <label for="buyOnlyAllocation" class="form-check-label">Buy only</label>
         </div>
-        <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="display-mode-toggle">
-          <button
-            type="button"
-            class="display-mode-btn"
-            :class="{ active: actionDisplayMode === 'units' }"
-            @click="emit('update:actionDisplayMode', 'units')"
-          >
-            Units
-          </button>
-          <button
-            type="button"
-            class="display-mode-btn"
-            :class="{ active: actionDisplayMode === 'amount' }"
-            @click="emit('update:actionDisplayMode', 'amount')"
-          >
-            Amount
-          </button>
-        </div>
+      </div>
+      <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="display-mode-toggle">
+        <button
+          type="button"
+          class="display-mode-btn"
+          :class="{ active: actionDisplayMode === 'units' }"
+          @click="emit('update:actionDisplayMode', 'units')"
+        >
+          Units
+        </button>
+        <button
+          type="button"
+          class="display-mode-btn"
+          :class="{ active: actionDisplayMode === 'amount' }"
+          @click="emit('update:actionDisplayMode', 'amount')"
+        >
+          Amount
+        </button>
       </div>
     </div>
 
@@ -125,7 +122,7 @@
     </div>
 
     <!-- Desktop Table View -->
-    <div class="hidden md:block table-responsive">
+    <div class="allocation-table-wrapper hidden md:block">
       <table class="table table-sm allocation-table">
         <thead>
           <tr>
@@ -214,7 +211,7 @@
             <th
               v-if="showInvestmentColumns || showRebalanceActionColumn"
               class="sortable"
-              style="width: 90px; white-space: nowrap"
+              style="width: 90px"
               @click="toggleSort('afterPercent')"
             >
               <span class="th-content">
@@ -237,6 +234,7 @@
               <select
                 :value="allocation.instrumentId"
                 class="form-select form-select-sm"
+                :title="getEtfName(allocation.instrumentId)"
                 @change="onInstrumentChange(getOriginalIndex(allocation), $event)"
               >
                 <option :value="0" disabled>Select ETF</option>
@@ -244,6 +242,7 @@
                   v-for="etf in availableEtfsForRow(getOriginalIndex(allocation))"
                   :key="etf.instrumentId"
                   :value="etf.instrumentId"
+                  :title="etf.name"
                 >
                   {{ formatTickerSymbol(etf.symbol) }}
                 </option>
@@ -414,7 +413,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { formatTer, formatReturn } from '../../utils/formatters'
+import { formatTer, formatReturn, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import { useSortableTable } from '../../composables/use-sortable-table'
@@ -568,17 +567,11 @@ const onTotalInvestmentChange = (event: Event) => {
 </script>
 
 <style scoped>
-.allocation-section {
-  background: var(--color-surface);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-}
-
-.header-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.allocation-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-card);
 }
 
 .investment-row {
@@ -588,7 +581,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .allocation-table {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .allocation-table th.sortable {
@@ -597,7 +590,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .allocation-table th.sortable:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-surface-hover);
 }
 
 .th-content {
@@ -641,13 +634,6 @@ const onTotalInvestmentChange = (event: Event) => {
   opacity: 1;
 }
 
-.allocation-table th {
-  font-weight: 500;
-  color: var(--color-gray-600);
-  font-size: 0.875rem;
-  border-bottom: 2px solid var(--color-gray-300);
-}
-
 .allocation-table td {
   vertical-align: middle;
 }
@@ -666,8 +652,7 @@ const onTotalInvestmentChange = (event: Event) => {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-gray-300);
+  margin-top: 1rem;
 }
 
 .totals-section {
@@ -787,7 +772,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .total-investment-input .input-group {
-  width: 140px;
+  width: 110px;
 }
 
 .total-investment-input .input-group-text {
@@ -797,6 +782,12 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .total-investment-input input {
   font-size: 0.875rem;
+}
+
+.allocation-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
 .optimize-toggle,
@@ -809,6 +800,7 @@ const onTotalInvestmentChange = (event: Event) => {
 .optimize-toggle .form-check-input,
 .buy-only-toggle .form-check-input {
   margin: 0;
+  flex-shrink: 0;
   cursor: pointer;
 }
 
@@ -826,10 +818,10 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .display-mode-btn {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-gray-300);
-  background: var(--color-surface);
-  color: var(--color-gray-600);
+  padding: 0.25rem 0.6875rem;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-soft);
   font-size: 0.6875rem;
   font-weight: 500;
   cursor: pointer;
@@ -838,24 +830,25 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .display-mode-btn:first-child {
-  border-radius: 0.25rem 0 0 0.25rem;
-  border-right: none;
+  border-radius: var(--radius-container) 0 0 var(--radius-container);
 }
 
 .display-mode-btn:last-child {
-  border-radius: 0 0.25rem 0.25rem 0;
+  border-radius: 0 var(--radius-container) var(--radius-container) 0;
+  margin-left: -1px;
 }
 
 .display-mode-btn:hover:not(.active) {
-  background: var(--color-gray-100);
-  border-color: var(--color-gray-400);
-  color: var(--color-gray-700);
+  background: var(--color-surface-hover);
+  color: var(--color-ink);
 }
 
 .display-mode-btn.active {
-  background: var(--color-gray-700);
-  color: var(--color-surface);
-  border-color: var(--color-gray-700);
+  position: relative;
+  z-index: 1;
+  border-color: var(--color-brass);
+  background: var(--color-brass-wash);
+  color: var(--color-brass-deep);
 }
 
 .remove-btn {
@@ -891,10 +884,6 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 @media (max-width: 767.98px) {
-  .allocation-section {
-    padding: 1rem;
-  }
-
   .investment-row {
     flex-wrap: wrap;
     gap: 0.75rem;
@@ -910,16 +899,15 @@ const onTotalInvestmentChange = (event: Event) => {
 
   .total-investment-input {
     flex: 1;
-    min-width: 100px;
   }
 
   .total-investment-input .input-group {
-    width: 100%;
+    flex: 1;
     flex-wrap: nowrap;
+    min-width: 110px;
   }
 
-  .optimize-toggle,
-  .buy-only-toggle {
+  .allocation-toggles {
     flex-shrink: 0;
   }
 
@@ -939,26 +927,12 @@ const onTotalInvestmentChange = (event: Event) => {
 
 @media (max-width: 480px) {
   .investment-row {
-    gap: 0.5rem;
+    gap: 0.5rem 0.75rem;
   }
 
-  .current-holdings {
-    flex-basis: calc(50% - 0.25rem);
-    justify-content: flex-end;
-  }
-
+  .current-holdings,
   .total-investment-input {
-    flex-basis: calc(70% - 0.25rem);
+    flex-basis: 100%;
   }
-
-  .optimize-toggle,
-  .buy-only-toggle {
-    flex-basis: calc(30% - 0.25rem);
-    justify-content: flex-end;
-  }
-}
-
-.platform-btn-toggle-all {
-  font-weight: 500;
 }
 </style>
