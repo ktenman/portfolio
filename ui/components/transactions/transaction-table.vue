@@ -234,11 +234,6 @@ const extractBaseSymbol = (symbol: string): string => {
 </script>
 
 <style scoped>
-.platform-tags .badge {
-  font-weight: 500;
-  background-color: var(--color-ink-muted);
-}
-
 .mobile-transaction-card {
   padding: 0.75rem;
 }

@@ -1,27 +1,22 @@
 <template>
   <div
     v-if="entries.length > 0"
-    class="currency-split-card min-w-40 rounded-container border border-hairline bg-surface px-4 py-3 shadow-card max-md:px-3.5 max-md:py-2.5"
+    class="currency-split-card card-shell min-w-40 max-md:px-3.5 max-md:py-2.5"
   >
     <div
-      class="currency-split-label mb-2 text-xs font-medium tracking-wider text-gray-600 uppercase"
+      class="currency-split-label mb-2.5 text-xs font-medium tracking-wider text-gray-600 uppercase"
     >
       {{ label }}
     </div>
-    <div class="flex flex-col gap-1">
-      <div
-        v-for="row in rows"
-        :key="row.currency"
-        class="currency-split-row flex items-center gap-2 text-sm text-ink"
-      >
+    <div class="currency-split-rows" :class="{ 'with-value': showValue }">
+      <div v-for="row in rows" :key="row.currency" class="currency-split-row">
         <CurrencyFlag :currency="row.currency" :size="14" />
-        <span class="min-w-10 font-semibold">{{ row.currency }}</span>
-        <span class="ml-auto font-semibold" data-testid="currency-split-pct">
+        <span class="currency-code">{{ row.currency }}</span>
+        <span class="currency-bar"><span :style="{ width: `${row.pct}%` }"></span></span>
+        <span class="currency-pct" data-testid="currency-split-pct">
           {{ formatPercent(row.pct) }}
         </span>
-        <span v-if="showValue" class="currency-value min-w-16 text-right text-2xs text-gray-600">
-          {{ formatValue(row.value) }}
-        </span>
+        <span v-if="showValue" class="currency-value">{{ formatValue(row.value) }}</span>
       </div>
     </div>
   </div>
@@ -59,3 +54,54 @@ const rows = computed(() =>
 
 const formatPercent = (pct: number) => `${pct.toFixed(1)}%`
 </script>
+
+<style scoped>
+.currency-split-rows {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.625rem;
+  row-gap: 0.5rem;
+}
+
+.currency-split-rows.with-value {
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+}
+
+.currency-split-row {
+  display: contents;
+}
+
+.currency-code {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.currency-bar {
+  height: 4px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-sunken);
+  overflow: hidden;
+}
+
+.currency-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-brass);
+}
+
+.currency-pct {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-ink);
+  text-align: right;
+}
+
+.currency-value {
+  font-size: var(--text-2xs);
+  color: var(--color-ink-soft);
+  text-align: right;
+}
+</style>

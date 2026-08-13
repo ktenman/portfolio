@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import EtfBreakdown from './etf-breakdown.vue'
-import EtfBreakdownHeader from './etf-breakdown-header.vue'
+import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import { etfBreakdownService } from '../../services/etf-breakdown-service'
@@ -74,6 +74,23 @@ describe('etf-breakdown', () => {
     firstTransactionDate: null,
   }
 
+  it('keeps the filter chips hidden until the filters toggle is pressed', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(mockHoldings)
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mount(EtfBreakdown)
+
+    await flushPromises()
+    expect(wrapper.find('.etf-buttons').exists()).toBe(false)
+
+    await wrapper.find('.dropdown-toggle').trigger('click')
+
+    expect(wrapper.find('.etf-buttons').exists()).toBe(true)
+  })
+
   it('shows a currency flag next to ETFs with fundCurrency', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(mockHoldings)
     vi.mocked(instrumentsService.getAll).mockResolvedValue({
@@ -84,6 +101,7 @@ describe('etf-breakdown', () => {
     const wrapper = mount(EtfBreakdown)
 
     await flushPromises()
+    await wrapper.find('.dropdown-toggle').trigger('click')
 
     const buttons = wrapper.findAll('.etf-btn')
     const vwceBtn = buttons.find(b => b.text().includes('VWCE'))
@@ -133,7 +151,7 @@ describe('etf-breakdown', () => {
 
     await flushPromises()
 
-    expect(wrapper.findComponent(EtfBreakdownHeader).props('totalValue')).toBe(15000)
+    expect(wrapper.findComponent(EtfBreakdownStats).props('totalValue')).toBe(15000)
   })
 
   it('keeps the unique holdings count across all holdings when search narrows the table', async () => {
@@ -148,7 +166,7 @@ describe('etf-breakdown', () => {
 
     await flushPromises()
 
-    expect(wrapper.findComponent(EtfBreakdownHeader).props('uniqueHoldings')).toBe(2)
+    expect(wrapper.findComponent(EtfBreakdownStats).props('uniqueHoldings')).toBe(2)
   })
 
   it('filters only the holdings table to rows matching the search query', async () => {
@@ -180,5 +198,32 @@ describe('etf-breakdown', () => {
 
     const sectorChart = wrapper.findAllComponents(EtfBreakdownChart)[0]
     expect(sectorChart.props('chartData').map(item => item.label)).toContain('Technology')
+  })
+
+  it(`shows the countries breakdown in the chart after the Countries tab is clicked`, async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mount(EtfBreakdown, {
+      global: {
+        stubs: {
+          EtfBreakdownChart: {
+            props: ['title', 'chartData'],
+            template: '<div><slot name="actions" /></div>',
+          },
+        },
+      },
+    })
+
+    await flushPromises()
+
+    const countriesTab = wrapper.findAll('.breakdown-tab').find(btn => btn.text() === 'Countries')
+    await countriesTab!.trigger('click')
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData').map(item => item.label)).toEqual(['United States'])
   })
 })

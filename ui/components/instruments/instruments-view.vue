@@ -10,7 +10,7 @@
     <template #subtitle>
       <platform-filter
         v-if="availablePlatforms.length > 0"
-        class="mt-2"
+        class="mt-3"
         :available="availablePlatforms"
         :selected="selectedPlatforms"
         @toggle="togglePlatform"
@@ -18,11 +18,14 @@
       >
         <div class="controls-row">
           <div class="period-selector-container">
-            <label class="period-label hidden md:inline">Period:</label>
-            <select v-model="selectedPeriod" class="period-select">
-              <option v-for="p in periods" :key="p.value" :value="p.value">
-                {{ p.label }}
-              </option>
+            <label class="period-label hidden md:inline" for="periodSelect">Period:</label>
+            <select
+              id="periodSelect"
+              v-model="selectedPeriod"
+              class="form-select form-select-sm period-select"
+              aria-label="Price change period"
+            >
+              <option v-for="p in periods" :key="p.value" :value="p.value">{{ p.label }}</option>
             </select>
           </div>
           <div class="toggle-container">
@@ -267,7 +270,7 @@ const handleTitleClick = async () => {
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background-color: #e2e8f0;
+  background-color: var(--color-hairline);
   border-radius: 1.5rem;
   transition: all 0.2s ease;
 }
@@ -286,7 +289,7 @@ const handleTitleClick = async () => {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: #4b5563;
+  background-color: var(--color-brass);
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
@@ -294,7 +297,7 @@ const handleTitleClick = async () => {
 }
 
 .toggle-switch input:focus + .toggle-slider {
-  box-shadow: 0 0 0 2px rgba(75, 85, 99, 0.2);
+  box-shadow: 0 0 0 2px var(--color-brass-wash);
 }
 
 .period-selector-container {
@@ -311,27 +314,9 @@ const handleTitleClick = async () => {
 }
 
 .period-select {
-  padding: 0.3125rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #4b5563;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  width: auto;
+  min-width: 5.5rem;
   cursor: pointer;
-  transition: all 0.12s ease;
-  min-width: 4rem;
-}
-
-.period-select:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
-}
-
-.period-select:focus {
-  outline: none;
-  border-color: #4b5563;
-  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.1);
 }
 
 @media (max-width: 768px) {

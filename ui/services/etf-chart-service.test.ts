@@ -6,6 +6,7 @@ import {
   getFilterParam,
 } from './etf-chart-service'
 import type { EtfHoldingBreakdownDto } from '../models/generated/domain-models'
+import { DONUT_COLORS } from '../constants/chart-colors'
 
 let holdingIdCounter = 1
 
@@ -62,17 +63,15 @@ describe('etf-chart-service', () => {
         createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: 5 })
       )
       const result = buildSectorChartData(holdings)
-      expect(result).toHaveLength(16)
-      expect(result[15].label).toBe('Others')
+      expect(result).toHaveLength(15)
     })
 
-    it('should group remaining sectors as Others', () => {
+    it('should drop sectors beyond the top count instead of grouping them', () => {
       const holdings = Array.from({ length: 22 }, (_, i) =>
         createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: i + 1 })
       )
       const result = buildSectorChartData(holdings)
-      const others = result.find(item => item.label === 'Others')
-      expect(others).toBeDefined()
+      expect(result.some(item => item.label === 'Others')).toBe(false)
     })
 
     it('should assign colors from palette', () => {
@@ -81,17 +80,8 @@ describe('etf-chart-service', () => {
         createHolding({ holdingSector: 'Finance', percentageOfTotal: 30 }),
       ]
       const result = buildSectorChartData(holdings)
-      expect(result[0].color).toBe('#0072B2')
-      expect(result[1].color).toBe('#E69F00')
-    })
-
-    it('should assign gray color to Others', () => {
-      const holdings = Array.from({ length: 22 }, (_, i) =>
-        createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: 1 })
-      )
-      const result = buildSectorChartData(holdings)
-      const others = result.find(item => item.label === 'Others')
-      expect(others?.color).toBe('#999999')
+      expect(result[0].color).toBe(DONUT_COLORS[0])
+      expect(result[1].color).toBe(DONUT_COLORS[1])
     })
 
     it('should handle empty holdings array', () => {
@@ -110,8 +100,7 @@ describe('etf-chart-service', () => {
         createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: 10 })
       )
       const result = buildSectorChartData(holdings, { topCount: 5 })
-      expect(result).toHaveLength(6)
-      expect(result[5].label).toBe('Others')
+      expect(result).toHaveLength(5)
     })
 
     it('should accept custom color palette', () => {
@@ -120,7 +109,7 @@ describe('etf-chart-service', () => {
       expect(result[0].color).toBe('#FF0000')
     })
 
-    it('should group sectors below 0.5% threshold into Others by default', () => {
+    it('should drop sectors below the 0.5% threshold by default', () => {
       const holdings = [
         createHolding({ holdingSector: 'Technology', percentageOfTotal: 70 }),
         createHolding({ holdingSector: 'Finance', percentageOfTotal: 20 }),
@@ -128,11 +117,7 @@ describe('etf-chart-service', () => {
         createHolding({ holdingSector: 'TinySector2', percentageOfTotal: 0.2 }),
       ]
       const result = buildSectorChartData(holdings)
-      expect(result).toHaveLength(3)
-      expect(result[0].label).toBe('Technology')
-      expect(result[1].label).toBe('Finance')
-      expect(result[2].label).toBe('Others')
-      expect(result[2].value).toBeCloseTo(0.5)
+      expect(result.map(item => item.label)).toEqual(['Technology', 'Finance'])
     })
 
     it('should accept custom minThreshold', () => {
@@ -142,9 +127,7 @@ describe('etf-chart-service', () => {
         createHolding({ holdingSector: 'SmallSector', percentageOfTotal: 1 }),
       ]
       const result = buildSectorChartData(holdings, { minThreshold: 2 })
-      expect(result).toHaveLength(3)
-      expect(result[2].label).toBe('Others')
-      expect(result[2].value).toBe(1)
+      expect(result.map(item => item.label)).toEqual(['Technology', 'Finance'])
     })
   })
 
@@ -166,17 +149,15 @@ describe('etf-chart-service', () => {
         createHolding({ holdingName: `Company ${i}`, percentageOfTotal: 5 })
       )
       const result = buildCompanyChartData(holdings)
-      expect(result).toHaveLength(16)
-      expect(result[15].label).toBe('Others')
+      expect(result).toHaveLength(15)
     })
 
-    it('should group holdings beyond top count as Others', () => {
+    it('should drop holdings beyond the top count instead of grouping them', () => {
       const holdings = Array.from({ length: 22 }, (_, i) =>
         createHolding({ holdingName: `Company ${i}`, percentageOfTotal: i + 1 })
       )
       const result = buildCompanyChartData(holdings)
-      const others = result.find(item => item.label === 'Others')
-      expect(others).toBeDefined()
+      expect(result.some(item => item.label === 'Others')).toBe(false)
     })
 
     it('should assign colors from palette', () => {
@@ -185,17 +166,8 @@ describe('etf-chart-service', () => {
         createHolding({ holdingName: 'Company B', percentageOfTotal: 15 }),
       ]
       const result = buildCompanyChartData(holdings)
-      expect(result[0].color).toBe('#0072B2')
-      expect(result[1].color).toBe('#E69F00')
-    })
-
-    it('should assign gray color to Others', () => {
-      const holdings = Array.from({ length: 18 }, (_, i) =>
-        createHolding({ holdingName: `Company ${i}`, percentageOfTotal: 5 })
-      )
-      const result = buildCompanyChartData(holdings)
-      const others = result.find(item => item.label === 'Others')
-      expect(others?.color).toBe('#999999')
+      expect(result[0].color).toBe(DONUT_COLORS[0])
+      expect(result[1].color).toBe(DONUT_COLORS[1])
     })
 
     it('should handle empty holdings array', () => {
@@ -208,8 +180,7 @@ describe('etf-chart-service', () => {
         createHolding({ holdingName: `Company ${i}`, percentageOfTotal: 10 })
       )
       const result = buildCompanyChartData(holdings, { topCount: 5 })
-      expect(result).toHaveLength(6)
-      expect(result[5].label).toBe('Others')
+      expect(result).toHaveLength(5)
     })
 
     it('should accept custom color palette', () => {
@@ -251,17 +222,15 @@ describe('etf-chart-service', () => {
         createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 5 })
       )
       const result = buildCountryChartData(holdings)
-      expect(result).toHaveLength(16)
-      expect(result[15].label).toBe('Others')
+      expect(result).toHaveLength(15)
     })
 
-    it('should group remaining countries as Others', () => {
+    it('should drop countries beyond the top count instead of grouping them', () => {
       const holdings = Array.from({ length: 22 }, (_, i) =>
         createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: i + 1 })
       )
       const result = buildCountryChartData(holdings)
-      const others = result.find(item => item.label === 'Others')
-      expect(others).toBeDefined()
+      expect(result.some(item => item.label === 'Others')).toBe(false)
     })
 
     it('should assign colors from palette', () => {
@@ -270,17 +239,8 @@ describe('etf-chart-service', () => {
         createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 30 }),
       ]
       const result = buildCountryChartData(holdings)
-      expect(result[0].color).toBe('#0072B2')
-      expect(result[1].color).toBe('#E69F00')
-    })
-
-    it('should assign gray color to Others', () => {
-      const holdings = Array.from({ length: 22 }, (_, i) =>
-        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 1 })
-      )
-      const result = buildCountryChartData(holdings)
-      const others = result.find(item => item.label === 'Others')
-      expect(others?.color).toBe('#999999')
+      expect(result[0].color).toBe(DONUT_COLORS[0])
+      expect(result[1].color).toBe(DONUT_COLORS[1])
     })
 
     it('should handle empty holdings array', () => {
@@ -299,8 +259,7 @@ describe('etf-chart-service', () => {
         createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 10 })
       )
       const result = buildCountryChartData(holdings, { topCount: 5 })
-      expect(result).toHaveLength(6)
-      expect(result[5].label).toBe('Others')
+      expect(result).toHaveLength(5)
     })
 
     it('should accept custom color palette', () => {
@@ -327,20 +286,7 @@ describe('etf-chart-service', () => {
       expect(result[1].code).toBe('DE')
     })
 
-    it('should have undefined code for Others category', () => {
-      const holdings = Array.from({ length: 22 }, (_, i) =>
-        createHolding({
-          holdingCountryName: `Country ${i}`,
-          holdingCountryCode: `C${i}`,
-          percentageOfTotal: 1,
-        })
-      )
-      const result = buildCountryChartData(holdings)
-      const others = result.find(item => item.label === 'Others')
-      expect(others?.code).toBeUndefined()
-    })
-
-    it('should group countries below 0.2% threshold into Others by default', () => {
+    it('should drop countries below the 0.2% threshold by default', () => {
       const holdings = [
         createHolding({ holdingCountryName: 'United States', percentageOfTotal: 70 }),
         createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 20 }),
@@ -348,11 +294,7 @@ describe('etf-chart-service', () => {
         createHolding({ holdingCountryName: 'TinyCountry2', percentageOfTotal: 0.1 }),
       ]
       const result = buildCountryChartData(holdings)
-      expect(result).toHaveLength(3)
-      expect(result[0].label).toBe('United States')
-      expect(result[1].label).toBe('Germany')
-      expect(result[2].label).toBe('Others')
-      expect(result[2].value).toBeCloseTo(0.25)
+      expect(result.map(item => item.label)).toEqual(['United States', 'Germany'])
     })
 
     it('should accept custom minThreshold', () => {
@@ -362,9 +304,7 @@ describe('etf-chart-service', () => {
         createHolding({ holdingCountryName: 'SmallCountry', percentageOfTotal: 1 }),
       ]
       const result = buildCountryChartData(holdings, { minThreshold: 2 })
-      expect(result).toHaveLength(3)
-      expect(result[2].label).toBe('Others')
-      expect(result[2].value).toBe(1)
+      expect(result.map(item => item.label)).toEqual(['United States', 'Germany'])
     })
   })
 

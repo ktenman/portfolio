@@ -1,7 +1,7 @@
 <template>
-  <div class="diversification-container">
+  <div class="mx-auto mt-4 w-full max-w-app px-3">
     <div class="mb-6">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between gap-4">
         <h2 class="mb-0">Diversification</h2>
         <div class="flex items-center gap-2">
           <span v-if="saveStatus === 'saving'" class="save-status text-body-secondary">
@@ -63,27 +63,13 @@
           :weighted-annual-return="result.weightedAnnualReturn"
           :total-unique-holdings="result.totalUniqueHoldings"
           :top10-percentage="result.concentration.top10Percentage"
+          :currency-split="currencySplit"
         />
 
-        <div
-          v-if="currencySplit.length > 0"
-          class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4"
-        >
-          <div>
-            <CurrencySplitCard label="Fund Currency" :entries="currencySplit" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div>
-            <BreakdownCard title="Top Holdings" :items="holdingsBreakdown" />
-          </div>
-          <div>
-            <BreakdownCard title="Sectors" :items="sectorsBreakdown" />
-          </div>
-          <div>
-            <BreakdownCard title="Countries" :items="countriesBreakdown" />
-          </div>
+        <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <BreakdownCard title="Top Holdings" :items="holdingsBreakdown" />
+          <BreakdownCard title="Sectors" :items="sectorsBreakdown" />
+          <BreakdownCard title="Countries" :items="countriesBreakdown" />
         </div>
       </div>
 
@@ -133,7 +119,6 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
-import CurrencySplitCard from '../shared/currency-split-card.vue'
 import type {
   DiversificationCalculatorResponseDto,
   InstrumentDto,
@@ -453,16 +438,10 @@ watch(
 </script>
 
 <style scoped>
-.diversification-container {
-  max-width: min(1600px, 95vw);
-  margin: 0 auto;
-  padding: 1.5rem;
-}
-
 .last-updated {
   font-size: 0.75rem;
   color: var(--color-ink-muted);
-  background: #f9fafb;
+  background: var(--color-surface-sunken);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   white-space: nowrap;
@@ -474,13 +453,13 @@ watch(
 }
 
 .last-updated.clickable:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--color-hairline);
+  color: var(--color-ink);
 }
 
 .last-updated.refreshing {
-  color: var(--color-signal-indigo);
-  background: #eff6ff;
+  color: var(--color-brass-deep);
+  background: var(--color-brass-wash);
   pointer-events: none;
 }
 
@@ -489,11 +468,5 @@ watch(
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .diversification-container {
-    padding: 1rem;
-  }
 }
 </style>

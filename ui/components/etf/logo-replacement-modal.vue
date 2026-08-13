@@ -170,20 +170,20 @@ const handleImageError = (event: Event) => {
   flex-direction: column;
   align-items: center;
   padding: 0.75rem;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--color-hairline);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .logo-candidate:hover {
-  border-color: #6c757d;
-  background-color: #f8f9fa;
+  border-color: var(--color-hairline-strong);
+  background-color: var(--color-surface-hover);
 }
 
 .logo-candidate.selected {
   border-color: var(--color-signal-indigo);
-  background-color: #e7f1ff;
+  background-color: var(--color-brass-wash);
 }
 
 .candidate-image {
@@ -191,6 +191,6 @@ const handleImageError = (event: Event) => {
   height: 80px;
   object-fit: contain;
   border-radius: 0.25rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
 }
 </style>

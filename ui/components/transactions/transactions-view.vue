@@ -2,7 +2,7 @@
   <div class="mx-auto mt-4 w-full max-w-app px-3">
     <div class="mb-6">
       <h2 class="mb-0">Transactions</h2>
-      <div class="filters-container mt-2">
+      <div class="filters-container mt-3">
         <div class="date-filters">
           <div class="date-inputs-row">
             <div class="date-input-group">
@@ -25,28 +25,25 @@
             </div>
           </div>
           <div class="date-actions-row">
-            <div class="dropdown" ref="quickDateDropdown">
-              <button
-                class="platform-btn dropdown-toggle"
-                :class="{ active: selectedQuickDate }"
-                type="button"
-                data-testid="quickDatesToggle"
-                :aria-expanded="isDropdownOpen"
-                @click="isDropdownOpen = !isDropdownOpen"
+            <select
+              :value="selectedQuickDate"
+              class="form-select form-select-sm"
+              data-testid="quickDatesToggle"
+              aria-label="Quick date range"
+              @change="handleQuickDateSelect(($event.target as HTMLSelectElement).value)"
+            >
+              <option value="">Quick Dates</option>
+              <option
+                v-for="option in QUICK_DATE_OPTIONS"
+                :key="option.preset"
+                :value="option.label"
               >
-                {{ selectedQuickDate || 'Quick Dates' }}
-              </button>
-              <ul class="dropdown-menu" :class="{ show: isDropdownOpen }">
-                <li v-for="option in QUICK_DATE_OPTIONS" :key="option.preset">
-                  <a class="dropdown-item" @click="handleQuickDateSelect(option.preset)">
-                    {{ option.label }}
-                  </a>
-                </li>
-              </ul>
-            </div>
+                {{ option.label }}
+              </option>
+            </select>
             <button
               v-if="fromDate || untilDate"
-              class="platform-btn"
+              class="platform-btn platform-btn-ghost"
               @click="clearDates"
               type="button"
             >
@@ -96,37 +93,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { onClickOutside, onKeyStroke } from '@vueuse/core'
 import TransactionTable from './transaction-table.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
 import { STORAGE_KEYS } from '../../constants'
-import {
-  useQuickDates,
-  QUICK_DATE_OPTIONS,
-  type QuickDatePreset,
-} from '../../composables/use-quick-dates'
+import { useQuickDates, QUICK_DATE_OPTIONS } from '../../composables/use-quick-dates'
 import { useAuthState } from '../../composables/use-auth-state'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
 const { isAuthenticated } = useAuthState()
-const quickDateDropdown = ref<HTMLElement | null>(null)
-const isDropdownOpen = ref(false)
-
-const closeDropdown = () => {
-  isDropdownOpen.value = false
-}
-
-onClickOutside(quickDateDropdown, closeDropdown)
-onKeyStroke('Escape', closeDropdown)
 
 const { fromDate, untilDate, selectedQuickDate, setQuickDate, clearDates } = useQuickDates({
   fromDateKey: STORAGE_KEYS.TRANSACTIONS_FROM_DATE,
   untilDateKey: STORAGE_KEYS.TRANSACTIONS_UNTIL_DATE,
   selectedQuickDateKey: STORAGE_KEYS.SELECTED_QUICK_DATE,
-  onDateSet: closeDropdown,
 })
 
 const { data: allTransactionsResponse } = useQuery({
@@ -182,8 +164,13 @@ const totalInvested = computed(() => {
   return transactionsResponse.value?.summary.totalInvested || 0
 })
 
-const handleQuickDateSelect = (preset: QuickDatePreset) => {
-  setQuickDate(preset)
+const handleQuickDateSelect = (label: string) => {
+  const option = QUICK_DATE_OPTIONS.find(o => o.label === label)
+  if (!option) {
+    clearDates()
+    return
+  }
+  setQuickDate(option.preset)
 }
 </script>
 
@@ -218,7 +205,7 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
 .date-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #4b5563;
+  color: var(--color-ink-soft);
   margin-bottom: 0;
 }
 
@@ -258,7 +245,6 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
   font-weight: 700;
   line-height: 1.2;
   color: var(--color-ink);
-  font-variant-numeric: tabular-nums;
 }
 
 .date-actions {
@@ -267,28 +253,15 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
   align-items: center;
 }
 
-.date-actions-row .platform-btn,
-.date-actions-row .dropdown {
+.date-actions-row .platform-btn {
   width: 110px;
 }
 
-.date-actions-row .dropdown-toggle {
-  width: 100%;
-}
-
-.dropdown-menu {
-  top: 100%;
-  left: 0;
-  margin-top: 0.125rem;
-}
-
-.dropdown-item {
+.date-actions-row .form-select {
+  width: auto;
+  min-width: 130px;
+  white-space: nowrap;
   cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.dropdown-item:active {
-  background-color: #4b5563;
 }
 
 @media (max-width: 768px) {
@@ -328,13 +301,13 @@ const handleQuickDateSelect = (preset: QuickDatePreset) => {
     padding: 0.375rem 0.5rem;
   }
 
-  .dropdown-toggle {
+  .date-actions-row .form-select {
     font-size: 0.75rem;
-    padding: 0.375rem 0.5rem;
+    padding: 0.375rem 1.75rem 0.375rem 0.5rem;
   }
 
   .date-actions-row .platform-btn,
-  .date-actions-row .dropdown {
+  .date-actions-row .form-select {
     width: 110px;
   }
 }

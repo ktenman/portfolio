@@ -1,14 +1,34 @@
 <template>
-  <div class="etf-breakdown-container">
+  <div class="mx-auto mt-4 w-full max-w-app px-3">
     <div class="mb-6">
-      <h2 class="mb-0">ETF Breakdown</h2>
-      <div v-if="availableEtfs.length > 0" class="etf-filter-container mt-2">
+      <div class="page-header">
+        <div class="page-heading">
+          <h2 class="mb-0">ETF Breakdown</h2>
+          <etf-breakdown-header
+            v-if="!isLoading"
+            :selected-etfs="selectedEtfs"
+            :available-etfs="availableEtfs"
+          />
+        </div>
+        <button
+          v-if="availableEtfs.length > 0"
+          class="etf-btn dropdown-toggle"
+          :class="{ active: isFiltered }"
+          :aria-expanded="filtersOpen"
+          type="button"
+          @click="filtersOpen = !filtersOpen"
+        >
+          Filters
+        </button>
+      </div>
+      <div v-if="filtersOpen && availableEtfs.length > 0" class="etf-filter-container mt-3">
         <div class="etf-buttons">
           <button
             v-for="etf in availableEtfs"
             :key="etf"
             class="etf-btn"
             :class="{ active: isEtfSelected(etf) }"
+            :title="symbolToName.get(etf) ?? etf"
             @click="toggleEtf(etf)"
             type="button"
           >
@@ -16,13 +36,13 @@
             {{ getSymbolOnly(etf) }}
           </button>
           <span class="etf-separator"></span>
-          <button class="etf-btn" @click="toggleAllEtfs" type="button">
+          <button class="etf-btn etf-btn-ghost" @click="toggleAllEtfs" type="button">
             {{ selectedEtfs.length === availableEtfs.length ? 'Clear All' : 'Select All' }}
           </button>
         </div>
       </div>
       <platform-filter
-        v-if="availablePlatforms.length > 1"
+        v-if="filtersOpen && availablePlatforms.length > 1"
         class="mt-2"
         :available="availablePlatforms"
         :selected="selectedPlatforms"
@@ -31,27 +51,29 @@
       />
     </div>
 
-    <etf-breakdown-header
-      v-if="!isLoading"
-      :total-value="totalValue"
-      :unique-holdings="holdings.length"
-      :selected-etfs="selectedEtfs"
-      :available-etfs="availableEtfs"
-      :currency-split="currencySplit"
-    />
-
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div>
-          <etf-breakdown-chart title="Sector Allocation" :chart-data="sectorChartData" />
-        </div>
-        <div>
-          <etf-breakdown-chart title="Top Companies" :chart-data="companyChartData" />
-        </div>
-        <div>
-          <etf-breakdown-chart title="Country Allocation" :chart-data="countryChartData" />
-        </div>
-      </div>
+      <etf-breakdown-chart :chart-data="activeChartData">
+        <template #actions>
+          <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
+            <button
+              v-for="tab in breakdownTabs"
+              :key="tab.key"
+              class="breakdown-tab"
+              :class="{ active: activeTab === tab.key }"
+              :aria-pressed="activeTab === tab.key"
+              type="button"
+              @click="activeTab = tab.key"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+        </template>
+      </etf-breakdown-chart>
+      <etf-breakdown-stats
+        :total-value="totalValue"
+        :unique-holdings="holdings.length"
+        :currency-split="currencySplit"
+      />
     </div>
 
     <div class="search-container mb-4">
@@ -106,6 +128,7 @@ import {
 } from '../../services/etf-chart-service'
 import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
 import EtfBreakdownHeader from './etf-breakdown-header.vue'
+import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
@@ -119,6 +142,13 @@ const symbolToFundCurrency = computed(() => {
   const m = new Map<string, string>()
   for (const inst of allInstruments.value) {
     if (inst.fundCurrency) m.set(inst.symbol, inst.fundCurrency)
+  }
+  return m
+})
+const symbolToName = computed(() => {
+  const m = new Map<string, string>()
+  for (const inst of allInstruments.value) {
+    m.set(inst.symbol, inst.name)
   }
   return m
 })
@@ -157,6 +187,14 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
 
 const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
 
+const filtersOpen = useLocalStorage<boolean>('portfolio_etf_filters_open', false)
+
+const isFiltered = computed(
+  () =>
+    selectedEtfs.value.length !== availableEtfs.value.length ||
+    selectedPlatforms.value.length !== availablePlatforms.value.length
+)
+
 watch(
   availableEtfs,
   newEtfs => {
@@ -193,6 +231,22 @@ const sectorChartData = computed<ChartDataItem[]>(() => buildSectorChartData(hol
 const companyChartData = computed<ChartDataItem[]>(() => buildCompanyChartData(holdings.value))
 
 const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(holdings.value))
+
+const breakdownTabs = [
+  { key: 'sectors', label: 'Sectors' },
+  { key: 'companies', label: 'Top holdings' },
+  { key: 'countries', label: 'Countries' },
+] as const
+
+type BreakdownTab = (typeof breakdownTabs)[number]['key']
+
+const activeTab = ref<BreakdownTab>('sectors')
+
+const activeChartData = computed(() => {
+  if (activeTab.value === 'companies') return companyChartData.value
+  if (activeTab.value === 'countries') return countryChartData.value
+  return sectorChartData.value
+})
 
 const getEtfsParam = (): string[] | undefined =>
   getFilterParam(selectedEtfs.value, availableEtfs.value)
@@ -316,10 +370,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.etf-breakdown-container {
-  max-width: min(1350px, 91vw);
-  margin: 0 auto;
-  padding: 1.5rem;
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .etf-filter-container {
@@ -327,6 +389,27 @@ onMounted(async () => {
   align-items: center;
   padding: 0;
   background: transparent;
+}
+
+.charts-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .charts-section {
+    grid-template-columns: minmax(0, 1fr) 17rem;
+    align-items: start;
+  }
+}
+
+.dropdown-toggle::after {
+  transition: transform var(--transition-fast);
+}
+
+.dropdown-toggle[aria-expanded='true']::after {
+  transform: rotate(180deg);
 }
 
 .etf-buttons {
@@ -339,58 +422,34 @@ onMounted(async () => {
 .etf-separator {
   width: 1px;
   height: 1.25rem;
-  background-color: #d1d5db;
+  background-color: var(--color-hairline-strong);
   display: inline-block;
 }
 
-.etf-btn {
-  padding: 0.3125rem 0.625rem;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: var(--color-ink-muted);
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+.breakdown-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.breakdown-tab {
+  padding: 0.3125rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-container);
+  background: transparent;
+  font-size: 0.8125rem;
+  color: var(--color-ink-soft);
   cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
 }
 
-.etf-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #4b5563;
+.breakdown-tab:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-ink);
 }
 
-.etf-btn:active {
-  background: #f1f5f9;
-  transform: scale(0.98);
-}
-
-.etf-btn.active {
-  background: #4b5563;
-  color: white;
-  border-color: #4b5563;
-  font-weight: 500;
-}
-
-.etf-btn.active:hover {
-  background: #374151;
-  border-color: #374151;
-  color: white;
-}
-
-:deep(.platform-btn.active) {
-  background: #0072b2;
-  border-color: #0072b2;
-}
-
-:deep(.platform-btn.active:hover) {
-  background: #005a8c;
-  border-color: #005a8c;
+.breakdown-tab.active {
+  border-color: var(--color-brass);
+  background: var(--color-brass-wash);
+  color: var(--color-brass-deep);
 }
 
 .search-container {
@@ -408,21 +467,16 @@ onMounted(async () => {
 .search-input {
   width: 100%;
   padding: 0.375rem 2rem 0.375rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-hairline);
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  color: #374151;
-  background: white;
+  color: var(--color-ink);
+  background: var(--color-surface);
   transition: border-color 0.15s ease;
 }
 
-.search-input:focus {
-  outline: none;
-  border-color: #4b5563;
-}
-
 .search-input::placeholder {
-  color: #9ca3af;
+  color: var(--color-ink-soft);
 }
 
 .search-clear-btn {
@@ -432,7 +486,7 @@ onMounted(async () => {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #9ca3af;
+  color: var(--color-ink-soft);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
@@ -440,7 +494,7 @@ onMounted(async () => {
 }
 
 .search-clear-btn:hover {
-  color: #4b5563;
+  color: var(--color-ink);
 }
 
 .search-results-count {
@@ -450,10 +504,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .etf-breakdown-container {
-    padding: 1rem;
-  }
-
   .etf-filter-container {
     flex-direction: column;
     align-items: flex-start;

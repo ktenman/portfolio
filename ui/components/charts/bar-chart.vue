@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { ref, toRef } from 'vue'
 import { useChartLifecycle } from '../../composables/use-chart-lifecycle'
+import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 
 interface ChartDataPoint {
   date: string
@@ -25,8 +26,8 @@ const props = withDefaults(defineProps<ChartProps>(), {
   title: 'Bar Chart',
   xAxisLabel: 'Date',
   yAxisLabel: 'Value',
-  backgroundColor: 'rgba(75, 192, 192, 0.6)',
-  borderColor: 'rgba(75, 192, 192, 1)',
+  backgroundColor: withAlpha(CHART_COLORS[0], 0.55),
+  borderColor: CHART_COLORS[0],
   maxPoints: 50,
 })
 

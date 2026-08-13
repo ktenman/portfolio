@@ -1,20 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { Chart } from 'chart.js'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import type { ChartDataItem } from './etf-breakdown-chart.vue'
 
 vi.mock('chart.js', () => {
-  const mockChart: any = vi.fn().mockImplementation(function () {
+  const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {
     return {
+      data: config.data,
       destroy: vi.fn(),
       update: vi.fn(),
+      setActiveElements: vi.fn(),
     }
   })
   mockChart.register = vi.fn()
 
   return {
     Chart: mockChart,
-    PieController: vi.fn(),
+    DoughnutController: vi.fn(),
     ArcElement: vi.fn(),
     Tooltip: vi.fn(),
     Legend: vi.fn(),
@@ -28,6 +31,14 @@ describe('EtfBreakdownChart', () => {
     { label: 'Google', value: 15.2, percentage: '15.20', color: '#009E73' },
   ]
 
+  const buildItems = (count: number): ChartDataItem[] =>
+    Array.from({ length: count }, (_, index) => ({
+      label: `Item ${index + 1}`,
+      value: 10,
+      percentage: '10.00',
+      color: '#000000',
+    }))
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -37,21 +48,9 @@ describe('EtfBreakdownChart', () => {
   })
 
   describe('rendering', () => {
-    it('should render chart title', () => {
-      const wrapper = mount(EtfBreakdownChart, {
-        props: {
-          title: 'Top Companies',
-          chartData: mockChartData,
-        },
-      })
-
-      expect(wrapper.find('.chart-title').text()).toBe('Top Companies')
-    })
-
     it('should render canvas element', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Sector Allocation',
           chartData: mockChartData,
         },
       })
@@ -62,7 +61,6 @@ describe('EtfBreakdownChart', () => {
     it('should render legend items', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Test Chart',
           chartData: mockChartData,
         },
       })
@@ -70,13 +68,35 @@ describe('EtfBreakdownChart', () => {
       const legendItems = wrapper.findAll('.legend-item')
       expect(legendItems).toHaveLength(3)
     })
+
+    it('should leave the centre of the donut empty until a slice is selected', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: mockChartData,
+        },
+      })
+
+      expect(wrapper.find('.chart-centre').exists()).toBe(false)
+    })
+
+    it('should read out the selected slice in the centre of the donut', async () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: mockChartData,
+        },
+      })
+
+      await wrapper.findAll('.legend-item')[1].trigger('mouseenter')
+
+      expect(wrapper.find('.chart-centre-label').text()).toBe('Microsoft')
+      expect(wrapper.find('.chart-centre-value').text()).toBe('20.30%')
+    })
   })
 
   describe('legend content', () => {
     it('should display correct labels in legend', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Test Chart',
           chartData: mockChartData,
         },
       })
@@ -90,7 +110,6 @@ describe('EtfBreakdownChart', () => {
     it('should display correct percentages in legend', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Test Chart',
           chartData: mockChartData,
         },
       })
@@ -104,7 +123,6 @@ describe('EtfBreakdownChart', () => {
     it('should display correct colors in legend', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Test Chart',
           chartData: mockChartData,
         },
       })
@@ -120,12 +138,10 @@ describe('EtfBreakdownChart', () => {
     it('should render without errors when chartData is empty', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Empty Chart',
           chartData: [],
         },
       })
 
-      expect(wrapper.find('.chart-title').text()).toBe('Empty Chart')
       expect(wrapper.findAll('.legend-item')).toHaveLength(0)
     })
   })
@@ -134,7 +150,6 @@ describe('EtfBreakdownChart', () => {
     it('should update legend when chartData changes', async () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Test Chart',
           chartData: mockChartData,
         },
       })
@@ -153,6 +168,64 @@ describe('EtfBreakdownChart', () => {
     })
   })
 
+  describe('hover fill', () => {
+    interface CapturedDataset {
+      backgroundColor: string[]
+      hoverBackgroundColor: string[]
+    }
+
+    const capturedDataset = (): CapturedDataset =>
+      vi.mocked(Chart).mock.calls[0][1].data.datasets[0] as unknown as CapturedDataset
+
+    it(`pins the hover fill to the resting fill when the chart is constructed`, () => {
+      mount(EtfBreakdownChart, {
+        props: {
+          chartData: mockChartData,
+        },
+      })
+
+      const dataset = capturedDataset()
+      expect(dataset.hoverBackgroundColor).toEqual(dataset.backgroundColor)
+    })
+
+    it(`keeps the hover fill array the same length as the resting fill array after the dataset shrinks`, async () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: mockChartData,
+        },
+      })
+
+      const shorterData: ChartDataItem[] = [
+        { label: 'Amazon', value: 30, percentage: '30.00', color: '#D55E00' },
+      ]
+
+      await wrapper.setProps({ chartData: shorterData })
+
+      const dataset = capturedDataset()
+      expect(dataset.hoverBackgroundColor).toHaveLength(dataset.backgroundColor.length)
+    })
+  })
+
+  describe('stale hover state', () => {
+    it(`clears the chart's active element when the dataset swaps after a legend hover`, async () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: mockChartData,
+        },
+      })
+
+      await wrapper.findAll('.legend-item')[2].trigger('mouseenter')
+
+      const newData: ChartDataItem[] = [
+        { label: 'Amazon', value: 30, percentage: '30.00', color: '#D55E00' },
+      ]
+      await wrapper.setProps({ chartData: newData })
+
+      const chartInstance = vi.mocked(Chart).mock.results[0].value
+      expect(chartInstance.setActiveElements).toHaveBeenLastCalledWith([])
+    })
+  })
+
   describe('single item', () => {
     it('should render correctly with single item', () => {
       const singleItemData: ChartDataItem[] = [
@@ -161,7 +234,6 @@ describe('EtfBreakdownChart', () => {
 
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Single Item',
           chartData: singleItemData,
         },
       })
@@ -184,13 +256,21 @@ describe('EtfBreakdownChart', () => {
 
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Many Items',
           chartData: manyItems,
         },
       })
 
       const legendItems = wrapper.findAll('.legend-item')
       expect(legendItems).toHaveLength(10)
+    })
+
+    it('should render every legend entry without a show all control', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: buildItems(16) },
+      })
+
+      expect(wrapper.findAll('.legend-item')).toHaveLength(16)
+      expect(wrapper.find('.legend-toggle').exists()).toBe(false)
     })
   })
 
@@ -203,7 +283,6 @@ describe('EtfBreakdownChart', () => {
 
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          title: 'Special Chars',
           chartData: specialData,
         },
       })

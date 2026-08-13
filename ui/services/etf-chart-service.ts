@@ -1,5 +1,5 @@
 import type { EtfHoldingBreakdownDto } from '../models/generated/domain-models'
-import { CHART_COLORS, OTHERS_COLOR } from '../constants/chart-colors'
+import { DONUT_COLORS } from '../constants/chart-colors'
 
 export interface ChartDataItem {
   label: string
@@ -20,7 +20,7 @@ export function buildSectorChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 15, minThreshold = 0.5, colors = CHART_COLORS } = config
+  const { topCount = 15, minThreshold = 0.5, colors = DONUT_COLORS } = config
   const sectorTotals = new Map<string, number>()
 
   holdings.forEach(holding => {
@@ -37,64 +37,37 @@ export function buildSectorChartData(
       percentage: value.toFixed(2),
     }))
 
-  const aboveThreshold = sortedSectors.filter(s => s.value >= minThreshold)
-  const belowThreshold = sortedSectors.filter(s => s.value < minThreshold)
-  const mainSectors = aboveThreshold.slice(0, topCount)
-  const smallSectors = [...aboveThreshold.slice(topCount), ...belowThreshold]
-
-  const result = [...mainSectors]
-
-  if (smallSectors.length > 0) {
-    const othersTotal = smallSectors.reduce((sum, s) => sum + s.value, 0)
-    result.push({
-      label: 'Others',
-      value: othersTotal,
-      percentage: othersTotal.toFixed(2),
-    })
-  }
-
-  return result.map((item, index) => ({
-    ...item,
-    color: item.label === 'Others' ? OTHERS_COLOR : colors[index % colors.length],
-  }))
+  return sortedSectors
+    .filter(s => s.value >= minThreshold)
+    .slice(0, topCount)
+    .map((item, index) => ({
+      ...item,
+      color: colors[index % colors.length],
+    }))
 }
 
 export function buildCompanyChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 15, colors = CHART_COLORS } = config
-  const sortedHoldings = [...holdings].sort((a, b) => b.percentageOfTotal - a.percentageOfTotal)
+  const { topCount = 15, colors = DONUT_COLORS } = config
 
-  const mainHoldings = sortedHoldings.slice(0, topCount)
-  const smallHoldings = sortedHoldings.slice(topCount)
-
-  const result = mainHoldings.map(h => ({
-    label: h.holdingName,
-    value: h.percentageOfTotal,
-    percentage: h.percentageOfTotal.toFixed(2),
-  }))
-
-  if (smallHoldings.length > 0) {
-    const othersTotal = smallHoldings.reduce((sum, h) => sum + h.percentageOfTotal, 0)
-    result.push({
-      label: 'Others',
-      value: othersTotal,
-      percentage: othersTotal.toFixed(2),
-    })
-  }
-
-  return result.map((item, index) => ({
-    ...item,
-    color: item.label === 'Others' ? OTHERS_COLOR : colors[index % colors.length],
-  }))
+  return [...holdings]
+    .sort((a, b) => b.percentageOfTotal - a.percentageOfTotal)
+    .slice(0, topCount)
+    .map((holding, index) => ({
+      label: holding.holdingName,
+      value: holding.percentageOfTotal,
+      percentage: holding.percentageOfTotal.toFixed(2),
+      color: colors[index % colors.length],
+    }))
 }
 
 export function buildCountryChartData(
   holdings: EtfHoldingBreakdownDto[],
   config: ChartDataConfig = {}
 ): ChartDataItem[] {
-  const { topCount = 15, minThreshold = 0.2, colors = CHART_COLORS } = config
+  const { topCount = 15, minThreshold = 0.2, colors = DONUT_COLORS } = config
   const countryTotals = new Map<string, { value: number; code: string }>()
 
   holdings.forEach(holding => {
@@ -117,30 +90,16 @@ export function buildCountryChartData(
       code: data.code,
     }))
 
-  const aboveThreshold = sortedCountries.filter(c => c.value >= minThreshold)
-  const belowThreshold = sortedCountries.filter(c => c.value < minThreshold)
-  const mainCountries = aboveThreshold.slice(0, topCount)
-  const smallCountries = [...aboveThreshold.slice(topCount), ...belowThreshold]
-
-  const result = [...mainCountries]
-
-  if (smallCountries.length > 0) {
-    const othersTotal = smallCountries.reduce((sum, c) => sum + c.value, 0)
-    result.push({
-      label: 'Others',
-      value: othersTotal,
-      percentage: othersTotal.toFixed(2),
-      code: '',
-    })
-  }
-
-  return result.map((item, index) => ({
-    label: item.label,
-    value: item.value,
-    percentage: item.percentage,
-    color: item.label === 'Others' ? OTHERS_COLOR : colors[index % colors.length],
-    code: item.code || undefined,
-  }))
+  return sortedCountries
+    .filter(c => c.value >= minThreshold)
+    .slice(0, topCount)
+    .map((item, index) => ({
+      label: item.label,
+      value: item.value,
+      percentage: item.percentage,
+      color: colors[index % colors.length],
+      code: item.code || undefined,
+    }))
 }
 
 export function getFilterParam<T>(selected: T[], available: T[]): T[] | undefined {

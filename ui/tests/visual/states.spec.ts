@@ -28,7 +28,6 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
 }
 
 const OPEN_MODAL = 'dialog.modal[open]'
-const OPEN_DROPDOWN = '.dropdown-menu.show'
 const QUICK_DATES_TOGGLE = '[data-testid="quickDatesToggle"]'
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
@@ -59,8 +58,7 @@ async function openInstrumentModal(page: Page): Promise<void> {
 async function openQuickDates(page: Page): Promise<void> {
   await stubTransactions(page)
   await openRoute(page, '/transactions')
-  await page.click(QUICK_DATES_TOGGLE)
-  await expect(page.locator(OPEN_DROPDOWN)).toBeVisible()
+  await expect(page.locator(QUICK_DATES_TOGGLE)).toBeVisible()
 }
 
 const MODALS: {
@@ -184,36 +182,22 @@ test.describe('desktop states', () => {
     await stubEnums(page)
   })
 
-  test('dropdown quick dates', async ({ page }) => {
-    await openQuickDates(page)
-    await settleAndFreeze(page)
-    await expect(page).toHaveScreenshot('dropdown-quick-dates.png')
-  })
-
-  test('dropdown selecting a quick date applies it and closes', async ({ page }) => {
+  test('selecting a quick date applies it', async ({ page }) => {
     await openQuickDates(page)
 
-    await page.click(`${OPEN_DROPDOWN} .dropdown-item:has-text("Last 7 Days")`)
+    await page.selectOption(QUICK_DATES_TOGGLE, 'Last 7 Days')
 
-    await expect(page.locator(OPEN_DROPDOWN)).toHaveCount(0)
-    await expect(page.locator(QUICK_DATES_TOGGLE)).toHaveText('Last 7 Days')
+    await expect(page.locator(QUICK_DATES_TOGGLE)).toHaveValue('Last 7 Days')
     await expect(page.locator('#fromDate')).not.toHaveValue('')
   })
 
-  test('dropdown escape closes the quick dates menu', async ({ page }) => {
+  test('clearing the quick date selection clears the dates', async ({ page }) => {
     await openQuickDates(page)
+    await page.selectOption(QUICK_DATES_TOGGLE, 'Last 7 Days')
 
-    await page.keyboard.press('Escape')
+    await page.selectOption(QUICK_DATES_TOGGLE, '')
 
-    await expect(page.locator(OPEN_DROPDOWN)).toHaveCount(0)
-  })
-
-  test('dropdown clicking outside closes the quick dates menu', async ({ page }) => {
-    await openQuickDates(page)
-
-    await page.click('h2:has-text("Transactions")')
-
-    await expect(page.locator(OPEN_DROPDOWN)).toHaveCount(0)
+    await expect(page.locator('#fromDate')).toHaveValue('')
   })
 
   for (const variant of ['success', 'error', 'info', 'warning'] as const) {

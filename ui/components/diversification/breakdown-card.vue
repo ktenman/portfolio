@@ -1,5 +1,5 @@
 <template>
-  <div class="breakdown-card">
+  <div class="breakdown-card card-shell">
     <h6 class="breakdown-title">{{ title }}</h6>
     <div class="breakdown-list">
       <div v-for="item in items.slice(0, maxItems)" :key="item.key" class="breakdown-item">
@@ -33,17 +33,16 @@ withDefaults(
 
 <style scoped>
 .breakdown-card {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem;
-  padding: 1rem;
   height: 100%;
 }
 
 .breakdown-title {
-  font-weight: 600;
   margin-bottom: 0.75rem;
-  color: #1a1a1a;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
 }
 
 .breakdown-list {
@@ -57,7 +56,7 @@ withDefaults(
   justify-content: space-between;
   align-items: center;
   padding: 0.25rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .breakdown-item:last-child {
@@ -65,8 +64,8 @@ withDefaults(
 }
 
 .breakdown-name {
-  font-size: 0.875rem;
-  color: #333;
+  font-size: var(--text-base);
+  color: var(--color-ink-soft);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -74,8 +73,8 @@ withDefaults(
 }
 
 .breakdown-value {
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--color-ink);
 }
 </style>

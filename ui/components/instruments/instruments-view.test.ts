@@ -28,6 +28,7 @@ vi.mock('../../composables/use-toast', () => ({
 }))
 vi.mock('@vueuse/core', () => ({
   useLocalStorage: vi.fn((_key: string, defaultValue: any) => ref(defaultValue)),
+  onClickOutside: vi.fn(),
 }))
 
 const CrudLayoutStub = {

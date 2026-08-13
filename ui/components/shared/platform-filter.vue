@@ -12,7 +12,7 @@
         {{ formatPlatformName(platform) }}
       </button>
       <span class="platform-separator"></span>
-      <button class="platform-btn" type="button" @click="emit('toggle-all')">
+      <button class="platform-btn platform-btn-ghost" type="button" @click="emit('toggle-all')">
         {{ selected.length === available.length ? 'Clear All' : 'Select All' }}
       </button>
     </div>

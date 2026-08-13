@@ -39,6 +39,7 @@ export default [
     rules: {
       // Example: disable the multi-word component names rule
       'vue/multi-word-component-names': 'off',
+      'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: true }],
       // Unused imports detection
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
@@ -89,8 +90,30 @@ export default [
       ],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: true }],
       'prettier/prettier': 'error',
       // Add more TypeScript rules here as needed
+    },
+  },
+
+  // Specs and fixtures are linear data, not logic - splitting them buys nothing
+  {
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'ui/tests/visual/*-fixture.ts'],
+    rules: {
+      'max-lines': 'off',
+    },
+  },
+
+  // Pre-existing files above the limit, to be brought under it
+  {
+    files: [
+      'ui/components/diversification/allocation-table.vue',
+      'ui/components/etf/etf-breakdown-table.vue',
+      'ui/components/etf/etf-breakdown.vue',
+      'ui/components/instruments/instrument-table.vue',
+    ],
+    rules: {
+      'max-lines': 'off',
     },
   },
 

@@ -401,12 +401,12 @@ const columns: ColumnDefinition[] = [
 }
 
 .empty-state-icon {
-  color: #9ca3af;
+  color: var(--color-ink-faint);
   margin-bottom: 1rem;
 }
 
 .empty-state-title {
-  color: #374151;
+  color: var(--color-ink);
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -433,7 +433,7 @@ const columns: ColumnDefinition[] = [
 
 .logo-container:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lifted);
 }
 
 .company-logo {
@@ -442,7 +442,7 @@ const columns: ColumnDefinition[] = [
   object-fit: cover;
   flex-shrink: 0;
   border-radius: 50%;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-sunken);
   padding: 2px;
 }
 
@@ -456,9 +456,9 @@ const columns: ColumnDefinition[] = [
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-sunken);
   border-radius: 50%;
-  color: #adb5bd;
+  color: var(--color-ink-faint);
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
@@ -469,9 +469,9 @@ const columns: ColumnDefinition[] = [
 
 .logo-placeholder.clickable:hover {
   transform: scale(1.1);
-  background-color: #e9ecef;
-  color: #6c757d;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background-color: var(--color-surface-band);
+  color: var(--color-ink-muted);
+  box-shadow: var(--shadow-lifted);
 }
 
 .ticker-symbol {
@@ -503,7 +503,7 @@ const columns: ColumnDefinition[] = [
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-ink-muted);
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-sunken);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
 }
@@ -518,13 +518,6 @@ const columns: ColumnDefinition[] = [
 }
 
 .card :deep(.table thead th) {
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #dee2e6;
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  color: #6c757d;
   padding: 1rem 0.75rem;
 }
 
@@ -533,19 +526,19 @@ const columns: ColumnDefinition[] = [
 }
 
 .card :deep(.table tbody tr:hover) {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-hover);
 }
 
 .card :deep(.table td) {
   padding: 0.875rem 0.75rem;
   vertical-align: middle;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .table-footer-totals {
   font-weight: 600;
-  background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
-  border-top: 2px solid #dee2e6;
+  background: var(--color-surface-sunken);
+  border-top: 1px solid var(--color-hairline-strong);
 }
 
 .table-footer-totals td {

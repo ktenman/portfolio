@@ -8,7 +8,7 @@
 
     <platform-filter
       v-if="availablePlatforms.length > 0"
-      class="mt-2 mb-4"
+      class="mt-3 mb-4"
       :available="availablePlatforms"
       :selected="selectedPlatforms"
       @toggle="togglePlatform"
