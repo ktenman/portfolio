@@ -92,6 +92,10 @@ jobs:
     name: 🧪 ${{ matrix.name }}
     if: github.event_name != 'workflow_dispatch'
     runs-on: self-hosted
+    env:
+      E2E_WEB_PORT: 61242
+      E2E_API_PORT: 61243
+      E2E_BASE_URL: http://localhost:61242
     strategy:
       matrix:
         include:
@@ -210,6 +214,12 @@ jobs:
             build/reports/selenide/
             build/reports/jacoco/test/html/
           retention-days: 14
+      - name: Tear down E2E services
+        if: always() && matrix.type == 'e2e'
+        run: |
+          docker compose -f docker-compose.e2e-minimal.yml down -v --remove-orphans
+          docker image prune -f
+          docker builder prune -f --filter until=168h
 
   detect-changes:
     name: 🔍 Detect Changes

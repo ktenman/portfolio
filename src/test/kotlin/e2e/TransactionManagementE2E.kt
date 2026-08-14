@@ -23,7 +23,7 @@ import org.openqa.selenium.By.tagName
 import org.openqa.selenium.TimeoutException
 import java.time.Duration
 
-private const val TRANSACTIONS_BASE_URL = "http://localhost:61234/transactions"
+private val TRANSACTIONS_BASE_URL = "${BrowserConfig.baseUrl}/transactions"
 
 @ExtendWith(RetryExtension::class)
 @Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])

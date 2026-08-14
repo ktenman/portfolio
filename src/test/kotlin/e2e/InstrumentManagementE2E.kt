@@ -22,7 +22,7 @@ import org.openqa.selenium.By.tagName
 import org.openqa.selenium.TimeoutException
 import java.time.Duration
 
-private const val INSTRUMENTS_BASE_URL = "http://localhost:61234/instruments"
+private val INSTRUMENTS_BASE_URL = "${BrowserConfig.baseUrl}/instruments"
 
 @ExtendWith(RetryExtension::class)
 @Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])

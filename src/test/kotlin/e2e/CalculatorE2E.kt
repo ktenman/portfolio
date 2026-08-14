@@ -28,7 +28,7 @@ import org.openqa.selenium.By
 import org.openqa.selenium.TimeoutException
 import java.time.Duration
 
-private const val CALCULATOR_BASE_URL = "http://localhost:61234/calculator"
+private val CALCULATOR_BASE_URL = "${BrowserConfig.baseUrl}/calculator"
 
 @ExtendWith(RetryExtension::class)
 @Retry(times = 3, onExceptions = [ElementNotFound::class, TimeoutException::class])
