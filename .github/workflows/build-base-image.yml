@@ -11,7 +11,7 @@ on:
 jobs:
   build-base:
     name: 🐳 Build & Push Base Image
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write

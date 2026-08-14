@@ -29,7 +29,7 @@ env:
 jobs:
   scan-docker-images:
     name: Scan ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
 
     strategy:
@@ -81,7 +81,7 @@ jobs:
 
   notify-critical:
     name: Notify on Critical Vulnerabilities
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: scan-docker-images
     if: failure()
 
@@ -118,7 +118,7 @@ jobs:
 
   scan-with-sbom:
     name: Advanced Scan with SBOM
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scan_all) }}
 
     steps:

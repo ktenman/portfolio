@@ -42,7 +42,7 @@ on:
 jobs:
   deploy:
     name: 🚀 Deploy to K3s
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

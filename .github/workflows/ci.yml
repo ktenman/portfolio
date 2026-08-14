@@ -27,7 +27,7 @@ jobs:
   lint:
     name: 🧹 ${{ matrix.lint-name }}
     if: github.event_name != 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         include:
@@ -91,7 +91,7 @@ jobs:
   test:
     name: 🧪 ${{ matrix.name }}
     if: github.event_name != 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         include:
@@ -213,7 +213,7 @@ jobs:
 
   detect-changes:
     name: 🔍 Detect Changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -243,7 +243,7 @@ jobs:
     name: 🐳 Build & Push ${{ matrix.name }}
     needs: [lint, test, detect-changes]
     if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write
@@ -407,7 +407,7 @@ jobs:
     name: 🤖 Auto-Merge Dependabot
     needs: [lint, test]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: write
       pull-requests: write
