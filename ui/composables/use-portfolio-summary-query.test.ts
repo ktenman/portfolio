@@ -7,6 +7,7 @@ import { renderWithProviders } from '../tests/test-utils'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
+import { TimeRange } from '../models/generated/domain-models'
 
 vi.mock('../services/portfolio-summary-service')
 vi.mock('./use-auth-state', () => ({
@@ -57,14 +58,19 @@ describe('usePortfolioSummaryQuery', () => {
     vi.clearAllMocks()
     vi.mocked(portfolioSummaryService.getHistorical).mockResolvedValue(mockPage)
     vi.mocked(portfolioSummaryService.getCurrent).mockResolvedValue(mockCurrentSummary)
+    vi.mocked(portfolioSummaryService.getSeries).mockResolvedValue(mockHistoricalSummaries)
+    vi.mocked(portfolioSummaryService.getRangeChange).mockResolvedValue({
+      changeAmount: 250,
+      changePercent: 1.25,
+    })
   })
 
-  const setupQuery = (platforms?: Ref<string[]>) => {
+  const setupQuery = (platforms?: Ref<string[]>, range?: Ref<TimeRange>) => {
     let queryResult: ReturnType<typeof usePortfolioSummaryQuery> | null = null
 
     const TestComponent = {
       setup() {
-        queryResult = usePortfolioSummaryQuery(platforms)
+        queryResult = usePortfolioSummaryQuery(platforms, range)
         return { queryResult }
       },
       template: '<div>{{ queryResult.isLoading.value ? "Loading" : "Loaded" }}</div>',
@@ -270,6 +276,33 @@ describe('usePortfolioSummaryQuery', () => {
       expect(queryResult.summaries.value).toHaveLength(1)
       expect(queryResult.summaries.value[0]).toEqual(mockCurrentSummary)
     })
+
+    it('should expose the range error when the chart series request fails', async () => {
+      vi.mocked(portfolioSummaryService.getSeries).mockRejectedValue(
+        new Error('Series unavailable')
+      )
+
+      const { queryResult } = setupQuery()
+
+      await vi.waitFor(() => expect(queryResult.rangeError.value).toBe('Series unavailable'), {
+        timeout: 5000,
+      })
+    })
+
+    it('should expose the range error when the range change request fails', async () => {
+      vi.mocked(portfolioSummaryService.getRangeChange).mockRejectedValue(
+        new Error('Range change unavailable')
+      )
+
+      const { queryResult } = setupQuery()
+
+      await vi.waitFor(
+        () => expect(queryResult.rangeError.value).toBe('Range change unavailable'),
+        {
+          timeout: 5000,
+        }
+      )
+    })
   })
 
   describe('platform filtering', () => {
@@ -334,6 +367,55 @@ describe('usePortfolioSummaryQuery', () => {
 
       const { queryResult } = setupQuery()
       expect(queryResult.isLoading.value).toBe(true)
+    })
+  })
+
+  describe('chart series', () => {
+    it('should request the default range when none is provided', async () => {
+      const { queryResult } = setupQuery()
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      expect(portfolioSummaryService.getSeries).toHaveBeenCalledWith('6M', undefined)
+    })
+
+    it('should request the selected range with the selected platforms', async () => {
+      const platforms = ref(['LIGHTYEAR'])
+      const range = ref(TimeRange.ONE_YEAR)
+      const { queryResult } = setupQuery(platforms, range)
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      expect(portfolioSummaryService.getSeries).toHaveBeenCalledWith('1Y', ['LIGHTYEAR'])
+    })
+
+    it('should refetch when the range changes', async () => {
+      const range = ref(TimeRange.SIX_MONTHS)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      range.value = TimeRange.MAX
+      await flushPromises()
+
+      await vi.waitFor(
+        () => expect(portfolioSummaryService.getSeries).toHaveBeenCalledWith('MAX', undefined),
+        { timeout: 5000 }
+      )
+    })
+
+    it('should merge the current summary into the chart series', async () => {
+      const { queryResult } = setupQuery()
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      await vi.waitFor(() => queryResult.chartSummaries.value.length === 3, { timeout: 5000 })
+
+      expect(queryResult.chartSummaries.value.map(s => s.date)).toContain('2023-12-31')
     })
   })
 })

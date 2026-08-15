@@ -3,10 +3,12 @@ import {
   buildSectorChartData,
   buildCompanyChartData,
   buildCountryChartData,
+  calculateWeightedMetrics,
   getFilterParam,
 } from './etf-chart-service'
 import type { EtfHoldingBreakdownDto } from '../models/generated/domain-models'
 import { DONUT_COLORS } from '../constants/chart-colors'
+import { createInstrumentDto } from '../tests/fixtures'
 
 let holdingIdCounter = 1
 
@@ -332,6 +334,55 @@ describe('etf-chart-service', () => {
     it('should handle number arrays', () => {
       const result = getFilterParam([1, 2], [1, 2, 3, 4])
       expect(result).toEqual([1, 2])
+    })
+  })
+
+  describe('calculateWeightedMetrics', () => {
+    const vwce = createInstrumentDto({
+      symbol: 'VWCE',
+      currentValue: 3000,
+      ter: 0.2,
+      xirrAnnualReturn: 0.1,
+    })
+    const qdve = createInstrumentDto({
+      symbol: 'QDVE',
+      currentValue: 1000,
+      ter: 0.6,
+      xirrAnnualReturn: 0.5,
+    })
+
+    it('should weight both figures by current value', () => {
+      const result = calculateWeightedMetrics([vwce, qdve], ['VWCE', 'QDVE'])
+
+      expect(result.ter).toBeCloseTo(0.3, 10)
+      expect(result.annualReturn).toBeCloseTo(0.2, 10)
+    })
+
+    it('should ignore instruments that are not selected', () => {
+      const excluded = createInstrumentDto({ symbol: 'SXR8', currentValue: 9000, ter: 5 })
+      const result = calculateWeightedMetrics([vwce, qdve, excluded], ['VWCE', 'QDVE'])
+
+      expect(result.ter).toBeCloseTo(0.3, 10)
+    })
+
+    it('should ignore instruments without a current value', () => {
+      const sold = createInstrumentDto({ symbol: 'IWDA', currentValue: 0, ter: 5 })
+      const result = calculateWeightedMetrics([vwce, qdve, sold], ['VWCE', 'QDVE', 'IWDA'])
+
+      expect(result.ter).toBeCloseTo(0.3, 10)
+    })
+
+    it('should redistribute weight when a figure is missing', () => {
+      const withoutTer = createInstrumentDto({ symbol: 'VWCE', currentValue: 3000, ter: null })
+      const result = calculateWeightedMetrics([withoutTer, qdve], ['VWCE', 'QDVE'])
+
+      expect(result.ter).toBeCloseTo(0.6, 10)
+    })
+
+    it('should return nulls when nothing is selected', () => {
+      const result = calculateWeightedMetrics([vwce, qdve], [])
+
+      expect(result).toEqual({ ter: null, annualReturn: null })
     })
   })
 })

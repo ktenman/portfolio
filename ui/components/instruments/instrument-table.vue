@@ -118,7 +118,7 @@
             <span class="metric-value" :class="getProfitClass(item.priceChangeAmount)">
               {{ formatCurrencyWithSign(Math.abs(item.priceChangeAmount), item.baseCurrency) }}
             </span>
-            <span class="metric-label">{{ selectedPeriod.toUpperCase() }}</span>
+            <span class="metric-label">{{ selectedPeriod }}</span>
           </div>
         </div>
         <div class="instrument-metrics secondary-metrics">
@@ -193,7 +193,7 @@
             </span>
           </div>
           <div class="total-item total-price-change-item">
-            <span class="total-label">{{ selectedPeriod.toUpperCase() }}</span>
+            <span class="total-label">{{ selectedPeriod }}</span>
             <span
               class="total-value"
               :class="[
@@ -332,7 +332,7 @@
 <script setup lang="ts">
 import { computed, toRef, watch } from 'vue'
 import DataTable from '../shared/data-table.vue'
-import { InstrumentDto } from '../../models/generated/domain-models'
+import { InstrumentDto, TimeRange } from '../../models/generated/domain-models'
 import { instrumentColumns } from '../../config'
 import {
   getProfitClass,
@@ -356,7 +356,7 @@ interface Props {
   isLoading?: boolean
   isError?: boolean
   errorMessage?: string
-  selectedPeriod: string
+  selectedPeriod: TimeRange
   sortState?: SortState
   onSort?: (key: string) => void
 }
@@ -365,7 +365,6 @@ const props = withDefaults(defineProps<Props>(), {
   portfolioXirr: null,
   isLoading: false,
   isError: false,
-  selectedPeriod: '24h',
 })
 
 const emit = defineEmits<{
@@ -379,7 +378,7 @@ const { getChangeClass, trackTotalsChange, getTotalsChangeClass } =
 
 const columns = computed(() =>
   instrumentColumns.map(col =>
-    col.key === 'priceChange' ? { ...col, label: props.selectedPeriod.toUpperCase() } : col
+    col.key === 'priceChange' ? { ...col, label: props.selectedPeriod } : col
   )
 )
 

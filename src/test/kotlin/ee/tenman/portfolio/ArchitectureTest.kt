@@ -102,6 +102,8 @@ class ArchitectureTest {
     classes()
       .that()
       .resideInAPackage("..domain..")
+      .and()
+      .haveSimpleNameNotEndingWith("Test")
       .should()
       .onlyDependOnClassesThat()
       .resideInAnyPackage(

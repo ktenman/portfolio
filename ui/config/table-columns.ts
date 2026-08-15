@@ -27,7 +27,7 @@ export const instrumentColumns: ColumnDefinition[] = [
   },
   {
     key: 'priceChange',
-    label: '24H',
+    label: '1D',
     class: 'hidden! lg:table-cell! price-change-column',
     hideOnMobile: true,
     sortKey: 'priceChangeAmount',

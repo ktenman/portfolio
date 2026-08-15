@@ -7,6 +7,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.model.InstrumentSnapshot
 import ee.tenman.portfolio.model.InstrumentSnapshotsWithPortfolioXirr
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -62,13 +63,13 @@ class InstrumentService(
   @Transactional(readOnly = true)
   fun getAllInstrumentSnapshots(
     platforms: List<String>?,
-    period: String?,
+    period: TimeRange?,
   ): List<InstrumentSnapshot> = instrumentSnapshotService.getAllSnapshots(platforms, period)
 
   @Transactional(readOnly = true)
   fun getAllInstrumentSnapshotsWithPortfolioXirr(
     platforms: List<String>?,
-    period: String?,
+    period: TimeRange?,
   ): InstrumentSnapshotsWithPortfolioXirr = instrumentSnapshotService.getAllSnapshotsWithPortfolioXirr(platforms, period)
 
   @Transactional

@@ -72,12 +72,23 @@
       <etf-breakdown-stats
         :total-value="totalValue"
         :unique-holdings="holdings.length"
+        :weighted-ter="weightedMetrics.ter"
+        :weighted-annual-return="weightedMetrics.annualReturn"
         :currency-split="currencySplit"
       />
     </div>
 
     <div class="search-container mb-4">
       <div class="search-input-wrapper">
+        <svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <path
+            d="M10.6 10.6 14 14"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
         <input
           v-model="searchQuery"
           type="text"
@@ -123,6 +134,7 @@ import {
   buildSectorChartData,
   buildCompanyChartData,
   buildCountryChartData,
+  calculateWeightedMetrics,
   getFilterParam,
   type ChartDataItem,
 } from '../../services/etf-chart-service'
@@ -348,6 +360,10 @@ const loadPlatformInstruments = async () => {
   }
 }
 
+const weightedMetrics = computed(() =>
+  calculateWeightedMetrics(platformInstruments.value, selectedEtfs.value)
+)
+
 const currencySplit = computed(() => {
   const selected = new Set(selectedEtfs.value)
   const byCurrency = new Map<string, number>()
@@ -464,15 +480,35 @@ onMounted(async () => {
   max-width: 320px;
 }
 
+.search-icon {
+  position: absolute;
+  left: 0.6875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--color-ink-faint);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+}
+
+.search-input-wrapper:focus-within .search-icon {
+  color: var(--color-brass);
+}
+
 .search-input {
   width: 100%;
-  padding: 0.375rem 2rem 0.375rem 0.75rem;
-  border: 1px solid var(--color-hairline);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  padding: 0.4375rem 2rem 0.4375rem 2.125rem;
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-container);
+  font-size: var(--text-sm);
   color: var(--color-ink);
+  background: var(--color-surface-subtle);
+  transition: background-color var(--transition-fast);
+}
+
+.search-input:focus {
   background: var(--color-surface);
-  transition: border-color 0.15s ease;
 }
 
 .search-input::placeholder {
@@ -481,19 +517,26 @@ onMounted(async () => {
 
 .search-clear-btn {
   position: absolute;
-  right: 0.5rem;
+  right: 0.4375rem;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
   background: none;
   border: none;
+  border-radius: var(--radius-control);
   color: var(--color-ink-soft);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   line-height: 1;
   cursor: pointer;
-  padding: 0.125rem 0.25rem;
 }
 
 .search-clear-btn:hover {
+  background: var(--color-brass-wash);
   color: var(--color-ink);
 }
 

@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.PLATFORM_S
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.TimeRange
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
@@ -39,6 +40,16 @@ class PlatformSummaryCacheService(
     platforms: List<Platform>,
     date: LocalDate,
   ): PortfolioDailySummary = summaryService.getSummaryForPlatformsOnDate(platforms, date)
+
+  @Cacheable(
+    value = [PLATFORM_SUMMARY_CACHE],
+    key = "'platform-series-' + #root.target.platformKey(#platforms) + '-' + #range.name()",
+    unless = "#result.isEmpty()",
+  )
+  fun getSeriesForPlatforms(
+    platforms: List<Platform>,
+    range: TimeRange,
+  ): List<PortfolioDailySummary> = summaryService.getSeriesForPlatforms(platforms, range)
 
   fun platformKey(platforms: List<Platform>): String = platforms.map { it.name }.sorted().joinToString(",")
 }

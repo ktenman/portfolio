@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { instrumentsService } from './instruments-service'
 import { httpClient } from '../utils/http-client'
-import { PriceChangePeriod, ProviderName } from '../models/generated/domain-models'
+import { ProviderName, TimeRange } from '../models/generated/domain-models'
 import { createInstrumentDto } from '../tests/fixtures'
 
 vi.mock('../utils/http-client', () => ({
@@ -40,7 +40,7 @@ describe('instrumentsService', () => {
       const result = await instrumentsService.getAll()
 
       expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
-        params: { period: PriceChangePeriod.P24H },
+        params: { period: TimeRange.ONE_DAY },
       })
       expect(result).toEqual(mockInstruments)
     })
@@ -51,7 +51,7 @@ describe('instrumentsService', () => {
       const result = await instrumentsService.getAll()
 
       expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
-        params: { period: PriceChangePeriod.P24H },
+        params: { period: TimeRange.ONE_DAY },
       })
       expect(result).toEqual([])
     })
@@ -79,7 +79,7 @@ describe('instrumentsService', () => {
       const result = await instrumentsService.getAll(['TRADING212'])
 
       expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
-        params: { period: PriceChangePeriod.P24H, platforms: ['TRADING212'] },
+        params: { period: TimeRange.ONE_DAY, platforms: ['TRADING212'] },
       })
       expect(result).toEqual(mockInstruments)
     })
@@ -92,7 +92,7 @@ describe('instrumentsService', () => {
       const result = await instrumentsService.getAll(undefined)
 
       expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
-        params: { period: PriceChangePeriod.P24H },
+        params: { period: TimeRange.ONE_DAY },
       })
       expect(result).toEqual(mockInstruments)
     })
@@ -113,7 +113,7 @@ describe('instrumentsService', () => {
 
       expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
         params: {
-          period: PriceChangePeriod.P24H,
+          period: TimeRange.ONE_DAY,
           platforms: ['TRADING212', 'BINANCE', 'COINBASE'],
         },
       })
@@ -128,7 +128,7 @@ describe('instrumentsService', () => {
       const result = await instrumentsService.getAll([])
 
       expect(httpClient.get).toHaveBeenCalledWith('/instruments', {
-        params: { period: PriceChangePeriod.P24H },
+        params: { period: TimeRange.ONE_DAY },
       })
       expect(result).toEqual(mockInstruments)
     })

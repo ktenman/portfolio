@@ -8,6 +8,7 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.multipart.MultipartException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
@@ -56,6 +57,17 @@ class GlobalExceptionHandler {
         status = HttpStatus.BAD_REQUEST,
         message = exception.message ?: "Invalid request",
         debugMessage = "Validation failed",
+      )
+    return ResponseEntity(apiError, HttpStatus.BAD_REQUEST)
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+  fun handleMethodArgumentTypeMismatch(exception: MethodArgumentTypeMismatchException): ResponseEntity<ApiError> {
+    val apiError =
+      ApiError(
+        status = HttpStatus.BAD_REQUEST,
+        message = "Invalid value '${exception.value}' for parameter '${exception.name}'",
+        debugMessage = "Failed to convert request parameter",
       )
     return ResponseEntity(apiError, HttpStatus.BAD_REQUEST)
   }

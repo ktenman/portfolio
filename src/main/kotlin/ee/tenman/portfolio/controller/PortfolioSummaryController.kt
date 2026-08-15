@@ -3,15 +3,20 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.AnnualWindowsDto
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
+import ee.tenman.portfolio.dto.RangeChangeDto
 import ee.tenman.portfolio.dto.XirrWindowsDto
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.summary.PortfolioAnnualWindowService
+import ee.tenman.portfolio.service.summary.PortfolioRangeChangeService
+import ee.tenman.portfolio.service.summary.PortfolioSummarySeriesService
 import ee.tenman.portfolio.service.summary.PortfolioXirrWindowService
 import ee.tenman.portfolio.service.summary.SummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryService
+import ee.tenman.portfolio.service.summary.toSummaryDto
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -22,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.math.BigDecimal
 import java.time.LocalDate
 
 @RestController
@@ -34,6 +38,8 @@ class PortfolioSummaryController(
   private val platformSummaryCacheService: PlatformSummaryCacheService,
   private val xirrWindowService: PortfolioXirrWindowService,
   private val annualWindowService: PortfolioAnnualWindowService,
+  private val seriesService: PortfolioSummarySeriesService,
+  private val rangeChangeService: PortfolioRangeChangeService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -77,8 +83,22 @@ class PortfolioSummaryController(
     if (platformEnums != null) return getFilteredCurrentSummary(platformEnums)
     val summary = currentDaySummaryCacheService.getCurrentDaySummary()
     val profitChange24h = summaryCacheService.calculate24hProfitChange(summary)
-    return summary.toDto(profitChange24h)
+    return summary.toSummaryDto(profitChange24h)
   }
+
+  @GetMapping("/series")
+  @Loggable
+  fun getSummarySeries(
+    @RequestParam(defaultValue = "6M") range: TimeRange,
+    @RequestParam(required = false) platforms: List<String>?,
+  ): List<PortfolioSummaryDto> = seriesService.getSeries(range, Platform.parseList(platforms))
+
+  @GetMapping("/range-change")
+  @Loggable
+  fun getRangeChange(
+    @RequestParam(defaultValue = "6M") range: TimeRange,
+    @RequestParam(required = false) platforms: List<String>?,
+  ): RangeChangeDto = rangeChangeService.calculate(range, Platform.parseList(platforms))
 
   @GetMapping("/xirr-windows")
   @Loggable
@@ -97,7 +117,7 @@ class PortfolioSummaryController(
     val yesterdaySummary =
       platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, summary.entryDate.minusDays(1))
     val profitChange24h = summary.totalProfit.subtract(yesterdaySummary.totalProfit)
-    return summary.toDto(profitChange24h)
+    return summary.toSummaryDto(profitChange24h)
   }
 
   private fun getFilteredHistoricalSummaries(
@@ -128,23 +148,6 @@ class PortfolioSummaryController(
 
   private fun PortfolioDailySummary.toDto(lookup: Map<LocalDate, PortfolioDailySummary>): PortfolioSummaryDto {
     val profitChange24h = lookup[entryDate.minusDays(1)]?.let { totalProfit.subtract(it.totalProfit) }
-    return toDto(profitChange24h)
-  }
-
-  private fun PortfolioDailySummary.toDto(profitChange24h: BigDecimal?) =
-    PortfolioSummaryDto(
-      date = entryDate,
-      totalValue = totalValue,
-      xirrAnnualReturn = xirrAnnualReturn,
-      realizedProfit = realizedProfit,
-      unrealizedProfit = unrealizedProfit,
-      totalProfit = totalProfit,
-      earningsPerDay = earningsPerDay,
-      earningsPerMonth = earningsPerDay.multiply(DAYS_PER_MONTH),
-      totalProfitChange24h = profitChange24h,
-    )
-
-  companion object {
-    private val DAYS_PER_MONTH = BigDecimal(365.25 / 12)
+    return toSummaryDto(profitChange24h)
   }
 }

@@ -51,8 +51,9 @@
         class="form-control form-control-sm"
         min="0"
         max="100"
-        step="1"
+        step="0.1"
         @input="onValueChange"
+        @wheel="blurOnWheel"
       />
     </div>
     <div
@@ -75,6 +76,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { blurOnWheel } from '../../utils/dom'
 import { formatTer, formatReturn } from '../../utils/formatters'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import CurrencyFlag from '../shared/currency-flag.vue'

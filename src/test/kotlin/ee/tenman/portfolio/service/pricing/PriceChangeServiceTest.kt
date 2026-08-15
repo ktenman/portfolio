@@ -6,9 +6,9 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.PriceSnapshot
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
 import io.mockk.clearMocks
 import io.mockk.every
@@ -38,14 +38,14 @@ class PriceChangeServiceTest {
   }
 
   @Test
-  fun `should getPriceChange with 24h period falls back to daily prices when no snapshots`() {
+  fun `should getPriceChange with 1d period falls back to daily prices when no snapshots`() {
     every { priceSnapshotService.findClosestAtOrBefore(1L, ProviderName.FT, any(), any()) } returns null
     val currentPrice = createDailyPrice(closePrice = BigDecimal("110.00"), date = testDate)
     val yesterdayPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(1))
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
     every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(1)) } returns yesterdayPrice
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
@@ -53,7 +53,7 @@ class PriceChangeServiceTest {
   }
 
   @Test
-  fun `should getPriceChange with 24h period uses snapshots when available`() {
+  fun `should getPriceChange with 1d period uses snapshots when available`() {
     val currentSnapshot = createSnapshot(price = BigDecimal("110.00"), hour = Instant.parse("2024-01-15T09:00:00Z"))
     val previousSnapshot = createSnapshot(price = BigDecimal("100.00"), hour = Instant.parse("2024-01-14T09:00:00Z"))
     every {
@@ -73,7 +73,7 @@ class PriceChangeServiceTest {
       )
     } returns previousSnapshot
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
@@ -82,7 +82,7 @@ class PriceChangeServiceTest {
   }
 
   @Test
-  fun `should getPriceChange with 24h period falls back when current snapshot is stale`() {
+  fun `should getPriceChange with 1d period falls back when current snapshot is stale`() {
     every {
       priceSnapshotService.findClosestAtOrBefore(
         1L,
@@ -96,7 +96,7 @@ class PriceChangeServiceTest {
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
     every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(1)) } returns yesterdayPrice
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
@@ -104,7 +104,7 @@ class PriceChangeServiceTest {
   }
 
   @Test
-  fun `should getPriceChange with 24h period falls back when previous snapshot missing`() {
+  fun `should getPriceChange with 1d period falls back when previous snapshot missing`() {
     val currentSnapshot = createSnapshot(price = BigDecimal("110.00"), hour = Instant.parse("2024-01-15T09:00:00Z"))
     every {
       priceSnapshotService.findClosestAtOrBefore(
@@ -127,7 +127,7 @@ class PriceChangeServiceTest {
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
     every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(1)) } returns yesterdayPrice
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("10.00"))
@@ -135,13 +135,13 @@ class PriceChangeServiceTest {
   }
 
   @Test
-  fun `should getPriceChange with 7d period returns correct change`() {
+  fun `should getPriceChange with 1w period returns correct change`() {
     val currentPrice = createDailyPrice(closePrice = BigDecimal("120.00"), date = testDate)
     val weekAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(7))
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
     every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(7)) } returns weekAgoPrice
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P7D)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_WEEK)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("20.00"))
@@ -150,13 +150,13 @@ class PriceChangeServiceTest {
   }
 
   @Test
-  fun `should getPriceChange with 30d period returns correct change`() {
+  fun `should getPriceChange with 1m period returns correct change`() {
     val currentPrice = createDailyPrice(closePrice = BigDecimal("150.00"), date = testDate)
-    val monthAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusDays(30))
+    val monthAgoPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = testDate.minusMonths(1))
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
-    every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(30)) } returns monthAgoPrice
+    every { dailyPriceService.findPriceNear(testInstrument, testDate.minusMonths(1)) } returns monthAgoPrice
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P30D)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_MONTH)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("50.00"))
@@ -164,11 +164,32 @@ class PriceChangeServiceTest {
   }
 
   @Test
+  fun `should getPriceChange with ytd period measures from the first day of the year`() {
+    val currentPrice = createDailyPrice(closePrice = BigDecimal("125.00"), date = testDate)
+    val yearStartPrice = createDailyPrice(closePrice = BigDecimal("100.00"), date = LocalDate.of(2024, 1, 1))
+    every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
+    every { dailyPriceService.findPriceNear(testInstrument, LocalDate.of(2024, 1, 1)) } returns yearStartPrice
+
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.YTD)
+
+    expect(result).notToEqualNull()
+    expect(result!!.changeAmount).toEqualNumerically(BigDecimal("25.00"))
+    expect(result.changePercent).toEqual(25.0)
+  }
+
+  @Test
+  fun `should getPriceChange returns null for the max period which has no fixed start`() {
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.MAX)
+
+    expect(result).toEqual(null)
+  }
+
+  @Test
   fun `should getPriceChange returns null when current price not found`() {
     every { priceSnapshotService.findClosestAtOrBefore(1L, ProviderName.FT, any(), any()) } returns null
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns null
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).toEqual(null)
   }
@@ -180,7 +201,7 @@ class PriceChangeServiceTest {
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
     every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(1)) } returns null
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).toEqual(null)
   }
@@ -193,7 +214,7 @@ class PriceChangeServiceTest {
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
     every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(1)) } returns yesterdayPrice
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("-20.00"))
@@ -208,7 +229,7 @@ class PriceChangeServiceTest {
     every { dailyPriceService.findLastDailyPrice(testInstrument, testDate) } returns currentPrice
     every { dailyPriceService.findPriceNear(testInstrument, testDate.minusDays(1)) } returns zeroPreviousPrice
 
-    val result = priceChangeService.getPriceChange(testInstrument, PriceChangePeriod.P24H)
+    val result = priceChangeService.getPriceChange(testInstrument, TimeRange.ONE_DAY)
 
     expect(result).notToEqualNull()
     expect(result!!.changeAmount).toEqualNumerically(BigDecimal("100.00"))

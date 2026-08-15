@@ -26,7 +26,9 @@ import io.mockk.every
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.closeTo
+import org.hamcrest.Matchers.everyItem
 import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.system.CapturedOutput
@@ -82,16 +84,7 @@ class PortfolioSummaryControllerIT {
     every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone
 
-    val instrument =
-      instrumentRepository.save(
-        Instrument(
-          symbol = "QDVE",
-          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-          category = "ETF",
-          baseCurrency = "EUR",
-          currentPrice = 28.25.toBigDecimal(),
-        ),
-      )
+    val instrument = saveQdveInstrument()
 
     portfolioTransactionRepository.save(
       PortfolioTransaction(
@@ -186,16 +179,7 @@ class PortfolioSummaryControllerIT {
     every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone
 
-    val instrument =
-      instrumentRepository.save(
-        Instrument(
-          symbol = "QDVE",
-          name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
-          category = "ETF",
-          baseCurrency = "EUR",
-          currentPrice = 28.25.toBigDecimal(),
-        ),
-      )
+    val instrument = saveQdveInstrument()
 
     dailyPriceRepository.save(
       DailyPrice(
@@ -234,5 +218,154 @@ class PortfolioSummaryControllerIT {
     expect(output.out).toContain("entered with arguments: [null]")
     expect(output.out).toContain("exited with result:")
     expect(output.out).toContain("\"date\":")
+  }
+
+  @Test
+  fun `should return the six month series by default`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+
+    portfolioSummaryRepository.saveAll(
+      listOf(
+        LocalDate.of(2023, 1, 20),
+        LocalDate.of(2023, 1, 21),
+        LocalDate.of(2023, 4, 15),
+        LocalDate.of(2023, 7, 20),
+        LocalDate.of(2023, 7, 21),
+      ).map { summaryOn(it) },
+    )
+
+    mockMvc
+      .perform(get("/api/portfolio-summary/series").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(3))
+      .andExpect(jsonPath("$[0].date").value("2023-01-21"))
+      .andExpect(jsonPath("$[1].date").value("2023-04-15"))
+      .andExpect(jsonPath("$[2].date").value("2023-07-20"))
+  }
+
+  @Test
+  fun `should return no more than the sampling limit of points for the max range`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+
+    portfolioSummaryRepository.saveAll(
+      (0 until 400).map { summaryOn(LocalDate.of(2022, 1, 1).plusDays(it.toLong())) },
+    )
+
+    mockMvc
+      .perform(get("/api/portfolio-summary/series").param("range", "MAX").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(366))
+  }
+
+  @Test
+  fun `should return a platform filtered series`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+
+    val instrument = saveQdveWithLhvBuy()
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = 10.0.toBigDecimal(),
+        price = 27.25.toBigDecimal(),
+        transactionDate = LocalDate.of(2023, 7, 1),
+        platform = Platform.TRADING212,
+      ),
+    )
+
+    mockMvc
+      .perform(
+        get("/api/portfolio-summary/series")
+          .param("range", "1W")
+          .param("platforms", "LHV")
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(7))
+      .andExpect(jsonPath("$[*].totalValue").value(everyItem(closeTo(96.05, 0.01))))
+
+    mockMvc
+      .perform(
+        get("/api/portfolio-summary/series")
+          .param("range", "1W")
+          .param("platforms", "TRADING212")
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(7))
+      .andExpect(jsonPath("$[*].totalValue").value(everyItem(closeTo(282.50, 0.01))))
+  }
+
+  @Test
+  fun `should omit the twenty four hour change from every series point`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+
+    saveQdveWithLhvBuy()
+
+    mockMvc
+      .perform(
+        get("/api/portfolio-summary/series")
+          .param("range", "1W")
+          .param("platforms", "LHV")
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(7))
+      .andExpect(jsonPath("$[*].totalProfitChange24h").value(everyItem(nullValue())))
+  }
+
+  @Test
+  fun `should reject an unknown range code`() {
+    mockMvc
+      .perform(get("/api/portfolio-summary/series").param("range", "iga-aeg").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isBadRequest)
+  }
+
+  private fun summaryOn(date: LocalDate): PortfolioDailySummary =
+    PortfolioDailySummary(
+      entryDate = date,
+      totalValue = BigDecimal("100.00"),
+      xirrAnnualReturn = BigDecimal("0.05"),
+      totalProfit = BigDecimal("10.00"),
+      earningsPerDay = BigDecimal("1.00"),
+    )
+
+  private fun saveQdveInstrument(): Instrument =
+    instrumentRepository.save(
+      Instrument(
+        symbol = "QDVE",
+        name = "iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc)",
+        category = "ETF",
+        baseCurrency = "EUR",
+        currentPrice = 28.25.toBigDecimal(),
+      ),
+    )
+
+  private fun saveQdveWithLhvBuy(): Instrument {
+    val instrument = saveQdveInstrument()
+    dailyPriceRepository.save(
+      DailyPrice(
+        instrument = instrument,
+        entryDate = LocalDate.of(2023, 7, 10),
+        providerName = ProviderName.FT,
+        openPrice = BigDecimal("28.25"),
+        highPrice = BigDecimal("28.25"),
+        lowPrice = BigDecimal("28.25"),
+        closePrice = BigDecimal("28.25"),
+        volume = 1000,
+      ),
+    )
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = 3.4.toBigDecimal(),
+        price = 27.25.toBigDecimal(),
+        transactionDate = LocalDate.of(2023, 7, 1),
+        platform = Platform.LHV,
+      ),
+    )
+    return instrument
   }
 }

@@ -17,6 +17,7 @@
               :step="field.step"
               :min="field.min"
               required
+              @wheel="blurOnWheel"
             />
           </div>
           <div class="calculator-buttons-desktop">
@@ -75,6 +76,7 @@
 
 <script setup lang="ts">
 import { useCalculator } from '../composables/use-calculator'
+import { blurOnWheel } from '../utils/dom'
 import { formatCurrency } from '../utils/formatters'
 import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'

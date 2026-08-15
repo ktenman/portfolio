@@ -2,12 +2,12 @@ import { httpClient } from '../utils/http-client'
 import {
   type InstrumentDto,
   type InstrumentsResponse,
-  PriceChangePeriod,
+  TimeRange,
 } from '../models/generated/domain-models'
 import { API_ENDPOINTS } from '../constants'
 
 export const instrumentsService = {
-  getAll: (platforms?: string[], period: PriceChangePeriod = PriceChangePeriod.P24H) => {
+  getAll: (platforms?: string[], period: TimeRange = TimeRange.ONE_DAY) => {
     const params: Record<string, any> = { period }
     if (platforms && platforms.length > 0) {
       params.platforms = platforms

@@ -248,8 +248,10 @@ const PLATFORMS = [
   'TRADING212',
 ]
 
+const SERIES_RESPONSE = HISTORICAL_ROWS.map(toSummary)
+
 const HISTORICAL_RESPONSE = {
-  content: HISTORICAL_ROWS.map(toSummary),
+  content: SERIES_RESPONSE,
   totalPages: 1,
   totalElements: HISTORICAL_ROWS.length,
   size: HISTORICAL_ROWS.length,
@@ -257,6 +259,9 @@ const HISTORICAL_RESPONSE = {
 } satisfies Page<PortfolioSummaryDto>
 
 export const stubPortfolioSummary: RouteStub = async page => {
+  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), route =>
+    route.fulfill({ json: SERIES_RESPONSE })
+  )
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_HISTORICAL), route =>
     route.fulfill({ json: HISTORICAL_RESPONSE })
   )

@@ -46,8 +46,10 @@ class PortfolioSummaryWarmupTest {
       "/api/transactions/platforms",
       "/api/portfolio-summary/historical?page=0&size=186",
       "/api/portfolio-summary/current",
+      "/api/portfolio-summary/series?range=6M",
       "/api/portfolio-summary/historical?page=0&size=186&platforms=LIGHTYEAR&platforms=TRADING212",
       "/api/portfolio-summary/current?platforms=LIGHTYEAR&platforms=TRADING212",
+      "/api/portfolio-summary/series?range=6M&platforms=LIGHTYEAR&platforms=TRADING212",
     )
   }
 
@@ -62,6 +64,7 @@ class PortfolioSummaryWarmupTest {
         "/api/transactions/platforms",
         "/api/portfolio-summary/historical?page=0&size=186",
         "/api/portfolio-summary/current",
+        "/api/portfolio-summary/series?range=6M",
       ),
     )
   }

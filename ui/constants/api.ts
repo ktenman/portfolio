@@ -5,6 +5,8 @@ export const API_ENDPOINTS = {
   TRANSACTIONS_PLATFORMS: '/transactions/platforms',
   PORTFOLIO_SUMMARY_HISTORICAL: '/portfolio-summary/historical',
   PORTFOLIO_SUMMARY_CURRENT: '/portfolio-summary/current',
+  PORTFOLIO_SUMMARY_SERIES: '/portfolio-summary/series',
+  PORTFOLIO_SUMMARY_RANGE_CHANGE: '/portfolio-summary/range-change',
   PORTFOLIO_SUMMARY_RECALCULATE: '/portfolio-summary/recalculate',
   PORTFOLIO_SUMMARY_XIRR_WINDOWS: '/portfolio-summary/xirr-windows',
   PORTFOLIO_SUMMARY_ANNUAL_WINDOWS: '/portfolio-summary/annual-windows',
