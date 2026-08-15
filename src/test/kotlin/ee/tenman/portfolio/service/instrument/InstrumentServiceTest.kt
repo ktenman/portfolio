@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.model.InstrumentSnapshot
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
@@ -160,12 +161,12 @@ class InstrumentServiceTest {
   @Test
   fun `should delegate to snapshot service for getAllInstrumentSnapshots with platforms and period`() {
     val snapshot = InstrumentSnapshot(testInstrument)
-    every { instrumentSnapshotService.getAllSnapshots(listOf("LHV"), "P7D") } returns listOf(snapshot)
+    every { instrumentSnapshotService.getAllSnapshots(listOf("LHV"), TimeRange.ONE_WEEK) } returns listOf(snapshot)
 
-    val result = instrumentService.getAllInstrumentSnapshots(listOf("LHV"), "P7D")
+    val result = instrumentService.getAllInstrumentSnapshots(listOf("LHV"), TimeRange.ONE_WEEK)
 
     expect(result).toEqual(listOf(snapshot))
-    verify { instrumentSnapshotService.getAllSnapshots(listOf("LHV"), "P7D") }
+    verify { instrumentSnapshotService.getAllSnapshots(listOf("LHV"), TimeRange.ONE_WEEK) }
   }
 
   @Test

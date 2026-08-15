@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-4 chart-container" data-testid="summary-chart" v-if="chartData">
+  <div class="chart-container md:w-[80.8%]" data-testid="summary-chart" v-if="chartData">
     <Line :data="chartData" :options="chartOptions" :plugins="[crosshair]" />
   </div>
 </template>
@@ -81,11 +81,14 @@ const tickFont = { size: 11 }
 
 const chartOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true,
-  aspectRatio: isCompact.value ? 1.3 : 2,
+  aspectRatio: isCompact.value ? 1.85 : 2.15,
   animation: false,
   interaction: {
     mode: 'index',
     intersect: false,
+  },
+  layout: {
+    padding: { top: 28 },
   },
   elements: {
     point: {
@@ -116,6 +119,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
     },
     legend: {
       position: 'bottom' as const,
+      align: 'start' as const,
       labels: {
         usePointStyle: true,
         pointStyle: 'circle' as const,

@@ -893,4 +893,20 @@ describe('AllocationTable', () => {
       expect(flag.attributes('src')).toContain('/us.svg')
     })
   })
+
+  describe('target percentage input', () => {
+    it('blurs on wheel so trackpad scrolling cannot change the target', async () => {
+      const wrapper = mount(AllocationTable, {
+        props: { ...defaultProps, allocations: [{ instrumentId: 1, value: 57.3 }] },
+        attachTo: document.body,
+      })
+      const target = wrapper.find('tbody input[type="number"]')
+      ;(target.element as HTMLInputElement).focus()
+
+      await target.trigger('wheel')
+
+      expect(document.activeElement).not.toBe(target.element)
+      wrapper.unmount()
+    })
+  })
 })

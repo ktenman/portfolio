@@ -3,6 +3,7 @@ package ee.tenman.portfolio.configuration.exception
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.GlobalExceptionHandler
+import ee.tenman.portfolio.domain.TimeRange
 import io.mockk.every
 import io.mockk.mockk
 import jakarta.validation.ConstraintViolation
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.validation.BindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.multipart.MultipartException
 
 class GlobalExceptionHandlerTest {
@@ -86,6 +88,24 @@ class GlobalExceptionHandlerTest {
     expect(response.statusCode).toEqual(HttpStatus.BAD_REQUEST)
     expect(response.body?.message).toEqual("Invalid request")
     expect(response.body?.debugMessage).toEqual("Malformed multipart request")
+  }
+
+  @Test
+  fun `should return bad request when handling method argument type mismatch exception`() {
+    val exception =
+      MethodArgumentTypeMismatchException(
+        "1D",
+        TimeRange::class.java,
+        "range",
+        methodParameter,
+        IllegalArgumentException("Unknown summary range 1D"),
+      )
+
+    val response = globalExceptionHandler.handleMethodArgumentTypeMismatch(exception)
+
+    expect(response.statusCode).toEqual(HttpStatus.BAD_REQUEST)
+    expect(response.body?.message).toEqual("Invalid value '1D' for parameter 'range'")
+    expect(response.body?.debugMessage).toEqual("Failed to convert request parameter")
   }
 
   @Test

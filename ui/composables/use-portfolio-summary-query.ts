@@ -1,5 +1,11 @@
 import { computed, ref, type Ref } from 'vue'
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/vue-query'
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+  keepPreviousData,
+} from '@tanstack/vue-query'
 import { portfolioSummaryService } from '../services/portfolio-summary-service'
 import {
   mergeHistoricalWithCurrent,
@@ -7,8 +13,13 @@ import {
   flattenPages,
 } from '../services/summary-aggregator'
 import { useAuthState } from './use-auth-state'
+import { DEFAULT_CHART_RANGE } from './use-time-range'
+import type { TimeRange } from '../models/generated/domain-models'
 
-export function usePortfolioSummaryQuery(selectedPlatforms?: Ref<string[]>) {
+export function usePortfolioSummaryQuery(
+  selectedPlatforms?: Ref<string[]>,
+  selectedRange?: Ref<TimeRange>
+) {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
   const pageSize = 186
@@ -18,6 +29,7 @@ export function usePortfolioSummaryQuery(selectedPlatforms?: Ref<string[]>) {
   const activePlatforms = computed(() =>
     platformsKey.value.length > 0 ? platformsKey.value : undefined
   )
+  const rangeKey = computed(() => selectedRange?.value ?? DEFAULT_CHART_RANGE)
 
   const {
     data: historicalData,
@@ -46,6 +58,24 @@ export function usePortfolioSummaryQuery(selectedPlatforms?: Ref<string[]>) {
     enabled: isAuthenticated,
   })
 
+  const {
+    data: seriesData,
+    isFetching: isFetchingSeries,
+    error: seriesError,
+  } = useQuery({
+    queryKey: ['portfolio-summary', 'series', platformsKey, rangeKey],
+    queryFn: () => portfolioSummaryService.getSeries(rangeKey.value, activePlatforms.value),
+    placeholderData: keepPreviousData,
+    enabled: isAuthenticated,
+  })
+
+  const { data: rangeChange, error: rangeChangeError } = useQuery({
+    queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
+    queryFn: () => portfolioSummaryService.getRangeChange(rangeKey.value, activePlatforms.value),
+    placeholderData: keepPreviousData,
+    enabled: isAuthenticated,
+  })
+
   const recalculateMutation = useMutation({
     mutationFn: portfolioSummaryService.recalculate,
     onSuccess: response => {
@@ -63,21 +93,32 @@ export function usePortfolioSummaryQuery(selectedPlatforms?: Ref<string[]>) {
     return mergeHistoricalWithCurrent(historicalSummaries, currentSummary.value)
   })
 
+  const chartSummaries = computed(() =>
+    mergeHistoricalWithCurrent(seriesData.value ?? [], currentSummary.value)
+  )
+
   const sortedSummaries = computed(() => sortSummariesByDateAsc(summaries.value))
 
   const reversedSummaries = computed(() => [...sortedSummaries.value].reverse())
 
   const isLoading = computed(() => isLoadingHistorical.value || isLoadingCurrent.value)
   const error = computed(() => historicalError.value?.message || null)
+  const rangeError = computed(
+    () => seriesError.value?.message || rangeChangeError.value?.message || null
+  )
 
   return {
     summaries,
+    chartSummaries,
+    rangeChange,
     sortedSummaries,
     reversedSummaries,
     isLoading,
     isFetching: isFetchingNextPage,
+    isRangeLoading: isFetchingSeries,
     isRecalculating: recalculateMutation.isPending,
     error,
+    rangeError,
     recalculationMessage,
     hasMoreData: hasNextPage,
     fetchSummaries: fetchNextPage,

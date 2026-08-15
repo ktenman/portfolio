@@ -54,6 +54,16 @@ test-results/
 
 .aider*
 
+### AI agent tooling state ###
+.claude/
+.codex/
+.impeccable/live/
+.improve-loop/
+.superpowers/
+
+### Root-level logs ###
+/*.log
+
 ### PlantUML ###
 plantuml*.jar
 
