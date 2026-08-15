@@ -99,18 +99,20 @@ class TimeRangeTest {
   }
 
   @Test
-  fun `should produce ninety two dates for the three months range`() {
-    expect(TimeRange.THREE_MONTHS.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(92)
+  fun `should span three months between its endpoints for the three months range`() {
+    val dates = TimeRange.THREE_MONTHS.dates(LocalDate.of(2020, 1, 2), today)
+    expect(dates.first() to dates.last()).toEqual(LocalDate.of(2026, 5, 14) to LocalDate.of(2026, 8, 13))
   }
 
   @Test
-  fun `should produce one hundred and eighty one dates for the six months range`() {
-    expect(TimeRange.SIX_MONTHS.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(181)
+  fun `should span six months between its endpoints for the six months range`() {
+    val dates = TimeRange.SIX_MONTHS.dates(LocalDate.of(2020, 1, 2), today)
+    expect(dates.first() to dates.last()).toEqual(LocalDate.of(2026, 2, 14) to LocalDate.of(2026, 8, 13))
   }
 
   @Test
   fun `should cap the max range at the sampling limit`() {
-    expect(TimeRange.MAX.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(366)
+    expect(TimeRange.MAX.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(60)
   }
 
   @Test
@@ -178,6 +180,6 @@ class TimeRangeTest {
 
   @Test
   fun `should keep every sampled index in bounds at the production limit`() {
-    expect(TimeRange.sample((1..367).toList())).toHaveSize(366)
+    expect(TimeRange.sample((1..367).toList())).toHaveSize(60)
   }
 }

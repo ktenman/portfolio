@@ -256,7 +256,7 @@ class PortfolioSummaryControllerIT {
     mockMvc
       .perform(get("/api/portfolio-summary/series").param("range", "MAX").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$.length()").value(366))
+      .andExpect(jsonPath("$.length()").value(60))
   }
 
   @Test

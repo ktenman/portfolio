@@ -52,7 +52,7 @@ enum class TimeRange(
   }
 
   companion object {
-    const val MAX_POINTS = 366
+    const val MAX_POINTS = 60
 
     fun from(code: String): TimeRange =
       entries.firstOrNull { it.code.equals(code, ignoreCase = true) }
