@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.summary
 
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.service.transaction.TransactionService
@@ -15,13 +16,18 @@ class PortfolioSummarySeriesService(
   fun getSeries(
     range: TimeRange,
     platforms: List<Platform>?,
-  ): List<PortfolioSummaryDto> {
-    if (platforms == null) return summaryService.getSeries(range).map { it.toSummaryDto() }
+  ): List<PortfolioSummaryDto> = summaries(range, platforms).map { it.toSummaryDto() }
+
+  private fun summaries(
+    range: TimeRange,
+    platforms: List<Platform>?,
+  ): List<PortfolioDailySummary> {
+    if (platforms == null) return summaryService.getSeries(range)
     if (coversEveryPlatform(platforms)) {
       val stored = summaryService.getSeries(range)
-      if (stored.isNotEmpty()) return stored.map { it.toSummaryDto() }
+      if (stored.isNotEmpty()) return stored
     }
-    return platformSummaryCacheService.getSeriesForPlatforms(platforms, range).map { it.toSummaryDto() }
+    return platformSummaryCacheService.getSeriesForPlatforms(platforms, range)
   }
 
   private fun coversEveryPlatform(platforms: List<Platform>): Boolean = platforms.containsAll(transactionService.getDistinctPlatforms())
