@@ -158,6 +158,11 @@ class TimeRangeTest {
   }
 
   @Test
+  fun `should resolve the default code to the one month range`() {
+    expect(TimeRange.from(TimeRange.DEFAULT_CODE)).toEqual(TimeRange.ONE_MONTH)
+  }
+
+  @Test
   fun `should declare the ranges in chip order`() {
     expect(TimeRange.entries.map { it.code })
       .toContainExactly(

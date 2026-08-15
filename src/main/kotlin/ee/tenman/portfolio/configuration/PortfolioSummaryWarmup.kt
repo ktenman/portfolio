@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -53,7 +54,7 @@ class PortfolioSummaryWarmup(
       listOf(
         "/api/portfolio-summary/historical?page=0&size=$HISTORICAL_PAGE_SIZE&$platformQuery",
         "/api/portfolio-summary/current?$platformQuery",
-        "/api/portfolio-summary/series?range=$DEFAULT_RANGE&$platformQuery",
+        "/api/portfolio-summary/series?range=${TimeRange.DEFAULT_CODE}&$platformQuery",
       )
   }
 
@@ -66,14 +67,13 @@ class PortfolioSummaryWarmup(
     private const val DEFAULT_PORT = "8081"
     private const val WARMUP_ROUNDS = 2
     private const val HISTORICAL_PAGE_SIZE = 186
-    private const val DEFAULT_RANGE = "1M"
     private val REQUEST_TIMEOUT = Duration.ofSeconds(30)
     private val BASE_PATHS =
       listOf(
         "/api/transactions/platforms",
         "/api/portfolio-summary/historical?page=0&size=$HISTORICAL_PAGE_SIZE",
         "/api/portfolio-summary/current",
-        "/api/portfolio-summary/series?range=$DEFAULT_RANGE",
+        "/api/portfolio-summary/series?range=${TimeRange.DEFAULT_CODE}",
       )
   }
 }
