@@ -1,14 +1,14 @@
 package ee.tenman.portfolio.service.pricing
 
+import ee.tenman.portfolio.common.percentOf
 import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.PriceChangePeriod
 import ee.tenman.portfolio.domain.PriceSnapshot
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.model.PriceChange
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -22,17 +22,20 @@ class PriceChangeService(
 ) {
   companion object {
     private val MAX_SNAPSHOT_AGE: Duration = Duration.ofHours(6)
+    private const val PERCENT_SCALE = 10
   }
 
   @Transactional(readOnly = true)
   fun getPriceChange(
     instrument: Instrument,
-    period: PriceChangePeriod = PriceChangePeriod.P24H,
+    period: TimeRange = TimeRange.ONE_DAY,
   ): PriceChange? {
-    if (period == PriceChangePeriod.P24H) {
+    if (period == TimeRange.ONE_DAY) {
       getPriceChangeFromSnapshots(instrument)?.let { return it }
     }
-    return getPriceChangeFromDailyPrices(instrument, period)
+    val currentDate = LocalDate.now(clock)
+    val targetDate = period.startDate(currentDate) ?: return null
+    return getPriceChangeFromDailyPrices(instrument, currentDate, targetDate)
   }
 
   private fun getPriceChangeFromSnapshots(instrument: Instrument): PriceChange? {
@@ -60,10 +63,9 @@ class PriceChangeService(
 
   private fun getPriceChangeFromDailyPrices(
     instrument: Instrument,
-    period: PriceChangePeriod,
+    currentDate: LocalDate,
+    targetDate: LocalDate,
   ): PriceChange? {
-    val currentDate = LocalDate.now(clock)
-    val targetDate = currentDate.minusDays(period.days.toLong())
     val currentPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)?.closePrice ?: return null
     val previousPrice =
       dailyPriceService
@@ -79,9 +81,6 @@ class PriceChangeService(
     previousPrice: BigDecimal,
   ): Double {
     if (previousPrice.compareTo(BigDecimal.ZERO) == 0) return 0.0
-    return changeAmount
-      .divide(previousPrice, 10, RoundingMode.HALF_UP)
-      .multiply(BigDecimal(100))
-      .toDouble()
+    return changeAmount.percentOf(previousPrice, PERCENT_SCALE).toDouble()
   }
 }

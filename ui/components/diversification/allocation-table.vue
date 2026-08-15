@@ -38,6 +38,7 @@
             step="1000"
             placeholder="10000"
             @input="onTotalInvestmentChange"
+            @wheel="blurOnWheel"
           />
         </div>
       </div>
@@ -274,8 +275,9 @@
                 class="form-control form-control-sm"
                 min="0"
                 max="100"
-                step="1"
+                step="0.1"
                 @input="onValueChange(getOriginalIndex(allocation), $event)"
+                @wheel="blurOnWheel"
               />
             </td>
             <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="text-[0.875em]">
@@ -413,6 +415,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { blurOnWheel } from '../../utils/dom'
 import { formatTer, formatReturn, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'

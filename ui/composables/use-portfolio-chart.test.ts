@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { ref } from 'vue'
 import { usePortfolioChart } from './use-portfolio-chart'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
@@ -31,10 +31,6 @@ const mockSummaries = [
   }),
 ]
 describe('usePortfolioChart', () => {
-  beforeEach(() => {
-    vi.stubGlobal('window', { innerWidth: 1200 })
-  })
-
   it('should return null when summaries are empty', () => {
     const summaries = ref<PortfolioSummaryDto[]>([])
     const { processedChartData } = usePortfolioChart(summaries)
@@ -73,9 +69,7 @@ describe('usePortfolioChart', () => {
   })
 
   describe('data sampling', () => {
-    it('should limit data points to 31 on desktop', () => {
-      vi.stubGlobal('window', { innerWidth: 1200 })
-
+    it('should keep every point when under the limit', () => {
       const manySummaries = Array.from({ length: 50 }, (_, i) => ({
         ...mockSummaries[0],
         date: `2023-01-${String(i + 1).padStart(2, '0')}`,
@@ -88,10 +82,8 @@ describe('usePortfolioChart', () => {
       expect(processedChartData.value?.labels).toHaveLength(50)
     })
 
-    it('should limit data points to 15 on mobile', () => {
-      vi.stubGlobal('window', { innerWidth: 800 })
-
-      const manySummaries = Array.from({ length: 30 }, (_, i) => ({
+    it('should limit data points to 60 regardless of window width', () => {
+      const manySummaries = Array.from({ length: 90 }, (_, i) => ({
         ...mockSummaries[0],
         date: `2023-01-${String(i + 1).padStart(2, '0')}`,
         totalValue: 10000 + i * 100,
@@ -100,12 +92,10 @@ describe('usePortfolioChart', () => {
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(30)
+      expect(processedChartData.value?.labels).toHaveLength(60)
     })
 
     it('should not sample when data points are less than max', () => {
-      vi.stubGlobal('window', { innerWidth: 1200 })
-
       const summaries = ref(mockSummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
@@ -113,8 +103,6 @@ describe('usePortfolioChart', () => {
     })
 
     it('should sample evenly distributed points', () => {
-      vi.stubGlobal('window', { innerWidth: 1200 })
-
       const manySummaries = Array.from({ length: 61 }, (_, i) => ({
         ...mockSummaries[0],
         date: `2023-${String(Math.floor(i / 31) + 1).padStart(2, '0')}-${String((i % 31) + 1).padStart(2, '0')}`,
@@ -124,9 +112,9 @@ describe('usePortfolioChart', () => {
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(61)
+      expect(processedChartData.value?.labels).toHaveLength(60)
       expect(processedChartData.value?.labels?.[0]).toBe('2023-01-01')
-      expect(processedChartData.value?.labels?.[30]).toBe('2023-01-31')
+      expect(processedChartData.value?.labels?.[30]).toBe('2023-02-01')
     })
   })
 

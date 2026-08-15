@@ -211,6 +211,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.dto.XirrWindowsDto",
       "ee.tenman.portfolio.dto.AnnualWindowDto",
       "ee.tenman.portfolio.dto.AnnualWindowsDto",
+      "ee.tenman.portfolio.dto.RangeChangeDto",
       "ee.tenman.portfolio.dto.EtfHoldingBreakdownDto",
       "ee.tenman.portfolio.dto.EtfDiagnosticDto",
       "ee.tenman.portfolio.dto.CalculationResult",
@@ -223,7 +224,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.domain.EnumsResponse",
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",
-      "ee.tenman.portfolio.domain.PriceChangePeriod",
+      "ee.tenman.portfolio.domain.TimeRange",
     ),
   )
   outputKind.set(cz.habarta.typescript.generator.TypeScriptOutputKind.module)

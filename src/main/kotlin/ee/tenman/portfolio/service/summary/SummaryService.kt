@@ -5,6 +5,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTIO
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
@@ -67,7 +68,7 @@ class SummaryService(
     platforms: List<Platform>,
     date: LocalDate,
   ): PortfolioDailySummary {
-    val transactions = fetchFilteredTransactions(platforms, date)
+    val transactions = fetchSortedTransactions(platforms).filter { !it.transactionDate.isAfter(date) }
     return dailySummaryCalculator.calculateFromTransactions(transactions, date)
   }
 
@@ -80,10 +81,7 @@ class SummaryService(
     size: Int,
   ): Page<PortfolioDailySummary> {
     val pageRequest = PageRequest.of(page, size)
-    val sortedTransactions =
-      transactionService
-        .getAllTransactions(platforms.map { it.name })
-        .sortedWith(transactionSortOrder)
+    val sortedTransactions = fetchSortedTransactions(platforms)
     val yesterday = LocalDate.now(clock).minusDays(1)
     val firstDate = sortedTransactions.firstOrNull()?.transactionDate
     if (firstDate == null || firstDate.isAfter(yesterday)) return Page.empty(pageRequest)
@@ -98,13 +96,28 @@ class SummaryService(
     return PageImpl(summaries.reversed(), pageRequest, totalDates.toLong())
   }
 
-  private fun fetchFilteredTransactions(
+  fun getSeriesForPlatforms(
     platforms: List<Platform>,
-    upToDate: LocalDate,
-  ): List<PortfolioTransaction> =
+    range: TimeRange,
+  ): List<PortfolioDailySummary> {
+    val sortedTransactions = fetchSortedTransactions(platforms)
+    val firstDate = sortedTransactions.firstOrNull()?.transactionDate ?: return emptyList()
+    val dates = range.dates(firstDate, LocalDate.now(clock))
+    if (dates.isEmpty()) return emptyList()
+    return calculateSummariesForDates(dates, sortedTransactions)
+  }
+
+  @Transactional(readOnly = true)
+  fun getSeries(range: TimeRange): List<PortfolioDailySummary> {
+    val today = LocalDate.now(clock)
+    val start = range.startDate(today) ?: LocalDate.EPOCH
+    val stored = portfolioDailySummaryRepository.findAllByEntryDateBetween(start, today.minusDays(1))
+    return TimeRange.sample(stored.sortedBy { it.entryDate })
+  }
+
+  private fun fetchSortedTransactions(platforms: List<Platform>): List<PortfolioTransaction> =
     transactionService
       .getAllTransactions(platforms.map { it.name })
-      .filter { !it.transactionDate.isAfter(upToDate) }
       .sortedWith(transactionSortOrder)
 
   private fun calculateSummariesForDates(

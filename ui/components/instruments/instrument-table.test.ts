@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { mount } from '@vue/test-utils'
 import InstrumentTable from './instrument-table.vue'
-import { ProviderName } from '../../models/generated/domain-models'
+import { ProviderName, TimeRange } from '../../models/generated/domain-models'
 import { createInstrumentDto } from '../../tests/fixtures'
 import { setPlatformDisplayNames } from '../../utils/platform-utils'
 
@@ -106,7 +106,7 @@ describe('InstrumentTable', () => {
       props: {
         instruments: mockInstruments,
         portfolioXirr: 0.125,
-        selectedPeriod: '24h',
+        selectedPeriod: TimeRange.ONE_DAY,
         ...props,
       },
     })
@@ -265,7 +265,7 @@ describe('InstrumentTable', () => {
         props: {
           instruments: [],
           portfolioXirr: 0,
-          selectedPeriod: '24h',
+          selectedPeriod: TimeRange.ONE_DAY,
         },
       })
       const dataTable = wrapper.findComponent({ name: 'DataTable' })
@@ -501,17 +501,17 @@ describe('InstrumentTable', () => {
 
   describe('period label', () => {
     it('should update column header label based on selected period', () => {
-      const wrapper = createWrapper({ selectedPeriod: '7d' })
+      const wrapper = createWrapper({ selectedPeriod: TimeRange.ONE_WEEK })
       const dataTable = wrapper.findComponent({ name: 'DataTable' })
       const columns = dataTable.props('columns')
       const priceChangeColumn = columns.find((col: { key: string }) => col.key === 'priceChange')
 
-      expect(priceChangeColumn.label).toBe('7D')
+      expect(priceChangeColumn.label).toBe('1W')
     })
 
     it('should display selected period in mobile card metric label', () => {
       const wrapper = createWrapper({
-        selectedPeriod: '30d',
+        selectedPeriod: TimeRange.ONE_MONTH,
         instruments: [
           createInstrumentDto({
             id: 14,
@@ -526,34 +526,24 @@ describe('InstrumentTable', () => {
       const mobileCard = wrapper.find('.mobile-instrument-card')
 
       const metricLabels = mobileCard.findAll('.metric-label')
-      expect(metricLabels.map(label => label.text())).toContain('30D')
+      expect(metricLabels.map(label => label.text())).toContain('1M')
     })
 
     it('should display selected period in mobile totals card', () => {
-      const wrapper = createWrapper({ selectedPeriod: '1y' })
+      const wrapper = createWrapper({ selectedPeriod: TimeRange.ONE_YEAR })
       const mobileTotals = wrapper.find('.mobile-totals-card')
 
       const totalLabels = mobileTotals.findAll('.total-label')
       expect(totalLabels.map(label => label.text())).toContain('1Y')
     })
 
-    it('should use default period when set to 24h', () => {
-      const wrapper = createWrapper({ selectedPeriod: '24h' })
+    it('should label the column with the one day range', () => {
+      const wrapper = createWrapper({ selectedPeriod: TimeRange.ONE_DAY })
       const dataTable = wrapper.findComponent({ name: 'DataTable' })
       const columns = dataTable.props('columns')
       const priceChangeColumn = columns.find((col: { key: string }) => col.key === 'priceChange')
 
-      expect(priceChangeColumn.label).toBe('24H')
-    })
-
-    it('should uppercase period label in all locations', () => {
-      const wrapper = createWrapper({ selectedPeriod: '3d' })
-      const dataTable = wrapper.findComponent({ name: 'DataTable' })
-      const columns = dataTable.props('columns')
-      const priceChangeColumn = columns.find((col: { key: string }) => col.key === 'priceChange')
-
-      expect(priceChangeColumn.label).toBe('3D')
-      expect(priceChangeColumn.label).not.toBe('3d')
+      expect(priceChangeColumn.label).toBe('1D')
     })
   })
 })

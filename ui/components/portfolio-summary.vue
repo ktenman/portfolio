@@ -8,7 +8,7 @@
 
     <platform-filter
       v-if="availablePlatforms.length > 0"
-      class="mt-3 mb-4"
+      class="mt-3 mb-6"
       :available="availablePlatforms"
       :selected="selectedPlatforms"
       @toggle="togglePlatform"
@@ -43,7 +43,24 @@
         ></button>
       </div>
 
-      <portfolio-chart :key="chartKey" :data="processedChartData" />
+      <div class="chart-frame">
+        <range-change-header
+          v-if="rangeChange"
+          class="chart-overlay-change"
+          :amount="rangeChange.changeAmount"
+          :percent="rangeChange.changePercent"
+        />
+        <portfolio-chart :key="chartKey" :data="processedChartData" />
+        <div v-if="isRangeLoading" class="chart-veil">
+          <loading-spinner message="Loading chart" />
+        </div>
+      </div>
+
+      <div v-if="rangeError" class="alert alert-warning mt-3" role="alert">
+        Could not load the {{ selectedRange }} chart range: {{ rangeError }}
+      </div>
+
+      <chart-range-filter class="mt-3" :selected="selectedRange" @select="selectedRange = $event" />
 
       <data-table
         :items="sortedItems"
@@ -52,10 +69,10 @@
         :sortable="true"
         :sort-state="sortState"
         :on-sort="toggleSort"
-        class="mt-4"
+        class="mt-10"
       >
         <template #cell-totalProfitChange24h="{ value, item }">
-          <span v-if="value && Math.abs(value) > 0.01" :class="getProfitChangeClass(value)">
+          <span v-if="value && Math.abs(value) > 0.01" :class="getGainLossClass(value)">
             {{ format24hChange(item.totalProfitChange24h) }}
             <span class="change-percentage">{{ format24hChangePercentage(item) }}</span>
           </span>
@@ -78,10 +95,14 @@ import { usePortfolioChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import { useSortableTable } from '../composables/use-sortable-table'
 import { usePlatformFilter } from '../composables/use-platform-filter'
+import { useChartRange } from '../composables/use-time-range'
 import { useAuthState } from '../composables/use-auth-state'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
+import ChartRangeFilter from './portfolio/chart-range-filter.vue'
+import RangeChangeHeader from './portfolio/range-change-header.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
+import LoadingSpinner from './shared/loading-spinner.vue'
 import PlatformFilter from './shared/platform-filter.vue'
 import { transactionsService } from '../services/transactions-service'
 import { STORAGE_KEYS } from '../constants'
@@ -90,6 +111,7 @@ import {
   formatCurrencyWithSymbol,
   formatDate,
   formatPercentageFromDecimal,
+  getGainLossClass,
 } from '../utils/formatters'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
@@ -113,22 +135,28 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
   availablePlatforms
 )
 
+const selectedRange = useChartRange()
+
 const {
   summaries,
+  chartSummaries,
+  rangeChange,
   reversedSummaries,
   isLoading,
   isRecalculating,
   isFetching,
+  isRangeLoading,
   error,
+  rangeError,
   recalculationMessage,
   recalculate,
   fetchSummaries,
   hasMoreData,
-} = usePortfolioSummaryQuery(selectedPlatforms)
+} = usePortfolioSummaryQuery(selectedPlatforms, selectedRange)
 
 const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 
-const { processedChartData } = usePortfolioChart(summaries)
+const { processedChartData } = usePortfolioChart(chartSummaries)
 
 const { confirm } = useConfirm()
 
@@ -201,12 +229,6 @@ const getSummaryRowClass = (summary: any, index: number) => {
   return { 'font-weight-bold': index === 0 && isToday }
 }
 
-const getProfitChangeClass = (value: number) => {
-  if (value > 0) return 'text-gain'
-  if (value < 0) return 'text-loss'
-  return ''
-}
-
 useInfiniteScroll(
   window,
   async () => {
@@ -233,6 +255,26 @@ const handleRecalculate = async () => {
 </script>
 
 <style scoped>
+.chart-frame {
+  position: relative;
+}
+
+.chart-overlay-change {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.chart-veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+}
+
 .change-percentage {
   margin-left: 0.25rem;
   font-size: 0.85em;

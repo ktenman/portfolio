@@ -111,6 +111,11 @@ export interface AnnualWindowsDto {
     windows: AnnualWindowDto[];
 }
 
+export interface RangeChangeDto {
+    changeAmount: number;
+    changePercent: number;
+}
+
 export interface EtfHoldingBreakdownDto extends Serializable {
     holdingUuid: string | null;
     holdingTicker: string | null;
@@ -269,12 +274,19 @@ export enum TransactionType {
     SELL = "SELL",
 }
 
-export enum PriceChangePeriod {
-    P24H = "P24H",
-    P48H = "P48H",
-    P3D = "P3D",
-    P7D = "P7D",
-    P10D = "P10D",
-    P30D = "P30D",
-    P1Y = "P1Y",
+export enum TimeRange {
+    ONE_DAY = "1D",
+    TWO_DAYS = "2D",
+    THREE_DAYS = "3D",
+    ONE_WEEK = "1W",
+    ONE_MONTH = "1M",
+    THREE_MONTHS = "3M",
+    SIX_MONTHS = "6M",
+    YTD = "YTD",
+    ONE_YEAR = "1Y",
+    TWO_YEARS = "2Y",
+    THREE_YEARS = "3Y",
+    FOUR_YEARS = "4Y",
+    FIVE_YEARS = "5Y",
+    MAX = "MAX",
 }

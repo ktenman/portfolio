@@ -1,4 +1,4 @@
-import type { EtfHoldingBreakdownDto } from '../models/generated/domain-models'
+import type { EtfHoldingBreakdownDto, InstrumentDto } from '../models/generated/domain-models'
 import { DONUT_COLORS } from '../constants/chart-colors'
 
 export interface ChartDataItem {
@@ -100,6 +100,44 @@ export function buildCountryChartData(
       color: colors[index % colors.length],
       code: item.code || undefined,
     }))
+}
+
+export interface WeightedMetrics {
+  ter: number | null
+  annualReturn: number | null
+}
+
+function weightedAverage(
+  instruments: InstrumentDto[],
+  select: (instrument: InstrumentDto) => number | null
+): number | null {
+  const totals = instruments.reduce(
+    (acc, instrument) => {
+      const value = select(instrument)
+      if (value === null) return acc
+      const weight = instrument.currentValue ?? 0
+      return { weight: acc.weight + weight, sum: acc.sum + value * weight }
+    },
+    { weight: 0, sum: 0 }
+  )
+
+  if (totals.weight === 0) return null
+  return totals.sum / totals.weight
+}
+
+export function calculateWeightedMetrics(
+  instruments: InstrumentDto[],
+  selectedSymbols: string[]
+): WeightedMetrics {
+  const selected = new Set(selectedSymbols)
+  const funds = instruments.filter(
+    instrument => selected.has(instrument.symbol) && (instrument.currentValue ?? 0) > 0
+  )
+
+  return {
+    ter: weightedAverage(funds, instrument => instrument.ter),
+    annualReturn: weightedAverage(funds, instrument => instrument.xirrAnnualReturn),
+  }
 }
 
 export function getFilterParam<T>(selected: T[], available: T[]): T[] | undefined {

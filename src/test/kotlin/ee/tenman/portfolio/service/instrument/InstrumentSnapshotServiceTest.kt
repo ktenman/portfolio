@@ -2,6 +2,8 @@ package ee.tenman.portfolio.service.instrument
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
@@ -11,6 +13,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.model.PriceChange
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
@@ -190,6 +193,36 @@ class InstrumentSnapshotServiceTest {
   }
 
   @Test
+  fun `should report total profit including realized losses when the period is max`() {
+    val transaction = createBuyCashFlow(BigDecimal("10"), BigDecimal("100"), testDate.minusYears(3))
+
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, any(), any())
+    } returns createMetricsWithRealizedLoss()
+
+    val result = instrumentSnapshotService.getAllSnapshots(null, TimeRange.MAX)
+
+    expect(result[0].priceChangeAmount).notToEqualNull().toEqualNumerically(BigDecimal("400"))
+  }
+
+  @Test
+  fun `should measure the max period return against capital deployed`() {
+    val transaction = createBuyCashFlow(BigDecimal("10"), BigDecimal("100"), testDate.minusYears(3))
+
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns listOf(transaction)
+    every {
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, any(), any())
+    } returns createMetricsWithRealizedLoss()
+
+    val result = instrumentSnapshotService.getAllSnapshots(null, TimeRange.MAX)
+
+    expect(result[0].priceChangePercent).notToEqualNull().toBeGreaterThan(36.36).toBeLessThan(36.37)
+  }
+
+  @Test
   fun `should handle mixed case platform names`() {
     val transaction = createBuyCashFlow(BigDecimal("10"), BigDecimal("100"), testDate, Platform.LHV)
     val metrics = createMetrics()
@@ -234,6 +267,17 @@ class InstrumentSnapshotServiceTest {
       transactionDate = date,
       platform = platform,
       commission = commission,
+    )
+
+  private fun createMetricsWithRealizedLoss(): InstrumentMetrics =
+    InstrumentMetrics(
+      totalInvestment = BigDecimal("1000"),
+      currentValue = BigDecimal("1500"),
+      profit = BigDecimal("400"),
+      realizedProfit = BigDecimal("-100"),
+      unrealizedProfit = BigDecimal("500"),
+      xirr = 25.0,
+      quantity = BigDecimal("10"),
     )
 
   private fun createMetrics(): InstrumentMetrics =

@@ -84,9 +84,9 @@ class InstrumentManagementE2E {
     expect(options.size()).toBeGreaterThan(3)
 
     val optionTexts = options.texts()
-    expect(optionTexts.contains("24H")).toEqual(true)
-    expect(optionTexts.contains("7D")).toEqual(true)
-    expect(optionTexts.contains("30D")).toEqual(true)
+    expect(optionTexts.contains("1D")).toEqual(true)
+    expect(optionTexts.contains("1W")).toEqual(true)
+    expect(optionTexts.contains("1M")).toEqual(true)
   }
 
   @Test

@@ -9,6 +9,8 @@ interface ChartDataPoint {
   earningsValues: number[]
 }
 
+const MAX_CHART_POINTS = 60
+
 function sampleDataPoints<T>(array: T[], maxPoints: number): T[] {
   if (array.length <= maxPoints) return array
 
@@ -27,8 +29,7 @@ export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
 
-    const maxPoints = Math.min(window.innerWidth >= 1000 ? 61 : 30, chronologicalSummaries.length)
-    const sampledData = sampleDataPoints(chronologicalSummaries, maxPoints)
+    const sampledData = sampleDataPoints(chronologicalSummaries, MAX_CHART_POINTS)
 
     return {
       labels: sampledData.map(item => item.date),

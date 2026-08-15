@@ -10,7 +10,7 @@ describe('EtfBreakdownStats', () => {
       })
 
       const statCards = wrapper.findAll('.stat-card')
-      expect(statCards).toHaveLength(2)
+      expect(statCards).toHaveLength(4)
     })
 
     it('should not display stat cards when totalValue is 0', () => {
@@ -47,6 +47,35 @@ describe('EtfBreakdownStats', () => {
       const statLabels = wrapper.findAll('.stat-label')
       expect(statLabels[0].text()).toBe('Total Value')
       expect(statLabels[1].text()).toBe('Unique Holdings')
+      expect(statLabels[2].text()).toBe('Weighted TER')
+      expect(statLabels[3].text()).toBe('Weighted Return')
+    })
+
+    it('should display the weighted TER with three decimals', () => {
+      const wrapper = mount(EtfBreakdownStats, {
+        props: { totalValue: 10000, uniqueHoldings: 50, weightedTer: 0.3125 },
+      })
+
+      const statValues = wrapper.findAll('.stat-value')
+      expect(statValues[2].text()).toBe('0.313%')
+    })
+
+    it('should display the weighted return as a percentage', () => {
+      const wrapper = mount(EtfBreakdownStats, {
+        props: { totalValue: 10000, uniqueHoldings: 50, weightedAnnualReturn: 0.4063 },
+      })
+
+      const statValues = wrapper.findAll('.stat-value')
+      expect(statValues[3].text()).toBe('40.63%')
+    })
+
+    it('should display a dash when weighted figures are unavailable', () => {
+      const wrapper = mount(EtfBreakdownStats, {
+        props: { totalValue: 10000, uniqueHoldings: 50 },
+      })
+
+      const statValues = wrapper.findAll('.stat-value')
+      expect(statValues.slice(2).map(value => value.text())).toEqual(['-', '-'])
     })
 
     it('should display the currency split card when entries are given', () => {

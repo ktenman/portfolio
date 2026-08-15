@@ -1,15 +1,16 @@
 package ee.tenman.portfolio.service.instrument
 
+import ee.tenman.portfolio.common.percentOf
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.PriceChangePeriod
-import ee.tenman.portfolio.domain.TransactionType
+import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.InstrumentEnrichmentContext
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.InstrumentSnapshot
 import ee.tenman.portfolio.model.InstrumentSnapshotsWithPortfolioXirr
 import ee.tenman.portfolio.model.PriceChange
+import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
@@ -20,10 +21,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 @Service
 class InstrumentSnapshotService(
@@ -46,20 +45,20 @@ class InstrumentSnapshotService(
   @Transactional(readOnly = true)
   fun getAllSnapshots(
     platforms: List<String>?,
-    period: String?,
+    period: TimeRange?,
   ): List<InstrumentSnapshot> = getAllSnapshotsWithPortfolioXirr(platforms, period).snapshots
 
   @Transactional(readOnly = true)
   fun getAllSnapshotsWithPortfolioXirr(
     platforms: List<String>?,
-    period: String?,
+    period: TimeRange?,
   ): InstrumentSnapshotsWithPortfolioXirr {
     val instruments = instrumentRepository.findAll().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val context =
       InstrumentEnrichmentContext(
         calculationDate = LocalDate.now(clock),
-        priceChangePeriod = period?.let { PriceChangePeriod.fromString(it) } ?: PriceChangePeriod.P24H,
+        priceChangePeriod = period ?: TimeRange.ONE_DAY,
         targetPlatforms = parsePlatformFilters(platforms),
       )
     val snapshotsWithTransactions = mutableListOf<Pair<InstrumentSnapshot, List<PortfolioTransaction>>>()
@@ -132,7 +131,7 @@ class InstrumentSnapshotService(
   ): InstrumentSnapshot? {
     val metrics =
       investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, context.calculationDate)
-    val priceChange = calculatePriceChange(instrument, transactions, context)
+    val priceChange = calculatePriceChange(instrument, transactions, metrics, context)
     if (metrics.quantity.compareTo(BigDecimal.ZERO) == 0 && metrics.realizedProfit.compareTo(BigDecimal.ZERO) == 0) return null
     val firstTransactionDate = transactions.minOfOrNull { it.transactionDate }
     return InstrumentSnapshot(
@@ -145,7 +144,7 @@ class InstrumentSnapshotService(
       xirr = metrics.xirr,
       quantity = metrics.quantity,
       platforms = transactions.map { it.platform }.toSet(),
-      priceChangeAmount = priceChange?.changeAmount?.multiply(metrics.quantity),
+      priceChangeAmount = priceChange?.changeAmount,
       priceChangePercent = priceChange?.changePercent,
       firstTransactionDate = firstTransactionDate,
     )
@@ -154,39 +153,22 @@ class InstrumentSnapshotService(
   private fun calculatePriceChange(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
+    metrics: InstrumentMetrics,
     context: InstrumentEnrichmentContext,
   ): PriceChange? {
     if (transactions.isEmpty()) return null
-    val earliestTransaction = transactions.minBy { it.transactionDate }
-    val holdingPeriodDays = ChronoUnit.DAYS.between(earliestTransaction.transactionDate, context.calculationDate)
-    return if (holdingPeriodDays >= context.priceChangePeriod.days) {
-      priceChangeService.getPriceChange(instrument, context.priceChangePeriod)
-    } else {
-      calculatePriceChangeSincePurchase(instrument, transactions)
+    val periodStart = context.priceChangePeriod.startDate(context.calculationDate)
+    if (periodStart == null || transactions.minOf { it.transactionDate }.isAfter(periodStart)) {
+      return totalReturn(metrics)
     }
+    return priceChangeService
+      .getPriceChange(instrument, context.priceChangePeriod)
+      ?.let { PriceChange(it.changeAmount.multiply(metrics.quantity), it.changePercent) }
   }
 
-  private fun calculatePriceChangeSincePurchase(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-  ): PriceChange? {
-    if (instrument.isCash()) return PriceChange(BigDecimal.ZERO, 0.0)
-    val currentPrice = instrument.currentPrice ?: return null
-    val buyTransactions = transactions.filter { it.transactionType == TransactionType.BUY }
-    val totalQuantity = buyTransactions.sumOf { it.quantity }
-    if (buyTransactions.isEmpty() || totalQuantity.compareTo(BigDecimal.ZERO) <= 0) return null
-    val totalCost =
-      buyTransactions.sumOf { transaction ->
-        transaction.price.multiply(transaction.quantity).add(transaction.commission)
-      }
-    val weightedAveragePurchasePrice = totalCost.divide(totalQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
-    if (weightedAveragePurchasePrice.compareTo(BigDecimal.ZERO) == 0) return null
-    val changeAmount = currentPrice.subtract(weightedAveragePurchasePrice)
-    val changePercent =
-      changeAmount
-        .divide(weightedAveragePurchasePrice, CALCULATION_SCALE, RoundingMode.HALF_UP)
-        .multiply(BigDecimal(100))
-        .toDouble()
-    return PriceChange(changeAmount, changePercent)
+  private fun totalReturn(metrics: InstrumentMetrics): PriceChange {
+    val basis = metrics.currentValue.subtract(metrics.profit)
+    if (basis <= BigDecimal.ZERO) return PriceChange(metrics.profit, 0.0)
+    return PriceChange(metrics.profit, metrics.profit.percentOf(basis, CALCULATION_SCALE).toDouble())
   }
 }

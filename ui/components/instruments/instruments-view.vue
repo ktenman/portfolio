@@ -25,7 +25,7 @@
               class="form-select form-select-sm period-select"
               aria-label="Price change period"
             >
-              <option v-for="p in periods" :key="p.value" :value="p.value">{{ p.label }}</option>
+              <option v-for="range in TIME_RANGES" :key="range" :value="range">{{ range }}</option>
             </select>
           </div>
           <div class="toggle-container">
@@ -82,7 +82,7 @@ import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
-import { usePriceChangePeriod } from '../../composables/use-price-change-period'
+import { TIME_RANGES, usePriceChangePeriod } from '../../composables/use-time-range'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAuthState } from '../../composables/use-auth-state'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
@@ -101,7 +101,7 @@ const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, t
 const isInstrumentModalOpen = ref(false)
 const isXirrWindowsModalOpen = ref(false)
 const isAnnualWindowsModalOpen = ref(false)
-const { selectedPeriod, periods } = usePriceChangePeriod()
+const selectedPeriod = usePriceChangePeriod()
 const queryClient = useQueryClient()
 const toast = useToast()
 const { isAuthenticated } = useAuthState()

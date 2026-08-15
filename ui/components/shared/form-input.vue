@@ -22,6 +22,7 @@
       class="form-control"
       :class="{ 'is-invalid': error }"
       v-bind="$attrs"
+      @wheel="blurOnWheel"
     />
     <div v-if="error" class="invalid-feedback">{{ error }}</div>
   </div>
@@ -29,6 +30,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { blurOnWheel } from '../../utils/dom'
 
 interface SelectOption {
   value: string | number
