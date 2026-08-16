@@ -461,7 +461,7 @@
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Uppercase, weight 600, 0.05em tracking. The system most recognizable typographic gesture: brass-deep at 0.75rem on table headers, gray-700 at 0.8125rem on mobile card fields. Ten further variants exist across five specs and are debt, not precedent."
+        "purpose": "Uppercase, weight 600, 0.05em tracking. The system's most recognizable typographic gesture: brass-deep at 0.75rem on table headers, gray-700 at 0.8125rem on mobile card fields. Ten further variants exist across five specs and are debt, not precedent."
       },
       "numerals": {
         "displayName": "Tabular Numerals",
@@ -606,7 +606,7 @@
       "name": "Filter Chip",
       "kind": "chip",
       "refersTo": "filter-chip",
-      "description": "Selected-one-of-many, and the system busiest control: the platform filters, the ETF selector chips, and the summary chart time range all use this exact rule. The ETF dimension tabs and the allocation display-mode toggle share only its active treatment, on their own resting states. Resting is a sunken warm fill with a transparent border, so selecting a chip adds an edge rather than moving the text. Active is brass-wash with a brass border and an inset ring of the same wash, which thickens the edge without a second colour.",
+      "description": "Selected-one-of-many, and the system's busiest control: the platform filters, the ETF selector chips, and the summary chart's time range all use this exact rule. The ETF dimension tabs and the allocation display-mode toggle share only its active treatment, on their own resting states. Resting is a sunken warm fill with a transparent border, so selecting a chip adds an edge rather than moving the text. Active is brass-wash with a brass border and an inset ring of the same wash, which thickens the edge without a second colour.",
       "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip is-active\">1M</button><button class=\"ds-chip\">1Y</button><button class=\"ds-chip\">MAX</button></div>",
       "css": ".ds-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; } .ds-chip { display: inline-flex; align-items: center; gap: 0.3rem; font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; white-space: nowrap; color: #69625b; background: #f6f3ed; border: 1px solid transparent; border-radius: 0.5rem; padding: 0.3125rem 0.6875rem; cursor: pointer; transition: all 120ms ease; } .ds-chip:hover { color: #241e1a; background: #f9f6f2; border-color: #d2cfc8; } .ds-chip:active { transform: scale(0.96); } .ds-chip.is-active { color: #784e00; background: #f8eee2; border-color: #8d621f; box-shadow: inset 0 0 0 1px #f8eee2; } .ds-chip.is-active:hover { border-color: #784e00; }"
     },
@@ -714,7 +714,7 @@
       },
       {
         "name": "State layers use color-mix() against the base token",
-        "body": "Hover and active states are never a second hardcoded colour. Declared and gated: today there is exactly one consumer and it is not a state layer — the summary chart loading veil at color-mix(in srgb, var(--color-surface) 72%, transparent). Every hover still resolves to a second token. The veil is nonetheless the precedent to copy: mix against a token, never against a literal."
+        "body": "Hover and active states are never a second hardcoded colour. Declared and gated: today there is exactly one consumer and it is not a state layer — the summary chart's loading veil at color-mix(in srgb, var(--color-surface) 72%, transparent). Every hover still resolves to a second token. The veil is nonetheless the precedent to copy: mix against a token, never against a literal."
       },
       {
         "name": "No component declares a colour",
@@ -722,7 +722,7 @@
       },
       {
         "name": "One face, and headings are weight 550",
-        "body": "Geist Variable is declared once on body and everything inherits it. h1–h6 share font-weight 550, line-height 1.2, and text-wrap: balance. 550 is not a rounding artefact of 500 — it is Lightyear heading weight to the number, reachable only because Geist wght axis is continuous, and it is the half step that keeps a heading distinct from the 600 label gesture beneath it. Geist Mono is the single sanctioned exception and is confined to the Monaco config editor."
+        "body": "Geist Variable is declared once on body and everything inherits it. h1–h6 share font-weight 550, line-height 1.2, and text-wrap: balance. 550 is not a rounding artefact of 500 — it is Lightyear's heading weight to the number, reachable only because Geist's wght axis is continuous, and it is the half step that keeps a heading distinct from the 600 label gesture beneath it. Geist Mono is the single sanctioned exception and is confined to the Monaco config editor."
       },
       {
         "name": "Every figure is tabular-nums",
@@ -734,7 +734,7 @@
       },
       {
         "name": "Reach for a hairline before a shadow",
-        "body": "If two surfaces need separating, that is a border. Shadow is reserved for the four things that genuinely float: the dropdown, the select picker, the toast, and the sticky nav."
+        "body": "If two surfaces need separating, that is a border. Where a shadow does exist it is tinted from ink rather than neutral black and it stays faint — the heaviest of the five is the toast at 14%, and shadow-nav is a 1px rule at zero blur rather than an elevation at all. There is no glass, no blur, and no backdrop filter anywhere; the modal backdrop is the native <dialog> element's own."
       },
       {
         "name": "Two naming systems, one palette",
@@ -755,22 +755,22 @@
       "Let font-variant-numeric: tabular-nums inherit from body. Every money column depends on it.",
       "Ship both renderings when adding a data column: the desktop table cell and the mobile card pair.",
       "Hold the page shell at mx-auto mt-4 w-full max-w-app px-3. The gutter is intentional.",
-      "Reuse .platform-btn when a new surface needs a selected-one-of-many row. The summary chart time-range filter does exactly that and adds no CSS; a fifth resting treatment is what would be wrong.",
-      "State a chart values as text in its legend. The colours are an index into the legend, not the data.",
+      "Reuse .platform-btn when a new surface needs a selected-one-of-many row. The summary chart's time-range filter does exactly that and adds no CSS; a fifth resting treatment is what would be wrong.",
+      "State a chart's values as text in its legend. The colours are an index into the legend, not the data.",
       "Add a new route to ui/tests/visual/palette.spec.ts when you build one. It walks every visible text node for AA and the first fifteen tab stops for the focus ring, on three viewports, against stubbed data — and it catches what the screenshot comparator structurally cannot, a colour that moved but stayed close."
     ],
     "donts": [
-      "Write a hex literal in a component or a stylesheet. There is exactly one in theme.css and four declarations of three distinct values in index.html, and every one has a recorded reason. A near-miss hex is a fork, and the pixel gate cannot police it: the comparator runs at maxDiffPixels: 0 but leaves Playwright per-pixel threshold at its default, so a colour that is merely close passes silently.",
+      "Write a hex literal in a component or a stylesheet. There is exactly one in theme.css and four declarations of three distinct values in index.html, and every one has a recorded reason. A near-miss hex is a fork, and the pixel gate cannot police it: the comparator runs at maxDiffPixels: 0 but leaves Playwright's per-pixel threshold at its default, so a colour that is merely close passes silently.",
       "Treat --color-signal-indigo as a second accent. It is brass under an old name and it is leaving.",
       "Use gain or loss for anything other than the sign of a value. No green \"active\" chips, no red \"new\" badges. The eight inherited danger and validation uses of loss are a known divergence, not a licence to add more — and the count has already grown once.",
       "Introduce a second text face. One is declared, on body, and everything inherits it. The serif was built and removed; rebuilding it needs a rendered screenshot, not a rationale.",
       "Add a radius value. Controls are 0.25rem, containers are 0.5rem. A container inside a container does not get a smaller radius — it gets a hairline. The one surviving 0.375rem radius is debt, not precedent.",
       "Put a background fill back on .table thead th. It was removed because it collided with the active filter chips, which are the brass-wash element on a data surface.",
-      "Describe the legend swatch stroke as an accessibility feature. It is a 1.56:1 seam; the legend text is what satisfies non-text contrast. The donut arcs carry no stroke at all — the gap and the palette 3:1 floor already do that job.",
+      "Describe the legend swatch stroke as an accessibility feature. It is a 1.56:1 seam; the legend text is what satisfies non-text contrast. The donut arcs carry no stroke at all — the gap and the palette's 3:1 floor already do that job.",
       "Build a custom listbox, popover, or modal. <select> is styled through ::picker(select) and the dialogs are native <dialog>; both give you the top layer, the keyboard model, and scroll containment for free. A hand-rolled replacement has to reimplement all three and will get one of them wrong.",
-      "Animate anything that is not confirming a state change. The value flash, the spinners, and the select picker 150ms open are the whole motion budget.",
+      "Animate anything that is not confirming a state change. The value flash, the spinners, and the select picker's 150ms open are the whole motion budget.",
       "Put a <style scoped> block in a component to override a components.css rule and expect the layer order to explain it. Scoped styles are injected unlayered and therefore beat every @layer.",
-      "Reach for a gray-* value when a semantic token names the same role. The ramp exists for the component layer older internals, not for new work.",
+      "Reach for a gray-* value when a semantic token names the same role. The ramp exists for the component layer's older internals, not for new work.",
       "Cite ui/styles/components.css with a line number. It is a nine-line barrel of @imports; the rules live in ui/styles/components/ across buttons, surfaces, forms, modals, feedback, navigation, controls, mobile-cards, and motion."
     ]
   }

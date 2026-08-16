@@ -262,7 +262,7 @@ Badge fills, row tints, alert backgrounds, and the price-flash animation. Each c
 
 `--color-brass-wash` is the busiest of the four, and its consumer map has grown to fifteen declarations. In the
 stylesheet layer: the active filter chip's fill and its `inset` ring (`controls.css:106,108,114`), the ghost
-button's hover, the add-new button's hover, and one more button hover (`buttons.css:118,143,152`), the warning
+button's hover, and the add-new button's hover and press (`buttons.css:118,143,152`), the warning
 alert's background (`feedback.css:23`), and — new since the last revision — the native customizable `<select>`'s
 option hover and `:checked` fill (`forms.css:98,103`). In components: the diversification calculator's
 refreshing status pill (`diversification-calculator.vue:462`), the allocation table's active display-mode
@@ -311,9 +311,9 @@ no consumer had to change in the same commit as the palette. They are aliases, n
 | `--color-status-info`           | `oklch(0.52 0.11 250)`  | `#316ca5` | `notice`     |
 | `--color-status-warning`        | `oklch(0.53 0.098 74)`  | `#8d621f` | `brass`      |
 
-There is no `--color-warning`. The doc asserted one in an earlier revision and the code never had it; the
-warning alert reads `--color-status-warning`, which resolves to brass. Do not add one back to make the alias
-table look symmetrical.
+There is no `--color-warning`. The doc asserted one in an earlier revision and the code never had it; the only
+consumer of `--color-status-warning` is the warning toast (`feedback.css:137`), and the warning alert reaches
+for the brass tokens directly (`feedback.css:21`). Do not add one back to make the alias table look symmetrical.
 
 **`--color-signal-indigo` and `--color-signal-indigo-deep` are not a second accent.** They hold the brass
 values and exist only so Tailwind keeps generating the utilities their remaining consumers use. Phase 2 deletes
@@ -510,7 +510,7 @@ five distinct specs. The full census, because a sample of it has been wrong twic
 | `0.75rem` / 600 / `0.05em`      | **the gesture** — `surfaces.css:42` (brass-deep), `mobile-cards.css:29` at `0.8125rem` (gray-700) |
 | `0.75rem` / 500 / `0.05em`      | `stat-card.vue:16`, `transactions-view.vue:234`, `breakdown-card.vue:39` — all `ink-muted`        |
 | `0.75rem` / 500 / `0.5px`       | `calculator.vue:151` (ink-soft), `allocation-table.vue:673` (gray-600)                            |
-| `0.6875rem` / unset / `0.025em` | `allocation-card.vue:242`, `transaction-table.vue:300`, `instrument-table.vue:630` — all gray-600 |
+| `0.6875rem` / unset / `0.025em` | `allocation-card.vue:242`, `transaction-table.vue:300`, `instrument-table.vue:629` — all gray-600 |
 | `0.6875rem` / 500 / `0.05em`    | `instrument-table.vue:529` (gray-600)                                                             |
 | `0.875rem` / 700 / `0.025em`    | `instrument-table.vue:454` (gray-800) — the table footer's totals label                           |
 
@@ -581,16 +581,17 @@ two would do; the third is worth collapsing.
 **Shadows are warm-tinted**, derived from `oklch(0.24 0.012 60 / α)` — the ink itself, not neutral black. All
 five are in real use and the heaviest is the toast at 14%.
 
-| token              | value                                         | used for                                             |
-| ------------------ | --------------------------------------------- | ---------------------------------------------------- |
-| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper                 |
-| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls                           |
-| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | dropdown menu, mobile card hover, ETF breakdown rows |
-| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px                              |
-| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker                   |
+| token              | value                                         | used for                                            |
+| ------------------ | --------------------------------------------- | --------------------------------------------------- |
+| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper                |
+| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls                          |
+| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | dropdown menu, mobile card hover, ETF holding logos |
+| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px                             |
+| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker                  |
 
 `--shadow-lifted` has four consumers, not two: `navigation.css:53` (the dropdown menu),
-`data-table.vue:211` (the mobile card's hover), and `etf-breakdown-table.vue:436,474`. `--shadow-overlay` has
+`data-table.vue:211` (the mobile card's hover), and the ETF holding logo and its placeholder, both of which
+lift on hover under a `scale(1.1)` (`etf-breakdown-table.vue:436,474`). `--shadow-overlay` has
 two: the toast (`feedback.css:109`) and the customizable `<select>` picker (`forms.css:68`). Both extra pairs
 are consistent with the tokens' stated roles — record them so the next reader does not conclude a component
 invented its own elevation.
@@ -644,7 +645,7 @@ pixels without shifting layout. State is carried by fill _and_ border _and_ that
 Press adds `scale(0.96)`. The transparent resting border is load-bearing: it reserves the hover border's box so
 nothing reflows on hover, and removing it would make every chip row jump by 2px.
 
-**The active-segment gesture now spans four surfaces**, and all four are the same three declarations —
+**The active-segment gesture now spans four surfaces**, and all four share the same three declarations —
 `--color-brass-wash` fill, `--color-brass` border, `--color-brass-deep` text. Beyond the filter chips
 (`controls.css:103`) it drives the ETF breakdown's dimension tabs (`etf-breakdown.vue:465`), the allocation
 table's display-mode toggle (`allocation-table.vue:849`), and the summary chart's time-range row, which reuses
