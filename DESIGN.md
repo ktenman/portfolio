@@ -410,7 +410,7 @@ These are enforceable constraints, not guidance. They are reproduced from the de
 5. **State layers use `color-mix()`** against the base token. Hover and active states are never a second
    hardcoded colour. Like `--color-series-*`, this is declared and gated, and it now has exactly one consumer —
    which is not a state layer: the summary chart's loading veil, `color-mix(in srgb, var(--color-surface) 72%,
-   transparent)` at `portfolio-summary.vue:275`. Every hover in the app still resolves to a second token —
+transparent)` at `portfolio-summary.vue:275`. Every hover in the app still resolves to a second token —
    `.btn-ghost:hover` and `.btn-add-new:hover` both swap to `brass-wash` (`buttons.css:118`, `:143`). Phase 2 is
    what makes the rule true. The veil is nonetheless the precedent to copy: mix against a token, never against a
    literal.
@@ -505,21 +505,28 @@ stands alone beside its value rather than at the head of an aligned column.
 Those two are the gesture. Twelve uppercase label rules are live in total, so **ten of them are variants**, in
 five distinct specs. The full census, because a sample of it has been wrong twice:
 
-| spec                                | sites                                                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `0.75rem` / 600 / `0.05em`          | **the gesture** — `surfaces.css:42` (brass-deep), `mobile-cards.css:29` at `0.8125rem` (gray-700) |
-| `0.75rem` / 500 / `0.05em`          | `stat-card.vue:16`, `transactions-view.vue:234`, `breakdown-card.vue:39` — all `ink-muted`         |
-| `0.75rem` / 500 / `0.5px`           | `calculator.vue:151` (ink-soft), `allocation-table.vue:673` (gray-600)                            |
-| `0.6875rem` / unset / `0.025em`     | `allocation-card.vue:242`, `transaction-table.vue:300`, `instrument-table.vue:630` — all gray-600  |
-| `0.6875rem` / 500 / `0.05em`        | `instrument-table.vue:529` (gray-600)                                                            |
-| `0.875rem` / 700 / `0.025em`        | `instrument-table.vue:454` (gray-800) — the table footer's totals label                           |
+| spec                            | sites                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `0.75rem` / 600 / `0.05em`      | **the gesture** — `surfaces.css:42` (brass-deep), `mobile-cards.css:29` at `0.8125rem` (gray-700) |
+| `0.75rem` / 500 / `0.05em`      | `stat-card.vue:16`, `transactions-view.vue:234`, `breakdown-card.vue:39` — all `ink-muted`        |
+| `0.75rem` / 500 / `0.5px`       | `calculator.vue:151` (ink-soft), `allocation-table.vue:673` (gray-600)                            |
+| `0.6875rem` / unset / `0.025em` | `allocation-card.vue:242`, `transaction-table.vue:300`, `instrument-table.vue:630` — all gray-600 |
+| `0.6875rem` / 500 / `0.05em`    | `instrument-table.vue:529` (gray-600)                                                             |
+| `0.875rem` / 700 / `0.025em`    | `instrument-table.vue:454` (gray-800) — the table footer's totals label                           |
 
-`0.5px` is not `0.05em` — at `0.75rem` it is `0.0417em`. The three `0.75rem / 500 / 0.05em` sites are now
-byte-identical to each other and to the shared `stat-card.vue`, which is the consolidation target: extracting
-that component already retired the copies that used to live in `etf-breakdown-stats.vue` and
-`diversification-stats.vue`, and `transactions-view.vue` and `breakdown-card.vue` are the two that can still
-fold into it. Normalizing the rest is a Phase 2 task with a visual-baseline cost, not a drive-by; until then, do
-not cite "the label gesture" as if the code speaks with one voice.
+A thirteenth label is missing from that table because it is not a rule: `currency-split-card.vue:7` sets the
+same `0.75rem` / 500 / `0.05em` spec in Tailwind utilities — `text-xs font-medium tracking-wider text-gray-600
+uppercase` — so a `text-transform: uppercase` grep does not find it at all. Its `gray-600` and the row above's
+`ink-muted` resolve to the same `oklch(0.5 0.014 60)`, so it is a naming variant rather than a visual one.
+
+`0.5px` is not `0.05em` — at `0.75rem` it is `0.0417em`. The three `0.75rem / 500 / 0.05em` rules carry the same
+six declarations as the shared `stat-card.vue`, which is the consolidation target: extracting that component
+already retired the copies that used to live in `etf-breakdown-stats.vue` and `diversification-stats.vue`, and
+`transactions-view.vue` and `breakdown-card.vue` are the two that can still fold into it — `transactions-view.vue`
+for free, since only its declaration order differs, and `breakdown-card.vue` at the cost of a `margin-bottom` that
+is `0.75rem` there and `0.25rem` in the shared component. Normalizing the rest is a Phase 2 task with a
+visual-baseline cost, not a drive-by; until then, do not cite "the label gesture" as if the code speaks with one
+voice.
 
 ## Layout
 
@@ -560,7 +567,7 @@ alerts, toasts, and small input-group addons; `--radius-container: 0.5rem` for f
 wrappers, inputs and selects, modals, dropdown menus, and the base skeleton class. The control radius tightened
 from `0.375rem` in this phase: crisper edges read as printed rather than as app chrome. A `50%` produces the
 handful of true circles — spinners, the legend swatch, the flag glyphs. A `0.75rem` one-off survives on
-`.mobile-card` (`mobile-cards.css:6`), but `data-table.vue:205` overrides it back to `--radius-container` for
+`.mobile-card` (`mobile-cards.css:6`), but `data-table.vue:206` overrides it back to `--radius-container` for
 every card the shared table renders — which is all of them today, so the one-off is currently unreachable.
 Treat it as debt, not as scale. Two skeleton variants in `skeleton-loader.vue:80,118` override the base to
 `--radius-control`, and being unlayered scoped styles they win — so a skeleton cell is not reliably the
@@ -574,13 +581,13 @@ two would do; the third is worth collapsing.
 **Shadows are warm-tinted**, derived from `oklch(0.24 0.012 60 / α)` — the ink itself, not neutral black. All
 five are in real use and the heaviest is the toast at 14%.
 
-| token              | value                                         | used for                                              |
-| ------------------ | --------------------------------------------- | ----------------------------------------------------- |
-| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper                  |
-| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls                            |
-| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | dropdown menu, mobile card hover, ETF breakdown rows  |
-| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px                               |
-| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker                    |
+| token              | value                                         | used for                                             |
+| ------------------ | --------------------------------------------- | ---------------------------------------------------- |
+| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper                 |
+| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls                           |
+| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | dropdown menu, mobile card hover, ETF breakdown rows |
+| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px                              |
+| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker                   |
 
 `--shadow-lifted` has four consumers, not two: `navigation.css:53` (the dropdown menu),
 `data-table.vue:211` (the mobile card's hover), and `etf-breakdown-table.vue:436,474`. `--shadow-overlay` has
