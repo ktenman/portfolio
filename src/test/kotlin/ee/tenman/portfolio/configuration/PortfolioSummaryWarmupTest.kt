@@ -44,12 +44,12 @@ class PortfolioSummaryWarmupTest {
     warmup.warmUp()
     expect(requestedPaths.toSet()).toContain(
       "/api/transactions/platforms",
-      "/api/portfolio-summary/historical?page=0&size=186",
+      "/api/portfolio-summary/historical?page=0&size=30",
       "/api/portfolio-summary/current",
-      "/api/portfolio-summary/series?range=6M",
-      "/api/portfolio-summary/historical?page=0&size=186&platforms=LIGHTYEAR&platforms=TRADING212",
+      "/api/portfolio-summary/series?range=1M",
+      "/api/portfolio-summary/historical?page=0&size=30&platforms=LIGHTYEAR&platforms=TRADING212",
       "/api/portfolio-summary/current?platforms=LIGHTYEAR&platforms=TRADING212",
-      "/api/portfolio-summary/series?range=6M&platforms=LIGHTYEAR&platforms=TRADING212",
+      "/api/portfolio-summary/series?range=1M&platforms=LIGHTYEAR&platforms=TRADING212",
     )
   }
 
@@ -62,9 +62,9 @@ class PortfolioSummaryWarmupTest {
     expect(requestedPaths.toSet()).toEqual(
       setOf(
         "/api/transactions/platforms",
-        "/api/portfolio-summary/historical?page=0&size=186",
+        "/api/portfolio-summary/historical?page=0&size=30",
         "/api/portfolio-summary/current",
-        "/api/portfolio-summary/series?range=6M",
+        "/api/portfolio-summary/series?range=1M",
       ),
     )
   }

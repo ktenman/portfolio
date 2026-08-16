@@ -2,7 +2,6 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
 import ee.tenman.portfolio.domain.Platform
-import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.AnnualWindowsDto
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
@@ -12,6 +11,7 @@ import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.summary.PortfolioAnnualWindowService
 import ee.tenman.portfolio.service.summary.PortfolioRangeChangeService
+import ee.tenman.portfolio.service.summary.PortfolioSummaryHistoricalService
 import ee.tenman.portfolio.service.summary.PortfolioSummarySeriesService
 import ee.tenman.portfolio.service.summary.PortfolioXirrWindowService
 import ee.tenman.portfolio.service.summary.SummaryCacheService
@@ -19,7 +19,6 @@ import ee.tenman.portfolio.service.summary.SummaryService
 import ee.tenman.portfolio.service.summary.toSummaryDto
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -27,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/portfolio-summary")
@@ -39,6 +37,7 @@ class PortfolioSummaryController(
   private val xirrWindowService: PortfolioXirrWindowService,
   private val annualWindowService: PortfolioAnnualWindowService,
   private val seriesService: PortfolioSummarySeriesService,
+  private val historicalService: PortfolioSummaryHistoricalService,
   private val rangeChangeService: PortfolioRangeChangeService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -65,14 +64,7 @@ class PortfolioSummaryController(
     @RequestParam page: Int,
     @RequestParam size: Int,
     @RequestParam(required = false) platforms: List<String>?,
-  ): Page<PortfolioSummaryDto> {
-    val platformEnums = Platform.parseList(platforms)
-    if (platformEnums != null) return getFilteredHistoricalSummaries(platformEnums, page, size)
-    val summaries = summaryCacheService.getAllDailySummaries(page, size)
-    if (summaries.isEmpty) return Page.empty(PageRequest.of(page, size))
-    val lookup = buildSummaryLookup(summaries.content)
-    return summaries.map { it.toDto(lookup) }
-  }
+  ): Page<PortfolioSummaryDto> = historicalService.getHistorical(page, size, Platform.parseList(platforms))
 
   @GetMapping("/current")
   @Loggable
@@ -89,14 +81,14 @@ class PortfolioSummaryController(
   @GetMapping("/series")
   @Loggable
   fun getSummarySeries(
-    @RequestParam(defaultValue = "6M") range: TimeRange,
+    @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
   ): List<PortfolioSummaryDto> = seriesService.getSeries(range, Platform.parseList(platforms))
 
   @GetMapping("/range-change")
   @Loggable
   fun getRangeChange(
-    @RequestParam(defaultValue = "6M") range: TimeRange,
+    @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
   ): RangeChangeDto = rangeChangeService.calculate(range, Platform.parseList(platforms))
 
@@ -118,36 +110,5 @@ class PortfolioSummaryController(
       platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, summary.entryDate.minusDays(1))
     val profitChange24h = summary.totalProfit.subtract(yesterdaySummary.totalProfit)
     return summary.toSummaryDto(profitChange24h)
-  }
-
-  private fun getFilteredHistoricalSummaries(
-    platforms: List<Platform>,
-    page: Int,
-    size: Int,
-  ): Page<PortfolioSummaryDto> {
-    val summaries = platformSummaryCacheService.getHistoricalSummariesForPlatforms(platforms, page, size)
-    if (summaries.isEmpty) return Page.empty(PageRequest.of(page, size))
-    val oldestDate = summaries.content.minOf { it.entryDate }
-    val previousDaySummary =
-      platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, oldestDate.minusDays(1))
-    val lookup =
-      buildMap {
-        summaries.content.forEach { put(it.entryDate, it) }
-        put(previousDaySummary.entryDate, previousDaySummary)
-      }
-    return summaries.map { it.toDto(lookup) }
-  }
-
-  private fun buildSummaryLookup(summaries: List<PortfolioDailySummary>): Map<LocalDate, PortfolioDailySummary> {
-    val previousDaySummary = summaryCacheService.findByEntryDate(summaries.minOf { it.entryDate }.minusDays(1))
-    return buildMap {
-      summaries.forEach { put(it.entryDate, it) }
-      previousDaySummary?.let { put(it.entryDate, it) }
-    }
-  }
-
-  private fun PortfolioDailySummary.toDto(lookup: Map<LocalDate, PortfolioDailySummary>): PortfolioSummaryDto {
-    val profitChange24h = lookup[entryDate.minusDays(1)]?.let { totalProfit.subtract(it.totalProfit) }
-    return toSummaryDto(profitChange24h)
   }
 }

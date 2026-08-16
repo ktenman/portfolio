@@ -10,6 +10,7 @@ import {
   formatProfitLoss,
   formatTransactionAmount,
   getProfitClass,
+  getGainLossClass,
   getAmountClass,
   formatDate,
   formatQuantity,
@@ -320,6 +321,27 @@ describe('getProfitClass', () => {
   it('should handle null and undefined values', () => {
     expect(getProfitClass(null)).toBe('')
     expect(getProfitClass(undefined)).toBe('')
+  })
+})
+
+describe('getGainLossClass', () => {
+  it('should return gain token for positive values', () => {
+    expect(getGainLossClass(100)).toBe('text-gain')
+    expect(getGainLossClass(0.01)).toBe('text-gain')
+  })
+
+  it('should return loss token for negative values', () => {
+    expect(getGainLossClass(-100)).toBe('text-loss')
+    expect(getGainLossClass(-0.01)).toBe('text-loss')
+  })
+
+  it('should return no token for zero', () => {
+    expect(getGainLossClass(0)).toBe('')
+  })
+
+  it('should handle null and undefined values', () => {
+    expect(getGainLossClass(null)).toBe('')
+    expect(getGainLossClass(undefined)).toBe('')
   })
 })
 
