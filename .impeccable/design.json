@@ -509,7 +509,7 @@
       {
         "name": "transition-base",
         "value": "200ms var(--ease-standard)",
-        "purpose": "The add-new button and its + glyph."
+        "purpose": "The add-new button and its + glyph, the sort indicator's opacity, and the mobile instrument card's link fade."
       },
       {
         "name": "transition-slow",
@@ -670,7 +670,7 @@
       "name": "Value Flash",
       "kind": "custom",
       "refersTo": "table-row-band",
-      "description": "The price-change pulse: a cell animates from transparent to gain-wash or loss-wash and back over 3s. It is the only animation in the system exempted from prefers-reduced-motion by name, because it carries information rather than decoration — the global reduce rule crushes every animation to 0.01ms and this one is explicitly restored to 3s.",
+      "description": "The price-change pulse: a cell animates from transparent to gain-wash or loss-wash and back over 3s. It is exempted from prefers-reduced-motion by name, alongside the spinners, because it carries information rather than decoration — the global reduce rule crushes every animation to 0.01ms and this one is explicitly restored to 3s.",
       "html": "<span class=\"ds-flash-up\">€412.08</span> <span class=\"ds-flash-down\">€391.55</span>",
       "css": "@keyframes ds-pulse-increase { 0% { background-color: transparent; } 50% { background-color: #e6f5e9; } 100% { background-color: transparent; } } @keyframes ds-pulse-decrease { 0% { background-color: transparent; } 50% { background-color: #ffebe8; } 100% { background-color: transparent; } } .ds-flash-up { font-variant-numeric: tabular-nums; color: #287b46; animation: ds-pulse-increase 3s ease-in-out; transition: background-color 3s ease-in-out; } .ds-flash-down { font-variant-numeric: tabular-nums; color: #b33834; animation: ds-pulse-decrease 3s ease-in-out; transition: background-color 3s ease-in-out; } @media (prefers-reduced-motion: reduce) { .ds-flash-up, .ds-flash-down { animation-duration: 3s !important; } }"
     },

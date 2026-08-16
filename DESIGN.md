@@ -403,10 +403,11 @@ These are enforceable constraints, not guidance. They are reproduced from the de
    ≥18.66px bold) only. Its legitimate uses are chart axis ticks, disabled control glyphs, and decorative
    rules. **Every piece of small text — labels, captions, the build hash, stat-card labels, table meta — uses
    `ink-soft` at 6.02:1.** This rule is what prevents the current `gray-500` mistake recurring under a new name.
-   Today it has four consumers and none of them is one of the sanctioned three: the config dialog's empty-state
-   glyph (`config-dialog.vue:253`), two receded figures in `etf-breakdown-table.vue:404,461`, and the ETF
-   breakdown's resting search icon (`etf-breakdown.vue:490`). All four are large or non-text, so they pass — but
-   the rule's own examples describe an intent, not the current map. The decorative rule it names is `hr`, which
+   Today it has five consumers and only one of them is one of the sanctioned three: the dashed hover crosshair
+   both charts draw (`chart.ts:31`). The other four are the config dialog's empty-state glyph
+   (`config-dialog.vue:253`), two receded figures in `etf-breakdown-table.vue:404,461`, and the ETF breakdown's
+   resting search icon (`etf-breakdown.vue:490`). All five are large or non-text, so they pass — but the rule's
+   own examples describe an intent, not the current map. The decorative rule it names is `hr`, which
    draws in `hairline-strong` at 25% opacity (`base.css:91`).
 5. **State layers use `color-mix()`** against the base token. Hover and active states are never a second
    hardcoded colour. Like `--color-series-*`, this is declared and gated, and it now has exactly one consumer —
@@ -608,7 +609,7 @@ active link additionally goes brass and bold.
 **Focus is always a brass outline**: `outline: 2px solid var(--color-brass)`, `outline-offset: 2px`, on every
 link, button, input, select, and textarea. Never a glow, and never suppressed on anything tabbable.
 
-**The select's dropdown is the browser's, restyled — not a rebuilt one.** `forms.css:54–111` opts into the
+**The select's dropdown is the browser's, restyled — not a rebuilt one.** `forms.css:53–111` opts into the
 native customizable select behind `@supports (appearance: base-select)`, so the whole block is inert on engines
 that do not have it and the field falls back to the chevron data URI above it. Inside, `::picker(select)` takes
 `--color-surface`, a `--color-hairline-strong` hairline, `--radius-container`, and `--shadow-overlay`;
