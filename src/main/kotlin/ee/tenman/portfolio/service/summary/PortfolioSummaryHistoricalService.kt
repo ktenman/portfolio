@@ -19,8 +19,14 @@ class PortfolioSummaryHistoricalService(
     page: Int,
     size: Int,
     platforms: List<Platform>?,
-  ): Page<PortfolioSummaryDto> {
-    if (platforms == null) return storedPage(page, size) ?: Page.empty(PageRequest.of(page, size))
+  ): Page<PortfolioSummaryDto> = resolve(page, size, platforms) ?: Page.empty(PageRequest.of(page, size))
+
+  private fun resolve(
+    page: Int,
+    size: Int,
+    platforms: List<Platform>?,
+  ): Page<PortfolioSummaryDto>? {
+    if (platforms == null) return storedPage(page, size)
     if (!transactionService.coversEveryPlatform(platforms)) return forPlatforms(platforms, page, size)
     return storedPage(page, size) ?: forPlatforms(platforms, page, size)
   }
@@ -37,11 +43,10 @@ class PortfolioSummaryHistoricalService(
     platforms: List<Platform>,
     page: Int,
     size: Int,
-  ): Page<PortfolioSummaryDto> =
+  ): Page<PortfolioSummaryDto>? =
     platformSummaryCacheService
       .getHistoricalSummariesForPlatforms(platforms, page, size)
       .toDtoPage { platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, it) }
-      ?: Page.empty(PageRequest.of(page, size))
 
   private fun Page<PortfolioDailySummary>.toDtoPage(
     previousDaySummary: (LocalDate) -> PortfolioDailySummary?,
