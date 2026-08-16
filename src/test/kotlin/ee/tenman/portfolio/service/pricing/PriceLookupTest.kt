@@ -49,8 +49,7 @@ class PriceLookupTest {
 
   @Test
   fun `should priceOnOrBefore return null when the nearest price is just over ten years old`() {
-    val lookup =
-      PriceLookup(listOf(DailyPricePoint(1L, queryDate.minusYears(10).minusDays(1), BigDecimal("42.50"))))
+    val lookup = PriceLookup(listOf(DailyPricePoint(1L, queryDate.minusYears(10).minusDays(1), BigDecimal("42.50"))))
     expect(lookup.priceOnOrBefore(1L, queryDate)).toEqual(null)
   }
 
