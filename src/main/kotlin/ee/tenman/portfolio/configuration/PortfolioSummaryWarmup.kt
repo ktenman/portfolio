@@ -51,11 +51,10 @@ class PortfolioSummaryWarmup(
     if (platforms.isEmpty()) return BASE_PATHS
     val platformQuery = platforms.joinToString("&") { "platforms=${it.name}" }
     return BASE_PATHS +
-      listOf(
-        "/api/portfolio-summary/historical?page=0&size=$HISTORICAL_PAGE_SIZE&$platformQuery",
-        "/api/portfolio-summary/current?$platformQuery",
-        "/api/portfolio-summary/series?range=${TimeRange.DEFAULT_CODE}&$platformQuery",
-      )
+      SUMMARY_PATHS.map { path ->
+        val separator = if ('?' in path) "&" else "?"
+        "$path$separator$platformQuery"
+      }
   }
 
   private fun resolvePort(): String =
@@ -68,12 +67,12 @@ class PortfolioSummaryWarmup(
     private const val WARMUP_ROUNDS = 2
     private const val HISTORICAL_PAGE_SIZE = 30
     private val REQUEST_TIMEOUT = Duration.ofSeconds(30)
-    private val BASE_PATHS =
+    private val SUMMARY_PATHS =
       listOf(
-        "/api/transactions/platforms",
         "/api/portfolio-summary/historical?page=0&size=$HISTORICAL_PAGE_SIZE",
         "/api/portfolio-summary/current",
         "/api/portfolio-summary/series?range=${TimeRange.DEFAULT_CODE}",
       )
+    private val BASE_PATHS = listOf("/api/transactions/platforms") + SUMMARY_PATHS
   }
 }
