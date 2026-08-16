@@ -22,7 +22,7 @@ export function usePortfolioSummaryQuery(
 ) {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
-  const pageSize = 186
+  const pageSize = 30
   const { isAuthenticated } = useAuthState()
 
   const platformsKey = computed(() => selectedPlatforms?.value ?? [])

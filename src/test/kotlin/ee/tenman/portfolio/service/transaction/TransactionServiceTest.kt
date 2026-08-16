@@ -773,4 +773,18 @@ class TransactionServiceTest {
     expect(buyTx.remainingQuantity).toEqualNumerically(BigDecimal("33.333333"))
     expect(buyTx.unrealizedProfit!!.compareTo(BigDecimal.ZERO)).toBeGreaterThan(0)
   }
+
+  @Test
+  fun `should report full coverage when the selection contains every platform holding transactions`() {
+    every { portfolioTransactionRepository.findDistinctPlatforms() } returns listOf(Platform.LHV, Platform.SWEDBANK)
+
+    expect(transactionService.coversEveryPlatform(listOf(Platform.SWEDBANK, Platform.LHV, Platform.BINANCE))).toEqual(true)
+  }
+
+  @Test
+  fun `should report partial coverage when the selection omits a platform holding transactions`() {
+    every { portfolioTransactionRepository.findDistinctPlatforms() } returns listOf(Platform.LHV, Platform.SWEDBANK)
+
+    expect(transactionService.coversEveryPlatform(listOf(Platform.LHV))).toEqual(false)
+  }
 }

@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.repository
 
 import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.DailyPricePoint
 import ee.tenman.portfolio.domain.Instrument
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -19,7 +20,14 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
 
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice>
 
-  fun findAllByInstrumentIn(instruments: Collection<Instrument>): List<DailyPrice>
+  @Query(
+    """
+    SELECT new ee.tenman.portfolio.domain.DailyPricePoint(dp.instrument.id, dp.entryDate, dp.closePrice)
+    FROM DailyPrice dp
+    WHERE dp.instrument IN :instruments
+    """,
+  )
+  fun findPricePointsByInstrumentIn(instruments: Collection<Instrument>): List<DailyPricePoint>
 
   @Query("SELECT DISTINCT dp.entryDate FROM DailyPrice dp WHERE dp.instrument = :instrument")
   fun findAllEntryDatesByInstrument(instrument: Instrument): Set<LocalDate>

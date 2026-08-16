@@ -5,7 +5,7 @@ import { TimeRange } from '../models/generated/domain-models'
 
 export const TIME_RANGES = Object.values(TimeRange)
 
-export const DEFAULT_CHART_RANGE = TimeRange.SIX_MONTHS
+export const DEFAULT_CHART_RANGE = TimeRange.ONE_MONTH
 
 function useStoredRange(key: string, fallback: TimeRange) {
   const stored = useLocalStorage<TimeRange>(key, fallback)

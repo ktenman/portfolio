@@ -196,8 +196,8 @@ export const getProfitClass = (value: number | null | undefined): string => {
 }
 
 export const getGainLossClass = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || value === 0) return ''
-  return value > 0 ? 'text-gain' : 'text-loss'
+  if (value === 0) return ''
+  return getProfitClass(value)
 }
 
 export const getAmountClass = (type: string): string => {

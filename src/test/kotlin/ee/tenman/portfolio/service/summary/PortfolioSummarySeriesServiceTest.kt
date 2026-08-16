@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.TimeRange
+import ee.tenman.portfolio.service.transaction.TransactionService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -15,10 +16,12 @@ import java.time.LocalDate
 class PortfolioSummarySeriesServiceTest {
   private val summaryService = mockk<SummaryService>()
   private val platformSummaryCacheService = mockk<PlatformSummaryCacheService>()
+  private val transactionService = mockk<TransactionService>()
   private val service =
     PortfolioSummarySeriesService(
       summaryService = summaryService,
       platformSummaryCacheService = platformSummaryCacheService,
+      transactionService = transactionService,
     )
 
   private fun summary(): PortfolioDailySummary =
@@ -43,13 +46,38 @@ class PortfolioSummarySeriesServiceTest {
   }
 
   @Test
-  fun `should fetch the platform filtered series when platforms is provided`() {
+  fun `should fetch the platform filtered series when the selection omits a platform holding transactions`() {
     val platforms = listOf(Platform.LHV)
+    every { transactionService.coversEveryPlatform(platforms) } returns false
     every { platformSummaryCacheService.getSeriesForPlatforms(platforms, TimeRange.SIX_MONTHS) } returns listOf(summary())
 
     val result = service.getSeries(TimeRange.SIX_MONTHS, platforms)
 
     verify(exactly = 0) { summaryService.getSeries(any()) }
+    expect(result).toEqual(listOf(summary().toSummaryDto()))
+  }
+
+  @Test
+  fun `should fetch the unfiltered series when the selection covers every platform holding transactions`() {
+    val platforms = listOf(Platform.SWEDBANK, Platform.LHV)
+    every { transactionService.coversEveryPlatform(platforms) } returns true
+    every { summaryService.getSeries(TimeRange.SIX_MONTHS) } returns listOf(summary())
+
+    val result = service.getSeries(TimeRange.SIX_MONTHS, platforms)
+
+    verify(exactly = 0) { platformSummaryCacheService.getSeriesForPlatforms(any(), any()) }
+    expect(result).toEqual(listOf(summary().toSummaryDto()))
+  }
+
+  @Test
+  fun `should recompute the series when the selection covers every platform but no summaries are stored`() {
+    val platforms = listOf(Platform.LHV)
+    every { transactionService.coversEveryPlatform(platforms) } returns true
+    every { summaryService.getSeries(TimeRange.SIX_MONTHS) } returns emptyList()
+    every { platformSummaryCacheService.getSeriesForPlatforms(platforms, TimeRange.SIX_MONTHS) } returns listOf(summary())
+
+    val result = service.getSeries(TimeRange.SIX_MONTHS, platforms)
+
     expect(result).toEqual(listOf(summary().toSummaryDto()))
   }
 }

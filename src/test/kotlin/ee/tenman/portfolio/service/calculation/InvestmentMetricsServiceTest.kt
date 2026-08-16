@@ -11,7 +11,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.DailyPricePoint
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
@@ -450,7 +450,7 @@ class InvestmentMetricsServiceTest {
     val instrumentGroups = mapOf(testInstrument to transactions)
     every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("150")
     val databaseValue = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate).totalValue
-    val lookup = PriceLookup(listOf(createDailyPrice(testInstrument, testDate, BigDecimal("150"))))
+    val lookup = PriceLookup(listOf(DailyPricePoint(testInstrument.id, testDate, BigDecimal("150"))))
     val lookupValue = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate, lookup).totalValue
     expect(lookupValue).toEqualNumerically(databaseValue)
   }
@@ -459,7 +459,7 @@ class InvestmentMetricsServiceTest {
   fun `should calculatePortfolioMetrics with price lookup avoids database query`() {
     val transactions = listOf(createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")))
     val instrumentGroups = mapOf(testInstrument to transactions)
-    val lookup = PriceLookup(listOf(createDailyPrice(testInstrument, testDate, BigDecimal("150"))))
+    val lookup = PriceLookup(listOf(DailyPricePoint(testInstrument.id, testDate, BigDecimal("150"))))
     investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate, lookup)
     verify(exactly = 0) { dailyPriceService.getPrice(any(), any()) }
   }
@@ -547,22 +547,6 @@ class InvestmentMetricsServiceTest {
       transactionDate = date,
       platform = platform,
       commission = commission,
-    )
-
-  private fun createDailyPrice(
-    instrument: Instrument,
-    date: LocalDate,
-    closePrice: BigDecimal,
-  ): DailyPrice =
-    DailyPrice(
-      instrument = instrument,
-      entryDate = date,
-      providerName = ProviderName.FT,
-      openPrice = null,
-      highPrice = null,
-      lowPrice = null,
-      closePrice = closePrice,
-      volume = null,
     )
 
   @Test

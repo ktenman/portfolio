@@ -82,7 +82,7 @@ class SummaryServiceSeriesTest {
 
     service.getSeriesForPlatforms(listOf(Platform.LHV), TimeRange.MAX)
 
-    expect(dates.captured).toHaveSize(366)
+    expect(dates.captured).toHaveSize(TimeRange.MAX_POINTS)
   }
 
   @Test
@@ -115,7 +115,7 @@ class SummaryServiceSeriesTest {
     val stored = (0 until 900).map { summary(LocalDate.of(2020, 1, 2).plusDays(it.toLong())) }
     every { repository.findAllByEntryDateBetween(any(), any()) } returns stored
 
-    expect(service.getSeries(TimeRange.MAX)).toHaveSize(366)
+    expect(service.getSeries(TimeRange.MAX)).toHaveSize(TimeRange.MAX_POINTS)
   }
 
   @Test

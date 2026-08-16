@@ -313,7 +313,7 @@ describe('usePortfolioSummaryQuery', () => {
       await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
       await flushPromises()
 
-      expect(portfolioSummaryService.getHistorical).toHaveBeenCalledWith(0, 186, [
+      expect(portfolioSummaryService.getHistorical).toHaveBeenCalledWith(0, 30, [
         'LIGHTYEAR',
         'TRADING212',
       ])
@@ -327,7 +327,7 @@ describe('usePortfolioSummaryQuery', () => {
       await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
       await flushPromises()
 
-      expect(portfolioSummaryService.getHistorical).toHaveBeenCalledWith(0, 186, undefined)
+      expect(portfolioSummaryService.getHistorical).toHaveBeenCalledWith(0, 30, undefined)
       expect(portfolioSummaryService.getCurrent).toHaveBeenCalledWith(undefined)
     })
   })
@@ -377,7 +377,7 @@ describe('usePortfolioSummaryQuery', () => {
       await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
       await flushPromises()
 
-      expect(portfolioSummaryService.getSeries).toHaveBeenCalledWith('6M', undefined)
+      expect(portfolioSummaryService.getSeries).toHaveBeenCalledWith('1M', undefined)
     })
 
     it('should request the selected range with the selected platforms', async () => {

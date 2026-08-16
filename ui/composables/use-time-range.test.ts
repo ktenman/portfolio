@@ -27,10 +27,10 @@ describe('useTimeRange', () => {
     ])
   })
 
-  it('should initialize the chart range with six months when localStorage is empty', () => {
+  it('should initialize the chart range with one month when localStorage is empty', () => {
     const selectedRange = useChartRange()
 
-    expect(selectedRange.value).toBe(TimeRange.SIX_MONTHS)
+    expect(selectedRange.value).toBe(TimeRange.ONE_MONTH)
   })
 
   it('should initialize the chart range from localStorage when the stored range is valid', () => {
@@ -41,12 +41,12 @@ describe('useTimeRange', () => {
     expect(selectedRange.value).toBe(TimeRange.MAX)
   })
 
-  it('should fall back to six months when the stored chart range is unknown', () => {
+  it('should fall back to one month when the stored chart range is unknown', () => {
     localStorage.setItem('portfolio_summary_chart_range', 'ülipikk')
 
     const selectedRange = useChartRange()
 
-    expect(selectedRange.value).toBe(TimeRange.SIX_MONTHS)
+    expect(selectedRange.value).toBe(TimeRange.ONE_MONTH)
   })
 
   it('should persist the chart range to localStorage when changed', async () => {
@@ -72,7 +72,7 @@ describe('useTimeRange', () => {
 
     await flushPromises()
 
-    expect(selectedRange.value).toBe(TimeRange.SIX_MONTHS)
+    expect(selectedRange.value).toBe(TimeRange.ONE_MONTH)
   })
 
   it('should initialize the price change period with one day when localStorage is empty', () => {

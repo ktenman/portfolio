@@ -73,7 +73,7 @@ class DailyPriceService(
 
   @Transactional(readOnly = true)
   fun buildPriceLookup(instruments: Collection<Instrument>): PriceLookup =
-    PriceLookup(dailyPriceRepository.findAllByInstrumentIn(instruments))
+    PriceLookup(dailyPriceRepository.findPricePointsByInstrumentIn(instruments))
 
   @Transactional(readOnly = true)
   fun findAllExistingDates(instrument: Instrument): Set<LocalDate> = dailyPriceRepository.findAllEntryDatesByInstrument(instrument)
