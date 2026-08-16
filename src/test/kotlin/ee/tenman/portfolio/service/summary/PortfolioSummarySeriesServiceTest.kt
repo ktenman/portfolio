@@ -48,7 +48,7 @@ class PortfolioSummarySeriesServiceTest {
   @Test
   fun `should fetch the platform filtered series when platforms is provided`() {
     val platforms = listOf(Platform.LHV)
-    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV, Platform.SWEDBANK)
+    every { transactionService.coversEveryPlatform(platforms) } returns false
     every { platformSummaryCacheService.getSeriesForPlatforms(platforms, TimeRange.SIX_MONTHS) } returns listOf(summary())
 
     val result = service.getSeries(TimeRange.SIX_MONTHS, platforms)
@@ -60,7 +60,7 @@ class PortfolioSummarySeriesServiceTest {
   @Test
   fun `should fetch the unfiltered series when the selection covers every platform holding transactions`() {
     val platforms = listOf(Platform.SWEDBANK, Platform.LHV)
-    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV, Platform.SWEDBANK)
+    every { transactionService.coversEveryPlatform(platforms) } returns true
     every { summaryService.getSeries(TimeRange.SIX_MONTHS) } returns listOf(summary())
 
     val result = service.getSeries(TimeRange.SIX_MONTHS, platforms)
@@ -72,7 +72,7 @@ class PortfolioSummarySeriesServiceTest {
   @Test
   fun `should recompute the series when the selection covers every platform but no summaries are stored`() {
     val platforms = listOf(Platform.LHV)
-    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV)
+    every { transactionService.coversEveryPlatform(platforms) } returns true
     every { summaryService.getSeries(TimeRange.SIX_MONTHS) } returns emptyList()
     every { platformSummaryCacheService.getSeriesForPlatforms(platforms, TimeRange.SIX_MONTHS) } returns listOf(summary())
 

@@ -23,9 +23,9 @@ class PortfolioSummarySeriesService(
     platforms: List<Platform>?,
   ): List<PortfolioDailySummary> {
     if (platforms == null) return summaryService.getSeries(range)
-    if (!transactionService.coversEveryPlatform(platforms)) {
-      return platformSummaryCacheService.getSeriesForPlatforms(platforms, range)
-    }
+    if (!coversEveryPlatform(platforms)) return platformSummaryCacheService.getSeriesForPlatforms(platforms, range)
     return summaryService.getSeries(range).ifEmpty { platformSummaryCacheService.getSeriesForPlatforms(platforms, range) }
   }
+
+  private fun coversEveryPlatform(platforms: List<Platform>): Boolean = platforms.containsAll(transactionService.getDistinctPlatforms())
 }

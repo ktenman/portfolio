@@ -88,10 +88,6 @@ class TransactionService(
   fun getDistinctPlatforms(): List<Platform> = portfolioTransactionRepository.findDistinctPlatforms()
 
   @Transactional(readOnly = true)
-  fun coversEveryPlatform(platforms: List<Platform>): Boolean =
-    platforms.containsAll(portfolioTransactionRepository.findDistinctPlatforms())
-
-  @Transactional(readOnly = true)
   fun getAllTransactions(): List<PortfolioTransaction> = transactionCacheService.getAllTransactions()
 
   @Transactional(readOnly = true)
