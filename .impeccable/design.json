@@ -1,408 +1,567 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-12T00:00:00Z",
+  "generatedAt": "2026-08-16T00:00:00Z",
   "title": "Design System: Portfolio",
   "extensions": {
     "colorMeta": {
-      "signal-indigo": {
-        "role": "primary",
-        "displayName": "Signal Indigo",
-        "canonical": "#4361ee",
+      "paper": {
+        "role": "ground",
+        "displayName": "Paper",
+        "canonical": "#fcfaf6",
+        "oklch": "oklch(0.985 0.006 85)",
+        "purpose": "The page ground, set on body. Warm at hue 85 so no card ever reads clinical against it.",
         "tonalRamp": [
-          "#0c112b",
-          "#131c45",
-          "#1e2c6b",
-          "#2a3c94",
-          "#344cba",
-          "#4361ee",
-          "#9dadf6",
-          "#eaeefd"
-        ]
-      },
-      "signal-indigo-deep": {
-        "role": "primary-deep",
-        "displayName": "Signal Indigo Deep",
-        "canonical": "#3651d4",
-        "tonalRamp": [
-          "#0a0f26",
-          "#10173d",
-          "#18245f",
-          "#213283",
-          "#2a3fa5",
-          "#3651d4",
-          "#96a5e9",
-          "#e9ecfa"
-        ]
-      },
-      "control-graphite": {
-        "role": "secondary",
-        "displayName": "Control Graphite",
-        "canonical": "#4b5563",
-        "tonalRamp": [
-          "#0e0f12",
-          "#16191d",
-          "#22262d",
-          "#2f353d",
-          "#3b424d",
-          "#4b5563",
-          "#a1a7ae",
-          "#ebecee"
-        ]
-      },
-      "control-graphite-deep": {
-        "role": "secondary-deep",
-        "displayName": "Control Graphite Deep",
-        "canonical": "#374151",
-        "tonalRamp": [
-          "#0a0c0f",
-          "#101317",
-          "#191d24",
-          "#222832",
-          "#2b333f",
-          "#374151",
-          "#979ca5",
-          "#e9eaec"
-        ]
-      },
-      "gain": {
-        "role": "positive",
-        "displayName": "Gain Green",
-        "canonical": "#21c55d",
-        "tonalRamp": [
-          "#062311",
-          "#0a391b",
-          "#0f592a",
-          "#147a3a",
-          "#1a9a49",
-          "#21c55d",
-          "#8ce1ab",
-          "#e7f9ed"
-        ]
-      },
-      "loss": {
-        "role": "negative",
-        "displayName": "Loss Red",
-        "canonical": "#dc3545",
-        "tonalRamp": [
-          "#280a0c",
-          "#400f14",
-          "#63181f",
-          "#88212b",
-          "#ac2936",
-          "#dc3545",
-          "#ed969e",
-          "#fbe9eb"
-        ]
-      },
-      "loss-deep": {
-        "role": "negative-deep",
-        "displayName": "Loss Deep",
-        "canonical": "#c82333",
-        "tonalRamp": [
-          "#240609",
-          "#3a0a0f",
-          "#5a1017",
-          "#7c1620",
-          "#9c1b28",
-          "#c82333",
-          "#e28d95",
-          "#f9e7e9"
-        ]
-      },
-      "loss-wash": {
-        "role": "negative-wash",
-        "displayName": "Loss Wash",
-        "canonical": "#fef2f2",
-        "tonalRamp": [
-          "#2e2c2c",
-          "#4a4646",
-          "#726d6d",
-          "#9d9696",
-          "#c6bdbd",
-          "#fef2f2",
-          "#fef8f8",
+          "#2d2d2b",
+          "#4c4b49",
+          "#73726f",
+          "#a3a19d",
+          "#d5d3cf",
+          "#fcfaf6",
+          "#fefdfa",
           "#fffefe"
         ]
       },
-      "loss-wash-deep": {
-        "role": "negative-wash-border",
-        "displayName": "Loss Wash Border",
-        "canonical": "#fecaca",
+      "surface": {
+        "role": "surface",
+        "displayName": "Surface",
+        "canonical": "#ffffff",
+        "oklch": "oklch(1 0 0)",
+        "purpose": "Pure white. Every card, table, dialog, and chip sits on it — the only achromatic token in the palette.",
         "tonalRamp": [
-          "#2e2424",
-          "#4a3b3b",
-          "#725b5b",
-          "#9d7d7d",
-          "#c69e9e",
-          "#fecaca",
-          "#fee3e3",
-          "#fff9f9"
+          "#2e2e2e",
+          "#4d4d4d",
+          "#747474",
+          "#a4a4a4",
+          "#d7d7d7",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff"
         ]
       },
-      "ink": {
-        "role": "text",
-        "displayName": "Ink",
-        "canonical": "#212529",
+      "surface-sunken": {
+        "role": "surface",
+        "displayName": "Sunken Surface",
+        "canonical": "#f6f3ed",
+        "oklch": "oklch(0.965 0.008 85)",
+        "purpose": "The resting fill of a filter chip and the pressed state of a dialog button. One step below the page.",
         "tonalRamp": [
-          "#060707",
-          "#0a0b0c",
-          "#0f1112",
-          "#141719",
-          "#1a1d20",
-          "#212529",
-          "#8c8e90",
-          "#e7e7e7"
+          "#2c2b29",
+          "#4a4946",
+          "#706e6a",
+          "#9f9c98",
+          "#d0cdc8",
+          "#f6f3ed",
+          "#fbfaf7",
+          "#fefefd"
         ]
       },
-      "ink-muted": {
-        "role": "text-muted",
-        "displayName": "Muted Ink",
-        "canonical": "#6b7280",
+      "surface-hover": {
+        "role": "surface",
+        "displayName": "Hover Surface",
+        "canonical": "#f9f6f2",
+        "oklch": "oklch(0.975 0.007 85)",
+        "purpose": "Dropdown items, dialog buttons, and unselected chips on hover. Half a step, never a colour change.",
         "tonalRamp": [
-          "#131517",
-          "#1f2125",
-          "#30333a",
-          "#42474f",
-          "#535964",
-          "#6b7280",
-          "#b2b6bd",
-          "#efeff1"
+          "#2d2c2a",
+          "#4b4a47",
+          "#72706d",
+          "#a19f9a",
+          "#d2d0cb",
+          "#f9f6f2",
+          "#fcfbf8",
+          "#fffefd"
+        ]
+      },
+      "surface-subtle": {
+        "role": "surface",
+        "displayName": "Subtle Surface",
+        "canonical": "#fcfaf6",
+        "oklch": "oklch(0.985 0.006 85)",
+        "purpose": "Shares paper exactly. Fills table cells, form fields, and dropdown menus so a field reads as recessed into the card.",
+        "tonalRamp": [
+          "#2d2d2b",
+          "#4c4b49",
+          "#73726f",
+          "#a3a19d",
+          "#d5d3cf",
+          "#fcfaf6",
+          "#fefdfa",
+          "#fffefe"
+        ]
+      },
+      "surface-band": {
+        "role": "surface",
+        "displayName": "Band",
+        "canonical": "#f6f3ed",
+        "oklch": "oklch(0.965 0.008 85)",
+        "purpose": "An opaque warm band for odd table rows. Not a translucent ink overlay — that is why banding no longer reads blue.",
+        "tonalRamp": [
+          "#2c2b29",
+          "#4a4946",
+          "#706e6a",
+          "#9f9c98",
+          "#d0cdc8",
+          "#f6f3ed",
+          "#fbfaf7",
+          "#fefefd"
         ]
       },
       "hairline": {
         "role": "border",
         "displayName": "Hairline",
-        "canonical": "#e2e8f0",
+        "canonical": "#e2dfda",
+        "oklch": "oklch(0.905 0.008 85)",
+        "purpose": "The default 1px separation between surfaces. Structure comes from this, not from shadow.",
         "tonalRamp": [
-          "#292a2b",
-          "#424346",
-          "#66686c",
-          "#8c9095",
-          "#b0b5bb",
-          "#e2e8f0",
-          "#f0f3f7",
-          "#fcfcfd"
+          "#282724",
+          "#44423f",
+          "#676561",
+          "#928f8a",
+          "#bfbcb7",
+          "#e2dfda",
+          "#f2f1ee",
+          "#fcfcfb"
         ]
       },
       "hairline-strong": {
-        "role": "border-strong",
-        "displayName": "Hairline Strong",
-        "canonical": "#dee2e6",
+        "role": "border",
+        "displayName": "Strong Hairline",
+        "canonical": "#d2cfc8",
+        "oklch": "oklch(0.855 0.01 85)",
+        "purpose": "Table row rules, modal header and footer divisions, and the chip separator. Also aliased as control-border.",
         "tonalRamp": [
-          "#282929",
-          "#404243",
-          "#646668",
-          "#8a8c8f",
-          "#adb0b3",
-          "#dee2e6",
-          "#eef0f2",
-          "#fbfcfc"
+          "#242320",
+          "#3f3d39",
+          "#5f5d58",
+          "#87847f",
+          "#b1aea8",
+          "#d2cfc8",
+          "#ebe9e5",
+          "#fbfaf9"
         ]
       },
-      "surface": {
-        "role": "surface",
-        "displayName": "Card White",
-        "canonical": "#ffffff",
+      "ink": {
+        "role": "foreground",
+        "displayName": "Ink",
+        "canonical": "#241e1a",
+        "oklch": "oklch(0.24 0.012 60)",
+        "purpose": "Body text and every figure. Warm at hue 60 at 16.48:1 on surface; nothing on screen is neutral black.",
         "tonalRamp": [
-          "#2e2e2e",
-          "#4a4a4a",
-          "#737373",
-          "#9e9e9e",
-          "#c7c7c7",
-          "#ffffff",
-          "#ffffff",
-          "#ffffff"
+          "#020101",
+          "#050302",
+          "#0b0705",
+          "#140f0b",
+          "#1d1713",
+          "#241e1a",
+          "#95918e",
+          "#e7e5e4"
         ]
       },
-      "surface-subtle": {
-        "role": "surface-recessed",
-        "displayName": "Surface Subtle",
-        "canonical": "#fcfcfd",
+      "ink-soft": {
+        "role": "foreground",
+        "displayName": "Soft Ink",
+        "canonical": "#69625b",
+        "oklch": "oklch(0.5 0.014 60)",
+        "purpose": "Every piece of small text — labels, captions, the build hash, table meta. 6.02:1, which is what keeps small text legal.",
         "tonalRamp": [
-          "#2d2d2e",
-          "#494949",
-          "#717172",
-          "#9c9c9d",
-          "#c5c5c5",
-          "#fcfcfd",
-          "#fdfdfe",
-          "#ffffff"
+          "#0e0a08",
+          "#1c1714",
+          "#2d2823",
+          "#433c36",
+          "#59514b",
+          "#69625b",
+          "#bab5b1",
+          "#f0eeed"
         ]
       },
-      "surface-hover": {
-        "role": "surface-hover",
-        "displayName": "Surface Hover",
-        "canonical": "#f8fafc",
+      "ink-faint": {
+        "role": "foreground",
+        "displayName": "Faint Ink",
+        "canonical": "#8c857f",
+        "oklch": "oklch(0.62 0.012 60)",
+        "purpose": "Not body text. 3.65:1 clears non-text and AA large only: axis ticks, disabled glyphs, decorative rules.",
         "tonalRamp": [
-          "#2d2d2d",
-          "#484949",
-          "#707171",
-          "#9a9b9c",
-          "#c1c3c5",
-          "#f8fafc",
-          "#fbfcfd",
-          "#fefeff"
+          "#151210",
+          "#272320",
+          "#3e3935",
+          "#59534e",
+          "#766f69",
+          "#8c857f",
+          "#cac6c3",
+          "#f4f2f1"
         ]
       },
-      "paper": {
-        "role": "background",
-        "displayName": "Paper",
-        "canonical": "#fafafa",
+      "brass": {
+        "role": "primary",
+        "displayName": "Brass",
+        "canonical": "#8d621f",
+        "oklch": "oklch(0.53 0.098 74)",
+        "purpose": "The one accent. Navigation state, focus ring, primary action, active filter chip. Nothing else may claim it.",
         "tonalRamp": [
-          "#2d2d2d",
-          "#494949",
-          "#717171",
-          "#9b9b9b",
-          "#c3c3c3",
-          "#fafafa",
-          "#fcfcfc",
-          "#fefefe"
+          "#1a0800",
+          "#2d1400",
+          "#452400",
+          "#5f3900",
+          "#7a5002",
+          "#8d621f",
+          "#cfb694",
+          "#f8eee1"
         ]
       },
-      "body-secondary": {
-        "role": "text-secondary",
-        "displayName": "Body Secondary",
-        "canonical": "rgba(33, 37, 41, 0.75)",
-        "note": "Translucent Ink rather than a gray; a solid gray in its place reads visibly cooler."
-      },
-      "control-border": {
-        "role": "border-control",
-        "displayName": "Control Border",
-        "canonical": "rgb(0 0 0 / 0.1)",
-        "note": "Translucent so a control edge darkens with whatever it sits on rather than fighting it."
-      },
-      "legacy-primary": {
-        "role": "legacy",
-        "displayName": "Legacy Primary",
-        "canonical": "#007bff",
+      "brass-deep": {
+        "role": "primary",
+        "displayName": "Deep Brass",
+        "canonical": "#784e00",
+        "oklch": "oklch(0.46 0.098 74)",
+        "purpose": "Brass as text on a brass wash, the primary gradient end stop, and every table column header.",
         "tonalRamp": [
-          "#00162e",
-          "#00244a",
-          "#003773",
-          "#004c9e",
-          "#0060c7",
-          "#007bff",
-          "#7abaff",
-          "#e3f0ff"
-        ],
-        "note": "Pre-Tailwind Bootstrap blue. Survives on the checked checkbox only; not for new work."
+          "#150400",
+          "#260d00",
+          "#3a1a00",
+          "#512c00",
+          "#683f00",
+          "#784e00",
+          "#c5ac8b",
+          "#f5ecdf"
+        ]
+      },
+      "brass-wash": {
+        "role": "accent",
+        "displayName": "Brass Wash",
+        "canonical": "#f8eee2",
+        "oklch": "oklch(0.955 0.02 74)",
+        "purpose": "The active filter chip fill and every brass-tinted hover. Fifteen declarations and the busiest wash in the system.",
+        "tonalRamp": [
+          "#2e2a25",
+          "#4d4740",
+          "#736c63",
+          "#a2998e",
+          "#d3c9bd",
+          "#f8eee2",
+          "#fdf7f0",
+          "#fffdfb"
+        ]
+      },
+      "gain": {
+        "role": "success",
+        "displayName": "Gain",
+        "canonical": "#287b46",
+        "oklch": "oklch(0.52 0.115 152)",
+        "purpose": "Positive signed monetary movement. Locked to L = 0.520 against loss.",
+        "tonalRamp": [
+          "#001301",
+          "#002405",
+          "#00380f",
+          "#005021",
+          "#0d6935",
+          "#287b46",
+          "#9bc5a5",
+          "#e4f4e8"
+        ]
+      },
+      "gain-deep": {
+        "role": "success",
+        "displayName": "Deep Gain",
+        "canonical": "#086733",
+        "oklch": "oklch(0.45 0.115 152)",
+        "purpose": "Gain one step down, for gradient end stops and text on a gain wash.",
+        "tonalRamp": [
+          "#000e00",
+          "#001c01",
+          "#002e05",
+          "#004213",
+          "#005724",
+          "#086733",
+          "#91bb9b",
+          "#e2f2e5"
+        ]
+      },
+      "gain-wash": {
+        "role": "success",
+        "displayName": "Gain Wash",
+        "canonical": "#e6f5e9",
+        "oklch": "oklch(0.955 0.022 152)",
+        "purpose": "Positive badge fills and the upward half of the price-flash animation.",
+        "tonalRamp": [
+          "#262c28",
+          "#424a44",
+          "#667068",
+          "#929f94",
+          "#c1cfc4",
+          "#e6f5e9",
+          "#f3fbf4",
+          "#fbfefc"
+        ]
+      },
+      "loss": {
+        "role": "danger",
+        "displayName": "Loss",
+        "canonical": "#b33834",
+        "oklch": "oklch(0.52 0.16 26)",
+        "purpose": "Negative signed monetary movement, at the same lightness as gain so an equal loss cannot look louder.",
+        "tonalRamp": [
+          "#270000",
+          "#400000",
+          "#5e0000",
+          "#7e000d",
+          "#9d2122",
+          "#b33834",
+          "#eca39b",
+          "#ffe8e4"
+        ]
+      },
+      "loss-deep": {
+        "role": "danger",
+        "displayName": "Deep Loss",
+        "canonical": "#9b1e20",
+        "oklch": "oklch(0.45 0.16 26)",
+        "purpose": "Loss one step down: gradient end stops, danger alert text, destructive hover fills.",
+        "tonalRamp": [
+          "#210000",
+          "#370000",
+          "#510000",
+          "#6e0000",
+          "#88010f",
+          "#9b1e20",
+          "#e19992",
+          "#ffe5e2"
+        ]
+      },
+      "loss-wash": {
+        "role": "danger",
+        "displayName": "Loss Wash",
+        "canonical": "#ffebe8",
+        "oklch": "oklch(0.955 0.022 26)",
+        "purpose": "Negative badge fills, the danger alert ground, and the downward half of the price flash.",
+        "tonalRamp": [
+          "#302827",
+          "#504544",
+          "#786967",
+          "#a79694",
+          "#d9c6c3",
+          "#ffebe8",
+          "#fff5f4",
+          "#fffcfc"
+        ]
+      },
+      "loss-wash-deep": {
+        "role": "danger",
+        "displayName": "Deep Loss Wash",
+        "canonical": "#fbd3cf",
+        "oklch": "oklch(0.9 0.045 26)",
+        "purpose": "A border colour only — the danger alert edge and destructive-button hovers. Never a fill.",
+        "tonalRamp": [
+          "#322220",
+          "#513c39",
+          "#795c59",
+          "#a78581",
+          "#d7b1ac",
+          "#fbd3cf",
+          "#ffeae8",
+          "#fffaf9"
+        ]
+      },
+      "notice": {
+        "role": "info",
+        "displayName": "Notice",
+        "canonical": "#316ca5",
+        "oklch": "oklch(0.52 0.11 250)",
+        "purpose": "Informational signal, held at the gain/loss lightness so it cannot outrank either.",
+        "tonalRamp": [
+          "#000c25",
+          "#001a3c",
+          "#002c58",
+          "#024275",
+          "#1d5a92",
+          "#316ca5",
+          "#9cbcdf",
+          "#e4f1fe"
+        ]
+      },
+      "notice-wash": {
+        "role": "info",
+        "displayName": "Notice Wash",
+        "canonical": "#e5f2ff",
+        "oklch": "oklch(0.955 0.022 250)",
+        "purpose": "Informational badge and alert grounds.",
+        "tonalRamp": [
+          "#262b30",
+          "#424950",
+          "#656e78",
+          "#919ca7",
+          "#c0ccd9",
+          "#e5f2ff",
+          "#f2f9ff",
+          "#fbfeff"
+        ]
+      },
+      "series-5": {
+        "role": "chart",
+        "displayName": "Series Five",
+        "canonical": "#7e539c",
+        "oklch": "oklch(0.52 0.12 310)",
+        "purpose": "The fifth quantitative hue. Declared and contrast-gated; no component consumes it yet.",
+        "tonalRamp": [
+          "#150321",
+          "#260a36",
+          "#3b1851",
+          "#532b6d",
+          "#6c4189",
+          "#7e539c",
+          "#c6add9",
+          "#f4ebfc"
+        ]
+      },
+      "series-6": {
+        "role": "chart",
+        "displayName": "Series Six",
+        "canonical": "#42878b",
+        "oklch": "oklch(0.58 0.07 200)",
+        "purpose": "The sixth quantitative hue, lifted to 0.58 to clear 3:1 at its lower chroma.",
+        "tonalRamp": [
+          "#001517",
+          "#002729",
+          "#003d40",
+          "#0e575b",
+          "#2b7276",
+          "#42878b",
+          "#a5c9cb",
+          "#e7f4f5"
+        ]
       }
     },
     "typographyMeta": {
-      "headline": {
-        "displayName": "Headline",
-        "purpose": "Page and major section titles in routine use."
+      "display": {
+        "displayName": "Display",
+        "purpose": "h1 only, at clamp(2.5rem, 1.6rem + 3.6vw, 3.5rem) / 550 / -0.01em. The tracking matches the -0.48px Lightyear sets on its own 48px price figure."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Card headers and section subheads."
+        "purpose": "h2 and every stat-card value, at clamp(1.5rem, 1.3rem + 0.9vw, 1.875rem) / 550. A number large enough to be the point of its card is set at 550, not 400."
+      },
+      "heading": {
+        "displayName": "Heading",
+        "purpose": "h3 and card headers at clamp(1.125rem, 1.05rem + 0.35vw, 1.25rem) / 550. Not 600 — in a document made of tables a 600 heading over a 600 figure flattens the hierarchy it was meant to create."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "The resting size of an interactive control at 1rem: .btn, .form-control, .form-select, .input-group-text, .dropdown-menu. One step above body, inherited from the pre-Tailwind control layer."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Prose, form values, dialog text. The least-used role in a system made of tables."
+        "purpose": "Prose, form values, dialog text, and h6 at 0.9375rem / 400. The least-used role in a system made of tables."
       },
-      "data": {
-        "displayName": "Data",
-        "purpose": "The numeric readout: table cells, card values, the right-aligned figure in a mobile row. Weight 600 is what separates a value from its label."
+      "control-sm": {
+        "displayName": "Small Control",
+        "purpose": "The -sm control variant, plus .toast and .dialog-btn, at 0.875rem."
+      },
+      "dense": {
+        "displayName": "Dense",
+        "purpose": "Table meta and compacted mobile values at 0.8125rem."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Table column headers and mobile card field names. Uppercase plus 0.05em tracking plus Muted Ink is the system most recognizable typographic gesture."
+        "purpose": "Uppercase, weight 600, 0.05em tracking. The system's most recognizable typographic gesture: brass-deep at 0.75rem on table headers, gray-700 at 0.8125rem on mobile card fields. Ten further variants exist across five specs and are debt, not precedent."
       },
-      "scale": {
-        "displayName": "Recorded Ramp",
-        "purpose": "Every literal font size the UI actually renders, from the 0.5rem legend glyph to the 2.5rem h1 endpoint. A record of what exists, not a menu to pick from; new work picks a role."
+      "numerals": {
+        "displayName": "Tabular Numerals",
+        "purpose": "font-variant-numeric: tabular-nums is set once on body and inherits everywhere. Every right-aligned money column depends on it, and so does the price-flash animation not making digits jitter."
       }
     },
     "shadows": [
       {
         "name": "shadow-card",
-        "value": "0 1px 3px rgb(0 0 0 / 0.05)",
-        "purpose": "Cards and the desktop table wrapper. Barely visible; its job is to keep white-on-white from vibrating."
+        "value": "0 1px 2px oklch(0.24 0.012 60 / 0.05)",
+        "purpose": "Cards, card shells, and the desktop table wrapper. Tinted from ink, never from neutral black — a warm surface casting a cool shadow is the tell that a palette was retoned but its elevation was not."
       },
       {
         "name": "shadow-control",
-        "value": "0 1px 2px rgb(0 0 0 / 0.04)",
+        "value": "0 1px 2px oklch(0.24 0.012 60 / 0.04)",
         "purpose": "Buttons and ghost controls. Inverted to inset on press so the button reads as depressed rather than moved."
       },
       {
         "name": "shadow-lifted",
-        "value": "0 2px 8px rgb(0 0 0 / 0.08)",
-        "purpose": "Mobile card hover and the dropdown menu. The strongest shadow in routine use."
+        "value": "0 2px 8px oklch(0.24 0.012 60 / 0.08)",
+        "purpose": "The dropdown menu, mobile card hover, and the ETF holding logo lift. The strongest shadow in routine use."
       },
       {
         "name": "shadow-nav",
-        "value": "0 2px 4px rgb(0 0 0 / 0.05)",
-        "purpose": "The sticky navbar at 992px and up, when the bar is actually overlapping scrolled content."
+        "value": "0 1px 0 oklch(0.24 0.012 60 / 0.06)",
+        "purpose": "The sticky navbar at 992px and up. A hairline rendered as a shadow, not an elevation."
       },
       {
         "name": "shadow-overlay",
-        "value": "0 0.5rem 1rem rgb(0 0 0 / 0.15)",
-        "purpose": "Toasts. The only shadow allowed to be seen from across the room, because a toast has to arrive."
+        "value": "0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)",
+        "purpose": "Toasts and the native select picker. The only shadow allowed to be seen from across the room, because a toast has to arrive."
       }
     ],
     "motion": [
       {
         "name": "ease-standard",
         "value": "cubic-bezier(0.4, 0, 0.2, 1)",
-        "purpose": "Default easing for every state transition in the system."
+        "purpose": "Default easing for every state transition in the system. Declared in @theme static; the durations below are declared in a :root block at the head of base.css because Tailwind has no namespace for them."
       },
       {
         "name": "transition-fast",
-        "value": "150ms",
-        "purpose": "Hover, focus, and color transitions on controls, nav links, and mobile cards."
+        "value": "150ms var(--ease-standard)",
+        "purpose": "Hover, focus, and colour transitions on buttons, form fields, nav links, and mobile cards. Also the native select picker open and close."
       },
       {
         "name": "transition-base",
-        "value": "200ms",
-        "purpose": "Sort indicator opacity and the add-new button."
+        "value": "200ms var(--ease-standard)",
+        "purpose": "The add-new button and its + glyph, the sort indicator's opacity, and the mobile instrument card's link fade."
       },
       {
         "name": "transition-slow",
-        "value": "300ms",
-        "purpose": "The nav indicator scaleX and the route fade-slide (20px translateY)."
+        "value": "300ms var(--ease-standard)",
+        "purpose": "The nav indicator scaleX, the nav link colour, and the route fade-slide across 20px of translateY."
       },
       {
         "name": "transition-chip",
         "value": "120ms ease",
-        "purpose": "Filter chips, dialog buttons, and table row action buttons only, on plain ease. A faster tier that makes filtering feel immediate."
+        "purpose": "Filter chips, time-range chips, and dialog buttons only, on plain ease rather than the standard curve. A faster tier that makes filtering feel immediate."
       },
       {
         "name": "value-flash",
         "value": "3s ease-in-out",
-        "purpose": "The gain/loss background pulse when a price changes, peaking at 20% alpha. Exempt from prefers-reduced-motion because it is information."
+        "purpose": "The price-change pulse: transparent to gain-wash or loss-wash and back. Exempt from prefers-reduced-motion by an explicit 3s !important override, because the flash is information rather than decoration."
       },
       {
         "name": "skeleton-pulse",
         "value": "1.5s ease-in-out infinite",
-        "purpose": "Gradient sweep across loading placeholders."
+        "purpose": "Opacity oscillation from 0.6 to 0.8 across loading placeholders."
       },
       {
         "name": "spinner",
         "value": "0.75s linear infinite",
-        "purpose": "Button and page spinners. Kept running under prefers-reduced-motion so a working control still reads as working."
+        "purpose": "Button, page, and bordered spinners. Kept running under prefers-reduced-motion so a working control still reads as working."
+      },
+      {
+        "name": "chip-press",
+        "value": "scale(0.96)",
+        "purpose": "The only transform in the chip vocabulary. Buttons translateY(1px) instead; a chip is pressed, a button is pushed."
       }
     ],
     "breakpoints": [
       {
         "name": "sm",
         "value": "576px",
-        "note": "Modal max-width engages (500px)."
+        "note": "Modal max-width engages at 500px."
       },
       {
         "name": "md",
         "value": "768px",
-        "note": "The signature switch: data tables become mobile card stacks below this."
+        "note": "The signature switch: data tables become label/value card stacks below this, and every .btn takes a 44px min-height. --container-app also drops to 100%."
       },
       {
         "name": "lg",
         "value": "992px",
-        "note": "Navigation becomes sticky and picks up shadow-nav."
+        "note": "Navigation becomes sticky and picks up shadow-nav; .modal-lg widens to 800px."
       },
       {
         "name": "xl",
         "value": "1200px",
-        "note": "Fluid heading ramp stops growing and locks to fixed sizes."
+        "note": "Declared token. No media query hangs off it — the fluid clamp() ramp is what stops growing near here."
       },
       {
         "name": "2xl",
@@ -422,7 +581,7 @@
       {
         "name": "ad-hoc-844",
         "value": "844px",
-        "note": "Tablet band: icon-plus-label buttons tighten so action rows do not wrap."
+        "note": "Tablet band: icon-plus-label ghost buttons tighten to 0.375rem 0.5rem so action rows do not wrap."
       }
     ]
   },
@@ -431,164 +590,188 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The single primary action on a screen. The 135deg gradient reverses on hover rather than lightening.",
+      "description": "The single primary action on a screen. The 135deg brass gradient reverses on hover rather than lightening, so the control darkens into the press instead of glowing. Still authored against the legacy signal-indigo alias, which holds the brass value.",
       "html": "<button class=\"ds-btn-primary\">Save transaction</button>",
-      "css": ".ds-btn-primary { font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 1rem; font-weight: 500; color: #fff; background: linear-gradient(135deg, #4361ee 0%, #3651d4 100%); border: 1px solid rgb(0 0 0 / 0.1); border-radius: 0.5rem; padding: 0.375rem 0.75rem; box-shadow: 0 1px 2px rgb(0 0 0 / 0.04); cursor: pointer; transition: all 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background: linear-gradient(135deg, #3651d4 0%, #4361ee 100%); } .ds-btn-primary:active { transform: translateY(1px); box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.04); } .ds-btn-primary:focus-visible { outline: 2px solid rgb(67 97 238 / 0.4); outline-offset: 2px; }"
+      "css": ".ds-btn-primary { font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 1rem; font-weight: 500; line-height: 1.5; color: #ffffff; background: linear-gradient(135deg, #8d621f 0%, #784e00 100%); border: 1px solid #d2cfc8; border-radius: 0.5rem; padding: 0.375rem 0.75rem; box-shadow: 0 1px 2px oklch(0.24 0.012 60 / 0.04); cursor: pointer; transition: all 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background: linear-gradient(135deg, #784e00 0%, #8d621f 100%); } .ds-btn-primary:active { transform: translateY(0); } .ds-btn-primary:focus-visible { outline: 2px solid #8d621f; outline-offset: 2px; }"
     },
     {
       "name": "Ghost Button",
       "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "The workhorse action. A 2% black tint with a hairline border, visible at rest unlike a true ghost button; hover is the only place the accent appears. Adjacent ghost buttons are spaced 0.375rem apart, never joined.",
-      "html": "<button class=\"ds-btn-ghost\">Edit</button>\n<button class=\"ds-btn-ghost\">Delete</button>",
-      "css": ".ds-btn-ghost { font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 0.875rem; font-weight: 500; color: #6c757d; background: rgb(0 0 0 / 0.02); border: 1px solid rgb(0 0 0 / 0.1); border-radius: 0.375rem; padding: 0.25rem 0.625rem; box-shadow: 0 1px 2px rgb(0 0 0 / 0.04); cursor: pointer; transition: all 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-ghost + .ds-btn-ghost { margin-left: 0.375rem; } .ds-btn-ghost:hover { color: #4361ee; background-color: rgb(67 97 238 / 0.08); } .ds-btn-ghost:active { transform: translateY(1px); } .ds-btn-ghost:focus-visible { outline: 2px solid rgb(67 97 238 / 0.4); outline-offset: 2px; }"
+      "refersTo": "button-ghost-hover",
+      "description": "The default action in a table row or toolbar. Rests as a hairline outline over a 2% black tint and only becomes brass on hover, so a row of six actions reads as one quiet group until it is approached.",
+      "html": "<button class=\"ds-btn-ghost\">Edit</button>",
+      "css": ".ds-btn-ghost { font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; line-height: 1.5; color: #69625b; background: rgb(0 0 0 / 0.02); border: 1px solid #d2cfc8; border-radius: 0.5rem; padding: 0.25rem 0.625rem; box-shadow: 0 1px 2px oklch(0.24 0.012 60 / 0.04); cursor: pointer; transition: all 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-ghost:hover { color: #784e00; background-color: #f8eee2; } .ds-btn-ghost:active { transform: translateY(1px); box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.04); } .ds-btn-ghost:focus-visible { outline: 2px solid #8d621f; outline-offset: 2px; }"
     },
     {
-      "name": "Platform Filter Chip",
+      "name": "Filter Chip",
       "kind": "chip",
-      "refersTo": "chip-filter",
-      "description": "Broker filter toggles. Active fills Control Graphite, never the accent: a filter being on is a fact, not an event. Runs on the fast 120ms tier.",
-      "html": "<div class=\"ds-chip-row\">\n  <button class=\"ds-chip ds-chip--active\">Trading212</button>\n  <button class=\"ds-chip\">Lightyear</button>\n  <span class=\"ds-chip-sep\"></span>\n  <button class=\"ds-chip\">Clear all</button>\n</div>",
-      "css": ".ds-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; } .ds-chip { font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 0.75rem; font-weight: 500; color: #6b7280; background: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.3125rem 0.625rem; cursor: pointer; transition: all 120ms ease; } .ds-chip:hover { color: #4b5563; background: #f8fafc; border-color: #cbd5e1; } .ds-chip:active { transform: scale(0.98); } .ds-chip--active { color: #fff; background: #4b5563; border-color: #4b5563; } .ds-chip-sep { width: 1px; height: 1.25rem; background: #d1d5db; }"
+      "refersTo": "filter-chip",
+      "description": "Selected-one-of-many, and the system's busiest control: the platform filters, the ETF selector chips, and the summary chart's time range all use this exact rule. The ETF dimension tabs and the allocation display-mode toggle share only its active treatment, on their own resting states. Resting is a sunken warm fill with a transparent border, so selecting a chip adds an edge rather than moving the text. Active is brass-wash with a brass border and an inset ring of the same wash, which thickens the edge without a second colour.",
+      "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip is-active\">1M</button><button class=\"ds-chip\">1Y</button><button class=\"ds-chip\">MAX</button></div>",
+      "css": ".ds-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; } .ds-chip { display: inline-flex; align-items: center; gap: 0.3rem; font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; white-space: nowrap; color: #69625b; background: #f6f3ed; border: 1px solid transparent; border-radius: 0.5rem; padding: 0.3125rem 0.6875rem; cursor: pointer; transition: all 120ms ease; } .ds-chip:hover { color: #241e1a; background: #f9f6f2; border-color: #d2cfc8; } .ds-chip:active { transform: scale(0.96); } .ds-chip.is-active { color: #784e00; background: #f8eee2; border-color: #8d621f; box-shadow: inset 0 0 0 1px #f8eee2; } .ds-chip.is-active:hover { border-color: #784e00; }"
     },
     {
       "name": "Dialog Button",
       "kind": "button",
-      "refersTo": "dialog-button",
-      "description": "Confirmation dialogs use their own quieter vocabulary so a decision reads as a control panel choice, not a marketing call to action. Confirm fills graphite; destructive confirm fills Loss Red.",
-      "html": "<div class=\"ds-dialog-actions\">\n  <button class=\"ds-dialog-btn\">Cancel</button>\n  <button class=\"ds-dialog-btn ds-dialog-btn--danger\">Delete</button>\n</div>",
-      "css": ".ds-dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem; border-top: 1px solid #dee2e6; } .ds-dialog-btn { font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 0.875rem; font-weight: 500; color: #6b7280; background: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem 1rem; cursor: pointer; transition: all 120ms ease; } .ds-dialog-btn:hover { color: #4b5563; background: #f8fafc; border-color: #cbd5e1; } .ds-dialog-btn:active { transform: scale(0.98); } .ds-dialog-btn--primary { color: #fff; background: #4b5563; border-color: #4b5563; } .ds-dialog-btn--primary:hover { color: #fff; background: #374151; border-color: #374151; } .ds-dialog-btn--danger { color: #fff; background: #dc3545; border-color: #dc3545; } .ds-dialog-btn--danger:hover { color: #fff; background: #c82333; border-color: #c82333; }"
+      "refersTo": "button-ghost-hover",
+      "description": "The action row of a dialog, on the 120ms chip tier rather than the 150ms control tier. Its primary variant fills with ink-soft rather than brass — inside a dialog the accent is already spent on the focus ring, and a brass confirm beside a brass ring reads as two primaries.",
+      "html": "<div class=\"ds-dialog-actions\"><button class=\"ds-dialog-btn\">Cancel</button><button class=\"ds-dialog-btn is-primary\">Apply</button></div>",
+      "css": ".ds-dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; } .ds-dialog-btn { font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: nowrap; color: #69625b; background: #ffffff; border: 1px solid #e2dfda; border-radius: 0.25rem; padding: 0.5rem 1rem; cursor: pointer; transition: all 120ms ease; } .ds-dialog-btn:hover { color: #69625b; background: #f9f6f2; border-color: #d2cfc8; } .ds-dialog-btn:active { background: #f6f3ed; transform: scale(0.98); } .ds-dialog-btn.is-primary { color: #ffffff; background: #69625b; border-color: #69625b; } .ds-dialog-btn.is-primary:hover { background: #241e1a; border-color: #241e1a; }"
     },
     {
       "name": "Text Input",
       "kind": "input",
       "refersTo": "input",
-      "description": "Surface Subtle fill so a field never disappears into the card behind it. Focus outlines, it does not glow.",
-      "html": "<label class=\"ds-field\">\n  <span class=\"ds-field-label\">Quantity</span>\n  <input class=\"ds-input\" type=\"text\" value=\"12.4058\" />\n</label>",
-      "css": ".ds-field { display: block; font-family: Avenir, Helvetica, Arial, sans-serif; } .ds-field-label { display: block; margin-bottom: 0.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; } .ds-input { width: 100%; font-family: inherit; font-size: 1rem; color: #212529; background-color: #fcfcfd; border: 1px solid rgb(0 0 0 / 0.1); border-radius: 0.5rem; padding: 0.375rem 0.75rem; transition: border-color 150ms cubic-bezier(0.4,0,0.2,1), box-shadow 150ms cubic-bezier(0.4,0,0.2,1); } .ds-input:focus { border-color: #4361ee; outline: 2px solid rgb(67 97 238 / 0.2); outline-offset: 2px; } .ds-input.is-invalid { border-color: #dc3545; }"
+      "description": "Fields are filled with surface-subtle rather than surface, so a field reads as recessed into the card it sits on rather than raised off it. Focus carries both a brass border and the 2px brass ring at 2px offset; the doubled treatment is deliberate on a form where a mistyped figure is a wrong number.",
+      "html": "<label class=\"ds-form-label\" for=\"qty\">Quantity</label><input class=\"ds-input\" id=\"qty\" value=\"12.4085\" />",
+      "css": ".ds-form-label { display: inline-block; margin-bottom: 0.5rem; font-family: \"Geist Variable\", system-ui, sans-serif; } .ds-input { display: block; width: 100%; font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 1rem; font-weight: 400; line-height: 1.5; font-variant-numeric: tabular-nums; color: #241e1a; background-color: #fcfaf6; border: 1px solid #d2cfc8; border-radius: 0.5rem; padding: 0.375rem 0.75rem; appearance: none; transition: border-color 150ms cubic-bezier(0.4,0,0.2,1), box-shadow 150ms cubic-bezier(0.4,0,0.2,1); } .ds-input::placeholder { color: #69625b; } .ds-input:focus { border-color: #8d621f; outline: 2px solid #8d621f; outline-offset: 2px; } .ds-input.is-invalid { border-color: #b33834; }"
     },
     {
-      "name": "Navigation Link",
-      "kind": "nav",
-      "refersTo": "button-primary",
-      "description": "The one place the accent marks position. Active goes bold plus a 2px indigo underline that scales in from zero at 300ms; hover previews the same indicator.",
-      "html": "<nav class=\"ds-nav\">\n  <a class=\"ds-nav-link ds-nav-link--active\" href=\"#\">Instruments<span class=\"ds-nav-indicator\"></span></a>\n  <a class=\"ds-nav-link\" href=\"#\">Transactions<span class=\"ds-nav-indicator\"></span></a>\n</nav>",
-      "css": ".ds-nav { display: flex; gap: 1rem; padding: 0.5rem 0; background: #fff; border-bottom: 1px solid #dee2e6; } .ds-nav-link { position: relative; font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 1rem; font-weight: 500; color: rgb(0 0 0 / 0.65); text-decoration: none; padding: 0.5rem; transition: color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-link:hover, .ds-nav-link--active { color: #4361ee; } .ds-nav-link--active { font-weight: bold; } .ds-nav-indicator { position: absolute; right: 0; bottom: -0.125rem; left: 0; height: 0.125rem; background-color: #4361ee; transform: scaleX(0); transition: transform 300ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-link:hover .ds-nav-indicator, .ds-nav-link--active .ds-nav-indicator { transform: scaleX(1); }"
+      "name": "Native Select Picker",
+      "kind": "select",
+      "refersTo": "input",
+      "description": "A real <select> styled through appearance: base-select and ::picker(select), behind an @supports guard that falls back to the SVG chevron. Options are brass-wash on hover and on :checked, the checkmark is brass, and the picker fades and translates 0.25rem over 150ms with display and overlay transitioned allow-discrete plus a @starting-style entry. Nothing here is a custom listbox: the top layer, the keyboard model, and scroll containment are the platform.",
+      "html": "<select class=\"ds-select\"><option>All platforms</option><option selected>Lightyear</option><option>Trading212</option></select>",
+      "css": ".ds-select { display: block; width: 100%; font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 1rem; line-height: 1.5; color: #241e1a; background-color: #fcfaf6; border: 1px solid #d2cfc8; border-radius: 0.5rem; padding: 0.375rem 2.25rem 0.375rem 0.75rem; } @supports (appearance: base-select) { .ds-select, .ds-select::picker(select) { appearance: base-select; } .ds-select::picker-icon { display: none; } .ds-select::picker(select) { padding: 0.25rem; background: #ffffff; border: 1px solid #d2cfc8; border-radius: 0.5rem; box-shadow: 0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14); opacity: 1; translate: 0 0; transition: opacity 150ms cubic-bezier(0.4,0,0.2,1), translate 150ms cubic-bezier(0.4,0,0.2,1), display 150ms cubic-bezier(0.4,0,0.2,1) allow-discrete, overlay 150ms cubic-bezier(0.4,0,0.2,1) allow-discrete; } .ds-select:not(:open)::picker(select) { opacity: 0; translate: 0 -0.25rem; } @starting-style { .ds-select:open::picker(select) { opacity: 0; translate: 0 -0.25rem; } } .ds-select option { padding: 0.375rem 0.5rem; border-radius: 0.25rem; color: #241e1a; } .ds-select option:hover, .ds-select option:focus { background: #f8eee2; color: #784e00; } .ds-select option:checked { background: #f8eee2; color: #784e00; font-weight: 550; } .ds-select option::checkmark { color: #8d621f; } }"
     },
     {
       "name": "Data Table",
       "kind": "custom",
       "refersTo": "table-header-cell",
-      "description": "The defining surface. Uppercase micro-label headers over a 2px rule, near-white cells, and a 2% indigo row hover: the faintest deliberate color in the system.",
-      "html": "<div class=\"ds-table-wrap\">\n  <table class=\"ds-table\">\n    <thead><tr><th>Symbol</th><th class=\"ds-num\">Quantity</th><th class=\"ds-num\">Profit</th></tr></thead>\n    <tbody>\n      <tr><td>VUAA</td><td class=\"ds-num\">12.4058</td><td class=\"ds-num ds-gain\">+1,204.18</td></tr>\n      <tr><td>QDVE</td><td class=\"ds-num\">3.0000</td><td class=\"ds-num ds-loss\">-88.40</td></tr>\n    </tbody>\n  </table>\n</div>",
-      "css": ".ds-table-wrap { overflow: hidden; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 1px 3px rgb(0 0 0 / 0.05); } .ds-table { width: 100%; border-collapse: collapse; font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 0.9rem; font-variant-numeric: tabular-nums; } .ds-table th, .ds-table td { padding: 1rem 0.75rem; background-color: #fcfcfd; border-bottom: 1px solid #dee2e6; vertical-align: middle; text-align: left; } .ds-table thead th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #e9ecef; } .ds-table tbody tr:hover td { background-color: rgb(67 97 238 / 0.02); } .ds-num { text-align: right; font-weight: 600; } .ds-gain { color: #21c55d; } .ds-loss { color: #dc3545; }"
+      "description": "The desktop primitive the whole system is built around. Column headers carry the label gesture in brass-deep — the one place the accent appears as text — and cells are filled with surface-subtle so the table body recedes below its own header. There is no background fill on thead th: it was removed because it collided with the brass-wash filter chips sitting directly above the table.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Instrument</th><th class=\"num\">Value</th></tr></thead><tbody><tr><td>VWCE</td><td class=\"num\">€24,881.02</td></tr><tr class=\"band\"><td>QDVE</td><td class=\"num\">€9,140.55</td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 0.9375rem; font-variant-numeric: tabular-nums; color: #241e1a; background-color: #ffffff; } .ds-table th, .ds-table td { padding: 1rem 0.75rem; vertical-align: middle; background-color: #fcfaf6; border-bottom: 1px solid #d2cfc8; } .ds-table thead th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; text-align: left; color: #784e00; } .ds-table tbody tr.band > * { background-color: #f6f3ed; } .ds-table .num { text-align: right; }"
     },
     {
       "name": "Mobile Data Card",
       "kind": "card",
       "refersTo": "card",
-      "description": "Below 768px every table becomes this. Not a fallback: a designed rendering that must carry every value the table carries.",
-      "html": "<div class=\"ds-mcard\">\n  <div class=\"ds-mcard-row\"><span class=\"ds-mcard-label\">Symbol</span><span class=\"ds-mcard-value\">VUAA</span></div>\n  <div class=\"ds-mcard-row\"><span class=\"ds-mcard-label\">Quantity</span><span class=\"ds-mcard-value\">12.4058</span></div>\n  <div class=\"ds-mcard-row\"><span class=\"ds-mcard-label\">Profit</span><span class=\"ds-mcard-value ds-mcard-gain\">+1,204.18</span></div>\n</div>",
-      "css": ".ds-mcard { overflow: hidden; margin-bottom: 0.5rem; padding: 1rem; font-family: Avenir, Helvetica, Arial, sans-serif; background: #fff; border: 1px solid #e9ecef; border-radius: 0.5rem; font-variant-numeric: tabular-nums; transition: all 150ms cubic-bezier(0.4,0,0.2,1); } .ds-mcard:hover { box-shadow: 0 2px 8px rgb(0 0 0 / 0.08); } .ds-mcard-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; } .ds-mcard-row:not(:last-child) { border-bottom: 1px solid #f8f9fa; } .ds-mcard-row:first-child { padding-top: 0; } .ds-mcard-row:last-child { padding-bottom: 0; } .ds-mcard-label { flex: 0 0 auto; min-width: 80px; font-size: 0.8125rem; font-weight: 500; color: #6c757d; } .ds-mcard-value { flex: 1; text-align: right; font-weight: 600; word-break: break-word; } .ds-mcard-gain { color: #21c55d; }"
+      "description": "What every table becomes below 768px — the signature responsive move. Each row turns into label/value pairs, the label taking the gesture one size up at 0.8125rem because it stands beside its value rather than at the head of an aligned column. Shipping a new data column means shipping both renderings.",
+      "html": "<article class=\"ds-mobile-card\"><div class=\"ds-mc-item\"><span class=\"ds-mc-label\">Instrument</span><span class=\"ds-mc-value\">VWCE</span></div><div class=\"ds-mc-item\"><span class=\"ds-mc-label\">Value</span><span class=\"ds-mc-value\">€24,881.02</span></div></article>",
+      "css": ".ds-mobile-card { font-family: \"Geist Variable\", system-ui, sans-serif; font-variant-numeric: tabular-nums; padding: 1.25rem 0.75rem; margin-bottom: 0.875rem; background: #ffffff; border: 1px solid #eae7e2; border-radius: 0.75rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03); transition: all 150ms cubic-bezier(0.4,0,0.2,1); } .ds-mobile-card:hover { border-color: #e2dfda; } .ds-mc-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.875rem 0; } .ds-mc-item:nth-child(2) { padding-bottom: 1rem; margin-bottom: 0.25rem; border-bottom: 1px solid #f9f6f2; } .ds-mc-label { flex: 0 0 auto; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #4e4640; } .ds-mc-value { flex: 1; margin-left: auto; font-weight: 600; text-align: right; word-break: break-word; }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "card-shell",
+      "description": "The extracted shared primitive behind every headline figure. The label takes the gesture at weight 500 rather than 600, and the value is set at title size and weight 550 — a number large enough to be the point of its card is not body text, and at 400 it read visibly thin beside the same figure on Lightyear.",
+      "html": "<div class=\"ds-stat-card\"><div class=\"ds-stat-label\">Total value</div><div class=\"ds-stat-value\">€48,204.19</div></div>",
+      "css": ".ds-stat-card { font-family: \"Geist Variable\", system-ui, sans-serif; font-variant-numeric: tabular-nums; padding: 0.75rem 1rem; background-color: #ffffff; border: 1px solid #e2dfda; border-radius: 0.5rem; box-shadow: 0 1px 2px oklch(0.24 0.012 60 / 0.05); } .ds-stat-label { margin-bottom: 0.25rem; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: #69625b; } .ds-stat-value { font-size: clamp(1.5rem, 1.3rem + 0.9vw, 1.875rem); font-weight: 550; line-height: 1.2; color: #241e1a; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-indicator",
+      "description": "The one place brass marks location. A 0.125rem underline scales in from scaleX(0) over 300ms on hover and on active, so the indicator grows from the link rather than sliding along the bar. Active also goes bold and brass; hover previews the same indicator without the weight change.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link is-active\" href=\"#\">Summary<span class=\"ds-nav-indicator\"></span></a><a class=\"ds-nav-link\" href=\"#\">Instruments<span class=\"ds-nav-indicator\"></span></a></nav>",
+      "css": ".ds-nav { display: flex; } .ds-nav-link { position: relative; display: block; padding: 0.5rem; font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 0.9375rem; font-weight: 500; letter-spacing: -0.01em; color: rgb(0 0 0 / 0.65); text-decoration: none; transition: color 300ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-link:hover, .ds-nav-link.is-active { color: #8d621f; } .ds-nav-link.is-active { font-weight: bold; } .ds-nav-indicator { position: absolute; bottom: -0.125rem; left: 0; width: 100%; height: 0.125rem; background-color: #8d621f; transform: scaleX(0); transition: transform 300ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-link:hover .ds-nav-indicator, .ds-nav-link.is-active .ds-nav-indicator { transform: scaleX(1); }"
     },
     {
       "name": "Value Flash",
       "kind": "custom",
-      "refersTo": "table-header-cell",
-      "description": "The only ambient motion in the product. A 3s wash peaking at 20% alpha of the exact semantic Gain Green or Loss Red, deliberately exempt from prefers-reduced-motion because it is information, not decoration.",
-      "html": "<td class=\"ds-flash-up\">1,204.18</td>\n<td class=\"ds-flash-down\">988.40</td>",
-      "css": "@keyframes ds-pulse-increase { 0% { background-color: transparent; } 50% { background-color: rgb(33 197 93 / 0.2); } 100% { background-color: transparent; } } @keyframes ds-pulse-decrease { 0% { background-color: transparent; } 50% { background-color: rgb(220 53 69 / 0.2); } 100% { background-color: transparent; } } .ds-flash-up { animation: ds-pulse-increase 3s ease-in-out; transition: background-color 3s ease-in-out; } .ds-flash-down { animation: ds-pulse-decrease 3s ease-in-out; transition: background-color 3s ease-in-out; } @media (prefers-reduced-motion: reduce) { .ds-flash-up, .ds-flash-down { animation-duration: 3s !important; } }"
+      "refersTo": "table-row-band",
+      "description": "The price-change pulse: a cell animates from transparent to gain-wash or loss-wash and back over 3s. It is exempted from prefers-reduced-motion by name, alongside the spinners, because it carries information rather than decoration — the global reduce rule crushes every animation to 0.01ms and this one is explicitly restored to 3s.",
+      "html": "<span class=\"ds-flash-up\">€412.08</span> <span class=\"ds-flash-down\">€391.55</span>",
+      "css": "@keyframes ds-pulse-increase { 0% { background-color: transparent; } 50% { background-color: #e6f5e9; } 100% { background-color: transparent; } } @keyframes ds-pulse-decrease { 0% { background-color: transparent; } 50% { background-color: #ffebe8; } 100% { background-color: transparent; } } .ds-flash-up { font-variant-numeric: tabular-nums; color: #287b46; animation: ds-pulse-increase 3s ease-in-out; transition: background-color 3s ease-in-out; } .ds-flash-down { font-variant-numeric: tabular-nums; color: #b33834; animation: ds-pulse-decrease 3s ease-in-out; transition: background-color 3s ease-in-out; } @media (prefers-reduced-motion: reduce) { .ds-flash-up, .ds-flash-down { animation-duration: 3s !important; } }"
     },
     {
       "name": "Toast",
       "kind": "custom",
       "refersTo": "toast",
-      "description": "Fixed-width panels pinned top right, driven by a single --toast-bg custom property. The container is pointer-events: none so a toast never blocks the page beneath.",
-      "html": "<div class=\"ds-toast-container\">\n  <div class=\"ds-toast ds-toast--success\"><div class=\"ds-toast-body\">Transaction saved</div></div>\n</div>",
-      "css": ".ds-toast-container { position: fixed; top: 0; right: 0; z-index: 1090; padding: 1rem; pointer-events: none; } .ds-toast-container > :not(:last-child) { margin-bottom: 1.5rem; } .ds-toast { --toast-bg: #4b5563; width: 350px; font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 0.875rem; color: #fff; background-color: var(--toast-bg); border-radius: 0.375rem; box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.15); } .ds-toast--success { --toast-bg: #28a745; } .ds-toast--info { --toast-bg: #17a2b8; } .ds-toast--error { --toast-bg: #dc3545; } .ds-toast--warning { --toast-bg: #ffc107; } .ds-toast-body { padding: 0.75rem; }"
+      "description": "Fixed top-right at 350px, tinted by a single --toast-bg custom property that each variant reassigns. It teleports out of #app to body, which is exactly why the font stack is declared on body rather than on #app: move the declaration and the toast silently renders in a different typeface than the app behind it.",
+      "html": "<div class=\"ds-toast-container\"><div class=\"ds-toast is-success\"><div class=\"ds-toast-body\">Transaction saved</div></div></div>",
+      "css": ".ds-toast-container { position: fixed; top: 0; right: 0; z-index: 1090; width: max-content; max-width: 100%; padding: 1rem; pointer-events: none; } .ds-toast { --toast-bg: #69625b; width: 350px; max-width: 100%; font-family: \"Geist Variable\", system-ui, sans-serif; font-size: 0.875rem; pointer-events: auto; color: #ffffff; background-color: var(--toast-bg); background-clip: padding-box; border-radius: 0.25rem; box-shadow: 0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14); } .ds-toast.is-success { --toast-bg: #287b46; } .ds-toast.is-error { --toast-bg: #b33834; } .ds-toast.is-info { --toast-bg: #316ca5; } .ds-toast.is-warning { --toast-bg: #8d621f; } .ds-toast-body { padding: 0.75rem; word-wrap: break-word; }"
     }
   ],
   "narrative": {
-    "northStar": "The Instrument Panel",
-    "overview": "The domain's own word for the things this app tracks is instrument, and the interface takes that literally. A panel of calibrated readouts: the chrome is quiet, machined, and gets out of the way; the values are the only things allowed to be loud. Nothing on screen is decorative. Every saturated pixel is either a number's sign, the position you're currently in, or something asking to be pressed. When a price actually moves, the cell it lives in glows for three seconds and then goes back to being furniture: the one moment of animation in the system is a readout confirming it changed, not a flourish.",
+    "northStar": "The Statement. A private-bank statement, not a trading terminal. Warm archival paper, deep ink, one metal accent. Nothing glows; things are printed. The interface is a document you sit with, and the numbers are the only things on it that were ever meant to be read closely.",
+    "overview": "The material is paper and ink. Grounds are warm at hue 85 — a barely-there ochre cast that keeps white cards from reading as clinical — and every ink is warm at hue 60, so nothing on screen is the blue-grey the previous world defaulted to. Structure comes from hairlines, not shadow: where an edge exists it is 1px and warm, and where elevation exists it is a tinted whisper derived from the ink itself, never from neutral black. Colour is scarce and spent on meaning. There is exactly one accent, brass, and it marks three things: where you are, what you are focused on, and what is currently filtering the data. Green and red mean gain and loss, at matched lightness so a loss cannot look louder than an equal gain. Everything else is ink on paper. Density is deliberately high and the type carries it: one face, weight 550 for headings rather than 600 or 700, and tabular-nums inherited from body so every money column aligns. This is an interface built for someone who already knows what every column means.",
     "keyCharacteristics": [
-      "Hairline-bordered, near-flat surfaces; shadow reserved for genuine float",
-      "High density, small type (12-14px dominant), weight over size for hierarchy",
-      "One reserved accent (Signal Indigo) for navigation and primary action; neutral graphite for everything else that is merely on",
-      "Green and red mean gain and loss and nothing else",
-      "Motion only confirms a state change; the reduced-motion path keeps only the spinner and the price flash",
-      "Tables on desktop become label/value cards under 767px: the signature responsive move"
+      "Warm grounds at hue 85 and warm inks at hue 60; no neutral grey anywhere in the ramp",
+      "Hairline-bordered, near-flat surfaces; shadow only where something genuinely floats, and always tinted from ink",
+      "One accent — brass — for navigation, focus, and active filters. Nothing else",
+      "Gain and loss locked to the same lightness, so equal magnitudes carry equal weight",
+      "Every colour resolves to a token authored in OKLCH; components declare none, and the stylesheet layer holds raw hex in exactly one declaration",
+      "Tables on desktop become label/value cards under 768px — the signature responsive move",
+      "Native platform primitives over hand-rolled ones: <dialog> for modals, ::picker(select) for dropdowns"
     ],
     "rules": [
       {
-        "name": "The Reserved Accent Rule",
-        "body": "Signal Indigo is spent on exactly three things: where you are (nav), what you are focused on (focus ring), and the one primary action on the screen. Anything that is merely selected, active, or toggled uses Control Graphite. If a screen has two indigo elements competing for \"primary\", one of them is wrong.",
-        "section": "colors"
+        "name": "Gain and loss are locked to L = 0.520",
+        "body": "Equal magnitudes carry equal visual weight. Neither may be re-toned independently, and neither may be lightened to \"soften\" a loss."
       },
       {
-        "name": "The Signed-Number Rule",
-        "body": "Green and red are reserved for the sign of a value and for destructive intent. Never use them for status chips, category badges, brand accent, or emphasis. A red pixel on this interface means \"you lost money\" or \"this will delete something\", and it must never mean anything else.",
-        "section": "colors"
+        "name": "Brass is the only brand accent",
+        "body": "Nav active state, focus ring, primary action, active filter chip. Nothing else. If a screen has two brass elements competing for primary, one of them is wrong."
       },
       {
-        "name": "The Single-Source Rule",
-        "body": "Every color in the system is declared once, in the @theme static block of ui/styles/theme.css, and consumed as var(--color-*) or as a Tailwind utility derived from it. There is no second palette layer to reconcile against. A hardcoded near-miss hex in a component — an #ef4444 beside Loss Red, an #0d6efd beside Signal Indigo — is not a shortcut, it is a fork. The pixel gate cannot police this: a near-miss green measures far below the comparator threshold and passes silently, so the only defense is that the literal never gets written.",
-        "section": "colors"
+        "name": "Gain and loss are reserved for signed monetary movement",
+        "body": "They never decorate and never indicate non-financial success or failure. The shipped code diverges at eight sites, all of them loss and all inherited: destructive intent (.dialog-btn.danger, .btn-danger, .action-btn.danger:hover, two .remove-btn:hover rules) and validation error (.is-invalid, .invalid-feedback, .total-value.invalid). The previous count of six was an undercount, not a smaller divergence; every one of the eight predates it. Resolve it by moving those sites to a dedicated danger token, not by restating the rule more loosely."
       },
       {
-        "name": "The Weight-Not-Size Rule",
-        "body": "Hierarchy is carried by weight (500 to 600 to 700) and color, not by scale. The gap between a label and its value is 100 weight units and one color step, not four points of size. Reaching for a larger font to create emphasis breaks the density the tables depend on.",
-        "section": "typography"
+        "name": "ink-faint is not body text",
+        "body": "At 3.65:1 it satisfies non-text contrast and AA large text only. Its sanctioned uses are chart axis ticks, disabled control glyphs, and decorative rules. Every piece of small text — labels, captions, the build hash, stat-card labels, table meta — uses ink-soft at 6.02:1. This rule is what prevents the old gray-500 mistake recurring under a new name."
       },
       {
-        "name": "The Tabular Figures Rule",
-        "body": "Numeric columns must set font-variant-numeric: tabular-nums. It is set once, on body in the base layer, and inherits everywhere, which is exactly how it should stay. Any component that introduces its own font-variant-numeric (or a font stack without tabular figures) breaks the alignment of every right-aligned money column beneath it.",
-        "section": "typography"
+        "name": "State layers use color-mix() against the base token",
+        "body": "Hover and active states are never a second hardcoded colour. Declared and gated: today there is exactly one consumer and it is not a state layer — the summary chart's loading veil at color-mix(in srgb, var(--color-surface) 72%, transparent). Every hover still resolves to a second token. The veil is nonetheless the precedent to copy: mix against a token, never against a literal."
       },
       {
-        "name": "The Documented-Step Rule",
-        "body": "A font size that is not already in typography.scale does not get added by writing it in a component. Either it maps to one of the five roles, or the ramp entry lands in theme.css and in DESIGN.md first.",
-        "section": "typography"
+        "name": "No component declares a colour",
+        "body": "Every value resolves to a token in the @theme static block of ui/styles/theme.css. That block is the only palette; a second one is a fork, not a shortcut."
       },
       {
-        "name": "The Two-Speeds Rule",
-        "body": "Every data surface ships two renderings of the same truth: a dense desktop table and a mobile label/value card stack. Neither is a fallback. If a new column is added to the table and not to the card, the phone view has silently lost information.",
-        "section": "layout"
+        "name": "One face, and headings are weight 550",
+        "body": "Geist Variable is declared once on body and everything inherits it. h1–h6 share font-weight 550, line-height 1.2, and text-wrap: balance. 550 is not a rounding artefact of 500 — it is Lightyear's heading weight to the number, reachable only because Geist's wght axis is continuous, and it is the half step that keeps a heading distinct from the 600 label gesture beneath it. Geist Mono is the single sanctioned exception and is confined to the Monaco config editor."
       },
       {
-        "name": "The Hairline-First Rule",
-        "body": "Reach for a 1px border before a shadow. Shadow is reserved for elements that genuinely float above the page: modals, the sticky navbar, a card under the finger. A shadow used to separate two adjacent surfaces is a border that has not been written yet.",
-        "section": "elevation"
+        "name": "Every figure is tabular-nums",
+        "body": "font-variant-numeric: tabular-nums is set once on body and inherits everywhere. A component that introduces its own font-variant-numeric, or a font stack without tabular figures, breaks the alignment of every right-aligned money column beneath it and makes digits jitter during the price flash."
       },
       {
-        "name": "The Two-Radius Rule",
-        "body": "Controls get 0.375rem; containers get 0.5rem. A container inside a container does not get a smaller radius, it gets a hairline. Introducing a third radius for a single component fragments the form language.",
-        "section": "shapes"
+        "name": "The label gesture is uppercase, 600, 0.05em",
+        "body": "Two rules are the gesture: table headers at 0.75rem in brass-deep, mobile card labels at 0.8125rem in gray-700. Twelve uppercase label rules are live in total, so ten are variants across five distinct specs — including two sites at 0.5px tracking, which at 0.75rem is 0.0417em, not 0.05em. A thirteenth label carries no rule at all: currency-split-card.vue sets the same spec in Tailwind utilities, where an uppercase grep cannot see it. Normalizing them is a phased task with a visual-baseline cost; until then, do not cite \"the label gesture\" as if the code speaks with one voice."
+      },
+      {
+        "name": "Reach for a hairline before a shadow",
+        "body": "If two surfaces need separating, that is a border. Where a shadow does exist it is tinted from ink rather than neutral black and it stays faint — the heaviest of the five is the toast at 14%, and shadow-nav is a 1px rule at zero blur rather than an elevation at all. There is no glass, no blur, and no backdrop filter anywhere; the modal backdrop is the native <dialog> element's own."
+      },
+      {
+        "name": "Two naming systems, one palette",
+        "body": "signal-indigo holds the brass value, control-graphite holds ink-soft, status-* hold the semantic signals, and the gray-* ramp holds warm neutrals. Neither naming system is a fork — a fork is two sources of truth; this is one source with two sets of names pointing into it. New work uses the semantic names; existing code keeps its legacy name until its component is migrated. signal-indigo still has sixteen references across ten files."
+      },
+      {
+        "name": "Scoped styles are injected unlayered",
+        "body": "A <style scoped> block in a Vue component beats every @layer, including components. That is why an override \"works\" and why it is invisible to anyone reading the cascade. Never use one to override a components.css rule and expect the layer order to explain it."
       }
     ],
     "dos": [
-      "Do reach for a 1px hairline before a shadow. If two surfaces need separating, that is a border.",
-      "Do spend Signal Indigo (#4361ee) only on navigation state, focus rings, and the single primary action. Use Control Graphite (#4b5563) for anything that is merely selected or toggled.",
-      "Do ship both renderings when adding a data column: the desktop table cell and the mobile card label/value pair.",
-      "Do carry hierarchy with weight (500 to 600 to 700) and color, not with size. Keep the type small.",
-      "Do set uppercase 0.75rem/600 with 0.05em tracking in Muted Ink for every column header and field label: it is the system most recognizable gesture.",
-      "Do add every new token to the @theme static block in ui/styles/theme.css and consume it as var(--color-*) or its Tailwind utility. That block is the only palette.",
-      "Do use outlines for focus (2px solid, 2px offset), never a glow, and never suppress the focus ring on a control that can be tabbed to.",
-      "Do let font-variant-numeric: tabular-nums inherit from body. Every money column depends on it.",
-      "Do keep skeleton placeholders shape-matched to the real content so nothing reflows on load.",
-      "Do hold the container at --container-app (min(1350px, 91vw)). The gutter is intentional at every width."
+      "Reach for a 1px hairline before a shadow. If two surfaces need separating, that is a border.",
+      "Spend brass only on navigation state, focus rings, the primary action, and the active filter chip.",
+      "Add every new token to the @theme static block in ui/styles/theme.css, authored in OKLCH, and consume it as var(--color-*) or its Tailwind utility.",
+      "Keep gain and loss at L = 0.520, so an equal loss cannot look louder than a gain.",
+      "Use ink-soft for small text. ink-faint is for axis ticks, disabled glyphs, and rules.",
+      "Set the uppercase 0.75rem / 600 / 0.05em label for every column header and field label.",
+      "Let font-variant-numeric: tabular-nums inherit from body. Every money column depends on it.",
+      "Ship both renderings when adding a data column: the desktop table cell and the mobile card pair.",
+      "Hold the page shell at mx-auto mt-4 w-full max-w-app px-3. The gutter is intentional.",
+      "Reuse .platform-btn when a new surface needs a selected-one-of-many row. The summary chart's time-range filter does exactly that and adds no CSS; a fifth resting treatment is what would be wrong.",
+      "State a chart's values as text in its legend. The colours are an index into the legend, not the data.",
+      "Add a new route to ui/tests/visual/palette.spec.ts when you build one. It walks every visible text node for AA and the first fifteen tab stops for the focus ring, on three viewports, against stubbed data — and it catches what the screenshot comparator structurally cannot, a colour that moved but stayed close."
     ],
     "donts": [
-      "Don't use green or red for anything other than the sign of a value or a destructive action. No green active chips, no red new badges.",
-      "Don't hardcode a near-miss hex. An #ef4444 beside Loss Red or an #0d6efd beside Signal Indigo is always a color the theme already names, and the screenshot gate will not catch it.",
-      "Don't introduce a second font stack. One is declared, on body, and everything inherits it.",
-      "Don't add a new radius value. Controls are 0.375rem, containers are 0.5rem.",
-      "Don't add a font size that isn't already in typography.scale. The twenty-one recorded steps are a measurement of existing drift, not an invitation to widen it.",
-      "Don't re-add shadows to buttons or table wrappers beyond shadow-control and shadow-card. The flatness is the material.",
-      "Don't treat the mobile card stack as a degraded table. It is a designed rendering and it must carry every value the table carries.",
-      "Don't animate anything that isn't confirming a state change. The value flash and the spinners are the whole motion budget.",
-      "Don't put a scoped style block in a component to override a components.css rule and expect the layer order to explain it. Scoped styles are injected unlayered and therefore beat every @layer; that is why an override works and why it is invisible to anyone reading the cascade.",
-      "Don't reach for a gray-* ramp value when a semantic token names the same role. The ramp exists for the component layer's older internals, not for new work."
+      "Write a hex literal in a component or a stylesheet. There is exactly one in theme.css and four declarations of three distinct values in index.html, and every one has a recorded reason. A near-miss hex is a fork, and the pixel gate cannot police it: the comparator runs at maxDiffPixels: 0 but leaves Playwright's per-pixel threshold at its default, so a colour that is merely close passes silently.",
+      "Treat --color-signal-indigo as a second accent. It is brass under an old name and it is leaving.",
+      "Use gain or loss for anything other than the sign of a value. No green \"active\" chips, no red \"new\" badges. The eight inherited danger and validation uses of loss are a known divergence, not a licence to add more.",
+      "Introduce a second text face. One is declared, on body, and everything inherits it. The serif was built and removed; rebuilding it needs a rendered screenshot, not a rationale.",
+      "Add a radius value. Controls are 0.25rem, containers are 0.5rem. A container inside a container does not get a smaller radius — it gets a hairline. The one surviving 0.375rem radius is debt, not precedent.",
+      "Put a background fill back on .table thead th. It was removed because it collided with the active filter chips, which are the brass-wash element on a data surface.",
+      "Describe the legend swatch stroke as an accessibility feature. It is a 1.56:1 seam; the legend text is what satisfies non-text contrast. The donut arcs carry no stroke at all — the gap and the palette's 3:1 floor already do that job.",
+      "Build a custom listbox, popover, or modal. <select> is styled through ::picker(select) and the dialogs are native <dialog>; both give you the top layer, the keyboard model, and scroll containment for free. A hand-rolled replacement has to reimplement all three and will get one of them wrong.",
+      "Animate anything that is not confirming a state change. The value flash, the spinners, and the select picker's 150ms open are the whole motion budget.",
+      "Put a <style scoped> block in a component to override a components.css rule and expect the layer order to explain it. Scoped styles are injected unlayered and therefore beat every @layer.",
+      "Reach for a gray-* value when a semantic token names the same role. The ramp exists for the component layer's older internals, not for new work.",
+      "Cite ui/styles/components.css with a line number. It is a nine-line barrel of @imports; the rules live in ui/styles/components/ across buttons, surfaces, forms, modals, feedback, navigation, controls, mobile-cards, and motion."
     ]
   }
 }
