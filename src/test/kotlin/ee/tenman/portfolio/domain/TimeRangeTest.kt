@@ -185,6 +185,6 @@ class TimeRangeTest {
 
   @Test
   fun `should keep every sampled index in bounds at the production limit`() {
-    expect(TimeRange.sample((1..367).toList())).toHaveSize(60)
+    expect(TimeRange.sample((1..TimeRange.MAX_POINTS + 1).toList())).toHaveSize(TimeRange.MAX_POINTS)
   }
 }

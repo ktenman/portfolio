@@ -20,14 +20,19 @@ class PortfolioSummaryHistoricalService(
     size: Int,
     platforms: List<Platform>?,
   ): Page<PortfolioSummaryDto> {
-    if (platforms != null && !transactionService.coversEveryPlatform(platforms)) {
-      return forPlatforms(platforms, page, size)
-    }
-    val stored = summaryCacheService.getAllDailySummaries(page, size)
-    if (stored.isEmpty && platforms != null) return forPlatforms(platforms, page, size)
-    if (stored.isEmpty) return Page.empty(PageRequest.of(page, size))
-    val lookup = storedLookup(stored.content)
-    return stored.map { it.toDto(lookup) }
+    if (platforms == null) return storedPage(page, size) ?: Page.empty(PageRequest.of(page, size))
+    if (!transactionService.coversEveryPlatform(platforms)) return forPlatforms(platforms, page, size)
+    return storedPage(page, size) ?: forPlatforms(platforms, page, size)
+  }
+
+  private fun storedPage(
+    page: Int,
+    size: Int,
+  ): Page<PortfolioSummaryDto>? {
+    val summaries = summaryCacheService.getAllDailySummaries(page, size)
+    if (summaries.isEmpty) return null
+    val lookup = storedLookup(summaries.content)
+    return summaries.map { it.toDto(lookup) }
   }
 
   private fun forPlatforms(
