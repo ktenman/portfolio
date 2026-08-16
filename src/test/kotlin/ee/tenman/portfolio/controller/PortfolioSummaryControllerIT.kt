@@ -221,15 +221,15 @@ class PortfolioSummaryControllerIT {
   }
 
   @Test
-  fun `should return the six month series by default`() {
+  fun `should return the one month series by default`() {
     every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone
 
     portfolioSummaryRepository.saveAll(
       listOf(
-        LocalDate.of(2023, 1, 20),
-        LocalDate.of(2023, 1, 21),
-        LocalDate.of(2023, 4, 15),
+        LocalDate.of(2023, 6, 20),
+        LocalDate.of(2023, 6, 21),
+        LocalDate.of(2023, 7, 5),
         LocalDate.of(2023, 7, 20),
         LocalDate.of(2023, 7, 21),
       ).map { summaryOn(it) },
@@ -239,8 +239,8 @@ class PortfolioSummaryControllerIT {
       .perform(get("/api/portfolio-summary/series").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.length()").value(3))
-      .andExpect(jsonPath("$[0].date").value("2023-01-21"))
-      .andExpect(jsonPath("$[1].date").value("2023-04-15"))
+      .andExpect(jsonPath("$[0].date").value("2023-06-21"))
+      .andExpect(jsonPath("$[1].date").value("2023-07-05"))
       .andExpect(jsonPath("$[2].date").value("2023-07-20"))
   }
 
@@ -256,7 +256,7 @@ class PortfolioSummaryControllerIT {
     mockMvc
       .perform(get("/api/portfolio-summary/series").param("range", "MAX").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$.length()").value(366))
+      .andExpect(jsonPath("$.length()").value(60))
   }
 
   @Test

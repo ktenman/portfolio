@@ -1,16 +1,16 @@
 package ee.tenman.portfolio.service.pricing
 
-import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.DailyPricePoint
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.TreeMap
 
 class PriceLookup(
-  prices: List<DailyPrice>,
+  prices: List<DailyPricePoint>,
 ) {
   private val pricesByInstrument: Map<Long, TreeMap<LocalDate, BigDecimal>> =
     prices
-      .groupBy { it.instrument.id }
+      .groupBy { it.instrumentId }
       .mapValues { (_, rows) -> rows.associateTo(TreeMap()) { it.entryDate to it.closePrice } }
 
   fun priceOnOrBefore(

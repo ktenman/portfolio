@@ -89,14 +89,14 @@ class PortfolioSummaryController(
   @GetMapping("/series")
   @Loggable
   fun getSummarySeries(
-    @RequestParam(defaultValue = "6M") range: TimeRange,
+    @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
   ): List<PortfolioSummaryDto> = seriesService.getSeries(range, Platform.parseList(platforms))
 
   @GetMapping("/range-change")
   @Loggable
   fun getRangeChange(
-    @RequestParam(defaultValue = "6M") range: TimeRange,
+    @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
   ): RangeChangeDto = rangeChangeService.calculate(range, Platform.parseList(platforms))
 
