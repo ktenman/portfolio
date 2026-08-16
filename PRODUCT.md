@@ -52,7 +52,7 @@ Each broker's own app sees one slice and reports a return that is only true insi
 - Platform: `AVIVA, BINANCE, COINBASE, IBKR, LHV, LIGHTYEAR, LIGHTYEAR_BUSINESS, SWEDBANK, TRADING212, UNKNOWN`
 - Provider: `BINANCE, FT, LIGHTYEAR, MANUAL, SYNTHETIC, TRADING212`
 - Transaction type: `BUY, SELL`
-- Price-change windows: 24h, 48h, 3d, 7d, 10d, 30d, 1y
+- Time range (drives both the summary chart and the instruments price-change column): `1D, 2D, 3D, 1W, 1M, 3M, 6M, YTD, 1Y, 2Y, 3Y, 4Y, 5Y, MAX`
 
 TypeScript types are generated from Kotlin DTOs into `ui/models/generated/domain-models.ts` and are never hand-edited; the domain model is owned by the backend.
 
@@ -63,7 +63,7 @@ TypeScript types are generated from Kotlin DTOs into `ui/models/generated/domain
 - **LLM-derived ETF intelligence.** OpenRouter classifies holdings by sector and country and resolves fund currency and TER; MinIO stores holding logos. These values are inferred by a model, not sourced from a broker.
 - **Vehicle valuation, deliberately headless.** `/api/vehicle/info` performs Auto24 and Google Vision licence-plate lookups. It has no route in the SPA, it is not portfolio data, and its absence from the navigation is intentional.
 
-**The UI framework is settled: Tailwind CSS v4.** Bootstrap and the SCSS layer are fully removed and the utility prefix has been stripped. The styling layer is three files: `ui/styles/theme.css` (the `@theme static` block — the single palette), `base.css`, and `components.css`. New visual decisions are declared as tokens there and consumed as `var(--color-*)` or a generated utility; a second palette layer is a fork, not a shortcut.
+**The UI framework is settled: Tailwind CSS v4.** Bootstrap and the SCSS layer are fully removed and the utility prefix has been stripped. The styling layer is `ui/styles/theme.css` (the `@theme static` block — the single palette, plus the layer order and `@source` globs), `base.css` (element defaults and the `--transition-*` / `--z-*` scales), and `components.css`, which is now a barrel importing nine partials from `ui/styles/components/`: buttons, surfaces, forms, modals, feedback, navigation, controls, mobile-cards, motion. New visual decisions are declared as tokens in `theme.css` and consumed as `var(--color-*)` or a generated utility; a second palette layer is a fork, not a shortcut.
 
 **Every UI change is gated by a pixel harness.** Playwright captures each route at three viewports (390×844, 768×1024, 1440×900) at `maxDiffPixels: 0`, with baselines in `docs/superpowers/baseline/`, and every capture must stub its data routes so a shot never reads the live database. Any visual change is therefore a baseline change: work is not finished until its baselines are re-recorded deliberately, and an unexplained diff is a regression, not noise.
 

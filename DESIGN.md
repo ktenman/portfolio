@@ -38,7 +38,6 @@ colors:
   signal-indigo-deep: '#784e00'
   control-graphite: '#69625b'
   control-graphite-deep: '#241e1a'
-  warning: '#784e00'
   status-success: '#287b46'
   status-danger: '#b33834'
   status-info: '#316ca5'
@@ -55,7 +54,7 @@ colors:
   white: '#ffffff'
 typography:
   sans: "'Geist Variable', system-ui, sans-serif"
-  mono: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace"
+  mono: "'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace"
   display:
     fontSize: 'clamp(2.5rem, 1.6rem + 3.6vw, 3.5rem)'
     fontWeight: 550
@@ -127,15 +126,16 @@ components:
   table-row-band:
     backgroundColor: '{colors.surface-band}'
   filter-chip:
-    backgroundColor: '{colors.surface}'
-    textColor: '{colors.ink-muted}'
-    borderColor: '{colors.hairline}'
-    rounded: '{rounded.control}'
-    padding: '0.3125rem 0.625rem'
+    backgroundColor: '{colors.surface-sunken}'
+    textColor: '{colors.ink-soft}'
+    borderColor: 'transparent'
+    rounded: '{rounded.container}'
+    padding: '0.3125rem 0.6875rem'
   filter-chip-active:
     backgroundColor: '{colors.brass-wash}'
     textColor: '{colors.brass-deep}'
     borderColor: '{colors.brass}'
+    boxShadow: 'inset 0 0 0 1px {colors.brass-wash}'
   button-primary:
     background: 'linear-gradient(135deg, {colors.brass} 0%, {colors.brass-deep} 100%)'
     textColor: '{colors.white}'
@@ -190,7 +190,7 @@ who already knows what every column means.
 - One accent — brass — for navigation, focus, and active filters. Nothing else
 - Gain and loss locked to the same lightness, so equal magnitudes carry equal weight
 - Every colour in the product resolves to a token; components declare none, and the stylesheet layer holds
-  raw hex in exactly two declarations
+  raw hex in exactly one declaration
 - Tables on desktop become label/value cards under 768px — the signature responsive move
 
 ## Colours
@@ -199,6 +199,12 @@ Every token is authored in OKLCH in the `@theme static` block of `ui/styles/them
 is transcribed from that file character for character; the hex column is its sRGB rendering, and the ratios are
 WCAG 2.x contrast computed with the project's own contrast math in `ui/tests/contrast.ts` — the same code the
 palette gate asserts against.
+
+`ui/styles/components.css` is now a nine-line barrel of `@import`s, and the component layer it pulls in lives in
+`ui/styles/components/`: `buttons.css`, `surfaces.css`, `forms.css`, `modals.css`, `feedback.css`,
+`navigation.css`, `controls.css`, `mobile-cards.css`, `motion.css`. Citations below name the partial, never the
+barrel. `--transition-fast` / `-base` / `-slow` / `-chip` and the `--z-*` scale are declared in a `:root` block
+at the head of `base.css`, not in `@theme static`, because Tailwind has no namespace for them.
 
 ### Grounds
 
@@ -254,14 +260,19 @@ Badge fills, row tints, alert backgrounds, and the price-flash animation. Each c
 | `--color-loss-wash-deep` | `oklch(0.9 0.045 26)`    | `#fbd3cf` | 1.37       | 1.31     | border only, never a fill |
 | `--color-notice-wash`    | `oklch(0.955 0.022 250)` | `#e5f2ff` | 1.14       | 1.09     | 4.82 with `notice`        |
 
-`--color-brass-wash` is the busiest of the four: in `components.css` it is the active filter chip's fill, the
-ghost button's hover fill, the add-new button's hover fill, and the warning alert's background; four components
-reach for it directly as well — the diversification calculator's refreshing status pill
-(`diversification-calculator.vue:475`), the ETF breakdown's active dimension tab (`etf-breakdown.vue:449`), the
-logo modal's selected thumbnail (`logo-replacement-modal.vue:186`), and the instruments toggle's focus ring
-(`instruments-view.vue:297`). `--color-loss-wash-deep` is a border colour only: the danger alert's in
-`components.css`, and the destructive-button hovers — `.remove-btn:hover` at `allocation-card.vue:310` and
-`allocation-table.vue:873`, `.action-btn.danger:hover` at `allocation-table.vue:743`.
+`--color-brass-wash` is the busiest of the four, and its consumer map has grown to fifteen declarations. In the
+stylesheet layer: the active filter chip's fill and its `inset` ring (`controls.css:106,108,114`), the ghost
+button's hover, the add-new button's hover, and one more button hover (`buttons.css:118,143,152`), the warning
+alert's background (`feedback.css:23`), and — new since the last revision — the native customizable `<select>`'s
+option hover and `:checked` fill (`forms.css:98,103`). In components: the diversification calculator's
+refreshing status pill (`diversification-calculator.vue:462`), the allocation table's active display-mode
+segment (`allocation-table.vue:853`), the instruments toggle's focus ring (`instruments-view.vue:300`), the logo
+modal's selected thumbnail (`logo-replacement-modal.vue:186`), and the ETF breakdown's active dimension tab plus
+its search clear-button hover (`etf-breakdown.vue:467,539`).
+
+`--color-loss-wash-deep` is a border colour only: the danger alert's (`feedback.css:12`) and the
+destructive-button hovers — `.remove-btn:hover` at `allocation-card.vue:312` and `allocation-table.vue:876`,
+`.action-btn.danger:hover` at `allocation-table.vue:738`.
 
 ### Quantitative series
 
@@ -293,7 +304,6 @@ no consumer had to change in the same commit as the palette. They are aliases, n
 | `--color-signal-indigo-deep`    | `oklch(0.46 0.098 74)`  | `#784e00` | `brass-deep` |
 | `--color-control-graphite`      | `oklch(0.5 0.014 60)`   | `#69625b` | `ink-soft`   |
 | `--color-control-graphite-deep` | `oklch(0.24 0.012 60)`  | `#241e1a` | `ink`        |
-| `--color-warning`               | `oklch(0.46 0.098 74)`  | `#784e00` | `brass-deep` |
 | `--color-ink-muted`             | `oklch(0.5 0.014 60)`   | `#69625b` | `ink-soft`   |
 | `--color-body-secondary`        | `oklch(0.5 0.014 60)`   | `#69625b` | `ink-soft`   |
 | `--color-status-success`        | `oklch(0.52 0.115 152)` | `#287b46` | `gain`       |
@@ -301,17 +311,22 @@ no consumer had to change in the same commit as the palette. They are aliases, n
 | `--color-status-info`           | `oklch(0.52 0.11 250)`  | `#316ca5` | `notice`     |
 | `--color-status-warning`        | `oklch(0.53 0.098 74)`  | `#8d621f` | `brass`      |
 
+There is no `--color-warning`. The doc asserted one in an earlier revision and the code never had it; the
+warning alert reads `--color-status-warning`, which resolves to brass. Do not add one back to make the alias
+table look symmetrical.
+
 **`--color-signal-indigo` and `--color-signal-indigo-deep` are not a second accent.** They hold the brass
 values and exist only so Tailwind keeps generating the utilities their remaining consumers use. Phase 2 deletes
 them once every consumer migrates, so scope from the real count, not from a sample: **sixteen references across
-nine files.** In `components.css` — the primary button gradient (both stops, both directions), the form-control
-focus border, and the checkbox `accent-color`. In components — `nav-bar.vue` (active link colour and the
-indicator fill), `app.vue` and `loading-spinner.vue` (spinner `border-top-color`), `data-table.vue` (the
-sort-indicator colour, `:349`), `instrument-table.vue` (the XIRR value link's hover, `:483` — not a sort
-indicator), `config-dialog.vue` (the file drop zone's hover border, `:242`), and `logo-replacement-modal.vue`
-(the selected thumbnail's border, `:185` — that file has no drag-and-drop). The only uses of the generated
-Tailwind utility rather than the custom property are the two
-`text-signal-indigo` spinners in `diversification-calculator.vue:27,91`. Nothing new may reference them.
+ten files.** In the stylesheet layer — the primary button gradient, both stops in both directions
+(`buttons.css:58,59,66,67`), the form-control focus border (`forms.css:26`), and the checkbox `accent-color`
+(`forms.css:129`). In components — `nav-bar.vue:104,117` (active link colour and the indicator fill),
+`app.vue:66` and `loading-spinner.vue:56` (spinner `border-top-color`), `data-table.vue:349` (the sort-indicator
+colour), `instrument-table.vue:477` (the XIRR value link's hover — not a sort indicator), `config-dialog.vue:242`
+(the file drop zone's hover border), and `logo-replacement-modal.vue:185` (the selected thumbnail's border —
+that file has no drag-and-drop). The only uses of the generated Tailwind utility rather than the custom property
+are the two `text-signal-indigo` spinners in `diversification-calculator.vue:27,77`. Nothing new may reference
+them.
 
 Retoning the aliases in place also closed the old contrast failures without touching a component:
 `status-warning` under white toast text moved from 1.63:1 to 5.37:1, and `gray-500` from 2.07:1 to 4.87:1.
@@ -335,34 +350,36 @@ that predate the semantic names.
 
 Prefer a semantic token when one fits; reach into the ramp only where the component layer already does.
 
-### The two literal colours
+### The one literal colour
 
-`--color-white: #ffffff` and `--color-black: #000000` are the only raw hex declarations in the stylesheet
-layer, and they are structural rather than expressive — white is text on a filled control, black is the base
-for the neutral `rgb(0 0 0 / α)` tints that remain. `ui/components/**/*.vue` contains **zero** raw hex colours,
-and so does `ui/styles/components.css`.
+`--color-white: #ffffff` (`theme.css:17`) is the **only** raw hex declaration in the entire stylesheet layer,
+and it is structural rather than expressive: white is text on a filled control. There is no `--color-black`;
+the neutral `rgb(0 0 0 / α)` tints below are written inline and have never had a token behind them.
+`ui/components/**/*.vue` contains **zero** raw hex colours, and so do all nine partials under
+`ui/styles/components/`.
 
 Three exceptions exist and are deliberate:
 
-- `ui/index.html` hardcodes `#fcfaf6`, `#e2dfda`, and `#8d621f` in the pre-mount loader `<style>`. It paints
-  before any stylesheet has loaded, so a `var()` there would resolve to nothing and the first frame would flash
-  the wrong world. Those three literals are paper, hairline, and brass, and they must be updated by hand if
-  those tokens ever move.
+- `ui/index.html` hardcodes `#fcfaf6`, `#e2dfda`, and `#8d621f` in the pre-mount loader `<style>` — four
+  declarations of three distinct values, at `:13,24,29,30`. It paints before any stylesheet has loaded, so a
+  `var()` there would resolve to nothing and the first frame would flash the wrong world. Those three literals
+  are paper, hairline, and brass, and they must be updated by hand if those tokens ever move.
 - `ui/public/favicon.svg` sets a `P` in `#8d621f` on no enclosing shape. An SVG file has no access to the theme.
-- The `.form-select` chevron in `components.css` carries a URL-encoded `%23241e1a` stroke inside its data URI.
+- The `.form-select` chevron (`forms.css:37`) carries a URL-encoded `%23241e1a` stroke inside its data URI.
   A data URI cannot read a `var()`, and the `mask` trick `.btn-close` uses would mask away the field's own
   fill, so the literal is unavoidable — but it is `--color-ink` rendered to hex, not a leftover. It is the one
   colour in the stylesheet that a hex grep does not find, and it must be updated by hand if ink ever moves.
 
-Seventeen neutral black tints also remain — ten in `components.css`, seven in components (`calculator.vue`,
-`data-table.vue`, `diversification-stats.vue`, `etf-breakdown-chart.vue`, `etf-breakdown-table.vue`,
-`instruments-view.vue`, `modal-shell.vue`) — carrying hover films, the button press inset, the card and
-modal borders, the skeleton gradient, the nav link's resting colour, the modal backdrop, and a few shadows.
-They are written three ways, and a grep must cover all three: twelve use `rgb(0 0 0 / α)`; three use the
-comma form `rgba(0, 0, 0, α)` (`diversification-stats.vue`, `instruments-view.vue`, `modal-shell.vue`); and
-two sit inside Tailwind arbitrary values as `rgb(0_0_0/0.075)`, where the class syntax forbids spaces
-(`etf-breakdown-chart.vue:2`, `etf-breakdown-table.vue:2`). They are achromatic and therefore harmless on a
-warm ground, but they are not tokens; Phase 2 removes them.
+Sixteen neutral black tints also remain — ten in the component partials (`surfaces.css:9`, `modals.css:30`,
+`mobile-cards.css:7`, `motion.css:14,15,16`, `navigation.css:20`, `buttons.css:40,98,125`) and six in
+components (`calculator.vue:191`, `modal-shell.vue:119`, `data-table.vue:318`, `instruments-view.vue:288`,
+`etf-breakdown-table.vue:2`, `etf-breakdown-chart.vue:2`) — carrying hover films, the button press inset, the
+card and modal borders, the skeleton gradient, the nav link's resting colour, the modal backdrop, and a few
+shadows. They are written three ways, and a grep must cover all three: twelve use `rgb(0 0 0 / α)`; two use the
+comma form `rgba(0, 0, 0, α)` (`modal-shell.vue`, `instruments-view.vue`); and two sit inside Tailwind arbitrary
+values as `rgb(0_0_0/0.075)`, where the class syntax forbids spaces (`etf-breakdown-chart.vue:2`,
+`etf-breakdown-table.vue:2`). They are achromatic and therefore harmless on a warm ground, but they are not
+tokens; Phase 2 removes them.
 
 ### Palette rules
 
@@ -374,24 +391,29 @@ These are enforceable constraints, not guidance. They are reproduced from the de
    Nothing else.
 3. **Gain and loss are reserved for signed monetary movement.** They never decorate, never indicate
    non-financial success or failure. The shipped code diverges here, and the divergence is inherited, not
-   chosen: `--color-loss` also carries destructive intent (`.dialog-btn.danger` at `components.css:738`,
-   `.action-btn.danger:hover` at `allocation-table.vue:744`, `.remove-btn:hover` at `allocation-card.vue:311`
-   and `allocation-table.vue:874`) and form-validation error (`.is-invalid` at `components.css:325,332`).
-   Six sites, all `loss`, none `gain`. Either the rule loses "never indicate non-financial failure" or those
-   sites move to a dedicated danger token; do not resolve it by restating the rule more loosely elsewhere.
+   chosen: `--color-loss` also carries destructive intent (`.dialog-btn.danger` at `controls.css:44,45`,
+   `.btn-danger` at `buttons.css:86,90`, `.action-btn.danger:hover` at `allocation-table.vue:739`,
+   `.remove-btn:hover` at `allocation-card.vue:313` and `allocation-table.vue:877`) and validation error
+   (`.is-invalid` at `forms.css:115`, `.invalid-feedback` at `forms.css:122`, `.total-value.invalid` at
+   `allocation-table.vue:692`). **Eight sites, all `loss`, none `gain`** — up from six, so the divergence is
+   growing rather than shrinking. Either the rule loses "never indicate non-financial failure" or those sites
+   move to a dedicated danger token; do not resolve it by restating the rule more loosely elsewhere.
 4. **`ink-faint` is not body text.** At 3.65:1 it satisfies 1.4.11 non-text and AA large text (≥24px, or
    ≥18.66px bold) only. Its legitimate uses are chart axis ticks, disabled control glyphs, and decorative
    rules. **Every piece of small text — labels, captions, the build hash, stat-card labels, table meta — uses
    `ink-soft` at 6.02:1.** This rule is what prevents the current `gray-500` mistake recurring under a new name.
-   Today it has three consumers and none of them is one of the sanctioned three: the config dialog's empty-state
-   glyph (`config-dialog.vue:253`) and two receded figures in `etf-breakdown-table.vue:404,461`. All three are
-   large or non-text, so they pass — but the rule's own examples describe an intent, not the current map. The
-   decorative rule it names is `hr`, which draws in `hairline-strong` at 25% opacity (`base.css:92`).
+   Today it has four consumers and none of them is one of the sanctioned three: the config dialog's empty-state
+   glyph (`config-dialog.vue:253`), two receded figures in `etf-breakdown-table.vue:404,461`, and the ETF
+   breakdown's resting search icon (`etf-breakdown.vue:490`). All four are large or non-text, so they pass — but
+   the rule's own examples describe an intent, not the current map. The decorative rule it names is `hr`, which
+   draws in `hairline-strong` at 25% opacity (`base.css:91`).
 5. **State layers use `color-mix()`** against the base token. Hover and active states are never a second
-   hardcoded colour. Like `--color-series-*`, this is declared and gated, not yet enforced: the tracked UI
-   source contains **zero** `color-mix()`, and hovers today resolve to a second token — `.btn-ghost:hover` and
-   `.btn-add-new:hover` both swap to `brass-wash` (`components.css:118`, `:143`). Phase 2 is what makes the rule
-   true.
+   hardcoded colour. Like `--color-series-*`, this is declared and gated, and it now has exactly one consumer —
+   which is not a state layer: the summary chart's loading veil, `color-mix(in srgb, var(--color-surface) 72%,
+   transparent)` at `portfolio-summary.vue:275`. Every hover in the app still resolves to a second token —
+   `.btn-ghost:hover` and `.btn-add-new:hover` both swap to `brass-wash` (`buttons.css:118`, `:143`). Phase 2 is
+   what makes the rule true. The veil is nonetheless the precedent to copy: mix against a token, never against a
+   literal.
 6. **No component declares a colour.** Every value resolves to a token.
 
 ## Typography
@@ -410,13 +432,19 @@ price is 550 with `-0.48px` tracking. Nothing there is 400 and nothing is 700.
 
 There is no display face. A serif was specified and built, then removed once it was seen rendering a euro
 figure; body and headings are the same typeface, and hierarchy is carried by size, weight, and colour rather
-than by a change of voice. Do not reintroduce a second face without rendering it first.
+than by a change of voice. Do not reintroduce a display face without rendering it first.
 
-**Mono** is `--font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace`. The token is
-declared and has zero references: the only monospaced surface is the diversification config editor, and Monaco
-carries its own literal copy of that list (`config-dialog.vue:119`) because it measures glyph widths in a
-canvas context, where a `var()` does not resolve. That copy stays literal on purpose, so the token stands ready
-for the first consumer that can read it.
+**Mono** is `--font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace`, and it is no
+longer a stack of system fallbacks: `@fontsource-variable/geist-mono` 5.3.0 ships self-hosted alongside the
+text face and is imported next to it in `ui/main.ts`. The token has exactly one consumer — the diversification
+config editor, where Monaco is handed `fontFamily: 'var(--font-mono)'` (`config-dialog.vue:119`). Monaco writes
+that through to an inline style, so the `var()` does resolve; the literal copy of the stack that used to sit
+there is gone.
+
+Geist Mono is **not** a second voice, and it is the one exception the "one face" rule tolerates. It is the
+monospaced sibling of the same superfamily, drawn to the same skeleton, and it appears on exactly one surface
+that is a code editor. Nothing outside that editor may reference `--font-mono`; a monospaced figure in a table
+would break `tabular-nums` alignment against the text face beside it.
 
 ### The scale
 
@@ -454,11 +482,14 @@ step that keeps a heading distinct from the 600 label gesture beneath it. `h1` a
 `letter-spacing: -0.01em`, matching the `-0.48px` Lightyear sets on its 48px display figure; the title and
 heading tiers stay at normal tracking, as Lightyear's 24px h1 does.
 
-**Display figures are weight 550, not 400.** `.stat-value` (`etf-breakdown-stats.vue`) and
+**Display figures are weight 550, not 400.** `.stat-value` (now in the shared `stat-card.vue:25`) and
 `.chart-centre-value` (`etf-breakdown-chart.vue`) are the two places a number is set at `--text-title`, and
 both sit at 550. They were 400 until the Lightyear comparison, where a 30px total at 400 read as thin
 against the same figure at 550 — the single most visible difference between the two interfaces once the
-typeface matched. A number large enough to be the point of its card is not body text.
+typeface matched. A number large enough to be the point of its card is not body text. The summary chart's
+range-change readout follows the same rule one step down: `range-change-header.vue:26` sets `--text-control` at
+550, so the figure floating over the chart carries the same weight as a stat-card value without competing
+with the title above it.
 
 **Every figure is `tabular-nums`.** `font-variant-numeric: tabular-nums` is set once, on `body`, and inherits
 everywhere. That is exactly how it should stay. Any component that introduces its own `font-variant-numeric`,
@@ -467,17 +498,28 @@ and makes digits jitter during the price-flash animation.
 
 **The label gesture.** Uppercase, weight 600, `0.05em` letter-spacing. It is the system's most recognizable
 typographic move and it appears on every table header and every mobile card field name. The two differ in size
-and colour: table headers are `0.75rem` in `--color-brass-deep` (`components.css:249`), mobile card labels
-`0.8125rem` in `--color-gray-700` (`components.css:878`). The card label is the larger of the two because it
+and colour: table headers are `0.75rem` in `--color-brass-deep` (`surfaces.css:42`), mobile card labels
+`0.8125rem` in `--color-gray-700` (`mobile-cards.css:29`). The card label is the larger of the two because it
 stands alone beside its value rather than at the head of an aligned column.
 
-Those two are the gesture. **Six variants of it are live**, and the count is the point: stat-card labels run
-weight 500 at `0.05em` (`transactions-view.vue:247`, `etf-breakdown-stats.vue:51`) or weight 500 at `0.5px`
-(`calculator.vue:151`, `diversification-stats.vue:53`, `allocation-table.vue:679`); a smaller `0.6875rem` /
-`0.025em` pair sits in `allocation-card.vue:241` and `transaction-table.vue:307`; and
-`instrument-table.vue:461` runs `0.875rem` / 700 / `0.025em`. `0.5px` is not `0.05em` — at `0.75rem` it is
-`0.0417em`. Normalizing them is a Phase 2 task with a visual-baseline cost, not a drive-by; until then, do not
-cite "the label gesture" as if the code speaks with one voice.
+Those two are the gesture. Twelve uppercase label rules are live in total, so **ten of them are variants**, in
+five distinct specs. The full census, because a sample of it has been wrong twice:
+
+| spec                                | sites                                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `0.75rem` / 600 / `0.05em`          | **the gesture** — `surfaces.css:42` (brass-deep), `mobile-cards.css:29` at `0.8125rem` (gray-700) |
+| `0.75rem` / 500 / `0.05em`          | `stat-card.vue:16`, `transactions-view.vue:234`, `breakdown-card.vue:39` — all `ink-muted`         |
+| `0.75rem` / 500 / `0.5px`           | `calculator.vue:151` (ink-soft), `allocation-table.vue:673` (gray-600)                            |
+| `0.6875rem` / unset / `0.025em`     | `allocation-card.vue:242`, `transaction-table.vue:300`, `instrument-table.vue:630` — all gray-600  |
+| `0.6875rem` / 500 / `0.05em`        | `instrument-table.vue:529` (gray-600)                                                            |
+| `0.875rem` / 700 / `0.025em`        | `instrument-table.vue:454` (gray-800) — the table footer's totals label                           |
+
+`0.5px` is not `0.05em` — at `0.75rem` it is `0.0417em`. The three `0.75rem / 500 / 0.05em` sites are now
+byte-identical to each other and to the shared `stat-card.vue`, which is the consolidation target: extracting
+that component already retired the copies that used to live in `etf-breakdown-stats.vue` and
+`diversification-stats.vue`, and `transactions-view.vue` and `breakdown-card.vue` are the two that can still
+fold into it. Normalizing the rest is a Phase 2 task with a visual-baseline cost, not a drive-by; until then, do
+not cite "the label gesture" as if the code speaks with one voice.
 
 ## Layout
 
@@ -517,9 +559,11 @@ Hairline-first, shadow-second — printed paper does not float.
 alerts, toasts, and small input-group addons; `--radius-container: 0.5rem` for full-size buttons, cards, table
 wrappers, inputs and selects, modals, dropdown menus, and the base skeleton class. The control radius tightened
 from `0.375rem` in this phase: crisper edges read as printed rather than as app chrome. A `50%` produces the
-handful of true circles — spinners, the legend swatch, the flag glyphs. A `0.75rem` one-off survives on the
-mobile card; treat it as debt, not as scale. Two skeleton variants in `skeleton-loader.vue:80,118` override the
-base to `--radius-control`, and being unlayered scoped styles they win — so a skeleton cell is not reliably the
+handful of true circles — spinners, the legend swatch, the flag glyphs. A `0.75rem` one-off survives on
+`.mobile-card` (`mobile-cards.css:6`), but `data-table.vue:205` overrides it back to `--radius-container` for
+every card the shared table renders — which is all of them today, so the one-off is currently unreachable.
+Treat it as debt, not as scale. Two skeleton variants in `skeleton-loader.vue:80,118` override the base to
+`--radius-control`, and being unlayered scoped styles they win — so a skeleton cell is not reliably the
 container radius.
 
 **Borders are 1px, always.** The table header's old 2px rule is gone; header and body cells now share a single
@@ -530,13 +574,19 @@ two would do; the third is worth collapsing.
 **Shadows are warm-tinted**, derived from `oklch(0.24 0.012 60 / α)` — the ink itself, not neutral black. All
 five are in real use and the heaviest is the toast at 14%.
 
-| token              | value                                         | used for                             |
-| ------------------ | --------------------------------------------- | ------------------------------------ |
-| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper |
-| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls           |
-| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | dropdown menu, mobile card hover     |
-| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px              |
-| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts                               |
+| token              | value                                         | used for                                              |
+| ------------------ | --------------------------------------------- | ----------------------------------------------------- |
+| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper                  |
+| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls                            |
+| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | dropdown menu, mobile card hover, ETF breakdown rows  |
+| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px                               |
+| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker                    |
+
+`--shadow-lifted` has four consumers, not two: `navigation.css:53` (the dropdown menu),
+`data-table.vue:211` (the mobile card's hover), and `etf-breakdown-table.vue:436,474`. `--shadow-overlay` has
+two: the toast (`feedback.css:109`) and the customizable `<select>` picker (`forms.css:68`). Both extra pairs
+are consistent with the tokens' stated roles — record them so the next reader does not conclude a component
+invented its own elevation.
 
 `--shadow-nav` is a hairline in shadow's clothing: a 1px rule at zero blur, so the sticky bar reads as an edge
 rather than as a floating panel. There is no glass, no blur, and no backdrop filter anywhere; the modal
@@ -548,6 +598,22 @@ active link additionally goes brass and bold.
 
 **Focus is always a brass outline**: `outline: 2px solid var(--color-brass)`, `outline-offset: 2px`, on every
 link, button, input, select, and textarea. Never a glow, and never suppressed on anything tabbable.
+
+**The select's dropdown is the browser's, restyled — not a rebuilt one.** `forms.css:54–111` opts into the
+native customizable select behind `@supports (appearance: base-select)`, so the whole block is inert on engines
+that do not have it and the field falls back to the chevron data URI above it. Inside, `::picker(select)` takes
+`--color-surface`, a `--color-hairline-strong` hairline, `--radius-container`, and `--shadow-overlay`;
+`::picker-icon` is hidden because the field draws its own chevron; `option` gets `--radius-control` and
+`0.375rem 0.5rem`; `option:hover`, `option:focus`, and `option:checked` all take `--color-brass-wash` with
+`--color-brass-deep` text, with `:checked` additionally at weight 550; and `option::checkmark` is brass. Opening
+and closing are a 150ms fade and a `0.25rem` translate, with `display` and `overlay` transitioned
+`allow-discrete` and the entry state declared in `@starting-style` — the only way to animate a top-layer element
+in and out without JavaScript.
+
+This is the pattern to reach for whenever a control needs a popup: **use the platform's element and style its
+parts**, so keyboard behaviour, typeahead, scroll containment, and the top layer come from the browser rather
+than from a component that has to reimplement all four. No custom listbox exists in this codebase and none
+should be added.
 
 **Table headers are quiet.** `.table thead th` is uppercase `0.75rem` / weight 600 / `0.05em` letter-spacing in
 `--color-brass-deep`, with `white-space: nowrap` and **no background fill** — it inherits `--color-surface-subtle`
@@ -561,10 +627,24 @@ tint on top of a band reads as a selection. One surface still breaks this: `etf-
 `tbody tr:hover` with `--color-surface-hover`. It is debt, not precedent.
 
 **Filter chips are the brass-wash element.** They are `.platform-btn` and `.etf-btn` in the source, styled as
-one rule (`components.css:768`). At rest: `--color-surface` fill, `--color-hairline` border,
-`--color-ink-muted` text, `0.75rem` / weight 500, `0.3125rem 0.625rem` padding, `--radius-control`, on a fast
-`120ms` transition. Active: `--color-brass-wash` fill, `--color-brass` border, `--color-brass-deep` text at
-6.36:1 — state carried by fill _and_ border, not by colour alone. Press adds `scale(0.98)`.
+one rule (`controls.css:74`). At rest the chip is **recessed, not outlined**: `--color-surface-sunken` fill, a
+`1px solid transparent` border, `--color-ink-soft` text, `0.75rem` / weight 500, `0.3125rem 0.6875rem` padding,
+`--radius-container`, on a fast `120ms` transition (`--transition-chip`). Hover is where the border appears —
+`--color-hairline-strong` over `--color-surface-hover`, text to `--color-ink` — so the chip rises out of the
+page rather than filling in. Active: `--color-brass-wash` fill, `--color-brass` border, `--color-brass-deep`
+text at 6.36:1, plus an `inset 0 0 0 1px var(--color-brass-wash)` ring that thickens the edge to two effective
+pixels without shifting layout. State is carried by fill _and_ border _and_ that ring, never by colour alone.
+Press adds `scale(0.96)`. The transparent resting border is load-bearing: it reserves the hover border's box so
+nothing reflows on hover, and removing it would make every chip row jump by 2px.
+
+**The active-segment gesture now spans four surfaces**, and all four are the same three declarations —
+`--color-brass-wash` fill, `--color-brass` border, `--color-brass-deep` text. Beyond the filter chips
+(`controls.css:103`) it drives the ETF breakdown's dimension tabs (`etf-breakdown.vue:465`), the allocation
+table's display-mode toggle (`allocation-table.vue:849`), and the summary chart's time-range row, which reuses
+`.platform-btn` verbatim rather than restyling it (`chart-range-filter.vue`). Only the resting states differ:
+tabs rest transparent so the row does not gain three boxes, the display-mode toggle rests sunken with a real
+hairline and joined radii, and the range row inherits the chip exactly. A fifth surface that needs "selected"
+should reach for one of these four, not invent a sixth resting treatment.
 
 **The value flash** is the one piece of ambient motion. When a price or portfolio value changes, its cell
 animates `pulse-increase` or `pulse-decrease` — a 3s ease-in-out background wash peaking at `--color-gain-wash`
@@ -647,21 +727,51 @@ the `L 0.80` tier and the chart's largest category read as its faintest.
 
 ### Line and bar charts
 
-In `portfolio-chart.vue`, series carry no point markers at rest — `radius: 0`, `hoverRadius: 4` — so a long
-daily series reads as a trend rather than as a beaded rope, at `borderWidth: 2` and `tension: 0.3`. That is the
-intended treatment for every line chart, but only the portfolio chart sets it today: `charts/line-chart.vue`
-sets `borderWidth: 2` and nothing else, and the bar chart is likewise unmigrated. The portfolio chart draws its
-four series from `CHART_COLORS` indices 0, 1, 3, and 5 rather than from consecutive entries, so no two lines on
-it are 45° neighbours. Every dataset sets `backgroundColor` from its own `borderColor` — as the colour itself, or
-via `withAlpha` for the one filled series. Without it Chart.js fills legend swatches with its default grey and
-the key stops matching the lines.
+In `components/portfolio/portfolio-chart.vue`, series carry no point markers at rest — `radius: 0`,
+`hoverRadius: 5` — so a long daily series reads as a trend rather than as a beaded rope, at `borderWidth: 2` and
+`tension: 0.4`. That is the intended treatment for every line chart, but only the portfolio chart sets it today:
+`charts/line-chart.vue` sets `borderWidth: 2` and nothing else, and the bar chart is likewise unmigrated. The
+portfolio chart draws its four series from `CHART_COLORS` indices 0, 1, 3, and 5 rather than from consecutive
+entries, so no two lines on it are 45° neighbours. Every dataset sets `backgroundColor` from its own
+`borderColor` — as the colour itself, or via `withAlpha` for the one filled series. Without it Chart.js fills
+legend swatches with its default grey and the key stops matching the lines.
+
+### The summary chart's range controls
+
+The chart on `/` carries three pieces around it, and their arrangement is the design decision worth preserving.
+
+**The range row is chips, not a select.** `chart-range-filter.vue` renders all fourteen `TimeRange` values as
+`.platform-btn` inside `.platform-buttons` — the same classes the platform filters use, with no additional
+styling of its own. Fourteen chips wrap onto two rows on a phone, and that is the intended outcome: every range
+stays one tap away, which a `<select>` would cost two. It sits **below** the chart, because it changes what the
+chart already showed rather than introducing it.
+
+**The change figure floats over the plot, not above it.** `range-change-header.vue` is absolutely positioned at
+the chart's top-left inside `.chart-frame` and is `pointer-events: none`, so it reads as an annotation on the
+plot rather than as another header competing with the card's title. It carries a real U+2212 minus for negative
+values — not a hyphen — and takes its colour from the shared `getGainLossClass`.
+
+**Loading is a veil, not a swap.** While a new range resolves, `.chart-veil` covers the plot at
+`color-mix(in srgb, var(--color-surface) 72%, transparent)` with the spinner centred on it. The old chart stays
+visible and dimmed underneath, so the card does not collapse and reflow the page beneath it. 72% is the point:
+opaque enough that the stale figures cannot be misread as current, transparent enough that the shape of the
+series is still there to orient against.
 
 ### The ETF breakdown card
 
 One card, three dimensions, one chart. The dimension is chosen by a segmented control in the card's `actions`
 slot — Sectors, Top holdings, Countries — where the active segment is the filter-chip treatment exactly:
-`--color-brass-wash` fill, `--color-brass` border, `--color-brass-deep` text; the inactive segments are
-`--color-ink-soft` on transparent with a transparent border, so the row does not gain three boxes.
+`--color-brass-wash` fill, `--color-brass` border, `--color-brass-deep` text (`etf-breakdown.vue:465`); the
+inactive segments are `--color-ink-soft` on transparent with a transparent border, so the row does not gain
+three boxes.
+
+**The search field is the one place the system draws a leading-icon input.** Below the card,
+`.search-input-wrapper` holds a `--color-ink-faint` glyph that goes brass on `:focus-within` — the wrapper
+carries the state, not the input — over a `--radius-container` field, with a `--radius-control` clear button
+that takes `--color-brass-wash` on hover and appears only when the query is non-empty. The query itself lives in
+`useLocalStorage('portfolio_etf_search')` and is debounced 200ms, so it survives a reload and a result count
+renders beside it once results settle. If another surface needs search, copy this treatment rather than putting
+a magnifier inside a plain `.form-control`: the focus-within colour change is what tells you the field is live.
 
 The chart is a doughnut with `cutout: '83.333%'`, `spacing: 6`, `borderRadius: 0`, and `borderWidth: 0`.
 Chart.js's own legend and tooltip are both disabled and animation is off.
@@ -673,8 +783,8 @@ doubling its thickness while its outer edge stays put. Unselected arcs simultane
 `withAlpha`. `hoverOffset` is deliberately unset — pulling a slice out of the ring breaks the band.
 
 **The centre readout** sits inside the cutout: the label at `0.8125rem` in `--color-ink-soft`, the percentage
-under it at `var(--text-title)` / weight 400 in `--color-ink` with `tabular-nums`. The light weight is the
-point — the number is large enough that weight would make it shout, and it matches the stat cards beside it.
+under it at `var(--text-title)` / weight 550 in `--color-ink` with `tabular-nums` inherited. 550 is the same
+weight `stat-card.vue` sets, so the figure in the ring and the figures in the cards beside it read as one tier.
 It follows the hovered slice — driven
 by both the chart's `onHover` and the legend's `mouseenter` — and rests on index 0, which is the largest slice
 because the chart service sorts descending. It is `aria-hidden="true"`. That is not an oversight: the legend
@@ -682,8 +792,11 @@ beside it already states the same label and the same percentage as real text, so
 make a screen reader announce every value twice, once as a duplicate that changes under the mouse.
 
 **The legend** is a two-column grid with the value under the label. Each row leads with a 10px circular swatch
-— or a 16px circular flag on the countries dimension — then the label in `--color-ink-soft` at `0.8125rem`,
-with the value beneath it in `--color-ink` at `var(--text-base)` / weight 500 with `tabular-nums`.
+— or a 16px circular flag on the countries dimension — then the label in `--color-ink-soft` at
+`var(--text-base)`, with the value beneath it in `--color-ink` at `1.0625rem` / weight 500 with `tabular-nums`.
+That `1.0625rem` is off the scale — 17px, one step above `--text-control` with no token behind it — and it is
+the legend's one piece of debt; it exists because the value had to out-weigh its own label without reaching
+`--text-title`, which is the centre readout's size. Add a token before copying it anywhere else.
 It collapses to one column under 480px. It is a focusable `role="region"` labelled "Breakdown legend", taking
 the standard 2px brass focus ring, and hovering a row drives the chart's active slice in the same direction the
 chart drives it.
@@ -723,6 +836,8 @@ consumers. Until then:
 - **Do** let `font-variant-numeric: tabular-nums` inherit from `body`. Every money column depends on it.
 - **Do** ship both renderings when adding a data column: the desktop table cell _and_ the mobile card pair.
 - **Do** hold the page shell at `mx-auto mt-4 w-full max-w-app px-3`. The gutter is intentional.
+- **Do** reuse `.platform-btn` when a new surface needs a selected-one-of-many row. The summary chart's
+  time-range filter does exactly that and adds no CSS; a fifth resting treatment is what would be wrong.
 - **Do** state a chart's values as text in its legend. The colours are an index into the legend, not the data.
 - **Do** add a new route to `ui/tests/visual/palette.spec.ts` when you build one. It walks every visible text
   node for AA and the first fifteen tab stops for the focus ring, on three viewports, against stubbed data.
@@ -732,7 +847,7 @@ consumers. Until then:
 
 ### Don't
 
-- **Don't** write a hex literal in a component or a stylesheet. There are two in `theme.css` and four
+- **Don't** write a hex literal in a component or a stylesheet. There is exactly one in `theme.css` and four
   declarations of three distinct values in `index.html` (`#fcfaf6` paints both the page and the shell), and
   every one of them has a reason recorded above. A near-miss hex is not a shortcut, it is a
   fork, and the pixel gate cannot police it: the visual comparator runs at `maxDiffPixels: 0` but leaves
@@ -740,21 +855,26 @@ consumers. Until then:
   pixels and passes silently.
 - **Don't** treat `--color-signal-indigo` as a second accent. It is brass under an old name and it is leaving.
 - **Don't** use gain or loss for anything other than the sign of a value. No green "active" chips, no red
-  "new" badges. The six inherited danger and validation uses of `loss` are listed under palette rule 3; they
-  are a known divergence, not a licence to add more.
-- **Don't** introduce a second typeface. One is declared, on `body`, and everything inherits it. The serif was
-  built and removed; rebuilding it needs a rendered screenshot, not a rationale.
+  "new" badges. The eight inherited danger and validation uses of `loss` are listed under palette rule 3; they
+  are a known divergence, not a licence to add more — and the count has already grown once.
+- **Don't** introduce a second text face. One is declared, on `body`, and everything inherits it. The serif was
+  built and removed; rebuilding it needs a rendered screenshot, not a rationale. Geist Mono is the single
+  sanctioned exception and it is confined to the Monaco config editor.
 - **Don't** add a radius value. Controls are `0.25rem`, containers are `0.5rem`. A container inside a container
-  does not get a smaller radius — it gets a hairline. Three `0.375rem` radii predate the rule and still stand:
-  `allocation-table.vue:717`, `etf-breakdown.vue:471`, `instruments-view.vue:318`. They are debt, not
-  precedent. (`0.375rem` as padding or gap is fine and common — the rule is about radii only.)
+  does not get a smaller radius — it gets a hairline. One `0.375rem` radius predates the rule and still stands,
+  at `allocation-table.vue:712`; the two that used to sit beside it in `etf-breakdown.vue` and
+  `instruments-view.vue` are gone. It is debt, not precedent. (`0.375rem` as padding or gap is fine and
+  common — the rule is about radii only.)
 - **Don't** put a background fill back on `.table thead th`. It was removed because it collided with the active
   filter chips, which are the brass-wash element on a data surface.
 - **Don't** describe the legend swatch stroke as an accessibility feature. It is a 1.56:1 seam. The legend text
   is what satisfies 1.4.11. The donut's arcs carry no stroke at all — don't add one back to "help contrast";
   the gap and the palette's 3:1 floor already do that job.
-- **Don't** animate anything that isn't confirming a state change. The value flash and the spinners are the
-  whole motion budget.
+- **Don't** build a custom listbox, popover, or modal. `<select>` is styled through `::picker(select)` and the
+  dialogs are native `<dialog>`; both give you the top layer, the keyboard model, and scroll containment for
+  free. A hand-rolled replacement has to reimplement all three and will get one of them wrong.
+- **Don't** animate anything that isn't confirming a state change. The value flash, the spinners, and the
+  select picker's 150ms open are the whole motion budget.
 - **Don't** put a `<style scoped>` block in a component to override a `components.css` rule and expect the
   layer order to explain it. Scoped styles are injected unlayered and therefore beat every `@layer`; that is
   why an override "works" and why it is invisible to anyone reading the cascade.
