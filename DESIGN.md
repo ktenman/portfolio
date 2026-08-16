@@ -410,12 +410,12 @@ These are enforceable constraints, not guidance. They are reproduced from the de
    own examples describe an intent, not the current map. The decorative rule it names is `hr`, which
    draws in `hairline-strong` at 25% opacity (`base.css:91`).
 5. **State layers use `color-mix()`** against the base token. Hover and active states are never a second
-   hardcoded colour. Like `--color-series-*`, this is declared and gated, and it now has exactly one consumer —
-   which is not a state layer: the summary chart's loading veil, `color-mix(in srgb, var(--color-surface) 72%,
-transparent)` at `portfolio-summary.vue:275`. Every hover in the app still resolves to a second token —
-   `.btn-ghost:hover` and `.btn-add-new:hover` both swap to `brass-wash` (`buttons.css:118`, `:143`). Phase 2 is
-   what makes the rule true. The veil is nonetheless the precedent to copy: mix against a token, never against a
-   literal.
+   hardcoded colour. Like `--color-series-*`, this is declared and gated, and it has exactly one consumer —
+   which is not a state layer: the summary chart's loading veil at `portfolio-summary.vue:275`,
+   `color-mix(in srgb, var(--color-surface) 72%, transparent)`. Every hover in the app still resolves to a
+   second token — `.btn-ghost:hover` and `.btn-add-new:hover` both swap to `brass-wash` (`buttons.css:118`,
+   `:143`). Phase 2 is what makes the rule true. The veil is nonetheless the precedent to copy: mix against a
+   token, never against a literal.
 6. **No component declares a colour.** Every value resolves to a token.
 
 ## Typography
@@ -521,14 +521,13 @@ same `0.75rem` / 500 / `0.05em` spec in Tailwind utilities — `text-xs font-med
 uppercase` — so a `text-transform: uppercase` grep does not find it at all. Its `gray-600` and the row above's
 `ink-muted` resolve to the same `oklch(0.5 0.014 60)`, so it is a naming variant rather than a visual one.
 
-`0.5px` is not `0.05em` — at `0.75rem` it is `0.0417em`. The three `0.75rem / 500 / 0.05em` rules carry the same
-six declarations as the shared `stat-card.vue`, which is the consolidation target: extracting that component
-already retired the copies that used to live in `etf-breakdown-stats.vue` and `diversification-stats.vue`, and
-`transactions-view.vue` and `breakdown-card.vue` are the two that can still fold into it — `transactions-view.vue`
-for free, since only its declaration order differs, and `breakdown-card.vue` at the cost of a `margin-bottom` that
-is `0.75rem` there and `0.25rem` in the shared component. Normalizing the rest is a Phase 2 task with a
-visual-baseline cost, not a drive-by; until then, do not cite "the label gesture" as if the code speaks with one
-voice.
+`0.5px` is not `0.05em` — at `0.75rem` it is `0.0417em`. The shared `stat-card.vue` is the consolidation target
+for the `0.75rem` / 500 / `0.05em` row: extracting it already retired the copies that used to live in
+`etf-breakdown-stats.vue` and `diversification-stats.vue`. The two rules still standing beside it carry the same
+six declarations — `transactions-view.vue` can fold in for free, since only its declaration order differs, and
+`breakdown-card.vue` at the cost of a `margin-bottom` that is `0.75rem` there and `0.25rem` in the shared
+component. Normalizing the rest is a Phase 2 task with a visual-baseline cost, not a drive-by; until then, do not
+cite "the label gesture" as if the code speaks with one voice.
 
 ## Layout
 
@@ -591,12 +590,11 @@ five are in real use and the heaviest is the toast at 14%.
 | `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px                             |
 | `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker                  |
 
-`--shadow-lifted` has four consumers, not two: `navigation.css:53` (the dropdown menu),
-`data-table.vue:211` (the mobile card's hover), and the ETF holding logo and its placeholder, both of which
-lift on hover under a `scale(1.1)` (`etf-breakdown-table.vue:436,474`). `--shadow-overlay` has
-two: the toast (`feedback.css:109`) and the customizable `<select>` picker (`forms.css:68`). Both extra pairs
-are consistent with the tokens' stated roles — record them so the next reader does not conclude a component
-invented its own elevation.
+Citations for the two multi-consumer rows, so the next reader does not conclude a component invented its own
+elevation: `--shadow-lifted` at `navigation.css:53` (the dropdown menu), `data-table.vue:211` (the card hover),
+and `etf-breakdown-table.vue:436,474` (the ETF holding logo and its placeholder, both of which lift on hover
+under a `scale(1.1)`); `--shadow-overlay` at `feedback.css:109` (the toast) and `forms.css:68` (the
+customizable `<select>` picker).
 
 `--shadow-nav` is a hairline in shadow's clothing: a 1px rule at zero blur, so the sticky bar reads as an edge
 rather than as a floating panel. There is no glass, no blur, and no backdrop filter anywhere; the modal
@@ -653,8 +651,8 @@ nothing reflows on hover, and removing it would make every chip row jump by 2px.
 table's display-mode toggle (`allocation-table.vue:849`), and the summary chart's time-range row, which reuses
 `.platform-btn` verbatim rather than restyling it (`chart-range-filter.vue`). Only the resting states differ:
 tabs rest transparent so the row does not gain three boxes, the display-mode toggle rests sunken with a real
-hairline and joined radii, and the range row inherits the chip exactly. A fifth surface that needs "selected"
-should reach for one of these four, not invent a fifth resting treatment.
+hairline and joined radii, and the range row inherits the chip exactly — three resting treatments across the
+four surfaces. A fifth surface that needs "selected" should reach for one of those three, not invent another.
 
 **The value flash** is the one piece of ambient motion. When a price or portfolio value changes, its cell
 animates `pulse-increase` or `pulse-decrease` — a 3s ease-in-out background wash peaking at `--color-gain-wash`
@@ -795,21 +793,22 @@ doubling its thickness while its outer edge stays put. Unselected arcs simultane
 **The centre readout** sits inside the cutout: the label at `0.8125rem` in `--color-ink-soft`, the percentage
 under it at `var(--text-title)` / weight 550 in `--color-ink` with `tabular-nums` inherited. 550 is the same
 weight `stat-card.vue` sets, so the figure in the ring and the figures in the cards beside it read as one tier.
-It follows the hovered slice — driven
-by both the chart's `onHover` and the legend's `mouseenter` — and rests on index 0, which is the largest slice
-because the chart service sorts descending. It is `aria-hidden="true"`. That is not an oversight: the legend
-beside it already states the same label and the same percentage as real text, so exposing the readout would
-make a screen reader announce every value twice, once as a duplicate that changes under the mouse.
+It follows the hovered slice — driven by both the chart's `onHover` and the legend's `mouseenter` — and rests on
+index 0, which is the largest slice because the chart service sorts descending. It is `aria-hidden="true"`. That
+is not an oversight: the legend beside it already states the same label and the same percentage as real text, so
+exposing the readout would make a screen reader announce every value twice, once as a duplicate that changes
+under the mouse.
 
 **The legend** is a two-column grid with the value under the label. Each row leads with a 10px circular swatch
 — or a 16px circular flag on the countries dimension — then the label in `--color-ink-soft` at
 `var(--text-base)`, with the value beneath it in `--color-ink` at `1.0625rem` / weight 500 with `tabular-nums`.
-That `1.0625rem` is off the scale — 17px, one step above `--text-control` with no token behind it — and it is
-the legend's one piece of debt; it exists because the value had to out-weigh its own label without reaching
-`--text-title`, which is the centre readout's size. Add a token before copying it anywhere else.
 It collapses to one column under 480px. It is a focusable `role="region"` labelled "Breakdown legend", taking
 the standard 2px brass focus ring, and hovering a row drives the chart's active slice in the same direction the
 chart drives it.
+
+That `1.0625rem` is off the scale — 17px, a pixel above `--text-control`, with no token behind it — and it is
+the legend's one piece of debt. It exists because the value had to out-weigh its own label without reaching
+`--text-title`, which is the centre readout's size. Add a token before copying it anywhere else.
 
 Note that `spacing: 6` — the gap between arcs — **replaced** the per-arc stroke rather than joining it. The
 stroke was doing two jobs badly: separating neighbouring slices, and separating a pale slice from the card. A
@@ -847,7 +846,7 @@ consumers. Until then:
 - **Do** ship both renderings when adding a data column: the desktop table cell _and_ the mobile card pair.
 - **Do** hold the page shell at `mx-auto mt-4 w-full max-w-app px-3`. The gutter is intentional.
 - **Do** reuse `.platform-btn` when a new surface needs a selected-one-of-many row. The summary chart's
-  time-range filter does exactly that and adds no CSS; a fifth resting treatment is what would be wrong.
+  time-range filter does exactly that and adds no CSS; inventing another resting treatment is what would be wrong.
 - **Do** state a chart's values as text in its legend. The colours are an index into the legend, not the data.
 - **Do** add a new route to `ui/tests/visual/palette.spec.ts` when you build one. It walks every visible text
   node for AA and the first fifteen tab stops for the focus ring, on three viewports, against stubbed data.
