@@ -31,7 +31,8 @@ class PortfolioSummaryHistoricalService(
   ): Page<PortfolioSummaryDto>? {
     val summaries = summaryCacheService.getAllDailySummaries(page, size)
     if (summaries.isEmpty) return null
-    val lookup = storedLookup(summaries.content)
+    val oldestDate = summaries.content.minOf { it.entryDate }
+    val lookup = buildLookup(summaries.content, summaryCacheService.findByEntryDate(oldestDate.minusDays(1)))
     return summaries.map { it.toDto(lookup) }
   }
 
@@ -44,21 +45,14 @@ class PortfolioSummaryHistoricalService(
     if (summaries.isEmpty) return Page.empty(PageRequest.of(page, size))
     val oldestDate = summaries.content.minOf { it.entryDate }
     val previousDaySummary = platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, oldestDate.minusDays(1))
-    val lookup =
-      buildMap {
-        summaries.content.forEach { put(it.entryDate, it) }
-        put(previousDaySummary.entryDate, previousDaySummary)
-      }
+    val lookup = buildLookup(summaries.content, previousDaySummary)
     return summaries.map { it.toDto(lookup) }
   }
 
-  private fun storedLookup(summaries: List<PortfolioDailySummary>): Map<LocalDate, PortfolioDailySummary> {
-    val previousDaySummary = summaryCacheService.findByEntryDate(summaries.minOf { it.entryDate }.minusDays(1))
-    return buildMap {
-      summaries.forEach { put(it.entryDate, it) }
-      previousDaySummary?.let { put(it.entryDate, it) }
-    }
-  }
+  private fun buildLookup(
+    summaries: List<PortfolioDailySummary>,
+    previousDaySummary: PortfolioDailySummary?,
+  ): Map<LocalDate, PortfolioDailySummary> = (summaries + listOfNotNull(previousDaySummary)).associateBy { it.entryDate }
 
   private fun PortfolioDailySummary.toDto(lookup: Map<LocalDate, PortfolioDailySummary>): PortfolioSummaryDto {
     val profitChange24h = lookup[entryDate.minusDays(1)]?.let { totalProfit.subtract(it.totalProfit) }

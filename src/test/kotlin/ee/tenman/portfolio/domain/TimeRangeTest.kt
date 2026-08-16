@@ -112,7 +112,7 @@ class TimeRangeTest {
 
   @Test
   fun `should cap the max range at the sampling limit`() {
-    expect(TimeRange.MAX.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(60)
+    expect(TimeRange.MAX.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(TimeRange.MAX_POINTS)
   }
 
   @Test
