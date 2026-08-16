@@ -46,7 +46,7 @@ class PortfolioSummarySeriesServiceTest {
   }
 
   @Test
-  fun `should fetch the platform filtered series when platforms is provided`() {
+  fun `should fetch the platform filtered series when the selection omits a platform holding transactions`() {
     val platforms = listOf(Platform.LHV)
     every { transactionService.coversEveryPlatform(platforms) } returns false
     every { platformSummaryCacheService.getSeriesForPlatforms(platforms, TimeRange.SIX_MONTHS) } returns listOf(summary())
