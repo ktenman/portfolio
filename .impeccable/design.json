@@ -706,7 +706,7 @@
       },
       {
         "name": "Gain and loss are reserved for signed monetary movement",
-        "body": "They never decorate and never indicate non-financial success or failure. The shipped code diverges at eight sites, all of them loss and all inherited: destructive intent (.dialog-btn.danger, .btn-danger, .action-btn.danger:hover, two .remove-btn:hover rules) and validation error (.is-invalid, .invalid-feedback, .total-value.invalid). The count grew from six, so the divergence is expanding rather than shrinking. Resolve it by moving those sites to a dedicated danger token, not by restating the rule more loosely."
+        "body": "They never decorate and never indicate non-financial success or failure. The shipped code diverges at eight sites, all of them loss and all inherited: destructive intent (.dialog-btn.danger, .btn-danger, .action-btn.danger:hover, two .remove-btn:hover rules) and validation error (.is-invalid, .invalid-feedback, .total-value.invalid). The previous count of six was an undercount, not a smaller divergence; every one of the eight predates it. Resolve it by moving those sites to a dedicated danger token, not by restating the rule more loosely."
       },
       {
         "name": "ink-faint is not body text",
@@ -762,7 +762,7 @@
     "donts": [
       "Write a hex literal in a component or a stylesheet. There is exactly one in theme.css and four declarations of three distinct values in index.html, and every one has a recorded reason. A near-miss hex is a fork, and the pixel gate cannot police it: the comparator runs at maxDiffPixels: 0 but leaves Playwright's per-pixel threshold at its default, so a colour that is merely close passes silently.",
       "Treat --color-signal-indigo as a second accent. It is brass under an old name and it is leaving.",
-      "Use gain or loss for anything other than the sign of a value. No green \"active\" chips, no red \"new\" badges. The eight inherited danger and validation uses of loss are a known divergence, not a licence to add more — and the count has already grown once.",
+      "Use gain or loss for anything other than the sign of a value. No green \"active\" chips, no red \"new\" badges. The eight inherited danger and validation uses of loss are a known divergence, not a licence to add more.",
       "Introduce a second text face. One is declared, on body, and everything inherits it. The serif was built and removed; rebuilding it needs a rendered screenshot, not a rationale.",
       "Add a radius value. Controls are 0.25rem, containers are 0.5rem. A container inside a container does not get a smaller radius — it gets a hairline. The one surviving 0.375rem radius is debt, not precedent.",
       "Put a background fill back on .table thead th. It was removed because it collided with the active filter chips, which are the brass-wash element on a data surface.",

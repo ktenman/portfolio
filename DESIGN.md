@@ -263,8 +263,8 @@ Badge fills, row tints, alert backgrounds, and the price-flash animation. Each c
 `--color-brass-wash` is the busiest of the four, and its consumer map has grown to fifteen declarations. In the
 stylesheet layer: the active filter chip's fill and its `inset` ring (`controls.css:106,108,114`), the ghost
 button's hover, and the add-new button's hover and press (`buttons.css:118,143,152`), the warning
-alert's background (`feedback.css:23`), and — new since the last revision — the native customizable `<select>`'s
-option hover and `:checked` fill (`forms.css:98,103`). In components: the diversification calculator's
+alert's background (`feedback.css:23`), and the native customizable `<select>`'s option hover and `:checked`
+fill (`forms.css:98,103`). In components: the diversification calculator's
 refreshing status pill (`diversification-calculator.vue:462`), the allocation table's active display-mode
 segment (`allocation-table.vue:853`), the instruments toggle's focus ring (`instruments-view.vue:300`), the logo
 modal's selected thumbnail (`logo-replacement-modal.vue:186`), and the ETF breakdown's active dimension tab plus
@@ -395,9 +395,10 @@ These are enforceable constraints, not guidance. They are reproduced from the de
    `.btn-danger` at `buttons.css:86,90`, `.action-btn.danger:hover` at `allocation-table.vue:739`,
    `.remove-btn:hover` at `allocation-card.vue:313` and `allocation-table.vue:877`) and validation error
    (`.is-invalid` at `forms.css:115`, `.invalid-feedback` at `forms.css:122`, `.total-value.invalid` at
-   `allocation-table.vue:692`). **Eight sites, all `loss`, none `gain`** — up from six, so the divergence is
-   growing rather than shrinking. Either the rule loses "never indicate non-financial failure" or those sites
-   move to a dedicated danger token; do not resolve it by restating the rule more loosely elsewhere.
+   `allocation-table.vue:692`). **Eight sites, all `loss`, none `gain`** — the previous count of six was an
+   undercount, not a smaller divergence; every one of the eight predates it. Either the rule loses "never
+   indicate non-financial failure" or those sites move to a dedicated danger token; do not resolve it by
+   restating the rule more loosely elsewhere.
 4. **`ink-faint` is not body text.** At 3.65:1 it satisfies 1.4.11 non-text and AA large text (≥24px, or
    ≥18.66px bold) only. Its legitimate uses are chart axis ticks, disabled control glyphs, and decorative
    rules. **Every piece of small text — labels, captions, the build hash, stat-card labels, table meta — uses
@@ -652,7 +653,7 @@ table's display-mode toggle (`allocation-table.vue:849`), and the summary chart'
 `.platform-btn` verbatim rather than restyling it (`chart-range-filter.vue`). Only the resting states differ:
 tabs rest transparent so the row does not gain three boxes, the display-mode toggle rests sunken with a real
 hairline and joined radii, and the range row inherits the chip exactly. A fifth surface that needs "selected"
-should reach for one of these four, not invent a sixth resting treatment.
+should reach for one of these four, not invent a fifth resting treatment.
 
 **The value flash** is the one piece of ambient motion. When a price or portfolio value changes, its cell
 animates `pulse-increase` or `pulse-decrease` — a 3s ease-in-out background wash peaking at `--color-gain-wash`
@@ -864,7 +865,7 @@ consumers. Until then:
 - **Don't** treat `--color-signal-indigo` as a second accent. It is brass under an old name and it is leaving.
 - **Don't** use gain or loss for anything other than the sign of a value. No green "active" chips, no red
   "new" badges. The eight inherited danger and validation uses of `loss` are listed under palette rule 3; they
-  are a known divergence, not a licence to add more — and the count has already grown once.
+  are a known divergence, not a licence to add more.
 - **Don't** introduce a second text face. One is declared, on `body`, and everything inherits it. The serif was
   built and removed; rebuilding it needs a rendered screenshot, not a rationale. Geist Mono is the single
   sanctioned exception and it is confined to the Monaco config editor.
