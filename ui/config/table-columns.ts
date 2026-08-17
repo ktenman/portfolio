@@ -37,12 +37,7 @@ export const instrumentColumns: ColumnDefinition[] = [
     hideOnMobile: true,
     sortKey: 'priceChangeAmount',
   },
-  {
-    key: 'xirr',
-    label: 'XIRR',
-    formatter: formatPercentageFromDecimal,
-    class: 'text-right!',
-  },
+  { key: 'xirr', label: 'XIRR', formatter: formatPercentageFromDecimal, class: 'text-right!' },
   {
     key: 'xirrAnnualReturn',
     label: 'Annual',

@@ -33,14 +33,14 @@ vi.mock('@vueuse/core', () => ({
 
 const CrudLayoutStub = {
   name: 'CrudLayout',
-  props: { showAddButton: { type: Boolean, default: true }, addButtonText: String },
+  props: { showAddButton: { type: Boolean, default: true } },
   emits: ['add'],
   setup(props: any, { emit, slots }: any) {
     const handleAdd = () => emit('add')
     return () =>
       h('div', [
         props.showAddButton
-          ? h('button', { onClick: handleAdd, id: 'stub-add-button' }, props.addButtonText)
+          ? h('button', { onClick: handleAdd, id: 'stub-add-button' }, 'Add')
           : null,
         slots['title-suffix']?.(),
         slots.toolbar?.(),

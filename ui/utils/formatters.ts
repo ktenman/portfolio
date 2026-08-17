@@ -251,7 +251,7 @@ export const formatPriceChange = (item: InstrumentDto): string => {
     return '-'
   }
 
-  return `${formatSignedCurrency(amount, item.baseCurrency || 'EUR')} / ${formatSignedPercent(percent)}`
+  return `${formatSignedCurrency(amount, item.baseCurrency)} / ${formatSignedPercent(percent)}`
 }
 
 export const formatPercentage = (value: number): string => `${value.toFixed(2)}%`
