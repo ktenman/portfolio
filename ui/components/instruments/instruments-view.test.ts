@@ -33,12 +33,17 @@ vi.mock('@vueuse/core', () => ({
 
 const CrudLayoutStub = {
   name: 'CrudLayout',
+  props: { showAddButton: { type: Boolean, default: true }, addButtonText: String },
   emits: ['add'],
-  setup(_props: any, { emit, slots }: any) {
+  setup(props: any, { emit, slots }: any) {
     const handleAdd = () => emit('add')
     return () =>
       h('div', [
-        h('button', { onClick: handleAdd, id: 'stub-add-button' }, 'Add'),
+        props.showAddButton
+          ? h('button', { onClick: handleAdd, id: 'stub-add-button' }, props.addButtonText)
+          : null,
+        slots['title-suffix']?.(),
+        slots.toolbar?.(),
         slots.subtitle?.(),
         slots['subtitle-end']?.(),
         slots.content?.(),
@@ -111,6 +116,11 @@ const createWrapper = () => {
   return { wrapper, queryClient }
 }
 
+const requestAdd = async (wrapper: ReturnType<typeof createWrapper>['wrapper']) => {
+  wrapper.findComponent({ name: 'CrudLayout' }).vm.$emit('add')
+  await flushPromises()
+}
+
 describe('InstrumentsView', () => {
   const mockInstruments = [
     createInstrumentDto({
@@ -178,13 +188,18 @@ describe('InstrumentsView', () => {
   })
 
   describe('modal operations', () => {
+    it('should not offer an add button in the header', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      expect(wrapper.find('#stub-add-button').exists()).toBe(false)
+    })
+
     it('should clear selectedItem and show modal when opening add modal', async () => {
       const { wrapper } = createWrapper()
       await flushPromises()
 
-      const addButton = wrapper.find('#stub-add-button')
-      await addButton.trigger('click')
-      await flushPromises()
+      await requestAdd(wrapper)
 
       const modal = wrapper.find('#stub-modal')
       const instrumentData = JSON.parse(modal.attributes('data-instrument') || '{}')
@@ -206,8 +221,7 @@ describe('InstrumentsView', () => {
 
       await flushPromises()
 
-      await wrapper.find('#stub-add-button').trigger('click')
-      await flushPromises()
+      await requestAdd(wrapper)
 
       const saveButton = wrapper.find('#stub-save-button')
       await saveButton.trigger('click')
@@ -227,8 +241,7 @@ describe('InstrumentsView', () => {
 
       await flushPromises()
 
-      await wrapper.find('#stub-add-button').trigger('click')
-      await flushPromises()
+      await requestAdd(wrapper)
 
       await wrapper.find('#stub-save-button').trigger('click')
       await flushPromises()
@@ -252,8 +265,7 @@ describe('InstrumentsView', () => {
 
       await flushPromises()
 
-      await wrapper.find('#stub-add-button').trigger('click')
-      await flushPromises()
+      await requestAdd(wrapper)
 
       const modalBeforeSave = wrapper.find('#stub-modal')
       expect(JSON.parse(modalBeforeSave.attributes('data-instrument') || '{}')).toEqual({})
@@ -279,6 +291,13 @@ describe('InstrumentsView', () => {
       expect(platformTexts).toContain('Trading 212')
       expect(platformTexts).toContain('Binance')
       expect(platformTexts).toContain('Coinbase')
+    })
+
+    it('should show the filters toggle with the platform selection count', async () => {
+      const { wrapper } = createWrapper()
+      await flushPromises()
+
+      expect(wrapper.find('.dropdown-toggle').text()).toBe('Filters (3/3)')
     })
 
     it('should have platform filter buttons', async () => {

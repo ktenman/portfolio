@@ -4,11 +4,20 @@
       :is-loading="isLoading"
       :is-recalculating="isRecalculating"
       @recalculate="handleRecalculate"
-    />
+    >
+      <template #title-suffix>
+        <filter-toggle
+          v-if="availablePlatforms.length > 0"
+          v-model="filtersOpen"
+          :selected="selectedPlatforms.length"
+          :available="availablePlatforms.length"
+        />
+      </template>
+    </portfolio-actions>
 
     <platform-filter
-      v-if="availablePlatforms.length > 0"
-      class="mt-3 mb-6"
+      v-if="filtersOpen && availablePlatforms.length > 0"
+      class="mb-6"
       :available="availablePlatforms"
       :selected="selectedPlatforms"
       @toggle="togglePlatform"
@@ -43,13 +52,19 @@
         ></button>
       </div>
 
+      <header v-if="latestSummary" class="portfolio-headline">
+        <h1>{{ formatCurrencyWithSymbol(latestSummary.totalValue) }}</h1>
+        <div class="headline-meta">
+          <range-change-header
+            v-if="rangeChange"
+            :amount="rangeChange.changeAmount"
+            :percent="rangeChange.changePercent"
+          />
+          <span class="headline-asof">as of {{ formatDate(latestSummary.date) }}</span>
+        </div>
+      </header>
+
       <div class="chart-frame">
-        <range-change-header
-          v-if="rangeChange"
-          class="chart-overlay-change"
-          :amount="rangeChange.changeAmount"
-          :percent="rangeChange.changePercent"
-        />
         <portfolio-chart :key="chartKey" :data="processedChartData" />
         <div v-if="isRangeLoading" class="chart-veil">
           <loading-spinner message="Loading chart" />
@@ -87,8 +102,8 @@
 </template>
 
 <script lang="ts" setup>
-import { defineAsyncComponent, computed, ref, watch } from 'vue'
-import { useInfiniteScroll, useWindowSize } from '@vueuse/core'
+import { defineAsyncComponent, computed, h, ref, watch } from 'vue'
+import { useInfiniteScroll, useLocalStorage, useWindowSize } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
 import { usePortfolioChart } from '../composables/use-portfolio-chart'
@@ -104,6 +119,7 @@ import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import PlatformFilter from './shared/platform-filter.vue'
+import FilterToggle from './shared/filter-toggle.vue'
 import { transactionsService } from '../services/transactions-service'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
@@ -111,11 +127,15 @@ import {
   formatCurrencyWithSymbol,
   formatDate,
   formatPercentageFromDecimal,
+  formatSignedPercent,
   getGainLossClass,
 } from '../utils/formatters'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
-const PortfolioChart = defineAsyncComponent(() => import('./portfolio/portfolio-chart.vue'))
+const PortfolioChart = defineAsyncComponent({
+  loader: () => import('./portfolio/portfolio-chart.vue'),
+  loadingComponent: () => h(LoadingSpinner, { containerClass: 'min-h-48' }),
+})
 
 type ViewState = 'LOADING' | 'ERROR' | 'EMPTY' | 'SUCCESS'
 
@@ -134,6 +154,8 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
   STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS,
   availablePlatforms
 )
+
+const filtersOpen = useLocalStorage(STORAGE_KEYS.SUMMARY_FILTERS_OPEN, true)
 
 const selectedRange = useChartRange()
 
@@ -176,6 +198,8 @@ const viewState = computed<ViewState>(() => {
 
 const showRecalculationMessage = computed(() => !!recalculationMessage.value)
 
+const latestSummary = computed(() => reversedSummaries.value[0] ?? null)
+
 const format24hChange = (value: number | null) => {
   if (value === null || value === 0 || Math.abs(value) <= 0.01) {
     return ''
@@ -192,36 +216,55 @@ const format24hChangePercentage = (summary: PortfolioSummaryDto) => {
   if (previousValue <= 0) {
     return ''
   }
-  const percentage = (change / previousValue) * 100
-  const sign = percentage >= 0 ? '+' : ''
-  return `(${sign}${percentage.toFixed(2)}%)`
+  return `(${formatSignedPercent((change / previousValue) * 100)})`
 }
 
 const summaryColumns: ColumnDefinition[] = [
   { key: 'date', label: 'Date', formatter: formatDate },
-  { key: 'xirrAnnualReturn', label: 'XIRR Annual Return', formatter: formatPercentageFromDecimal },
+  {
+    key: 'xirrAnnualReturn',
+    label: 'XIRR Annual Return',
+    formatter: formatPercentageFromDecimal,
+    class: 'text-right!',
+  },
   {
     key: 'earningsPerDay',
     label: 'Earnings Per Day',
     formatter: formatCurrencyWithSymbol,
-    class: 'hidden! md:table-cell!',
+    class: 'hidden! md:table-cell! text-right!',
     hideOnMobile: true,
   },
-  { key: 'earningsPerMonth', label: 'Earnings Per Month', formatter: formatCurrencyWithSymbol },
+  {
+    key: 'earningsPerMonth',
+    label: 'Earnings Per Month',
+    formatter: formatCurrencyWithSymbol,
+    class: 'text-right!',
+  },
   {
     key: 'unrealizedProfit',
     label: 'Unrealized Profit',
     formatter: formatCurrencyWithSymbol,
-    class: 'hidden! md:table-cell!',
+    class: 'hidden! md:table-cell! text-right!',
     hideOnMobile: true,
   },
-  { key: 'totalProfit', label: 'Total Profit', formatter: formatCurrencyWithSymbol },
+  {
+    key: 'totalProfit',
+    label: 'Total Profit',
+    formatter: formatCurrencyWithSymbol,
+    class: 'text-right!',
+  },
   {
     key: 'totalProfitChange24h',
     label: '24h Change',
     formatter: format24hChange,
+    class: 'text-right!',
   },
-  { key: 'totalValue', label: 'Total Value', formatter: formatCurrencyWithSymbol },
+  {
+    key: 'totalValue',
+    label: 'Total Value',
+    formatter: formatCurrencyWithSymbol,
+    class: 'text-right!',
+  },
 ]
 
 const getSummaryRowClass = (summary: any, index: number) => {
@@ -245,7 +288,7 @@ const handleRecalculate = async () => {
       'This will delete all current summary data and recalculate it from scratch. This operation may take some time. Continue?',
     confirmText: 'Recalculate',
     cancelText: 'Cancel',
-    confirmClass: 'btn-primary',
+    confirmClass: 'btn-danger',
   })
 
   if (shouldProceed) {
@@ -257,13 +300,29 @@ const handleRecalculate = async () => {
 <style scoped>
 .chart-frame {
   position: relative;
+  min-height: 12rem;
 }
 
-.chart-overlay-change {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
+.portfolio-headline {
+  margin-bottom: 1.5rem;
+}
+
+.portfolio-headline h1 {
+  margin: 0;
+  line-height: 1.05;
+}
+
+.headline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.375rem;
+}
+
+.headline-asof {
+  font-size: var(--text-sm);
+  color: var(--color-ink-faint);
 }
 
 .chart-veil {

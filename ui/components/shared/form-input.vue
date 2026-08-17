@@ -4,10 +4,11 @@
     <select
       v-if="type === 'select'"
       :id="inputId"
-      v-model="model"
       class="form-select"
       :class="{ 'is-invalid': error }"
+      :value="model ?? ''"
       v-bind="$attrs"
+      @change="model = ($event.target as HTMLSelectElement).value"
     >
       <option v-if="placeholder" value="">{{ placeholder }}</option>
       <option v-for="opt in options" :key="opt.value" :value="opt.value">
@@ -19,6 +20,7 @@
       :id="inputId"
       v-model="model"
       :type="type"
+      :placeholder="placeholder"
       class="form-control"
       :class="{ 'is-invalid': error }"
       v-bind="$attrs"

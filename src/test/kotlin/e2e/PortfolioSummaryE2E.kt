@@ -57,7 +57,7 @@ class PortfolioSummaryE2E {
   @Test
   fun `should display platform filter buttons after summary data loads`() {
     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
-    val platformButtons = elements(className("platform-btn"))
+    val platformButtons = elements(cssSelector(".platform-buttons .platform-btn"))
     expect(platformButtons.size()).toBeGreaterThan(0)
   }
 }

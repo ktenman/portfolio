@@ -439,7 +439,7 @@ watch(
 
 <style scoped>
 .last-updated {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-ink-muted);
   background: var(--color-surface-sunken);
   padding: 0.25rem 0.5rem;
@@ -464,7 +464,7 @@ watch(
 }
 
 .save-status {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   white-space: nowrap;

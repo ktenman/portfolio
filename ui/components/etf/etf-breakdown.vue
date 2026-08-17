@@ -1,25 +1,22 @@
 <template>
   <div class="mx-auto mt-4 w-full max-w-app px-3">
     <div class="mb-6">
-      <div class="page-header">
-        <div class="page-heading">
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
           <h2 class="mb-0">ETF Breakdown</h2>
-          <etf-breakdown-header
-            v-if="!isLoading"
-            :selected-etfs="selectedEtfs"
-            :available-etfs="availableEtfs"
+          <filter-toggle
+            v-if="availableEtfs.length > 0"
+            v-model="filtersOpen"
+            :class="{ active: selectedPlatforms.length !== availablePlatforms.length }"
+            :selected="selectedEtfs.length"
+            :available="availableEtfs.length"
           />
         </div>
-        <button
-          v-if="availableEtfs.length > 0"
-          class="etf-btn dropdown-toggle"
-          :class="{ active: isFiltered }"
-          :aria-expanded="filtersOpen"
-          type="button"
-          @click="filtersOpen = !filtersOpen"
-        >
-          Filters
-        </button>
+        <etf-breakdown-header
+          v-if="!isLoading"
+          :selected-etfs="selectedEtfs"
+          :available-etfs="availableEtfs"
+        />
       </div>
       <div v-if="filtersOpen && availableEtfs.length > 0" class="etf-filter-container mt-3">
         <div class="etf-buttons">
@@ -145,6 +142,8 @@ import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
+import FilterToggle from '../shared/filter-toggle.vue'
+import { STORAGE_KEYS } from '../../constants'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
 const masterHoldings = ref<EtfHoldingBreakdownDto[]>([])
@@ -199,13 +198,7 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
 
 const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
 
-const filtersOpen = useLocalStorage<boolean>('portfolio_etf_filters_open', false)
-
-const isFiltered = computed(
-  () =>
-    selectedEtfs.value.length !== availableEtfs.value.length ||
-    selectedPlatforms.value.length !== availablePlatforms.value.length
-)
+const filtersOpen = useLocalStorage<boolean>(STORAGE_KEYS.ETF_FILTERS_OPEN, false)
 
 watch(
   availableEtfs,
@@ -386,20 +379,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.page-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
 .etf-filter-container {
   display: flex;
   align-items: center;
@@ -418,14 +397,6 @@ onMounted(async () => {
     grid-template-columns: minmax(0, 1fr) 17rem;
     align-items: start;
   }
-}
-
-.dropdown-toggle::after {
-  transition: transform var(--transition-fast);
-}
-
-.dropdown-toggle[aria-expanded='true']::after {
-  transform: rotate(180deg);
 }
 
 .etf-buttons {
@@ -541,7 +512,7 @@ onMounted(async () => {
 }
 
 .search-results-count {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-ink-muted);
   white-space: nowrap;
 }

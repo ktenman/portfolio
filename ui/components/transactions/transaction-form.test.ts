@@ -86,7 +86,7 @@ describe('TransactionForm', () => {
       const formInputs = wrapper.findAllComponents(FormInput)
       expect(formInputs).toHaveLength(8)
 
-      expect(formInputs[0].props('label')).toBe('InstrumentDto')
+      expect(formInputs[0].props('label')).toBe('Instrument')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')
@@ -353,7 +353,7 @@ describe('TransactionForm', () => {
       const formInputs = wrapper.findAllComponents(FormInput)
 
       expect(formInputs).toHaveLength(8)
-      expect(formInputs[0].props('label')).toBe('InstrumentDto')
+      expect(formInputs[0].props('label')).toBe('Instrument')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')
