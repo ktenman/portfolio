@@ -3,6 +3,8 @@ import {
   formatCurrencyWithSymbol,
   formatCurrency,
   formatCurrencyWithSign,
+  formatSignedCurrency,
+  formatSignedPercent,
   formatPrice,
   getCurrencySymbol,
   formatNumber,
@@ -371,12 +373,61 @@ describe('formatPriceChange', () => {
     expect(formatPriceChange(item)).not.toContain('<')
   })
 
-  it('should format the absolute amount and percent', () => {
-    expect(formatPriceChange(item)).toBe('€1.23 / 4.56%')
+  it('should sign both halves of a gain', () => {
+    expect(formatPriceChange(item)).toBe('+€1.23 / +4.56%')
+  })
+
+  it('should sign both halves of a loss', () => {
+    expect(
+      formatPriceChange({ ...item, priceChangeAmount: -1.23, priceChangePercent: -4.56 })
+    ).toBe('−€1.23 / −4.56%')
   })
 
   it('should return a dash when the change is unknown', () => {
     expect(formatPriceChange({ ...item, priceChangeAmount: null })).toBe('-')
+  })
+})
+
+describe('formatSignedCurrency', () => {
+  it('should prefix a gain with a plus', () => {
+    expect(formatSignedCurrency(100, 'EUR')).toBe('+€100.00')
+    expect(formatSignedCurrency(1234567.89, 'EUR')).toBe('+€1,234,567.89')
+  })
+
+  it('should prefix a loss with a typographic minus', () => {
+    expect(formatSignedCurrency(-100, 'EUR')).toBe('−€100.00')
+    expect(formatSignedCurrency(-1234567.89, 'EUR')).toBe('−€1,234,567.89')
+  })
+
+  it('should leave a flat value unsigned', () => {
+    expect(formatSignedCurrency(0, 'EUR')).toBe('€0.00')
+  })
+
+  it('should use the currency it is given', () => {
+    expect(formatSignedCurrency(50, 'USD')).toBe('+$50.00')
+    expect(formatSignedCurrency(-50, 'GBP')).toBe('−£50.00')
+  })
+
+  it('should default to euro when the currency is undefined', () => {
+    expect(formatSignedCurrency(75, undefined)).toBe('+€75.00')
+  })
+
+  it('should round to two decimals', () => {
+    expect(formatSignedCurrency(123.456, 'EUR')).toBe('+€123.46')
+  })
+})
+
+describe('formatSignedPercent', () => {
+  it('should prefix a gain with a plus', () => {
+    expect(formatSignedPercent(17.16)).toBe('+17.16%')
+  })
+
+  it('should prefix a loss with a typographic minus', () => {
+    expect(formatSignedPercent(-8.46)).toBe('−8.46%')
+  })
+
+  it('should leave a flat value unsigned', () => {
+    expect(formatSignedPercent(0)).toBe('0.00%')
   })
 })
 

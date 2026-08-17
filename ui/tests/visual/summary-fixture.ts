@@ -238,6 +238,11 @@ const TODAY_SUMMARY: PortfolioSummaryDto = {
   totalProfitChange24h: null,
 }
 
+const RANGE_CHANGE = {
+  changeAmount: 13726.45,
+  changePercent: 8.4,
+}
+
 const PLATFORMS = [
   'AVIVA',
   'BINANCE',
@@ -267,6 +272,9 @@ export const stubPortfolioSummary: RouteStub = async page => {
   )
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_CURRENT), route =>
     route.fulfill({ json: TODAY_SUMMARY })
+  )
+  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_RANGE_CHANGE), route =>
+    route.fulfill({ json: RANGE_CHANGE })
   )
   await page.route(apiRoute(API_ENDPOINTS.TRANSACTIONS_PLATFORMS), route =>
     route.fulfill({ json: PLATFORMS })

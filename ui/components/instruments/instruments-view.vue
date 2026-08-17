@@ -1,47 +1,58 @@
 <template>
   <crud-layout
-    add-button-id="addNewInstrument"
-    add-button-text="New InstrumentDto"
     title="Instruments"
     :show-add-button="false"
     @add="openAddModal"
     @title-click="handleTitleClick"
   >
+    <template #title-suffix>
+      <filter-toggle
+        v-if="availablePlatforms.length > 0"
+        v-model="filtersOpen"
+        :selected="selectedPlatforms.length"
+        :available="availablePlatforms.length"
+      />
+    </template>
+
+    <template #toolbar>
+      <div class="controls-row">
+        <div class="period-selector-container">
+          <label class="period-label hidden md:inline" for="periodSelect">Period:</label>
+          <select
+            id="periodSelect"
+            v-model="selectedPeriod"
+            class="form-select form-select-sm period-select"
+            aria-label="Price change period"
+          >
+            <option v-for="range in TIME_RANGES" :key="range" :value="range">
+              {{ range }}
+            </option>
+          </select>
+        </div>
+        <div class="toggle-container">
+          <span class="toggle-label">Active only</span>
+          <label class="toggle-switch">
+            <input
+              v-model="showActiveOnly"
+              type="checkbox"
+              role="switch"
+              aria-label="Show active instruments only"
+            />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </template>
+
     <template #subtitle>
       <platform-filter
-        v-if="availablePlatforms.length > 0"
+        v-if="filtersOpen && availablePlatforms.length > 0"
         class="mt-3"
         :available="availablePlatforms"
         :selected="selectedPlatforms"
         @toggle="togglePlatform"
         @toggle-all="toggleAllPlatforms"
-      >
-        <div class="controls-row">
-          <div class="period-selector-container">
-            <label class="period-label hidden md:inline" for="periodSelect">Period:</label>
-            <select
-              id="periodSelect"
-              v-model="selectedPeriod"
-              class="form-select form-select-sm period-select"
-              aria-label="Price change period"
-            >
-              <option v-for="range in TIME_RANGES" :key="range" :value="range">{{ range }}</option>
-            </select>
-          </div>
-          <div class="toggle-container">
-            <span class="toggle-label">Active only</span>
-            <label class="toggle-switch">
-              <input
-                v-model="showActiveOnly"
-                type="checkbox"
-                role="switch"
-                aria-label="Show active instruments only"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-      </platform-filter>
+      />
     </template>
 
     <template #content>
@@ -88,6 +99,7 @@ import { useAuthState } from '../../composables/use-auth-state'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
 import CrudLayout from '../shared/crud-layout.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
+import FilterToggle from '../shared/filter-toggle.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
@@ -98,6 +110,7 @@ import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
 const selectedItem = ref<InstrumentDto | null>(null)
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
+const filtersOpen = useLocalStorage<boolean>(STORAGE_KEYS.INSTRUMENTS_FILTERS_OPEN, true)
 const isInstrumentModalOpen = ref(false)
 const isXirrWindowsModalOpen = ref(false)
 const isAnnualWindowsModalOpen = ref(false)
@@ -226,17 +239,10 @@ const handleTitleClick = async () => {
 </script>
 
 <style scoped>
-.platform-filter-container {
-  gap: 1rem;
-  width: 100%;
-  position: relative;
-}
-
 .controls-row {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-left: auto;
 }
 
 .toggle-container {
@@ -246,7 +252,7 @@ const handleTitleClick = async () => {
 }
 
 .toggle-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--color-ink-muted);
   white-space: nowrap;
@@ -320,14 +326,6 @@ const handleTitleClick = async () => {
 }
 
 @media (max-width: 768px) {
-  .platform-filter-container {
-    gap: 0.75rem;
-  }
-
-  .controls-row {
-    margin-left: 0;
-  }
-
   .period-selector-container {
     width: auto;
   }

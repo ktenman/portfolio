@@ -19,38 +19,40 @@
         <td class="font-bold">Total</td>
         <td></td>
         <td></td>
-        <td class="font-bold whitespace-nowrap">
+        <td class="font-bold whitespace-nowrap text-right!">
           <span :class="getTotalsChangeClass('totalValue')">
             {{ formatCurrencyWithSign(animatedTotalValue, 'EUR') }}
           </span>
         </td>
-        <td class="font-bold whitespace-nowrap hidden! md:table-cell!">
+        <td class="font-bold whitespace-nowrap hidden! md:table-cell! text-right!">
           {{ formatCurrencyWithSign(totalInvested, 'EUR') }}
         </td>
-        <td class="font-bold whitespace-nowrap profit-column">
+        <td class="font-bold whitespace-nowrap profit-column text-right!">
           <span :class="[getProfitClass(totalProfit), getTotalsChangeClass('totalProfit')]">
-            {{ formatProfit(animatedTotalProfit, 'EUR') }}
+            {{ formatSignedCurrency(animatedTotalProfit, 'EUR') }}
           </span>
         </td>
-        <td class="font-bold whitespace-nowrap unrealized-column">
+        <td class="font-bold whitespace-nowrap unrealized-column text-right!">
           <span
             :class="[
               getProfitClass(totalUnrealizedProfit),
               getTotalsChangeClass('totalUnrealizedProfit'),
             ]"
           >
-            {{ formatProfit(animatedTotalUnrealizedProfit, 'EUR') }}
+            {{ formatSignedCurrency(animatedTotalUnrealizedProfit, 'EUR') }}
           </span>
         </td>
-        <td class="font-bold whitespace-nowrap hidden! lg:table-cell! price-change-column">
+        <td
+          class="font-bold whitespace-nowrap hidden! lg:table-cell! price-change-column text-right!"
+        >
           <span
             :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
           >
-            {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
-            {{ Math.abs(animatedTotalChangePercent).toFixed(2) }}%
+            {{ formatSignedCurrency(animatedTotalChangeAmount, 'EUR') }} /
+            {{ formatSignedPercent(animatedTotalChangePercent) }}
           </span>
         </td>
-        <td class="font-bold whitespace-nowrap">
+        <td class="font-bold whitespace-nowrap text-right!">
           <button
             type="button"
             class="xirr-trigger"
@@ -62,7 +64,7 @@
             {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}
           </button>
         </td>
-        <td class="font-bold whitespace-nowrap hidden! xl:table-cell!">
+        <td class="font-bold whitespace-nowrap hidden! xl:table-cell! text-right!">
           <button
             type="button"
             class="xirr-trigger"
@@ -77,8 +79,8 @@
             {{ totalAnnualReturn === null ? '-' : formatAnnualReturn(animatedTotalAnnualReturn) }}
           </button>
         </td>
-        <td class="font-bold whitespace-nowrap hidden! xl:table-cell!">100.00%</td>
-        <td class="font-bold whitespace-nowrap hidden! xl:table-cell!">
+        <td class="font-bold whitespace-nowrap hidden! xl:table-cell! text-right!">100.00%</td>
+        <td class="font-bold whitespace-nowrap hidden! xl:table-cell! text-right!">
           {{ formatTer(totalTer) }}
         </td>
       </tr>
@@ -116,7 +118,7 @@
             class="metric-group"
           >
             <span class="metric-value" :class="getProfitClass(item.priceChangeAmount)">
-              {{ formatCurrencyWithSign(Math.abs(item.priceChangeAmount), item.baseCurrency) }}
+              {{ formatSignedCurrency(item.priceChangeAmount, item.baseCurrency) }}
             </span>
             <span class="metric-label">{{ selectedPeriod }}</span>
           </div>
@@ -124,13 +126,13 @@
         <div class="instrument-metrics secondary-metrics">
           <div class="metric-group">
             <span class="metric-value" :class="getProfitClass(item.profit || 0)">
-              {{ formatProfit(item.profit || 0, item.baseCurrency) }}
+              {{ formatSignedCurrency(item.profit || 0, item.baseCurrency) }}
             </span>
             <span class="metric-label">Profit</span>
           </div>
           <div class="metric-group">
             <span class="metric-value" :class="getProfitClass(item.unrealizedProfit || 0)">
-              {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
+              {{ formatSignedCurrency(item.unrealizedProfit || 0, item.baseCurrency) }}
             </span>
             <span class="metric-label">Unrealized</span>
           </div>
@@ -177,7 +179,7 @@
               class="total-value"
               :class="[getProfitClass(totalProfit), getTotalsChangeClass('totalProfit')]"
             >
-              {{ formatProfit(animatedTotalProfit, 'EUR') }}
+              {{ formatSignedCurrency(animatedTotalProfit, 'EUR') }}
             </span>
           </div>
           <div class="total-item total-unrealized-item">
@@ -189,7 +191,7 @@
                 getTotalsChangeClass('totalUnrealizedProfit'),
               ]"
             >
-              {{ formatProfit(animatedTotalUnrealizedProfit, 'EUR') }}
+              {{ formatSignedCurrency(animatedTotalUnrealizedProfit, 'EUR') }}
             </span>
           </div>
           <div class="total-item total-price-change-item">
@@ -201,8 +203,8 @@
                 getTotalsChangeClass('totalChangeAmount'),
               ]"
             >
-              {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
-              {{ Math.abs(animatedTotalChangePercent).toFixed(2) }}%
+              {{ formatSignedCurrency(animatedTotalChangeAmount, 'EUR') }} /
+              {{ formatSignedPercent(animatedTotalChangePercent) }}
             </span>
           </div>
           <div class="total-item">
@@ -290,7 +292,7 @@
           'whitespace-nowrap',
         ]"
       >
-        {{ formatProfit(item.profit || 0, item.baseCurrency) }}
+        {{ formatSignedCurrency(item.profit || 0, item.baseCurrency) }}
       </span>
     </template>
 
@@ -303,7 +305,7 @@
           'whitespace-nowrap',
         ]"
       >
-        {{ formatProfit(item.unrealizedProfit || 0, item.baseCurrency) }}
+        {{ formatSignedCurrency(item.unrealizedProfit || 0, item.baseCurrency) }}
       </span>
     </template>
 
@@ -342,9 +344,11 @@ import {
   formatPercentageFromDecimal,
   formatPriceChange,
   formatAcronym,
+  formatSignedCurrency,
+  formatSignedPercent,
 } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
-import { formatProfit, calculatePortfolioWeight } from '../../utils/instrument-formatters'
+import { calculatePortfolioWeight } from '../../utils/instrument-formatters'
 import { useValueChangeAnimation } from '../../composables/use-value-change-animation'
 import { useNumberTransition } from '../../composables/use-number-transition'
 import { useInstrumentTotals } from '../../composables/use-instrument-totals'
@@ -573,7 +577,7 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
 }
 
 .mobile-instrument-card .instrument-symbol {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--color-gray-600);
 }
@@ -648,7 +652,7 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
 }
 
 .mobile-instrument-card .value-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-gray-600);
 }
 

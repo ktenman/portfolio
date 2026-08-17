@@ -62,7 +62,7 @@ vi.mock('../../utils/formatters', () => ({
   formatReturn: vi.fn((value: number | null) =>
     value === null ? '-' : `${(value * 100).toFixed(2)}%`
   ),
-  formatCurrencyWithSymbol: vi.fn((value: number) => `€${value.toFixed(2)}`),
+  formatCurrencyWithSymbol: vi.fn((value?: number | null) => `€${(value ?? 0).toFixed(2)}`),
   formatPercentage: vi.fn((value: number) => `${value.toFixed(2)}%`),
 }))
 

@@ -17,7 +17,7 @@
   --color-white: #ffffff;
 
   --color-paper: oklch(0.985 0.006 85);
-  --color-surface: oklch(1 0 0);
+  --color-surface: oklch(0.995 0.004 85);
   --color-surface-sunken: oklch(0.965 0.008 85);
   --color-surface-hover: oklch(0.975 0.007 85);
   --color-surface-subtle: oklch(0.985 0.006 85);
@@ -77,13 +77,14 @@
   --font-sans: 'Geist Variable', system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  --text-label: 0.75rem;
   --text-2xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 0.9375rem;
   --text-control: 1rem;
   --text-heading: clamp(1.125rem, 1.05rem + 0.35vw, 1.25rem);
   --text-title: clamp(1.5rem, 1.3rem + 0.9vw, 1.875rem);
-  --text-display: clamp(2.5rem, 1.6rem + 3.6vw, 3.5rem);
+  --text-display: clamp(2.125rem, 1.7rem + 1.75vw, 2.875rem);
 
   --container-app: min(1350px, 91vw);
 

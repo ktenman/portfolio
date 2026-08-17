@@ -8,4 +8,8 @@ export const STORAGE_KEYS = {
   SELECTED_SUMMARY_PLATFORMS: 'portfolio_selected_summary_platforms',
   SUMMARY_CHART_RANGE: 'portfolio_summary_chart_range',
   PRICE_CHANGE_PERIOD: 'portfolio_price_change_period',
+  SUMMARY_FILTERS_OPEN: 'portfolio_summary_filters_open',
+  INSTRUMENTS_FILTERS_OPEN: 'portfolio_instruments_filters_open',
+  TRANSACTIONS_FILTERS_OPEN: 'portfolio_transactions_filters_open',
+  ETF_FILTERS_OPEN: 'portfolio_etf_filters_open',
 } as const

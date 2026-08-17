@@ -263,7 +263,7 @@
               {{ formatReturn(getEtfReturn(allocation.instrumentId)) }}
             </td>
             <td v-if="showRebalanceColumns" class="text-gray-600! text-[0.875em]">
-              €{{ (allocation.currentValue ?? 0).toFixed(2) }}
+              {{ formatCurrencyWithSymbol(allocation.currentValue ?? 0) }}
               <span class="current-percent">
                 ({{ getRebalanceData(allocation).currentPercent.toFixed(1) }}%)
               </span>
@@ -406,7 +406,9 @@
         </div>
         <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="total-row">
           <span class="total-label">Total Unused</span>
-          <span class="total-value text-gray-600!">€{{ totalUnused.toFixed(2) }}</span>
+          <span class="total-value text-gray-600!">
+            {{ formatCurrencyWithSymbol(totalUnused) }}
+          </span>
         </div>
       </div>
     </div>
@@ -491,7 +493,8 @@ const {
   getActionSortValue,
 } = useAllocationCalculations(props)
 
-const formatEtfPrice = (value: number | null) => (value === null ? '-' : `€${value.toFixed(2)}`)
+const formatEtfPrice = (value: number | null) =>
+  value === null ? '-' : formatCurrencyWithSymbol(value)
 
 const totalAllocation = computed(() =>
   props.allocations.reduce((sum, a) => sum + (a.value || 0), 0)
@@ -671,7 +674,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .total-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--color-gray-600);
   text-transform: uppercase;
@@ -693,7 +696,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .total-hint {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 400;
   margin-left: 0.25rem;
 }
@@ -710,7 +713,7 @@ const onTotalInvestmentChange = (event: Event) => {
   background: var(--color-surface);
   color: var(--color-gray-600);
   border-radius: 0.375rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.12s ease;
@@ -746,7 +749,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .current-holdings label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-gray-600);
   white-space: nowrap;
 }
@@ -769,7 +772,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .total-investment-input label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-gray-600);
   white-space: nowrap;
 }
@@ -779,7 +782,7 @@ const onTotalInvestmentChange = (event: Event) => {
 }
 
 .total-investment-input .input-group-text {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   padding: 0.25rem 0.5rem;
 }
 
@@ -809,7 +812,7 @@ const onTotalInvestmentChange = (event: Event) => {
 
 .optimize-toggle .form-check-label,
 .buy-only-toggle .form-check-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-gray-600);
   cursor: pointer;
   white-space: nowrap;

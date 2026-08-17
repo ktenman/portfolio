@@ -58,13 +58,15 @@ export const formatAcronym = (value: string | undefined | null): string => {
     .join(' ')
 }
 
+const EUR_FORMAT = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'EUR',
+  minimumFractionDigits: 2,
+})
+
 export const formatCurrencyWithSymbol = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '€0.00'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-  }).format(value)
+  return EUR_FORMAT.format(value)
 }
 
 export const formatCurrency = (value: number | undefined | null): string => {
@@ -89,6 +91,18 @@ export const formatCurrencyWithSign = (
 
   return `${currencySymbol}${absValue}`
 }
+
+const signFor = (value: number): string => {
+  if (value > 0) return '+'
+  if (value < 0) return '−'
+  return ''
+}
+
+export const formatSignedCurrency = (value: number, currency: string | undefined): string =>
+  `${signFor(value)}${formatCurrencyWithSign(value, currency)}`
+
+export const formatSignedPercent = (value: number): string =>
+  `${signFor(value)}${Math.abs(value).toFixed(2)}%`
 
 const PRICE_THRESHOLD_NO_DECIMALS = 10000
 const PRICE_THRESHOLD_ONE_DECIMAL = 1000
@@ -237,11 +251,7 @@ export const formatPriceChange = (item: InstrumentDto): string => {
     return '-'
   }
 
-  const currency = item.baseCurrency || 'EUR'
-  const formattedAmount = formatCurrencyWithSign(Math.abs(amount), currency)
-  const formattedPercent = Math.abs(percent).toFixed(2)
-
-  return `${formattedAmount} / ${formattedPercent}%`
+  return `${formatSignedCurrency(amount, item.baseCurrency)} / ${formatSignedPercent(percent)}`
 }
 
 export const formatPercentage = (value: number): string => `${value.toFixed(2)}%`

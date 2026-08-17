@@ -325,6 +325,10 @@ const handleSort = (column: ColumnDefinition) => {
   gap: 0.5rem;
 }
 
+.table th.text-right\! .th-content {
+  justify-content: flex-end;
+}
+
 .sort-indicator {
   display: inline-flex;
   flex-direction: column;

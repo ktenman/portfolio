@@ -99,7 +99,7 @@ const handleReset = async () => {
     message: 'Are you sure you want to reset the calculator to default values?',
     confirmText: 'Reset',
     cancelText: 'Cancel',
-    confirmClass: 'btn-primary',
+    confirmClass: 'btn-danger',
   })
 
   if (confirmed) {
@@ -150,7 +150,7 @@ canvas {
 
 .stat-label {
   margin-bottom: 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;

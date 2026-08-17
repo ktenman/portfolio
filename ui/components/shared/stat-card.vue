@@ -15,7 +15,7 @@ defineProps<{
 <style scoped>
 .stat-label {
   margin-bottom: 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;

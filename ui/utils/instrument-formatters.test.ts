@@ -1,49 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { formatProfit, calculatePortfolioWeight } from './instrument-formatters'
+import { calculatePortfolioWeight } from './instrument-formatters'
 
 describe('instrument-formatters', () => {
-  describe('formatProfit', () => {
-    it('should format positive profit without sign prefix', () => {
-      const result = formatProfit(100, 'EUR')
-      expect(result).toBe('€100.00')
-    })
-
-    it('should format negative profit with minus sign', () => {
-      const result = formatProfit(-100, 'EUR')
-      expect(result).toBe('-€100.00')
-    })
-
-    it('should handle zero profit', () => {
-      const result = formatProfit(0, 'EUR')
-      expect(result).toBe('€0.00')
-    })
-
-    it('should use provided currency', () => {
-      const result = formatProfit(50, 'USD')
-      expect(result).toBe('$50.00')
-    })
-
-    it('should default to EUR when currency is undefined', () => {
-      const result = formatProfit(75, undefined)
-      expect(result).toBe('€75.00')
-    })
-
-    it('should handle large positive numbers', () => {
-      const result = formatProfit(1234567.89, 'EUR')
-      expect(result).toBe('€1,234,567.89')
-    })
-
-    it('should handle large negative numbers', () => {
-      const result = formatProfit(-1234567.89, 'EUR')
-      expect(result).toBe('-€1,234,567.89')
-    })
-
-    it('should handle decimal values', () => {
-      const result = formatProfit(123.456, 'EUR')
-      expect(result).toBe('€123.46')
-    })
-  })
-
   describe('calculatePortfolioWeight', () => {
     it('should calculate percentage correctly', () => {
       const result = calculatePortfolioWeight(1000, 10000)

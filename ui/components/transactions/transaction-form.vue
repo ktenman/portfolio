@@ -2,10 +2,10 @@
   <form id="transactionForm" novalidate @submit.prevent="handleSubmit">
     <FormInput
       v-model="instrumentIdModel"
-      label="InstrumentDto"
+      label="Instrument"
       type="select"
       :options="instrumentOptions"
-      placeholder="Select InstrumentDto"
+      placeholder="Select Instrument"
       :error="getFieldError('instrumentId')"
       id="instrumentId"
       @blur="touchField('instrumentId')"

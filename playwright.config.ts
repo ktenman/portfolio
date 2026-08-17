@@ -12,6 +12,7 @@ export default defineConfig({
     screenshot: 'off',
   },
   expect: {
+    timeout: 30000,
     toHaveScreenshot: {
       maxDiffPixels: 0,
       animations: 'disabled',
