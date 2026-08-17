@@ -1,7 +1,7 @@
 <template>
   <button
     class="platform-btn dropdown-toggle"
-    :class="{ active: selected !== available }"
+    :class="{ active: active ?? selected !== available }"
     type="button"
     :aria-expanded="open"
     @click="open = !open"
@@ -13,8 +13,12 @@
 <script setup lang="ts">
 const open = defineModel<boolean>({ required: true })
 
-defineProps<{
-  selected: number
-  available: number
-}>()
+withDefaults(
+  defineProps<{
+    selected: number
+    available: number
+    active?: boolean
+  }>(),
+  { active: undefined }
+)
 </script>

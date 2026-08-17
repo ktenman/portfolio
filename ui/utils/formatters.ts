@@ -58,13 +58,15 @@ export const formatAcronym = (value: string | undefined | null): string => {
     .join(' ')
 }
 
+const EUR_FORMAT = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'EUR',
+  minimumFractionDigits: 2,
+})
+
 export const formatCurrencyWithSymbol = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '€0.00'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-  }).format(value)
+  return EUR_FORMAT.format(value)
 }
 
 export const formatCurrency = (value: number | undefined | null): string => {

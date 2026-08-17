@@ -341,11 +341,11 @@ describe('TransactionForm', () => {
 
       const quantityInput = formInputs[3]
       expect(quantityInput.props('type')).toBe('number')
-      expect(quantityInput.props('step')).toBe('0.00000001')
+      expect(quantityInput.find('input').attributes('step')).toBe('0.00000001')
 
       const priceInput = formInputs[4]
       expect(priceInput.props('type')).toBe('number')
-      expect(priceInput.props('step')).toBe('0.001')
+      expect(priceInput.find('input').attributes('step')).toBe('0.001')
     })
 
     it('should show all form fields as rendered', () => {

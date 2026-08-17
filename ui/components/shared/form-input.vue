@@ -4,11 +4,10 @@
     <select
       v-if="type === 'select'"
       :id="inputId"
+      v-model="selectModel"
       class="form-select"
       :class="{ 'is-invalid': error }"
-      :value="model ?? ''"
       v-bind="$attrs"
-      @change="model = ($event.target as HTMLSelectElement).value"
     >
       <option v-if="placeholder" value="">{{ placeholder }}</option>
       <option v-for="opt in options" :key="opt.value" :value="opt.value">
@@ -45,9 +44,6 @@ interface Props {
   error?: string
   placeholder?: string
   options?: SelectOption[]
-  step?: string | number
-  min?: string | number
-  max?: string | number
   id?: string
 }
 
@@ -56,5 +52,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const model = defineModel<string | number>()
+const selectModel = computed({
+  get: () => model.value ?? '',
+  set: value => {
+    model.value = value
+  },
+})
 const inputId = computed(() => props.id || `input-${Math.random().toString(36).slice(2, 9)}`)
 </script>

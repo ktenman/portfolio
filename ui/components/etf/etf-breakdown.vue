@@ -7,9 +7,9 @@
           <filter-toggle
             v-if="availableEtfs.length > 0"
             v-model="filtersOpen"
-            :class="{ active: selectedPlatforms.length !== availablePlatforms.length }"
             :selected="selectedEtfs.length"
             :available="availableEtfs.length"
+            :active="isFiltered"
           />
         </div>
         <etf-breakdown-header
@@ -199,6 +199,12 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
 const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
 
 const filtersOpen = useLocalStorage<boolean>(STORAGE_KEYS.ETF_FILTERS_OPEN, false)
+
+const isFiltered = computed(
+  () =>
+    selectedEtfs.value.length !== availableEtfs.value.length ||
+    selectedPlatforms.value.length !== availablePlatforms.value.length
+)
 
 watch(
   availableEtfs,

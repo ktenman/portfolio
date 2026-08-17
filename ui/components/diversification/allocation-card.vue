@@ -39,9 +39,7 @@
         <span class="metric-label">Annual</span>
       </div>
       <div v-if="showRebalanceMode" class="metric-group">
-        <span class="metric-value">
-          {{ formatCurrencyWithSymbol(allocation.currentValue ?? 0) }}
-        </span>
+        <span class="metric-value">{{ formattedCurrentValue }}</span>
         <span class="metric-label">Current</span>
       </div>
     </div>
@@ -115,6 +113,10 @@ const formattedPrice = computed(() => {
   const price = selectedEtf.value?.currentPrice
   return price === null || price === undefined ? '-' : formatCurrencyWithSymbol(price)
 })
+
+const formattedCurrentValue = computed(() =>
+  formatCurrencyWithSymbol(props.allocation.currentValue)
+)
 
 const formattedTer = computed(() => formatTer(selectedEtf.value?.ter ?? null))
 
