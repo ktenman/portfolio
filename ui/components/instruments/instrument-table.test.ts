@@ -497,6 +497,24 @@ describe('InstrumentTable', () => {
       expect(mobileTotals.text()).toContain('INVESTED')
       expect(mobileTotals.text()).toContain('PROFIT')
     })
+
+    it('should sign a falling period change so it cannot read as a gain', () => {
+      const wrapper = createWrapper({
+        instruments: [
+          createInstrumentDto({
+            id: 15,
+            symbol: 'FÄLL',
+            name: 'Falling Asset',
+            providerName: ProviderName.FT,
+            priceChangeAmount: -84.19,
+            baseCurrency: 'EUR',
+          }),
+        ],
+      })
+      const changeMetric = wrapper.find('.mobile-instrument-card .text-loss')
+
+      expect(changeMetric.text()).toBe('−€84.19')
+    })
   })
 
   describe('period label', () => {

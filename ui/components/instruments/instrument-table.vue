@@ -48,8 +48,8 @@
           <span
             :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
           >
-            {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
-            {{ Math.abs(animatedTotalChangePercent).toFixed(2) }}%
+            {{ formatSignedCurrency(animatedTotalChangeAmount, 'EUR') }} /
+            {{ formatSignedPercent(animatedTotalChangePercent) }}
           </span>
         </td>
         <td class="font-bold whitespace-nowrap text-right!">
@@ -118,7 +118,7 @@
             class="metric-group"
           >
             <span class="metric-value" :class="getProfitClass(item.priceChangeAmount)">
-              {{ formatCurrencyWithSign(Math.abs(item.priceChangeAmount), item.baseCurrency) }}
+              {{ formatSignedCurrency(item.priceChangeAmount, item.baseCurrency) }}
             </span>
             <span class="metric-label">{{ selectedPeriod }}</span>
           </div>
@@ -203,8 +203,8 @@
                 getTotalsChangeClass('totalChangeAmount'),
               ]"
             >
-              {{ formatCurrencyWithSign(Math.abs(animatedTotalChangeAmount), 'EUR') }} /
-              {{ Math.abs(animatedTotalChangePercent).toFixed(2) }}%
+              {{ formatSignedCurrency(animatedTotalChangeAmount, 'EUR') }} /
+              {{ formatSignedPercent(animatedTotalChangePercent) }}
             </span>
           </div>
           <div class="total-item">
@@ -345,6 +345,7 @@ import {
   formatPriceChange,
   formatAcronym,
   formatSignedCurrency,
+  formatSignedPercent,
 } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { calculatePortfolioWeight } from '../../utils/instrument-formatters'

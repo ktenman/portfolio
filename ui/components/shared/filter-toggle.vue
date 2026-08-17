@@ -1,7 +1,7 @@
 <template>
   <button
     class="platform-btn dropdown-toggle"
-    :class="{ active: active ?? selected !== available }"
+    :class="{ active: active ?? (selected !== available) }"
     type="button"
     :aria-expanded="open"
     @click="open = !open"
