@@ -85,7 +85,7 @@ class TransactionManagementE2E {
     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
     Thread.sleep(500)
 
-    val platformButtons = elements(className("platform-btn"))
+    val platformButtons = elements(cssSelector(".platform-buttons .platform-btn"))
     expect(platformButtons.size()).toBeGreaterThan(0)
   }
 

@@ -4,18 +4,16 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatCurrencyWithSign, getGainLossClass } from '../../utils/formatters'
+import { formatSignedCurrency, formatSignedPercent, getGainLossClass } from '../../utils/formatters'
 
 const props = defineProps<{
   amount: number
   percent: number
 }>()
 
-const label = computed(() => {
-  const sign = props.amount < 0 ? '−' : '+'
-  const percent = Math.abs(props.percent).toFixed(2)
-  return `${sign}${formatCurrencyWithSign(props.amount, 'EUR')} (${sign}${percent}%)`
-})
+const label = computed(
+  () => `${formatSignedCurrency(props.amount, 'EUR')} (${formatSignedPercent(props.percent)})`
+)
 
 const changeClass = computed(() => getGainLossClass(props.amount))
 </script>

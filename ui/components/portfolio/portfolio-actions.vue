@@ -1,6 +1,9 @@
 <template>
   <div class="mb-6 flex items-center justify-between">
-    <h2 class="mb-0">Portfolio Summary</h2>
+    <div class="flex items-center gap-3">
+      <h2 class="mb-0">Portfolio Summary</h2>
+      <slot name="title-suffix" />
+    </div>
     <button
       class="btn btn-ghost btn-sm btn-secondary"
       @click="$emit('recalculate')"

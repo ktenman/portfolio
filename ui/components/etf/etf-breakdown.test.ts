@@ -91,6 +91,23 @@ describe('etf-breakdown', () => {
     expect(wrapper.find('.etf-buttons').exists()).toBe(true)
   })
 
+  it('marks the filters toggle active when a platform is deselected while every ETF is selected', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue([
+      { ...mockHoldings[0], platforms: 'LIGHTYEAR,SWEDBANK' },
+    ])
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+    localStorage.setItem('portfolio_etf_breakdown_platforms', JSON.stringify(['LIGHTYEAR']))
+
+    const wrapper = mount(EtfBreakdown)
+
+    await flushPromises()
+
+    expect(wrapper.find('.dropdown-toggle').classes()).toContain('active')
+  })
+
   it('shows a currency flag next to ETFs with fundCurrency', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(mockHoldings)
     vi.mocked(instrumentsService.getAll).mockResolvedValue({

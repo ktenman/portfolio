@@ -500,7 +500,7 @@ const columns: ColumnDefinition[] = [
 }
 
 .flag-fallback {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--color-ink-muted);
   background-color: var(--color-surface-sunken);
@@ -565,7 +565,7 @@ const columns: ColumnDefinition[] = [
 
   .card :deep(.table th:nth-child(3))::after {
     content: '%';
-    font-size: 0.75rem;
+    font-size: var(--text-label);
   }
 
   .card :deep(.table th:nth-child(6)),

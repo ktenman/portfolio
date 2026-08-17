@@ -31,4 +31,12 @@ describe('RangeChangeHeader', () => {
     const change = wrapper.find('.range-change')
     expect(change.classes()).toEqual(['range-change'])
   })
+
+  it('should leave a flat range unsigned', () => {
+    const wrapper = mount(RangeChangeHeader, {
+      props: { amount: 0, percent: 0 },
+    })
+
+    expect(wrapper.find('.range-change').text()).toBe('€0.00 (0.00%)')
+  })
 })

@@ -39,7 +39,7 @@
         <span class="metric-label">Annual</span>
       </div>
       <div v-if="showRebalanceMode" class="metric-group">
-        <span class="metric-value">€{{ (allocation.currentValue ?? 0).toFixed(0) }}</span>
+        <span class="metric-value">{{ formatCurrencyWithSymbol(allocation.currentValue) }}</span>
         <span class="metric-label">Current</span>
       </div>
     </div>
@@ -77,7 +77,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { blurOnWheel } from '../../utils/dom'
-import { formatTer, formatReturn } from '../../utils/formatters'
+import { formatTer, formatReturn, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
@@ -111,7 +111,7 @@ const etfName = computed(() => selectedEtf.value?.name || '')
 
 const formattedPrice = computed(() => {
   const price = selectedEtf.value?.currentPrice
-  return price === null || price === undefined ? '-' : `€${price.toFixed(2)}`
+  return price === null || price === undefined ? '-' : formatCurrencyWithSymbol(price)
 })
 
 const formattedTer = computed(() => formatTer(selectedEtf.value?.ter ?? null))
@@ -124,7 +124,7 @@ const formattedUnits = computed(() => {
   if (props.actionDisplayMode === 'amount') {
     const amount = props.computedAmount ?? 0
     if (amount === 0) return '-'
-    return `€${amount.toFixed(2)}`
+    return formatCurrencyWithSymbol(amount)
   }
   const units = props.computedUnits ?? 0
   if (units === 0) return '-'
@@ -137,7 +137,7 @@ const formattedUnused = computed(() => {
   if (units === 0) return '-'
   if (props.showRebalanceMode && props.computedUnused === undefined) return '-'
   const unused = props.computedUnused ?? 0
-  return `€${unused.toFixed(2)}`
+  return formatCurrencyWithSymbol(unused)
 })
 
 const formattedAfterPercent = computed(() => {
@@ -254,7 +254,7 @@ const onValueChange = (event: Event) => {
 }
 
 .allocation-card-input label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-gray-600);
   white-space: nowrap;
 }
@@ -279,7 +279,7 @@ const onValueChange = (event: Event) => {
 }
 
 .allocation-card-investment label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--color-gray-600);
   white-space: nowrap;
 }

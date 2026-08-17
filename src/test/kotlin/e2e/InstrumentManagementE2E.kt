@@ -52,7 +52,7 @@ class InstrumentManagementE2E {
 
   @Test
   fun `should display platform filter buttons`() {
-    val platformButtons = elements(className("platform-btn"))
+    val platformButtons = elements(cssSelector(".platform-buttons .platform-btn"))
     platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
     expect(platformButtons.size()).toBeGreaterThan(0)
 
@@ -62,7 +62,7 @@ class InstrumentManagementE2E {
 
   @Test
   fun `should toggle platform filter when clicking button`() {
-    val platformButtons = elements(className("platform-btn"))
+    val platformButtons = elements(cssSelector(".platform-buttons .platform-btn"))
     platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
 
     val firstPlatformButton = platformButtons.first()
@@ -141,14 +141,14 @@ class InstrumentManagementE2E {
 
   @Test
   fun `should clear all platform filters when clicking clear all button`() {
-    val platformButtons = elements(className("platform-btn"))
+    val platformButtons = elements(cssSelector(".platform-buttons .platform-btn"))
     platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
 
     val clearAllButton = platformButtons.findBy(text("Clear All"))
     clearAllButton.click()
     Thread.sleep(500)
 
-    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All"))
+    val selectAllButton = platformButtons.findBy(text("Select All"))
     expect(selectAllButton.isDisplayed).toEqual(true)
   }
 }

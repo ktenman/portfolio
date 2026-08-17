@@ -129,7 +129,7 @@ function formatDate(dateString: string): string {
   align-items: center;
   margin-left: 1.25rem;
   padding: 0 0.625rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   white-space: nowrap;
 }
 

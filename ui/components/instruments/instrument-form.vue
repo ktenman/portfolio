@@ -34,7 +34,7 @@
       label="Category"
       type="select"
       :options="categoryOptions"
-      placeholder="Select InstrumentDto Category"
+      placeholder="Select Category"
       :error="getFieldError('category')"
       :disabled="!!initialData?.id"
       @update:model-value="updateField('category', $event)"

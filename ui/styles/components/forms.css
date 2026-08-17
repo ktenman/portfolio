@@ -56,6 +56,14 @@
     appearance: base-select;
   }
 
+  .form-select {
+    min-height: calc(1.5em + 0.75rem + 2px);
+  }
+
+  .form-select-sm {
+    min-height: calc(1.5em + 0.5rem + 2px);
+  }
+
   .form-select::picker-icon {
     display: none;
   }

@@ -1,8 +1,23 @@
 <template>
   <div class="mx-auto mt-4 w-full max-w-app px-3">
     <div class="mb-6">
-      <h2 class="mb-0">Transactions</h2>
+      <div class="flex items-center gap-3">
+        <h2 class="mb-0">Transactions</h2>
+        <filter-toggle
+          v-if="availablePlatforms.length > 0"
+          v-model="filtersOpen"
+          :selected="selectedPlatforms.length"
+          :available="availablePlatforms.length"
+        />
+      </div>
       <div class="filters-container mt-3">
+        <platform-filter
+          v-if="filtersOpen && availablePlatforms.length > 0"
+          :available="availablePlatforms"
+          :selected="selectedPlatforms"
+          @toggle="togglePlatform"
+          @toggle-all="toggleAllPlatforms"
+        />
         <div class="date-filters">
           <div class="date-inputs-row">
             <div class="date-input-group">
@@ -51,13 +66,6 @@
             </button>
           </div>
         </div>
-        <platform-filter
-          v-if="availablePlatforms.length > 0"
-          :available="availablePlatforms"
-          :selected="selectedPlatforms"
-          @toggle="togglePlatform"
-          @toggle-all="toggleAllPlatforms"
-        />
       </div>
     </div>
 
@@ -94,9 +102,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import TransactionTable from './transaction-table.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
+import FilterToggle from '../shared/filter-toggle.vue'
 import { transactionsService } from '../../services/transactions-service'
 import { formatCurrency } from '../../utils/formatters'
 import { STORAGE_KEYS } from '../../constants'
@@ -134,6 +144,8 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
   STORAGE_KEYS.SELECTED_TRANSACTION_PLATFORMS,
   availablePlatforms
 )
+
+const filtersOpen = useLocalStorage<boolean>(STORAGE_KEYS.TRANSACTIONS_FILTERS_OPEN, true)
 
 const { data: transactionsResponse, isLoading } = useQuery({
   queryKey: ['transactions', selectedPlatforms, fromDate, untilDate],
@@ -232,7 +244,7 @@ const handleQuickDateSelect = (label: string) => {
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-ink-muted);
@@ -287,7 +299,7 @@ const handleQuickDateSelect = (label: string) => {
   }
 
   .date-label {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
   }
 
   .date-input-group .form-control {
@@ -297,12 +309,12 @@ const handleQuickDateSelect = (label: string) => {
   }
 
   :deep(.platform-btn) {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
     padding: 0.375rem 0.5rem;
   }
 
   .date-actions-row .form-select {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
     padding: 0.375rem 1.75rem 0.375rem 0.5rem;
   }
 

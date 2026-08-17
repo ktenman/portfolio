@@ -258,7 +258,7 @@ const extractBaseSymbol = (symbol: string): string => {
 }
 
 .transaction-date {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--color-gray-600);
 }

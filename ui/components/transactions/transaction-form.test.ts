@@ -86,7 +86,7 @@ describe('TransactionForm', () => {
       const formInputs = wrapper.findAllComponents(FormInput)
       expect(formInputs).toHaveLength(8)
 
-      expect(formInputs[0].props('label')).toBe('InstrumentDto')
+      expect(formInputs[0].props('label')).toBe('Instrument')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')
@@ -341,11 +341,11 @@ describe('TransactionForm', () => {
 
       const quantityInput = formInputs[3]
       expect(quantityInput.props('type')).toBe('number')
-      expect(quantityInput.props('step')).toBe('0.00000001')
+      expect(quantityInput.find('input').attributes('step')).toBe('0.00000001')
 
       const priceInput = formInputs[4]
       expect(priceInput.props('type')).toBe('number')
-      expect(priceInput.props('step')).toBe('0.001')
+      expect(priceInput.find('input').attributes('step')).toBe('0.001')
     })
 
     it('should show all form fields as rendered', () => {
@@ -353,7 +353,7 @@ describe('TransactionForm', () => {
       const formInputs = wrapper.findAllComponents(FormInput)
 
       expect(formInputs).toHaveLength(8)
-      expect(formInputs[0].props('label')).toBe('InstrumentDto')
+      expect(formInputs[0].props('label')).toBe('Instrument')
       expect(formInputs[1].props('label')).toBe('Platform')
       expect(formInputs[2].props('label')).toBe('Transaction Type')
       expect(formInputs[3].props('label')).toBe('Quantity')

@@ -48,24 +48,15 @@ textarea:focus-visible {
 .btn-sm {
   padding: 0.375rem 0.875rem;
   font-size: var(--text-sm);
-  border-radius: var(--radius-control);
 }
 
 .btn-primary {
   color: var(--color-white);
-  background: linear-gradient(
-    135deg,
-    var(--color-signal-indigo) 0%,
-    var(--color-signal-indigo-deep) 100%
-  );
+  background: var(--color-signal-indigo);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(
-    135deg,
-    var(--color-signal-indigo-deep) 0%,
-    var(--color-signal-indigo) 100%
-  );
+  background: var(--color-signal-indigo-deep);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -83,11 +74,11 @@ textarea:focus-visible {
 
 .btn-danger:not(.btn-ghost) {
   color: var(--color-white);
-  background: linear-gradient(135deg, var(--color-loss) 0%, var(--color-loss-deep) 100%);
+  background: var(--color-loss);
 }
 
 .btn-danger:not(.btn-ghost):hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--color-loss-deep) 0%, var(--color-loss) 100%);
+  background: var(--color-loss-deep);
 }
 
 .btn-danger:not(.btn-ghost):active:not(:disabled) {
@@ -119,7 +110,8 @@ textarea:focus-visible {
 }
 
 .btn-add-new {
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 0.75rem;
+  font-size: var(--text-sm);
   font-weight: 400;
   color: var(--color-gray-700);
   background: rgb(0 0 0 / 0.02);
