@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.TransactionResponseDto
 import ee.tenman.portfolio.dto.TransactionSummaryDto
 import ee.tenman.portfolio.dto.TransactionsWithSummaryDto
+import ee.tenman.portfolio.service.calculation.InvestmentMath
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -68,13 +69,12 @@ class TransactionQueryService(
 
   private fun calculateTransactionSummary(transactions: List<PortfolioTransaction>): TransactionSummaryDto {
     val totalUnrealizedProfit = calculateTotalUnrealizedProfit(transactions)
-    val totalRealizedProfit = calculateTotalRealizedProfit(transactions)
-    val totalInvested = calculateTotalInvested(transactions)
+    val totalRealizedProfit = InvestmentMath.calculateRealizedProfit(transactions)
     return TransactionSummaryDto(
       totalRealizedProfit = totalRealizedProfit,
       totalUnrealizedProfit = totalUnrealizedProfit,
       totalProfit = totalRealizedProfit + totalUnrealizedProfit,
-      totalInvested = totalInvested,
+      netInvested = calculateNetInvested(transactions),
     )
   }
 
@@ -83,14 +83,8 @@ class TransactionQueryService(
       .filter { it.transactionType == TransactionType.BUY }
       .sumOf { it.unrealizedProfit }
 
-  private fun calculateTotalRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
-
-  private fun calculateTotalInvested(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.BUY }
-      .filterNot { it.instrument.isCash() }
-      .sumOf { it.quantity.multiply(it.price).add(it.commission) }
+  private fun calculateNetInvested(transactions: List<PortfolioTransaction>): BigDecimal {
+    val nonCash = transactions.filterNot { it.instrument.isCash() }
+    return InvestmentMath.calculateTotalBuys(nonCash) - InvestmentMath.calculateTotalSells(nonCash)
+  }
 }

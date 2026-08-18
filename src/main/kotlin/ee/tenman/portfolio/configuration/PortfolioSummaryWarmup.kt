@@ -49,7 +49,7 @@ class PortfolioSummaryWarmup(
   private fun warmupPaths(): List<String> {
     val platforms = transactionService.getDistinctPlatforms()
     if (platforms.isEmpty()) return BASE_PATHS
-    val platformQuery = platforms.joinToString("&") { "platforms=${it.name}" }
+    val platformQuery = platforms.joinToString(",", prefix = "platforms=") { it.name }
     return BASE_PATHS +
       SUMMARY_PATHS.map { path ->
         val separator = if ('?' in path) "&" else "?"

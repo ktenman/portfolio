@@ -111,7 +111,7 @@ class TransactionQueryServiceTest {
   }
 
   @Test
-  fun `should calculate total invested as sum of all buy transactions`() {
+  fun `should offset buy cost with sell proceeds in net invested`() {
     val buyTx =
       TransactionFixtures
         .createBuyTransaction(testInstrument, BigDecimal("10"), BigDecimal("100"), testDate)
@@ -126,7 +126,7 @@ class TransactionQueryServiceTest {
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(buyTx, sellTx)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("1005"))
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("410"))
   }
 
   @Test
@@ -201,7 +201,7 @@ class TransactionQueryServiceTest {
   }
 
   @Test
-  fun `should calculate total invested from multiple buys regardless of remaining quantities`() {
+  fun `should calculate net invested from multiple buys regardless of remaining quantities`() {
     val firstBuy =
       TransactionFixtures
         .createBuyTransaction(testInstrument, BigDecimal("10"), BigDecimal("100"), testDate)
@@ -220,11 +220,11 @@ class TransactionQueryServiceTest {
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(firstBuy, secondBuy, sell)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("2010"))
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("215"))
   }
 
   @Test
-  fun `should calculate total invested when sells from previous position precede new buy`() {
+  fun `should calculate net invested when sells from previous position precede new buy`() {
     val oldSell1 =
       TransactionFixtures
         .createSellTransaction(testInstrument, BigDecimal("0.00317"), BigDecimal("62724.95"), testDate)
@@ -246,11 +246,11 @@ class TransactionQueryServiceTest {
       listOf(oldSell1, oldSell2, newBuy)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(listOf("BINANCE"), null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("859.9295106"))
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("272.1525171"))
   }
 
   @Test
-  fun `should exclude cash instruments from total invested calculation`() {
+  fun `should exclude cash instruments from net invested calculation`() {
     val cashInstrument = TransactionFixtures.createCashInstrument()
     val cashBuy =
       TransactionFixtures
@@ -273,11 +273,11 @@ class TransactionQueryServiceTest {
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(cashBuy, etfBuy)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("1000"))
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("1000"))
   }
 
   @Test
-  fun `should return zero total invested when only cash transactions exist`() {
+  fun `should return zero net invested when only cash transactions exist`() {
     val cashInstrument = TransactionFixtures.createCashInstrument()
     val cashBuy =
       TransactionFixtures
@@ -291,11 +291,11 @@ class TransactionQueryServiceTest {
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(cashBuy)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal.ZERO)
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @Test
-  fun `should include commission in total invested calculation`() {
+  fun `should include commission in net invested calculation`() {
     val buyTx =
       TransactionFixtures
         .createBuyTransaction(
@@ -308,11 +308,11 @@ class TransactionQueryServiceTest {
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(buyTx)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("1015"))
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("1015"))
   }
 
   @Test
-  fun `should calculate total invested across multiple instruments`() {
+  fun `should calculate net invested across multiple instruments`() {
     val secondInstrument = TransactionFixtures.createInstrument(symbol = "GOOGL", name = "Google", id = 2L)
     val appleBuy =
       TransactionFixtures
@@ -335,80 +335,22 @@ class TransactionQueryServiceTest {
     every { transactionService.getAllTransactions(null, null, null) } returns listOf(appleBuy, googleBuy)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("1350"))
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("1350"))
   }
 
   @Test
-  fun `should not include sell transactions in total invested`() {
-    val buyTx =
-      TransactionFixtures
-        .createBuyTransaction(
-          testInstrument,
-          BigDecimal("10"),
-          BigDecimal("100"),
-          testDate,
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { remainingQuantity = BigDecimal("5") }
+  fun `should return negative net invested when only sells exist`() {
     val sellTx =
-      TransactionFixtures
-        .createSellTransaction(
-          testInstrument,
-          BigDecimal("5"),
-          BigDecimal("150"),
-          testDate.plusDays(1),
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { realizedProfit = BigDecimal("250") }
-    every { transactionService.getAllTransactions(null, null, null) } returns listOf(buyTx, sellTx)
+      TransactionFixtures.createSellTransaction(
+        testInstrument,
+        BigDecimal("5"),
+        BigDecimal("120"),
+        testDate,
+        commission = BigDecimal("3"),
+      )
+    every { transactionService.getAllTransactions(null, null, null) } returns listOf(sellTx)
     every { transactionService.calculateTransactionProfits(any()) } returns Unit
     val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("1000"))
-  }
-
-  @Test
-  fun `should calculate total invested with mixed cash and etf transactions like real scenario`() {
-    val cashInstrument = TransactionFixtures.createCashInstrument()
-    val etf1 = TransactionFixtures.createInstrument(symbol = "STOXX50", name = "iShares STOXX 50", id = 2L)
-    val etf2 = TransactionFixtures.createInstrument(symbol = "VUSA", name = "Vanguard S&P 500", id = 3L)
-    val cashDeposit1 =
-      TransactionFixtures
-        .createBuyTransaction(
-          cashInstrument,
-          BigDecimal("1000"),
-          BigDecimal("1"),
-          testDate,
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { remainingQuantity = BigDecimal("300") }
-    val cashDeposit2 =
-      TransactionFixtures
-        .createBuyTransaction(
-          cashInstrument,
-          BigDecimal("1000"),
-          BigDecimal("1"),
-          testDate.plusDays(7),
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { remainingQuantity = BigDecimal("231.40") }
-    val etfBuy1 =
-      TransactionFixtures
-        .createBuyTransaction(
-          etf1,
-          BigDecimal("0.6356"),
-          BigDecimal("227.15"),
-          testDate.plusDays(1),
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { remainingQuantity = BigDecimal("0.3232") }
-    val etfBuy2 =
-      TransactionFixtures
-        .createBuyTransaction(
-          etf2,
-          BigDecimal("1.5705"),
-          BigDecimal("145.88"),
-          testDate.plusDays(2),
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { remainingQuantity = BigDecimal("1.0116") }
-    every { transactionService.getAllTransactions(null, null, null) } returns
-      listOf(cashDeposit1, cashDeposit2, etfBuy1, etfBuy2)
-    every { transactionService.calculateTransactionProfits(any()) } returns Unit
-    val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.totalInvested).toEqualNumerically(BigDecimal("373.48108"))
+    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("-597"))
   }
 }

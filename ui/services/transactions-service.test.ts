@@ -80,7 +80,7 @@ describe('transactionsService', () => {
       const result = await transactionsService.getAll(['BINANCE', 'COINBASE'])
 
       expect(httpClient.get).toHaveBeenCalledWith('/transactions', {
-        params: { platforms: 'BINANCE,COINBASE' },
+        params: { platforms: ['BINANCE', 'COINBASE'] },
       })
       expect(result).toEqual(mockTransactions)
     })

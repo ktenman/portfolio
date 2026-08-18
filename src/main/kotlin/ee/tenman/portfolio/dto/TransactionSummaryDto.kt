@@ -6,5 +6,5 @@ data class TransactionSummaryDto(
   val totalRealizedProfit: BigDecimal,
   val totalUnrealizedProfit: BigDecimal,
   val totalProfit: BigDecimal,
-  val totalInvested: BigDecimal,
+  val netInvested: BigDecimal,
 )
