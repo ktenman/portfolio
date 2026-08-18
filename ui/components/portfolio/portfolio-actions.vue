@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-6 flex flex-wrap items-center gap-x-3 gap-y-3">
+  <div class="mb-6 flex flex-wrap items-center gap-3">
     <h2 class="mb-0 hidden sm:block">Portfolio Summary</h2>
     <slot name="title-suffix" />
     <button

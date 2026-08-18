@@ -112,6 +112,7 @@ import { useSortableTable } from '../composables/use-sortable-table'
 import { usePlatformFilter } from '../composables/use-platform-filter'
 import { useChartRange } from '../composables/use-time-range'
 import { useAuthState } from '../composables/use-auth-state'
+import { formatDateToString } from '../composables/use-quick-dates'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import ChartRangeFilter from './portfolio/chart-range-filter.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
@@ -206,7 +207,7 @@ const showRecalculationMessage = computed(() => !!recalculationMessage.value)
 
 const latestSummary = computed(() => reversedSummaries.value[0] ?? null)
 
-const today = () => new Date().toISOString().split('T')[0]
+const today = () => formatDateToString(new Date())
 
 const staleAsOf = computed(() => {
   const date = latestSummary.value?.date
