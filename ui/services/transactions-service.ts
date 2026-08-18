@@ -9,7 +9,7 @@ import { API_ENDPOINTS } from '../constants'
 export const transactionsService = {
   getAll: (platforms?: string[], fromDate?: string, untilDate?: string) => {
     const params: Record<string, string | string[]> = {}
-    if (platforms && platforms.length > 0) {
+    if (platforms?.length) {
       params.platforms = platforms
     }
     if (fromDate) {
