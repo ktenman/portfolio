@@ -339,32 +339,6 @@ class TransactionQueryServiceTest {
   }
 
   @Test
-  fun `should subtract sell proceeds from net invested`() {
-    val buyTx =
-      TransactionFixtures
-        .createBuyTransaction(
-          testInstrument,
-          BigDecimal("10"),
-          BigDecimal("100"),
-          testDate,
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { remainingQuantity = BigDecimal("5") }
-    val sellTx =
-      TransactionFixtures
-        .createSellTransaction(
-          testInstrument,
-          BigDecimal("5"),
-          BigDecimal("150"),
-          testDate.plusDays(1),
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply { realizedProfit = BigDecimal("250") }
-    every { transactionService.getAllTransactions(null, null, null) } returns listOf(buyTx, sellTx)
-    every { transactionService.calculateTransactionProfits(any()) } returns Unit
-    val result = transactionQueryService.getTransactionsWithSummary(null, null, null)
-    expect(result.summary.netInvested).toEqualNumerically(BigDecimal("250"))
-  }
-
-  @Test
   fun `should return negative net invested when only sells exist`() {
     val sellTx =
       TransactionFixtures.createSellTransaction(

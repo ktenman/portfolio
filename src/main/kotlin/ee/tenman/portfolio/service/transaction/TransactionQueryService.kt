@@ -70,12 +70,11 @@ class TransactionQueryService(
   private fun calculateTransactionSummary(transactions: List<PortfolioTransaction>): TransactionSummaryDto {
     val totalUnrealizedProfit = calculateTotalUnrealizedProfit(transactions)
     val totalRealizedProfit = InvestmentMath.calculateRealizedProfit(transactions)
-    val netInvested = calculateNetInvested(transactions)
     return TransactionSummaryDto(
       totalRealizedProfit = totalRealizedProfit,
       totalUnrealizedProfit = totalUnrealizedProfit,
       totalProfit = totalRealizedProfit + totalUnrealizedProfit,
-      netInvested = netInvested,
+      netInvested = calculateNetInvested(transactions),
     )
   }
 
