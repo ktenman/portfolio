@@ -28,9 +28,7 @@ Detailed per-area rules live in their own files and are imported below, so they 
 
 Each subdirectory also keeps a thin `CLAUDE.md` containing `@AGENTS.md`, so the same rules load when work happens directly inside that subtree.
 
-Recurring multi-step jobs live as skills in `.claude/skills/` (tracked in git; the rest of `.claude/` is ignored). Check there before improvising a workflow:
-
-- `recording-broker-transactions` — transcribing Lightyear/LHV/Trading212 screenshots into a Flyway transaction migration
+Recurring multi-step jobs live as skills in `.claude/skills/` (tracked in git; the rest of `.claude/` is ignored). Check there before improvising a workflow.
 
 ## Git Branching Strategy
 
