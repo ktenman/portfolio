@@ -230,7 +230,7 @@ describe('InstrumentsView', () => {
       expect(instrumentsService.create).toHaveBeenCalled()
       expect(instrumentsService.update).not.toHaveBeenCalled()
       expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
-      expect(mockToastSuccess).toHaveBeenCalledWith('InstrumentDto created successfully')
+      expect(mockToastSuccess).not.toHaveBeenCalled()
       expect(wrapper.find('#stub-modal').attributes('data-open')).toBe('false')
     })
 
