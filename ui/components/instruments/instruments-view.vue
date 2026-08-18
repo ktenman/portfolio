@@ -205,7 +205,6 @@ const saveMutation = useMutation({
     queryClient.invalidateQueries({ queryKey: ['instruments'] })
     queryClient.invalidateQueries({ queryKey: ['summaries'] })
     queryClient.invalidateQueries({ queryKey: ['transactions'] })
-    toast.success(`InstrumentDto ${selectedItem.value?.id ? 'updated' : 'created'} successfully`)
     isInstrumentModalOpen.value = false
     selectedItem.value = null
   },

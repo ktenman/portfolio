@@ -1,11 +1,9 @@
 <template>
-  <div class="mb-6 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <h2 class="mb-0">Portfolio Summary</h2>
-      <slot name="title-suffix" />
-    </div>
+  <div class="mb-6 flex flex-wrap items-center gap-3">
+    <h2 class="mb-0 hidden sm:block">Portfolio Summary</h2>
+    <slot name="title-suffix" />
     <button
-      class="btn btn-ghost btn-sm btn-secondary"
+      class="btn btn-ghost btn-sm btn-secondary ml-auto whitespace-nowrap max-sm:border-transparent max-sm:bg-transparent max-sm:pr-0 max-sm:shadow-none"
       @click="$emit('recalculate')"
       :disabled="isRecalculating || isLoading"
     >
