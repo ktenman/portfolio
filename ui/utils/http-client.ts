@@ -2,6 +2,15 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios'
 import { ApiError } from '../models/api-error'
 import { ApiErrorResponse } from '../models/api-error-response'
 
+const serializeParams = (params: Record<string, unknown>): string => {
+  const search = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return
+    search.append(key, Array.isArray(value) ? value.join(',') : String(value))
+  })
+  return search.toString().replace(/%2C/g, ',')
+}
+
 const axiosInstance = axios.create({
   baseURL: '/api',
   timeout: 10000,
@@ -9,7 +18,7 @@ const axiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
   paramsSerializer: {
-    indexes: null,
+    serialize: serializeParams,
   },
 })
 
