@@ -55,7 +55,8 @@ test-results/
 .aider*
 
 ### AI agent tooling state ###
-.claude/
+.claude/*
+!.claude/skills/
 .codex/
 .impeccable/live/
 .improve-loop/
