@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.TransactionResponseDto
 import ee.tenman.portfolio.dto.TransactionSummaryDto
 import ee.tenman.portfolio.dto.TransactionsWithSummaryDto
+import ee.tenman.portfolio.service.calculation.InvestmentMath
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -88,14 +89,8 @@ class TransactionQueryService(
       .filter { it.transactionType == TransactionType.SELL }
       .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
 
-  private fun calculateNetInvested(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filterNot { it.instrument.isCash() }
-      .sumOf { signedAmount(it) }
-
-  private fun signedAmount(transaction: PortfolioTransaction): BigDecimal {
-    val gross = transaction.quantity.multiply(transaction.price)
-    if (transaction.transactionType == TransactionType.SELL) return transaction.commission.subtract(gross)
-    return gross.add(transaction.commission)
+  private fun calculateNetInvested(transactions: List<PortfolioTransaction>): BigDecimal {
+    val invested = transactions.filterNot { it.instrument.isCash() }
+    return InvestmentMath.calculateTotalBuys(invested).subtract(InvestmentMath.calculateTotalSells(invested))
   }
 }

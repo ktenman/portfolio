@@ -54,15 +54,14 @@ describe('httpClient', () => {
   })
 
   it('should create axios instance with correct config', () => {
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        baseURL: '/api',
-        timeout: 10000,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-    )
+    expect(mockCreate).toHaveBeenCalledWith({
+      baseURL: '/api',
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      paramsSerializer: { serialize: expect.any(Function) },
+    })
   })
 
   describe('params serializer', () => {
