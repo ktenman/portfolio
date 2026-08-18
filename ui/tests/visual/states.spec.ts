@@ -23,7 +23,7 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
     totalRealizedProfit: 0,
     totalUnrealizedProfit: 0,
     totalProfit: 0,
-    totalInvested: 0,
+    netInvested: 0,
   },
 }
 

@@ -47,9 +47,9 @@ class PortfolioSummaryWarmupTest {
       "/api/portfolio-summary/historical?page=0&size=30",
       "/api/portfolio-summary/current",
       "/api/portfolio-summary/series?range=1M",
-      "/api/portfolio-summary/historical?page=0&size=30&platforms=LIGHTYEAR&platforms=TRADING212",
-      "/api/portfolio-summary/current?platforms=LIGHTYEAR&platforms=TRADING212",
-      "/api/portfolio-summary/series?range=1M&platforms=LIGHTYEAR&platforms=TRADING212",
+      "/api/portfolio-summary/historical?page=0&size=30&platforms=LIGHTYEAR,TRADING212",
+      "/api/portfolio-summary/current?platforms=LIGHTYEAR,TRADING212",
+      "/api/portfolio-summary/series?range=1M&platforms=LIGHTYEAR,TRADING212",
     )
   }
 

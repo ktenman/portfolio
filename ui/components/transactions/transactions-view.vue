@@ -89,9 +89,9 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Total Invested</div>
+        <div class="stat-label">Net Invested</div>
         <div class="stat-value">
-          {{ formatCurrency(totalInvested) }}
+          {{ formatProfitLoss(netInvested) }}
         </div>
       </div>
     </div>
@@ -108,7 +108,7 @@ import TransactionTable from './transaction-table.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
 import { transactionsService } from '../../services/transactions-service'
-import { formatCurrency } from '../../utils/formatters'
+import { formatCurrency, formatProfitLoss } from '../../utils/formatters'
 import { STORAGE_KEYS } from '../../constants'
 import { useQuickDates, QUICK_DATE_OPTIONS } from '../../composables/use-quick-dates'
 import { useAuthState } from '../../composables/use-auth-state'
@@ -172,8 +172,8 @@ const totalProfitSum = computed(() => {
   return transactionsResponse.value?.summary.totalProfit || 0
 })
 
-const totalInvested = computed(() => {
-  return transactionsResponse.value?.summary.totalInvested || 0
+const netInvested = computed(() => {
+  return transactionsResponse.value?.summary.netInvested || 0
 })
 
 const handleQuickDateSelect = (label: string) => {

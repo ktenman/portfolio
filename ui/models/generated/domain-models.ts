@@ -71,7 +71,7 @@ export interface TransactionSummaryDto {
     totalRealizedProfit: number;
     totalUnrealizedProfit: number;
     totalProfit: number;
-    totalInvested: number;
+    netInvested: number;
 }
 
 export interface TransactionsWithSummaryDto {

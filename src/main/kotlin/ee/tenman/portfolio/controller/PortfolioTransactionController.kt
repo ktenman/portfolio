@@ -60,13 +60,10 @@ class PortfolioTransactionController(
   @GetMapping
   @Loggable
   fun getAllTransactions(
-    @RequestParam(required = false) platforms: String?,
+    @RequestParam(required = false) platforms: List<String>?,
     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) fromDate: LocalDate?,
     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) untilDate: LocalDate?,
-  ): TransactionsWithSummaryDto {
-    val platformList = platforms?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
-    return transactionQueryService.getTransactionsWithSummary(platformList, fromDate, untilDate)
-  }
+  ): TransactionsWithSummaryDto = transactionQueryService.getTransactionsWithSummary(platforms, fromDate, untilDate)
 
   @GetMapping("/{id}")
   @Loggable

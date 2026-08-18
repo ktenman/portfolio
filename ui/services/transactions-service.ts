@@ -7,19 +7,14 @@ import type {
 import { API_ENDPOINTS } from '../constants'
 
 export const transactionsService = {
-  getAll: (platforms?: string[], fromDate?: string, untilDate?: string) => {
-    const params: Record<string, string> = {}
-    if (platforms && platforms.length > 0) {
-      params.platforms = platforms.join(',')
-    }
-    if (fromDate) {
-      params.fromDate = fromDate
-    }
-    if (untilDate) {
-      params.untilDate = untilDate
-    }
-    return httpClient.get<TransactionsWithSummaryDto>(API_ENDPOINTS.TRANSACTIONS, { params })
-  },
+  getAll: (platforms?: string[], fromDate?: string, untilDate?: string) =>
+    httpClient.get<TransactionsWithSummaryDto>(API_ENDPOINTS.TRANSACTIONS, {
+      params: {
+        ...(platforms?.length ? { platforms } : {}),
+        ...(fromDate ? { fromDate } : {}),
+        ...(untilDate ? { untilDate } : {}),
+      },
+    }),
 
   getPlatforms: () => httpClient.get<string[]>(API_ENDPOINTS.TRANSACTIONS_PLATFORMS),
 

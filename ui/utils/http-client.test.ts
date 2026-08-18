@@ -60,9 +60,26 @@ describe('httpClient', () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      paramsSerializer: {
-        indexes: null,
-      },
+      paramsSerializer: { serialize: expect.any(Function) },
+    })
+  })
+
+  describe('params serializer', () => {
+    const serialize = (params: Record<string, unknown>): string =>
+      mockCreate.mock.calls[0][0].paramsSerializer.serialize(params)
+
+    it('should send an array as a single comma separated param', () => {
+      expect(serialize({ range: '2Y', platforms: ['LHV', 'BINANCE', 'AVIVA'] })).toBe(
+        'range=2Y&platforms=LHV,BINANCE,AVIVA'
+      )
+    })
+
+    it('should omit params that are undefined or null', () => {
+      expect(serialize({ page: 0, size: undefined, platforms: null })).toBe('page=0')
+    })
+
+    it('should encode reserved characters in scalar params', () => {
+      expect(serialize({ name: 'Kärcher & Sons' })).toBe('name=K%C3%A4rcher+%26+Sons')
     })
   })
 
