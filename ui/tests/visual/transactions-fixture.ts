@@ -818,7 +818,7 @@ const SUMMARY: TransactionSummaryDto = {
   totalRealizedProfit: 41226.25,
   totalUnrealizedProfit: 44746.75,
   totalProfit: 85973.0,
-  totalInvested: 386008.34,
+  netInvested: 386008.34,
 }
 
 const RESPONSE = {

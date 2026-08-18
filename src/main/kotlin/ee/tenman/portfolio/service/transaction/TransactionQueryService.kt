@@ -69,12 +69,12 @@ class TransactionQueryService(
   private fun calculateTransactionSummary(transactions: List<PortfolioTransaction>): TransactionSummaryDto {
     val totalUnrealizedProfit = calculateTotalUnrealizedProfit(transactions)
     val totalRealizedProfit = calculateTotalRealizedProfit(transactions)
-    val totalInvested = calculateTotalInvested(transactions)
+    val netInvested = calculateNetInvested(transactions)
     return TransactionSummaryDto(
       totalRealizedProfit = totalRealizedProfit,
       totalUnrealizedProfit = totalUnrealizedProfit,
       totalProfit = totalRealizedProfit + totalUnrealizedProfit,
-      totalInvested = totalInvested,
+      netInvested = netInvested,
     )
   }
 
@@ -88,9 +88,14 @@ class TransactionQueryService(
       .filter { it.transactionType == TransactionType.SELL }
       .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
 
-  private fun calculateTotalInvested(transactions: List<PortfolioTransaction>): BigDecimal =
+  private fun calculateNetInvested(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions
-      .filter { it.transactionType == TransactionType.BUY }
       .filterNot { it.instrument.isCash() }
-      .sumOf { it.quantity.multiply(it.price).add(it.commission) }
+      .sumOf { signedAmount(it) }
+
+  private fun signedAmount(transaction: PortfolioTransaction): BigDecimal {
+    val gross = transaction.quantity.multiply(transaction.price)
+    if (transaction.transactionType == TransactionType.SELL) return transaction.commission.subtract(gross)
+    return gross.add(transaction.commission)
+  }
 }
