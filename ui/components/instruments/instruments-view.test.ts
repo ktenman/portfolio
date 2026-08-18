@@ -230,8 +230,28 @@ describe('InstrumentsView', () => {
       expect(instrumentsService.create).toHaveBeenCalled()
       expect(instrumentsService.update).not.toHaveBeenCalled()
       expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['instruments'] })
-      expect(mockToastSuccess).toHaveBeenCalledWith('InstrumentDto created successfully')
       expect(wrapper.find('#stub-modal').attributes('data-open')).toBe('false')
+    })
+
+    it('should not confirm a successful save in the UI', async () => {
+      const { wrapper } = createWrapper()
+      vi.mocked(instrumentsService.create).mockResolvedValue(
+        createInstrumentDto({
+          id: 5,
+          symbol: 'ÕIE',
+          name: 'Õie Investeeringud AS',
+          providerName: ProviderName.FT,
+        })
+      )
+
+      await flushPromises()
+
+      await requestAdd(wrapper)
+
+      await wrapper.find('#stub-save-button').trigger('click')
+      await flushPromises()
+
+      expect(mockToastSuccess).not.toHaveBeenCalled()
     })
 
     it('should handle create error and show error message', async () => {

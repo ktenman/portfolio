@@ -4,11 +4,7 @@
       <div class="flex flex-wrap items-center justify-between gap-4">
         <h2 class="mb-0">Diversification</h2>
         <div class="flex items-center gap-2">
-          <span v-if="saveStatus === 'saving'" class="save-status text-body-secondary">
-            Saving...
-          </span>
-          <span v-else-if="saveStatus === 'saved'" class="save-status text-gain">Saved</span>
-          <span v-else-if="saveStatus === 'error'" class="save-status text-loss">Save failed</span>
+          <span v-if="saveFailed" class="save-status text-loss">Save failed</span>
           <div
             v-if="lastUpdatedText"
             class="last-updated clickable"
@@ -233,7 +229,7 @@ const currentConfig = computed(() => ({
   actionDisplayMode: actionDisplayMode.value,
 }))
 
-const { saveStatus, markDirty } = useDiversificationConfig(() => currentConfig.value)
+const { saveFailed, markDirty } = useDiversificationConfig(() => currentConfig.value)
 
 const toBreakdown = <T extends { percentage: number }>(
   items: T[] | undefined,

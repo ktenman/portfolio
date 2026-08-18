@@ -81,7 +81,7 @@ const tickFont = { size: 11 }
 
 const chartOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true,
-  aspectRatio: isCompact.value ? 1.85 : 2.15,
+  aspectRatio: isCompact.value ? 1.76 : 2.05,
   animation: false,
   interaction: {
     mode: 'index',
