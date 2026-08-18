@@ -60,7 +60,7 @@
             :amount="rangeChange.changeAmount"
             :percent="rangeChange.changePercent"
           />
-          <span class="headline-asof">as of {{ formatDate(latestSummary.date) }}</span>
+          <span v-if="staleAsOf" class="headline-asof">as of {{ staleAsOf }}</span>
         </div>
       </header>
 
@@ -206,6 +206,14 @@ const showRecalculationMessage = computed(() => !!recalculationMessage.value)
 
 const latestSummary = computed(() => reversedSummaries.value[0] ?? null)
 
+const today = () => new Date().toISOString().split('T')[0]
+
+const staleAsOf = computed(() => {
+  const date = latestSummary.value?.date
+  if (!date || date === today()) return null
+  return formatDate(date)
+})
+
 const format24hChange = (value: number | null) => {
   if (value === null || value === 0 || Math.abs(value) <= 0.01) {
     return ''
@@ -273,10 +281,9 @@ const summaryColumns: ColumnDefinition[] = [
   },
 ]
 
-const getSummaryRowClass = (summary: any, index: number) => {
-  const isToday = summary.date === new Date().toISOString().split('T')[0]
-  return { 'font-weight-bold': index === 0 && isToday }
-}
+const getSummaryRowClass = (summary: any, index: number) => ({
+  'font-weight-bold': index === 0 && summary.date === today(),
+})
 
 useInfiniteScroll(
   window,
@@ -328,7 +335,7 @@ const handleRecalculate = async () => {
 
 .headline-asof {
   font-size: var(--text-sm);
-  color: var(--color-ink-faint);
+  color: var(--color-ink-soft);
 }
 
 .chart-veil {
