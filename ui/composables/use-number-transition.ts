@@ -11,9 +11,15 @@ export function useNumberTransition(value: Ref<number | null | undefined>) {
   watch(value, (newValue, oldValue) => {
     if (animationId !== null) {
       cancelAnimationFrame(animationId)
+      animationId = null
     }
 
-    const start = oldValue ?? 0
+    if (oldValue === null || oldValue === undefined) {
+      displayValue.value = newValue ?? 0
+      return
+    }
+
+    const start = oldValue
     const end = newValue ?? 0
     const startTime = performance.now()
 

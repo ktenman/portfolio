@@ -213,7 +213,9 @@ const showRecalculationMessage = computed(() => !!recalculationMessage.value)
 
 const latestSummary = computed(() => reversedSummaries.value[0] ?? null)
 
-const headlineValue = computed(() => latestSummary.value?.totalValue ?? null)
+const headlineValue = computed(() =>
+  viewState.value === 'SUCCESS' ? (latestSummary.value?.totalValue ?? null) : null
+)
 const animatedHeadlineValue = useNumberTransition(headlineValue)
 const headlineFlashClass = useFlashOnChange(headlineValue)
 
