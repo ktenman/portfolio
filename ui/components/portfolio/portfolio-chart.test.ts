@@ -1,15 +1,20 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
+import { Chart, type ChartConfiguration } from 'chart.js'
 import PortfolioChart from './portfolio-chart.vue'
 import { CHART_COLORS } from '../../constants/chart-colors'
 
-vi.mock('vue-chartjs', () => ({
-  Line: {
-    name: 'Line',
-    props: ['data', 'options'],
-    template: '<div class="mock-chart">{{ JSON.stringify(data) }}</div>',
-  },
-}))
+vi.mock('chart.js', async importOriginal => {
+  const actual = await importOriginal<typeof import('chart.js')>()
+  const mockChart: any = vi.fn().mockImplementation(function () {
+    return { destroy: vi.fn() }
+  })
+  mockChart.register = vi.fn()
+  mockChart.defaults = { font: {} }
+
+  return { ...actual, Chart: mockChart }
+})
 
 vi.mock('../../utils/formatters', () => ({
   formatDate: vi.fn((date: string) => {
@@ -27,59 +32,72 @@ describe('PortfolioChart', () => {
     earningsValues: [2500, 2750, 3000],
   }
 
-  const createWrapper = (props = {}) => {
-    return mount(PortfolioChart, {
+  const createWrapper = async (props = {}) => {
+    const wrapper = mount(PortfolioChart, {
       props: {
         data: mockChartData,
         ...props,
       },
     })
+    await nextTick()
+    return wrapper
   }
 
+  const chartConfig = () =>
+    vi.mocked(Chart).mock.calls[0][1] as unknown as ChartConfiguration<'line'>
+
+  const chartData = () => chartConfig().data
+  const chartOptions = (): any => chartConfig().options
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('data transformation', () => {
-    it('should render chart when data is provided', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.find('.mock-chart')
-      expect(chart.exists()).toBe(true)
+    it('should render chart when data is provided', async () => {
+      const wrapper = await createWrapper()
+
+      expect(wrapper.find('canvas').exists()).toBe(true)
+      expect(Chart).toHaveBeenCalled()
     })
 
-    it('should not render chart when data is null', () => {
-      const wrapper = createWrapper({ data: null })
-      const chart = wrapper.find('.mock-chart')
-      expect(chart.exists()).toBe(false)
+    it('should not render chart when data is null', async () => {
+      const wrapper = await createWrapper({ data: null })
+
+      expect(wrapper.find('canvas').exists()).toBe(false)
+      expect(Chart).not.toHaveBeenCalled()
     })
 
-    it('should format labels using formatDate', () => {
-      const wrapper = createWrapper()
-      const chartData = JSON.parse(wrapper.find('.mock-chart').text())
+    it('should format labels using formatDate', async () => {
+      await createWrapper()
 
-      expect(chartData.labels).toEqual(['29.12.2023', '30.12.2023', '31.12.2023'])
+      expect(chartData().labels).toEqual(['29.12.2023', '30.12.2023', '31.12.2023'])
     })
 
-    it('should create correct datasets structure', () => {
-      const wrapper = createWrapper()
-      const chartData = JSON.parse(wrapper.find('.mock-chart').text())
+    it('should create correct datasets structure', async () => {
+      await createWrapper()
+      const datasets = chartData().datasets
 
-      expect(chartData.datasets).toHaveLength(4)
-      expect(chartData.datasets[0]).toMatchObject({
+      expect(datasets).toHaveLength(4)
+      expect(datasets[0]).toMatchObject({
         label: 'Total Value',
         borderColor: CHART_COLORS[0],
         data: mockChartData.totalValues,
         yAxisID: 'y',
       })
-      expect(chartData.datasets[1]).toMatchObject({
+      expect(datasets[1]).toMatchObject({
         label: 'Total Profit',
         borderColor: CHART_COLORS[1],
         data: mockChartData.profitValues,
         yAxisID: 'y',
       })
-      expect(chartData.datasets[2]).toMatchObject({
+      expect(datasets[2]).toMatchObject({
         label: 'XIRR Annual Return',
         borderColor: CHART_COLORS[3],
         data: mockChartData.xirrValues,
         yAxisID: 'y1',
       })
-      expect(chartData.datasets[3]).toMatchObject({
+      expect(datasets[3]).toMatchObject({
         label: 'Earnings Per Month',
         borderColor: CHART_COLORS[5],
         data: mockChartData.earningsValues,
@@ -87,11 +105,10 @@ describe('PortfolioChart', () => {
       })
     })
 
-    it('should fill the area under the total value series only', () => {
-      const wrapper = createWrapper()
-      const chartData = JSON.parse(wrapper.find('.mock-chart').text())
+    it('should fill the area under the total value series only', async () => {
+      await createWrapper()
 
-      expect(chartData.datasets.map((dataset: { fill?: boolean }) => dataset.fill)).toEqual([
+      expect(chartData().datasets.map(dataset => dataset.fill)).toEqual([
         true,
         undefined,
         undefined,
@@ -101,10 +118,9 @@ describe('PortfolioChart', () => {
   })
 
   describe('chart configuration', () => {
-    it('should pass correct options to chart', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.findComponent({ name: 'Line' })
-      const options = chart.props('options')
+    it('should pass correct options to chart', async () => {
+      await createWrapper()
+      const options = chartOptions()
 
       expect(options.responsive).toBe(true)
       expect(options.animation).toBe(false)
@@ -112,62 +128,75 @@ describe('PortfolioChart', () => {
       expect(options.interaction.intersect).toBe(false)
     })
 
-    it('should configure dual y-axes correctly', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.findComponent({ name: 'Line' })
-      const options = chart.props('options')
+    it('should configure dual y-axes correctly', async () => {
+      await createWrapper()
+      const options = chartOptions()
 
       expect(options.scales.y.position).toBe('left')
       expect(options.scales.y1.position).toBe('right')
       expect(options.scales.y1.grid.drawOnChartArea).toBe(false)
     })
 
-    it('should label the left axis with compact euro amounts', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.findComponent({ name: 'Line' })
-      const options = chart.props('options')
+    it('should label the left axis with compact euro amounts', async () => {
+      await createWrapper()
 
-      expect(options.scales.y.ticks.callback(50000)).toBe('€50K')
+      expect(chartOptions().scales.y.ticks.callback(50000)).toBe('€50K')
     })
 
-    it('should label the right axis with percentages', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.findComponent({ name: 'Line' })
-      const options = chart.props('options')
+    it('should label the right axis with percentages', async () => {
+      await createWrapper()
 
-      expect(options.scales.y1.ticks.callback(12)).toBe('12%')
+      expect(chartOptions().scales.y1.ticks.callback(12)).toBe('12%')
     })
 
-    it('should place the legend below the plot with round markers', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.findComponent({ name: 'Line' })
-      const options = chart.props('options')
+    it('should place the legend below the plot with round markers', async () => {
+      await createWrapper()
+      const legend = chartOptions().plugins.legend
 
-      expect(options.plugins.legend.position).toBe('bottom')
-      expect(options.plugins.legend.labels.pointStyle).toBe('circle')
+      expect(legend.position).toBe('bottom')
+      expect(legend.labels.pointStyle).toBe('circle')
     })
 
-    it('should draw horizontal gridlines only', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.findComponent({ name: 'Line' })
-      const options = chart.props('options')
+    it('should draw horizontal gridlines only', async () => {
+      await createWrapper()
 
-      expect(options.scales.x.grid.display).toBe(false)
+      expect(chartOptions().scales.x.grid.display).toBe(false)
     })
 
-    it('should limit ticks on axes', () => {
-      const wrapper = createWrapper()
-      const chart = wrapper.findComponent({ name: 'Line' })
-      const options = chart.props('options')
+    it('should limit ticks on axes', async () => {
+      await createWrapper()
+      const scales = chartOptions().scales
 
-      expect(options.scales.x.ticks.maxTicksLimit).toBe(5)
-      expect(options.scales.y.ticks.maxTicksLimit).toBe(8)
-      expect(options.scales.y1.ticks.maxTicksLimit).toBe(8)
+      expect(scales.x.ticks.maxTicksLimit).toBe(5)
+      expect(scales.y.ticks.maxTicksLimit).toBe(8)
+      expect(scales.y1.ticks.maxTicksLimit).toBe(8)
+    })
+  })
+
+  describe('chart lifecycle', () => {
+    it('should rebuild the chart when the data changes', async () => {
+      const wrapper = await createWrapper()
+      const previous = vi.mocked(Chart).mock.results[0].value
+
+      await wrapper.setProps({ data: { ...mockChartData, totalValues: [1, 2, 3] } })
+      await nextTick()
+
+      expect(previous.destroy).toHaveBeenCalled()
+      expect(vi.mocked(Chart).mock.calls[1][1].data.datasets[0].data).toEqual([1, 2, 3])
+    })
+
+    it('should destroy the chart when the component unmounts', async () => {
+      const wrapper = await createWrapper()
+      const instance = vi.mocked(Chart).mock.results[0].value
+
+      wrapper.unmount()
+
+      expect(instance.destroy).toHaveBeenCalled()
     })
   })
 
   describe('empty data handling', () => {
-    it('should handle empty arrays gracefully', () => {
+    it('should handle empty arrays gracefully', async () => {
       const emptyData = {
         labels: [],
         totalValues: [],
@@ -176,12 +205,11 @@ describe('PortfolioChart', () => {
         earningsValues: [],
       }
 
-      const wrapper = createWrapper({ data: emptyData })
-      const chartData = JSON.parse(wrapper.find('.mock-chart').text())
+      await createWrapper({ data: emptyData })
 
-      expect(chartData.labels).toEqual([])
-      expect(chartData.datasets).toHaveLength(4)
-      chartData.datasets.forEach((dataset: any) => {
+      expect(chartData().labels).toEqual([])
+      expect(chartData().datasets).toHaveLength(4)
+      chartData().datasets.forEach(dataset => {
         expect(dataset.data).toEqual([])
       })
     })
