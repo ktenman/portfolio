@@ -363,9 +363,9 @@ Migrations are in `src/main/resources/db/migration/` using timestamp naming `VYY
 - **Other:** Telegram (notifications), MinIO (S3-compatible logo storage)
 - **Infrastructure:** Cloudflare Bypass Proxy (Node.js/TypeScript, curl-impersonate for TLS fingerprint spoofing)
 
-### FT Data Retrieval - Adaptive Scheduling
+### Market Phase Detection
 
-FT job uses market-phase-based adaptive scheduling (60s during market hours, 15min pre/post, 2hr off-hours, 4hr weekends). Config in `ft.adaptive-scheduling`. Key classes: `MarketPhaseDetectionService`, `FtDataRetrievalJob`.
+`MarketPhaseDetectionService` classifies the current time into a `MarketPhase` (main hours, pre/post, off-hours, weekend). Its only consumer is `PriceUpdateProcessor`, which calls `isWeekendPhase()` to skip persisting daily prices on weekends. `FtDataRetrievalJob` runs on a plain cron and does not read the phase.
 
 ### Performance Optimization
 

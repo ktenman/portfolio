@@ -90,7 +90,6 @@ logging:
     org.springframework: INFO
     org.hibernate: INFO
     ee.tenman.portfolio.service.etf.EtfHoldingService: DEBUG
-    ee.tenman.portfolio.service.HoldingParser: DEBUG
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{transactionId}- %msg%n'
 #    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg %X{traceId}%n'
@@ -126,16 +125,8 @@ historicalPrices:
   url: https://markets.ft.com
 
 ft:
-  job:
-    enabled: true
   parallel:
     threads: 5
-  instruments:
-    parallel:
-      threads: 5
-  adaptive-scheduling:
-    enabled: ${FT_ADAPTIVE_SCHEDULING_ENABLED:false}
-    minimum-interval-seconds: 60
 
 telegram:
   bot:
@@ -156,14 +147,10 @@ scheduling:
   enabled: ${SCHEDULING_ENABLED:true}
   jobs:
     binance-interval: ${BINANCE_JOB_INTERVAL:120000}
-    ft-interval: ${FT_JOB_INTERVAL:120000}
-    xirr-interval: ${XIRR_JOB_INTERVAL:120000}
     summary-interval: ${SUMMARY_JOB_INTERVAL:60000}
     trading212-interval: ${TRADING212_JOB_INTERVAL:60000}
-    industry-classification: ${INDUSTRY_CLASSIFICATION_CRON:0 0 2 * * *}
     etf-holdings-classification-cron: ${ETF_HOLDINGS_CLASSIFICATION_CRON:0 0 3 * * SUN}
     etf-country-classification-cron: ${ETF_COUNTRY_CLASSIFICATION_CRON:0 30 4 * * *}
-    ecb-cron: ${ECB_JOB_CRON:0 0 9 * * *}
     price-snapshot-cleanup-cron: ${PRICE_SNAPSHOT_CLEANUP_CRON:0 0 4 * * *}
     price-snapshot-retention-days: ${PRICE_SNAPSHOT_RETENTION_DAYS:30}
 
@@ -235,9 +222,6 @@ cloudflare-bypass-proxy:
   url: ${CLOUDFLARE_BYPASS_PROXY_URL:${TRADING212_PROXY_URL:http://localhost:3000}}
 
 trading212:
-  proxy:
-    url: ${TRADING212_PROXY_URL:${cloudflare-bypass-proxy.url}}
-  batch-size: ${TRADING212_BATCH_SIZE:15}
   api:
     base-url: ${TRADING212_API_BASE_URL:https://live.trading212.com}
     key-id: ${TRADING212_API_KEY_ID:}
