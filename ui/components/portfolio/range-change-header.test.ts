@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import RangeChangeHeader from './range-change-header.vue'
 
 describe('RangeChangeHeader', () => {
@@ -38,5 +39,27 @@ describe('RangeChangeHeader', () => {
     })
 
     expect(wrapper.find('.range-change').text()).toBe('€0.00 (0.00%)')
+  })
+
+  it('should flash a gain when the amount rises', async () => {
+    const wrapper = mount(RangeChangeHeader, {
+      props: { amount: 100, percent: 1 },
+    })
+
+    await wrapper.setProps({ amount: 200, percent: 2 })
+    await nextTick()
+
+    expect(wrapper.find('.range-change').classes()).toContain('value-increase')
+  })
+
+  it('should flash a loss when the amount falls', async () => {
+    const wrapper = mount(RangeChangeHeader, {
+      props: { amount: 100, percent: 1 },
+    })
+
+    await wrapper.setProps({ amount: 50, percent: 0.5 })
+    await nextTick()
+
+    expect(wrapper.find('.range-change').classes()).toContain('value-decrease')
   })
 })
