@@ -38,7 +38,6 @@ dependencies {
   implementation(libs.spring.cloud.starter.openfeign)
   implementation(libs.jackson.module.kotlin)
 
-  implementation(libs.commons.fileupload)
   implementation(libs.spring.boot.starter.actuator)
   implementation(libs.spring.boot.starter.aspectj)
   implementation(libs.micrometer.registry.prometheus)
