@@ -407,6 +407,32 @@ describe('usePortfolioSummaryQuery', () => {
       )
     })
 
+    it('should tag the range change with the range it belongs to', async () => {
+      const range = ref(TimeRange.ONE_YEAR)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => expect(queryResult.rangeChange.value?.range).toBe('1Y'), {
+        timeout: 5000,
+      })
+    })
+
+    it('should keep the previous range tag while the next range is still loading', async () => {
+      const range = ref(TimeRange.ONE_YEAR)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => expect(queryResult.rangeChange.value?.range).toBe('1Y'), {
+        timeout: 5000,
+      })
+
+      vi.mocked(portfolioSummaryService.getRangeChange).mockImplementation(
+        () => new Promise(() => {})
+      )
+      range.value = TimeRange.ONE_WEEK
+      await flushPromises()
+
+      expect(queryResult.rangeChange.value?.range).toBe('1Y')
+    })
+
     it('should merge the current summary into the chart series', async () => {
       const { queryResult } = setupQuery()
 

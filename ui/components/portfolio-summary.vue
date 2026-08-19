@@ -61,6 +61,7 @@
         <div class="headline-meta">
           <range-change-header
             v-if="rangeChange"
+            :key="rangeChange.range"
             :amount="rangeChange.changeAmount"
             :percent="rangeChange.changePercent"
           />
