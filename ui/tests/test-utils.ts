@@ -1,18 +1,11 @@
-import { render, RenderOptions } from '@testing-library/vue'
+import { mount, VueWrapper } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
-import { createMemoryHistory, createRouter, Router } from 'vue-router'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import router from '../router/index'
 
-interface TestingOptions extends RenderOptions<any> {
-  initialRoute?: string
-}
-
-export function renderWithProviders(
-  component: any,
-  options: TestingOptions = {}
-): ReturnType<typeof render> & { router: Router; queryClient: QueryClient } {
-  const { initialRoute = '/', ...renderOptions } = options
-
+export function renderWithProviders(component: any): VueWrapper<any> & {
+  queryClient: QueryClient
+} {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -31,21 +24,13 @@ export function renderWithProviders(
     routes: router.options.routes,
   })
 
-  testRouter.push(initialRoute)
+  testRouter.push('/')
 
-  return {
-    ...render(component, {
-      ...renderOptions,
-      global: {
-        ...renderOptions.global,
-        plugins: [
-          [VueQueryPlugin, { queryClient }],
-          testRouter,
-          ...(renderOptions.global?.plugins || []),
-        ],
-      },
-    }),
-    router: testRouter,
-    queryClient,
-  }
+  const wrapper = mount(component, {
+    global: {
+      plugins: [[VueQueryPlugin, { queryClient }], testRouter],
+    },
+  })
+
+  return Object.assign(wrapper, { queryClient })
 }

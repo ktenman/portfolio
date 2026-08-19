@@ -15,7 +15,7 @@ Portfolio Management System - full-stack app for tracking investment portfolios 
 - Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, MockK, Kotest (property-based), PITest (mutation), Selenide, Vitest
 - Build: Gradle 9.5 with Version Catalogs (libs.versions.toml)
 - Authentication: Custom Spring Boot auth service (https://github.com/ktenman/auth)
-- Infrastructure: Docker, Kubernetes, Caddy reverse proxy
+- Infrastructure: Docker, Caddy reverse proxy
 - Additional Services: Google Cloud Vision API
 
 ## Context Map
