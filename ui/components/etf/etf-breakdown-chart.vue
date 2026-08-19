@@ -27,20 +27,13 @@
 import { Chart, DoughnutController, ArcElement } from 'chart.js'
 
 Chart.register(DoughnutController, ArcElement)
-
-export interface ChartDataItem {
-  label: string
-  value: number
-  percentage: string
-  color: string
-  code?: string
-}
 </script>
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import EtfBreakdownLegend from './etf-breakdown-legend.vue'
 import { withAlpha } from '../../constants/chart-colors'
+import type { ChartDataItem } from '../../services/etf-chart-service'
 
 const props = defineProps<{
   chartData: ChartDataItem[]
