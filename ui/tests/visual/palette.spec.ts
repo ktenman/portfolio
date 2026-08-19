@@ -36,7 +36,6 @@ interface PaintedRing {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await stubBuildInfo(page)
   await stubEnums(page)
 })

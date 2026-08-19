@@ -14,7 +14,11 @@ export function useChartLifecycle<T>(
     }
     const ctx = chartCanvas.value?.getContext('2d')
     if (!ctx) return
-    chartInstance = new Chart(ctx, createConfig(ctx, data.value))
+    const config = createConfig(ctx, data.value)
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      config.options = { ...config.options, animation: false }
+    }
+    chartInstance = new Chart(ctx, config)
   }
 
   watch(data, createChart, { deep: true })

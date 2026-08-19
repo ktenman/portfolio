@@ -11,6 +11,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:61234',
     screenshot: 'off',
+    reducedMotion: 'reduce',
   },
   webServer: {
     command: 'npm run dev:ui',
