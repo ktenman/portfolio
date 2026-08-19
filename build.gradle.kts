@@ -40,7 +40,10 @@ dependencies {
 
   implementation(libs.spring.boot.starter.actuator)
   implementation(libs.spring.boot.starter.aspectj)
-  implementation(libs.micrometer.registry.prometheus)
+  implementation(libs.micrometer.registry.prometheus) {
+    exclude(group = "io.prometheus", module = "prometheus-metrics-exposition-formats")
+  }
+  runtimeOnly(libs.prometheus.exposition.textformats)
   implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
   implementation(libs.kotlin.reflect)
@@ -49,12 +52,16 @@ dependencies {
   implementation(libs.resilience4j.retry)
   implementation(libs.resilience4j.kotlin)
   implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.telegrambots)
-  implementation(libs.telegrambots.spring.boot.starter)
+  implementation(libs.telegrambots.spring.boot.starter) {
+    exclude(group = "org.glassfish.jersey.containers", module = "jersey-container-grizzly2-http")
+    exclude(group = "org.glassfish.jersey.core", module = "jersey-server")
+    exclude(group = "org.glassfish.jersey.inject", module = "jersey-hk2")
+    exclude(group = "org.glassfish.jersey.media", module = "jersey-media-json-jackson")
+    exclude(group = "com.fasterxml.jackson.jaxrs", module = "jackson-jaxrs-json-provider")
+    exclude(group = "com.fasterxml.jackson.module", module = "jackson-module-jaxb-annotations")
+  }
 
   implementation(libs.minio)
-  implementation(libs.jollyday.core)
-  runtimeOnly(libs.jollyday.jaxb)
 
   developmentOnly(libs.spring.boot.docker.compose)
   runtimeOnly(libs.postgresql)
@@ -79,7 +86,6 @@ dependencies {
   }
   testImplementation(libs.datafaker)
   testImplementation(libs.kotest.property)
-  testImplementation(libs.kotest.runner.junit5)
   testImplementation(libs.selenide)
   testRuntimeOnly(libs.junit.platform.launcher)
   testRuntimeOnly(libs.junit.jupiter.engine)
