@@ -1,14 +1,13 @@
 <template>
   <div class="chart-container md:w-[80.8%]" data-testid="summary-chart" v-if="chartData">
-    <Line :data="chartData" :options="chartOptions" :plugins="[crosshair]" />
+    <canvas ref="canvas"></canvas>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, watchEffect } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
-import { Line } from 'vue-chartjs'
-import type { ChartOptions } from 'chart.js'
+import { Chart, type ChartOptions } from 'chart.js'
 import { formatDate, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 import {
@@ -32,7 +31,10 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const canvas = ref<HTMLCanvasElement | null>(null)
 const isCompact = useMediaQuery('(max-width: 768px)')
+
+let chart: Chart<'line'> | null = null
 
 const chartData = computed(() => {
   if (!props.data) return null
@@ -171,4 +173,27 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
     },
   },
 }))
+
+watchEffect(
+  () => {
+    const data = chartData.value
+    const options = chartOptions.value
+    const element = canvas.value
+    if (!element || !data) {
+      chart?.destroy()
+      chart = null
+      return
+    }
+    if (chart) {
+      chart.data = data
+      chart.options = options
+      chart.update('none')
+      return
+    }
+    chart = new Chart(element, { type: 'line', data, options, plugins: [crosshair] })
+  },
+  { flush: 'post' }
+)
+
+onBeforeUnmount(() => chart?.destroy())
 </script>

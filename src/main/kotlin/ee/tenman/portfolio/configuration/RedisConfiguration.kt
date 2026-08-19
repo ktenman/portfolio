@@ -22,7 +22,6 @@ class RedisConfiguration {
     cacheConfigurations[PLATFORM_SUMMARY_CACHE] =
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[ETF_LOGOS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
-    cacheConfigurations[EASTER_HOLIDAYS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     cacheConfigurations[ETF_BREAKDOWN_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(2))
     cacheConfigurations[LIGHTYEAR_UUID_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[LOGO_CANDIDATES_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
@@ -48,7 +47,6 @@ class RedisConfiguration {
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
     const val ETF_LOGOS_CACHE: String = "etf-logos-v3"
     const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v3"
-    const val EASTER_HOLIDAYS_CACHE: String = "easter-holidays-v3"
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid-v3"
     const val LOGO_CANDIDATES_CACHE: String = "logo-candidates-v3"
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v3"

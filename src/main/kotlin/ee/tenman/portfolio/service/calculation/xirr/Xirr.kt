@@ -1,10 +1,6 @@
 package ee.tenman.portfolio.service.calculation.xirr
 
 import ee.tenman.portfolio.exception.XirrCalculationException
-import org.apache.commons.math3.analysis.differentiation.DerivativeStructure
-import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction
-import org.apache.commons.math3.analysis.solvers.BisectionSolver
-import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -18,6 +14,7 @@ class Xirr(
     private const val MAX_ELEVATIONS = 1_000
     private const val SEARCH_LOWER_BOUND = -0.99
     private const val SEARCH_UPPER_BOUND = 0.99
+    private const val SOLVER_ACCURACY = 1e-6
   }
 
   private val log = LoggerFactory.getLogger(javaClass)
@@ -58,8 +55,13 @@ class Xirr(
     }
 
   private fun calculateXirrWithNewtonRaphson(guess: Double): Double {
-    val solver = NewtonRaphsonSolver()
-    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), SEARCH_LOWER_BOUND, SEARCH_UPPER_BOUND, guess)
+    var current = guess
+    repeat(MAX_ELEVATIONS) {
+      val next = current - netPresentValue(current) / netPresentValueDerivative(current)
+      if (abs(next - current) <= SOLVER_ACCURACY) return next
+      current = next
+    }
+    throw ArithmeticException("Newton-Raphson exceeded $MAX_ELEVATIONS evaluations")
   }
 
   private fun calculateXirrWithBisection(): Double {
@@ -68,25 +70,20 @@ class Xirr(
     if (lowerValue * upperValue > 0) {
       return if (abs(lowerValue) < abs(upperValue)) SEARCH_LOWER_BOUND else SEARCH_UPPER_BOUND
     }
-    val solver = BisectionSolver()
-    return solver.solve(MAX_ELEVATIONS, createXirrFunction(), SEARCH_LOWER_BOUND, SEARCH_UPPER_BOUND)
+    var lower = SEARCH_LOWER_BOUND
+    var upper = SEARCH_UPPER_BOUND
+    repeat(MAX_ELEVATIONS) {
+      val middle = (lower + upper) * 0.5
+      if (netPresentValue(middle) * lowerValue > 0) lower = middle else upper = middle
+      if (abs(upper - lower) <= SOLVER_ACCURACY) return (lower + upper) * 0.5
+    }
+    throw ArithmeticException("Bisection exceeded $MAX_ELEVATIONS evaluations")
   }
 
   private fun calculateSimpleReturn(): Double {
     val initialInvestment = -cashFlows.first { it.amount < 0 }.amount
     val finalValue = cashFlows.last { it.amount > 0 }.amount
     return (finalValue - initialInvestment) / initialInvestment
-  }
-
-  private fun createXirrFunction(): UnivariateDifferentiableFunction {
-    return object : UnivariateDifferentiableFunction {
-      override fun value(x: Double): Double = netPresentValue(x)
-
-      override fun value(t: DerivativeStructure): DerivativeStructure {
-        val x = t.value
-        return DerivativeStructure(t.freeParameters, t.order, netPresentValue(x), netPresentValueDerivative(x))
-      }
-    }
   }
 
   private fun netPresentValue(rate: Double): Double = cashFlows.sumOf { it.amount * (1 + rate).pow(yearsToEnd(it.date)) }

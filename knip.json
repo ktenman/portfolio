@@ -14,7 +14,6 @@
     "src/**",
     "build/**",
     "dist/**",
-    "k8s/**",
     "cloudflare-bypass-proxy/**"
   ],
   "ignoreUnresolved": ["./tests/setup.ts"],
