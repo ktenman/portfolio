@@ -15,7 +15,7 @@ class CurrentDaySummaryRefreshJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(fixedDelayString = "\${scheduling.jobs.summary-interval:120000}")
+  @Scheduled(fixedDelayString = "\${scheduling.jobs.summary-interval:60000}")
   fun refresh() {
     val summary =
       runCatching { currentDaySummaryCacheService.refreshCurrentDaySummary() }
