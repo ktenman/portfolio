@@ -148,7 +148,7 @@ import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
 import LogoReplacementModal from './logo-replacement-modal.vue'
-import { utilityService } from '../../services/utility-service'
+import { logoService } from '../../services/api'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatScientific } from '../../utils/formatters'
 
@@ -237,7 +237,7 @@ const handleLogoReplaced = (holdingUuid: string) => {
 
 const getLogoUrl = (uuid: string): string => {
   const version = logoVersions.value[uuid]
-  const baseUrl = utilityService.getLogoUrl(uuid)
+  const baseUrl = logoService.getLogoUrl(uuid)
   return version ? `${baseUrl}?v=${version}` : baseUrl
 }
 

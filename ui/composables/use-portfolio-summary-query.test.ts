@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref, type Ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
-import { portfolioSummaryService } from '../services/portfolio-summary-service'
+import { portfolioSummaryService } from '../services/api'
 import { renderWithProviders } from '../tests/test-utils'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
 import { TimeRange } from '../models/generated/domain-models'
 
-vi.mock('../services/portfolio-summary-service')
+vi.mock('../services/api')
 vi.mock('./use-auth-state', () => ({
   useAuthState: () => ({
     isAuthenticated: ref(true),

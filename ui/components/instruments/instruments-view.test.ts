@@ -3,7 +3,7 @@ import { ref, h } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
-import { instrumentsService } from '../../services/instruments-service'
+import { instrumentsService } from '../../services/api'
 import type { InstrumentsResponse, Platform } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
 import { createInstrumentDto } from '../../tests/fixtures'
@@ -12,7 +12,7 @@ import { setPlatformDisplayNames } from '../../utils/platform-utils'
 const mockToastSuccess = vi.fn()
 const mockToastError = vi.fn()
 
-vi.mock('../../services/instruments-service')
+vi.mock('../../services/api')
 vi.mock('../../composables/use-auth-state', () => ({
   useAuthState: () => ({
     isAuthenticated: ref(true),

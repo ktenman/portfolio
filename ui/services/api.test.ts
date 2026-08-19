@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { httpClient } from '../utils/http-client'
-import { transactionsService } from './transactions-service'
-import { instrumentsService } from './instruments-service'
-import { portfolioSummaryService } from './portfolio-summary-service'
-import { diversificationService } from './diversification-service'
-import { utilityService } from './utility-service'
+import {
+  diversificationService,
+  instrumentsService,
+  logoService,
+  portfolioSummaryService,
+  transactionsService,
+  utilityService,
+} from './api'
 import { Platform, TimeRange } from '../models/generated/domain-models'
 import type { AllocationDto } from '../models/generated/domain-models'
 import type { CachedState } from '../components/diversification/types'
@@ -196,7 +199,7 @@ describe('api services', () => {
   })
 
   it('builds a proxied logo url from a uuid', () => {
-    expect(utilityService.getLogoUrl('550e8400-e29b-41d4-a716-446655440000')).toBe(
+    expect(logoService.getLogoUrl('550e8400-e29b-41d4-a716-446655440000')).toBe(
       '/api/logos/550e8400-e29b-41d4-a716-446655440000'
     )
   })

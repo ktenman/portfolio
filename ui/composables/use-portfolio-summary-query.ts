@@ -6,7 +6,7 @@ import {
   useInfiniteQuery,
   keepPreviousData,
 } from '@tanstack/vue-query'
-import { portfolioSummaryService } from '../services/portfolio-summary-service'
+import { portfolioSummaryService } from '../services/api'
 import {
   mergeHistoricalWithCurrent,
   sortSummariesByDateAsc,
