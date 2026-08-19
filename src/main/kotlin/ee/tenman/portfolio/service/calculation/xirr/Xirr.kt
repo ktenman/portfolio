@@ -72,9 +72,9 @@ class Xirr(
     }
     var lower = SEARCH_LOWER_BOUND
     var upper = SEARCH_UPPER_BOUND
-    repeat(MAX_ELEVATIONS / 2) {
+    repeat(MAX_ELEVATIONS) {
       val middle = (lower + upper) * 0.5
-      if (netPresentValue(middle) * netPresentValue(lower) > 0) lower = middle else upper = middle
+      if (netPresentValue(middle) * lowerValue > 0) lower = middle else upper = middle
       if (abs(upper - lower) <= SOLVER_ACCURACY) return (lower + upper) * 0.5
     }
     throw ArithmeticException("Bisection exceeded $MAX_ELEVATIONS evaluations")

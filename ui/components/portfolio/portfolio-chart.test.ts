@@ -8,7 +8,7 @@ import { CHART_COLORS } from '../../constants/chart-colors'
 vi.mock('chart.js', async importOriginal => {
   const actual = await importOriginal<typeof import('chart.js')>()
   const mockChart: any = vi.fn().mockImplementation(function () {
-    return { destroy: vi.fn() }
+    return { destroy: vi.fn(), update: vi.fn(), data: null, options: null }
   })
   mockChart.register = vi.fn()
   mockChart.defaults = { font: {} }
@@ -174,15 +174,16 @@ describe('PortfolioChart', () => {
   })
 
   describe('chart lifecycle', () => {
-    it('should rebuild the chart when the data changes', async () => {
+    it('should update the chart in place when the data changes', async () => {
       const wrapper = await createWrapper()
-      const previous = vi.mocked(Chart).mock.results[0].value
+      const instance = vi.mocked(Chart).mock.results[0].value
 
       await wrapper.setProps({ data: { ...mockChartData, totalValues: [1, 2, 3] } })
       await nextTick()
 
-      expect(previous.destroy).toHaveBeenCalled()
-      expect(vi.mocked(Chart).mock.calls[1][1].data.datasets[0].data).toEqual([1, 2, 3])
+      expect(Chart).toHaveBeenCalledTimes(1)
+      expect(instance.update).toHaveBeenCalled()
+      expect(instance.data.datasets[0].data).toEqual([1, 2, 3])
     })
 
     it('should destroy the chart when the component unmounts', async () => {

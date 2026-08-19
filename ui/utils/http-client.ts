@@ -24,7 +24,6 @@ const buildUrl = (url: string, params?: Record<string, unknown>): string => {
 }
 
 const parseBody = async (response: Response): Promise<unknown> => {
-  if (response.status === 204) return undefined
   const text = await response.text()
   return text ? JSON.parse(text) : undefined
 }

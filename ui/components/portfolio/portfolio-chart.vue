@@ -34,7 +34,7 @@ const props = defineProps<Props>()
 const canvas = ref<HTMLCanvasElement | null>(null)
 const isCompact = useMediaQuery('(max-width: 768px)')
 
-let chart: Chart | null = null
+let chart: Chart<'line'> | null = null
 
 const chartData = computed(() => {
   if (!props.data) return null
@@ -176,15 +176,21 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
 
 watchEffect(
   () => {
-    chart?.destroy()
-    chart = null
-    if (!canvas.value || !chartData.value) return
-    chart = new Chart(canvas.value, {
-      type: 'line',
-      data: chartData.value,
-      options: chartOptions.value,
-      plugins: [crosshair],
-    })
+    const data = chartData.value
+    const options = chartOptions.value
+    const element = canvas.value
+    if (!element || !data) {
+      chart?.destroy()
+      chart = null
+      return
+    }
+    if (chart) {
+      chart.data = data
+      chart.options = options
+      chart.update('none')
+      return
+    }
+    chart = new Chart(element, { type: 'line', data, options, plugins: [crosshair] })
   },
   { flush: 'post' }
 )
