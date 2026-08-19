@@ -124,9 +124,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
-import { etfBreakdownService } from '../../services/etf-breakdown-service'
-import { instrumentsService } from '../../services/instruments-service'
-import { logoService } from '../../services/logo-service'
+import { etfBreakdownService, instrumentsService, logoService } from '../../services/api'
 import {
   buildSectorChartData,
   buildCompanyChartData,

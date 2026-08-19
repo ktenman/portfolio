@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
-import { portfolioSummaryService } from '../../services/portfolio-summary-service'
+import { portfolioSummaryService } from '../../services/api'
 import type { AnnualWindowDto } from '../../models/generated/domain-models'
 
 interface Props {

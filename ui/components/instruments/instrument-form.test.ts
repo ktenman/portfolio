@@ -4,7 +4,7 @@ import { nextTick } from 'vue'
 import InstrumentForm from './instrument-form.vue'
 import FormInput from '../shared/form-input.vue'
 
-vi.mock('../../services/enum-service', () => ({
+vi.mock('../../services/api', () => ({
   enumService: {
     getAll: vi.fn(() =>
       Promise.resolve({

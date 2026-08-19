@@ -1,7 +1,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useLocalStorage, watchDebounced } from '@vueuse/core'
-import { utilityService } from '../services/utility-service'
+import { utilityService } from '../services/api'
 import { CalculationResult } from '../models/generated/domain-models'
 import {
   calculateProjection,

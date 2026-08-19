@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
-import { instrumentsService } from '../services/instruments-service'
+import { instrumentsService } from '../services/api'
 import type { AllocationInput } from '../components/diversification/types'
 
 interface UseDiversificationPlatformsArgs {

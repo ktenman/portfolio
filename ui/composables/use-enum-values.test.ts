@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { enumService } from '../services/enum-service'
+import { enumService } from '../services/api'
 
-vi.mock('../services/enum-service')
+vi.mock('../services/api')
 
 describe('useEnumValues', () => {
   const mockEnumData = {

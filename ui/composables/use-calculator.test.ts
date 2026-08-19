@@ -3,7 +3,7 @@ import { nextTick, ref } from 'vue'
 import { useCalculator } from './use-calculator'
 import type { CalculationResult } from '../models/generated/domain-models'
 
-vi.mock('../services/utility-service')
+vi.mock('../services/api')
 
 let mockData = ref<CalculationResult | null>(null)
 let mockRefetch: any

@@ -26,7 +26,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { utilityService } from '../services/utility-service'
+import { utilityService } from '../services/api'
 
 const routes = ref([
   { path: '/', name: 'Summary' },

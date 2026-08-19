@@ -1,6 +1,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { diversificationService } from '../services/diversification-service'
+import { diversificationService } from '../services/api'
 import type { CachedState } from '../components/diversification/types'
 
 export function useDiversificationConfig(getConfig: () => CachedState) {

@@ -11,7 +11,7 @@ interface BuildInfo {
 
 const mockBuildInfo = ref<BuildInfo | null>(null)
 
-vi.mock('../services/utility-service', () => ({
+vi.mock('../services/api', () => ({
   utilityService: {
     getBuildInfo: vi.fn(),
   },

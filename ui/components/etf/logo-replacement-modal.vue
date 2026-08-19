@@ -56,7 +56,7 @@
 import { ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
-import { logoService, type LogoCandidateDto } from '../../services/logo-service'
+import { logoService, type LogoCandidateDto } from '../../services/api'
 
 interface Props {
   modelValue: boolean
