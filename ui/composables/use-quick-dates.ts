@@ -11,6 +11,7 @@ export type QuickDatePreset =
   | 'lastMonth'
   | 'thisYear'
   | 'lastYear'
+  | 'max'
 
 export interface QuickDateOption {
   preset: QuickDatePreset
@@ -27,6 +28,7 @@ export const QUICK_DATE_OPTIONS: QuickDateOption[] = [
   { preset: 'lastMonth', label: 'Last Month' },
   { preset: 'thisYear', label: 'This Year' },
   { preset: 'lastYear', label: 'Last Year' },
+  { preset: 'max', label: 'MAX' },
 ]
 
 export interface UseQuickDatesOptions {
@@ -52,10 +54,13 @@ export function formatDateToString(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
-export function calculateDateRange(preset: QuickDatePreset): { from: Date; until: Date } {
+export function calculateDateRange(preset: QuickDatePreset): { from: Date; until: Date } | null {
   const today = new Date()
 
   switch (preset) {
+    case 'max':
+      return null
+
     case 'today':
       return { from: today, until: today }
 
@@ -135,8 +140,8 @@ export function useQuickDates(options: UseQuickDatesOptions): UseQuickDatesRetur
   const setQuickDate = (preset: QuickDatePreset) => {
     manualDateChange.value = true
     const range = calculateDateRange(preset)
-    fromDate.value = formatDateToString(range.from)
-    untilDate.value = formatDateToString(range.until)
+    fromDate.value = range ? formatDateToString(range.from) : ''
+    untilDate.value = range ? formatDateToString(range.until) : ''
     selectedQuickDate.value = getLabelForPreset(preset)
     options.onDateSet?.()
     nextTick(() => {
