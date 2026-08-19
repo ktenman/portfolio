@@ -49,7 +49,6 @@ dependencies {
   implementation(libs.resilience4j.circuitbreaker)
   implementation(libs.resilience4j.retry)
   implementation(libs.resilience4j.kotlin)
-  implementation(libs.commons.math3)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.telegrambots)
   implementation(libs.telegrambots.spring.boot.starter)

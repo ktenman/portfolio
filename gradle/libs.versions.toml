@@ -11,7 +11,6 @@ detekt = "2.0.0-alpha.3"
 typescriptGenerator = "4.1.1"
 selenide = "7.16.2"
 resilience4j = "2.4.0"
-commonsMath = "3.6.1"
 commonsFileupload = "1.6.0"
 jsoup = "1.22.2"
 telegramBots = "6.9.7.1"
@@ -73,7 +72,6 @@ resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", v
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 
 # Utilities
-commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath" }
 commons-fileupload = { module = "commons-fileupload:commons-fileupload", version.ref = "commonsFileupload" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 
