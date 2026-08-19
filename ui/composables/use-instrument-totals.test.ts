@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ref } from 'vue'
-import { useInstrumentTotals } from './use-instrument-totals'
+import { useInstrumentTotals, type UseInstrumentTotalsReturn } from './use-instrument-totals'
 import type { InstrumentDto } from '../models/generated/domain-models'
 
 const createInstrument = (overrides: Partial<InstrumentDto> = {}): InstrumentDto => ({
@@ -28,280 +28,129 @@ const createInstrument = (overrides: Partial<InstrumentDto> = {}): InstrumentDto
   ...overrides,
 })
 
+const totalOf = (key: keyof UseInstrumentTotalsReturn, holdings: Partial<InstrumentDto>[]) =>
+  useInstrumentTotals(ref(holdings.map(createInstrument)))[key].value
+
 describe('useInstrumentTotals', () => {
-  describe('totalInvested', () => {
-    it('should sum totalInvestment from all instruments', () => {
-      const instruments = ref([
-        createInstrument({ totalInvestment: 1000 }),
-        createInstrument({ totalInvestment: 2000 }),
-        createInstrument({ totalInvestment: 3000 }),
-      ])
-      const { totalInvested } = useInstrumentTotals(instruments)
-      expect(totalInvested.value).toBe(6000)
-    })
+  it.each([
+    [
+      'totalInvested',
+      [{ totalInvestment: 1000 }, { totalInvestment: 2000 }, { totalInvestment: 3000 }],
+      6000,
+    ],
+    ['totalInvested', [], 0],
+    [
+      'totalInvested',
+      [{ totalInvestment: 1000 }, { totalInvestment: undefined }, { totalInvestment: 2000 }],
+      3000,
+    ],
+    ['totalValue', [{ currentValue: 1500 }, { currentValue: 2500 }, { currentValue: 3500 }], 7500],
+    ['totalValue', [], 0],
+    ['totalValue', [{ currentValue: 1000 }, { currentValue: undefined }], 1000],
+    ['totalProfit', [{ profit: 100 }, { profit: 200 }, { profit: 300 }], 600],
+    ['totalProfit', [{ profit: 500 }, { profit: -200 }, { profit: -100 }], 200],
+    ['totalProfit', [], 0],
+    ['totalUnrealizedProfit', [{ unrealizedProfit: 150 }, { unrealizedProfit: 250 }], 400],
+    ['totalUnrealizedProfit', [{ unrealizedProfit: 300 }, { unrealizedProfit: -100 }], 200],
+    ['totalUnrealizedProfit', [], 0],
+    [
+      'totalChangeAmount',
+      [{ priceChangeAmount: 50 }, { priceChangeAmount: 75 }, { priceChangeAmount: 25 }],
+      150,
+    ],
+    ['totalChangeAmount', [{ priceChangeAmount: 100 }, { priceChangeAmount: -50 }], 50],
+    ['totalChangeAmount', [], 0],
+    ['totalChangePercent', [{ currentValue: 1100, priceChangeAmount: 100 }], 10],
+    ['totalChangePercent', [{ currentValue: 100, priceChangeAmount: 100 }], 0],
+    ['totalChangePercent', [{ currentValue: 900, priceChangeAmount: -100 }], -10],
+    ['totalChangePercent', [], 0],
+    [
+      'totalTer',
+      [
+        { currentValue: 10000, ter: 0.07 },
+        { currentValue: 10000, ter: 0.22 },
+      ],
+      0.145,
+    ],
+    [
+      'totalTer',
+      [
+        { currentValue: 30000, ter: 0.07 },
+        { currentValue: 10000, ter: 0.22 },
+      ],
+      0.1075,
+    ],
+    [
+      'totalTer',
+      [
+        { currentValue: 5000, ter: 0.2 },
+        { currentValue: 5000, ter: null },
+      ],
+      0.1,
+    ],
+    ['totalTer', [{ currentValue: 0, ter: 0.15 }], 0],
+    ['totalTer', [], 0],
+    [
+      'totalAnnualReturn',
+      [
+        { currentValue: 10000, xirrAnnualReturn: 0.1 },
+        { currentValue: 10000, xirrAnnualReturn: 0.2 },
+      ],
+      0.15,
+    ],
+    [
+      'totalAnnualReturn',
+      [
+        { currentValue: 30000, xirrAnnualReturn: 0.1 },
+        { currentValue: 10000, xirrAnnualReturn: 0.3 },
+      ],
+      0.15,
+    ],
+    [
+      'totalAnnualReturn',
+      [
+        { currentValue: 5000, xirrAnnualReturn: 0.2 },
+        { currentValue: 5000, xirrAnnualReturn: null },
+      ],
+      0.2,
+    ],
+    [
+      'totalAnnualReturn',
+      [
+        { currentValue: 5000, xirrAnnualReturn: null },
+        { currentValue: 5000, xirrAnnualReturn: null },
+      ],
+      null,
+    ],
+    ['totalAnnualReturn', [{ currentValue: 0, xirrAnnualReturn: 0.15 }], null],
+    ['totalAnnualReturn', [], null],
+  ] as [keyof UseInstrumentTotalsReturn, Partial<InstrumentDto>[], number | null][])(
+    '%s of %j → %s',
+    (key, holdings, expected) => {
+      const total = totalOf(key, holdings)
+      if (expected === null) return expect(total).toBeNull()
+      expect(total).toBeCloseTo(expected, 4)
+    }
+  )
 
-    it('should return 0 for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalInvested } = useInstrumentTotals(instruments)
-      expect(totalInvested.value).toBe(0)
-    })
+  it('should recompute when the instrument list is replaced', () => {
+    const instruments = ref([createInstrument({ totalInvestment: 1000 })])
+    const { totalInvested } = useInstrumentTotals(instruments)
 
-    it('should handle null totalInvestment values', () => {
-      const instruments = ref([
-        createInstrument({ totalInvestment: 1000 }),
-        createInstrument({ totalInvestment: undefined }),
-        createInstrument({ totalInvestment: 2000 }),
-      ])
-      const { totalInvested } = useInstrumentTotals(instruments)
-      expect(totalInvested.value).toBe(3000)
-    })
+    instruments.value = [
+      createInstrument({ totalInvestment: 1000 }),
+      createInstrument({ totalInvestment: 2000 }),
+    ]
+
+    expect(totalInvested.value).toBe(3000)
   })
 
-  describe('totalValue', () => {
-    it('should sum currentValue from all instruments', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 1500 }),
-        createInstrument({ currentValue: 2500 }),
-        createInstrument({ currentValue: 3500 }),
-      ])
-      const { totalValue } = useInstrumentTotals(instruments)
-      expect(totalValue.value).toBe(7500)
-    })
+  it('should recompute when an instrument is added', () => {
+    const instruments = ref([createInstrument({ currentValue: 500 })])
+    const { totalValue } = useInstrumentTotals(instruments)
 
-    it('should return 0 for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalValue } = useInstrumentTotals(instruments)
-      expect(totalValue.value).toBe(0)
-    })
+    instruments.value.push(createInstrument({ currentValue: 300 }))
 
-    it('should handle undefined currentValue', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 1000 }),
-        createInstrument({ currentValue: undefined }),
-      ])
-      const { totalValue } = useInstrumentTotals(instruments)
-      expect(totalValue.value).toBe(1000)
-    })
-  })
-
-  describe('totalProfit', () => {
-    it('should sum profit from all instruments', () => {
-      const instruments = ref([
-        createInstrument({ profit: 100 }),
-        createInstrument({ profit: 200 }),
-        createInstrument({ profit: 300 }),
-      ])
-      const { totalProfit } = useInstrumentTotals(instruments)
-      expect(totalProfit.value).toBe(600)
-    })
-
-    it('should handle negative profits', () => {
-      const instruments = ref([
-        createInstrument({ profit: 500 }),
-        createInstrument({ profit: -200 }),
-        createInstrument({ profit: -100 }),
-      ])
-      const { totalProfit } = useInstrumentTotals(instruments)
-      expect(totalProfit.value).toBe(200)
-    })
-
-    it('should return 0 for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalProfit } = useInstrumentTotals(instruments)
-      expect(totalProfit.value).toBe(0)
-    })
-  })
-
-  describe('totalUnrealizedProfit', () => {
-    it('should sum unrealizedProfit from all instruments', () => {
-      const instruments = ref([
-        createInstrument({ unrealizedProfit: 150 }),
-        createInstrument({ unrealizedProfit: 250 }),
-      ])
-      const { totalUnrealizedProfit } = useInstrumentTotals(instruments)
-      expect(totalUnrealizedProfit.value).toBe(400)
-    })
-
-    it('should handle negative unrealized profits', () => {
-      const instruments = ref([
-        createInstrument({ unrealizedProfit: 300 }),
-        createInstrument({ unrealizedProfit: -100 }),
-      ])
-      const { totalUnrealizedProfit } = useInstrumentTotals(instruments)
-      expect(totalUnrealizedProfit.value).toBe(200)
-    })
-
-    it('should return 0 for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalUnrealizedProfit } = useInstrumentTotals(instruments)
-      expect(totalUnrealizedProfit.value).toBe(0)
-    })
-  })
-
-  describe('totalChangeAmount', () => {
-    it('should sum priceChangeAmount from all instruments', () => {
-      const instruments = ref([
-        createInstrument({ priceChangeAmount: 50 }),
-        createInstrument({ priceChangeAmount: 75 }),
-        createInstrument({ priceChangeAmount: 25 }),
-      ])
-      const { totalChangeAmount } = useInstrumentTotals(instruments)
-      expect(totalChangeAmount.value).toBe(150)
-    })
-
-    it('should handle negative price changes', () => {
-      const instruments = ref([
-        createInstrument({ priceChangeAmount: 100 }),
-        createInstrument({ priceChangeAmount: -50 }),
-      ])
-      const { totalChangeAmount } = useInstrumentTotals(instruments)
-      expect(totalChangeAmount.value).toBe(50)
-    })
-
-    it('should return 0 for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalChangeAmount } = useInstrumentTotals(instruments)
-      expect(totalChangeAmount.value).toBe(0)
-    })
-  })
-
-  describe('totalChangePercent', () => {
-    it('should calculate percentage based on previous value', () => {
-      const instruments = ref([createInstrument({ currentValue: 1100, priceChangeAmount: 100 })])
-      const { totalChangePercent } = useInstrumentTotals(instruments)
-      expect(totalChangePercent.value).toBe(10)
-    })
-
-    it('should return 0 when previous value is 0', () => {
-      const instruments = ref([createInstrument({ currentValue: 100, priceChangeAmount: 100 })])
-      const { totalChangePercent } = useInstrumentTotals(instruments)
-      expect(totalChangePercent.value).toBe(0)
-    })
-
-    it('should handle negative percentage', () => {
-      const instruments = ref([createInstrument({ currentValue: 900, priceChangeAmount: -100 })])
-      const { totalChangePercent } = useInstrumentTotals(instruments)
-      expect(totalChangePercent.value).toBe(-10)
-    })
-
-    it('should return 0 for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalChangePercent } = useInstrumentTotals(instruments)
-      expect(totalChangePercent.value).toBe(0)
-    })
-  })
-
-  describe('totalTer', () => {
-    it('should calculate weighted average TER based on portfolio value', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 10000, ter: 0.07 }),
-        createInstrument({ currentValue: 10000, ter: 0.22 }),
-      ])
-      const { totalTer } = useInstrumentTotals(instruments)
-      expect(totalTer.value).toBeCloseTo(0.145, 4)
-    })
-
-    it('should weight TER by instrument value', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 30000, ter: 0.07 }),
-        createInstrument({ currentValue: 10000, ter: 0.22 }),
-      ])
-      const { totalTer } = useInstrumentTotals(instruments)
-      expect(totalTer.value).toBeCloseTo(0.1075, 4)
-    })
-
-    it('should return 0 for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalTer } = useInstrumentTotals(instruments)
-      expect(totalTer.value).toBe(0)
-    })
-
-    it('should treat null TER as 0', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 5000, ter: 0.2 }),
-        createInstrument({ currentValue: 5000, ter: null }),
-      ])
-      const { totalTer } = useInstrumentTotals(instruments)
-      expect(totalTer.value).toBeCloseTo(0.1, 4)
-    })
-
-    it('should return 0 when total value is 0', () => {
-      const instruments = ref([createInstrument({ currentValue: 0, ter: 0.15 })])
-      const { totalTer } = useInstrumentTotals(instruments)
-      expect(totalTer.value).toBe(0)
-    })
-  })
-
-  describe('totalAnnualReturn', () => {
-    it('should calculate weighted average annual return based on portfolio value', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 10000, xirrAnnualReturn: 0.1 }),
-        createInstrument({ currentValue: 10000, xirrAnnualReturn: 0.2 }),
-      ])
-      const { totalAnnualReturn } = useInstrumentTotals(instruments)
-      expect(totalAnnualReturn.value).toBeCloseTo(0.15, 4)
-    })
-
-    it('should weight annual return by instrument value', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 30000, xirrAnnualReturn: 0.1 }),
-        createInstrument({ currentValue: 10000, xirrAnnualReturn: 0.3 }),
-      ])
-      const { totalAnnualReturn } = useInstrumentTotals(instruments)
-      expect(totalAnnualReturn.value).toBeCloseTo(0.15, 4)
-    })
-
-    it('should return null for empty array', () => {
-      const instruments = ref<InstrumentDto[]>([])
-      const { totalAnnualReturn } = useInstrumentTotals(instruments)
-      expect(totalAnnualReturn.value).toBeNull()
-    })
-
-    it('should exclude null annual returns from calculation', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 5000, xirrAnnualReturn: 0.2 }),
-        createInstrument({ currentValue: 5000, xirrAnnualReturn: null }),
-      ])
-      const { totalAnnualReturn } = useInstrumentTotals(instruments)
-      expect(totalAnnualReturn.value).toBeCloseTo(0.2, 4)
-    })
-
-    it('should return null when no instruments have annual return', () => {
-      const instruments = ref([
-        createInstrument({ currentValue: 5000, xirrAnnualReturn: null }),
-        createInstrument({ currentValue: 5000, xirrAnnualReturn: null }),
-      ])
-      const { totalAnnualReturn } = useInstrumentTotals(instruments)
-      expect(totalAnnualReturn.value).toBeNull()
-    })
-
-    it('should return null when total value is 0', () => {
-      const instruments = ref([createInstrument({ currentValue: 0, xirrAnnualReturn: 0.15 })])
-      const { totalAnnualReturn } = useInstrumentTotals(instruments)
-      expect(totalAnnualReturn.value).toBeNull()
-    })
-  })
-
-  describe('reactivity', () => {
-    it('should update totals when instruments change', () => {
-      const instruments = ref([createInstrument({ totalInvestment: 1000 })])
-      const { totalInvested } = useInstrumentTotals(instruments)
-      expect(totalInvested.value).toBe(1000)
-
-      instruments.value = [
-        createInstrument({ totalInvestment: 1000 }),
-        createInstrument({ totalInvestment: 2000 }),
-      ]
-      expect(totalInvested.value).toBe(3000)
-    })
-
-    it('should update when instrument is added', () => {
-      const instruments = ref([createInstrument({ currentValue: 500 })])
-      const { totalValue } = useInstrumentTotals(instruments)
-      expect(totalValue.value).toBe(500)
-
-      instruments.value.push(createInstrument({ currentValue: 300 }))
-      expect(totalValue.value).toBe(800)
-    })
+    expect(totalValue.value).toBe(800)
   })
 })

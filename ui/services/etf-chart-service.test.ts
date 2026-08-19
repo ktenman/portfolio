@@ -29,197 +29,115 @@ const createHolding = (
   ...overrides,
 })
 
+const BUILDERS = [
+  ['buildSectorChartData', buildSectorChartData, (holdingSector: string) => ({ holdingSector })],
+  ['buildCompanyChartData', buildCompanyChartData, (holdingName: string) => ({ holdingName })],
+  [
+    'buildCountryChartData',
+    buildCountryChartData,
+    (holdingCountryName: string) => ({ holdingCountryName }),
+  ],
+] as const
+
 describe('etf-chart-service', () => {
   beforeEach(() => {
     holdingIdCounter = 1
   })
-  describe('buildSectorChartData', () => {
-    it('should aggregate holdings by sector', () => {
-      const holdings = [
-        createHolding({ holdingSector: 'Technology', percentageOfTotal: 30 }),
-        createHolding({ holdingSector: 'Technology', percentageOfTotal: 20 }),
-        createHolding({ holdingSector: 'Finance', percentageOfTotal: 25 }),
-      ]
-      const result = buildSectorChartData(holdings)
-      expect(result).toHaveLength(2)
-      expect(result[0].label).toBe('Technology')
-      expect(result[0].value).toBe(50)
-      expect(result[1].label).toBe('Finance')
-      expect(result[1].value).toBe(25)
+
+  describe.each(BUILDERS)('%s', (_name, build, labelled) => {
+    it('should sort entries by percentage descending', () => {
+      const result = build([
+        createHolding({ ...labelled('B'), percentageOfTotal: 10 }),
+        createHolding({ ...labelled('A'), percentageOfTotal: 50 }),
+        createHolding({ ...labelled('C'), percentageOfTotal: 30 }),
+      ])
+      expect(result.map(item => item.label)).toEqual(['A', 'C', 'B'])
     })
 
-    it('should sort sectors by total percentage descending', () => {
-      const holdings = [
-        createHolding({ holdingSector: 'Finance', percentageOfTotal: 10 }),
-        createHolding({ holdingSector: 'Technology', percentageOfTotal: 50 }),
-        createHolding({ holdingSector: 'Healthcare', percentageOfTotal: 30 }),
-      ]
-      const result = buildSectorChartData(holdings)
-      expect(result[0].label).toBe('Technology')
-      expect(result[1].label).toBe('Healthcare')
-      expect(result[2].label).toBe('Finance')
-    })
-
-    it('should limit to top 15 sectors by default', () => {
-      const holdings = Array.from({ length: 20 }, (_, i) =>
-        createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: 5 })
+    it('should limit to the top 15 entries', () => {
+      const result = build(
+        Array.from({ length: 20 }, (_, i) =>
+          createHolding({ ...labelled(`Entry ${i}`), percentageOfTotal: 5 })
+        )
       )
-      const result = buildSectorChartData(holdings)
       expect(result).toHaveLength(15)
     })
 
-    it('should drop sectors beyond the top count instead of grouping them', () => {
-      const holdings = Array.from({ length: 22 }, (_, i) =>
-        createHolding({ holdingSector: `Sector ${i}`, percentageOfTotal: i + 1 })
+    it('should drop entries beyond the top count instead of grouping them', () => {
+      const result = build(
+        Array.from({ length: 22 }, (_, i) =>
+          createHolding({ ...labelled(`Entry ${i}`), percentageOfTotal: i + 1 })
+        )
       )
-      const result = buildSectorChartData(holdings)
       expect(result.some(item => item.label === 'Others')).toBe(false)
     })
 
-    it('should assign colors from palette', () => {
-      const holdings = [
-        createHolding({ holdingSector: 'Technology', percentageOfTotal: 50 }),
-        createHolding({ holdingSector: 'Finance', percentageOfTotal: 30 }),
-      ]
-      const result = buildSectorChartData(holdings)
-      expect(result[0].color).toBe(DONUT_COLORS[0])
-      expect(result[1].color).toBe(DONUT_COLORS[1])
+    it('should assign colors from the palette in order', () => {
+      const result = build([
+        createHolding({ ...labelled('A'), percentageOfTotal: 50 }),
+        createHolding({ ...labelled('B'), percentageOfTotal: 30 }),
+      ])
+      expect([result[0].color, result[1].color]).toEqual([DONUT_COLORS[0], DONUT_COLORS[1]])
     })
 
     it('should handle empty holdings array', () => {
-      const result = buildSectorChartData([])
-      expect(result).toHaveLength(0)
+      expect(build([])).toHaveLength(0)
+    })
+  })
+
+  describe('buildSectorChartData', () => {
+    it('should aggregate holdings by sector', () => {
+      const result = buildSectorChartData([
+        createHolding({ holdingSector: 'Technology', percentageOfTotal: 30 }),
+        createHolding({ holdingSector: 'Technology', percentageOfTotal: 20 }),
+        createHolding({ holdingSector: 'Finance', percentageOfTotal: 25 }),
+      ])
+      expect(result).toEqual([
+        expect.objectContaining({ label: 'Technology', value: 50 }),
+        expect.objectContaining({ label: 'Finance', value: 25 }),
+      ])
     })
 
     it('should handle unknown sector as Unknown', () => {
-      const holdings = [createHolding({ holdingSector: undefined, percentageOfTotal: 10 })]
-      const result = buildSectorChartData(holdings)
+      const result = buildSectorChartData([
+        createHolding({ holdingSector: undefined, percentageOfTotal: 10 }),
+      ])
       expect(result[0].label).toBe('Unknown')
     })
 
     it('should drop sectors below the 0.5% threshold', () => {
-      const holdings = [
+      const result = buildSectorChartData([
         createHolding({ holdingSector: 'Technology', percentageOfTotal: 70 }),
         createHolding({ holdingSector: 'Finance', percentageOfTotal: 20 }),
         createHolding({ holdingSector: 'TinySector1', percentageOfTotal: 0.3 }),
         createHolding({ holdingSector: 'TinySector2', percentageOfTotal: 0.2 }),
-      ]
-      const result = buildSectorChartData(holdings)
+      ])
       expect(result.map(item => item.label)).toEqual(['Technology', 'Finance'])
-    })
-  })
-
-  describe('buildCompanyChartData', () => {
-    it('should sort holdings by percentage descending', () => {
-      const holdings = [
-        createHolding({ holdingName: 'Company A', percentageOfTotal: 5 }),
-        createHolding({ holdingName: 'Company B', percentageOfTotal: 15 }),
-        createHolding({ holdingName: 'Company C', percentageOfTotal: 10 }),
-      ]
-      const result = buildCompanyChartData(holdings)
-      expect(result[0].label).toBe('Company B')
-      expect(result[1].label).toBe('Company C')
-      expect(result[2].label).toBe('Company A')
-    })
-
-    it('should show top 15 companies by default', () => {
-      const holdings = Array.from({ length: 20 }, (_, i) =>
-        createHolding({ holdingName: `Company ${i}`, percentageOfTotal: 5 })
-      )
-      const result = buildCompanyChartData(holdings)
-      expect(result).toHaveLength(15)
-    })
-
-    it('should drop holdings beyond the top count instead of grouping them', () => {
-      const holdings = Array.from({ length: 22 }, (_, i) =>
-        createHolding({ holdingName: `Company ${i}`, percentageOfTotal: i + 1 })
-      )
-      const result = buildCompanyChartData(holdings)
-      expect(result.some(item => item.label === 'Others')).toBe(false)
-    })
-
-    it('should assign colors from palette', () => {
-      const holdings = [
-        createHolding({ holdingName: 'Company A', percentageOfTotal: 20 }),
-        createHolding({ holdingName: 'Company B', percentageOfTotal: 15 }),
-      ]
-      const result = buildCompanyChartData(holdings)
-      expect(result[0].color).toBe(DONUT_COLORS[0])
-      expect(result[1].color).toBe(DONUT_COLORS[1])
-    })
-
-    it('should handle empty holdings array', () => {
-      const result = buildCompanyChartData([])
-      expect(result).toHaveLength(0)
     })
   })
 
   describe('buildCountryChartData', () => {
     it('should aggregate holdings by country', () => {
-      const holdings = [
+      const result = buildCountryChartData([
         createHolding({ holdingCountryName: 'United States', percentageOfTotal: 30 }),
         createHolding({ holdingCountryName: 'United States', percentageOfTotal: 20 }),
         createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 25 }),
-      ]
-      const result = buildCountryChartData(holdings)
-      expect(result).toHaveLength(2)
-      expect(result[0].label).toBe('United States')
-      expect(result[0].value).toBe(50)
-      expect(result[1].label).toBe('Germany')
-      expect(result[1].value).toBe(25)
-    })
-
-    it('should sort countries by total percentage descending', () => {
-      const holdings = [
-        createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 10 }),
-        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 50 }),
-        createHolding({ holdingCountryName: 'Japan', percentageOfTotal: 30 }),
-      ]
-      const result = buildCountryChartData(holdings)
-      expect(result[0].label).toBe('United States')
-      expect(result[1].label).toBe('Japan')
-      expect(result[2].label).toBe('Germany')
-    })
-
-    it('should limit to top 15 countries by default', () => {
-      const holdings = Array.from({ length: 20 }, (_, i) =>
-        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: 5 })
-      )
-      const result = buildCountryChartData(holdings)
-      expect(result).toHaveLength(15)
-    })
-
-    it('should drop countries beyond the top count instead of grouping them', () => {
-      const holdings = Array.from({ length: 22 }, (_, i) =>
-        createHolding({ holdingCountryName: `Country ${i}`, percentageOfTotal: i + 1 })
-      )
-      const result = buildCountryChartData(holdings)
-      expect(result.some(item => item.label === 'Others')).toBe(false)
-    })
-
-    it('should assign colors from palette', () => {
-      const holdings = [
-        createHolding({ holdingCountryName: 'United States', percentageOfTotal: 50 }),
-        createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 30 }),
-      ]
-      const result = buildCountryChartData(holdings)
-      expect(result[0].color).toBe(DONUT_COLORS[0])
-      expect(result[1].color).toBe(DONUT_COLORS[1])
-    })
-
-    it('should handle empty holdings array', () => {
-      const result = buildCountryChartData([])
-      expect(result).toHaveLength(0)
+      ])
+      expect(result).toEqual([
+        expect.objectContaining({ label: 'United States', value: 50 }),
+        expect.objectContaining({ label: 'Germany', value: 25 }),
+      ])
     })
 
     it('should handle unknown country as Unknown', () => {
-      const holdings = [createHolding({ holdingCountryName: null, percentageOfTotal: 10 })]
-      const result = buildCountryChartData(holdings)
+      const result = buildCountryChartData([
+        createHolding({ holdingCountryName: null, percentageOfTotal: 10 }),
+      ])
       expect(result[0].label).toBe('Unknown')
     })
 
     it('should include country code for flag display', () => {
-      const holdings = [
+      const result = buildCountryChartData([
         createHolding({
           holdingCountryName: 'United States',
           holdingCountryCode: 'US',
@@ -230,49 +148,42 @@ describe('etf-chart-service', () => {
           holdingCountryCode: 'DE',
           percentageOfTotal: 40,
         }),
-      ]
-      const result = buildCountryChartData(holdings)
-      expect(result[0].code).toBe('US')
-      expect(result[1].code).toBe('DE')
+      ])
+      expect(result.map(item => item.code)).toEqual(['US', 'DE'])
     })
 
     it('should drop countries below the 0.2% threshold', () => {
-      const holdings = [
+      const result = buildCountryChartData([
         createHolding({ holdingCountryName: 'United States', percentageOfTotal: 70 }),
         createHolding({ holdingCountryName: 'Germany', percentageOfTotal: 20 }),
         createHolding({ holdingCountryName: 'TinyCountry1', percentageOfTotal: 0.15 }),
         createHolding({ holdingCountryName: 'TinyCountry2', percentageOfTotal: 0.1 }),
-      ]
-      const result = buildCountryChartData(holdings)
+      ])
       expect(result.map(item => item.label)).toEqual(['United States', 'Germany'])
     })
   })
 
   describe('getFilterParam', () => {
-    it('should return undefined when nothing selected', () => {
-      const result = getFilterParam([], ['A', 'B', 'C'])
-      expect(result).toBeUndefined()
-    })
-
-    it('should return undefined when all items selected', () => {
-      const result = getFilterParam(['A', 'B', 'C'], ['A', 'B', 'C'])
-      expect(result).toBeUndefined()
-    })
-
-    it('should return selected items when partial selection', () => {
-      const result = getFilterParam(['A', 'B'], ['A', 'B', 'C'])
-      expect(result).toEqual(['A', 'B'])
-    })
-
-    it('should return single selected item', () => {
-      const result = getFilterParam(['B'], ['A', 'B', 'C'])
-      expect(result).toEqual(['B'])
-    })
-
-    it('should handle number arrays', () => {
-      const result = getFilterParam([1, 2], [1, 2, 3, 4])
-      expect(result).toEqual([1, 2])
-    })
+    it.each([
+      [[], ['A', 'B', 'C'], undefined],
+      [['A', 'B', 'C'], ['A', 'B', 'C'], undefined],
+      [
+        ['A', 'B'],
+        ['A', 'B', 'C'],
+        ['A', 'B'],
+      ],
+      [['B'], ['A', 'B', 'C'], ['B']],
+      [
+        [1, 2],
+        [1, 2, 3, 4],
+        [1, 2],
+      ],
+    ] as [(string | number)[], (string | number)[], (string | number)[] | undefined][])(
+      '%j of %j → %j',
+      (selected, all, expected) => {
+        expect(getFilterParam(selected, all)).toEqual(expected)
+      }
+    )
   })
 
   describe('calculateWeightedMetrics', () => {

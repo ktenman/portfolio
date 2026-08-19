@@ -21,314 +21,297 @@ import {
 import type { InstrumentDto } from '../models/generated/domain-models'
 
 describe('formatCurrencyWithSymbol', () => {
-  it('should format positive numbers with EUR symbol', () => {
-    expect(formatCurrencyWithSymbol(1234.56)).toBe('€1,234.56')
-    expect(formatCurrencyWithSymbol(0.99)).toBe('€0.99')
-    expect(formatCurrencyWithSymbol(1000000)).toBe('€1,000,000.00')
-  })
-
-  it('should format negative numbers with EUR symbol', () => {
-    expect(formatCurrencyWithSymbol(-1234.56)).toBe('-€1,234.56')
-    expect(formatCurrencyWithSymbol(-0.99)).toBe('-€0.99')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(formatCurrencyWithSymbol(null)).toBe('€0.00')
-    expect(formatCurrencyWithSymbol(undefined)).toBe('€0.00')
-  })
-
-  it('should handle zero value', () => {
-    expect(formatCurrencyWithSymbol(0)).toBe('€0.00')
-  })
-
-  it('should always show 2 decimal places', () => {
-    expect(formatCurrencyWithSymbol(100)).toBe('€100.00')
-    expect(formatCurrencyWithSymbol(100.1)).toBe('€100.10')
-    expect(formatCurrencyWithSymbol(100.999)).toBe('€101.00')
+  it.each([
+    [1234.56, '€1,234.56'],
+    [0.99, '€0.99'],
+    [1000000, '€1,000,000.00'],
+    [-1234.56, '-€1,234.56'],
+    [-0.99, '-€0.99'],
+    [0, '€0.00'],
+    [100, '€100.00'],
+    [100.1, '€100.10'],
+    [100.999, '€101.00'],
+    [null, '€0.00'],
+    [undefined, '€0.00'],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(formatCurrencyWithSymbol(value)).toBe(expected)
   })
 })
 
 describe('formatCurrency', () => {
-  it('should format positive numbers without symbol', () => {
-    expect(formatCurrency(1234.56)).toBe('1,234.56')
-    expect(formatCurrency(0.99)).toBe('0.99')
-    expect(formatCurrency(1000000)).toBe('1,000,000.00')
-  })
-
-  it('should format negative numbers as absolute values', () => {
-    expect(formatCurrency(-1234.56)).toBe('1,234.56')
-    expect(formatCurrency(-0.99)).toBe('0.99')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(formatCurrency(null)).toBe('0.00')
-    expect(formatCurrency(undefined)).toBe('0.00')
-  })
-
-  it('should handle zero value', () => {
-    expect(formatCurrency(0)).toBe('0.00')
-  })
-
-  it('should always show 2 decimal places', () => {
-    expect(formatCurrency(100)).toBe('100.00')
-    expect(formatCurrency(100.1)).toBe('100.10')
-    expect(formatCurrency(100.999)).toBe('101.00')
+  it.each([
+    [1234.56, '1,234.56'],
+    [0.99, '0.99'],
+    [1000000, '1,000,000.00'],
+    [-1234.56, '1,234.56'],
+    [-0.99, '0.99'],
+    [0, '0.00'],
+    [100, '100.00'],
+    [100.1, '100.10'],
+    [100.999, '101.00'],
+    [null, '0.00'],
+    [undefined, '0.00'],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(formatCurrency(value)).toBe(expected)
   })
 })
 
 describe('formatCurrencyWithSign', () => {
-  it('should format with EUR symbol by default', () => {
-    expect(formatCurrencyWithSign(1234.56)).toBe('€1,234.56')
-    expect(formatCurrencyWithSign(1234.56, undefined)).toBe('€1,234.56')
-    expect(formatCurrencyWithSign(1234.56, '')).toBe('€1,234.56')
-  })
-
-  it('should format with EUR symbol for EUR currency', () => {
-    expect(formatCurrencyWithSign(1234.56, 'EUR')).toBe('€1,234.56')
-    expect(formatCurrencyWithSign(1234.56, 'eur')).toBe('€1,234.56')
-  })
-
-  it('should format with USD symbol for USD currency', () => {
-    expect(formatCurrencyWithSign(1234.56, 'USD')).toBe('$1,234.56')
-    expect(formatCurrencyWithSign(1234.56, 'usd')).toBe('$1,234.56')
-  })
-
-  it('should format with GBP symbol for GBP currency', () => {
-    expect(formatCurrencyWithSign(1234.56, 'GBP')).toBe('£1,234.56')
-    expect(formatCurrencyWithSign(1234.56, 'gbp')).toBe('£1,234.56')
-  })
-
-  it('should format negative numbers as absolute values', () => {
-    expect(formatCurrencyWithSign(-1234.56, 'EUR')).toBe('€1,234.56')
-    expect(formatCurrencyWithSign(-1234.56, 'USD')).toBe('$1,234.56')
-    expect(formatCurrencyWithSign(-1234.56, 'GBP')).toBe('£1,234.56')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(formatCurrencyWithSign(null)).toBe('0.00')
-    expect(formatCurrencyWithSign(undefined)).toBe('0.00')
-    expect(formatCurrencyWithSign(null, 'USD')).toBe('0.00')
-  })
-
-  it('should handle zero value', () => {
-    expect(formatCurrencyWithSign(0, 'EUR')).toBe('€0.00')
-    expect(formatCurrencyWithSign(0, 'USD')).toBe('$0.00')
-  })
-
-  it('should always show 2 decimal places', () => {
-    expect(formatCurrencyWithSign(100, 'EUR')).toBe('€100.00')
-    expect(formatCurrencyWithSign(100.1, 'USD')).toBe('$100.10')
-    expect(formatCurrencyWithSign(100.999, 'GBP')).toBe('£101.00')
-  })
-
-  it('should default to EUR for unknown currencies', () => {
-    expect(formatCurrencyWithSign(100, 'JPY')).toBe('€100.00')
-    expect(formatCurrencyWithSign(100, 'UNKNOWN')).toBe('€100.00')
+  it.each([
+    [1234.56, undefined, '€1,234.56'],
+    [1234.56, '', '€1,234.56'],
+    [1234.56, 'EUR', '€1,234.56'],
+    [1234.56, 'eur', '€1,234.56'],
+    [1234.56, 'USD', '$1,234.56'],
+    [1234.56, 'usd', '$1,234.56'],
+    [1234.56, 'GBP', '£1,234.56'],
+    [1234.56, 'gbp', '£1,234.56'],
+    [-1234.56, 'EUR', '€1,234.56'],
+    [-1234.56, 'USD', '$1,234.56'],
+    [-1234.56, 'GBP', '£1,234.56'],
+    [0, 'EUR', '€0.00'],
+    [0, 'USD', '$0.00'],
+    [100, 'EUR', '€100.00'],
+    [100.1, 'USD', '$100.10'],
+    [100.999, 'GBP', '£101.00'],
+    [100, 'JPY', '€100.00'],
+    [100, 'UNKNOWN', '€100.00'],
+    [null, undefined, '0.00'],
+    [undefined, undefined, '0.00'],
+    [null, 'USD', '0.00'],
+  ] as const)('%s in %s → %s', (value, currency, expected) => {
+    expect(formatCurrencyWithSign(value, currency)).toBe(expected)
   })
 })
 
 describe('formatPrice', () => {
-  it('should format large prices with no decimals', () => {
-    expect(formatPrice(12345.67, 'EUR')).toBe('€12,346')
-    expect(formatPrice(99999.99, 'USD')).toBe('$100,000')
-    expect(formatPrice(10000, 'GBP')).toBe('£10,000')
-  })
-
-  it('should format medium prices with 1 decimal', () => {
-    expect(formatPrice(1234.56, 'EUR')).toBe('€1,234.6')
-    expect(formatPrice(9999.99, 'USD')).toBe('$10,000.0')
-    expect(formatPrice(1000, 'GBP')).toBe('£1,000.0')
-  })
-
-  it('should format small prices with 2 decimals', () => {
-    expect(formatPrice(123.45, 'EUR')).toBe('€123.45')
-    expect(formatPrice(12.34, 'USD')).toBe('$12.34')
-    expect(formatPrice(1.23, 'GBP')).toBe('£1.23')
-    expect(formatPrice(0.12, 'EUR')).toBe('€0.12')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(formatPrice(null)).toBe('0.00')
-    expect(formatPrice(undefined)).toBe('0.00')
-    expect(formatPrice(null, 'USD')).toBe('0.00')
-  })
-
-  it('should handle zero value', () => {
-    expect(formatPrice(0, 'EUR')).toBe('€0.00')
-    expect(formatPrice(0, 'USD')).toBe('$0.00')
-  })
-
-  it('should format negative numbers as absolute values', () => {
-    expect(formatPrice(-12345.67, 'EUR')).toBe('€12,346')
-    expect(formatPrice(-1234.56, 'USD')).toBe('$1,234.6')
-    expect(formatPrice(-123.45, 'GBP')).toBe('£123.45')
-  })
-
-  it('should default to EUR for undefined currency', () => {
-    expect(formatPrice(100)).toBe('€100.00')
-    expect(formatPrice(1234.56)).toBe('€1,234.6')
-    expect(formatPrice(12345.67)).toBe('€12,346')
-  })
-
-  it('should handle edge cases at thresholds', () => {
-    expect(formatPrice(999.99, 'EUR')).toBe('€999.99')
-    expect(formatPrice(1000, 'EUR')).toBe('€1,000.0')
-    expect(formatPrice(9999.9, 'EUR')).toBe('€9,999.9')
-    expect(formatPrice(10000, 'EUR')).toBe('€10,000')
+  it.each([
+    [12345.67, 'EUR', '€12,346'],
+    [99999.99, 'USD', '$100,000'],
+    [10000, 'GBP', '£10,000'],
+    [1234.56, 'EUR', '€1,234.6'],
+    [9999.99, 'USD', '$10,000.0'],
+    [1000, 'GBP', '£1,000.0'],
+    [123.45, 'EUR', '€123.45'],
+    [12.34, 'USD', '$12.34'],
+    [1.23, 'GBP', '£1.23'],
+    [0.12, 'EUR', '€0.12'],
+    [0, 'EUR', '€0.00'],
+    [0, 'USD', '$0.00'],
+    [-12345.67, 'EUR', '€12,346'],
+    [-1234.56, 'USD', '$1,234.6'],
+    [-123.45, 'GBP', '£123.45'],
+    [100, undefined, '€100.00'],
+    [1234.56, undefined, '€1,234.6'],
+    [12345.67, undefined, '€12,346'],
+    [999.99, 'EUR', '€999.99'],
+    [1000, 'EUR', '€1,000.0'],
+    [9999.9, 'EUR', '€9,999.9'],
+    [10000, 'EUR', '€10,000'],
+    [null, undefined, '0.00'],
+    [undefined, undefined, '0.00'],
+    [null, 'USD', '0.00'],
+  ] as const)('%s in %s → %s', (value, currency, expected) => {
+    expect(formatPrice(value, currency)).toBe(expected)
   })
 })
 
 describe('getCurrencySymbol', () => {
-  it('should return EUR symbol for EUR', () => {
-    expect(getCurrencySymbol('EUR')).toBe('€')
-    expect(getCurrencySymbol('eur')).toBe('€')
-  })
-
-  it('should return USD symbol for USD', () => {
-    expect(getCurrencySymbol('USD')).toBe('$')
-    expect(getCurrencySymbol('usd')).toBe('$')
-  })
-
-  it('should return GBP symbol for GBP', () => {
-    expect(getCurrencySymbol('GBP')).toBe('£')
-    expect(getCurrencySymbol('gbp')).toBe('£')
-  })
-
-  it('should return EUR symbol by default', () => {
-    expect(getCurrencySymbol()).toBe('€')
-    expect(getCurrencySymbol(undefined)).toBe('€')
-    expect(getCurrencySymbol('')).toBe('€')
-    expect(getCurrencySymbol('UNKNOWN')).toBe('€')
-    expect(getCurrencySymbol('JPY')).toBe('€')
+  it.each([
+    ['EUR', '€'],
+    ['eur', '€'],
+    ['USD', '$'],
+    ['usd', '$'],
+    ['GBP', '£'],
+    ['gbp', '£'],
+    ['', '€'],
+    ['UNKNOWN', '€'],
+    ['JPY', '€'],
+    [undefined, '€'],
+  ] as const)('%s → %s', (currency, expected) => {
+    expect(getCurrencySymbol(currency)).toBe(expected)
   })
 })
 
 describe('formatPercentageFromDecimal', () => {
-  it('should convert decimal to percentage', () => {
-    expect(formatPercentageFromDecimal(0.1)).toBe('10.00%')
-    expect(formatPercentageFromDecimal(0.1234)).toBe('12.34%')
-    expect(formatPercentageFromDecimal(1)).toBe('100.00%')
-    expect(formatPercentageFromDecimal(1.5)).toBe('150.00%')
-  })
-
-  it('should handle negative percentages', () => {
-    expect(formatPercentageFromDecimal(-0.1)).toBe('-10.00%')
-    expect(formatPercentageFromDecimal(-0.5)).toBe('-50.00%')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(formatPercentageFromDecimal(null)).toBe('N/A')
-    expect(formatPercentageFromDecimal(undefined)).toBe('N/A')
-  })
-
-  it('should handle zero value', () => {
-    expect(formatPercentageFromDecimal(0)).toBe('0.00%')
-  })
-
-  it('should round to 2 decimal places', () => {
-    expect(formatPercentageFromDecimal(0.12345)).toBe('12.35%')
-    expect(formatPercentageFromDecimal(0.12344)).toBe('12.34%')
+  it.each([
+    [0.1, '10.00%'],
+    [0.1234, '12.34%'],
+    [1, '100.00%'],
+    [1.5, '150.00%'],
+    [-0.1, '-10.00%'],
+    [-0.5, '-50.00%'],
+    [0, '0.00%'],
+    [0.12345, '12.35%'],
+    [0.12344, '12.34%'],
+    [null, 'N/A'],
+    [undefined, 'N/A'],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(formatPercentageFromDecimal(value)).toBe(expected)
   })
 })
 
 describe('formatProfitLoss', () => {
-  it('should format positive values with + sign', () => {
-    expect(formatProfitLoss(100)).toBe('+100.00')
-    expect(formatProfitLoss(1234.56)).toBe('+1,234.56')
-    expect(formatProfitLoss(0.01)).toBe('+0.01')
-  })
-
-  it('should format negative values with - sign', () => {
-    expect(formatProfitLoss(-100)).toBe('-100.00')
-    expect(formatProfitLoss(-1234.56)).toBe('-1,234.56')
-    expect(formatProfitLoss(-0.01)).toBe('-0.01')
-  })
-
-  it('should handle zero as positive', () => {
-    expect(formatProfitLoss(0)).toBe('+0.00')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(formatProfitLoss(null)).toBe('0.00')
-    expect(formatProfitLoss(undefined)).toBe('0.00')
+  it.each([
+    [100, '+100.00'],
+    [1234.56, '+1,234.56'],
+    [0.01, '+0.01'],
+    [-100, '-100.00'],
+    [-1234.56, '-1,234.56'],
+    [-0.01, '-0.01'],
+    [0, '+0.00'],
+    [null, '0.00'],
+    [undefined, '0.00'],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(formatProfitLoss(value)).toBe(expected)
   })
 })
 
 describe('formatTransactionAmount', () => {
-  it('should format BUY transactions with + sign and default EUR currency', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY')).toBe('+€1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'BUY')).toBe('+€112.75')
-    expect(formatTransactionAmount(1, 0.01, 'BUY')).toBe('+€0.01')
-  })
-
-  it('should format SELL transactions with - sign and default EUR currency', () => {
-    expect(formatTransactionAmount(10, 100, 'SELL')).toBe('-€1,000.00')
-    expect(formatTransactionAmount(5.5, 20.5, 'SELL')).toBe('-€112.75')
-    expect(formatTransactionAmount(1, 0.01, 'SELL')).toBe('-€0.01')
-  })
-
-  it('should handle zero values', () => {
-    expect(formatTransactionAmount(0, 100, 'BUY')).toBe('+€0.00')
-    expect(formatTransactionAmount(10, 0, 'SELL')).toBe('-€0.00')
-  })
-
-  it('should format with different currencies', () => {
-    expect(formatTransactionAmount(10, 100, 'BUY', 'USD')).toBe('+$1,000.00')
-    expect(formatTransactionAmount(10, 100, 'SELL', 'GBP')).toBe('-£1,000.00')
+  it.each([
+    [10, 100, 'BUY', undefined, '+€1,000.00'],
+    [5.5, 20.5, 'BUY', undefined, '+€112.75'],
+    [1, 0.01, 'BUY', undefined, '+€0.01'],
+    [10, 100, 'SELL', undefined, '-€1,000.00'],
+    [5.5, 20.5, 'SELL', undefined, '-€112.75'],
+    [1, 0.01, 'SELL', undefined, '-€0.01'],
+    [0, 100, 'BUY', undefined, '+€0.00'],
+    [10, 0, 'SELL', undefined, '-€0.00'],
+    [10, 100, 'BUY', 'USD', '+$1,000.00'],
+    [10, 100, 'SELL', 'GBP', '-£1,000.00'],
+  ] as const)('%s × %s %s in %s → %s', (quantity, price, type, currency, expected) => {
+    expect(formatTransactionAmount(quantity, price, type, currency)).toBe(expected)
   })
 })
 
 describe('getProfitClass', () => {
-  it('should return gain token for positive values', () => {
-    expect(getProfitClass(100)).toBe('text-gain')
-    expect(getProfitClass(0.01)).toBe('text-gain')
-    expect(getProfitClass(0)).toBe('text-gain')
-  })
-
-  it('should return loss token for negative values', () => {
-    expect(getProfitClass(-100)).toBe('text-loss')
-    expect(getProfitClass(-0.01)).toBe('text-loss')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(getProfitClass(null)).toBe('')
-    expect(getProfitClass(undefined)).toBe('')
+  it.each([
+    [100, 'text-gain'],
+    [0.01, 'text-gain'],
+    [0, 'text-gain'],
+    [-100, 'text-loss'],
+    [-0.01, 'text-loss'],
+    [null, ''],
+    [undefined, ''],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(getProfitClass(value)).toBe(expected)
   })
 })
 
 describe('getGainLossClass', () => {
-  it('should return gain token for positive values', () => {
-    expect(getGainLossClass(100)).toBe('text-gain')
-    expect(getGainLossClass(0.01)).toBe('text-gain')
-  })
-
-  it('should return loss token for negative values', () => {
-    expect(getGainLossClass(-100)).toBe('text-loss')
-    expect(getGainLossClass(-0.01)).toBe('text-loss')
-  })
-
-  it('should return no token for zero', () => {
-    expect(getGainLossClass(0)).toBe('')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(getGainLossClass(null)).toBe('')
-    expect(getGainLossClass(undefined)).toBe('')
+  it.each([
+    [100, 'text-gain'],
+    [0.01, 'text-gain'],
+    [-100, 'text-loss'],
+    [-0.01, 'text-loss'],
+    [0, ''],
+    [null, ''],
+    [undefined, ''],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(getGainLossClass(value)).toBe(expected)
   })
 })
 
 describe('getAmountClass', () => {
-  it('should return gain token for BUY type', () => {
-    expect(getAmountClass('BUY')).toBe('text-gain')
+  it.each([
+    ['BUY', 'text-gain'],
+    ['SELL', 'text-loss'],
+    ['OTHER', 'text-loss'],
+    ['', 'text-loss'],
+  ] as const)('%s → %s', (type, expected) => {
+    expect(getAmountClass(type)).toBe(expected)
   })
+})
 
-  it('should return loss token for SELL type', () => {
-    expect(getAmountClass('SELL')).toBe('text-loss')
+describe('formatSignedCurrency', () => {
+  it.each([
+    [100, 'EUR', '+€100.00'],
+    [1234567.89, 'EUR', '+€1,234,567.89'],
+    [-100, 'EUR', '−€100.00'],
+    [-1234567.89, 'EUR', '−€1,234,567.89'],
+    [0, 'EUR', '€0.00'],
+    [50, 'USD', '+$50.00'],
+    [-50, 'GBP', '−£50.00'],
+    [123.456, 'EUR', '+€123.46'],
+    [75, undefined, '+€75.00'],
+  ] as const)('%s in %s → %s', (value, currency, expected) => {
+    expect(formatSignedCurrency(value, currency)).toBe(expected)
   })
+})
 
-  it('should handle other transaction types', () => {
-    expect(getAmountClass('OTHER')).toBe('text-loss')
-    expect(getAmountClass('')).toBe('text-loss')
+describe('formatSignedPercent', () => {
+  it.each([
+    [17.16, '+17.16%'],
+    [-8.46, '−8.46%'],
+    [0, '0.00%'],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(formatSignedPercent(value)).toBe(expected)
+  })
+})
+
+describe('formatDate', () => {
+  it.each([
+    ['2023-01-15', '15.01.23'],
+    ['2023-12-31', '31.12.23'],
+    ['2023-02-05', '05.02.23'],
+    ['2023-01-15T10:30:00', '15.01.23'],
+    ['2023-12-31T23:59:59.999', '31.12.23'],
+    ['2023/01/15', '15.01.23'],
+    ['01/15/2023', '15.01.23'],
+    ['2099-12-31', '31.12.99'],
+    ['2100-01-01', '01.01.00'],
+    ['', ''],
+  ] as const)('%s → %s', (dateString, expected) => {
+    expect(formatDate(dateString)).toBe(expected)
+  })
+})
+
+describe('formatQuantity', () => {
+  it.each([
+    [176.73, '176.73'],
+    [100, '100.00'],
+    [999.99, '999.99'],
+    [1234.5678, '1234.57'],
+    [84.446, '84.446'],
+    [10, '10.000'],
+    [99.999, '99.999'],
+    [45.1234, '45.123'],
+    [5.25, '5.2500'],
+    [0.1331, '0.1331'],
+    [0.01332304, '0.0133'],
+    [1.2345, '1.2345'],
+    [9.9999, '9.9999'],
+    [0.0001, '0.0001'],
+    [0.00009999, '10.00 × 10⁻⁵'],
+    [0.00001, '1.00 × 10⁻⁵'],
+    [0.0000123456, '1.23 × 10⁻⁵'],
+    [0.000000001, '1.00 × 10⁻⁹'],
+    [0.0000000001, '1.00 × 10⁻¹⁰'],
+    [-176.73, '-176.73'],
+    [-84.446, '-84.446'],
+    [-0.1331, '-0.1331'],
+    [-0.00001, '-1.00 × 10⁻⁵'],
+    [0, '0.0000'],
+    [null, '0.0000'],
+    [undefined, '0.0000'],
+  ] as const)('%s → %s', (value, expected) => {
+    expect(formatQuantity(value)).toBe(expected)
+  })
+})
+
+describe('formatScientific', () => {
+  it.each([
+    [0.001, undefined, '1.00 × 10⁻³'],
+    [0.00001, undefined, '1.00 × 10⁻⁵'],
+    [0.0000123, undefined, '1.23 × 10⁻⁵'],
+    [-0.001, undefined, '-1.00 × 10⁻³'],
+    [-0.00005, undefined, '-5.00 × 10⁻⁵'],
+    [0.0000000001, undefined, '1.00 × 10⁻¹⁰'],
+    [0.00000000001, undefined, '1.00 × 10⁻¹¹'],
+    [0.0001, '%', '1.00 × 10⁻⁴%'],
+    [0.00005, ' units', '5.00 × 10⁻⁵ units'],
+  ] as const)('%s with suffix %s → %s', (value, suffix, expected) => {
+    expect(formatScientific(value, suffix)).toBe(expected)
   })
 })
 
@@ -355,158 +338,5 @@ describe('formatPriceChange', () => {
 
   it('should return a dash when the change is unknown', () => {
     expect(formatPriceChange({ ...item, priceChangeAmount: null })).toBe('-')
-  })
-})
-
-describe('formatSignedCurrency', () => {
-  it('should prefix a gain with a plus', () => {
-    expect(formatSignedCurrency(100, 'EUR')).toBe('+€100.00')
-    expect(formatSignedCurrency(1234567.89, 'EUR')).toBe('+€1,234,567.89')
-  })
-
-  it('should prefix a loss with a typographic minus', () => {
-    expect(formatSignedCurrency(-100, 'EUR')).toBe('−€100.00')
-    expect(formatSignedCurrency(-1234567.89, 'EUR')).toBe('−€1,234,567.89')
-  })
-
-  it('should leave a flat value unsigned', () => {
-    expect(formatSignedCurrency(0, 'EUR')).toBe('€0.00')
-  })
-
-  it('should use the currency it is given', () => {
-    expect(formatSignedCurrency(50, 'USD')).toBe('+$50.00')
-    expect(formatSignedCurrency(-50, 'GBP')).toBe('−£50.00')
-  })
-
-  it('should default to euro when the currency is undefined', () => {
-    expect(formatSignedCurrency(75, undefined)).toBe('+€75.00')
-  })
-
-  it('should round to two decimals', () => {
-    expect(formatSignedCurrency(123.456, 'EUR')).toBe('+€123.46')
-  })
-})
-
-describe('formatSignedPercent', () => {
-  it('should prefix a gain with a plus', () => {
-    expect(formatSignedPercent(17.16)).toBe('+17.16%')
-  })
-
-  it('should prefix a loss with a typographic minus', () => {
-    expect(formatSignedPercent(-8.46)).toBe('−8.46%')
-  })
-
-  it('should leave a flat value unsigned', () => {
-    expect(formatSignedPercent(0)).toBe('0.00%')
-  })
-})
-
-describe('formatDate', () => {
-  it('should format valid date strings to DD.MM.YY', () => {
-    expect(formatDate('2023-01-15')).toBe('15.01.23')
-    expect(formatDate('2023-12-31')).toBe('31.12.23')
-    expect(formatDate('2023-02-05')).toBe('05.02.23')
-  })
-
-  it('should format date with time component', () => {
-    expect(formatDate('2023-01-15T10:30:00')).toBe('15.01.23')
-    expect(formatDate('2023-12-31T23:59:59.999')).toBe('31.12.23')
-  })
-
-  it('should handle different date formats', () => {
-    expect(formatDate('2023/01/15')).toBe('15.01.23')
-    expect(formatDate('01/15/2023')).toBe('15.01.23')
-  })
-
-  it('should handle empty or invalid date strings', () => {
-    expect(formatDate('')).toBe('')
-  })
-
-  it('should handle years with 2 and 4 digits', () => {
-    expect(formatDate('2023-01-15')).toBe('15.01.23')
-    expect(formatDate('2099-12-31')).toBe('31.12.99')
-    expect(formatDate('2100-01-01')).toBe('01.01.00')
-  })
-})
-
-describe('formatQuantity', () => {
-  it('should format large quantities with 2 decimal places', () => {
-    expect(formatQuantity(176.73)).toBe('176.73')
-    expect(formatQuantity(100)).toBe('100.00')
-    expect(formatQuantity(999.99)).toBe('999.99')
-    expect(formatQuantity(1234.5678)).toBe('1234.57')
-  })
-
-  it('should format medium quantities with 3 decimal places', () => {
-    expect(formatQuantity(84.446)).toBe('84.446')
-    expect(formatQuantity(10)).toBe('10.000')
-    expect(formatQuantity(99.999)).toBe('99.999')
-    expect(formatQuantity(45.1234)).toBe('45.123')
-  })
-
-  it('should format small quantities with 4 decimal places', () => {
-    expect(formatQuantity(5.25)).toBe('5.2500')
-    expect(formatQuantity(0.1331)).toBe('0.1331')
-    expect(formatQuantity(0.01332304)).toBe('0.0133')
-    expect(formatQuantity(1.2345)).toBe('1.2345')
-    expect(formatQuantity(9.9999)).toBe('9.9999')
-  })
-
-  it('should format very small quantities in scientific notation', () => {
-    expect(formatQuantity(0.00001)).toBe('1.00 × 10⁻⁵')
-    expect(formatQuantity(0.0000123456)).toBe('1.23 × 10⁻⁵')
-  })
-
-  it('should handle negative quantities', () => {
-    expect(formatQuantity(-176.73)).toBe('-176.73')
-    expect(formatQuantity(-84.446)).toBe('-84.446')
-    expect(formatQuantity(-0.1331)).toBe('-0.1331')
-    expect(formatQuantity(-0.00001)).toBe('-1.00 × 10⁻⁵')
-  })
-
-  it('should handle edge cases at thresholds', () => {
-    expect(formatQuantity(0.0001)).toBe('0.0001')
-    expect(formatQuantity(0.00009999)).toBe('10.00 × 10⁻⁵')
-    expect(formatQuantity(10)).toBe('10.000')
-    expect(formatQuantity(9.9999)).toBe('9.9999')
-    expect(formatQuantity(100)).toBe('100.00')
-    expect(formatQuantity(99.999)).toBe('99.999')
-  })
-
-  it('should handle null and undefined values', () => {
-    expect(formatQuantity(null)).toBe('0.0000')
-    expect(formatQuantity(undefined)).toBe('0.0000')
-  })
-
-  it('should handle zero value', () => {
-    expect(formatQuantity(0)).toBe('0.0000')
-  })
-
-  it('should handle very small values correctly', () => {
-    expect(formatQuantity(0.000000001)).toBe('1.00 × 10⁻⁹')
-    expect(formatQuantity(0.0000000001)).toBe('1.00 × 10⁻¹⁰')
-  })
-})
-
-describe('formatScientific', () => {
-  it('should format numbers with superscript exponents', () => {
-    expect(formatScientific(0.001)).toBe('1.00 × 10⁻³')
-    expect(formatScientific(0.00001)).toBe('1.00 × 10⁻⁵')
-    expect(formatScientific(0.0000123)).toBe('1.23 × 10⁻⁵')
-  })
-
-  it('should format with suffix', () => {
-    expect(formatScientific(0.0001, '%')).toBe('1.00 × 10⁻⁴%')
-    expect(formatScientific(0.00005, ' units')).toBe('5.00 × 10⁻⁵ units')
-  })
-
-  it('should handle negative numbers', () => {
-    expect(formatScientific(-0.001)).toBe('-1.00 × 10⁻³')
-    expect(formatScientific(-0.00005)).toBe('-5.00 × 10⁻⁵')
-  })
-
-  it('should handle double-digit exponents', () => {
-    expect(formatScientific(0.0000000001)).toBe('1.00 × 10⁻¹⁰')
-    expect(formatScientific(0.00000000001)).toBe('1.00 × 10⁻¹¹')
   })
 })
