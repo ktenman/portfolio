@@ -1,4 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
+import { tryOnScopeDispose } from '@vueuse/core'
 
 const TRANSITION_DURATION = 3000
 
@@ -6,39 +7,39 @@ export function useNumberTransition(value: Ref<number | null | undefined>) {
   const displayValue = ref<number>(value.value ?? 0)
   let animationId: number | null = null
 
+  const cancel = () => {
+    if (animationId === null) return
+    cancelAnimationFrame(animationId)
+    animationId = null
+  }
+
   const easeOutQuart = (t: number): number => 1 - Math.pow(1 - t, 4)
 
   watch(value, (newValue, oldValue) => {
-    if (animationId !== null) {
-      cancelAnimationFrame(animationId)
-      animationId = null
-    }
+    cancel()
 
-    if (oldValue === null || oldValue === undefined) {
-      displayValue.value = newValue ?? 0
+    if (newValue == null) return
+
+    if (oldValue == null) {
+      displayValue.value = newValue
       return
     }
 
     const start = oldValue
-    const end = newValue ?? 0
     const startTime = performance.now()
 
     const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime
-      const progress = Math.min(elapsed / TRANSITION_DURATION, 1)
-      const easedProgress = easeOutQuart(progress)
+      const progress = Math.min((currentTime - startTime) / TRANSITION_DURATION, 1)
 
-      displayValue.value = start + (end - start) * easedProgress
+      displayValue.value = start + (newValue - start) * easeOutQuart(progress)
 
-      if (progress < 1) {
-        animationId = requestAnimationFrame(animate)
-      } else {
-        animationId = null
-      }
+      animationId = progress < 1 ? requestAnimationFrame(animate) : null
     }
 
     animationId = requestAnimationFrame(animate)
   })
+
+  tryOnScopeDispose(cancel)
 
   return displayValue
 }

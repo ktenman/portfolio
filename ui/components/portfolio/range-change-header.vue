@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRefs } from 'vue'
 import { useNumberTransition } from '../../composables/use-number-transition'
 import { useFlashOnChange } from '../../composables/use-flash-on-change'
 import { formatSignedCurrency, formatSignedPercent, getGainLossClass } from '../../utils/formatters'
@@ -13,8 +13,7 @@ const props = defineProps<{
   percent: number
 }>()
 
-const amount = computed(() => props.amount)
-const percent = computed(() => props.percent)
+const { amount, percent } = toRefs(props)
 
 const animatedAmount = useNumberTransition(amount)
 const animatedPercent = useNumberTransition(percent)

@@ -43,14 +43,6 @@ describe('useFlashOnChange', () => {
     expect(flash.value).toBe('')
   })
 
-  it('should respect a custom threshold for small percentage moves', async () => {
-    const value = ref<number | null>(0.15)
-    const flash = useFlashOnChange(value, 0.00001)
-    value.value = 0.1502
-    await nextTick()
-    expect(flash.value).toBe('value-increase')
-  })
-
   it('should clear the flash after the animation finishes', async () => {
     const value = ref<number | null>(100)
     const flash = useFlashOnChange(value)

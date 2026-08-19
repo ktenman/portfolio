@@ -77,16 +77,18 @@ export const formatCurrency = (value: number | undefined | null): string => {
   })
 }
 
+const AMOUNT_FORMAT = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
 export const formatCurrencyWithSign = (
   value: number | undefined | null,
   currency?: string
 ): string => {
   if (value === null || value === undefined) return '0.00'
 
-  const absValue = Math.abs(value).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
+  const absValue = AMOUNT_FORMAT.format(Math.abs(value))
   const currencySymbol = getCurrencySymbol(currency)
 
   return `${currencySymbol}${absValue}`
