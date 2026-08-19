@@ -27,6 +27,5 @@ class CurrentDaySummaryCacheTestConfiguration {
     CurrentDaySummaryCacheService(summaryService)
 
   @Bean
-  fun platformSummaryCacheService(summaryService: SummaryService): PlatformSummaryCacheService =
-    PlatformSummaryCacheService(summaryService)
+  fun platformSummaryCacheService(summaryService: SummaryService): PlatformSummaryCacheService = PlatformSummaryCacheService(summaryService)
 }

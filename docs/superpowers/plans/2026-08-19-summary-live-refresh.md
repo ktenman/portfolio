@@ -4,7 +4,7 @@
 
 **Goal:** Refresh the portfolio summary every 5 seconds, rolling the headline total and range-change numbers to their new values and flashing their background green or red on the way.
 
-**Architecture:** The frontend already has the animation machinery (`useNumberTransition` for the rAF number roll, `.value-increase`/`.value-decrease` keyframes for the flash) built for the instruments table; this reuses both. Two changes make the poll meaningful rather than decorative: the backend starts warming the *filtered* current-day summary entry in the job that already warms the unfiltered one, and only the two live queries (`current`, `range-change`) get a `refetchInterval`.
+**Architecture:** The frontend already has the animation machinery (`useNumberTransition` for the rAF number roll, `.value-increase`/`.value-decrease` keyframes for the flash) built for the instruments table; this reuses both. Two changes make the poll meaningful rather than decorative: the backend starts warming the _filtered_ current-day summary entry in the job that already warms the unfiltered one, and only the two live queries (`current`, `range-change`) get a `refetchInterval`.
 
 **Tech Stack:** Kotlin 2.3 / Spring Boot 4.0 / Spring Cache (backend), Vue 3.5 / TypeScript / TanStack Vue Query / Vitest (frontend), Atrium + MockK + JUnit 5 (backend tests).
 
@@ -24,13 +24,15 @@
 ## File Structure
 
 **Backend**
+
 - `src/main/kotlin/ee/tenman/portfolio/service/summary/PlatformSummaryCacheService.kt` — gains a `@CachePut` sibling to its existing `@Cacheable` current-day method. Owns the cache-key expressions.
-- `src/main/kotlin/ee/tenman/portfolio/job/CurrentDaySummaryRefreshJob.kt` — gains two dependencies so it warms the filtered entry too. Owns *when* warming happens.
+- `src/main/kotlin/ee/tenman/portfolio/job/CurrentDaySummaryRefreshJob.kt` — gains two dependencies so it warms the filtered entry too. Owns _when_ warming happens.
 - `src/test/kotlin/ee/tenman/portfolio/configuration/CurrentDaySummaryCacheTestConfiguration.kt` — gains beans so the new `@CachePut` can be exercised through a real Spring cache proxy.
 - `src/test/kotlin/ee/tenman/portfolio/service/summary/PlatformSummaryCacheRefreshTest.kt` (new) — the load-bearing test that the `@CachePut` key and the `@Cacheable` key are the same string.
 - `src/test/kotlin/ee/tenman/portfolio/job/CurrentDaySummaryRefreshJobTest.kt` — updated for the new constructor.
 
 **Frontend**
+
 - `ui/constants/api.ts` — one new interval constant.
 - `ui/composables/use-flash-on-change.ts` (new) — maps a changing number to a transient flash class. Single responsibility, no knowledge of any DTO.
 - `ui/composables/use-flash-on-change.test.ts` (new).
@@ -47,11 +49,13 @@
 ### Task 1: Warm the filtered current-day summary
 
 **Files:**
+
 - Modify: `src/main/kotlin/ee/tenman/portfolio/service/summary/PlatformSummaryCacheService.kt:17-22`
 - Modify: `src/test/kotlin/ee/tenman/portfolio/configuration/CurrentDaySummaryCacheTestConfiguration.kt`
 - Test: `src/test/kotlin/ee/tenman/portfolio/service/summary/PlatformSummaryCacheRefreshTest.kt` (create)
 
 **Interfaces:**
+
 - Consumes: existing `PlatformSummaryCacheService(summaryService: SummaryService)`, `SummaryService.getCurrentDaySummaryForPlatforms(platforms: List<Platform>): PortfolioDailySummary`, `RedisConfiguration.Companion.SUMMARY_CACHE`.
 - Produces: `PlatformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(platforms: List<Platform>): PortfolioDailySummary` — used by Task 2.
 
@@ -160,7 +164,7 @@ class PlatformSummaryCacheRefreshTest {
 }
 ```
 
-Note the second test asserts the *stale* date on purpose: it proves the refresh wrote into the cache that the reader reads, because a reader that recomputed would return the 3/12 value.
+Note the second test asserts the _stale_ date on purpose: it proves the refresh wrote into the cache that the reader reads, because a reader that recomputed would return the 3/12 value.
 
 - [ ] **Step 3: Run the test to verify it fails**
 
@@ -199,14 +203,16 @@ git commit -m "Add cache refresh for platform current summary"
 ### Task 2: Warm the filtered entry on the existing 120s job
 
 **Files:**
+
 - Modify: `src/main/kotlin/ee/tenman/portfolio/job/CurrentDaySummaryRefreshJob.kt` (whole file)
 - Test: `src/test/kotlin/ee/tenman/portfolio/job/CurrentDaySummaryRefreshJobTest.kt` (rewrite)
 
 **Interfaces:**
+
 - Consumes: `PlatformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(...)` from Task 1; existing `TransactionService.getDistinctPlatforms(): List<Platform>`; existing `CurrentDaySummaryCacheService.refreshCurrentDaySummary()`.
 - Produces: nothing consumed by later tasks.
 
-**Background the implementer needs:** the frontend always sends every platform it knows about, so the entry worth warming is the one keyed by *all* distinct platforms. When there are no transactions yet, `getDistinctPlatforms()` returns an empty list; warming an empty-platform key is pointless work, so guard and skip. Each warm is wrapped in its own `runCatching` so a failure warming one entry does not skip the other. This job's constructor is changing from one parameter to three, which breaks the two existing tests — they are rewritten in Step 1.
+**Background the implementer needs:** the frontend always sends every platform it knows about, so the entry worth warming is the one keyed by _all_ distinct platforms. When there are no transactions yet, `getDistinctPlatforms()` returns an empty list; warming an empty-platform key is pointless work, so guard and skip. Each warm is wrapped in its own `runCatching` so a failure warming one entry does not skip the other. This job's constructor is changing from one parameter to three, which breaks the two existing tests — they are rewritten in Step 1.
 
 - [ ] **Step 1: Rewrite the test file with the new constructor and new expectations**
 
@@ -324,7 +330,7 @@ Expected: only the test file. If a production call site appears, update it to pa
 - [ ] **Step 6: Run the architecture tests**
 
 Run: `./gradlew test --tests "ArchitectureTest"`
-Expected: PASS. This job now has three constructor dependencies; the suite caps service *method* dependencies at 65, so this is well clear, but run it because the job package is covered by layer rules.
+Expected: PASS. This job now has three constructor dependencies; the suite caps service _method_ dependencies at 65, so this is well clear, but run it because the job package is covered by layer rules.
 
 - [ ] **Step 7: Commit**
 
@@ -339,10 +345,12 @@ git commit -m "Keep filtered summary cache warm in refresh job"
 ### Task 3: The flash-on-change composable
 
 **Files:**
+
 - Create: `ui/composables/use-flash-on-change.ts`
 - Test: `ui/composables/use-flash-on-change.test.ts`
 
 **Interfaces:**
+
 - Consumes: `vue` (`ref`, `watch`, `type Ref`).
 - Produces: `useFlashOnChange(value: Ref<number | null | undefined>, threshold?: number): Ref<string>` — returns `'value-increase'`, `'value-decrease'`, or `''`. Used by Tasks 6 and 7.
 
@@ -510,14 +518,16 @@ git commit -m "Add flash-on-change composable"
 ### Task 4: Promote the flash styles to global CSS
 
 **Files:**
+
 - Modify: `ui/styles/base.css` (insert after the `hr` rule that ends at line 95, before the first `@media` block at line 97)
 - Modify: `ui/components/instruments/instrument-table.vue:690-731` (delete the moved rules from the scoped `<style>` block)
 
 **Interfaces:**
+
 - Consumes: CSS custom properties `--color-gain-wash` and `--color-loss-wash`, already defined in the theme.
 - Produces: global `.value-increase` / `.value-decrease` classes, used by Tasks 6 and 7 and by the existing instruments table.
 
-**Background the implementer needs:** these rules live in `instrument-table.vue`'s *scoped* style block today, so nothing outside that component can use them. `base.css` already refers to both class names in its `prefers-reduced-motion` block, so the global name is the one already assumed to exist. Moving them is a dedup, not a new pattern. Order does not matter against the reduced-motion override because that override uses `!important`, but insert before the media queries anyway to keep the file readable.
+**Background the implementer needs:** these rules live in `instrument-table.vue`'s _scoped_ style block today, so nothing outside that component can use them. `base.css` already refers to both class names in its `prefers-reduced-motion` block, so the global name is the one already assumed to exist. Moving them is a dedup, not a new pattern. Order does not matter against the reduced-motion override because that override uses `!important`, but insert before the media queries anyway to keep the file readable.
 
 Note for anyone testing this by hand: with macOS "Reduce Motion" enabled the flash is suppressed to a 3s no-op wash and the roll still runs, so the numbers will change without any colour. That is the environment, not a bug.
 
@@ -592,11 +602,13 @@ git commit -m "Move value flash styles to global stylesheet"
 ### Task 5: Poll the live summary queries every 5 seconds
 
 **Files:**
+
 - Modify: `ui/constants/api.ts:21-25`
 - Modify: `ui/composables/use-portfolio-summary-query.ts:55-77`
 - Test: `ui/composables/use-portfolio-summary-query.test.ts` (existing — run it, do not rewrite it)
 
 **Interfaces:**
+
 - Consumes: `REFETCH_INTERVALS` from `../constants/api`, already imported by consumers.
 - Produces: `REFETCH_INTERVALS.SUMMARY = 5000`.
 
@@ -604,7 +616,7 @@ git commit -m "Move value flash styles to global stylesheet"
 
 - `current` — yes. This is the live payload; it feeds the headline and today's row.
 - `range-change` — yes. This is the `+€X (+Y%)` header, derived from the same live value.
-- `historical` — **no.** It is a `useInfiniteQuery`; a refetch re-requests *every page the user has scrolled through*.
+- `historical` — **no.** It is a `useInfiniteQuery`; a refetch re-requests _every page the user has scrolled through_.
 - `series` — **no.** It backs the chart and would force a re-render every 5 seconds. It is already merged with `current` by `mergeHistoricalWithCurrent`, so the chart's final point updates for free.
 
 - [ ] **Step 1: Add the constant**
@@ -633,24 +645,24 @@ import { REFETCH_INTERVALS } from '../constants/api'
 In the `currentSummary` query, add `refetchInterval` after `enabled`:
 
 ```typescript
-  const { data: currentSummary, isLoading: isLoadingCurrent } = useQuery({
-    queryKey: ['portfolio-summary', 'current', platformsKey],
-    queryFn: () => portfolioSummaryService.getCurrent(activePlatforms.value),
-    enabled: isAuthenticated,
-    refetchInterval: REFETCH_INTERVALS.SUMMARY,
-  })
+const { data: currentSummary, isLoading: isLoadingCurrent } = useQuery({
+  queryKey: ['portfolio-summary', 'current', platformsKey],
+  queryFn: () => portfolioSummaryService.getCurrent(activePlatforms.value),
+  enabled: isAuthenticated,
+  refetchInterval: REFETCH_INTERVALS.SUMMARY,
+})
 ```
 
 In the `rangeChange` query, likewise:
 
 ```typescript
-  const { data: rangeChange, error: rangeChangeError } = useQuery({
-    queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
-    queryFn: () => portfolioSummaryService.getRangeChange(rangeKey.value, activePlatforms.value),
-    placeholderData: keepPreviousData,
-    enabled: isAuthenticated,
-    refetchInterval: REFETCH_INTERVALS.SUMMARY,
-  })
+const { data: rangeChange, error: rangeChangeError } = useQuery({
+  queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
+  queryFn: () => portfolioSummaryService.getRangeChange(rangeKey.value, activePlatforms.value),
+  placeholderData: keepPreviousData,
+  enabled: isAuthenticated,
+  refetchInterval: REFETCH_INTERVALS.SUMMARY,
+})
 ```
 
 Leave the `historical` and `series` queries untouched.
@@ -677,16 +689,18 @@ git commit -m "Poll live summary queries every five seconds"
 ### Task 6: Animate the range-change header
 
 **Files:**
+
 - Modify: `ui/components/portfolio/range-change-header.vue` (whole file)
 - Test: `ui/components/portfolio/range-change-header.test.ts` (existing — extend, keep all four existing tests passing unchanged)
 
 **Interfaces:**
+
 - Consumes: `useNumberTransition` from `../../composables/use-number-transition`, `useFlashOnChange` from Task 3.
 - Produces: nothing consumed by later tasks.
 
-**Background the implementer needs:** this component's existing tests assert exact rendered text on mount and assert that a flat range has classes exactly `['range-change']`. Both keep passing because `useNumberTransition` seeds its display ref with the current value and only animates on *change*, and because `useFlashOnChange` returns `''` until a change arrives — and Vue drops empty strings from a class binding.
+**Background the implementer needs:** this component's existing tests assert exact rendered text on mount and assert that a flat range has classes exactly `['range-change']`. Both keep passing because `useNumberTransition` seeds its display ref with the current value and only animates on _change_, and because `useFlashOnChange` returns `''` until a change arrives — and Vue drops empty strings from a class binding.
 
-`props.amount` is a prop, not a ref, so it must be wrapped before either composable can watch it. Wrap it with `computed(() => props.amount)`, **not** `toRef(props, 'amount')`: `toRef` hands back a *writable* `Ref<number>`, and a writable ref's setter makes the type invariant, so it will not typecheck against `useNumberTransition`'s `Ref<number | null | undefined>` parameter under strict mode. `computed` yields a read-only `ComputedRef`, which is the pattern `instrument-table.vue` already uses everywhere it feeds a prop into this composable.
+`props.amount` is a prop, not a ref, so it must be wrapped before either composable can watch it. Wrap it with `computed(() => props.amount)`, **not** `toRef(props, 'amount')`: `toRef` hands back a _writable_ `Ref<number>`, and a writable ref's setter makes the type invariant, so it will not typecheck against `useNumberTransition`'s `Ref<number | null | undefined>` parameter under strict mode. `computed` yields a read-only `ComputedRef`, which is the pattern `instrument-table.vue` already uses everywhere it feeds a prop into this composable.
 
 Both numbers roll, but only the `amount` drives the flash — they always move together, and two independently-timed washes on one line would flicker. The amount is a currency figure, so the default `0.001` threshold is right and no custom threshold is passed.
 
@@ -695,27 +709,27 @@ Both numbers roll, but only the `amount` drives the flash — they always move t
 Append these two tests inside the existing `describe('RangeChangeHeader')` block in `ui/components/portfolio/range-change-header.test.ts`, and add `nextTick` to the existing `vue` import (`import { nextTick } from 'vue'`):
 
 ```typescript
-  it('should flash a gain when the amount rises', async () => {
-    const wrapper = mount(RangeChangeHeader, {
-      props: { amount: 100, percent: 1 },
-    })
-
-    await wrapper.setProps({ amount: 200, percent: 2 })
-    await nextTick()
-
-    expect(wrapper.find('.range-change').classes()).toContain('value-increase')
+it('should flash a gain when the amount rises', async () => {
+  const wrapper = mount(RangeChangeHeader, {
+    props: { amount: 100, percent: 1 },
   })
 
-  it('should flash a loss when the amount falls', async () => {
-    const wrapper = mount(RangeChangeHeader, {
-      props: { amount: 100, percent: 1 },
-    })
+  await wrapper.setProps({ amount: 200, percent: 2 })
+  await nextTick()
 
-    await wrapper.setProps({ amount: 50, percent: 0.5 })
-    await nextTick()
+  expect(wrapper.find('.range-change').classes()).toContain('value-increase')
+})
 
-    expect(wrapper.find('.range-change').classes()).toContain('value-decrease')
+it('should flash a loss when the amount falls', async () => {
+  const wrapper = mount(RangeChangeHeader, {
+    props: { amount: 100, percent: 1 },
   })
+
+  await wrapper.setProps({ amount: 50, percent: 0.5 })
+  await nextTick()
+
+  expect(wrapper.find('.range-change').classes()).toContain('value-decrease')
+})
 ```
 
 - [ ] **Step 2: Run the tests to verify the new ones fail**
@@ -778,10 +792,12 @@ git commit -m "Animate range change header values"
 ### Task 7: Animate the headline total
 
 **Files:**
+
 - Modify: `ui/components/portfolio-summary.vue:55-65` (template) and its `<script setup>` imports plus the `latestSummary` area near line 208
 - Test: `ui/components/portfolio-summary.test.ts` (existing — run it, extend only if it already mounts the component)
 
 **Interfaces:**
+
 - Consumes: `useNumberTransition`, `useFlashOnChange` (Task 3), the global flash classes (Task 4), the 5s poll (Task 5).
 - Produces: the finished feature.
 
@@ -815,17 +831,15 @@ const headlineFlashClass = useFlashOnChange(headlineValue)
 Change the headline block in the template from:
 
 ```html
-        <h1>{{ formatCurrencyWithSymbol(latestSummary.totalValue) }}</h1>
+<h1>{{ formatCurrencyWithSymbol(latestSummary.totalValue) }}</h1>
 ```
 
 to:
 
 ```html
-        <h1>
-          <span :class="headlineFlashClass">{{
-            formatCurrencyWithSymbol(animatedHeadlineValue)
-          }}</span>
-        </h1>
+<h1>
+  <span :class="headlineFlashClass">{{ formatCurrencyWithSymbol(animatedHeadlineValue) }}</span>
+</h1>
 ```
 
 - [ ] **Step 4: Run the summary tests and the full UI suite**
@@ -862,7 +876,7 @@ Expected: PASS.
 - [ ] **Step 2: Run the real lint gate**
 
 Run: `./gradlew ktlintCheck detekt`
-Expected: PASS. Note `detektMain`/`detektTest` are *not* part of the CI gate and report pre-existing type-resolution findings; do not chase those.
+Expected: PASS. Note `detektMain`/`detektTest` are _not_ part of the CI gate and report pre-existing type-resolution findings; do not chase those.
 
 - [ ] **Step 3: Run the frontend suite**
 

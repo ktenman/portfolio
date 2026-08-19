@@ -691,42 +691,4 @@ const formatAnnualReturn = (value: number | null | undefined): string => {
     display: none !important;
   }
 }
-
-@keyframes pulse-increase {
-  0% {
-    background-color: transparent;
-  }
-
-  50% {
-    background-color: var(--color-gain-wash);
-  }
-
-  100% {
-    background-color: transparent;
-  }
-}
-
-@keyframes pulse-decrease {
-  0% {
-    background-color: transparent;
-  }
-
-  50% {
-    background-color: var(--color-loss-wash);
-  }
-
-  100% {
-    background-color: transparent;
-  }
-}
-
-.value-increase {
-  animation: pulse-increase 3s ease-in-out;
-  transition: background-color 3s ease-in-out;
-}
-
-.value-decrease {
-  animation: pulse-decrease 3s ease-in-out;
-  transition: background-color 3s ease-in-out;
-}
 </style>
