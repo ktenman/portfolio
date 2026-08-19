@@ -73,7 +73,10 @@ export function usePortfolioSummaryQuery(
 
   const { data: rangeChange, error: rangeChangeError } = useQuery({
     queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
-    queryFn: () => portfolioSummaryService.getRangeChange(rangeKey.value, activePlatforms.value),
+    queryFn: async () => ({
+      range: rangeKey.value,
+      ...(await portfolioSummaryService.getRangeChange(rangeKey.value, activePlatforms.value)),
+    }),
     placeholderData: keepPreviousData,
     enabled: isAuthenticated,
     refetchInterval: REFETCH_INTERVALS.SUMMARY,
