@@ -471,7 +471,6 @@ HEALTHCHECK_URL=https://hc-ping.com/your-check-uuid
 ## Monitoring & Observability
 
 - **Health Checks**: All services expose `/actuator/health` endpoints
-- **Metrics**: Prometheus metrics available at `/actuator/prometheus`
 - **Logging**: Centralized logging with correlation IDs
 - **Performance**: Redis caching with configurable TTL
 

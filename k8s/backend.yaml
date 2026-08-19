@@ -158,11 +158,6 @@ metadata:
   namespace: portfolio
   labels:
     app: backend
-  annotations:
-    # Service annotations for monitoring
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/path: "/actuator/prometheus"
 spec:
   type: ClusterIP
   ports:

@@ -40,10 +40,6 @@ dependencies {
 
   implementation(libs.spring.boot.starter.actuator)
   implementation(libs.spring.boot.starter.aspectj)
-  implementation(libs.micrometer.registry.prometheus) {
-    exclude(group = "io.prometheus", module = "prometheus-metrics-exposition-formats")
-  }
-  runtimeOnly(libs.prometheus.exposition.textformats)
   implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
   implementation(libs.kotlin.reflect)

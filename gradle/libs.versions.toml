@@ -65,10 +65,6 @@ resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-ci
 resilience4j-retry = { module = "io.github.resilience4j:resilience4j-retry", version.ref = "resilience4j" }
 resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", version.ref = "resilience4j" }
 
-# Monitoring
-micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
-prometheus-exposition-textformats = { module = "io.prometheus:prometheus-metrics-exposition-textformats" }
-
 # Utilities
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 
