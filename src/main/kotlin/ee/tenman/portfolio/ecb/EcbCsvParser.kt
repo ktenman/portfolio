@@ -4,6 +4,11 @@ import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.time.LocalDate
 
+data class EcbDailyRate(
+  val date: LocalDate,
+  val rate: BigDecimal,
+)
+
 object EcbCsvParser {
   private val log = LoggerFactory.getLogger(javaClass)
 

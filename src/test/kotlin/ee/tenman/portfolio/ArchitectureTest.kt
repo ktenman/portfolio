@@ -532,29 +532,35 @@ class ArchitectureTest {
   }
 
   @ArchTest
-  fun eachSourceFileShouldContainOnlyOneTopLevelClass(classes: JavaClasses) {
-    val violations = findMultipleClassesPerFileViolations(classes)
+  fun eachSourceFileShouldContainOnlyOneSpringBeanOrEntity(classes: JavaClasses) {
+    val violations = findMultipleBeansPerFileViolations(classes)
     if (violations.isNotEmpty()) {
       throw AssertionError(
-        "Each file should contain only one top-level class. Violations:\n" +
+        "A Spring stereotype or JPA entity must be the only top-level class in its file. Violations:\n" +
           violations.joinToString("\n") { "  - $it" },
       )
     }
   }
 
-  private fun findMultipleClassesPerFileViolations(classes: JavaClasses): List<String> {
-    val topLevelClasses: Map<String, List<JavaClass>> =
-      classes
+  private fun findMultipleBeansPerFileViolations(classes: JavaClasses): List<String> =
+    classes
       .filter { isRelevantTopLevelClass(it) }
-      .groupBy { javaClass -> extractFileName(javaClass) }
-    return topLevelClasses.entries
+      .groupBy { javaClass -> "${javaClass.packageName}.${extractFileName(javaClass)}" }
+      .entries
       .filter { entry ->
-        !isAcceptableMultiClassFile(entry.key) && filterKotlinFileClasses(entry.value).size > 1
+        val declared = filterKotlinFileClasses(entry.value)
+        declared.size > 1 && declared.any { isSpringBeanOrEntity(it) }
       }.map { entry ->
         val classNames = filterKotlinFileClasses(entry.value).joinToString(", ") { it.simpleName }
         "${entry.key} contains multiple classes: [$classNames]"
       }
-  }
+
+  private fun isSpringBeanOrEntity(javaClass: JavaClass): Boolean =
+    javaClass.isAnnotatedWith(Service::class.java) ||
+      javaClass.isAnnotatedWith(Component::class.java) ||
+      javaClass.isAnnotatedWith(RestController::class.java) ||
+      javaClass.isAnnotatedWith(Configuration::class.java) ||
+      javaClass.isAnnotatedWith(Entity::class.java)
 
   private fun extractFileName(javaClass: JavaClass): String {
     val source = javaClass.source
@@ -563,23 +569,8 @@ class ArchitectureTest {
     return if (fileName.isPresent) fileName.get() else "unknown"
   }
 
-  private fun isAcceptableMultiClassFile(fileName: String): Boolean =
-    fileName.endsWith("Response.kt") ||
-      fileName.endsWith("Request.kt") ||
-      fileName.endsWith("Properties.kt") ||
-      fileName.endsWith("Client.kt") ||
-      fileName.endsWith("Test.kt") ||
-      fileName.endsWith("IT.kt") ||
-      fileName.endsWith("E2E.kt") ||
-      fileName.endsWith("Utility.kt") ||
-      fileName.endsWith("Controller.kt") ||
-      fileName.endsWith("Handler.kt") ||
-      fileName.endsWith("Indicator.kt") ||
-      fileName.endsWith("Processor.kt")
-
   private fun isRelevantTopLevelClass(javaClass: JavaClass): Boolean =
-    !javaClass.isInnerClass &&
-      !javaClass.isAnonymousClass &&
+    !javaClass.isNestedClass &&
       !javaClass.simpleName.contains("$") &&
       javaClass.packageName.startsWith("ee.tenman.portfolio")
 

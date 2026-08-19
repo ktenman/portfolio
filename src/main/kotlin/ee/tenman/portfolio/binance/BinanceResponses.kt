@@ -1,16 +1,14 @@
-package ee.tenman.portfolio.common
+package ee.tenman.portfolio.binance
 
+import ee.tenman.portfolio.common.DailyPriceData
 import java.math.BigDecimal
 
-interface DailyPriceData {
-  val open: BigDecimal
-  val high: BigDecimal
-  val low: BigDecimal
-  val close: BigDecimal
-  val volume: Long
-}
+data class TickerPrice(
+  val symbol: String,
+  val price: String,
+)
 
-data class DailyPriceDataImpl(
+data class BinanceDailyPriceData(
   override val open: BigDecimal,
   override val high: BigDecimal,
   override val low: BigDecimal,

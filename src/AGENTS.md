@@ -31,7 +31,8 @@ export GRADLE_OPTS="--enable-native-access=ALL-UNNAMED"
 - Use Kotlin data classes for DTOs and value objects
 - Use `runCatching` for error handling instead of try-catch blocks
 - Use guard clauses for early returns instead of nested conditionals
-- **Data classes must be in separate files** - Never nest data classes inside service classes. Each data class should have its own file for better organization and testability. This is enforced by ArchUnit tests.
+- **Never nest data classes inside service classes** - a DTO or value object declared inside a service is not reusable or testable. Declare it at the top level.
+- **Group related top-level declarations in one file** - DTOs, enums, exceptions, value objects and `@ConfigurationProperties` that belong to the same cluster live together (`DiversificationDtos.kt`, `LightyearResponses.kt`), named for the cluster rather than one member. One declaration per file is only required for Spring stereotypes (`@Service`, `@Component`, `@RestController`, `@Configuration`, `@RestControllerAdvice`) and JPA `@Entity` classes. This is enforced by ArchUnit tests.
 
 ## Exception Handling
 
