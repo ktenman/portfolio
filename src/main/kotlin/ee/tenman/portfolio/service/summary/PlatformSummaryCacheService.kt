@@ -22,12 +22,15 @@ class PlatformSummaryCacheService(
   fun getCurrentDaySummaryForPlatforms(platforms: List<Platform>): PortfolioDailySummary =
     summaryService.getCurrentDaySummaryForPlatforms(platforms)
 
+  @Suppress("UnusedParameter")
   @CachePut(
     value = [SUMMARY_CACHE],
     key = "'platform-current-' + #root.target.platformKey(#platforms)",
   )
-  fun refreshCurrentDaySummaryForPlatforms(platforms: List<Platform>): PortfolioDailySummary =
-    summaryService.getCurrentDaySummaryForPlatforms(platforms)
+  fun putCurrentDaySummaryForPlatforms(
+    platforms: List<Platform>,
+    summary: PortfolioDailySummary,
+  ): PortfolioDailySummary = summary
 
   @Cacheable(
     value = [PLATFORM_SUMMARY_CACHE],

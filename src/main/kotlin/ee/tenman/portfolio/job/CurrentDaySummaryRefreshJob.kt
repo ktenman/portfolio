@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.transaction.TransactionService
@@ -16,15 +17,17 @@ class CurrentDaySummaryRefreshJob(
 
   @Scheduled(fixedDelayString = "\${scheduling.jobs.summary-interval:120000}")
   fun refresh() {
-    runCatching { currentDaySummaryCacheService.refreshCurrentDaySummary() }
-      .onFailure { log.warn("Failed to refresh current day summary cache", it) }
-    runCatching { refreshForKnownPlatforms() }
+    val summary =
+      runCatching { currentDaySummaryCacheService.refreshCurrentDaySummary() }
+        .onFailure { log.warn("Failed to refresh current day summary cache", it) }
+        .getOrNull() ?: return
+    runCatching { cacheForKnownPlatforms(summary) }
       .onFailure { log.warn("Failed to refresh platform current day summary cache", it) }
   }
 
-  private fun refreshForKnownPlatforms() {
+  private fun cacheForKnownPlatforms(summary: PortfolioDailySummary) {
     val platforms = transactionService.getDistinctPlatforms()
     if (platforms.isEmpty()) return
-    platformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(platforms)
+    platformSummaryCacheService.putCurrentDaySummaryForPlatforms(platforms, summary)
   }
 }

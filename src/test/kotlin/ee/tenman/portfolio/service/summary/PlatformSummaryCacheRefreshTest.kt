@@ -44,16 +44,14 @@ class PlatformSummaryCacheRefreshTest {
   fun `should serve the refreshed summary from cache so the refresh and the read share a cache key`() {
     every { summaryService.getCurrentDaySummaryForPlatforms(platforms) } returns summaryOn(LocalDate.of(2024, 3, 11))
     platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
-    every { summaryService.getCurrentDaySummaryForPlatforms(platforms) } returns summaryOn(LocalDate.of(2024, 3, 12))
-    platformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(platforms)
+    platformSummaryCacheService.putCurrentDaySummaryForPlatforms(platforms, summaryOn(LocalDate.of(2024, 3, 12)))
     val served = platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
     expect(served.entryDate).toEqual(LocalDate.of(2024, 3, 12))
   }
 
   @Test
   fun `should populate the cache from a refresh so a later read cannot recompute`() {
-    every { summaryService.getCurrentDaySummaryForPlatforms(platforms) } returns summaryOn(LocalDate.of(2024, 3, 11))
-    platformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(platforms)
+    platformSummaryCacheService.putCurrentDaySummaryForPlatforms(platforms, summaryOn(LocalDate.of(2024, 3, 11)))
     every { summaryService.getCurrentDaySummaryForPlatforms(platforms) } returns summaryOn(LocalDate.of(2024, 3, 12))
     val served = platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
     expect(served.entryDate).toEqual(LocalDate.of(2024, 3, 11))
@@ -61,8 +59,7 @@ class PlatformSummaryCacheRefreshTest {
 
   @Test
   fun `should key the refreshed summary by platform so another platform set cannot read it`() {
-    every { summaryService.getCurrentDaySummaryForPlatforms(platforms) } returns summaryOn(LocalDate.of(2024, 3, 11))
-    platformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(platforms)
+    platformSummaryCacheService.putCurrentDaySummaryForPlatforms(platforms, summaryOn(LocalDate.of(2024, 3, 11)))
     val other = listOf(Platform.LHV)
     every { summaryService.getCurrentDaySummaryForPlatforms(other) } returns summaryOn(LocalDate.of(2024, 3, 12))
     val served = platformSummaryCacheService.getCurrentDaySummaryForPlatforms(other)
