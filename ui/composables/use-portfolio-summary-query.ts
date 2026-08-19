@@ -14,6 +14,7 @@ import {
 } from '../services/summary-aggregator'
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
+import { REFETCH_INTERVALS } from '../constants/api'
 import type { TimeRange } from '../models/generated/domain-models'
 
 export function usePortfolioSummaryQuery(
@@ -56,6 +57,7 @@ export function usePortfolioSummaryQuery(
     queryKey: ['portfolio-summary', 'current', platformsKey],
     queryFn: () => portfolioSummaryService.getCurrent(activePlatforms.value),
     enabled: isAuthenticated,
+    refetchInterval: REFETCH_INTERVALS.SUMMARY,
   })
 
   const {
@@ -74,6 +76,7 @@ export function usePortfolioSummaryQuery(
     queryFn: () => portfolioSummaryService.getRangeChange(rangeKey.value, activePlatforms.value),
     placeholderData: keepPreviousData,
     enabled: isAuthenticated,
+    refetchInterval: REFETCH_INTERVALS.SUMMARY,
   })
 
   const recalculateMutation = useMutation({
