@@ -24,7 +24,7 @@ const label = computed(
     `${formatSignedCurrency(animatedAmount.value, 'EUR')} (${formatSignedPercent(animatedPercent.value)})`
 )
 
-const changeClass = computed(() => getGainLossClass(props.amount))
+const changeClass = computed(() => getGainLossClass(amount.value))
 </script>
 
 <style scoped>
