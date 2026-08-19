@@ -4,27 +4,23 @@ import EtfBreakdown from './etf-breakdown.vue'
 import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
-import { etfBreakdownService } from '../../services/etf-breakdown-service'
-import { instrumentsService } from '../../services/instruments-service'
+import { etfBreakdownService, instrumentsService } from '../../services/api'
 import { Currency } from '../../models/generated/domain-models'
 import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
 
-vi.mock('../../services/etf-breakdown-service', () => ({
+vi.mock('../../services/api', () => ({
   etfBreakdownService: {
     getBreakdown: vi.fn(),
   },
-}))
-
-vi.mock('../../services/instruments-service', () => ({
   instrumentsService: {
     getAll: vi.fn(),
     refreshPrices: vi.fn().mockResolvedValue({ status: 'ok' }),
   },
-}))
-
-vi.mock('../../services/logo-service', () => ({
   logoService: {
     prefetchCandidates: vi.fn().mockResolvedValue(undefined),
+  },
+  utilityService: {
+    getLogoUrl: (uuid: string) => `/api/logos/${uuid}`,
   },
 }))
 

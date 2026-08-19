@@ -148,7 +148,7 @@ import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
 import LogoReplacementModal from './logo-replacement-modal.vue'
-import { utilityService } from '../../services/utility-service'
+import { utilityService } from '../../services/api'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatScientific } from '../../utils/formatters'
 

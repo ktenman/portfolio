@@ -34,16 +34,13 @@ vi.mock('@tanstack/vue-query', () => ({
   })),
 }))
 
-vi.mock('../../services/diversification-service', () => ({
+vi.mock('../../services/api', () => ({
   diversificationService: {
     getAvailableEtfs: vi.fn(),
     calculate: vi.fn(),
     getConfig: vi.fn().mockResolvedValue(null),
     saveConfig: vi.fn().mockResolvedValue(null),
   },
-}))
-
-vi.mock('../../services/instruments-service', () => ({
   instrumentsService: {
     getAll: vi.fn(),
     refreshPrices: vi.fn().mockResolvedValue({ status: 'ok' }),
@@ -118,10 +115,7 @@ describe('DiversificationCalculator', () => {
   })
 
   it('passes all selected platforms to instrumentsService when loading from portfolio', async () => {
-    const instrumentsService = (await import('../../services/instruments-service'))
-      .instrumentsService
-    const diversificationService = (await import('../../services/diversification-service'))
-      .diversificationService
+    const { instrumentsService, diversificationService } = await import('../../services/api')
 
     vi.mocked(instrumentsService.getAll).mockResolvedValue({
       instruments: [

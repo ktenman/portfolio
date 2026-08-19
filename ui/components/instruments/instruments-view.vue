@@ -104,7 +104,7 @@ import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
 import AnnualWindowsModal from './annual-windows-modal.vue'
-import { instrumentsService } from '../../services/instruments-service'
+import { instrumentsService } from '../../services/api'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 

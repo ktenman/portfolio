@@ -127,7 +127,7 @@ import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import PlatformFilter from './shared/platform-filter.vue'
 import FilterToggle from './shared/filter-toggle.vue'
-import { transactionsService } from '../services/transactions-service'
+import { transactionsService } from '../services/api'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
 import {

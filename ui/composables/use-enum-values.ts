@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { enumService } from '../services/enum-service'
+import { enumService } from '../services/api'
 import type { EnumsResponse } from '../models/generated/domain-models'
 import { setPlatformDisplayNames } from '../utils/platform-utils'
 import { formatAcronym } from '../utils/formatters'

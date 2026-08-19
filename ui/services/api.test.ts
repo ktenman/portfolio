@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { httpClient } from '../utils/http-client'
-import { transactionsService } from './transactions-service'
-import { instrumentsService } from './instruments-service'
-import { portfolioSummaryService } from './portfolio-summary-service'
-import { diversificationService } from './diversification-service'
-import { utilityService } from './utility-service'
+import {
+  diversificationService,
+  instrumentsService,
+  portfolioSummaryService,
+  transactionsService,
+  utilityService,
+} from './api'
 import { Platform, TimeRange } from '../models/generated/domain-models'
 import type { AllocationDto } from '../models/generated/domain-models'
 import type { CachedState } from '../components/diversification/types'
