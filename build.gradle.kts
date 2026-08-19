@@ -85,6 +85,10 @@ dependencies {
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
+configurations.all {
+  exclude(group = "org.bouncycastle", module = "bcprov-jdk18on")
+}
+
 dependencyManagement {
   imports {
     mavenBom(
