@@ -43,4 +43,4 @@ npm run check-unused:fix   # Auto-fix some issues
 - Frontend API calls go through `/api` proxy in development (see `vite.config.ts`)
 - Frontend tests focus on business logic with comprehensive coverage
 - Redis cache keys are defined in `ui/constants/cache-keys.ts`
-- Test files excluded from coverage: `.eslintrc.cjs` and `app.vue`
+- Test files excluded from coverage: `app.vue`
