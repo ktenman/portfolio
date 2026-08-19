@@ -2,7 +2,7 @@ import { type Locator, type Page } from '@playwright/test'
 
 const SETTLE_POLL_INTERVAL_MS = 400
 const SETTLE_REQUIRED_SAMPLES = 4
-const SETTLE_TIMEOUT_MS = 30000
+const SETTLE_TIMEOUT_MS = 20000
 
 const FREEZE_STYLES = [
   '.currency-value { overflow: hidden; }',
@@ -12,7 +12,7 @@ const FREEZE_STYLES = [
 async function waitForValueToSettle(
   page: Page,
   label: string,
-  measure: () => Promise<number>
+  measure: () => Promise<string | number>
 ): Promise<void> {
   const deadline = Date.now() + SETTLE_TIMEOUT_MS
   let lastValue = await measure()
@@ -30,9 +30,25 @@ async function waitForValueToSettle(
   }
 }
 
-function waitForScrollHeightToSettle(page: Page): Promise<void> {
-  return waitForValueToSettle(page, 'Page height in px', () =>
-    page.evaluate(() => document.documentElement.scrollHeight)
+function waitForPageToSettle(page: Page): Promise<void> {
+  return waitForValueToSettle(page, 'Page signature', () =>
+    page.evaluate(() => {
+      const hash = (text: string) => {
+        let accumulator = 0
+        for (let index = 0; index < text.length; index += 1) {
+          accumulator = (accumulator * 31 + text.charCodeAt(index)) | 0
+        }
+        return accumulator
+      }
+      const paintedCanvases = Array.from(document.querySelectorAll('canvas'), canvas => {
+        try {
+          return hash(canvas.toDataURL())
+        } catch {
+          return `${canvas.width}x${canvas.height}`
+        }
+      })
+      return [document.documentElement.scrollHeight, ...paintedCanvases].join(':')
+    })
   )
 }
 
@@ -45,7 +61,7 @@ export function waitForBoxHeightToSettle(page: Page, target: Locator): Promise<v
 export async function openRoute(page: Page, path: string): Promise<void> {
   await page.goto(path)
   await page.waitForLoadState('networkidle')
-  await waitForScrollHeightToSettle(page)
+  await waitForPageToSettle(page)
 }
 
 export async function freeze(page: Page): Promise<void> {
@@ -54,6 +70,6 @@ export async function freeze(page: Page): Promise<void> {
 }
 
 export async function settleAndFreeze(page: Page): Promise<void> {
-  await waitForScrollHeightToSettle(page)
+  await waitForPageToSettle(page)
   await freeze(page)
 }

@@ -211,6 +211,29 @@ jobs:
             build/reports/jacoco/test/html/
           retention-days: 14
 
+  visual:
+    name: 🖼️ Visual Regression Tests
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Run visual regression tests
+        run: npx playwright test
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        continue-on-error: true
+        with:
+          name: Visual Regression Diffs
+          path: test-results/
+          retention-days: 14
+
   detect-changes:
     name: 🔍 Detect Changes
     runs-on: ubuntu-latest

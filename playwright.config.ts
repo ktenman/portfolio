@@ -6,10 +6,17 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
+  timeout: 90000,
   reporter: [['list']],
   use: {
     baseURL: 'http://localhost:61234',
     screenshot: 'off',
+  },
+  webServer: {
+    command: 'npm run dev:ui',
+    url: 'http://localhost:61234',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
   expect: {
     timeout: 30000,

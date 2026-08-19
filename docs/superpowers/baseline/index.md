@@ -24,11 +24,15 @@ Viewports: **mobile** 390×844, **tablet** 768×1024, **desktop** 1440×900. All
 and a late poll re-flows table column widths. Every capture therefore runs:
 
 1. `page.goto(route)` then `waitForLoadState('networkidle')`
-2. `waitForScrollHeightToSettle` — page height identical across 4 samples 400 ms apart
+2. `waitForPageToSettle` — page signature identical across 4 samples 400 ms apart
 3. the interaction that opens the state, if any
-4. `waitForScrollHeightToSettle` again
+4. `waitForPageToSettle` again
 5. `page.route('**/api/**', r => r.abort())` — no further data can land
 6. screenshot
+
+The signature is `document.documentElement.scrollHeight` joined with a hash of every `<canvas>`'s
+`toDataURL()`, so layout and painted chart pixels settle on the same four samples at no extra polling
+cost.
 
 Step 2 is what makes the framing deterministic. `page.goto` resolves while the page is still growing
 (`/instruments` desktop: 2293 → 2337 → 2401 px over ~165 ms after `networkidle`), and a Playwright
@@ -395,15 +399,14 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
   clamp is `scrollHeight - innerHeight`, currently 1501 px on desktop. `modal-xirr-windows-desktop`
   and `modal-annual-windows-desktop` predated step 2 and were recorded mid-growth at 1480 and 1435;
   they were re-recorded at the settled 1501 and now agree with each other.
-- **The Chart.js canvases are gated on the animation finishing inside the settle window.** They were
+- **The Chart.js canvases are gated on their own painted pixels, not on page height.** They were
   never masked — `ui/components/charts/{line,bar}-chart.vue` render a bare `<canvas>` carrying no
-  class or test id, so no selector could have reached them — but the freeze pass that ran before
-  every capture used to hide the page behind an overlay, and nothing proved the charts were complete
-  in the shots that did include them. They are now gated directly. The ≥1.6 s
-  `waitForScrollHeightToSettle` outlasts Chart.js's default animation, verified by re-shooting
-  `[data-testid="summary-chart"]` on three consecutive isolated runs and getting byte-identical
-  output. A chart whose animation ever outran the settle would flake rather than fail cleanly, so a
-  single-capture red on a canvas is worth re-running before re-recording.
+  class or test id, so no selector could have reached them. Gating them on the height settle alone
+  was not enough and did flake: a freshly recorded `route-calculator-desktop` failed on immediate
+  re-run at 1858 pixels, bounded to `791x513+541+512` — the "XIRR Rolling Result (ASAP)" canvas
+  caught mid-animation. `animations: 'disabled'` does not cover this, because it disables CSS
+  animations and Chart.js draws on `requestAnimationFrame`. The settle signature now folds in a hash
+  of each canvas's `toDataURL()`, so a still-animating chart keeps resetting the sample count.
 - **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the chart fills the
   viewport below the platform filter, so no table row is visible behind the backdrop and the capture
   was byte-identical before and after `/` became fixture-driven. Only the mobile confirm capture,
