@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ChartDataItem } from './etf-breakdown-chart.vue'
+import type { ChartDataItem } from '../../services/etf-chart-service'
 
 defineProps<{
   items: ChartDataItem[]

@@ -17,8 +17,6 @@ export const CHART_COLORS = [
   'oklch(0.75 0.07 29)',
 ]
 
-export const OTHERS_COLOR = 'oklch(0.91 0.005 85)'
-
 export const DONUT_COLORS = [
   'oklch(0.5 0.095 80)',
   'oklch(0.65 0.072 175)',
@@ -37,8 +35,6 @@ export const DONUT_COLORS = [
   'oklch(0.35 0.061 175)',
   'oklch(0.8 0.069 340)',
 ]
-
-export const DONUT_OTHERS_COLOR = 'oklch(0.925 0.008 85)'
 
 export const withAlpha = (color: string, alpha: number): string =>
   color.replace(')', ` / ${alpha})`)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CHART_COLORS, DONUT_COLORS, DONUT_OTHERS_COLOR, OTHERS_COLOR } from './chart-colors'
+import { CHART_COLORS, DONUT_COLORS } from './chart-colors'
 import { contrastRatio, isInSrgbGamut, luminanceFromOklch, type Oklch } from '../tests/contrast'
 
 const PAPER: Oklch = { l: 0.985, c: 0.006, h: 85 }
@@ -62,16 +62,6 @@ describe('the chart palette', () => {
     )
     expect(Math.min(...ratios)).toBeGreaterThanOrEqual(1.7)
   })
-
-  it('keeps the Others tone off the wheel and inside the gamut', () => {
-    expect(CHART_COLORS).not.toContain(OTHERS_COLOR)
-    expect(isInSrgbGamut(parseRampColor(OTHERS_COLOR))).toEqual(true)
-  })
-
-  it('keeps the Others tone lighter than every named slice so the residual recedes', () => {
-    const lightest = Math.max(...CHART_COLORS.map(color => parseRampColor(color).l))
-    expect(parseRampColor(OTHERS_COLOR).l).toBeGreaterThan(lightest)
-  })
 })
 
 describe('the breakdown donut palette', () => {
@@ -101,11 +91,5 @@ describe('the breakdown donut palette', () => {
     const paper = luminanceFromOklch(PAPER)
     const ratios = wheel.map(color => contrastRatio(luminanceFromOklch(color), paper))
     expect(Math.min(...ratios)).toBeGreaterThanOrEqual(1.7)
-  })
-
-  it('keeps the Others tone off the wheel and lighter than every named slice', () => {
-    expect(DONUT_COLORS).not.toContain(DONUT_OTHERS_COLOR)
-    const lightest = Math.max(...wheel.map(color => color.l))
-    expect(parseRampColor(DONUT_OTHERS_COLOR).l).toBeGreaterThan(lightest)
   })
 })

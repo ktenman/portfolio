@@ -7,7 +7,6 @@ import {
   formatSignedPercent,
   formatPrice,
   getCurrencySymbol,
-  formatNumber,
   formatPercentageFromDecimal,
   formatProfitLoss,
   formatTransactionAmount,
@@ -201,35 +200,6 @@ describe('getCurrencySymbol', () => {
     expect(getCurrencySymbol('')).toBe('€')
     expect(getCurrencySymbol('UNKNOWN')).toBe('€')
     expect(getCurrencySymbol('JPY')).toBe('€')
-  })
-})
-
-describe('formatNumber', () => {
-  it('should format numbers >= 1 with 2 decimal places', () => {
-    expect(formatNumber(1234.56789)).toBe('1,234.57')
-    expect(formatNumber(1)).toBe('1.00')
-    expect(formatNumber(999999.999)).toBe('1,000,000.00')
-  })
-
-  it('should format numbers < 1 with up to 8 decimal places', () => {
-    expect(formatNumber(0.12345678)).toBe('0.12345678')
-    expect(formatNumber(0.1)).toBe('0.10')
-    expect(formatNumber(0.00000001)).toBe('0.00000001')
-    expect(formatNumber(0.123456789)).toBe('0.12345679')
-  })
-
-  it('should format negative numbers', () => {
-    expect(formatNumber(-1234.56)).toBe('-1,234.56')
-    expect(formatNumber(-0.12345678)).toBe('-0.12345678')
-  })
-
-  it('should handle special cases', () => {
-    expect(formatNumber(null)).toBe('')
-    expect(formatNumber(undefined)).toBe('')
-    expect(formatNumber(0)).toBe('0')
-    expect(formatNumber(Infinity)).toBe('0')
-    expect(formatNumber(-Infinity)).toBe('0')
-    expect(formatNumber(NaN)).toBe('0')
   })
 })
 

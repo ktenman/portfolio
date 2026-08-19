@@ -29,19 +29,20 @@ describe('useEnumValues', () => {
     it('should load and transform enum values correctly', async () => {
       vi.mocked(enumService.getAll).mockResolvedValue(mockEnumData)
 
-      const { loadAll, platformOptions, transactionTypeOptions } = useEnumValues()
+      const { loadAll, providerOptions, categoryOptions } = useEnumValues()
       await loadAll()
 
-      // NOTE: Testing the business logic of enum transformation
-      expect(platformOptions.value).toEqual([
-        { value: 'DEGIRO', text: 'Degiro' },
-        { value: 'TRADING212', text: 'Trading 212' },
+      expect(providerOptions.value).toEqual([
         { value: 'BINANCE', text: 'Binance' },
+        { value: 'FT', text: 'FT' },
+        { value: 'LIGHTYEAR', text: 'Lightyear' },
+        { value: 'TRADING212', text: 'Trading212' },
       ])
 
-      expect(transactionTypeOptions.value).toEqual([
-        { value: 'BUY', text: 'Buy' },
-        { value: 'SELL', text: 'Sell' },
+      expect(categoryOptions.value).toEqual([
+        { value: 'STOCK', text: 'Stock' },
+        { value: 'ETF', text: 'ETF' },
+        { value: 'CRYPTO', text: 'Crypto' },
       ])
     })
 
@@ -65,26 +66,6 @@ describe('useEnumValues', () => {
 
       // NOTE: Important business logic - caching prevents unnecessary API calls
       expect(enumService.getAll).toHaveBeenCalledTimes(1)
-    })
-
-    it('should use display names from PlatformDto', async () => {
-      vi.mocked(enumService.getAll).mockResolvedValue({
-        ...mockEnumData,
-        platforms: [
-          { name: 'TEST_PLATFORM', displayName: 'Test Platform' },
-          { name: 'ANOTHER_TEST', displayName: 'Another Test' },
-        ],
-      })
-
-      vi.resetModules()
-      const freshUseEnumValues = (await import('./use-enum-values')).useEnumValues
-      const { loadAll, platformOptions } = freshUseEnumValues()
-      await loadAll()
-
-      expect(platformOptions.value).toEqual([
-        { value: 'TEST_PLATFORM', text: 'Test Platform' },
-        { value: 'ANOTHER_TEST', text: 'Another Test' },
-      ])
     })
   })
 })

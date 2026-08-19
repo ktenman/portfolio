@@ -142,24 +142,6 @@ export const getCurrencySymbol = (currency?: string): string => {
   }
 }
 
-export const formatNumber = (value: number | undefined | null): string => {
-  if (value === null || value === undefined) return ''
-  if (value === 0) return '0'
-  if (!isFinite(value)) return '0'
-
-  if (Math.abs(value) >= 1) {
-    return value.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  }
-
-  return value.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 8,
-  })
-}
-
 export const formatPercentageFromDecimal = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return 'N/A'
   return `${(value * 100).toFixed(2)}%`

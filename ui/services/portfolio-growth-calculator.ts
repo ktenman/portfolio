@@ -22,31 +22,27 @@ interface ProjectionResult {
   portfolioData: number[]
 }
 
-export function annualToMonthlyReturnRate(annualRate: number): number {
+function annualToMonthlyReturnRate(annualRate: number): number {
   return Math.pow(1 + annualRate / 100, 1 / 12) - 1
 }
 
-export function annualToMonthlyGrowthRate(yearlyGrowthRate: number): number {
+function annualToMonthlyGrowthRate(yearlyGrowthRate: number): number {
   return yearlyGrowthRate / 100 / 12
 }
 
-export function calculateTaxAmount(grossProfit: number, taxRate: number): number {
+function calculateTaxAmount(grossProfit: number, taxRate: number): number {
   return grossProfit * (taxRate / 100)
 }
 
-export function calculateNetWorth(
-  totalInvested: number,
-  grossProfit: number,
-  taxAmount: number
-): number {
+function calculateNetWorth(totalInvested: number, grossProfit: number, taxAmount: number): number {
   return totalInvested + grossProfit - taxAmount
 }
 
-export function calculateMonthlyEarnings(totalWorth: number, annualReturnRate: number): number {
+function calculateMonthlyEarnings(totalWorth: number, annualReturnRate: number): number {
   return (totalWorth * annualReturnRate) / 100 / 12
 }
 
-export function simulateYear(
+function simulateYear(
   startingWorth: number,
   startingInvested: number,
   monthlyInvestment: number,

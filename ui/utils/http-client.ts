@@ -70,7 +70,4 @@ export const httpClient = {
 
   put: <T>(url: string, data?: unknown, config?: RequestConfig): Promise<T> =>
     request<T>('PUT', url, data, config),
-
-  delete: <T>(url: string, config?: RequestConfig): Promise<T> =>
-    request<T>('DELETE', url, undefined, config),
 }
