@@ -2,6 +2,7 @@ package ee.tenman.portfolio.configuration
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
+import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.summary.SummaryService
 import io.mockk.mockk
 import org.springframework.cache.CacheManager
@@ -24,4 +25,8 @@ class CurrentDaySummaryCacheTestConfiguration {
   @Bean
   fun currentDaySummaryCacheService(summaryService: SummaryService): CurrentDaySummaryCacheService =
     CurrentDaySummaryCacheService(summaryService)
+
+  @Bean
+  fun platformSummaryCacheService(summaryService: SummaryService): PlatformSummaryCacheService =
+    PlatformSummaryCacheService(summaryService)
 }
