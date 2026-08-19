@@ -16,9 +16,12 @@ describe('diversification-calculations', () => {
       [0, 10000, 100, 10000],
       [10000, 0, 50, 5000],
       [10000, 0, 33.33, 3333],
-    ] as const)('holdings %s plus investment %s at %s%% → %s', (holdings, investment, pct, out) => {
-      expect(calculateTargetValue(holdings, investment, pct)).toBeCloseTo(out, 0)
-    })
+    ] as const)(
+      'sizes holdings %s plus investment %s at %s%% to %s',
+      (holdings, investment, pct, out) => {
+        expect(calculateTargetValue(holdings, investment, pct)).toBeCloseTo(out, 0)
+      }
+    )
   })
 
   describe('calculateInvestmentAmount', () => {
@@ -28,7 +31,7 @@ describe('diversification-calculations', () => {
       [0, 50, 0],
       [10000, 0, 0],
       [10000, 33.33, 3333],
-    ] as const)('%s at %s%% → %s', (investment, percentage, expected) => {
+    ] as const)('allocates %s at %s%% as %s', (investment, percentage, expected) => {
       expect(calculateInvestmentAmount(investment, percentage)).toBeCloseTo(expected, 0)
     })
   })
@@ -40,7 +43,7 @@ describe('diversification-calculations', () => {
       [1000, 0, 0],
       [1000, -100, 0],
       [50, 100, 0],
-    ] as const)('%s at price %s → %s units', (amount, price, expected) => {
+    ] as const)('converts %s at price %s into %s units', (amount, price, expected) => {
       expect(calculateUnitsFromAmount(amount, price)).toBe(expected)
     })
   })
@@ -52,7 +55,7 @@ describe('diversification-calculations', () => {
       [1234.567, '€1234.57'],
       [1234, '€1234.00'],
       [0.01, '€0.01'],
-    ] as const)('%s → %s', (amount, expected) => {
+    ] as const)('formats %s as %s', (amount, expected) => {
       expect(formatEuroAmount(amount)).toBe(expected)
     })
   })

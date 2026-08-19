@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   buildSectorChartData,
   buildCompanyChartData,
@@ -10,12 +10,10 @@ import type { EtfHoldingBreakdownDto } from '../models/generated/domain-models'
 import { DONUT_COLORS } from '../constants/chart-colors'
 import { createInstrumentDto } from '../tests/fixtures'
 
-let holdingIdCounter = 1
-
 const createHolding = (
   overrides: Partial<EtfHoldingBreakdownDto> = {}
 ): EtfHoldingBreakdownDto => ({
-  holdingUuid: `uuid-${holdingIdCounter++}`,
+  holdingUuid: 'uuid-1',
   holdingName: 'Apple Inc.',
   holdingTicker: 'AAPL',
   holdingSector: 'Technology',
@@ -40,10 +38,6 @@ const BUILDERS = [
 ] as const
 
 describe('etf-chart-service', () => {
-  beforeEach(() => {
-    holdingIdCounter = 1
-  })
-
   describe.each(BUILDERS)('%s', (_name, build, labelled) => {
     it('should sort entries by percentage descending', () => {
       const result = build([
@@ -179,7 +173,7 @@ describe('etf-chart-service', () => {
         [1, 2],
       ],
     ] as [(string | number)[], (string | number)[], (string | number)[] | undefined][])(
-      '%j of %j → %j',
+      'passes %j of %j to the api as %j',
       (selected, all, expected) => {
         expect(getFilterParam(selected, all)).toEqual(expected)
       }

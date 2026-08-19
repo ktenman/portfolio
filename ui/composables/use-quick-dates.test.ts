@@ -5,7 +5,6 @@ import {
   getLabelForPreset,
   useQuickDates,
   QUICK_DATE_OPTIONS,
-  type QuickDatePreset,
 } from './use-quick-dates'
 
 const quickDates = (onDateSet?: () => void) =>
@@ -23,7 +22,7 @@ describe('use-quick-dates', () => {
       [new Date(2024, 0, 15), '2024-01-15'],
       [new Date(2024, 11, 5), '2024-12-05'],
       [new Date(2025, 0, 1), '2025-01-01'],
-    ] as const)('%s → %s', (date, expected) => {
+    ] as const)('formats %s as %s', (date, expected) => {
       expect(formatDateToString(date)).toBe(expected)
     })
   })
@@ -50,20 +49,17 @@ describe('use-quick-dates', () => {
       ['lastMonth', new Date(2024, 2, 15), '2024-02-01', '2024-02-29'],
       ['thisYear', new Date(2024, 5, 15), '2024-01-01', '2024-12-31'],
       ['lastYear', new Date(2024, 5, 15), '2023-01-01', '2023-12-31'],
-    ] as [QuickDatePreset, Date, string, string][])(
-      '%s on %s → %s to %s',
-      (preset, now, from, until) => {
-        vi.useFakeTimers()
-        vi.setSystemTime(now)
+    ] as const)('resolves %s on %s to the range %s through %s', (preset, now, from, until) => {
+      vi.useFakeTimers()
+      vi.setSystemTime(now)
 
-        const range = calculateDateRange(preset)
+      const range = calculateDateRange(preset)
 
-        expect([formatDateToString(range.from), formatDateToString(range.until)]).toEqual([
-          from,
-          until,
-        ])
-      }
-    )
+      expect([formatDateToString(range.from), formatDateToString(range.until)]).toEqual([
+        from,
+        until,
+      ])
+    })
   })
 
   describe('getLabelForPreset', () => {
@@ -77,7 +73,7 @@ describe('use-quick-dates', () => {
       ['lastMonth', 'Last Month'],
       ['thisYear', 'This Year'],
       ['lastYear', 'Last Year'],
-    ] as [QuickDatePreset, string][])('%s → %s', (preset, expected) => {
+    ] as const)('labels %s as %s', (preset, expected) => {
       expect(getLabelForPreset(preset)).toBe(expected)
     })
   })
@@ -118,20 +114,17 @@ describe('use-quick-dates', () => {
       ['last30Days', '2024-05-17', '2024-06-15', 'Last 30 Days'],
       ['thisYear', '2024-01-01', '2024-12-31', 'This Year'],
       ['lastYear', '2023-01-01', '2023-12-31', 'Last Year'],
-    ] as [QuickDatePreset, string, string, string][])(
-      'setQuickDate(%s) → %s to %s labelled %s',
-      (preset, from, until, label) => {
-        const { fromDate, untilDate, selectedQuickDate, setQuickDate } = quickDates()
+    ] as const)('sets %s to the range %s through %s labelled %s', (preset, from, until, label) => {
+      const { fromDate, untilDate, selectedQuickDate, setQuickDate } = quickDates()
 
-        setQuickDate(preset)
+      setQuickDate(preset)
 
-        expect([fromDate.value, untilDate.value, selectedQuickDate.value]).toEqual([
-          from,
-          until,
-          label,
-        ])
-      }
-    )
+      expect([fromDate.value, untilDate.value, selectedQuickDate.value]).toEqual([
+        from,
+        until,
+        label,
+      ])
+    })
 
     it('should call onDateSet callback when dates are set', () => {
       const onDateSet = vi.fn()

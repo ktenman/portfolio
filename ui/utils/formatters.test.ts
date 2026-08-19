@@ -33,7 +33,7 @@ describe('formatCurrencyWithSymbol', () => {
     [100.999, '€101.00'],
     [null, '€0.00'],
     [undefined, '€0.00'],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('formats %s as %s', (value, expected) => {
     expect(formatCurrencyWithSymbol(value)).toBe(expected)
   })
 })
@@ -51,7 +51,7 @@ describe('formatCurrency', () => {
     [100.999, '101.00'],
     [null, '0.00'],
     [undefined, '0.00'],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('formats %s as %s', (value, expected) => {
     expect(formatCurrency(value)).toBe(expected)
   })
 })
@@ -79,7 +79,7 @@ describe('formatCurrencyWithSign', () => {
     [null, undefined, '0.00'],
     [undefined, undefined, '0.00'],
     [null, 'USD', '0.00'],
-  ] as const)('%s in %s → %s', (value, currency, expected) => {
+  ] as const)('formats %s in %s as %s', (value, currency, expected) => {
     expect(formatCurrencyWithSign(value, currency)).toBe(expected)
   })
 })
@@ -111,7 +111,7 @@ describe('formatPrice', () => {
     [null, undefined, '0.00'],
     [undefined, undefined, '0.00'],
     [null, 'USD', '0.00'],
-  ] as const)('%s in %s → %s', (value, currency, expected) => {
+  ] as const)('formats %s in %s as %s', (value, currency, expected) => {
     expect(formatPrice(value, currency)).toBe(expected)
   })
 })
@@ -128,7 +128,7 @@ describe('getCurrencySymbol', () => {
     ['UNKNOWN', '€'],
     ['JPY', '€'],
     [undefined, '€'],
-  ] as const)('%s → %s', (currency, expected) => {
+  ] as const)('symbolises %s as %s', (currency, expected) => {
     expect(getCurrencySymbol(currency)).toBe(expected)
   })
 })
@@ -146,7 +146,7 @@ describe('formatPercentageFromDecimal', () => {
     [0.12344, '12.34%'],
     [null, 'N/A'],
     [undefined, 'N/A'],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('formats %s as %s', (value, expected) => {
     expect(formatPercentageFromDecimal(value)).toBe(expected)
   })
 })
@@ -162,7 +162,7 @@ describe('formatProfitLoss', () => {
     [0, '+0.00'],
     [null, '0.00'],
     [undefined, '0.00'],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('formats %s as %s', (value, expected) => {
     expect(formatProfitLoss(value)).toBe(expected)
   })
 })
@@ -179,7 +179,7 @@ describe('formatTransactionAmount', () => {
     [10, 0, 'SELL', undefined, '-€0.00'],
     [10, 100, 'BUY', 'USD', '+$1,000.00'],
     [10, 100, 'SELL', 'GBP', '-£1,000.00'],
-  ] as const)('%s × %s %s in %s → %s', (quantity, price, type, currency, expected) => {
+  ] as const)('formats %s × %s %s in %s as %s', (quantity, price, type, currency, expected) => {
     expect(formatTransactionAmount(quantity, price, type, currency)).toBe(expected)
   })
 })
@@ -193,7 +193,7 @@ describe('getProfitClass', () => {
     [-0.01, 'text-loss'],
     [null, ''],
     [undefined, ''],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('classifies %s as %s', (value, expected) => {
     expect(getProfitClass(value)).toBe(expected)
   })
 })
@@ -207,7 +207,7 @@ describe('getGainLossClass', () => {
     [0, ''],
     [null, ''],
     [undefined, ''],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('classifies %s as %s', (value, expected) => {
     expect(getGainLossClass(value)).toBe(expected)
   })
 })
@@ -218,7 +218,7 @@ describe('getAmountClass', () => {
     ['SELL', 'text-loss'],
     ['OTHER', 'text-loss'],
     ['', 'text-loss'],
-  ] as const)('%s → %s', (type, expected) => {
+  ] as const)('classifies %s as %s', (type, expected) => {
     expect(getAmountClass(type)).toBe(expected)
   })
 })
@@ -234,7 +234,7 @@ describe('formatSignedCurrency', () => {
     [-50, 'GBP', '−£50.00'],
     [123.456, 'EUR', '+€123.46'],
     [75, undefined, '+€75.00'],
-  ] as const)('%s in %s → %s', (value, currency, expected) => {
+  ] as const)('formats %s in %s as %s', (value, currency, expected) => {
     expect(formatSignedCurrency(value, currency)).toBe(expected)
   })
 })
@@ -244,7 +244,7 @@ describe('formatSignedPercent', () => {
     [17.16, '+17.16%'],
     [-8.46, '−8.46%'],
     [0, '0.00%'],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('formats %s as %s', (value, expected) => {
     expect(formatSignedPercent(value)).toBe(expected)
   })
 })
@@ -261,7 +261,7 @@ describe('formatDate', () => {
     ['2099-12-31', '31.12.99'],
     ['2100-01-01', '01.01.00'],
     ['', ''],
-  ] as const)('%s → %s', (dateString, expected) => {
+  ] as const)('formats %s as %s', (dateString, expected) => {
     expect(formatDate(dateString)).toBe(expected)
   })
 })
@@ -294,7 +294,7 @@ describe('formatQuantity', () => {
     [0, '0.0000'],
     [null, '0.0000'],
     [undefined, '0.0000'],
-  ] as const)('%s → %s', (value, expected) => {
+  ] as const)('formats %s as %s', (value, expected) => {
     expect(formatQuantity(value)).toBe(expected)
   })
 })
@@ -310,7 +310,7 @@ describe('formatScientific', () => {
     [0.00000000001, undefined, '1.00 × 10⁻¹¹'],
     [0.0001, '%', '1.00 × 10⁻⁴%'],
     [0.00005, ' units', '5.00 × 10⁻⁵ units'],
-  ] as const)('%s with suffix %s → %s', (value, suffix, expected) => {
+  ] as const)('formats %s with suffix %s as %s', (value, suffix, expected) => {
     expect(formatScientific(value, suffix)).toBe(expected)
   })
 })

@@ -18,8 +18,6 @@ vi.mock('../../services/api', () => ({
   },
   logoService: {
     prefetchCandidates: vi.fn().mockResolvedValue(undefined),
-  },
-  utilityService: {
     getLogoUrl: (uuid: string) => `/api/logos/${uuid}`,
   },
 }))

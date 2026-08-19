@@ -3,6 +3,7 @@ import { httpClient } from '../utils/http-client'
 import {
   diversificationService,
   instrumentsService,
+  logoService,
   portfolioSummaryService,
   transactionsService,
   utilityService,
@@ -198,7 +199,7 @@ describe('api services', () => {
   })
 
   it('builds a proxied logo url from a uuid', () => {
-    expect(utilityService.getLogoUrl('550e8400-e29b-41d4-a716-446655440000')).toBe(
+    expect(logoService.getLogoUrl('550e8400-e29b-41d4-a716-446655440000')).toBe(
       '/api/logos/550e8400-e29b-41d4-a716-446655440000'
     )
   })

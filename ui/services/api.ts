@@ -21,6 +21,8 @@ import { API_ENDPOINTS } from '../constants'
 
 const LOGO_SEARCH_TIMEOUT = 60000
 
+const platformParams = (platforms?: string[]) => (platforms?.length ? { platforms } : {})
+
 interface BuildInfo {
   hash: string
   time: string
@@ -51,7 +53,7 @@ export const transactionsService = {
   getAll: (platforms?: string[], fromDate?: string, untilDate?: string) =>
     httpClient.get<TransactionsWithSummaryDto>(API_ENDPOINTS.TRANSACTIONS, {
       params: {
-        ...(platforms?.length ? { platforms } : {}),
+        ...platformParams(platforms),
         ...(fromDate ? { fromDate } : {}),
         ...(untilDate ? { untilDate } : {}),
       },
@@ -61,11 +63,10 @@ export const transactionsService = {
 }
 
 export const instrumentsService = {
-  getAll: (platforms?: string[], period: TimeRange = TimeRange.ONE_DAY) => {
-    const params: Record<string, unknown> = { period }
-    if (platforms?.length) params.platforms = platforms
-    return httpClient.get<InstrumentsResponse>(API_ENDPOINTS.INSTRUMENTS, { params })
-  },
+  getAll: (platforms?: string[], period: TimeRange = TimeRange.ONE_DAY) =>
+    httpClient.get<InstrumentsResponse>(API_ENDPOINTS.INSTRUMENTS, {
+      params: { period, ...platformParams(platforms) },
+    }),
 
   create: (data: Partial<InstrumentDto>) =>
     httpClient.post<InstrumentDto>(API_ENDPOINTS.INSTRUMENTS, data),
@@ -80,32 +81,32 @@ export const instrumentsService = {
 export const portfolioSummaryService = {
   getHistorical: (page: number, size: number, platforms?: string[]) =>
     httpClient.get<Page<PortfolioSummaryDto>>(API_ENDPOINTS.PORTFOLIO_SUMMARY_HISTORICAL, {
-      params: { page, size, ...(platforms?.length ? { platforms } : {}) },
+      params: { page, size, ...platformParams(platforms) },
     }),
 
   getCurrent: (platforms?: string[]) =>
     httpClient.get<PortfolioSummaryDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_CURRENT, {
-      params: platforms?.length ? { platforms } : {},
+      params: platformParams(platforms),
     }),
 
   getSeries: (range: TimeRange, platforms?: string[]) =>
     httpClient.get<PortfolioSummaryDto[]>(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES, {
-      params: { range, ...(platforms?.length ? { platforms } : {}) },
+      params: { range, ...platformParams(platforms) },
     }),
 
   getRangeChange: (range: TimeRange, platforms?: string[]) =>
     httpClient.get<RangeChangeDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_RANGE_CHANGE, {
-      params: { range, ...(platforms?.length ? { platforms } : {}) },
+      params: { range, ...platformParams(platforms) },
     }),
 
   getXirrWindows: (platforms?: string[]) =>
     httpClient.get<XirrWindowsDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_XIRR_WINDOWS, {
-      params: platforms?.length ? { platforms } : {},
+      params: platformParams(platforms),
     }),
 
   getAnnualWindows: (platforms?: string[]) =>
     httpClient.get<AnnualWindowsDto>(API_ENDPOINTS.PORTFOLIO_SUMMARY_ANNUAL_WINDOWS, {
-      params: platforms?.length ? { platforms } : {},
+      params: platformParams(platforms),
     }),
 
   recalculate: () =>
@@ -132,12 +133,10 @@ export const diversificationService = {
 }
 
 export const etfBreakdownService = {
-  getBreakdown: (etfSymbols?: string[], platforms?: string[]) => {
-    const params: Record<string, string[]> = {}
-    if (etfSymbols?.length) params.etfSymbols = etfSymbols
-    if (platforms?.length) params.platforms = platforms
-    return httpClient.get<EtfHoldingBreakdownDto[]>(API_ENDPOINTS.ETF_BREAKDOWN, { params })
-  },
+  getBreakdown: (etfSymbols?: string[], platforms?: string[]) =>
+    httpClient.get<EtfHoldingBreakdownDto[]>(API_ENDPOINTS.ETF_BREAKDOWN, {
+      params: { ...(etfSymbols?.length ? { etfSymbols } : {}), ...platformParams(platforms) },
+    }),
 }
 
 export const logoService = {
@@ -157,12 +156,12 @@ export const logoService = {
 
   prefetchCandidates: (holdingUuids: string[]) =>
     httpClient.post<void>(`${API_ENDPOINTS.LOGOS}/prefetch`, { holdingUuids }),
+
+  getLogoUrl: (uuid: string): string => `/api${API_ENDPOINTS.LOGOS}/${uuid}`,
 }
 
 export const utilityService = {
   getCalculationResult: () => httpClient.get<CalculationResult>(API_ENDPOINTS.CALCULATOR),
 
   getBuildInfo: () => httpClient.get<BuildInfo>(API_ENDPOINTS.BUILD_INFO),
-
-  getLogoUrl: (uuid: string): string => `/api${API_ENDPOINTS.LOGOS}/${uuid}`,
 }
