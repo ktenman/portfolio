@@ -6,11 +6,16 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
+import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
+import ee.tenman.portfolio.service.transaction.TransactionService
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -23,6 +28,60 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+
+class CurrentDaySummaryRefreshJobTest {
+  private val currentDayCache = mockk<CurrentDaySummaryCacheService>(relaxed = true)
+  private val platformCache = mockk<PlatformSummaryCacheService>(relaxed = true)
+  private val transactionService = mockk<TransactionService>()
+  private val job = CurrentDaySummaryRefreshJob(currentDayCache, platformCache, transactionService)
+
+  @Test
+  fun `should refresh current day summary cache when scheduled refresh runs`() {
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV)
+    job.refresh()
+    verify { currentDayCache.refreshCurrentDaySummary() }
+  }
+
+  @Test
+  fun `should reuse the unfiltered summary for every known platform so it cannot be computed twice`() {
+    val platforms = listOf(Platform.TRADING212, Platform.BINANCE)
+    val summary = summaryOn(LocalDate.of(2024, 3, 11))
+    every { currentDayCache.refreshCurrentDaySummary() } returns summary
+    every { transactionService.getDistinctPlatforms() } returns platforms
+    job.refresh()
+    verify { platformCache.putCurrentDaySummaryForPlatforms(platforms, summary) }
+  }
+
+  @Test
+  fun `should dont cache any platform summary when no transactions exist`() {
+    every { transactionService.getDistinctPlatforms() } returns emptyList()
+    job.refresh()
+    verify(exactly = 0) { platformCache.putCurrentDaySummaryForPlatforms(any(), any()) }
+  }
+
+  @Test
+  fun `should not propagate failures when the cache refresh throws`() {
+    every { currentDayCache.refreshCurrentDaySummary() } throws RuntimeException("price provider unavailable")
+    job.refresh()
+    verify { currentDayCache.refreshCurrentDaySummary() }
+  }
+
+  @Test
+  fun `should still refresh the unfiltered summary when resolving platforms throws`() {
+    every { transactionService.getDistinctPlatforms() } throws RuntimeException("database unavailable")
+    job.refresh()
+    verify { currentDayCache.refreshCurrentDaySummary() }
+  }
+
+  private fun summaryOn(date: LocalDate): PortfolioDailySummary =
+    PortfolioDailySummary(
+      entryDate = date,
+      totalValue = BigDecimal.ZERO,
+      xirrAnnualReturn = BigDecimal.ZERO,
+      totalProfit = BigDecimal.ZERO,
+      earningsPerDay = BigDecimal.ZERO,
+    )
+}
 
 class InstrumentXirrJobTest {
   private val fixedInstant: Instant = Instant.parse("2025-06-15T10:00:00Z")
