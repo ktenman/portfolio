@@ -90,7 +90,7 @@ describe('httpClient', () => {
   describe('response handling', () => {
     it('should resolve to undefined for a 204 response', async () => {
       fetchMock.mockResolvedValue(new Response(null, { status: 204 }))
-      await expect(httpClient.delete('/transactions/1')).resolves.toBeUndefined()
+      await expect(httpClient.get('/transactions/1')).resolves.toBeUndefined()
     })
 
     it('should resolve to undefined for an empty 200 response', async () => {

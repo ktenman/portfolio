@@ -16,7 +16,9 @@ import java.io.ObjectOutputStream
 import java.math.BigDecimal
 
 class DiversificationDtoTest {
-  private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
+  companion object {
+    private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
+  }
 
   @Test
   fun `should pass validation for valid allocation`() {

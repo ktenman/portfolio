@@ -547,19 +547,15 @@ class ArchitectureTest {
       .filter { isRelevantTopLevelClass(it) }
       .groupBy { javaClass -> "${javaClass.packageName}.${extractFileName(javaClass)}" }
       .entries
-      .filter { entry ->
-        val declared = filterKotlinFileClasses(entry.value)
-        declared.size > 1 && declared.any { isSpringBeanOrEntity(it) }
-      }.map { entry ->
-        val classNames = filterKotlinFileClasses(entry.value).joinToString(", ") { it.simpleName }
+      .filter { entry -> entry.value.size > 1 && entry.value.any { isSpringBeanOrEntity(it) } }
+      .map { entry ->
+        val classNames = entry.value.joinToString(", ") { it.simpleName }
         "${entry.key} contains multiple classes: [$classNames]"
       }
 
   private fun isSpringBeanOrEntity(javaClass: JavaClass): Boolean =
-    javaClass.isAnnotatedWith(Service::class.java) ||
-      javaClass.isAnnotatedWith(Component::class.java) ||
-      javaClass.isAnnotatedWith(RestController::class.java) ||
-      javaClass.isAnnotatedWith(Configuration::class.java) ||
+    javaClass.isAnnotatedWith(Component::class.java) ||
+      javaClass.isMetaAnnotatedWith(Component::class.java) ||
       javaClass.isAnnotatedWith(Entity::class.java)
 
   private fun extractFileName(javaClass: JavaClass): String {
@@ -572,15 +568,8 @@ class ArchitectureTest {
   private fun isRelevantTopLevelClass(javaClass: JavaClass): Boolean =
     !javaClass.isNestedClass &&
       !javaClass.simpleName.contains("$") &&
-      javaClass.packageName.startsWith("ee.tenman.portfolio")
-
-  private fun filterKotlinFileClasses(classes: List<JavaClass>): List<JavaClass> =
-    classes.filter { javaClass ->
       !javaClass.simpleName.endsWith("Kt") &&
-        javaClass.simpleName != "Companion" &&
-        javaClass.simpleName != "DefaultImpls" &&
-        javaClass.simpleName != "WhenMappings"
-    }
+      javaClass.packageName.startsWith("ee.tenman.portfolio")
 
   @ArchTest
   fun testsShouldNotUseWhenExpressions(classes: JavaClasses) {

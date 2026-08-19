@@ -5,7 +5,7 @@ import { instrumentsService } from './instruments-service'
 import { portfolioSummaryService } from './portfolio-summary-service'
 import { diversificationService } from './diversification-service'
 import { utilityService } from './utility-service'
-import { TimeRange } from '../models/generated/domain-models'
+import { Platform, TimeRange } from '../models/generated/domain-models'
 import type { AllocationDto } from '../models/generated/domain-models'
 import type { CachedState } from '../components/diversification/types'
 
@@ -14,13 +14,15 @@ vi.mock('../utils/http-client', () => ({
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
-    delete: vi.fn(),
   },
 }))
 
-const PLATFORMS = ['TRADING212', 'LIGHTYEAR']
+const PLATFORMS = [Platform.TRADING212, Platform.LIGHTYEAR]
 const ALLOCATIONS: AllocationDto[] = [{ instrumentId: 7, percentage: 100 }]
-const CONFIG = { allocations: ALLOCATIONS } as unknown as CachedState
+const CONFIG: CachedState = {
+  allocations: [{ instrumentId: 7, value: 100 }],
+  inputMode: 'percentage',
+}
 
 describe('api services', () => {
   beforeEach(() => {

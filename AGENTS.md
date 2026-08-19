@@ -212,13 +212,13 @@ A file should be one read and one idea. Too many tiny files costs more than a fe
 
 | Kind                                       | Target                            | Merge below | Split above |
 | ------------------------------------------ | --------------------------------- | ----------- | ----------- |
-| Kotlin service / class with real logic     | 80-250                            | 40          | 400         |
+| Kotlin service / class with real logic     | 80-250                            | 40          | 300         |
 | Kotlin DTO / enum / exception / value type | group by cluster, 30-150 per file | -           | -           |
 | Vue component                              | 80-200                            | -           | 400         |
 | Composable / util module                   | 50-200                            | 30          | 300         |
 | Test class                                 | 100-400                           | 60          | 500         |
 
-Under the merge threshold, group the declaration with its siblings in the same package rather than giving it its own file. Over the split threshold, extract by concern.
+Under the merge threshold, group the declaration with its siblings in the same package rather than giving it its own file. Over the split threshold, extract by concern. The Kotlin service limit is a hard gate — `ArchitectureTest.serviceClassesShouldNotExceedMaxLinesOfCode` fails the build above it.
 
 When a file exceeds its split threshold:
 
