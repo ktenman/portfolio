@@ -66,54 +66,19 @@ export function useEnumValues() {
     }
   }
 
-  const platformOptions = computed(() => {
-    if (!enumCache.value) return []
-    return enumCache.value.platforms.map(p => ({
-      value: p.name,
-      text: p.displayName,
-    }))
-  })
-
   const providerOptions = computed(() =>
     enumCache.value ? toSelectOptions(enumCache.value.providers) : []
   )
-
-  const transactionTypeOptions = computed(() => {
-    if (!enumCache.value) return []
-    return enumCache.value.transactionTypes.map(value => ({
-      value,
-      text: value === 'BUY' ? 'Buy' : 'Sell',
-    }))
-  })
 
   const categoryOptions = computed(() =>
     enumCache.value ? toSelectOptions(enumCache.value.categories) : []
   )
 
-  const currencyOptions = computed(() => {
-    if (enumCache.value && enumCache.value.currencies.length > 0) {
-      return toSelectOptions(enumCache.value.currencies)
-    }
-
-    return [
-      { value: 'EUR', text: 'EUR' },
-      { value: 'USD', text: 'USD' },
-      { value: 'GBP', text: 'GBP' },
-      { value: 'JPY', text: 'JPY' },
-      { value: 'CHF', text: 'CHF' },
-      { value: 'CAD', text: 'CAD' },
-      { value: 'AUD', text: 'AUD' },
-    ]
-  })
-
   return {
     loading,
     error,
-    platformOptions,
     providerOptions,
-    transactionTypeOptions,
     categoryOptions,
-    currencyOptions,
     loadAll,
   }
 }
