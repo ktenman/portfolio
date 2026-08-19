@@ -64,6 +64,11 @@ const EUR_FORMAT = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
 })
 
+const AMOUNT_FORMAT = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
 export const formatCurrencyWithSymbol = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '€0.00'
   return EUR_FORMAT.format(value)
@@ -71,10 +76,7 @@ export const formatCurrencyWithSymbol = (value: number | undefined | null): stri
 
 export const formatCurrency = (value: number | undefined | null): string => {
   if (value === null || value === undefined) return '0.00'
-  return Math.abs(value).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
+  return AMOUNT_FORMAT.format(Math.abs(value))
 }
 
 export const formatCurrencyWithSign = (
@@ -83,10 +85,7 @@ export const formatCurrencyWithSign = (
 ): string => {
   if (value === null || value === undefined) return '0.00'
 
-  const absValue = Math.abs(value).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
+  const absValue = AMOUNT_FORMAT.format(Math.abs(value))
   const currencySymbol = getCurrencySymbol(currency)
 
   return `${currencySymbol}${absValue}`
@@ -171,10 +170,7 @@ export const formatProfitLoss = (
   includeSign: boolean = true
 ): string => {
   if (value === null || value === undefined) return '0.00'
-  const formattedValue = Math.abs(value).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
+  const formattedValue = AMOUNT_FORMAT.format(Math.abs(value))
   if (!includeSign) return formattedValue
   const sign = value >= 0 ? '+' : '-'
   return `${sign}${formattedValue}`
@@ -189,10 +185,7 @@ export const formatTransactionAmount = (
 ): string => {
   const amount = quantity * price
 
-  const formattedAmount = amount.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
+  const formattedAmount = AMOUNT_FORMAT.format(amount)
 
   const currencySymbol = getCurrencySymbol(currency)
 

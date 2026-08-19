@@ -5,6 +5,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CA
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.TimeRange
+import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
@@ -20,6 +21,16 @@ class PlatformSummaryCacheService(
   )
   fun getCurrentDaySummaryForPlatforms(platforms: List<Platform>): PortfolioDailySummary =
     summaryService.getCurrentDaySummaryForPlatforms(platforms)
+
+  @Suppress("UnusedParameter")
+  @CachePut(
+    value = [SUMMARY_CACHE],
+    key = "'platform-current-' + #root.target.platformKey(#platforms)",
+  )
+  fun putCurrentDaySummaryForPlatforms(
+    platforms: List<Platform>,
+    summary: PortfolioDailySummary,
+  ): PortfolioDailySummary = summary
 
   @Cacheable(
     value = [PLATFORM_SUMMARY_CACHE],
