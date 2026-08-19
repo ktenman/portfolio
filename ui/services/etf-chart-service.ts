@@ -9,18 +9,11 @@ export interface ChartDataItem {
   code?: string
 }
 
-export interface ChartDataConfig {
-  topCount?: number
-  threshold?: number
-  minThreshold?: number
-  colors?: string[]
-}
+const TOP_COUNT = 15
+const SECTOR_MIN_PERCENTAGE = 0.5
+const COUNTRY_MIN_PERCENTAGE = 0.2
 
-export function buildSectorChartData(
-  holdings: EtfHoldingBreakdownDto[],
-  config: ChartDataConfig = {}
-): ChartDataItem[] {
-  const { topCount = 15, minThreshold = 0.5, colors = DONUT_COLORS } = config
+export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
   const sectorTotals = new Map<string, number>()
 
   holdings.forEach(holding => {
@@ -38,36 +31,27 @@ export function buildSectorChartData(
     }))
 
   return sortedSectors
-    .filter(s => s.value >= minThreshold)
-    .slice(0, topCount)
+    .filter(s => s.value >= SECTOR_MIN_PERCENTAGE)
+    .slice(0, TOP_COUNT)
     .map((item, index) => ({
       ...item,
-      color: colors[index % colors.length],
+      color: DONUT_COLORS[index % DONUT_COLORS.length],
     }))
 }
 
-export function buildCompanyChartData(
-  holdings: EtfHoldingBreakdownDto[],
-  config: ChartDataConfig = {}
-): ChartDataItem[] {
-  const { topCount = 15, colors = DONUT_COLORS } = config
-
+export function buildCompanyChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
   return [...holdings]
     .sort((a, b) => b.percentageOfTotal - a.percentageOfTotal)
-    .slice(0, topCount)
+    .slice(0, TOP_COUNT)
     .map((holding, index) => ({
       label: holding.holdingName,
       value: holding.percentageOfTotal,
       percentage: holding.percentageOfTotal.toFixed(2),
-      color: colors[index % colors.length],
+      color: DONUT_COLORS[index % DONUT_COLORS.length],
     }))
 }
 
-export function buildCountryChartData(
-  holdings: EtfHoldingBreakdownDto[],
-  config: ChartDataConfig = {}
-): ChartDataItem[] {
-  const { topCount = 15, minThreshold = 0.2, colors = DONUT_COLORS } = config
+export function buildCountryChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
   const countryTotals = new Map<string, { value: number; code: string }>()
 
   holdings.forEach(holding => {
@@ -91,13 +75,13 @@ export function buildCountryChartData(
     }))
 
   return sortedCountries
-    .filter(c => c.value >= minThreshold)
-    .slice(0, topCount)
+    .filter(c => c.value >= COUNTRY_MIN_PERCENTAGE)
+    .slice(0, TOP_COUNT)
     .map((item, index) => ({
       label: item.label,
       value: item.value,
       percentage: item.percentage,
-      color: colors[index % colors.length],
+      color: DONUT_COLORS[index % DONUT_COLORS.length],
       code: item.code || undefined,
     }))
 }

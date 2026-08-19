@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.service.integration
 
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
-import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
@@ -39,24 +38,6 @@ class CountryClassificationService(
         "(?:headquartered|based|located)\\s+in\\s+(\\w+(?:\\s+\\w+){0,3})",
         RegexOption.IGNORE_CASE,
       )
-  }
-
-  fun classifyCompanyCountryWithModel(
-    companyName: String,
-    ticker: String? = null,
-    etfNames: List<String> = emptyList(),
-  ): CountryClassificationResult? {
-    val sanitizedName = LogSanitizerUtil.sanitize(companyName)
-    log.info("Classifying country for company: $sanitizedName (ticker: $ticker)")
-    if (companyName.isBlank()) {
-      log.warn("Blank company name")
-      return null
-    }
-    if (isNonCompanyHolding(companyName)) {
-      log.info("Skipping non-company holding: $sanitizedName")
-      return null
-    }
-    return tryAutoAssign(etfNames, sanitizedName) ?: classifyWithLlm(companyName, ticker, etfNames, sanitizedName)
   }
 
   fun classifyBatch(companies: List<CompanyClassificationInput>): BatchClassificationOutcome<CountryClassificationResult> {
@@ -171,20 +152,6 @@ class CountryClassificationService(
     return NON_COMPANY_REGEXES.any { regex -> regex.containsMatchIn(normalized) }
   }
 
-  private fun classifyWithLlm(
-    companyName: String,
-    ticker: String?,
-    etfNames: List<String>,
-    sanitizedName: String,
-  ): CountryClassificationResult? {
-    if (!properties.enabled) {
-      log.warn("LLM classification disabled, skipping: $sanitizedName")
-      return null
-    }
-    val prompt = buildPrompt(companyName, ticker, etfNames)
-    return classifyWithCountryModels(prompt, sanitizedName)
-  }
-
   private fun tryAutoAssign(
     etfNames: List<String>,
     sanitizedName: String,
@@ -197,44 +164,6 @@ class CountryClassificationService(
     return null
   }
 
-  private fun isNorthAmericaEtf(etfNames: List<String>): Boolean = etfNames.any { it.contains("North America", ignoreCase = true) }
-
-  private fun classifyWithCountryModels(
-    prompt: String,
-    sanitizedName: String,
-  ): CountryClassificationResult? {
-    val response = openRouterClient.classifyWithCountryFallback(prompt)
-    if (response == null) {
-      log.warn("All country classification models failed for: $sanitizedName")
-      return null
-    }
-    return parseResponse(response, sanitizedName, logUnknownCountry = true)
-  }
-
-  private fun parseResponse(
-    response: OpenRouterClassificationResult,
-    sanitizedName: String,
-    logUnknownCountry: Boolean = false,
-  ): CountryClassificationResult? {
-    val content = response.content ?: return null
-    val countryCode = parseCountryCode(content)
-    if (countryCode == null) {
-      if (logUnknownCountry) log.warn("Unknown country from model response: $content")
-      return null
-    }
-    val countryName = getCountryName(countryCode)
-    log.info("Classified $sanitizedName as $countryName ($countryCode) using model ${response.model}")
-    return CountryClassificationResult(countryCode = countryCode, countryName = countryName, model = response.model)
-  }
-
-  private fun parseCountryCode(content: String): String? {
-    val trimmed = content.trim().uppercase()
-    if (trimmed.length == 2 && VALID_COUNTRY_CODES.contains(trimmed)) {
-      return trimmed
-    }
-    return findCountryCodeByName(content)
-  }
-
   internal fun findCountryCodeByName(name: String): String? {
     val normalized = name.trim().lowercase()
     COUNTRY_NAME_TO_CODE[normalized]?.let { return it }
@@ -243,40 +172,4 @@ class CountryClassificationService(
   }
 
   private fun getCountryName(countryCode: String): String = Locale.of("", countryCode).getDisplayCountry(Locale.ENGLISH)
-
-  private fun buildPrompt(
-    companyName: String,
-    ticker: String?,
-    etfNames: List<String>,
-  ): String {
-    val tickerInfo = if (!ticker.isNullOrBlank()) " (ticker: $ticker)" else ""
-    val etfContext = if (etfNames.isNotEmpty()) "\nThis company is held in: ${etfNames.joinToString(", ")}" else ""
-    if (isNorthAmericaEtf(etfNames)) {
-      return buildNorthAmericaPrompt(companyName, tickerInfo, etfContext)
-    }
-    return """
-    What is the headquarters country of "$companyName"$tickerInfo?
-    $etfContext
-
-    Rules:
-    - Use OPERATIONAL headquarters, not legal incorporation country
-    - Ferrari (RACE) = IT, Shell (SHEL) = GB, Airbus (AIR) = FR
-    - Reply with ONLY the 2-letter ISO code (US, GB, DE, FR, etc.)
-    - NO sentences, NO explanations, NO punctuation - just 2 letters
-    """.trimIndent()
-  }
-
-  private fun buildNorthAmericaPrompt(
-    companyName: String,
-    tickerInfo: String,
-    etfContext: String,
-  ): String =
-    """
-    This company "$companyName"$tickerInfo is a holding in a North America ETF.
-    $etfContext
-
-    Is this company headquartered in Canada or United States?
-
-    ANSWER WITH ONLY: US or CA
-    """.trimIndent()
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Chart } from 'chart.js'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
-import type { ChartDataItem } from './etf-breakdown-chart.vue'
+import type { ChartDataItem } from '../../services/etf-chart-service'
 
 vi.mock('chart.js', () => {
   const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {

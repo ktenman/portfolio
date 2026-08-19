@@ -3,6 +3,7 @@ package ee.tenman.portfolio.openrouter
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.VisionModel
 import org.junit.jupiter.api.Test
 
 class AiModelTest {
@@ -213,6 +214,12 @@ class AiModelTest {
   @Test
   fun `should return primary country model`() {
     expect(AiModel.primaryCountryModel()).toEqual(AiModel.DEEPSEEK_V4_FLASH)
+  }
+
+  @Test
+  fun `should have correct model ids`() {
+    expect(VisionModel.LLAMA_4_SCOUT.modelId).toEqual("meta-llama/llama-4-scout")
+    expect(VisionModel.NOVA_LITE.modelId).toEqual("amazon/nova-lite-v1")
   }
 
   companion object {

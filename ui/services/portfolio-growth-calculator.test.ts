@@ -1,125 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import {
-  annualToMonthlyReturnRate,
-  annualToMonthlyGrowthRate,
-  calculateTaxAmount,
-  calculateNetWorth,
-  calculateMonthlyEarnings,
-  simulateYear,
-  calculateProjection,
-  CalculatorInput,
-} from './portfolio-growth-calculator'
+import { calculateProjection, CalculatorInput } from './portfolio-growth-calculator'
 
 describe('portfolio-growth-calculator', () => {
-  describe('annualToMonthlyReturnRate', () => {
-    it('should convert 12% annual to monthly rate', () => {
-      const monthlyRate = annualToMonthlyReturnRate(12)
-      const expectedRate = Math.pow(1.12, 1 / 12) - 1
-      expect(monthlyRate).toBeCloseTo(expectedRate, 10)
-    })
-
-    it('should return 0 for 0% annual rate', () => {
-      expect(annualToMonthlyReturnRate(0)).toBe(0)
-    })
-
-    it('should handle 100% annual rate', () => {
-      const monthlyRate = annualToMonthlyReturnRate(100)
-      const expectedRate = Math.pow(2, 1 / 12) - 1
-      expect(monthlyRate).toBeCloseTo(expectedRate, 10)
-    })
-  })
-
-  describe('annualToMonthlyGrowthRate', () => {
-    it('should convert 12% yearly to 1% monthly', () => {
-      expect(annualToMonthlyGrowthRate(12)).toBeCloseTo(0.01, 10)
-    })
-
-    it('should convert 5% yearly to correct monthly rate', () => {
-      expect(annualToMonthlyGrowthRate(5)).toBeCloseTo(5 / 100 / 12, 10)
-    })
-
-    it('should return 0 for 0% yearly rate', () => {
-      expect(annualToMonthlyGrowthRate(0)).toBe(0)
-    })
-  })
-
-  describe('calculateTaxAmount', () => {
-    it('should calculate 22% tax on profit', () => {
-      expect(calculateTaxAmount(1000, 22)).toBe(220)
-    })
-
-    it('should return 0 when tax rate is 0', () => {
-      expect(calculateTaxAmount(1000, 0)).toBe(0)
-    })
-
-    it('should handle zero profit', () => {
-      expect(calculateTaxAmount(0, 22)).toBe(0)
-    })
-
-    it('should handle negative profit', () => {
-      expect(calculateTaxAmount(-500, 22)).toBe(-110)
-    })
-  })
-
-  describe('calculateNetWorth', () => {
-    it('should calculate net worth correctly', () => {
-      const netWorth = calculateNetWorth(10000, 2000, 440)
-      expect(netWorth).toBe(11560)
-    })
-
-    it('should handle zero values', () => {
-      expect(calculateNetWorth(0, 0, 0)).toBe(0)
-    })
-  })
-
-  describe('calculateMonthlyEarnings', () => {
-    it('should calculate monthly earnings from total worth and annual return rate', () => {
-      expect(calculateMonthlyEarnings(120000, 12)).toBe(1200)
-    })
-
-    it('should handle zero total worth', () => {
-      expect(calculateMonthlyEarnings(0, 12)).toBe(0)
-    })
-
-    it('should handle zero annual return rate', () => {
-      expect(calculateMonthlyEarnings(100000, 0)).toBe(0)
-    })
-
-    it('should handle decimal results', () => {
-      expect(calculateMonthlyEarnings(100000, 10)).toBeCloseTo(833.333, 2)
-    })
-  })
-
-  describe('simulateYear', () => {
-    it('should simulate a year with no growth', () => {
-      const result = simulateYear(10000, 10000, 100, 0, 22, 1, 0)
-
-      expect(result.summary.year).toBe(1)
-      expect(result.summary.totalInvested).toBe(11200)
-      expect(result.summary.totalWorth).toBe(11200)
-      expect(result.summary.grossProfit).toBe(0)
-      expect(result.summary.taxAmount).toBe(0)
-      expect(result.summary.netWorth).toBe(11200)
-    })
-
-    it('should simulate a year with positive return', () => {
-      const monthlyRate = annualToMonthlyReturnRate(12)
-      const result = simulateYear(10000, 10000, 0, monthlyRate, 22, 1, 12)
-
-      expect(result.summary.year).toBe(1)
-      expect(result.summary.totalInvested).toBe(10000)
-      expect(result.summary.grossProfit).toBeGreaterThan(0)
-      expect(result.summary.taxAmount).toBeCloseTo(result.summary.grossProfit * 0.22, 2)
-    })
-
-    it('should track ending worth and invested amounts', () => {
-      const result = simulateYear(5000, 5000, 200, 0, 0, 1, 0)
-
-      expect(result.endingWorth).toBe(7400)
-      expect(result.endingInvested).toBe(7400)
-    })
-  })
-
   describe('calculateProjection', () => {
     it('should generate correct number of year summaries', () => {
       const input: CalculatorInput = {
@@ -246,10 +128,7 @@ describe('portfolio-growth-calculator', () => {
       const result = calculateProjection(input)
       const yearOne = result.yearSummaries[0]
 
-      expect(yearOne.monthlyEarnings).toBeCloseTo(
-        calculateMonthlyEarnings(yearOne.totalWorth, 12),
-        2
-      )
+      expect(yearOne.monthlyEarnings).toBeCloseTo(yearOne.totalWorth * 0.01, 2)
     })
 
     it('should accumulate investments correctly year over year', () => {

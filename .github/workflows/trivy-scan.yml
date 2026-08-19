@@ -6,12 +6,6 @@ permissions:
   actions: read
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
-    branches:
-      - main
   schedule:
     # Run weekly on mondays at 2 AM UTC
     - cron: '0 2 * * 1'

@@ -149,7 +149,6 @@ services:
       - ./tsconfig.node.json:/app/tsconfig.node.json
       - ./index.html:/app/index.html
       - ./vitest.config.ts:/app/vitest.config.ts
-      - ./.eslintrc.cjs:/app/.eslintrc.cjs
     command: sh -c "npm install && npm run dev -- --host"
     ports:
       - "61234:61234"

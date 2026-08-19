@@ -1,9 +1,5 @@
 import { httpClient } from '../utils/http-client'
-import type {
-  TransactionResponseDto,
-  TransactionRequestDto,
-  TransactionsWithSummaryDto,
-} from '../models/generated/domain-models'
+import type { TransactionsWithSummaryDto } from '../models/generated/domain-models'
 import { API_ENDPOINTS } from '../constants'
 
 export const transactionsService = {
@@ -17,13 +13,4 @@ export const transactionsService = {
     }),
 
   getPlatforms: () => httpClient.get<string[]>(API_ENDPOINTS.TRANSACTIONS_PLATFORMS),
-
-  create: (data: Partial<TransactionRequestDto>) =>
-    httpClient.post<TransactionResponseDto>(API_ENDPOINTS.TRANSACTIONS, data),
-
-  update: (id: number | string, data: Partial<TransactionRequestDto>) =>
-    httpClient.put<TransactionResponseDto>(`${API_ENDPOINTS.TRANSACTIONS}/${id}`, data),
-
-  delete: (id: number | string) =>
-    httpClient.delete<void>(`${API_ENDPOINTS.TRANSACTIONS}/${id}`).then(() => undefined),
 }

@@ -44,7 +44,6 @@ export default defineConfig({
         '**/main.ts',
         '**/env.d.ts',
         'coverage/',
-        '.eslintrc.cjs',
         'app.vue',
       ],
     },
