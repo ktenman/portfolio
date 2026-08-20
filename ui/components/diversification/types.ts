@@ -1,3 +1,5 @@
+import type { EtfDetailDto } from '../../models/generated/domain-models'
+
 export interface AllocationInput {
   instrumentId: number
   value: number
@@ -5,6 +7,17 @@ export interface AllocationInput {
 }
 
 export type ActionDisplayMode = 'units' | 'amount'
+
+export interface AllocationProps {
+  readonly allocations: AllocationInput[]
+  readonly availableEtfs: EtfDetailDto[]
+  readonly totalInvestment: number
+  readonly currentHoldingsTotal: number
+  readonly selectedPlatforms: string[]
+  readonly optimizeEnabled: boolean
+  readonly buyOnlyEnabled: boolean
+  readonly actionDisplayMode: ActionDisplayMode
+}
 
 export interface CachedState {
   allocations: AllocationInput[]

@@ -102,11 +102,15 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, defineAsyncComponent, onMounted } from 'vue'
-import { useDebounceFn, useNow, useLocalStorage } from '@vueuse/core'
+import { useNow, useLocalStorage } from '@vueuse/core'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
 import { useDiversificationPlatforms } from '../../composables/use-diversification-platforms'
 import { useDiversificationConfig } from '../../composables/use-diversification-config'
+import {
+  getErrorMessage,
+  useDiversificationResult,
+} from '../../composables/use-diversification-result'
 import { diversificationService, instrumentsService } from '../../services/api'
 import { REFETCH_INTERVALS } from '../../constants'
 import { formatRelativeTime } from '../../utils/formatters'
@@ -114,10 +118,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
-import type {
-  DiversificationCalculatorResponseDto,
-  InstrumentDto,
-} from '../../models/generated/domain-models'
+import type { InstrumentDto } from '../../models/generated/domain-models'
 import type { AllocationInput, CachedState, ActionDisplayMode } from './types'
 
 const ConfigDialog = defineAsyncComponent(() => import('./config-dialog.vue'))
@@ -174,13 +175,20 @@ const actionDisplayMode = useLocalStorage<ActionDisplayMode>(
   'units'
 )
 const portfolioInstruments = ref<InstrumentDto[]>([])
-const isCalculating = ref(false)
 const isLoadingPortfolio = ref(false)
-const error = ref('')
-const result = ref<DiversificationCalculatorResponseDto | null>(null)
 const isInitialized = ref(false)
 const showExportDialog = ref(false)
 const showImportDialog = ref(false)
+
+const {
+  result,
+  error,
+  isCalculating,
+  debouncedCalculate,
+  holdingsBreakdown,
+  sectorsBreakdown,
+  countriesBreakdown,
+} = useDiversificationResult(allocations)
 
 onMounted(async () => {
   try {
@@ -230,20 +238,6 @@ const currentConfig = computed(() => ({
 
 const { saveFailed, markDirty } = useDiversificationConfig(() => currentConfig.value)
 
-const toBreakdown = <T extends { percentage: number }>(
-  items: T[] | undefined,
-  getName: (item: T) => string
-) =>
-  items?.map(item => ({
-    key: getName(item),
-    name: getName(item),
-    percentage: item.percentage,
-  })) ?? []
-
-const holdingsBreakdown = computed(() => toBreakdown(result.value?.holdings, h => h.name))
-const sectorsBreakdown = computed(() => toBreakdown(result.value?.sectors, s => s.sector))
-const countriesBreakdown = computed(() => toBreakdown(result.value?.countries, c => c.countryName))
-
 const etfById = computed(() => new Map(etfList.value.map(e => [e.instrumentId, e])))
 
 const currencySplit = computed(() => {
@@ -272,46 +266,6 @@ const updateAllocation = (index: number, allocation: AllocationInput) => {
   allocations.value[index] = allocation
   onAllocationChange()
 }
-
-const getErrorMessage = (e: unknown): string => {
-  if (e instanceof Error) {
-    if (e.message.includes('Network Error') || e.message.includes('fetch')) {
-      return 'Unable to connect to the server. Please check your internet connection and try again.'
-    }
-    if (e.message.includes('timeout')) {
-      return 'The request timed out. Please try again.'
-    }
-    if (e.message.includes('500') || e.message.includes('Internal Server Error')) {
-      return 'A server error occurred. Please try again later.'
-    }
-    return e.message
-  }
-  return 'An unexpected error occurred. Please try again.'
-}
-
-const calculateDiversification = async () => {
-  const validAllocations = allocations.value.filter(a => a.instrumentId > 0 && a.value > 0)
-  if (validAllocations.length < 1) {
-    result.value = null
-    return
-  }
-  isCalculating.value = true
-  error.value = ''
-  try {
-    const requestAllocations = validAllocations.map(a => ({
-      instrumentId: a.instrumentId,
-      percentage: a.value,
-    }))
-    result.value = await diversificationService.calculate(requestAllocations)
-  } catch (e) {
-    error.value = getErrorMessage(e)
-    result.value = null
-  } finally {
-    isCalculating.value = false
-  }
-}
-
-const debouncedCalculate = useDebounceFn(calculateDiversification, 500)
 
 const onAllocationChange = () => {
   markDirty()
