@@ -100,6 +100,7 @@ import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
 import AnnualWindowsModal from './annual-windows-modal.vue'
 import { instrumentsService, portfolioSummaryService } from '../../services/api'
+import { getFilterParam } from '../../services/etf-chart-service'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
@@ -145,11 +146,9 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
   availablePlatforms
 )
 
-const activePlatforms = computed<string[]>(() => {
-  const selected = selectedPlatforms.value
-  if (selected.length === 0 || selected.length === availablePlatforms.value.length) return []
-  return selected
-})
+const activePlatforms = computed(() =>
+  getFilterParam(selectedPlatforms.value, availablePlatforms.value)
+)
 
 const {
   data: rawItems,
@@ -157,7 +156,7 @@ const {
   isError,
   error,
 } = useQuery({
-  queryKey: computed(() => ['instruments', selectedPlatforms.value, selectedPeriod.value]),
+  queryKey: computed(() => ['instruments', activePlatforms.value, selectedPeriod.value]),
   queryFn: () => instrumentsService.getAll(activePlatforms.value, selectedPeriod.value),
   refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
   enabled: isAuthenticated,
@@ -173,7 +172,7 @@ const { data: rangeChange } = useQuery({
   queryFn: () =>
     portfolioSummaryService.getRangeChange(selectedPeriod.value, activePlatforms.value),
   placeholderData: keepPreviousData,
-  refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
+  refetchInterval: REFETCH_INTERVALS.SUMMARY,
   enabled: isAuthenticated,
 })
 
