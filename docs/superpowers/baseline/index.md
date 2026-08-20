@@ -24,11 +24,15 @@ Viewports: **mobile** 390×844, **tablet** 768×1024, **desktop** 1440×900. All
 and a late poll re-flows table column widths. Every capture therefore runs:
 
 1. `page.goto(route)` then `waitForLoadState('networkidle')`
-2. `waitForScrollHeightToSettle` — page height identical across 4 samples 400 ms apart
+2. `waitForPageToSettle` — page signature identical across 4 samples 400 ms apart
 3. the interaction that opens the state, if any
-4. `waitForScrollHeightToSettle` again
+4. `waitForPageToSettle` again
 5. `page.route('**/api/**', r => r.abort())` — no further data can land
 6. screenshot
+
+The signature is `document.documentElement.scrollHeight` joined with a hash of every `<canvas>`'s
+`toDataURL()`, so layout and painted chart pixels settle on the same four samples at no extra polling
+cost.
 
 Step 2 is what makes the framing deterministic. `page.goto` resolves while the page is still growing
 (`/instruments` desktop: 2293 → 2337 → 2401 px over ~165 ms after `networkidle`), and a Playwright
@@ -288,8 +292,20 @@ null` and three `averageCost: null` rows (all render `0.00`), three quantities b
 
 ## Routes — `ui/tests/visual/routes.spec.ts`
 
-Full-page (`fullPage: true`), unmasked, no interaction. Every route carries a stub, and
-`stubBuildInfo` runs for all six through a file-scoped `beforeEach`.
+Full-page (`fullPage: true`), no interaction. Every route carries a stub, and `stubBuildInfo` runs
+for all six through a file-scoped `beforeEach`. Two bounds narrow what is actually compared:
+
+- **The capture is clipped to the first `MAX_CAPTURE_HEIGHT` (12000) pixels**, at
+  `document.documentElement.scrollWidth` rather than the viewport width — the viewport width would
+  crop `route-diversification-tablet` from its real 785 px back to 768 and hide the overflow that
+  produced it. Chromium paints `fullPage` unreliably past roughly 16000 px, and `/transactions` runs
+  to 56854 px on desktop and 147160 on mobile: the un-clipped desktop capture returned a 38.7 M-pixel
+  diff on CI while passing locally. Everything below 12000 px on those pages is uncovered — on
+  `/transactions` that is 79 % of the fixture on desktop and 92 % on mobile, and it costs the pixel
+  coverage of the `formatScientific` quantities, the `realizedProfit: null` row and the
+  `averageCost: null` row, all of which sort below the cut. Only `id: null` stays inside every clip.
+- **Every `<canvas>` is masked**, so no chart pixel is compared on any route. See the canvas note
+  under Known limits.
 
 | File                                | Route              | Viewport |
 | ----------------------------------- | ------------------ | -------- |
@@ -395,15 +411,26 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
   clamp is `scrollHeight - innerHeight`, currently 1501 px on desktop. `modal-xirr-windows-desktop`
   and `modal-annual-windows-desktop` predated step 2 and were recorded mid-growth at 1480 and 1435;
   they were re-recorded at the settled 1501 and now agree with each other.
-- **The Chart.js canvases are gated on the animation finishing inside the settle window.** They were
-  never masked — `ui/components/charts/{line,bar}-chart.vue` render a bare `<canvas>` carrying no
-  class or test id, so no selector could have reached them — but the freeze pass that ran before
-  every capture used to hide the page behind an overlay, and nothing proved the charts were complete
-  in the shots that did include them. They are now gated directly. The ≥1.6 s
-  `waitForScrollHeightToSettle` outlasts Chart.js's default animation, verified by re-shooting
-  `[data-testid="summary-chart"]` on three consecutive isolated runs and getting byte-identical
-  output. A chart whose animation ever outran the settle would flake rather than fail cleanly, so a
-  single-capture red on a canvas is worth re-running before re-recording.
+- **The Chart.js canvases are masked in `routes.spec.ts` and unmasked everywhere else.** Two
+  separate defences were needed. First, they flake mid-animation: a freshly recorded
+  `route-calculator-desktop` failed on immediate re-run at 1858 pixels, bounded to
+  `791x513+541+512`, with the "XIRR Rolling Result (ASAP)" canvas caught part-drawn.
+  `animations: 'disabled'` does not cover that, because it disables CSS animations and Chart.js
+  draws on `requestAnimationFrame`; the settle signature folds in a hash of each canvas's
+  `toDataURL()`, so a still-animating chart keeps resetting the sample count. That fix holds for the
+  viewport captures in `states.spec.ts`, which stay unmasked. Second, and only on the route
+  captures, a settled canvas is still not reproducible — and the cause is product code, not the
+  harness. `bar-chart.vue` derives its point count from `ctx.canvas.width` at config-build time
+  (`Math.max(Math.floor(ctx.canvas.width / 15), 26)`), while `useChartLifecycle` builds the config
+  twice, once from `onMounted` and again from `watch(data)`. The two builds can disagree on how many
+  points `applyASAP` emits, which moves every bar edge and the `x` tick modulo together. Ten
+  consecutive container runs of `/calculator` at tablet held the canvas bitmap at an exact 472×236
+  and still produced two distinct renders, 2 runs in 10; on CI that surfaced as 9376 pixels over
+  `467x190+277+519` on `route-calculator-tablet`, which is what made the job red.
+  `mask: [page.locator('canvas')]` paints those regions out, so the alarm is silenced rather than
+  the race fixed. Note the cost: `states.spec.ts` never visits `/calculator`, so the line and bar
+  charts now have no pixel coverage anywhere. Chart configuration is covered instead by
+  `ui/composables/use-chart-lifecycle.test.ts` and `ui/components/charts/portfolio-chart.test.ts`.
 - **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the chart fills the
   viewport below the platform filter, so no table row is visible behind the backdrop and the capture
   was byte-identical before and after `/` became fixture-driven. Only the mobile confirm capture,
