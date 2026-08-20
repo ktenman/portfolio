@@ -25,13 +25,6 @@ describe('useInstrumentTotals', () => {
     ['totalUnrealizedProfit', [{ unrealizedProfit: 150 }, { unrealizedProfit: 250 }], 400],
     ['totalUnrealizedProfit', [{ unrealizedProfit: 300 }, { unrealizedProfit: -100 }], 200],
     ['totalUnrealizedProfit', [], 0],
-    [
-      'totalChangeAmount',
-      [{ priceChangeAmount: 50 }, { priceChangeAmount: 75 }, { priceChangeAmount: 25 }],
-      150,
-    ],
-    ['totalChangeAmount', [{ priceChangeAmount: 100 }, { priceChangeAmount: -50 }], 50],
-    ['totalChangeAmount', [], 0],
   ] as const)('%s adds %j up to %s', (key, holdings, expected) => {
     expect(totalOf(key, holdings)).toBe(expected)
   })
@@ -51,10 +44,6 @@ describe('useInstrumentTotals', () => {
   })
 
   it.each([
-    ['totalChangePercent', [{ currentValue: 1100, priceChangeAmount: 100 }], 10],
-    ['totalChangePercent', [{ currentValue: 100, priceChangeAmount: 100 }], 0],
-    ['totalChangePercent', [{ currentValue: 900, priceChangeAmount: -100 }], -10],
-    ['totalChangePercent', [], 0],
     [
       'totalTer',
       [

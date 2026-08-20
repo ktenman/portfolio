@@ -75,6 +75,7 @@ export function usePortfolioSummaryQuery(
     queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
     queryFn: async () => ({
       range: rangeKey.value,
+      platforms: platformsKey.value.join(','),
       ...(await portfolioSummaryService.getRangeChange(rangeKey.value, activePlatforms.value)),
     }),
     placeholderData: keepPreviousData,

@@ -110,7 +110,7 @@ class InvestmentMetricsService(
     val realizedProfit = calculateRealizedProfit(transactions)
     val currentValue = calculateCurrentValueForDate(aggregated.totalQuantity, instrument, date, priceLookup)
     val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
-    if (currentValue <= BigDecimal.ZERO && realizedProfit <= BigDecimal.ZERO) return
+    if (hasNothingToAdd(currentValue, realizedProfit)) return
     updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
     xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, currentValue, date)
   }
@@ -130,7 +130,7 @@ class InvestmentMetricsService(
     val price = getEffectivePriceForDate(instrument, date, priceLookup) ?: return
     val currentValue = netQuantity.multiply(price)
     val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, currentValue)
-    if (currentValue <= BigDecimal.ZERO && realizedProfit <= BigDecimal.ZERO) return
+    if (hasNothingToAdd(currentValue, realizedProfit)) return
     updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
     xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, currentValue, date)
   }
@@ -151,10 +151,15 @@ class InvestmentMetricsService(
     metrics: PortfolioMetrics,
   ) {
     val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, BigDecimal.ZERO)
-    if (realizedProfit <= BigDecimal.ZERO) return
+    if (hasNothingToAdd(BigDecimal.ZERO, realizedProfit)) return
     updateMetrics(metrics, BigDecimal.ZERO, realizedProfit, unrealizedProfit)
     xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, BigDecimal.ZERO, date)
   }
+
+  private fun hasNothingToAdd(
+    currentValue: BigDecimal,
+    realizedProfit: BigDecimal,
+  ): Boolean = currentValue <= BigDecimal.ZERO && realizedProfit.signum() == 0
 
   private fun calculateCurrentValueForDate(
     currentHoldings: BigDecimal,

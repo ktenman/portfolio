@@ -43,6 +43,31 @@ describe('useFlashOnChange', () => {
     expect(flash.value).toBe('')
   })
 
+  it('should dont flash when the snap signal changed first', async () => {
+    const value = ref<number | null>(100)
+    const platforms = ref(['Lightyear'])
+    const flash = useFlashOnChange(value, platforms)
+    platforms.value = ['Lightyear', 'Lightyear Business']
+    await nextTick()
+    value.value = 200
+    await nextTick()
+    expect(flash.value).toBe('')
+  })
+
+  it('should flash the first real change after a snap that spanned a loading gap', async () => {
+    const value = ref<number | null>(100)
+    const platforms = ref(['Lightyear'])
+    const flash = useFlashOnChange(value, platforms)
+    platforms.value = ['Lightyear', 'Lightyear Business']
+    value.value = null
+    await nextTick()
+    value.value = 200
+    await nextTick()
+    value.value = 300
+    await nextTick()
+    expect(flash.value).toBe('value-increase')
+  })
+
   it('should clear the flash after the animation finishes', async () => {
     const value = ref<number | null>(100)
     const flash = useFlashOnChange(value)

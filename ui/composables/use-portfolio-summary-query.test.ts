@@ -416,6 +416,16 @@ describe('usePortfolioSummaryQuery', () => {
       })
     })
 
+    it('should tag the range change with the platforms it belongs to', async () => {
+      const platforms = ref(['Lightyear', 'Lightyear Business'])
+      const { queryResult } = setupQuery(platforms)
+
+      await vi.waitFor(
+        () => expect(queryResult.rangeChange.value?.platforms).toBe('Lightyear,Lightyear Business'),
+        { timeout: 5000 }
+      )
+    })
+
     it('should keep the previous range tag while the next range is still loading', async () => {
       const range = ref(TimeRange.ONE_YEAR)
       const { queryResult } = setupQuery(undefined, range)

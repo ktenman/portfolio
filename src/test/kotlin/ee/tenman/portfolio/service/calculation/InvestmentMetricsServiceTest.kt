@@ -19,6 +19,7 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
+import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.PriceLookup
@@ -512,6 +513,32 @@ class InvestmentMetricsServiceTest {
     val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
 
     expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `should calculatePortfolioMetrics count realized loss of a fully closed position`() {
+    expect(closedLoserMetrics().totalProfit).toEqualNumerically(BigDecimal("-298.28"))
+  }
+
+  @Test
+  fun `should calculatePortfolioMetrics feed a fully closed loser into the xirr cash flows`() {
+    expect(closedLoserMetrics().xirrCashFlows).toHaveSize(3)
+  }
+
+  private fun closedLoserMetrics(): PortfolioMetrics {
+    val sell = createSellCashFlow(quantity = BigDecimal("10"), price = BigDecimal("70"))
+    sell.realizedProfit = BigDecimal("-298.28")
+    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
+    return investmentMetricsService.calculatePortfolioMetrics(
+      mapOf(
+        testInstrument to
+          listOf(
+            createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")),
+            sell,
+          ),
+      ),
+      testDate,
+    )
   }
 
   private fun createBuyCashFlow(

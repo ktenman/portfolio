@@ -517,6 +517,47 @@ describe('InstrumentTable', () => {
     })
   })
 
+  describe('period totals', () => {
+    it('should report the portfolio range change instead of the sum of the rows', () => {
+      const wrapper = createWrapper({
+        rangeChange: { changeAmount: 11862.06, changePercent: 20.29 },
+        instruments: [createInstrumentDto({ priceChangeAmount: 689.62 })],
+      })
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.text()).toBe('+€11,862.06 / +20.29%')
+    })
+
+    it('should not show a change until the range change has arrived', () => {
+      const wrapper = createWrapper()
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.text()).toBe('-')
+    })
+
+    it('should jump to the new period change instead of animating from the old one', async () => {
+      const wrapper = createWrapper({ rangeChange: { changeAmount: 100, changePercent: 1 } })
+      await wrapper.setProps({
+        selectedPeriod: TimeRange.ONE_YEAR,
+        rangeChange: { changeAmount: 5000, changePercent: 40 },
+      })
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.text()).toBe('+€5,000.00 / +40.00%')
+    })
+
+    it('should dont flash the totals when only the period changed', async () => {
+      const wrapper = createWrapper({ rangeChange: { changeAmount: 100, changePercent: 1 } })
+      await wrapper.setProps({
+        selectedPeriod: TimeRange.ONE_YEAR,
+        rangeChange: { changeAmount: 5000, changePercent: 40 },
+      })
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.classes()).not.toContain('value-increase')
+    })
+  })
+
   describe('period label', () => {
     it('should update column header label based on selected period', () => {
       const wrapper = createWrapper({ selectedPeriod: TimeRange.ONE_WEEK })

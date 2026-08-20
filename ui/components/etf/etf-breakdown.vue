@@ -189,10 +189,8 @@ const etfPlatformMetadata = computed(() => {
 
 const availablePlatforms = computed(() => etfPlatformMetadata.value.platforms)
 
-const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
-  'portfolio_etf_breakdown_platforms',
-  availablePlatforms
-)
+const { selectedPlatforms, activePlatforms, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter('portfolio_etf_breakdown_platforms', availablePlatforms)
 
 const availableEtfs = computed(() => etfPlatformMetadata.value.etfs)
 
@@ -260,9 +258,6 @@ const activeChartData = computed(() => {
 const getEtfsParam = (): string[] | undefined =>
   getFilterParam(selectedEtfs.value, availableEtfs.value)
 
-const getPlatformsParam = (): string[] | undefined =>
-  getFilterParam(selectedPlatforms.value, availablePlatforms.value)
-
 const loadBreakdown = async (refreshMaster = false) => {
   isLoading.value = true
   isError.value = false
@@ -270,7 +265,7 @@ const loadBreakdown = async (refreshMaster = false) => {
 
   try {
     const needsMaster = refreshMaster || masterHoldings.value.length === 0
-    const platformsParam = getPlatformsParam()
+    const platformsParam = activePlatforms.value
     const etfsParam = getEtfsParam()
 
     if (needsMaster) {
@@ -349,7 +344,7 @@ const loadAllInstruments = async () => {
 
 const loadPlatformInstruments = async () => {
   try {
-    const platformsParam = getPlatformsParam()
+    const platformsParam = activePlatforms.value
     const response = await instrumentsService.getAll(platformsParam)
     platformInstruments.value = response.instruments
   } catch {
