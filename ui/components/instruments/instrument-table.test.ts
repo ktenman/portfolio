@@ -532,7 +532,29 @@ describe('InstrumentTable', () => {
       const wrapper = createWrapper()
       const change = wrapper.find('.total-price-change-item .total-value')
 
-      expect(change.text()).toBe('€0.00 / 0.00%')
+      expect(change.text()).toBe('-')
+    })
+
+    it('should jump to the new period change instead of animating from the old one', async () => {
+      const wrapper = createWrapper({ rangeChange: { changeAmount: 100, changePercent: 1 } })
+      await wrapper.setProps({
+        selectedPeriod: TimeRange.ONE_YEAR,
+        rangeChange: { changeAmount: 5000, changePercent: 40 },
+      })
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.text()).toBe('+€5,000.00 / +40.00%')
+    })
+
+    it('should dont flash the totals when only the period changed', async () => {
+      const wrapper = createWrapper({ rangeChange: { changeAmount: 100, changePercent: 1 } })
+      await wrapper.setProps({
+        selectedPeriod: TimeRange.ONE_YEAR,
+        rangeChange: { changeAmount: 5000, changePercent: 40 },
+      })
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.classes()).not.toContain('value-increase')
     })
   })
 

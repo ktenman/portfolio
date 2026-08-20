@@ -48,8 +48,7 @@
           <span
             :class="[getProfitClass(totalChangeAmount), getTotalsChangeClass('totalChangeAmount')]"
           >
-            {{ formatSignedCurrency(animatedTotalChangeAmount, 'EUR') }} /
-            {{ formatSignedPercent(animatedTotalChangePercent) }}
+            {{ totalChangeLabel }}
           </span>
         </td>
         <td class="font-bold whitespace-nowrap text-right!">
@@ -203,8 +202,7 @@
                 getTotalsChangeClass('totalChangeAmount'),
               ]"
             >
-              {{ formatSignedCurrency(animatedTotalChangeAmount, 'EUR') }} /
-              {{ formatSignedPercent(animatedTotalChangePercent) }}
+              {{ totalChangeLabel }}
             </span>
           </div>
           <div class="total-item">
@@ -396,22 +394,30 @@ const {
   totalAnnualReturn,
 } = useInstrumentTotals(instrumentsRef)
 
+const periodRef = toRef(props, 'selectedPeriod')
 const totalChangeAmount = computed(() => props.rangeChange?.changeAmount ?? 0)
 const totalChangePercent = computed(() => props.rangeChange?.changePercent ?? 0)
 
 const totalXirr = computed(() => props.portfolioXirr)
 const totalXirrForAnimation = computed(() => props.portfolioXirr ?? 0)
 
+let trackedPeriod = props.selectedPeriod
+
 watch(
   [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount, totalXirrForAnimation],
   () => {
-    trackTotalsChange({
-      totalValue: totalValue.value,
-      totalProfit: totalProfit.value,
-      totalUnrealizedProfit: totalUnrealizedProfit.value,
-      totalChangeAmount: totalChangeAmount.value,
-      totalXirr: totalXirrForAnimation.value,
-    })
+    const snapped = props.selectedPeriod !== trackedPeriod
+    trackedPeriod = props.selectedPeriod
+    trackTotalsChange(
+      {
+        totalValue: totalValue.value,
+        totalProfit: totalProfit.value,
+        totalUnrealizedProfit: totalUnrealizedProfit.value,
+        totalChangeAmount: totalChangeAmount.value,
+        totalXirr: totalXirrForAnimation.value,
+      },
+      snapped
+    )
   },
   { deep: true }
 )
@@ -419,9 +425,15 @@ watch(
 const animatedTotalValue = useNumberTransition(totalValue)
 const animatedTotalProfit = useNumberTransition(totalProfit)
 const animatedTotalUnrealizedProfit = useNumberTransition(totalUnrealizedProfit)
-const animatedTotalChangeAmount = useNumberTransition(totalChangeAmount)
+const animatedTotalChangeAmount = useNumberTransition(totalChangeAmount, periodRef)
 const animatedTotalXirr = useNumberTransition(totalXirrForAnimation)
-const animatedTotalChangePercent = useNumberTransition(totalChangePercent)
+const animatedTotalChangePercent = useNumberTransition(totalChangePercent, periodRef)
+
+const totalChangeLabel = computed(() => {
+  if (!props.rangeChange) return '-'
+  const amount = formatSignedCurrency(animatedTotalChangeAmount.value, 'EUR')
+  return `${amount} / ${formatSignedPercent(animatedTotalChangePercent.value)}`
+})
 const totalAnnualReturnForAnimation = computed(() => totalAnnualReturn.value ?? 0)
 const animatedTotalAnnualReturn = useNumberTransition(totalAnnualReturnForAnimation)
 
