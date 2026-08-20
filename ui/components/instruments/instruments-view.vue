@@ -100,7 +100,6 @@ import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
 import AnnualWindowsModal from './annual-windows-modal.vue'
 import { instrumentsService, portfolioSummaryService } from '../../services/api'
-import { getFilterParam } from '../../services/etf-chart-service'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
@@ -141,14 +140,8 @@ const availablePlatforms = computed(() => {
   return Array.from(platformSet).sort()
 })
 
-const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
-  STORAGE_KEYS.SELECTED_PLATFORMS,
-  availablePlatforms
-)
-
-const activePlatforms = computed(() =>
-  getFilterParam(selectedPlatforms.value, availablePlatforms.value)
-)
+const { selectedPlatforms, activePlatforms, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter(STORAGE_KEYS.SELECTED_PLATFORMS, availablePlatforms)
 
 const {
   data: rawItems,
