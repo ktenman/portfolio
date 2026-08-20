@@ -3,9 +3,10 @@ import { tryOnScopeDispose } from '@vueuse/core'
 
 const TRANSITION_DURATION = 3000
 
-export function useNumberTransition(value: Ref<number | null | undefined>) {
+export function useNumberTransition(value: Ref<number | null | undefined>, snapOn?: Ref<unknown>) {
   const displayValue = ref<number>(value.value ?? 0)
   let animationId: number | null = null
+  let snap = false
 
   const cancel = () => {
     if (animationId === null) return
@@ -15,12 +16,17 @@ export function useNumberTransition(value: Ref<number | null | undefined>) {
 
   const easeOutQuart = (t: number): number => 1 - Math.pow(1 - t, 4)
 
+  if (snapOn) {
+    watch(snapOn, () => (snap = true))
+  }
+
   watch(value, (newValue, oldValue) => {
     cancel()
 
     if (newValue == null) return
 
-    if (oldValue == null) {
+    if (oldValue == null || snap) {
+      snap = false
       displayValue.value = newValue
       return
     }
