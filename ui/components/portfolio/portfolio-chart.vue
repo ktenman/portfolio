@@ -17,6 +17,7 @@ import {
   labelColor,
   surfaceColor,
   compactAmount,
+  percentAmount,
 } from '../../plugins/chart'
 
 interface Props {
@@ -168,7 +169,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
         maxTicksLimit: 8,
         color: labelColor,
         font: tickFont,
-        callback: value => `${value}%`,
+        callback: value => `${percentAmount.format(Number(value))}%`,
       },
     },
   },
