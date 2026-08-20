@@ -61,7 +61,7 @@
         <div class="headline-meta">
           <range-change-header
             v-if="rangeChange"
-            :key="rangeChange.range"
+            :key="`${rangeChange.range}:${rangeChange.platforms}`"
             :amount="rangeChange.changeAmount"
             :percent="rangeChange.changePercent"
           />
@@ -217,8 +217,8 @@ const latestSummary = computed(() => reversedSummaries.value[0] ?? null)
 const headlineValue = computed(() =>
   viewState.value === 'SUCCESS' ? (latestSummary.value?.totalValue ?? null) : null
 )
-const animatedHeadlineValue = useNumberTransition(headlineValue)
-const headlineFlashClass = useFlashOnChange(headlineValue)
+const animatedHeadlineValue = useNumberTransition(headlineValue, selectedPlatforms)
+const headlineFlashClass = useFlashOnChange(headlineValue, selectedPlatforms)
 
 const today = () => formatDateToString(new Date())
 

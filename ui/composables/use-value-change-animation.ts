@@ -120,7 +120,7 @@ export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
     return direction === 'increase' ? 'value-increase' : 'value-decrease'
   }
 
-  const trackTotalsChange = (totals: TotalsValues) => {
+  const trackTotalsChange = (totals: TotalsValues, snap = false) => {
     const fields: TotalsFieldName[] = [
       'totalValue',
       'totalProfit',
@@ -136,7 +136,7 @@ export function useValueChangeAnimation(instruments: Ref<InstrumentDto[]>) {
       const newValue = totals[field] ?? 0
       const threshold = field === 'totalXirr' ? 0.00001 : 0.001
 
-      if (oldValue !== newValue && Math.abs(newValue - oldValue) > threshold) {
+      if (!snap && oldValue !== newValue && Math.abs(newValue - oldValue) > threshold) {
         changes[field] = newValue > oldValue ? 'increase' : 'decrease'
 
         setTimeout(() => {

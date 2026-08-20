@@ -24,6 +24,30 @@ describe('useNumberTransition', () => {
     expect(display.value).toBe(100)
   })
 
+  it('should jump straight to the new value when the snap signal changed first', async () => {
+    const value = ref<number | null>(100)
+    const platforms = ref(['Lightyear'])
+    const display = useNumberTransition(value, platforms)
+    platforms.value = ['Lightyear', 'Lightyear Business']
+    await nextTick()
+    value.value = 200
+    await nextTick()
+    expect(display.value).toBe(200)
+  })
+
+  it('should dont jump straight to the change that follows a consumed snap', async () => {
+    const value = ref<number | null>(100)
+    const platforms = ref(['Lightyear'])
+    const display = useNumberTransition(value, platforms)
+    platforms.value = []
+    await nextTick()
+    value.value = 200
+    await nextTick()
+    value.value = 300
+    await nextTick()
+    expect(display.value).toBe(200)
+  })
+
   it('should cancel a running animation when the owning scope is disposed', async () => {
     const cancelFrame = vi.spyOn(globalThis, 'cancelAnimationFrame')
     const value = ref<number | null>(100)

@@ -3,8 +3,12 @@ package ee.tenman.portfolio.service.summary
 import ee.tenman.portfolio.common.percentOf
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TimeRange
+import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.dto.RangeChangeDto
+import ee.tenman.portfolio.service.calculation.InvestmentMath
+import ee.tenman.portfolio.service.transaction.TransactionService
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -16,6 +20,7 @@ class PortfolioRangeChangeService(
   private val seriesService: PortfolioSummarySeriesService,
   private val currentDaySummaryCacheService: CurrentDaySummaryCacheService,
   private val platformSummaryCacheService: PlatformSummaryCacheService,
+  private val transactionService: TransactionService,
   private val clock: Clock,
 ) {
   fun calculate(
@@ -23,11 +28,12 @@ class PortfolioRangeChangeService(
     platforms: List<Platform>?,
   ): RangeChangeDto {
     val current = current(platforms)
-    val amount = current.totalProfit.subtract(baseline(range, platforms))
-    val opening = current.totalValue.subtract(amount)
+    val opening = opening(range, platforms)
+    val amount = current.totalProfit.subtract(opening?.totalProfit ?: BigDecimal.ZERO)
+    val capital = (opening?.totalValue ?: BigDecimal.ZERO).add(contributions(platforms, opening?.date))
     return RangeChangeDto(
       changeAmount = amount.setScale(AMOUNT_SCALE, RoundingMode.HALF_UP),
-      changePercent = percent(amount, opening),
+      changePercent = percent(amount, capital),
     )
   }
 
@@ -36,22 +42,37 @@ class PortfolioRangeChangeService(
     return platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
   }
 
-  private fun baseline(
+  private fun opening(
     range: TimeRange,
     platforms: List<Platform>?,
-  ): BigDecimal {
-    val start = range.startDate(LocalDate.now(clock)) ?: return BigDecimal.ZERO
-    val opening = seriesService.getSeries(range, platforms).firstOrNull() ?: return BigDecimal.ZERO
-    if (opening.date.isAfter(start)) return BigDecimal.ZERO
-    return opening.totalProfit
+  ): PortfolioSummaryDto? {
+    val start = range.startDate(LocalDate.now(clock)) ?: return null
+    return seriesService.getSeries(range, platforms).firstOrNull()?.takeUnless { it.date.isAfter(start) }
   }
+
+  private fun contributions(
+    platforms: List<Platform>?,
+    after: LocalDate?,
+  ): BigDecimal =
+    transactionService
+      .getAllTransactions(platforms?.map { it.name })
+      .filter { after == null || it.transactionDate.isAfter(after) }
+      .groupBy { it.transactionDate }
+      .values
+      .sumOf { netInflow(it) }
+
+  private fun netInflow(sameDay: List<PortfolioTransaction>): BigDecimal =
+    InvestmentMath
+      .calculateTotalBuys(sameDay)
+      .subtract(InvestmentMath.calculateTotalSells(sameDay))
+      .coerceAtLeast(BigDecimal.ZERO)
 
   private fun percent(
     amount: BigDecimal,
-    opening: BigDecimal,
+    capital: BigDecimal,
   ): BigDecimal {
-    if (opening <= BigDecimal.ZERO) return BigDecimal.ZERO
-    return amount.percentOf(opening, PERCENT_SCALE)
+    if (capital <= BigDecimal.ZERO) return BigDecimal.ZERO
+    return amount.percentOf(capital, PERCENT_SCALE)
   }
 
   companion object {

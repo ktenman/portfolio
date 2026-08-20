@@ -336,6 +336,14 @@ const RESPONSE = {
   portfolioXirr: 0.1842,
 } satisfies InstrumentsResponse
 
+const RANGE_CHANGE = {
+  changeAmount: 341.19,
+  changePercent: 1.87,
+}
+
 export const stubInstruments: RouteStub = async page => {
   await page.route(apiRoute(API_ENDPOINTS.INSTRUMENTS), route => route.fulfill({ json: RESPONSE }))
+  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_RANGE_CHANGE), route =>
+    route.fulfill({ json: RANGE_CHANGE })
+  )
 }

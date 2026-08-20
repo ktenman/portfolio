@@ -3,7 +3,7 @@ import { ref, h } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import InstrumentsView from './instruments-view.vue'
-import { instrumentsService } from '../../services/api'
+import { instrumentsService, portfolioSummaryService } from '../../services/api'
 import type { InstrumentsResponse, Platform } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
 import { createInstrumentDto } from '../../tests/fixtures'
@@ -161,6 +161,10 @@ describe('InstrumentsView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(instrumentsService.getAll).mockResolvedValue(mockResponse)
+    vi.mocked(portfolioSummaryService.getRangeChange).mockResolvedValue({
+      changeAmount: 0,
+      changePercent: 0,
+    })
     setPlatformDisplayNames([
       { name: 'AVIVA', displayName: 'Aviva' },
       { name: 'BINANCE', displayName: 'Binance' },

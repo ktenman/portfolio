@@ -1,5 +1,6 @@
-import { type Ref, watch } from 'vue'
+import { computed, type Ref, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
+import { getFilterParam } from '../services/etf-chart-service'
 
 export function usePlatformFilter(storageKey: string, availablePlatforms: Ref<string[]>) {
   const selectedPlatforms = useLocalStorage<string[]>(storageKey, [])
@@ -38,5 +39,9 @@ export function usePlatformFilter(storageKey: string, availablePlatforms: Ref<st
     }
   }
 
-  return { selectedPlatforms, togglePlatform, toggleAllPlatforms }
+  const activePlatforms = computed(() =>
+    getFilterParam(selectedPlatforms.value, availablePlatforms.value)
+  )
+
+  return { selectedPlatforms, activePlatforms, togglePlatform, toggleAllPlatforms }
 }
