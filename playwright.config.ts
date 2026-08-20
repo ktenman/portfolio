@@ -16,7 +16,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev:ui',
     url: 'http://localhost:61234',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120000,
   },
   expect: {

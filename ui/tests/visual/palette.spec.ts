@@ -142,7 +142,8 @@ for (const route of ROUTES) {
           background: layers,
         }
       })
-      if (ring) rings.push(ring)
+      if (!ring) break
+      rings.push(ring)
     }
 
     expect(rings.length).toBeGreaterThanOrEqual(MIN_FOCUSABLE)

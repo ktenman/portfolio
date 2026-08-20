@@ -40,13 +40,9 @@ function waitForPageToSettle(page: Page): Promise<void> {
         }
         return accumulator
       }
-      const paintedCanvases = Array.from(document.querySelectorAll('canvas'), canvas => {
-        try {
-          return hash(canvas.toDataURL())
-        } catch {
-          return `${canvas.width}x${canvas.height}`
-        }
-      })
+      const paintedCanvases = Array.from(document.querySelectorAll('canvas'), canvas =>
+        hash(canvas.toDataURL())
+      )
       return [document.documentElement.scrollHeight, ...paintedCanvases].join(':')
     })
   )

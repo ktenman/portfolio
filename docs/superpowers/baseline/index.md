@@ -300,7 +300,10 @@ for all six through a file-scoped `beforeEach`. Two bounds narrow what is actual
   crop `route-diversification-tablet` from its real 785 px back to 768 and hide the overflow that
   produced it. Chromium paints `fullPage` unreliably past roughly 16000 px, and `/transactions` runs
   to 56854 px on desktop and 147160 on mobile: the un-clipped desktop capture returned a 38.7 M-pixel
-  diff on CI while passing locally. Everything below 12000 px on those pages is uncovered.
+  diff on CI while passing locally. Everything below 12000 px on those pages is uncovered — on
+  `/transactions` that is 79 % of the fixture on desktop and 92 % on mobile, and it costs the pixel
+  coverage of the `formatScientific` quantities, the `realizedProfit: null` row and the
+  `averageCost: null` row, all of which sort below the cut. Only `id: null` stays inside every clip.
 - **Every `<canvas>` is masked**, so no chart pixel is compared on any route. See the canvas note
   under Known limits.
 
@@ -416,11 +419,17 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
   draws on `requestAnimationFrame`; the settle signature folds in a hash of each canvas's
   `toDataURL()`, so a still-animating chart keeps resetting the sample count. That fix holds for the
   viewport captures in `states.spec.ts`, which stay unmasked. Second, and only on the route
-  captures, a settled canvas is still not reproducible: Chart.js `responsive: true` lands on a
-  chart-area rect that differs by about a pixel between runs on the same machine, offsetting axis
-  lines, tick labels and every bar edge together — 9376 pixels over `467x190+277+519` on
-  `route-calculator-tablet`, which is what made the CI job red. `mask: [page.locator('canvas')]`
-  paints those regions out. Chart configuration is covered instead by
+  captures, a settled canvas is still not reproducible — and the cause is product code, not the
+  harness. `bar-chart.vue` derives its point count from `ctx.canvas.width` at config-build time
+  (`Math.max(Math.floor(ctx.canvas.width / 15), 26)`), while `useChartLifecycle` builds the config
+  twice, once from `onMounted` and again from `watch(data)`. The two builds can disagree on how many
+  points `applyASAP` emits, which moves every bar edge and the `x` tick modulo together. Ten
+  consecutive container runs of `/calculator` at tablet held the canvas bitmap at an exact 472×236
+  and still produced two distinct renders, 2 runs in 10; on CI that surfaced as 9376 pixels over
+  `467x190+277+519` on `route-calculator-tablet`, which is what made the job red.
+  `mask: [page.locator('canvas')]` paints those regions out, so the alarm is silenced rather than
+  the race fixed. Note the cost: `states.spec.ts` never visits `/calculator`, so the line and bar
+  charts now have no pixel coverage anywhere. Chart configuration is covered instead by
   `ui/composables/use-chart-lifecycle.test.ts` and `ui/components/charts/portfolio-chart.test.ts`.
 - **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the chart fills the
   viewport below the platform filter, so no table row is visible behind the backdrop and the capture

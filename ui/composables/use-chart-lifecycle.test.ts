@@ -25,18 +25,15 @@ const host = defineComponent({
 const chartOptions = () =>
   (vi.mocked(Chart).mock.calls[0][1] as unknown as ChartConfiguration).options
 
-const emulateReducedMotion = (matches: boolean) => {
-  window.matchMedia = vi.fn().mockReturnValue({ matches }) as unknown as typeof window.matchMedia
-}
-
 describe('useChartLifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllGlobals()
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({})
   })
 
   it('should turn animation off when the reader asks for reduced motion', () => {
-    emulateReducedMotion(true)
+    vi.stubGlobal('matchMedia', () => ({ matches: true }))
 
     mount(host)
 
@@ -44,8 +41,6 @@ describe('useChartLifecycle', () => {
   })
 
   it('should leave the configured animation alone otherwise', () => {
-    emulateReducedMotion(false)
-
     mount(host)
 
     expect(chartOptions()).toEqual({ responsive: true })
