@@ -5,9 +5,9 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TimeRange
-import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.dto.RangeChangeDto
+import ee.tenman.portfolio.service.calculation.InvestmentMath
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -47,9 +47,7 @@ class PortfolioRangeChangeService(
     platforms: List<Platform>?,
   ): PortfolioSummaryDto? {
     val start = range.startDate(LocalDate.now(clock)) ?: return null
-    val opening = seriesService.getSeries(range, platforms).firstOrNull() ?: return null
-    if (opening.date.isAfter(start)) return null
-    return opening
+    return seriesService.getSeries(range, platforms).firstOrNull()?.takeUnless { it.date.isAfter(start) }
   }
 
   private fun contributions(
@@ -57,18 +55,17 @@ class PortfolioRangeChangeService(
     after: LocalDate?,
   ): BigDecimal =
     transactionService
-      .getAllTransactions(platforms?.map { it.name }, after?.plusDays(1), null)
+      .getAllTransactions(platforms?.map { it.name })
+      .filter { after == null || it.transactionDate.isAfter(after) }
       .groupBy { it.transactionDate }
       .values
-      .map { sameDay -> sameDay.fold(BigDecimal.ZERO) { total, transaction -> total.add(flow(transaction)) } }
-      .filter { it > BigDecimal.ZERO }
-      .fold(BigDecimal.ZERO, BigDecimal::add)
+      .sumOf { netInflow(it) }
 
-  private fun flow(transaction: PortfolioTransaction): BigDecimal {
-    val traded = transaction.quantity.multiply(transaction.price)
-    if (transaction.transactionType == TransactionType.BUY) return traded.add(transaction.commission)
-    return transaction.commission.subtract(traded)
-  }
+  private fun netInflow(sameDay: List<PortfolioTransaction>): BigDecimal =
+    InvestmentMath
+      .calculateTotalBuys(sameDay)
+      .subtract(InvestmentMath.calculateTotalSells(sameDay))
+      .coerceAtLeast(BigDecimal.ZERO)
 
   private fun percent(
     amount: BigDecimal,
