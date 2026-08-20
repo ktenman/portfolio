@@ -7,6 +7,46 @@ import {
   TransactionType,
 } from '../models/generated/domain-models'
 
+export const mockPlatforms = [
+  { name: 'AVIVA', displayName: 'Aviva' },
+  { name: 'BINANCE', displayName: 'Binance' },
+  { name: 'COINBASE', displayName: 'Coinbase' },
+  { name: 'IBKR', displayName: 'IBKR' },
+  { name: 'LHV', displayName: 'LHV' },
+  { name: 'LIGHTYEAR', displayName: 'Lightyear' },
+  { name: 'SWEDBANK', displayName: 'Swedbank' },
+  { name: 'TRADING212', displayName: 'Trading 212' },
+  { name: 'UNKNOWN', displayName: 'Unknown' },
+]
+
+export const instrumentDataTableStub = {
+  name: 'DataTable',
+  props: ['items', 'columns', 'isLoading', 'isError', 'errorMessage', 'emptyMessage'],
+  template: `
+      <div>
+        <div class="mobile-cards-wrapper">
+          <div v-for="item in items" :key="item.id" class="mobile-card">
+            <slot name="mobile-card" :item="item" />
+          </div>
+          <slot name="mobile-footer" />
+        </div>
+        <table>
+          <tbody>
+            <tr v-for="item in items" :key="item.id">
+              <td><slot name="cell-instrument" :item="item" /></td>
+              <td><slot name="cell-type" :item="item" /></td>
+              <td><slot name="cell-currentPrice" :item="item" /></td>
+              <td><slot name="cell-totalInvestment" :item="item" /></td>
+              <td><slot name="cell-currentValue" :item="item" /></td>
+              <td><slot name="cell-profit" :item="item" /></td>
+              <td><slot name="actions" :item="item" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `,
+}
+
 export const createInstrumentDto = (overrides?: Partial<InstrumentDto>): InstrumentDto => ({
   id: 1,
   symbol: 'TEST',

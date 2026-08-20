@@ -1,37 +1,12 @@
 import { computed } from 'vue'
-import type { EtfDetailDto } from '../models/generated/domain-models'
-import type { AllocationInput, ActionDisplayMode } from '../components/diversification/types'
+import type { AllocationInput, AllocationProps } from '../components/diversification/types'
+import { useRebalanceCalculations } from './use-rebalance-calculations'
 import {
-  calculateTargetValue,
   calculateInvestmentAmount,
   calculateUnitsFromAmount,
-  calculateBudgetConstrainedRebalance,
-  optimizeRebalanceUnits,
   optimizeInvestmentAllocation,
   formatEuroAmount,
 } from '../utils/diversification-calculations'
-
-export interface RebalanceData {
-  currentValue: number
-  currentPercent: number
-  targetValue: number
-  difference: number
-  isBuy: boolean
-  units: number
-  unused: number
-  price: number | null
-}
-
-interface AllocationProps {
-  readonly allocations: AllocationInput[]
-  readonly availableEtfs: EtfDetailDto[]
-  readonly totalInvestment: number
-  readonly currentHoldingsTotal: number
-  readonly selectedPlatforms: string[]
-  readonly optimizeEnabled: boolean
-  readonly buyOnlyEnabled: boolean
-  readonly actionDisplayMode: ActionDisplayMode
-}
 
 export function useAllocationCalculations(props: AllocationProps) {
   const etfMap = computed(() => new Map(props.availableEtfs.map(e => [e.instrumentId, e])))
@@ -45,170 +20,26 @@ export function useAllocationCalculations(props: AllocationProps) {
     findEtf(instrumentId)?.fundCurrency ?? null
 
   const showInvestmentColumns = computed(() => props.totalInvestment > 0)
-  const showRebalanceColumns = computed(() => props.selectedPlatforms.length > 0)
+
+  const {
+    showRebalanceColumns,
+    rebalanceUnusedTotal,
+    getBaseRebalanceData,
+    getRebalanceData,
+    getRebalanceFractionalAmount,
+    hasRebalanceAction,
+    getAfterPercent,
+    getAfterPercentForSort,
+  } = useRebalanceCalculations(props, getEtfPrice)
+
   const showRebalanceActionColumn = computed(
     () =>
       showRebalanceColumns.value && (props.totalInvestment > 0 || props.currentHoldingsTotal > 0)
   )
 
-  const applyBuyOnlyClamp = (rawDifference: number): number => {
-    if (props.buyOnlyEnabled && (rawDifference < 0 || props.totalInvestment <= 0)) return 0
-    return rawDifference
-  }
-
-  const getBaseRebalanceData = (allocation: AllocationInput): RebalanceData => {
-    const price = getEtfPrice(allocation.instrumentId)
-    const currentValue = allocation.currentValue ?? 0
-    const currentPercent =
-      props.currentHoldingsTotal > 0 ? (currentValue / props.currentHoldingsTotal) * 100 : 0
-    const targetValue = calculateTargetValue(
-      props.currentHoldingsTotal,
-      props.totalInvestment,
-      allocation.value
-    )
-    const difference = applyBuyOnlyClamp(targetValue - currentValue)
-    const isBuy = difference >= 0
-    const absoluteDifference = Math.abs(difference)
-    const units = calculateUnitsFromAmount(absoluteDifference, price ?? 0)
-    const unused = absoluteDifference - units * (price ?? 0)
-    return { currentValue, currentPercent, targetValue, difference, isBuy, units, unused, price }
-  }
-
-  const budgetAwareRebalance = computed(() => {
-    if (!showRebalanceColumns.value || props.totalInvestment <= 0) return null
-    const validAllocations = props.allocations.filter(a => a.instrumentId > 0 && a.value > 0)
-    if (validAllocations.length === 0) return null
-    const entries = validAllocations.map(a => {
-      const price = getEtfPrice(a.instrumentId) ?? 0
-      const currentValue = a.currentValue ?? 0
-      const targetValue = calculateTargetValue(
-        props.currentHoldingsTotal,
-        props.totalInvestment,
-        a.value
-      )
-      const difference = applyBuyOnlyClamp(targetValue - currentValue)
-      return { id: a.instrumentId, price, difference, isBuy: difference >= 0 }
-    })
-    return calculateBudgetConstrainedRebalance(
-      entries,
-      props.totalInvestment,
-      props.optimizeEnabled
-    )
-  })
-
-  const optimizedRebalanceResult = computed(() => {
-    const emptyResult = {
-      allocations: new Map<number, { units: number; isBuy: boolean }>(),
-      totalRemaining: 0,
-    }
-    if (!showRebalanceColumns.value || !props.optimizeEnabled) return emptyResult
-    if (budgetAwareRebalance.value) return emptyResult
-    const validAllocations = props.allocations.filter(a => a.instrumentId > 0 && a.value > 0)
-    if (validAllocations.length === 0) return emptyResult
-    const entries = validAllocations.map(a => ({
-      ...getBaseRebalanceData(a),
-      id: a.instrumentId,
-    }))
-    return optimizeRebalanceUnits(entries)
-  })
-
-  const optimizedRebalance = computed(() => optimizedRebalanceResult.value.allocations)
-
-  const fractionalRebalanceAmounts = computed<Map<number, number>>(() => {
-    const result = new Map<number, number>()
-    if (!showRebalanceColumns.value) return result
-    const validAllocations = props.allocations.filter(a => a.instrumentId > 0 && a.value > 0)
-    if (validAllocations.length === 0) return result
-    const entries = validAllocations.map(a => {
-      const base = getBaseRebalanceData(a)
-      return { id: a.instrumentId, difference: base.difference, isBuy: base.isBuy }
-    })
-    const totalBuyNeeded = entries
-      .filter(e => e.isBuy && e.difference > 0)
-      .reduce((sum, e) => sum + e.difference, 0)
-    const sellAmount = entries
-      .filter(e => !e.isBuy)
-      .reduce((sum, e) => sum + Math.abs(e.difference), 0)
-    const availableBudget = props.totalInvestment + sellAmount
-    const constrained = totalBuyNeeded > availableBudget && totalBuyNeeded > 0
-    for (const entry of entries) {
-      if (entry.isBuy) {
-        const amount = constrained
-          ? (entry.difference / totalBuyNeeded) * availableBudget
-          : entry.difference
-        result.set(entry.id, amount)
-      } else {
-        result.set(entry.id, Math.abs(entry.difference))
-      }
-    }
-    return result
-  })
-
-  const getRebalanceFractionalAmount = (allocation: AllocationInput): number =>
-    fractionalRebalanceAmounts.value.get(allocation.instrumentId) ?? 0
-
-  const hasRebalanceAction = (allocation: AllocationInput): boolean => {
-    if (props.actionDisplayMode === 'amount') {
-      return getRebalanceFractionalAmount(allocation) > 0.01
-    }
-    return getRebalanceData(allocation).units > 0
-  }
-
-  const getRebalanceData = (allocation: AllocationInput): RebalanceData => {
-    const base = getBaseRebalanceData(allocation)
-    if (budgetAwareRebalance.value?.allocations.has(allocation.instrumentId)) {
-      const data = budgetAwareRebalance.value.allocations.get(allocation.instrumentId)!
-      return { ...base, units: data.units, isBuy: data.isBuy, unused: 0 }
-    }
-    if (!props.optimizeEnabled || !optimizedRebalance.value.has(allocation.instrumentId)) {
-      return base
-    }
-    const optimized = optimizedRebalance.value.get(allocation.instrumentId)!
-    const actualAmount = optimized.units * (base.price ?? 0)
-    const unused = Math.abs(base.difference) - actualAmount
-    return { ...base, units: optimized.units, isBuy: optimized.isBuy, unused: Math.max(0, unused) }
-  }
-
-  const calcAfterValue = (allocation: AllocationInput, data: RebalanceData): number => {
-    const currentVal = allocation.currentValue ?? 0
-    const tradeAmount =
-      props.actionDisplayMode === 'amount'
-        ? getRebalanceFractionalAmount(allocation)
-        : data.units * (data.price ?? 0)
-    return data.isBuy ? currentVal + tradeAmount : currentVal - tradeAmount
-  }
-
-  const totalAfterValue = computed(() =>
-    props.allocations.reduce((sum, a) => sum + calcAfterValue(a, getRebalanceData(a)), 0)
+  const showActionColumns = computed(
+    () => showInvestmentColumns.value || showRebalanceActionColumn.value
   )
-
-  const totalAfterValueForSort = computed(() =>
-    props.allocations.reduce((sum, a) => sum + calcAfterValue(a, getBaseRebalanceData(a)), 0)
-  )
-
-  const getAfterPercent = (allocation: AllocationInput): number => {
-    if (totalAfterValue.value <= 0) return 0
-    return (calcAfterValue(allocation, getRebalanceData(allocation)) / totalAfterValue.value) * 100
-  }
-
-  const getAfterPercentForSort = (allocation: AllocationInput): number => {
-    if (totalAfterValueForSort.value <= 0) return 0
-    return (
-      (calcAfterValue(allocation, getBaseRebalanceData(allocation)) /
-        totalAfterValueForSort.value) *
-      100
-    )
-  }
-
-  const calculateBaseInvestmentData = (percentage: number, price: number | null) => {
-    if (!percentage || !price || price <= 0 || props.totalInvestment <= 0) {
-      return { allocated: 0, units: 0, unused: 0 }
-    }
-    const allocated = calculateInvestmentAmount(props.totalInvestment, percentage)
-    const units = calculateUnitsFromAmount(allocated, price)
-    const unused = allocated - units * price
-    return { allocated, units, unused }
-  }
 
   const optimizedAllocation = computed(() => {
     if (!showInvestmentColumns.value || !props.optimizeEnabled) return new Map<number, number>()
@@ -222,23 +53,24 @@ export function useAllocationCalculations(props: AllocationProps) {
     return optimizeInvestmentAllocation(entries, props.totalInvestment)
   })
 
-  const getUnits = (instrumentId: number, percentage: number, price: number | null): number => {
+  const getUnits = ({ instrumentId, value: percentage }: AllocationInput): number => {
     if (props.optimizeEnabled && optimizedAllocation.value.has(instrumentId)) {
       return optimizedAllocation.value.get(instrumentId) ?? 0
     }
-    return calculateBaseInvestmentData(percentage, price).units
+    const price = getEtfPrice(instrumentId)
+    if (!percentage || !price || price <= 0 || props.totalInvestment <= 0) return 0
+    return calculateUnitsFromAmount(
+      calculateInvestmentAmount(props.totalInvestment, percentage),
+      price
+    )
   }
 
-  const getUnused = (instrumentId: number, percentage: number, price: number | null): number => {
-    const units = getUnits(instrumentId, percentage, price)
+  const getUnused = (allocation: AllocationInput): number => {
+    const units = getUnits(allocation)
+    const price = getEtfPrice(allocation.instrumentId)
     if (!price || units === 0) return 0
-    const allocated = calculateInvestmentAmount(props.totalInvestment, percentage)
+    const allocated = calculateInvestmentAmount(props.totalInvestment, allocation.value)
     return allocated - units * price
-  }
-
-  const getRebalanceAmount = (allocation: AllocationInput): number => {
-    const data = getRebalanceData(allocation)
-    return data.units * (data.price ?? 0)
   }
 
   const formatActionValue = (allocation: AllocationInput): string => {
@@ -248,47 +80,34 @@ export function useAllocationCalculations(props: AllocationProps) {
     return getRebalanceData(allocation).units.toString()
   }
 
-  const formatAction = (instrumentId: number, percentage: number, price: number | null): string => {
+  const formatAction = (allocation: AllocationInput): string => {
     if (props.actionDisplayMode === 'amount') {
-      return formatEuroAmount(calculateInvestmentAmount(props.totalInvestment, percentage))
+      return formatEuroAmount(calculateInvestmentAmount(props.totalInvestment, allocation.value))
     }
-    const units = getUnits(instrumentId, percentage, price)
+    const units = getUnits(allocation)
     if (units === 0) return '-'
     return units.toString()
   }
 
-  const formatUnused = (instrumentId: number, percentage: number, price: number | null): string => {
+  const formatUnused = (allocation: AllocationInput): string => {
     if (props.actionDisplayMode === 'amount') return '-'
-    const units = getUnits(instrumentId, percentage, price)
-    if (units === 0) return '-'
-    return formatEuroAmount(getUnused(instrumentId, percentage, price))
+    if (getUnits(allocation) === 0) return '-'
+    return formatEuroAmount(getUnused(allocation))
   }
 
   const totalUnused = computed(() => {
-    if (!showInvestmentColumns.value && !showRebalanceActionColumn.value) return 0
+    if (!showActionColumns.value) return 0
     if (props.actionDisplayMode === 'amount') return 0
-    if (budgetAwareRebalance.value) return budgetAwareRebalance.value.totalRemaining
-    if (showRebalanceColumns.value && props.optimizeEnabled) {
-      return optimizedRebalanceResult.value.totalRemaining
-    }
-    if (showRebalanceColumns.value) {
-      return props.allocations.reduce((sum, allocation) => {
-        const data = getRebalanceData(allocation)
-        return sum + (data.units > 0 ? data.unused : 0)
-      }, 0)
-    }
-    return props.allocations.reduce((sum, allocation) => {
-      const price = getEtfPrice(allocation.instrumentId)
-      const unused = getUnused(allocation.instrumentId, allocation.value, price)
-      return sum + unused
-    }, 0)
+    if (showRebalanceColumns.value) return rebalanceUnusedTotal.value
+    return props.allocations.reduce((sum, allocation) => sum + getUnused(allocation), 0)
   })
 
   const getComputedAmount = (allocation: AllocationInput): number => {
     if (!showRebalanceColumns.value)
       return calculateInvestmentAmount(props.totalInvestment, allocation.value)
     if (props.actionDisplayMode === 'amount') return getRebalanceFractionalAmount(allocation)
-    return getRebalanceAmount(allocation)
+    const data = getRebalanceData(allocation)
+    return data.units * (data.price ?? 0)
   }
 
   const getActionSortValue = (allocation: AllocationInput): number => {
@@ -312,17 +131,15 @@ export function useAllocationCalculations(props: AllocationProps) {
     getEtfReturn,
     getEtfSymbol,
     getEtfFundCurrency,
-    showInvestmentColumns,
     showRebalanceColumns,
     showRebalanceActionColumn,
+    showActionColumns,
     getBaseRebalanceData,
     getRebalanceData,
     getAfterPercent,
     getAfterPercentForSort,
     getUnits,
     getUnused,
-    getRebalanceAmount,
-    getRebalanceFractionalAmount,
     hasRebalanceAction,
     formatActionValue,
     formatAction,
