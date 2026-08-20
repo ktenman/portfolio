@@ -292,8 +292,17 @@ null` and three `averageCost: null` rows (all render `0.00`), three quantities b
 
 ## Routes — `ui/tests/visual/routes.spec.ts`
 
-Full-page (`fullPage: true`), unmasked, no interaction. Every route carries a stub, and
-`stubBuildInfo` runs for all six through a file-scoped `beforeEach`.
+Full-page (`fullPage: true`), no interaction. Every route carries a stub, and `stubBuildInfo` runs
+for all six through a file-scoped `beforeEach`. Two bounds narrow what is actually compared:
+
+- **The capture is clipped to the first `MAX_CAPTURE_HEIGHT` (12000) pixels**, at
+  `document.documentElement.scrollWidth` rather than the viewport width — the viewport width would
+  crop `route-diversification-tablet` from its real 785 px back to 768 and hide the overflow that
+  produced it. Chromium paints `fullPage` unreliably past roughly 16000 px, and `/transactions` runs
+  to 56854 px on desktop and 147160 on mobile: the un-clipped desktop capture returned a 38.7 M-pixel
+  diff on CI while passing locally. Everything below 12000 px on those pages is uncovered.
+- **Every `<canvas>` is masked**, so no chart pixel is compared on any route. See the canvas note
+  under Known limits.
 
 | File                                | Route              | Viewport |
 | ----------------------------------- | ------------------ | -------- |
@@ -399,14 +408,20 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
   clamp is `scrollHeight - innerHeight`, currently 1501 px on desktop. `modal-xirr-windows-desktop`
   and `modal-annual-windows-desktop` predated step 2 and were recorded mid-growth at 1480 and 1435;
   they were re-recorded at the settled 1501 and now agree with each other.
-- **The Chart.js canvases are gated on their own painted pixels, not on page height.** They were
-  never masked — `ui/components/charts/{line,bar}-chart.vue` render a bare `<canvas>` carrying no
-  class or test id, so no selector could have reached them. Gating them on the height settle alone
-  was not enough and did flake: a freshly recorded `route-calculator-desktop` failed on immediate
-  re-run at 1858 pixels, bounded to `791x513+541+512` — the "XIRR Rolling Result (ASAP)" canvas
-  caught mid-animation. `animations: 'disabled'` does not cover this, because it disables CSS
-  animations and Chart.js draws on `requestAnimationFrame`. The settle signature now folds in a hash
-  of each canvas's `toDataURL()`, so a still-animating chart keeps resetting the sample count.
+- **The Chart.js canvases are masked in `routes.spec.ts` and unmasked everywhere else.** Two
+  separate defences were needed. First, they flake mid-animation: a freshly recorded
+  `route-calculator-desktop` failed on immediate re-run at 1858 pixels, bounded to
+  `791x513+541+512`, with the "XIRR Rolling Result (ASAP)" canvas caught part-drawn.
+  `animations: 'disabled'` does not cover that, because it disables CSS animations and Chart.js
+  draws on `requestAnimationFrame`; the settle signature folds in a hash of each canvas's
+  `toDataURL()`, so a still-animating chart keeps resetting the sample count. That fix holds for the
+  viewport captures in `states.spec.ts`, which stay unmasked. Second, and only on the route
+  captures, a settled canvas is still not reproducible: Chart.js `responsive: true` lands on a
+  chart-area rect that differs by about a pixel between runs on the same machine, offsetting axis
+  lines, tick labels and every bar edge together — 9376 pixels over `467x190+277+519` on
+  `route-calculator-tablet`, which is what made the CI job red. `mask: [page.locator('canvas')]`
+  paints those regions out. Chart configuration is covered instead by
+  `ui/composables/use-chart-lifecycle.test.ts` and `ui/components/charts/portfolio-chart.test.ts`.
 - **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the chart fills the
   viewport below the platform filter, so no table row is visible behind the backdrop and the capture
   was byte-identical before and after `/` became fixture-driven. Only the mobile confirm capture,
