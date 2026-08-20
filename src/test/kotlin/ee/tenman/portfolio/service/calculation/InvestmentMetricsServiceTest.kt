@@ -514,6 +514,26 @@ class InvestmentMetricsServiceTest {
     expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
   }
 
+  @Test
+  fun `should calculatePortfolioMetrics count realized loss of a fully closed position`() {
+    val sell = createSellCashFlow(quantity = BigDecimal("10"), price = BigDecimal("70"))
+    sell.realizedProfit = BigDecimal("-298.28")
+    val instrumentGroups =
+      mapOf(
+        testInstrument to
+          listOf(
+            createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")),
+            sell,
+          ),
+      )
+
+    every { transactionService.calculateTransactionProfits(any(), any()) } returns Unit
+
+    val metrics = investmentMetricsService.calculatePortfolioMetrics(instrumentGroups, testDate)
+
+    expect(metrics.totalProfit).toEqualNumerically(BigDecimal("-298.28"))
+  }
+
   private fun createBuyCashFlow(
     quantity: BigDecimal,
     price: BigDecimal,
