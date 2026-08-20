@@ -63,6 +63,7 @@
         :is-error="isError"
         :error-message="error?.message"
         :selected-period="selectedPeriod"
+        :range-change="rangeChange"
         :sort-state="sortState"
         :on-sort="toggleSort"
         @show-xirr-windows="isXirrWindowsModalOpen = true"
@@ -76,14 +77,8 @@
         :instrument="selectedItem || {}"
         @save="onSave"
       />
-      <xirr-windows-modal
-        v-model:open="isXirrWindowsModalOpen"
-        :platforms="effectivePlatformsForXirr"
-      />
-      <annual-windows-modal
-        v-model:open="isAnnualWindowsModalOpen"
-        :platforms="effectivePlatformsForXirr"
-      />
+      <xirr-windows-modal v-model:open="isXirrWindowsModalOpen" :platforms="activePlatforms" />
+      <annual-windows-modal v-model:open="isAnnualWindowsModalOpen" :platforms="activePlatforms" />
     </template>
   </crud-layout>
 </template>
@@ -91,7 +86,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
 import { TIME_RANGES, usePriceChangePeriod } from '../../composables/use-time-range'
 import { useSortableTable } from '../../composables/use-sortable-table'
@@ -104,7 +99,7 @@ import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
 import AnnualWindowsModal from './annual-windows-modal.vue'
-import { instrumentsService } from '../../services/api'
+import { instrumentsService, portfolioSummaryService } from '../../services/api'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
 
@@ -150,6 +145,12 @@ const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFil
   availablePlatforms
 )
 
+const activePlatforms = computed<string[]>(() => {
+  const selected = selectedPlatforms.value
+  if (selected.length === 0 || selected.length === availablePlatforms.value.length) return []
+  return selected
+})
+
 const {
   data: rawItems,
   isLoading,
@@ -157,15 +158,21 @@ const {
   error,
 } = useQuery({
   queryKey: computed(() => ['instruments', selectedPlatforms.value, selectedPeriod.value]),
-  queryFn: () => {
-    if (
-      selectedPlatforms.value.length === 0 ||
-      selectedPlatforms.value.length === availablePlatforms.value.length
-    ) {
-      return instrumentsService.getAll(undefined, selectedPeriod.value)
-    }
-    return instrumentsService.getAll(selectedPlatforms.value, selectedPeriod.value)
-  },
+  queryFn: () => instrumentsService.getAll(activePlatforms.value, selectedPeriod.value),
+  refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
+  enabled: isAuthenticated,
+})
+
+const { data: rangeChange } = useQuery({
+  queryKey: computed(() => [
+    'instruments',
+    'range-change',
+    activePlatforms.value,
+    selectedPeriod.value,
+  ]),
+  queryFn: () =>
+    portfolioSummaryService.getRangeChange(selectedPeriod.value, activePlatforms.value),
+  placeholderData: keepPreviousData,
   refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
   enabled: isAuthenticated,
 })
@@ -187,12 +194,6 @@ const {
 } = useSortableTable(filteredItems, 'currentValue', 'desc')
 
 const portfolioXirr = computed(() => rawItems.value?.portfolioXirr ?? null)
-
-const effectivePlatformsForXirr = computed<string[]>(() => {
-  const selected = selectedPlatforms.value
-  if (selected.length === 0 || selected.length === availablePlatforms.value.length) return []
-  return selected
-})
 
 const saveMutation = useMutation({
   mutationFn: (data: Partial<InstrumentDto>) => {

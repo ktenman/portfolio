@@ -334,7 +334,7 @@
 <script setup lang="ts">
 import { computed, toRef, watch } from 'vue'
 import DataTable from '../shared/data-table.vue'
-import { InstrumentDto, TimeRange } from '../../models/generated/domain-models'
+import { InstrumentDto, type RangeChangeDto, TimeRange } from '../../models/generated/domain-models'
 import { instrumentColumns } from '../../config'
 import {
   getProfitClass,
@@ -361,6 +361,7 @@ interface Props {
   isError?: boolean
   errorMessage?: string
   selectedPeriod: TimeRange
+  rangeChange?: RangeChangeDto
   sortState?: SortState
   onSort?: (key: string) => void
 }
@@ -391,11 +392,12 @@ const {
   totalValue,
   totalProfit,
   totalUnrealizedProfit,
-  totalChangeAmount,
-  totalChangePercent,
   totalTer,
   totalAnnualReturn,
 } = useInstrumentTotals(instrumentsRef)
+
+const totalChangeAmount = computed(() => props.rangeChange?.changeAmount ?? 0)
+const totalChangePercent = computed(() => props.rangeChange?.changePercent ?? 0)
 
 const totalXirr = computed(() => props.portfolioXirr)
 const totalXirrForAnimation = computed(() => props.portfolioXirr ?? 0)

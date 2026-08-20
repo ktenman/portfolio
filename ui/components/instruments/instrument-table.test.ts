@@ -517,6 +517,36 @@ describe('InstrumentTable', () => {
     })
   })
 
+  describe('period totals', () => {
+    it('should report the portfolio range change instead of the sum of the rows', () => {
+      const wrapper = createWrapper({
+        rangeChange: { changeAmount: 11862.06, changePercent: 20.29 },
+        instruments: [
+          createInstrumentDto({
+            id: 21,
+            symbol: 'SÜLD',
+            name: 'Closed Position',
+            providerName: ProviderName.FT,
+            currentValue: 0,
+            profit: 689.62,
+            priceChangeAmount: 689.62,
+            baseCurrency: 'EUR',
+          }),
+        ],
+      })
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.text()).toBe('+€11,862.06 / +20.29%')
+    })
+
+    it('should dont show a change until the range change has arrived', () => {
+      const wrapper = createWrapper()
+      const change = wrapper.find('.total-price-change-item .total-value')
+
+      expect(change.text()).toBe('€0.00 / 0.00%')
+    })
+  })
+
   describe('period label', () => {
     it('should update column header label based on selected period', () => {
       const wrapper = createWrapper({ selectedPeriod: TimeRange.ONE_WEEK })
