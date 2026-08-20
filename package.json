@@ -35,8 +35,8 @@
     "docker:build-proxy": "docker build --platform linux/amd64 -t portfolio-cloudflare-bypass-proxy:latest ./cloudflare-bypass-proxy",
     "docker:up": "docker compose -f compose.yaml up -d",
     "docker:down": "docker compose -f compose.yaml down",
-    "visual": "playwright test",
-    "visual:update": "playwright test --update-snapshots"
+    "visual": "docker run --rm --platform linux/arm64 --ipc=host -v \"$PWD\":/w -v portfolio-visual-modules:/w/node_modules -w /w mcr.microsoft.com/playwright:v1.62.1-noble bash -c '[ -x node_modules/.bin/playwright ] || npm ci --no-audit --no-fund --silent; CI=true npx playwright test \"$@\"' visual",
+    "visual:update": "npm run visual -- --update-snapshots"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
