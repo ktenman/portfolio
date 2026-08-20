@@ -55,10 +55,14 @@ describe('use-quick-dates', () => {
 
       const range = calculateDateRange(preset)
 
-      expect([formatDateToString(range.from), formatDateToString(range.until)]).toEqual([
+      expect(range && [formatDateToString(range.from), formatDateToString(range.until)]).toEqual([
         from,
         until,
       ])
+    })
+
+    it('resolves max to no range at all', () => {
+      expect(calculateDateRange('max')).toBeNull()
     })
   })
 
@@ -73,6 +77,7 @@ describe('use-quick-dates', () => {
       ['lastMonth', 'Last Month'],
       ['thisYear', 'This Year'],
       ['lastYear', 'Last Year'],
+      ['max', 'MAX'],
     ] as const)('labels %s as %s', (preset, expected) => {
       expect(getLabelForPreset(preset)).toBe(expected)
     })
@@ -80,7 +85,7 @@ describe('use-quick-dates', () => {
 
   describe('QUICK_DATE_OPTIONS', () => {
     it('should offer one option per preset', () => {
-      expect(QUICK_DATE_OPTIONS).toHaveLength(9)
+      expect(QUICK_DATE_OPTIONS).toHaveLength(10)
     })
 
     it('should pair a preset with a label in every option', () => {
@@ -124,6 +129,15 @@ describe('use-quick-dates', () => {
         until,
         label,
       ])
+    })
+
+    it('should drop both dates but keep the label when max is selected', () => {
+      const { fromDate, untilDate, selectedQuickDate, setQuickDate } = quickDates()
+
+      setQuickDate('lastYear')
+      setQuickDate('max')
+
+      expect([fromDate.value, untilDate.value, selectedQuickDate.value]).toEqual(['', '', 'MAX'])
     })
 
     it('should call onDateSet callback when dates are set', () => {

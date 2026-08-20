@@ -39,6 +39,10 @@ export const compactAmount = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1,
 })
 
+export const percentAmount = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 2,
+})
+
 export const tooltipStyle = {
   backgroundColor: rootStyles.getPropertyValue('--color-gray-700').trim(),
   titleColor: rootStyles.getPropertyValue('--color-paper').trim(),
