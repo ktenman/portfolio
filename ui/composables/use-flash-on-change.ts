@@ -9,19 +9,13 @@ export function useFlashOnChange(
   snapOn?: Ref<unknown>
 ): Ref<string> {
   const flashClass = refAutoReset('', FLASH_DURATION)
-  let snap = false
-
-  if (snapOn) {
-    watch(snapOn, () => (snap = true))
-  }
+  let lastSnapOn = snapOn?.value
 
   watch(value, (newValue, oldValue) => {
-    if (newValue == null || oldValue == null) return
+    const snapped = snapOn?.value !== lastSnapOn
+    lastSnapOn = snapOn?.value
 
-    if (snap) {
-      snap = false
-      return
-    }
+    if (newValue == null || oldValue == null || snapped) return
 
     const delta = newValue - oldValue
     if (Math.abs(delta) <= THRESHOLD) return
