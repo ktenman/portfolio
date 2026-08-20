@@ -24,10 +24,9 @@ class PortfolioRangeChangeService(
   ): RangeChangeDto {
     val current = current(platforms)
     val amount = current.totalProfit.subtract(baseline(range, platforms))
-    val opening = current.totalValue.subtract(amount)
     return RangeChangeDto(
       changeAmount = amount.setScale(AMOUNT_SCALE, RoundingMode.HALF_UP),
-      changePercent = percent(amount, opening),
+      changePercent = percent(amount, current.totalValue),
     )
   }
 
@@ -48,10 +47,10 @@ class PortfolioRangeChangeService(
 
   private fun percent(
     amount: BigDecimal,
-    opening: BigDecimal,
+    totalValue: BigDecimal,
   ): BigDecimal {
-    if (opening <= BigDecimal.ZERO) return BigDecimal.ZERO
-    return amount.percentOf(opening, PERCENT_SCALE)
+    if (totalValue <= BigDecimal.ZERO) return BigDecimal.ZERO
+    return amount.percentOf(totalValue, PERCENT_SCALE)
   }
 
   companion object {

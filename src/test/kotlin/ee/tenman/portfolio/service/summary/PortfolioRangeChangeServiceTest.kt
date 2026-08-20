@@ -44,13 +44,13 @@ class PortfolioRangeChangeServiceTest {
   }
 
   @Test
-  fun `should express the change as a percentage of the opening value`() {
+  fun `should express the change as a percentage of the current value`() {
     every { currentDaySummaryCacheService.getCurrentDaySummary() } returns
       summary(LocalDate.of(2026, 8, 14), BigDecimal("24532.90"), BigDecimal("818.96"))
     every { seriesService.getSeries(TimeRange.ONE_YEAR, null) } returns
       listOf(point(LocalDate.of(2026, 6, 16), BigDecimal("5897.21"), BigDecimal("-102.79")))
 
-    expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("3.4535"))
+    expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("3.3382"))
   }
 
   @Test
@@ -62,11 +62,19 @@ class PortfolioRangeChangeServiceTest {
   }
 
   @Test
-  fun `should report a zero percentage when the opening value is not positive`() {
+  fun `should report a zero percentage when the current value is not positive`() {
+    every { currentDaySummaryCacheService.getCurrentDaySummary() } returns
+      summary(LocalDate.of(2026, 8, 14), BigDecimal.ZERO, BigDecimal("500.00"))
+
+    expect(service.calculate(TimeRange.MAX, null).changePercent).toEqualNumerically(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `should report the whole gain as the percentage when every euro held is profit`() {
     every { currentDaySummaryCacheService.getCurrentDaySummary() } returns
       summary(LocalDate.of(2026, 8, 14), BigDecimal("500.00"), BigDecimal("500.00"))
 
-    expect(service.calculate(TimeRange.MAX, null).changePercent).toEqualNumerically(BigDecimal.ZERO)
+    expect(service.calculate(TimeRange.MAX, null).changePercent).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
