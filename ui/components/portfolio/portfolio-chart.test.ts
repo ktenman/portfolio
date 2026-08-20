@@ -149,6 +149,12 @@ describe('PortfolioChart', () => {
       expect(chartOptions().scales.y1.ticks.callback(12)).toBe('12%')
     })
 
+    it('should round away floating point noise in right axis ticks', async () => {
+      await createWrapper()
+
+      expect(chartOptions().scales.y1.ticks.callback(19.700000000000003)).toBe('19.7%')
+    })
+
     it('should place the legend below the plot with round markers', async () => {
       await createWrapper()
       const legend = chartOptions().plugins.legend
