@@ -38,7 +38,7 @@ class PortfolioRangeChangeServiceTest {
 
   @BeforeEach
   fun setUp() {
-    every { transactionService.getAllTransactions(any(), any(), any()) } returns emptyList()
+    every { transactionService.getAllTransactions(any<List<String>>()) } returns emptyList()
   }
 
   @Test
@@ -61,7 +61,7 @@ class PortfolioRangeChangeServiceTest {
 
   @Test
   fun `should divide the change by the value held when the range opened`() {
-    givenOpeningYearOf(BigDecimal("5897.21"))
+    givenOpeningYear()
 
     expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("15.6303"))
   }
@@ -69,7 +69,7 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should ignore money paid in before the range opened`() {
     givenTransactions(buy(LocalDate.of(2025, 1, 5), BigDecimal("1000.00")))
-    givenOpeningYearOf(BigDecimal("5897.21"))
+    givenOpeningYear()
 
     expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("15.6303"))
   }
@@ -77,7 +77,7 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should add money paid in during the range to the divisor`() {
     givenTransactions(buy(LocalDate.of(2026, 3, 9), BigDecimal("1000.00")))
-    givenOpeningYearOf(BigDecimal("5897.21"))
+    givenOpeningYear()
 
     expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("13.3641"))
   }
@@ -85,7 +85,7 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should leave the divisor alone when money was only taken out during the range`() {
     givenTransactions(sell(LocalDate.of(2026, 3, 9), BigDecimal("1000.00")))
-    givenOpeningYearOf(BigDecimal("5897.21"))
+    givenOpeningYear()
 
     expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("15.6303"))
   }
@@ -96,7 +96,7 @@ class PortfolioRangeChangeServiceTest {
       buy(LocalDate.of(2026, 3, 9), BigDecimal("1500.00")),
       sell(LocalDate.of(2026, 3, 9), BigDecimal("500.00")),
     )
-    givenOpeningYearOf(BigDecimal("5897.21"))
+    givenOpeningYear()
 
     expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("13.3641"))
   }
@@ -147,11 +147,7 @@ class PortfolioRangeChangeServiceTest {
   }
 
   private fun givenTransactions(vararg transactions: PortfolioTransaction) {
-    every { transactionService.getAllTransactions(any(), any(), any()) } answers
-      {
-        val from = secondArg<LocalDate?>()
-        transactions.filter { from == null || !it.transactionDate.isBefore(from) }
-      }
+    every { transactionService.getAllTransactions(any<List<String>>()) } returns transactions.toList()
   }
 
   private fun givenCurrentSummary(
@@ -162,10 +158,10 @@ class PortfolioRangeChangeServiceTest {
       summary(LocalDate.of(2026, 8, 14), totalValue, totalProfit)
   }
 
-  private fun givenOpeningYearOf(openingValue: BigDecimal) {
+  private fun givenOpeningYear() {
     givenCurrentSummary()
     every { seriesService.getSeries(TimeRange.ONE_YEAR, null) } returns
-      listOf(point(LocalDate.of(2025, 8, 14), openingValue, BigDecimal("-102.79")))
+      listOf(point(LocalDate.of(2025, 8, 14), BigDecimal("5897.21"), BigDecimal("-102.79")))
   }
 
   private fun buy(

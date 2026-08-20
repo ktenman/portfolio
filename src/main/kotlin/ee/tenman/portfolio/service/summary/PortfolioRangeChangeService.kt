@@ -55,7 +55,8 @@ class PortfolioRangeChangeService(
     after: LocalDate?,
   ): BigDecimal =
     transactionService
-      .getAllTransactions(platforms?.map { it.name }, after?.plusDays(1), null)
+      .getAllTransactions(platforms?.map { it.name })
+      .filter { after == null || it.transactionDate.isAfter(after) }
       .groupBy { it.transactionDate }
       .values
       .sumOf { netInflow(it) }
