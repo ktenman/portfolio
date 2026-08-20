@@ -38,7 +38,7 @@ class PortfolioRangeChangeServiceTest {
 
   @BeforeEach
   fun setUp() {
-    every { transactionService.getAllTransactions(any()) } returns emptyList()
+    every { transactionService.getAllTransactions(any(), any(), any()) } returns emptyList()
   }
 
   @Test
@@ -147,7 +147,11 @@ class PortfolioRangeChangeServiceTest {
   }
 
   private fun givenTransactions(vararg transactions: PortfolioTransaction) {
-    every { transactionService.getAllTransactions(any()) } returns transactions.toList()
+    every { transactionService.getAllTransactions(any(), any(), any()) } answers
+      {
+        val from = secondArg<LocalDate?>()
+        transactions.filter { from == null || !it.transactionDate.isBefore(from) }
+      }
   }
 
   private fun givenCurrentSummary(
