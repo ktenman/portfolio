@@ -1,12 +1,13 @@
 import { ref, watch, type Ref } from 'vue'
 import { tryOnScopeDispose } from '@vueuse/core'
+import { useSnapLatch } from './use-snap-latch'
 
 const TRANSITION_DURATION = 3000
 
 export function useNumberTransition(value: Ref<number | null | undefined>, snapOn?: Ref<unknown>) {
   const displayValue = ref<number>(value.value ?? 0)
   let animationId: number | null = null
-  let lastSnapOn = snapOn?.value
+  const consumeSnap = useSnapLatch(snapOn)
 
   const cancel = () => {
     if (animationId === null) return
@@ -19,8 +20,7 @@ export function useNumberTransition(value: Ref<number | null | undefined>, snapO
   watch(value, (newValue, oldValue) => {
     cancel()
 
-    const snapped = snapOn?.value !== lastSnapOn
-    lastSnapOn = snapOn?.value
+    const snapped = consumeSnap()
 
     if (newValue == null) return
 

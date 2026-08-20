@@ -1,5 +1,6 @@
 import { watch, type Ref } from 'vue'
 import { refAutoReset } from '@vueuse/core'
+import { useSnapLatch } from './use-snap-latch'
 
 const FLASH_DURATION = 3000
 const THRESHOLD = 0.001
@@ -9,11 +10,10 @@ export function useFlashOnChange(
   snapOn?: Ref<unknown>
 ): Ref<string> {
   const flashClass = refAutoReset('', FLASH_DURATION)
-  let lastSnapOn = snapOn?.value
+  const consumeSnap = useSnapLatch(snapOn)
 
   watch(value, (newValue, oldValue) => {
-    const snapped = snapOn?.value !== lastSnapOn
-    lastSnapOn = snapOn?.value
+    const snapped = consumeSnap()
 
     if (newValue == null || oldValue == null || snapped) return
 

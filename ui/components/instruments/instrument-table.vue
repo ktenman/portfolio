@@ -349,6 +349,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import { calculatePortfolioWeight } from '../../utils/instrument-formatters'
 import { useValueChangeAnimation } from '../../composables/use-value-change-animation'
 import { useNumberTransition } from '../../composables/use-number-transition'
+import { useSnapLatch } from '../../composables/use-snap-latch'
 import { useInstrumentTotals } from '../../composables/use-instrument-totals'
 import type { SortState } from '../../composables/use-sortable-table'
 
@@ -401,13 +402,11 @@ const totalChangePercent = computed(() => props.rangeChange?.changePercent ?? 0)
 const totalXirr = computed(() => props.portfolioXirr)
 const totalXirrForAnimation = computed(() => props.portfolioXirr ?? 0)
 
-let trackedPeriod = props.selectedPeriod
+const consumeSnap = useSnapLatch(periodRef)
 
 watch(
   [totalValue, totalProfit, totalUnrealizedProfit, totalChangeAmount, totalXirrForAnimation],
   () => {
-    const snapped = props.selectedPeriod !== trackedPeriod
-    trackedPeriod = props.selectedPeriod
     trackTotalsChange(
       {
         totalValue: totalValue.value,
@@ -416,7 +415,7 @@ watch(
         totalChangeAmount: totalChangeAmount.value,
         totalXirr: totalXirrForAnimation.value,
       },
-      snapped
+      consumeSnap()
     )
   },
   { deep: true }
