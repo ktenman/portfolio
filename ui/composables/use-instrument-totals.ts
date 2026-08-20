@@ -44,8 +44,9 @@ export function useInstrumentTotals(instruments: Ref<InstrumentDto[]>): UseInstr
   })
 
   const totalChangePercent = computed(() => {
-    if (totalValue.value === 0) return 0
-    return (totalChangeAmount.value / totalValue.value) * 100
+    const previousTotalValue = totalValue.value - totalChangeAmount.value
+    if (previousTotalValue === 0) return 0
+    return (totalChangeAmount.value / previousTotalValue) * 100
   })
 
   const totalTer = computed(() => {

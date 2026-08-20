@@ -51,10 +51,9 @@ describe('useInstrumentTotals', () => {
   })
 
   it.each([
-    ['totalChangePercent', [{ currentValue: 1000, priceChangeAmount: 100 }], 10],
-    ['totalChangePercent', [{ currentValue: 100, priceChangeAmount: 100 }], 100],
-    ['totalChangePercent', [{ currentValue: 1000, priceChangeAmount: -100 }], -10],
-    ['totalChangePercent', [{ currentValue: 0, priceChangeAmount: 100 }], 0],
+    ['totalChangePercent', [{ currentValue: 1100, priceChangeAmount: 100 }], 10],
+    ['totalChangePercent', [{ currentValue: 100, priceChangeAmount: 100 }], 0],
+    ['totalChangePercent', [{ currentValue: 900, priceChangeAmount: -100 }], -10],
     ['totalChangePercent', [], 0],
     [
       'totalTer',
