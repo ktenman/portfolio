@@ -42,7 +42,7 @@
           />
         </div>
       </div>
-      <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="allocation-toggles">
+      <div v-if="showActionColumns" class="allocation-toggles">
         <div class="optimize-toggle">
           <input
             id="optimizeAllocation"
@@ -64,7 +64,7 @@
           <label for="buyOnlyAllocation" class="form-check-label">Buy only</label>
         </div>
       </div>
-      <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="display-mode-toggle">
+      <div v-if="showActionColumns" class="display-mode-toggle">
         <button
           type="button"
           class="display-mode-btn"
@@ -98,24 +98,10 @@
         :action-display-mode="actionDisplayMode"
         :is-buy="showRebalanceColumns ? getRebalanceData(allocation).isBuy : true"
         :computed-units="
-          showRebalanceColumns
-            ? getRebalanceData(allocation).units
-            : getUnits(
-                allocation.instrumentId,
-                allocation.value,
-                getEtfPrice(allocation.instrumentId)
-              )
+          showRebalanceColumns ? getRebalanceData(allocation).units : getUnits(allocation)
         "
         :computed-amount="getComputedAmount(allocation)"
-        :computed-unused="
-          showRebalanceColumns
-            ? undefined
-            : getUnused(
-                allocation.instrumentId,
-                allocation.value,
-                getEtfPrice(allocation.instrumentId)
-              )
-        "
+        :computed-unused="showRebalanceColumns ? undefined : getUnused(allocation)"
         :after-percent="showRebalanceColumns ? getAfterPercent(allocation) : undefined"
         @update:allocation="updateAllocationAtIndex(index, $event)"
         @remove="$emit('remove', index)"
@@ -196,7 +182,7 @@
               </span>
             </th>
             <th
-              v-if="showInvestmentColumns || showRebalanceActionColumn"
+              v-if="showActionColumns"
               class="sortable"
               style="width: 90px"
               @click="toggleSort('units')"
@@ -210,7 +196,7 @@
               </span>
             </th>
             <th
-              v-if="showInvestmentColumns || showRebalanceActionColumn"
+              v-if="showActionColumns"
               class="sortable"
               style="width: 90px"
               @click="toggleSort('afterPercent')"
@@ -280,7 +266,7 @@
                 @wheel="blurOnWheel"
               />
             </td>
-            <td v-if="showInvestmentColumns || showRebalanceActionColumn" class="text-[0.875em]">
+            <td v-if="showActionColumns" class="text-[0.875em]">
               <template v-if="showRebalanceColumns">
                 <span
                   v-if="hasRebalanceAction(allocation)"
@@ -291,32 +277,13 @@
                 </span>
                 <span v-else class="text-gray-600">-</span>
               </template>
-              <template v-else>
-                {{
-                  formatAction(
-                    allocation.instrumentId,
-                    allocation.value,
-                    getEtfPrice(allocation.instrumentId)
-                  )
-                }}
-              </template>
+              <template v-else>{{ formatAction(allocation) }}</template>
             </td>
-            <td
-              v-if="showInvestmentColumns || showRebalanceActionColumn"
-              class="text-gray-600! text-[0.875em]"
-            >
+            <td v-if="showActionColumns" class="text-gray-600! text-[0.875em]">
               <template v-if="showRebalanceColumns">
                 {{ getAfterPercent(allocation).toFixed(1) }}%
               </template>
-              <template v-else>
-                {{
-                  formatUnused(
-                    allocation.instrumentId,
-                    allocation.value,
-                    getEtfPrice(allocation.instrumentId)
-                  )
-                }}
-              </template>
+              <template v-else>{{ formatUnused(allocation) }}</template>
             </td>
             <td>
               <button
@@ -404,7 +371,7 @@
             <span v-if="!isValidTotal" class="total-hint">(should be 100%)</span>
           </span>
         </div>
-        <div v-if="showInvestmentColumns || showRebalanceActionColumn" class="total-row">
+        <div v-if="showActionColumns" class="total-row">
           <span class="total-label">Total Unused</span>
           <span class="total-value text-gray-600!">
             {{ formatCurrencyWithSymbol(totalUnused) }}
@@ -425,8 +392,7 @@ import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAllocationCalculations } from '../../composables/use-allocation-calculations'
 import AllocationCard from './allocation-card.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
-import type { EtfDetailDto } from '../../models/generated/domain-models'
-import type { AllocationInput, ActionDisplayMode } from './types'
+import type { AllocationInput, AllocationProps, ActionDisplayMode } from './types'
 
 interface AllocationWithData extends AllocationInput {
   symbol: string
@@ -439,18 +405,12 @@ interface AllocationWithData extends AllocationInput {
   afterPercent: number
 }
 
-const props = defineProps<{
-  allocations: AllocationInput[]
-  availableEtfs: EtfDetailDto[]
+interface Props extends AllocationProps {
   isLoadingPortfolio: boolean
-  totalInvestment: number
-  selectedPlatforms: string[]
   availablePlatforms: string[]
-  currentHoldingsTotal: number
-  optimizeEnabled: boolean
-  buyOnlyEnabled: boolean
-  actionDisplayMode: ActionDisplayMode
-}>()
+}
+
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'update:allocation': [index: number, allocation: AllocationInput]
@@ -475,9 +435,9 @@ const {
   getEtfReturn,
   getEtfSymbol,
   getEtfFundCurrency,
-  showInvestmentColumns,
   showRebalanceColumns,
   showRebalanceActionColumn,
+  showActionColumns,
   getBaseRebalanceData,
   getRebalanceData,
   getAfterPercent,
