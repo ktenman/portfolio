@@ -68,22 +68,6 @@ function formatDate(dateString: string): string {
   padding: 0.5rem 0;
 }
 
-.navbar-nav {
-  display: flex;
-  margin-bottom: 0;
-  padding-left: 0;
-  list-style: none;
-}
-
-.nav-link {
-  display: block;
-  padding: 0.5rem;
-  font-weight: 500;
-  color: rgb(0 0 0 / 0.65);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
 .navbar-scroll-container {
   width: 100%;
   overflow-x: auto;
@@ -108,7 +92,10 @@ function formatDate(dateString: string): string {
   display: flex;
   flex-wrap: nowrap;
   gap: 1rem;
+  margin-bottom: 0;
+  padding-left: 0;
   padding-bottom: 0.3125rem;
+  list-style: none;
 }
 
 .nav-item {
@@ -117,9 +104,14 @@ function formatDate(dateString: string): string {
 }
 
 .nav-link {
+  display: block;
   position: relative;
+  padding: 0.5rem;
   font-size: var(--text-base);
+  font-weight: 500;
   letter-spacing: -0.01em;
+  color: rgb(0 0 0 / 0.65);
+  text-decoration: none;
   transition: color var(--transition-slow);
 }
 

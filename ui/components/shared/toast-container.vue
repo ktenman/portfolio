@@ -47,7 +47,6 @@ const TOAST_STYLES: Record<ToastType, { accent: string; label: string }> = {
 }
 
 .toast {
-  --toast-bg: var(--color-control-graphite);
   width: 350px;
   max-width: 100%;
   font-size: var(--text-sm);

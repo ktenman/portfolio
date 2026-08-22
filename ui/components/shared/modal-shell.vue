@@ -13,7 +13,7 @@
       <div class="modal-content" autofocus tabindex="-1" @click.stop>
         <div class="modal-header">
           <h5 class="modal-title" :id="`${modalId}Label`">{{ title }}</h5>
-          <close-button @click="requestClose" />
+          <close-button class="px-2 py-2 -m-2 ml-auto" @click="requestClose" />
         </div>
         <div class="modal-body">
           <slot />
@@ -103,7 +103,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 dialog.modal {
-  display: none;
   position: fixed;
   inset: 0;
   width: 100%;
@@ -115,10 +114,6 @@ dialog.modal {
   overflow-y: auto;
   background: transparent;
   color: inherit;
-}
-
-dialog.modal[open] {
-  display: block;
 }
 
 dialog.modal::backdrop {
@@ -157,11 +152,6 @@ dialog.modal::backdrop {
   align-items: center;
   padding: 1rem;
   border-bottom: 1px solid var(--color-hairline-strong);
-}
-
-.modal-header .btn-close {
-  padding: 0.5rem;
-  margin: -0.5rem -0.5rem -0.5rem auto;
 }
 
 .modal-title {

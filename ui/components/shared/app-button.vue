@@ -22,7 +22,7 @@ const props = withDefaults(
     disabled?: boolean
     type?: 'button' | 'submit'
   }>(),
-  { variant: undefined, size: undefined, type: 'button' }
+  { type: 'button' }
 )
 
 const BASE =
@@ -48,7 +48,6 @@ const classes = computed(() => [
   sizing.value,
   props.variant ? `btn-${props.variant}` : undefined,
   props.size ? `btn-${props.size}` : undefined,
-  props.ghost ? 'btn-ghost bg-[rgb(0_0_0/0.02)] [.btn-ghost+&]:ml-1.5' : undefined,
-  props.ghost ? GHOST : SOLID[props.variant ?? 'none'],
+  props.ghost ? `btn-ghost bg-[rgb(0_0_0/0.02)] ${GHOST}` : SOLID[props.variant ?? 'none'],
 ])
 </script>
