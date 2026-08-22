@@ -7,10 +7,7 @@
     @update:open="emit('update:open', $event)"
   >
     <div v-if="isLoading" class="text-center py-4">
-      <div
-        class="spinner-border inline-block size-8 shrink-0 animate-btn-spin rounded-full border-[0.25em] border-r-transparent align-[-0.125em]"
-        role="status"
-      />
+      <SpinnerRing />
     </div>
     <AlertMessage v-else-if="error" variant="danger">{{ error }}</AlertMessage>
     <div v-else>
@@ -51,6 +48,7 @@ import { computed, ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
 import AppButton from '../shared/app-button.vue'
 import AlertMessage from '../shared/alert-message.vue'
+import SpinnerRing from '../shared/spinner-ring.vue'
 import { portfolioSummaryService } from '../../services/api'
 import type { XirrWindowDto } from '../../models/generated/domain-models'
 

@@ -45,7 +45,7 @@ class RetryExtension : InvocationInterceptor {
     repeat(retry.times) { index ->
       val outcome = runCatching { method.invoke(target, *arguments) }
       if (outcome.isSuccess) return
-      val failure = outcome.exceptionOrNull().unwrap()
+      val failure = checkNotNull(outcome.exceptionOrNull()) { "Attempt produced no failure for $name" }.unwrap()
       if (!retry.matches(failure)) throw failure
       lastFailure = failure
       log.info(
@@ -60,9 +60,6 @@ class RetryExtension : InvocationInterceptor {
   }
 }
 
-private fun Throwable?.unwrap(): Throwable {
-  val throwable = checkNotNull(this) { "Cannot unwrap a null failure" }
-  return (throwable as? InvocationTargetException)?.targetException ?: throwable
-}
+private fun Throwable.unwrap(): Throwable = (this as? InvocationTargetException)?.targetException ?: this
 
 private fun Retry.matches(throwable: Throwable): Boolean = onExceptions.isEmpty() || onExceptions.any { it.isInstance(throwable) }

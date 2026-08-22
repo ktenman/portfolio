@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-center items-center" :class="containerClass">
-    <div class="loading-spinner" :class="sizeClass" role="status">
+    <div class="loading-spinner animate-btn-spin" :class="`spinner-${size}`" role="status">
       <span class="sr-only">{{ message }}</span>
     </div>
     <span v-if="showMessage" class="ml-2">{{ message }}</span>
@@ -8,8 +8,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-
 interface LoadingSpinnerProps {
   message?: string
   showMessage?: boolean
@@ -17,36 +15,20 @@ interface LoadingSpinnerProps {
   containerClass?: string
 }
 
-const props = withDefaults(defineProps<LoadingSpinnerProps>(), {
+withDefaults(defineProps<LoadingSpinnerProps>(), {
   message: 'Loading...',
   showMessage: false,
   size: 'md',
   containerClass: '',
 })
-
-const sizeClass = computed(() => {
-  const sizeMap = {
-    sm: 'spinner-sm',
-    md: 'spinner-md',
-    lg: 'spinner-lg',
-  }
-  return sizeMap[props.size]
-})
 </script>
 
 <style scoped>
-@keyframes spinner-rotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .loading-spinner {
   display: inline-block;
   border: 3px solid var(--color-hairline);
   border-top-color: var(--color-signal-indigo);
   border-radius: 50%;
-  animation: spinner-rotate 0.75s linear infinite;
 }
 
 .spinner-sm {

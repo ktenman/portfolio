@@ -104,10 +104,15 @@ onBeforeUnmount(() => {
 <style scoped>
 dialog.modal {
   display: none;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   max-width: none;
   max-height: none;
   padding: 0;
   border: 0;
+  overflow-y: auto;
   background: transparent;
   color: inherit;
 }
@@ -118,14 +123,6 @@ dialog.modal[open] {
 
 dialog.modal::backdrop {
   background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
 }
 
 .modal-dialog {

@@ -15,7 +15,7 @@ import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'danger'
+    variant?: 'primary' | 'secondary'
     size?: 'sm'
     ghost?: boolean
     loading?: boolean
@@ -32,16 +32,10 @@ const SOLID = {
   none: 'bg-transparent text-ink enabled:active:translate-y-px',
   primary: 'bg-signal-indigo text-white enabled:hover:bg-signal-indigo-deep',
   secondary: 'bg-gray-600 text-white enabled:hover:bg-gray-700 enabled:active:translate-y-px',
-  danger: 'bg-loss text-white enabled:hover:bg-loss-deep',
 }
 
-const GHOST = {
-  none: 'text-ink enabled:active:translate-y-px',
-  primary: 'text-white enabled:hover:bg-signal-indigo-deep',
-  secondary:
-    'text-gray-600 enabled:hover:bg-brass-wash enabled:hover:text-brass-deep enabled:active:translate-y-px',
-  danger: 'text-ink enabled:active:translate-y-px',
-}
+const GHOST =
+  'text-gray-600 enabled:hover:bg-brass-wash enabled:hover:text-brass-deep enabled:active:translate-y-px'
 
 const sizing = computed(() => {
   if (props.size !== 'sm') return 'px-3 py-1.5 text-control'
@@ -55,6 +49,6 @@ const classes = computed(() => [
   props.variant ? `btn-${props.variant}` : undefined,
   props.size ? `btn-${props.size}` : undefined,
   props.ghost ? 'btn-ghost bg-[rgb(0_0_0/0.02)] [.btn-ghost+&]:ml-1.5' : undefined,
-  props.ghost ? GHOST[props.variant ?? 'none'] : SOLID[props.variant ?? 'none'],
+  props.ghost ? GHOST : SOLID[props.variant ?? 'none'],
 ])
 </script>

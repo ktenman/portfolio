@@ -321,11 +321,7 @@
           :disabled="isLoadingPortfolio"
           @click="$emit('loadPortfolio')"
         >
-          <span
-            v-if="isLoadingPortfolio"
-            class="spinner-border spinner-border-sm inline-block size-4 shrink-0 animate-btn-spin rounded-full border-[0.2em] border-r-transparent align-[-0.125em]"
-            role="status"
-          ></span>
+          <SpinnerRing v-if="isLoadingPortfolio" size="sm" />
           <template v-else>
             <span class="sm:hidden">↓</span>
             <span class="hidden sm:inline">Load from Portfolio</span>
@@ -392,6 +388,7 @@ import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAllocationCalculations } from '../../composables/use-allocation-calculations'
 import AllocationCard from './allocation-card.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
+import SpinnerRing from '../shared/spinner-ring.vue'
 import type { AllocationInput, AllocationProps, ActionDisplayMode } from './types'
 
 interface AllocationWithData extends AllocationInput {

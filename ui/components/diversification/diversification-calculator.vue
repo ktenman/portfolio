@@ -20,12 +20,7 @@
     </div>
 
     <div v-if="isLoadingEtfs" class="py-6 text-center">
-      <div
-        class="spinner-border inline-block size-8 shrink-0 animate-btn-spin rounded-full border-[0.25em] border-r-transparent align-[-0.125em] text-signal-indigo"
-        role="status"
-      >
-        <span class="sr-only">Loading...</span>
-      </div>
+      <SpinnerRing class="text-signal-indigo" label="Loading..." />
     </div>
 
     <template v-else>
@@ -73,12 +68,7 @@
       </div>
 
       <div v-if="isCalculating" class="py-6 text-center">
-        <div
-          class="spinner-border inline-block size-8 shrink-0 animate-btn-spin rounded-full border-[0.25em] border-r-transparent align-[-0.125em] text-signal-indigo"
-          role="status"
-        >
-          <span class="sr-only">Calculating...</span>
-        </div>
+        <SpinnerRing class="text-signal-indigo" label="Calculating..." />
       </div>
 
       <AlertMessage v-if="error" variant="danger" class="mt-4">
@@ -125,6 +115,7 @@ import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
 import AlertMessage from '../shared/alert-message.vue'
+import SpinnerRing from '../shared/spinner-ring.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
 import type { AllocationInput, CachedState, ActionDisplayMode } from './types'
 
