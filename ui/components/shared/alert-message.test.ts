@@ -18,6 +18,7 @@ describe('alert-message', () => {
       props: { variant: 'info', dismissible: true },
       slots: { default: 'Teade' },
     })
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['alert-info']))
     expect(wrapper.classes()).toContain('alert-dismissible')
     await wrapper.find('.btn-close').trigger('click')
     expect(wrapper.emitted('dismiss')).toHaveLength(1)
@@ -28,6 +29,7 @@ describe('alert-message', () => {
       props: { variant: 'warning' },
       slots: { default: 'Hoiatus' },
     })
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['alert-warning']))
     expect(wrapper.find('.btn-close').exists()).toBe(false)
     expect(wrapper.classes()).not.toContain('alert-dismissible')
   })
