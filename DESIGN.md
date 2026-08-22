@@ -200,9 +200,9 @@ is transcribed from that file character for character; the hex column is its sRG
 WCAG 2.x contrast computed with the project's own contrast math in `ui/tests/contrast.ts` — the same code the
 palette gate asserts against.
 
-`ui/styles/components.css` is now a nine-line barrel of `@import`s, and the component layer it pulls in lives in
-`ui/styles/components/`: `buttons.css`, `surfaces.css`, `forms.css`, `modals.css`, `feedback.css`,
-`navigation.css`, `controls.css`, `mobile-cards.css`, `motion.css`. Citations below name the partial, never the
+`ui/styles/components.css` is now a seven-line barrel of `@import`s, and the component layer it pulls in lives in
+`ui/styles/components/`: `buttons.css`, `surfaces.css`, `forms.css`, `feedback.css`, `controls.css`,
+`mobile-cards.css`, `motion.css`. Citations below name the partial, never the
 barrel. `--transition-fast` / `-base` / `-slow` / `-chip` and the `--z-*` scale are declared in a `:root` block
 at the head of `base.css`, not in `@theme static`, because Tailwind has no namespace for them.
 
@@ -262,7 +262,7 @@ Badge fills, row tints, alert backgrounds, and the price-flash animation. Each c
 
 `--color-brass-wash` is the busiest of the four, and its consumer map has grown to fifteen declarations. In the
 stylesheet layer: the active filter chip's fill and its `inset` ring (`controls.css:106,108,114`), the ghost
-button's hover, and the add-new button's hover and press (`buttons.css:118,143,152`), the warning
+button's hover, and the add-new button's hover and press (`buttons.css:100,126,135`), the warning
 alert's background (`feedback.css:23`), and the native customizable `<select>`'s option hover and `:checked`
 fill (`forms.css:98,103`). In components: the diversification calculator's
 refreshing status pill (`diversification-calculator.vue:462`), the allocation table's active display-mode
@@ -312,14 +312,14 @@ no consumer had to change in the same commit as the palette. They are aliases, n
 | `--color-status-warning`        | `oklch(0.53 0.098 74)`  | `#8d621f` | `brass`      |
 
 There is no `--color-warning`. The doc asserted one in an earlier revision and the code never had it; the only
-consumer of `--color-status-warning` is the warning toast (`feedback.css:137`), and the warning alert reaches
+consumer of `--color-status-warning` is the warning toast (`toast-container.vue:87`), and the warning alert reaches
 for the brass tokens directly (`feedback.css:21`). Do not add one back to make the alias table look symmetrical.
 
 **`--color-signal-indigo` and `--color-signal-indigo-deep` are not a second accent.** They hold the brass
 values and exist only so Tailwind keeps generating the utilities their remaining consumers use. Phase 2 deletes
 them once every consumer migrates, so scope from the real count, not from a sample: **sixteen references across
 ten files.** In the stylesheet layer — the primary button gradient, both stops in both directions
-(`buttons.css:58,59,66,67`), the form-control focus border (`forms.css:26`), and the checkbox `accent-color`
+(`buttons.css:46,50`), the form-control focus border (`forms.css:26`), and the checkbox `accent-color`
 (`forms.css:129`). In components — `nav-bar.vue:104,117` (active link colour and the indicator fill),
 `app.vue:66` and `loading-spinner.vue:56` (spinner `border-top-color`), `data-table.vue:349` (the sort-indicator
 colour), `instrument-table.vue:477` (the XIRR value link's hover — not a sort indicator), `config-dialog.vue:242`
@@ -370,10 +370,10 @@ Three exceptions exist and are deliberate:
   fill, so the literal is unavoidable — but it is `--color-ink` rendered to hex, not a leftover. It is the one
   colour in the stylesheet that a hex grep does not find, and it must be updated by hand if ink ever moves.
 
-Sixteen neutral black tints also remain — ten in the component partials (`surfaces.css:9`, `modals.css:30`,
-`mobile-cards.css:7`, `motion.css:14,15,16`, `navigation.css:20`, `buttons.css:40,98,125`) and six in
-components (`calculator.vue:191`, `modal-shell.vue:119`, `data-table.vue:318`, `instruments-view.vue:288`,
-`etf-breakdown-table.vue:2`, `etf-breakdown-chart.vue:2`) — carrying hover films, the button press inset, the
+Sixteen neutral black tints also remain — eight in the component partials (`surfaces.css:9`,
+`mobile-cards.css:7`, `motion.css:14,15,16`, `buttons.css:31,80,108`) and eight in
+components (`calculator.vue:191`, `modal-shell.vue:119,151`, `data-table.vue:318`, `instruments-view.vue:288`,
+`nav-bar.vue:82`, `etf-breakdown-table.vue:2`, `etf-breakdown-chart.vue:2`) — carrying hover films, the button press inset, the
 card and modal borders, the skeleton gradient, the nav link's resting colour, the modal backdrop, and a few
 shadows. They are written three ways, and a grep must cover all three: twelve use `rgb(0 0 0 / α)`; two use the
 comma form `rgba(0, 0, 0, α)` (`modal-shell.vue`, `instruments-view.vue`); and two sit inside Tailwind arbitrary
@@ -408,13 +408,13 @@ These are enforceable constraints, not guidance. They are reproduced from the de
    (`config-dialog.vue:253`), two receded figures in `etf-breakdown-table.vue:404,461`, and the ETF breakdown's
    resting search icon (`etf-breakdown.vue:490`). All five are large or non-text, so they pass — but the rule's
    own examples describe an intent, not the current map. The decorative rule it names is `hr`, which
-   draws in `hairline-strong` at 25% opacity (`base.css:91`).
+   draws in `hairline-strong` at 25% opacity (`base.css:100`).
 5. **State layers use `color-mix()`** against the base token. Hover and active states are never a second
    hardcoded colour. Like `--color-series-*`, this is declared and gated, and it has exactly one consumer —
    which is not a state layer: the summary chart's loading veil at `portfolio-summary.vue:275`,
    `color-mix(in srgb, var(--color-surface) 72%, transparent)`. Every hover in the app still resolves to a
-   second token — `.btn-ghost:hover` and `.btn-add-new:hover` both swap to `brass-wash` (`buttons.css:118`,
-   `:143`). Phase 2 is what makes the rule true. The veil is nonetheless the precedent to copy: mix against a
+   second token — `.btn-ghost:hover` and `.btn-add-new:hover` both swap to `brass-wash` (`buttons.css:100`,
+   `:126`). Phase 2 is what makes the rule true. The veil is nonetheless the precedent to copy: mix against a
    token, never against a literal.
 6. **No component declares a colour.** Every value resolves to a token.
 
@@ -582,18 +582,18 @@ two would do; the third is worth collapsing.
 **Shadows are warm-tinted**, derived from `oklch(0.24 0.012 60 / α)` — the ink itself, not neutral black. All
 five are in real use and the heaviest is the toast at 14%.
 
-| token              | value                                         | used for                                            |
-| ------------------ | --------------------------------------------- | --------------------------------------------------- |
-| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper                |
-| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls                          |
-| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | dropdown menu, mobile card hover, ETF holding logos |
-| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px                             |
-| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker                  |
+| token              | value                                         | used for                             |
+| ------------------ | --------------------------------------------- | ------------------------------------ |
+| `--shadow-card`    | `0 1px 2px oklch(0.24 0.012 60 / 0.05)`       | resting cards, desktop table wrapper |
+| `--shadow-control` | `0 1px 2px oklch(0.24 0.012 60 / 0.04)`       | buttons and ghost controls           |
+| `--shadow-lifted`  | `0 2px 8px oklch(0.24 0.012 60 / 0.08)`       | mobile card hover, ETF holding logos |
+| `--shadow-nav`     | `0 1px 0 oklch(0.24 0.012 60 / 0.06)`         | sticky navbar at ≥992px              |
+| `--shadow-overlay` | `0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14)` | toasts, the native select's picker   |
 
 Citations for the two multi-consumer rows, so the next reader does not conclude a component invented its own
-elevation: `--shadow-lifted` at `navigation.css:53` (the dropdown menu), `data-table.vue:211` (the card hover),
+elevation: `--shadow-lifted` at `data-table.vue:211` (the card hover),
 and `etf-breakdown-table.vue:436,474` (the ETF holding logo and its placeholder, both of which lift on hover
-under a `scale(1.1)`); `--shadow-overlay` at `feedback.css:109` (the toast) and `forms.css:68` (the
+under a `scale(1.1)`); `--shadow-overlay` at `toast-container.vue:63` (the toast) and `forms.css:68` (the
 customizable `<select>` picker).
 
 `--shadow-nav` is a hairline in shadow's clothing: a 1px rule at zero blur, so the sticky bar reads as an edge

@@ -3,6 +3,7 @@ package e2e
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import com.codeborne.selenide.Condition.empty
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.Selenide.clearBrowserLocalStorage
@@ -67,17 +68,13 @@ class TransactionManagementE2E {
   }
 
   @Test
-  fun `should display quick dates dropdown`() {
-    val quickDatesButton = elements(className("platform-btn")).findBy(text("Quick Dates"))
-    quickDatesButton.shouldBe(visible, Duration.ofSeconds(10))
-    expect(quickDatesButton.isDisplayed).toEqual(true)
+  fun `should filter transactions using a quick date range`() {
+    val quickDates = element(cssSelector("[data-testid='quickDatesToggle']"))
+    quickDates.shouldBe(visible, Duration.ofSeconds(10))
+    expect(quickDates.findAll(tagName("option")).size()).toBeGreaterThan(1)
 
-    quickDatesButton.click()
-    Thread.sleep(300)
-
-    val dropdownMenu = element(className("dropdown-menu")).shouldBe(visible)
-    val dropdownItems = dropdownMenu.findAll(className("dropdown-item"))
-    expect(dropdownItems.size()).toBeGreaterThan(0)
+    quickDates.selectOptionContainingText("Last")
+    element(id("fromDate")).shouldNotBe(empty)
   }
 
   @Test

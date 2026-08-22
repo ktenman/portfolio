@@ -130,7 +130,7 @@ describe('AllocationTable', () => {
     it('blurs on wheel so trackpad scrolling cannot change the target', async () => {
       const wrapper = createWrapper(
         { allocations: [{ instrumentId: 1, value: 57.3 }] },
-        { attachTo: document.body }
+        document.body
       )
       const target = wrapper.find('tbody input[type="number"]')
       ;(target.element as HTMLInputElement).focus()

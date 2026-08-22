@@ -7,9 +7,9 @@
     @update:open="emit('update:open', $event)"
   >
     <div v-if="isLoading" class="text-center py-4">
-      <div class="spinner-border" role="status" />
+      <SpinnerRing />
     </div>
-    <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+    <AlertMessage v-else-if="error" variant="danger">{{ error }}</AlertMessage>
     <div v-else>
       <table class="table table-sm mb-0">
         <thead>
@@ -38,9 +38,7 @@
       </p>
     </div>
     <template #footer>
-      <button type="button" class="btn btn-secondary" @click="emit('update:open', false)">
-        Close
-      </button>
+      <AppButton variant="secondary" @click="emit('update:open', false)">Close</AppButton>
     </template>
   </modal-shell>
 </template>
@@ -48,6 +46,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
+import AppButton from '../shared/app-button.vue'
+import AlertMessage from '../shared/alert-message.vue'
+import SpinnerRing from '../shared/spinner-ring.vue'
 import { portfolioSummaryService } from '../../services/api'
 import type { AnnualWindowDto } from '../../models/generated/domain-models'
 

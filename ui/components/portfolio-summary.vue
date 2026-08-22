@@ -29,28 +29,24 @@
       <skeleton-loader type="table" :rows="10" :columns="5" />
     </div>
 
-    <div v-else-if="viewState === 'ERROR'" class="alert alert-danger" role="alert">
+    <AlertMessage v-else-if="viewState === 'ERROR'" variant="danger">
       {{ error }}
-    </div>
+    </AlertMessage>
 
-    <div v-else-if="viewState === 'EMPTY'" class="alert alert-info" role="alert">
+    <AlertMessage v-else-if="viewState === 'EMPTY'" variant="info">
       No portfolio summary data found.
-    </div>
+    </AlertMessage>
 
     <template v-else>
-      <div
+      <AlertMessage
         v-if="showRecalculationMessage"
-        class="alert alert-info alert-dismissible mt-4"
-        role="alert"
+        variant="info"
+        dismissible
+        class="mt-4"
+        @dismiss="recalculationMessage = ''"
       >
         {{ recalculationMessage }}
-        <button
-          type="button"
-          class="btn-close"
-          @click="recalculationMessage = ''"
-          aria-label="Close"
-        ></button>
-      </div>
+      </AlertMessage>
 
       <header v-if="latestSummary" class="portfolio-headline">
         <h1>
@@ -76,9 +72,9 @@
         </div>
       </div>
 
-      <div v-if="rangeError" class="alert alert-warning mt-3" role="alert">
+      <AlertMessage v-if="rangeError" variant="warning" class="mt-3">
         Could not load the {{ selectedRange }} chart range: {{ rangeError }}
-      </div>
+      </AlertMessage>
 
       <chart-range-filter class="mt-3" :selected="selectedRange" @select="selectedRange = $event" />
 
@@ -128,6 +124,7 @@ import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import PlatformFilter from './shared/platform-filter.vue'
 import FilterToggle from './shared/filter-toggle.vue'
+import AlertMessage from './shared/alert-message.vue'
 import { transactionsService } from '../services/api'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
@@ -142,12 +139,12 @@ import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
 const PortfolioChart = defineAsyncComponent({
   loader: () => import('./portfolio/portfolio-chart.vue'),
-  loadingComponent: () => h(LoadingSpinner, { containerClass: 'min-h-48' }),
+  loadingComponent: () => h(LoadingSpinner, { class: 'min-h-48' }),
   errorComponent: () =>
     h(
-      'div',
-      { class: 'alert alert-warning', role: 'alert' },
-      'Could not load the chart. Refresh the page to try again.'
+      AlertMessage,
+      { variant: 'warning' },
+      () => 'Could not load the chart. Refresh the page to try again.'
     ),
 })
 
@@ -315,7 +312,7 @@ const handleRecalculate = async () => {
       'This will delete all current summary data and recalculate it from scratch. This operation may take some time. Continue?',
     confirmText: 'Recalculate',
     cancelText: 'Cancel',
-    confirmClass: 'btn-danger',
+    variant: 'danger',
   })
 
   if (shouldProceed) {
