@@ -18,7 +18,7 @@ import java.util.Optional
 abstract class CalculationServiceTestBase {
   protected val dataRetrievalService = mockk<DailyPriceService>()
   protected val instrumentRepository = mockk<InstrumentRepository>()
-  protected val clock = mockk<Clock>()
+  private val clock = mockk<Clock>()
   protected val portfolioSummaryService = mockk<SummaryService>()
   protected val today: LocalDate = LocalDate.of(2024, 5, 15)
   protected val instrumentCode = "QDVE:GER:EUR"

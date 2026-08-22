@@ -5,12 +5,15 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.testing.fixture.CashFlowTestBase
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import java.math.BigDecimal
 
-class XirrCalculationCashFlowTest : InvestmentMetricsTestBase() {
+class XirrCalculationCashFlowTest : CashFlowTestBase() {
+  private val xirrCalculationService = XirrCalculationService(clock)
+
   @Test
   fun `should buildCashFlows with buy transactions only`() {
     val transactions =
