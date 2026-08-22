@@ -29,10 +29,12 @@
 ## File Structure
 
 **Deleted outright:**
+
 - `ui/styles/components/navigation.css` — `.dropdown`, `.dropdown-menu`, `.dropdown-menu.show`, `.dropdown-item` (lines 25-27, 45-83); file survives with `.navbar`, `.navbar-nav`, `.nav-link`, `.dropdown-toggle::after` until Phase B empties it.
 - `ui/styles/components/feedback.css` — `.toast:not(.show)` (lines 112-114).
 
 **Relocated (Phase B):**
+
 - `ui/styles/components/modals.css` (85 lines) → `ui/components/shared/modal-shell.vue` scoped style, then file deleted.
 - `.navbar`/`.navbar-nav`/`.nav-link` → `ui/components/nav-bar.vue`.
 - `.dropdown-toggle::after` + `[aria-expanded='true']` → `ui/components/shared/filter-toggle.vue`.
@@ -41,6 +43,7 @@
 - `ui/styles/components/navigation.css` deleted once empty; `ui/styles/components.css` barrel updated.
 
 **Created (Phase D):**
+
 - `ui/components/shared/app-button.vue` — one button primitive. Props `variant`, `size`, `ghost`, `loading`, `disabled`, `type`. Renders existing Bootstrap class names.
 - `ui/components/shared/alert-message.vue` — one alert primitive. Props `variant`, `dismissible`. Renders `.alert .alert-<variant>` + `.btn-close`.
 
@@ -49,6 +52,7 @@
 **Modified (Phase E):** `ui/styles/components/feedback.css` (spinner, badge), `ui/styles/components/surfaces.css` (borders, label gesture), `ui/styles/components/mobile-cards.css`, and the 7 component files carrying label-gesture variants.
 
 **Backend (Phase A):**
+
 - `src/test/kotlin/e2e/retry/RetryExtension.kt` — rewritten.
 - `src/test/kotlin/ee/tenman/portfolio/testing/RetryExtensionTest.kt` — created (outside `**/e2e/**` so it runs in the fast `./gradlew test` task).
 - `src/test/kotlin/e2e/TransactionManagementE2E.kt` — `should display quick dates dropdown` rewritten.
@@ -64,10 +68,12 @@ Branch: `fix/<issue>-e2e-retry-and-dead-css`. Zero visual delta.
 `RetryExtension` implements `TestExecutionExceptionHandler`. When it decides to "retry", it `return`s — and a `TestExecutionExceptionHandler` that returns normally tells JUnit **the test passed**. Nothing is re-run. All 4 E2E classes (29 tests) opt in with `onExceptions = [ElementNotFound::class, TimeoutException::class]`, so every missing-element failure in the suite has been silently green.
 
 **Files:**
+
 - Modify: `src/test/kotlin/e2e/retry/RetryExtension.kt` (full rewrite)
 - Test: `src/test/kotlin/ee/tenman/portfolio/testing/RetryExtensionTest.kt` (create)
 
 **Interfaces:**
+
 - Consumes: `e2e.retry.Retry` annotation (`times: Int = 3`, `onExceptions: Array<KClass<out Throwable>> = [Exception::class]`) — unchanged.
 - Produces: `e2e.retry.RetryExtension` implementing `org.junit.jupiter.api.extension.InvocationInterceptor`. `times` means **total attempts**, not extra attempts (documented change from the old handler's "up to N extra runs"). Values below 1 fail fast.
 
@@ -196,6 +202,7 @@ private fun Retry.matches(throwable: Throwable): Boolean =
 ```
 
 Notes for the implementer:
+
 - JUnit requires exactly one of `proceed()` / `skip()` per invocation. `skip()` hands control back so the method can be invoked reflectively in a loop.
 - `method.invoke` wraps test failures in `InvocationTargetException`; `unwrap()` restores the real cause so `onExceptions` matching and the final rethrow see the original exception.
 - `@BeforeEach` / `@AfterEach` run **once** around the whole retry loop, not per attempt. For the Selenide E2E classes that means the page is opened once and retries re-query the DOM — acceptable, and strictly better than today's zero re-runs. Do not try to re-run lifecycle callbacks.
@@ -231,10 +238,12 @@ git commit -m "Make the E2E retry extension actually retry"
 ### Task 2: Triage the E2E suite now that failures surface
 
 **Files:**
+
 - Modify: `src/test/kotlin/e2e/TransactionManagementE2E.kt:69-81`
 - Possibly modify: other files under `src/test/kotlin/e2e/` depending on what the run reveals
 
 **Interfaces:**
+
 - Consumes: the working `RetryExtension` from Task 1.
 - Produces: a green E2E suite, or an explicit written list of failures deferred with reasons.
 
@@ -277,6 +286,7 @@ Expected: `should filter transactions using a quick date range` PASSES.
 - [ ] **Step 4: Fix or report the remaining failures**
 
 For each other test that Step 1 revealed:
+
 - If the fix is a selector or assertion drift of the same kind (the UI moved, the test didn't), fix it in place.
 - If a failure indicates a genuine app bug, stop and report it rather than editing the test to match broken behaviour.
 - If the suite reveals more rot than this phase can absorb, list the remaining failures explicitly in the PR body. Do not silence anything by re-adding a swallow.
@@ -293,10 +303,12 @@ git commit -m "Assert the real quick date control in E2E"
 Grep proves zero consumers in any template or runtime class binding. `.dropdown-toggle::after` **is** live (`filter-toggle.vue`) and must survive.
 
 **Files:**
+
 - Modify: `ui/styles/components/navigation.css:25-27,45-83`
 - Modify: `ui/styles/components/feedback.css:112-114`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `navigation.css` reduced to `.navbar`, `.navbar-nav`, `.nav-link`, `.dropdown-toggle::after`, `.dropdown-toggle[aria-expanded='true']::after`.
 
@@ -376,11 +388,13 @@ Branch: `feature/<issue>-relocate-component-css`. Zero visual delta. Each moved 
 ### Task 4: Move the modal CSS into `modal-shell.vue`
 
 **Files:**
+
 - Delete: `ui/styles/components/modals.css` (85 lines)
 - Modify: `ui/components/shared/modal-shell.vue` (scoped `<style>`)
 - Modify: `ui/styles/components.css` (drop the import)
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `.modal`, `.modal-dialog`, `.modal-dialog-centered`, `.modal-content`, `.modal-header`, `.modal-title`, `.modal-body`, `.modal-footer`, `.modal-lg` defined inside `modal-shell.vue`.
 
@@ -427,12 +441,14 @@ git commit -m "Move modal styles into modal-shell"
 ### Task 5: Move navbar and caret CSS into their components
 
 **Files:**
+
 - Modify: `ui/components/nav-bar.vue` (scoped `<style>`)
 - Modify: `ui/components/shared/filter-toggle.vue` (scoped `<style>`)
 - Delete: `ui/styles/components/navigation.css`
 - Modify: `ui/styles/components.css`
 
 **Interfaces:**
+
 - Consumes: `navigation.css` as reduced by Task 3.
 - Produces: `.navbar`, `.navbar-nav`, `.nav-link` in `nav-bar.vue`; `.dropdown-toggle::after` and `.dropdown-toggle[aria-expanded='true']::after` in `filter-toggle.vue`.
 
@@ -530,12 +546,14 @@ git commit -m "Move navbar and caret styles into components"
 The `:focus-visible` rule sitting in `buttons.css:29-36` is global — it targets `a[href]`, `input`, `select`, `textarea`, none of which are buttons. It belongs in `base.css`. `base.css` is imported into `@layer base`, and `buttons.css` into `@layer components`; utilities and components both outrank base. Verify no `@layer components` or utility rule sets `outline` on these elements before moving.
 
 **Files:**
+
 - Modify: `ui/components/shared/toast-container.vue` (scoped `<style>`)
 - Modify: `ui/styles/components/feedback.css` (remove the toast block)
 - Modify: `ui/styles/components/buttons.css:29-36` (remove)
 - Modify: `ui/styles/base.css` (add the focus rule)
 
 **Interfaces:**
+
 - Consumes: `feedback.css` as reduced by Task 3.
 - Produces: `.toast-container`, `.toast`, `.toast .btn-close`, `.toast-container > :not(:last-child)`, `.toast-success/-info/-error/-warning`, `.toast-body` inside `toast-container.vue`. `feedback.css` keeps `.alert*`, `.small`, `.badge`, `.spinner-border*`.
 
@@ -633,11 +651,13 @@ Branch: `feature/<issue>-button-and-alert-components`. Zero visual delta. Both c
 19 files render `.btn`. The markup repeats `:disabled`, the `.btn-spinner` span, and variant class juggling.
 
 **Files:**
+
 - Create: `ui/components/shared/app-button.vue`
 - Create: `ui/components/shared/app-button.test.ts`
 - Modify: the 19 files listed in Step 4
 
 **Interfaces:**
+
 - Consumes: the `.btn*` classes in `ui/styles/components/buttons.css` (unchanged).
 - Produces: `<AppButton>` with props `variant?: 'primary' | 'secondary' | 'danger'` (default `undefined` → bare `.btn`), `size?: 'sm'`, `ghost?: boolean`, `loading?: boolean`, `disabled?: boolean`, `type?: 'button' | 'submit'` (default `'button'`); default slot for label content; emits nothing (native `click` falls through via `$attrs`).
 
@@ -754,11 +774,13 @@ ui/components/diversification/allocation-card.vue      (1)
 ```
 
 Skip these three — they render `.btn-close` or `.btn` variants the component does not cover:
+
 - `ui/components/shared/modal-shell.vue` (`.btn-close`)
 - `ui/components/shared/toast-container.vue` (`.btn-close`)
 - `ui/components/shared/filter-toggle.vue` (`.platform-btn dropdown-toggle`, not a `.btn`)
 
 Rules while converting:
+
 - A button that carries extra utility classes keeps them: `<AppButton variant="primary" class="mt-3">`.
 - A button whose classes do not decompose into the prop set (an unusual combination, an extra bespoke class) stays a raw `<button>`. Do not bend the component to fit one site.
 - Preserve `data-testid` and `aria-*` attributes verbatim — E2E and unit tests select on them.
@@ -785,11 +807,13 @@ git commit -m "Extract the shared button component"
 14 alert sites across 9 files, in 3 variants (`danger`, `info`, `warning`), one of them dismissible.
 
 **Files:**
+
 - Create: `ui/components/shared/alert-message.vue`
 - Create: `ui/components/shared/alert-message.test.ts`
 - Modify: the 9 files listed in Step 5
 
 **Interfaces:**
+
 - Consumes: `.alert*` classes in `ui/styles/components/feedback.css` (unchanged).
 - Produces: `<AlertMessage>` with props `variant: 'danger' | 'info' | 'warning'` (required), `dismissible?: boolean`; default slot for the message; emits `dismiss` when the close button is clicked. Always renders `role="alert"`.
 
@@ -824,7 +848,10 @@ describe('alert-message', () => {
   })
 
   it('omits the close button when it cannot be dismissed', () => {
-    const wrapper = mount(AlertMessage, { props: { variant: 'warning' }, slots: { default: 'Hoiatus' } })
+    const wrapper = mount(AlertMessage, {
+      props: { variant: 'warning' },
+      slots: { default: 'Hoiatus' },
+    })
     expect(wrapper.find('.btn-close').exists()).toBe(false)
     expect(wrapper.classes()).not.toContain('alert-dismissible')
   })
@@ -944,26 +971,28 @@ Branch: `feature/<issue>-retire-legacy-tokens`. Zero visual delta, but this is t
 
 Five shades map exactly onto Statement tokens. Four have no equivalent and keep their exact values under lightness-named tokens.
 
-| Old | Value | New |
-| --- | --- | --- |
-| `--color-gray-100` | `oklch(0.975 0.007 85)` | `--color-surface-hover` |
-| `--color-gray-200` | `oklch(0.93 0.008 85)` | `--color-hairline-soft` (new) |
-| `--color-gray-300` | `oklch(0.905 0.008 85)` | `--color-hairline` |
-| `--color-gray-400` | `oklch(0.855 0.01 85)` | `--color-hairline-strong` |
-| `--color-gray-500` | `oklch(0.55 0.014 60)` | `--color-ink-55` (new) |
-| `--color-gray-600` | `oklch(0.5 0.014 60)` | `--color-ink-soft` |
-| `--color-gray-700` | `oklch(0.4 0.014 60)` | `--color-ink-40` (new) |
-| `--color-gray-800` | `oklch(0.32 0.013 60)` | `--color-ink-32` (new) |
-| `--color-gray-900` | `oklch(0.24 0.012 60)` | `--color-ink` |
+| Old                | Value                   | New                           |
+| ------------------ | ----------------------- | ----------------------------- |
+| `--color-gray-100` | `oklch(0.975 0.007 85)` | `--color-surface-hover`       |
+| `--color-gray-200` | `oklch(0.93 0.008 85)`  | `--color-hairline-soft` (new) |
+| `--color-gray-300` | `oklch(0.905 0.008 85)` | `--color-hairline`            |
+| `--color-gray-400` | `oklch(0.855 0.01 85)`  | `--color-hairline-strong`     |
+| `--color-gray-500` | `oklch(0.55 0.014 60)`  | `--color-ink-55` (new)        |
+| `--color-gray-600` | `oklch(0.5 0.014 60)`   | `--color-ink-soft`            |
+| `--color-gray-700` | `oklch(0.4 0.014 60)`   | `--color-ink-40` (new)        |
+| `--color-gray-800` | `oklch(0.32 0.013 60)`  | `--color-ink-32` (new)        |
+| `--color-gray-900` | `oklch(0.24 0.012 60)`  | `--color-ink`                 |
 
 The three new ink tokens are named for their lightness because they are mechanical holdovers, not roles — the number states exactly what they are and marks them as consolidation candidates. Do not invent role names for them.
 
 **Files:**
+
 - Modify: `ui/styles/theme.css:67-75`
 - Modify: 14 files with `var(--color-gray-*)` references (75 sites)
 - Modify: 6 files with `text-gray-600` / `bg-gray-100` utility classes (14 sites)
 
 **Interfaces:**
+
 - Consumes: existing Statement tokens in `theme.css`.
 - Produces: `--color-hairline-soft`, `--color-ink-55`, `--color-ink-40`, `--color-ink-32` in `@theme static`; zero `--color-gray-*` anywhere in `ui/`.
 
@@ -972,15 +1001,15 @@ The three new ink tokens are named for their lightness because they are mechanic
 In `ui/styles/theme.css`, add to the hairline group — after `--color-hairline-strong` on line 27, before the `--color-control-border` alias on line 28:
 
 ```css
-  --color-hairline-soft: oklch(0.93 0.008 85);
+--color-hairline-soft: oklch(0.93 0.008 85);
 ```
 
 and to the ink group, after `--color-ink-faint` on line 32 and before the `--color-ink-muted` alias on line 33:
 
 ```css
-  --color-ink-55: oklch(0.55 0.014 60);
-  --color-ink-40: oklch(0.4 0.014 60);
-  --color-ink-32: oklch(0.32 0.013 60);
+--color-ink-55: oklch(0.55 0.014 60);
+--color-ink-40: oklch(0.4 0.014 60);
+--color-ink-32: oklch(0.32 0.013 60);
 ```
 
 Do **not** delete the gray ramp yet — both names must resolve while the swap is in progress.
@@ -1091,24 +1120,26 @@ git commit -m "Replace the gray ramp with Statement tokens"
 
 Five alias families, all pure `var()` indirections, so every swap is provably identity.
 
-| Old | Resolves to | New |
-| --- | --- | --- |
-| `--color-signal-indigo` | `var(--color-brass)` | `--color-brass` |
-| `--color-signal-indigo-deep` | `var(--color-brass-deep)` | `--color-brass-deep` |
-| `--color-control-graphite` | `var(--color-ink-soft)` | `--color-ink-soft` |
-| `--color-control-graphite-deep` | `var(--color-ink)` | `--color-ink` |
-| `--color-status-success` | `var(--color-gain)` | `--color-gain` |
-| `--color-status-danger` | `var(--color-loss)` | `--color-loss` |
-| `--color-status-info` | `var(--color-notice)` | `--color-notice` |
-| `--color-status-warning` | `var(--color-brass)` | `--color-brass` |
-| `--color-ink-muted` | `var(--color-ink-soft)` | `--color-ink-soft` |
-| `--color-body-secondary` | `var(--color-ink-soft)` | `--color-ink-soft` |
+| Old                             | Resolves to               | New                  |
+| ------------------------------- | ------------------------- | -------------------- |
+| `--color-signal-indigo`         | `var(--color-brass)`      | `--color-brass`      |
+| `--color-signal-indigo-deep`    | `var(--color-brass-deep)` | `--color-brass-deep` |
+| `--color-control-graphite`      | `var(--color-ink-soft)`   | `--color-ink-soft`   |
+| `--color-control-graphite-deep` | `var(--color-ink)`        | `--color-ink`        |
+| `--color-status-success`        | `var(--color-gain)`       | `--color-gain`       |
+| `--color-status-danger`         | `var(--color-loss)`       | `--color-loss`       |
+| `--color-status-info`           | `var(--color-notice)`     | `--color-notice`     |
+| `--color-status-warning`        | `var(--color-brass)`      | `--color-brass`      |
+| `--color-ink-muted`             | `var(--color-ink-soft)`   | `--color-ink-soft`   |
+| `--color-body-secondary`        | `var(--color-ink-soft)`   | `--color-ink-soft`   |
 
 **Files:**
+
 - Modify: `ui/styles/theme.css:33-34,50-58`
 - Modify: 20 files across `var()` and utility-class references
 
 **Interfaces:**
+
 - Consumes: `theme.css` as left by Task 9.
 - Produces: zero references to any of the ten aliases; `@theme static` shorter by 10 declarations.
 
@@ -1218,12 +1249,14 @@ git commit -m "Delete the legacy colour aliases"
 16 pure-black tints remain. They cannot move onto Statement shadow/hairline tokens without changing pixels — every such token is ink-hue `oklch(0.24 0.012 60 / α)`, not black. So this task only removes genuine duplication and modernizes syntax; the 9 one-off values stay and get recorded as open debt.
 
 **Files:**
+
 - Modify: `ui/styles/theme.css` (2 new tokens)
 - Modify: `ui/styles/components/buttons.css:89,117`, `ui/components/shared/data-table.vue:318`
 - Modify: `ui/components/etf/etf-breakdown-chart.vue:2`, `ui/components/etf/etf-breakdown-table.vue:2`
 - Modify: `ui/components/shared/modal-shell.vue:119`, `ui/components/instruments/instruments-view.vue:286`
 
 **Interfaces:**
+
 - Consumes: `theme.css` as left by Task 10.
 - Produces: `--color-surface-tint: rgb(0 0 0 / 0.02)` and `--shadow-panel: 0 0.125rem 0.25rem rgb(0 0 0 / 0.075)`, generating `bg-surface-tint` and `shadow-panel` utilities.
 
@@ -1315,6 +1348,7 @@ Branch: `feature/<issue>-2026-polish`. **The only phase that changes pixels.** O
 **Files:** none modified.
 
 **Interfaces:**
+
 - Consumes: the app as left by Phase C.
 - Produces: a written before-state the final task compares against.
 
@@ -1335,9 +1369,11 @@ Expected: green. If it is red before any change, stop — the baselines have dri
 ### Task 13: Thin the spinner and lighten the badge
 
 **Files:**
+
 - Modify: `ui/styles/components/feedback.css:48` (badge weight), `:70-86` (spinner)
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `.spinner-border` with a 2px arc; `.badge` at weight 550.
 
@@ -1400,9 +1436,11 @@ git commit -m "Thin the spinner and lighten the badge"
 Three treatments exist today: `.card` uses `rgb(0 0 0 / 0.05)`, `.card-shell` uses `var(--color-hairline)`, and the table family uses `var(--color-hairline-strong)`. Standardize on the token pair: `--color-hairline` for interior rules, `--color-hairline-strong` for outer edges. This also retires one of the nine surviving black tints.
 
 **Files:**
+
 - Modify: `ui/styles/components/surfaces.css:9`
 
 **Interfaces:**
+
 - Consumes: `--color-hairline` from `theme.css`.
 - Produces: `.card` bordered with `var(--color-hairline)`, matching `.card-shell`.
 
@@ -1411,7 +1449,7 @@ Three treatments exist today: `.card` uses `rgb(0 0 0 / 0.05)`, `.card-shell` us
 In `ui/styles/components/surfaces.css`, change line 9:
 
 ```css
-  border: 1px solid var(--color-hairline);
+border: 1px solid var(--color-hairline);
 ```
 
 This is a visible change: `rgb(0 0 0 / 0.05)` over the paper background is a cooler, fainter line than `oklch(0.905 0.008 85)`. That is the intended modernization — the card edge now matches `.card-shell` and the paper hue instead of being a neutral gray wash.
@@ -1444,23 +1482,24 @@ git commit -m "Unify the card border on the hairline token"
 
 Nine label declarations exist in five distinct specs. The canonical gesture is the one in `surfaces.css` `.table thead th`: `var(--text-label)` / `600` / `0.05em` / uppercase.
 
-| File | Current | Action |
-| --- | --- | --- |
-| `ui/styles/components/surfaces.css:42-50` | `--text-label` / 600 / 0.05em | canonical — leave |
-| `ui/styles/components/mobile-cards.css:31-36` | 600 / 0.05em | add `font-size: var(--text-label)` if absent |
-| `ui/components/shared/stat-card.vue:19-23` | 500 / 0.05em | weight → 600 |
-| `ui/components/diversification/breakdown-card.vue:42-46` | 500 / 0.05em | weight → 600 |
-| `ui/components/calculator.vue:154-158` | 500 / **0.5px** | weight → 600, spacing → 0.05em |
-| `ui/components/diversification/allocation-table.vue:638-642` | 500 / **0.5px** | weight → 600, spacing → 0.05em |
-| `ui/components/diversification/allocation-card.vue:244-248` | **0.6875rem** / 0.025em | size → `var(--text-label)`, spacing → 0.05em |
-| `ui/components/transactions/transaction-table.vue:303-307` | **0.6875rem** / 0.025em | size → `var(--text-label)`, spacing → 0.05em |
-| `ui/components/transactions/transactions-view.vue:246-250` | `--text-label` / 0.05em | add `font-weight: 600` if absent |
+| File                                                         | Current                       | Action                                       |
+| ------------------------------------------------------------ | ----------------------------- | -------------------------------------------- |
+| `ui/styles/components/surfaces.css:42-50`                    | `--text-label` / 600 / 0.05em | canonical — leave                            |
+| `ui/styles/components/mobile-cards.css:31-36`                | 600 / 0.05em                  | add `font-size: var(--text-label)` if absent |
+| `ui/components/shared/stat-card.vue:19-23`                   | 500 / 0.05em                  | weight → 600                                 |
+| `ui/components/diversification/breakdown-card.vue:42-46`     | 500 / 0.05em                  | weight → 600                                 |
+| `ui/components/calculator.vue:154-158`                       | 500 / **0.5px**               | weight → 600, spacing → 0.05em               |
+| `ui/components/diversification/allocation-table.vue:638-642` | 500 / **0.5px**               | weight → 600, spacing → 0.05em               |
+| `ui/components/diversification/allocation-card.vue:244-248`  | **0.6875rem** / 0.025em       | size → `var(--text-label)`, spacing → 0.05em |
+| `ui/components/transactions/transaction-table.vue:303-307`   | **0.6875rem** / 0.025em       | size → `var(--text-label)`, spacing → 0.05em |
+| `ui/components/transactions/transactions-view.vue:246-250`   | `--text-label` / 0.05em       | add `font-weight: 600` if absent             |
 
 Colours stay as they are — this task normalizes the gesture (size, weight, spacing), not the palette.
 
 **Files:** the nine listed above.
 
 **Interfaces:**
+
 - Consumes: `--text-label: 0.75rem` from `theme.css`.
 - Produces: one label gesture — `font-size: var(--text-label); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase`.
 
@@ -1495,9 +1534,11 @@ git commit -m "Normalize the label gesture across components"
 ### Task 16: Close out the phase
 
 **Files:**
+
 - Modify: `DESIGN.md`
 
 **Interfaces:**
+
 - Consumes: everything above.
 - Produces: DESIGN.md with the Phase 2 backlog marked done, a refreshed debt census, and accurate citations.
 
@@ -1553,13 +1594,13 @@ EOF
 
 ## Verification Summary
 
-| Phase | Visual expectation | Extra gate |
-| --- | --- | --- |
-| A | `npm run visual` green, baselines untouched | `./gradlew test` + `npm run test:e2e` |
-| B | `npm run visual` green, baselines untouched | 7 modal shots, toast states, `palette.spec` focus rings |
-| D | `npm run visual` green, baselines untouched | `states.spec` alert shots, 2 new component test files |
-| C | `npm run visual` green, baselines untouched | `threshold: 0` double-run; grep proves zero surviving tokens |
-| E | Baselines **updated**, one change per commit | `palette.spec` AA contrast; impeccable audit before/after |
+| Phase | Visual expectation                           | Extra gate                                                   |
+| ----- | -------------------------------------------- | ------------------------------------------------------------ |
+| A     | `npm run visual` green, baselines untouched  | `./gradlew test` + `npm run test:e2e`                        |
+| B     | `npm run visual` green, baselines untouched  | 7 modal shots, toast states, `palette.spec` focus rings      |
+| D     | `npm run visual` green, baselines untouched  | `states.spec` alert shots, 2 new component test files        |
+| C     | `npm run visual` green, baselines untouched  | `threshold: 0` double-run; grep proves zero surviving tokens |
+| E     | Baselines **updated**, one change per commit | `palette.spec` AA contrast; impeccable audit before/after    |
 
 ## Open Risks
 
