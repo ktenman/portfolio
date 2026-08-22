@@ -109,10 +109,6 @@
   box-shadow: var(--shadow-overlay);
 }
 
-.toast:not(.show) {
-  display: none;
-}
-
 .toast .btn-close {
   color: var(--color-white);
 }
