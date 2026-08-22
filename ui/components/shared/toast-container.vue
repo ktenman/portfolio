@@ -15,12 +15,7 @@
             <strong>{{ TOAST_STYLES[toast.type].label }}</strong>
             {{ toast.message }}
           </div>
-          <button
-            type="button"
-            class="btn-close me-2 m-auto"
-            aria-label="Close"
-            @click="dismissToast(toast.id)"
-          ></button>
+          <close-button class="me-2 m-auto" @click="dismissToast(toast.id)" />
         </div>
       </div>
     </div>
@@ -29,6 +24,7 @@
 
 <script setup lang="ts">
 import { dismissToast, toasts, type ToastType } from '../../composables/use-toast'
+import CloseButton from './close-button.vue'
 
 const TOAST_STYLES: Record<ToastType, { accent: string; label: string }> = {
   success: { accent: 'toast-success', label: '✓ Success:' },
@@ -61,10 +57,6 @@ const TOAST_STYLES: Record<ToastType, { accent: string; label: string }> = {
   background-clip: padding-box;
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-overlay);
-}
-
-.toast .btn-close {
-  color: var(--color-white);
 }
 
 .toast-container > :not(:last-child) {

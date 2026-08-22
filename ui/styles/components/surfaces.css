@@ -11,6 +11,12 @@
   box-shadow: var(--shadow-card);
 }
 
+@media (max-width: 768px) {
+  .card {
+    margin-bottom: 1rem;
+  }
+}
+
 .card-body {
   flex: 1 1 auto;
   padding: 1.25rem;

@@ -13,7 +13,7 @@
       <div class="modal-content" autofocus tabindex="-1" @click.stop>
         <div class="modal-header">
           <h5 class="modal-title" :id="`${modalId}Label`">{{ title }}</h5>
-          <button type="button" class="btn-close" aria-label="Close" @click="requestClose"></button>
+          <close-button @click="requestClose" />
         </div>
         <div class="modal-body">
           <slot />
@@ -28,6 +28,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import CloseButton from './close-button.vue'
 
 interface Props {
   open: boolean

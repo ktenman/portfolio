@@ -1,18 +1,17 @@
 <template>
   <div :class="classes" role="alert">
     <slot />
-    <button
+    <close-button
       v-if="dismissible"
-      type="button"
-      class="btn-close"
-      aria-label="Close"
+      class="absolute top-0 right-0 z-2 px-4 py-5"
       @click="emit('dismiss')"
-    ></button>
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import CloseButton from './close-button.vue'
 
 const props = defineProps<{
   variant: 'danger' | 'info' | 'warning'
