@@ -60,6 +60,30 @@ function formatDate(dateString: string): string {
 </script>
 
 <style scoped>
+.navbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+}
+
+.navbar-nav {
+  display: flex;
+  margin-bottom: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.nav-link {
+  display: block;
+  padding: 0.5rem;
+  font-weight: 500;
+  color: rgb(0 0 0 / 0.65);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
 .navbar-scroll-container {
   width: 100%;
   overflow-x: auto;
