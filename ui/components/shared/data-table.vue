@@ -8,13 +8,13 @@
       />
     </div>
 
-    <div v-else-if="isError" class="alert alert-danger" role="alert">
+    <AlertMessage v-else-if="isError" variant="danger">
       {{ errorMessage || 'Failed to load data. Please try again.' }}
-    </div>
+    </AlertMessage>
 
-    <div v-else-if="hasNoData" class="alert alert-info" role="alert">
+    <AlertMessage v-else-if="hasNoData" variant="info">
       {{ emptyMessage }}
-    </div>
+    </AlertMessage>
 
     <template v-else>
       <!-- Mobile Card View -->
@@ -122,6 +122,7 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { computed } from 'vue'
 import SkeletonLoader from './skeleton-loader.vue'
+import AlertMessage from './alert-message.vue'
 import type { SortState } from '../../composables/use-sortable-table'
 
 export interface ColumnDefinition {

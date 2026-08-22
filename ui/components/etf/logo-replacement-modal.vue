@@ -8,7 +8,7 @@
     @update:open="close"
   >
     <loading-spinner v-if="isLoading" class="my-6" />
-    <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+    <AlertMessage v-else-if="error" variant="danger">{{ error }}</AlertMessage>
     <div
       v-else-if="hasFetched && candidates.length === 0"
       class="py-6 text-center text-body-secondary"
@@ -56,6 +56,7 @@ import { ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
 import AppButton from '../shared/app-button.vue'
+import AlertMessage from '../shared/alert-message.vue'
 import { logoService, type LogoCandidateDto } from '../../services/api'
 
 interface Props {

@@ -9,7 +9,7 @@
     <div v-if="isLoading" class="text-center py-4">
       <div class="spinner-border" role="status" />
     </div>
-    <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+    <AlertMessage v-else-if="error" variant="danger">{{ error }}</AlertMessage>
     <div v-else>
       <table class="table table-sm mb-0">
         <thead>
@@ -47,6 +47,7 @@
 import { computed, ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
 import AppButton from '../shared/app-button.vue'
+import AlertMessage from '../shared/alert-message.vue'
 import { portfolioSummaryService } from '../../services/api'
 import type { AnnualWindowDto } from '../../models/generated/domain-models'
 

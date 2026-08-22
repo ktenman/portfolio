@@ -75,9 +75,9 @@
         </div>
       </div>
 
-      <div v-if="error" class="alert alert-danger mt-4">
+      <AlertMessage v-if="error" variant="danger" class="mt-4">
         {{ error }}
-      </div>
+      </AlertMessage>
     </template>
 
     <ConfigDialog
@@ -118,6 +118,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownCard from './breakdown-card.vue'
+import AlertMessage from '../shared/alert-message.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
 import type { AllocationInput, CachedState, ActionDisplayMode } from './types'
 
