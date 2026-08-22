@@ -22,18 +22,25 @@
         <div
           v-for="(item, index) in items"
           :key="getItemKey(item, index)"
-          class="mobile-card"
+          class="mobile-card mb-2 overflow-hidden rounded-container border border-gray-200 bg-surface px-3 py-5 shadow-[0_1px_2px_0_rgb(0_0_0/0.03)] transition-all min-[389px]:px-2 min-[389px]:py-3 hover:shadow-lifted"
           :class="rowClass?.(item, index)"
         >
           <slot name="mobile-card" :item="item" :index="index" :columns="columns">
-            <div class="mobile-card-body">
+            <div class="mobile-card-body p-4">
               <div
                 v-for="column in columns.filter(col => !col.hideOnMobile)"
                 :key="column.key"
-                class="mobile-card-item"
+                class="mobile-card-item flex items-center justify-between gap-2 py-2 not-last:border-b not-last:border-b-gray-100 first:pt-0 last:pb-0 nth-2:mb-1"
               >
-                <span class="label">{{ column.label }}</span>
-                <span class="value" :class="column.class">
+                <span
+                  class="label min-w-20 flex-none text-2xs font-medium tracking-wider text-gray-600 uppercase"
+                >
+                  {{ column.label }}
+                </span>
+                <span
+                  class="value ml-auto flex-1 text-right font-semibold wrap-anywhere min-[389px]:text-2xs"
+                  :class="column.class"
+                >
                   <slot
                     :name="`cell-${column.key}`"
                     :item="item"
@@ -199,59 +206,6 @@ const handleSort = (column: ColumnDefinition) => {
 </script>
 
 <style scoped>
-.mobile-cards-wrapper .mobile-card {
-  margin-bottom: 0.5rem;
-  overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-container);
-  transition: all var(--transition-fast);
-}
-
-.mobile-cards-wrapper .mobile-card:hover {
-  box-shadow: var(--shadow-lifted);
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-body {
-  padding: 1rem;
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item:not(:last-child) {
-  border-bottom: 1px solid var(--color-gray-100);
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item:first-child {
-  padding-top: 0;
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item:last-child {
-  padding-bottom: 0;
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item .label {
-  flex: 0 0 auto;
-  min-width: 80px;
-  font-size: var(--text-2xs);
-  font-weight: 500;
-  color: var(--color-gray-600);
-}
-
-.mobile-cards-wrapper .mobile-card .mobile-card-body .mobile-card-item .value {
-  flex: 1;
-  margin-left: auto;
-  font-weight: 600;
-  text-align: right;
-  word-break: break-word;
-}
-
 .desktop-table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--color-hairline-strong);
