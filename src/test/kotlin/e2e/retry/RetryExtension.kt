@@ -1,47 +1,68 @@
 package e2e.retry
 
 import org.junit.jupiter.api.extension.ExtensionContext
-import org.junit.jupiter.api.extension.TestExecutionExceptionHandler
+import org.junit.jupiter.api.extension.InvocationInterceptor
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext
 import org.slf4j.LoggerFactory
-import java.util.concurrent.atomic.AtomicInteger
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 
-class RetryExtension : TestExecutionExceptionHandler {
+class RetryExtension : InvocationInterceptor {
   private val log = LoggerFactory.getLogger(javaClass)
-  private val attemptsPerTest = mutableMapOf<String, AtomicInteger>()
 
-  override fun handleTestExecutionException(
-    context: ExtensionContext,
-    throwable: Throwable,
+  override fun interceptTestMethod(
+    invocation: InvocationInterceptor.Invocation<Void?>,
+    invocationContext: ReflectiveInvocationContext<Method>,
+    extensionContext: ExtensionContext,
   ) {
-    val testMethod = context.requiredTestMethod
-    val testClass = context.requiredTestClass
-
-    val retryAnnotation =
-      testMethod.getAnnotation(Retry::class.java)
-        ?: testClass.getAnnotation(Retry::class.java)
-        ?: throw throwable
-
-    val allowedExceptions = retryAnnotation.onExceptions.toList()
-
-    if (allowedExceptions.isEmpty() || allowedExceptions.any { it.isInstance(throwable) }) {
-      val testName = "${testClass.name}.${testMethod.name}"
-      val attempts = attemptsPerTest.computeIfAbsent(testName) { AtomicInteger(0) }
-      val currentAttempt = attempts.incrementAndGet()
-
-      if (currentAttempt <= retryAnnotation.times) {
-        log.info(
-          "Retrying test '{}' after failure (Attempt {}/{})",
-          testName,
-          currentAttempt,
-          retryAnnotation.times,
-        )
-        log.info("Failure was: {}: {}", throwable.javaClass.simpleName, throwable.message)
-        return
-      }
-
-      log.error("Test '{}' failed after {} attempts", testName, retryAnnotation.times)
+    val retry = resolve(invocationContext.executable, extensionContext)
+    if (retry == null) {
+      invocation.proceed()
+      return
     }
+    invocation.skip()
+    attempt(retry, invocationContext, extensionContext)
+  }
 
-    throw throwable
+  private fun resolve(
+    method: Method,
+    context: ExtensionContext,
+  ): Retry? =
+    method.getAnnotation(Retry::class.java)
+      ?: context.requiredTestClass.getAnnotation(Retry::class.java)
+
+  private fun attempt(
+    retry: Retry,
+    invocationContext: ReflectiveInvocationContext<Method>,
+    extensionContext: ExtensionContext,
+  ) {
+    require(retry.times >= 1) { "Retry times must be at least 1 but was ${retry.times}" }
+    val method = invocationContext.executable
+    val target = invocationContext.target.orElseThrow()
+    val arguments = invocationContext.arguments.toTypedArray()
+    val name = "${extensionContext.requiredTestClass.simpleName}.${method.name}"
+    var lastFailure: Throwable? = null
+    repeat(retry.times) { index ->
+      val outcome = runCatching { method.invoke(target, *arguments) }
+      if (outcome.isSuccess) return
+      val failure = outcome.exceptionOrNull().unwrap()
+      if (!retry.matches(failure)) throw failure
+      lastFailure = failure
+      log.info(
+        "Test {} failed attempt {} of {}: {}",
+        name,
+        index + 1,
+        retry.times,
+        failure.message,
+      )
+    }
+    throw lastFailure ?: IllegalStateException("Retry produced no outcome for $name")
   }
 }
+
+private fun Throwable?.unwrap(): Throwable {
+  val throwable = checkNotNull(this) { "Cannot unwrap a null failure" }
+  return (throwable as? InvocationTargetException)?.targetException ?: throwable
+}
+
+private fun Retry.matches(throwable: Throwable): Boolean = onExceptions.isEmpty() || onExceptions.any { it.isInstance(throwable) }
