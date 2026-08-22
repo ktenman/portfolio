@@ -47,8 +47,22 @@ of changes should move the surface closer to a 2026 look.
   16 refs / 11 files, `--color-gray-100..900` ramp 81 refs,
   `--color-ink-muted` 14, `--color-control-graphite(-deep)` 8,
   `--color-status-*` 8, `--color-body-secondary` 1.
+- **Tokens are also consumed as generated Tailwind utilities**, which no
+  `var()` grep finds: `text-body-secondary` ×10, `text-gray-600` ×13,
+  `text-signal-indigo` ×2, `bg-gray-100` ×1. Deleting a `@theme` key stops
+  generating its utility class, so those sites lose their colour silently.
+  Every token deletion must sweep `var()` refs **and** utility-class refs.
+  `--color-body-secondary` has zero `var()` refs but 10 utility refs — live,
+  not dead.
+- **Four gray shades have no Statement equivalent:** gray-200
+  `oklch(0.93 0.008 85)`, gray-500 `oklch(0.55 0.014 60)`, gray-700
+  `oklch(0.4 0.014 60)`, gray-800 `oklch(0.32 0.013 60)`. The other five map
+  exactly (100→surface-hover, 300→hairline, 400→hairline-strong,
+  600→ink-soft, 900→ink).
 - **16 neutral black tints** in three syntaxes (`rgb(0 0 0 / α)`,
-  `rgba(0, 0, 0, α)`, `rgb(0_0_0/0.075)`) instead of hairline/shadow tokens.
+  `rgba(0, 0, 0, α)`, `rgb(0_0_0/0.075)`). These are pure black, while every
+  Statement shadow/hairline token is ink-hue (`oklch(0.24 0.012 60 / α)`) —
+  so swapping them onto existing tokens is a visual change, not a rename.
 - **Pixel gate:** 40 baselines in `docs/superpowers/baseline/`, 3 viewports,
   6 stubbed routes, 7 modals, `maxDiffPixels: 0` — but per-pixel `threshold`
   is the Playwright default 0.2, so the gate is blind to close colours.
@@ -63,17 +77,24 @@ Five phases, each its own GitHub issue + `feature/<issue>-<desc>` branch + PR
 and verified byte-identical against the existing baselines; only Phase E
 changes pixels and re-baselines, once.
 
-### Phase A — Delete dead CSS, fix the stale E2E (zero delta)
+### Phase A — Fix the retry bug, then the CSS it was hiding (zero delta)
 
-- Delete `.dropdown`, `.dropdown-menu(.show)`, `.dropdown-item` from
-  `navigation.css`; delete `.toast:not(.show)` from `feedback.css`.
+- **Fix `RetryExtension` first.** Replace the `TestExecutionExceptionHandler`
+  with an `InvocationInterceptor` that actually re-invokes the test method.
+  All 4 E2E classes (29 tests) opt in with
+  `onExceptions = [ElementNotFound, TimeoutException]`, so every
+  missing-element assertion in the suite has been swallowed. Cover it with a
+  fast unit test that runs in the normal `./gradlew test` task.
+- **Triage what the fix reveals.** Running the E2E suite with retry working
+  may surface further rotted tests beyond quick-dates. Fix what it finds;
+  report anything too large to absorb rather than widening silently.
 - Rewrite `should display quick dates dropdown` to assert the real control:
   `[data-testid="quickDatesToggle"]` visible, more than one `<option>`, and
   selecting an option fills `#fromDate`.
-- File a separate issue for the `RetryExtension` swallow-equals-pass bug. Not
-  fixed in this migration.
-- Verify: visual suite byte-identical to committed baselines; `npm test`;
-  rewritten E2E green via `npm run test:e2e`.
+- Delete `.dropdown`, `.dropdown-menu(.show)`, `.dropdown-item` from
+  `navigation.css`; delete `.toast:not(.show)` from `feedback.css`.
+- Verify: visual suite green against committed baselines; `npm test`;
+  E2E green via `npm run test:e2e`.
 
 ### Phase B — Relocate single-consumer CSS into components (zero delta)
 
@@ -103,13 +124,21 @@ changes pixels and re-baselines, once.
 
 ### Phase C — Retire legacy tokens, tokenize black tints (zero delta, colour-only risk)
 
-- Swap every reference to `--color-signal-indigo(-deep)`,
-  `--color-control-graphite(-deep)`, `--color-status-*`, `--color-ink-muted`,
-  `--color-body-secondary` and the `--color-gray-*` ramp to the Statement
-  token with the identical computed value, then delete the aliases from
-  `@theme` in `theme.css`.
-- Fold the 16 neutral black tints into existing hairline/shadow tokens at
-  identical values.
+- Swap every reference — `var()` **and** generated utility class — for
+  `--color-signal-indigo(-deep)`, `--color-control-graphite(-deep)`,
+  `--color-status-*`, `--color-ink-muted`, `--color-body-secondary` and the
+  `--color-gray-*` ramp onto the Statement token with the identical computed
+  value, then delete the aliases from `@theme`.
+- The four orphan gray shades keep their exact values under lightness-named
+  tokens (`--color-hairline-soft`, `--color-ink-32/40/55`), flagged in
+  DESIGN.md as consolidation candidates for a later pass.
+- Black tints: deduplicate only where the same value repeats
+  (`rgb(0 0 0 / 0.02)` ×3 → `--color-surface-tint`; the duplicated
+  `0 0.125rem 0.25rem rgb(0 0 0 / 0.075)` card shadow ×2 → `--shadow-panel`)
+  and modernize the two `rgba(0, 0, 0, α)` sites to space syntax. The
+  remaining 9 one-off tints stay pure black and are recorded as open debt —
+  moving them to the ink hue is a visual change and is not on the curated
+  polish list.
 - Runs after B and D so edits land in the files' final homes.
 - Verify: the default gate cannot see close colours, so run a `threshold: 0`
   copy of the Playwright config twice — stashed vs applied — and byte-compare
@@ -140,13 +169,19 @@ changes pixels and re-baselines, once.
 ## Non-goals
 
 - No Tailwind utility rewrites of `.table` / `.form-*` / `.card` internals.
-- No fix of `RetryExtension` (separate issue).
 - No new visual ideas beyond the curated list.
 - No renaming of DOM-hook class names.
+- No move of the 9 one-off black tints onto the ink hue.
+- No consolidation of the four orphan gray tones (values preserved, renamed).
 
 ## Risks
 
 - **Colour-blind gate (Phase C):** mitigated by the threshold-0 double-run.
+- **Utility-class blindness (Phase C):** a deleted `@theme` key silently stops
+  generating its utility; mitigated by sweeping utility refs alongside `var()`
+  refs and by a grep gate asserting zero surviving references per token.
+- **Unknown E2E rot (Phase A):** a working retry may reveal more broken tests
+  than the quick-dates one. Triage and report; do not widen scope silently.
 - **Scoped-style precedence (Phase B):** moved rules win over `@layer` rules;
   safe only because the moves are whole-block and byte-verified.
 - **Raw class stragglers (Phase D):** grep gate before moving CSS into the
