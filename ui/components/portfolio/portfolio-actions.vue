@@ -9,7 +9,7 @@
       class="ml-auto whitespace-nowrap max-sm:border-transparent max-sm:bg-transparent max-sm:pr-0 max-sm:shadow-none"
       :loading="isRecalculating"
       @click="$emit('recalculate')"
-      :disabled="isRecalculating || isLoading"
+      :disabled="isLoading"
     >
       {{ isRecalculating ? 'Recalculating...' : 'Recalculate Data' }}
     </AppButton>

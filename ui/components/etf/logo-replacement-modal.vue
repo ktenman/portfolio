@@ -43,7 +43,7 @@
         variant="primary"
         :loading="isReplacing"
         @click="confirmReplacement"
-        :disabled="selectedIndex === null || isReplacing"
+        :disabled="selectedIndex === null"
       >
         {{ isReplacing ? 'Replacing...' : 'Use This Logo' }}
       </AppButton>
