@@ -22,7 +22,7 @@
         <div
           v-for="(item, index) in items"
           :key="getItemKey(item, index)"
-          class="mobile-card mb-2 overflow-hidden rounded-container border border-gray-200 bg-surface px-3 py-5 shadow-[0_1px_2px_0_rgb(0_0_0/0.03)] transition-all min-[389px]:px-2 min-[389px]:py-3 hover:shadow-lifted"
+          class="mobile-card mb-2 overflow-hidden rounded-container border border-gray-200 bg-surface px-3 py-5 shadow-[0_1px_2px_0_rgb(0_0_0/0.03)] transition-all min-[389px]:px-2 min-[389px]:py-3 hover:border-gray-300 hover:shadow-lifted"
           :class="rowClass?.(item, index)"
         >
           <slot name="mobile-card" :item="item" :index="index" :columns="columns">

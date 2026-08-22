@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import AppButton from './app-button.vue'
 
 describe('app-button', () => {
-  it('renders the bootstrap class names for a ghost secondary small button', () => {
+  it('keeps the selector hooks for a ghost secondary small button', () => {
     const wrapper = mount(AppButton, {
       props: { variant: 'secondary', size: 'sm', ghost: true },
       slots: { default: 'Reset' },

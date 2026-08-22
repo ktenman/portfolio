@@ -1,8 +1,13 @@
 package e2e.retry
 
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.InvocationInterceptor
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext
+import org.junit.platform.commons.support.AnnotationSupport
+import org.junit.platform.commons.support.HierarchyTraversalMode
+import org.junit.platform.commons.support.ReflectionSupport
 import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -43,6 +48,7 @@ class RetryExtension : InvocationInterceptor {
     val name = "${extensionContext.requiredTestClass.simpleName}.${method.name}"
     var lastFailure: Throwable? = null
     repeat(retry.times) { index ->
+      if (index > 0) restart(target)
       val outcome = runCatching { method.invoke(target, *arguments) }
       if (outcome.isSuccess) return
       val failure = checkNotNull(outcome.exceptionOrNull()) { "Attempt produced no failure for $name" }.unwrap()
@@ -57,6 +63,21 @@ class RetryExtension : InvocationInterceptor {
       )
     }
     throw lastFailure ?: IllegalStateException("Retry produced no outcome for $name")
+  }
+
+  private fun restart(target: Any) {
+    lifecycle(target, AfterEach::class.java, HierarchyTraversalMode.BOTTOM_UP)
+    lifecycle(target, BeforeEach::class.java, HierarchyTraversalMode.TOP_DOWN)
+  }
+
+  private fun lifecycle(
+    target: Any,
+    annotation: Class<out Annotation>,
+    order: HierarchyTraversalMode,
+  ) {
+    AnnotationSupport
+      .findAnnotatedMethods(target.javaClass, annotation, order)
+      .forEach { ReflectionSupport.invokeMethod(it, target) }
   }
 }
 

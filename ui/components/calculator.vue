@@ -98,7 +98,7 @@ const handleReset = async () => {
     message: 'Are you sure you want to reset the calculator to default values?',
     confirmText: 'Reset',
     cancelText: 'Cancel',
-    confirmClass: 'btn-danger',
+    variant: 'danger',
   })
 
   if (confirmed) {
