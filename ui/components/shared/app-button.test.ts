@@ -20,6 +20,12 @@ describe('app-button', () => {
     expect(wrapper.find('.btn-spinner').exists()).toBe(true)
   })
 
+  it('disables itself when disabled is set without loading', () => {
+    const wrapper = mount(AppButton, { props: { disabled: true }, slots: { default: 'Sulge' } })
+    expect(wrapper.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('.btn-spinner').exists()).toBe(false)
+  })
+
   it('defaults to a non-submitting button', () => {
     const wrapper = mount(AppButton, { slots: { default: 'Cancel' } })
     expect(wrapper.attributes('type')).toBe('button')
