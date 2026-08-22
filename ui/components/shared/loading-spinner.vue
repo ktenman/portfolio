@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-center items-center" :class="containerClass">
-    <div class="loading-spinner" :class="[spinnerClass, sizeClass]" role="status">
+    <div class="loading-spinner" :class="sizeClass" role="status">
       <span class="sr-only">{{ message }}</span>
     </div>
     <span v-if="showMessage" class="ml-2">{{ message }}</span>
@@ -22,15 +22,6 @@ const props = withDefaults(defineProps<LoadingSpinnerProps>(), {
   showMessage: false,
   size: 'md',
   containerClass: '',
-})
-
-const spinnerClass = computed(() => {
-  const sizeMap = {
-    sm: 'spinner-border-sm',
-    md: '',
-    lg: '',
-  }
-  return sizeMap[props.size]
 })
 
 const sizeClass = computed(() => {

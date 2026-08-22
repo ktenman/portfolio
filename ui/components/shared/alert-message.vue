@@ -20,9 +20,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{ dismiss: [] }>()
 
+const BASE = 'alert relative mb-4 rounded-control border p-4'
+
+const VARIANTS = {
+  danger: 'alert-danger border-loss-wash-deep bg-loss-wash text-loss-deep',
+  info: 'alert-info border-hairline bg-surface-sunken text-ink',
+  warning: 'alert-warning border-brass bg-brass-wash text-brass-deep',
+}
+
 const classes = computed(() => [
-  'alert',
-  `alert-${props.variant}`,
-  props.dismissible ? 'alert-dismissible' : undefined,
+  BASE,
+  VARIANTS[props.variant],
+  props.dismissible ? 'alert-dismissible pr-12' : undefined,
 ])
 </script>

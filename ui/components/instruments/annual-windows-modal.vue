@@ -7,7 +7,10 @@
     @update:open="emit('update:open', $event)"
   >
     <div v-if="isLoading" class="text-center py-4">
-      <div class="spinner-border" role="status" />
+      <div
+        class="spinner-border inline-block size-8 shrink-0 animate-btn-spin rounded-full border-[0.25em] border-r-transparent align-[-0.125em]"
+        role="status"
+      />
     </div>
     <AlertMessage v-else-if="error" variant="danger">{{ error }}</AlertMessage>
     <div v-else>

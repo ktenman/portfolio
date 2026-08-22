@@ -20,7 +20,10 @@
     </div>
 
     <div v-if="isLoadingEtfs" class="py-6 text-center">
-      <div class="spinner-border text-signal-indigo" role="status">
+      <div
+        class="spinner-border inline-block size-8 shrink-0 animate-btn-spin rounded-full border-[0.25em] border-r-transparent align-[-0.125em] text-signal-indigo"
+        role="status"
+      >
         <span class="sr-only">Loading...</span>
       </div>
     </div>
@@ -70,7 +73,10 @@
       </div>
 
       <div v-if="isCalculating" class="py-6 text-center">
-        <div class="spinner-border text-signal-indigo" role="status">
+        <div
+          class="spinner-border inline-block size-8 shrink-0 animate-btn-spin rounded-full border-[0.25em] border-r-transparent align-[-0.125em] text-signal-indigo"
+          role="status"
+        >
           <span class="sr-only">Calculating...</span>
         </div>
       </div>

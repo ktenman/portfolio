@@ -112,10 +112,13 @@
           <tr v-if="hasMore" class="load-more-row">
             <td colspan="7" class="text-center! py-2!">
               <div ref="loadMoreTrigger" class="flex items-center justify-center">
-                <div class="spinner-border spinner-border-sm mr-2 text-gray-600" role="status">
+                <div
+                  class="spinner-border spinner-border-sm mr-2 inline-block size-4 shrink-0 animate-btn-spin rounded-full border-[0.2em] border-r-transparent align-[-0.125em] text-gray-600"
+                  role="status"
+                >
                   <span class="sr-only">Loading...</span>
                 </div>
-                <span class="small text-gray-600">
+                <span class="small text-[0.875em] text-gray-600">
                   Loading more... ({{ displayedHoldings.length }} of {{ holdings.length }})
                 </span>
               </div>
@@ -379,7 +382,7 @@ const columns: ColumnDefinition[] = [
     key: 'inEtfs',
     label: 'Found in ETFs',
     sortable: false,
-    class: 'text-gray-600! small',
+    class: 'text-gray-600! small [&:where(td)]:text-[0.875em]',
     formatter: (value: string | null) => {
       if (!value) return '-'
       return value

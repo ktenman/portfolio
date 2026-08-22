@@ -323,7 +323,7 @@
         >
           <span
             v-if="isLoadingPortfolio"
-            class="spinner-border spinner-border-sm"
+            class="spinner-border spinner-border-sm inline-block size-4 shrink-0 animate-btn-spin rounded-full border-[0.2em] border-r-transparent align-[-0.125em]"
             role="status"
           ></span>
           <template v-else>
