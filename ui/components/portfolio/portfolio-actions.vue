@@ -2,18 +2,23 @@
   <div class="mb-6 flex flex-wrap items-center gap-3">
     <h2 class="mb-0 hidden sm:block">Portfolio Summary</h2>
     <slot name="title-suffix" />
-    <button
-      class="btn btn-ghost btn-sm btn-secondary ml-auto whitespace-nowrap max-sm:border-transparent max-sm:bg-transparent max-sm:pr-0 max-sm:shadow-none"
+    <AppButton
+      variant="secondary"
+      size="sm"
+      ghost
+      class="ml-auto whitespace-nowrap max-sm:border-transparent max-sm:bg-transparent max-sm:pr-0 max-sm:shadow-none"
+      :loading="isRecalculating"
       @click="$emit('recalculate')"
       :disabled="isRecalculating || isLoading"
     >
-      <span v-if="isRecalculating" class="btn-spinner mr-1" role="status" aria-hidden="true"></span>
       {{ isRecalculating ? 'Recalculating...' : 'Recalculate Data' }}
-    </button>
+    </AppButton>
   </div>
 </template>
 
 <script setup lang="ts">
+import AppButton from '../shared/app-button.vue'
+
 interface Props {
   isRecalculating: boolean
   isLoading: boolean

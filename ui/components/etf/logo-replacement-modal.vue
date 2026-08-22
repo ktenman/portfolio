@@ -35,19 +35,18 @@
       <div v-if="!holdingUuid" class="me-auto text-[0.875em] text-body-secondary">
         Logo preview only - no holding record to save to
       </div>
-      <button type="button" class="btn btn-secondary" @click="close" :disabled="isReplacing">
+      <AppButton variant="secondary" @click="close" :disabled="isReplacing">
         {{ holdingUuid ? 'Cancel' : 'Close' }}
-      </button>
-      <button
+      </AppButton>
+      <AppButton
         v-if="holdingUuid"
-        type="button"
-        class="btn btn-primary"
+        variant="primary"
+        :loading="isReplacing"
         @click="confirmReplacement"
         :disabled="selectedIndex === null || isReplacing"
       >
-        <span v-if="isReplacing" class="btn-spinner me-1"></span>
         {{ isReplacing ? 'Replacing...' : 'Use This Logo' }}
-      </button>
+      </AppButton>
     </template>
   </modal-shell>
 </template>
@@ -56,6 +55,7 @@
 import { ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
+import AppButton from '../shared/app-button.vue'
 import { logoService, type LogoCandidateDto } from '../../services/api'
 
 interface Props {

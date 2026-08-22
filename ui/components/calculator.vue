@@ -21,9 +21,9 @@
             />
           </div>
           <div class="calculator-buttons-desktop">
-            <button type="button" class="btn btn-ghost btn-sm btn-secondary" @click="handleReset">
+            <AppButton variant="secondary" size="sm" ghost @click="handleReset">
               Reset Calculator
-            </button>
+            </AppButton>
           </div>
         </form>
       </div>
@@ -62,9 +62,7 @@
     </div>
 
     <div class="calculator-buttons-mobile">
-      <button type="button" class="btn btn-ghost btn-secondary" @click="handleReset">
-        Reset Calculator
-      </button>
+      <AppButton variant="secondary" ghost @click="handleReset">Reset Calculator</AppButton>
     </div>
 
     <div class="mt-6">
@@ -82,6 +80,7 @@ import LineChart from './charts/line-chart.vue'
 import BarChart from './charts/bar-chart.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
+import AppButton from './shared/app-button.vue'
 import { useConfirm } from '../composables/use-confirm'
 
 const { form, isLoading, yearSummary, portfolioData, calculationResult, resetCalculator } =

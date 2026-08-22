@@ -38,9 +38,7 @@
       </p>
     </div>
     <template #footer>
-      <button type="button" class="btn btn-secondary" @click="emit('update:open', false)">
-        Close
-      </button>
+      <AppButton variant="secondary" @click="emit('update:open', false)">Close</AppButton>
     </template>
   </modal-shell>
 </template>
@@ -48,6 +46,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ModalShell from '../shared/modal-shell.vue'
+import AppButton from '../shared/app-button.vue'
 import { portfolioSummaryService } from '../../services/api'
 import type { AnnualWindowDto } from '../../models/generated/domain-models'
 
