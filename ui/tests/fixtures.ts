@@ -14,6 +14,7 @@ export const mockPlatforms = [
   { name: 'IBKR', displayName: 'IBKR' },
   { name: 'LHV', displayName: 'LHV' },
   { name: 'LIGHTYEAR', displayName: 'Lightyear' },
+  { name: 'LIGHTYEAR_BUSINESS', displayName: 'Lightyear Business' },
   { name: 'SWEDBANK', displayName: 'Swedbank' },
   { name: 'TRADING212', displayName: 'Trading 212' },
   { name: 'UNKNOWN', displayName: 'Unknown' },

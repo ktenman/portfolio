@@ -12,7 +12,7 @@
             <button
               v-if="showAddButton"
               :id="addButtonId"
-              class="btn btn-primary btn-add-new hidden md:block"
+              class="btn btn-primary btn-add-new hidden cursor-pointer rounded-container border border-control-border bg-[rgb(0_0_0/0.02)] px-3 py-1 text-center align-middle text-sm leading-normal font-normal text-gray-700 shadow-control transition-all duration-200 select-none before:mr-2 before:text-[1.1em] before:font-light before:opacity-70 before:transition-opacity before:duration-200 before:content-['+'] hover:bg-brass-wash hover:text-brass-deep hover:before:opacity-100 active:bg-brass-wash active:shadow-[inset_0_1px_1px_rgb(0_0_0/0.04)] md-down:min-h-11 md:block"
               @click="$emit('add')"
             >
               {{ addButtonText }}

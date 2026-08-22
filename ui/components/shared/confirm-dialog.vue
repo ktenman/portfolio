@@ -19,10 +19,7 @@
       <button
         type="button"
         class="dialog-btn"
-        :class="{
-          primary: confirmClass === 'btn-primary',
-          danger: confirmClass === 'btn-danger',
-        }"
+        :class="variant"
         @click="confirm"
         data-testid="confirmDialogConfirmButton"
       >
@@ -42,7 +39,7 @@ interface Props {
   message?: string
   confirmText?: string
   cancelText?: string
-  confirmClass?: string
+  variant?: 'primary' | 'danger'
 }
 
 withDefaults(defineProps<Props>(), {
@@ -51,7 +48,7 @@ withDefaults(defineProps<Props>(), {
   message: 'Are you sure?',
   confirmText: 'Confirm',
   cancelText: 'Cancel',
-  confirmClass: 'btn-primary',
+  variant: 'primary',
 })
 
 const emit = defineEmits<{

@@ -14,7 +14,10 @@
               <span class="name-default">{{ item.name }}</span>
             </h6>
             <div class="transaction-meta">
-              <span v-if="item.platform" class="badge">
+              <span
+                v-if="item.platform"
+                class="badge inline-block rounded-control bg-gray-600 px-[0.65em] py-[0.35em] text-center align-baseline text-[0.75em] leading-none font-bold whitespace-nowrap text-white"
+              >
                 {{ formatPlatformName(item.platform) }}
               </span>
               <span class="transaction-date">
@@ -96,7 +99,9 @@
           <span class="name-default">{{ item.name }}</span>
         </div>
         <div v-if="item.platform" class="platform-tags mt-1">
-          <span class="badge">
+          <span
+            class="badge inline-block rounded-control bg-gray-200 px-[0.65em] py-[0.35em] text-center align-baseline text-[0.75em] leading-none font-medium whitespace-nowrap text-ink-soft"
+          >
             {{ formatPlatformName(item.platform) }}
           </span>
         </div>

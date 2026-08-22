@@ -22,7 +22,7 @@
       :message="confirmState.options.value.message"
       :confirm-text="confirmState.options.value.confirmText"
       :cancel-text="confirmState.options.value.cancelText"
-      :confirm-class="confirmState.options.value.confirmClass"
+      :variant="confirmState.options.value.variant"
       @confirm="confirmState.handleConfirm"
       @cancel="confirmState.handleCancel"
     />

@@ -24,14 +24,14 @@ import java.time.ZoneId
 abstract class SummaryServiceTestBase {
   protected val transactionService = mockk<TransactionService>()
   protected val portfolioDailySummaryRepository = mockk<PortfolioDailySummaryRepository>(relaxUnitFun = true)
-  protected val cacheManager = mockk<CacheManager>(relaxed = true)
+  private val cacheManager = mockk<CacheManager>(relaxed = true)
   protected val investmentMetricsService = mockk<InvestmentMetricsService>()
   protected val xirrCalculationService = mockk<XirrCalculationService>()
   protected val clock = mockk<Clock>()
   protected val summaryBatchProcessor = mockk<SummaryBatchProcessorService>(relaxed = true)
   protected val summaryDeletionService = mockk<SummaryDeletionService>(relaxed = true)
   protected val summaryCacheService = mockk<SummaryCacheService>(relaxed = true)
-  protected val dailySummaryCalculator = DailySummaryCalculator(investmentMetricsService, xirrCalculationService)
+  private val dailySummaryCalculator = DailySummaryCalculator(investmentMetricsService, xirrCalculationService)
   protected val summaryService =
     SummaryService(
       portfolioDailySummaryRepository,

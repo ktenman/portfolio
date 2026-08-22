@@ -53,7 +53,5 @@ export const allocationPair = [
   { instrumentId: 2, value: 40 },
 ]
 
-export const createWrapper = (
-  props: Record<string, unknown> = {},
-  options: { attachTo?: HTMLElement } = {}
-) => mount(AllocationTable, { props: { ...defaultProps, ...props }, ...options })
+export const createWrapper = (props: Record<string, unknown> = {}, attachTo?: HTMLElement) =>
+  mount(AllocationTable, { props: { ...defaultProps, ...props }, attachTo })

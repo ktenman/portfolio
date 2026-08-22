@@ -18,7 +18,7 @@ abstract class LightyearPriceServiceTestBase {
   protected val instrumentService = mockk<InstrumentService>()
   protected val uuidCacheService = mockk<LightyearUuidCacheService>()
   protected val currencyConversionService = mockk<CurrencyConversionService>()
-  protected val clock: Clock = Clock.fixed(Instant.parse("2026-07-16T12:00:00Z"), ZoneOffset.UTC)
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-16T12:00:00Z"), ZoneOffset.UTC)
   protected val service =
     LightyearPriceService(
       lightyearPriceClient,

@@ -6,11 +6,14 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
+import ee.tenman.portfolio.testing.fixture.CashFlowTestBase
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 
-class XirrCalculationAdjustedTest : InvestmentMetricsTestBase() {
+class XirrCalculationAdjustedTest : CashFlowTestBase() {
+  private val xirrCalculationService = XirrCalculationService(clock)
+
   @Test
   fun `should calculateAdjustedXirr with sufficient transactions returns bounded value`() {
     val transactions =

@@ -43,9 +43,9 @@
             <div>Click to select or drag a JSON file here</div>
           </div>
         </div>
-        <div v-if="importError" class="alert alert-danger mt-4 mb-0">
+        <AlertMessage v-if="importError" variant="danger" class="mt-4 mb-0!">
           {{ importError }}
-        </div>
+        </AlertMessage>
       </div>
       <div v-else class="import-preview">
         <p class="mb-2 text-[0.875em] text-body-secondary">Preview of configuration to import:</p>
@@ -57,9 +57,9 @@
             theme="vs"
           />
         </div>
-        <div v-if="validationWarning" class="alert alert-warning mt-4 mb-0">
+        <AlertMessage v-if="validationWarning" variant="warning" class="mt-4 mb-0!">
           {{ validationWarning }}
-        </div>
+        </AlertMessage>
       </div>
     </template>
     <template #footer>
@@ -88,6 +88,7 @@
 import { ref, computed } from 'vue'
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import ModalShell from '../shared/modal-shell.vue'
+import AlertMessage from '../shared/alert-message.vue'
 import type { CachedState } from './types'
 
 interface Props {

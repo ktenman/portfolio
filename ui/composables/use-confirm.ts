@@ -5,7 +5,7 @@ interface ConfirmOptions {
   message?: string
   confirmText?: string
   cancelText?: string
-  confirmClass?: string
+  variant?: 'primary' | 'danger'
 }
 
 interface ConfirmState {
@@ -57,7 +57,7 @@ export function provideConfirm(): ConfirmState {
       message: 'Are you sure?',
       confirmText: 'Confirm',
       cancelText: 'Cancel',
-      confirmClass: 'btn-primary',
+      variant: 'primary',
       ...confirmOptions,
     }
 

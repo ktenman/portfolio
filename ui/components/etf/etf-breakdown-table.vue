@@ -2,10 +2,10 @@
   <div class="card border-0! shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
     <div class="card-body p-0!">
       <loading-spinner v-if="isLoading" class="my-12!" />
-      <div v-else-if="isError" class="alert alert-danger m-6! mb-0!">
+      <AlertMessage v-else-if="isError" variant="danger" class="m-6! mb-0!">
         <strong>Error:</strong>
         {{ errorMessage }}
-      </div>
+      </AlertMessage>
       <div v-else-if="holdings.length === 0" class="empty-state">
         <div class="empty-state-icon">
           <svg
@@ -112,10 +112,8 @@
           <tr v-if="hasMore" class="load-more-row">
             <td colspan="7" class="text-center! py-2!">
               <div ref="loadMoreTrigger" class="flex items-center justify-center">
-                <div class="spinner-border spinner-border-sm mr-2 text-gray-600" role="status">
-                  <span class="sr-only">Loading...</span>
-                </div>
-                <span class="small text-gray-600">
+                <SpinnerRing size="sm" class="mr-2 text-gray-600" label="Loading..." />
+                <span class="text-[0.875em] text-gray-600">
                   Loading more... ({{ displayedHoldings.length }} of {{ holdings.length }})
                 </span>
               </div>
@@ -147,6 +145,8 @@ import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-model
 import DataTable from '../shared/data-table.vue'
 import type { ColumnDefinition } from '../shared/data-table.vue'
 import LoadingSpinner from '../shared/loading-spinner.vue'
+import SpinnerRing from '../shared/spinner-ring.vue'
+import AlertMessage from '../shared/alert-message.vue'
 import LogoReplacementModal from './logo-replacement-modal.vue'
 import { logoService } from '../../services/api'
 import { formatPlatformName } from '../../utils/platform-utils'
@@ -378,7 +378,7 @@ const columns: ColumnDefinition[] = [
     key: 'inEtfs',
     label: 'Found in ETFs',
     sortable: false,
-    class: 'text-gray-600! small',
+    class: 'text-gray-600! [&:where(td)]:text-[0.875em]',
     formatter: (value: string | null) => {
       if (!value) return '-'
       return value

@@ -67,7 +67,7 @@ describe('ConfirmDialog', () => {
     })
 
     it('should apply custom confirm button class', () => {
-      const wrapper = createWrapper({ modelValue: true, confirmClass: 'btn-danger' })
+      const wrapper = createWrapper({ modelValue: true, variant: 'danger' })
 
       const confirmButton = wrapper.findAll('button').filter(b => b.text() === 'Confirm')[0]
 

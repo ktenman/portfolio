@@ -91,7 +91,11 @@
             <h6 class="instrument-name">{{ item.name }}</h6>
             <span class="instrument-symbol">{{ item.symbol }}</span>
             <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
-              <span v-for="platform in item.platforms" :key="platform" class="badge mr-1">
+              <span
+                v-for="platform in item.platforms"
+                :key="platform"
+                class="badge mr-1 inline-block rounded-control bg-gray-200 px-[0.65em] py-[0.35em] text-center align-baseline text-[0.75em] leading-none font-medium whitespace-nowrap text-ink-soft"
+              >
                 {{ formatPlatformName(platform) }}
               </span>
             </div>
@@ -243,7 +247,11 @@
           <small class="block instrument-symbol">{{ item.symbol }}</small>
         </div>
         <div v-if="item.platforms && item.platforms.length > 0" class="platform-tags mt-1">
-          <span v-for="platform in item.platforms" :key="platform" class="badge mr-1">
+          <span
+            v-for="platform in item.platforms"
+            :key="platform"
+            class="badge mr-1 inline-block rounded-control bg-gray-200 px-[0.65em] py-[0.35em] text-center align-baseline text-[0.75em] leading-none font-medium whitespace-nowrap text-ink-soft"
+          >
             {{ formatPlatformName(platform) }}
           </span>
         </div>

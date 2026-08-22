@@ -53,7 +53,7 @@ describe('useConfirm', () => {
         message: 'Are you sure?',
         confirmText: 'Confirm',
         cancelText: 'Cancel',
-        confirmClass: 'btn-primary',
+        variant: 'primary',
       })
     })
 
@@ -63,7 +63,7 @@ describe('useConfirm', () => {
       const customOptions = {
         title: 'Delete Item',
         message: 'This action cannot be undone.',
-        confirmClass: 'btn-danger',
+        variant: 'danger',
       }
 
       confirmFn(customOptions)
@@ -74,7 +74,7 @@ describe('useConfirm', () => {
         message: 'This action cannot be undone.',
         confirmText: 'Confirm',
         cancelText: 'Cancel',
-        confirmClass: 'btn-danger',
+        variant: 'danger',
       })
     })
 
@@ -176,7 +176,7 @@ describe('useConfirm', () => {
                     title: 'Delete Record',
                     message: 'Are you sure you want to delete this record?',
                     confirmText: 'Delete',
-                    confirmClass: 'btn-danger',
+                    variant: 'danger',
                   })
                 }
 
