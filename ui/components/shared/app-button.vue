@@ -26,7 +26,7 @@ const props = withDefaults(
 )
 
 const BASE =
-  'btn inline-block cursor-pointer rounded-container border border-control-border text-center align-middle leading-normal font-medium shadow-control transition-all select-none disabled:cursor-not-allowed disabled:opacity-60 enabled:active:shadow-[inset_0_1px_1px_rgb(0_0_0/0.04)] md-down:min-h-11 [&_svg]:mr-1.5 [&_svg]:align-[-0.125em] [&_svg:last-child]:mr-0 [&_svg:last-child]:ml-1.5'
+  'btn inline-block cursor-pointer rounded-container border border-control-border text-center align-middle leading-normal font-medium shadow-control transition-all select-none disabled:cursor-not-allowed disabled:opacity-60 enabled:active:shadow-[inset_0_1px_1px_rgb(0_0_0/0.04)] md-down:min-h-11'
 
 const SOLID = {
   none: 'bg-transparent text-ink enabled:active:translate-y-px',

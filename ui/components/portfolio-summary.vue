@@ -139,12 +139,12 @@ import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
 const PortfolioChart = defineAsyncComponent({
   loader: () => import('./portfolio/portfolio-chart.vue'),
-  loadingComponent: () => h(LoadingSpinner, { containerClass: 'min-h-48' }),
+  loadingComponent: () => h(LoadingSpinner, { class: 'min-h-48' }),
   errorComponent: () =>
     h(
-      'div',
-      { class: 'alert alert-warning', role: 'alert' },
-      'Could not load the chart. Refresh the page to try again.'
+      AlertMessage,
+      { variant: 'warning' },
+      () => 'Could not load the chart. Refresh the page to try again.'
     ),
 })
 

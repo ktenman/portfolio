@@ -43,7 +43,7 @@
             <div>Click to select or drag a JSON file here</div>
           </div>
         </div>
-        <AlertMessage v-if="importError" variant="danger" class="mt-4 mb-0">
+        <AlertMessage v-if="importError" variant="danger" class="mt-4 mb-0!">
           {{ importError }}
         </AlertMessage>
       </div>
@@ -57,7 +57,7 @@
             theme="vs"
           />
         </div>
-        <AlertMessage v-if="validationWarning" variant="warning" class="mt-4 mb-0">
+        <AlertMessage v-if="validationWarning" variant="warning" class="mt-4 mb-0!">
           {{ validationWarning }}
         </AlertMessage>
       </div>
