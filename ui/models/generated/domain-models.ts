@@ -116,6 +116,11 @@ export interface RangeChangeDto {
     changePercent: number;
 }
 
+export interface BenchmarkPointDto {
+    date: DateAsString;
+    price: number;
+}
+
 export interface EtfHoldingBreakdownDto extends Serializable {
     holdingUuid: string | null;
     holdingTicker: string | null;

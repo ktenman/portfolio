@@ -323,6 +323,37 @@ class PortfolioSummaryControllerIT {
       .andExpect(status().isBadRequest)
   }
 
+  @Test
+  fun `should return benchmark points from the tracked sp500 etf`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+    val vuaa = instrumentRepository.save(Instrument("VUAA:GER:EUR", "Vanguard S&P 500", "ETF", "EUR"))
+    dailyPriceRepository.saveAll(
+      listOf(
+        DailyPrice(vuaa, LocalDate.of(2023, 7, 20), ProviderName.FT, null, null, null, BigDecimal("102.20"), null),
+        DailyPrice(vuaa, LocalDate.of(2023, 7, 19), ProviderName.FT, null, null, null, BigDecimal("101.10"), null),
+        DailyPrice(vuaa, LocalDate.of(2023, 5, 1), ProviderName.FT, null, null, null, BigDecimal("95.00"), null),
+      ),
+    )
+    mockMvc
+      .perform(get("/api/portfolio-summary/benchmark").param("range", "1M").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[0].date").value("2023-07-19"))
+      .andExpect(jsonPath("$[0].price").value(101.1))
+      .andExpect(jsonPath("$[1].date").value("2023-07-20"))
+  }
+
+  @Test
+  fun `should return an empty benchmark series when the etf is not tracked`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+    mockMvc
+      .perform(get("/api/portfolio-summary/benchmark").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(0))
+  }
+
   private fun summaryOn(date: LocalDate): PortfolioDailySummary =
     PortfolioDailySummary(
       entryDate = date,

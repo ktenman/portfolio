@@ -216,6 +216,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.dto.AnnualWindowDto",
       "ee.tenman.portfolio.dto.AnnualWindowsDto",
       "ee.tenman.portfolio.dto.RangeChangeDto",
+      "ee.tenman.portfolio.dto.BenchmarkPointDto",
       "ee.tenman.portfolio.dto.EtfHoldingBreakdownDto",
       "ee.tenman.portfolio.dto.EtfDiagnosticDto",
       "ee.tenman.portfolio.dto.CalculationResult",
