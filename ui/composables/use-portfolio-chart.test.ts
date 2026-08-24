@@ -172,6 +172,27 @@ describe('usePerformanceChart', () => {
     { date: '2024-01-03', price: 102 },
   ]
 
+  const dateAt = (offset: number) =>
+    new Date(Date.UTC(2024, 0, 1 + offset)).toISOString().slice(0, 10)
+
+  const valueAt = (offset: number) => {
+    if (offset < 30) return 1000
+    if (offset === 30) return 2000
+    return 2100
+  }
+
+  const buildDepositHistory = () =>
+    Array.from({ length: 61 }, (_, offset) =>
+      createPortfolioSummaryDto({
+        date: dateAt(offset),
+        totalValue: valueAt(offset),
+        totalProfit: offset > 30 ? 100 : 0,
+      })
+    )
+
+  const buildLongBenchmark = () =>
+    Array.from({ length: 61 }, (_, offset) => ({ date: dateAt(offset), price: 100 }))
+
   it('should return null when the benchmark is empty', () => {
     const { performanceChartData } = usePerformanceChart(ref(buildSummaries()), ref([]))
 
@@ -201,5 +222,32 @@ describe('usePerformanceChart', () => {
 
     expect(performanceChartData.value?.portfolioValues[1]).toBeCloseTo(10)
     expect(performanceChartData.value?.benchmarkValues[1]).toBeCloseTo(2)
+  })
+
+  it('should compound the whole history before sampling so deposits dont inflate returns', () => {
+    const { performanceChartData } = usePerformanceChart(
+      ref(buildDepositHistory()),
+      ref(buildLongBenchmark())
+    )
+    const values = performanceChartData.value?.portfolioValues ?? []
+
+    expect(values[values.length - 1]).toBeCloseTo(5)
+  })
+
+  it('should sample long histories down to the chart point limit', () => {
+    const { performanceChartData } = usePerformanceChart(
+      ref(buildDepositHistory()),
+      ref(buildLongBenchmark())
+    )
+
+    expect(performanceChartData.value?.portfolioValues).toHaveLength(60)
+  })
+
+  it('should keep long history labels identical to the euro chart', () => {
+    const summaries = ref(buildDepositHistory())
+    const { performanceChartData } = usePerformanceChart(summaries, ref(buildLongBenchmark()))
+    const { processedChartData } = usePortfolioChart(summaries)
+
+    expect(performanceChartData.value?.labels).toEqual(processedChartData.value?.labels)
   })
 })

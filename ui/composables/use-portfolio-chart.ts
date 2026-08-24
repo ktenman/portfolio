@@ -63,13 +63,15 @@ export function usePerformanceChart(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
 
-    const sampledData = sampleDataPoints(chronologicalSummaries, MAX_CHART_POINTS)
-    const series = buildPerformanceSeries(sampledData, benchmark.value)
+    const series = buildPerformanceSeries(chronologicalSummaries, benchmark.value)
 
     return {
-      labels: sampledData.map(item => item.date),
-      portfolioValues: series.portfolioValues,
-      benchmarkValues: series.benchmarkValues,
+      labels: sampleDataPoints(
+        chronologicalSummaries.map(item => item.date),
+        MAX_CHART_POINTS
+      ),
+      portfolioValues: sampleDataPoints(series.portfolioValues, MAX_CHART_POINTS),
+      benchmarkValues: sampleDataPoints(series.benchmarkValues, MAX_CHART_POINTS),
     }
   })
 
