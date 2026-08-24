@@ -66,7 +66,7 @@
       </header>
 
       <div class="chart-frame">
-        <portfolio-chart :key="`${chartKey}:${chartMode}`" :data="activeChartData" />
+        <portfolio-chart :key="`${chartKey}:${activeMode}`" :data="activeChartData" />
         <div v-if="isRangeLoading" class="chart-veil">
           <loading-spinner message="Loading chart" />
         </div>
@@ -204,10 +204,12 @@ const { performanceChartData } = usePerformanceChart(chartSummaries, benchmarkPo
 
 const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
 
+const activeMode = computed<ChartMode>(() =>
+  chartMode.value === 'performance' && performanceChartData.value ? 'performance' : 'value'
+)
+
 const activeChartData = computed(() =>
-  chartMode.value === 'performance' && performanceChartData.value
-    ? performanceChartData.value
-    : processedChartData.value
+  activeMode.value === 'performance' ? performanceChartData.value : processedChartData.value
 )
 
 const { confirm } = useConfirm()
