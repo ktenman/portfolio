@@ -71,6 +71,13 @@ export function usePortfolioSummaryQuery(
     enabled: isAuthenticated,
   })
 
+  const { data: benchmarkData } = useQuery({
+    queryKey: ['portfolio-summary', 'benchmark', rangeKey],
+    queryFn: () => portfolioSummaryService.getBenchmark(rangeKey.value),
+    placeholderData: keepPreviousData,
+    enabled: isAuthenticated,
+  })
+
   const { data: rangeChange, error: rangeChangeError } = useQuery({
     queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
     queryFn: async () => ({
@@ -104,6 +111,8 @@ export function usePortfolioSummaryQuery(
     mergeHistoricalWithCurrent(seriesData.value ?? [], currentSummary.value)
   )
 
+  const benchmarkPoints = computed(() => benchmarkData.value ?? [])
+
   const sortedSummaries = computed(() => sortSummariesByDateAsc(summaries.value))
 
   const reversedSummaries = computed(() => [...sortedSummaries.value].reverse())
@@ -117,6 +126,7 @@ export function usePortfolioSummaryQuery(
   return {
     summaries,
     chartSummaries,
+    benchmarkPoints,
     rangeChange,
     sortedSummaries,
     reversedSummaries,

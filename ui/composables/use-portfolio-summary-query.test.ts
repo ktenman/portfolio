@@ -63,6 +63,7 @@ describe('usePortfolioSummaryQuery', () => {
       changeAmount: 250,
       changePercent: 1.25,
     })
+    vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
   })
 
   const setupQuery = (platforms?: Ref<string[]>, range?: Ref<TimeRange>) => {
@@ -452,6 +453,20 @@ describe('usePortfolioSummaryQuery', () => {
       await vi.waitFor(() => queryResult.chartSummaries.value.length === 3, { timeout: 5000 })
 
       expect(queryResult.chartSummaries.value.map(s => s.date)).toContain('2023-12-31')
+    })
+
+    it('should expose the benchmark points for the selected range', async () => {
+      vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([
+        { date: '2023-12-29', price: 101.5 },
+      ])
+      const range = ref(TimeRange.ONE_YEAR)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => expect(queryResult.benchmarkPoints.value).toHaveLength(1), {
+        timeout: 5000,
+      })
+
+      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y')
     })
   })
 })

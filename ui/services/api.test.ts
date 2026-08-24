@@ -128,6 +128,13 @@ describe('api services', () => {
       { params: { range: TimeRange.ONE_YEAR, platforms: PLATFORMS } },
     ],
     [
+      'summary.getBenchmark',
+      () => portfolioSummaryService.getBenchmark(TimeRange.ONE_YEAR),
+      'get',
+      '/portfolio-summary/benchmark',
+      { params: { range: TimeRange.ONE_YEAR } },
+    ],
+    [
       'summary.getRangeChange',
       () => portfolioSummaryService.getRangeChange(TimeRange.ONE_MONTH),
       'get',
