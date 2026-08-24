@@ -221,4 +221,59 @@ describe('PortfolioChart', () => {
       })
     })
   })
+
+  describe('performance mode', () => {
+    const mockPerformanceData = {
+      labels: ['2023-12-29', '2023-12-30', '2023-12-31'],
+      portfolioValues: [null, 0, 1.4],
+      benchmarkValues: [null, 0, 2.1],
+    }
+
+    it('should render two percentage datasets in performance mode', async () => {
+      await createWrapper({ data: mockPerformanceData })
+      const datasets = chartData().datasets
+
+      expect(datasets).toHaveLength(2)
+      expect(datasets[0]).toMatchObject({
+        label: 'Portfolio',
+        borderColor: CHART_COLORS[0],
+        data: mockPerformanceData.portfolioValues,
+        yAxisID: 'y',
+      })
+      expect(datasets[1]).toMatchObject({
+        label: 'S&P 500',
+        borderColor: CHART_COLORS[1],
+        data: mockPerformanceData.benchmarkValues,
+        yAxisID: 'y',
+      })
+    })
+
+    it('should hide the right axis in performance mode', async () => {
+      await createWrapper({ data: mockPerformanceData })
+
+      expect(chartOptions().scales.y1.display).toBe(false)
+    })
+
+    it('should format the left axis as percentages in performance mode', async () => {
+      await createWrapper({ data: mockPerformanceData })
+
+      expect(chartOptions().scales.y.ticks.callback(12)).toBe('12%')
+    })
+
+    it('should format tooltips as percentages in performance mode', async () => {
+      await createWrapper({ data: mockPerformanceData })
+      const label = chartOptions().plugins.tooltip.callbacks.label({
+        parsed: { y: 5.25 },
+        dataset: { label: 'Portfolio', yAxisID: 'y' },
+      })
+
+      expect(label).toContain('%')
+    })
+
+    it('should keep the right axis visible in value mode', async () => {
+      await createWrapper()
+
+      expect(chartOptions().scales.y1.display).toBe(true)
+    })
+  })
 })
