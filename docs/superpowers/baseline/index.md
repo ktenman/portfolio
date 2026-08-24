@@ -170,7 +170,8 @@ in the mask's left edge turned 14 captures red at 26 pixels each.
   `recalculate` abort second, so the abort is the most recently registered handler for its URL.
 
   Every fixture date is a fixed literal in the past, so no row is ever "today". Changing the fixture
-  re-records eight baselines.
+  re-records nine baselines: the benchmark stub added for the chart-mode toggle pulled
+  `modal-confirm-desktop` into the fixture's blast radius (see below).
 
 - **`/transactions` is served a fixture, not the database.** Masking could not have stabilised it
   either, and the mechanism is not the one the row-count argument predicts. Measured on the live
@@ -431,11 +432,13 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
   the race fixed. Note the cost: `states.spec.ts` never visits `/calculator`, so the line and bar
   charts now have no pixel coverage anywhere. Chart configuration is covered instead by
   `ui/composables/use-chart-lifecycle.test.ts` and `ui/components/charts/portfolio-chart.test.ts`.
-- **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the chart fills the
-  viewport below the platform filter, so no table row is visible behind the backdrop and the capture
-  was byte-identical before and after `/` became fixture-driven. Only the mobile confirm capture,
-  whose smaller chart leaves cards visible, moved. Do not assume a `/`-based viewport capture is
-  covered by the fixture — check whether the table is actually in frame.
+- **`modal-confirm-desktop` is gated on `/`'s fixture after all.** At 1440×900 no table row is
+  visible behind the backdrop, and the capture was byte-identical when `/` first became
+  fixture-driven — only the mobile confirm capture, whose smaller chart leaves cards visible, moved.
+  That held until the chart-mode toggle landed: its `v-if` reads the stubbed benchmark series, the
+  toggle sits inside the 1440×900 frame, and the capture moved 3942 pixels. Do not assume a
+  `/`-based viewport capture is outside the fixture's blast radius — check what is actually in
+  frame, not just the table.
 - **`/api/enums` is still live on every route**, `/` included. It supplies the platform badge and
   filter-button labels ("Lightyear Business", "Trading 212"), which change only on deploy. That is
   the last unstubbed endpoint any capture reaches, and it has been accepted branch-wide.
