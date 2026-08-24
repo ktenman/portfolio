@@ -1,5 +1,6 @@
 import { computed, Ref } from 'vue'
-import { PortfolioSummaryDto } from '../models/generated/domain-models'
+import { BenchmarkPointDto, PortfolioSummaryDto } from '../models/generated/domain-models'
+import { buildPerformanceSeries } from '../services/benchmark-comparison'
 
 interface ChartDataPoint {
   labels: string[]
@@ -42,5 +43,37 @@ export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
 
   return {
     processedChartData,
+  }
+}
+
+export interface PerformanceChartData {
+  labels: string[]
+  portfolioValues: (number | null)[]
+  benchmarkValues: (number | null)[]
+}
+
+export function usePerformanceChart(
+  summaries: Ref<PortfolioSummaryDto[]>,
+  benchmark: Ref<BenchmarkPointDto[]>
+) {
+  const performanceChartData = computed<PerformanceChartData | null>(() => {
+    if (summaries.value.length === 0 || benchmark.value.length === 0) return null
+
+    const chronologicalSummaries = [...summaries.value].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+
+    const sampledData = sampleDataPoints(chronologicalSummaries, MAX_CHART_POINTS)
+    const series = buildPerformanceSeries(sampledData, benchmark.value)
+
+    return {
+      labels: sampledData.map(item => item.date),
+      portfolioValues: series.portfolioValues,
+      benchmarkValues: series.benchmarkValues,
+    }
+  })
+
+  return {
+    performanceChartData,
   }
 }

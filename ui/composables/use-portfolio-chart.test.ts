@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ref } from 'vue'
-import { usePortfolioChart } from './use-portfolio-chart'
+import { usePerformanceChart, usePortfolioChart } from './use-portfolio-chart'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
 
@@ -158,5 +158,48 @@ describe('usePortfolioChart', () => {
 
     expect(processedChartData.value?.xirrValues).toEqual([NaN])
     expect(processedChartData.value?.earningsValues).toEqual([null])
+  })
+})
+
+describe('usePerformanceChart', () => {
+  const buildSummaries = () => [
+    createPortfolioSummaryDto({ date: '2024-01-02', totalValue: 1000, totalProfit: 0 }),
+    createPortfolioSummaryDto({ date: '2024-01-03', totalValue: 1100, totalProfit: 100 }),
+  ]
+
+  const buildBenchmark = () => [
+    { date: '2024-01-02', price: 100 },
+    { date: '2024-01-03', price: 102 },
+  ]
+
+  it('should return null when the benchmark is empty', () => {
+    const { performanceChartData } = usePerformanceChart(ref(buildSummaries()), ref([]))
+
+    expect(performanceChartData.value).toBeNull()
+  })
+
+  it('should return null when the summaries are empty', () => {
+    const { performanceChartData } = usePerformanceChart(ref([]), ref(buildBenchmark()))
+
+    expect(performanceChartData.value).toBeNull()
+  })
+
+  it('should align labels with the sorted summary dates', () => {
+    const { performanceChartData } = usePerformanceChart(
+      ref([...buildSummaries()].reverse()),
+      ref(buildBenchmark())
+    )
+
+    expect(performanceChartData.value?.labels).toEqual(['2024-01-02', '2024-01-03'])
+  })
+
+  it('should expose rebased portfolio and benchmark series', () => {
+    const { performanceChartData } = usePerformanceChart(
+      ref(buildSummaries()),
+      ref(buildBenchmark())
+    )
+
+    expect(performanceChartData.value?.portfolioValues[1]).toBeCloseTo(10)
+    expect(performanceChartData.value?.benchmarkValues[1]).toBeCloseTo(2)
   })
 })
