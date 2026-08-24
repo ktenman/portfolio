@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   SHOW_ACTIVE_ONLY: 'portfolio_show_active_only',
   SELECTED_SUMMARY_PLATFORMS: 'portfolio_selected_summary_platforms',
   SUMMARY_CHART_RANGE: 'portfolio_summary_chart_range',
+  SUMMARY_CHART_MODE: 'portfolio_summary_chart_mode',
   PRICE_CHANGE_PERIOD: 'portfolio_price_change_period',
   SUMMARY_FILTERS_OPEN: 'portfolio_summary_filters_open',
   INSTRUMENTS_FILTERS_OPEN: 'portfolio_instruments_filters_open',

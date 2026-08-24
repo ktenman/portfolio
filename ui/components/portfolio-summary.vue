@@ -66,7 +66,7 @@
       </header>
 
       <div class="chart-frame">
-        <portfolio-chart :key="chartKey" :data="processedChartData" />
+        <portfolio-chart :key="`${chartKey}:${chartMode}`" :data="activeChartData" />
         <div v-if="isRangeLoading" class="chart-veil">
           <loading-spinner message="Loading chart" />
         </div>
@@ -76,7 +76,14 @@
         Could not load the {{ selectedRange }} chart range: {{ rangeError }}
       </AlertMessage>
 
-      <chart-range-filter class="mt-3" :selected="selectedRange" @select="selectedRange = $event" />
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
+        <chart-mode-toggle
+          v-if="benchmarkPoints.length > 0"
+          :selected="chartMode"
+          @select="chartMode = $event"
+        />
+      </div>
 
       <data-table
         :items="sortedItems"
@@ -107,7 +114,7 @@ import { defineAsyncComponent, computed, h, ref, watch } from 'vue'
 import { useInfiniteScroll, useLocalStorage, useWindowSize } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
-import { usePortfolioChart } from '../composables/use-portfolio-chart'
+import { usePortfolioChart, usePerformanceChart } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import { useSortableTable } from '../composables/use-sortable-table'
 import { usePlatformFilter } from '../composables/use-platform-filter'
@@ -118,6 +125,7 @@ import { useNumberTransition } from '../composables/use-number-transition'
 import { useFlashOnChange } from '../composables/use-flash-on-change'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import ChartRangeFilter from './portfolio/chart-range-filter.vue'
+import ChartModeToggle, { type ChartMode } from './portfolio/chart-mode-toggle.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
@@ -173,6 +181,7 @@ const selectedRange = useChartRange()
 const {
   summaries,
   chartSummaries,
+  benchmarkPoints,
   rangeChange,
   reversedSummaries,
   isLoading,
@@ -190,6 +199,16 @@ const {
 const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
+
+const { performanceChartData } = usePerformanceChart(chartSummaries, benchmarkPoints)
+
+const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
+
+const activeChartData = computed(() =>
+  chartMode.value === 'performance' && performanceChartData.value
+    ? performanceChartData.value
+    : processedChartData.value
+)
 
 const { confirm } = useConfirm()
 
