@@ -17,7 +17,6 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -246,7 +245,7 @@ class PortfolioSummaryControllerIT {
   }
 
   @Test
-  fun `should return no more than the sampling limit of points for the max range`() {
+  fun `should return every stored point for the max range`() {
     every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone
 
@@ -257,7 +256,7 @@ class PortfolioSummaryControllerIT {
     mockMvc
       .perform(get("/api/portfolio-summary/series").param("range", "MAX").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$.length()").value(TimeRange.MAX_POINTS))
+      .andExpect(jsonPath("$.length()").value(400))
   }
 
   @Test
