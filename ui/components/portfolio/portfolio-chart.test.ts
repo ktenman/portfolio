@@ -7,8 +7,15 @@ import { CHART_COLORS } from '../../constants/chart-colors'
 
 vi.mock('chart.js', async importOriginal => {
   const actual = await importOriginal<typeof import('chart.js')>()
-  const mockChart: any = vi.fn().mockImplementation(function () {
-    return { destroy: vi.fn(), update: vi.fn(), data: null, options: null }
+  const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {
+    return {
+      destroy: vi.fn(),
+      update: vi.fn(),
+      data: config.data,
+      options: config.options,
+      isDatasetVisible: vi.fn(() => true),
+      setDatasetVisibility: vi.fn(),
+    }
   })
   mockChart.register = vi.fn()
   mockChart.defaults = { font: {} }
@@ -190,6 +197,22 @@ describe('PortfolioChart', () => {
       expect(Chart).toHaveBeenCalledTimes(1)
       expect(instance.update).toHaveBeenCalled()
       expect(instance.data.datasets[0].data).toEqual([1, 2, 3])
+    })
+
+    it('should keep legend-hidden series hidden when the data changes', async () => {
+      const wrapper = await createWrapper()
+      const instance = vi.mocked(Chart).mock.results[0].value
+      instance.isDatasetVisible.mockImplementation((index: number) => index !== 2)
+
+      await wrapper.setProps({ data: { ...mockChartData, totalValues: [1, 2, 3] } })
+      await nextTick()
+
+      expect(instance.setDatasetVisibility.mock.calls).toEqual([
+        [0, true],
+        [1, true],
+        [2, false],
+        [3, true],
+      ])
     })
 
     it('should destroy the chart when the component unmounts', async () => {

@@ -198,6 +198,18 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
   },
 }))
 
+const hiddenSeries = (instance: Chart<'line'>) =>
+  new Set(
+    instance.data.datasets
+      .filter((_, index) => !instance.isDatasetVisible(index))
+      .map(dataset => dataset.label)
+  )
+
+const applyHiddenSeries = (instance: Chart<'line'>, hidden: Set<string | undefined>) =>
+  instance.data.datasets.forEach((dataset, index) =>
+    instance.setDatasetVisibility(index, !hidden.has(dataset.label))
+  )
+
 watchEffect(
   () => {
     const data = chartData.value
@@ -209,8 +221,10 @@ watchEffect(
       return
     }
     if (chart) {
+      const hidden = hiddenSeries(chart)
       chart.data = data
       chart.options = options
+      applyHiddenSeries(chart, hidden)
       chart.update('none')
       return
     }
