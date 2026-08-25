@@ -65,6 +65,8 @@ class PortfolioSummaryWarmupTest {
         "/api/portfolio-summary/historical?page=0&size=30",
         "/api/portfolio-summary/current",
         "/api/portfolio-summary/series?range=1M",
+        "/api/portfolio-summary/benchmark?range=1M&index=SP500",
+        "/api/portfolio-summary/benchmark?range=1M&index=WORLD",
       ),
     )
   }

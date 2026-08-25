@@ -32,3 +32,12 @@ data class CalculationResult(
     private const val serialVersionUID: Long = 1L
   }
 }
+
+data class BenchmarkPointDto(
+  val date: LocalDate,
+  val price: BigDecimal,
+) : Serializable {
+  companion object {
+    private const val serialVersionUID: Long = 1L
+  }
+}

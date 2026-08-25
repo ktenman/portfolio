@@ -14,12 +14,14 @@ import {
 } from '../services/summary-aggregator'
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
+import { BENCHMARKS, type ChartBenchmark } from './use-portfolio-chart'
 import { REFETCH_INTERVALS } from '../constants/api'
-import type { TimeRange } from '../models/generated/domain-models'
+import { type BenchmarkIndex, type TimeRange } from '../models/generated/domain-models'
 
 export function usePortfolioSummaryQuery(
   selectedPlatforms?: Ref<string[]>,
-  selectedRange?: Ref<TimeRange>
+  selectedRange?: Ref<TimeRange>,
+  benchmarksEnabled?: Ref<boolean>
 ) {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
@@ -71,6 +73,23 @@ export function usePortfolioSummaryQuery(
     enabled: isAuthenticated,
   })
 
+  const benchmarksActive = computed(
+    () => isAuthenticated.value && (benchmarksEnabled?.value ?? true)
+  )
+
+  const benchmarkQuery = (index: BenchmarkIndex) =>
+    useQuery({
+      queryKey: ['portfolio-summary', 'benchmark', rangeKey, index],
+      queryFn: () => portfolioSummaryService.getBenchmark(rangeKey.value, index),
+      placeholderData: keepPreviousData,
+      enabled: benchmarksActive,
+    })
+
+  const benchmarkQueries = BENCHMARKS.map(benchmark => ({
+    benchmark,
+    query: benchmarkQuery(benchmark.index),
+  }))
+
   const { data: rangeChange, error: rangeChangeError } = useQuery({
     queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
     queryFn: async () => ({
@@ -104,6 +123,15 @@ export function usePortfolioSummaryQuery(
     mergeHistoricalWithCurrent(seriesData.value ?? [], currentSummary.value)
   )
 
+  const benchmarks = computed<ChartBenchmark[]>(() =>
+    benchmarkQueries.map(({ benchmark, query }) => ({
+      key: benchmark.key,
+      label: benchmark.label,
+      color: benchmark.color,
+      points: query.data.value ?? [],
+    }))
+  )
+
   const sortedSummaries = computed(() => sortSummariesByDateAsc(summaries.value))
 
   const reversedSummaries = computed(() => [...sortedSummaries.value].reverse())
@@ -117,6 +145,7 @@ export function usePortfolioSummaryQuery(
   return {
     summaries,
     chartSummaries,
+    benchmarks,
     rangeChange,
     sortedSummaries,
     reversedSummaries,

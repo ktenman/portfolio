@@ -163,14 +163,20 @@ in the mask's left edge turned 14 captures red at 26 pixels each.
   database produced when the fixture was written. `totalPages: 1` keeps `useInfiniteScroll` from ever
   requesting a second page.
 
-  The stub is installed **per capture**, on `route summary`, `modal confirm` and the four `toast`
-  captures. `state loading skeleton` deliberately does **not** get it: that test holds
-  `**/api/portfolio-summary/**` open for 20 s to render the skeleton, and a stub would fulfil the
-  request and delete the state. Registration order in `modal confirm` puts the stub first and the
-  `recalculate` abort second, so the abort is the most recently registered handler for its URL.
+  The stub is installed **per capture**, on `route summary`, `modal confirm`, the four `toast`
+  captures and `performance mode overlays three lines`. `state loading skeleton` deliberately
+  does **not** get it: that test holds `**/api/portfolio-summary/**` open for 20 s to render the
+  skeleton, and a stub would fulfil the request and delete the state. Registration order in
+  `modal confirm` puts the stub first and the `recalculate` abort second, so the abort is the most
+  recently registered handler for its URL.
 
   Every fixture date is a fixed literal in the past, so no row is ever "today". Changing the fixture
-  re-records eight baselines.
+  re-records ten baselines: the benchmark stub added for the chart-mode toggle pulled
+  `modal-confirm-desktop` into the fixture's blast radius (see below). The benchmark handler
+  branches on the `index` query param — `apiRoute` ignores query strings, so the one registration
+  serves the S&P 500 payload by default and the World payload for `index=WORLD`. The toggle is two
+  chips, `€ | %`; `%` overlays Portfolio, S&P 500 and World as three rebased lines on one chart,
+  which only `summary-performance-mode-desktop` compares unmasked.
 
 - **`/transactions` is served a fixture, not the database.** Masking could not have stabilised it
   either, and the mechanism is not the one the row-count argument predicts. Measured on the live
@@ -367,17 +373,19 @@ mount, and `selectedItem` is already `null` on a fresh load.
 
 Desktop only.
 
-| File                               | State                              | Interaction                                                                                                   |
-| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `dropdown-quick-dates-desktop.png` | `/transactions` "Quick Dates" open | click `[data-bs-toggle="dropdown"]`, await `.dropdown-menu.show`; viewport shot over the fixture-backed table |
-| `toast-success-desktop.png`        | `/` + success toast                | `import('/composables/use-toast.ts')` then `useToast().success('Baseline success message')`                   |
-| `toast-error-desktop.png`          | `/` + error toast                  | same, `.error(...)`                                                                                           |
-| `toast-info-desktop.png`           | `/` + info toast                   | same, `.info(...)`                                                                                            |
-| `toast-warning-desktop.png`        | `/` + warning toast                | same, `.warning(...)`                                                                                         |
-| `state-loading-desktop.png`        | `/` loading skeleton               | `**/api/portfolio-summary/**` held 20 s, then assert `.skeleton`; no summary fixture, deliberately            |
-| `state-spinner-desktop.png`        | `/etf-breakdown` loading spinner   | `**/api/etf-breakdown**` held 20 s, then assert the first `.loading-spinner`                                  |
-| `state-empty-desktop.png`          | `/transactions` empty              | `**/api/transactions**` stubbed with an empty transaction list, then assert `.alert-info`                     |
-| `state-error-desktop.png`          | `/instruments` error               | `**/api/instruments**` stubbed 500; **element-scoped to `.alert-danger`**                                     |
+| File                                   | State                              | Interaction                                                                                                                                      |
+| -------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `dropdown-quick-dates-desktop.png`     | `/transactions` "Quick Dates" open | click `[data-bs-toggle="dropdown"]`, await `.dropdown-menu.show`; viewport shot over the fixture-backed table                                    |
+| `summary-performance-mode-desktop.png` | `/` chart vs S&P 500               | click `.platform-btn:text-is("% vs S&P 500")`, then settle; pins the single-benchmark view — Portfolio and S&P 500 rebased onto one percent axis |
+| `summary-benchmark-both-desktop.png`   | `/` chart vs both benchmarks       | click both `%` chips, then settle; pins the three-line view — Portfolio, S&P 500 and World anchored at 0% together                               |
+| `toast-success-desktop.png`            | `/` + success toast                | `import('/composables/use-toast.ts')` then `useToast().success('Baseline success message')`                                                      |
+| `toast-error-desktop.png`              | `/` + error toast                  | same, `.error(...)`                                                                                                                              |
+| `toast-info-desktop.png`               | `/` + info toast                   | same, `.info(...)`                                                                                                                               |
+| `toast-warning-desktop.png`            | `/` + warning toast                | same, `.warning(...)`                                                                                                                            |
+| `state-loading-desktop.png`            | `/` loading skeleton               | `**/api/portfolio-summary/**` held 20 s, then assert `.skeleton`; no summary fixture, deliberately                                               |
+| `state-spinner-desktop.png`            | `/etf-breakdown` loading spinner   | `**/api/etf-breakdown**` held 20 s, then assert the first `.loading-spinner`                                                                     |
+| `state-empty-desktop.png`              | `/transactions` empty              | `**/api/transactions**` stubbed with an empty transaction list, then assert `.alert-info`                                                        |
+| `state-error-desktop.png`              | `/instruments` error               | `**/api/instruments**` stubbed 500; **element-scoped to `.alert-danger`**                                                                        |
 
 Toasts are fired _after_ the freeze, because they auto-hide in 4000–7500 ms while the settle gate
 needs ≥1.6 s. `/transactions` cannot produce an error state at all (`transactions-view.vue` never
@@ -431,11 +439,13 @@ destructures `isError`), which is why the error capture moved to `/instruments`.
   the race fixed. Note the cost: `states.spec.ts` never visits `/calculator`, so the line and bar
   charts now have no pixel coverage anywhere. Chart configuration is covered instead by
   `ui/composables/use-chart-lifecycle.test.ts` and `ui/components/charts/portfolio-chart.test.ts`.
-- **`modal-confirm-desktop` is not gated on `/`'s data.** At 1440×900 the chart fills the
-  viewport below the platform filter, so no table row is visible behind the backdrop and the capture
-  was byte-identical before and after `/` became fixture-driven. Only the mobile confirm capture,
-  whose smaller chart leaves cards visible, moved. Do not assume a `/`-based viewport capture is
-  covered by the fixture — check whether the table is actually in frame.
+- **`modal-confirm-desktop` is gated on `/`'s fixture after all.** At 1440×900 no table row is
+  visible behind the backdrop, and the capture was byte-identical when `/` first became
+  fixture-driven — only the mobile confirm capture, whose smaller chart leaves cards visible, moved.
+  That held until the chart-mode toggle landed: its `v-if` reads the stubbed benchmark series, the
+  toggle sits inside the 1440×900 frame, and the capture moved 3942 pixels. Do not assume a
+  `/`-based viewport capture is outside the fixture's blast radius — check what is actually in
+  frame, not just the table.
 - **`/api/enums` is still live on every route**, `/` included. It supplies the platform badge and
   filter-button labels ("Lightyear Business", "Trading 212"), which change only on deploy. That is
   the last unstubbed endpoint any capture reaches, and it has been accepted branch-wide.

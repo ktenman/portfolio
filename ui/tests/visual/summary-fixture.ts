@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '../../constants/api'
-import type { PortfolioSummaryDto } from '../../models/generated/domain-models'
+import type { BenchmarkPointDto, PortfolioSummaryDto } from '../../models/generated/domain-models'
 import type { Page } from '../../models/page'
 import { apiRoute, type RouteStub } from './stub'
 
@@ -263,12 +263,27 @@ const HISTORICAL_RESPONSE = {
   number: 0,
 } satisfies Page<PortfolioSummaryDto>
 
+const BENCHMARK_RESPONSE = [...HISTORICAL_ROWS]
+  .reverse()
+  .filter((_, index) => index % 2 === 0)
+  .map(([date], index) => ({ date, price: 95 + index * 0.45 })) satisfies BenchmarkPointDto[]
+
+const WORLD_RESPONSE = BENCHMARK_RESPONSE.map(({ date, price }, index) => ({
+  date,
+  price: price * (0.9 + index * 0.001),
+})) satisfies BenchmarkPointDto[]
+
 export const stubPortfolioSummary: RouteStub = async page => {
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), route =>
     route.fulfill({ json: SERIES_RESPONSE })
   )
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_HISTORICAL), route =>
     route.fulfill({ json: HISTORICAL_RESPONSE })
+  )
+  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_BENCHMARK), route =>
+    route.fulfill({
+      json: route.request().url().includes('index=WORLD') ? WORLD_RESPONSE : BENCHMARK_RESPONSE,
+    })
   )
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_CURRENT), route =>
     route.fulfill({ json: TODAY_SUMMARY })

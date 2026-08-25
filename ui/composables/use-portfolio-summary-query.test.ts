@@ -7,7 +7,7 @@ import { renderWithProviders } from '../tests/test-utils'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
-import { TimeRange } from '../models/generated/domain-models'
+import { BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
 
 vi.mock('../services/api')
 vi.mock('./use-auth-state', () => ({
@@ -63,14 +63,19 @@ describe('usePortfolioSummaryQuery', () => {
       changeAmount: 250,
       changePercent: 1.25,
     })
+    vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
   })
 
-  const setupQuery = (platforms?: Ref<string[]>, range?: Ref<TimeRange>) => {
+  const setupQuery = (
+    platforms?: Ref<string[]>,
+    range?: Ref<TimeRange>,
+    benchmarksEnabled?: Ref<boolean>
+  ) => {
     let queryResult: ReturnType<typeof usePortfolioSummaryQuery> | null = null
 
     const TestComponent = {
       setup() {
-        queryResult = usePortfolioSummaryQuery(platforms, range)
+        queryResult = usePortfolioSummaryQuery(platforms, range, benchmarksEnabled)
         return { queryResult }
       },
       template: '<div>{{ queryResult.isLoading.value ? "Loading" : "Loaded" }}</div>',
@@ -452,6 +457,40 @@ describe('usePortfolioSummaryQuery', () => {
       await vi.waitFor(() => queryResult.chartSummaries.value.length === 3, { timeout: 5000 })
 
       expect(queryResult.chartSummaries.value.map(s => s.date)).toContain('2023-12-31')
+    })
+
+    it('should expose both benchmark series for the selected range', async () => {
+      vi.mocked(portfolioSummaryService.getBenchmark).mockImplementation((_, index) =>
+        Promise.resolve(
+          index === BenchmarkIndex.SP500
+            ? [{ date: '2023-12-29', price: 101.5 }]
+            : [{ date: '2023-12-29', price: 88.2 }]
+        )
+      )
+      const range = ref(TimeRange.ONE_YEAR)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => expect(queryResult.benchmarks.value[0].points).toHaveLength(1), {
+        timeout: 5000,
+      })
+      await vi.waitFor(() => expect(queryResult.benchmarks.value[1].points).toHaveLength(1), {
+        timeout: 5000,
+      })
+
+      const [sp500, world] = queryResult.benchmarks.value
+      expect(sp500.points[0].price).toBe(101.5)
+      expect(world.points[0].price).toBe(88.2)
+      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.SP500)
+      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.WORLD)
+    })
+
+    it('should not fetch benchmark series while benchmarks are disabled', async () => {
+      const { queryResult } = setupQuery(undefined, undefined, ref(false))
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      expect(portfolioSummaryService.getBenchmark).not.toHaveBeenCalled()
     })
   })
 })

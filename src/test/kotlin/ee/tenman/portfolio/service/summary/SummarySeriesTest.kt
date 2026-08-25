@@ -180,11 +180,11 @@ class SummaryServiceSeriesTest {
   }
 
   @Test
-  fun `should sample the stored rows down to the limit`() {
+  fun `should return every stored row so performance math stays deposit neutral`() {
     val stored = (0 until 900).map { summary(LocalDate.of(2020, 1, 2).plusDays(it.toLong())) }
     every { repository.findAllByEntryDateBetween(any(), any()) } returns stored
 
-    expect(service.getSeries(TimeRange.MAX)).toHaveSize(TimeRange.MAX_POINTS)
+    expect(service.getSeries(TimeRange.MAX)).toHaveSize(900)
   }
 
   @Test

@@ -10,6 +10,7 @@ import { useMediaQuery } from '@vueuse/core'
 import { Chart, type ChartOptions } from 'chart.js'
 import { formatDate, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
+import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
 import {
   crosshair,
   tooltipStyle,
@@ -21,16 +22,21 @@ import {
 } from '../../plugins/chart'
 
 interface Props {
-  data: {
-    labels: string[]
-    totalValues: number[]
-    profitValues: number[]
-    xirrValues: number[]
-    earningsValues: number[]
-  } | null
+  data: ChartDataPoint | PerformanceChartData | null
 }
 
 const props = defineProps<Props>()
+
+const isPerformance = computed(() => props.data !== null && 'benchmarks' in props.data)
+
+const performanceDataset = (label: string, color: string, data: (number | null)[]) => ({
+  label,
+  borderColor: color,
+  backgroundColor: color,
+  pointHoverBackgroundColor: color,
+  data,
+  yAxisID: 'y' as const,
+})
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const isCompact = useMediaQuery('(max-width: 768px)')
@@ -40,8 +46,22 @@ let chart: Chart<'line'> | null = null
 const chartData = computed(() => {
   if (!props.data) return null
 
+  const labels = props.data.labels.map(label => formatDate(label))
+
+  if ('benchmarks' in props.data) {
+    return {
+      labels,
+      datasets: [
+        performanceDataset('Portfolio', CHART_COLORS[0], props.data.portfolioValues),
+        ...props.data.benchmarks.map(benchmark =>
+          performanceDataset(benchmark.label, benchmark.color, benchmark.values)
+        ),
+      ],
+    }
+  }
+
   return {
-    labels: props.data.labels.map(label => formatDate(label)),
+    labels,
     datasets: [
       {
         label: isCompact.value ? 'Value' : 'Total Value',
@@ -82,6 +102,8 @@ const chartData = computed(() => {
 
 const tickFont = { size: 11 }
 
+const percentTick = (value: number | string) => `${percentAmount.format(Number(value))}%`
+
 const chartOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true,
   aspectRatio: isCompact.value ? 1.76 : 2.05,
@@ -113,7 +135,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
           const value = context.parsed.y
           if (value === null) return ` ${context.dataset.label}`
           const formatted =
-            context.dataset.yAxisID === 'y1'
+            isPerformance.value || context.dataset.yAxisID === 'y1'
               ? `${value.toFixed(2)}%`
               : formatCurrencyWithSymbol(value)
           return ` ${context.dataset.label}  ${formatted}`
@@ -154,12 +176,13 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
         maxTicksLimit: 8,
         color: labelColor,
         font: tickFont,
-        callback: value => `€${compactAmount.format(Number(value))}`,
+        callback: value =>
+          isPerformance.value ? percentTick(value) : `€${compactAmount.format(Number(value))}`,
       },
     },
     y1: {
+      display: !isPerformance.value,
       type: 'linear' as const,
-      display: true,
       position: 'right' as const,
       border: { display: false },
       grid: {
@@ -169,7 +192,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
         maxTicksLimit: 8,
         color: labelColor,
         font: tickFont,
-        callback: value => `${percentAmount.format(Number(value))}%`,
+        callback: percentTick,
       },
     },
   },

@@ -1,12 +1,15 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.domain.BenchmarkIndex
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.AnnualWindowsDto
+import ee.tenman.portfolio.dto.BenchmarkPointDto
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.dto.RangeChangeDto
 import ee.tenman.portfolio.dto.XirrWindowsDto
+import ee.tenman.portfolio.service.summary.BenchmarkSeriesService
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.summary.PortfolioAnnualWindowService
@@ -39,6 +42,7 @@ class PortfolioSummaryController(
   private val seriesService: PortfolioSummarySeriesService,
   private val historicalService: PortfolioSummaryHistoricalService,
   private val rangeChangeService: PortfolioRangeChangeService,
+  private val benchmarkSeriesService: BenchmarkSeriesService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -84,6 +88,13 @@ class PortfolioSummaryController(
     @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
   ): List<PortfolioSummaryDto> = seriesService.getSeries(range, Platform.parseList(platforms))
+
+  @GetMapping("/benchmark")
+  @Loggable
+  fun getBenchmarkSeries(
+    @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
+    @RequestParam(defaultValue = "SP500") index: BenchmarkIndex,
+  ): List<BenchmarkPointDto> = benchmarkSeriesService.getSeries(range, index)
 
   @GetMapping("/range-change")
   @Loggable
