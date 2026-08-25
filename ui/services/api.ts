@@ -2,6 +2,7 @@ import { httpClient } from '../utils/http-client'
 import {
   type AllocationDto,
   type AnnualWindowsDto,
+  BenchmarkIndex,
   type BenchmarkPointDto,
   type CalculationResult,
   type DiversificationCalculatorResponseDto,
@@ -95,9 +96,9 @@ export const portfolioSummaryService = {
       params: { range, ...platformParams(platforms) },
     }),
 
-  getBenchmark: (range: TimeRange) =>
+  getBenchmark: (range: TimeRange, index: BenchmarkIndex) =>
     httpClient.get<BenchmarkPointDto[]>(API_ENDPOINTS.PORTFOLIO_SUMMARY_BENCHMARK, {
-      params: { range },
+      params: { range, index },
     }),
 
   getRangeChange: (range: TimeRange, platforms?: string[]) =>

@@ -79,7 +79,7 @@
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle
-          v-if="benchmarkPoints.length > 0"
+          v-if="sp500Points.length > 0"
           :selected="chartMode"
           @select="chartMode = $event"
         />
@@ -181,7 +181,7 @@ const selectedRange = useChartRange()
 const {
   summaries,
   chartSummaries,
-  benchmarkPoints,
+  sp500Points,
   rangeChange,
   reversedSummaries,
   isLoading,
@@ -200,7 +200,7 @@ const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummarie
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
-const { performanceChartData } = usePerformanceChart(chartSummaries, benchmarkPoints)
+const { performanceChartData } = usePerformanceChart(chartSummaries, sp500Points)
 
 const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
 

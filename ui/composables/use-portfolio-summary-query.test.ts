@@ -7,7 +7,7 @@ import { renderWithProviders } from '../tests/test-utils'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
-import { TimeRange } from '../models/generated/domain-models'
+import { BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
 
 vi.mock('../services/api')
 vi.mock('./use-auth-state', () => ({
@@ -455,18 +455,28 @@ describe('usePortfolioSummaryQuery', () => {
       expect(queryResult.chartSummaries.value.map(s => s.date)).toContain('2023-12-31')
     })
 
-    it('should expose the benchmark points for the selected range', async () => {
-      vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([
-        { date: '2023-12-29', price: 101.5 },
-      ])
+    it('should expose both benchmark series for the selected range', async () => {
+      vi.mocked(portfolioSummaryService.getBenchmark).mockImplementation((_, index) =>
+        Promise.resolve(
+          index === BenchmarkIndex.SP500
+            ? [{ date: '2023-12-29', price: 101.5 }]
+            : [{ date: '2023-12-29', price: 88.2 }]
+        )
+      )
       const range = ref(TimeRange.ONE_YEAR)
       const { queryResult } = setupQuery(undefined, range)
 
-      await vi.waitFor(() => expect(queryResult.benchmarkPoints.value).toHaveLength(1), {
+      await vi.waitFor(() => expect(queryResult.sp500Points.value).toHaveLength(1), {
+        timeout: 5000,
+      })
+      await vi.waitFor(() => expect(queryResult.worldPoints.value).toHaveLength(1), {
         timeout: 5000,
       })
 
-      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y')
+      expect(queryResult.sp500Points.value[0].price).toBe(101.5)
+      expect(queryResult.worldPoints.value[0].price).toBe(88.2)
+      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.SP500)
+      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.WORLD)
     })
   })
 })
