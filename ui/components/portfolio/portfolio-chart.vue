@@ -6,9 +6,10 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watchEffect } from 'vue'
-import { useMediaQuery } from '@vueuse/core'
+import { useLocalStorage, useMediaQuery } from '@vueuse/core'
 import { Chart, type ChartOptions } from 'chart.js'
 import { formatDate, formatCurrencyWithSymbol } from '../../utils/formatters'
+import { STORAGE_KEYS } from '../../constants'
 import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
 import {
@@ -28,6 +29,22 @@ interface Props {
 const props = defineProps<Props>()
 
 const isPerformance = computed(() => props.data !== null && 'benchmarks' in props.data)
+
+const hiddenLabels = useLocalStorage<string[]>(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, [])
+
+const isHidden = (label: string) => hiddenLabels.value.includes(label)
+
+const toggleSeries = (label: string | undefined) => {
+  if (!label) return
+  hiddenLabels.value = isHidden(label)
+    ? hiddenLabels.value.filter(existing => existing !== label)
+    : [...hiddenLabels.value, label]
+}
+
+const withHidden = <T extends { label: string }>(dataset: T) => ({
+  ...dataset,
+  hidden: isHidden(dataset.label),
+})
 
 const performanceDataset = (label: string, color: string, data: (number | null)[]) => ({
   label,
@@ -56,7 +73,7 @@ const chartData = computed(() => {
         ...props.data.benchmarks.map(benchmark =>
           performanceDataset(benchmark.label, benchmark.color, benchmark.values)
         ),
-      ],
+      ].map(withHidden),
     }
   }
 
@@ -96,7 +113,7 @@ const chartData = computed(() => {
         data: props.data.earningsValues,
         yAxisID: 'y',
       },
-    ],
+    ].map(withHidden),
   }
 })
 
@@ -145,6 +162,8 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
     legend: {
       position: 'bottom' as const,
       align: 'start' as const,
+      onClick: (_event, item, legend) =>
+        toggleSeries(legend.chart.data.datasets[item.datasetIndex ?? -1]?.label),
       labels: {
         usePointStyle: true,
         pointStyle: 'circle' as const,
@@ -198,18 +217,6 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
   },
 }))
 
-const hiddenSeries = (instance: Chart<'line'>) =>
-  new Set(
-    instance.data.datasets
-      .filter((_, index) => !instance.isDatasetVisible(index))
-      .map(dataset => dataset.label)
-  )
-
-const applyHiddenSeries = (instance: Chart<'line'>, hidden: Set<string | undefined>) =>
-  instance.data.datasets.forEach((dataset, index) =>
-    instance.setDatasetVisibility(index, !hidden.has(dataset.label))
-  )
-
 watchEffect(
   () => {
     const data = chartData.value
@@ -221,10 +228,8 @@ watchEffect(
       return
     }
     if (chart) {
-      const hidden = hiddenSeries(chart)
       chart.data = data
       chart.options = options
-      applyHiddenSeries(chart, hidden)
       chart.update('none')
       return
     }

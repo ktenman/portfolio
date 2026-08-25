@@ -4,6 +4,7 @@ import { nextTick } from 'vue'
 import { Chart, type ChartConfiguration } from 'chart.js'
 import PortfolioChart from './portfolio-chart.vue'
 import { CHART_COLORS } from '../../constants/chart-colors'
+import { STORAGE_KEYS } from '../../constants'
 
 vi.mock('chart.js', async importOriginal => {
   const actual = await importOriginal<typeof import('chart.js')>()
@@ -13,8 +14,6 @@ vi.mock('chart.js', async importOriginal => {
       update: vi.fn(),
       data: config.data,
       options: config.options,
-      isDatasetVisible: vi.fn(() => true),
-      setDatasetVisibility: vi.fn(),
     }
   })
   mockChart.register = vi.fn()
@@ -58,6 +57,7 @@ describe('PortfolioChart', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
   })
 
   describe('data transformation', () => {
@@ -200,19 +200,52 @@ describe('PortfolioChart', () => {
     })
 
     it('should keep legend-hidden series hidden when the data changes', async () => {
+      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["XIRR Annual Return"]')
       const wrapper = await createWrapper()
       const instance = vi.mocked(Chart).mock.results[0].value
-      instance.isDatasetVisible.mockImplementation((index: number) => index !== 2)
 
       await wrapper.setProps({ data: { ...mockChartData, totalValues: [1, 2, 3] } })
       await nextTick()
 
-      expect(instance.setDatasetVisibility.mock.calls).toEqual([
-        [0, true],
-        [1, true],
-        [2, false],
-        [3, true],
+      expect(instance.data.datasets[2].hidden).toBe(true)
+    })
+
+    it('should hide series stored in local storage when the chart mounts', async () => {
+      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["XIRR Annual Return"]')
+
+      await createWrapper()
+
+      expect(chartData().datasets.map(dataset => dataset.hidden)).toEqual([
+        false,
+        false,
+        true,
+        false,
       ])
+    })
+
+    it('should persist a series hidden via the legend', async () => {
+      await createWrapper()
+      const instance = vi.mocked(Chart).mock.results[0].value
+
+      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 }, { chart: instance })
+      await nextTick()
+
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN) ?? '[]')).toEqual([
+        'Total Profit',
+      ])
+    })
+
+    it('should show a hidden series again when its legend item is clicked', async () => {
+      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["Total Profit"]')
+      await createWrapper()
+      const instance = vi.mocked(Chart).mock.results[0].value
+
+      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 }, { chart: instance })
+      await nextTick()
+
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN) ?? '[]')).toEqual(
+        []
+      )
     })
 
     it('should destroy the chart when the component unmounts', async () => {
@@ -319,6 +352,14 @@ describe('PortfolioChart', () => {
       await createWrapper()
 
       expect(chartOptions().scales.y1.display).toBe(true)
+    })
+
+    it('should hide a stored benchmark series in performance mode', async () => {
+      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["S&P 500"]')
+
+      await createWrapper({ data: mockPerformanceData })
+
+      expect(chartData().datasets.map(dataset => dataset.hidden)).toEqual([false, true])
     })
   })
 })
