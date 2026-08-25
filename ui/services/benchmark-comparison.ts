@@ -42,7 +42,7 @@ export function buildPerformanceSeries(
       const earned = summary.totalProfit - previous.totalProfit
       const deposited = summary.totalValue - previous.totalValue - earned
       const invested = previous.totalValue + Math.max(deposited, 0)
-      index *= 1 + (invested > 0 ? earned / invested : 0)
+      if (invested > 0) index *= 1 + earned / invested
     }
     return (index - 1) * 100
   })

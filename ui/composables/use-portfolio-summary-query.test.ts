@@ -481,10 +481,7 @@ describe('usePortfolioSummaryQuery', () => {
     })
 
     it('should fetch benchmark series while only a subset of platforms is selected', async () => {
-      const { queryResult } = setupQuery(ref(['LIGHTYEAR']), ref(TimeRange.ONE_YEAR))
-
-      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
-      await flushPromises()
+      setupQuery(ref(['LIGHTYEAR']), ref(TimeRange.ONE_YEAR))
 
       await vi.waitFor(
         () =>

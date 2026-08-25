@@ -16,9 +16,9 @@ class PortfolioSummarySeriesService(
   fun getSeries(
     range: TimeRange,
     platforms: List<Platform>?,
-  ): List<PortfolioSummaryDto> = summaries(range, platforms).map { it.toSummaryDto() }
+  ): List<PortfolioSummaryDto> = getSummaries(range, platforms).map { it.toSummaryDto() }
 
-  private fun summaries(
+  fun getSummaries(
     range: TimeRange,
     platforms: List<Platform>?,
   ): List<PortfolioDailySummary> {

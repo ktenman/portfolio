@@ -5,7 +5,6 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TimeRange
-import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.dto.RangeChangeDto
 import ee.tenman.portfolio.service.calculation.InvestmentMath
 import ee.tenman.portfolio.service.transaction.TransactionService
@@ -30,7 +29,7 @@ class PortfolioRangeChangeService(
     val current = current(platforms)
     val opening = opening(range, platforms)
     val amount = current.totalProfit.subtract(opening?.totalProfit ?: BigDecimal.ZERO)
-    val capital = (opening?.totalValue ?: BigDecimal.ZERO).add(contributions(platforms, opening?.date))
+    val capital = (opening?.totalValue ?: BigDecimal.ZERO).add(contributions(platforms, opening?.entryDate))
     return RangeChangeDto(
       changeAmount = amount.setScale(AMOUNT_SCALE, RoundingMode.HALF_UP),
       changePercent = percent(amount, capital),
@@ -45,9 +44,9 @@ class PortfolioRangeChangeService(
   private fun opening(
     range: TimeRange,
     platforms: List<Platform>?,
-  ): PortfolioSummaryDto? {
+  ): PortfolioDailySummary? {
     val start = range.startDate(LocalDate.now(clock)) ?: return null
-    return seriesService.getSeries(range, platforms).firstOrNull()?.takeUnless { it.date.isAfter(start) }
+    return seriesService.getSummaries(range, platforms).firstOrNull()?.takeUnless { it.entryDate.isAfter(start) }
   }
 
   private fun contributions(

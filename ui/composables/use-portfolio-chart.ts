@@ -41,9 +41,7 @@ export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
   const processedChartData = computed<ChartDataPoint | null>(() => {
     if (summaries.value.length === 0) return null
 
-    const chronologicalSummaries = [...summaries.value].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    )
+    const chronologicalSummaries = sortSummariesByDateAsc(summaries.value)
 
     const sampledData = sampleDataPoints(chronologicalSummaries, MAX_CHART_POINTS)
 
@@ -94,10 +92,7 @@ export function usePerformanceChart(
     )
 
     return {
-      labels: sampleDataPoints(
-        chronologicalSummaries.map(item => item.date),
-        MAX_CHART_POINTS
-      ),
+      labels: sampleDataPoints(chronologicalSummaries, MAX_CHART_POINTS).map(item => item.date),
       portfolioValues: sampleDataPoints(series.portfolioValues, MAX_CHART_POINTS),
       benchmarks: benchmarks.value.map((benchmark, i) => ({
         label: benchmark.label,

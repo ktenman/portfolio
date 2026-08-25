@@ -145,13 +145,13 @@ class SummaryServiceSeriesTest {
 
   @Test
   fun `should request every day so filtered performance math stays deposit neutral`() {
-    every { transactionService.getAllTransactions(listOf("LHV")) } returns listOf(transaction(LocalDate.of(2026, 5, 14)))
+    every { transactionService.getAllTransactions(listOf("LHV")) } returns listOf(transaction(LocalDate.of(2020, 1, 2)))
     val dates = slot<List<LocalDate>>()
     every { batchProcessor.calculateSummaries(capture(dates), any()) } returns emptyList()
 
     service.getSeriesForPlatforms(listOf(Platform.LHV), TimeRange.MAX)
 
-    expect(dates.captured).toHaveSize(92)
+    expect(dates.captured).toHaveSize(2416)
   }
 
   @Test

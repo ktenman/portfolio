@@ -6,7 +6,6 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TimeRange
-import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import ee.tenman.portfolio.service.transaction.TransactionService
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.ZERO_COMMISSION
@@ -44,8 +43,8 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should report the whole profit when the range opens before the first recorded day`() {
     givenCurrentSummary()
-    every { seriesService.getSeries(TimeRange.ONE_YEAR, null) } returns
-      listOf(point(LocalDate.of(2026, 6, 16), BigDecimal("5897.21"), BigDecimal("-102.79")))
+    every { seriesService.getSummaries(TimeRange.ONE_YEAR, null) } returns
+      listOf(summary(LocalDate.of(2026, 6, 16), BigDecimal("5897.21"), BigDecimal("-102.79")))
 
     expect(service.calculate(TimeRange.ONE_YEAR, null).changeAmount).toEqualNumerically(BigDecimal("818.96"))
   }
@@ -53,8 +52,8 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should subtract the profit recorded on the range start date`() {
     givenCurrentSummary()
-    every { seriesService.getSeries(TimeRange.ONE_WEEK, null) } returns
-      listOf(point(LocalDate.of(2026, 8, 7), BigDecimal("24138.46"), BigDecimal("424.52")))
+    every { seriesService.getSummaries(TimeRange.ONE_WEEK, null) } returns
+      listOf(summary(LocalDate.of(2026, 8, 7), BigDecimal("24138.46"), BigDecimal("424.52")))
 
     expect(service.calculate(TimeRange.ONE_WEEK, null).changeAmount).toEqualNumerically(BigDecimal("394.44"))
   }
@@ -130,7 +129,7 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should report a zero change when the range has no recorded days`() {
     givenCurrentSummary(BigDecimal.ZERO, BigDecimal.ZERO)
-    every { seriesService.getSeries(TimeRange.SIX_MONTHS, null) } returns emptyList()
+    every { seriesService.getSummaries(TimeRange.SIX_MONTHS, null) } returns emptyList()
 
     expect(service.calculate(TimeRange.SIX_MONTHS, null).changeAmount).toEqualNumerically(BigDecimal.ZERO)
   }
@@ -140,8 +139,8 @@ class PortfolioRangeChangeServiceTest {
     val platforms = listOf(Platform.LIGHTYEAR_BUSINESS)
     every { platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms) } returns
       summary(LocalDate.of(2026, 8, 14), BigDecimal("24532.90"), BigDecimal("818.96"))
-    every { seriesService.getSeries(TimeRange.FIVE_YEARS, platforms) } returns
-      listOf(point(LocalDate.of(2026, 6, 16), BigDecimal("5897.21"), BigDecimal("-102.79")))
+    every { seriesService.getSummaries(TimeRange.FIVE_YEARS, platforms) } returns
+      listOf(summary(LocalDate.of(2026, 6, 16), BigDecimal("5897.21"), BigDecimal("-102.79")))
 
     expect(service.calculate(TimeRange.FIVE_YEARS, platforms).changeAmount).toEqualNumerically(BigDecimal("818.96"))
   }
@@ -160,8 +159,8 @@ class PortfolioRangeChangeServiceTest {
 
   private fun givenOpeningYear() {
     givenCurrentSummary()
-    every { seriesService.getSeries(TimeRange.ONE_YEAR, null) } returns
-      listOf(point(LocalDate.of(2025, 8, 14), BigDecimal("5897.21"), BigDecimal("-102.79")))
+    every { seriesService.getSummaries(TimeRange.ONE_YEAR, null) } returns
+      listOf(summary(LocalDate.of(2025, 8, 14), BigDecimal("5897.21"), BigDecimal("-102.79")))
   }
 
   private fun buy(
@@ -187,21 +186,5 @@ class PortfolioRangeChangeServiceTest {
       xirrAnnualReturn = BigDecimal("0.24"),
       totalProfit = totalProfit,
       earningsPerDay = BigDecimal("16.14"),
-    )
-
-  private fun point(
-    date: LocalDate,
-    totalValue: BigDecimal,
-    totalProfit: BigDecimal,
-  ): PortfolioSummaryDto =
-    PortfolioSummaryDto(
-      date = date,
-      totalValue = totalValue,
-      xirrAnnualReturn = BigDecimal("0.24"),
-      realizedProfit = BigDecimal.ZERO,
-      unrealizedProfit = totalProfit,
-      totalProfit = totalProfit,
-      earningsPerDay = BigDecimal("16.14"),
-      earningsPerMonth = BigDecimal("491.33"),
     )
 }
