@@ -69,6 +69,7 @@ export interface ChartBenchmark {
 }
 
 export interface PerformanceBenchmark {
+  key: BenchmarkKey
   label: string
   color: string
   values: (number | null)[]
@@ -100,6 +101,7 @@ export function usePerformanceChart(
       ),
       portfolioValues: sampleDataPoints(series.portfolioValues, MAX_CHART_POINTS),
       benchmarks: benchmarks.value.map((benchmark, i) => ({
+        key: benchmark.key,
         label: benchmark.label,
         color: benchmark.color,
         values: sampleDataPoints(series.benchmarkValues[i], MAX_CHART_POINTS),

@@ -34,21 +34,23 @@ const hiddenSeries = useLocalStorage<string[]>(STORAGE_KEYS.SUMMARY_CHART_HIDDEN
 
 const isHidden = (id: string) => hiddenSeries.value.includes(id)
 
-const toggleSeries = (id: string | undefined) => {
+const toggleSeries = (index = -1) => {
+  const id = chartData.value?.datasets[index]?.seriesId
   if (!id) return
   hiddenSeries.value = isHidden(id)
     ? hiddenSeries.value.filter(existing => existing !== id)
     : [...hiddenSeries.value, id]
 }
 
-const withHidden = <T extends { seriesId: string }>(dataset: T) => ({
-  ...dataset,
-  hidden: isHidden(dataset.seriesId),
-})
-
-const performanceDataset = (label: string, color: string, data: (number | null)[]) => ({
+const performanceDataset = (
+  seriesId: string,
+  label: string,
+  color: string,
+  data: (number | null)[]
+) => ({
+  seriesId,
   label,
-  seriesId: label,
+  hidden: isHidden(seriesId),
   borderColor: color,
   backgroundColor: color,
   pointHoverBackgroundColor: color,
@@ -70,11 +72,11 @@ const chartData = computed(() => {
     return {
       labels,
       datasets: [
-        performanceDataset('Portfolio', CHART_COLORS[0], props.data.portfolioValues),
+        performanceDataset('portfolio', 'Portfolio', CHART_COLORS[0], props.data.portfolioValues),
         ...props.data.benchmarks.map(benchmark =>
-          performanceDataset(benchmark.label, benchmark.color, benchmark.values)
+          performanceDataset(benchmark.key, benchmark.label, benchmark.color, benchmark.values)
         ),
-      ].map(withHidden),
+      ],
     }
   }
 
@@ -82,8 +84,9 @@ const chartData = computed(() => {
     labels,
     datasets: [
       {
-        seriesId: 'Total Value',
+        seriesId: 'totalValue',
         label: isCompact.value ? 'Value' : 'Total Value',
+        hidden: isHidden('totalValue'),
         borderColor: CHART_COLORS[0],
         backgroundColor: withAlpha(CHART_COLORS[0], 0.08),
         pointHoverBackgroundColor: CHART_COLORS[0],
@@ -92,8 +95,9 @@ const chartData = computed(() => {
         yAxisID: 'y',
       },
       {
-        seriesId: 'Total Profit',
+        seriesId: 'totalProfit',
         label: isCompact.value ? 'Profit' : 'Total Profit',
+        hidden: isHidden('totalProfit'),
         borderColor: CHART_COLORS[1],
         backgroundColor: CHART_COLORS[1],
         pointHoverBackgroundColor: CHART_COLORS[1],
@@ -101,8 +105,9 @@ const chartData = computed(() => {
         yAxisID: 'y',
       },
       {
-        seriesId: 'XIRR Annual Return',
+        seriesId: 'xirrAnnualReturn',
         label: isCompact.value ? 'XIRR' : 'XIRR Annual Return',
+        hidden: isHidden('xirrAnnualReturn'),
         borderColor: CHART_COLORS[3],
         backgroundColor: CHART_COLORS[3],
         pointHoverBackgroundColor: CHART_COLORS[3],
@@ -110,15 +115,16 @@ const chartData = computed(() => {
         yAxisID: 'y1',
       },
       {
-        seriesId: 'Earnings Per Month',
+        seriesId: 'earningsPerMonth',
         label: isCompact.value ? 'EPM' : 'Earnings Per Month',
+        hidden: isHidden('earningsPerMonth'),
         borderColor: CHART_COLORS[5],
         backgroundColor: CHART_COLORS[5],
         pointHoverBackgroundColor: CHART_COLORS[5],
         data: props.data.earningsValues,
         yAxisID: 'y',
       },
-    ].map(withHidden),
+    ],
   }
 })
 
@@ -167,8 +173,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
     legend: {
       position: 'bottom' as const,
       align: 'start' as const,
-      onClick: (_event, item) =>
-        toggleSeries(chartData.value?.datasets[item.datasetIndex ?? -1]?.seriesId),
+      onClick: (_event, item) => toggleSeries(item.datasetIndex),
       labels: {
         usePointStyle: true,
         pointStyle: 'circle' as const,
