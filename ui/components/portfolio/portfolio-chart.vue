@@ -6,9 +6,10 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watchEffect } from 'vue'
-import { useMediaQuery } from '@vueuse/core'
+import { useLocalStorage, useMediaQuery } from '@vueuse/core'
 import { Chart, type ChartOptions } from 'chart.js'
 import { formatDate, formatCurrencyWithSymbol } from '../../utils/formatters'
+import { STORAGE_KEYS } from '../../constants'
 import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
 import {
@@ -29,8 +30,25 @@ const props = defineProps<Props>()
 
 const isPerformance = computed(() => props.data !== null && 'benchmarks' in props.data)
 
+const hiddenSeries = useLocalStorage<string[]>(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, [])
+
+const isHidden = (id: string) => hiddenSeries.value.includes(id)
+
+const toggleSeries = (id: string | undefined) => {
+  if (!id) return
+  hiddenSeries.value = isHidden(id)
+    ? hiddenSeries.value.filter(existing => existing !== id)
+    : [...hiddenSeries.value, id]
+}
+
+const withHidden = <T extends { seriesId: string }>(dataset: T) => ({
+  ...dataset,
+  hidden: isHidden(dataset.seriesId),
+})
+
 const performanceDataset = (label: string, color: string, data: (number | null)[]) => ({
   label,
+  seriesId: label,
   borderColor: color,
   backgroundColor: color,
   pointHoverBackgroundColor: color,
@@ -56,7 +74,7 @@ const chartData = computed(() => {
         ...props.data.benchmarks.map(benchmark =>
           performanceDataset(benchmark.label, benchmark.color, benchmark.values)
         ),
-      ],
+      ].map(withHidden),
     }
   }
 
@@ -64,6 +82,7 @@ const chartData = computed(() => {
     labels,
     datasets: [
       {
+        seriesId: 'Total Value',
         label: isCompact.value ? 'Value' : 'Total Value',
         borderColor: CHART_COLORS[0],
         backgroundColor: withAlpha(CHART_COLORS[0], 0.08),
@@ -73,6 +92,7 @@ const chartData = computed(() => {
         yAxisID: 'y',
       },
       {
+        seriesId: 'Total Profit',
         label: isCompact.value ? 'Profit' : 'Total Profit',
         borderColor: CHART_COLORS[1],
         backgroundColor: CHART_COLORS[1],
@@ -81,6 +101,7 @@ const chartData = computed(() => {
         yAxisID: 'y',
       },
       {
+        seriesId: 'XIRR Annual Return',
         label: isCompact.value ? 'XIRR' : 'XIRR Annual Return',
         borderColor: CHART_COLORS[3],
         backgroundColor: CHART_COLORS[3],
@@ -89,6 +110,7 @@ const chartData = computed(() => {
         yAxisID: 'y1',
       },
       {
+        seriesId: 'Earnings Per Month',
         label: isCompact.value ? 'EPM' : 'Earnings Per Month',
         borderColor: CHART_COLORS[5],
         backgroundColor: CHART_COLORS[5],
@@ -96,7 +118,7 @@ const chartData = computed(() => {
         data: props.data.earningsValues,
         yAxisID: 'y',
       },
-    ],
+    ].map(withHidden),
   }
 })
 
@@ -145,6 +167,8 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
     legend: {
       position: 'bottom' as const,
       align: 'start' as const,
+      onClick: (_event, item) =>
+        toggleSeries(chartData.value?.datasets[item.datasetIndex ?? -1]?.seriesId),
       labels: {
         usePointStyle: true,
         pointStyle: 'circle' as const,
