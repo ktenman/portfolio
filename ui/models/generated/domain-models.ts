@@ -279,6 +279,11 @@ export enum TransactionType {
     SELL = "SELL",
 }
 
+export enum BenchmarkIndex {
+    SP500 = "SP500",
+    WORLD = "WORLD",
+}
+
 export enum TimeRange {
     ONE_DAY = "1D",
     TWO_DAYS = "2D",

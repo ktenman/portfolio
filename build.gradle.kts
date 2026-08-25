@@ -229,6 +229,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.domain.EnumsResponse",
       "ee.tenman.portfolio.domain.ProviderName",
       "ee.tenman.portfolio.domain.TransactionType",
+      "ee.tenman.portfolio.domain.BenchmarkIndex",
       "ee.tenman.portfolio.domain.TimeRange",
     ),
   )

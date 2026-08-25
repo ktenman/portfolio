@@ -345,6 +345,29 @@ class PortfolioSummaryControllerIT {
   }
 
   @Test
+  fun `should return benchmark points from the world etf when the world index is requested`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+    val vwce = instrumentRepository.save(Instrument("VWCE:GER:EUR", "Vanguard FTSE All-World", "ETF", "EUR"))
+    dailyPriceRepository.saveAll(
+      listOf(
+        DailyPrice(vwce, LocalDate.of(2023, 7, 20), ProviderName.FT, null, null, null, BigDecimal("108.40"), null),
+        DailyPrice(vwce, LocalDate.of(2023, 7, 19), ProviderName.FT, null, null, null, BigDecimal("107.90"), null),
+      ),
+    )
+    mockMvc
+      .perform(
+        get("/api/portfolio-summary/benchmark")
+          .param("range", "1M")
+          .param("index", "WORLD")
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[0].date").value("2023-07-19"))
+      .andExpect(jsonPath("$[0].price").value(107.9))
+  }
+
+  @Test
   fun `should return an empty benchmark series when the etf is not tracked`() {
     every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone

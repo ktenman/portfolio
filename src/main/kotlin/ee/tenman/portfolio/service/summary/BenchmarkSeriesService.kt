@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.summary
 
+import ee.tenman.portfolio.domain.BenchmarkIndex
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.BenchmarkPointDto
 import ee.tenman.portfolio.repository.DailyPriceRepository
@@ -16,13 +17,20 @@ class BenchmarkSeriesService(
   private val clock: Clock,
 ) {
   companion object {
-    val BENCHMARK_SYMBOLS = listOf("VUAA:GER:EUR", "SPYL:GER:EUR")
+    val BENCHMARK_SYMBOLS =
+      mapOf(
+        BenchmarkIndex.SP500 to listOf("VUAA:GER:EUR", "SPYL:GER:EUR"),
+        BenchmarkIndex.WORLD to listOf("VWCE:GER:EUR", "SPPW:GER:EUR"),
+      )
   }
 
   @Transactional(readOnly = true)
-  fun getSeries(range: TimeRange): List<BenchmarkPointDto> {
+  fun getSeries(
+    range: TimeRange,
+    index: BenchmarkIndex,
+  ): List<BenchmarkPointDto> {
     val instrument =
-      BENCHMARK_SYMBOLS.firstNotNullOfOrNull { instrumentRepository.findBySymbol(it).orElse(null) }
+      BENCHMARK_SYMBOLS.getValue(index).firstNotNullOfOrNull { instrumentRepository.findBySymbol(it).orElse(null) }
         ?: return emptyList()
     val start = range.startDate(LocalDate.now(clock)) ?: LocalDate.EPOCH
     return dailyPriceRepository

@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.domain.BenchmarkIndex
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.AnnualWindowsDto
@@ -92,7 +93,8 @@ class PortfolioSummaryController(
   @Loggable
   fun getBenchmarkSeries(
     @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
-  ): List<BenchmarkPointDto> = benchmarkSeriesService.getSeries(range)
+    @RequestParam(defaultValue = "SP500") index: BenchmarkIndex,
+  ): List<BenchmarkPointDto> = benchmarkSeriesService.getSeries(range, index)
 
   @GetMapping("/range-change")
   @Loggable

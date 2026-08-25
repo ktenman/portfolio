@@ -29,6 +29,11 @@ enum class ProviderName {
   TRADING212,
 }
 
+enum class BenchmarkIndex {
+  SP500,
+  WORLD,
+}
+
 enum class SectorSource {
   LLM,
   LIGHTYEAR,
