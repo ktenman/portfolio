@@ -66,16 +66,12 @@ describe('usePortfolioSummaryQuery', () => {
     vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
   })
 
-  const setupQuery = (
-    platforms?: Ref<string[]>,
-    range?: Ref<TimeRange>,
-    benchmarksEnabled?: Ref<boolean>
-  ) => {
+  const setupQuery = (platforms?: Ref<string[]>, range?: Ref<TimeRange>) => {
     let queryResult: ReturnType<typeof usePortfolioSummaryQuery> | null = null
 
     const TestComponent = {
       setup() {
-        queryResult = usePortfolioSummaryQuery(platforms, range, benchmarksEnabled)
+        queryResult = usePortfolioSummaryQuery(platforms, range)
         return { queryResult }
       },
       template: '<div>{{ queryResult.isLoading.value ? "Loading" : "Loaded" }}</div>',
@@ -484,13 +480,17 @@ describe('usePortfolioSummaryQuery', () => {
       expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.WORLD)
     })
 
-    it('should not fetch benchmark series while benchmarks are disabled', async () => {
-      const { queryResult } = setupQuery(undefined, undefined, ref(false))
+    it('should fetch benchmark series while only a subset of platforms is selected', async () => {
+      setupQuery(ref(['LIGHTYEAR']), ref(TimeRange.ONE_YEAR))
 
-      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
-      await flushPromises()
-
-      expect(portfolioSummaryService.getBenchmark).not.toHaveBeenCalled()
+      await vi.waitFor(
+        () =>
+          expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith(
+            '1Y',
+            BenchmarkIndex.SP500
+          ),
+        { timeout: 5000 }
+      )
     })
   })
 })
