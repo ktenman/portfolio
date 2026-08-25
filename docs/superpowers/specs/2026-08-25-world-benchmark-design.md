@@ -27,9 +27,9 @@ work stacks onto the same branch and PR.
 ## Current state (evidence)
 
 - `BenchmarkSeriesService` holds `BENCHMARK_SYMBOLS = listOf("VUAA:GER:EUR",
-  "SPYL:GER:EUR")`; `getSeries(range)` takes the first symbol whose instrument
+"SPYL:GER:EUR")`; `getSeries(range)` takes the first symbol whose instrument
   exists, merges FT and LIGHTYEAR rows per date (`sortedWith(entryDate,
-  providerName)` then `distinctBy(entryDate)` — FT wins ties), returns
+providerName)` then `distinctBy(entryDate)` — FT wins ties), returns
   `List<BenchmarkPointDto>`.
 - `PortfolioSummaryController` exposes `GET /api/portfolio-summary/benchmark?range=`.
 - `ui/components/portfolio/chart-mode-toggle.vue` declares
@@ -40,7 +40,7 @@ work stacks onto the same branch and PR.
 - `ui/composables/use-portfolio-summary-query.ts` fetches one benchmark series
   per range (`queryKey: ['portfolio-summary', 'benchmark', rangeKey]`).
 - `portfolio-chart.vue` picks performance rendering by `'benchmarkValues' in
-  props.data` and hardcodes the legend label "S&P 500".
+props.data` and hardcodes the legend label "S&P 500".
 - DB coverage: VWCE has FT prices since 2019-07-25 plus LIGHTYEAR since
   2019-08-01; portfolio summaries start 2020-01-02 → the World line covers
   every range including MAX with no missing-anchor gap.
@@ -58,7 +58,7 @@ work stacks onto the same branch and PR.
 - `getSeries(range: TimeRange, index: BenchmarkIndex)` resolves the symbol
   list by index; the merge/dedup logic is unchanged.
 - Controller parameter `@RequestParam(defaultValue = "SP500") index:
-  BenchmarkIndex` — existing URLs without the param keep working.
+BenchmarkIndex` — existing URLs without the param keep working.
 - `BenchmarkIndex` joins the TypeScript-generation `classes` list in
   `build.gradle.kts`.
 
@@ -67,7 +67,7 @@ work stacks onto the same branch and PR.
 - `ChartMode = 'value' | 'sp500' | 'world'` (rename of `'performance'`).
 - `use-portfolio-summary-query.ts` fetches both benchmark series per range —
   two small requests keyed `['portfolio-summary', 'benchmark', rangeKey,
-  index]`; exposes `sp500Points` and `worldPoints`.
+index]`; exposes `sp500Points` and `worldPoints`.
 - `chart-mode-toggle.vue` renders the World button only when the world series
   is non-empty; labels `€`, `% vs S&P 500`, `% vs World`.
 - `portfolio-summary.vue` feeds the selected index's points into
