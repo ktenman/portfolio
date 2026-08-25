@@ -20,6 +20,11 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
 
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice>
 
+  fun findAllByInstrumentAndEntryDateGreaterThanEqual(
+    instrument: Instrument,
+    entryDate: LocalDate,
+  ): List<DailyPrice>
+
   @Query(
     """
     SELECT new ee.tenman.portfolio.domain.DailyPricePoint(dp.instrument.id, dp.entryDate, dp.closePrice)

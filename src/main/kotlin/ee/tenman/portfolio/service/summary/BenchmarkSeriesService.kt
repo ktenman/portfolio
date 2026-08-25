@@ -34,8 +34,7 @@ class BenchmarkSeriesService(
         ?: return emptyList()
     val start = range.startDate(LocalDate.now(clock)) ?: LocalDate.EPOCH
     return dailyPriceRepository
-      .findAllByInstrument(instrument)
-      .filter { !it.entryDate.isBefore(start) }
+      .findAllByInstrumentAndEntryDateGreaterThanEqual(instrument, start)
       .sortedWith(compareBy({ it.entryDate }, { it.providerName }))
       .distinctBy { it.entryDate }
       .map { BenchmarkPointDto(it.entryDate, it.closePrice) }
