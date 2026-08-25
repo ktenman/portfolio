@@ -44,8 +44,8 @@ describe('PortfolioChart', () => {
     return wrapper
   }
 
-  const chartConfig = () =>
-    vi.mocked(Chart).mock.calls[0][1] as unknown as ChartConfiguration<'line'>
+  const chartConfig = (call = 0) =>
+    vi.mocked(Chart).mock.calls[call][1] as unknown as ChartConfiguration<'line'>
 
   const chartData = () => chartConfig().data
   const chartOptions = (): any => chartConfig().options
@@ -195,7 +195,7 @@ describe('PortfolioChart', () => {
     })
 
     it('should keep legend-hidden series hidden when the data changes', async () => {
-      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["XIRR Annual Return"]')
+      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["xirrAnnualReturn"]')
       const wrapper = await createWrapper()
       const instance = vi.mocked(Chart).mock.results[0].value
 
@@ -205,30 +205,24 @@ describe('PortfolioChart', () => {
       expect(instance.data.datasets[2].hidden).toBe(true)
     })
 
-    it('should hide series stored in local storage when the chart mounts', async () => {
-      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["XIRR Annual Return"]')
+    it('should keep a legend-hidden series hidden after a remount', async () => {
+      const wrapper = await createWrapper()
+      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 })
+      await nextTick()
+      wrapper.unmount()
 
       await createWrapper()
 
-      expect(chartData().datasets.map(dataset => dataset.hidden)).toEqual([
-        false,
+      expect(chartConfig(1).data.datasets.map(dataset => dataset.hidden)).toEqual([
         false,
         true,
+        false,
         false,
       ])
     })
 
-    it('should persist a series hidden via the legend', async () => {
-      await createWrapper()
-
-      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 })
-      await nextTick()
-
-      expect(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN)).toBe('["Total Profit"]')
-    })
-
     it('should show a hidden series again when its legend item is clicked', async () => {
-      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["Total Profit"]')
+      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["totalProfit"]')
       await createWrapper()
 
       chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 })
@@ -271,7 +265,9 @@ describe('PortfolioChart', () => {
     const mockPerformanceData = {
       labels: ['2023-12-29', '2023-12-30', '2023-12-31'],
       portfolioValues: [null, 0, 1.4],
-      benchmarks: [{ label: 'S&P 500', color: CHART_COLORS[1], values: [null, 0, 2.1] }],
+      benchmarks: [
+        { key: 'sp500', label: 'S&P 500', color: CHART_COLORS[1], values: [null, 0, 2.1] },
+      ],
     }
 
     it('should render two percentage datasets in performance mode', async () => {
@@ -300,7 +296,7 @@ describe('PortfolioChart', () => {
           ...mockPerformanceData,
           benchmarks: [
             ...mockPerformanceData.benchmarks,
-            { label: 'World', color: CHART_COLORS[3], values: worldValues },
+            { key: 'world', label: 'World', color: CHART_COLORS[3], values: worldValues },
           ],
         },
       })
@@ -344,7 +340,7 @@ describe('PortfolioChart', () => {
     })
 
     it('should hide a stored benchmark series in performance mode', async () => {
-      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["S&P 500"]')
+      localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["sp500"]')
 
       await createWrapper({ data: mockPerformanceData })
 
