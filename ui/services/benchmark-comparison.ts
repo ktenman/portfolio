@@ -39,11 +39,10 @@ export function buildPerformanceSeries(
     if (i < anchor) return null
     if (i > anchor) {
       const previous = summaries[i - 1]
-      const growth =
-        previous.totalValue > 0
-          ? (summary.totalProfit - previous.totalProfit) / previous.totalValue
-          : 0
-      index *= 1 + growth
+      const earned = summary.totalProfit - previous.totalProfit
+      const deposited = summary.totalValue - previous.totalValue - earned
+      const invested = previous.totalValue + Math.max(deposited, 0)
+      index *= 1 + (invested > 0 ? earned / invested : 0)
     }
     return (index - 1) * 100
   })
