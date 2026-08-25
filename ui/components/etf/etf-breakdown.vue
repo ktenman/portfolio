@@ -75,6 +75,8 @@
       />
     </div>
 
+    <portfolio-warnings v-if="!isLoading" class="mb-6" :warnings="warnings" />
+
     <div class="search-container mb-4">
       <div class="search-input-wrapper">
         <svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true">
@@ -133,11 +135,16 @@ import {
   getFilterParam,
   type ChartDataItem,
 } from '../../services/etf-chart-service'
-import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
+import type {
+  EtfHoldingBreakdownDto,
+  InstrumentDto,
+  PortfolioWarningDto,
+} from '../../models/generated/domain-models'
 import EtfBreakdownHeader from './etf-breakdown-header.vue'
 import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
+import PortfolioWarnings from './portfolio-warnings.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
@@ -145,6 +152,7 @@ import { STORAGE_KEYS } from '../../constants'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
 const masterHoldings = ref<EtfHoldingBreakdownDto[]>([])
+const warnings = ref<PortfolioWarningDto[]>([])
 const allInstruments = ref<InstrumentDto[]>([])
 const platformInstruments = ref<InstrumentDto[]>([])
 const symbolToFundCurrency = computed(() => {
@@ -258,6 +266,14 @@ const activeChartData = computed(() => {
 const getEtfsParam = (): string[] | undefined =>
   getFilterParam(selectedEtfs.value, availableEtfs.value)
 
+const loadWarnings = async (etfsParam?: string[], platformsParam?: string[]) => {
+  try {
+    warnings.value = await etfBreakdownService.getWarnings(etfsParam, platformsParam)
+  } catch {
+    warnings.value = []
+  }
+}
+
 const loadBreakdown = async (refreshMaster = false) => {
   isLoading.value = true
   isError.value = false
@@ -278,6 +294,7 @@ const loadBreakdown = async (refreshMaster = false) => {
     } else {
       holdings.value = await etfBreakdownService.getBreakdown(etfsParam, platformsParam)
     }
+    loadWarnings(etfsParam, platformsParam)
   } catch (error) {
     isError.value = true
     errorMessage.value = error instanceof Error ? error.message : 'Unknown error'

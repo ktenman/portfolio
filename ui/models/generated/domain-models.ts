@@ -144,6 +144,15 @@ export interface EtfDiagnosticDto {
     platforms: string[];
 }
 
+export interface PortfolioWarningDto extends Serializable {
+    rule: PortfolioWarningRule;
+    label: string;
+    detail: string | null;
+    measuredPercentage: number;
+    thresholdPercentage: number;
+    breached: boolean;
+}
+
 export interface CalculationResult extends Serializable {
     cashFlows: CashFlow[];
     median: number;
@@ -289,4 +298,13 @@ export enum TimeRange {
     FOUR_YEARS = "4Y",
     FIVE_YEARS = "5Y",
     MAX = "MAX",
+}
+
+export enum PortfolioWarningRule {
+    LARGEST_HOLDING = "LARGEST_HOLDING",
+    SECTOR_CONCENTRATION = "SECTOR_CONCENTRATION",
+    COUNTRY_CONCENTRATION = "COUNTRY_CONCENTRATION",
+    PLATFORM_CONCENTRATION = "PLATFORM_CONCENTRATION",
+    AVERAGE_TER = "AVERAGE_TER",
+    CURRENCY_EXPOSURE = "CURRENCY_EXPOSURE",
 }

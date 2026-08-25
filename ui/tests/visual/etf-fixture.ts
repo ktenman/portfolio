@@ -2,6 +2,8 @@ import {
   Currency,
   type EtfHoldingBreakdownDto,
   type InstrumentDto,
+  type PortfolioWarningDto,
+  PortfolioWarningRule,
 } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
 import { apiRoute, type RouteStub } from './stub'
@@ -158,6 +160,57 @@ const HOLDINGS: EtfHoldingBreakdownDto[] = [
   },
 ]
 
+const WARNINGS: PortfolioWarningDto[] = [
+  {
+    rule: PortfolioWarningRule.LARGEST_HOLDING,
+    label: 'Largest holding',
+    detail: 'NVIDIA',
+    measuredPercentage: 18.421,
+    thresholdPercentage: 10,
+    breached: true,
+  },
+  {
+    rule: PortfolioWarningRule.SECTOR_CONCENTRATION,
+    label: 'Largest sector',
+    detail: 'Semiconductors',
+    measuredPercentage: 30.471,
+    thresholdPercentage: 35,
+    breached: false,
+  },
+  {
+    rule: PortfolioWarningRule.COUNTRY_CONCENTRATION,
+    label: 'Largest country',
+    detail: 'United States',
+    measuredPercentage: 41.2036,
+    thresholdPercentage: 70,
+    breached: false,
+  },
+  {
+    rule: PortfolioWarningRule.PLATFORM_CONCENTRATION,
+    label: 'Largest platform',
+    detail: 'Trading 212',
+    measuredPercentage: 62.5417,
+    thresholdPercentage: 60,
+    breached: true,
+  },
+  {
+    rule: PortfolioWarningRule.AVERAGE_TER,
+    label: 'Weighted TER',
+    detail: null,
+    measuredPercentage: 0.1842,
+    thresholdPercentage: 0.4,
+    breached: false,
+  },
+  {
+    rule: PortfolioWarningRule.CURRENCY_EXPOSURE,
+    label: 'Largest non-EUR fund currency',
+    detail: 'USD',
+    measuredPercentage: 24.7509,
+    thresholdPercentage: 60,
+    breached: false,
+  },
+]
+
 const LOGO_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#0072b2"/></svg>'
 
@@ -167,6 +220,9 @@ const LOGO_BY_UUID =
 export const stubEtfBreakdown: RouteStub = async page => {
   await page.route(apiRoute(API_ENDPOINTS.ETF_BREAKDOWN), route =>
     route.fulfill({ json: HOLDINGS })
+  )
+  await page.route(apiRoute(`${API_ENDPOINTS.ETF_BREAKDOWN}/warnings`), route =>
+    route.fulfill({ json: WARNINGS })
   )
   await page.route(apiRoute(API_ENDPOINTS.INSTRUMENTS), route =>
     route.fulfill({ json: { instruments: ETF_INSTRUMENTS, portfolioXirr: null } })

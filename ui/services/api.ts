@@ -10,6 +10,7 @@ import {
   type InstrumentDto,
   type InstrumentsResponse,
   type PortfolioSummaryDto,
+  type PortfolioWarningDto,
   type RangeChangeDto,
   TimeRange,
   type TransactionsWithSummaryDto,
@@ -135,6 +136,11 @@ export const diversificationService = {
 export const etfBreakdownService = {
   getBreakdown: (etfSymbols?: string[], platforms?: string[]) =>
     httpClient.get<EtfHoldingBreakdownDto[]>(API_ENDPOINTS.ETF_BREAKDOWN, {
+      params: { ...(etfSymbols?.length ? { etfSymbols } : {}), ...platformParams(platforms) },
+    }),
+
+  getWarnings: (etfSymbols?: string[], platforms?: string[]) =>
+    httpClient.get<PortfolioWarningDto[]>(`${API_ENDPOINTS.ETF_BREAKDOWN}/warnings`, {
       params: { ...(etfSymbols?.length ? { etfSymbols } : {}), ...platformParams(platforms) },
     }),
 }

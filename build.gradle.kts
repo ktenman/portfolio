@@ -218,6 +218,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.dto.RangeChangeDto",
       "ee.tenman.portfolio.dto.EtfHoldingBreakdownDto",
       "ee.tenman.portfolio.dto.EtfDiagnosticDto",
+      "ee.tenman.portfolio.dto.PortfolioWarningDto",
       "ee.tenman.portfolio.dto.CalculationResult",
       "ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto",
       "ee.tenman.portfolio.dto.DiversificationCalculatorResponseDto",
