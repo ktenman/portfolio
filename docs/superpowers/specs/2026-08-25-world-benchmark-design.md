@@ -115,3 +115,8 @@ range including MAX.
   percentages of a uniform 0.9x multiple are pixel-identical); summary
   baselines re-record for the two-button toggle; a new states capture pins the
   three-line percent view.
+- `%` mode is offered only while the platform selection covers every platform,
+  because a proper subset is served sampled to 60 dates and compounding across
+  those multi-week gaps would let deposits inside a gap inflate the portfolio
+  line; a filtered view resolves the displayed mode to `€` without overwriting
+  the persisted mode.

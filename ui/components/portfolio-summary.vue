@@ -79,7 +79,7 @@
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle
-          v-if="sp500Points.length > 0 || worldPoints.length > 0"
+          v-if="coversEveryPlatform && (sp500Points.length > 0 || worldPoints.length > 0)"
           :selected="activeMode"
           @select="chartMode = $event"
         />
@@ -173,10 +173,8 @@ const { data: platformsData } = useQuery({
 
 const availablePlatforms = computed(() => platformsData.value ?? [])
 
-const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
-  STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS,
-  availablePlatforms
-)
+const { selectedPlatforms, coversEveryPlatform, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter(STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS, availablePlatforms)
 
 const filtersOpen = useLocalStorage(STORAGE_KEYS.SUMMARY_FILTERS_OPEN, true)
 
@@ -210,12 +208,16 @@ const { performanceChartData } = usePerformanceChart(chartSummaries, sp500Points
 const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
 if (!['value', 'performance'].includes(chartMode.value)) chartMode.value = 'performance'
 
+const unfilteredPerformanceData = computed(() =>
+  coversEveryPlatform.value ? performanceChartData.value : null
+)
+
 const activeMode = computed<ChartMode>(() =>
-  resolveChartMode(chartMode.value, performanceChartData.value)
+  resolveChartMode(chartMode.value, unfilteredPerformanceData.value)
 )
 
 const activeChartData = computed(() =>
-  activeMode.value === 'value' ? processedChartData.value : performanceChartData.value
+  activeMode.value === 'value' ? processedChartData.value : unfilteredPerformanceData.value
 )
 
 const { confirm } = useConfirm()
