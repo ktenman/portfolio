@@ -35,7 +35,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const isPerformance = computed(() => props.data !== null && 'benchmarkValues' in props.data)
+const isPerformance = computed(() => props.data !== null && 'sp500Values' in props.data)
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const isCompact = useMediaQuery('(max-width: 768px)')
@@ -47,7 +47,11 @@ const chartData = computed(() => {
 
   const labels = props.data.labels.map(label => formatDate(label))
 
-  if ('benchmarkValues' in props.data) {
+  if ('sp500Values' in props.data) {
+    const benchmarks = [
+      { label: 'S&P 500', color: CHART_COLORS[1], values: props.data.sp500Values },
+      { label: 'World', color: CHART_COLORS[3], values: props.data.worldValues },
+    ].filter(benchmark => benchmark.values.some(value => value !== null))
     return {
       labels,
       datasets: [
@@ -59,14 +63,14 @@ const chartData = computed(() => {
           data: props.data.portfolioValues,
           yAxisID: 'y',
         },
-        {
-          label: props.data.benchmarkLabel,
-          borderColor: CHART_COLORS[1],
-          backgroundColor: CHART_COLORS[1],
-          pointHoverBackgroundColor: CHART_COLORS[1],
-          data: props.data.benchmarkValues,
+        ...benchmarks.map(benchmark => ({
+          label: benchmark.label,
+          borderColor: benchmark.color,
+          backgroundColor: benchmark.color,
+          pointHoverBackgroundColor: benchmark.color,
+          data: benchmark.values,
           yAxisID: 'y',
-        },
+        })),
       ],
     }
   }

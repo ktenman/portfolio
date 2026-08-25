@@ -50,23 +50,24 @@ export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
 export interface PerformanceChartData {
   labels: string[]
   portfolioValues: (number | null)[]
-  benchmarkValues: (number | null)[]
-  benchmarkLabel: string
+  sp500Values: (number | null)[]
+  worldValues: (number | null)[]
 }
 
 export function usePerformanceChart(
   summaries: Ref<PortfolioSummaryDto[]>,
-  benchmark: Ref<BenchmarkPointDto[]>,
-  label: string
+  sp500: Ref<BenchmarkPointDto[]>,
+  world: Ref<BenchmarkPointDto[]>
 ) {
   const performanceChartData = computed<PerformanceChartData | null>(() => {
-    if (summaries.value.length === 0 || benchmark.value.length === 0) return null
+    if (summaries.value.length === 0) return null
+    if (sp500.value.length === 0 && world.value.length === 0) return null
 
     const chronologicalSummaries = [...summaries.value].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
 
-    const series = buildPerformanceSeries(chronologicalSummaries, benchmark.value)
+    const series = buildPerformanceSeries(chronologicalSummaries, sp500.value, world.value)
 
     return {
       labels: sampleDataPoints(
@@ -74,8 +75,8 @@ export function usePerformanceChart(
         MAX_CHART_POINTS
       ),
       portfolioValues: sampleDataPoints(series.portfolioValues, MAX_CHART_POINTS),
-      benchmarkValues: sampleDataPoints(series.benchmarkValues, MAX_CHART_POINTS),
-      benchmarkLabel: label,
+      sp500Values: sampleDataPoints(series.sp500Values, MAX_CHART_POINTS),
+      worldValues: sampleDataPoints(series.worldValues, MAX_CHART_POINTS),
     }
   })
 

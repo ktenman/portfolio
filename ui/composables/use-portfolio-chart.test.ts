@@ -193,14 +193,25 @@ describe('usePerformanceChart', () => {
   const buildLongBenchmark = () =>
     Array.from({ length: 61 }, (_, offset) => ({ date: dateAt(offset), price: 100 }))
 
-  it('should return null when the benchmark is empty', () => {
-    const { performanceChartData } = usePerformanceChart(ref(buildSummaries()), ref([]), 'S&P 500')
+  it('should return null when both benchmark series are empty', () => {
+    const { performanceChartData } = usePerformanceChart(ref(buildSummaries()), ref([]), ref([]))
 
     expect(performanceChartData.value).toBeNull()
   })
 
+  it('should build the chart from the world series alone', () => {
+    const { performanceChartData } = usePerformanceChart(
+      ref(buildSummaries()),
+      ref([]),
+      ref(buildBenchmark())
+    )
+
+    expect(performanceChartData.value?.worldValues[1]).toBeCloseTo(2)
+    expect(performanceChartData.value?.sp500Values).toEqual([null, null])
+  })
+
   it('should return null when the summaries are empty', () => {
-    const { performanceChartData } = usePerformanceChart(ref([]), ref(buildBenchmark()), 'S&P 500')
+    const { performanceChartData } = usePerformanceChart(ref([]), ref(buildBenchmark()), ref([]))
 
     expect(performanceChartData.value).toBeNull()
   })
@@ -209,7 +220,7 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       ref([...buildSummaries()].reverse()),
       ref(buildBenchmark()),
-      'S&P 500'
+      ref([])
     )
 
     expect(performanceChartData.value?.labels).toEqual(['2024-01-02', '2024-01-03'])
@@ -219,18 +230,32 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildSummaries()),
       ref(buildBenchmark()),
-      'S&P 500'
+      ref([])
     )
 
     expect(performanceChartData.value?.portfolioValues[1]).toBeCloseTo(10)
-    expect(performanceChartData.value?.benchmarkValues[1]).toBeCloseTo(2)
+    expect(performanceChartData.value?.sp500Values[1]).toBeCloseTo(2)
+  })
+
+  it('should expose both rebased benchmark series at once', () => {
+    const { performanceChartData } = usePerformanceChart(
+      ref(buildSummaries()),
+      ref(buildBenchmark()),
+      ref([
+        { date: '2024-01-02', price: 80 },
+        { date: '2024-01-03', price: 88 },
+      ])
+    )
+
+    expect(performanceChartData.value?.sp500Values[1]).toBeCloseTo(2)
+    expect(performanceChartData.value?.worldValues[1]).toBeCloseTo(10)
   })
 
   it('should compound the whole history before sampling so deposits dont inflate returns', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildDepositHistory()),
       ref(buildLongBenchmark()),
-      'S&P 500'
+      ref([])
     )
     const values = performanceChartData.value?.portfolioValues ?? []
 
@@ -241,7 +266,7 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildDepositHistory()),
       ref(buildLongBenchmark()),
-      'S&P 500'
+      ref([])
     )
 
     expect(performanceChartData.value?.portfolioValues).toHaveLength(60)
@@ -252,37 +277,27 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       summaries,
       ref(buildLongBenchmark()),
-      'S&P 500'
+      ref([])
     )
     const { processedChartData } = usePortfolioChart(summaries)
 
     expect(performanceChartData.value?.labels).toEqual(processedChartData.value?.labels)
   })
-
-  it('should carry the benchmark label into the chart data', () => {
-    const { performanceChartData } = usePerformanceChart(
-      ref(buildSummaries()),
-      ref(buildBenchmark()),
-      'World'
-    )
-
-    expect(performanceChartData.value?.benchmarkLabel).toBe('World')
-  })
 })
 
 describe('resolveChartMode', () => {
-  it('should fall back to the value mode when the selected benchmark series is missing', () => {
-    expect(resolveChartMode('world', null)).toBe('value')
+  it('should fall back to the value mode when the performance series is missing', () => {
+    expect(resolveChartMode('performance', null)).toBe('value')
   })
 
   it('should keep the selected mode when its series is present', () => {
     const data = {
       labels: ['2024-01-02'],
       portfolioValues: [0],
-      benchmarkValues: [0],
-      benchmarkLabel: 'World',
+      sp500Values: [0],
+      worldValues: [0],
     }
 
-    expect(resolveChartMode('world', data)).toBe('world')
+    expect(resolveChartMode('performance', data)).toBe('performance')
   })
 })

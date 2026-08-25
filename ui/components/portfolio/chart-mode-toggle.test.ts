@@ -2,40 +2,32 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ChartModeToggle, { type ChartMode } from './chart-mode-toggle.vue'
 
-const createWrapper = (selected: ChartMode = 'value', worldAvailable = true) =>
-  mount(ChartModeToggle, { props: { selected, worldAvailable } })
+const createWrapper = (selected: ChartMode = 'value') =>
+  mount(ChartModeToggle, { props: { selected } })
 
 describe('ChartModeToggle', () => {
-  it('should render the euro and both benchmark chips', () => {
+  it('should render the euro and percent chips', () => {
     const labels = createWrapper()
       .findAll('.platform-btn')
       .map(button => button.text())
 
-    expect(labels).toEqual(['€', '% vs S&P 500', '% vs World'])
-  })
-
-  it('should hide the world chip when the world series is unavailable', () => {
-    const labels = createWrapper('value', false)
-      .findAll('.platform-btn')
-      .map(button => button.text())
-
-    expect(labels).toEqual(['€', '% vs S&P 500'])
+    expect(labels).toEqual(['€', '%'])
   })
 
   it('should mark the selected mode as active', () => {
-    const active = createWrapper('world')
+    const active = createWrapper('performance')
       .findAll('.platform-btn')
       .filter(button => button.classes('active'))
       .map(button => button.text())
 
-    expect(active).toEqual(['% vs World'])
+    expect(active).toEqual(['%'])
   })
 
   it('should emit the clicked mode', async () => {
     const wrapper = createWrapper()
 
-    await wrapper.findAll('.platform-btn')[2].trigger('click')
+    await wrapper.findAll('.platform-btn')[1].trigger('click')
 
-    expect(wrapper.emitted('select')).toEqual([['world']])
+    expect(wrapper.emitted('select')).toEqual([['performance']])
   })
 })

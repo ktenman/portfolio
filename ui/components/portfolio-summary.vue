@@ -81,7 +81,6 @@
         <chart-mode-toggle
           v-if="sp500Points.length > 0 || worldPoints.length > 0"
           :selected="activeMode"
-          :world-available="worldPoints.length > 0"
           @select="chartMode = $event"
         />
       </div>
@@ -206,32 +205,17 @@ const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummarie
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
-const { performanceChartData: sp500ChartData } = usePerformanceChart(
-  chartSummaries,
-  sp500Points,
-  'S&P 500'
-)
-
-const { performanceChartData: worldChartData } = usePerformanceChart(
-  chartSummaries,
-  worldPoints,
-  'World'
-)
+const { performanceChartData } = usePerformanceChart(chartSummaries, sp500Points, worldPoints)
 
 const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
-
-const performanceData = computed(() => {
-  if (chartMode.value === 'sp500') return sp500ChartData.value
-  if (chartMode.value === 'world') return worldChartData.value
-  return null
-})
+if (!['value', 'performance'].includes(chartMode.value)) chartMode.value = 'performance'
 
 const activeMode = computed<ChartMode>(() =>
-  resolveChartMode(chartMode.value, performanceData.value)
+  resolveChartMode(chartMode.value, performanceChartData.value)
 )
 
 const activeChartData = computed(() =>
-  activeMode.value === 'value' ? processedChartData.value : performanceData.value
+  activeMode.value === 'value' ? processedChartData.value : performanceChartData.value
 )
 
 const { confirm } = useConfirm()

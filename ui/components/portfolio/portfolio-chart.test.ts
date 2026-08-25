@@ -226,15 +226,15 @@ describe('PortfolioChart', () => {
     const mockPerformanceData = {
       labels: ['2023-12-29', '2023-12-30', '2023-12-31'],
       portfolioValues: [null, 0, 1.4],
-      benchmarkValues: [null, 0, 2.1],
-      benchmarkLabel: 'S&P 500',
+      sp500Values: [null, 0, 2.1],
+      worldValues: [null, 0, 3.2],
     }
 
-    it('should render two percentage datasets in performance mode', async () => {
+    it('should render three percentage datasets in performance mode', async () => {
       await createWrapper({ data: mockPerformanceData })
       const datasets = chartData().datasets
 
-      expect(datasets).toHaveLength(2)
+      expect(datasets).toHaveLength(3)
       expect(datasets[0]).toMatchObject({
         label: 'Portfolio',
         borderColor: CHART_COLORS[0],
@@ -244,15 +244,23 @@ describe('PortfolioChart', () => {
       expect(datasets[1]).toMatchObject({
         label: 'S&P 500',
         borderColor: CHART_COLORS[1],
-        data: mockPerformanceData.benchmarkValues,
+        data: mockPerformanceData.sp500Values,
+        yAxisID: 'y',
+      })
+      expect(datasets[2]).toMatchObject({
+        label: 'World',
+        borderColor: CHART_COLORS[3],
+        data: mockPerformanceData.worldValues,
         yAxisID: 'y',
       })
     })
 
-    it('should render the benchmark legend from the provided label', async () => {
-      await createWrapper({ data: { ...mockPerformanceData, benchmarkLabel: 'World' } })
+    it('should omit a benchmark dataset without any point', async () => {
+      await createWrapper({
+        data: { ...mockPerformanceData, worldValues: [null, null, null] },
+      })
 
-      expect(chartData().datasets[1].label).toBe('World')
+      expect(chartData().datasets.map(dataset => dataset.label)).toEqual(['Portfolio', 'S&P 500'])
     })
 
     it('should hide the right axis in performance mode', async () => {

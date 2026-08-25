@@ -14,19 +14,16 @@
 </template>
 
 <script lang="ts">
-export type ChartMode = 'value' | 'sp500' | 'world'
+export type ChartMode = 'value' | 'performance'
 </script>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
-
-const props = defineProps<{ selected: ChartMode; worldAvailable: boolean }>()
+defineProps<{ selected: ChartMode }>()
 
 const emit = defineEmits<{ select: [mode: ChartMode] }>()
 
-const modes = computed<{ value: ChartMode; label: string }[]>(() => [
+const modes: { value: ChartMode; label: string }[] = [
   { value: 'value', label: '€' },
-  { value: 'sp500', label: '% vs S&P 500' },
-  ...(props.worldAvailable ? [{ value: 'world' as const, label: '% vs World' }] : []),
-])
+  { value: 'performance', label: '%' },
+]
 </script>
