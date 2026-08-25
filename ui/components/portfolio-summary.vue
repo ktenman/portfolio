@@ -80,7 +80,7 @@
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle
           v-if="sp500Points.length > 0 || worldPoints.length > 0"
-          :selected="chartMode"
+          :selected="activeMode"
           :world-available="worldPoints.length > 0"
           @select="chartMode = $event"
         />
