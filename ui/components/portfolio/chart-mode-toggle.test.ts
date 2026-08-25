@@ -3,8 +3,8 @@ import { mount } from '@vue/test-utils'
 import ChartModeToggle from './chart-mode-toggle.vue'
 import type { BenchmarkKey } from '../../composables/use-portfolio-chart'
 
-const createWrapper = (selected: BenchmarkKey[] = [], worldAvailable = true) =>
-  mount(ChartModeToggle, { props: { selected, worldAvailable } })
+const createWrapper = (selected: BenchmarkKey[] = []) =>
+  mount(ChartModeToggle, { props: { selected } })
 
 const activeLabels = (wrapper: ReturnType<typeof createWrapper>) =>
   wrapper
@@ -19,14 +19,6 @@ describe('ChartModeToggle', () => {
       .map(button => button.text())
 
     expect(labels).toEqual(['€', '% vs S&P 500', '% vs World'])
-  })
-
-  it('should hide the world chip when the world series is unavailable', () => {
-    const labels = createWrapper([], false)
-      .findAll('.platform-btn')
-      .map(button => button.text())
-
-    expect(labels).toEqual(['€', '% vs S&P 500'])
   })
 
   it('should mark the euro chip active when no benchmark is selected', () => {
@@ -47,5 +39,13 @@ describe('ChartModeToggle', () => {
     await wrapper.findAll('.platform-btn')[2].trigger('click')
 
     expect(wrapper.emitted('select')).toEqual([['world']])
+  })
+
+  it('should emit null when the euro chip is clicked', async () => {
+    const wrapper = createWrapper(['sp500'])
+
+    await wrapper.findAll('.platform-btn')[0].trigger('click')
+
+    expect(wrapper.emitted('select')).toEqual([[null]])
   })
 })

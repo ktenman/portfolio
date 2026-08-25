@@ -1,21 +1,21 @@
 import { computed, Ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
-import { BenchmarkPointDto, PortfolioSummaryDto } from '../models/generated/domain-models'
+import {
+  BenchmarkIndex,
+  BenchmarkPointDto,
+  PortfolioSummaryDto,
+} from '../models/generated/domain-models'
 import { buildPerformanceSeries } from '../services/benchmark-comparison'
 import { sortSummariesByDateAsc } from '../services/summary-aggregator'
 import { STORAGE_KEYS } from '../constants'
+import { CHART_COLORS } from '../constants/chart-colors'
 
-export const CHART_MODES = [
-  { value: 'value', label: '€' },
-  { value: 'sp500', label: '% vs S&P 500' },
-  { value: 'world', label: '% vs World' },
+export const BENCHMARKS = [
+  { key: 'sp500', index: BenchmarkIndex.SP500, label: 'S&P 500', color: CHART_COLORS[1] },
+  { key: 'world', index: BenchmarkIndex.WORLD, label: 'World', color: CHART_COLORS[3] },
 ] as const
 
-export type ChartMode = (typeof CHART_MODES)[number]['value']
-
-export type BenchmarkKey = Exclude<ChartMode, 'value'>
-
-const BENCHMARK_KEYS: BenchmarkKey[] = ['sp500', 'world']
+export type BenchmarkKey = (typeof BENCHMARKS)[number]['key']
 
 export interface ChartDataPoint {
   labels: string[]
@@ -64,11 +64,13 @@ export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
 export interface ChartBenchmark {
   key: BenchmarkKey
   label: string
+  color: string
   points: BenchmarkPointDto[]
 }
 
 export interface PerformanceBenchmark {
   label: string
+  color: string
   values: (number | null)[]
 }
 
@@ -99,6 +101,7 @@ export function usePerformanceChart(
       portfolioValues: sampleDataPoints(series.portfolioValues, MAX_CHART_POINTS),
       benchmarks: benchmarks.value.map((benchmark, i) => ({
         label: benchmark.label,
+        color: benchmark.color,
         values: sampleDataPoints(series.benchmarkValues[i], MAX_CHART_POINTS),
       })),
     }
@@ -113,7 +116,10 @@ export function useBenchmarkSelection() {
   const stored = useLocalStorage<string>(STORAGE_KEYS.SUMMARY_CHART_MODE, '')
 
   return computed<BenchmarkKey[]>({
-    get: () => BENCHMARK_KEYS.filter(key => stored.value.split(',').includes(key)),
+    get: () =>
+      BENCHMARKS.filter(benchmark => stored.value.split(',').includes(benchmark.key)).map(
+        benchmark => benchmark.key
+      ),
     set: value => {
       stored.value = value.join(',')
     },

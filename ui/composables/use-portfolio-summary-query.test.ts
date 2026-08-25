@@ -470,15 +470,16 @@ describe('usePortfolioSummaryQuery', () => {
       const range = ref(TimeRange.ONE_YEAR)
       const { queryResult } = setupQuery(undefined, range)
 
-      await vi.waitFor(() => expect(queryResult.sp500Points.value).toHaveLength(1), {
+      await vi.waitFor(() => expect(queryResult.benchmarks.value[0].points).toHaveLength(1), {
         timeout: 5000,
       })
-      await vi.waitFor(() => expect(queryResult.worldPoints.value).toHaveLength(1), {
+      await vi.waitFor(() => expect(queryResult.benchmarks.value[1].points).toHaveLength(1), {
         timeout: 5000,
       })
 
-      expect(queryResult.sp500Points.value[0].price).toBe(101.5)
-      expect(queryResult.worldPoints.value[0].price).toBe(88.2)
+      const [sp500, world] = queryResult.benchmarks.value
+      expect(sp500.points[0].price).toBe(101.5)
+      expect(world.points[0].price).toBe(88.2)
       expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.SP500)
       expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.WORLD)
     })

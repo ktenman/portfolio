@@ -21,7 +21,7 @@ export function mergeHistoricalWithCurrent(
 }
 
 export function sortSummariesByDateAsc(summaries: PortfolioSummaryDto[]): PortfolioSummaryDto[] {
-  return [...summaries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  return [...summaries].sort((a, b) => a.date.localeCompare(b.date))
 }
 
 export function sortSummariesByDateDesc(summaries: PortfolioSummaryDto[]): PortfolioSummaryDto[] {

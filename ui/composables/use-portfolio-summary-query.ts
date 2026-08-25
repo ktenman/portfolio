@@ -14,8 +14,9 @@ import {
 } from '../services/summary-aggregator'
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
+import { BENCHMARKS, type ChartBenchmark } from './use-portfolio-chart'
 import { REFETCH_INTERVALS } from '../constants/api'
-import { BenchmarkIndex, type TimeRange } from '../models/generated/domain-models'
+import { type BenchmarkIndex, type TimeRange } from '../models/generated/domain-models'
 
 export function usePortfolioSummaryQuery(
   selectedPlatforms?: Ref<string[]>,
@@ -84,8 +85,10 @@ export function usePortfolioSummaryQuery(
       enabled: benchmarksActive,
     })
 
-  const { data: sp500Data } = benchmarkQuery(BenchmarkIndex.SP500)
-  const { data: worldData } = benchmarkQuery(BenchmarkIndex.WORLD)
+  const benchmarkQueries = BENCHMARKS.map(benchmark => ({
+    benchmark,
+    query: benchmarkQuery(benchmark.index),
+  }))
 
   const { data: rangeChange, error: rangeChangeError } = useQuery({
     queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],
@@ -120,8 +123,14 @@ export function usePortfolioSummaryQuery(
     mergeHistoricalWithCurrent(seriesData.value ?? [], currentSummary.value)
   )
 
-  const sp500Points = computed(() => sp500Data.value ?? [])
-  const worldPoints = computed(() => worldData.value ?? [])
+  const benchmarks = computed<ChartBenchmark[]>(() =>
+    benchmarkQueries.map(({ benchmark, query }) => ({
+      key: benchmark.key,
+      label: benchmark.label,
+      color: benchmark.color,
+      points: query.data.value ?? [],
+    }))
+  )
 
   const sortedSummaries = computed(() => sortSummariesByDateAsc(summaries.value))
 
@@ -136,8 +145,7 @@ export function usePortfolioSummaryQuery(
   return {
     summaries,
     chartSummaries,
-    sp500Points,
-    worldPoints,
+    benchmarks,
     rangeChange,
     sortedSummaries,
     reversedSummaries,

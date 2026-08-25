@@ -29,10 +29,14 @@ const props = defineProps<Props>()
 
 const isPerformance = computed(() => props.data !== null && 'benchmarks' in props.data)
 
-const BENCHMARK_COLORS: Record<string, string> = {
-  'S&P 500': CHART_COLORS[1],
-  World: CHART_COLORS[3],
-}
+const performanceDataset = (label: string, color: string, data: (number | null)[]) => ({
+  label,
+  borderColor: color,
+  backgroundColor: color,
+  pointHoverBackgroundColor: color,
+  data,
+  yAxisID: 'y' as const,
+})
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const isCompact = useMediaQuery('(max-width: 768px)')
@@ -48,25 +52,10 @@ const chartData = computed(() => {
     return {
       labels,
       datasets: [
-        {
-          label: 'Portfolio',
-          borderColor: CHART_COLORS[0],
-          backgroundColor: CHART_COLORS[0],
-          pointHoverBackgroundColor: CHART_COLORS[0],
-          data: props.data.portfolioValues,
-          yAxisID: 'y',
-        },
-        ...props.data.benchmarks.map(benchmark => {
-          const color = BENCHMARK_COLORS[benchmark.label] ?? CHART_COLORS[1]
-          return {
-            label: benchmark.label,
-            borderColor: color,
-            backgroundColor: color,
-            pointHoverBackgroundColor: color,
-            data: benchmark.values,
-            yAxisID: 'y',
-          }
-        }),
+        performanceDataset('Portfolio', CHART_COLORS[0], props.data.portfolioValues),
+        ...props.data.benchmarks.map(benchmark =>
+          performanceDataset(benchmark.label, benchmark.color, benchmark.values)
+        ),
       ],
     }
   }

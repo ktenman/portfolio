@@ -226,7 +226,7 @@ describe('PortfolioChart', () => {
     const mockPerformanceData = {
       labels: ['2023-12-29', '2023-12-30', '2023-12-31'],
       portfolioValues: [null, 0, 1.4],
-      benchmarks: [{ label: 'S&P 500', values: [null, 0, 2.1] }],
+      benchmarks: [{ label: 'S&P 500', color: CHART_COLORS[1], values: [null, 0, 2.1] }],
     }
 
     it('should render two percentage datasets in performance mode', async () => {
@@ -253,7 +253,10 @@ describe('PortfolioChart', () => {
       await createWrapper({
         data: {
           ...mockPerformanceData,
-          benchmarks: [...mockPerformanceData.benchmarks, { label: 'World', values: worldValues }],
+          benchmarks: [
+            ...mockPerformanceData.benchmarks,
+            { label: 'World', color: CHART_COLORS[3], values: worldValues },
+          ],
         },
       })
       const datasets = chartData().datasets

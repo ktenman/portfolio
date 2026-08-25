@@ -179,7 +179,7 @@ describe('usePerformanceChart', () => {
   ]
 
   const sp500 = (points: { date: string; price: number }[]): ChartBenchmark[] => [
-    { key: 'sp500', label: 'S&P 500', points },
+    { key: 'sp500', label: 'S&P 500', color: '#e8590c', points },
   ]
 
   const dateAt = (offset: number) =>
@@ -267,7 +267,9 @@ describe('usePerformanceChart', () => {
   it('should carry each benchmark label into the chart data', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildSummaries()),
-      ref<ChartBenchmark[]>([{ key: 'world', label: 'World', points: buildBenchmark() }])
+      ref<ChartBenchmark[]>([
+        { key: 'world', label: 'World', color: '#0ca678', points: buildBenchmark() },
+      ])
     )
 
     expect(performanceChartData.value?.benchmarks[0].label).toBe('World')
@@ -281,8 +283,8 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildSummaries()),
       ref<ChartBenchmark[]>([
-        { key: 'sp500', label: 'S&P 500', points: buildBenchmark() },
-        { key: 'world', label: 'World', points: world },
+        { key: 'sp500', label: 'S&P 500', color: '#e8590c', points: buildBenchmark() },
+        { key: 'world', label: 'World', color: '#0ca678', points: world },
       ])
     )
 

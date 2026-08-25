@@ -34,30 +34,24 @@ export function buildPerformanceSeries(
       benchmarkValues: benchmarks.map(() => summaries.map(() => null)),
     }
   }
-  const bases = aligned.map(prices => prices[anchor])
-  const portfolioValues: (number | null)[] = []
-  const benchmarkValues: (number | null)[][] = benchmarks.map(() => [])
   let index = 1
-  for (let i = 0; i < summaries.length; i++) {
-    if (i < anchor) {
-      portfolioValues.push(null)
-      benchmarkValues.forEach(values => values.push(null))
-      continue
-    }
+  const portfolioValues = summaries.map((summary, i) => {
+    if (i < anchor) return null
     if (i > anchor) {
       const previous = summaries[i - 1]
       const growth =
         previous.totalValue > 0
-          ? (summaries[i].totalProfit - previous.totalProfit) / previous.totalValue
+          ? (summary.totalProfit - previous.totalProfit) / previous.totalValue
           : 0
       index *= 1 + growth
     }
-    portfolioValues.push((index - 1) * 100)
-    aligned.forEach((prices, b) => {
-      const price = prices[i]
-      const base = bases[b]
-      benchmarkValues[b].push(base !== null && price !== null ? (price / base - 1) * 100 : null)
-    })
-  }
+    return (index - 1) * 100
+  })
+  const benchmarkValues = aligned.map(prices => {
+    const base = prices[anchor]
+    return prices.map((price, i) =>
+      i < anchor || base === null || price === null ? null : (price / base - 1) * 100
+    )
+  })
   return { portfolioValues, benchmarkValues }
 }
