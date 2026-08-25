@@ -116,6 +116,11 @@ export interface RangeChangeDto {
     changePercent: number;
 }
 
+export interface BenchmarkPointDto extends Serializable {
+    date: DateAsString;
+    price: number;
+}
+
 export interface EtfHoldingBreakdownDto extends Serializable {
     holdingUuid: string | null;
     holdingTicker: string | null;
@@ -272,6 +277,11 @@ export enum ProviderName {
 export enum TransactionType {
     BUY = "BUY",
     SELL = "SELL",
+}
+
+export enum BenchmarkIndex {
+    SP500 = "SP500",
+    WORLD = "WORLD",
 }
 
 export enum TimeRange {

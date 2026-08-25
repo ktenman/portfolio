@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.domain.BenchmarkIndex
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
@@ -73,6 +74,8 @@ class PortfolioSummaryWarmup(
         "/api/portfolio-summary/current",
         "/api/portfolio-summary/series?range=${TimeRange.DEFAULT_CODE}",
       )
-    private val BASE_PATHS = listOf("/api/transactions/platforms") + SUMMARY_PATHS
+    private val BENCHMARK_PATHS =
+      BenchmarkIndex.entries.map { "/api/portfolio-summary/benchmark?range=${TimeRange.DEFAULT_CODE}&index=$it" }
+    private val BASE_PATHS = listOf("/api/transactions/platforms") + SUMMARY_PATHS + BENCHMARK_PATHS
   }
 }

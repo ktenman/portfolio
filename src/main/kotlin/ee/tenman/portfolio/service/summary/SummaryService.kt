@@ -112,7 +112,7 @@ class SummaryService(
     val today = LocalDate.now(clock)
     val start = range.startDate(today) ?: LocalDate.EPOCH
     val stored = portfolioDailySummaryRepository.findAllByEntryDateBetween(start, today.minusDays(1))
-    return TimeRange.sample(stored.sortedBy { it.entryDate })
+    return stored.sortedBy { it.entryDate }
   }
 
   private fun fetchSortedTransactions(platforms: List<Platform>): List<PortfolioTransaction> =

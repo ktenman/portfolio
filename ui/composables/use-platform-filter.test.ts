@@ -82,6 +82,43 @@ describe('usePlatformFilter', () => {
     })
   })
 
+  describe('coversEveryPlatform', () => {
+    it('should cover every platform when all of them are selected', async () => {
+      platforms.value = ['LIGHTYEAR', 'TRADING212']
+      const { coversEveryPlatform } = usePlatformFilter('test-key', platforms)
+      await nextTick()
+
+      expect(coversEveryPlatform.value).toBe(true)
+    })
+
+    it('should not cover every platform when a proper subset is selected', async () => {
+      platforms.value = ['LIGHTYEAR', 'TRADING212']
+      const { coversEveryPlatform, togglePlatform } = usePlatformFilter('test-key', platforms)
+      await nextTick()
+
+      togglePlatform('LIGHTYEAR')
+
+      expect(coversEveryPlatform.value).toBe(false)
+    })
+
+    it('should cover every platform when the selection is empty', async () => {
+      platforms.value = ['LIGHTYEAR', 'TRADING212']
+      const { coversEveryPlatform, toggleAllPlatforms } = usePlatformFilter('test-key', platforms)
+      await nextTick()
+
+      toggleAllPlatforms()
+
+      expect(coversEveryPlatform.value).toBe(true)
+    })
+
+    it('should not cover every platform before the available platforms load', () => {
+      const { coversEveryPlatform, selectedPlatforms } = usePlatformFilter('test-key', platforms)
+      selectedPlatforms.value = ['LIGHTYEAR']
+
+      expect(coversEveryPlatform.value).toBe(false)
+    })
+  })
+
   describe('platform sync', () => {
     it('should remove invalid platforms when available platforms change', async () => {
       platforms.value = ['LIGHTYEAR', 'TRADING212', 'BINANCE']

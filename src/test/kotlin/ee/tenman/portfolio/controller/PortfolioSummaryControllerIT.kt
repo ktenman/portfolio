@@ -17,7 +17,6 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -246,7 +245,7 @@ class PortfolioSummaryControllerIT {
   }
 
   @Test
-  fun `should return no more than the sampling limit of points for the max range`() {
+  fun `should return every stored point for the max range`() {
     every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone
 
@@ -257,7 +256,7 @@ class PortfolioSummaryControllerIT {
     mockMvc
       .perform(get("/api/portfolio-summary/series").param("range", "MAX").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
-      .andExpect(jsonPath("$.length()").value(TimeRange.MAX_POINTS))
+      .andExpect(jsonPath("$.length()").value(400))
   }
 
   @Test
@@ -321,6 +320,60 @@ class PortfolioSummaryControllerIT {
     mockMvc
       .perform(get("/api/portfolio-summary/series").param("range", "iga-aeg").cookie(DEFAULT_COOKIE))
       .andExpect(status().isBadRequest)
+  }
+
+  @Test
+  fun `should return benchmark points from the tracked sp500 etf`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+    val vuaa = instrumentRepository.save(Instrument("VUAA:GER:EUR", "Vanguard S&P 500", "ETF", "EUR"))
+    dailyPriceRepository.saveAll(
+      listOf(
+        DailyPrice(vuaa, LocalDate.of(2023, 7, 20), ProviderName.FT, null, null, null, BigDecimal("102.20"), null),
+        DailyPrice(vuaa, LocalDate.of(2023, 7, 19), ProviderName.FT, null, null, null, BigDecimal("101.10"), null),
+        DailyPrice(vuaa, LocalDate.of(2023, 5, 1), ProviderName.FT, null, null, null, BigDecimal("95.00"), null),
+      ),
+    )
+    mockMvc
+      .perform(get("/api/portfolio-summary/benchmark").param("range", "1M").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[0].date").value("2023-07-19"))
+      .andExpect(jsonPath("$[0].price").value(101.1))
+      .andExpect(jsonPath("$[1].date").value("2023-07-20"))
+  }
+
+  @Test
+  fun `should return benchmark points from the world etf when the world index is requested`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+    val vwce = instrumentRepository.save(Instrument("VWCE:GER:EUR", "Vanguard FTSE All-World", "ETF", "EUR"))
+    dailyPriceRepository.saveAll(
+      listOf(
+        DailyPrice(vwce, LocalDate.of(2023, 7, 20), ProviderName.FT, null, null, null, BigDecimal("108.40"), null),
+        DailyPrice(vwce, LocalDate.of(2023, 7, 19), ProviderName.FT, null, null, null, BigDecimal("107.90"), null),
+      ),
+    )
+    mockMvc
+      .perform(
+        get("/api/portfolio-summary/benchmark")
+          .param("range", "1M")
+          .param("index", "WORLD")
+          .cookie(DEFAULT_COOKIE),
+      ).andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[0].date").value("2023-07-19"))
+      .andExpect(jsonPath("$[0].price").value(107.9))
+  }
+
+  @Test
+  fun `should return an empty benchmark series when the etf is not tracked`() {
+    every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
+    every { clock.zone } returns Clock.systemUTC().zone
+    mockMvc
+      .perform(get("/api/portfolio-summary/benchmark").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(0))
   }
 
   private fun summaryOn(date: LocalDate): PortfolioDailySummary =

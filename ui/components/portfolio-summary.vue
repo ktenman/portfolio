@@ -66,7 +66,7 @@
       </header>
 
       <div class="chart-frame">
-        <portfolio-chart :key="chartKey" :data="processedChartData" />
+        <portfolio-chart :key="chartKey" :data="activeChartData" />
         <div v-if="isRangeLoading" class="chart-veil">
           <loading-spinner message="Loading chart" />
         </div>
@@ -76,7 +76,14 @@
         Could not load the {{ selectedRange }} chart range: {{ rangeError }}
       </AlertMessage>
 
-      <chart-range-filter class="mt-3" :selected="selectedRange" @select="selectedRange = $event" />
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
+        <chart-mode-toggle
+          v-if="coversEveryPlatform"
+          :selected="selectedBenchmarks"
+          @select="selectBenchmark"
+        />
+      </div>
 
       <data-table
         :items="sortedItems"
@@ -107,7 +114,13 @@ import { defineAsyncComponent, computed, h, ref, watch } from 'vue'
 import { useInfiniteScroll, useLocalStorage, useWindowSize } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
-import { usePortfolioChart } from '../composables/use-portfolio-chart'
+import {
+  usePortfolioChart,
+  usePerformanceChart,
+  useBenchmarkSelection,
+  type BenchmarkKey,
+  type ChartBenchmark,
+} from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import { useSortableTable } from '../composables/use-sortable-table'
 import { usePlatformFilter } from '../composables/use-platform-filter'
@@ -118,6 +131,7 @@ import { useNumberTransition } from '../composables/use-number-transition'
 import { useFlashOnChange } from '../composables/use-flash-on-change'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import ChartRangeFilter from './portfolio/chart-range-filter.vue'
+import ChartModeToggle from './portfolio/chart-mode-toggle.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
@@ -161,10 +175,8 @@ const { data: platformsData } = useQuery({
 
 const availablePlatforms = computed(() => platformsData.value ?? [])
 
-const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
-  STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS,
-  availablePlatforms
-)
+const { selectedPlatforms, coversEveryPlatform, togglePlatform, toggleAllPlatforms } =
+  usePlatformFilter(STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS, availablePlatforms)
 
 const filtersOpen = useLocalStorage(STORAGE_KEYS.SUMMARY_FILTERS_OPEN, true)
 
@@ -173,6 +185,7 @@ const selectedRange = useChartRange()
 const {
   summaries,
   chartSummaries,
+  benchmarks,
   rangeChange,
   reversedSummaries,
   isLoading,
@@ -185,20 +198,47 @@ const {
   recalculate,
   fetchSummaries,
   hasMoreData,
-} = usePortfolioSummaryQuery(selectedPlatforms, selectedRange)
+} = usePortfolioSummaryQuery(selectedPlatforms, selectedRange, coversEveryPlatform)
 
 const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
+const selectedBenchmarks = useBenchmarkSelection()
+
+const activeBenchmarks = computed<ChartBenchmark[]>(() => {
+  if (!coversEveryPlatform.value) return []
+  return benchmarks.value.filter(
+    benchmark => selectedBenchmarks.value.includes(benchmark.key) && benchmark.points.length > 0
+  )
+})
+
+const { performanceChartData } = usePerformanceChart(chartSummaries, activeBenchmarks)
+
+const activeChartData = computed(() => performanceChartData.value ?? processedChartData.value)
+
+const selectBenchmark = (key: BenchmarkKey | null) => {
+  if (key === null) {
+    selectedBenchmarks.value = []
+    return
+  }
+  selectedBenchmarks.value = selectedBenchmarks.value.includes(key)
+    ? selectedBenchmarks.value.filter(selected => selected !== key)
+    : [...selectedBenchmarks.value, key]
+}
+
 const { confirm } = useConfirm()
 
 const { width } = useWindowSize()
-const chartKey = ref(0)
+const resizeCount = ref(0)
 
 watch(width, () => {
-  chartKey.value++
+  resizeCount.value++
 })
+
+const chartKey = computed(() =>
+  [resizeCount.value, ...activeBenchmarks.value.map(benchmark => benchmark.key)].join('-')
+)
 
 const viewState = computed<ViewState>(() => {
   if (isLoading.value) return 'LOADING'

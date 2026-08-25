@@ -8,7 +8,7 @@ import {
   transactionsService,
   utilityService,
 } from './api'
-import { Platform, TimeRange } from '../models/generated/domain-models'
+import { BenchmarkIndex, Platform, TimeRange } from '../models/generated/domain-models'
 import type { AllocationDto } from '../models/generated/domain-models'
 import type { CachedState } from '../components/diversification/types'
 
@@ -126,6 +126,13 @@ describe('api services', () => {
       'get',
       '/portfolio-summary/series',
       { params: { range: TimeRange.ONE_YEAR, platforms: PLATFORMS } },
+    ],
+    [
+      'summary.getBenchmark',
+      () => portfolioSummaryService.getBenchmark(TimeRange.ONE_YEAR, BenchmarkIndex.SP500),
+      'get',
+      '/portfolio-summary/benchmark',
+      { params: { range: TimeRange.ONE_YEAR, index: BenchmarkIndex.SP500 } },
     ],
     [
       'summary.getRangeChange',
