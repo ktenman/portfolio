@@ -9,6 +9,7 @@ import {
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
 import { STORAGE_KEYS } from '../constants'
+import { CHART_COLORS } from '../constants/chart-colors'
 
 const mockSummaries = [
   createPortfolioSummaryDto({
@@ -179,7 +180,7 @@ describe('usePerformanceChart', () => {
   ]
 
   const sp500 = (points: { date: string; price: number }[]): ChartBenchmark[] => [
-    { key: 'sp500', label: 'S&P 500', color: '#e8590c', points },
+    { key: 'sp500', label: 'S&P 500', color: CHART_COLORS[1], points },
   ]
 
   const dateAt = (offset: number) =>
@@ -268,7 +269,7 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildSummaries()),
       ref<ChartBenchmark[]>([
-        { key: 'world', label: 'World', color: '#0ca678', points: buildBenchmark() },
+        { key: 'world', label: 'World', color: CHART_COLORS[3], points: buildBenchmark() },
       ])
     )
 
@@ -283,8 +284,8 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildSummaries()),
       ref<ChartBenchmark[]>([
-        { key: 'sp500', label: 'S&P 500', color: '#e8590c', points: buildBenchmark() },
-        { key: 'world', label: 'World', color: '#0ca678', points: world },
+        { key: 'sp500', label: 'S&P 500', color: CHART_COLORS[1], points: buildBenchmark() },
+        { key: 'world', label: 'World', color: CHART_COLORS[3], points: world },
       ])
     )
 
