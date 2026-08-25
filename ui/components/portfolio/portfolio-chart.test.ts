@@ -8,13 +8,8 @@ import { STORAGE_KEYS } from '../../constants'
 
 vi.mock('chart.js', async importOriginal => {
   const actual = await importOriginal<typeof import('chart.js')>()
-  const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {
-    return {
-      destroy: vi.fn(),
-      update: vi.fn(),
-      data: config.data,
-      options: config.options,
-    }
+  const mockChart: any = vi.fn().mockImplementation(function () {
+    return { destroy: vi.fn(), update: vi.fn(), data: null, options: null }
   })
   mockChart.register = vi.fn()
   mockChart.defaults = { font: {} }
@@ -225,27 +220,21 @@ describe('PortfolioChart', () => {
 
     it('should persist a series hidden via the legend', async () => {
       await createWrapper()
-      const instance = vi.mocked(Chart).mock.results[0].value
 
-      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 }, { chart: instance })
+      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 })
       await nextTick()
 
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN) ?? '[]')).toEqual([
-        'Total Profit',
-      ])
+      expect(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN)).toBe('["Total Profit"]')
     })
 
     it('should show a hidden series again when its legend item is clicked', async () => {
       localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, '["Total Profit"]')
       await createWrapper()
-      const instance = vi.mocked(Chart).mock.results[0].value
 
-      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 }, { chart: instance })
+      chartOptions().plugins.legend.onClick(null, { datasetIndex: 1 })
       await nextTick()
 
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN) ?? '[]')).toEqual(
-        []
-      )
+      expect(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN)).toBe('[]')
     })
 
     it('should destroy the chart when the component unmounts', async () => {
