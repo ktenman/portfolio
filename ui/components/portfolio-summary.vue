@@ -79,8 +79,9 @@
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle
-          v-if="sp500Points.length > 0"
+          v-if="sp500Points.length > 0 || worldPoints.length > 0"
           :selected="chartMode"
+          :world-available="worldPoints.length > 0"
           @select="chartMode = $event"
         />
       </div>
@@ -114,7 +115,11 @@ import { defineAsyncComponent, computed, h, ref, watch } from 'vue'
 import { useInfiniteScroll, useLocalStorage, useWindowSize } from '@vueuse/core'
 import { useQuery } from '@tanstack/vue-query'
 import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-query'
-import { usePortfolioChart, usePerformanceChart } from '../composables/use-portfolio-chart'
+import {
+  usePortfolioChart,
+  usePerformanceChart,
+  resolveChartMode,
+} from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import { useSortableTable } from '../composables/use-sortable-table'
 import { usePlatformFilter } from '../composables/use-platform-filter'
@@ -182,6 +187,7 @@ const {
   summaries,
   chartSummaries,
   sp500Points,
+  worldPoints,
   rangeChange,
   reversedSummaries,
   isLoading,
@@ -200,16 +206,32 @@ const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummarie
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
-const { performanceChartData } = usePerformanceChart(chartSummaries, sp500Points, 'S&P 500')
+const { performanceChartData: sp500ChartData } = usePerformanceChart(
+  chartSummaries,
+  sp500Points,
+  'S&P 500'
+)
+
+const { performanceChartData: worldChartData } = usePerformanceChart(
+  chartSummaries,
+  worldPoints,
+  'World'
+)
 
 const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
 
+const performanceData = computed(() => {
+  if (chartMode.value === 'sp500') return sp500ChartData.value
+  if (chartMode.value === 'world') return worldChartData.value
+  return null
+})
+
 const activeMode = computed<ChartMode>(() =>
-  chartMode.value === 'performance' && performanceChartData.value ? 'performance' : 'value'
+  resolveChartMode(chartMode.value, performanceData.value)
 )
 
 const activeChartData = computed(() =>
-  activeMode.value === 'performance' ? performanceChartData.value : processedChartData.value
+  activeMode.value === 'value' ? processedChartData.value : performanceData.value
 )
 
 const { confirm } = useConfirm()

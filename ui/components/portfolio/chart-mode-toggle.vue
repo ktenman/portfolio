@@ -1,7 +1,7 @@
 <template>
   <div class="platform-buttons">
     <button
-      v-for="mode in MODES"
+      v-for="mode in modes"
       :key="mode.value"
       class="platform-btn"
       :class="{ active: mode.value === selected }"
@@ -14,16 +14,19 @@
 </template>
 
 <script lang="ts">
-export type ChartMode = 'value' | 'performance'
+export type ChartMode = 'value' | 'sp500' | 'world'
 </script>
 
 <script lang="ts" setup>
-const MODES: { value: ChartMode; label: string }[] = [
-  { value: 'value', label: '€' },
-  { value: 'performance', label: '% vs S&P 500' },
-]
+import { computed } from 'vue'
 
-defineProps<{ selected: ChartMode }>()
+const props = defineProps<{ selected: ChartMode; worldAvailable: boolean }>()
 
 const emit = defineEmits<{ select: [mode: ChartMode] }>()
+
+const modes = computed<{ value: ChartMode; label: string }[]>(() => [
+  { value: 'value', label: '€' },
+  { value: 'sp500', label: '% vs S&P 500' },
+  ...(props.worldAvailable ? [{ value: 'world' as const, label: '% vs World' }] : []),
+])
 </script>

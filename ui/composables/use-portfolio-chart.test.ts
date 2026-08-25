@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ref } from 'vue'
-import { usePerformanceChart, usePortfolioChart } from './use-portfolio-chart'
+import { resolveChartMode, usePerformanceChart, usePortfolioChart } from './use-portfolio-chart'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
 
@@ -267,5 +267,22 @@ describe('usePerformanceChart', () => {
     )
 
     expect(performanceChartData.value?.benchmarkLabel).toBe('World')
+  })
+})
+
+describe('resolveChartMode', () => {
+  it('should fall back to the value mode when the selected benchmark series is missing', () => {
+    expect(resolveChartMode('world', null)).toBe('value')
+  })
+
+  it('should keep the selected mode when its series is present', () => {
+    const data = {
+      labels: ['2024-01-02'],
+      portfolioValues: [0],
+      benchmarkValues: [0],
+      benchmarkLabel: 'World',
+    }
+
+    expect(resolveChartMode('world', data)).toBe('world')
   })
 })

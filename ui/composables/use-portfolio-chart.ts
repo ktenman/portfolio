@@ -1,6 +1,7 @@
 import { computed, Ref } from 'vue'
 import { BenchmarkPointDto, PortfolioSummaryDto } from '../models/generated/domain-models'
 import { buildPerformanceSeries } from '../services/benchmark-comparison'
+import type { ChartMode } from '../components/portfolio/chart-mode-toggle.vue'
 
 interface ChartDataPoint {
   labels: string[]
@@ -81,4 +82,12 @@ export function usePerformanceChart(
   return {
     performanceChartData,
   }
+}
+
+export function resolveChartMode(
+  mode: ChartMode,
+  performanceData: PerformanceChartData | null
+): ChartMode {
+  if (mode === 'value') return 'value'
+  return performanceData ? mode : 'value'
 }
