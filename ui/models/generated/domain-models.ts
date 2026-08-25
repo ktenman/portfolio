@@ -116,7 +116,7 @@ export interface RangeChangeDto {
     changePercent: number;
 }
 
-export interface BenchmarkPointDto {
+export interface BenchmarkPointDto extends Serializable {
     date: DateAsString;
     price: number;
 }
