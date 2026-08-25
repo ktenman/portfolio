@@ -171,7 +171,10 @@ in the mask's left edge turned 14 captures red at 26 pixels each.
 
   Every fixture date is a fixed literal in the past, so no row is ever "today". Changing the fixture
   re-records nine baselines: the benchmark stub added for the chart-mode toggle pulled
-  `modal-confirm-desktop` into the fixture's blast radius (see below).
+  `modal-confirm-desktop` into the fixture's blast radius (see below). The benchmark handler
+  branches on the `index` query param — `apiRoute` ignores query strings, so the one registration
+  serves the S&P 500 payload by default and the World payload for `index=WORLD`, which is what
+  renders the third `% vs World` toggle chip in these captures.
 
 - **`/transactions` is served a fixture, not the database.** Masking could not have stabilised it
   either, and the mechanism is not the one the row-count argument predicts. Measured on the live
