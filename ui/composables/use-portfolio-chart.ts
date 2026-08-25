@@ -1,9 +1,23 @@
 import { computed, Ref } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { BenchmarkPointDto, PortfolioSummaryDto } from '../models/generated/domain-models'
 import { buildPerformanceSeries } from '../services/benchmark-comparison'
-import type { ChartMode } from '../components/portfolio/chart-mode-toggle.vue'
+import { sortSummariesByDateAsc } from '../services/summary-aggregator'
+import { STORAGE_KEYS } from '../constants'
 
-interface ChartDataPoint {
+export const CHART_MODES = [
+  { value: 'value', label: '€' },
+  { value: 'sp500', label: '% vs S&P 500' },
+  { value: 'world', label: '% vs World' },
+] as const
+
+export type ChartMode = (typeof CHART_MODES)[number]['value']
+
+export type BenchmarkKey = Exclude<ChartMode, 'value'>
+
+const BENCHMARK_KEYS: BenchmarkKey[] = ['sp500', 'world']
+
+export interface ChartDataPoint {
   labels: string[]
   totalValues: number[]
   profitValues: number[]
@@ -47,27 +61,35 @@ export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
   }
 }
 
+export interface ChartBenchmark {
+  key: BenchmarkKey
+  label: string
+  points: BenchmarkPointDto[]
+}
+
+export interface PerformanceBenchmark {
+  label: string
+  values: (number | null)[]
+}
+
 export interface PerformanceChartData {
   labels: string[]
   portfolioValues: (number | null)[]
-  sp500Values: (number | null)[]
-  worldValues: (number | null)[]
+  benchmarks: PerformanceBenchmark[]
 }
 
 export function usePerformanceChart(
   summaries: Ref<PortfolioSummaryDto[]>,
-  sp500: Ref<BenchmarkPointDto[]>,
-  world: Ref<BenchmarkPointDto[]>
+  benchmarks: Ref<ChartBenchmark[]>
 ) {
   const performanceChartData = computed<PerformanceChartData | null>(() => {
-    if (summaries.value.length === 0) return null
-    if (sp500.value.length === 0 && world.value.length === 0) return null
+    if (summaries.value.length === 0 || benchmarks.value.length === 0) return null
 
-    const chronologicalSummaries = [...summaries.value].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    const chronologicalSummaries = sortSummariesByDateAsc(summaries.value)
+    const series = buildPerformanceSeries(
+      chronologicalSummaries,
+      benchmarks.value.map(benchmark => benchmark.points)
     )
-
-    const series = buildPerformanceSeries(chronologicalSummaries, sp500.value, world.value)
 
     return {
       labels: sampleDataPoints(
@@ -75,8 +97,10 @@ export function usePerformanceChart(
         MAX_CHART_POINTS
       ),
       portfolioValues: sampleDataPoints(series.portfolioValues, MAX_CHART_POINTS),
-      sp500Values: sampleDataPoints(series.sp500Values, MAX_CHART_POINTS),
-      worldValues: sampleDataPoints(series.worldValues, MAX_CHART_POINTS),
+      benchmarks: benchmarks.value.map((benchmark, i) => ({
+        label: benchmark.label,
+        values: sampleDataPoints(series.benchmarkValues[i], MAX_CHART_POINTS),
+      })),
     }
   })
 
@@ -85,10 +109,13 @@ export function usePerformanceChart(
   }
 }
 
-export function resolveChartMode(
-  mode: ChartMode,
-  performanceData: PerformanceChartData | null
-): ChartMode {
-  if (mode === 'value') return 'value'
-  return performanceData ? mode : 'value'
+export function useBenchmarkSelection() {
+  const stored = useLocalStorage<string>(STORAGE_KEYS.SUMMARY_CHART_MODE, '')
+
+  return computed<BenchmarkKey[]>({
+    get: () => BENCHMARK_KEYS.filter(key => stored.value.split(',').includes(key)),
+    set: value => {
+      stored.value = value.join(',')
+    },
+  })
 }

@@ -1,5 +1,4 @@
 import { beforeEach, describe, it, expect } from 'vitest'
-import { resolveChartMode } from '../composables/use-portfolio-chart'
 import { formatCurrencyWithSymbol } from '../utils/formatters'
 import { formatPlatformName, setPlatformDisplayNames } from '../utils/platform-utils'
 
@@ -73,26 +72,6 @@ describe('PortfolioSummary', () => {
 
       toggleAll()
       expect(selected).toHaveLength(0)
-    })
-  })
-
-  describe('chart mode availability', () => {
-    const performanceData = {
-      labels: ['2024-01-02'],
-      portfolioValues: [0],
-      sp500Values: [0],
-      worldValues: [0],
-    }
-
-    const displayedMode = (coversEveryPlatform: boolean) =>
-      resolveChartMode('performance', coversEveryPlatform ? performanceData : null)
-
-    it('should display the euro chart while a platform subset is selected', () => {
-      expect(displayedMode(false)).toBe('value')
-    })
-
-    it('should restore the persisted percent mode when the selection covers every platform', () => {
-      expect(displayedMode(true)).toBe('performance')
     })
   })
 

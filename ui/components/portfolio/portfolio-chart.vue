@@ -10,7 +10,7 @@ import { useMediaQuery } from '@vueuse/core'
 import { Chart, type ChartOptions } from 'chart.js'
 import { formatDate, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
-import type { PerformanceChartData } from '../../composables/use-portfolio-chart'
+import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
 import {
   crosshair,
   tooltipStyle,
@@ -21,21 +21,18 @@ import {
   percentAmount,
 } from '../../plugins/chart'
 
-interface ValueChartData {
-  labels: string[]
-  totalValues: number[]
-  profitValues: number[]
-  xirrValues: number[]
-  earningsValues: number[]
-}
-
 interface Props {
-  data: ValueChartData | PerformanceChartData | null
+  data: ChartDataPoint | PerformanceChartData | null
 }
 
 const props = defineProps<Props>()
 
-const isPerformance = computed(() => props.data !== null && 'sp500Values' in props.data)
+const isPerformance = computed(() => props.data !== null && 'benchmarks' in props.data)
+
+const BENCHMARK_COLORS: Record<string, string> = {
+  'S&P 500': CHART_COLORS[1],
+  World: CHART_COLORS[3],
+}
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const isCompact = useMediaQuery('(max-width: 768px)')
@@ -47,11 +44,7 @@ const chartData = computed(() => {
 
   const labels = props.data.labels.map(label => formatDate(label))
 
-  if ('sp500Values' in props.data) {
-    const benchmarks = [
-      { label: 'S&P 500', color: CHART_COLORS[1], values: props.data.sp500Values },
-      { label: 'World', color: CHART_COLORS[3], values: props.data.worldValues },
-    ].filter(benchmark => benchmark.values.some(value => value !== null))
+  if ('benchmarks' in props.data) {
     return {
       labels,
       datasets: [
@@ -63,14 +56,17 @@ const chartData = computed(() => {
           data: props.data.portfolioValues,
           yAxisID: 'y',
         },
-        ...benchmarks.map(benchmark => ({
-          label: benchmark.label,
-          borderColor: benchmark.color,
-          backgroundColor: benchmark.color,
-          pointHoverBackgroundColor: benchmark.color,
-          data: benchmark.values,
-          yAxisID: 'y',
-        })),
+        ...props.data.benchmarks.map(benchmark => {
+          const color = BENCHMARK_COLORS[benchmark.label] ?? CHART_COLORS[1]
+          return {
+            label: benchmark.label,
+            borderColor: color,
+            backgroundColor: color,
+            pointHoverBackgroundColor: color,
+            data: benchmark.values,
+            yAxisID: 'y',
+          }
+        }),
       ],
     }
   }
@@ -116,6 +112,8 @@ const chartData = computed(() => {
 })
 
 const tickFont = { size: 11 }
+
+const percentTick = (value: number | string) => `${percentAmount.format(Number(value))}%`
 
 const chartOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true,
@@ -190,9 +188,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
         color: labelColor,
         font: tickFont,
         callback: value =>
-          isPerformance.value
-            ? `${percentAmount.format(Number(value))}%`
-            : `€${compactAmount.format(Number(value))}`,
+          isPerformance.value ? percentTick(value) : `€${compactAmount.format(Number(value))}`,
       },
     },
     y1: {
@@ -207,7 +203,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
         maxTicksLimit: 8,
         color: labelColor,
         font: tickFont,
-        callback: value => `${percentAmount.format(Number(value))}%`,
+        callback: percentTick,
       },
     },
   },

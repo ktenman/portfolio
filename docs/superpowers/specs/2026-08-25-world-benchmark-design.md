@@ -120,3 +120,39 @@ range including MAX.
   those multi-week gaps would let deposits inside a gap inflate the portfolio
   line; a filtered view resolves the displayed mode to `€` without overwriting
   the persisted mode.
+
+## Addendum 2 (2026-08-25): independent benchmark toggles supersede the overlay
+
+User decision: the fixed three-line overlay lost the ability to view one
+benchmark alone, so the two `%` buttons become independent toggles. One active
+benchmark draws two lines, both draw three, none (or clicking `€`) restores the
+euro chart.
+
+- Backend unchanged: both `index=SP500` and `index=WORLD` endpoint variants
+  stay; the frontend still fetches both series per range.
+- `useBenchmarkSelection()` replaces `useChartMode()`: the selection is a
+  `BenchmarkKey[]` (`'sp500' | 'world'`) persisted as a CSV string under the
+  same storage key. The getter filters a canonical key list against the stored
+  string, so order is stable (S&P 500 before World regardless of click order)
+  and any legacy value (`'value'`, `'performance'`, junk) normalizes to the
+  empty selection.
+- `buildPerformanceSeries(summaries, benchmarks: BenchmarkPointDto[][])`
+  generalizes to N benchmarks and returns
+  `{ portfolioValues, benchmarkValues: (number | null)[][] }`. The anchor is
+  the first summary date at which every selected benchmark has a price
+  at-or-before it, so all lines start at 0% together; each benchmark rebases
+  against its own anchor close. For a single benchmark this is numerically
+  identical to the selector implementation, so the recorded sp500-only
+  baseline is unchanged.
+- `PerformanceChartData` carries `benchmarks: { label, values }[]`; the chart
+  maps one dataset per entry with a fixed color per label (S&P 500
+  `CHART_COLORS[1]`, World `CHART_COLORS[3]`) and `resolveChartMode` dissolves
+  into `performanceChartData ?? processedChartData`.
+- The toggle keeps the three buttons `€ | % vs S&P 500 | % vs World`; the `€`
+  button reads active when the selection is empty and clicking it clears the
+  selection; each `%` button toggles its key independently.
+- The platform gate is unchanged: benchmarks activate only while the platform
+  selection covers every platform; a filtered view falls back to `€` without
+  overwriting the persisted selection.
+- Visual: the existing `€` and sp500-only captures stay byte-identical; a new
+  states capture (`summary-benchmark-both`) pins the three-line view.

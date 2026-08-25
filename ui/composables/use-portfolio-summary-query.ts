@@ -19,7 +19,8 @@ import { BenchmarkIndex, type TimeRange } from '../models/generated/domain-model
 
 export function usePortfolioSummaryQuery(
   selectedPlatforms?: Ref<string[]>,
-  selectedRange?: Ref<TimeRange>
+  selectedRange?: Ref<TimeRange>,
+  benchmarksEnabled?: Ref<boolean>
 ) {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
@@ -71,19 +72,20 @@ export function usePortfolioSummaryQuery(
     enabled: isAuthenticated,
   })
 
-  const { data: sp500Data } = useQuery({
-    queryKey: ['portfolio-summary', 'benchmark', rangeKey, BenchmarkIndex.SP500],
-    queryFn: () => portfolioSummaryService.getBenchmark(rangeKey.value, BenchmarkIndex.SP500),
-    placeholderData: keepPreviousData,
-    enabled: isAuthenticated,
-  })
+  const benchmarksActive = computed(
+    () => isAuthenticated.value && (benchmarksEnabled?.value ?? true)
+  )
 
-  const { data: worldData } = useQuery({
-    queryKey: ['portfolio-summary', 'benchmark', rangeKey, BenchmarkIndex.WORLD],
-    queryFn: () => portfolioSummaryService.getBenchmark(rangeKey.value, BenchmarkIndex.WORLD),
-    placeholderData: keepPreviousData,
-    enabled: isAuthenticated,
-  })
+  const benchmarkQuery = (index: BenchmarkIndex) =>
+    useQuery({
+      queryKey: ['portfolio-summary', 'benchmark', rangeKey, index],
+      queryFn: () => portfolioSummaryService.getBenchmark(rangeKey.value, index),
+      placeholderData: keepPreviousData,
+      enabled: benchmarksActive,
+    })
+
+  const { data: sp500Data } = benchmarkQuery(BenchmarkIndex.SP500)
+  const { data: worldData } = benchmarkQuery(BenchmarkIndex.WORLD)
 
   const { data: rangeChange, error: rangeChangeError } = useQuery({
     queryKey: ['portfolio-summary', 'range-change', platformsKey, rangeKey],

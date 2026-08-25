@@ -66,12 +66,16 @@ describe('usePortfolioSummaryQuery', () => {
     vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
   })
 
-  const setupQuery = (platforms?: Ref<string[]>, range?: Ref<TimeRange>) => {
+  const setupQuery = (
+    platforms?: Ref<string[]>,
+    range?: Ref<TimeRange>,
+    benchmarksEnabled?: Ref<boolean>
+  ) => {
     let queryResult: ReturnType<typeof usePortfolioSummaryQuery> | null = null
 
     const TestComponent = {
       setup() {
-        queryResult = usePortfolioSummaryQuery(platforms, range)
+        queryResult = usePortfolioSummaryQuery(platforms, range, benchmarksEnabled)
         return { queryResult }
       },
       template: '<div>{{ queryResult.isLoading.value ? "Loading" : "Loaded" }}</div>',
@@ -477,6 +481,15 @@ describe('usePortfolioSummaryQuery', () => {
       expect(queryResult.worldPoints.value[0].price).toBe(88.2)
       expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.SP500)
       expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.WORLD)
+    })
+
+    it('should not fetch benchmark series while benchmarks are disabled', async () => {
+      const { queryResult } = setupQuery(undefined, undefined, ref(false))
+
+      await vi.waitFor(() => !queryResult.isLoading.value, { timeout: 5000 })
+      await flushPromises()
+
+      expect(portfolioSummaryService.getBenchmark).not.toHaveBeenCalled()
     })
   })
 })

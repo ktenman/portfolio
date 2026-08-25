@@ -43,11 +43,7 @@ export function usePlatformFilter(storageKey: string, availablePlatforms: Ref<st
     getFilterParam(selectedPlatforms.value, availablePlatforms.value)
   )
 
-  const coversEveryPlatform = computed(
-    () =>
-      selectedPlatforms.value.length === 0 ||
-      availablePlatforms.value.every(platform => selectedPlatforms.value.includes(platform))
-  )
+  const coversEveryPlatform = computed(() => activePlatforms.value === undefined)
 
   return {
     selectedPlatforms,

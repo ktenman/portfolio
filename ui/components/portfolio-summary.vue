@@ -66,7 +66,7 @@
       </header>
 
       <div class="chart-frame">
-        <portfolio-chart :key="`${chartKey}:${activeMode}`" :data="activeChartData" />
+        <portfolio-chart :key="`${chartKey}:${chartVariant}`" :data="activeChartData" />
         <div v-if="isRangeLoading" class="chart-veil">
           <loading-spinner message="Loading chart" />
         </div>
@@ -79,9 +79,10 @@
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle
-          v-if="coversEveryPlatform && (sp500Points.length > 0 || worldPoints.length > 0)"
-          :selected="activeMode"
-          @select="chartMode = $event"
+          v-if="coversEveryPlatform && availableBenchmarks.length > 0"
+          :selected="activeKeys"
+          :world-available="worldPoints.length > 0"
+          @select="selectBenchmark"
         />
       </div>
 
@@ -117,7 +118,9 @@ import { usePortfolioSummaryQuery } from '../composables/use-portfolio-summary-q
 import {
   usePortfolioChart,
   usePerformanceChart,
-  resolveChartMode,
+  useBenchmarkSelection,
+  type ChartBenchmark,
+  type ChartMode,
 } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
 import { useSortableTable } from '../composables/use-sortable-table'
@@ -129,7 +132,7 @@ import { useNumberTransition } from '../composables/use-number-transition'
 import { useFlashOnChange } from '../composables/use-flash-on-change'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import ChartRangeFilter from './portfolio/chart-range-filter.vue'
-import ChartModeToggle, { type ChartMode } from './portfolio/chart-mode-toggle.vue'
+import ChartModeToggle from './portfolio/chart-mode-toggle.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
@@ -197,28 +200,47 @@ const {
   recalculate,
   fetchSummaries,
   hasMoreData,
-} = usePortfolioSummaryQuery(selectedPlatforms, selectedRange)
+} = usePortfolioSummaryQuery(selectedPlatforms, selectedRange, coversEveryPlatform)
 
 const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
-const { performanceChartData } = usePerformanceChart(chartSummaries, sp500Points, worldPoints)
+const selectedBenchmarks = useBenchmarkSelection()
 
-const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
-if (!['value', 'performance'].includes(chartMode.value)) chartMode.value = 'performance'
-
-const unfilteredPerformanceData = computed(() =>
-  coversEveryPlatform.value ? performanceChartData.value : null
+const availableBenchmarks = computed<ChartBenchmark[]>(() =>
+  [
+    { key: 'sp500' as const, label: 'S&P 500', points: sp500Points.value },
+    { key: 'world' as const, label: 'World', points: worldPoints.value },
+  ].filter(benchmark => benchmark.points.length > 0)
 )
 
-const activeMode = computed<ChartMode>(() =>
-  resolveChartMode(chartMode.value, unfilteredPerformanceData.value)
+const activeBenchmarks = computed<ChartBenchmark[]>(() => {
+  if (!coversEveryPlatform.value) return []
+  return availableBenchmarks.value.filter(benchmark =>
+    selectedBenchmarks.value.includes(benchmark.key)
+  )
+})
+
+const activeKeys = computed(() => activeBenchmarks.value.map(benchmark => benchmark.key))
+
+const { performanceChartData } = usePerformanceChart(chartSummaries, activeBenchmarks)
+
+const activeChartData = computed(() => performanceChartData.value ?? processedChartData.value)
+
+const chartVariant = computed(() =>
+  performanceChartData.value ? activeKeys.value.join('+') : 'value'
 )
 
-const activeChartData = computed(() =>
-  activeMode.value === 'value' ? processedChartData.value : unfilteredPerformanceData.value
-)
+const selectBenchmark = (mode: ChartMode) => {
+  if (mode === 'value') {
+    selectedBenchmarks.value = []
+    return
+  }
+  selectedBenchmarks.value = selectedBenchmarks.value.includes(mode)
+    ? selectedBenchmarks.value.filter(key => key !== mode)
+    : [...selectedBenchmarks.value, mode]
+}
 
 const { confirm } = useConfirm()
 

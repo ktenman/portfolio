@@ -200,12 +200,21 @@ test.describe('desktop states', () => {
     await expect(page.locator('#fromDate')).toHaveValue('')
   })
 
-  test('performance mode overlays three lines', async ({ page }) => {
+  test('selecting the sp500 mode shows the benchmark comparison', async ({ page }) => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
-    await page.click('.platform-btn:has-text("%")')
+    await page.click('.platform-btn:text-is("% vs S&P 500")')
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('summary-performance-mode.png')
+  })
+
+  test('selecting both benchmarks overlays three lines', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    await page.click('.platform-btn:text-is("% vs S&P 500")')
+    await page.click('.platform-btn:text-is("% vs World")')
+    await settleAndFreeze(page)
+    await expect(page).toHaveScreenshot('summary-benchmark-both.png')
   })
 
   for (const variant of ['success', 'error', 'info', 'warning'] as const) {

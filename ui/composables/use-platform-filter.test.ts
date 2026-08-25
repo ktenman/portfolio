@@ -110,6 +110,13 @@ describe('usePlatformFilter', () => {
 
       expect(coversEveryPlatform.value).toBe(true)
     })
+
+    it('should not cover every platform before the available platforms load', () => {
+      const { coversEveryPlatform, selectedPlatforms } = usePlatformFilter('test-key', platforms)
+      selectedPlatforms.value = ['LIGHTYEAR']
+
+      expect(coversEveryPlatform.value).toBe(false)
+    })
   })
 
   describe('platform sync', () => {
