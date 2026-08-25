@@ -268,9 +268,9 @@ const BENCHMARK_RESPONSE = [...HISTORICAL_ROWS]
   .filter((_, index) => index % 2 === 0)
   .map(([date], index) => ({ date, price: 95 + index * 0.45 })) satisfies BenchmarkPointDto[]
 
-const WORLD_RESPONSE = BENCHMARK_RESPONSE.map(({ date, price }) => ({
+const WORLD_RESPONSE = BENCHMARK_RESPONSE.map(({ date, price }, index) => ({
   date,
-  price: price * 0.9,
+  price: price * (0.9 + index * 0.001),
 })) satisfies BenchmarkPointDto[]
 
 export const stubPortfolioSummary: RouteStub = async page => {

@@ -200,6 +200,14 @@ test.describe('desktop states', () => {
     await expect(page.locator('#fromDate')).toHaveValue('')
   })
 
+  test('performance mode overlays three lines', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    await page.click('.platform-btn:has-text("%")')
+    await settleAndFreeze(page)
+    await expect(page).toHaveScreenshot('summary-performance-mode.png')
+  })
+
   for (const variant of ['success', 'error', 'info', 'warning'] as const) {
     test(`toast ${variant}`, async ({ page }) => {
       await stubPortfolioSummary(page)
