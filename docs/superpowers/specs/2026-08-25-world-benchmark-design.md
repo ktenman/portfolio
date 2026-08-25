@@ -86,3 +86,32 @@ index]`; exposes `sp500Points` and `worldPoints`.
   switches with the index.
 - Visual: the summary fixture stubs the WORLD benchmark route; affected
   baselines re-recorded.
+
+## Addendum (2026-08-25): three-line overlay supersedes the selector
+
+User decision: show Portfolio, S&P 500 and World together in one `%` mode; the
+toggle collapses to `€ | %`. The selector's rationale (scope decision 1) does
+not bite for these funds: both VUAA and VWCE have prices before the first
+portfolio summary (2020-01-02), so all three lines share one anchor on every
+range including MAX.
+
+- Backend unchanged: both `index=SP500` and `index=WORLD` endpoint variants
+  stay; the frontend already fetches both series per range.
+- `buildPerformanceSeries(summaries, sp500, world)` returns
+  `{ portfolioValues, sp500Values, worldValues }`. The anchor is the first
+  summary date at which every non-empty benchmark has a price at-or-before it;
+  an empty benchmark series yields all-null values and does not constrain the
+  anchor; both empty (or no common anchor) yields all nulls.
+- `PerformanceChartData` carries `sp500Values`/`worldValues`; `benchmarkLabel`
+  is gone. The chart hardcodes legend labels Portfolio, S&P 500, World and
+  omits a benchmark dataset with no non-null point.
+- `ChartMode = 'value' | 'performance'`; the toggle renders `€` and `%` and
+  drops the `worldAvailable` prop; the toggle still shows when either
+  benchmark series is non-empty. Persisted `'sp500'`/`'world'` values are
+  normalized to `'performance'` on load (never deployed, dev browsers only).
+- Colors follow the euro chart's rotation: Portfolio `CHART_COLORS[0]`,
+  S&P 500 `CHART_COLORS[1]`, World `CHART_COLORS[3]`.
+- Visual: the World fixture gets a growth profile distinct from S&P (rebased
+  percentages of a uniform 0.9x multiple are pixel-identical); summary
+  baselines re-record for the two-button toggle; a new states capture pins the
+  three-line percent view.
