@@ -200,7 +200,7 @@ const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummarie
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
-const { performanceChartData } = usePerformanceChart(chartSummaries, sp500Points)
+const { performanceChartData } = usePerformanceChart(chartSummaries, sp500Points, 'S&P 500')
 
 const chartMode = useLocalStorage<ChartMode>(STORAGE_KEYS.SUMMARY_CHART_MODE, 'value')
 

@@ -227,6 +227,7 @@ describe('PortfolioChart', () => {
       labels: ['2023-12-29', '2023-12-30', '2023-12-31'],
       portfolioValues: [null, 0, 1.4],
       benchmarkValues: [null, 0, 2.1],
+      benchmarkLabel: 'S&P 500',
     }
 
     it('should render two percentage datasets in performance mode', async () => {
@@ -246,6 +247,12 @@ describe('PortfolioChart', () => {
         data: mockPerformanceData.benchmarkValues,
         yAxisID: 'y',
       })
+    })
+
+    it('should render the benchmark legend from the provided label', async () => {
+      await createWrapper({ data: { ...mockPerformanceData, benchmarkLabel: 'World' } })
+
+      expect(chartData().datasets[1].label).toBe('World')
     })
 
     it('should hide the right axis in performance mode', async () => {

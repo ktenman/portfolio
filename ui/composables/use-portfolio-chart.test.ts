@@ -194,13 +194,13 @@ describe('usePerformanceChart', () => {
     Array.from({ length: 61 }, (_, offset) => ({ date: dateAt(offset), price: 100 }))
 
   it('should return null when the benchmark is empty', () => {
-    const { performanceChartData } = usePerformanceChart(ref(buildSummaries()), ref([]))
+    const { performanceChartData } = usePerformanceChart(ref(buildSummaries()), ref([]), 'S&P 500')
 
     expect(performanceChartData.value).toBeNull()
   })
 
   it('should return null when the summaries are empty', () => {
-    const { performanceChartData } = usePerformanceChart(ref([]), ref(buildBenchmark()))
+    const { performanceChartData } = usePerformanceChart(ref([]), ref(buildBenchmark()), 'S&P 500')
 
     expect(performanceChartData.value).toBeNull()
   })
@@ -208,7 +208,8 @@ describe('usePerformanceChart', () => {
   it('should align labels with the sorted summary dates', () => {
     const { performanceChartData } = usePerformanceChart(
       ref([...buildSummaries()].reverse()),
-      ref(buildBenchmark())
+      ref(buildBenchmark()),
+      'S&P 500'
     )
 
     expect(performanceChartData.value?.labels).toEqual(['2024-01-02', '2024-01-03'])
@@ -217,7 +218,8 @@ describe('usePerformanceChart', () => {
   it('should expose rebased portfolio and benchmark series', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildSummaries()),
-      ref(buildBenchmark())
+      ref(buildBenchmark()),
+      'S&P 500'
     )
 
     expect(performanceChartData.value?.portfolioValues[1]).toBeCloseTo(10)
@@ -227,7 +229,8 @@ describe('usePerformanceChart', () => {
   it('should compound the whole history before sampling so deposits dont inflate returns', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildDepositHistory()),
-      ref(buildLongBenchmark())
+      ref(buildLongBenchmark()),
+      'S&P 500'
     )
     const values = performanceChartData.value?.portfolioValues ?? []
 
@@ -237,7 +240,8 @@ describe('usePerformanceChart', () => {
   it('should sample long histories down to the chart point limit', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildDepositHistory()),
-      ref(buildLongBenchmark())
+      ref(buildLongBenchmark()),
+      'S&P 500'
     )
 
     expect(performanceChartData.value?.portfolioValues).toHaveLength(60)
@@ -245,9 +249,23 @@ describe('usePerformanceChart', () => {
 
   it('should keep long history labels identical to the euro chart', () => {
     const summaries = ref(buildDepositHistory())
-    const { performanceChartData } = usePerformanceChart(summaries, ref(buildLongBenchmark()))
+    const { performanceChartData } = usePerformanceChart(
+      summaries,
+      ref(buildLongBenchmark()),
+      'S&P 500'
+    )
     const { processedChartData } = usePortfolioChart(summaries)
 
     expect(performanceChartData.value?.labels).toEqual(processedChartData.value?.labels)
+  })
+
+  it('should carry the benchmark label into the chart data', () => {
+    const { performanceChartData } = usePerformanceChart(
+      ref(buildSummaries()),
+      ref(buildBenchmark()),
+      'World'
+    )
+
+    expect(performanceChartData.value?.benchmarkLabel).toBe('World')
   })
 })

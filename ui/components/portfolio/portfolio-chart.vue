@@ -60,7 +60,7 @@ const chartData = computed(() => {
           yAxisID: 'y',
         },
         {
-          label: 'S&P 500',
+          label: props.data.benchmarkLabel,
           borderColor: CHART_COLORS[1],
           backgroundColor: CHART_COLORS[1],
           pointHoverBackgroundColor: CHART_COLORS[1],

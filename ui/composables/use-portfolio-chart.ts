@@ -50,11 +50,13 @@ export interface PerformanceChartData {
   labels: string[]
   portfolioValues: (number | null)[]
   benchmarkValues: (number | null)[]
+  benchmarkLabel: string
 }
 
 export function usePerformanceChart(
   summaries: Ref<PortfolioSummaryDto[]>,
-  benchmark: Ref<BenchmarkPointDto[]>
+  benchmark: Ref<BenchmarkPointDto[]>,
+  label: string
 ) {
   const performanceChartData = computed<PerformanceChartData | null>(() => {
     if (summaries.value.length === 0 || benchmark.value.length === 0) return null
@@ -72,6 +74,7 @@ export function usePerformanceChart(
       ),
       portfolioValues: sampleDataPoints(series.portfolioValues, MAX_CHART_POINTS),
       benchmarkValues: sampleDataPoints(series.benchmarkValues, MAX_CHART_POINTS),
+      benchmarkLabel: label,
     }
   })
 
