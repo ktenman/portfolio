@@ -114,9 +114,36 @@ describe('buildPerformanceSeries', () => {
     ).toEqual([0, 10, 21])
   })
 
-  it('should guard against a zero previous total value', () => {
+  it('should measure profit against the capital a deposit added, not the pre-deposit value', () => {
+    const result = buildPerformanceSeries(
+      [summary('2024-01-02', 100, 0), summary('2024-01-03', 5100, 100)],
+      [[point('2024-01-02', 100), point('2024-01-03', 100)]]
+    )
+
+    expect(result.portfolioValues).toEqual([0, expect.closeTo(2)])
+  })
+
+  it('should measure profit against the deposit when a position is opened from zero', () => {
     const result = buildPerformanceSeries(
       [summary('2024-01-02', 0, 0), summary('2024-01-03', 500, 50)],
+      [[point('2024-01-02', 100), point('2024-01-03', 100)]]
+    )
+
+    expect(result.portfolioValues).toEqual([0, expect.closeTo(11.11)])
+  })
+
+  it('should measure profit against the value held before a withdrawal empties the position', () => {
+    const result = buildPerformanceSeries(
+      [summary('2024-01-02', 1000, 200), summary('2024-01-03', 0, 220)],
+      [[point('2024-01-02', 100), point('2024-01-03', 100)]]
+    )
+
+    expect(result.portfolioValues).toEqual([0, expect.closeTo(2)])
+  })
+
+  it('should stay flat while no capital is at work', () => {
+    const result = buildPerformanceSeries(
+      [summary('2024-01-02', 0, 262.16), summary('2024-01-03', 0, 262.16)],
       [[point('2024-01-02', 100), point('2024-01-03', 100)]]
     )
 

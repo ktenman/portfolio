@@ -111,12 +111,17 @@ class TimeRangeTest {
   }
 
   @Test
-  fun `should cap the max range at the sampling limit`() {
-    expect(TimeRange.MAX.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(TimeRange.MAX_POINTS)
+  fun `should produce one date per day for the three months range`() {
+    expect(TimeRange.THREE_MONTHS.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(92)
   }
 
   @Test
-  fun `should keep both endpoints when sampling caps the max range`() {
+  fun `should produce one date per day for the max range`() {
+    expect(TimeRange.MAX.dates(LocalDate.of(2020, 1, 2), today)).toHaveSize(2416)
+  }
+
+  @Test
+  fun `should span the first transaction date to yesterday for the max range`() {
     val dates = TimeRange.MAX.dates(LocalDate.of(2020, 1, 2), today)
     expect(dates.first() to dates.last()).toEqual(LocalDate.of(2020, 1, 2) to LocalDate.of(2026, 8, 13))
   }
@@ -130,16 +135,6 @@ class TimeRangeTest {
   @Test
   fun `should return no dates when the first transaction is after yesterday`() {
     expect(TimeRange.MAX.dates(today, today)).toHaveSize(0)
-  }
-
-  @Test
-  fun `should return the list unchanged when it is at or under the sampling limit`() {
-    expect(TimeRange.sample(listOf("ä", "ö", "ü"), 3)).toContainExactly("ä", "ö", "ü")
-  }
-
-  @Test
-  fun `should keep the first and last element when sampling shrinks the list`() {
-    expect(TimeRange.sample((1..100).toList(), 5)).toContainExactly(1, 26, 51, 75, 100)
   }
 
   @Test
@@ -181,10 +176,5 @@ class TimeRangeTest {
         "5Y",
         "MAX",
       )
-  }
-
-  @Test
-  fun `should keep every sampled index in bounds at the production limit`() {
-    expect(TimeRange.sample((1..TimeRange.MAX_POINTS + 1).toList())).toHaveSize(TimeRange.MAX_POINTS)
   }
 }

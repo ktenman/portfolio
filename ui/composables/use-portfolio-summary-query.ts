@@ -20,8 +20,7 @@ import { type BenchmarkIndex, type TimeRange } from '../models/generated/domain-
 
 export function usePortfolioSummaryQuery(
   selectedPlatforms?: Ref<string[]>,
-  selectedRange?: Ref<TimeRange>,
-  benchmarksEnabled?: Ref<boolean>
+  selectedRange?: Ref<TimeRange>
 ) {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
@@ -73,16 +72,12 @@ export function usePortfolioSummaryQuery(
     enabled: isAuthenticated,
   })
 
-  const benchmarksActive = computed(
-    () => isAuthenticated.value && (benchmarksEnabled?.value ?? true)
-  )
-
   const benchmarkQuery = (index: BenchmarkIndex) =>
     useQuery({
       queryKey: ['portfolio-summary', 'benchmark', rangeKey, index],
       queryFn: () => portfolioSummaryService.getBenchmark(rangeKey.value, index),
       placeholderData: keepPreviousData,
-      enabled: benchmarksActive,
+      enabled: isAuthenticated,
     })
 
   const benchmarkQueries = BENCHMARKS.map(benchmark => ({

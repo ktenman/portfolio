@@ -2,7 +2,6 @@ package ee.tenman.portfolio.domain
 
 import com.fasterxml.jackson.annotation.JsonValue
 import java.time.LocalDate
-import kotlin.math.roundToInt
 
 enum class TimeRange(
   @get:JsonValue val code: String,
@@ -48,24 +47,14 @@ enum class TimeRange(
     val end = today.minusDays(1)
     val start = startDate(today)?.coerceAtLeast(firstDate) ?: firstDate
     if (start.isAfter(end)) return emptyList()
-    return sample(start.datesUntil(end.plusDays(1)).toList())
+    return start.datesUntil(end.plusDays(1)).toList()
   }
 
   companion object {
-    const val MAX_POINTS = 60
     const val DEFAULT_CODE = "1M"
 
     fun from(code: String): TimeRange =
       entries.firstOrNull { it.code.equals(code, ignoreCase = true) }
         ?: throw IllegalArgumentException("Unknown summary range $code")
-
-    fun <T> sample(
-      items: List<T>,
-      maxPoints: Int = MAX_POINTS,
-    ): List<T> {
-      if (items.size <= maxPoints) return items
-      val step = (items.size - 1).toDouble() / (maxPoints - 1)
-      return (0 until maxPoints).map { items[(it * step).roundToInt()] }
-    }
   }
 }

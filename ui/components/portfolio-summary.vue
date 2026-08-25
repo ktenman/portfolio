@@ -78,11 +78,7 @@
 
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
-        <chart-mode-toggle
-          v-if="coversEveryPlatform"
-          :selected="selectedBenchmarks"
-          @select="selectBenchmark"
-        />
+        <chart-mode-toggle :selected="selectedBenchmarks" @select="selectBenchmark" />
       </div>
 
       <data-table
@@ -175,8 +171,10 @@ const { data: platformsData } = useQuery({
 
 const availablePlatforms = computed(() => platformsData.value ?? [])
 
-const { selectedPlatforms, coversEveryPlatform, togglePlatform, toggleAllPlatforms } =
-  usePlatformFilter(STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS, availablePlatforms)
+const { selectedPlatforms, togglePlatform, toggleAllPlatforms } = usePlatformFilter(
+  STORAGE_KEYS.SELECTED_SUMMARY_PLATFORMS,
+  availablePlatforms
+)
 
 const filtersOpen = useLocalStorage(STORAGE_KEYS.SUMMARY_FILTERS_OPEN, true)
 
@@ -198,7 +196,7 @@ const {
   recalculate,
   fetchSummaries,
   hasMoreData,
-} = usePortfolioSummaryQuery(selectedPlatforms, selectedRange, coversEveryPlatform)
+} = usePortfolioSummaryQuery(selectedPlatforms, selectedRange)
 
 const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 
@@ -206,12 +204,11 @@ const { processedChartData } = usePortfolioChart(chartSummaries)
 
 const selectedBenchmarks = useBenchmarkSelection()
 
-const activeBenchmarks = computed<ChartBenchmark[]>(() => {
-  if (!coversEveryPlatform.value) return []
-  return benchmarks.value.filter(
+const activeBenchmarks = computed<ChartBenchmark[]>(() =>
+  benchmarks.value.filter(
     benchmark => selectedBenchmarks.value.includes(benchmark.key) && benchmark.points.length > 0
   )
-})
+)
 
 const { performanceChartData } = usePerformanceChart(chartSummaries, activeBenchmarks)
 
