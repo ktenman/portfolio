@@ -83,6 +83,16 @@ describe('buildPerformanceSeries', () => {
     expect(result).toEqual({ portfolioValues: [null], sp500Values: [null], worldValues: [null] })
   })
 
+  it('should return only nulls when every benchmark price postdates every summary', () => {
+    const result = buildPerformanceSeries(
+      [summary('2024-01-02', 1000, 0)],
+      [point('2024-01-03', 100)],
+      []
+    )
+
+    expect(result).toEqual({ portfolioValues: [null], sp500Values: [null], worldValues: [null] })
+  })
+
   it('should keep the portfolio flat when a deposit raises value without profit', () => {
     const result = buildPerformanceSeries(
       [summary('2024-01-02', 1000, 100), summary('2024-01-03', 2000, 100)],
