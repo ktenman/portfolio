@@ -6,9 +6,8 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.BenchmarkIndex
-import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.DailyPricePoint
 import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.repository.DailyPriceRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -31,12 +30,19 @@ class BenchmarkSeriesServiceTest {
 
   private fun instrument(symbol: String = "VUAA:GER:EUR"): Instrument = Instrument(symbol, "Vanguard S&P 500", "ETF", "EUR")
 
-  private fun price(
-    instrument: Instrument,
+  private fun point(
     date: LocalDate,
     close: String,
-    provider: ProviderName = ProviderName.FT,
-  ): DailyPrice = DailyPrice(instrument, date, provider, null, null, null, BigDecimal(close), null)
+  ): DailyPricePoint = DailyPricePoint(1, date, BigDecimal(close))
+
+  private fun tracked(
+    instrument: Instrument,
+    vararg points: DailyPricePoint,
+  ) {
+    every { instrumentRepository.findBySymbol(instrument.symbol) } returns Optional.of(instrument)
+    every { dailyPriceRepository.findPricePointsByInstrumentAndEntryDateGreaterThanEqual(instrument, any()) } returns
+      points.toList()
+  }
 
   @Test
   fun `should return an empty series when no benchmark instrument exists`() {
@@ -50,9 +56,7 @@ class BenchmarkSeriesServiceTest {
   fun `should fall back to the spyl instrument when vuaa is missing`() {
     val spyl = instrument("SPYL:GER:EUR")
     every { instrumentRepository.findBySymbol("VUAA:GER:EUR") } returns Optional.empty()
-    every { instrumentRepository.findBySymbol("SPYL:GER:EUR") } returns Optional.of(spyl)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(spyl, any()) } returns
-      listOf(price(spyl, today, "12.34"))
+    tracked(spyl, point(today, "12.34"))
     val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.SP500)
     expect(result).toHaveSize(1)
   }
@@ -62,8 +66,8 @@ class BenchmarkSeriesServiceTest {
     val vuaa = instrument()
     val start = slot<LocalDate>()
     every { instrumentRepository.findBySymbol("VUAA:GER:EUR") } returns Optional.of(vuaa)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(vuaa, capture(start)) } returns
-      listOf(price(vuaa, today.minusDays(3), "101.00"))
+    every { dailyPriceRepository.findPricePointsByInstrumentAndEntryDateGreaterThanEqual(vuaa, capture(start)) } returns
+      listOf(point(today.minusDays(3), "101.00"))
     service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.SP500)
     expect(start.captured).toEqual(today.minusMonths(1))
   }
@@ -73,35 +77,33 @@ class BenchmarkSeriesServiceTest {
     val vuaa = instrument()
     val start = slot<LocalDate>()
     every { instrumentRepository.findBySymbol("VUAA:GER:EUR") } returns Optional.of(vuaa)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(vuaa, capture(start)) } returns
-      listOf(price(vuaa, today.minusDays(3), "101.00"))
+    every { dailyPriceRepository.findPricePointsByInstrumentAndEntryDateGreaterThanEqual(vuaa, capture(start)) } returns
+      listOf(point(today.minusDays(3), "101.00"))
     service.getSeries(TimeRange.MAX, BenchmarkIndex.SP500)
     expect(start.captured).toEqual(LocalDate.EPOCH)
   }
 
   @Test
-  fun `should keep one point per date when providers overlap`() {
+  fun `should keep the first point per date when providers overlap`() {
     val vuaa = instrument()
-    every { instrumentRepository.findBySymbol("VUAA:GER:EUR") } returns Optional.of(vuaa)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(vuaa, any()) } returns
-      listOf(
-        price(vuaa, today.minusDays(1), "102.00", ProviderName.LIGHTYEAR),
-        price(vuaa, today.minusDays(1), "101.50", ProviderName.FT),
-      )
+    tracked(
+      vuaa,
+      point(today.minusDays(1), "101.50"),
+      point(today.minusDays(1), "102.00"),
+    )
     val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.SP500)
     expect(result.map { it.price.toPlainString() }).toEqual(listOf("101.50"))
   }
 
   @Test
-  fun `should return the full sorted history for the max range`() {
+  fun `should preserve the repository date order for the max range`() {
     val vuaa = instrument()
-    every { instrumentRepository.findBySymbol("VUAA:GER:EUR") } returns Optional.of(vuaa)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(vuaa, any()) } returns
-      listOf(
-        price(vuaa, today.minusDays(1), "102.00"),
-        price(vuaa, today.minusYears(6), "55.00"),
-        price(vuaa, today.minusDays(10), "99.00"),
-      )
+    tracked(
+      vuaa,
+      point(today.minusYears(6), "55.00"),
+      point(today.minusDays(10), "99.00"),
+      point(today.minusDays(1), "102.00"),
+    )
     val result = service.getSeries(TimeRange.MAX, BenchmarkIndex.SP500)
     expect(result.map { it.date }).toEqual(
       listOf(today.minusYears(6), today.minusDays(10), today.minusDays(1)),
@@ -111,9 +113,7 @@ class BenchmarkSeriesServiceTest {
   @Test
   fun `should map the entry date and close price into the point`() {
     val vuaa = instrument()
-    every { instrumentRepository.findBySymbol("VUAA:GER:EUR") } returns Optional.of(vuaa)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(vuaa, any()) } returns
-      listOf(price(vuaa, today.minusDays(2), "104.56"))
+    tracked(vuaa, point(today.minusDays(2), "104.56"))
     val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.SP500)
     expect(result.first().price).toEqualNumerically(BigDecimal("104.56"))
   }
@@ -121,9 +121,7 @@ class BenchmarkSeriesServiceTest {
   @Test
   fun `should resolve the world index to the vwce instrument`() {
     val vwce = instrument("VWCE:GER:EUR")
-    every { instrumentRepository.findBySymbol("VWCE:GER:EUR") } returns Optional.of(vwce)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(vwce, any()) } returns
-      listOf(price(vwce, today.minusDays(2), "133.70"))
+    tracked(vwce, point(today.minusDays(2), "133.70"))
     val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.WORLD)
     expect(result.first().price).toEqualNumerically(BigDecimal("133.70"))
   }
@@ -132,9 +130,7 @@ class BenchmarkSeriesServiceTest {
   fun `should fall back to the sppw instrument when vwce is missing`() {
     val sppw = instrument("SPPW:GER:EUR")
     every { instrumentRepository.findBySymbol("VWCE:GER:EUR") } returns Optional.empty()
-    every { instrumentRepository.findBySymbol("SPPW:GER:EUR") } returns Optional.of(sppw)
-    every { dailyPriceRepository.findAllByInstrumentAndEntryDateGreaterThanEqual(sppw, any()) } returns
-      listOf(price(sppw, today, "35.10"))
+    tracked(sppw, point(today, "35.10"))
     val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.WORLD)
     expect(result).toHaveSize(1)
   }

@@ -17,7 +17,7 @@ class BenchmarkSeriesService(
   private val clock: Clock,
 ) {
   companion object {
-    val BENCHMARK_SYMBOLS =
+    private val BENCHMARK_SYMBOLS =
       mapOf(
         BenchmarkIndex.SP500 to listOf("VUAA:GER:EUR", "SPYL:GER:EUR"),
         BenchmarkIndex.WORLD to listOf("VWCE:GER:EUR", "SPPW:GER:EUR"),
@@ -34,8 +34,7 @@ class BenchmarkSeriesService(
         ?: return emptyList()
     val start = range.startDate(LocalDate.now(clock)) ?: LocalDate.EPOCH
     return dailyPriceRepository
-      .findAllByInstrumentAndEntryDateGreaterThanEqual(instrument, start)
-      .sortedWith(compareBy({ it.entryDate }, { it.providerName }))
+      .findPricePointsByInstrumentAndEntryDateGreaterThanEqual(instrument, start)
       .distinctBy { it.entryDate }
       .map { BenchmarkPointDto(it.entryDate, it.closePrice) }
   }
