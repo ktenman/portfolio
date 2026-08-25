@@ -373,18 +373,18 @@ mount, and `selectedItem` is already `null` on a fresh load.
 
 Desktop only.
 
-| File                                   | State                              | Interaction                                                                                                                                        |
-| -------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dropdown-quick-dates-desktop.png`     | `/transactions` "Quick Dates" open | click `[data-bs-toggle="dropdown"]`, await `.dropdown-menu.show`; viewport shot over the fixture-backed table                                      |
-| `summary-performance-mode-desktop.png` | `/` chart in `%` mode              | click `.platform-btn:has-text("%")`, then settle; the only capture that compares chart pixels — Portfolio, S&P 500 and World rebased onto one axis |
-| `toast-success-desktop.png`            | `/` + success toast                | `import('/composables/use-toast.ts')` then `useToast().success('Baseline success message')`                                                        |
-| `toast-error-desktop.png`              | `/` + error toast                  | same, `.error(...)`                                                                                                                                |
-| `toast-info-desktop.png`               | `/` + info toast                   | same, `.info(...)`                                                                                                                                 |
-| `toast-warning-desktop.png`            | `/` + warning toast                | same, `.warning(...)`                                                                                                                              |
-| `state-loading-desktop.png`            | `/` loading skeleton               | `**/api/portfolio-summary/**` held 20 s, then assert `.skeleton`; no summary fixture, deliberately                                                 |
-| `state-spinner-desktop.png`            | `/etf-breakdown` loading spinner   | `**/api/etf-breakdown**` held 20 s, then assert the first `.loading-spinner`                                                                       |
-| `state-empty-desktop.png`              | `/transactions` empty              | `**/api/transactions**` stubbed with an empty transaction list, then assert `.alert-info`                                                          |
-| `state-error-desktop.png`              | `/instruments` error               | `**/api/instruments**` stubbed 500; **element-scoped to `.alert-danger`**                                                                          |
+| File                                   | State                              | Interaction                                                                                                                                                        |
+| -------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `dropdown-quick-dates-desktop.png`     | `/transactions` "Quick Dates" open | click `[data-bs-toggle="dropdown"]`, await `.dropdown-menu.show`; viewport shot over the fixture-backed table                                                      |
+| `summary-performance-mode-desktop.png` | `/` chart in `%` mode              | click `.platform-btn:has-text("%")`, then settle; the only capture that compares the `%`-mode benchmark lines — Portfolio, S&P 500 and World rebased onto one axis |
+| `toast-success-desktop.png`            | `/` + success toast                | `import('/composables/use-toast.ts')` then `useToast().success('Baseline success message')`                                                                        |
+| `toast-error-desktop.png`              | `/` + error toast                  | same, `.error(...)`                                                                                                                                                |
+| `toast-info-desktop.png`               | `/` + info toast                   | same, `.info(...)`                                                                                                                                                 |
+| `toast-warning-desktop.png`            | `/` + warning toast                | same, `.warning(...)`                                                                                                                                              |
+| `state-loading-desktop.png`            | `/` loading skeleton               | `**/api/portfolio-summary/**` held 20 s, then assert `.skeleton`; no summary fixture, deliberately                                                                 |
+| `state-spinner-desktop.png`            | `/etf-breakdown` loading spinner   | `**/api/etf-breakdown**` held 20 s, then assert the first `.loading-spinner`                                                                                       |
+| `state-empty-desktop.png`              | `/transactions` empty              | `**/api/transactions**` stubbed with an empty transaction list, then assert `.alert-info`                                                                          |
+| `state-error-desktop.png`              | `/instruments` error               | `**/api/instruments**` stubbed 500; **element-scoped to `.alert-danger`**                                                                                          |
 
 Toasts are fired _after_ the freeze, because they auto-hide in 4000–7500 ms while the settle gate
 needs ≥1.6 s. `/transactions` cannot produce an error state at all (`transactions-view.vue` never
