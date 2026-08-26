@@ -14,7 +14,7 @@ describe('InstrumentTable', () => {
 
       expect(totals.text()).toContain('€38,950.00')
       expect(totals.text()).toContain('€36,000.00')
-      expect(totals.text()).toContain('+€3,050.00')
+      expect(totals.text()).toContain('€3,050.00')
     })
 
     it('should handle zero profit correctly', () => {
@@ -83,7 +83,7 @@ describe('InstrumentTable', () => {
       )
       const change = wrapper.find('.total-price-change-item .total-value')
 
-      expect(change.text()).toBe('+€11,862.06 / +20.29%')
+      expect(change.text()).toBe('€11,862.06 / 20.29%')
     })
 
     it('should not show a change until the range change has arrived', () => {
@@ -94,7 +94,7 @@ describe('InstrumentTable', () => {
     })
 
     it('should jump to the new period change instead of animating from the old one', async () => {
-      expect((await switchToLongerPeriod()).text()).toBe('+€5,000.00 / +40.00%')
+      expect((await switchToLongerPeriod()).text()).toBe('€5,000.00 / 40.00%')
     })
 
     it('should dont flash the totals when only the period changed', async () => {

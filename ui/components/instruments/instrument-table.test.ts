@@ -61,7 +61,7 @@ describe('InstrumentTable', () => {
 
   describe('profit display', () => {
     it.each([
-      { row: 0, color: 'text-gain', text: '+$5,050.00' },
+      { row: 0, color: 'text-gain', text: '$5,050.00' },
       { row: 1, color: 'text-loss', text: '−€2,000.00' },
       { row: 2, color: 'text-gain', text: '$0.00' },
     ])(
