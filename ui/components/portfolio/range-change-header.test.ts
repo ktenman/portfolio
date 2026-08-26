@@ -4,14 +4,14 @@ import { nextTick } from 'vue'
 import RangeChangeHeader from './range-change-header.vue'
 
 describe('RangeChangeHeader', () => {
-  it('should prefix a gain with a plus and mark it as a gain', () => {
+  it('should leave a gain unsigned and mark it as a gain', () => {
     const wrapper = mount(RangeChangeHeader, {
       props: { amount: 25429, percent: 17.16 },
     })
 
     const change = wrapper.find('.range-change')
     expect(change.classes()).toContain('text-gain')
-    expect(change.text()).toBe('+€25,429.00 (+17.16%)')
+    expect(change.text()).toBe('€25,429.00 (17.16%)')
   })
 
   it('should prefix a loss with a minus and mark it as a loss', () => {
