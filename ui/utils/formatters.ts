@@ -91,11 +91,7 @@ export const formatCurrencyWithSign = (
   return `${currencySymbol}${absValue}`
 }
 
-const signFor = (value: number): string => {
-  if (value > 0) return '+'
-  if (value < 0) return '−'
-  return ''
-}
+const signFor = (value: number): string => (value < 0 ? '−' : '')
 
 export const formatSignedCurrency = (value: number, currency: string | undefined): string =>
   `${signFor(value)}${formatCurrencyWithSign(value, currency)}`

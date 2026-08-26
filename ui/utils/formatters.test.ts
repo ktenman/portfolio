@@ -225,15 +225,15 @@ describe('getAmountClass', () => {
 
 describe('formatSignedCurrency', () => {
   it.each([
-    [100, 'EUR', '+€100.00'],
-    [1234567.89, 'EUR', '+€1,234,567.89'],
+    [100, 'EUR', '€100.00'],
+    [1234567.89, 'EUR', '€1,234,567.89'],
     [-100, 'EUR', '−€100.00'],
     [-1234567.89, 'EUR', '−€1,234,567.89'],
     [0, 'EUR', '€0.00'],
-    [50, 'USD', '+$50.00'],
+    [50, 'USD', '$50.00'],
     [-50, 'GBP', '−£50.00'],
-    [123.456, 'EUR', '+€123.46'],
-    [75, undefined, '+€75.00'],
+    [123.456, 'EUR', '€123.46'],
+    [75, undefined, '€75.00'],
   ] as const)('formats %s in %s as %s', (value, currency, expected) => {
     expect(formatSignedCurrency(value, currency)).toBe(expected)
   })
@@ -241,7 +241,7 @@ describe('formatSignedCurrency', () => {
 
 describe('formatSignedPercent', () => {
   it.each([
-    [17.16, '+17.16%'],
+    [17.16, '17.16%'],
     [-8.46, '−8.46%'],
     [0, '0.00%'],
   ] as const)('formats %s as %s', (value, expected) => {
@@ -326,8 +326,8 @@ describe('formatPriceChange', () => {
     expect(formatPriceChange(item)).not.toContain('<')
   })
 
-  it('should sign both halves of a gain', () => {
-    expect(formatPriceChange(item)).toBe('+€1.23 / +4.56%')
+  it('should leave both halves of a gain unsigned', () => {
+    expect(formatPriceChange(item)).toBe('€1.23 / 4.56%')
   })
 
   it('should sign both halves of a loss', () => {
