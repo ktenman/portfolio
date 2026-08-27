@@ -19,9 +19,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.cache.CacheManager
+import org.springframework.cache.concurrent.ConcurrentMapCache
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
+
+private fun serviceFor(
+  openRouterClient: OpenRouterClient,
+  enabled: Boolean = true,
+) = HoldingIdentityService(HoldingIdentityCacheService(openRouterClient), IndustryClassificationProperties(enabled = enabled))
 
 class HoldingIdentityServiceTest {
   @Test
@@ -29,9 +35,8 @@ class HoldingIdentityServiceTest {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("NVIDIA", "NVIDIA CORP", "NVDA")
+    val result = serviceFor(openRouterClient).isSameCompany("NVIDIA", "NVIDIA CORP", "NVDA")
 
     expect(result).toEqual(true)
   }
@@ -41,9 +46,8 @@ class HoldingIdentityServiceTest {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("Merck & Co.", "Merck KGaA", "MRK")
+    val result = serviceFor(openRouterClient).isSameCompany("Merck & Co.", "Merck KGaA", "MRK")
 
     expect(result).toEqual(false)
   }
@@ -53,9 +57,8 @@ class HoldingIdentityServiceTest {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "  yes, identical entity\n", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("Amazon", "Amazon.com Inc", "AMZN")
+    val result = serviceFor(openRouterClient).isSameCompany("Amazon", "Amazon.com Inc", "AMZN")
 
     expect(result).toEqual(true)
   }
@@ -65,9 +68,8 @@ class HoldingIdentityServiceTest {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "Well, they might be the same entity", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("ASML Holding", "ASML Hōldings NV", "ASML")
+    val result = serviceFor(openRouterClient).isSameCompany("ASML Holding", "ASML Hōldings NV", "ASML")
 
     expect(result).toEqual(null)
   }
@@ -76,9 +78,8 @@ class HoldingIdentityServiceTest {
   fun `should return no verdict when model returns no response`() {
     val openRouterClient = mockk<OpenRouterClient>()
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("Micron", "Micron Technology Inc", "MU")
+    val result = serviceFor(openRouterClient).isSameCompany("Micron", "Micron Technology Inc", "MU")
 
     expect(result).toEqual(null)
   }
@@ -86,9 +87,8 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should return no verdict without consulting model when classification is disabled`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = false))
 
-    val result = service.isSameCompany("Alphabet", "Alphabet Inc", "GOOGL")
+    val result = serviceFor(openRouterClient, enabled = false).isSameCompany("Alphabet", "Alphabet Inc", "GOOGL")
 
     expect(result).toEqual(null)
   }
@@ -96,9 +96,8 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should confirm identity without consulting model when names match case insensitively`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("Évolution SA", "évolution sa", null)
+    val result = serviceFor(openRouterClient).isSameCompany("Évolution SA", "évolution sa", null)
 
     expect(result).toEqual(true)
   }
@@ -106,47 +105,19 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should return no verdict without consulting model when existing name is blank`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("   ", "Apple Inc", "AAPL")
+    val result = serviceFor(openRouterClient).isSameCompany("   ", "Apple Inc", "AAPL")
 
     expect(result).toEqual(null)
   }
 
   @Test
-  fun `should reject companies sharing only one word without consulting model`() {
+  fun `should reject dissimilar names without consulting model`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    val result = service.isSameCompany("China Merchants Bank", "China Life Insurance", null)
+    val result = serviceFor(openRouterClient).isSameCompany("China Merchants Bank", "China Life Insurance", null)
 
     expect(result).toEqual(false)
-  }
-
-  @Test
-  fun `should consult model when names differ only by share class and legal form`() {
-    val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
-
-    val result = service.isSameCompany("Sensetime Group Class B Inc", "Sensetime Group Inc", null)
-
-    expect(result).toEqual(true)
-  }
-
-  @Test
-  fun `should consult model when candidate name is truncated mid word`() {
-    val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
-
-    val result = service.isSameCompany("Zhejiang Sanhua Intelligent Controls Co Ltd", "Zhejiang Sanhua Intelligen-h", null)
-
-    expect(result).toEqual(true)
   }
 
   @Test
@@ -155,23 +126,10 @@ class HoldingIdentityServiceTest {
     val prompt = slot<String>()
     every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
 
-    service.isSameCompany("Zhejiang Sanhua Intelligent Controls", "Zhejiang Sanhua Intelligen-h", "002050")
+    serviceFor(openRouterClient).isSameCompany("Zhejiang Sanhua Intelligent Controls", "Zhejiang Sanhua Intelligen-h", "002050")
 
     expect(prompt.captured).notToContain("\n ")
-  }
-
-  @Test
-  fun `should consult model when one name is an abbreviation sharing no words`() {
-    val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
-    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
-
-    val result = service.isSameCompany("GSK", "GlaxoSmithKline", null)
-
-    expect(result).toEqual(true)
   }
 }
 
@@ -238,5 +196,12 @@ class HoldingIdentityServiceCacheTest {
     holdingIdentityService.isSameCompany("Micron", "Micron Technology Inc", "MU")
 
     verify(exactly = 2) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `should not store a cache entry when the similarity gate rejects the names`() {
+    holdingIdentityService.isSameCompany("China Merchants Bank", "China Life Insurance", null)
+
+    expect((testCacheManager.getCache(HOLDING_IDENTITY_CACHE) as ConcurrentMapCache).nativeCache.size).toEqual(0)
   }
 }

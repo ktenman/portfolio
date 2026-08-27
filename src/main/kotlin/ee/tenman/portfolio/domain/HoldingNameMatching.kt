@@ -1,29 +1,20 @@
 package ee.tenman.portfolio.domain
 
-import java.math.BigDecimal
 import java.text.Normalizer
-import java.time.LocalDate
 
-data class DailyPricePoint(
-  val instrumentId: Long,
-  val entryDate: LocalDate,
-  val closePrice: BigDecimal,
-)
+private val NON_ALPHANUMERIC = Regex("[^a-z0-9]+")
+
+private fun words(text: String): List<String> =
+  text
+    .map { it.lowercaseChar() }
+    .joinToString("")
+    .split(NON_ALPHANUMERIC)
 
 object HoldingBlockKey {
-  private val NON_ALPHANUMERIC = Regex("[^a-z0-9]+")
-
-  fun of(name: String): String =
-    name
-      .map { it.lowercaseChar() }
-      .joinToString("")
-      .split(NON_ALPHANUMERIC)
-      .firstOrNull { it.isNotEmpty() }
-      ?: ""
+  fun of(name: String): String = words(name).firstOrNull { it.isNotEmpty() } ?: ""
 }
 
 object HoldingNameSimilarity {
-  private val NON_ALPHANUMERIC = Regex("[^a-z0-9]+")
   private val COMBINING_MARKS = Regex("\\p{Mn}+")
   private const val MIN_PREFIX_LENGTH = 3
   private const val REQUIRED_MATCHES = 2
@@ -44,12 +35,7 @@ object HoldingNameSimilarity {
   }
 
   private fun tokenize(name: String): List<String> =
-    Normalizer
-      .normalize(name, Normalizer.Form.NFD)
-      .replace(COMBINING_MARKS, "")
-      .map { it.lowercaseChar() }
-      .joinToString("")
-      .split(NON_ALPHANUMERIC)
+    words(Normalizer.normalize(name, Normalizer.Form.NFD).replace(COMBINING_MARKS, ""))
       .filter { it.length > 1 && it !in LEGAL_FORMS }
 
   private fun alike(
