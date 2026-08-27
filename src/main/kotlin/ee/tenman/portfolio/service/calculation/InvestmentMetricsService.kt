@@ -46,9 +46,27 @@ class InvestmentMetricsService(
     calculationDate: LocalDate? = null,
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
-    val effectiveDate = calculationDate ?: LocalDate.now(clock)
+    val currentPrice = dailyPriceService.getCurrentPrice(instrument)
+    return buildMetrics(transactions, currentPrice, calculationDate ?: LocalDate.now(clock))
+  }
+
+  fun calculateInstrumentMetricsWithProfits(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    calculationDate: LocalDate? = null,
+  ): InstrumentMetrics {
+    if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
+    val currentPrice = dailyPriceService.getCurrentPrice(instrument)
+    transactionService.calculateTransactionProfits(transactions, currentPrice)
+    return buildMetrics(transactions, currentPrice, calculationDate ?: LocalDate.now(clock))
+  }
+
+  private fun buildMetrics(
+    transactions: List<PortfolioTransaction>,
+    currentPrice: BigDecimal,
+    effectiveDate: LocalDate,
+  ): InstrumentMetrics {
     val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
-    val currentPrice = getEffectivePrice(instrument)
     val currentValue = holdingsCalculationService.calculateCurrentValue(aggregated.totalQuantity, currentPrice)
     val realizedProfit = calculateRealizedProfit(transactions)
     val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
@@ -63,27 +81,6 @@ class InvestmentMetricsService(
       quantity = aggregated.totalQuantity,
     )
   }
-
-  fun calculateInstrumentMetricsWithProfits(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate? = null,
-  ): InstrumentMetrics {
-    if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
-    val effectiveDate = calculationDate ?: LocalDate.now(clock)
-    val currentPrice = getEffectivePrice(instrument)
-    transactionService.calculateTransactionProfits(transactions, currentPrice)
-    return calculateInstrumentMetrics(instrument, transactions, effectiveDate)
-  }
-
-  private fun getEffectivePrice(instrument: Instrument): BigDecimal =
-    livePrice(instrument)
-      ?: getEffectivePriceForDate(instrument, LocalDate.now(clock), null)
-      ?: BigDecimal.ZERO
-
-  private fun livePrice(instrument: Instrument): BigDecimal? =
-    instrument.cashPriceOrNull()
-      ?: instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
 
   fun calculatePortfolioMetrics(
     instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
@@ -177,6 +174,8 @@ class InvestmentMetricsService(
       isToday(date) -> currentHoldings.multiply(livePrice(instrument) ?: resolvePrice(instrument, date, priceLookup))
       else -> currentHoldings.multiply(resolvePrice(instrument, date, priceLookup))
     }
+
+  private fun livePrice(instrument: Instrument): BigDecimal? = instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
 
   private fun resolvePrice(
     instrument: Instrument,
