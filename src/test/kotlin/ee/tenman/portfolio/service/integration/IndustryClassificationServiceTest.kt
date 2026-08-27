@@ -352,7 +352,7 @@ class IndustryClassificationServiceTest {
   @Test
   fun `should return null when last model in chain fails with unknown sector`() {
     every { properties.enabled } returns true
-    val lastTier = AiModel.entries.filter { it.sectorFallbackTier >= 0 }.maxBy { it.sectorFallbackTier }
+    val lastTier = generateSequence(AiModel.primarySectorModel()) { it.nextSectorFallbackModel() }.last()
     every { openRouterClient.classifyWithModel(any()) } returns
       OpenRouterClassificationResult(content = "Unknown", model = lastTier)
 
@@ -411,12 +411,13 @@ class IndustryClassificationServiceTest {
   @Test
   fun `should start cascade at the second tier when primary model gives no response`() {
     every { properties.enabled } returns true
+    val secondTier = AiModel.primarySectorModel().nextSectorFallbackModel()!!
     every { openRouterClient.classifyWithModel(any()) } returns null
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel().nextSectorFallbackModel()!!) } returns
-      OpenRouterClassificationResult(content = "Finance", model = AiModel.GEMINI_3_5_FLASH_LITE)
+    every { openRouterClient.classifyWithCascadingFallback(any(), secondTier) } returns
+      OpenRouterClassificationResult(content = "Finance", model = secondTier)
 
     val result = service.classifyCompanyWithModel("Apple Inc")
 
-    expect(result?.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
+    expect(result?.model).toEqual(secondTier)
   }
 }
