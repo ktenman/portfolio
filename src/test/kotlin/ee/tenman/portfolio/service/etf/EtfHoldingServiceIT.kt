@@ -8,6 +8,7 @@ import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
@@ -104,6 +105,7 @@ class EtfHoldingServiceIT {
           weight = BigDecimal("10.0"),
           rank = 1,
           logoUrl = null,
+          sectorSource = SectorSource.LIGHTYEAR,
         ),
       )
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithSector)
@@ -124,6 +126,7 @@ class EtfHoldingServiceIT {
           weight = BigDecimal("10.0"),
           rank = 1,
           logoUrl = null,
+          sectorSource = SectorSource.LIGHTYEAR,
         ),
       )
     etfHoldingService.saveHoldings("IITU", testDate, holdingsWithSector)
@@ -139,6 +142,7 @@ class EtfHoldingServiceIT {
           weight = BigDecimal("10.0"),
           rank = 1,
           logoUrl = null,
+          sectorSource = SectorSource.LIGHTYEAR,
         ),
       )
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), holdingsWithDifferentSector)
@@ -261,6 +265,7 @@ class EtfHoldingServiceIT {
           weight = BigDecimal("9.0"),
           rank = 1,
           logoUrl = null,
+          sectorSource = SectorSource.LIGHTYEAR,
         ),
       )
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), richerPosition)

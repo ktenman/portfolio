@@ -54,7 +54,14 @@ class EtfHoldingPersistenceService(
   ): EtfHolding {
     val hinted = reuseHoldingId?.let { etfHoldingRepository.findById(it).orNull() }
     if (hinted != null) {
-      applyMissingFields(hinted, holdingData.ticker, holdingData.sector, holdingData.countryCode, holdingData.countryName)
+      applySourceFields(
+        hinted,
+        holdingData.ticker,
+        holdingData.sector,
+        holdingData.countryCode,
+        holdingData.countryName,
+        holdingData.sectorSource,
+      )
       return hinted
     }
     return findOrCreateHolding(
@@ -63,6 +70,7 @@ class EtfHoldingPersistenceService(
       holdingData.sector,
       holdingData.countryCode,
       holdingData.countryName,
+      holdingData.sectorSource,
     )
   }
 
@@ -100,24 +108,17 @@ class EtfHoldingPersistenceService(
     sector: String? = null,
     countryCode: String? = null,
     countryName: String? = null,
+    sectorSource: SectorSource? = null,
   ): EtfHolding {
     val existing = etfHoldingRepository.findByNameIgnoreCase(name)
     if (existing != null) {
-      applyMissingFields(existing, ticker, sector, countryCode, countryName)
+      applySourceFields(existing, ticker, sector, countryCode, countryName, sectorSource)
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
-    val canonicalSector = sector?.let { IndustrySector.fromDisplayName(it) }
-    return etfHoldingRepository.save(
-      EtfHolding(
-        name = name,
-        ticker = ticker,
-        sector = canonicalSector,
-        sectorSource = canonicalSector?.let { SectorSource.LIGHTYEAR },
-        countryCode = countryCode,
-        countryName = countryName,
-      ),
-    )
+    val holding = EtfHolding(name = name, ticker = ticker, countryCode = countryCode, countryName = countryName)
+    updateSectorFromSource(holding, sector, sectorSource)
+    return etfHoldingRepository.save(holding)
   }
 
   @Transactional(readOnly = true)
@@ -130,15 +131,16 @@ class EtfHoldingPersistenceService(
   @Transactional(readOnly = true)
   fun findByTicker(ticker: String): List<EtfHolding> = etfHoldingRepository.findByTicker(ticker)
 
-  private fun applyMissingFields(
+  private fun applySourceFields(
     holding: EtfHolding,
     ticker: String?,
     sector: String?,
     countryCode: String?,
     countryName: String?,
+    sectorSource: SectorSource?,
   ) {
     updateTickerIfMissing(holding, ticker)
-    updateSectorFromSourceIfMissing(holding, sector)
+    updateSectorFromSource(holding, sector, sectorSource)
     updateCountryFromSourceIfMissing(holding, countryCode, countryName)
   }
 
@@ -196,6 +198,7 @@ class EtfHoldingPersistenceService(
     classifiedByModel: AiModel? = null,
   ) {
     val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
+    if (!holding.acceptsSectorFrom(SectorSource.LLM)) return
     holding.sector = sector
     holding.classifiedByModel = classifiedByModel
     holding.sectorSource = SectorSource.LLM
@@ -240,15 +243,18 @@ class EtfHoldingPersistenceService(
       matches.first()
     }
 
-  private fun updateSectorFromSourceIfMissing(
+  private fun updateSectorFromSource(
     holding: EtfHolding,
     sourceSector: String?,
+    sourceType: SectorSource?,
   ) {
-    if (holding.sector != null) return
+    if (sourceType != SectorSource.LIGHTYEAR) return
+    if (!holding.acceptsSectorFrom(sourceType)) return
     val canonicalSector = sourceSector?.let { IndustrySector.fromDisplayName(it) } ?: return
     log.info("Updating sector from source for '${holding.name}': ${canonicalSector.displayName}")
     holding.sector = canonicalSector
     holding.sectorSource = SectorSource.LIGHTYEAR
+    holding.classifiedByModel = null
   }
 
   private fun updateCountryFromSourceIfMissing(

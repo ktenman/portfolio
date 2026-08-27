@@ -6,14 +6,13 @@ import java.math.BigDecimal
 data class BlackRockHolding(
   val ticker: String?,
   val name: String,
-  val sector: String?,
   val weight: BigDecimal,
 )
 
 object BlackRockCsvParser {
   private val log = LoggerFactory.getLogger(javaClass)
   private const val EQUITY = "Equity"
-  private val REQUIRED = listOf("Ticker", "Name", "Sector", "Asset Class", "Weight (%)")
+  private val REQUIRED = listOf("Ticker", "Name", "Asset Class", "Weight (%)")
 
   fun parse(csv: String): List<BlackRockHolding> {
     val lines = csv.lines().filter { it.isNotBlank() }
@@ -36,7 +35,6 @@ object BlackRockCsvParser {
       BlackRockHolding(
         ticker = cells[indices.getValue("Ticker")].trim().ifBlank { null },
         name = cells[indices.getValue("Name")].trim(),
-        sector = cells[indices.getValue("Sector")].trim().ifBlank { null },
         weight = BigDecimal(cells[indices.getValue("Weight (%)")].trim()),
       )
     }.onFailure { log.warn("Skipping malformed BlackRock holding row '$line'") }.getOrNull()

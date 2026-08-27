@@ -119,6 +119,7 @@ class IndustryClassificationService(
       - Exact sector name from the list above
       - No explanations, no extra text
       - One line per company: "1. Finance" or "2. Semiconductors"
+      $SECTOR_HINTS
 
       Companies:
       $companiesList
@@ -161,8 +162,22 @@ class IndustryClassificationService(
     """
     Classify $companyName into ONE category: ${IndustrySector.getAllDisplayNames()}
 
+    Rules:
+    $SECTOR_HINTS
+
     ANSWER WITH ONLY THE CATEGORY NAME. DO NOT EXPLAIN YOUR REASONING.
 
     Category:
     """.trimIndent()
+
+  private companion object {
+    val SECTOR_HINTS =
+      """
+      - Freight, rail, shipping, logistics, delivery and postal companies are Mobility, not Industrials
+      - Reference examples: Union Pacific = Mobility, Deutsche Post = Mobility, Cisco = Communication,
+        Akamai = Business Services, CGI = Business Services, GoDaddy = Business Services,
+        Amazon = Consumer Essentials, Alibaba = Consumer Essentials,
+        Autotrader = Software & Cloud Services, Enphase Energy = Semiconductors
+      """.trimIndent()
+  }
 }
