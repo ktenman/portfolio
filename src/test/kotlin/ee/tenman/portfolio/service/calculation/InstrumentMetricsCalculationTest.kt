@@ -9,6 +9,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createCashInstrument
+import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.NullSource
@@ -47,13 +48,23 @@ class InstrumentMetricsCalculationTest : InvestmentMetricsTestBase() {
   @ParameterizedTest
   @NullSource
   @ValueSource(strings = ["0"])
-  fun `should calculateInstrumentMetrics with zero or missing current price returns zero value`(price: String?) {
+  fun `should calculateInstrumentMetrics fall back to last stored close when live price is missing`(price: String?) {
     testInstrument.currentPrice = price?.let { BigDecimal(it) }
+    every { dailyPriceService.getPrice(testInstrument, any()) } returns BigDecimal("120")
+
+    val metrics = metricsFor(createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")))
+
+    expect(metrics.currentValue).toEqualNumerically(BigDecimal("1200"))
+  }
+
+  @Test
+  fun `should calculateInstrumentMetrics return zero value when neither live price nor stored close exists`() {
+    testInstrument.currentPrice = null
+    every { dailyPriceService.getPrice(testInstrument, any()) } throws NoSuchElementException("no price for AAPL")
 
     val metrics = metricsFor(createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100")))
 
     expect(metrics.currentValue).toEqualNumerically(BigDecimal.ZERO)
-    expect(metrics.profit).toBeLessThan(BigDecimal.ZERO)
   }
 
   @Test
