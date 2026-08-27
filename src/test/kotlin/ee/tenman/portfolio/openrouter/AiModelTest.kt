@@ -80,6 +80,7 @@ class AiModelTest {
         "CLAUDE_OPUS_4_8",
         "GPT_5_4_NANO",
         "GPT_5_6_LUNA",
+        "GEMINI_3_5_FLASH_LITE",
       )
   }
 }
