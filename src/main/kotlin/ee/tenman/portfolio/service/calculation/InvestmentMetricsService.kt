@@ -77,9 +77,14 @@ class InvestmentMetricsService(
   }
 
   private fun getEffectivePrice(instrument: Instrument): BigDecimal =
+    livePrice(instrument)
+      ?: runCatching { resolvePrice(instrument, LocalDate.now(clock), null) }
+        .onFailure { log.warn("No stored price for ${instrument.symbol}, valuing at zero") }
+        .getOrDefault(BigDecimal.ZERO)
+
+  private fun livePrice(instrument: Instrument): BigDecimal? =
     instrument.cashPriceOrNull()
-      ?: instrument.currentPrice
-      ?: BigDecimal.ZERO
+      ?: instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
 
   fun calculatePortfolioMetrics(
     instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
@@ -170,7 +175,7 @@ class InvestmentMetricsService(
     when {
       currentHoldings <= BigDecimal.ZERO -> BigDecimal.ZERO
       instrument.isCash() -> currentHoldings
-      isToday(date) -> currentHoldings.multiply(instrument.currentPrice ?: BigDecimal.ZERO)
+      isToday(date) -> currentHoldings.multiply(livePrice(instrument) ?: resolvePrice(instrument, date, priceLookup))
       else -> currentHoldings.multiply(resolvePrice(instrument, date, priceLookup))
     }
 
