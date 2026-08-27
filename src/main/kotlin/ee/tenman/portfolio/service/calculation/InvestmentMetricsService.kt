@@ -78,9 +78,8 @@ class InvestmentMetricsService(
 
   private fun getEffectivePrice(instrument: Instrument): BigDecimal =
     livePrice(instrument)
-      ?: runCatching { resolvePrice(instrument, LocalDate.now(clock), null) }
-        .onFailure { log.warn("No stored price for ${instrument.symbol}, valuing at zero") }
-        .getOrDefault(BigDecimal.ZERO)
+      ?: getEffectivePriceForDate(instrument, LocalDate.now(clock), null)
+      ?: BigDecimal.ZERO
 
   private fun livePrice(instrument: Instrument): BigDecimal? =
     instrument.cashPriceOrNull()
