@@ -174,7 +174,13 @@ class EtfHoldingPersistenceServiceIT {
 
   @Test
   fun `should findOrCreateHolding create new holding when not exists`() {
-    val result = etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL", "Digital Hardware")
+    val result =
+      etfHoldingPersistenceService.findOrCreateHolding(
+        "Apple Inc",
+        "AAPL",
+        "Digital Hardware",
+        sectorSource = SectorSource.LIGHTYEAR,
+      )
 
     expect(result.id).toBeGreaterThan(0L)
     expect(result.name).toEqual("Apple Inc")
@@ -208,7 +214,14 @@ class EtfHoldingPersistenceServiceIT {
       "VWCE",
       date,
       listOf(
-        HoldingData(name = "Caterpillar Inc", ticker = "CAT", sector = "Industrials", weight = BigDecimal("3.00"), rank = 1),
+        HoldingData(
+          name = "Caterpillar Inc",
+          ticker = "CAT",
+          sector = "Industrials",
+          weight = BigDecimal("3.00"),
+          rank = 1,
+          sectorSource = SectorSource.LIGHTYEAR,
+        ),
       ),
     )
 
@@ -216,6 +229,21 @@ class EtfHoldingPersistenceServiceIT {
 
     expect(saved.sector).toEqual(IndustrySector.INDUSTRIALS)
     expect(saved.sectorSource).toEqual(SectorSource.LIGHTYEAR)
+  }
+
+  @Test
+  fun `cannot store provider sector on a new holding when feed is not lightyear`() {
+    val date = LocalDate.of(2024, 7, 1)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      date,
+      listOf(HoldingData(name = "Union Pacific Corp", ticker = "UNP", sector = "Industrials", weight = BigDecimal("0.19"), rank = 1)),
+    )
+
+    val saved = etfHoldingRepository.findAll().first { it.name == "Union Pacific Corp" }
+
+    expect(saved.sector).toEqual(null)
+    expect(saved.sectorSource).toEqual(null)
   }
 
   @Test
@@ -467,8 +495,22 @@ class EtfHoldingPersistenceServiceIT {
       "VWCE",
       date,
       listOf(
-        HoldingData(name = "NVIDIA Corp", ticker = "NVDA", sector = "Industrials", weight = BigDecimal("7.00"), rank = 1),
-        HoldingData(name = "Microsoft Corp", ticker = "MSFT", sector = "Industrials", weight = BigDecimal("6.00"), rank = 2),
+        HoldingData(
+          name = "NVIDIA Corp",
+          ticker = "NVDA",
+          sector = "Industrials",
+          weight = BigDecimal("7.00"),
+          rank = 1,
+          sectorSource = SectorSource.LIGHTYEAR,
+        ),
+        HoldingData(
+          name = "Microsoft Corp",
+          ticker = "MSFT",
+          sector = "Industrials",
+          weight = BigDecimal("6.00"),
+          rank = 2,
+          sectorSource = SectorSource.LIGHTYEAR,
+        ),
         HoldingData(name = "Tundmatu Ühistu OÜ", ticker = "TUND", sector = null, weight = BigDecimal("1.00"), rank = 3),
       ),
     )

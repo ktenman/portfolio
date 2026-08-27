@@ -120,6 +120,9 @@ feign:
     config:
       default:
         loggerLevel: FULL
+      openrouter:
+        connectTimeout: 10000
+        readTimeout: 180000
 
 historicalPrices:
   url: https://markets.ft.com

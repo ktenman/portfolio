@@ -116,7 +116,7 @@ class EtfHoldingPersistenceService(
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
-    val canonicalSector = sector?.let { IndustrySector.fromDisplayName(it) }
+    val canonicalSector = sector?.takeIf { sectorSource == SectorSource.LIGHTYEAR }?.let { IndustrySector.fromDisplayName(it) }
     return etfHoldingRepository.save(
       EtfHolding(
         name = name,
@@ -255,8 +255,8 @@ class EtfHoldingPersistenceService(
     sourceSector: String?,
     sourceType: SectorSource?,
   ) {
+    if (sourceType != SectorSource.LIGHTYEAR) return
     if (holding.sector != null && holding.sectorSource != SectorSource.LLM) return
-    if (holding.sector != null && sourceType != SectorSource.LIGHTYEAR) return
     val canonicalSector = sourceSector?.let { IndustrySector.fromDisplayName(it) } ?: return
     log.info("Updating sector from source for '${holding.name}': ${canonicalSector.displayName}")
     holding.sector = canonicalSector
