@@ -54,7 +54,7 @@ class EtfHoldingPersistenceService(
   ): EtfHolding {
     val hinted = reuseHoldingId?.let { etfHoldingRepository.findById(it).orNull() }
     if (hinted != null) {
-      applyMissingFields(hinted, holdingData.ticker, holdingData.sector, holdingData.countryCode, holdingData.countryName)
+      applySourceFields(hinted, holdingData.ticker, holdingData.sector, holdingData.countryCode, holdingData.countryName)
       return hinted
     }
     return findOrCreateHolding(
@@ -103,7 +103,7 @@ class EtfHoldingPersistenceService(
   ): EtfHolding {
     val existing = etfHoldingRepository.findByNameIgnoreCase(name)
     if (existing != null) {
-      applyMissingFields(existing, ticker, sector, countryCode, countryName)
+      applySourceFields(existing, ticker, sector, countryCode, countryName)
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
@@ -130,7 +130,7 @@ class EtfHoldingPersistenceService(
   @Transactional(readOnly = true)
   fun findByTicker(ticker: String): List<EtfHolding> = etfHoldingRepository.findByTicker(ticker)
 
-  private fun applyMissingFields(
+  private fun applySourceFields(
     holding: EtfHolding,
     ticker: String?,
     sector: String?,
@@ -138,7 +138,7 @@ class EtfHoldingPersistenceService(
     countryName: String?,
   ) {
     updateTickerIfMissing(holding, ticker)
-    updateSectorFromSourceIfMissing(holding, sector)
+    updateSectorFromSource(holding, sector)
     updateCountryFromSourceIfMissing(holding, countryCode, countryName)
   }
 
@@ -240,15 +240,16 @@ class EtfHoldingPersistenceService(
       matches.first()
     }
 
-  private fun updateSectorFromSourceIfMissing(
+  private fun updateSectorFromSource(
     holding: EtfHolding,
     sourceSector: String?,
   ) {
-    if (holding.sector != null) return
+    if (holding.sector != null && holding.sectorSource != SectorSource.LLM) return
     val canonicalSector = sourceSector?.let { IndustrySector.fromDisplayName(it) } ?: return
     log.info("Updating sector from source for '${holding.name}': ${canonicalSector.displayName}")
     holding.sector = canonicalSector
     holding.sectorSource = SectorSource.LIGHTYEAR
+    holding.classifiedByModel = null
   }
 
   private fun updateCountryFromSourceIfMissing(

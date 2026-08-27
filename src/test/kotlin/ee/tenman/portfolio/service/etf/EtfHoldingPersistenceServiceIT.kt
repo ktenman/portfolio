@@ -8,6 +8,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
@@ -289,6 +290,39 @@ class EtfHoldingPersistenceServiceIT {
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
     expect(updated.sector).toEqual(IndustrySector.SOFTWARE_CLOUD_SERVICES)
+  }
+
+  @Test
+  fun `should replace llm classified sector with the one provided by lightyear`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Deutsche Post AG", "DHL", null)
+    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.INDUSTRIALS, AiModel.GPT_5_6_LUNA)
+
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      LocalDate.of(2024, 7, 1),
+      listOf(HoldingData(name = "Deutsche Post AG", ticker = "DHL", sector = "Mobility", weight = BigDecimal("0.42"), rank = 1)),
+    )
+
+    val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
+    expect(updated.sector).toEqual(IndustrySector.MOBILITY)
+    expect(updated.sectorSource).toEqual(SectorSource.LIGHTYEAR)
+    expect(updated.classifiedByModel).toEqual(null)
+  }
+
+  @Test
+  fun `should keep llm classified sector when lightyear provides no category`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Tundmatu Ühistu OÜ", "TÜO", null)
+    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.FINANCE, AiModel.GPT_5_6_LUNA)
+
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      LocalDate.of(2024, 7, 1),
+      listOf(HoldingData(name = "Tundmatu Ühistu OÜ", ticker = "TÜO", sector = null, weight = BigDecimal("0.11"), rank = 1)),
+    )
+
+    val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
+    expect(updated.sector).toEqual(IndustrySector.FINANCE)
+    expect(updated.sectorSource).toEqual(SectorSource.LLM)
   }
 
   @Test
