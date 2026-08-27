@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.integration
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toStartWith
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
@@ -10,6 +11,7 @@ import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -419,5 +421,17 @@ class IndustryClassificationServiceTest {
     val result = service.classifyCompanyWithModel("Apple Inc")
 
     expect(result?.model).toEqual(secondTier)
+  }
+
+  @Test
+  fun `cannot send a prompt indented by the surrounding source code`() {
+    every { properties.enabled } returns true
+    val prompt = slot<String>()
+    every { openRouterClient.classifyWithModel(capture(prompt)) } returns
+      OpenRouterClassificationResult(content = "Finance", model = AiModel.GEMINI_3_5_FLASH_LITE)
+
+    service.classifyCompanyWithModel("Äpfel AG")
+
+    expect(prompt.captured).toStartWith("Classify")
   }
 }
