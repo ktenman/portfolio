@@ -160,15 +160,15 @@ class IndustryClassificationService(
 
   private fun buildPrompt(companyName: String): String =
     """
-    Classify $companyName into ONE category: ${IndustrySector.getAllDisplayNames()}
-
-    Rules:
-    $SECTOR_HINTS
-
-    ANSWER WITH ONLY THE CATEGORY NAME. DO NOT EXPLAIN YOUR REASONING.
-
-    Category:
-    """.trimIndent()
+    |Classify $companyName into ONE category: ${IndustrySector.getAllDisplayNames()}
+    |
+    |Rules:
+    |$SECTOR_HINTS
+    |
+    |ANSWER WITH ONLY THE CATEGORY NAME. DO NOT EXPLAIN YOUR REASONING.
+    |
+    |Category:
+    """.trimMargin()
 
   private companion object {
     val SECTOR_HINTS =

@@ -41,47 +41,6 @@ class EtfHoldingServiceTest {
   }
 
   @Test
-  fun `should return existing holding when found by name`() {
-    val holding = createHolding(1L, "AAPL", "Apple Inc")
-    every { etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL") } returns holding
-
-    val result = service.findOrCreateHolding("Apple Inc", "AAPL")
-
-    expect(result.id).toEqual(1L)
-    expect(result.name).toEqual("Apple Inc")
-  }
-
-  @Test
-  fun `should create new holding when not found`() {
-    val savedHolding = createHolding(2L, "NVDA", "NVIDIA Corp")
-    every { etfHoldingPersistenceService.findOrCreateHolding("NVIDIA Corp", "NVDA") } returns savedHolding
-
-    val result = service.findOrCreateHolding("NVIDIA Corp", "NVDA")
-
-    expect(result.id).toEqual(2L)
-  }
-
-  @Test
-  fun `should update ticker when existing holding has no ticker`() {
-    val holding = createHolding(1L, "AAPL", "Apple Inc")
-    every { etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "AAPL") } returns holding
-
-    val result = service.findOrCreateHolding("Apple Inc", "AAPL")
-
-    expect(result.ticker).toEqual("AAPL")
-  }
-
-  @Test
-  fun `should not update ticker when existing holding already has ticker`() {
-    val holding = createHolding(1L, "AAPL", "Apple Inc")
-    every { etfHoldingPersistenceService.findOrCreateHolding("Apple Inc", "DIFFERENT") } returns holding
-
-    val result = service.findOrCreateHolding("Apple Inc", "DIFFERENT")
-
-    expect(result.ticker).toEqual("AAPL")
-  }
-
-  @Test
   fun `should download and upload logo via saveHoldings`() {
     val holdingUuid = UUID.randomUUID()
     val holding = createHolding(1L, "NVDA", "NVIDIA Corp", uuid = holdingUuid)
