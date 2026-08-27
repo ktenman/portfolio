@@ -21,12 +21,12 @@ jobs:
           import json, pathlib, re, time, urllib.request
 
           source = open("src/main/kotlin/ee/tenman/portfolio/domain/AiModel.kt").read()
-          ids = re.findall(r'"([\w.-]+/[\w.-]+)"', source)
+          by_name = dict(re.findall(r'([A-Z][A-Z0-9_]*)\(\s*"([\w.-]+/[\w.-]+)"', source))
+          ids = list(by_name.values())
           cascade = set(re.findall(r'"([\w.-]+/[\w.-]+)".*FallbackTier', source))
           if not cascade:
               raise SystemExit("no cascade model ids found in AiModel.kt")
 
-          by_name = dict(re.findall(r'([A-Z][A-Z0-9_]*)\(\s*"([\w.-]+/[\w.-]+)"', source))
           referenced = set()
           for path in pathlib.Path("src/main/kotlin").rglob("*.kt"):
               if path.name == "AiModel.kt":

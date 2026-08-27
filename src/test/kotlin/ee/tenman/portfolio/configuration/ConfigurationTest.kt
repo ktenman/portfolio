@@ -14,7 +14,6 @@ import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources
 import org.springframework.boot.env.YamlPropertySourceLoader
 import org.springframework.cloud.openfeign.FeignClientProperties
-import org.springframework.core.env.MutablePropertySources
 import org.springframework.core.io.FileSystemResource
 
 class TimeRangeConverterTest {
@@ -73,15 +72,9 @@ class FeignClientTimeoutPropertiesTest {
   @Test
   fun `should bind the openrouter read timeout at the prefix spring cloud openfeign declares`() {
     val prefix = FeignClientProperties::class.java.getAnnotation(ConfigurationProperties::class.java).value
-    val sources = MutablePropertySources()
-    YamlPropertySourceLoader()
-      .load("application.yml", FileSystemResource("src/main/resources/application.yml"))
-      .forEach(sources::addLast)
+    val yaml = YamlPropertySourceLoader().load("application.yml", FileSystemResource("src/main/resources/application.yml"))
 
-    val bound =
-      Binder(ConfigurationPropertySources.from(sources))
-        .bind(prefix, FeignClientProperties::class.java)
-        .orElseThrow { IllegalStateException("No Feign client configuration bound at prefix $prefix") }
+    val bound = Binder(ConfigurationPropertySources.from(yaml)).bind(prefix, FeignClientProperties::class.java).get()
 
     expect(bound.config["openrouter"]?.readTimeout).toEqual(180000)
   }

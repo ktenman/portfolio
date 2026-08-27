@@ -20,10 +20,11 @@ class OpenRouterCircuitBreakerTest {
   companion object {
     private const val MILLISECONDS_PER_MINUTE = 60_000L
     private const val RATE_LIMIT_BUFFER_MS = 1L
+    private val DEFAULTS = OpenRouterProperties()
     private val PRIMARY_RATE_LIMIT_INTERVAL_MS =
-      (MILLISECONDS_PER_MINUTE / AiModel.primarySectorModel().rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
+      (MILLISECONDS_PER_MINUTE / DEFAULTS.primaryModel.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val FALLBACK_RATE_LIMIT_INTERVAL_MS =
-      (MILLISECONDS_PER_MINUTE / OpenRouterProperties().fallbackModel.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
+      (MILLISECONDS_PER_MINUTE / DEFAULTS.fallbackModel.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val TEST_INSTANT = Instant.parse("2024-01-15T10:00:00Z")
   }
 

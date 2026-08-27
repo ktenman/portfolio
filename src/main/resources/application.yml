@@ -84,6 +84,14 @@ spring:
         max-size: 20
         queue-capacity: 100
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          openrouter:
+            connectTimeout: 10000
+            readTimeout: 180000
+
 logging:
   level:
     root: INFO
@@ -120,13 +128,6 @@ feign:
     config:
       default:
         loggerLevel: FULL
-
-spring.cloud.openfeign:
-  client:
-    config:
-      openrouter:
-        connectTimeout: 10000
-        readTimeout: 180000
 
 historicalPrices:
   url: https://markets.ft.com
