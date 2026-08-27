@@ -330,20 +330,7 @@ class EtfHoldingPersistenceServiceIT {
   @Test
   fun `cannot demote a lightyear classified sector through the llm write path`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Deutsche Post AG", "DHL", null)
-    etfHoldingPersistenceService.saveHoldings(
-      "VWCE",
-      LocalDate.of(2024, 7, 1),
-      listOf(
-        HoldingData(
-          name = "Deutsche Post AG",
-          ticker = "DHL",
-          sector = "Mobility",
-          weight = BigDecimal("0.42"),
-          rank = 1,
-          sectorSource = SectorSource.LIGHTYEAR,
-        ),
-      ),
-    )
+    feed("Deutsche Post AG", "DHL", "Mobility", SectorSource.LIGHTYEAR)
 
     etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.INDUSTRIALS, AiModel.primarySectorModel())
 
@@ -355,20 +342,7 @@ class EtfHoldingPersistenceServiceIT {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Deutsche Post AG", "DHL", null)
     etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.INDUSTRIALS, AiModel.primarySectorModel())
 
-    etfHoldingPersistenceService.saveHoldings(
-      "VWCE",
-      LocalDate.of(2024, 7, 1),
-      listOf(
-        HoldingData(
-          name = "Deutsche Post AG",
-          ticker = "DHL",
-          sector = "Mobility",
-          weight = BigDecimal("0.42"),
-          rank = 1,
-          sectorSource = SectorSource.LIGHTYEAR,
-        ),
-      ),
-    )
+    feed("Deutsche Post AG", "DHL", "Mobility", SectorSource.LIGHTYEAR)
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
     expect(updated.sector).toEqual(IndustrySector.MOBILITY)
@@ -381,20 +355,7 @@ class EtfHoldingPersistenceServiceIT {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Tundmatu Ühistu OÜ", "TÜO", null)
     etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.FINANCE, AiModel.primarySectorModel())
 
-    etfHoldingPersistenceService.saveHoldings(
-      "VWCE",
-      LocalDate.of(2024, 7, 1),
-      listOf(
-        HoldingData(
-          name = "Tundmatu Ühistu OÜ",
-          ticker = "TÜO",
-          sector = null,
-          weight = BigDecimal("0.11"),
-          rank = 1,
-          sectorSource = SectorSource.LIGHTYEAR,
-        ),
-      ),
-    )
+    feed("Tundmatu Ühistu OÜ", "TÜO", null, SectorSource.LIGHTYEAR)
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
     expect(updated.sector).toEqual(IndustrySector.FINANCE)
@@ -406,11 +367,7 @@ class EtfHoldingPersistenceServiceIT {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Union Pacific Corp", "UNP", null)
     etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.MOBILITY, AiModel.primarySectorModel())
 
-    etfHoldingPersistenceService.saveHoldings(
-      "VWCE",
-      LocalDate.of(2024, 7, 1),
-      listOf(HoldingData(name = "Union Pacific Corp", ticker = "UNP", sector = "Industrials", weight = BigDecimal("0.19"), rank = 1)),
-    )
+    feed("Union Pacific Corp", "UNP", "Industrials", null)
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
     expect(updated.sector).toEqual(IndustrySector.MOBILITY)
@@ -600,4 +557,24 @@ class EtfHoldingPersistenceServiceIT {
     val positions = etfPositionRepository.findAll()
     expect(positions).toHaveSize(50)
   }
+
+  private fun feed(
+    name: String,
+    ticker: String,
+    sector: String?,
+    sectorSource: SectorSource?,
+  ) = etfHoldingPersistenceService.saveHoldings(
+    "VWCE",
+    LocalDate.of(2024, 7, 1),
+    listOf(
+      HoldingData(
+        name = name,
+        ticker = ticker,
+        sector = sector,
+        weight = BigDecimal("0.42"),
+        rank = 1,
+        sectorSource = sectorSource,
+      ),
+    ),
+  )
 }
