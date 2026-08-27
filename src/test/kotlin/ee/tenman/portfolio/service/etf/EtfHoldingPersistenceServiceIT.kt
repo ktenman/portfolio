@@ -197,7 +197,14 @@ class EtfHoldingPersistenceServiceIT {
       "VWCE",
       date,
       listOf(
-        HoldingData(name = "NVIDIA Corp", ticker = "NVDA", sector = "Information Technology", weight = BigDecimal("7.00"), rank = 1),
+        HoldingData(
+          name = "NVIDIA Corp",
+          ticker = "NVDA",
+          sector = "Information Technology",
+          weight = BigDecimal("7.00"),
+          rank = 1,
+          sectorSource = SectorSource.LIGHTYEAR,
+        ),
       ),
     )
 

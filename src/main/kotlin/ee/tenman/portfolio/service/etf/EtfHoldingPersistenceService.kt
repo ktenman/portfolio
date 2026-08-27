@@ -116,17 +116,9 @@ class EtfHoldingPersistenceService(
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
-    val canonicalSector = sector?.takeIf { sectorSource == SectorSource.LIGHTYEAR }?.let { IndustrySector.fromDisplayName(it) }
-    return etfHoldingRepository.save(
-      EtfHolding(
-        name = name,
-        ticker = ticker,
-        sector = canonicalSector,
-        sectorSource = canonicalSector?.let { SectorSource.LIGHTYEAR },
-        countryCode = countryCode,
-        countryName = countryName,
-      ),
-    )
+    val holding = EtfHolding(name = name, ticker = ticker, countryCode = countryCode, countryName = countryName)
+    updateSectorFromSource(holding, sector, sectorSource)
+    return etfHoldingRepository.save(holding)
   }
 
   @Transactional(readOnly = true)

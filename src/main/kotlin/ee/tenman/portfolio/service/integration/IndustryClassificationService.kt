@@ -166,6 +166,13 @@ class IndustryClassificationService(
     """
     Classify $companyName into ONE category: ${IndustrySector.getAllDisplayNames()}
 
+    Rules:
+    - Freight, rail, shipping, logistics, delivery and postal companies are Mobility, not Industrials
+    - Reference examples: Union Pacific = Mobility, Deutsche Post = Mobility, Cisco = Communication,
+      Akamai = Business Services, CGI = Business Services, GoDaddy = Business Services,
+      Amazon = Consumer Essentials, Alibaba = Consumer Essentials,
+      Autotrader = Software & Cloud Services, Enphase Energy = Semiconductors
+
     ANSWER WITH ONLY THE CATEGORY NAME. DO NOT EXPLAIN YOUR REASONING.
 
     Category:
