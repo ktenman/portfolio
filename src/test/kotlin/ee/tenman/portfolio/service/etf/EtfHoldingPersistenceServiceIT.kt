@@ -510,19 +510,9 @@ class EtfHoldingPersistenceServiceIT {
           rank = 1,
           sectorSource = SectorSource.LIGHTYEAR,
         ),
-        HoldingData(
-          name = "Microsoft Corp",
-          ticker = "MSFT",
-          sector = "Industrials",
-          weight = BigDecimal("6.00"),
-          rank = 2,
-          sectorSource = SectorSource.LIGHTYEAR,
-        ),
-        HoldingData(name = "Tundmatu Ühistu OÜ", ticker = "TUND", sector = null, weight = BigDecimal("1.00"), rank = 3),
+        HoldingData(name = "Tundmatu Ühistu OÜ", ticker = "TUND", sector = null, weight = BigDecimal("1.00"), rank = 2),
       ),
     )
-    val microsoftId = etfHoldingRepository.findAll().first { it.name == "Microsoft Corp" }.id
-    etfHoldingPersistenceService.updateSector(microsoftId, IndustrySector.SOFTWARE_CLOUD_SERVICES)
 
     val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
 

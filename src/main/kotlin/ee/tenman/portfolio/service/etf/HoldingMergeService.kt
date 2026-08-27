@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.etf
 import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import org.slf4j.LoggerFactory
@@ -70,7 +71,7 @@ class HoldingMergeService(
     duplicate: EtfHolding,
   ) {
     applyMissingTicker(canonical, duplicate)
-    applyMissingSector(canonical, duplicate)
+    applySector(canonical, duplicate)
     applyMissingCountry(canonical, duplicate)
   }
 
@@ -83,12 +84,13 @@ class HoldingMergeService(
     canonical.ticker = duplicate.ticker
   }
 
-  private fun applyMissingSector(
+  private fun applySector(
     canonical: EtfHolding,
     duplicate: EtfHolding,
   ) {
-    if (canonical.sector != null) return
     if (duplicate.sector == null) return
+    if (canonical.sector != null && duplicate.sectorSource != SectorSource.LIGHTYEAR) return
+    if (canonical.sector != null && canonical.sectorSource != SectorSource.LLM) return
     canonical.sector = duplicate.sector
     canonical.sectorSource = duplicate.sectorSource
     canonical.classifiedByModel = duplicate.classifiedByModel

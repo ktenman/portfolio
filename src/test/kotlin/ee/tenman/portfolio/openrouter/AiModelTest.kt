@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.openrouter
 
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
@@ -57,6 +58,13 @@ class AiModelTest {
     val walked = generateSequence(AiModel.primaryCountryModel()) { it.nextCountryFallbackModel() }.toList()
 
     expect(walked).toEqual(rankedBy { it.countryFallbackTier })
+  }
+
+  @Test
+  fun `should keep the configured circuit breaker fallback model on the sector cascade`() {
+    val fallback = OpenRouterProperties().fallbackModel
+
+    expect(fallback.sectorFallbackTier).toBeGreaterThan(0)
   }
 
   @Test
