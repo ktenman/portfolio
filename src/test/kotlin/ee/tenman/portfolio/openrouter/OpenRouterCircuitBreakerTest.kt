@@ -21,7 +21,7 @@ class OpenRouterCircuitBreakerTest {
     private const val MILLISECONDS_PER_MINUTE = 60_000L
     private const val RATE_LIMIT_BUFFER_MS = 1L
     private val PRIMARY_RATE_LIMIT_INTERVAL_MS =
-      (MILLISECONDS_PER_MINUTE / AiModel.DEEPSEEK_V4_FLASH.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
+      (MILLISECONDS_PER_MINUTE / AiModel.GPT_5_6_LUNA.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val FALLBACK_RATE_LIMIT_INTERVAL_MS =
       (MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_SONNET_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val TEST_INSTANT = Instant.parse("2024-01-15T10:00:00Z")
@@ -44,7 +44,7 @@ class OpenRouterCircuitBreakerTest {
 
   @Test
   fun `should return primary model when circuit is closed`() {
-    expect(circuitBreaker.getCurrentModel()).toEqual(AiModel.DEEPSEEK_V4_FLASH.modelId)
+    expect(circuitBreaker.getCurrentModel()).toEqual(AiModel.GPT_5_6_LUNA.modelId)
   }
 
   @Test
@@ -78,7 +78,7 @@ class OpenRouterCircuitBreakerTest {
       circuitBreaker.recordFailure(Exception("API error"))
     }
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.CLOSED)
-    expect(circuitBreaker.getCurrentModel()).toEqual(AiModel.DEEPSEEK_V4_FLASH.modelId)
+    expect(circuitBreaker.getCurrentModel()).toEqual(AiModel.GPT_5_6_LUNA.modelId)
   }
 
   @Test
@@ -151,7 +151,7 @@ class OpenRouterCircuitBreakerTest {
   @Test
   fun `should select model atomically`() {
     val selection = circuitBreaker.selectModel()
-    expect(selection.modelId).toEqual(AiModel.DEEPSEEK_V4_FLASH.modelId)
+    expect(selection.modelId).toEqual(AiModel.GPT_5_6_LUNA.modelId)
     expect(selection.isUsingFallback).toEqual(false)
   }
 
@@ -173,7 +173,7 @@ class OpenRouterCircuitBreakerTest {
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.OPEN)
     circuitBreaker.transitionToHalfOpenState()
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.HALF_OPEN)
-    expect(circuitBreaker.getCurrentModel()).toEqual(AiModel.DEEPSEEK_V4_FLASH.modelId)
+    expect(circuitBreaker.getCurrentModel()).toEqual(AiModel.GPT_5_6_LUNA.modelId)
   }
 
   @Test
@@ -195,7 +195,7 @@ class OpenRouterCircuitBreakerTest {
   fun `should return remaining wait time after primary request`() {
     circuitBreaker.tryAcquirePrimary()
     val waitTime = circuitBreaker.getWaitTimeMs(isUsingFallback = false)
-    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.DEEPSEEK_V4_FLASH.rateLimitPerMinute
+    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.GPT_5_6_LUNA.rateLimitPerMinute
     expect(waitTime).toEqual(expectedMs)
   }
 
@@ -268,13 +268,11 @@ class OpenRouterCircuitBreakerTest {
     val tier2 = circuitBreaker.selectModelByTier(2)
     val tier3 = circuitBreaker.selectModelByTier(3)
     val tier4 = circuitBreaker.selectModelByTier(4)
-    val tier5 = circuitBreaker.selectModelByTier(5)
-    expect(tier0.model).toEqual(AiModel.DEEPSEEK_V4_FLASH)
-    expect(tier1.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
+    expect(tier0.model).toEqual(AiModel.GPT_5_6_LUNA)
+    expect(tier1.model).toEqual(AiModel.CLAUDE_OPUS_5)
     expect(tier2.model).toEqual(AiModel.CLAUDE_SONNET_5)
     expect(tier3.model).toEqual(AiModel.DEEPSEEK_V4_PRO)
     expect(tier4.model).toEqual(AiModel.GPT_5_6_TERRA)
-    expect(tier5.model).toEqual(AiModel.CLAUDE_OPUS_5)
   }
 
   @Test

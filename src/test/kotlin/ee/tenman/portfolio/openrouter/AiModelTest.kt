@@ -79,7 +79,8 @@ class AiModelTest {
         "GPT_5_5",
         "CLAUDE_OPUS_4_8",
         "GPT_5_4_NANO",
-        "GPT_5_6_LUNA",
+        "DEEPSEEK_V4_FLASH",
+        "GEMINI_3_5_FLASH_LITE",
       )
   }
 }

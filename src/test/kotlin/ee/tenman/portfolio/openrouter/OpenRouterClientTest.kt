@@ -70,7 +70,7 @@ class OpenRouterClientTest {
 
     val result = client.classifyWithCascadingFallback("prompt", AiModel.primarySectorModel())
 
-    expect(result?.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
+    expect(result?.model).toEqual(AiModel.primarySectorModel().nextSectorFallbackModel())
   }
 
   @Test
@@ -89,7 +89,7 @@ class OpenRouterClientTest {
 
     val result = client.classifyWithCascadingFallback("prompt", AiModel.primarySectorModel())
 
-    expect(result?.model).toEqual(AiModel.GEMINI_3_5_FLASH_LITE)
+    expect(result?.model).toEqual(AiModel.primarySectorModel().nextSectorFallbackModel())
   }
 
   @Test
