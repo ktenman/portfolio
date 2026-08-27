@@ -328,6 +328,29 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
+  fun `cannot demote a lightyear classified sector through the llm write path`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Deutsche Post AG", "DHL", null)
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      LocalDate.of(2024, 7, 1),
+      listOf(
+        HoldingData(
+          name = "Deutsche Post AG",
+          ticker = "DHL",
+          sector = "Mobility",
+          weight = BigDecimal("0.42"),
+          rank = 1,
+          sectorSource = SectorSource.LIGHTYEAR,
+        ),
+      ),
+    )
+
+    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.INDUSTRIALS, AiModel.primarySectorModel())
+
+    expect(etfHoldingRepository.findById(holding.id).orElseThrow().sector).toEqual(IndustrySector.MOBILITY)
+  }
+
+  @Test
   fun `should replace llm classified sector with the one provided by lightyear`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Deutsche Post AG", "DHL", null)
     etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.INDUSTRIALS, AiModel.primarySectorModel())

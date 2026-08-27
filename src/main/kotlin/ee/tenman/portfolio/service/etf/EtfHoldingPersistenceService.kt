@@ -198,6 +198,7 @@ class EtfHoldingPersistenceService(
     classifiedByModel: AiModel? = null,
   ) {
     val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
+    if (!holding.acceptsSectorFrom(SectorSource.LLM)) return
     holding.sector = sector
     holding.classifiedByModel = classifiedByModel
     holding.sectorSource = SectorSource.LLM
@@ -248,7 +249,7 @@ class EtfHoldingPersistenceService(
     sourceType: SectorSource?,
   ) {
     if (sourceType != SectorSource.LIGHTYEAR) return
-    if (holding.sector != null && holding.sectorSource != SectorSource.LLM) return
+    if (!holding.acceptsSectorFrom(sourceType)) return
     val canonicalSector = sourceSector?.let { IndustrySector.fromDisplayName(it) } ?: return
     log.info("Updating sector from source for '${holding.name}': ${canonicalSector.displayName}")
     holding.sector = canonicalSector

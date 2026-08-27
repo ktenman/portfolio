@@ -23,7 +23,7 @@ class OpenRouterCircuitBreakerTest {
     private val PRIMARY_RATE_LIMIT_INTERVAL_MS =
       (MILLISECONDS_PER_MINUTE / AiModel.primarySectorModel().rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val FALLBACK_RATE_LIMIT_INTERVAL_MS =
-      (MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_SONNET_5.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
+      (MILLISECONDS_PER_MINUTE / OpenRouterProperties().fallbackModel.rateLimitPerMinute) + RATE_LIMIT_BUFFER_MS
     private val TEST_INSTANT = Instant.parse("2024-01-15T10:00:00Z")
   }
 
@@ -68,7 +68,7 @@ class OpenRouterCircuitBreakerTest {
       circuitBreaker.recordFailure(Exception("API error"))
     }
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.OPEN)
-    expect(circuitBreaker.getCurrentModel()).toEqual(AiModel.CLAUDE_SONNET_5.modelId)
+    expect(circuitBreaker.getCurrentModel()).toEqual(properties.fallbackModel.modelId)
     expect(circuitBreaker.isUsingFallback()).toEqual(true)
   }
 
@@ -161,7 +161,7 @@ class OpenRouterCircuitBreakerTest {
       circuitBreaker.recordFailure(Exception("API error"))
     }
     val selection = circuitBreaker.selectModel()
-    expect(selection.modelId).toEqual(AiModel.CLAUDE_SONNET_5.modelId)
+    expect(selection.modelId).toEqual(properties.fallbackModel.modelId)
     expect(selection.isUsingFallback).toEqual(true)
   }
 
@@ -213,7 +213,7 @@ class OpenRouterCircuitBreakerTest {
     }
     circuitBreaker.tryAcquireFallback()
     val waitTime = circuitBreaker.getWaitTimeMs(isUsingFallback = true)
-    val expectedMs = MILLISECONDS_PER_MINUTE / AiModel.CLAUDE_SONNET_5.rateLimitPerMinute
+    val expectedMs = MILLISECONDS_PER_MINUTE / properties.fallbackModel.rateLimitPerMinute
     expect(waitTime).toEqual(expectedMs)
   }
 
@@ -278,7 +278,7 @@ class OpenRouterCircuitBreakerTest {
   @Test
   fun `should return fallback model for invalid tier`() {
     val invalidTier = circuitBreaker.selectModelByTier(99)
-    expect(invalidTier.model).toEqual(AiModel.CLAUDE_SONNET_5)
+    expect(invalidTier.model).toEqual(properties.fallbackModel)
   }
 
   @Test

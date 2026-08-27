@@ -9,6 +9,13 @@ import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.TimeRange
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.bind.Binder
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources
+import org.springframework.boot.env.YamlPropertySourceLoader
+import org.springframework.cloud.openfeign.FeignClientProperties
+import org.springframework.core.env.MutablePropertySources
+import org.springframework.core.io.FileSystemResource
 
 class TimeRangeConverterTest {
   private val converter = TimeRangeConverter()
@@ -59,6 +66,24 @@ class Trading212ScrapingPropertiesTest {
     val ticker = properties.findTickerBySymbol("UNKNOWN:SYM:EUR")
 
     expect(ticker).toEqual(null)
+  }
+}
+
+class FeignClientTimeoutPropertiesTest {
+  @Test
+  fun `should bind the openrouter read timeout at the prefix spring cloud openfeign declares`() {
+    val prefix = FeignClientProperties::class.java.getAnnotation(ConfigurationProperties::class.java).value
+    val sources = MutablePropertySources()
+    YamlPropertySourceLoader()
+      .load("application.yml", FileSystemResource("src/main/resources/application.yml"))
+      .forEach(sources::addLast)
+
+    val bound =
+      Binder(ConfigurationPropertySources.from(sources))
+        .bind(prefix, FeignClientProperties::class.java)
+        .orElseThrow { IllegalStateException("No Feign client configuration bound at prefix $prefix") }
+
+    expect(bound.config["openrouter"]?.readTimeout).toEqual(180000)
   }
 }
 

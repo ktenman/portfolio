@@ -120,6 +120,10 @@ feign:
     config:
       default:
         loggerLevel: FULL
+
+spring.cloud.openfeign:
+  client:
+    config:
       openrouter:
         connectTimeout: 10000
         readTimeout: 180000

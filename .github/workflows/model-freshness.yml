@@ -18,15 +18,24 @@ jobs:
       - name: Compare AiModel entries against OpenRouter catalog
         run: |
           python3 - <<'EOF'
-          import json, re, time, urllib.request
+          import json, pathlib, re, time, urllib.request
 
           source = open("src/main/kotlin/ee/tenman/portfolio/domain/AiModel.kt").read()
           ids = re.findall(r'"([\w.-]+/[\w.-]+)"', source)
           cascade = set(re.findall(r'"([\w.-]+/[\w.-]+)".*FallbackTier', source))
-          online = {"openai/gpt-5.6-luna"}
           if not cascade:
               raise SystemExit("no cascade model ids found in AiModel.kt")
-          active = [m for m in ids if m in cascade or m in online]
+
+          by_name = dict(re.findall(r'([A-Z][A-Z0-9_]*)\(\s*"([\w.-]+/[\w.-]+)"', source))
+          referenced = set()
+          for path in pathlib.Path("src/main/kotlin").rglob("*.kt"):
+              if path.name == "AiModel.kt":
+                  continue
+              referenced |= set(re.findall(r"AiModel\.([A-Z][A-Z0-9_]*)", path.read_text()))
+          pinned = {by_name[name] for name in referenced if name in by_name}
+          if not pinned:
+              raise SystemExit("no hardcoded AiModel references found outside AiModel.kt")
+          active = [m for m in ids if m in cascade or m in pinned]
 
           with urllib.request.urlopen("https://openrouter.ai/api/v1/models") as response:
               data = json.load(response)["data"]

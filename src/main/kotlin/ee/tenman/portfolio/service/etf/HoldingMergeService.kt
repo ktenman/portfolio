@@ -3,7 +3,6 @@ package ee.tenman.portfolio.service.etf
 import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
-import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import org.slf4j.LoggerFactory
@@ -89,8 +88,7 @@ class HoldingMergeService(
     duplicate: EtfHolding,
   ) {
     if (duplicate.sector == null) return
-    if (canonical.sector != null && duplicate.sectorSource != SectorSource.LIGHTYEAR) return
-    if (canonical.sector != null && canonical.sectorSource != SectorSource.LLM) return
+    if (!canonical.acceptsSectorFrom(duplicate.sectorSource)) return
     canonical.sector = duplicate.sector
     canonical.sectorSource = duplicate.sectorSource
     canonical.classifiedByModel = duplicate.classifiedByModel
