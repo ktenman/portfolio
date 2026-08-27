@@ -73,12 +73,6 @@ class EtfHoldingService(
     return (byTicker + byBlockKey).distinctBy { it.id }.sortedBy { it.id }
   }
 
-  fun findOrCreateHolding(
-    name: String,
-    ticker: String?,
-    sector: String? = null,
-  ): EtfHolding = etfHoldingPersistenceService.findOrCreateHolding(name, ticker, sector)
-
   private fun downloadLightyearLogo(
     holding: EtfHolding,
     lightyearLogoUrl: String?,

@@ -26,7 +26,7 @@ class CsusHoldingsService(
         HoldingData(
           name = holding.name,
           ticker = holding.ticker,
-          sector = holding.sector,
+          sector = null,
           weight = holding.weight,
           rank = index + 1,
         )

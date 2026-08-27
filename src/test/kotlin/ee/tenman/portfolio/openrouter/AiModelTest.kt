@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.openrouter
 
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
@@ -60,6 +61,13 @@ class AiModelTest {
   }
 
   @Test
+  fun `should keep the configured circuit breaker fallback model on the sector cascade`() {
+    val fallback = OpenRouterProperties().fallbackModel
+
+    expect(fallback.sectorFallbackTier).toBeGreaterThan(0)
+  }
+
+  @Test
   fun `should rate limit every model in a cascade`() {
     val unlimited = AiModel.entries.filter { it.sectorFallbackTier >= 0 && it.rateLimitPerMinute <= 0 }
 
@@ -79,7 +87,7 @@ class AiModelTest {
         "GPT_5_5",
         "CLAUDE_OPUS_4_8",
         "GPT_5_4_NANO",
-        "GPT_5_6_LUNA",
+        "DEEPSEEK_V4_FLASH",
         "GEMINI_3_5_FLASH_LITE",
       )
   }

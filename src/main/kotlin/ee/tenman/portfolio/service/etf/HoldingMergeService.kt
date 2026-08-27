@@ -70,7 +70,7 @@ class HoldingMergeService(
     duplicate: EtfHolding,
   ) {
     applyMissingTicker(canonical, duplicate)
-    applyMissingSector(canonical, duplicate)
+    applySector(canonical, duplicate)
     applyMissingCountry(canonical, duplicate)
   }
 
@@ -83,12 +83,12 @@ class HoldingMergeService(
     canonical.ticker = duplicate.ticker
   }
 
-  private fun applyMissingSector(
+  private fun applySector(
     canonical: EtfHolding,
     duplicate: EtfHolding,
   ) {
-    if (canonical.sector != null) return
     if (duplicate.sector == null) return
+    if (!canonical.acceptsSectorFrom(duplicate.sectorSource)) return
     canonical.sector = duplicate.sector
     canonical.sectorSource = duplicate.sectorSource
     canonical.classifiedByModel = duplicate.classifiedByModel
