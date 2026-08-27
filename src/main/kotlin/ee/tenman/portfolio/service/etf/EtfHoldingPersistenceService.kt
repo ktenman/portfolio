@@ -54,7 +54,14 @@ class EtfHoldingPersistenceService(
   ): EtfHolding {
     val hinted = reuseHoldingId?.let { etfHoldingRepository.findById(it).orNull() }
     if (hinted != null) {
-      applySourceFields(hinted, holdingData.ticker, holdingData.sector, holdingData.countryCode, holdingData.countryName)
+      applySourceFields(
+        hinted,
+        holdingData.ticker,
+        holdingData.sector,
+        holdingData.countryCode,
+        holdingData.countryName,
+        holdingData.sectorSource,
+      )
       return hinted
     }
     return findOrCreateHolding(
@@ -63,6 +70,7 @@ class EtfHoldingPersistenceService(
       holdingData.sector,
       holdingData.countryCode,
       holdingData.countryName,
+      holdingData.sectorSource,
     )
   }
 
@@ -100,10 +108,11 @@ class EtfHoldingPersistenceService(
     sector: String? = null,
     countryCode: String? = null,
     countryName: String? = null,
+    sectorSource: SectorSource? = null,
   ): EtfHolding {
     val existing = etfHoldingRepository.findByNameIgnoreCase(name)
     if (existing != null) {
-      applySourceFields(existing, ticker, sector, countryCode, countryName)
+      applySourceFields(existing, ticker, sector, countryCode, countryName, sectorSource)
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
@@ -136,9 +145,10 @@ class EtfHoldingPersistenceService(
     sector: String?,
     countryCode: String?,
     countryName: String?,
+    sectorSource: SectorSource?,
   ) {
     updateTickerIfMissing(holding, ticker)
-    updateSectorFromSource(holding, sector)
+    updateSectorFromSource(holding, sector, sectorSource)
     updateCountryFromSourceIfMissing(holding, countryCode, countryName)
   }
 
@@ -243,8 +253,10 @@ class EtfHoldingPersistenceService(
   private fun updateSectorFromSource(
     holding: EtfHolding,
     sourceSector: String?,
+    sourceType: SectorSource?,
   ) {
     if (holding.sector != null && holding.sectorSource != SectorSource.LLM) return
+    if (holding.sector != null && sourceType != SectorSource.LIGHTYEAR) return
     val canonicalSector = sourceSector?.let { IndustrySector.fromDisplayName(it) } ?: return
     log.info("Updating sector from source for '${holding.name}': ${canonicalSector.displayName}")
     holding.sector = canonicalSector

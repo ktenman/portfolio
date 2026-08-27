@@ -89,7 +89,7 @@ class IndustryClassificationServiceTest {
   fun `should return null when all cascading fallbacks return unknown sector`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_5_FLASH_LITE)
+      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.primarySectorModel())
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "Still Unknown", model = AiModel.DEEPSEEK_V4_PRO)
 
@@ -116,7 +116,7 @@ class IndustryClassificationServiceTest {
   fun `should return null when cascading fallback returns no response`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(any()) } returns
-      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_3_5_FLASH_LITE)
+      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.primarySectorModel())
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
 
     val result = service.classifyCompanyWithModel("Apple Inc")

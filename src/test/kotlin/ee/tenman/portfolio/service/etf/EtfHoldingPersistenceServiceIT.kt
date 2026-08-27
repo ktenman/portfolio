@@ -295,12 +295,21 @@ class EtfHoldingPersistenceServiceIT {
   @Test
   fun `should replace llm classified sector with the one provided by lightyear`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Deutsche Post AG", "DHL", null)
-    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.INDUSTRIALS, AiModel.GPT_5_6_LUNA)
+    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.INDUSTRIALS, AiModel.primarySectorModel())
 
     etfHoldingPersistenceService.saveHoldings(
       "VWCE",
       LocalDate.of(2024, 7, 1),
-      listOf(HoldingData(name = "Deutsche Post AG", ticker = "DHL", sector = "Mobility", weight = BigDecimal("0.42"), rank = 1)),
+      listOf(
+        HoldingData(
+          name = "Deutsche Post AG",
+          ticker = "DHL",
+          sector = "Mobility",
+          weight = BigDecimal("0.42"),
+          rank = 1,
+          sectorSource = SectorSource.LIGHTYEAR,
+        ),
+      ),
     )
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
@@ -312,16 +321,41 @@ class EtfHoldingPersistenceServiceIT {
   @Test
   fun `should keep llm classified sector when lightyear provides no category`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Tundmatu Ühistu OÜ", "TÜO", null)
-    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.FINANCE, AiModel.GPT_5_6_LUNA)
+    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.FINANCE, AiModel.primarySectorModel())
 
     etfHoldingPersistenceService.saveHoldings(
       "VWCE",
       LocalDate.of(2024, 7, 1),
-      listOf(HoldingData(name = "Tundmatu Ühistu OÜ", ticker = "TÜO", sector = null, weight = BigDecimal("0.11"), rank = 1)),
+      listOf(
+        HoldingData(
+          name = "Tundmatu Ühistu OÜ",
+          ticker = "TÜO",
+          sector = null,
+          weight = BigDecimal("0.11"),
+          rank = 1,
+          sectorSource = SectorSource.LIGHTYEAR,
+        ),
+      ),
     )
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
     expect(updated.sector).toEqual(IndustrySector.FINANCE)
+    expect(updated.sectorSource).toEqual(SectorSource.LLM)
+  }
+
+  @Test
+  fun `should keep llm classified sector when feed is not lightyear`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Union Pacific Corp", "UNP", null)
+    etfHoldingPersistenceService.updateSector(holding.id, IndustrySector.MOBILITY, AiModel.primarySectorModel())
+
+    etfHoldingPersistenceService.saveHoldings(
+      "VWCE",
+      LocalDate.of(2024, 7, 1),
+      listOf(HoldingData(name = "Union Pacific Corp", ticker = "UNP", sector = "Industrials", weight = BigDecimal("0.19"), rank = 1)),
+    )
+
+    val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
+    expect(updated.sector).toEqual(IndustrySector.MOBILITY)
     expect(updated.sectorSource).toEqual(SectorSource.LLM)
   }
 
@@ -427,7 +461,7 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
-  fun `should findUnclassifiedHoldingIds exclude lightyear sourced and llm classified sectors`() {
+  fun `should findUnclassifiedHoldingIds return only holdings without a sector`() {
     val date = LocalDate.of(2024, 7, 1)
     etfHoldingPersistenceService.saveHoldings(
       "VWCE",
