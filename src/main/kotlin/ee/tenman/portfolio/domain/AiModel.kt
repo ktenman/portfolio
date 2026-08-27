@@ -11,6 +11,7 @@ enum class AiModel(
   CLAUDE_SONNET_5("anthropic/claude-sonnet-5", 240, sectorFallbackTier = 2, countryFallbackTier = 2),
   DEEPSEEK_V4_PRO("deepseek/deepseek-v4-pro", 240, sectorFallbackTier = 3, countryFallbackTier = 3),
   GPT_5_6_TERRA("openai/gpt-5.6-terra", 240, sectorFallbackTier = 4, countryFallbackTier = 4),
+  GEMINI_3_7_FLASH("google/gemini-3.7-flash", 400, sectorFallbackTier = 5, countryFallbackTier = 5),
   DEEPSEEK_V4_FLASH("deepseek/deepseek-v4-flash", 240),
   GEMINI_3_5_FLASH_LITE("google/gemini-3.5-flash-lite", 400),
   GEMINI_3_FLASH_PREVIEW("google/gemini-3-flash-preview", 400),
