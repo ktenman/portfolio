@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.HoldingIdentityCacheTestConfiguration
@@ -11,6 +12,7 @@ import ee.tenman.portfolio.openrouter.OpenRouterClient
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -109,6 +111,67 @@ class HoldingIdentityServiceTest {
     val result = service.isSameCompany("   ", "Apple Inc", "AAPL")
 
     expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should reject companies sharing only one word without consulting model`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
+    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
+
+    val result = service.isSameCompany("China Merchants Bank", "China Life Insurance", null)
+
+    expect(result).toEqual(false)
+  }
+
+  @Test
+  fun `should consult model when names differ only by share class and legal form`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
+    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
+
+    val result = service.isSameCompany("Sensetime Group Class B Inc", "Sensetime Group Inc", null)
+
+    expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `should consult model when candidate name is truncated mid word`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
+    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
+
+    val result = service.isSameCompany("Zhejiang Sanhua Intelligent Controls Co Ltd", "Zhejiang Sanhua Intelligen-h", null)
+
+    expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `should build prompt without source indentation when ticker is present`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    val prompt = slot<String>()
+    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_3_5_FLASH_LITE)
+    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
+
+    service.isSameCompany("Zhejiang Sanhua Intelligent Controls", "Zhejiang Sanhua Intelligen-h", "002050")
+
+    expect(prompt.captured).notToContain("\n ")
+  }
+
+  @Test
+  fun `should consult model when one name is an abbreviation sharing no words`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
+    val service = HoldingIdentityService(openRouterClient, IndustryClassificationProperties(enabled = true))
+
+    val result = service.isSameCompany("GSK", "GlaxoSmithKline", null)
+
+    expect(result).toEqual(true)
   }
 }
 

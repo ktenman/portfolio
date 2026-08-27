@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.etf
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.HoldingNameSimilarity
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
@@ -29,6 +30,7 @@ class HoldingIdentityService(
     if (!properties.enabled) return null
     if (existingName.isBlank() || candidateName.isBlank()) return null
     if (existingName.equals(candidateName, ignoreCase = true)) return true
+    if (!HoldingNameSimilarity.mayBeSameCompany(existingName, candidateName)) return false
     val prompt = buildPrompt(existingName, candidateName, ticker)
     val content = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel())?.content ?: return null
     val verdict = parseVerdict(content)
@@ -62,13 +64,24 @@ class HoldingIdentityService(
   ): String {
     val tickerLine = ticker?.takeIf { it.isNotBlank() }?.let { "They may share the ticker symbol $it.\n" } ?: ""
     return """
-      Two stock holding names need to be compared.
-      ${tickerLine}Name 1: $existingName
-      Name 2: $candidateName
-
-      Are these the SAME company? Answer YES only if they are the same legal entity (abbreviation, legal-form suffix, rebrand, or alternate spelling). Answer NO if they are different companies that merely look similar or share a ticker.
-
-      ANSWER WITH ONLY ONE WORD: YES or NO.
-      """.trimIndent()
+      |You are deduplicating ETF holding names coming from different data providers.
+      |
+      |${tickerLine}Name 1: $existingName
+      |Name 2: $candidateName
+      |
+      |Answer YES when both names denote the same legal entity. Providers mangle names, so YES still applies
+      |when the only differences are:
+      |- a truncated or abbreviated name ("Zhejiang Sanhua Intelligen-h", "Kingdee Intl Sft", "Bharat Heavy Ele")
+      |- legal-form or listing suffixes (Ltd, Sa, Pcl, Pjsc, -a, Class B, ADR, GDR, Non-voting, Pref, Jpy50)
+      |- a ticker abbreviation or a rebrand of the same entity (GSK / GlaxoSmithKline, Strategy / MicroStrategy)
+      |- translation, transliteration or a spelling variant (Sberbank Rossii / Sberbank of Russia, Munich Re / Muenchener Rueck)
+      |
+      |Answer NO when the names denote different legal entities, even if they are closely related:
+      |- separate listed subsidiaries or affiliates of one group (Adani Ports vs Adani Enterprises, Alibaba vs Ant Group)
+      |- companies sharing a place name, family name, or industry word (China Merchants Bank vs China Life Insurance)
+      |- a parent and its separately listed subsidiary
+      |
+      |ANSWER WITH ONLY ONE WORD: YES or NO.
+      """.trimMargin()
   }
 }
