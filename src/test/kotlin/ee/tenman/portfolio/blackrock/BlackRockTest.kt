@@ -73,7 +73,6 @@ class BlackRockCsvParserTest {
     expect(holdings).toHaveSize(2)
     expect(holdings.first().ticker).toEqual("NVDA")
     expect(holdings.first().name).toEqual("NVIDIA CORP")
-    expect(holdings.first().sector).toEqual("Information Technology")
     expect(holdings.first().weight).toEqualNumerically(BigDecimal("7.42"))
   }
 

@@ -2,6 +2,7 @@ package ee.tenman.portfolio.dto
 
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.SectorSource
 import java.io.Serializable
 import java.math.BigDecimal
 import java.util.UUID
@@ -62,4 +63,5 @@ data class HoldingData(
   val logoUrl: String? = null,
   val countryCode: String? = null,
   val countryName: String? = null,
+  val sectorSource: SectorSource? = null,
 )

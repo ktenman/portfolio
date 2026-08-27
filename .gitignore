@@ -85,6 +85,7 @@ scripts/train_captcha_model.py
 scripts/*.keras
 scripts/*.png
 scripts/*.jpg
+scripts/model-benchmark/
 .worktrees/
 
 ### Working docs (keep architecture diagrams) ###

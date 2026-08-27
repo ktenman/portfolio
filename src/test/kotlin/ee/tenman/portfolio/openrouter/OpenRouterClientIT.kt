@@ -50,7 +50,7 @@ class OpenRouterClientIT {
 
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Technology")
-    expect(result?.model).toEqual(AiModel.DEEPSEEK_V4_FLASH)
+    expect(result?.model).toEqual(AiModel.primarySectorModel())
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.CLOSED)
   }
 

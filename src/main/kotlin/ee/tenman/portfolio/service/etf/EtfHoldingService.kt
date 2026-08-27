@@ -76,8 +76,7 @@ class EtfHoldingService(
   fun findOrCreateHolding(
     name: String,
     ticker: String?,
-    sector: String? = null,
-  ): EtfHolding = etfHoldingPersistenceService.findOrCreateHolding(name, ticker, sector)
+  ): EtfHolding = etfHoldingPersistenceService.findOrCreateHolding(name, ticker)
 
   private fun downloadLightyearLogo(
     holding: EtfHolding,

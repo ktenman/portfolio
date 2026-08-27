@@ -9,6 +9,7 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -84,6 +85,38 @@ class HoldingMergeServiceIT {
 
     val surviving = etfHoldingRepository.findAll().single()
     expect(surviving.ticker to surviving.sector).toEqual("NVDA" to IndustrySector.INDUSTRIALS)
+  }
+
+  @Test
+  fun `should replace llm classified canonical sector with the lightyear sector of a duplicate`() {
+    val canonical =
+      etfHoldingRepository.save(
+        EtfHolding(name = "Deutsche Post", sector = IndustrySector.INDUSTRIALS, sectorSource = SectorSource.LLM),
+      )
+    val duplicate =
+      etfHoldingRepository.save(
+        EtfHolding(name = "Deutsche Post AG", sector = IndustrySector.MOBILITY, sectorSource = SectorSource.LIGHTYEAR),
+      )
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    expect(etfHoldingRepository.findAll().single().sector).toEqual(IndustrySector.MOBILITY)
+  }
+
+  @Test
+  fun `cannot replace lightyear classified canonical sector with the sector of a duplicate`() {
+    val canonical =
+      etfHoldingRepository.save(
+        EtfHolding(name = "Deutsche Post", sector = IndustrySector.MOBILITY, sectorSource = SectorSource.LIGHTYEAR),
+      )
+    val duplicate =
+      etfHoldingRepository.save(
+        EtfHolding(name = "Deutsche Post AG", sector = IndustrySector.INDUSTRIALS, sectorSource = SectorSource.LIGHTYEAR),
+      )
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    expect(etfHoldingRepository.findAll().single().sector).toEqual(IndustrySector.MOBILITY)
   }
 
   @Test

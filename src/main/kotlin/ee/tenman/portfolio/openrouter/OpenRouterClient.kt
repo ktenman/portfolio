@@ -153,7 +153,7 @@ class OpenRouterClient(
   }
 
   companion object {
-    private const val DEFAULT_MAX_TOKENS = 4000
+    private const val DEFAULT_MAX_TOKENS = 8000
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3
   }

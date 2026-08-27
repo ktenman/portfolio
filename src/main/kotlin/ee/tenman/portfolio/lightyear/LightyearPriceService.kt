@@ -3,6 +3,7 @@ package ee.tenman.portfolio.lightyear
 import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.currency.CurrencyConversionService
@@ -81,6 +82,7 @@ class LightyearPriceService(
         weight = weightPercentage,
         rank = index + 1,
         logoUrl = instrument?.logo,
+        sectorSource = SectorSource.LIGHTYEAR,
       )
     }
   }

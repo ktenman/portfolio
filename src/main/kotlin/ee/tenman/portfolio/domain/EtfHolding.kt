@@ -54,4 +54,7 @@ class EtfHolding(
   fun applyNameBlockKey() {
     nameBlockKey = HoldingBlockKey.of(name)
   }
+
+  fun acceptsSectorFrom(source: SectorSource?): Boolean =
+    sector == null || (source == SectorSource.LIGHTYEAR && sectorSource == SectorSource.LLM)
 }
