@@ -34,7 +34,7 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     """
     SELECT h FROM EtfHolding h
     JOIN EtfPosition ep ON ep.holding.id = h.id
-    WHERE (h.sectorSource IS NULL OR h.sectorSource <> ee.tenman.portfolio.domain.SectorSource.LLM)
+    WHERE h.sector IS NULL
       AND h.sectorFetchAttempts < :maxAttempts
     GROUP BY h.id
     ORDER BY MAX(ep.weightPercentage) DESC

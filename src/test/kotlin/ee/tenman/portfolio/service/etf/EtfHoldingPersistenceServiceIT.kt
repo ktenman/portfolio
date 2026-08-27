@@ -393,7 +393,7 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
-  fun `should findUnclassifiedHoldingIds include lightyear sourced sectors and exclude llm classified`() {
+  fun `should findUnclassifiedHoldingIds exclude lightyear sourced and llm classified sectors`() {
     val date = LocalDate.of(2024, 7, 1)
     etfHoldingPersistenceService.saveHoldings(
       "VWCE",
@@ -401,6 +401,7 @@ class EtfHoldingPersistenceServiceIT {
       listOf(
         HoldingData(name = "NVIDIA Corp", ticker = "NVDA", sector = "Industrials", weight = BigDecimal("7.00"), rank = 1),
         HoldingData(name = "Microsoft Corp", ticker = "MSFT", sector = "Industrials", weight = BigDecimal("6.00"), rank = 2),
+        HoldingData(name = "Tundmatu Ühistu OÜ", ticker = "TUND", sector = null, weight = BigDecimal("1.00"), rank = 3),
       ),
     )
     val microsoftId = etfHoldingRepository.findAll().first { it.name == "Microsoft Corp" }.id
@@ -408,8 +409,8 @@ class EtfHoldingPersistenceServiceIT {
 
     val unclassifiedIds = etfHoldingPersistenceService.findUnclassifiedHoldingIds()
 
-    val nvidiaId = etfHoldingRepository.findAll().first { it.name == "NVIDIA Corp" }.id
-    expect(unclassifiedIds).toContainExactly(nvidiaId)
+    val unknownId = etfHoldingRepository.findAll().first { it.name == "Tundmatu Ühistu OÜ" }.id
+    expect(unclassifiedIds).toContainExactly(unknownId)
   }
 
   @Test
