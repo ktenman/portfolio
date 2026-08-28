@@ -29,6 +29,7 @@ class EtfHoldingsClassificationJob(
     private const val BATCH_SIZE = 100
   }
 
+  @Scheduled(initialDelay = 180000, fixedDelay = Long.MAX_VALUE)
   @Scheduled(cron = "\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}")
   fun runJob() {
     log.info("Running ETF holdings classification job")
