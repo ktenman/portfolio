@@ -19,6 +19,9 @@ import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.NullSource
+import org.junit.jupiter.params.provider.ValueSource
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
@@ -228,6 +231,32 @@ class DailyPriceServiceTest {
     val result = dailyPriceService.getCurrentPrice(createCashInstrument(currentPrice = null))
 
     expect(result).toEqualNumerically(BigDecimal.ONE)
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = ["0"])
+  fun `should getCurrentPrice fall back to last stored close when live price is missing`(price: String?) {
+    testInstrument.currentPrice = price?.let { BigDecimal(it) }
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(testInstrument, any(), any())
+    } returns createDailyPrice(closePrice = BigDecimal("120"))
+
+    val result = dailyPriceService.getCurrentPrice(testInstrument)
+
+    expect(result).toEqualNumerically(BigDecimal("120"))
+  }
+
+  @Test
+  fun `should getCurrentPrice return zero when neither live price nor stored close exists`() {
+    testInstrument.currentPrice = null
+    every {
+      dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(testInstrument, any(), any())
+    } returns null
+
+    val result = dailyPriceService.getCurrentPrice(testInstrument)
+
+    expect(result).toEqualNumerically(BigDecimal.ZERO)
   }
 
   private fun createDailyPrice(
