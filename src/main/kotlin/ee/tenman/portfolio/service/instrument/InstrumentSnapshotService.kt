@@ -16,7 +16,9 @@ import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
+import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.PriceChangeService
+import ee.tenman.portfolio.service.pricing.PriceLookup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -32,6 +34,7 @@ class InstrumentSnapshotService(
   private val priceChangeService: PriceChangeService,
   private val xirrCalculationService: XirrCalculationService,
   private val holdingsCalculationService: HoldingsCalculationService,
+  private val dailyPriceService: DailyPriceService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -55,6 +58,7 @@ class InstrumentSnapshotService(
   ): InstrumentSnapshotsWithPortfolioXirr {
     val instruments = instrumentRepository.findAll().toList()
     val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
+    val priceLookup = dailyPriceService.buildPriceLookup(instruments)
     val context =
       InstrumentEnrichmentContext(
         calculationDate = LocalDate.now(clock),
@@ -65,7 +69,7 @@ class InstrumentSnapshotService(
     instruments.forEach { instrument ->
       val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
       val filteredTransactions = filterTransactionsByPlatforms(allTransactions, context.targetPlatforms)
-      val snapshot = enrichInstrumentWithMetrics(instrument, transactionsByInstrument, context)
+      val snapshot = enrichInstrumentWithMetrics(instrument, transactionsByInstrument, context, priceLookup)
       if (snapshot != null && filteredTransactions.isNotEmpty()) {
         snapshotsWithTransactions.add(snapshot to filteredTransactions)
       } else if (snapshot != null) {
@@ -105,13 +109,14 @@ class InstrumentSnapshotService(
     instrument: Instrument,
     transactionsByInstrument: Map<Long, List<PortfolioTransaction>>,
     context: InstrumentEnrichmentContext,
+    priceLookup: PriceLookup,
   ): InstrumentSnapshot? {
     val allTransactions = transactionsByInstrument[instrument.id] ?: emptyList()
     val filteredTransactions = filterTransactionsByPlatforms(allTransactions, context.targetPlatforms)
     if (filteredTransactions.isEmpty()) {
       return if (context.targetPlatforms == null) InstrumentSnapshot(instrument) else null
     }
-    return createInstrumentSnapshot(instrument, filteredTransactions, context)
+    return createInstrumentSnapshot(instrument, filteredTransactions, context, priceLookup)
   }
 
   private fun filterTransactionsByPlatforms(
@@ -128,9 +133,15 @@ class InstrumentSnapshotService(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
     context: InstrumentEnrichmentContext,
+    priceLookup: PriceLookup,
   ): InstrumentSnapshot? {
     val metrics =
-      investmentMetricsService.calculateInstrumentMetricsWithProfits(instrument, transactions, context.calculationDate)
+      investmentMetricsService.calculateInstrumentMetricsWithProfits(
+        instrument,
+        transactions,
+        context.calculationDate,
+        priceLookup,
+      )
     val priceChange = calculatePriceChange(instrument, transactions, metrics, context)
     if (metrics.quantity.compareTo(BigDecimal.ZERO) == 0 && metrics.realizedProfit.compareTo(BigDecimal.ZERO) == 0) return null
     val firstTransactionDate = transactions.minOfOrNull { it.transactionDate }
