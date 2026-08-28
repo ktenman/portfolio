@@ -189,7 +189,7 @@ class InstrumentControllerIT {
         transactionType = TransactionType.BUY,
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
-        transactionDate = LocalDate.now().minusDays(1),
+        transactionDate = LocalDate.of(2024, 7, 1),
         platform = Platform.LIGHTYEAR,
       ),
     )
