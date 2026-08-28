@@ -148,11 +148,13 @@ class InvestmentMetricsService(
     instrument: Instrument,
     date: LocalDate,
     priceLookup: PriceLookup?,
-  ): BigDecimal? =
-    instrument.cashPriceOrNull()
-      ?: runCatching { resolvePrice(instrument, date, priceLookup) }
-        .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
-        .getOrNull()
+  ): BigDecimal? {
+    instrument.cashPriceOrNull()?.let { return it }
+    if (priceLookup != null) return priceLookup.priceOnOrBefore(instrument.id, date)
+    return runCatching { dailyPriceService.getPrice(instrument, date) }
+      .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
+      .getOrNull()
+  }
 
   private fun processZeroQuantityFallback(
     transactions: List<PortfolioTransaction>,
