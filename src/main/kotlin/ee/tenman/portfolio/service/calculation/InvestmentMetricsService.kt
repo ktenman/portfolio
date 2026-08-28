@@ -44,11 +44,12 @@ class InvestmentMetricsService(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
     calculationDate: LocalDate? = null,
+    priceLookup: PriceLookup? = null,
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
     val effectiveDate = calculationDate ?: LocalDate.now(clock)
     val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
-    val currentPrice = getEffectivePrice(instrument)
+    val currentPrice = getEffectivePrice(instrument, priceLookup)
     val currentValue = holdingsCalculationService.calculateCurrentValue(aggregated.totalQuantity, currentPrice)
     val realizedProfit = calculateRealizedProfit(transactions)
     val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
@@ -68,17 +69,21 @@ class InvestmentMetricsService(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
     calculationDate: LocalDate? = null,
+    priceLookup: PriceLookup? = null,
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
     val effectiveDate = calculationDate ?: LocalDate.now(clock)
-    val currentPrice = getEffectivePrice(instrument)
+    val currentPrice = getEffectivePrice(instrument, priceLookup)
     transactionService.calculateTransactionProfits(transactions, currentPrice)
-    return calculateInstrumentMetrics(instrument, transactions, effectiveDate)
+    return calculateInstrumentMetrics(instrument, transactions, effectiveDate, priceLookup)
   }
 
-  private fun getEffectivePrice(instrument: Instrument): BigDecimal =
+  private fun getEffectivePrice(
+    instrument: Instrument,
+    priceLookup: PriceLookup? = null,
+  ): BigDecimal =
     livePrice(instrument)
-      ?: getEffectivePriceForDate(instrument, LocalDate.now(clock), null)
+      ?: getEffectivePriceForDate(instrument, LocalDate.now(clock), priceLookup)
       ?: BigDecimal.ZERO
 
   private fun livePrice(instrument: Instrument): BigDecimal? =
@@ -143,11 +148,13 @@ class InvestmentMetricsService(
     instrument: Instrument,
     date: LocalDate,
     priceLookup: PriceLookup?,
-  ): BigDecimal? =
-    instrument.cashPriceOrNull()
-      ?: runCatching { resolvePrice(instrument, date, priceLookup) }
-        .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
-        .getOrNull()
+  ): BigDecimal? {
+    instrument.cashPriceOrNull()?.let { return it }
+    if (priceLookup != null) return priceLookup.priceOnOrBefore(instrument.id, date)
+    return runCatching { dailyPriceService.getPrice(instrument, date) }
+      .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
+      .getOrNull()
+  }
 
   private fun processZeroQuantityFallback(
     transactions: List<PortfolioTransaction>,

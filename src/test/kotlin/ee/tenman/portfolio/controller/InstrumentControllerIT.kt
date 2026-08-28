@@ -10,8 +10,12 @@ import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import jakarta.annotation.Resource
 import jakarta.servlet.http.Cookie
 import net.datafaker.Faker
@@ -28,6 +32,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.math.BigDecimal
+import java.time.LocalDate
 
 private val DEFAULT_COOKIE = Cookie("AUTHSESSION", "NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz")
 
@@ -43,6 +49,9 @@ class InstrumentControllerIT {
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
+
+  @Resource
+  private lateinit var portfolioTransactionRepository: PortfolioTransactionRepository
 
   @BeforeEach
   fun setup() {
@@ -169,5 +178,25 @@ class InstrumentControllerIT {
       .andExpect(status().isNoContent)
 
     expect(instrumentRepository.findById(savedInstrument.id).isEmpty).toEqual(true)
+  }
+
+  @Test
+  fun `should return instruments when a holding has no live price and no stored close`() {
+    val instrument = instrumentRepository.save(randomInstrument())
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.of(2024, 7, 1),
+        platform = Platform.LIGHTYEAR,
+      ),
+    )
+
+    mockMvc
+      .perform(get("/api/instruments").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.instruments[0].symbol").value(instrument.symbol))
   }
 }
