@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.service.calculation
 
-import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.transaction.TransactionService
@@ -27,10 +26,6 @@ abstract class InvestmentMetricsTestBase : CashFlowTestBase() {
 
   @BeforeEach
   fun setUp() {
-    every { dailyPriceService.getCurrentPrice(any()) } answers {
-      val instrument = firstArg<Instrument>()
-      instrument.cashPriceOrNull() ?: instrument.currentPrice ?: BigDecimal.ZERO
-    }
     every { transactionService.calculateTransactionProfits(any(), any()) } answers {
       val transactions = firstArg<List<PortfolioTransaction>>()
       transactions.forEach {

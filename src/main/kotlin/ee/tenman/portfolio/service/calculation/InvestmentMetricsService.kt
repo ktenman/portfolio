@@ -44,29 +44,12 @@ class InvestmentMetricsService(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
     calculationDate: LocalDate? = null,
+    priceLookup: PriceLookup? = null,
   ): InstrumentMetrics {
     if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
-    val currentPrice = dailyPriceService.getCurrentPrice(instrument)
-    return buildMetrics(transactions, currentPrice, calculationDate ?: LocalDate.now(clock))
-  }
-
-  fun calculateInstrumentMetricsWithProfits(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
-    calculationDate: LocalDate? = null,
-  ): InstrumentMetrics {
-    if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
-    val currentPrice = dailyPriceService.getCurrentPrice(instrument)
-    transactionService.calculateTransactionProfits(transactions, currentPrice)
-    return buildMetrics(transactions, currentPrice, calculationDate ?: LocalDate.now(clock))
-  }
-
-  private fun buildMetrics(
-    transactions: List<PortfolioTransaction>,
-    currentPrice: BigDecimal,
-    effectiveDate: LocalDate,
-  ): InstrumentMetrics {
+    val effectiveDate = calculationDate ?: LocalDate.now(clock)
     val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
+    val currentPrice = getEffectivePrice(instrument, priceLookup)
     val currentValue = holdingsCalculationService.calculateCurrentValue(aggregated.totalQuantity, currentPrice)
     val realizedProfit = calculateRealizedProfit(transactions)
     val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
@@ -81,6 +64,31 @@ class InvestmentMetricsService(
       quantity = aggregated.totalQuantity,
     )
   }
+
+  fun calculateInstrumentMetricsWithProfits(
+    instrument: Instrument,
+    transactions: List<PortfolioTransaction>,
+    calculationDate: LocalDate? = null,
+    priceLookup: PriceLookup? = null,
+  ): InstrumentMetrics {
+    if (transactions.isEmpty()) return InstrumentMetrics.EMPTY
+    val effectiveDate = calculationDate ?: LocalDate.now(clock)
+    val currentPrice = getEffectivePrice(instrument, priceLookup)
+    transactionService.calculateTransactionProfits(transactions, currentPrice)
+    return calculateInstrumentMetrics(instrument, transactions, effectiveDate, priceLookup)
+  }
+
+  private fun getEffectivePrice(
+    instrument: Instrument,
+    priceLookup: PriceLookup? = null,
+  ): BigDecimal =
+    livePrice(instrument)
+      ?: getEffectivePriceForDate(instrument, LocalDate.now(clock), priceLookup)
+      ?: BigDecimal.ZERO
+
+  private fun livePrice(instrument: Instrument): BigDecimal? =
+    instrument.cashPriceOrNull()
+      ?: instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
 
   fun calculatePortfolioMetrics(
     instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
@@ -140,11 +148,13 @@ class InvestmentMetricsService(
     instrument: Instrument,
     date: LocalDate,
     priceLookup: PriceLookup?,
-  ): BigDecimal? =
-    instrument.cashPriceOrNull()
-      ?: runCatching { resolvePrice(instrument, date, priceLookup) }
-        .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
-        .getOrNull()
+  ): BigDecimal? {
+    instrument.cashPriceOrNull()?.let { return it }
+    if (priceLookup != null) return priceLookup.priceOnOrBefore(instrument.id, date)
+    return runCatching { dailyPriceService.getPrice(instrument, date) }
+      .onFailure { log.warn("Skipping ${instrument.symbol} on $date: ${it.message}") }
+      .getOrNull()
+  }
 
   private fun processZeroQuantityFallback(
     transactions: List<PortfolioTransaction>,
@@ -174,8 +184,6 @@ class InvestmentMetricsService(
       isToday(date) -> currentHoldings.multiply(livePrice(instrument) ?: resolvePrice(instrument, date, priceLookup))
       else -> currentHoldings.multiply(resolvePrice(instrument, date, priceLookup))
     }
-
-  private fun livePrice(instrument: Instrument): BigDecimal? = instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
 
   private fun resolvePrice(
     instrument: Instrument,

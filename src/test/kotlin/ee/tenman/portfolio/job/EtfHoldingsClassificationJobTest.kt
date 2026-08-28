@@ -2,6 +2,7 @@ package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToThrow
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
@@ -275,15 +276,20 @@ class EtfHoldingsClassificationJobTest {
   }
 
   @Test
-  fun `should schedule runs only through weekly cron trigger with parseable default`() {
-    val cron =
+  fun `should schedule runs through boot trigger and weekly cron trigger with parseable default`() {
+    val annotations =
       EtfHoldingsClassificationJob::class.java
         .getMethod("runJob")
         .getAnnotationsByType(Scheduled::class.java)
-        .single()
-        .cron
-    CronExpression.parse(cron.substringAfter(":").removeSuffix("}"))
+        .toList()
+    expect(annotations).toHaveSize(2)
 
-    expect(cron).toEqual("\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}")
+    val cronTrigger = annotations.first { it.cron.isNotEmpty() }
+    CronExpression.parse(cronTrigger.cron.substringAfter(":").removeSuffix("}"))
+    expect(cronTrigger.cron).toEqual("\${scheduling.jobs.etf-holdings-classification-cron:0 0 3 * * SUN}")
+
+    val bootTrigger = annotations.first { it.cron.isEmpty() }
+    expect(bootTrigger.initialDelay).toEqual(180000L)
+    expect(bootTrigger.fixedDelay).toEqual(Long.MAX_VALUE)
   }
 }
