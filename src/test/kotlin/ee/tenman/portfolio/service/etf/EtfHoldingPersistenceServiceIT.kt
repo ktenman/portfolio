@@ -32,6 +32,9 @@ class EtfHoldingPersistenceServiceIT {
   private lateinit var etfHoldingPersistenceService: EtfHoldingPersistenceService
 
   @Resource
+  private lateinit var etfHoldingIndustryService: EtfHoldingIndustryService
+
+  @Resource
   private lateinit var instrumentRepository: InstrumentRepository
 
   @Resource
@@ -565,7 +568,7 @@ class EtfHoldingPersistenceServiceIT {
   fun `should updateIndustry store industry and model on the holding`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
 
-    etfHoldingPersistenceService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
+    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
     expect(updated.industry).toEqual(GicsIndustry.AEROSPACE_AND_DEFENSE)
@@ -576,8 +579,8 @@ class EtfHoldingPersistenceServiceIT {
   fun `should incrementIndustryFetchAttempts add one to the counter`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Mystery Öl AG", "MYS", null)
 
-    etfHoldingPersistenceService.incrementIndustryFetchAttempts(holding.id)
-    etfHoldingPersistenceService.incrementIndustryFetchAttempts(holding.id)
+    etfHoldingIndustryService.incrementIndustryFetchAttempts(holding.id)
+    etfHoldingIndustryService.incrementIndustryFetchAttempts(holding.id)
 
     expect(etfHoldingRepository.findById(holding.id).orElseThrow().industryFetchAttempts).toEqual(2)
   }
@@ -589,7 +592,7 @@ class EtfHoldingPersistenceServiceIT {
     etfPositionRepository.save(EtfPosition(etfInstrument = etfInstrument, holding = fresh, snapshotDate = LocalDate.of(2024, 7, 1), weightPercentage = BigDecimal("1.5")))
     etfPositionRepository.save(EtfPosition(etfInstrument = etfInstrument, holding = exhausted, snapshotDate = LocalDate.of(2024, 7, 1), weightPercentage = BigDecimal("9.0")))
 
-    val ids = etfHoldingPersistenceService.findUnclassifiedByIndustryHoldingIds()
+    val ids = etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds()
 
     expect(ids).toEqual(listOf(fresh.id))
   }

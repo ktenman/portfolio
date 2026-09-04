@@ -25,7 +25,7 @@ class EtfHoldingIndustryService(
   fun updateIndustry(
     holdingId: Long,
     industry: GicsIndustry,
-    classifiedByModel: AiModel? = null,
+    classifiedByModel: AiModel?,
   ) {
     val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
     holding.industry = industry
