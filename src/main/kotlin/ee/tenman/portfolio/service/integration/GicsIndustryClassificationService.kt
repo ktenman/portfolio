@@ -32,7 +32,9 @@ class GicsIndustryClassificationService(
         log.warn("Batch industry classification failed for ${validCompanies.size} companies")
         return BatchClassificationOutcome(emptyMap(), false)
       }
-    return BatchClassificationOutcome(parse(response.content, validCompanies, response.model), true)
+    val results = parse(response.content, validCompanies, response.model)
+    if (results.isEmpty()) log.warn("Batch industry classification returned no parsable lines for ${validCompanies.size} companies")
+    return BatchClassificationOutcome(results, results.isNotEmpty())
   }
 
   private fun buildPrompt(companies: List<CompanyClassificationInput>): String {
@@ -80,6 +82,6 @@ class GicsIndustryClassificationService(
       }.toMap()
 
   private companion object {
-    val LINE_PATTERN = Regex("^(\\d+)\\.?\\s*(\\d{6})\\b")
+    val LINE_PATTERN = Regex("^(\\d+)[.):]?\\s*(\\d{6})\\b")
   }
 }

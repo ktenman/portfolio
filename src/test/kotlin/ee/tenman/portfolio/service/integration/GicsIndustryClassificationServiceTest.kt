@@ -146,4 +146,26 @@ class GicsIndustryClassificationServiceTest {
     expect(outcome.results.keys).toHaveSize(0)
     expect(outcome.llmAnswered).toEqual(false)
   }
+
+  @Test
+  fun `should report the model as unanswered when no line parses`() {
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
+      OpenRouterClassificationResult(content = "| Company | Code |\n| Nvidia | 453010 |", model = AiModel.GPT_5_6_LUNA)
+
+    val outcome = service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA")))
+
+    expect(outcome.results.keys).toHaveSize(0)
+    expect(outcome.llmAnswered).toEqual(false)
+  }
+
+  @Test
+  fun `should accept a parenthesis or colon after the line number`() {
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
+      OpenRouterClassificationResult(content = "1) 453010\n2: 401010", model = AiModel.GPT_5_6_LUNA)
+
+    val results = service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA"), company(2L, "Santander", "SAN"))).results
+
+    expect(results[1L]?.industry).toEqual(GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT)
+    expect(results[2L]?.industry).toEqual(GicsIndustry.BANKS)
+  }
 }

@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.AiModel
@@ -17,6 +18,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -609,6 +611,11 @@ class EtfHoldingPersistenceServiceIT {
     val ids = etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds()
 
     expect(ids).toEqual(listOf(fresh.id))
+  }
+
+  @Test
+  fun `cannot updateIndustry a holding that does not exist`() {
+    expect { etfHoldingIndustryService.updateIndustry(999_999L, GicsIndustry.BANKS, null) }.toThrow<EntityNotFoundException>()
   }
 
   private fun feed(
