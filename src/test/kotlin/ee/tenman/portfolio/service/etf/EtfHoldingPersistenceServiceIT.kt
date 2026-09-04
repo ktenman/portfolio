@@ -9,6 +9,9 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
@@ -556,6 +559,39 @@ class EtfHoldingPersistenceServiceIT {
     expect(savedHoldings).toHaveSize(50)
     val positions = etfPositionRepository.findAll()
     expect(positions).toHaveSize(50)
+  }
+
+  @Test
+  fun `should updateIndustry store industry and model on the holding`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
+
+    etfHoldingPersistenceService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
+
+    val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
+    expect(updated.industry).toEqual(GicsIndustry.AEROSPACE_AND_DEFENSE)
+    expect(updated.industryClassifiedByModel).toEqual(AiModel.GPT_5_6_LUNA)
+  }
+
+  @Test
+  fun `should incrementIndustryFetchAttempts add one to the counter`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Mystery Öl AG", "MYS", null)
+
+    etfHoldingPersistenceService.incrementIndustryFetchAttempts(holding.id)
+    etfHoldingPersistenceService.incrementIndustryFetchAttempts(holding.id)
+
+    expect(etfHoldingRepository.findById(holding.id).orElseThrow().industryFetchAttempts).toEqual(2)
+  }
+
+  @Test
+  fun `should findUnclassifiedByIndustryHoldingIds skip holdings that reached the attempt cap`() {
+    val fresh = etfHoldingPersistenceService.findOrCreateHolding("Fresh Co", "FRS", null)
+    val exhausted = etfHoldingPersistenceService.saveHolding(EtfHolding(name = "Exhausted Co", ticker = "EXH", industryFetchAttempts = 3))
+    etfPositionRepository.save(EtfPosition(etfInstrument = etfInstrument, holding = fresh, snapshotDate = LocalDate.of(2024, 7, 1), weightPercentage = BigDecimal("1.5")))
+    etfPositionRepository.save(EtfPosition(etfInstrument = etfInstrument, holding = exhausted, snapshotDate = LocalDate.of(2024, 7, 1), weightPercentage = BigDecimal("9.0")))
+
+    val ids = etfHoldingPersistenceService.findUnclassifiedByIndustryHoldingIds()
+
+    expect(ids).toEqual(listOf(fresh.id))
   }
 
   private fun feed(

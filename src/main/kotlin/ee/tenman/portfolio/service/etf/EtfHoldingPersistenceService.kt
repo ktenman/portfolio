@@ -5,6 +5,7 @@ import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.HoldingBlockKey
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
@@ -24,6 +25,7 @@ class EtfHoldingPersistenceService(
   private val instrumentRepository: InstrumentRepository,
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
+  private val etfHoldingIndustryService: EtfHoldingIndustryService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -168,6 +170,8 @@ class EtfHoldingPersistenceService(
       .findUnclassifiedCountryHoldings(maxAttempts)
       .map { it.id }
 
+  fun findUnclassifiedByIndustryHoldingIds(): List<Long> = etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds()
+
   companion object {
     const val MAX_COUNTRY_FETCH_ATTEMPTS = 3
     const val MAX_SECTOR_FETCH_ATTEMPTS = 3
@@ -234,6 +238,14 @@ class EtfHoldingPersistenceService(
     etfHoldingRepository.save(holding)
     log.info("Incremented sector fetch attempts for holding id=$holdingId to ${holding.sectorFetchAttempts}")
   }
+
+  fun updateIndustry(
+    holdingId: Long,
+    industry: GicsIndustry,
+    classifiedByModel: AiModel? = null,
+  ) = etfHoldingIndustryService.updateIndustry(holdingId, industry, classifiedByModel)
+
+  fun incrementIndustryFetchAttempts(holdingId: Long) = etfHoldingIndustryService.incrementIndustryFetchAttempts(holdingId)
 
   private fun findOrCreateEtf(symbol: String): Instrument =
     instrumentRepository.findBySymbol(symbol).orElseGet {
