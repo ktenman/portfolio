@@ -67,21 +67,17 @@ class GicsIndustryClassificationService(
     content: String?,
     companies: List<CompanyClassificationInput>,
     model: AiModel?,
-  ): Map<Long, GicsIndustryClassificationResult> {
-    if (content.isNullOrBlank()) return emptyMap()
-    val results = mutableMapOf<Long, GicsIndustryClassificationResult>()
-    content.lines().forEach { line ->
-      val match = LINE_PATTERN.find(line.trim()) ?: return@forEach
-      val index = match.groupValues[1].toInt() - 1
-      if (index !in companies.indices) return@forEach
-      val industry = GicsIndustry.fromCode(match.groupValues[2].toInt()) ?: return@forEach
-      results[companies[index].holdingId] = GicsIndustryClassificationResult(industry = industry, model = model)
-    }
-    if (results.size < companies.size / 2) {
-      log.warn("Low parse success rate for industry batch: ${results.size}/${companies.size}")
-    }
-    return results
-  }
+  ): Map<Long, GicsIndustryClassificationResult> =
+    content
+      .orEmpty()
+      .lines()
+      .mapNotNull { line ->
+        val match = LINE_PATTERN.find(line.trim()) ?: return@mapNotNull null
+        val index = match.groupValues[1].toIntOrNull()?.minus(1) ?: return@mapNotNull null
+        val company = companies.getOrNull(index) ?: return@mapNotNull null
+        val industry = GicsIndustry.fromCode(match.groupValues[2].toInt()) ?: return@mapNotNull null
+        company.holdingId to GicsIndustryClassificationResult(industry = industry, model = model)
+      }.toMap()
 
   private companion object {
     val LINE_PATTERN = Regex("^(\\d+)\\.?\\s*(\\d{6})\\b")
