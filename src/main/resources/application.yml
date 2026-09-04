@@ -159,6 +159,7 @@ scheduling:
     trading212-interval: ${TRADING212_JOB_INTERVAL:60000}
     etf-holdings-classification-cron: ${ETF_HOLDINGS_CLASSIFICATION_CRON:0 0 3 * * SUN}
     etf-country-classification-cron: ${ETF_COUNTRY_CLASSIFICATION_CRON:0 30 4 * * *}
+    etf-industry-classification-cron: ${ETF_INDUSTRY_CLASSIFICATION_CRON:0 0 4 * * SUN}
     price-snapshot-cleanup-cron: ${PRICE_SNAPSHOT_CLEANUP_CRON:0 0 4 * * *}
     price-snapshot-retention-days: ${PRICE_SNAPSHOT_RETENTION_DAYS:30}
 
