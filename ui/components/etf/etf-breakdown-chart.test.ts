@@ -132,6 +132,102 @@ describe('EtfBreakdownChart', () => {
       expect(legendColors[1].attributes('style')).toContain('background-color: #E69F00')
       expect(legendColors[2].attributes('style')).toContain('background-color: #009E73')
     })
+
+    it('should show the benchmark share and ratio under a compared item', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [
+            {
+              label: 'Banks',
+              value: 9.2,
+              percentage: '9.20',
+              color: '#0072B2',
+              benchmark: 4,
+              ratio: 2.3,
+            },
+          ],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.3x')
+    })
+
+    it('should flag a ratio above 2', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [
+            {
+              label: 'Banks',
+              value: 9.2,
+              percentage: '9.20',
+              color: '#0072B2',
+              benchmark: 4,
+              ratio: 2.3,
+            },
+          ],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).toContain('flagged')
+    })
+
+    it('should flag a ratio below 0.5', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [
+            {
+              label: 'Software',
+              value: 2,
+              percentage: '2.00',
+              color: '#0072B2',
+              benchmark: 10,
+              ratio: 0.2,
+            },
+          ],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).toContain('flagged')
+    })
+
+    it('should not flag a ratio inside the half-to-double band', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [
+            {
+              label: 'Banks',
+              value: 5,
+              percentage: '5.00',
+              color: '#0072B2',
+              benchmark: 4,
+              ratio: 1.25,
+            },
+          ],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).not.toContain('flagged')
+    })
+
+    it('should omit the ratio when the benchmark has no weight', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [
+            { label: 'Banks', value: 5, percentage: '5.00', color: '#0072B2', benchmark: 0 },
+          ],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 0.00%')
+    })
+
+    it('should not render a benchmark line for items without a benchmark', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: mockChartData },
+      })
+
+      expect(wrapper.find('.legend-benchmark').exists()).toBe(false)
+    })
   })
 
   describe('empty state', () => {
