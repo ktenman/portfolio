@@ -325,12 +325,9 @@ class EtfBreakdownServiceTest {
     val holding = createHolding(1L, "BTCEUR", "Bitcoin (Trezor)", IndustrySector.CRYPTOCURRENCY, GicsIndustry.FINANCIAL_SERVICES)
     val position = createPosition(trezor, holding, BigDecimal("100.0000"), testDate)
     val btcTransaction = createCashFlow(btcInstrument, BigDecimal("1"), BigDecimal("50000"))
-    every { instrumentRepository.findByProviderNameIn(any()) } returns listOf(trezor)
-    every { etfPositionRepository.findLatestPositionsByEtfIds(any()) } returns listOf(position)
+    setupMocksForBatchLoading(listOf(trezor), listOf(position), listOf(btcTransaction))
     every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position)
-    every { transactionRepository.findAllByInstrumentIds(any()) } returns listOf(btcTransaction)
     every { instrumentRepository.findBySymbolIn(listOf("BTCEUR")) } returns listOf(btcInstrument)
-    every { dailyPriceService.getCurrentPrice(any()) } answers { firstArg<Instrument>().currentPrice ?: BigDecimal("100") }
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
