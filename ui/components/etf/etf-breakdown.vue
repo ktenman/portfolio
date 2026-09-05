@@ -342,14 +342,19 @@ const benchmarkLabel = computed(() => {
   return getSymbolOnly(symbol)
 })
 
-const loadBenchmark = async () => {
+let benchmarkRequest: Promise<void> | null = null
+
+const loadBenchmark = () => {
   const symbol = benchmarkSymbol.value
-  if (!symbol || benchmarkHoldings.value.length > 0) return
-  try {
-    benchmarkHoldings.value = await etfBreakdownService.getBreakdown([symbol], undefined)
-  } catch {
-    benchmarkHoldings.value = []
-  }
+  if (!symbol || benchmarkRequest) return
+  benchmarkRequest = etfBreakdownService
+    .getBreakdown([symbol], undefined)
+    .then(rows => {
+      benchmarkHoldings.value = rows
+    })
+    .catch(() => {
+      benchmarkHoldings.value = []
+    })
 }
 
 watch([activeTab, benchmarkSymbol], () => {

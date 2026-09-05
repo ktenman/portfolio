@@ -373,6 +373,28 @@ describe('etf-breakdown', () => {
     expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBeUndefined()
   })
 
+  it('does not fetch the benchmark again while the first request is still in flight', async () => {
+    const holdings = withBenchmarkFund()
+    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(etfs =>
+      etfs?.[0] === 'WEBN:GER:EUR' ? new Promise(() => {}) : Promise.resolve(holdings)
+    )
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await clickTab(wrapper, 'Sectors')
+    await clickTab(wrapper, 'Industries')
+
+    const benchmarkCalls = vi
+      .mocked(etfBreakdownService.getBreakdown)
+      .mock.calls.filter(([etfs]) => etfs?.[0] === 'WEBN:GER:EUR')
+    expect(benchmarkCalls).toHaveLength(1)
+  })
+
   it('matches the search query against the industry', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
     vi.mocked(instrumentsService.getAll).mockResolvedValue({
