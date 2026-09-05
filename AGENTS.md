@@ -157,6 +157,8 @@ Strong success criteria let the agent loop independently via tools (tests, type 
 
 ## Core Development Philosophy
 
+NEVER commit anything under `docs/superpowers/` (specs, plans, SDD ledgers). They are local working documents and `.gitignore` excludes them; do not `git add -f` them and do not include them in pull requests.
+
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.

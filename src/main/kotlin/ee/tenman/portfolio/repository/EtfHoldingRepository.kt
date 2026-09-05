@@ -48,6 +48,20 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     """
     SELECT h FROM EtfHolding h
     JOIN EtfPosition ep ON ep.holding.id = h.id
+    WHERE h.industry IS NULL
+      AND h.industryFetchAttempts < :maxAttempts
+    GROUP BY h.id
+    ORDER BY MAX(ep.weightPercentage) DESC
+  """,
+  )
+  fun findUnclassifiedIndustryHoldings(
+    @Param("maxAttempts") maxAttempts: Int,
+  ): List<EtfHolding>
+
+  @Query(
+    """
+    SELECT h FROM EtfHolding h
+    JOIN EtfPosition ep ON ep.holding.id = h.id
     WHERE (h.countryCode IS NULL OR h.countryCode = '')
       AND h.countryFetchAttempts < :maxAttempts
     GROUP BY h.id
