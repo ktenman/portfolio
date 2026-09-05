@@ -31,6 +31,15 @@ describe('EtfBreakdownChart', () => {
     { label: 'Google', value: 15.2, percentage: '15.20', color: '#009E73' },
   ]
 
+  const comparedItem: ChartDataItem = {
+    label: 'Banks',
+    value: 9.2,
+    percentage: '9.20',
+    color: '#0072B2',
+    benchmark: 4,
+    ratio: 2.3,
+  }
+
   const buildItems = (count: number): ChartDataItem[] =>
     Array.from({ length: count }, (_, index) => ({
       label: `Item ${index + 1}`,
@@ -135,18 +144,7 @@ describe('EtfBreakdownChart', () => {
 
     it('should show the benchmark share and ratio under a compared item', () => {
       const wrapper = mount(EtfBreakdownChart, {
-        props: {
-          chartData: [
-            {
-              label: 'Banks',
-              value: 9.2,
-              percentage: '9.20',
-              color: '#0072B2',
-              benchmark: 4,
-              ratio: 2.3,
-            },
-          ],
-        },
+        props: { chartData: [comparedItem] },
       })
 
       expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.3x')
@@ -154,18 +152,7 @@ describe('EtfBreakdownChart', () => {
 
     it('should flag a ratio above 2', () => {
       const wrapper = mount(EtfBreakdownChart, {
-        props: {
-          chartData: [
-            {
-              label: 'Banks',
-              value: 9.2,
-              percentage: '9.20',
-              color: '#0072B2',
-              benchmark: 4,
-              ratio: 2.3,
-            },
-          ],
-        },
+        props: { chartData: [comparedItem] },
       })
 
       expect(wrapper.find('.legend-benchmark').classes()).toContain('flagged')
