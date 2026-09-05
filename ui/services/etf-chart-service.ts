@@ -7,6 +7,8 @@ export interface ChartDataItem {
   percentage: string
   color: string
   code?: string
+  benchmark?: number
+  ratio?: number
 }
 
 const TOP_COUNT = 15
@@ -37,6 +39,55 @@ export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartD
       ...item,
       color: DONUT_COLORS[index % DONUT_COLORS.length],
     }))
+}
+
+const MIN_BENCHMARK_SHARE = 0.005
+
+const sumByIndustry = (holdings: EtfHoldingBreakdownDto[]): Map<string, number> =>
+  holdings.reduce((totals, holding) => {
+    const label = holding.holdingIndustry ?? 'Unclassified'
+    return totals.set(label, (totals.get(label) ?? 0) + holding.percentageOfTotal)
+  }, new Map<string, number>())
+
+const residual = (totals: Map<string, number>, shown: Set<string>): number =>
+  Array.from(totals.entries())
+    .filter(([label]) => !shown.has(label))
+    .reduce((sum, [, value]) => sum + value, 0)
+
+const toChartItem = (label: string, value: number, index: number): ChartDataItem => ({
+  label,
+  value,
+  percentage: value.toFixed(2),
+  color: DONUT_COLORS[index % DONUT_COLORS.length],
+})
+
+export function buildIndustryChartData(
+  holdings: EtfHoldingBreakdownDto[],
+  benchmark: EtfHoldingBreakdownDto[] = []
+): ChartDataItem[] {
+  const totals = sumByIndustry(holdings)
+  const shown = Array.from(totals.entries())
+    .sort((a, b) => b[1] - a[1])
+    .filter(([, value]) => value >= SECTOR_MIN_PERCENTAGE)
+    .slice(0, TOP_COUNT)
+  const shownLabels = new Set(shown.map(([label]) => label))
+  const benchmarkTotals = sumByIndustry(benchmark)
+  const compared = benchmark.length > 0
+  const items = shown.map(([label, value], index) => {
+    const item = toChartItem(label, value, index)
+    if (!compared) return item
+    const share = benchmarkTotals.get(label) ?? 0
+    return {
+      ...item,
+      benchmark: share,
+      ratio: share >= MIN_BENCHMARK_SHARE ? value / share : undefined,
+    }
+  })
+  const other = residual(totals, shownLabels)
+  const benchmarkOther = residual(benchmarkTotals, shownLabels)
+  if (other === 0 && benchmarkOther === 0) return items
+  const otherItem = toChartItem('Other', other, items.length)
+  return [...items, compared ? { ...otherItem, benchmark: benchmarkOther } : otherItem]
 }
 
 export function buildCompanyChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
