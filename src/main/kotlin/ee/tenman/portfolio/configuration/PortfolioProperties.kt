@@ -31,6 +31,7 @@ data class BatchLogoValidationProperties(
 @ConfigurationProperties(prefix = "industry-classification")
 data class IndustryClassificationProperties(
   val enabled: Boolean = true,
+  val gicsEnabled: Boolean = true,
   val rateLimitBufferMs: Long = 100L,
 )
 

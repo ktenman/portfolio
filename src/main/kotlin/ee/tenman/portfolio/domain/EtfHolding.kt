@@ -44,6 +44,14 @@ class EtfHolding(
   @Column(name = "sector_fetch_attempts", nullable = false)
   var sectorFetchAttempts: Int = 0,
   @Enumerated(EnumType.STRING)
+  @Column(name = "industry", length = 150)
+  var industry: GicsIndustry? = null,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "industry_classified_by_model", length = 100)
+  var industryClassifiedByModel: AiModel? = null,
+  @Column(name = "industry_fetch_attempts", nullable = false)
+  var industryFetchAttempts: Int = 0,
+  @Enumerated(EnumType.STRING)
   @Column(name = "logo_source", length = 20)
   var logoSource: LogoSource? = null,
   @Column(name = "name_block_key", length = 255)

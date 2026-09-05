@@ -6,14 +6,19 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.exception.EntityNotFoundException
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -27,6 +32,9 @@ import java.time.LocalDate
 class EtfHoldingPersistenceServiceIT {
   @Resource
   private lateinit var etfHoldingPersistenceService: EtfHoldingPersistenceService
+
+  @Resource
+  private lateinit var etfHoldingIndustryService: EtfHoldingIndustryService
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
@@ -556,6 +564,83 @@ class EtfHoldingPersistenceServiceIT {
     expect(savedHoldings).toHaveSize(50)
     val positions = etfPositionRepository.findAll()
     expect(positions).toHaveSize(50)
+  }
+
+  @Test
+  fun `should updateIndustry store industry and model on the holding`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
+
+    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
+
+    val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
+    expect(updated.industry).toEqual(GicsIndustry.AEROSPACE_AND_DEFENSE)
+    expect(updated.industryClassifiedByModel).toEqual(AiModel.GPT_5_6_LUNA)
+  }
+
+  @Test
+  fun `should incrementIndustryFetchAttempts add one to the counter`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Mystery Öl AG", "MYS", null)
+
+    etfHoldingIndustryService.incrementIndustryFetchAttempts(holding.id)
+    etfHoldingIndustryService.incrementIndustryFetchAttempts(holding.id)
+
+    expect(etfHoldingRepository.findById(holding.id).orElseThrow().industryFetchAttempts).toEqual(2)
+  }
+
+  @Test
+  fun `should findUnclassifiedByIndustry skip holdings that reached the attempt cap`() {
+    val fresh = etfHoldingPersistenceService.findOrCreateHolding("Fresh Co", "FRS", null)
+    val exhausted = etfHoldingPersistenceService.saveHolding(EtfHolding(name = "Exhausted Co", ticker = "EXH", industryFetchAttempts = 3))
+    etfPositionRepository.save(
+      EtfPosition(
+        etfInstrument = etfInstrument,
+        holding = fresh,
+        snapshotDate = LocalDate.of(2024, 7, 1),
+        weightPercentage = BigDecimal("1.5"),
+      ),
+    )
+    etfPositionRepository.save(
+      EtfPosition(
+        etfInstrument = etfInstrument,
+        holding = exhausted,
+        snapshotDate = LocalDate.of(2024, 7, 1),
+        weightPercentage = BigDecimal("9.0"),
+      ),
+    )
+
+    val holdings = etfHoldingIndustryService.findUnclassifiedByIndustry()
+
+    expect(holdings.map { it.id }).toEqual(listOf(fresh.id))
+  }
+
+  @Test
+  fun `should findUnclassifiedByIndustry return holdings heaviest first`() {
+    val small = etfHoldingPersistenceService.findOrCreateHolding("Small Co", "SML", null)
+    val mid = etfHoldingPersistenceService.findOrCreateHolding("Mid Co", "MID", null)
+    val big = etfHoldingPersistenceService.findOrCreateHolding("Big Co", "BIG", null)
+    position(small, LocalDate.of(2024, 7, 1), "0.5")
+    position(mid, LocalDate.of(2024, 7, 1), "3.0")
+    position(big, LocalDate.of(2024, 7, 1), "0.2")
+    position(big, LocalDate.of(2024, 7, 2), "9.0")
+
+    val ids = etfHoldingIndustryService.findUnclassifiedByIndustry().map { it.id }
+
+    expect(ids).toEqual(listOf(big.id, mid.id, small.id))
+  }
+
+  private fun position(
+    holding: EtfHolding,
+    snapshotDate: LocalDate,
+    weight: String,
+  ) {
+    etfPositionRepository.save(
+      EtfPosition(etfInstrument = etfInstrument, holding = holding, snapshotDate = snapshotDate, weightPercentage = BigDecimal(weight)),
+    )
+  }
+
+  @Test
+  fun `cannot updateIndustry a holding that does not exist`() {
+    expect { etfHoldingIndustryService.updateIndustry(999_999L, GicsIndustry.BANKS, null) }.toThrow<EntityNotFoundException>()
   }
 
   private fun feed(
