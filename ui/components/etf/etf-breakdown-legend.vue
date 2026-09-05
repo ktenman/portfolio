@@ -34,9 +34,10 @@
 <script lang="ts" setup>
 import type { ChartDataItem } from '../../services/etf-chart-service'
 
-defineProps<{
+const props = defineProps<{
   items: ChartDataItem[]
   activeIndex: number | null
+  benchmarkLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -45,8 +46,8 @@ const emit = defineEmits<{
 }>()
 
 const formatBenchmark = (item: ChartDataItem): string => {
-  const share = `vs ${(item.benchmark ?? 0).toFixed(2)}%`
-  return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(1)}x`
+  const share = `${props.benchmarkLabel ?? 'vs'} ${(item.benchmark ?? 0).toFixed(2)}%`
+  return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}x`
 }
 
 const isFlagged = (ratio: number | undefined): boolean =>

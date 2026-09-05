@@ -1,8 +1,6 @@
 import type { EtfHoldingBreakdownDto, InstrumentDto } from '../models/generated/domain-models'
 import { DONUT_COLORS } from '../constants/chart-colors'
 
-export type IndustryRollup = 'industry' | 'sector'
-
 export interface ChartDataItem {
   label: string
   value: number
@@ -45,15 +43,14 @@ export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartD
     }))
 }
 
-const industryLabel = (holding: EtfHoldingBreakdownDto, rollup: IndustryRollup): string =>
-  (rollup === 'sector' ? holding.holdingGicsSector : holding.holdingIndustry) ?? UNCLASSIFIED_LABEL
+const MIN_BENCHMARK_SHARE = 0.005
 
-const sumByIndustry = (
-  holdings: EtfHoldingBreakdownDto[],
-  rollup: IndustryRollup
-): Map<string, number> =>
+const industryLabel = (holding: EtfHoldingBreakdownDto): string =>
+  holding.holdingIndustry ?? UNCLASSIFIED_LABEL
+
+const sumByIndustry = (holdings: EtfHoldingBreakdownDto[]): Map<string, number> =>
   holdings.reduce((totals, holding) => {
-    const label = industryLabel(holding, rollup)
+    const label = industryLabel(holding)
     return totals.set(label, (totals.get(label) ?? 0) + holding.percentageOfTotal)
   }, new Map<string, number>())
 
@@ -70,16 +67,15 @@ const benchmarkShare = (
 
 export function buildIndustryChartData(
   holdings: EtfHoldingBreakdownDto[],
-  rollup: IndustryRollup,
   benchmark: EtfHoldingBreakdownDto[] = []
 ): ChartDataItem[] {
-  const sorted = Array.from(sumByIndustry(holdings, rollup).entries()).sort((a, b) => b[1] - a[1])
+  const sorted = Array.from(sumByIndustry(holdings).entries()).sort((a, b) => b[1] - a[1])
   const shown = sorted.filter(([, value]) => value >= SECTOR_MIN_PERCENTAGE).slice(0, TOP_COUNT)
   const shownLabels = new Set(shown.map(([label]) => label))
   const other = sorted
     .filter(([label]) => !shownLabels.has(label))
     .reduce((sum, [, value]) => sum + value, 0)
-  const benchmarkTotals = sumByIndustry(benchmark, rollup)
+  const benchmarkTotals = sumByIndustry(benchmark)
   const benchmarkOther = benchmarkShare(OTHER_LABEL, benchmarkTotals, shownLabels)
   const entries: [string, number][] =
     other > 0 || benchmarkOther > 0 ? [...shown, [OTHER_LABEL, other]] : shown
@@ -92,7 +88,7 @@ export function buildIndustryChartData(
     }
     if (benchmark.length === 0) return item
     const share = benchmarkShare(label, benchmarkTotals, shownLabels)
-    const ratio = label !== OTHER_LABEL && share > 0 ? value / share : undefined
+    const ratio = label !== OTHER_LABEL && share >= MIN_BENCHMARK_SHARE ? value / share : undefined
     return { ...item, benchmark: share, ratio }
   })
 }

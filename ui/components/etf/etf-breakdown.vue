@@ -49,27 +49,8 @@
     </div>
 
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
-      <etf-breakdown-chart :chart-data="activeChartData">
+      <etf-breakdown-chart :chart-data="activeChartData" :benchmark-label="benchmarkLabel">
         <template #actions>
-          <div
-            v-if="activeTab === 'industries'"
-            class="breakdown-tabs"
-            role="group"
-            aria-label="Industry rollup"
-          >
-            <button
-              v-for="option in rollupOptions"
-              :key="option.key"
-              class="breakdown-tab"
-              :class="{ active: industryRollup === option.key }"
-              :aria-pressed="industryRollup === option.key"
-              type="button"
-              @click="industryRollup = option.key"
-            >
-              {{ option.label }}
-            </button>
-            <span v-if="benchmarkLabel" class="benchmark-caption">vs {{ benchmarkLabel }}</span>
-          </div>
           <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
             <button
               v-for="tab in breakdownTabs"
@@ -152,7 +133,6 @@ import {
   calculateWeightedMetrics,
   getFilterParam,
   type ChartDataItem,
-  type IndustryRollup,
 } from '../../services/etf-chart-service'
 import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
 import EtfBreakdownHeader from './etf-breakdown-header.vue'
@@ -272,17 +252,10 @@ type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = ref<BreakdownTab>('sectors')
 
-const rollupOptions: { key: IndustryRollup; label: string }[] = [
-  { key: 'industry', label: '74 industries' },
-  { key: 'sector', label: '11 sectors' },
-]
-
-const industryRollup = useLocalStorage<IndustryRollup>(STORAGE_KEYS.ETF_INDUSTRY_ROLLUP, 'industry')
-
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
 
 const industryChartData = computed<ChartDataItem[]>(() =>
-  buildIndustryChartData(holdings.value, industryRollup.value, benchmarkHoldings.value)
+  buildIndustryChartData(holdings.value, benchmarkHoldings.value)
 )
 
 const activeChartData = computed(() => {
@@ -365,7 +338,7 @@ const benchmarkSymbol = computed(() =>
 
 const benchmarkLabel = computed(() => {
   const symbol = benchmarkSymbol.value
-  if (!symbol || benchmarkHoldings.value.length === 0) return null
+  if (!symbol || benchmarkHoldings.value.length === 0) return undefined
   return getSymbolOnly(symbol)
 })
 
@@ -499,14 +472,6 @@ onMounted(async () => {
   border-color: var(--color-brass);
   background: var(--color-brass-wash);
   color: var(--color-brass-deep);
-}
-
-.benchmark-caption {
-  align-self: center;
-  padding-left: 0.5rem;
-  font-size: var(--text-label);
-  color: var(--color-ink-muted);
-  white-space: nowrap;
 }
 
 .search-container {

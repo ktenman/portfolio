@@ -368,7 +368,7 @@ describe('EtfBreakdownTable', () => {
       ])
     })
 
-    it('should render a dash for a holding without an industry', () => {
+    it('should format a null industry as a dash', () => {
       const wrapper = mount(EtfBreakdownTable, {
         props: {
           holdings: mockHoldings,

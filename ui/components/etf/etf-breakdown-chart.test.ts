@@ -147,7 +147,15 @@ describe('EtfBreakdownChart', () => {
         props: { chartData: [comparedItem] },
       })
 
-      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.3x')
+      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.30x')
+    })
+
+    it('should name the benchmark fund on the compared line', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [comparedItem], benchmarkLabel: 'WEBN' },
+      })
+
+      expect(wrapper.find('.legend-benchmark').text()).toBe('WEBN 4.00% · 2.30x')
     })
 
     it('should flag a ratio above 2', () => {

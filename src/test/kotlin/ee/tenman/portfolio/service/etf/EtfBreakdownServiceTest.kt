@@ -315,7 +315,7 @@ class EtfBreakdownServiceTest {
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
-    expect(result[0].holdingIndustry).toEqual(null)
+    expect(result[0].holdingIndustry to result[0].holdingGicsSector).toEqual(null to null)
   }
 
   @Test

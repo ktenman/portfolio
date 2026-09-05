@@ -234,14 +234,11 @@ describe('etf-chart-service', () => {
 
   describe('buildIndustryChartData', () => {
     it('should aggregate holdings by industry', () => {
-      const result = buildIndustryChartData(
-        [
-          createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 8 }),
-          createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 4 }),
-          createHolding({ holdingIndustry: 'Software', percentageOfTotal: 5 }),
-        ],
-        'industry'
-      )
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 8 }),
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 4 }),
+        createHolding({ holdingIndustry: 'Software', percentageOfTotal: 5 }),
+      ])
       expect(result.map(item => [item.label, item.value])).toEqual([
         ['Banks', 12],
         ['Software', 5],
@@ -249,10 +246,9 @@ describe('etf-chart-service', () => {
     })
 
     it('should label holdings without an industry as Unclassified', () => {
-      const result = buildIndustryChartData(
-        [createHolding({ holdingIndustry: null, percentageOfTotal: 3 })],
-        'industry'
-      )
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: null, percentageOfTotal: 3 }),
+      ])
       expect(result[0].label).toBe('Unclassified')
     })
 
@@ -260,7 +256,7 @@ describe('etf-chart-service', () => {
       const holdings = Array.from({ length: 20 }, (_, i) =>
         createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 5 })
       )
-      const result = buildIndustryChartData(holdings, 'industry')
+      const result = buildIndustryChartData(holdings)
       expect([
         result.length,
         result[result.length - 1].label,
@@ -269,45 +265,16 @@ describe('etf-chart-service', () => {
     })
 
     it('should fold industries below the 0.5% floor into Other instead of dropping them', () => {
-      const result = buildIndustryChartData(
-        [
-          createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.7 }),
-          createHolding({ holdingIndustry: 'Tobacco', percentageOfTotal: 0.3 }),
-        ],
-        'industry'
-      )
-      expect(result.map(item => item.label)).toEqual(['Banks', 'Other'])
-    })
-
-    it('should roll up to gics sectors that sum to the same total as the industry view', () => {
-      const holdings = [
-        createHolding({
-          holdingIndustry: 'Banks',
-          holdingGicsSector: 'Financials',
-          percentageOfTotal: 8,
-        }),
-        createHolding({
-          holdingIndustry: 'Insurance',
-          holdingGicsSector: 'Financials',
-          percentageOfTotal: 4,
-        }),
-        createHolding({
-          holdingIndustry: 'Software',
-          holdingGicsSector: 'Information Technology',
-          percentageOfTotal: 5,
-        }),
-      ]
-      const bySector = buildIndustryChartData(holdings, 'sector')
-      expect(bySector.map(item => [item.label, item.value])).toEqual([
-        ['Financials', 12],
-        ['Information Technology', 5],
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.7 }),
+        createHolding({ holdingIndustry: 'Tobacco', percentageOfTotal: 0.3 }),
       ])
+      expect(result.map(item => item.label)).toEqual(['Banks', 'Other'])
     })
 
     it('should attach the benchmark share and the ratio per industry', () => {
       const result = buildIndustryChartData(
         [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 })],
-        'industry',
         [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 4 })]
       )
       expect([result[0].benchmark, result[0].ratio]).toEqual([4, 2.5])
@@ -316,7 +283,6 @@ describe('etf-chart-service', () => {
     it('should leave the ratio undefined when the benchmark has no weight in the industry', () => {
       const result = buildIndustryChartData(
         [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 })],
-        'industry',
         [createHolding({ holdingIndustry: 'Software', percentageOfTotal: 100 })]
       )
       expect(result.map(item => [item.label, item.value, item.benchmark, item.ratio])).toEqual([
@@ -325,10 +291,20 @@ describe('etf-chart-service', () => {
       ])
     })
 
+    it('should leave the ratio undefined when the benchmark share would display as zero', () => {
+      const result = buildIndustryChartData(
+        [createHolding({ holdingIndustry: 'Cryptocurrency', percentageOfTotal: 2.67 })],
+        [
+          createHolding({ holdingIndustry: 'Cryptocurrency', percentageOfTotal: 0.004 }),
+          createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.996 }),
+        ]
+      )
+      expect([result[0].benchmark, result[0].ratio]).toEqual([0.004, undefined])
+    })
+
     it('should keep benchmark-only weight visible under Other when the portfolio has no residual', () => {
       const result = buildIndustryChartData(
         [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 100 })],
-        'industry',
         [
           createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 98 }),
           createHolding({ holdingIndustry: 'Real Estate', percentageOfTotal: 2 }),
@@ -339,10 +315,9 @@ describe('etf-chart-service', () => {
     })
 
     it('should not emit Other for a benchmark-free portfolio with no residual', () => {
-      const result = buildIndustryChartData(
-        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 100 })],
-        'industry'
-      )
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 100 }),
+      ])
       expect(result.map(item => item.label)).toEqual(['Banks'])
     })
 
@@ -350,7 +325,7 @@ describe('etf-chart-service', () => {
       const holdings = Array.from({ length: 16 }, (_, i) =>
         createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 5 })
       )
-      const result = buildIndustryChartData(holdings, 'industry', [
+      const result = buildIndustryChartData(holdings, [
         createHolding({ holdingIndustry: 'Industry 15', percentageOfTotal: 30 }),
       ])
       const other = result[result.length - 1]
@@ -358,10 +333,9 @@ describe('etf-chart-service', () => {
     })
 
     it('should not attach benchmark fields when no benchmark holdings are given', () => {
-      const result = buildIndustryChartData(
-        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 })],
-        'industry'
-      )
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 }),
+      ])
       expect('benchmark' in result[0]).toBe(false)
     })
   })
