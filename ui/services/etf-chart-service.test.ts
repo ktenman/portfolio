@@ -319,7 +319,31 @@ describe('etf-chart-service', () => {
         'industry',
         [createHolding({ holdingIndustry: 'Software', percentageOfTotal: 100 })]
       )
-      expect([result[0].benchmark, result[0].ratio]).toEqual([0, undefined])
+      expect(result.map(item => [item.label, item.value, item.benchmark, item.ratio])).toEqual([
+        ['Banks', 10, 0, undefined],
+        ['Other', 0, 100, undefined],
+      ])
+    })
+
+    it('should keep benchmark-only weight visible under Other when the portfolio has no residual', () => {
+      const result = buildIndustryChartData(
+        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 100 })],
+        'industry',
+        [
+          createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 98 }),
+          createHolding({ holdingIndustry: 'Real Estate', percentageOfTotal: 2 }),
+        ]
+      )
+      const last = result[result.length - 1]
+      expect([last.label, last.value, last.benchmark]).toEqual(['Other', 0, 2])
+    })
+
+    it('should not emit Other for a benchmark-free portfolio with no residual', () => {
+      const result = buildIndustryChartData(
+        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 100 })],
+        'industry'
+      )
+      expect(result.map(item => item.label)).toEqual(['Banks'])
     })
 
     it('should put the benchmark weight of unshown industries under Other without a ratio', () => {

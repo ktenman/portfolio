@@ -79,8 +79,10 @@ export function buildIndustryChartData(
   const other = sorted
     .filter(([label]) => !shownLabels.has(label))
     .reduce((sum, [, value]) => sum + value, 0)
-  const entries: [string, number][] = other > 0 ? [...shown, [OTHER_LABEL, other]] : shown
   const benchmarkTotals = sumByIndustry(benchmark, rollup)
+  const benchmarkOther = benchmarkShare(OTHER_LABEL, benchmarkTotals, shownLabels)
+  const entries: [string, number][] =
+    other > 0 || benchmarkOther > 0 ? [...shown, [OTHER_LABEL, other]] : shown
   return entries.map(([label, value], index) => {
     const item: ChartDataItem = {
       label,
