@@ -286,9 +286,34 @@ describe('etf-breakdown', () => {
     expect(chart.props('chartData')[0].ratio).toBeCloseTo(3.33, 2)
   })
 
+  const benchmarkOnly = (holdings: EtfHoldingBreakdownDto[]): EtfHoldingBreakdownDto[] =>
+    holdings.map(holding => ({ ...holding, inEtfs: BENCHMARK }))
+
   it('hides the benchmark comparison when only the benchmark fund is selected', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    const holdings = withBenchmarkFund()
+    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(etfs =>
+      Promise.resolve(etfs?.[0] === BENCHMARK ? benchmarkOnly(holdings) : holdings)
+    )
     localStorage.setItem('portfolio_selected_etfs', JSON.stringify([BENCHMARK]))
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData').map(item => item.benchmark)).toEqual([undefined, undefined])
+  })
+
+  it('hides the benchmark comparison when the platform filter leaves only the benchmark fund', async () => {
+    const holdings = withBenchmarkFund().map(holding => ({
+      ...holding,
+      platforms: 'LIGHTYEAR,SWEDBANK',
+    }))
+    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation((etfs, platforms) =>
+      Promise.resolve(platforms || etfs?.[0] === BENCHMARK ? benchmarkOnly(holdings) : holdings)
+    )
+    localStorage.setItem('portfolio_etf_breakdown_platforms', JSON.stringify(['LIGHTYEAR']))
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -362,11 +387,28 @@ describe('etf-breakdown', () => {
     expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('WEBN')
   })
 
-  it('hides the comparison and does not retry after the benchmark request fails', async () => {
+  const failBenchmarkRequest = () => {
     const holdings = withBenchmarkFund()
     vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(etfs =>
       etfs?.[0] === BENCHMARK ? Promise.reject(new Error('unavailable')) : Promise.resolve(holdings)
     )
+  }
+
+  it('hides the comparison after the benchmark request fails', async () => {
+    failBenchmarkRequest()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    expect(
+      wrapper.findAllComponents(EtfBreakdownChart)[0].props('chartData')[0].benchmark
+    ).toBeUndefined()
+  })
+
+  it('does not retry the benchmark request after it fails', async () => {
+    failBenchmarkRequest()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -376,8 +418,7 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
     await flushPromises()
 
-    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
-    expect([chart.props('chartData')[0].benchmark, benchmarkCalls().length]).toEqual([undefined, 1])
+    expect(benchmarkCalls()).toHaveLength(1)
   })
 
   it('matches the search query against the industry', async () => {

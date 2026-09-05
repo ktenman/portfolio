@@ -280,7 +280,10 @@ describe('etf-chart-service', () => {
           createHolding({ holdingIndustry, percentageOfTotal: 0.2 })
         )
       )
-      expect(result.map(item => item.label)).toEqual(['Other'])
+      expect([result.map(item => item.label), result[0].value]).toEqual([
+        ['Other'],
+        expect.closeTo(0.6, 5),
+      ])
     })
 
     it('should attach the benchmark share and the ratio per industry', () => {

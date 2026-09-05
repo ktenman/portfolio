@@ -260,10 +260,15 @@ const benchmarkSymbol = computed(() =>
 
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
 
+const chartedFunds = computed(
+  () => new Set(holdings.value.flatMap(holding => holding.inEtfs.split(',').map(etf => etf.trim())))
+)
+
 const comparedHoldings = computed(() => {
-  const onlyBenchmarkSelected =
-    selectedEtfs.value.length === 1 && selectedEtfs.value[0] === benchmarkSymbol.value
-  return onlyBenchmarkSelected ? [] : benchmarkHoldings.value
+  const symbol = benchmarkSymbol.value
+  const onlyBenchmarkCharted =
+    symbol !== undefined && chartedFunds.value.size === 1 && chartedFunds.value.has(symbol)
+  return onlyBenchmarkCharted ? [] : benchmarkHoldings.value
 })
 
 const industryChartData = computed<ChartDataItem[]>(() =>
