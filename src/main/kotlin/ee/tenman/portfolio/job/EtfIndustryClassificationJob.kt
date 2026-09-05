@@ -34,8 +34,8 @@ class EtfIndustryClassificationJob(
   }
 
   override fun execute() {
-    if (!properties.enabled) {
-      log.info("Industry classification disabled, skipping job")
+    if (!properties.enabled || !properties.gicsEnabled) {
+      log.info("GICS industry classification disabled, skipping job")
       return
     }
     val holdings = etfHoldingIndustryService.findUnclassifiedByIndustry()

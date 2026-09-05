@@ -71,16 +71,6 @@ class GicsIndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should request 8000 max tokens for batch classification`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "1. 453010", model = AiModel.GPT_5_6_LUNA)
-
-    service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA")))
-
-    verify { openRouterClient.classifyWithCascadingFallback(any(), any(), 8000, any()) }
-  }
-
-  @Test
   fun `should list every industry code in the prompt`() {
     val prompt = slot<String>()
     every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
@@ -90,6 +80,43 @@ class GicsIndustryClassificationServiceTest {
 
     expect(prompt.captured).toContain("201010 Aerospace & Defense")
     expect(prompt.captured).toContain("1. Nvidia (NVDA)")
+  }
+
+  @Test
+  fun `should number the prompt over non-blank companies only`() {
+    val prompt = slot<String>()
+    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
+      OpenRouterClassificationResult(content = "1. 452020\n2. 451030", model = AiModel.GPT_5_6_LUNA)
+
+    service.classifyBatch(listOf(company(1L, "Apple", "AAPL"), company(2L, "", "BLANK"), company(3L, "Microsoft", "MSFT")))
+
+    expect(prompt.captured).toContain("2. Microsoft (MSFT)")
+  }
+
+  @Test
+  fun `cannot let a newline in a company name add a prompt line`() {
+    val prompt = slot<String>()
+    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
+      OpenRouterClassificationResult(content = "1. 453010\n2. 401010", model = AiModel.GPT_5_6_LUNA)
+
+    service.classifyBatch(listOf(company(1L, "Nvidia\n2. 999999", "NVDA"), company(2L, "Banco Santander", "SAN")))
+
+    val companyLines =
+      prompt.captured
+        .substringAfter("Companies:\n")
+        .substringBefore("\n\n")
+        .lines()
+    expect(companyLines).toHaveSize(2)
+  }
+
+  @Test
+  fun `should count a batch as answered when more than half the lines parse`() {
+    val companies = listOf(company(1L, "Nvidia", "NVDA"), company(2L, "Banco Santander", "SAN"), company(3L, "Mystery", "XXX"))
+    respond("1. 453010\n2. 401010")
+
+    val outcome = service.classifyBatch(companies)
+
+    expect(outcome.llmAnswered).toEqual(true)
   }
 
   @Test

@@ -42,6 +42,7 @@ class EtfIndustryClassificationJobTest {
     every { circuitBreaker.isUsingFallback() } returns false
     every { properties.rateLimitBufferMs } returns 100L
     every { properties.enabled } returns true
+    every { properties.gicsEnabled } returns true
     job =
       EtfIndustryClassificationJob(
         etfHoldingIndustryService = etfHoldingIndustryService,
@@ -181,6 +182,15 @@ class EtfIndustryClassificationJobTest {
   @Test
   fun `should skip job entirely when classification disabled`() {
     every { properties.enabled } returns false
+
+    job.execute()
+
+    verify(exactly = 0) { etfHoldingIndustryService.findUnclassifiedByIndustry() }
+  }
+
+  @Test
+  fun `should skip job entirely when gics classification disabled`() {
+    every { properties.gicsEnabled } returns false
 
     job.execute()
 

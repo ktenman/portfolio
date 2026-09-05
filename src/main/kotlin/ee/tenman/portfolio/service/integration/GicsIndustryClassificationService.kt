@@ -33,8 +33,12 @@ class GicsIndustryClassificationService(
     val companiesList =
       companies
         .mapIndexed { index, c ->
-          val tickerInfo = if (!c.ticker.isNullOrBlank()) " (${c.ticker})" else ""
-          "${index + 1}. ${c.name}$tickerInfo"
+          val tickerInfo =
+            c.ticker
+              ?.takeIf { it.isNotBlank() }
+              ?.let { " (${clean(it)})" }
+              .orEmpty()
+          "${index + 1}. ${clean(c.name)}$tickerInfo"
         }.joinToString("\n")
     return """
       |Classify each company into ONE GICS industry. Reply with the company number and the six-digit GICS code only.
@@ -57,6 +61,8 @@ class GicsIndustryClassificationService(
       """.trimMargin()
   }
 
+  private fun clean(text: String): String = text.replace(CONTROL_CHARS, " ").take(MAX_NAME_LENGTH)
+
   private fun parse(
     content: String?,
     companies: List<CompanyClassificationInput>,
@@ -75,6 +81,8 @@ class GicsIndustryClassificationService(
 
   private companion object {
     val LINE_PATTERN = Regex("^(\\d+)[.):]?\\s*(\\d{6})\\b")
+    val CONTROL_CHARS = Regex("[\\r\\n\\t]")
+    const val MAX_NAME_LENGTH = 120
     val UNANSWERED = BatchClassificationOutcome<GicsIndustryClassificationResult>(emptyMap(), false)
   }
 }

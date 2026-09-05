@@ -44,7 +44,7 @@ class EtfHolding(
   @Column(name = "sector_fetch_attempts", nullable = false)
   var sectorFetchAttempts: Int = 0,
   @Enumerated(EnumType.STRING)
-  @Column(length = 60)
+  @Column(name = "industry", length = 150)
   var industry: GicsIndustry? = null,
   @Enumerated(EnumType.STRING)
   @Column(name = "industry_classified_by_model", length = 100)

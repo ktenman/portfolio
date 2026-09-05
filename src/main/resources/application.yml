@@ -255,6 +255,7 @@ google:
 
 industry-classification:
   enabled: true
+  gics-enabled: ${GICS_INDUSTRY_CLASSIFICATION_ENABLED:true}
 
 ecb:
   url: https://data-api.ecb.europa.eu

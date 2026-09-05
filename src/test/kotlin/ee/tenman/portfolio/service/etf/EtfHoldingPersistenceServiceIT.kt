@@ -614,6 +614,31 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
+  fun `should findUnclassifiedByIndustry return holdings heaviest first`() {
+    val small = etfHoldingPersistenceService.findOrCreateHolding("Small Co", "SML", null)
+    val mid = etfHoldingPersistenceService.findOrCreateHolding("Mid Co", "MID", null)
+    val big = etfHoldingPersistenceService.findOrCreateHolding("Big Co", "BIG", null)
+    position(small, LocalDate.of(2024, 7, 1), "0.5")
+    position(mid, LocalDate.of(2024, 7, 1), "3.0")
+    position(big, LocalDate.of(2024, 7, 1), "0.2")
+    position(big, LocalDate.of(2024, 7, 2), "9.0")
+
+    val ids = etfHoldingIndustryService.findUnclassifiedByIndustry().map { it.id }
+
+    expect(ids).toEqual(listOf(big.id, mid.id, small.id))
+  }
+
+  private fun position(
+    holding: EtfHolding,
+    snapshotDate: LocalDate,
+    weight: String,
+  ) {
+    etfPositionRepository.save(
+      EtfPosition(etfInstrument = etfInstrument, holding = holding, snapshotDate = snapshotDate, weightPercentage = BigDecimal(weight)),
+    )
+  }
+
+  @Test
   fun `cannot updateIndustry a holding that does not exist`() {
     expect { etfHoldingIndustryService.updateIndustry(999_999L, GicsIndustry.BANKS, null) }.toThrow<EntityNotFoundException>()
   }
