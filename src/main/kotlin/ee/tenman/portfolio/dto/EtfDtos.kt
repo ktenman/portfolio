@@ -44,7 +44,6 @@ data class EtfHoldingBreakdownDto(
   val totalValueEur: BigDecimal,
   val holdingSector: String?,
   val holdingIndustry: String?,
-  val holdingGicsSector: String?,
   val holdingCountryCode: String?,
   val holdingCountryName: String?,
   val inEtfs: String,

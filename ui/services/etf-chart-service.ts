@@ -14,8 +14,6 @@ export interface ChartDataItem {
 const TOP_COUNT = 15
 const SECTOR_MIN_PERCENTAGE = 0.5
 const COUNTRY_MIN_PERCENTAGE = 0.2
-const UNCLASSIFIED_LABEL = 'Unclassified'
-const OTHER_LABEL = 'Other'
 
 export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
   const sectorTotals = new Map<string, number>()
@@ -45,52 +43,51 @@ export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartD
 
 const MIN_BENCHMARK_SHARE = 0.005
 
-const industryLabel = (holding: EtfHoldingBreakdownDto): string =>
-  holding.holdingIndustry ?? UNCLASSIFIED_LABEL
-
 const sumByIndustry = (holdings: EtfHoldingBreakdownDto[]): Map<string, number> =>
   holdings.reduce((totals, holding) => {
-    const label = industryLabel(holding)
+    const label = holding.holdingIndustry ?? 'Unclassified'
     return totals.set(label, (totals.get(label) ?? 0) + holding.percentageOfTotal)
   }, new Map<string, number>())
 
-const benchmarkShare = (
-  label: string,
-  benchmarkTotals: Map<string, number>,
-  shownLabels: Set<string>
-): number => {
-  if (label !== OTHER_LABEL) return benchmarkTotals.get(label) ?? 0
-  return Array.from(benchmarkTotals.entries())
-    .filter(([benchmarkLabel]) => !shownLabels.has(benchmarkLabel))
+const residual = (totals: Map<string, number>, shown: Set<string>): number =>
+  Array.from(totals.entries())
+    .filter(([label]) => !shown.has(label))
     .reduce((sum, [, value]) => sum + value, 0)
-}
+
+const toChartItem = (label: string, value: number, index: number): ChartDataItem => ({
+  label,
+  value,
+  percentage: value.toFixed(2),
+  color: DONUT_COLORS[index % DONUT_COLORS.length],
+})
 
 export function buildIndustryChartData(
   holdings: EtfHoldingBreakdownDto[],
   benchmark: EtfHoldingBreakdownDto[] = []
 ): ChartDataItem[] {
-  const sorted = Array.from(sumByIndustry(holdings).entries()).sort((a, b) => b[1] - a[1])
-  const shown = sorted.filter(([, value]) => value >= SECTOR_MIN_PERCENTAGE).slice(0, TOP_COUNT)
+  const totals = sumByIndustry(holdings)
+  const shown = Array.from(totals.entries())
+    .sort((a, b) => b[1] - a[1])
+    .filter(([, value]) => value >= SECTOR_MIN_PERCENTAGE)
+    .slice(0, TOP_COUNT)
   const shownLabels = new Set(shown.map(([label]) => label))
-  const other = sorted
-    .filter(([label]) => !shownLabels.has(label))
-    .reduce((sum, [, value]) => sum + value, 0)
   const benchmarkTotals = sumByIndustry(benchmark)
-  const benchmarkOther = benchmarkShare(OTHER_LABEL, benchmarkTotals, shownLabels)
-  const entries: [string, number][] =
-    other > 0 || benchmarkOther > 0 ? [...shown, [OTHER_LABEL, other]] : shown
-  return entries.map(([label, value], index) => {
-    const item: ChartDataItem = {
-      label,
-      value,
-      percentage: value.toFixed(2),
-      color: DONUT_COLORS[index % DONUT_COLORS.length],
+  const compared = benchmark.length > 0
+  const items = shown.map(([label, value], index) => {
+    const item = toChartItem(label, value, index)
+    if (!compared) return item
+    const share = benchmarkTotals.get(label) ?? 0
+    return {
+      ...item,
+      benchmark: share,
+      ratio: share >= MIN_BENCHMARK_SHARE ? value / share : undefined,
     }
-    if (benchmark.length === 0) return item
-    const share = benchmarkShare(label, benchmarkTotals, shownLabels)
-    const ratio = label !== OTHER_LABEL && share >= MIN_BENCHMARK_SHARE ? value / share : undefined
-    return { ...item, benchmark: share, ratio }
   })
+  const other = residual(totals, shownLabels)
+  const benchmarkOther = residual(benchmarkTotals, shownLabels)
+  if (other === 0 && benchmarkOther === 0) return items
+  const otherItem = toChartItem('Other', other, items.length)
+  return [...items, compared ? { ...otherItem, benchmark: benchmarkOther } : otherItem]
 }
 
 export function buildCompanyChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {

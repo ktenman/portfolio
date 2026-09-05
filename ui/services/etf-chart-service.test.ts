@@ -19,7 +19,6 @@ const createHolding = (
   holdingTicker: 'AAPL',
   holdingSector: 'Technology',
   holdingIndustry: 'Software',
-  holdingGicsSector: 'Information Technology',
   holdingCountryCode: 'US',
   holdingCountryName: 'United States',
   totalValueEur: 1000,

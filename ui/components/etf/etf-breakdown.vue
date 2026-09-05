@@ -336,29 +336,23 @@ const benchmarkSymbol = computed(() =>
   BENCHMARK_CHAIN.find(symbol => availableEtfs.value.includes(symbol))
 )
 
-const benchmarkLabel = computed(() => {
-  const symbol = benchmarkSymbol.value
-  if (!symbol || benchmarkHoldings.value.length === 0) return undefined
-  return getSymbolOnly(symbol)
-})
+const benchmarkLabel = computed(() => benchmarkSymbol.value && getSymbolOnly(benchmarkSymbol.value))
 
-let benchmarkRequest: Promise<void> | null = null
+let benchmarkRequested = false
 
-const loadBenchmark = () => {
+const loadBenchmark = async () => {
   const symbol = benchmarkSymbol.value
-  if (!symbol || benchmarkRequest) return
-  benchmarkRequest = etfBreakdownService
-    .getBreakdown([symbol], undefined)
-    .then(rows => {
-      benchmarkHoldings.value = rows
-    })
-    .catch(() => {
-      benchmarkHoldings.value = []
-    })
+  if (!symbol || benchmarkRequested) return
+  benchmarkRequested = true
+  try {
+    benchmarkHoldings.value = await etfBreakdownService.getBreakdown([symbol], undefined)
+  } catch {
+    benchmarkHoldings.value = []
+  }
 }
 
-watch([activeTab, benchmarkSymbol], () => {
-  if (activeTab.value === 'industries') loadBenchmark()
+watch(activeTab, tab => {
+  if (tab === 'industries') loadBenchmark()
 })
 
 const clearSearch = () => {

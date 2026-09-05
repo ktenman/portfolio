@@ -13,7 +13,6 @@ describe('EtfBreakdownTable', () => {
       totalValueEur: 10000,
       holdingSector: 'Technology',
       holdingIndustry: 'Technology Hardware, Storage & Peripherals',
-      holdingGicsSector: 'Information Technology',
       holdingCountryCode: 'US',
       holdingCountryName: 'United States',
       inEtfs: 'IITU:50%, VUSA:30%',
@@ -28,7 +27,6 @@ describe('EtfBreakdownTable', () => {
       totalValueEur: 8000,
       holdingSector: 'Technology',
       holdingIndustry: 'Software',
-      holdingGicsSector: 'Information Technology',
       holdingCountryCode: 'US',
       holdingCountryName: 'United States',
       inEtfs: 'IITU:40%',
@@ -173,7 +171,6 @@ describe('EtfBreakdownTable', () => {
           totalValueEur: 1234567.89,
           holdingSector: 'Technology',
           holdingIndustry: 'Technology Hardware, Storage & Peripherals',
-          holdingGicsSector: 'Information Technology',
           holdingCountryCode: 'US',
           holdingCountryName: 'United States',
           inEtfs: 'IITU:100%',
@@ -205,7 +202,6 @@ describe('EtfBreakdownTable', () => {
           totalValueEur: 0,
           holdingSector: null,
           holdingIndustry: null,
-          holdingGicsSector: null,
           holdingCountryCode: null,
           holdingCountryName: null,
           inEtfs: '',
@@ -366,24 +362,6 @@ describe('EtfBreakdownTable', () => {
         true,
         false,
       ])
-    })
-
-    it('should format a null industry as a dash', () => {
-      const wrapper = mount(EtfBreakdownTable, {
-        props: {
-          holdings: mockHoldings,
-          isLoading: false,
-          isError: false,
-          errorMessage: '',
-        },
-      })
-
-      const dataTable = wrapper.findComponent({ name: 'DataTable' })
-      const industryColumn = dataTable
-        .props('columns')
-        .find((col: any) => col.key === 'holdingIndustry')
-
-      expect(industryColumn.formatter(null)).toBe('-')
     })
   })
 

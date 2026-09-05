@@ -225,7 +225,6 @@ class EtfBreakdownService(
       totalValueEur = scaledValue.setScale(2, RoundingMode.HALF_UP),
       holdingSector = key.sector,
       holdingIndustry = key.industry,
-      holdingGicsSector = key.gicsSector,
       holdingCountryCode = key.countryCode,
       holdingCountryName = key.countryName,
       inEtfs = value.etfSymbols.sorted().joinToString(", "),

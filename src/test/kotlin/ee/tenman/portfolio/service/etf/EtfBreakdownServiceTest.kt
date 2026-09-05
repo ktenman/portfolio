@@ -293,7 +293,7 @@ class EtfBreakdownServiceTest {
   }
 
   @Test
-  fun `should expose the gics industry and its sector on the breakdown row`() {
+  fun `should expose the gics industry on the breakdown row`() {
     val etf = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
     val holding = createHolding(1L, "RHM", "Rheinmetall", IndustrySector.INDUSTRIALS, GicsIndustry.AEROSPACE_AND_DEFENSE)
     val position = createPosition(etf, holding, BigDecimal("100.0000"), testDate)
@@ -302,7 +302,7 @@ class EtfBreakdownServiceTest {
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
-    expect(result[0].holdingIndustry to result[0].holdingGicsSector).toEqual("Aerospace & Defense" to "Industrials")
+    expect(result[0].holdingIndustry).toEqual("Aerospace & Defense")
   }
 
   @Test
@@ -315,14 +315,14 @@ class EtfBreakdownServiceTest {
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
-    expect(result[0].holdingIndustry to result[0].holdingGicsSector).toEqual(null to null)
+    expect(result[0].holdingIndustry).toEqual(null)
   }
 
   @Test
   fun `should label a synthetic crypto holding as Cryptocurrency even when classified as Financial Services`() {
     val trezor = createInstrument(2L, "TREZOR", ProviderName.SYNTHETIC, BigDecimal("100"))
-    val btcInstrument = createInstrument(3L, "BTCEUR", ProviderName.BINANCE, BigDecimal("50000"))
-    val holding = createHolding(1L, "BTCEUR", "Bitcoin (Trezor)", IndustrySector.CRYPTOCURRENCY, GicsIndustry.FINANCIAL_SERVICES)
+    val btcInstrument = createInstrument(3L, "BTCEUR", ProviderName.BINANCE, BigDecimal("50000"), category = "CRYPTO")
+    val holding = createHolding(1L, "BTCEUR", "Bitcoin (Trezor)", null, GicsIndustry.FINANCIAL_SERVICES)
     val position = createPosition(trezor, holding, BigDecimal("100.0000"), testDate)
     val btcTransaction = createCashFlow(btcInstrument, BigDecimal("1"), BigDecimal("50000"))
     setupMocksForBatchLoading(listOf(trezor), listOf(position), listOf(btcTransaction))
@@ -331,7 +331,7 @@ class EtfBreakdownServiceTest {
 
     val result = etfBreakdownService.getHoldingsBreakdown()
 
-    expect(result[0].holdingIndustry to result[0].holdingGicsSector).toEqual("Cryptocurrency" to "Cryptocurrency")
+    expect(result[0].holdingIndustry).toEqual("Cryptocurrency")
   }
 
   private fun setupMocksForBatchLoading(
@@ -353,11 +353,12 @@ class EtfBreakdownServiceTest {
     symbol: String,
     providerName: ProviderName,
     currentPrice: BigDecimal = BigDecimal("100"),
+    category: String = "ETF",
   ): Instrument =
     Instrument(
       symbol = symbol,
       name = "Test $symbol",
-      category = "ETF",
+      category = category,
       baseCurrency = "EUR",
       currentPrice = currentPrice,
       providerName = providerName,

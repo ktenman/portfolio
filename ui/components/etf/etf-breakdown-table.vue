@@ -110,7 +110,7 @@
         </template>
         <template #footer>
           <tr v-if="hasMore" class="load-more-row">
-            <td colspan="8" class="text-center! py-2!">
+            <td :colspan="columns.length" class="text-center! py-2!">
               <div ref="loadMoreTrigger" class="flex items-center justify-center">
                 <SpinnerRing size="sm" class="mr-2 text-gray-600" label="Loading..." />
                 <span class="text-[0.875em] text-gray-600">
@@ -124,7 +124,7 @@
             <td></td>
             <td class="font-bold text-right!">100.0000%</td>
             <td class="font-bold text-right!">{{ formatCurrency(totalValue) }}</td>
-            <td colspan="4"></td>
+            <td :colspan="columns.length - 4"></td>
           </tr>
         </template>
       </data-table>
@@ -372,7 +372,6 @@ const columns: ColumnDefinition[] = [
     key: 'holdingIndustry',
     label: 'Industry',
     sortable: true,
-    formatter: (value: string | null) => value || '-',
   },
   {
     key: 'holdingCountryName',

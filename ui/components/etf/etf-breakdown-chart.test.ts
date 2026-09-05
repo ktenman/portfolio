@@ -169,16 +169,7 @@ describe('EtfBreakdownChart', () => {
     it('should flag a ratio below 0.5', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          chartData: [
-            {
-              label: 'Software',
-              value: 2,
-              percentage: '2.00',
-              color: '#0072B2',
-              benchmark: 10,
-              ratio: 0.2,
-            },
-          ],
+          chartData: [{ ...comparedItem, benchmark: 46, ratio: 0.2 }],
         },
       })
 
@@ -188,16 +179,7 @@ describe('EtfBreakdownChart', () => {
     it('should not flag a ratio inside the half-to-double band', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          chartData: [
-            {
-              label: 'Banks',
-              value: 5,
-              percentage: '5.00',
-              color: '#0072B2',
-              benchmark: 4,
-              ratio: 1.25,
-            },
-          ],
+          chartData: [{ ...comparedItem, benchmark: 7.36, ratio: 1.25 }],
         },
       })
 
@@ -207,9 +189,7 @@ describe('EtfBreakdownChart', () => {
     it('should omit the ratio when the benchmark has no weight', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {
-          chartData: [
-            { label: 'Banks', value: 5, percentage: '5.00', color: '#0072B2', benchmark: 0 },
-          ],
+          chartData: [{ ...comparedItem, benchmark: 0, ratio: undefined }],
         },
       })
 

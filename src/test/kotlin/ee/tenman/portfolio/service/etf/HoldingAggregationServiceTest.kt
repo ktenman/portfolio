@@ -130,15 +130,6 @@ class HoldingAggregationServiceTest {
     }
 
     @Test
-    fun `should derive the gics sector from the chosen industry`() {
-      val holdings = listOf(createHolding("Visa Inc", "V", BigDecimal("70.00"), "VUAA", industry = GicsIndustry.FINANCIAL_SERVICES))
-
-      val result = service.aggregateHoldings(holdings)
-
-      expect(result.keys.first().gicsSector).toEqual("Financials")
-    }
-
-    @Test
     fun `should label a cryptocurrency holding as Cryptocurrency regardless of its industry`() {
       val bitcoin =
         createHolding(
@@ -152,8 +143,7 @@ class HoldingAggregationServiceTest {
 
       val result = service.aggregateHoldings(listOf(bitcoin))
 
-      val key = result.keys.first()
-      expect(key.industry to key.gicsSector).toEqual("Cryptocurrency" to "Cryptocurrency")
+      expect(result.keys.first().industry).toEqual("Cryptocurrency")
     }
 
     @Test
