@@ -455,6 +455,8 @@ onMounted(async () => {
 
 .breakdown-tabs {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.25rem;
 }
 
@@ -466,6 +468,7 @@ onMounted(async () => {
   font-size: 0.8125rem;
   color: var(--color-ink-soft);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .breakdown-tab:hover {
@@ -581,6 +584,10 @@ onMounted(async () => {
   .search-input-wrapper {
     width: 100%;
     max-width: none;
+  }
+
+  .breakdown-tab {
+    padding: 0.3125rem 0.5rem;
   }
 }
 
