@@ -147,6 +147,20 @@ class HoldingAggregationServiceTest {
     }
 
     @Test
+    fun `should keep the industry consistent with a merged Cryptocurrency sector`() {
+      val holdings =
+        listOf(
+          createHolding("Coinbase", "COIN", BigDecimal("30.00"), "WBIT", sector = "Cryptocurrency", industry = GicsIndustry.SOFTWARE),
+          createHolding("Coinbase", "COIN", BigDecimal("70.00"), "VWCE", sector = "Software", industry = GicsIndustry.SOFTWARE),
+        )
+
+      val result = service.aggregateHoldings(holdings)
+
+      val key = result.keys.first()
+      expect(key.sector to key.industry).toEqual("Cryptocurrency" to "Cryptocurrency")
+    }
+
+    @Test
     fun `should leave industry null when no duplicate is classified`() {
       val holdings = listOf(createHolding("Euro Cash", "EUR", BigDecimal("10.00"), "CASH"))
 

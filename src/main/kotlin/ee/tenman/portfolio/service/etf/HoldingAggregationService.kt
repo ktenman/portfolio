@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.model.holding.HoldingKey
 import ee.tenman.portfolio.model.holding.HoldingValue
 import ee.tenman.portfolio.model.holding.InternalHoldingData
@@ -35,16 +36,28 @@ class HoldingAggregationService {
       groupedHoldings
         .mapNotNull { it.ticker?.takeIf { t -> t.isNotBlank() } }
         .maxByOrNull { it.length }
-    val industry = groupedHoldings.filter { it.industryLabel != null }.maxByOrNull { it.value }?.industryLabel
+    val sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length }
     return HoldingKey(
       holdingUuid = first.holdingUuid,
       ticker = longestTicker,
       name = bestName,
-      sector = groupedHoldings.mapNotNull { it.sector }.maxByOrNull { it.length },
-      industry = industry,
+      sector = sector,
+      industry = resolveIndustry(groupedHoldings, sector),
       countryCode = groupedHoldings.firstNotNullOfOrNull { it.countryCode },
       countryName = groupedHoldings.firstNotNullOfOrNull { it.countryName },
     )
+  }
+
+  private fun resolveIndustry(
+    groupedHoldings: List<InternalHoldingData>,
+    sector: String?,
+  ): String? {
+    if (sector == IndustrySector.CRYPTOCURRENCY.displayName) return sector
+    return groupedHoldings
+      .filter { it.industry != null }
+      .maxByOrNull { it.value }
+      ?.industry
+      ?.displayName
   }
 
   private fun selectBestName(names: List<String>): String = names.maxByOrNull { it.length } ?: names.first()

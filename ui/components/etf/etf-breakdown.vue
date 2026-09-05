@@ -252,10 +252,22 @@ type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = ref<BreakdownTab>('sectors')
 
+const BENCHMARK_CHAIN = ['WEBN:GER:EUR', 'VWCE:GER:EUR']
+
+const benchmarkSymbol = computed(() =>
+  BENCHMARK_CHAIN.find(symbol => availableEtfs.value.includes(symbol))
+)
+
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
 
+const comparedHoldings = computed(() => {
+  const onlyBenchmarkSelected =
+    selectedEtfs.value.length === 1 && selectedEtfs.value[0] === benchmarkSymbol.value
+  return onlyBenchmarkSelected ? [] : benchmarkHoldings.value
+})
+
 const industryChartData = computed<ChartDataItem[]>(() =>
-  buildIndustryChartData(holdings.value, benchmarkHoldings.value)
+  buildIndustryChartData(holdings.value, comparedHoldings.value)
 )
 
 const activeChartData = computed(() => {
@@ -329,12 +341,6 @@ const toggleAllEtfs = () => {
 const getSymbolOnly = (fullSymbol: string): string => {
   return fullSymbol.split(':')[0]
 }
-
-const BENCHMARK_CHAIN = ['WEBN:GER:EUR', 'VWCE:GER:EUR']
-
-const benchmarkSymbol = computed(() =>
-  BENCHMARK_CHAIN.find(symbol => availableEtfs.value.includes(symbol))
-)
 
 const benchmarkLabel = computed(() => benchmarkSymbol.value && getSymbolOnly(benchmarkSymbol.value))
 

@@ -268,7 +268,19 @@ describe('etf-chart-service', () => {
         createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.7 }),
         createHolding({ holdingIndustry: 'Tobacco', percentageOfTotal: 0.3 }),
       ])
-      expect(result.map(item => item.label)).toEqual(['Banks', 'Other'])
+      expect(result.map(item => [item.label, item.value])).toEqual([
+        ['Banks', 99.7],
+        ['Other', 0.3],
+      ])
+    })
+
+    it('should fold every industry into Other when all are below the floor', () => {
+      const result = buildIndustryChartData(
+        ['Banks', 'Tobacco', 'Media'].map(holdingIndustry =>
+          createHolding({ holdingIndustry, percentageOfTotal: 0.2 })
+        )
+      )
+      expect(result.map(item => item.label)).toEqual(['Other'])
     })
 
     it('should attach the benchmark share and the ratio per industry', () => {
@@ -335,7 +347,7 @@ describe('etf-chart-service', () => {
       const result = buildIndustryChartData([
         createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 }),
       ])
-      expect('benchmark' in result[0]).toBe(false)
+      expect(result[0].benchmark).toBeUndefined()
     })
   })
 })

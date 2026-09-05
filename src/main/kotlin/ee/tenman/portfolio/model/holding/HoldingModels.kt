@@ -2,7 +2,6 @@ package ee.tenman.portfolio.model.holding
 
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.GicsIndustry
-import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
@@ -53,10 +52,7 @@ data class InternalHoldingData(
   val value: BigDecimal,
   val etfSymbol: String,
   val platforms: Set<Platform>,
-) {
-  val industryLabel: String?
-    get() = if (sector == IndustrySector.CRYPTOCURRENCY.displayName) sector else industry?.displayName
-}
+)
 
 data class HoldingsAccumulator(
   val quantity: BigDecimal = BigDecimal.ZERO,

@@ -176,6 +176,22 @@ describe('EtfBreakdownChart', () => {
       expect(wrapper.find('.legend-benchmark').classes()).toContain('flagged')
     })
 
+    it('should not flag a ratio of exactly 2', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [{ ...comparedItem, benchmark: 4.6, ratio: 2 }] },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).not.toContain('flagged')
+    })
+
+    it('should not flag a ratio of exactly 0.5', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [{ ...comparedItem, benchmark: 18.4, ratio: 0.5 }] },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).not.toContain('flagged')
+    })
+
     it('should not flag a ratio inside the half-to-double band', () => {
       const wrapper = mount(EtfBreakdownChart, {
         props: {

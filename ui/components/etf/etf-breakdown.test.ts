@@ -166,7 +166,7 @@ describe('etf-breakdown', () => {
   const BENCHMARK = 'WEBN:GER:EUR'
 
   const withBenchmarkFund = (): EtfHoldingBreakdownDto[] =>
-    buildTwoHoldings().map(holding => ({ ...holding, inEtfs: BENCHMARK }))
+    buildTwoHoldings().map(holding => ({ ...holding, inEtfs: `${BENCHMARK}, VWCE:XETRA` }))
 
   const benchmarkCalls = () =>
     vi
@@ -286,6 +286,19 @@ describe('etf-breakdown', () => {
     expect(chart.props('chartData')[0].ratio).toBeCloseTo(3.33, 2)
   })
 
+  it('hides the benchmark comparison when only the benchmark fund is selected', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    localStorage.setItem('portfolio_selected_etfs', JSON.stringify([BENCHMARK]))
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData').map(item => item.benchmark)).toEqual([undefined, undefined])
+  })
+
   it('passes the benchmark fund symbol to the chart once it is loaded', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
 
@@ -321,6 +334,50 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
 
     expect(benchmarkCalls()).toHaveLength(1)
+  })
+
+  it('falls back to VWCE when WEBN is not held', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(
+      buildTwoHoldings().map(holding => ({ ...holding, inEtfs: 'VWCE:GER:EUR, VWCE:XETRA' }))
+    )
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('VWCE')
+  })
+
+  it('prefers WEBN when both benchmark funds are held', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(
+      buildTwoHoldings().map(holding => ({ ...holding, inEtfs: `${BENCHMARK}, VWCE:GER:EUR` }))
+    )
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('WEBN')
+  })
+
+  it('hides the comparison and does not retry after the benchmark request fails', async () => {
+    const holdings = withBenchmarkFund()
+    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(etfs =>
+      etfs?.[0] === BENCHMARK ? Promise.reject(new Error('unavailable')) : Promise.resolve(holdings)
+    )
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+    await clickTab(wrapper, 'Sectors')
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect([chart.props('chartData')[0].benchmark, benchmarkCalls().length]).toEqual([undefined, 1])
   })
 
   it('matches the search query against the industry', async () => {
