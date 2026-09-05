@@ -151,6 +151,7 @@ class EtfBreakdownService(
         ?.takeIf { it.isNotBlank() },
     name = position.holding.name.trim(),
     sector = position.holding.sector?.displayName,
+    industry = position.holding.industry,
     countryCode =
       position.holding.countryCode
         ?.trim()

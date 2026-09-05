@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.model.holding
 
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
@@ -35,6 +36,8 @@ data class HoldingKey(
   val ticker: String?,
   val name: String,
   val sector: String?,
+  val industry: String?,
+  val gicsSector: String?,
   val countryCode: String?,
   val countryName: String?,
 )
@@ -44,6 +47,7 @@ data class InternalHoldingData(
   val ticker: String?,
   val name: String,
   val sector: String?,
+  val industry: GicsIndustry?,
   val countryCode: String?,
   val countryName: String?,
   val value: BigDecimal,

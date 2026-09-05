@@ -4,6 +4,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.model.holding.InternalHoldingData
 import org.junit.jupiter.api.BeforeEach
@@ -101,6 +102,68 @@ class HoldingAggregationServiceTest {
       val entry = result.entries.first()
       expect(entry.value.platforms.size).toEqual(2)
     }
+
+    @Test
+    fun `should prefer the non-null industry when merging duplicates`() {
+      val holdings =
+        listOf(
+          createHolding("Rheinmetall AG", "RHM", BigDecimal("100.00"), "VWCE"),
+          createHolding("Rheinmetall AG", "RHM", BigDecimal("20.00"), "EXXT", industry = GicsIndustry.AEROSPACE_AND_DEFENSE),
+        )
+
+      val result = service.aggregateHoldings(holdings)
+
+      expect(result.keys.first().industry).toEqual("Aerospace & Defense")
+    }
+
+    @Test
+    fun `should keep the industry of the larger holding when duplicates disagree`() {
+      val holdings =
+        listOf(
+          createHolding("Visa Inc", "V", BigDecimal("30.00"), "VWCE", industry = GicsIndustry.IT_SERVICES),
+          createHolding("Visa Inc", "V", BigDecimal("70.00"), "VUAA", industry = GicsIndustry.FINANCIAL_SERVICES),
+        )
+
+      val result = service.aggregateHoldings(holdings)
+
+      expect(result.keys.first().industry).toEqual("Financial Services")
+    }
+
+    @Test
+    fun `should derive the gics sector from the chosen industry`() {
+      val holdings = listOf(createHolding("Visa Inc", "V", BigDecimal("70.00"), "VUAA", industry = GicsIndustry.FINANCIAL_SERVICES))
+
+      val result = service.aggregateHoldings(holdings)
+
+      expect(result.keys.first().gicsSector).toEqual("Financials")
+    }
+
+    @Test
+    fun `should label a cryptocurrency holding as Cryptocurrency regardless of its industry`() {
+      val bitcoin =
+        createHolding(
+          name = "Bitcoin",
+          ticker = "BTC",
+          value = BigDecimal("100.00"),
+          etfSymbol = "WBIT",
+          sector = "Cryptocurrency",
+          industry = GicsIndustry.FINANCIAL_SERVICES,
+        )
+
+      val result = service.aggregateHoldings(listOf(bitcoin))
+
+      val key = result.keys.first()
+      expect(key.industry to key.gicsSector).toEqual("Cryptocurrency" to "Cryptocurrency")
+    }
+
+    @Test
+    fun `should leave industry null when no duplicate is classified`() {
+      val holdings = listOf(createHolding("Euro Cash", "EUR", BigDecimal("10.00"), "CASH"))
+
+      val result = service.aggregateHoldings(holdings)
+
+      expect(result.keys.first().industry).toEqual(null)
+    }
   }
 
   @Nested
@@ -167,12 +230,15 @@ class HoldingAggregationServiceTest {
     value: BigDecimal,
     etfSymbol: String,
     platforms: Set<Platform> = setOf(Platform.TRADING212),
+    sector: String? = null,
+    industry: GicsIndustry? = null,
   ): InternalHoldingData =
     InternalHoldingData(
       holdingUuid = UUID.randomUUID(),
       ticker = ticker,
       name = name,
-      sector = null,
+      sector = sector,
+      industry = industry,
       countryCode = null,
       countryName = null,
       value = value,
