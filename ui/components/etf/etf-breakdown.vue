@@ -51,6 +51,25 @@
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
       <etf-breakdown-chart :chart-data="activeChartData">
         <template #actions>
+          <div
+            v-if="activeTab === 'industries'"
+            class="breakdown-tabs"
+            role="group"
+            aria-label="Industry rollup"
+          >
+            <button
+              v-for="option in rollupOptions"
+              :key="option.key"
+              class="breakdown-tab"
+              :class="{ active: industryRollup === option.key }"
+              :aria-pressed="industryRollup === option.key"
+              type="button"
+              @click="industryRollup = option.key"
+            >
+              {{ option.label }}
+            </button>
+            <span v-if="benchmarkLabel" class="benchmark-caption">vs {{ benchmarkLabel }}</span>
+          </div>
           <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
             <button
               v-for="tab in breakdownTabs"
@@ -90,7 +109,7 @@
           v-model="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Search by name, ticker, sector, or country..."
+          placeholder="Search by name, ticker, sector, industry, or country..."
         />
         <button
           v-if="searchQuery.trim()"
@@ -127,11 +146,13 @@ import { usePlatformFilter } from '../../composables/use-platform-filter'
 import { etfBreakdownService, instrumentsService, logoService } from '../../services/api'
 import {
   buildSectorChartData,
+  buildIndustryChartData,
   buildCompanyChartData,
   buildCountryChartData,
   calculateWeightedMetrics,
   getFilterParam,
   type ChartDataItem,
+  type IndustryRollup,
 } from '../../services/etf-chart-service'
 import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
 import EtfBreakdownHeader from './etf-breakdown-header.vue'
@@ -227,6 +248,7 @@ const filteredHoldings = computed(() => {
       h.holdingName.toLowerCase().includes(query) ||
       h.holdingTicker?.toLowerCase().includes(query) ||
       h.holdingSector?.toLowerCase().includes(query) ||
+      h.holdingIndustry?.toLowerCase().includes(query) ||
       h.holdingCountryName?.toLowerCase().includes(query)
   )
 })
@@ -241,6 +263,7 @@ const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(h
 
 const breakdownTabs = [
   { key: 'sectors', label: 'Sectors' },
+  { key: 'industries', label: 'Industries' },
   { key: 'companies', label: 'Top holdings' },
   { key: 'countries', label: 'Countries' },
 ] as const
@@ -249,7 +272,21 @@ type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = ref<BreakdownTab>('sectors')
 
+const rollupOptions: { key: IndustryRollup; label: string }[] = [
+  { key: 'industry', label: '74 industries' },
+  { key: 'sector', label: '11 sectors' },
+]
+
+const industryRollup = useLocalStorage<IndustryRollup>(STORAGE_KEYS.ETF_INDUSTRY_ROLLUP, 'industry')
+
+const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
+
+const industryChartData = computed<ChartDataItem[]>(() =>
+  buildIndustryChartData(holdings.value, industryRollup.value, benchmarkHoldings.value)
+)
+
 const activeChartData = computed(() => {
+  if (activeTab.value === 'industries') return industryChartData.value
   if (activeTab.value === 'companies') return companyChartData.value
   if (activeTab.value === 'countries') return countryChartData.value
   return sectorChartData.value
@@ -319,6 +356,32 @@ const toggleAllEtfs = () => {
 const getSymbolOnly = (fullSymbol: string): string => {
   return fullSymbol.split(':')[0]
 }
+
+const BENCHMARK_CHAIN = ['WEBN:GER:EUR', 'VWCE:GER:EUR']
+
+const benchmarkSymbol = computed(() =>
+  BENCHMARK_CHAIN.find(symbol => availableEtfs.value.includes(symbol))
+)
+
+const benchmarkLabel = computed(() => {
+  const symbol = benchmarkSymbol.value
+  if (!symbol || benchmarkHoldings.value.length === 0) return null
+  return getSymbolOnly(symbol)
+})
+
+const loadBenchmark = async () => {
+  const symbol = benchmarkSymbol.value
+  if (!symbol || benchmarkHoldings.value.length > 0) return
+  try {
+    benchmarkHoldings.value = await etfBreakdownService.getBreakdown([symbol], undefined)
+  } catch {
+    benchmarkHoldings.value = []
+  }
+}
+
+watch([activeTab, benchmarkSymbol], () => {
+  if (activeTab.value === 'industries') loadBenchmark()
+})
 
 const clearSearch = () => {
   searchQuery.value = ''
@@ -436,6 +499,14 @@ onMounted(async () => {
   border-color: var(--color-brass);
   background: var(--color-brass-wash);
   color: var(--color-brass-deep);
+}
+
+.benchmark-caption {
+  align-self: center;
+  padding-left: 0.5rem;
+  font-size: var(--text-label);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
 }
 
 .search-container {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
 import EtfBreakdown from './etf-breakdown.vue'
 import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
@@ -156,6 +157,26 @@ describe('etf-breakdown', () => {
     },
   ]
 
+  const mountWithChartStub = () =>
+    mount(EtfBreakdown, {
+      global: {
+        stubs: {
+          EtfBreakdownChart: {
+            props: ['title', 'chartData'],
+            template: '<div><slot name="actions" /></div>',
+          },
+        },
+      },
+    })
+
+  const clickTab = async (wrapper: VueWrapper, label: string) => {
+    const tab = wrapper.findAll('.breakdown-tab').find(btn => btn.text() === label)
+    await tab!.trigger('click')
+  }
+
+  const withBenchmarkFund = (): EtfHoldingBreakdownDto[] =>
+    buildTwoHoldings().map(holding => ({ ...holding, inEtfs: 'WEBN:GER:EUR' }))
+
   it('does not shrink the summary total value when search narrows the table', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
     vi.mocked(instrumentsService.getAll).mockResolvedValue({
@@ -242,5 +263,143 @@ describe('etf-breakdown', () => {
 
     const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
     expect(chart.props('chartData').map(item => item.label)).toEqual(['United States'])
+  })
+  it('shows the industries breakdown in the chart after the Industries tab is clicked', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData').map(item => item.label)).toEqual([
+      'Technology Hardware, Storage & Peripherals',
+      'Interactive Media & Services',
+    ])
+  })
+
+  it('rolls the industries chart up to gics sectors when the 11 sectors switch is clicked', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await clickTab(wrapper, '11 sectors')
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData').map(item => item.label)).toEqual([
+      'Information Technology',
+      'Communication Services',
+    ])
+  })
+
+  it('hides the rollup switch on every tab except Industries', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.findAll('.breakdown-tab').map(btn => btn.text())).toEqual([
+      'Sectors',
+      'Industries',
+      'Top holdings',
+      'Countries',
+    ])
+  })
+
+  it('fetches the benchmark fund breakdown once when the Industries tab opens', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+    await clickTab(wrapper, 'Sectors')
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    const benchmarkCalls = vi
+      .mocked(etfBreakdownService.getBreakdown)
+      .mock.calls.filter(([etfs]) => etfs?.length === 1 && etfs[0] === 'WEBN:GER:EUR')
+    expect(benchmarkCalls).toHaveLength(1)
+  })
+
+  it('attaches the benchmark ratio to each industry once the benchmark is loaded', async () => {
+    const holdings = withBenchmarkFund()
+    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(async etfs =>
+      etfs?.[0] === 'WEBN:GER:EUR' ? [{ ...holdings[0], percentageOfTotal: 20 }] : holdings
+    )
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData')[0].ratio).toBeCloseTo(3.33, 2)
+  })
+
+  it('shows the benchmark caption with the symbol only', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    expect(wrapper.find('.benchmark-caption').text()).toBe('vs WEBN')
+  })
+
+  it('leaves the benchmark caption out when no benchmark fund is held', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+    await flushPromises()
+
+    expect(wrapper.find('.benchmark-caption').exists()).toBe(false)
+  })
+
+  it('matches the search query against the industry', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [mockInstrument],
+      portfolioXirr: null,
+    })
+    localStorage.setItem('portfolio_etf_search', 'interactive media')
+
+    const wrapper = mount(EtfBreakdown)
+    await flushPromises()
+
+    expect(wrapper.findComponent(EtfBreakdownTable).props('holdings')).toHaveLength(1)
   })
 })

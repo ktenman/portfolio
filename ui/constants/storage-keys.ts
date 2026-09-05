@@ -14,4 +14,5 @@ export const STORAGE_KEYS = {
   INSTRUMENTS_FILTERS_OPEN: 'portfolio_instruments_filters_open',
   TRANSACTIONS_FILTERS_OPEN: 'portfolio_transactions_filters_open',
   ETF_FILTERS_OPEN: 'portfolio_etf_filters_open',
+  ETF_INDUSTRY_ROLLUP: 'portfolio_etf_industry_rollup',
 } as const
