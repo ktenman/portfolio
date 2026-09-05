@@ -588,7 +588,7 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
-  fun `should findUnclassifiedByIndustryHoldingIds skip holdings that reached the attempt cap`() {
+  fun `should findUnclassifiedByIndustry skip holdings that reached the attempt cap`() {
     val fresh = etfHoldingPersistenceService.findOrCreateHolding("Fresh Co", "FRS", null)
     val exhausted = etfHoldingPersistenceService.saveHolding(EtfHolding(name = "Exhausted Co", ticker = "EXH", industryFetchAttempts = 3))
     etfPositionRepository.save(
@@ -608,9 +608,9 @@ class EtfHoldingPersistenceServiceIT {
       ),
     )
 
-    val ids = etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds()
+    val holdings = etfHoldingIndustryService.findUnclassifiedByIndustry()
 
-    expect(ids).toEqual(listOf(fresh.id))
+    expect(holdings.map { it.id }).toEqual(listOf(fresh.id))
   }
 
   @Test

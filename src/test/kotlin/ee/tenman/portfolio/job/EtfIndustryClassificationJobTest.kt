@@ -11,7 +11,6 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
-import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.integration.BatchClassificationOutcome
@@ -28,7 +27,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.support.CronExpression
 
 class EtfIndustryClassificationJobTest {
-  private val etfHoldingPersistenceService: EtfHoldingPersistenceService = mockk(relaxed = true)
   private val etfHoldingIndustryService: EtfHoldingIndustryService = mockk(relaxed = true)
   private val classificationService: GicsIndustryClassificationService = mockk()
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
@@ -46,7 +44,6 @@ class EtfIndustryClassificationJobTest {
     every { properties.enabled } returns true
     job =
       EtfIndustryClassificationJob(
-        etfHoldingPersistenceService = etfHoldingPersistenceService,
         etfHoldingIndustryService = etfHoldingIndustryService,
         classificationService = classificationService,
         jobExecutionService = jobExecutionService,
@@ -56,11 +53,15 @@ class EtfIndustryClassificationJobTest {
       )
   }
 
-  private fun createHolding(
+  private fun holding(
     id: Long,
     name: String,
     ticker: String? = null,
   ): EtfHolding = EtfHolding(name = name, ticker = ticker).apply { this.id = id }
+
+  private fun unclassified(vararg holdings: EtfHolding) {
+    every { etfHoldingIndustryService.findUnclassifiedByIndustry() } returns holdings.toList()
+  }
 
   private fun answered(vararg pairs: Pair<Long, GicsIndustry>) =
     BatchClassificationOutcome(
@@ -70,7 +71,7 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `should do nothing when no unclassified holdings found`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns emptyList()
+    unclassified()
 
     job.execute()
 
@@ -79,26 +80,20 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `should process holdings in batches of 100`() {
-    val ids = (1L..250L).toList()
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns ids
-    every { etfHoldingPersistenceService.findAllByIds(ids) } returns ids.map { createHolding(it, "Co $it", "T$it") }
-    val batchSlot = slot<List<CompanyClassificationInput>>()
-    val invokedSizes: MutableList<Int> = mutableListOf()
-    every { classificationService.classifyBatch(capture(batchSlot)) } answers {
-      invokedSizes.add(batchSlot.captured.size)
-      answered(*batchSlot.captured.map { it.holdingId to GicsIndustry.BANKS }.toTypedArray())
+    unclassified(*(1L..250L).map { holding(it, "Co $it", "T$it") }.toTypedArray())
+    val batches = mutableListOf<List<CompanyClassificationInput>>()
+    every { classificationService.classifyBatch(capture(batches)) } answers {
+      answered(*batches.last().map { it.holdingId to GicsIndustry.BANKS }.toTypedArray())
     }
 
     job.execute()
 
-    expect(invokedSizes as List<Int>).toEqual(listOf(100, 100, 50))
+    expect(batches.map { it.size }).toEqual(listOf(100, 100, 50))
   }
 
   @Test
   fun `should call updateIndustry for each successfully classified holding`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns listOf(1L, 2L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns
-      listOf(createHolding(1L, "Nvidia", "NVDA"), createHolding(2L, "Rheinmetall", "RHM"))
+    unclassified(holding(1L, "Nvidia", "NVDA"), holding(2L, "Rheinmetall", "RHM"))
     every { classificationService.classifyBatch(any()) } returns
       answered(1L to GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT, 2L to GicsIndustry.AEROSPACE_AND_DEFENSE)
 
@@ -114,9 +109,7 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `should increment industry fetch attempts only for holdings missing from an answered batch`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns listOf(1L, 2L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns
-      listOf(createHolding(1L, "Nvidia", "NVDA"), createHolding(2L, "Mystery Corp", "XXX"))
+    unclassified(holding(1L, "Nvidia", "NVDA"), holding(2L, "Mystery Corp", "XXX"))
     every { classificationService.classifyBatch(any()) } returns
       answered(1L to GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT)
 
@@ -128,8 +121,7 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `cannot increment industry fetch attempts when model gives no answer`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns listOf(1L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(createHolding(1L, "Mystery Corp", "XXX"))
+    unclassified(holding(1L, "Mystery Corp", "XXX"))
     every { classificationService.classifyBatch(any()) } returns BatchClassificationOutcome(emptyMap(), false)
 
     runCatching { job.execute() }
@@ -139,23 +131,20 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `should skip holdings with blank name without incrementing attempts`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns listOf(1L, 2L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns
-      listOf(createHolding(1L, "Nvidia", "NVDA"), createHolding(2L, "", "BLANK"))
-    val batchSlot = slot<List<CompanyClassificationInput>>()
-    every { classificationService.classifyBatch(capture(batchSlot)) } returns
+    unclassified(holding(1L, "Nvidia", "NVDA"), holding(2L, "", "BLANK"))
+    val batch = slot<List<CompanyClassificationInput>>()
+    every { classificationService.classifyBatch(capture(batch)) } returns
       answered(1L to GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT)
 
     job.execute()
 
-    expect(batchSlot.captured.map { it.holdingId }).toEqual(listOf(1L))
+    expect(batch.captured.map { it.holdingId }).toEqual(listOf(1L))
     verify(exactly = 0) { etfHoldingIndustryService.incrementIndustryFetchAttempts(2L) }
   }
 
   @Test
   fun `should evict etf breakdown caches when classification succeeds`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns listOf(1L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(createHolding(1L, "Nvidia", "NVDA"))
+    unclassified(holding(1L, "Nvidia", "NVDA"))
     every { classificationService.classifyBatch(any()) } returns
       answered(1L to GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT)
 
@@ -167,7 +156,7 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `should not evict caches when no holdings classified`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns emptyList()
+    unclassified()
 
     job.execute()
 
@@ -176,8 +165,7 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `should fail job when classification produces no successes`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns listOf(1L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(createHolding(1L, "Mystery Corp", "XXX"))
+    unclassified(holding(1L, "Mystery Corp", "XXX"))
     every { classificationService.classifyBatch(any()) } returns BatchClassificationOutcome(emptyMap(), false)
 
     expect { job.execute() }.toThrow<IllegalStateException>()
@@ -185,8 +173,7 @@ class EtfIndustryClassificationJobTest {
 
   @Test
   fun `cannot fail job when every holding is skipped for blank name`() {
-    every { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() } returns listOf(1L)
-    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(createHolding(1L, "", "BLANK"))
+    unclassified(holding(1L, "", "BLANK"))
 
     expect { job.execute() }.notToThrow()
   }
@@ -197,7 +184,7 @@ class EtfIndustryClassificationJobTest {
 
     job.execute()
 
-    verify(exactly = 0) { etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds() }
+    verify(exactly = 0) { etfHoldingIndustryService.findUnclassifiedByIndustry() }
   }
 
   @Test

@@ -34,6 +34,11 @@ class GicsIndustryClassificationServiceTest {
     ticker: String? = null,
   ) = CompanyClassificationInput(holdingId = id, name = name, ticker = ticker)
 
+  private fun respond(content: String) {
+    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
+      OpenRouterClassificationResult(content = content, model = AiModel.GPT_5_6_LUNA)
+  }
+
   @Test
   fun `should return empty outcome for empty batch input`() {
     val outcome = service.classifyBatch(emptyList())
@@ -54,8 +59,7 @@ class GicsIndustryClassificationServiceTest {
   @Test
   fun `should classify a batch of three companies from returned codes`() {
     val companies = listOf(company(1L, "Nvidia", "NVDA"), company(2L, "Banco Santander", "SAN"), company(3L, "Pfizer", "PFE"))
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = "1. 453010\n2. 401010\n3. 352020", model = AiModel.GPT_5_6_LUNA)
+    respond("1. 453010\n2. 401010\n3. 352020")
 
     val results = service.classifyBatch(companies).results
 
@@ -91,8 +95,7 @@ class GicsIndustryClassificationServiceTest {
   @Test
   fun `should skip blank names in batch`() {
     val companies = listOf(company(1L, "Apple", "AAPL"), company(2L, "", "BLANK"), company(3L, "Microsoft", "MSFT"))
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = "1. 452020\n2. 451030", model = AiModel.GPT_5_6_LUNA)
+    respond("1. 452020\n2. 451030")
 
     val results = service.classifyBatch(companies).results
 
@@ -105,8 +108,7 @@ class GicsIndustryClassificationServiceTest {
   @Test
   fun `should return partial results when response has only some lines`() {
     val companies = (1..5).map { company(it.toLong(), "Company $it", "C$it") }
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = "1. 453010\n3. 401010", model = AiModel.GPT_5_6_LUNA)
+    respond("1. 453010\n3. 401010")
 
     val results = service.classifyBatch(companies).results
 
@@ -117,9 +119,8 @@ class GicsIndustryClassificationServiceTest {
 
   @Test
   fun `should ignore unknown codes and malformed lines`() {
-    val companies = listOf(company(1L, "Nvidia", "NVDA"), company(2L, "Mystery", "XXX"), company(3L, "Pfizer", "PFE"))
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = "1. 453010\n2. 999999\nthree: Pharmaceuticals\n4. 352020", model = AiModel.GPT_5_6_LUNA)
+    val companies = listOf(company(1L, "Nvidia", "NVDA"), company(2L, "Mystery", "XXX"))
+    respond("1. 453010\n2. 999999\nthree: Pharmaceuticals\n4. 352020")
 
     val outcome = service.classifyBatch(companies)
 
@@ -129,8 +130,7 @@ class GicsIndustryClassificationServiceTest {
 
   @Test
   fun `should accept a code followed by its name`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = "1. 201010 Aerospace & Defense", model = AiModel.GPT_5_6_LUNA)
+    respond("1. 201010 Aerospace & Defense")
 
     val results = service.classifyBatch(listOf(company(1L, "Rheinmetall", "RHM"))).results
 
@@ -149,8 +149,7 @@ class GicsIndustryClassificationServiceTest {
 
   @Test
   fun `should report the model as unanswered when no line parses`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = "| Company | Code |\n| Nvidia | 453010 |", model = AiModel.GPT_5_6_LUNA)
+    respond("| Company | Code |\n| Nvidia | 453010 |")
 
     val outcome = service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA")))
 
@@ -159,9 +158,19 @@ class GicsIndustryClassificationServiceTest {
   }
 
   @Test
+  fun `should report the model as unanswered when fewer than half the lines parse`() {
+    val companies = listOf(company(1L, "Nvidia", "NVDA"), company(2L, "Mystery", "XXX"), company(3L, "Pfizer", "PFE"))
+    respond("1. 453010")
+
+    val outcome = service.classifyBatch(companies)
+
+    expect(outcome.results.keys).toEqual(setOf(1L))
+    expect(outcome.llmAnswered).toEqual(false)
+  }
+
+  @Test
   fun `should accept a parenthesis or colon after the line number`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = "1) 453010\n2: 401010", model = AiModel.GPT_5_6_LUNA)
+    respond("1) 453010\n2: 401010")
 
     val results = service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA"), company(2L, "Santander", "SAN"))).results
 

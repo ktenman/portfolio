@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import org.slf4j.LoggerFactory
@@ -16,10 +17,7 @@ class EtfHoldingIndustryService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Transactional(readOnly = true)
-  fun findUnclassifiedByIndustryHoldingIds(): List<Long> =
-    etfHoldingRepository
-      .findUnclassifiedIndustryHoldings(MAX_INDUSTRY_FETCH_ATTEMPTS)
-      .map { it.id }
+  fun findUnclassifiedByIndustry(): List<EtfHolding> = etfHoldingRepository.findUnclassifiedIndustryHoldings(MAX_INDUSTRY_FETCH_ATTEMPTS)
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun updateIndustry(

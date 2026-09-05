@@ -5,7 +5,6 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.model.ClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
 import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
-import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.integration.CompanyClassificationInput
@@ -17,7 +16,6 @@ import org.springframework.scheduling.annotation.Scheduled
 
 @ScheduledJob
 class EtfIndustryClassificationJob(
-  private val etfHoldingPersistenceService: EtfHoldingPersistenceService,
   private val etfHoldingIndustryService: EtfHoldingIndustryService,
   private val classificationService: GicsIndustryClassificationService,
   private val jobExecutionService: JobExecutionService,
@@ -40,14 +38,13 @@ class EtfIndustryClassificationJob(
       log.info("Industry classification disabled, skipping job")
       return
     }
-    val holdingIds = etfHoldingIndustryService.findUnclassifiedByIndustryHoldingIds()
-    if (holdingIds.isEmpty()) {
+    val holdings = etfHoldingIndustryService.findUnclassifiedByIndustry()
+    if (holdings.isEmpty()) {
       log.info("No holdings without industry classification found")
       return
     }
-    log.info("Found ${holdingIds.size} holdings without industry classification")
-    val holdings = loadHoldingsMap(holdingIds)
-    val result = processInBatches(holdingIds, holdings)
+    log.info("Found ${holdings.size} holdings without industry classification")
+    val result = processInBatches(holdings)
     if (result.success > 0) {
       cacheInvalidationService.evictEtfBreakdownCache()
       cacheInvalidationService.evictDiversificationEtfsCache()
@@ -56,22 +53,13 @@ class EtfIndustryClassificationJob(
     log.info("Industry classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
 
-  private fun loadHoldingsMap(holdingIds: List<Long>): Map<Long, EtfHolding> =
-    etfHoldingPersistenceService
-      .findAllByIds(holdingIds)
-      .mapNotNull { holding -> holding.id?.let { it to holding } }
-      .toMap()
-
-  private fun processInBatches(
-    holdingIds: List<Long>,
-    holdings: Map<Long, EtfHolding>,
-  ): ClassificationResult {
-    val batches = holdingIds.chunked(BATCH_SIZE)
+  private fun processInBatches(holdings: List<EtfHolding>): ClassificationResult {
+    val batches = holdings.chunked(BATCH_SIZE)
     return batches
-      .mapIndexed { index, batchIds ->
-        log.info("Processing industry batch ${index + 1}/${batches.size} (${batchIds.size} holdings)")
+      .mapIndexed { index, batch ->
+        log.info("Processing industry batch ${index + 1}/${batches.size} (${batch.size} holdings)")
         waitForRateLimit()
-        processBatch(batchIds, holdings)
+        processBatch(batch)
       }.fold(ClassificationResult(0, 0, 0)) { acc, batch ->
         ClassificationResult(acc.success + batch.success, acc.failure + batch.failure, acc.skipped + batch.skipped)
       }
@@ -84,28 +72,18 @@ class EtfIndustryClassificationJob(
     }
   }
 
-  private fun processBatch(
-    batchIds: List<Long>,
-    holdings: Map<Long, EtfHolding>,
-  ): ClassificationResult {
-    val inputs =
-      batchIds.mapNotNull { id ->
-        holdings[id]?.takeIf { it.name.isNotBlank() }?.let { CompanyClassificationInput(id, it.name, it.ticker) }
-      }
-    val skipped = batchIds.size - inputs.size
+  private fun processBatch(batch: List<EtfHolding>): ClassificationResult {
+    val inputs = batch.filter { it.name.isNotBlank() }.map { CompanyClassificationInput(it.id, it.name, it.ticker) }
+    val skipped = batch.size - inputs.size
     if (inputs.isEmpty()) return ClassificationResult(success = 0, failure = 0, skipped = skipped)
     val outcome = classificationService.classifyBatch(inputs)
-    val classified =
-      inputs.count { input ->
-        val result = outcome.results[input.holdingId]
-        if (result == null) {
-          if (outcome.llmAnswered) etfHoldingIndustryService.incrementIndustryFetchAttempts(input.holdingId)
-          return@count false
-        }
-        etfHoldingIndustryService.updateIndustry(input.holdingId, result.industry, result.model)
-        true
-      }
-    return ClassificationResult(success = classified, failure = inputs.size - classified, skipped = skipped)
+    val (classified, missing) = inputs.partition { outcome.results.containsKey(it.holdingId) }
+    classified.forEach { input ->
+      val result = outcome.results.getValue(input.holdingId)
+      etfHoldingIndustryService.updateIndustry(input.holdingId, result.industry, result.model)
+    }
+    if (outcome.llmAnswered) missing.forEach { etfHoldingIndustryService.incrementIndustryFetchAttempts(it.holdingId) }
+    return ClassificationResult(success = classified.size, failure = missing.size, skipped = skipped)
   }
 
   private companion object {

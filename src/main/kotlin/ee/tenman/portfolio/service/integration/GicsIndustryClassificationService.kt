@@ -16,25 +16,17 @@ class GicsIndustryClassificationService(
 
   fun classifyBatch(companies: List<CompanyClassificationInput>): BatchClassificationOutcome<GicsIndustryClassificationResult> {
     val validCompanies = companies.filter { it.name.isNotBlank() }
-    if (validCompanies.isEmpty()) return BatchClassificationOutcome(emptyMap(), false)
-    if (!properties.enabled) {
-      log.warn("Industry classification disabled, skipping batch of ${companies.size}")
-      return BatchClassificationOutcome(emptyMap(), false)
-    }
-    return classifyValidBatch(validCompanies)
-  }
-
-  private fun classifyValidBatch(
-    validCompanies: List<CompanyClassificationInput>,
-  ): BatchClassificationOutcome<GicsIndustryClassificationResult> {
+    if (!properties.enabled) log.warn("Industry classification disabled, skipping batch of ${companies.size}")
+    if (validCompanies.isEmpty() || !properties.enabled) return UNANSWERED
     val response =
       openRouterClient.classifyWithCascadingFallback(buildPrompt(validCompanies), AiModel.primarySectorModel()) ?: run {
         log.warn("Batch industry classification failed for ${validCompanies.size} companies")
-        return BatchClassificationOutcome(emptyMap(), false)
+        return UNANSWERED
       }
     val results = parse(response.content, validCompanies, response.model)
-    if (results.isEmpty()) log.warn("Batch industry classification returned no parsable lines for ${validCompanies.size} companies")
-    return BatchClassificationOutcome(results, results.isNotEmpty())
+    val answered = results.size * 2 >= validCompanies.size
+    if (!answered) log.warn("Batch industry classification parsed ${results.size} of ${validCompanies.size} lines and counts as unanswered")
+    return BatchClassificationOutcome(results, answered)
   }
 
   private fun buildPrompt(companies: List<CompanyClassificationInput>): String {
@@ -83,5 +75,6 @@ class GicsIndustryClassificationService(
 
   private companion object {
     val LINE_PATTERN = Regex("^(\\d+)[.):]?\\s*(\\d{6})\\b")
+    val UNANSWERED = BatchClassificationOutcome<GicsIndustryClassificationResult>(emptyMap(), false)
   }
 }
