@@ -3,6 +3,7 @@ import {
   buildSectorChartData,
   buildCompanyChartData,
   buildCountryChartData,
+  buildIndustryChartData,
   calculateWeightedMetrics,
   getFilterParam,
 } from './etf-chart-service'
@@ -17,6 +18,7 @@ const createHolding = (
   holdingName: 'Apple Inc.',
   holdingTicker: 'AAPL',
   holdingSector: 'Technology',
+  holdingIndustry: 'Software',
   holdingCountryCode: 'US',
   holdingCountryName: 'United States',
   totalValueEur: 1000,
@@ -226,6 +228,129 @@ describe('etf-chart-service', () => {
       const result = calculateWeightedMetrics([vwce, qdve], [])
 
       expect(result).toEqual({ ter: null, annualReturn: null })
+    })
+  })
+
+  describe('buildIndustryChartData', () => {
+    it('should aggregate holdings by industry', () => {
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 8 }),
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 4 }),
+        createHolding({ holdingIndustry: 'Software', percentageOfTotal: 5 }),
+      ])
+      expect(result.map(item => [item.label, item.value])).toEqual([
+        ['Banks', 12],
+        ['Software', 5],
+      ])
+    })
+
+    it('should label holdings without an industry as Unclassified', () => {
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: null, percentageOfTotal: 3 }),
+      ])
+      expect(result[0].label).toBe('Unclassified')
+    })
+
+    it('should fold everything beyond the top 15 into Other so the chart sums to the holdings total', () => {
+      const holdings = Array.from({ length: 20 }, (_, i) =>
+        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 5 })
+      )
+      const result = buildIndustryChartData(holdings)
+      expect([
+        result.length,
+        result[result.length - 1].label,
+        result.reduce((sum, item) => sum + item.value, 0),
+      ]).toEqual([16, 'Other', 100])
+    })
+
+    it('should fold industries below the 0.5% floor into Other instead of dropping them', () => {
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.7 }),
+        createHolding({ holdingIndustry: 'Tobacco', percentageOfTotal: 0.3 }),
+      ])
+      expect(result.map(item => [item.label, item.value])).toEqual([
+        ['Banks', 99.7],
+        ['Other', 0.3],
+      ])
+    })
+
+    it('should fold every industry into Other when all are below the floor', () => {
+      const result = buildIndustryChartData(
+        ['Banks', 'Tobacco', 'Media'].map(holdingIndustry =>
+          createHolding({ holdingIndustry, percentageOfTotal: 0.2 })
+        )
+      )
+      expect([result.map(item => item.label), result[0].value]).toEqual([
+        ['Other'],
+        expect.closeTo(0.6, 5),
+      ])
+    })
+
+    it('should attach the benchmark share and the ratio per industry', () => {
+      const result = buildIndustryChartData(
+        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 })],
+        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 4 })]
+      )
+      expect([result[0].benchmark, result[0].ratio]).toEqual([4, 2.5])
+    })
+
+    it('should leave the ratio undefined when the benchmark has no weight in the industry', () => {
+      const result = buildIndustryChartData(
+        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 })],
+        [createHolding({ holdingIndustry: 'Software', percentageOfTotal: 100 })]
+      )
+      expect(result.map(item => [item.label, item.value, item.benchmark, item.ratio])).toEqual([
+        ['Banks', 10, 0, undefined],
+        ['Other', 0, 100, undefined],
+      ])
+    })
+
+    it('should leave the ratio undefined when the benchmark share would display as zero', () => {
+      const result = buildIndustryChartData(
+        [createHolding({ holdingIndustry: 'Cryptocurrency', percentageOfTotal: 2.67 })],
+        [
+          createHolding({ holdingIndustry: 'Cryptocurrency', percentageOfTotal: 0.004 }),
+          createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.996 }),
+        ]
+      )
+      expect([result[0].benchmark, result[0].ratio]).toEqual([0.004, undefined])
+    })
+
+    it('should keep benchmark-only weight visible under Other when the portfolio has no residual', () => {
+      const result = buildIndustryChartData(
+        [createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 100 })],
+        [
+          createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 98 }),
+          createHolding({ holdingIndustry: 'Real Estate', percentageOfTotal: 2 }),
+        ]
+      )
+      const last = result[result.length - 1]
+      expect([last.label, last.value, last.benchmark]).toEqual(['Other', 0, 2])
+    })
+
+    it('should not emit Other for a benchmark-free portfolio with no residual', () => {
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 100 }),
+      ])
+      expect(result.map(item => item.label)).toEqual(['Banks'])
+    })
+
+    it('should put the benchmark weight of unshown industries under Other without a ratio', () => {
+      const holdings = Array.from({ length: 16 }, (_, i) =>
+        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 5 })
+      )
+      const result = buildIndustryChartData(holdings, [
+        createHolding({ holdingIndustry: 'Industry 15', percentageOfTotal: 30 }),
+      ])
+      const other = result[result.length - 1]
+      expect([other.label, other.benchmark, other.ratio]).toEqual(['Other', 30, undefined])
+    })
+
+    it('should not attach benchmark fields when no benchmark holdings are given', () => {
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 10 }),
+      ])
+      expect(result[0].benchmark).toBeUndefined()
     })
   })
 })

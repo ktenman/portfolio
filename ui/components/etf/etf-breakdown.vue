@@ -49,7 +49,7 @@
     </div>
 
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
-      <etf-breakdown-chart :chart-data="activeChartData">
+      <etf-breakdown-chart :chart-data="activeChartData" :benchmark-label="benchmarkLabel">
         <template #actions>
           <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
             <button
@@ -90,7 +90,7 @@
           v-model="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Search by name, ticker, sector, or country..."
+          placeholder="Search by name, ticker, sector, industry, or country..."
         />
         <button
           v-if="searchQuery.trim()"
@@ -127,6 +127,7 @@ import { usePlatformFilter } from '../../composables/use-platform-filter'
 import { etfBreakdownService, instrumentsService, logoService } from '../../services/api'
 import {
   buildSectorChartData,
+  buildIndustryChartData,
   buildCompanyChartData,
   buildCountryChartData,
   calculateWeightedMetrics,
@@ -227,6 +228,7 @@ const filteredHoldings = computed(() => {
       h.holdingName.toLowerCase().includes(query) ||
       h.holdingTicker?.toLowerCase().includes(query) ||
       h.holdingSector?.toLowerCase().includes(query) ||
+      h.holdingIndustry?.toLowerCase().includes(query) ||
       h.holdingCountryName?.toLowerCase().includes(query)
   )
 })
@@ -241,6 +243,7 @@ const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(h
 
 const breakdownTabs = [
   { key: 'sectors', label: 'Sectors' },
+  { key: 'industries', label: 'Industries' },
   { key: 'companies', label: 'Top holdings' },
   { key: 'countries', label: 'Countries' },
 ] as const
@@ -249,7 +252,31 @@ type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = ref<BreakdownTab>('sectors')
 
+const BENCHMARK_CHAIN = ['WEBN:GER:EUR', 'VWCE:GER:EUR']
+
+const benchmarkSymbol = computed(() =>
+  BENCHMARK_CHAIN.find(symbol => availableEtfs.value.includes(symbol))
+)
+
+const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
+
+const chartedFunds = computed(
+  () => new Set(holdings.value.flatMap(holding => holding.inEtfs.split(',').map(etf => etf.trim())))
+)
+
+const comparedHoldings = computed(() => {
+  const symbol = benchmarkSymbol.value
+  const onlyBenchmarkCharted =
+    symbol !== undefined && chartedFunds.value.size === 1 && chartedFunds.value.has(symbol)
+  return onlyBenchmarkCharted ? [] : benchmarkHoldings.value
+})
+
+const industryChartData = computed<ChartDataItem[]>(() =>
+  buildIndustryChartData(holdings.value, comparedHoldings.value)
+)
+
 const activeChartData = computed(() => {
+  if (activeTab.value === 'industries') return industryChartData.value
   if (activeTab.value === 'companies') return companyChartData.value
   if (activeTab.value === 'countries') return countryChartData.value
   return sectorChartData.value
@@ -319,6 +346,25 @@ const toggleAllEtfs = () => {
 const getSymbolOnly = (fullSymbol: string): string => {
   return fullSymbol.split(':')[0]
 }
+
+const benchmarkLabel = computed(() => benchmarkSymbol.value && getSymbolOnly(benchmarkSymbol.value))
+
+let benchmarkRequested = false
+
+const loadBenchmark = async () => {
+  const symbol = benchmarkSymbol.value
+  if (!symbol || benchmarkRequested) return
+  benchmarkRequested = true
+  try {
+    benchmarkHoldings.value = await etfBreakdownService.getBreakdown([symbol], undefined)
+  } catch {
+    benchmarkHoldings.value = []
+  }
+}
+
+watch(activeTab, tab => {
+  if (tab === 'industries') loadBenchmark()
+})
 
 const clearSearch = () => {
   searchQuery.value = ''
@@ -414,6 +460,8 @@ onMounted(async () => {
 
 .breakdown-tabs {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.25rem;
 }
 
@@ -425,6 +473,7 @@ onMounted(async () => {
   font-size: 0.8125rem;
   color: var(--color-ink-soft);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .breakdown-tab:hover {
@@ -540,6 +589,10 @@ onMounted(async () => {
   .search-input-wrapper {
     width: 100%;
     max-width: none;
+  }
+
+  .breakdown-tab {
+    padding: 0.3125rem 0.5rem;
   }
 }
 

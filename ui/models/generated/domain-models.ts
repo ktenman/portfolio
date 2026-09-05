@@ -128,6 +128,7 @@ export interface EtfHoldingBreakdownDto extends Serializable {
     percentageOfTotal: number;
     totalValueEur: number;
     holdingSector: string | null;
+    holdingIndustry: string | null;
     holdingCountryCode: string | null;
     holdingCountryName: string | null;
     inEtfs: string;

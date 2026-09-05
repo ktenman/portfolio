@@ -7,6 +7,7 @@
       :class="{
         active: index === activeIndex,
         dimmed: activeIndex !== null && index !== activeIndex,
+        compared: item.benchmark !== undefined,
       }"
       @mouseenter="emit('hover', index)"
     >
@@ -19,6 +20,13 @@
       <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
       <span class="legend-label">{{ item.label }}</span>
       <span class="legend-value">{{ item.percentage }}%</span>
+      <span
+        v-if="item.benchmark !== undefined"
+        class="legend-benchmark"
+        :class="{ flagged: isFlagged(item.ratio) }"
+      >
+        {{ formatBenchmark(item) }}
+      </span>
     </div>
   </div>
 </template>
@@ -26,15 +34,24 @@
 <script lang="ts" setup>
 import type { ChartDataItem } from '../../services/etf-chart-service'
 
-defineProps<{
+const props = defineProps<{
   items: ChartDataItem[]
   activeIndex: number | null
+  benchmarkLabel?: string
 }>()
 
 const emit = defineEmits<{
   hover: [index: number]
   leave: []
 }>()
+
+const formatBenchmark = (item: ChartDataItem): string => {
+  const share = `${props.benchmarkLabel ?? 'vs'} ${(item.benchmark ?? 0).toFixed(2)}%`
+  return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}x`
+}
+
+const isFlagged = (ratio: number | undefined): boolean =>
+  ratio !== undefined && (ratio > 2 || ratio < 0.5)
 </script>
 
 <style scoped>
@@ -61,6 +78,23 @@ const emit = defineEmits<{
 .legend-color,
 .legend-flag {
   grid-row: 1 / span 2;
+}
+
+.legend-item.compared .legend-color,
+.legend-item.compared .legend-flag {
+  grid-row: 1 / span 3;
+}
+
+.legend-benchmark {
+  grid-column: 2;
+  font-size: var(--text-label);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.legend-benchmark.flagged {
+  color: var(--color-brass-deep);
+  font-weight: 600;
 }
 
 .legend-color {

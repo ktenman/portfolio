@@ -46,7 +46,7 @@ class RedisConfiguration {
     const val TRANSACTION_CACHE = "transaction-cache-v3"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
     const val ETF_LOGOS_CACHE: String = "etf-logos-v3"
-    const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v3"
+    const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v4"
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid-v3"
     const val LOGO_CANDIDATES_CACHE: String = "logo-candidates-v3"
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v3"

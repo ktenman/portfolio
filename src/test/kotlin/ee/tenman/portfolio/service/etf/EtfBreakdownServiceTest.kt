@@ -7,6 +7,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
@@ -291,6 +292,48 @@ class EtfBreakdownServiceTest {
     expect(result[0].platforms).toEqual("LIGHTYEAR")
   }
 
+  @Test
+  fun `should expose the gics industry on the breakdown row`() {
+    val etf = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding = createHolding(1L, "RHM", "Rheinmetall", IndustrySector.INDUSTRIALS, GicsIndustry.AEROSPACE_AND_DEFENSE)
+    val position = createPosition(etf, holding, BigDecimal("100.0000"), testDate)
+    val transaction = createCashFlow(etf, BigDecimal("10"), BigDecimal("100"))
+    setupMocksForBatchLoading(listOf(etf), listOf(position), listOf(transaction))
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result[0].holdingIndustry).toEqual("Aerospace & Defense")
+  }
+
+  @Test
+  fun `should leave the industry null for an unclassified holding`() {
+    val etf = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding = createHolding(1L, "XYZ", "Unclassified Co", IndustrySector.FINANCE)
+    val position = createPosition(etf, holding, BigDecimal("100.0000"), testDate)
+    val transaction = createCashFlow(etf, BigDecimal("10"), BigDecimal("100"))
+    setupMocksForBatchLoading(listOf(etf), listOf(position), listOf(transaction))
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result[0].holdingIndustry).toEqual(null)
+  }
+
+  @Test
+  fun `should label a synthetic crypto holding as Cryptocurrency even when classified as Financial Services`() {
+    val trezor = createInstrument(2L, "TREZOR", ProviderName.SYNTHETIC, BigDecimal("100"))
+    val btcInstrument = createInstrument(3L, "BTCEUR", ProviderName.BINANCE, BigDecimal("50000"), category = "CRYPTO")
+    val holding = createHolding(1L, "BTCEUR", "Bitcoin (Trezor)", null, GicsIndustry.FINANCIAL_SERVICES)
+    val position = createPosition(trezor, holding, BigDecimal("100.0000"), testDate)
+    val btcTransaction = createCashFlow(btcInstrument, BigDecimal("1"), BigDecimal("50000"))
+    setupMocksForBatchLoading(listOf(trezor), listOf(position), listOf(btcTransaction))
+    every { etfPositionRepository.findLatestPositionsByEtfId(2L) } returns listOf(position)
+    every { instrumentRepository.findBySymbolIn(listOf("BTCEUR")) } returns listOf(btcInstrument)
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result[0].holdingIndustry).toEqual("Cryptocurrency")
+  }
+
   private fun setupMocksForBatchLoading(
     instruments: List<Instrument>,
     positions: List<EtfPosition>,
@@ -310,11 +353,12 @@ class EtfBreakdownServiceTest {
     symbol: String,
     providerName: ProviderName,
     currentPrice: BigDecimal = BigDecimal("100"),
+    category: String = "ETF",
   ): Instrument =
     Instrument(
       symbol = symbol,
       name = "Test $symbol",
-      category = "ETF",
+      category = category,
       baseCurrency = "EUR",
       currentPrice = currentPrice,
       providerName = providerName,
@@ -325,11 +369,13 @@ class EtfBreakdownServiceTest {
     ticker: String?,
     name: String,
     sector: IndustrySector?,
+    industry: GicsIndustry? = null,
   ): EtfHolding =
     EtfHolding(
       ticker = ticker,
       name = name,
       sector = sector,
+      industry = industry,
     ).apply { this.id = id }
 
   private fun createPosition(

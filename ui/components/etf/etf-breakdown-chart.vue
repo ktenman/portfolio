@@ -15,6 +15,7 @@
         <etf-breakdown-legend
           :items="chartData"
           :active-index="activeIndex"
+          :benchmark-label="benchmarkLabel"
           @hover="focusSlice"
           @leave="clearSlice"
         />
@@ -37,6 +38,7 @@ import type { ChartDataItem } from '../../services/etf-chart-service'
 
 const props = defineProps<{
   chartData: ChartDataItem[]
+  benchmarkLabel?: string
 }>()
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)

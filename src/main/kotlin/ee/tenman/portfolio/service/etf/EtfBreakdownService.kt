@@ -151,6 +151,7 @@ class EtfBreakdownService(
         ?.takeIf { it.isNotBlank() },
     name = position.holding.name.trim(),
     sector = position.holding.sector?.displayName,
+    industry = position.holding.industry,
     countryCode =
       position.holding.countryCode
         ?.trim()
@@ -223,6 +224,7 @@ class EtfBreakdownService(
       percentageOfTotal = percentage,
       totalValueEur = scaledValue.setScale(2, RoundingMode.HALF_UP),
       holdingSector = key.sector,
+      holdingIndustry = key.industry,
       holdingCountryCode = key.countryCode,
       holdingCountryName = key.countryName,
       inEtfs = value.etfSymbols.sorted().joinToString(", "),

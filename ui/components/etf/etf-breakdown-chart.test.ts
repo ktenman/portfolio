@@ -31,6 +31,15 @@ describe('EtfBreakdownChart', () => {
     { label: 'Google', value: 15.2, percentage: '15.20', color: '#009E73' },
   ]
 
+  const comparedItem: ChartDataItem = {
+    label: 'Banks',
+    value: 9.2,
+    percentage: '9.20',
+    color: '#0072B2',
+    benchmark: 4,
+    ratio: 2.3,
+  }
+
   const buildItems = (count: number): ChartDataItem[] =>
     Array.from({ length: count }, (_, index) => ({
       label: `Item ${index + 1}`,
@@ -131,6 +140,84 @@ describe('EtfBreakdownChart', () => {
       expect(legendColors[0].attributes('style')).toContain('background-color: #0072B2')
       expect(legendColors[1].attributes('style')).toContain('background-color: #E69F00')
       expect(legendColors[2].attributes('style')).toContain('background-color: #009E73')
+    })
+
+    it('should show the benchmark share and ratio under a compared item', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [comparedItem] },
+      })
+
+      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.30x')
+    })
+
+    it('should name the benchmark fund on the compared line', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [comparedItem], benchmarkLabel: 'WEBN' },
+      })
+
+      expect(wrapper.find('.legend-benchmark').text()).toBe('WEBN 4.00% · 2.30x')
+    })
+
+    it('should flag a ratio above 2', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [comparedItem] },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).toContain('flagged')
+    })
+
+    it('should flag a ratio below 0.5', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [{ ...comparedItem, benchmark: 46, ratio: 0.2 }],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).toContain('flagged')
+    })
+
+    it('should not flag a ratio of exactly 2', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [{ ...comparedItem, benchmark: 4.6, ratio: 2 }] },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).not.toContain('flagged')
+    })
+
+    it('should not flag a ratio of exactly 0.5', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: [{ ...comparedItem, benchmark: 18.4, ratio: 0.5 }] },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).not.toContain('flagged')
+    })
+
+    it('should not flag a ratio inside the half-to-double band', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [{ ...comparedItem, benchmark: 7.36, ratio: 1.25 }],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').classes()).not.toContain('flagged')
+    })
+
+    it('should omit the ratio when the benchmark has no weight', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: {
+          chartData: [{ ...comparedItem, benchmark: 0, ratio: undefined }],
+        },
+      })
+
+      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 0.00%')
+    })
+
+    it('should not render a benchmark line for items without a benchmark', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: mockChartData },
+      })
+
+      expect(wrapper.find('.legend-benchmark').exists()).toBe(false)
     })
   })
 
