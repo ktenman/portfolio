@@ -76,9 +76,16 @@ export function compareBreakdown(
   return [...rows, benchmarkMap === null ? otherRow : { ...otherRow, benchmark: benchmarkOther }]
 }
 
+const toWeights = (items: BreakdownItem[]): Map<string, number> => {
+  const map = toMap(items)
+  const total = Array.from(map.values()).reduce((sum, value) => sum + value, 0)
+  if (total === 0) return map
+  return new Map(Array.from(map.entries()).map(([key, value]) => [key, (value / total) * 100]))
+}
+
 export function activeShare(items: BreakdownItem[], benchmarkItems: BreakdownItem[]): number {
-  const weights = toMap(items)
-  const benchmark = toMap(benchmarkItems)
+  const weights = toWeights(items)
+  const benchmark = toWeights(benchmarkItems)
   const labels = new Set([...weights.keys(), ...benchmark.keys()])
   const total = Array.from(labels).reduce(
     (sum, label) => sum + Math.abs((weights.get(label) ?? 0) - (benchmark.get(label) ?? 0)),

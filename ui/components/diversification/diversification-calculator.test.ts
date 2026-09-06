@@ -207,6 +207,12 @@ describe('DiversificationCalculator', () => {
             percentage: allocations[0].instrumentId === 1 ? 40 : 60,
             inEtfs: '',
           },
+          {
+            name: 'Apple',
+            ticker: null,
+            percentage: allocations[0].instrumentId === 1 ? 60 : 40,
+            inEtfs: '',
+          },
         ],
       })
     )
@@ -218,6 +224,6 @@ describe('DiversificationCalculator', () => {
     const wrapper = mount(DiversificationCalculator)
     await flushPromises()
 
-    expect(wrapper.findComponent({ name: 'DiversificationStats' }).props('activeShare')).toBe(10)
+    expect(wrapper.findComponent({ name: 'DiversificationStats' }).props('activeShare')).toBe(20)
   })
 })

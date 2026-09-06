@@ -46,6 +46,27 @@ describe('BreakdownPanel', () => {
     expect(mountPanel().find('.breakdown-tab.active').text()).toBe('Industries')
   })
 
+  it('falls back to Industries when the stored tab is unknown', () => {
+    localStorage.setItem('portfolio_diversification_breakdown_tab', 'companies')
+    expect(mountPanel().find('.breakdown-tab.active').text()).toBe('Industries')
+  })
+
+  it('renders a real Other country next to the residual row', async () => {
+    const wrapper = mountPanel({
+      breakdowns: {
+        ...breakdowns,
+        countries: [...breakdowns.countries, { label: 'Other', value: 2 }],
+      },
+      benchmark: {
+        ...benchmark,
+        countries: [...benchmark.countries, { label: 'Ålandinseln', value: 4 }],
+      },
+    })
+    await wrapper.findAll('.breakdown-tab')[3].trigger('click')
+    expect(wrapper.findAll('.row-label').map(l => l.text())).toEqual(['Spain', 'Other', 'Other'])
+    expect(wrapper.findAll('.row-track.empty')).toHaveLength(1)
+  })
+
   it('restores the persisted tab', () => {
     localStorage.setItem('portfolio_diversification_breakdown_tab', 'countries')
     expect(mountPanel().find('.breakdown-tab.active').text()).toBe('Countries')

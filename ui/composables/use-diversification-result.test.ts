@@ -73,6 +73,17 @@ describe('useDiversificationResult', () => {
     expect(benchmarkBreakdowns.value?.sectors).toEqual([{ label: 'Finance', value: 10 }])
   })
 
+  it('hides the comparison when the benchmark fund leaves the ETF list', async () => {
+    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'WEBN:GER:EUR')])
+    const { debouncedCalculate, benchmarkBreakdowns } = useDiversificationResult(
+      ref([{ instrumentId: 1, value: 60 }]),
+      etfs
+    )
+    await debouncedCalculate()
+    etfs.value = [etf(1, 'TSTA:GER:EUR')]
+    expect(benchmarkBreakdowns.value).toBeNull()
+  })
+
   it('leaves the benchmark null after a failed fetch', async () => {
     vi.mocked(diversificationService.calculate).mockImplementation(allocations =>
       isBenchmarkCall([allocations])
@@ -108,5 +119,11 @@ describe('useDiversificationResult', () => {
   it('resolves the benchmark label to the symbol part', () => {
     const { benchmarkLabel } = useDiversificationResult(ref([]), ref([etf(7, 'WEBN:GER:EUR')]))
     expect(benchmarkLabel.value).toBe('WEBN')
+  })
+
+  it('falls back to VWCE when WEBN is not held', () => {
+    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(3, 'VWCE:GER:EUR')])
+    const { benchmarkLabel } = useDiversificationResult(ref([]), etfs)
+    expect(benchmarkLabel.value).toBe('VWCE')
   })
 })

@@ -6,8 +6,8 @@
           v-for="tab in TABS"
           :key="tab.key"
           class="breakdown-tab"
-          :class="{ active: activeTab === tab.key }"
-          :aria-pressed="activeTab === tab.key"
+          :class="{ active: currentTab.key === tab.key }"
+          :aria-pressed="currentTab.key === tab.key"
           type="button"
           @click="activeTab = tab.key"
         >
@@ -25,7 +25,12 @@
       <span>{{ benchmarkLabel }}</span>
     </div>
     <div class="breakdown-rows">
-      <div v-for="row in rows" :key="row.label" class="breakdown-row" :title="rowTitle(row)">
+      <div
+        v-for="row in rows"
+        :key="row.isOther ? '__other' : row.label"
+        class="breakdown-row"
+        :title="rowTitle(row)"
+      >
         <span class="row-label">
           <img v-if="row.code" :src="countryFlagUrl(row.code)" :alt="row.code" class="row-flag" />
           <span class="row-label-text">{{ row.label }}</span>
@@ -119,14 +124,15 @@ const activeTab = useLocalStorage<keyof Breakdowns>(
 
 const compared = computed(() => props.benchmark !== null)
 
-const rows = computed(() => {
-  const tab = TABS.find(t => t.key === activeTab.value) ?? TABS[1]
-  return compareBreakdown(
-    props.breakdowns[tab.key],
-    props.benchmark?.[tab.key] ?? null,
-    tab.options
+const currentTab = computed(() => TABS.find(t => t.key === activeTab.value) ?? TABS[1])
+
+const rows = computed(() =>
+  compareBreakdown(
+    props.breakdowns[currentTab.value.key],
+    props.benchmark?.[currentTab.value.key] ?? null,
+    currentTab.value.options
   )
-})
+)
 
 const scaleMax = computed(() =>
   rows.value.filter(r => !r.isOther).reduce((max, r) => Math.max(max, r.value, r.benchmark ?? 0), 0)

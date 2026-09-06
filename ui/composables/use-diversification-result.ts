@@ -115,7 +115,7 @@ export function useDiversificationResult(
   )
 
   const benchmarkBreakdowns = computed(() =>
-    onlyBenchmarkAllocated.value ? null : mappedBenchmark.value
+    benchmarkEtf.value === undefined || onlyBenchmarkAllocated.value ? null : mappedBenchmark.value
   )
 
   return {

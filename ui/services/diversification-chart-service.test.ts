@@ -91,6 +91,18 @@ describe('activeShare', () => {
     expect(activeShare(own, benchmark)).toBe(20)
   })
 
+  it('compares the shape of each side when the lists do not sum to 100', () => {
+    const own = [
+      { label: 'A', value: 30 },
+      { label: 'B', value: 20 },
+    ]
+    const benchmark = [
+      { label: 'A', value: 60 },
+      { label: 'B', value: 40 },
+    ]
+    expect(activeShare(own, benchmark)).toBe(0)
+  })
+
   it('counts labels present on one side only', () => {
     expect(activeShare([{ label: 'A', value: 100 }], [{ label: 'B', value: 100 }])).toBe(100)
   })
