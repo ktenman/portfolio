@@ -12,6 +12,7 @@ const etf: EtfDetailDto = {
   annualReturn: 0.15,
   currentPrice: 100,
   fundCurrency: Currency.EUR,
+  constituentSymbols: [],
 }
 
 const baseProps = {

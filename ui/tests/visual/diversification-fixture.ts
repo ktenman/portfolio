@@ -18,6 +18,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.1521,
     currentPrice: 14.62,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 102,
@@ -28,6 +29,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.0894,
     currentPrice: 23.8,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 103,
@@ -38,6 +40,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.1146,
     currentPrice: 56.69,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 104,
@@ -48,6 +51,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.2038,
     currentPrice: 45.86,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 105,
@@ -58,6 +62,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.0712,
     currentPrice: 20.35,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 106,
@@ -68,6 +73,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.1288,
     currentPrice: 13.29,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 107,
@@ -78,6 +84,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.1795,
     currentPrice: 8.59,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 108,
@@ -88,6 +95,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.2411,
     currentPrice: 198.1,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 109,
@@ -98,6 +106,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.1932,
     currentPrice: 31.74,
     fundCurrency: Currency.USD,
+    constituentSymbols: [],
   },
   {
     instrumentId: 110,
@@ -108,6 +117,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.0641,
     currentPrice: 12.44,
     fundCurrency: Currency.GBP,
+    constituentSymbols: [],
   },
   {
     instrumentId: 112,
@@ -118,6 +128,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.1503,
     currentPrice: null,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 113,
@@ -128,6 +139,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.2264,
     currentPrice: 36.32,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
   {
     instrumentId: 115,
@@ -138,6 +150,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     annualReturn: 0.1102,
     currentPrice: 6.41,
     fundCurrency: Currency.EUR,
+    constituentSymbols: [],
   },
 ]
 

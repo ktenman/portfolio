@@ -15,6 +15,7 @@ vi.mock('@tanstack/vue-query', () => ({
         ter: 0.22,
         annualReturn: 12.5,
         currentPrice: 120.5,
+        constituentSymbols: [],
       },
       {
         instrumentId: 2,
@@ -24,6 +25,7 @@ vi.mock('@tanstack/vue-query', () => ({
         ter: 0.07,
         annualReturn: 15.0,
         currentPrice: 95.3,
+        constituentSymbols: [],
       },
     ]),
     isLoading: ref(false),
