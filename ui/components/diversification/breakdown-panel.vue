@@ -28,10 +28,10 @@
       <div v-for="row in rows" :key="row.label" class="breakdown-row" :title="rowTitle(row)">
         <span class="row-label">
           <img v-if="row.code" :src="flagUrl(row.code)" :alt="row.code" class="row-flag" />
-          {{ row.label }}
+          <span class="row-label-text">{{ row.label }}</span>
         </span>
         <span class="row-value">{{ formatPercentage(row.value) }}</span>
-        <span class="row-track">
+        <span class="row-track" :class="{ empty: row.isOther }">
           <template v-if="!row.isOther">
             <span class="row-bar" :style="{ width: `${scaled(row.value)}%` }"></span>
             <span
@@ -241,6 +241,9 @@ const rowTitle = (row: ComparedRow): string => {
   min-width: 0;
   font-size: var(--text-base);
   color: var(--color-ink-soft);
+}
+
+.row-label-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -266,6 +269,10 @@ const rowTitle = (row: ComparedRow): string => {
   height: 0.5rem;
   background: var(--color-surface-sunken);
   border-radius: 2px;
+}
+
+.row-track.empty {
+  background: transparent;
 }
 
 .row-bar {
