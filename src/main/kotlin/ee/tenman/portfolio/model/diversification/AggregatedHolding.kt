@@ -6,6 +6,7 @@ data class AggregatedHolding(
   val name: String,
   val ticker: String?,
   val sector: String?,
+  val industry: String?,
   val countryCode: String?,
   val countryName: String?,
   val percentage: BigDecimal,

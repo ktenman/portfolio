@@ -180,6 +180,7 @@ const CALCULATION: DiversificationCalculatorResponseDto = {
     { sector: 'Energy', percentage: 4.2508 },
     { sector: 'Materials', percentage: 2.8546 },
   ],
+  industries: [],
   countries: [
     { countryCode: 'US', countryName: 'United States', percentage: 58.3214 },
     { countryCode: 'DE', countryName: 'Germany', percentage: 9.7052 },

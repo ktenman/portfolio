@@ -10,6 +10,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
@@ -129,6 +130,52 @@ class DiversificationCalculatorServiceTest {
     val techSector = result.sectors.find { it.sector == "Digital Hardware" }
     expect(techSector).notToEqualNull()
     expect(techSector!!.percentage).toEqualNumerically(BigDecimal("50.0000"))
+  }
+
+  @Test
+  fun `should aggregate industries correctly`() {
+    val etf = createInstrument(1L, "VWCE")
+    val holding1 = createHolding(1L, "JPM", "JPMorgan", IndustrySector.FINANCE, "US", "United States", GicsIndustry.BANKS)
+    val holding2 = createHolding(2L, "BAC", "Bank of America", IndustrySector.FINANCE, "US", "United States", GicsIndustry.BANKS)
+    val holding3 =
+      createHolding(3L, "MSFT", "Microsoft", IndustrySector.SOFTWARE_CLOUD_SERVICES, "US", "United States", GicsIndustry.SOFTWARE)
+    val positions =
+      listOf(
+        createPosition(etf, holding1, BigDecimal("30.0000")),
+        createPosition(etf, holding2, BigDecimal("20.0000")),
+        createPosition(etf, holding3, BigDecimal("10.0000")),
+      )
+    setupMocks(listOf(etf), positions)
+    val request = createRequest(AllocationDto(1L, BigDecimal("100")))
+
+    val result = service.calculate(request)
+
+    expect(result.industries.map { it.industry }).toEqual(listOf("Banks", "Software"))
+    expect(result.industries[0].percentage).toEqualNumerically(BigDecimal("50.0000"))
+  }
+
+  @Test
+  fun `should label holdings without industry as Unclassified`() {
+    val etf = createInstrument(1L, "VWCE")
+    val holding = createHolding(1L, "XYZ", "Ünknown Corp", IndustrySector.FINANCE, "US", "United States")
+    setupMocks(listOf(etf), listOf(createPosition(etf, holding, BigDecimal("100.0000"))))
+    val request = createRequest(AllocationDto(1L, BigDecimal("100")))
+
+    val result = service.calculate(request)
+
+    expect(result.industries.map { it.industry }).toEqual(listOf("Unclassified"))
+  }
+
+  @Test
+  fun `should label cryptocurrency holdings as Cryptocurrency regardless of model industry`() {
+    val etf = createInstrument(1L, "VWCE")
+    val holding = createHolding(1L, "BTC", "Bitcoin", IndustrySector.CRYPTOCURRENCY, null, null, GicsIndustry.SOFTWARE)
+    setupMocks(listOf(etf), listOf(createPosition(etf, holding, BigDecimal("100.0000"))))
+    val request = createRequest(AllocationDto(1L, BigDecimal("100")))
+
+    val result = service.calculate(request)
+
+    expect(result.industries.map { it.industry }).toEqual(listOf("Cryptocurrency"))
   }
 
   @Test
@@ -364,6 +411,7 @@ class DiversificationCalculatorServiceTest {
     sector: IndustrySector?,
     countryCode: String?,
     countryName: String?,
+    industry: GicsIndustry? = null,
   ): EtfHolding =
     EtfHolding(
       ticker = ticker,
@@ -371,6 +419,7 @@ class DiversificationCalculatorServiceTest {
       sector = sector,
       countryCode = countryCode,
       countryName = countryName,
+      industry = industry,
     ).apply { this.id = id }
 
   private fun createPosition(
