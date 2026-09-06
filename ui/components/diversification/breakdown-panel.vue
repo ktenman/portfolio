@@ -324,7 +324,8 @@ const rowTitle = (row: ComparedRow): string => {
     font-size: var(--text-label);
   }
 
-  .breakdown-tab.active {
+  .breakdown-tab.active,
+  .breakdown-tab:hover {
     background: transparent;
   }
 
