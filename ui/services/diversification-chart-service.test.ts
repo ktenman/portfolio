@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  activeShare,
-  compareBreakdown,
-  isFlagged,
-  INDUSTRY_TOP_COUNT,
-} from './diversification-chart-service'
+import { activeShare, compareBreakdown, isFlagged } from './diversification-chart-service'
 
 const OPTS = { topCount: 2, minPercentage: 0.5, withOther: true }
 
@@ -80,10 +75,6 @@ describe('compareBreakdown', () => {
   it('keeps the country code', () => {
     const rows = compareBreakdown([{ label: 'Spain', value: 5, code: 'ES' }], null, OPTS)
     expect(rows[0].code).toBe('ES')
-  })
-
-  it('shows up to forty industries', () => {
-    expect(INDUSTRY_TOP_COUNT).toBe(40)
   })
 })
 

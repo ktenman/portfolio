@@ -1,5 +1,3 @@
-import { MIN_BENCHMARK_SHARE } from './etf-chart-service'
-
 export interface BreakdownItem {
   label: string
   value: number
@@ -21,8 +19,12 @@ export interface CompareOptions {
   withOther: boolean
 }
 
+export const TOP_COUNT = 15
 export const INDUSTRY_TOP_COUNT = 40
+export const SECTOR_MIN_PERCENTAGE = 0.5
+export const COUNTRY_MIN_PERCENTAGE = 0.2
 export const INDUSTRY_MIN_PERCENTAGE = 0.1
+const MIN_BENCHMARK_SHARE = 0.005
 
 export const isFlagged = (ratio: number | undefined): boolean =>
   ratio !== undefined && (ratio > 2 || ratio < 0.5)
@@ -48,9 +50,10 @@ export function compareBreakdown(
   benchmarkItems: BreakdownItem[] | null,
   options: CompareOptions
 ): ComparedRow[] {
-  const shown = [...items]
-    .sort((a, b) => b.value - a.value)
+  const itemsMap = toMap(items)
+  const shown = items
     .filter(item => item.value >= options.minPercentage)
+    .sort((a, b) => b.value - a.value)
     .slice(0, options.topCount)
   const shownKeys = new Set(shown.map(item => normaliseLabel(item.label)))
   const benchmarkMap = benchmarkItems === null ? null : toMap(benchmarkItems)
@@ -66,7 +69,7 @@ export function compareBreakdown(
     return { ...row, benchmark: share, ratio: ratioOf(item.value, share) }
   })
   if (!options.withOther) return rows
-  const other = residual(toMap(items), shownKeys)
+  const other = residual(itemsMap, shownKeys)
   const benchmarkOther = benchmarkMap === null ? 0 : residual(benchmarkMap, shownKeys)
   if (other === 0 && benchmarkOther === 0) return rows
   const otherRow: ComparedRow = { label: 'Other', value: other, isOther: true }

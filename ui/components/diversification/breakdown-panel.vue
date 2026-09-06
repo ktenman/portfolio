@@ -27,7 +27,7 @@
     <div class="breakdown-rows">
       <div v-for="row in rows" :key="row.label" class="breakdown-row" :title="rowTitle(row)">
         <span class="row-label">
-          <img v-if="row.code" :src="flagUrl(row.code)" :alt="row.code" class="row-flag" />
+          <img v-if="row.code" :src="countryFlagUrl(row.code)" :alt="row.code" class="row-flag" />
           <span class="row-label-text">{{ row.label }}</span>
         </span>
         <span class="row-value">{{ formatPercentage(row.value) }}</span>
@@ -58,19 +58,18 @@ import { computed } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { STORAGE_KEYS } from '../../constants'
 import { formatPercentage } from '../../utils/formatters'
+import { countryFlagUrl } from '../../utils/currency-flag'
 import {
   compareBreakdown,
   isFlagged,
+  COUNTRY_MIN_PERCENTAGE,
   INDUSTRY_MIN_PERCENTAGE,
   INDUSTRY_TOP_COUNT,
+  SECTOR_MIN_PERCENTAGE,
+  TOP_COUNT,
   type ComparedRow,
   type CompareOptions,
 } from '../../services/diversification-chart-service'
-import {
-  COUNTRY_MIN_PERCENTAGE,
-  SECTOR_MIN_PERCENTAGE,
-  TOP_COUNT,
-} from '../../services/etf-chart-service'
 import type { Breakdowns } from '../../composables/use-diversification-result'
 
 const props = defineProps<{
@@ -135,9 +134,6 @@ const scaleMax = computed(() =>
 
 const scaled = (value: number): number =>
   scaleMax.value === 0 ? 0 : (value / scaleMax.value) * 100
-
-const flagUrl = (code: string): string =>
-  `https://hatscripts.github.io/circle-flags/flags/${code.toLowerCase()}.svg`
 
 const formatBenchmark = (row: ComparedRow): string => {
   const share = `${props.benchmarkLabel} ${(row.benchmark ?? 0).toFixed(2)}%`
