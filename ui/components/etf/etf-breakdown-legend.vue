@@ -21,7 +21,7 @@
         class="legend-benchmark"
         :class="{ flagged: isFlagged(item.ratio) }"
       >
-        {{ formatBenchmark(item) }}
+        {{ formatBenchmarkShare(item.benchmark, item.ratio) }}
       </span>
     </div>
   </div>
@@ -29,7 +29,7 @@
 
 <script lang="ts" setup>
 import type { ChartDataItem } from '../../services/etf-chart-service'
-import { isFlagged } from '../../services/diversification-chart-service'
+import { formatBenchmarkShare, isFlagged } from '../../services/diversification-chart-service'
 import { countryFlagUrl } from '../../utils/currency-flag'
 
 const props = defineProps<{
@@ -44,11 +44,6 @@ const emit = defineEmits<{
 
 const toggle = (index: number) =>
   index === props.activeIndex ? emit('leave') : emit('hover', index)
-
-const formatBenchmark = (item: ChartDataItem): string => {
-  const share = `${(item.benchmark ?? 0).toFixed(2)}%`
-  return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}×`
-}
 </script>
 
 <style scoped>

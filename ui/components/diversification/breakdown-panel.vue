@@ -62,7 +62,7 @@
           class="row-benchmark"
           :class="{ flagged: isFlagged(row.ratio) }"
         >
-          {{ formatBenchmark(row) }}
+          {{ formatBenchmarkShare(row.benchmark, row.ratio) }}
         </span>
       </div>
     </div>
@@ -77,6 +77,7 @@ import { formatPercentage } from '../../utils/formatters'
 import { countryFlagUrl } from '../../utils/currency-flag'
 import {
   compareBreakdown,
+  formatBenchmarkShare,
   isFlagged,
   COUNTRY_MIN_PERCENTAGE,
   INDUSTRY_MIN_PERCENTAGE,
@@ -156,11 +157,6 @@ const scaled = (value: number): number =>
 
 const showsBenchmark = (row: ComparedRow): row is ComparedRow & { benchmark: number } =>
   row.benchmark !== undefined && !(currentTab.value.key === 'holdings' && row.benchmark === 0)
-
-const formatBenchmark = (row: ComparedRow): string => {
-  const share = `${(row.benchmark ?? 0).toFixed(2)}%`
-  return row.ratio === undefined ? share : `${share} · ${row.ratio.toFixed(2)}×`
-}
 
 const rowTitle = (row: ComparedRow): string => {
   const own = `${row.label} ${formatPercentage(row.value)}`

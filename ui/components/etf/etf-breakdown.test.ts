@@ -400,7 +400,7 @@ describe('etf-breakdown', () => {
     expect(wrapper.find('.compare-label').text()).toBe('vs WEBN')
   })
 
-  it('passes no benchmark label when no benchmark fund is held', async () => {
+  it('hides the compare toggle when no benchmark fund is held', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
 
     const wrapper = mountWithChartStub()
