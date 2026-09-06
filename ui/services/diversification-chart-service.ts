@@ -27,7 +27,7 @@ export const INDUSTRY_MIN_PERCENTAGE = 0.1
 export const isFlagged = (ratio: number | undefined): boolean =>
   ratio !== undefined && (ratio > 2 || ratio < 0.5)
 
-export const normaliseLabel = (label: string): string =>
+const normaliseLabel = (label: string): string =>
   label.toLowerCase().replace(/\s+/g, ' ').trim()
 
 const toMap = (items: BreakdownItem[]): Map<string, number> =>
@@ -56,7 +56,12 @@ export function compareBreakdown(
   const shownKeys = new Set(shown.map(item => normaliseLabel(item.label)))
   const benchmarkMap = benchmarkItems === null ? null : toMap(benchmarkItems)
   const rows: ComparedRow[] = shown.map(item => {
-    const row: ComparedRow = { label: item.label, value: item.value, code: item.code, isOther: false }
+    const row: ComparedRow = {
+      label: item.label,
+      value: item.value,
+      code: item.code,
+      isOther: false,
+    }
     if (benchmarkMap === null) return row
     const share = benchmarkMap.get(normaliseLabel(item.label)) ?? 0
     return { ...row, benchmark: share, ratio: ratioOf(item.value, share) }

@@ -60,7 +60,7 @@ describe('compareBreakdown', () => {
       ],
       OPTS
     )
-    expect(rows.at(-1)).toMatchObject({ label: 'Other', value: 0, benchmark: 50 })
+    expect(rows[rows.length - 1]).toMatchObject({ label: 'Other', value: 0, benchmark: 50 })
   })
 
   it('joins holdings by normalised name', () => {
