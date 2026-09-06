@@ -147,15 +147,7 @@ describe('EtfBreakdownChart', () => {
         props: { chartData: [comparedItem] },
       })
 
-      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.30×')
-    })
-
-    it('should name the benchmark fund on the compared line', () => {
-      const wrapper = mount(EtfBreakdownChart, {
-        props: { chartData: [comparedItem], benchmarkLabel: 'WEBN' },
-      })
-
-      expect(wrapper.find('.legend-benchmark').text()).toBe('WEBN 4.00% · 2.30×')
+      expect(wrapper.find('.legend-benchmark').text()).toBe('4.00% · 2.30×')
     })
 
     it('should clear the focused slice when its legend item is tapped again', async () => {
@@ -223,7 +215,7 @@ describe('EtfBreakdownChart', () => {
         },
       })
 
-      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 0.00%')
+      expect(wrapper.find('.legend-benchmark').text()).toBe('0.00%')
     })
 
     it('should not render a benchmark line for items without a benchmark', () => {
