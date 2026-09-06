@@ -1,30 +1,30 @@
 <template>
   <div class="breakdown-panel card-shell">
     <div class="panel-header">
-      <div class="panel-controls">
-        <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
-          <button
-            v-for="tab in TABS"
-            :key="tab.key"
-            class="breakdown-tab"
-            :class="{ active: currentTab.key === tab.key }"
-            :aria-pressed="currentTab.key === tab.key"
-            type="button"
-            @click="activeTab = tab.key"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
+      <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
         <button
-          v-if="benchmarkLabel"
+          v-for="tab in TABS"
+          :key="tab.key"
+          class="breakdown-tab"
+          :class="{ active: currentTab.key === tab.key }"
+          :aria-pressed="currentTab.key === tab.key"
           type="button"
-          class="etf-btn compare-toggle"
-          :class="{ active: compare }"
-          :aria-pressed="compare"
-          @click="compare = !compare"
+          @click="activeTab = tab.key"
         >
-          vs {{ benchmarkLabel }}
+          {{ tab.label }}
         </button>
+        <template v-if="benchmarkLabel">
+          <span class="platform-separator" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="breakdown-tab compare-toggle"
+            :class="{ active: compare }"
+            :aria-pressed="compare"
+            @click="compare = !compare"
+          >
+            vs {{ benchmarkLabel }}
+          </button>
+        </template>
       </div>
       <span v-if="coverage !== null" class="coverage-badge">
         Covers {{ Math.round(coverage * 100) }}% of portfolio value
@@ -180,17 +180,15 @@ const rowTitle = (row: ComparedRow): string => {
   margin-bottom: 0.75rem;
 }
 
-.panel-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .breakdown-tabs {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.25rem;
+}
+
+.breakdown-tabs .platform-separator {
+  margin: 0 0.25rem;
 }
 
 .breakdown-tab {

@@ -37,7 +37,7 @@ describe('BreakdownPanel', () => {
 
   it('renders four tabs in order', () => {
     const labels = mountPanel()
-      .findAll('.breakdown-tab')
+      .findAll('.breakdown-tab:not(.compare-toggle)')
       .map(t => t.text())
     expect(labels).toEqual(['Sectors', 'Industries', 'Top holdings', 'Countries'])
   })

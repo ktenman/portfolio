@@ -51,30 +51,30 @@
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
       <etf-breakdown-chart :chart-data="activeChartData" :benchmark-label="benchmarkLabel">
         <template #actions>
-          <div class="chart-actions">
-            <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
-              <button
-                v-for="tab in breakdownTabs"
-                :key="tab.key"
-                class="breakdown-tab"
-                :class="{ active: activeTab === tab.key }"
-                :aria-pressed="activeTab === tab.key"
-                type="button"
-                @click="activeTab = tab.key"
-              >
-                {{ tab.label }}
-              </button>
-            </div>
+          <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
             <button
-              v-if="benchmarkLabel"
+              v-for="tab in breakdownTabs"
+              :key="tab.key"
+              class="breakdown-tab"
+              :class="{ active: activeTab === tab.key }"
+              :aria-pressed="activeTab === tab.key"
               type="button"
-              class="etf-btn compare-toggle"
-              :class="{ active: compare }"
-              :aria-pressed="compare"
-              @click="compare = !compare"
+              @click="activeTab = tab.key"
             >
-              vs {{ benchmarkLabel }}
+              {{ tab.label }}
             </button>
+            <template v-if="benchmarkLabel">
+              <span class="platform-separator" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="breakdown-tab compare-toggle"
+                :class="{ active: compare }"
+                :aria-pressed="compare"
+                @click="compare = !compare"
+              >
+                vs {{ benchmarkLabel }}
+              </button>
+            </template>
           </div>
         </template>
       </etf-breakdown-chart>
@@ -479,19 +479,16 @@ onMounted(async () => {
   display: inline-block;
 }
 
-.chart-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .breakdown-tabs {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.25rem;
+}
+
+.breakdown-tabs .platform-separator {
+  margin: 0 0.25rem;
 }
 
 .breakdown-tab {
@@ -624,9 +621,8 @@ onMounted(async () => {
     padding: 0.3125rem 0.5rem;
   }
 
-  .chart-actions {
-    flex-direction: column;
-    align-items: center;
+  .breakdown-tabs {
+    justify-content: center;
   }
 }
 
