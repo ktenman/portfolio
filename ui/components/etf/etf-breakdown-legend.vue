@@ -10,6 +10,7 @@
         compared: item.benchmark !== undefined,
       }"
       @mouseenter="emit('hover', index)"
+      @click="toggle(index)"
     >
       <img v-if="item.code" :src="countryFlagUrl(item.code)" :alt="item.code" class="legend-flag" />
       <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
@@ -42,9 +43,12 @@ const emit = defineEmits<{
   leave: []
 }>()
 
+const toggle = (index: number) =>
+  index === props.activeIndex ? emit('leave') : emit('hover', index)
+
 const formatBenchmark = (item: ChartDataItem): string => {
   const share = `${props.benchmarkLabel ?? 'vs'} ${(item.benchmark ?? 0).toFixed(2)}%`
-  return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}x`
+  return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}×`
 }
 </script>
 
@@ -122,5 +126,36 @@ const formatBenchmark = (item: ChartDataItem): string => {
 
 .legend-item.active .legend-label {
   color: var(--color-ink);
+}
+
+@media (max-width: 639px) {
+  .chart-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 0.75rem;
+  }
+
+  .legend-item {
+    align-items: start;
+    align-content: start;
+  }
+
+  .legend-color,
+  .legend-flag {
+    margin-top: 0.3rem;
+  }
+
+  .legend-label {
+    font-size: var(--text-label);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    white-space: normal;
+  }
+
+  .legend-value {
+    font-size: var(--text-sm);
+    font-weight: 400;
+  }
 }
 </style>
