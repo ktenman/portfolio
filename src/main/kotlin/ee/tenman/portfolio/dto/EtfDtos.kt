@@ -16,6 +16,7 @@ data class EtfDetailDto(
   val annualReturn: BigDecimal?,
   val currentPrice: BigDecimal?,
   val fundCurrency: Currency? = null,
+  val constituentSymbols: List<String> = emptyList(),
 ) : Serializable {
   companion object {
     private const val serialVersionUID = 1L

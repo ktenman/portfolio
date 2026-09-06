@@ -181,6 +181,7 @@ export interface EtfDetailDto extends Serializable {
     annualReturn: number | null;
     currentPrice: number | null;
     fundCurrency: Currency | null;
+    constituentSymbols: string[];
 }
 
 export interface PlatformDto {

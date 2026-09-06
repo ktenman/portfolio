@@ -121,6 +121,7 @@ import BreakdownPanel from './breakdown-panel.vue'
 import AlertMessage from '../shared/alert-message.vue'
 import SpinnerRing from '../shared/spinner-ring.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
+import { etfPortfolioValues } from '../../utils/etf-portfolio-value'
 import type { AllocationInput, CachedState, ActionDisplayMode } from './types'
 
 const ConfigDialog = defineAsyncComponent(() => import('./config-dialog.vue'))
@@ -220,10 +221,10 @@ const activeShareValue = computed(() =>
 const coverage = computed(() => {
   const total = portfolioInstruments.value.reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
   if (total === 0) return null
-  const allocated = new Set(allocations.value.filter(a => a.value > 0).map(a => a.instrumentId))
-  const covered = portfolioInstruments.value
-    .filter(i => i.id !== null && allocated.has(i.id))
-    .reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
+  const values = etfPortfolioValues(etfList.value, portfolioInstruments.value)
+  const covered = allocations.value
+    .filter(a => a.value > 0)
+    .reduce((sum, a) => sum + (values.get(a.instrumentId) ?? 0), 0)
   return covered / total
 })
 
@@ -240,6 +241,7 @@ const {
   applyFirstTimeDefault,
 } = useDiversificationPlatforms({
   allocations,
+  etfs: etfList,
   availablePlatforms,
   onChanged: () => markDirty(),
 })
@@ -296,10 +298,10 @@ const loadFromPortfolio = async () => {
   try {
     const platforms = selectedPlatforms.value.length > 0 ? selectedPlatforms.value : undefined
     const response = await instrumentsService.getAll(platforms)
-    const etfIds = new Set(etfList.value.map(e => e.instrumentId))
-    const portfolioEtfs = response.instruments.filter(
-      i => i.id !== null && etfIds.has(i.id) && (i.currentValue ?? 0) > 0
-    )
+    const values = etfPortfolioValues(etfList.value, response.instruments)
+    const portfolioEtfs = etfList.value
+      .map(e => ({ id: e.instrumentId, currentValue: values.get(e.instrumentId) ?? 0 }))
+      .filter(e => e.currentValue > 0)
     if (portfolioEtfs.length === 0) {
       error.value =
         selectedPlatforms.value.length > 0
@@ -307,14 +309,12 @@ const loadFromPortfolio = async () => {
           : 'No ETFs found in your portfolio'
       return
     }
-    const totalValue = portfolioEtfs.reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
-    allocations.value = portfolioEtfs
-      .filter((i): i is typeof i & { id: number } => i.id !== null)
-      .map(i => ({
-        instrumentId: i.id,
-        value: Math.round(((i.currentValue ?? 0) / totalValue) * 1000) / 10,
-        currentValue: selectedPlatforms.value.length > 0 ? (i.currentValue ?? 0) : undefined,
-      }))
+    const totalValue = portfolioEtfs.reduce((sum, i) => sum + i.currentValue, 0)
+    allocations.value = portfolioEtfs.map(i => ({
+      instrumentId: i.id,
+      value: Math.round((i.currentValue / totalValue) * 1000) / 10,
+      currentValue: selectedPlatforms.value.length > 0 ? i.currentValue : undefined,
+    }))
     markDirty()
     debouncedCalculate()
   } catch (e) {
