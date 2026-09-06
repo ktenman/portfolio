@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1420" viewBox="0 0 1400 1420" font-family="Geist, 'Helvetica Neue', Arial, sans-serif">
+<rect x="0" y="0" width="1400" height="1420" rx="0" fill="#fcfaf6" />
+<text x="28" y="44" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#241e1a" text-anchor="start" >BEFORE</text>
+<text x="133.0" y="44" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="400" fill="#69625b" text-anchor="start" >Diversification · below the allocation table · 6 Sep 2026</text>
+<rect x="28.0" y="62" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="44.0" y="88" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">WEIGHTED TER</text>
+<text x="44.0" y="126" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >0.305%</text>
+<rect x="300.0" y="62" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="316.0" y="88" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">WEIGHTED RETURN</text>
+<text x="316.0" y="126" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >36.26%</text>
+<rect x="572.0" y="62" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="588.0" y="88" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">UNIQUE HOLDINGS</text>
+<text x="588.0" y="126" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >3,122</text>
+<rect x="844.0" y="62" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="860.0" y="88" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">TOP 10 CONCENTRATION</text>
+<text x="860.0" y="126" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >26.04%</text>
+<rect x="1116.0" y="62" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="1132.0" y="88" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">FUND CURRENCY</text>
+<text x="1132.0" y="126" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="600" fill="#241e1a" text-anchor="start" >USD 84.4% · EUR 15.6%</text>
+<rect x="28.0" y="170" width="437.3333333333333" height="372" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="44.0" y="196" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">TOP HOLDINGS</text>
+<text x="44.0" y="226" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >NVIDIA</text>
+<text x="449.3333333333333" y="226" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >4.27%</text>
+<line x1="44.0" y1="238" x2="449.3333333333333" y2="238" stroke="#e2dfda"/>
+<text x="44.0" y="262" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Apple</text>
+<text x="449.3333333333333" y="262" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >3.54%</text>
+<line x1="44.0" y1="274" x2="449.3333333333333" y2="274" stroke="#e2dfda"/>
+<text x="44.0" y="298" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Taiwan Semiconductor Manufacturing…</text>
+<text x="449.3333333333333" y="298" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >3.37%</text>
+<line x1="44.0" y1="310" x2="449.3333333333333" y2="310" stroke="#e2dfda"/>
+<text x="44.0" y="334" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Microsoft</text>
+<text x="449.3333333333333" y="334" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.57%</text>
+<line x1="44.0" y1="346" x2="449.3333333333333" y2="346" stroke="#e2dfda"/>
+<text x="44.0" y="370" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Broadcom</text>
+<text x="449.3333333333333" y="370" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.38%</text>
+<line x1="44.0" y1="382" x2="449.3333333333333" y2="382" stroke="#e2dfda"/>
+<text x="44.0" y="406" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Banco Santander</text>
+<text x="449.3333333333333" y="406" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.34%</text>
+<line x1="44.0" y1="418" x2="449.3333333333333" y2="418" stroke="#e2dfda"/>
+<text x="44.0" y="442" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Micron Technology</text>
+<text x="449.3333333333333" y="442" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.04%</text>
+<line x1="44.0" y1="454" x2="449.3333333333333" y2="454" stroke="#e2dfda"/>
+<text x="44.0" y="478" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >AMD</text>
+<text x="449.3333333333333" y="478" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >1.97%</text>
+<line x1="44.0" y1="490" x2="449.3333333333333" y2="490" stroke="#e2dfda"/>
+<text x="246.66666666666666" y="516" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="400" fill="#8c857f" text-anchor="middle" >… 7 more rows, no bars, no benchmark</text>
+<rect x="481.3333333333333" y="170" width="437.3333333333333" height="372" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="497.3333333333333" y="196" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">SECTORS</text>
+<text x="497.3333333333333" y="226" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Semiconductors</text>
+<text x="902.6666666666666" y="226" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >26.40%</text>
+<line x1="497.3333333333333" y1="238" x2="902.6666666666666" y2="238" stroke="#e2dfda"/>
+<text x="497.3333333333333" y="262" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Finance</text>
+<text x="902.6666666666666" y="262" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >23.46%</text>
+<line x1="497.3333333333333" y1="274" x2="902.6666666666666" y2="274" stroke="#e2dfda"/>
+<text x="497.3333333333333" y="298" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Industrials</text>
+<text x="902.6666666666666" y="298" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >16.02%</text>
+<line x1="497.3333333333333" y1="310" x2="902.6666666666666" y2="310" stroke="#e2dfda"/>
+<text x="497.3333333333333" y="334" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Software &amp; Cloud Services</text>
+<text x="902.6666666666666" y="334" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >9.37%</text>
+<line x1="497.3333333333333" y1="346" x2="902.6666666666666" y2="346" stroke="#e2dfda"/>
+<text x="497.3333333333333" y="370" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Digital Hardware</text>
+<text x="902.6666666666666" y="370" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >8.20%</text>
+<line x1="497.3333333333333" y1="382" x2="902.6666666666666" y2="382" stroke="#e2dfda"/>
+<text x="497.3333333333333" y="406" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Business Services</text>
+<text x="902.6666666666666" y="406" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >3.25%</text>
+<line x1="497.3333333333333" y1="418" x2="902.6666666666666" y2="418" stroke="#e2dfda"/>
+<text x="497.3333333333333" y="442" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Consumer Essentials</text>
+<text x="902.6666666666666" y="442" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >3.12%</text>
+<line x1="497.3333333333333" y1="454" x2="902.6666666666666" y2="454" stroke="#e2dfda"/>
+<text x="497.3333333333333" y="478" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Communication</text>
+<text x="902.6666666666666" y="478" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.64%</text>
+<line x1="497.3333333333333" y1="490" x2="902.6666666666666" y2="490" stroke="#e2dfda"/>
+<text x="700.0" y="516" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="400" fill="#8c857f" text-anchor="middle" >… 7 more rows, no bars, no benchmark</text>
+<rect x="934.6666666666666" y="170" width="437.3333333333333" height="372" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="950.6666666666666" y="196" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">COUNTRIES</text>
+<text x="950.6666666666666" y="226" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Unknown</text>
+<text x="1356.0" y="226" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >87.11%</text>
+<line x1="950.6666666666666" y1="238" x2="1356.0" y2="238" stroke="#e2dfda"/>
+<text x="950.6666666666666" y="262" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Spain</text>
+<text x="1356.0" y="262" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >5.11%</text>
+<line x1="950.6666666666666" y1="274" x2="1356.0" y2="274" stroke="#e2dfda"/>
+<text x="950.6666666666666" y="298" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >France</text>
+<text x="1356.0" y="298" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.27%</text>
+<line x1="950.6666666666666" y1="310" x2="1356.0" y2="310" stroke="#e2dfda"/>
+<text x="950.6666666666666" y="334" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Netherlands</text>
+<text x="1356.0" y="334" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >1.48%</text>
+<line x1="950.6666666666666" y1="346" x2="1356.0" y2="346" stroke="#e2dfda"/>
+<text x="950.6666666666666" y="370" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Italy</text>
+<text x="1356.0" y="370" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >1.28%</text>
+<line x1="950.6666666666666" y1="382" x2="1356.0" y2="382" stroke="#e2dfda"/>
+<text x="950.6666666666666" y="406" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Germany</text>
+<text x="1356.0" y="406" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >1.07%</text>
+<line x1="950.6666666666666" y1="418" x2="1356.0" y2="418" stroke="#e2dfda"/>
+<text x="950.6666666666666" y="442" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Austria</text>
+<text x="1356.0" y="442" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >0.73%</text>
+<line x1="950.6666666666666" y1="454" x2="1356.0" y2="454" stroke="#e2dfda"/>
+<text x="950.6666666666666" y="478" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" fill="#69625b" text-anchor="start" >Belgium</text>
+<text x="1356.0" y="478" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >0.41%</text>
+<line x1="950.6666666666666" y1="490" x2="1356.0" y2="490" stroke="#e2dfda"/>
+<text x="1153.3333333333333" y="516" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="400" fill="#8c857f" text-anchor="middle" >… 2 more rows, no bars, no benchmark</text>
+<text x="28" y="610" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#8d621f" text-anchor="start" >AFTER</text>
+<text x="118.5" y="610" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="400" fill="#69625b" text-anchor="start" >one panel, four tabs, the same bar row everywhere, WEBN named per row · #1797</text>
+<rect x="28.0" y="628" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="44.0" y="654" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">WEIGHTED TER</text>
+<text x="44.0" y="692" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >0.305%</text>
+<rect x="300.0" y="628" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="316.0" y="654" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">WEIGHTED XIRR</text>
+<text x="316.0" y="692" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >36.26%</text>
+<rect x="572.0" y="628" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="588.0" y="654" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">UNIQUE HOLDINGS</text>
+<text x="588.0" y="692" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >3,122</text>
+<rect x="844.0" y="628" width="256.0" height="88" rx="8" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<text x="860.0" y="654" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8c857f" text-anchor="start" letter-spacing="1">TOP 10</text>
+<text x="860.0" y="692" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#241e1a" text-anchor="start" >26.04%</text>
+<rect x="1116.0" y="628" width="256.0" height="88" rx="8" fill="#f8eee2" stroke="#e2dfda" stroke-width="1" />
+<text x="1132.0" y="654" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="11" font-weight="500" fill="#8d621f" text-anchor="start" letter-spacing="1">ACTIVE SHARE VS WEBN</text>
+<text x="1132.0" y="692" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="600" fill="#784e00" text-anchor="start" >38%</text>
+<rect x="28" y="740" width="1344" height="578" rx="8" fill="#fffdfa" stroke="#8d621f" stroke-width="1" />
+<text x="86.5" y="776" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="500" fill="#69625b" text-anchor="middle" letter-spacing="1">SECTORS</text>
+<rect x="143" y="756" width="116" height="30" rx="6" fill="#f8eee2" stroke="#8d621f" stroke-width="1" />
+<text x="201.0" y="776" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="500" fill="#8d621f" text-anchor="middle" letter-spacing="1">INDUSTRIES</text>
+<text x="338.0" y="776" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="500" fill="#69625b" text-anchor="middle" letter-spacing="1">TOP HOLDINGS</text>
+<text x="470.5" y="776" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="500" fill="#69625b" text-anchor="middle" letter-spacing="1">COUNTRIES</text>
+<rect x="1099.2" y="756" width="252.8" height="30" rx="15" fill="#fffdfa" stroke="#e2dfda" stroke-width="1" />
+<circle cx="1117.2" cy="771" r="4" fill="#8d621f"/>
+<text x="1131.2" y="775" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >Covers 92% of portfolio value</text>
+<rect x="52" y="798" width="16" height="9" rx="2" fill="#8d621f" />
+<text x="74" y="806" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >This allocation</text>
+<rect x="184" y="795" width="2.5" height="14" fill="#241e1a"/>
+<text x="194" y="806" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >WEBN</text>
+<text x="52" y="841" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Semiconductors &amp; Semi. Equipment</text>
+<rect x="470" y="831" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="831" width="492.8" height="10" rx="3" fill="#8d621f" />
+<rect x="647.95" y="827" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="841" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >26.4%</text>
+<text x="1122" y="841" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="600" fill="#784e00" text-anchor="start" >WEBN 9.60% · 2.75×</text>
+<line x1="52" y1="856" x2="1348" y2="856" stroke="#e2dfda"/>
+<text x="52" y="881" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Banks</text>
+<rect x="470" y="871" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="871" width="354.6666666666667" height="10" rx="3" fill="#8d621f" />
+<rect x="618.0833333333334" y="867" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="881" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >19.0%</text>
+<text x="1122" y="881" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="600" fill="#784e00" text-anchor="start" >WEBN 8.00% · 2.38×</text>
+<line x1="52" y1="896" x2="1348" y2="896" stroke="#e2dfda"/>
+<text x="52" y="921" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Aerospace &amp; Defense</text>
+<rect x="470" y="911" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="911" width="205.33333333333334" height="10" rx="3" fill="#8d621f" />
+<rect x="503.2833333333333" y="907" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="921" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >11.0%</text>
+<text x="1122" y="921" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="600" fill="#784e00" text-anchor="start" >WEBN 1.85% · 5.95×</text>
+<line x1="52" y1="936" x2="1348" y2="936" stroke="#e2dfda"/>
+<text x="52" y="961" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Software</text>
+<rect x="470" y="951" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="951" width="130.66666666666666" height="10" rx="3" fill="#8d621f" />
+<rect x="601.2833333333333" y="947" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="961" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >7.0%</text>
+<text x="1122" y="961" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >WEBN 7.10% · 0.99×</text>
+<line x1="52" y1="976" x2="1348" y2="976" stroke="#e2dfda"/>
+<text x="52" y="1001" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Technology Hardware &amp; Storage</text>
+<rect x="470" y="991" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="991" width="121.33333333333333" height="10" rx="3" fill="#8d621f" />
+<rect x="560.2166666666667" y="987" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="1001" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >6.5%</text>
+<text x="1122" y="1001" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >WEBN 4.90% · 1.33×</text>
+<line x1="52" y1="1016" x2="1348" y2="1016" stroke="#e2dfda"/>
+<text x="52" y="1041" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Electrical Equipment</text>
+<rect x="470" y="1031" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="1031" width="46.666666666666664" height="10" rx="3" fill="#8d621f" />
+<rect x="494.8833333333333" y="1027" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="1041" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.5%</text>
+<text x="1122" y="1041" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >WEBN 1.40% · 1.79×</text>
+<line x1="52" y1="1056" x2="1348" y2="1056" stroke="#e2dfda"/>
+<text x="52" y="1081" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Capital Markets</text>
+<rect x="470" y="1071" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="1071" width="46.666666666666664" height="10" rx="3" fill="#8d621f" />
+<rect x="528.4833333333333" y="1067" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="1081" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >2.5%</text>
+<text x="1122" y="1081" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >WEBN 3.20% · 0.78×</text>
+<line x1="52" y1="1096" x2="1348" y2="1096" stroke="#e2dfda"/>
+<text x="52" y="1121" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Interactive Media &amp; Services</text>
+<rect x="470" y="1111" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="1111" width="33.6" height="10" rx="3" fill="#8d621f" />
+<rect x="554.6166666666667" y="1107" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="1121" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >1.8%</text>
+<text x="1122" y="1121" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="600" fill="#784e00" text-anchor="start" >WEBN 4.60% · 0.39×</text>
+<line x1="52" y1="1136" x2="1348" y2="1136" stroke="#e2dfda"/>
+<text x="52" y="1161" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Oil, Gas &amp; Consumable Fuels</text>
+<rect x="470" y="1151" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="1151" width="28.0" height="10" rx="3" fill="#8d621f" />
+<rect x="532.2166666666667" y="1147" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="1161" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >1.5%</text>
+<text x="1122" y="1161" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="600" fill="#784e00" text-anchor="start" >WEBN 3.40% · 0.44×</text>
+<line x1="52" y1="1176" x2="1348" y2="1176" stroke="#e2dfda"/>
+<text x="52" y="1201" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#241e1a" text-anchor="start" >Pharmaceuticals</text>
+<rect x="470" y="1191" width="560" height="10" rx="3" fill="#f6f3ed" />
+<rect x="470" y="1191" width="22.4" height="10" rx="3" fill="#8d621f" />
+<rect x="545.2833333333333" y="1187" width="2.5" height="18" fill="#241e1a"/>
+<text x="1105" y="1201" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >1.2%</text>
+<text x="1122" y="1201" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="600" fill="#784e00" text-anchor="start" >WEBN 4.10% · 0.29×</text>
+<line x1="52" y1="1216" x2="1348" y2="1216" stroke="#e2dfda"/>
+<text x="52" y="1241" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="14.5" font-weight="400" fill="#69625b" text-anchor="start" >Other</text>
+<text x="1105" y="1241" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#241e1a" text-anchor="end" >20.6%</text>
+<text x="1122" y="1241" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" font-size="12.5" font-weight="400" fill="#69625b" text-anchor="start" >WEBN 51.85%   · 34 more industries below</text>
+<text x="52" y="1304" font-family="Geist, 'Helvetica Neue', Arial, sans-serif" font-size="11.5" font-weight="400" fill="#8c857f" text-anchor="start" >Bars: this allocation · tick: WEBN share · brass text: ratio above 2.0× or below 0.5× · Industries lists up to 40 rows before Other · Sectors, Top holdings and Countries use the same row · Semiconductors is the live Sectors figure, other rows illustrative</text>
+</svg>
