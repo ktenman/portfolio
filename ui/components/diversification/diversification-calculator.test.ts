@@ -9,7 +9,7 @@ vi.mock('@tanstack/vue-query', () => ({
     data: ref([
       {
         instrumentId: 1,
-        symbol: 'VWCE',
+        symbol: 'VWCE:GER:EUR',
         name: 'Vanguard FTSE All-World',
         allocation: 0,
         ter: 0.22,
@@ -18,7 +18,7 @@ vi.mock('@tanstack/vue-query', () => ({
       },
       {
         instrumentId: 2,
-        symbol: 'VUAA',
+        symbol: 'VUAA:GER:EUR',
         name: 'Vanguard S&P 500',
         allocation: 0,
         ter: 0.07,
@@ -143,5 +143,87 @@ describe('DiversificationCalculator', () => {
     await flushPromises()
 
     expect(instrumentsService.getAll).toHaveBeenCalledWith(['LHV', 'SWEDBANK'])
+  })
+
+  const emptyResult = () => ({
+    weightedTer: 0,
+    weightedAnnualReturn: 0,
+    totalUniqueHoldings: 0,
+    holdings: [],
+    sectors: [],
+    industries: [],
+    countries: [],
+    concentration: { top10Percentage: 0, largestPosition: null },
+  })
+
+  const benchmarkCalls = async () => {
+    const { diversificationService } = await import('../../services/api')
+    return vi
+      .mocked(diversificationService.calculate)
+      .mock.calls.filter(([a]) => a.length === 1 && a[0].instrumentId === 1)
+  }
+
+  it('fetches the benchmark once with a single 100 percent allocation and not again on edits', async () => {
+    const { diversificationService } = await import('../../services/api')
+    vi.mocked(diversificationService.calculate).mockResolvedValue(emptyResult())
+    vi.mocked(diversificationService.getConfig).mockResolvedValue({
+      allocations: [{ instrumentId: 2, value: 100 }],
+      inputMode: 'percentage',
+    })
+
+    const wrapper = mount(DiversificationCalculator)
+    await flushPromises()
+    wrapper
+      .findComponent({ name: 'AllocationTable' })
+      .vm.$emit('update:allocation', 0, { instrumentId: 2, value: 80 })
+    await flushPromises()
+
+    expect(await benchmarkCalls()).toEqual([[[{ instrumentId: 1, percentage: 100 }]]])
+  })
+
+  it('hides the comparison when the allocation is only the benchmark fund', async () => {
+    const { diversificationService } = await import('../../services/api')
+    vi.mocked(diversificationService.calculate).mockResolvedValue(emptyResult())
+    vi.mocked(diversificationService.getConfig).mockResolvedValue({
+      allocations: [{ instrumentId: 1, value: 100 }],
+      inputMode: 'percentage',
+    })
+
+    const wrapper = mount(DiversificationCalculator)
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'BreakdownPanel' }).props('benchmark')).toBeNull()
+  })
+
+  it('passes the active share to the stats once the benchmark is loaded', async () => {
+    const { diversificationService } = await import('../../services/api')
+    vi.mocked(diversificationService.calculate).mockImplementation(allocations =>
+      Promise.resolve({
+        ...emptyResult(),
+        holdings: [
+          {
+            name: 'NVIDIA',
+            ticker: null,
+            percentage: allocations[0].instrumentId === 1 ? 40 : 60,
+            inEtfs: '',
+          },
+          {
+            name: 'Apple',
+            ticker: null,
+            percentage: allocations[0].instrumentId === 1 ? 60 : 40,
+            inEtfs: '',
+          },
+        ],
+      })
+    )
+    vi.mocked(diversificationService.getConfig).mockResolvedValue({
+      allocations: [{ instrumentId: 2, value: 100 }],
+      inputMode: 'percentage',
+    })
+
+    const wrapper = mount(DiversificationCalculator)
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'DiversificationStats' }).props('activeShare')).toBe(20)
   })
 })

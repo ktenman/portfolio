@@ -129,7 +129,19 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     currentPrice: 36.32,
     fundCurrency: Currency.EUR,
   },
+  {
+    instrumentId: 115,
+    symbol: 'WEBN:GER:EUR',
+    name: 'Test World Benchmark',
+    allocation: 0,
+    ter: 0.07,
+    annualReturn: 0.1102,
+    currentPrice: 6.41,
+    fundCurrency: Currency.EUR,
+  },
 ]
+
+const BENCHMARK_ID = 115
 
 const CONFIG: CachedState = {
   allocations: [
@@ -180,6 +192,17 @@ const CALCULATION: DiversificationCalculatorResponseDto = {
     { sector: 'Energy', percentage: 4.2508 },
     { sector: 'Materials', percentage: 2.8546 },
   ],
+  industries: [
+    { industry: 'Semiconductors & Semiconductor Equipment', percentage: 21.4062 },
+    { industry: 'Software', percentage: 12.1835 },
+    { industry: 'Banks', percentage: 9.7326 },
+    { industry: 'Aerospace & Defense', percentage: 7.4408 },
+    { industry: 'Technology Hardware, Storage & Peripherals', percentage: 6.3583 },
+    { industry: 'Pharmaceuticals', percentage: 4.2051 },
+    { industry: 'Electric Utilities', percentage: 3.3177 },
+    { industry: 'Food Products', percentage: 2.1893 },
+    { industry: 'Unclassified', percentage: 1.4062 },
+  ],
   countries: [
     { countryCode: 'US', countryName: 'United States', percentage: 58.3214 },
     { countryCode: 'DE', countryName: 'Germany', percentage: 9.7052 },
@@ -198,13 +221,78 @@ const CALCULATION: DiversificationCalculatorResponseDto = {
   },
 }
 
+const BENCHMARK_CALCULATION: DiversificationCalculatorResponseDto = {
+  weightedTer: 0.07,
+  weightedAnnualReturn: 0.1102,
+  totalUniqueHoldings: 3512,
+  holdings: [
+    { name: 'NVIDIA', ticker: 'NVDA', percentage: 4.2731, inEtfs: 'WEBN' },
+    { name: 'Apple', ticker: 'AAPL', percentage: 3.5402, inEtfs: 'WEBN' },
+    { name: 'Microsoft', ticker: 'MSFT', percentage: 2.5688, inEtfs: 'WEBN' },
+    { name: 'ASML Holding N.V.', ticker: 'ASML', percentage: 0.7104, inEtfs: 'WEBN' },
+    { name: 'SAP SE', ticker: 'SAP', percentage: 0.4211, inEtfs: 'WEBN' },
+    { name: 'Nestlé S.A.', ticker: 'NESN', percentage: 0.3305, inEtfs: 'WEBN' },
+    { name: 'Novo Nordisk A/S', ticker: 'NOVO-B', percentage: 0.2517, inEtfs: 'WEBN' },
+  ],
+  sectors: [
+    { sector: 'Semiconductors', percentage: 9.6021 },
+    { sector: 'Software & Cloud Services', percentage: 18.4104 },
+    { sector: 'Digital Hardware', percentage: 7.2213 },
+    { sector: 'Industrials', percentage: 10.8352 },
+    { sector: 'Financials', percentage: 16.9027 },
+    { sector: 'Healthcare', percentage: 9.7716 },
+    { sector: 'Food & Beverage', percentage: 3.8843 },
+    { sector: 'Utilities', percentage: 2.5306 },
+    { sector: 'Energy', percentage: 3.9107 },
+    { sector: 'Materials', percentage: 3.4082 },
+    { sector: 'Consumer Discretionary', percentage: 10.6218 },
+    { sector: 'Communication', percentage: 2.9011 },
+  ],
+  industries: [
+    { industry: 'Semiconductors & Semiconductor Equipment', percentage: 9.6021 },
+    { industry: 'Software', percentage: 12.3104 },
+    { industry: 'Banks', percentage: 8.0035 },
+    { industry: 'Aerospace & Defense', percentage: 1.8512 },
+    { industry: 'Technology Hardware, Storage & Peripherals', percentage: 4.9013 },
+    { industry: 'Pharmaceuticals', percentage: 4.1046 },
+    { industry: 'Electric Utilities', percentage: 1.3077 },
+    { industry: 'Food Products', percentage: 1.6182 },
+    { industry: 'Interactive Media & Services', percentage: 5.4208 },
+    { industry: 'Oil, Gas & Consumable Fuels', percentage: 3.2311 },
+    { industry: 'Unclassified', percentage: 2.9013 },
+  ],
+  countries: [
+    { countryCode: 'US', countryName: 'United States', percentage: 63.1102 },
+    { countryCode: 'JP', countryName: 'Japan', percentage: 5.4207 },
+    { countryCode: 'GB', countryName: 'United Kingdom', percentage: 3.5911 },
+    { countryCode: 'DE', countryName: 'Germany', percentage: 2.3082 },
+    { countryCode: 'NL', countryName: 'Netherlands', percentage: 1.2504 },
+    { countryCode: 'TW', countryName: 'Taiwan', percentage: 2.0417 },
+    { countryCode: 'CH', countryName: 'Switzerland', percentage: 2.4305 },
+    { countryCode: 'DK', countryName: 'Denmark', percentage: 0.7211 },
+    { countryCode: 'FR', countryName: 'France', percentage: 2.6801 },
+    { countryCode: null, countryName: 'Other', percentage: 16.446 },
+  ],
+  concentration: {
+    top10Percentage: 18.7215,
+    largestPosition: null,
+  },
+}
+
+const isBenchmarkRequest = (body: { allocations: { instrumentId: number }[] }) =>
+  body.allocations.length === 1 && body.allocations[0].instrumentId === BENCHMARK_ID
+
 export const stubDiversification: RouteStub = async page => {
   await stubInstruments(page)
   await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/available-etfs`), route =>
     route.fulfill({ json: AVAILABLE_ETFS })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/calculate`), route =>
-    route.fulfill({ json: CALCULATION })
+    route.fulfill({
+      json: isBenchmarkRequest(route.request().postDataJSON())
+        ? BENCHMARK_CALCULATION
+        : CALCULATION,
+    })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/config`), route =>
     route.fulfill({ json: CONFIG })

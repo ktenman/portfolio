@@ -11,12 +11,7 @@
       }"
       @mouseenter="emit('hover', index)"
     >
-      <img
-        v-if="item.code"
-        :src="`https://hatscripts.github.io/circle-flags/flags/${item.code.toLowerCase()}.svg`"
-        :alt="item.code"
-        class="legend-flag"
-      />
+      <img v-if="item.code" :src="countryFlagUrl(item.code)" :alt="item.code" class="legend-flag" />
       <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
       <span class="legend-label">{{ item.label }}</span>
       <span class="legend-value">{{ item.percentage }}%</span>
@@ -33,6 +28,8 @@
 
 <script lang="ts" setup>
 import type { ChartDataItem } from '../../services/etf-chart-service'
+import { isFlagged } from '../../services/diversification-chart-service'
+import { countryFlagUrl } from '../../utils/currency-flag'
 
 const props = defineProps<{
   items: ChartDataItem[]
@@ -49,9 +46,6 @@ const formatBenchmark = (item: ChartDataItem): string => {
   const share = `${props.benchmarkLabel ?? 'vs'} ${(item.benchmark ?? 0).toFixed(2)}%`
   return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}x`
 }
-
-const isFlagged = (ratio: number | undefined): boolean =>
-  ratio !== undefined && (ratio > 2 || ratio < 0.5)
 </script>
 
 <style scoped>

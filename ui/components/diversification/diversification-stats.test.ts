@@ -21,9 +21,23 @@ describe('DiversificationStats', () => {
       const wrapper = mount(DiversificationStats, { props: defaultProps })
       const labels = wrapper.findAll('.stat-label')
       expect(labels[0].text()).toBe('Weighted TER')
-      expect(labels[1].text()).toBe('Weighted Return')
+      expect(labels[1].text()).toBe('Weighted XIRR')
       expect(labels[2].text()).toBe('Unique Holdings')
       expect(labels[3].text()).toBe('Top 10 Concentration')
+    })
+  })
+
+  describe('active share', () => {
+    it('shows the tile only with a benchmark', () => {
+      const without = mount(DiversificationStats, { props: defaultProps })
+      const withBenchmark = mount(DiversificationStats, {
+        props: { ...defaultProps, benchmarkLabel: 'WEBN', activeShare: 38.4 },
+      })
+      expect(without.text()).not.toContain('Active share')
+      expect(withBenchmark.findAll('.stat-label').map(l => l.text())).toContain(
+        'Active share vs WEBN'
+      )
+      expect(withBenchmark.findAll('.stat-value')[4].text()).toBe('38%')
     })
   })
 

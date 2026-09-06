@@ -2,7 +2,13 @@ import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { diversificationService } from '../services/api'
-import type { DiversificationCalculatorResponseDto } from '../models/generated/domain-models'
+import { resolveBenchmark } from '../constants/benchmarks'
+import { formatTickerSymbol } from '../utils/ticker-symbol'
+import type { BreakdownItem } from '../services/diversification-chart-service'
+import type {
+  DiversificationCalculatorResponseDto,
+  EtfDetailDto,
+} from '../models/generated/domain-models'
 import type { AllocationInput } from '../components/diversification/types'
 
 export const getErrorMessage = (e: unknown): string => {
@@ -21,35 +27,72 @@ export const getErrorMessage = (e: unknown): string => {
   return 'An unexpected error occurred. Please try again.'
 }
 
-const toBreakdown = <T extends { percentage: number }>(
-  items: T[] | undefined,
-  getName: (item: T) => string
-) =>
-  items?.map(item => ({
-    key: getName(item),
-    name: getName(item),
-    percentage: item.percentage,
-  })) ?? []
+export interface Breakdowns {
+  sectors: BreakdownItem[]
+  industries: BreakdownItem[]
+  holdings: BreakdownItem[]
+  countries: BreakdownItem[]
+}
 
-export function useDiversificationResult(allocations: Ref<AllocationInput[]>) {
+const toBreakdowns = (dto: DiversificationCalculatorResponseDto | null): Breakdowns => ({
+  sectors: dto?.sectors.map(s => ({ label: s.sector, value: s.percentage })) ?? [],
+  industries: dto?.industries.map(i => ({ label: i.industry, value: i.percentage })) ?? [],
+  holdings: dto?.holdings.map(h => ({ label: h.name, value: h.percentage })) ?? [],
+  countries:
+    dto?.countries.map(c => ({
+      label: c.countryName,
+      value: c.percentage,
+      code: c.countryCode ?? undefined,
+    })) ?? [],
+})
+
+export function useDiversificationResult(
+  allocations: Ref<AllocationInput[]>,
+  availableEtfs: Ref<EtfDetailDto[]>
+) {
   const result = ref<DiversificationCalculatorResponseDto | null>(null)
+  const benchmark = ref<DiversificationCalculatorResponseDto | null>(null)
   const error = ref('')
   const isCalculating = ref(false)
+  let benchmarkRequested = false
+
+  const benchmarkEtf = computed(() => {
+    const symbol = resolveBenchmark(availableEtfs.value.map(e => e.symbol))
+    return availableEtfs.value.find(e => e.symbol === symbol)
+  })
+
+  const benchmarkLabel = computed(
+    () => benchmarkEtf.value && formatTickerSymbol(benchmarkEtf.value.symbol)
+  )
+
+  const loadBenchmark = async () => {
+    const etf = benchmarkEtf.value
+    if (!etf || benchmarkRequested) return
+    benchmarkRequested = true
+    try {
+      benchmark.value = await diversificationService.calculate([
+        { instrumentId: etf.instrumentId, percentage: 100 },
+      ])
+    } catch {
+      benchmark.value = null
+    }
+  }
+
+  const validAllocations = () => allocations.value.filter(a => a.instrumentId > 0 && a.value > 0)
 
   const calculateDiversification = async () => {
-    const validAllocations = allocations.value.filter(a => a.instrumentId > 0 && a.value > 0)
-    if (validAllocations.length < 1) {
+    const valid = validAllocations()
+    if (valid.length < 1) {
       result.value = null
       return
     }
+    loadBenchmark()
     isCalculating.value = true
     error.value = ''
     try {
-      const requestAllocations = validAllocations.map(a => ({
-        instrumentId: a.instrumentId,
-        percentage: a.value,
-      }))
-      result.value = await diversificationService.calculate(requestAllocations)
+      result.value = await diversificationService.calculate(
+        valid.map(a => ({ instrumentId: a.instrumentId, percentage: a.value }))
+      )
     } catch (e) {
       error.value = getErrorMessage(e)
       result.value = null
@@ -60,10 +103,19 @@ export function useDiversificationResult(allocations: Ref<AllocationInput[]>) {
 
   const debouncedCalculate = useDebounceFn(calculateDiversification, 500)
 
-  const holdingsBreakdown = computed(() => toBreakdown(result.value?.holdings, h => h.name))
-  const sectorsBreakdown = computed(() => toBreakdown(result.value?.sectors, s => s.sector))
-  const countriesBreakdown = computed(() =>
-    toBreakdown(result.value?.countries, c => c.countryName)
+  const breakdowns = computed(() => toBreakdowns(result.value))
+
+  const onlyBenchmarkAllocated = computed(() => {
+    const ids = validAllocations().map(a => a.instrumentId)
+    return ids.length === 1 && ids[0] === benchmarkEtf.value?.instrumentId
+  })
+
+  const mappedBenchmark = computed(() =>
+    benchmark.value === null ? null : toBreakdowns(benchmark.value)
+  )
+
+  const benchmarkBreakdowns = computed(() =>
+    benchmarkEtf.value === undefined || onlyBenchmarkAllocated.value ? null : mappedBenchmark.value
   )
 
   return {
@@ -71,8 +123,8 @@ export function useDiversificationResult(allocations: Ref<AllocationInput[]>) {
     error,
     isCalculating,
     debouncedCalculate,
-    holdingsBreakdown,
-    sectorsBreakdown,
-    countriesBreakdown,
+    breakdowns,
+    benchmarkBreakdowns,
+    benchmarkLabel,
   }
 }
