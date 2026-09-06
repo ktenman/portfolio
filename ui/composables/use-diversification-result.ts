@@ -62,17 +62,19 @@ export function useDiversificationResult(
 
   const benchmarkLabel = computed(() => benchmarkEtf.value && symbolPart(benchmarkEtf.value.symbol))
 
+  const fetchBenchmark = async (instrumentId: number) => {
+    try {
+      benchmark.value =
+        (await diversificationService.calculate([{ instrumentId, percentage: 100 }])) ?? null
+    } catch {
+      benchmark.value = null
+    }
+  }
+
   const loadBenchmark = () => {
     const etf = benchmarkEtf.value
     if (!etf || benchmarkRequest) return
-    benchmarkRequest = diversificationService
-      .calculate([{ instrumentId: etf.instrumentId, percentage: 100 }])
-      .then(dto => {
-        benchmark.value = dto
-      })
-      .catch(() => {
-        benchmark.value = null
-      })
+    benchmarkRequest = fetchBenchmark(etf.instrumentId)
   }
 
   const validAllocations = () => allocations.value.filter(a => a.instrumentId > 0 && a.value > 0)

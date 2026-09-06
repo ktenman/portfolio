@@ -27,8 +27,7 @@ export const INDUSTRY_MIN_PERCENTAGE = 0.1
 export const isFlagged = (ratio: number | undefined): boolean =>
   ratio !== undefined && (ratio > 2 || ratio < 0.5)
 
-const normaliseLabel = (label: string): string =>
-  label.toLowerCase().replace(/\s+/g, ' ').trim()
+const normaliseLabel = (label: string): string => label.toLowerCase().replace(/\s+/g, ' ').trim()
 
 const toMap = (items: BreakdownItem[]): Map<string, number> =>
   items.reduce((map, item) => {
