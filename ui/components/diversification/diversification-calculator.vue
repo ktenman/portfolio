@@ -57,14 +57,17 @@
           :weighted-annual-return="result.weightedAnnualReturn"
           :total-unique-holdings="result.totalUniqueHoldings"
           :top10-percentage="result.concentration.top10Percentage"
+          :benchmark-label="benchmarkLabel"
+          :active-share="activeShareValue"
           :currency-split="currencySplit"
         />
 
-        <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <BreakdownCard title="Top Holdings" :items="holdingsBreakdown" />
-          <BreakdownCard title="Sectors" :items="sectorsBreakdown" />
-          <BreakdownCard title="Countries" :items="countriesBreakdown" />
-        </div>
+        <BreakdownPanel
+          :breakdowns="breakdowns"
+          :benchmark="benchmarkBreakdowns"
+          :benchmark-label="benchmarkLabel"
+          :coverage="coverage"
+        />
       </div>
 
       <div v-if="isCalculating" class="py-6 text-center">
@@ -108,12 +111,13 @@ import {
   useDiversificationResult,
 } from '../../composables/use-diversification-result'
 import { diversificationService, instrumentsService } from '../../services/api'
+import { activeShare } from '../../services/diversification-chart-service'
 import { REFETCH_INTERVALS } from '../../constants'
 import { formatRelativeTime } from '../../utils/formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
-import BreakdownCard from './breakdown-card.vue'
+import BreakdownPanel from './breakdown-panel.vue'
 import AlertMessage from '../shared/alert-message.vue'
 import SpinnerRing from '../shared/spinner-ring.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
@@ -178,15 +182,17 @@ const isInitialized = ref(false)
 const showExportDialog = ref(false)
 const showImportDialog = ref(false)
 
+const etfList = computed(() => availableEtfs.value ?? [])
+
 const {
   result,
   error,
   isCalculating,
   debouncedCalculate,
-  holdingsBreakdown,
-  sectorsBreakdown,
-  countriesBreakdown,
-} = useDiversificationResult(allocations)
+  breakdowns,
+  benchmarkBreakdowns,
+  benchmarkLabel,
+} = useDiversificationResult(allocations, etfList)
 
 onMounted(async () => {
   try {
@@ -197,14 +203,28 @@ onMounted(async () => {
   }
 })
 
-const etfList = computed(() => availableEtfs.value ?? [])
-
 const validEtfIds = computed(() => new Set(etfList.value.map(e => e.instrumentId)))
 
 const availablePlatforms = computed(() => {
   const platforms = new Set<string>()
   portfolioInstruments.value.forEach(i => i.platforms?.forEach(p => platforms.add(p)))
   return Array.from(platforms).sort()
+})
+
+const activeShareValue = computed(() =>
+  benchmarkBreakdowns.value === null
+    ? null
+    : activeShare(breakdowns.value.holdings, benchmarkBreakdowns.value.holdings)
+)
+
+const coverage = computed(() => {
+  const total = portfolioInstruments.value.reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
+  if (total === 0) return null
+  const allocated = new Set(allocations.value.filter(a => a.value > 0).map(a => a.instrumentId))
+  const covered = portfolioInstruments.value
+    .filter(i => i.id !== null && allocated.has(i.id))
+    .reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
+  return covered / total
 })
 
 const currentHoldingsTotal = computed(() =>

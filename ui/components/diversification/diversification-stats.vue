@@ -1,9 +1,14 @@
 <template>
   <div class="summary-cards mb-6">
     <StatCard label="Weighted TER" :value="formatTer(weightedTer, 3)" />
-    <StatCard label="Weighted Return" :value="formatReturn(weightedAnnualReturn)" />
+    <StatCard label="Weighted XIRR" :value="formatReturn(weightedAnnualReturn)" />
     <StatCard label="Unique Holdings" :value="totalUniqueHoldings.toLocaleString()" />
     <StatCard label="Top 10 Concentration" :value="formatPercentage(top10Percentage)" />
+    <StatCard
+      v-if="benchmarkLabel && activeShare != null"
+      :label="`Active share vs ${benchmarkLabel}`"
+      :value="`${Math.round(activeShare)}%`"
+    />
     <CurrencySplitCard
       v-if="currencySplit && currencySplit.length > 0"
       label="Fund Currency"
@@ -22,6 +27,8 @@ defineProps<{
   weightedAnnualReturn: number
   totalUniqueHoldings: number
   top10Percentage: number
+  benchmarkLabel?: string
+  activeShare?: number | null
   currencySplit?: Array<{ currency: string; value: number }>
 }>()
 </script>

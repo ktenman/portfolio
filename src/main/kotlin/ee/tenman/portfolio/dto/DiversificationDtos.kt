@@ -28,11 +28,12 @@ data class DiversificationCalculatorResponseDto(
   val totalUniqueHoldings: Int,
   val holdings: List<DiversificationHoldingDto>,
   val sectors: List<DiversificationSectorDto>,
+  val industries: List<DiversificationIndustryDto>,
   val countries: List<DiversificationCountryDto>,
   val concentration: ConcentrationDto,
 ) : Serializable {
   companion object {
-    private const val serialVersionUID = 1L
+    private const val serialVersionUID = 2L
   }
 }
 
@@ -49,6 +50,15 @@ data class DiversificationHoldingDto(
 
 data class DiversificationSectorDto(
   val sector: String,
+  val percentage: BigDecimal,
+) : Serializable {
+  companion object {
+    private const val serialVersionUID = 1L
+  }
+}
+
+data class DiversificationIndustryDto(
+  val industry: String,
   val percentage: BigDecimal,
 ) : Serializable {
   companion object {

@@ -30,7 +30,7 @@
             type="button"
           >
             <currency-flag :currency="symbolToFundCurrency.get(etf)" :size="14" />
-            {{ getSymbolOnly(etf) }}
+            {{ formatTickerSymbol(etf) }}
           </button>
           <span class="etf-separator"></span>
           <button class="etf-btn etf-btn-ghost" @click="toggleAllEtfs" type="button">
@@ -143,6 +143,8 @@ import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
 import { STORAGE_KEYS } from '../../constants'
+import { resolveBenchmark } from '../../constants/benchmarks'
+import { formatTickerSymbol } from '../../utils/ticker-symbol'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
 const masterHoldings = ref<EtfHoldingBreakdownDto[]>([])
@@ -252,11 +254,7 @@ type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = ref<BreakdownTab>('sectors')
 
-const BENCHMARK_CHAIN = ['WEBN:GER:EUR', 'VWCE:GER:EUR']
-
-const benchmarkSymbol = computed(() =>
-  BENCHMARK_CHAIN.find(symbol => availableEtfs.value.includes(symbol))
-)
+const benchmarkSymbol = computed(() => resolveBenchmark(availableEtfs.value))
 
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
 
@@ -343,11 +341,9 @@ const toggleAllEtfs = () => {
   }
 }
 
-const getSymbolOnly = (fullSymbol: string): string => {
-  return fullSymbol.split(':')[0]
-}
-
-const benchmarkLabel = computed(() => benchmarkSymbol.value && getSymbolOnly(benchmarkSymbol.value))
+const benchmarkLabel = computed(
+  () => benchmarkSymbol.value && formatTickerSymbol(benchmarkSymbol.value)
+)
 
 let benchmarkRequested = false
 

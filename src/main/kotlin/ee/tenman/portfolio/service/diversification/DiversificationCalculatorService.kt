@@ -1,12 +1,15 @@
 package ee.tenman.portfolio.service.diversification
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_ETFS_CACHE
+import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.dto.AllocationDto
 import ee.tenman.portfolio.dto.ConcentrationDto
 import ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto
 import ee.tenman.portfolio.dto.DiversificationCalculatorResponseDto
 import ee.tenman.portfolio.dto.DiversificationCountryDto
 import ee.tenman.portfolio.dto.DiversificationHoldingDto
+import ee.tenman.portfolio.dto.DiversificationIndustryDto
 import ee.tenman.portfolio.dto.DiversificationSectorDto
 import ee.tenman.portfolio.dto.EtfDetailDto
 import ee.tenman.portfolio.dto.LargestPositionDto
@@ -38,6 +41,7 @@ class DiversificationCalculatorService(
     val holdingsData = aggregateHoldings(allocations, positionsByEtfId, instruments)
     val holdings = buildHoldingDtos(holdingsData)
     val sectors = aggregateSectors(holdingsData)
+    val industries = aggregateIndustries(holdingsData)
     val countries = aggregateCountries(holdingsData)
     val concentration = buildConcentration(holdings)
     return DiversificationCalculatorResponseDto(
@@ -46,6 +50,7 @@ class DiversificationCalculatorService(
       totalUniqueHoldings = holdings.size,
       holdings = holdings,
       sectors = sectors,
+      industries = industries,
       countries = countries,
       concentration = concentration,
     )
@@ -158,6 +163,7 @@ class DiversificationCalculatorService(
               name = position.holding.name,
               ticker = position.holding.ticker,
               sector = position.holding.sector?.displayName,
+              industry = resolveIndustry(position.holding),
               countryCode = position.holding.countryCode,
               countryName = position.holding.countryName,
               percentage = weightedPercentage,
@@ -193,6 +199,22 @@ class DiversificationCalculatorService(
       }.filter { it.percentage.signum() > 0 }
       .sortedByDescending { it.percentage }
 
+  private fun resolveIndustry(holding: EtfHolding): String? {
+    if (holding.sector == IndustrySector.CRYPTOCURRENCY) return IndustrySector.CRYPTOCURRENCY.displayName
+    return holding.industry?.displayName
+  }
+
+  private fun aggregateIndustries(holdingsData: Map<String, AggregatedHolding>): List<DiversificationIndustryDto> =
+    holdingsData.values
+      .groupBy { it.industry ?: UNCLASSIFIED }
+      .map { (industry, holdings) ->
+        DiversificationIndustryDto(
+          industry = industry,
+          percentage = holdings.sumOf { it.percentage }.setScale(RESULT_SCALE, RoundingMode.HALF_UP),
+        )
+      }.filter { it.percentage.signum() > 0 }
+      .sortedByDescending { it.percentage }
+
   private fun aggregateCountries(holdingsData: Map<String, AggregatedHolding>): List<DiversificationCountryDto> =
     holdingsData.values
       .groupBy { it.countryName ?: UNKNOWN }
@@ -218,6 +240,7 @@ class DiversificationCalculatorService(
     private const val RESULT_SCALE = 4
     private const val TOP_HOLDINGS_COUNT = 10
     private const val UNKNOWN = "Unknown"
+    private const val UNCLASSIFIED = "Unclassified"
     private const val ETF_CATEGORY = "ETF"
     private val HUNDRED = BigDecimal(100)
   }

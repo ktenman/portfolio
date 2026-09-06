@@ -167,6 +167,7 @@ export interface DiversificationCalculatorResponseDto extends Serializable {
     totalUniqueHoldings: number;
     holdings: DiversificationHoldingDto[];
     sectors: DiversificationSectorDto[];
+    industries: DiversificationIndustryDto[];
     countries: DiversificationCountryDto[];
     concentration: ConcentrationDto;
 }
@@ -217,6 +218,11 @@ export interface DiversificationHoldingDto extends Serializable {
 
 export interface DiversificationSectorDto extends Serializable {
     sector: string;
+    percentage: number;
+}
+
+export interface DiversificationIndustryDto extends Serializable {
+    industry: string;
     percentage: number;
 }
 
