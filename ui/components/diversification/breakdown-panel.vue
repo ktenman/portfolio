@@ -25,15 +25,12 @@
           </label>
         </template>
       </div>
-      <span v-if="coverage !== null" class="coverage-badge">
-        Covers {{ Math.round(coverage * 100) }}% of portfolio value
-      </span>
-    </div>
-    <div v-if="compared" class="panel-legend">
-      <span class="legend-bar"></span>
-      <span>This allocation</span>
-      <span class="legend-tick"></span>
-      <span>{{ benchmarkLabel }}</span>
+      <div v-if="compared" class="panel-legend">
+        <span class="legend-bar"></span>
+        <span>This allocation</span>
+        <span class="legend-tick"></span>
+        <span>{{ benchmarkLabel }}</span>
+      </div>
     </div>
     <div class="breakdown-rows">
       <div
@@ -93,7 +90,6 @@ const props = defineProps<{
   breakdowns: Breakdowns
   benchmark: Breakdowns | null
   benchmarkLabel?: string
-  coverage: number | null
 }>()
 
 interface Tab {
@@ -208,22 +204,13 @@ const rowTitle = (row: ComparedRow): string => {
   color: var(--color-brass-deep);
 }
 
-.coverage-badge {
-  font-size: var(--text-label);
-  color: var(--color-ink-muted);
-  background: var(--color-surface-sunken);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  white-space: nowrap;
-}
-
 .panel-legend {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  margin-bottom: 0.5rem;
   font-size: var(--text-label);
   color: var(--color-ink-muted);
+  white-space: nowrap;
 }
 
 .legend-bar {
@@ -324,12 +311,21 @@ const rowTitle = (row: ComparedRow): string => {
 
 @media (max-width: 639px) {
   .breakdown-tabs {
-    gap: 0.125rem;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 0.375rem;
   }
 
   .breakdown-tab {
-    padding: 0.3125rem 0.25rem;
+    padding: 0.3125rem 0;
+    border: 0;
+    border-bottom: 0.125rem solid transparent;
+    border-radius: 0;
     font-size: var(--text-label);
+  }
+
+  .breakdown-tab.active {
+    background: transparent;
   }
 
   .breakdown-tabs .platform-separator {
@@ -338,6 +334,10 @@ const rowTitle = (row: ComparedRow): string => {
 
   .compare-prefix {
     display: none;
+  }
+
+  .compare-toggle {
+    margin-left: auto;
   }
 
   .compare-switch {
@@ -360,6 +360,16 @@ const rowTitle = (row: ComparedRow): string => {
     justify-self: end;
     min-width: 5.5rem;
     text-align: right;
+  }
+}
+
+@media (max-width: 359px) {
+  .breakdown-tabs {
+    flex-wrap: wrap;
+  }
+
+  .compare-toggle {
+    margin-left: 0;
   }
 }
 </style>

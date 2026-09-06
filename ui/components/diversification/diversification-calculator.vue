@@ -66,7 +66,6 @@
           :breakdowns="breakdowns"
           :benchmark="benchmarkBreakdowns"
           :benchmark-label="benchmarkLabel"
-          :coverage="coverage"
         />
       </div>
 
@@ -217,19 +216,6 @@ const activeShareValue = computed(() =>
     ? null
     : activeShare(breakdowns.value.holdings, benchmarkBreakdowns.value.holdings)
 )
-
-const portfolioValueByEtf = computed(() =>
-  etfPortfolioValues(etfList.value, portfolioInstruments.value)
-)
-
-const coverage = computed(() => {
-  const total = portfolioInstruments.value.reduce((sum, i) => sum + (i.currentValue ?? 0), 0)
-  if (total === 0) return null
-  const covered = allocations.value
-    .filter(a => a.value > 0)
-    .reduce((sum, a) => sum + (portfolioValueByEtf.value.get(a.instrumentId) ?? 0), 0)
-  return covered / total
-})
 
 const currentHoldingsTotal = computed(() =>
   allocations.value.reduce((sum, a) => sum + (a.currentValue ?? 0), 0)
