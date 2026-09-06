@@ -27,7 +27,7 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/superpowers/baseline
+          git add -f docs/superpowers/baseline
           git status --short
           md5sum docs/superpowers/baseline/route-etf-breakdown-tablet.png docs/superpowers/baseline/modal-logo-replacement-*.png
           git commit -m "Record visual baselines from CI" || exit 0
