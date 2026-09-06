@@ -283,7 +283,6 @@ class DiversificationCalculatorServiceTest {
     val etf3 = createInstrument(3L, "CSPX", ter = BigDecimal("0.07"))
     every { etfPositionRepository.findDistinctEtfInstrumentIds() } returns listOf(1L, 2L, 3L)
     every { instrumentRepository.findAllById(listOf(1L, 2L, 3L)) } returns listOf(etf1, etf2, etf3)
-    every { etfPositionRepository.findLatestPositionsByEtfIds(listOf(1L, 2L, 3L)) } returns emptyList()
 
     val result = service.getAvailableEtfs()
 
@@ -300,7 +299,6 @@ class DiversificationCalculatorServiceTest {
     val cash = createInstrumentWithCategory(3L, "CASH", "Cash")
     every { etfPositionRepository.findDistinctEtfInstrumentIds() } returns listOf(1L, 2L, 3L)
     every { instrumentRepository.findAllById(listOf(1L, 2L, 3L)) } returns listOf(etf, crypto, cash)
-    every { etfPositionRepository.findLatestPositionsByEtfIds(listOf(1L, 2L, 3L)) } returns emptyList()
 
     val result = service.getAvailableEtfs()
 
@@ -310,13 +308,10 @@ class DiversificationCalculatorServiceTest {
 
   @Test
   fun `should include synthetic funds with their constituent symbols in available etfs`() {
-    val fund = createSyntheticFund(20L)
-    val btc = createHolding(1L, "BTCEUR", "Bitcoin (Trezor)", IndustrySector.CRYPTOCURRENCY, null, null)
-    val bnb = createHolding(3L, "BNBEUR", "Binance Coin (Trezor)", IndustrySector.CRYPTOCURRENCY, null, null)
+    val fund = createSyntheticFund()
     every { etfPositionRepository.findDistinctEtfInstrumentIds() } returns listOf(20L)
     every { instrumentRepository.findAllById(listOf(20L)) } returns listOf(fund)
-    every { etfPositionRepository.findLatestPositionsByEtfIds(listOf(20L)) } returns
-      listOf(createPosition(fund, btc, BigDecimal.ZERO), createPosition(fund, bnb, BigDecimal.ZERO))
+    every { etfPositionRepository.findLatestPositionsByEtfIds(listOf(20L)) } returns createTrezorPositions(fund)
 
     val result = service.getAvailableEtfs()
 
@@ -325,10 +320,8 @@ class DiversificationCalculatorServiceTest {
 
   @Test
   fun `should weight synthetic fund holdings by live value instead of stored weight`() {
-    val fund = createSyntheticFund(20L)
-    val btc = createHolding(1L, "BTCEUR", "Bitcoin (Trezor)", IndustrySector.CRYPTOCURRENCY, null, null)
-    val bnb = createHolding(3L, "BNBEUR", "Binance Coin (Trezor)", IndustrySector.CRYPTOCURRENCY, null, null)
-    val positions = listOf(createPosition(fund, btc, BigDecimal.ZERO), createPosition(fund, bnb, BigDecimal.ZERO))
+    val fund = createSyntheticFund()
+    val positions = createTrezorPositions(fund)
     setupMocks(listOf(fund), positions)
     every { syntheticEtfCalculationService.calculateHoldingValues(positions) } returns
       listOf(
@@ -431,20 +424,19 @@ class DiversificationCalculatorServiceTest {
       this.xirrAnnualReturn = annualReturn
     }
 
-  private fun createSyntheticFund(id: Long): Instrument =
-    Instrument(
-      symbol = "TREZOR",
-      name = "Trezor Crypto Fund",
-      category = "CRYPTO",
-      baseCurrency = "EUR",
-      currentPrice = null,
-      providerName = ProviderName.SYNTHETIC,
-    ).apply { this.id = id }
+  private fun createSyntheticFund(): Instrument = createInstrumentWithCategory(20L, "TREZOR", "CRYPTO", ProviderName.SYNTHETIC)
+
+  private fun createTrezorPositions(fund: Instrument): List<EtfPosition> {
+    val btc = createHolding(1L, "BTCEUR", "Bitcoin (Trezor)", IndustrySector.CRYPTOCURRENCY, null, null)
+    val bnb = createHolding(3L, "BNBEUR", "Binance Coin (Trezor)", IndustrySector.CRYPTOCURRENCY, null, null)
+    return listOf(createPosition(fund, btc, BigDecimal.ZERO), createPosition(fund, bnb, BigDecimal.ZERO))
+  }
 
   private fun createInstrumentWithCategory(
     id: Long,
     symbol: String,
     category: String,
+    providerName: ProviderName = ProviderName.LIGHTYEAR,
   ): Instrument =
     Instrument(
       symbol = symbol,
@@ -452,7 +444,7 @@ class DiversificationCalculatorServiceTest {
       category = category,
       baseCurrency = "EUR",
       currentPrice = BigDecimal("100.00"),
-      providerName = ProviderName.LIGHTYEAR,
+      providerName = providerName,
     ).apply { this.id = id }
 
   private fun createHolding(

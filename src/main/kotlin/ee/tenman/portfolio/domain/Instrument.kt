@@ -35,5 +35,7 @@ class Instrument(
 ) : BaseEntity() {
   fun isCash(): Boolean = category == InstrumentCategory.CASH.name
 
+  fun isSynthetic(): Boolean = providerName == ProviderName.SYNTHETIC
+
   fun cashPriceOrNull(): BigDecimal? = if (isCash()) BigDecimal.ONE else null
 }

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { etfPortfolioValues } from './etf-portfolio-value'
-import type { EtfDetailDto, InstrumentDto } from '../models/generated/domain-models'
+import type { EtfDetailDto } from '../models/generated/domain-models'
+import { createInstrumentDto } from '../tests/fixtures'
 
 const etf = (instrumentId: number, constituentSymbols: string[] = []) =>
   ({ instrumentId, constituentSymbols }) as EtfDetailDto
 const instrument = (id: number, symbol: string, currentValue: number) =>
-  ({ id, symbol, currentValue }) as InstrumentDto
+  createInstrumentDto({ id, symbol, currentValue })
 
 describe('etfPortfolioValues', () => {
   it('reads a regular etf value by its own instrument id', () => {

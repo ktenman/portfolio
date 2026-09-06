@@ -1,11 +1,11 @@
 package ee.tenman.portfolio.service.diversification
 
+import ee.tenman.portfolio.common.percentOf
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_ETFS_CACHE
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.dto.AllocationDto
 import ee.tenman.portfolio.dto.ConcentrationDto
 import ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto
@@ -66,7 +66,7 @@ class DiversificationCalculatorService(
   fun getAvailableEtfs(): List<EtfDetailDto> {
     val etfIds = etfPositionRepository.findDistinctEtfInstrumentIds()
     val instruments = instrumentRepository.findAllById(etfIds)
-    val positions = etfPositionRepository.findLatestPositionsByEtfIds(etfIds).groupBy { it.etfInstrument.id }
+    val constituents = constituentSymbols(instruments.filter { it.isSynthetic() })
     return instruments
       .filter { it.category == ETF_CATEGORY || it.isSynthetic() }
       .map { instrument ->
@@ -79,27 +79,28 @@ class DiversificationCalculatorService(
           annualReturn = instrument.xirrAnnualReturn,
           currentPrice = instrument.currentPrice,
           fundCurrency = instrument.fundCurrency,
-          constituentSymbols = constituentSymbols(instrument, positions[instrument.id].orEmpty()),
+          constituentSymbols = constituents[instrument.id].orEmpty(),
         )
       }.sortedBy { it.symbol }
   }
 
-  private fun Instrument.isSynthetic(): Boolean = providerName == ProviderName.SYNTHETIC
+  private fun constituentSymbols(funds: List<Instrument>): Map<Long, List<String>> {
+    if (funds.isEmpty()) return emptyMap()
+    return etfPositionRepository
+      .findLatestPositionsByEtfIds(funds.map { it.id })
+      .groupBy({ it.etfInstrument.id }, { it.holding.ticker })
+      .mapValues { (_, tickers) -> tickers.filterNotNull().sorted() }
+  }
 
-  private fun constituentSymbols(
+  private fun weightedPositions(
     instrument: Instrument,
     positions: List<EtfPosition>,
-  ): List<String> = if (instrument.isSynthetic()) positions.mapNotNull { it.holding.ticker }.sorted() else emptyList()
-
-  private fun weightsByPosition(
-    instrument: Instrument,
-    positions: List<EtfPosition>,
-  ): Map<Long, BigDecimal> {
-    if (!instrument.isSynthetic()) return positions.associate { it.holding.id to it.weightPercentage }
+  ): List<Pair<EtfPosition, BigDecimal>> {
+    if (!instrument.isSynthetic()) return positions.map { it to it.weightPercentage }
     val values = syntheticEtfCalculationService.calculateHoldingValues(positions)
     val total = values.sumOf { it.value }
-    if (total.signum() == 0) return emptyMap()
-    return values.associate { it.position.holding.id to it.value.multiply(HUNDRED).divide(total, CALCULATION_SCALE, RoundingMode.HALF_UP) }
+    if (total.signum() == 0) return emptyList()
+    return values.map { it.position to it.value.percentOf(total, CALCULATION_SCALE) }
   }
 
   private fun validateRequest(request: DiversificationCalculatorRequestDto) {
@@ -170,11 +171,10 @@ class DiversificationCalculatorService(
     allocations.fold(emptyMap()) { acc, allocation ->
       val positions = positionsByEtfId[allocation.instrumentId] ?: return@fold acc
       val instrument = instruments[allocation.instrumentId] ?: return@fold acc
-      val weights = weightsByPosition(instrument, positions)
-      positions.fold(acc) { innerAcc, position ->
+      weightedPositions(instrument, positions).fold(acc) { innerAcc, (position, weight) ->
         val key = normalizeHoldingName(position.holding.name)
         val weightedPercentage =
-          (weights[position.holding.id] ?: BigDecimal.ZERO)
+          weight
             .multiply(allocation.percentage)
             .divide(HUNDRED, CALCULATION_SCALE, RoundingMode.HALF_UP)
         val existing = innerAcc[key]
