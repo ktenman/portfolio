@@ -63,6 +63,7 @@
           class="row-benchmark"
           :class="{ flagged: isFlagged(row.ratio) }"
         >
+          <span class="row-benchmark-name">{{ benchmarkLabel }}</span>
           {{ formatBenchmark(row) }}
         </span>
       </div>
@@ -119,7 +120,7 @@ const TABS: readonly Tab[] = [
   },
   {
     key: 'holdings',
-    label: 'Top holdings',
+    label: 'Holdings',
     options: { topCount: TOP_COUNT, minPercentage: 0, withOther: false },
   },
   {
@@ -159,7 +160,7 @@ const showsBenchmark = (row: ComparedRow): row is ComparedRow & { benchmark: num
   row.benchmark !== undefined && !(currentTab.value.key === 'holdings' && row.benchmark === 0)
 
 const formatBenchmark = (row: ComparedRow): string => {
-  const share = `${props.benchmarkLabel} ${(row.benchmark ?? 0).toFixed(2)}%`
+  const share = `${(row.benchmark ?? 0).toFixed(2)}%`
   return row.ratio === undefined ? share : `${share} · ${row.ratio.toFixed(2)}×`
 }
 
@@ -328,6 +329,14 @@ const rowTitle = (row: ComparedRow): string => {
 }
 
 @media (max-width: 639px) {
+  .breakdown-tab {
+    padding: 0.3125rem 0.5rem;
+  }
+
+  .breakdown-tabs .platform-separator {
+    display: none;
+  }
+
   .breakdown-row {
     grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 0.25rem;
@@ -340,6 +349,12 @@ const rowTitle = (row: ComparedRow): string => {
   .row-benchmark {
     grid-column: 2;
     justify-self: end;
+    min-width: 5.5rem;
+    text-align: right;
+  }
+
+  .row-benchmark-name {
+    display: none;
   }
 }
 </style>

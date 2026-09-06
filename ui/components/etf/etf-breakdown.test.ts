@@ -252,7 +252,7 @@ describe('etf-breakdown', () => {
     expect(wrapper.findAll('.breakdown-tab').map(btn => btn.text())).toEqual([
       'Sectors',
       'Industries',
-      'Top holdings',
+      'Holdings',
       'Countries',
     ])
   })

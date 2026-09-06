@@ -264,7 +264,7 @@ const countryChartData = computed<ChartDataItem[]>(() =>
 const breakdownTabs = [
   { key: 'sectors', label: 'Sectors' },
   { key: 'industries', label: 'Industries' },
-  { key: 'companies', label: 'Top holdings' },
+  { key: 'companies', label: 'Holdings' },
   { key: 'countries', label: 'Countries' },
 ] as const
 
@@ -617,12 +617,16 @@ onMounted(async () => {
     max-width: none;
   }
 
+  .breakdown-tabs {
+    justify-content: center;
+  }
+
   .breakdown-tab {
     padding: 0.3125rem 0.5rem;
   }
 
-  .breakdown-tabs {
-    justify-content: center;
+  .breakdown-tabs .platform-separator {
+    display: none;
   }
 }
 

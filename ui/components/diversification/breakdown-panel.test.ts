@@ -39,7 +39,7 @@ describe('BreakdownPanel', () => {
     const labels = mountPanel()
       .findAll('.breakdown-tab:not(.compare-toggle)')
       .map(t => t.text())
-    expect(labels).toEqual(['Sectors', 'Industries', 'Top holdings', 'Countries'])
+    expect(labels).toEqual(['Sectors', 'Industries', 'Holdings', 'Countries'])
   })
 
   it('opens on Industries by default', () => {
@@ -154,7 +154,7 @@ describe('BreakdownPanel', () => {
     ])
   })
 
-  it('shows no Other row on Top holdings', async () => {
+  it('shows no Other row on Holdings', async () => {
     const wrapper = mountPanel()
     await wrapper.findAll('.breakdown-tab')[2].trigger('click')
     expect(wrapper.findAll('.breakdown-row').map(r => r.find('.row-label').text())).toEqual([
