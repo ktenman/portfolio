@@ -79,8 +79,8 @@ describe('BreakdownPanel', () => {
     expect(flagged.slice(0, 3)).toEqual([true, false, true])
   })
 
-  it('names the benchmark and ratio on each row', () => {
-    expect(mountPanel().findAll('.row-benchmark')[0].text()).toBe('WEBN 10.00% · 2.03×')
+  it('shows the benchmark share and ratio on each row', () => {
+    expect(mountPanel().findAll('.row-benchmark')[0].text()).toBe('10.00% · 2.03×')
   })
 
   it('renders the Other row without a bar', () => {

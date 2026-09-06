@@ -49,7 +49,7 @@
     </div>
 
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
-      <etf-breakdown-chart :chart-data="activeChartData" :benchmark-label="benchmarkLabel">
+      <etf-breakdown-chart :chart-data="activeChartData">
         <template #actions>
           <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
             <button
