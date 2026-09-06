@@ -91,3 +91,4 @@ scripts/model-benchmark/
 ### Working docs (keep architecture diagrams) ###
 docs/*
 !docs/architecture/
+.env.sync
