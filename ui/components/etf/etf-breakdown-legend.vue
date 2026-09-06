@@ -33,6 +33,7 @@
 
 <script lang="ts" setup>
 import type { ChartDataItem } from '../../services/etf-chart-service'
+import { isFlagged } from '../../services/diversification-chart-service'
 
 const props = defineProps<{
   items: ChartDataItem[]
@@ -49,9 +50,6 @@ const formatBenchmark = (item: ChartDataItem): string => {
   const share = `${props.benchmarkLabel ?? 'vs'} ${(item.benchmark ?? 0).toFixed(2)}%`
   return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}x`
 }
-
-const isFlagged = (ratio: number | undefined): boolean =>
-  ratio !== undefined && (ratio > 2 || ratio < 0.5)
 </script>
 
 <style scoped>

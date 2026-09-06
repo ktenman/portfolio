@@ -11,9 +11,9 @@ export interface ChartDataItem {
   ratio?: number
 }
 
-const TOP_COUNT = 15
-const SECTOR_MIN_PERCENTAGE = 0.5
-const COUNTRY_MIN_PERCENTAGE = 0.2
+export const TOP_COUNT = 15
+export const SECTOR_MIN_PERCENTAGE = 0.5
+export const COUNTRY_MIN_PERCENTAGE = 0.2
 
 export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
   const sectorTotals = new Map<string, number>()
@@ -41,7 +41,7 @@ export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartD
     }))
 }
 
-const MIN_BENCHMARK_SHARE = 0.005
+export const MIN_BENCHMARK_SHARE = 0.005
 
 const sumByIndustry = (holdings: EtfHoldingBreakdownDto[]): Map<string, number> =>
   holdings.reduce((totals, holding) => {

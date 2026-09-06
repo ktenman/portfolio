@@ -143,6 +143,7 @@ import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
 import { STORAGE_KEYS } from '../../constants'
+import { resolveBenchmark, benchmarkLabel as symbolPart } from '../../constants/benchmarks'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
 const masterHoldings = ref<EtfHoldingBreakdownDto[]>([])
@@ -252,11 +253,7 @@ type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = ref<BreakdownTab>('sectors')
 
-const BENCHMARK_CHAIN = ['WEBN:GER:EUR', 'VWCE:GER:EUR']
-
-const benchmarkSymbol = computed(() =>
-  BENCHMARK_CHAIN.find(symbol => availableEtfs.value.includes(symbol))
-)
+const benchmarkSymbol = computed(() => resolveBenchmark(availableEtfs.value))
 
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
 
@@ -347,7 +344,7 @@ const getSymbolOnly = (fullSymbol: string): string => {
   return fullSymbol.split(':')[0]
 }
 
-const benchmarkLabel = computed(() => benchmarkSymbol.value && getSymbolOnly(benchmarkSymbol.value))
+const benchmarkLabel = computed(() => benchmarkSymbol.value && symbolPart(benchmarkSymbol.value))
 
 let benchmarkRequested = false
 
