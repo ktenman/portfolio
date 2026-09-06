@@ -116,6 +116,44 @@ describe('BreakdownPanel', () => {
     expect(mountPanel().find('.row-tick').attributes('style')).toContain('left: 49.26')
   })
 
+  it('hides the legend and benchmark text while the comparison is switched off', () => {
+    localStorage.setItem('portfolio_benchmark_compare', 'false')
+    const wrapper = mountPanel()
+    expect([
+      wrapper.find('.panel-legend').exists(),
+      wrapper.find('.row-benchmark').exists(),
+    ]).toEqual([false, false])
+  })
+
+  it('persists the comparison toggle', async () => {
+    const wrapper = mountPanel()
+    await wrapper.find('.compare-toggle').trigger('click')
+    expect(localStorage.getItem('portfolio_benchmark_compare')).toBe('false')
+  })
+
+  it('labels the toggle with the benchmark ticker', () => {
+    expect(mountPanel().find('.compare-toggle').text()).toBe('vs WEBN')
+  })
+
+  it('hides the toggle without a benchmark', () => {
+    const wrapper = mountPanel({ benchmark: null, benchmarkLabel: undefined })
+    expect(wrapper.find('.compare-toggle').exists()).toBe(false)
+  })
+
+  it('shows no benchmark line for a holding the benchmark does not own', async () => {
+    const wrapper = mountPanel({
+      breakdowns: {
+        ...breakdowns,
+        holdings: [...breakdowns.holdings, { label: 'Tiny Co', value: 1 }],
+      },
+    })
+    await wrapper.findAll('.breakdown-tab')[2].trigger('click')
+    expect(wrapper.findAll('.breakdown-row').map(r => r.find('.row-benchmark').exists())).toEqual([
+      true,
+      false,
+    ])
+  })
+
   it('shows no Other row on Top holdings', async () => {
     const wrapper = mountPanel()
     await wrapper.findAll('.breakdown-tab')[2].trigger('click')

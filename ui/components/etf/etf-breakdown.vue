@@ -51,17 +51,29 @@
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
       <etf-breakdown-chart :chart-data="activeChartData" :benchmark-label="benchmarkLabel">
         <template #actions>
-          <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
+          <div class="chart-actions">
+            <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
+              <button
+                v-for="tab in breakdownTabs"
+                :key="tab.key"
+                class="breakdown-tab"
+                :class="{ active: activeTab === tab.key }"
+                :aria-pressed="activeTab === tab.key"
+                type="button"
+                @click="activeTab = tab.key"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
             <button
-              v-for="tab in breakdownTabs"
-              :key="tab.key"
-              class="breakdown-tab"
-              :class="{ active: activeTab === tab.key }"
-              :aria-pressed="activeTab === tab.key"
+              v-if="benchmarkLabel"
               type="button"
-              @click="activeTab = tab.key"
+              class="etf-btn compare-toggle"
+              :class="{ active: compare }"
+              :aria-pressed="compare"
+              @click="compare = !compare"
             >
-              {{ tab.label }}
+              vs {{ benchmarkLabel }}
             </button>
           </div>
         </template>
@@ -237,11 +249,17 @@ const filteredHoldings = computed(() => {
 
 const totalValue = computed(() => holdings.value.reduce((sum, h) => sum + h.totalValueEur, 0))
 
-const sectorChartData = computed<ChartDataItem[]>(() => buildSectorChartData(holdings.value))
+const sectorChartData = computed<ChartDataItem[]>(() =>
+  buildSectorChartData(holdings.value, comparedHoldings.value)
+)
 
-const companyChartData = computed<ChartDataItem[]>(() => buildCompanyChartData(holdings.value))
+const companyChartData = computed<ChartDataItem[]>(() =>
+  buildCompanyChartData(holdings.value, comparedHoldings.value)
+)
 
-const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(holdings.value))
+const countryChartData = computed<ChartDataItem[]>(() =>
+  buildCountryChartData(holdings.value, comparedHoldings.value)
+)
 
 const breakdownTabs = [
   { key: 'sectors', label: 'Sectors' },
@@ -258,11 +276,14 @@ const benchmarkSymbol = computed(() => resolveBenchmark(availableEtfs.value))
 
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
 
+const compare = useLocalStorage(STORAGE_KEYS.BENCHMARK_COMPARE, true)
+
 const chartedFunds = computed(
   () => new Set(holdings.value.flatMap(holding => holding.inEtfs.split(',').map(etf => etf.trim())))
 )
 
 const comparedHoldings = computed(() => {
+  if (!compare.value) return []
   const symbol = benchmarkSymbol.value
   const onlyBenchmarkCharted =
     symbol !== undefined && chartedFunds.value.size === 1 && chartedFunds.value.has(symbol)
@@ -358,9 +379,13 @@ const loadBenchmark = async () => {
   }
 }
 
-watch(activeTab, tab => {
-  if (tab === 'industries') loadBenchmark()
-})
+watch(
+  [compare, benchmarkSymbol],
+  ([on, symbol]) => {
+    if (on && symbol) loadBenchmark()
+  },
+  { immediate: true }
+)
 
 const clearSearch = () => {
   searchQuery.value = ''
@@ -452,6 +477,14 @@ onMounted(async () => {
   height: 1.25rem;
   background-color: var(--color-hairline-strong);
   display: inline-block;
+}
+
+.chart-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .breakdown-tabs {
@@ -589,6 +622,11 @@ onMounted(async () => {
 
   .breakdown-tab {
     padding: 0.3125rem 0.5rem;
+  }
+
+  .chart-actions {
+    flex-direction: column;
+    align-items: center;
   }
 }
 

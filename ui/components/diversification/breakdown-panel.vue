@@ -1,17 +1,29 @@
 <template>
   <div class="breakdown-panel card-shell">
     <div class="panel-header">
-      <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
+      <div class="panel-controls">
+        <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
+          <button
+            v-for="tab in TABS"
+            :key="tab.key"
+            class="breakdown-tab"
+            :class="{ active: currentTab.key === tab.key }"
+            :aria-pressed="currentTab.key === tab.key"
+            type="button"
+            @click="activeTab = tab.key"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
         <button
-          v-for="tab in TABS"
-          :key="tab.key"
-          class="breakdown-tab"
-          :class="{ active: currentTab.key === tab.key }"
-          :aria-pressed="currentTab.key === tab.key"
+          v-if="benchmarkLabel"
           type="button"
-          @click="activeTab = tab.key"
+          class="etf-btn compare-toggle"
+          :class="{ active: compare }"
+          :aria-pressed="compare"
+          @click="compare = !compare"
         >
-          {{ tab.label }}
+          vs {{ benchmarkLabel }}
         </button>
       </div>
       <span v-if="coverage !== null" class="coverage-badge">
@@ -40,14 +52,14 @@
           <template v-if="!row.isOther">
             <span class="row-bar" :style="{ width: `${scaled(row.value)}%` }"></span>
             <span
-              v-if="row.benchmark !== undefined"
+              v-if="showsBenchmark(row)"
               class="row-tick"
               :style="{ left: `${scaled(row.benchmark)}%` }"
             ></span>
           </template>
         </span>
         <span
-          v-if="row.benchmark !== undefined"
+          v-if="showsBenchmark(row)"
           class="row-benchmark"
           :class="{ flagged: isFlagged(row.ratio) }"
         >
@@ -122,14 +134,16 @@ const activeTab = useLocalStorage<keyof Breakdowns>(
   'industries'
 )
 
-const compared = computed(() => props.benchmark !== null)
+const compare = useLocalStorage(STORAGE_KEYS.BENCHMARK_COMPARE, true)
+
+const compared = computed(() => compare.value && props.benchmark !== null)
 
 const currentTab = computed(() => TABS.find(t => t.key === activeTab.value) ?? TABS[1])
 
 const rows = computed(() =>
   compareBreakdown(
     props.breakdowns[currentTab.value.key],
-    props.benchmark?.[currentTab.value.key] ?? null,
+    compared.value ? (props.benchmark?.[currentTab.value.key] ?? null) : null,
     currentTab.value.options
   )
 )
@@ -140,6 +154,9 @@ const scaleMax = computed(() =>
 
 const scaled = (value: number): number =>
   scaleMax.value === 0 ? 0 : (value / scaleMax.value) * 100
+
+const showsBenchmark = (row: ComparedRow): row is ComparedRow & { benchmark: number } =>
+  row.benchmark !== undefined && !(currentTab.value.key === 'holdings' && row.benchmark === 0)
 
 const formatBenchmark = (row: ComparedRow): string => {
   const share = `${props.benchmarkLabel} ${(row.benchmark ?? 0).toFixed(2)}%`
@@ -161,6 +178,13 @@ const rowTitle = (row: ComparedRow): string => {
   justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.panel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .breakdown-tabs {

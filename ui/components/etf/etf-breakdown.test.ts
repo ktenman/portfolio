@@ -257,7 +257,7 @@ describe('etf-breakdown', () => {
     ])
   })
 
-  it('fetches the benchmark fund breakdown once when the Industries tab opens', async () => {
+  it('fetches the benchmark fund breakdown once on load', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
 
     const wrapper = mountWithChartStub()
@@ -265,10 +265,75 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
     await flushPromises()
     await clickTab(wrapper, 'Sectors')
-    await clickTab(wrapper, 'Industries')
     await flushPromises()
 
     expect(benchmarkCalls()).toEqual([[[BENCHMARK], undefined]])
+  })
+
+  it('does not fetch the benchmark while the comparison is switched off', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    localStorage.setItem('portfolio_benchmark_compare', 'false')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    wrapper.unmount()
+
+    expect(benchmarkCalls()).toHaveLength(0)
+  })
+
+  it('fetches the benchmark once when the comparison is switched on', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    localStorage.setItem('portfolio_benchmark_compare', 'false')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await wrapper.find('.compare-toggle').trigger('click')
+    await flushPromises()
+
+    expect(benchmarkCalls()).toHaveLength(1)
+  })
+
+  it('compares sectors against the benchmark without opening Industries', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData')[0].benchmark).toBeDefined()
+  })
+
+  it('strips the comparison from the chart when switched off', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await wrapper.find('.compare-toggle').trigger('click')
+
+    const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
+    expect(chart.props('chartData')[0].benchmark).toBeUndefined()
+  })
+
+  it('labels the toggle with the benchmark ticker and persists its state', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await wrapper.find('.compare-toggle').trigger('click')
+
+    expect([
+      wrapper.find('.compare-toggle').text(),
+      localStorage.getItem('portfolio_benchmark_compare'),
+    ]).toEqual(['vs WEBN', 'false'])
+  })
+
+  it('hides the toggle when no benchmark fund is held', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.find('.compare-toggle').exists()).toBe(false)
   })
 
   it('attaches the benchmark ratio to each industry once the benchmark is loaded', async () => {
