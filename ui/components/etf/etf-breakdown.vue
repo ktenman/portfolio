@@ -617,16 +617,20 @@ onMounted(async () => {
   }
 
   .breakdown-tabs {
+    flex-wrap: nowrap;
     justify-content: center;
-  }
-
-  .breakdown-tabs {
     gap: 0.125rem;
   }
 
   .breakdown-tab {
+    flex-shrink: 1;
+    min-width: 0;
     padding: 0.3125rem 0.25rem;
     font-size: var(--text-label);
+  }
+
+  .compare-toggle {
+    flex-shrink: 0;
   }
 
   .breakdown-tabs .platform-separator {
