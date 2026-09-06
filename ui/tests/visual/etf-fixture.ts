@@ -22,6 +22,7 @@ const ETF_INSTRUMENTS: Pick<InstrumentDto, 'symbol' | 'fundCurrency' | 'currentV
   { symbol: 'TSTK:GER:EUR', fundCurrency: Currency.EUR, currentValue: 1620.9 },
   { symbol: 'TSTL:AEX:EUR', fundCurrency: Currency.EUR, currentValue: 1210.45 },
   { symbol: 'TSTM:GER:EUR', fundCurrency: Currency.EUR, currentValue: 980.25 },
+  { symbol: 'WEBN:GER:EUR', fundCurrency: Currency.EUR, currentValue: 4620.3 },
 ]
 
 const HOLDINGS: EtfHoldingBreakdownDto[] = [
@@ -36,8 +37,8 @@ const HOLDINGS: EtfHoldingBreakdownDto[] = [
     holdingCountryCode: 'US',
     holdingCountryName: 'United States',
     inEtfs:
-      'TSTA:GER:EUR, TSTB:LSE:GBP, TSTUS:NSQ:USD, GB00TEST0001:LSE:GBP, TSTC:GER:EUR, TSTD:AEX:EUR, TSTE:PAR:EUR, TSTF:MIL:EUR',
-    numEtfs: 8,
+      'TSTA:GER:EUR, TSTB:LSE:GBP, TSTUS:NSQ:USD, GB00TEST0001:LSE:GBP, TSTC:GER:EUR, TSTD:AEX:EUR, TSTE:PAR:EUR, TSTF:MIL:EUR, WEBN:GER:EUR',
+    numEtfs: 9,
     platforms: 'LHV, TRADING212',
   },
   {
@@ -50,8 +51,8 @@ const HOLDINGS: EtfHoldingBreakdownDto[] = [
     holdingIndustry: 'Semiconductors & Semiconductor Equipment',
     holdingCountryCode: 'NL',
     holdingCountryName: 'Netherlands',
-    inEtfs: 'TSTA:GER:EUR, TSTC:GER:EUR',
-    numEtfs: 2,
+    inEtfs: 'TSTA:GER:EUR, TSTC:GER:EUR, WEBN:GER:EUR',
+    numEtfs: 3,
     platforms: 'LHV',
   },
   {
@@ -134,8 +135,8 @@ const HOLDINGS: EtfHoldingBreakdownDto[] = [
     holdingIndustry: 'Software',
     holdingCountryCode: 'DE',
     holdingCountryName: 'Germany',
-    inEtfs: 'TSTA:GER:EUR, TSTB:LSE:GBP, TSTK:GER:EUR',
-    numEtfs: 3,
+    inEtfs: 'TSTA:GER:EUR, TSTB:LSE:GBP, TSTK:GER:EUR, WEBN:GER:EUR',
+    numEtfs: 4,
     platforms: 'LHV, TRADING212',
   },
   {
@@ -148,8 +149,8 @@ const HOLDINGS: EtfHoldingBreakdownDto[] = [
     holdingIndustry: 'Software',
     holdingCountryCode: 'US',
     holdingCountryName: 'United States',
-    inEtfs: 'TSTB:LSE:GBP, TSTL:AEX:EUR',
-    numEtfs: 2,
+    inEtfs: 'TSTB:LSE:GBP, TSTL:AEX:EUR, WEBN:GER:EUR',
+    numEtfs: 3,
     platforms: 'TRADING212',
   },
   {
@@ -168,6 +169,37 @@ const HOLDINGS: EtfHoldingBreakdownDto[] = [
   },
 ]
 
+const BENCHMARK_WEIGHTS: Record<string, number> = {
+  NVDA: 7.2143,
+  ASML: 1.1028,
+  SAP: 0.6204,
+  MSFT: 4.9317,
+}
+
+const BENCHMARK_HOLDINGS: EtfHoldingBreakdownDto[] = [
+  ...HOLDINGS.filter(holding => holding.holdingTicker! in BENCHMARK_WEIGHTS).map(holding => ({
+    ...holding,
+    percentageOfTotal: BENCHMARK_WEIGHTS[holding.holdingTicker!],
+    inEtfs: 'WEBN:GER:EUR',
+    numEtfs: 1,
+    platforms: 'LHV',
+  })),
+  {
+    holdingUuid: 'a1000000-0000-4000-8000-000000000011',
+    holdingTicker: 'NOVO-B',
+    holdingName: 'Novo Nordisk A/S',
+    percentageOfTotal: 0.9412,
+    totalValueEur: 43.49,
+    holdingSector: 'Health',
+    holdingIndustry: 'Pharmaceuticals',
+    holdingCountryCode: 'DK',
+    holdingCountryName: 'Denmark',
+    inEtfs: 'WEBN:GER:EUR',
+    numEtfs: 1,
+    platforms: 'LHV',
+  },
+]
+
 const LOGO_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#0072b2"/></svg>'
 
@@ -176,7 +208,9 @@ const LOGO_BY_UUID =
 
 export const stubEtfBreakdown: RouteStub = async page => {
   await page.route(apiRoute(API_ENDPOINTS.ETF_BREAKDOWN), route =>
-    route.fulfill({ json: HOLDINGS })
+    route.fulfill({
+      json: route.request().url().includes('WEBN') ? BENCHMARK_HOLDINGS : HOLDINGS,
+    })
   )
   await page.route(apiRoute(API_ENDPOINTS.INSTRUMENTS), route =>
     route.fulfill({ json: { instruments: ETF_INSTRUMENTS, portfolioXirr: null } })

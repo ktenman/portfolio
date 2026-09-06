@@ -147,7 +147,7 @@ describe('EtfBreakdownChart', () => {
         props: { chartData: [comparedItem] },
       })
 
-      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.30x')
+      expect(wrapper.find('.legend-benchmark').text()).toBe('vs 4.00% · 2.30×')
     })
 
     it('should name the benchmark fund on the compared line', () => {
@@ -155,7 +155,21 @@ describe('EtfBreakdownChart', () => {
         props: { chartData: [comparedItem], benchmarkLabel: 'WEBN' },
       })
 
-      expect(wrapper.find('.legend-benchmark').text()).toBe('WEBN 4.00% · 2.30x')
+      expect(wrapper.find('.legend-benchmark').text()).toBe('WEBN 4.00% · 2.30×')
+    })
+
+    it('should clear the focused slice when its legend item is tapped again', async () => {
+      const wrapper = mount(EtfBreakdownChart, { props: { chartData: mockChartData } })
+      const item = wrapper.findAll('.legend-item')[1]
+      await item.trigger('click')
+      await item.trigger('click')
+      expect(wrapper.findAll('.legend-item.dimmed')).toHaveLength(0)
+    })
+
+    it('should focus a slice when its legend item is tapped', async () => {
+      const wrapper = mount(EtfBreakdownChart, { props: { chartData: mockChartData } })
+      await wrapper.findAll('.legend-item')[1].trigger('click')
+      expect(wrapper.findAll('.legend-item.dimmed')).toHaveLength(2)
     })
 
     it('should flag a ratio above 2', () => {

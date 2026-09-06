@@ -231,6 +231,59 @@ describe('etf-chart-service', () => {
     })
   })
 
+  describe('benchmark comparison on every dimension', () => {
+    it('should attach the benchmark share and ratio per sector', () => {
+      const result = buildSectorChartData(
+        [createHolding({ holdingSector: 'Finance', percentageOfTotal: 20 })],
+        [createHolding({ holdingSector: 'Finance', percentageOfTotal: 10 })]
+      )
+      expect([result[0].benchmark, result[0].ratio]).toEqual([10, 2])
+    })
+
+    it('should attach the benchmark share and ratio per country and keep the flag code', () => {
+      const result = buildCountryChartData(
+        [createHolding({ holdingCountryName: 'Spain', holdingCountryCode: 'ES' })],
+        [
+          createHolding({
+            holdingCountryName: 'Spain',
+            holdingCountryCode: 'ES',
+            percentageOfTotal: 5,
+          }),
+        ]
+      )
+      expect([result[0].code, result[0].benchmark, result[0].ratio]).toEqual(['ES', 5, 2])
+    })
+
+    it('should attach the benchmark share to a holding the benchmark also owns', () => {
+      const result = buildCompanyChartData(
+        [createHolding({ holdingName: 'Nvidia', percentageOfTotal: 8 })],
+        [createHolding({ holdingName: 'NVIDIA', percentageOfTotal: 4 })]
+      )
+      expect([result[0].benchmark, result[0].ratio]).toEqual([4, 2])
+    })
+
+    it('should leave a holding uncompared when the benchmark does not own it', () => {
+      const result = buildCompanyChartData(
+        [createHolding({ holdingName: 'Tiny Co', percentageOfTotal: 8 })],
+        [createHolding({ holdingName: 'Nvidia', percentageOfTotal: 4 })]
+      )
+      expect('benchmark' in result[0]).toBe(false)
+    })
+
+    it('should report a zero benchmark share for a sector the benchmark lacks', () => {
+      const result = buildSectorChartData(
+        [createHolding({ holdingSector: 'Energy', percentageOfTotal: 8 })],
+        [createHolding({ holdingSector: 'Finance', percentageOfTotal: 4 })]
+      )
+      expect([result[0].benchmark, result[0].ratio]).toEqual([0, undefined])
+    })
+
+    it('should omit benchmark fields without a benchmark', () => {
+      const result = buildSectorChartData([createHolding()])
+      expect('benchmark' in result[0]).toBe(false)
+    })
+  })
+
   describe('buildIndustryChartData', () => {
     it('should aggregate holdings by industry', () => {
       const result = buildIndustryChartData([

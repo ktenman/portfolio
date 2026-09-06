@@ -5,6 +5,9 @@ import {
   COUNTRY_MIN_PERCENTAGE,
   SECTOR_MIN_PERCENTAGE,
   TOP_COUNT,
+  type BreakdownItem,
+  type ComparedRow,
+  type CompareOptions,
 } from './diversification-chart-service'
 
 export interface ChartDataItem {
@@ -17,105 +20,110 @@ export interface ChartDataItem {
   ratio?: number
 }
 
-export function buildSectorChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
-  const sectorTotals = new Map<string, number>()
+type Items = BreakdownItem[]
 
+const sumBy = (holdings: EtfHoldingBreakdownDto[], keyOf: (h: EtfHoldingBreakdownDto) => string) =>
+  Array.from(
+    holdings
+      .reduce((totals, holding) => {
+        const label = keyOf(holding)
+        return totals.set(label, (totals.get(label) ?? 0) + holding.percentageOfTotal)
+      }, new Map<string, number>())
+      .entries()
+  ).map(([label, value]) => ({ label, value }))
+
+const sectorItems = (holdings: EtfHoldingBreakdownDto[]): Items =>
+  sumBy(holdings, holding => holding.holdingSector || 'Unknown')
+
+const industryItems = (holdings: EtfHoldingBreakdownDto[]): Items =>
+  sumBy(holdings, holding => holding.holdingIndustry ?? 'Unclassified')
+
+const companyItems = (holdings: EtfHoldingBreakdownDto[]): Items =>
+  holdings.map(holding => ({ label: holding.holdingName, value: holding.percentageOfTotal }))
+
+const countryItems = (holdings: EtfHoldingBreakdownDto[]): Items => {
+  const codes = new Map<string, string>()
   holdings.forEach(holding => {
-    const sector = holding.holdingSector || 'Unknown'
-    const percentage = holding.percentageOfTotal
-    sectorTotals.set(sector, (sectorTotals.get(sector) || 0) + percentage)
+    const name = holding.holdingCountryName || 'Unknown'
+    if (!codes.get(name) && holding.holdingCountryCode) codes.set(name, holding.holdingCountryCode)
   })
-
-  const sortedSectors = Array.from(sectorTotals.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, value]) => ({
-      label,
-      value,
-      percentage: value.toFixed(2),
-    }))
-
-  return sortedSectors
-    .filter(s => s.value >= SECTOR_MIN_PERCENTAGE)
-    .slice(0, TOP_COUNT)
-    .map((item, index) => ({
-      ...item,
-      color: DONUT_COLORS[index % DONUT_COLORS.length],
-    }))
+  return sumBy(holdings, holding => holding.holdingCountryName || 'Unknown').map(item => ({
+    ...item,
+    code: codes.get(item.label),
+  }))
 }
 
-const sumByIndustry = (holdings: EtfHoldingBreakdownDto[]): Map<string, number> =>
-  holdings.reduce((totals, holding) => {
-    const label = holding.holdingIndustry ?? 'Unclassified'
-    return totals.set(label, (totals.get(label) ?? 0) + holding.percentageOfTotal)
-  }, new Map<string, number>())
+const toChartItems = (rows: ComparedRow[]): ChartDataItem[] =>
+  rows.map(({ label, value, benchmark: share, ratio, code }, index) => ({
+    label,
+    value,
+    percentage: value.toFixed(2),
+    color: DONUT_COLORS[index % DONUT_COLORS.length],
+    ...(code ? { code } : {}),
+    ...(share === undefined ? {} : { benchmark: share, ratio }),
+  }))
 
-const toItems = (totals: Map<string, number>) =>
-  Array.from(totals.entries()).map(([label, value]) => ({ label, value }))
+const build = (
+  holdings: EtfHoldingBreakdownDto[],
+  benchmark: EtfHoldingBreakdownDto[],
+  toItems: (holdings: EtfHoldingBreakdownDto[]) => Items,
+  options: CompareOptions
+): ComparedRow[] =>
+  compareBreakdown(toItems(holdings), benchmark.length > 0 ? toItems(benchmark) : null, options)
+
+export function buildSectorChartData(
+  holdings: EtfHoldingBreakdownDto[],
+  benchmark: EtfHoldingBreakdownDto[] = []
+): ChartDataItem[] {
+  return toChartItems(
+    build(holdings, benchmark, sectorItems, {
+      topCount: TOP_COUNT,
+      minPercentage: SECTOR_MIN_PERCENTAGE,
+      withOther: false,
+    })
+  )
+}
 
 export function buildIndustryChartData(
   holdings: EtfHoldingBreakdownDto[],
   benchmark: EtfHoldingBreakdownDto[] = []
 ): ChartDataItem[] {
-  const benchmarkItems = benchmark.length > 0 ? toItems(sumByIndustry(benchmark)) : null
-  const rows = compareBreakdown(toItems(sumByIndustry(holdings)), benchmarkItems, {
-    topCount: TOP_COUNT,
-    minPercentage: SECTOR_MIN_PERCENTAGE,
-    withOther: true,
-  })
-  return rows.map(({ label, value, benchmark: share, ratio }, index) => ({
-    label,
-    value,
-    percentage: value.toFixed(2),
-    color: DONUT_COLORS[index % DONUT_COLORS.length],
-    ...(share === undefined ? {} : { benchmark: share, ratio }),
-  }))
-}
-
-export function buildCompanyChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
-  return [...holdings]
-    .sort((a, b) => b.percentageOfTotal - a.percentageOfTotal)
-    .slice(0, TOP_COUNT)
-    .map((holding, index) => ({
-      label: holding.holdingName,
-      value: holding.percentageOfTotal,
-      percentage: holding.percentageOfTotal.toFixed(2),
-      color: DONUT_COLORS[index % DONUT_COLORS.length],
-    }))
-}
-
-export function buildCountryChartData(holdings: EtfHoldingBreakdownDto[]): ChartDataItem[] {
-  const countryTotals = new Map<string, { value: number; code: string }>()
-
-  holdings.forEach(holding => {
-    const countryName = holding.holdingCountryName || 'Unknown'
-    const countryCode = holding.holdingCountryCode || ''
-    const percentage = holding.percentageOfTotal
-    const existing = countryTotals.get(countryName) || { value: 0, code: countryCode }
-    countryTotals.set(countryName, {
-      value: existing.value + percentage,
-      code: existing.code || countryCode,
+  return toChartItems(
+    build(holdings, benchmark, industryItems, {
+      topCount: TOP_COUNT,
+      minPercentage: SECTOR_MIN_PERCENTAGE,
+      withOther: true,
     })
-  })
+  )
+}
 
-  const sortedCountries = Array.from(countryTotals.entries())
-    .sort((a, b) => b[1].value - a[1].value)
-    .map(([label, data]) => ({
-      label,
-      value: data.value,
-      percentage: data.value.toFixed(2),
-      code: data.code,
-    }))
+const unlessAbsent = (row: ComparedRow): ComparedRow =>
+  row.benchmark === 0 ? { ...row, benchmark: undefined, ratio: undefined } : row
 
-  return sortedCountries
-    .filter(c => c.value >= COUNTRY_MIN_PERCENTAGE)
-    .slice(0, TOP_COUNT)
-    .map((item, index) => ({
-      label: item.label,
-      value: item.value,
-      percentage: item.percentage,
-      color: DONUT_COLORS[index % DONUT_COLORS.length],
-      code: item.code || undefined,
-    }))
+export function buildCompanyChartData(
+  holdings: EtfHoldingBreakdownDto[],
+  benchmark: EtfHoldingBreakdownDto[] = []
+): ChartDataItem[] {
+  return toChartItems(
+    build(holdings, benchmark, companyItems, {
+      topCount: TOP_COUNT,
+      minPercentage: 0,
+      withOther: false,
+    }).map(unlessAbsent)
+  )
+}
+
+export function buildCountryChartData(
+  holdings: EtfHoldingBreakdownDto[],
+  benchmark: EtfHoldingBreakdownDto[] = []
+): ChartDataItem[] {
+  return toChartItems(
+    build(holdings, benchmark, countryItems, {
+      topCount: TOP_COUNT,
+      minPercentage: COUNTRY_MIN_PERCENTAGE,
+      withOther: false,
+    })
+  )
 }
 
 export interface WeightedMetrics {

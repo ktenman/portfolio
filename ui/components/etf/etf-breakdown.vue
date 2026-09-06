@@ -63,6 +63,17 @@
             >
               {{ tab.label }}
             </button>
+            <template v-if="benchmarkLabel">
+              <span class="platform-separator" aria-hidden="true"></span>
+              <label class="compare-switch compare-toggle">
+                <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
+                <span class="compare-track" aria-hidden="true"></span>
+                <span class="compare-label">
+                  <span class="compare-prefix">vs</span>
+                  {{ benchmarkLabel }}
+                </span>
+              </label>
+            </template>
           </div>
         </template>
       </etf-breakdown-chart>
@@ -237,16 +248,22 @@ const filteredHoldings = computed(() => {
 
 const totalValue = computed(() => holdings.value.reduce((sum, h) => sum + h.totalValueEur, 0))
 
-const sectorChartData = computed<ChartDataItem[]>(() => buildSectorChartData(holdings.value))
+const sectorChartData = computed<ChartDataItem[]>(() =>
+  buildSectorChartData(holdings.value, comparedHoldings.value)
+)
 
-const companyChartData = computed<ChartDataItem[]>(() => buildCompanyChartData(holdings.value))
+const companyChartData = computed<ChartDataItem[]>(() =>
+  buildCompanyChartData(holdings.value, comparedHoldings.value)
+)
 
-const countryChartData = computed<ChartDataItem[]>(() => buildCountryChartData(holdings.value))
+const countryChartData = computed<ChartDataItem[]>(() =>
+  buildCountryChartData(holdings.value, comparedHoldings.value)
+)
 
 const breakdownTabs = [
   { key: 'sectors', label: 'Sectors' },
   { key: 'industries', label: 'Industries' },
-  { key: 'companies', label: 'Top holdings' },
+  { key: 'companies', label: 'Holdings' },
   { key: 'countries', label: 'Countries' },
 ] as const
 
@@ -258,11 +275,14 @@ const benchmarkSymbol = computed(() => resolveBenchmark(availableEtfs.value))
 
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
 
+const compare = useLocalStorage(STORAGE_KEYS.BENCHMARK_COMPARE, true)
+
 const chartedFunds = computed(
   () => new Set(holdings.value.flatMap(holding => holding.inEtfs.split(',').map(etf => etf.trim())))
 )
 
 const comparedHoldings = computed(() => {
+  if (!compare.value) return []
   const symbol = benchmarkSymbol.value
   const onlyBenchmarkCharted =
     symbol !== undefined && chartedFunds.value.size === 1 && chartedFunds.value.has(symbol)
@@ -358,9 +378,13 @@ const loadBenchmark = async () => {
   }
 }
 
-watch(activeTab, tab => {
-  if (tab === 'industries') loadBenchmark()
-})
+watch(
+  [compare, benchmarkSymbol],
+  ([on, symbol]) => {
+    if (on && symbol) loadBenchmark()
+  },
+  { immediate: true }
+)
 
 const clearSearch = () => {
   searchQuery.value = ''
@@ -458,7 +482,12 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.25rem;
+}
+
+.breakdown-tabs .platform-separator {
+  margin: 0 0.25rem;
 }
 
 .breakdown-tab {
@@ -587,8 +616,31 @@ onMounted(async () => {
     max-width: none;
   }
 
+  .breakdown-tabs {
+    justify-content: center;
+  }
+
+  .breakdown-tabs {
+    gap: 0.125rem;
+  }
+
   .breakdown-tab {
-    padding: 0.3125rem 0.5rem;
+    padding: 0.3125rem 0.25rem;
+    font-size: var(--text-label);
+  }
+
+  .breakdown-tabs .platform-separator {
+    display: none;
+  }
+
+  .compare-prefix {
+    display: none;
+  }
+
+  .compare-switch {
+    gap: 0.25rem;
+    padding-inline: 0.125rem;
+    font-size: var(--text-label);
   }
 }
 
