@@ -62,7 +62,6 @@
           class="row-benchmark"
           :class="{ flagged: isFlagged(row.ratio) }"
         >
-          <span class="row-benchmark-name">{{ benchmarkLabel }}</span>
           {{ formatBenchmark(row) }}
         </span>
       </div>
@@ -365,10 +364,6 @@ const rowTitle = (row: ComparedRow): string => {
     justify-self: end;
     min-width: 5.5rem;
     text-align: right;
-  }
-
-  .row-benchmark-name {
-    display: none;
   }
 }
 </style>

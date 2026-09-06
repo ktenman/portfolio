@@ -35,7 +35,6 @@ import { countryFlagUrl } from '../../utils/currency-flag'
 const props = defineProps<{
   items: ChartDataItem[]
   activeIndex: number | null
-  benchmarkLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -47,7 +46,7 @@ const toggle = (index: number) =>
   index === props.activeIndex ? emit('leave') : emit('hover', index)
 
 const formatBenchmark = (item: ChartDataItem): string => {
-  const share = `${props.benchmarkLabel ?? 'vs'} ${(item.benchmark ?? 0).toFixed(2)}%`
+  const share = `${(item.benchmark ?? 0).toFixed(2)}%`
   return item.ratio === undefined ? share : `${share} · ${item.ratio.toFixed(2)}×`
 }
 </script>

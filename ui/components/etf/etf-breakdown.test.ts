@@ -389,7 +389,7 @@ describe('etf-breakdown', () => {
     expect(chart.props('chartData').map(item => item.benchmark)).toEqual([undefined, undefined])
   })
 
-  it('passes the benchmark fund symbol to the chart once it is loaded', async () => {
+  it('names the benchmark fund on the compare toggle once it is loaded', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
 
     const wrapper = mountWithChartStub()
@@ -397,7 +397,7 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
     await flushPromises()
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('WEBN')
+    expect(wrapper.find('.compare-label').text()).toBe('vs WEBN')
   })
 
   it('passes no benchmark label when no benchmark fund is held', async () => {
@@ -408,7 +408,7 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
     await flushPromises()
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBeUndefined()
+    expect(wrapper.find('.compare-label').exists()).toBe(false)
   })
 
   it('does not fetch the benchmark again while the first request is still in flight', async () => {
@@ -436,7 +436,7 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
     await flushPromises()
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('VWCE')
+    expect(wrapper.find('.compare-label').text()).toBe('vs VWCE')
   })
 
   it('prefers WEBN when both benchmark funds are held', async () => {
@@ -449,7 +449,7 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
     await flushPromises()
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('WEBN')
+    expect(wrapper.find('.compare-label').text()).toBe('vs WEBN')
   })
 
   const failBenchmarkRequest = () => {
