@@ -287,7 +287,7 @@ describe('etf-breakdown', () => {
 
     const wrapper = mountWithChartStub()
     await flushPromises()
-    await wrapper.find('.compare-toggle').trigger('click')
+    await wrapper.find('.compare-input').setValue(true)
     await flushPromises()
 
     expect(benchmarkCalls()).toHaveLength(1)
@@ -308,7 +308,7 @@ describe('etf-breakdown', () => {
 
     const wrapper = mountWithChartStub()
     await flushPromises()
-    await wrapper.find('.compare-toggle').trigger('click')
+    await wrapper.find('.compare-input').setValue(false)
 
     const chart = wrapper.findAllComponents(EtfBreakdownChart)[0]
     expect(chart.props('chartData')[0].benchmark).toBeUndefined()
@@ -319,7 +319,7 @@ describe('etf-breakdown', () => {
 
     const wrapper = mountWithChartStub()
     await flushPromises()
-    await wrapper.find('.compare-toggle').trigger('click')
+    await wrapper.find('.compare-input').setValue(false)
 
     expect([
       wrapper.find('.compare-toggle').text(),

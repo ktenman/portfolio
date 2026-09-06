@@ -127,7 +127,7 @@ describe('BreakdownPanel', () => {
 
   it('persists the comparison toggle', async () => {
     const wrapper = mountPanel()
-    await wrapper.find('.compare-toggle').trigger('click')
+    await wrapper.find('.compare-input').setValue(false)
     expect(localStorage.getItem('portfolio_benchmark_compare')).toBe('false')
   })
 

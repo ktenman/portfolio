@@ -155,6 +155,7 @@ const formatBenchmark = (item: ChartDataItem): string => {
 
   .legend-value {
     font-size: var(--text-sm);
+    font-weight: 400;
   }
 }
 </style>

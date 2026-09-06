@@ -231,6 +231,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .chart-header {
+    justify-content: center;
+  }
+
   .chart-container {
     height: 250px;
   }

@@ -15,15 +15,14 @@
         </button>
         <template v-if="benchmarkLabel">
           <span class="platform-separator" aria-hidden="true"></span>
-          <button
-            type="button"
-            class="breakdown-tab compare-toggle"
-            :class="{ active: compare }"
-            :aria-pressed="compare"
-            @click="compare = !compare"
-          >
-            vs {{ benchmarkLabel }}
-          </button>
+          <label class="compare-switch compare-toggle">
+            <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
+            <span class="compare-track" aria-hidden="true"></span>
+            <span class="compare-label">
+              <span class="compare-prefix">vs</span>
+              {{ benchmarkLabel }}
+            </span>
+          </label>
         </template>
       </div>
       <span v-if="coverage !== null" class="coverage-badge">
@@ -329,12 +328,27 @@ const rowTitle = (row: ComparedRow): string => {
 }
 
 @media (max-width: 639px) {
+  .breakdown-tabs {
+    gap: 0.125rem;
+  }
+
   .breakdown-tab {
-    padding: 0.3125rem 0.5rem;
+    padding: 0.3125rem 0.25rem;
+    font-size: var(--text-label);
   }
 
   .breakdown-tabs .platform-separator {
     display: none;
+  }
+
+  .compare-prefix {
+    display: none;
+  }
+
+  .compare-switch {
+    gap: 0.25rem;
+    padding-inline: 0.125rem;
+    font-size: var(--text-label);
   }
 
   .breakdown-row {
