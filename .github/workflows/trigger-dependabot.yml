@@ -16,10 +16,8 @@ jobs:
 
       - name: Restamp dependabot.yml to force an update check
         run: |
-          file=.github/dependabot.yml
-          sed -i '/^# manual trigger:/d' "$file"
-          echo "# manual trigger: $(date -u +%FT%TZ)" >> "$file"
+          sed -i "s/^# manual trigger:.*/# manual trigger: $(date -u +'%Y-%m-%dT%H:%M:%SZ')/" .github/dependabot.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -am 'Trigger Dependabot update check'
+          git commit -am 'Trigger Dependabot update check [skip ci]'
           git push
