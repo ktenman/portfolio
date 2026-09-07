@@ -1,0 +1,25 @@
+name: Trigger Dependabot
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.DEPENDABOT_TRIGGER_TOKEN || github.token }}
+
+      - name: Restamp dependabot.yml to force an update check
+        run: |
+          file=.github/dependabot.yml
+          sed -i '/^# manual trigger:/d' "$file"
+          echo "# manual trigger: $(date -u +%FT%TZ)" >> "$file"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am 'Trigger Dependabot update check'
+          git push
