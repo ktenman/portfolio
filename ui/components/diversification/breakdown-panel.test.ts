@@ -29,7 +29,7 @@ const benchmark: Breakdowns = {
 
 const mountPanel = (props = {}) =>
   mount(BreakdownPanel, {
-    props: { breakdowns, benchmark, benchmarkLabel: 'WEBN', coverage: 0.92, ...props },
+    props: { breakdowns, benchmark, benchmarkLabel: 'WEBN', ...props },
   })
 
 describe('BreakdownPanel', () => {
@@ -95,9 +95,8 @@ describe('BreakdownPanel', () => {
     expect(wrapper.find('.row-benchmark').exists()).toBe(false)
   })
 
-  it('shows the coverage badge and hides it when coverage is null', () => {
-    expect(mountPanel().find('.coverage-badge').text()).toBe('Covers 92% of portfolio value')
-    expect(mountPanel({ coverage: null }).find('.coverage-badge').exists()).toBe(false)
+  it('places the legend in the panel header', () => {
+    expect(mountPanel().find('.panel-header .panel-legend').exists()).toBe(true)
   })
 
   it('puts a hover title on each row', () => {

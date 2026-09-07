@@ -618,19 +618,29 @@ onMounted(async () => {
 
   .breakdown-tabs {
     flex-wrap: nowrap;
-    justify-content: center;
-    gap: 0.125rem;
+    justify-content: flex-start;
+    width: 100%;
+    gap: 0.375rem;
   }
 
   .breakdown-tab {
     flex-shrink: 1;
     min-width: 0;
-    padding: 0.3125rem 0.25rem;
+    padding: 0.3125rem 0;
+    border: 0;
+    border-bottom: 0.125rem solid transparent;
+    border-radius: 0;
     font-size: var(--text-label);
+  }
+
+  .breakdown-tab.active,
+  .breakdown-tab:hover {
+    background: transparent;
   }
 
   .compare-toggle {
     flex-shrink: 0;
+    margin-left: auto;
   }
 
   .breakdown-tabs .platform-separator {
@@ -645,6 +655,16 @@ onMounted(async () => {
     gap: 0.25rem;
     padding-inline: 0.125rem;
     font-size: var(--text-label);
+  }
+}
+
+@media (max-width: 359px) {
+  .breakdown-tabs {
+    flex-wrap: wrap;
+  }
+
+  .compare-toggle {
+    margin-left: 0;
   }
 }
 
