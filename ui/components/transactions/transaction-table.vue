@@ -1,8 +1,11 @@
 <template>
   <data-table
-    :items="enrichedTransactions"
+    :items="sortedItems"
     :columns="columns"
     :is-loading="isLoading"
+    :sortable="true"
+    :sort-state="sortState"
+    :on-sort="toggleSort"
     empty-message="No transactions found. Add a new transaction to get started."
   >
     <template #mobile-card="{ item }">
@@ -10,7 +13,7 @@
         <div class="transaction-header">
           <div class="transaction-title">
             <h6 class="instrument-name">
-              <span class="ticker-landscape">{{ extractBaseSymbol(item.symbol) }}</span>
+              <span class="ticker-landscape">{{ formatTickerSymbol(item.symbol) }}</span>
               <span class="name-default">{{ item.name }}</span>
             </h6>
             <div class="transaction-meta">
@@ -58,19 +61,8 @@
             <span class="metric-label">Fee</span>
           </div>
           <div class="metric-group">
-            <span
-              class="metric-value"
-              :class="
-                getProfitClass(
-                  item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
-                )
-              "
-            >
-              {{
-                formatProfitLoss(
-                  item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
-                )
-              }}
+            <span class="metric-value" :class="getProfitClass(item.profit)">
+              {{ formatProfitLoss(item.profit) }}
             </span>
             <span class="metric-label">
               {{ item.transactionType === 'SELL' ? 'Realized' : 'Unrealized' }}
@@ -95,7 +87,7 @@
     <template #cell-instrumentId="{ item }">
       <div class="instrument-info">
         <div>
-          <span class="ticker-landscape">{{ extractBaseSymbol(item.symbol) }}</span>
+          <span class="ticker-landscape">{{ formatTickerSymbol(item.symbol) }}</span>
           <span class="name-default">{{ item.name }}</span>
         </div>
         <div v-if="item.platform" class="platform-tags mt-1">
@@ -152,19 +144,8 @@
     </template>
 
     <template #cell-profit="{ item }">
-      <span
-        :class="
-          getProfitClass(
-            item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
-          )
-        "
-      >
-        {{
-          formatProfitLoss(
-            item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit,
-            false
-          )
-        }}
+      <span :class="getProfitClass(item.profit)">
+        {{ formatProfitLoss(item.profit, false) }}
       </span>
     </template>
   </data-table>
@@ -175,6 +156,9 @@ import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
 import { TransactionResponseDto } from '../../models/generated/domain-models'
 import { transactionColumns } from '../../config'
+import { useSortableTable } from '../../composables/use-sortable-table'
+import { formatPlatformName } from '../../utils/platform-utils'
+import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import {
   formatProfitLoss,
   formatTransactionAmount,
@@ -200,6 +184,11 @@ const enrichedTransactions = computed(() => {
     .map(transaction => ({
       ...transaction,
       instrumentName: transaction.name,
+      amount: transaction.quantity * transaction.price,
+      profit:
+        transaction.transactionType === 'SELL'
+          ? transaction.realizedProfit
+          : transaction.unrealizedProfit,
     }))
     .sort((a, b) => {
       const dateA = new Date(a.transactionDate).getTime()
@@ -209,20 +198,11 @@ const enrichedTransactions = computed(() => {
     })
 })
 
-const formatPlatformName = (platform: string): string => {
-  const platformMap: Record<string, string> = {
-    TRADING212: 'Trading 212',
-    LIGHTYEAR: 'Lightyear',
-    SWEDBANK: 'Swedbank',
-    BINANCE: 'Binance',
-    COINBASE: 'Coinbase',
-    LHV: 'LHV',
-    AVIVA: 'Aviva',
-    UNKNOWN: 'Unknown',
-  }
-
-  return platformMap[platform] || platform
-}
+const { sortedItems, sortState, toggleSort } = useSortableTable(
+  enrichedTransactions,
+  'transactionDate',
+  'desc'
+)
 
 const formatTransactionDate = (date: string | Date): string => {
   const d = new Date(date)
@@ -231,10 +211,6 @@ const formatTransactionDate = (date: string | Date): string => {
     month: 'short',
     day: 'numeric',
   })
-}
-
-const extractBaseSymbol = (symbol: string): string => {
-  return symbol.split(':')[0]
 }
 </script>
 

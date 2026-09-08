@@ -321,4 +321,68 @@ describe('TransactionTable', () => {
       expect(enrichedTransactions[0].instrumentName).toBe('Unknown')
     })
   })
+
+  describe('interactive column sorting', () => {
+    const transactions = [
+      createTransactionDto({
+        id: 1,
+        name: 'Zalando SE',
+        transactionDate: '2024-07-15',
+        quantity: 3,
+        price: 100,
+      }),
+      createTransactionDto({
+        id: 2,
+        name: 'Ångpanneföreningen AB',
+        transactionDate: '2024-07-01',
+        quantity: 1,
+        price: 50,
+      }),
+      createTransactionDto({
+        id: 3,
+        name: 'Apple Inc',
+        transactionDate: '2024-07-19',
+        quantity: 2,
+        price: 900,
+      }),
+    ]
+
+    const mountAndSort = async (label: string, clicks: number) => {
+      const wrapper = mount(TransactionTable, { props: { transactions } })
+      const header = wrapper.findAll('th.sortable').find(th => th.text().startsWith(label))
+      if (!header) throw new Error(`no sortable header labelled ${label}`)
+      for (let i = 0; i < clicks; i++) {
+        await header.trigger('click')
+      }
+      return wrapper.findComponent({ name: 'DataTable' }).props('items')
+    }
+
+    it('should sort by quantity ascending when the quantity header is clicked once', async () => {
+      const items = await mountAndSort('Quantity', 1)
+
+      expect(items.map((item: { quantity: number }) => item.quantity)).toEqual([1, 2, 3])
+    })
+
+    it('should sort by quantity descending when the quantity header is clicked twice', async () => {
+      const items = await mountAndSort('Quantity', 2)
+
+      expect(items.map((item: { quantity: number }) => item.quantity)).toEqual([3, 2, 1])
+    })
+
+    it('should sort by amount using quantity multiplied by price', async () => {
+      const items = await mountAndSort('Amount', 1)
+
+      expect(items.map((item: { amount: number }) => item.amount)).toEqual([50, 300, 1800])
+    })
+
+    it('should sort by instrument name rather than instrument id', async () => {
+      const items = await mountAndSort('Instrument', 1)
+
+      expect(items.map((item: { name: string }) => item.name)).toEqual([
+        'Ångpanneföreningen AB',
+        'Apple Inc',
+        'Zalando SE',
+      ])
+    })
+  })
 })

@@ -28,8 +28,8 @@ export const instrumentColumns: ColumnDefinition[] = [
 
 export const transactionColumns: ColumnDefinition[] = [
   { key: 'transactionDate', label: 'Date', formatter: formatDate },
-  { key: 'instrumentId', label: 'Instrument' },
-  { key: 'quantityInfo', label: 'Quantity', class: 'text-right!' },
+  { key: 'instrumentId', label: 'Instrument', sortKey: 'name' },
+  { key: 'quantityInfo', label: 'Quantity', class: 'text-right!', sortKey: 'quantity' },
   { key: 'price', label: 'Price', class: 'text-right!' },
   { key: 'amount', label: 'Amount', class: 'text-right!' },
   { key: 'profit', label: 'Profit', class: 'text-right!' },
