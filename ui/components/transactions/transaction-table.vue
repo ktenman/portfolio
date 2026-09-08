@@ -13,7 +13,7 @@
         <div class="transaction-header">
           <div class="transaction-title">
             <h6 class="instrument-name">
-              <span class="ticker-landscape">{{ extractBaseSymbol(item.symbol) }}</span>
+              <span class="ticker-landscape">{{ formatTickerSymbol(item.symbol) }}</span>
               <span class="name-default">{{ item.name }}</span>
             </h6>
             <div class="transaction-meta">
@@ -87,7 +87,7 @@
     <template #cell-instrumentId="{ item }">
       <div class="instrument-info">
         <div>
-          <span class="ticker-landscape">{{ extractBaseSymbol(item.symbol) }}</span>
+          <span class="ticker-landscape">{{ formatTickerSymbol(item.symbol) }}</span>
           <span class="name-default">{{ item.name }}</span>
         </div>
         <div v-if="item.platform" class="platform-tags mt-1">
@@ -157,6 +157,8 @@ import DataTable from '../shared/data-table.vue'
 import { TransactionResponseDto } from '../../models/generated/domain-models'
 import { transactionColumns } from '../../config'
 import { useSortableTable } from '../../composables/use-sortable-table'
+import { formatPlatformName } from '../../utils/platform-utils'
+import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import {
   formatProfitLoss,
   formatTransactionAmount,
@@ -202,21 +204,6 @@ const { sortedItems, sortState, toggleSort } = useSortableTable(
   'desc'
 )
 
-const formatPlatformName = (platform: string): string => {
-  const platformMap: Record<string, string> = {
-    TRADING212: 'Trading 212',
-    LIGHTYEAR: 'Lightyear',
-    SWEDBANK: 'Swedbank',
-    BINANCE: 'Binance',
-    COINBASE: 'Coinbase',
-    LHV: 'LHV',
-    AVIVA: 'Aviva',
-    UNKNOWN: 'Unknown',
-  }
-
-  return platformMap[platform] || platform
-}
-
 const formatTransactionDate = (date: string | Date): string => {
   const d = new Date(date)
   return d.toLocaleDateString('en-US', {
@@ -224,10 +211,6 @@ const formatTransactionDate = (date: string | Date): string => {
     month: 'short',
     day: 'numeric',
   })
-}
-
-const extractBaseSymbol = (symbol: string): string => {
-  return symbol.split(':')[0]
 }
 </script>
 
