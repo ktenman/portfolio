@@ -1,8 +1,11 @@
 <template>
   <data-table
-    :items="enrichedTransactions"
+    :items="sortedItems"
     :columns="columns"
     :is-loading="isLoading"
+    :sortable="true"
+    :sort-state="sortState"
+    :on-sort="toggleSort"
     empty-message="No transactions found. Add a new transaction to get started."
   >
     <template #mobile-card="{ item }">
@@ -175,6 +178,7 @@ import { computed } from 'vue'
 import DataTable from '../shared/data-table.vue'
 import { TransactionResponseDto } from '../../models/generated/domain-models'
 import { transactionColumns } from '../../config'
+import { useSortableTable } from '../../composables/use-sortable-table'
 import {
   formatProfitLoss,
   formatTransactionAmount,
@@ -200,6 +204,11 @@ const enrichedTransactions = computed(() => {
     .map(transaction => ({
       ...transaction,
       instrumentName: transaction.name,
+      amount: transaction.quantity * transaction.price,
+      profit:
+        transaction.transactionType === 'SELL'
+          ? transaction.realizedProfit
+          : transaction.unrealizedProfit,
     }))
     .sort((a, b) => {
       const dateA = new Date(a.transactionDate).getTime()
@@ -208,6 +217,12 @@ const enrichedTransactions = computed(() => {
       return (b.id || 0) - (a.id || 0)
     })
 })
+
+const { sortedItems, sortState, toggleSort } = useSortableTable(
+  enrichedTransactions,
+  'transactionDate',
+  'desc'
+)
 
 const formatPlatformName = (platform: string): string => {
   const platformMap: Record<string, string> = {
