@@ -326,52 +326,36 @@ describe('TransactionTable', () => {
     const transactions = [
       createTransactionDto({
         id: 1,
-        symbol: 'ZALANDO',
         name: 'Zalando SE',
         transactionDate: '2024-07-01',
-        transactionType: TransactionType.BUY,
         quantity: 3,
         price: 100,
-        platform: Platform.SWEDBANK,
       }),
       createTransactionDto({
         id: 2,
-        symbol: 'ÄNGPANNE',
         name: 'Ångpanneföreningen AB',
         transactionDate: '2024-07-19',
-        transactionType: TransactionType.BUY,
         quantity: 1,
         price: 50,
-        platform: Platform.SWEDBANK,
       }),
       createTransactionDto({
         id: 3,
-        symbol: 'AAPL',
         name: 'Apple Inc',
         transactionDate: '2024-07-15',
-        transactionType: TransactionType.BUY,
         quantity: 2,
         price: 900,
-        platform: Platform.SWEDBANK,
       }),
     ]
 
     const mountAndSort = async (label: string, clicks: number) => {
       const wrapper = mount(TransactionTable, { props: { transactions } })
-      const header = wrapper.findAll('th').find(th => th.text().startsWith(label))
+      const header = wrapper.findAll('th.sortable').find(th => th.text().startsWith(label))
       if (!header) throw new Error(`no sortable header labelled ${label}`)
       for (let i = 0; i < clicks; i++) {
         await header.trigger('click')
       }
       return wrapper.findComponent({ name: 'DataTable' }).props('items')
     }
-
-    it('should expose sort state to the table so the arrows can render', () => {
-      const wrapper = mount(TransactionTable, { props: { transactions } })
-      const dataTable = wrapper.findComponent({ name: 'DataTable' })
-
-      expect(dataTable.props('sortable')).toBe(true)
-    })
 
     it('should sort by quantity ascending when the quantity header is clicked once', async () => {
       const items = await mountAndSort('Quantity', 1)

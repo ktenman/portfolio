@@ -61,19 +61,8 @@
             <span class="metric-label">Fee</span>
           </div>
           <div class="metric-group">
-            <span
-              class="metric-value"
-              :class="
-                getProfitClass(
-                  item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
-                )
-              "
-            >
-              {{
-                formatProfitLoss(
-                  item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
-                )
-              }}
+            <span class="metric-value" :class="getProfitClass(item.profit)">
+              {{ formatProfitLoss(item.profit) }}
             </span>
             <span class="metric-label">
               {{ item.transactionType === 'SELL' ? 'Realized' : 'Unrealized' }}
@@ -155,19 +144,8 @@
     </template>
 
     <template #cell-profit="{ item }">
-      <span
-        :class="
-          getProfitClass(
-            item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit
-          )
-        "
-      >
-        {{
-          formatProfitLoss(
-            item.transactionType === 'SELL' ? item.realizedProfit : item.unrealizedProfit,
-            false
-          )
-        }}
+      <span :class="getProfitClass(item.profit)">
+        {{ formatProfitLoss(item.profit, false) }}
       </span>
     </template>
   </data-table>
