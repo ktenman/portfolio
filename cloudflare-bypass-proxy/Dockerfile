@@ -1,6 +1,6 @@
 FROM lwthiker/curl-impersonate:latest AS curl-source
 
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY src ./src
 
 RUN npm run build
 
-FROM node:20-slim
+FROM node:24-slim
 
 COPY --from=curl-source /usr/local/bin/curl_ff117 /usr/local/bin/curl_ff117
 COPY --from=curl-source /usr/local/bin/curl-impersonate-ff /usr/local/bin/curl-impersonate-ff
