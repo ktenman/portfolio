@@ -7,6 +7,7 @@ jest.mock('child_process', () => ({
 }))
 
 jest.mock('util', () => ({
+  ...jest.requireActual('util'),
   promisify: (fn: any) => {
     return jest.fn((...args) => {
       return new Promise((resolve, reject) => {
