@@ -6,6 +6,7 @@ jest.mock('child_process', () => ({
 }))
 
 jest.mock('util', () => ({
+  ...jest.requireActual('util'),
   promisify: jest.fn(() => jest.fn()),
 }))
 
