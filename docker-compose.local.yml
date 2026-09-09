@@ -136,7 +136,7 @@ services:
       retries: 15
 
   frontend:
-    image: node:23.5.0-alpine
+    image: node:24-alpine
     container_name: portfolio-frontend
     working_dir: /app
     volumes:
