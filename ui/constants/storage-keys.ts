@@ -16,5 +16,6 @@ export const STORAGE_KEYS = {
   ETF_FILTERS_OPEN: 'portfolio_etf_filters_open',
   ETF_BREAKDOWN_VIEW: 'portfolio_etf_breakdown_view',
   DIVERSIFICATION_BREAKDOWN_TAB: 'portfolio_diversification_breakdown_tab',
+  DIVERSIFICATION_BREAKDOWN_VIEW: 'portfolio_diversification_breakdown_view',
   BENCHMARK_COMPARE: 'portfolio_benchmark_compare',
 } as const

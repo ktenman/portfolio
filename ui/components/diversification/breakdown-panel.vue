@@ -24,15 +24,17 @@
             </span>
           </label>
         </template>
+        <view-switch v-model="view" />
       </div>
-      <div v-if="compared" class="panel-legend">
+      <div v-if="compared && view === 'bars'" class="panel-legend">
         <span class="legend-bar"></span>
         <span>This allocation</span>
         <span class="legend-tick"></span>
         <span>{{ benchmarkLabel }}</span>
       </div>
     </div>
-    <breakdown-bars :rows="rows" :benchmark-label="benchmarkLabel" />
+    <breakdown-bars v-if="view === 'bars'" :rows="rows" :benchmark-label="benchmarkLabel" />
+    <breakdown-donut v-else :rows="rows" />
   </div>
 </template>
 
@@ -42,6 +44,8 @@ import { useLocalStorage } from '@vueuse/core'
 import { STORAGE_KEYS } from '../../constants'
 import { DONUT_COLORS } from '../../constants/chart-colors'
 import BreakdownBars from '../shared/breakdown-bars.vue'
+import BreakdownDonut from '../shared/breakdown-donut.vue'
+import ViewSwitch, { type BreakdownView } from '../shared/view-switch.vue'
 import {
   compareBreakdown,
   unlessAbsent,
@@ -99,6 +103,8 @@ const activeTab = useLocalStorage<keyof Breakdowns>(
 )
 
 const compare = useLocalStorage(STORAGE_KEYS.BENCHMARK_COMPARE, true)
+
+const view = useLocalStorage<BreakdownView>(STORAGE_KEYS.DIVERSIFICATION_BREAKDOWN_VIEW, 'bars')
 
 const compared = computed(() => compare.value && props.benchmark !== null)
 

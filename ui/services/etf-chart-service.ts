@@ -4,6 +4,8 @@ import {
   compareBreakdown,
   unlessAbsent,
   COUNTRY_MIN_PERCENTAGE,
+  INDUSTRY_MIN_PERCENTAGE,
+  INDUSTRY_TOP_COUNT,
   SECTOR_MIN_PERCENTAGE,
   TOP_COUNT,
   type BreakdownItem,
@@ -14,7 +16,6 @@ import {
 export interface ChartDataItem {
   label: string
   value: number
-  percentage: string
   color: string
   isOther: boolean
   code?: string
@@ -59,7 +60,6 @@ const toChartItems = (rows: ComparedRow[]): ChartDataItem[] =>
   rows.map(({ label, value, benchmark: share, ratio, code, isOther }, index) => ({
     label,
     value,
-    percentage: value.toFixed(2),
     color: DONUT_COLORS[index % DONUT_COLORS.length],
     isOther,
     ...(code ? { code } : {}),
@@ -93,8 +93,8 @@ export function buildIndustryChartData(
 ): ChartDataItem[] {
   return toChartItems(
     build(holdings, benchmark, industryItems, {
-      topCount: TOP_COUNT,
-      minPercentage: SECTOR_MIN_PERCENTAGE,
+      topCount: INDUSTRY_TOP_COUNT,
+      minPercentage: INDUSTRY_MIN_PERCENTAGE,
       withOther: true,
     })
   )

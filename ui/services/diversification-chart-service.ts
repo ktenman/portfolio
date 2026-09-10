@@ -13,6 +13,8 @@ export interface ComparedRow {
   isOther: boolean
 }
 
+export type BreakdownRow = ComparedRow & { color?: string }
+
 export interface CompareOptions {
   topCount: number
   minPercentage: number

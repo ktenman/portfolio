@@ -26,15 +26,14 @@ vi.mock('chart.js', () => {
 
 describe('EtfBreakdownChart', () => {
   const mockChartData: ChartDataItem[] = [
-    { label: 'Apple', value: 25.5, percentage: '25.50', color: '#0072B2', isOther: false },
-    { label: 'Microsoft', value: 20.3, percentage: '20.30', color: '#E69F00', isOther: false },
-    { label: 'Google', value: 15.2, percentage: '15.20', color: '#009E73', isOther: false },
+    { label: 'Apple', value: 25.5, color: '#0072B2', isOther: false },
+    { label: 'Microsoft', value: 20.3, color: '#E69F00', isOther: false },
+    { label: 'Google', value: 15.2, color: '#009E73', isOther: false },
   ]
 
   const comparedItem: ChartDataItem = {
     label: 'Banks',
     value: 9.2,
-    percentage: '9.20',
     isOther: false,
     color: '#0072B2',
     benchmark: 4,
@@ -45,7 +44,6 @@ describe('EtfBreakdownChart', () => {
     Array.from({ length: count }, (_, index) => ({
       label: `Item ${index + 1}`,
       value: 10,
-      percentage: '10.00',
       isOther: false,
       color: '#000000',
     }))
@@ -252,7 +250,7 @@ describe('EtfBreakdownChart', () => {
       expect(wrapper.findAll('.legend-item')).toHaveLength(3)
 
       const newData: ChartDataItem[] = [
-        { label: 'Amazon', value: 30, percentage: '30.00', color: '#D55E00', isOther: false },
+        { label: 'Amazon', value: 30, color: '#D55E00', isOther: false },
       ]
 
       await wrapper.setProps({ chartData: newData })
@@ -291,7 +289,7 @@ describe('EtfBreakdownChart', () => {
       })
 
       const shorterData: ChartDataItem[] = [
-        { label: 'Amazon', value: 30, percentage: '30.00', color: '#D55E00', isOther: false },
+        { label: 'Amazon', value: 30, color: '#D55E00', isOther: false },
       ]
 
       await wrapper.setProps({ chartData: shorterData })
@@ -312,7 +310,7 @@ describe('EtfBreakdownChart', () => {
       await wrapper.findAll('.legend-item')[2].trigger('mouseenter')
 
       const newData: ChartDataItem[] = [
-        { label: 'Amazon', value: 30, percentage: '30.00', color: '#D55E00', isOther: false },
+        { label: 'Amazon', value: 30, color: '#D55E00', isOther: false },
       ]
       await wrapper.setProps({ chartData: newData })
 
@@ -324,7 +322,7 @@ describe('EtfBreakdownChart', () => {
   describe('single item', () => {
     it('should render correctly with single item', () => {
       const singleItemData: ChartDataItem[] = [
-        { label: 'Tesla', value: 100, percentage: '100.00', color: '#56B4E9', isOther: false },
+        { label: 'Tesla', value: 100, color: '#56B4E9', isOther: false },
       ]
 
       const wrapper = mount(EtfBreakdownChart, {
@@ -345,7 +343,6 @@ describe('EtfBreakdownChart', () => {
       const manyItems: ChartDataItem[] = Array.from({ length: 10 }, (_, i) => ({
         label: `Item ${i + 1}`,
         value: 10,
-        percentage: '10.00',
         isOther: false,
         color: '#000000',
       }))
@@ -373,11 +370,10 @@ describe('EtfBreakdownChart', () => {
   describe('special characters', () => {
     it('should handle labels with special characters', () => {
       const specialData: ChartDataItem[] = [
-        { label: 'AT&T Inc.', value: 25, percentage: '25.00', color: '#0072B2', isOther: false },
+        { label: 'AT&T Inc.', value: 25, color: '#0072B2', isOther: false },
         {
           label: 'Johnson & Johnson',
           value: 30,
-          percentage: '30.00',
           color: '#E69F00',
           isOther: false,
         },

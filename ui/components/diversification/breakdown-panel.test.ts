@@ -1,8 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import BreakdownPanel from './breakdown-panel.vue'
 import { DONUT_COLORS } from '../../constants/chart-colors'
 import type { Breakdowns } from '../../composables/use-diversification-result'
+
+vi.mock('chart.js', () => {
+  const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {
+    return { data: config.data, destroy: vi.fn(), update: vi.fn(), setActiveElements: vi.fn() }
+  })
+  mockChart.register = vi.fn()
+  return { Chart: mockChart, DoughnutController: vi.fn(), ArcElement: vi.fn() }
+})
 
 const breakdowns: Breakdowns = {
   sectors: [{ label: 'Finance', value: 30 }],
@@ -168,5 +176,29 @@ describe('BreakdownPanel', () => {
     expect(wrapper.findAll('.breakdown-row').map(r => r.find('.row-label').text())).toEqual([
       'NVIDIA',
     ])
+  })
+
+  it('opens on the bars', () => {
+    expect(mountPanel().find('.breakdown-row').exists()).toBe(true)
+  })
+
+  it('replaces the bars with the donut when the donut control is pressed', async () => {
+    const wrapper = mountPanel()
+    await wrapper.findAll('.view-btn')[0].trigger('click')
+    expect([wrapper.find('canvas').exists(), wrapper.find('.breakdown-row').exists()]).toEqual([
+      true,
+      false,
+    ])
+  })
+
+  it('persists the chosen breakdown view', async () => {
+    const wrapper = mountPanel()
+    await wrapper.findAll('.view-btn')[0].trigger('click')
+    expect(localStorage.getItem('portfolio_diversification_breakdown_view')).toBe('donut')
+  })
+
+  it('restores the persisted breakdown view', () => {
+    localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
+    expect(mountPanel().find('canvas').exists()).toBe(true)
   })
 })
