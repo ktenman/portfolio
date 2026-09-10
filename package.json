@@ -55,7 +55,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.4.1",
     "@typescript-eslint/eslint-plugin": "^8.69.0",
-    "@typescript-eslint/parser": "^8.62.1",
+    "@typescript-eslint/parser": "^8.70.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-v8": "^5.0.0",
     "@vitest/ui": "^5.0.0",
