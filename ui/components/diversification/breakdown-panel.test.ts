@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import BreakdownPanel from './breakdown-panel.vue'
+import { DONUT_COLORS } from '../../constants/chart-colors'
 import type { Breakdowns } from '../../composables/use-diversification-result'
 
 const breakdowns: Breakdowns = {
@@ -81,6 +82,14 @@ describe('BreakdownPanel', () => {
 
   it('shows the benchmark share and ratio on each row', () => {
     expect(mountPanel().findAll('.row-benchmark')[0].text()).toBe('10.00% · 2.03×')
+  })
+
+  it('paints each bar with its own colour from the shared palette', () => {
+    const bars = mountPanel()
+      .findAll('.row-bar')
+      .map(bar => bar.attributes('style'))
+    expect(bars[0]).toContain(`--row-bar-color: ${DONUT_COLORS[0]}`)
+    expect(bars[1]).toContain(`--row-bar-color: ${DONUT_COLORS[1]}`)
   })
 
   it('renders the Other row without a bar', () => {

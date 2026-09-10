@@ -4,7 +4,8 @@
       <div class="chart-header mb-4">
         <slot name="actions" />
       </div>
-      <div class="chart-body">
+      <breakdown-bars v-if="showsBars" :rows="chartData" :benchmark-label="benchmarkLabel" />
+      <div v-else class="chart-body">
         <div class="chart-container">
           <canvas ref="chartCanvas"></canvas>
           <div v-if="activeItem" class="chart-centre" aria-hidden="true">
@@ -30,18 +31,23 @@ Chart.register(DoughnutController, ArcElement)
 </script>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, onMounted, watch, onBeforeUnmount } from 'vue'
 import EtfBreakdownLegend from './etf-breakdown-legend.vue'
+import BreakdownBars from '../shared/breakdown-bars.vue'
 import { withAlpha } from '../../constants/chart-colors'
 import type { ChartDataItem } from '../../services/etf-chart-service'
 
 const props = defineProps<{
   chartData: ChartDataItem[]
+  view?: 'donut' | 'bars'
+  benchmarkLabel?: string
 }>()
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 const activeIndex = ref<number | null>(null)
 let chart: Chart | null = null
+
+const showsBars = computed(() => props.view === 'bars')
 
 const activeItem = computed(() =>
   activeIndex.value === null ? null : (props.chartData[activeIndex.value] ?? null)
@@ -140,6 +146,11 @@ const updateChartData = () => {
   chart.update('none')
 }
 
+const destroyChart = () => {
+  chart?.destroy()
+  chart = null
+}
+
 onMounted(() => {
   renderChart()
 })
@@ -152,11 +163,16 @@ watch(
   { deep: true }
 )
 
-onBeforeUnmount(() => {
-  if (chart) {
-    chart.destroy()
+watch(showsBars, async bars => {
+  if (bars) {
+    destroyChart()
+    return
   }
+  await nextTick()
+  renderChart()
 })
+
+onBeforeUnmount(destroyChart)
 </script>
 
 <style scoped>

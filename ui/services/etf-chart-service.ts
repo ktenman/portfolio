@@ -2,6 +2,7 @@ import type { EtfHoldingBreakdownDto, InstrumentDto } from '../models/generated/
 import { DONUT_COLORS } from '../constants/chart-colors'
 import {
   compareBreakdown,
+  unlessAbsent,
   COUNTRY_MIN_PERCENTAGE,
   SECTOR_MIN_PERCENTAGE,
   TOP_COUNT,
@@ -15,6 +16,7 @@ export interface ChartDataItem {
   value: number
   percentage: string
   color: string
+  isOther: boolean
   code?: string
   benchmark?: number
   ratio?: number
@@ -54,11 +56,12 @@ const countryItems = (holdings: EtfHoldingBreakdownDto[]): Items => {
 }
 
 const toChartItems = (rows: ComparedRow[]): ChartDataItem[] =>
-  rows.map(({ label, value, benchmark: share, ratio, code }, index) => ({
+  rows.map(({ label, value, benchmark: share, ratio, code, isOther }, index) => ({
     label,
     value,
     percentage: value.toFixed(2),
     color: DONUT_COLORS[index % DONUT_COLORS.length],
+    isOther,
     ...(code ? { code } : {}),
     ...(share === undefined ? {} : { benchmark: share, ratio }),
   }))
@@ -96,9 +99,6 @@ export function buildIndustryChartData(
     })
   )
 }
-
-const unlessAbsent = (row: ComparedRow): ComparedRow =>
-  row.benchmark === 0 ? { ...row, benchmark: undefined, ratio: undefined } : row
 
 export function buildCompanyChartData(
   holdings: EtfHoldingBreakdownDto[],

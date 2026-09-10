@@ -29,6 +29,9 @@ const MIN_BENCHMARK_SHARE = 0.005
 export const isFlagged = (ratio: number | undefined): boolean =>
   ratio !== undefined && (ratio > 2 || ratio < 0.5)
 
+export const unlessAbsent = (row: ComparedRow): ComparedRow =>
+  row.benchmark === 0 ? { ...row, benchmark: undefined, ratio: undefined } : row
+
 export const formatBenchmarkShare = (
   benchmark: number | undefined,
   ratio: number | undefined

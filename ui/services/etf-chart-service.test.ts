@@ -407,3 +407,31 @@ describe('etf-chart-service', () => {
     })
   })
 })
+
+describe('other row', () => {
+  const holdings = (industries: [string, number][]): EtfHoldingBreakdownDto[] =>
+    industries.map(([industry, percentage], index) => ({
+      holdingUuid: `uuid-${index}`,
+      holdingTicker: `T${index}`,
+      holdingName: `Holding ${index}`,
+      percentageOfTotal: percentage,
+      totalValueEur: percentage * 100,
+      holdingSector: 'Technology',
+      holdingIndustry: industry,
+      holdingCountryCode: 'US',
+      holdingCountryName: 'United States',
+      inEtfs: 'VWCE:XETRA',
+      numEtfs: 1,
+      platforms: 'LIGHTYEAR',
+    }))
+
+  it('marks the residual industry row as other', () => {
+    const rows = buildIndustryChartData(
+      holdings([
+        ['Banken', 60],
+        ['Ölwirtschaft', 0.2],
+      ])
+    )
+    expect(rows.map(row => row.isOther)).toEqual([false, true])
+  })
+})
