@@ -110,11 +110,17 @@ const compared = computed(() => compare.value && props.benchmark !== null)
 
 const currentTab = computed(() => TABS.find(t => t.key === activeTab.value) ?? TABS[1])
 
+const options = computed<CompareOptions>(() =>
+  currentTab.value.key === 'industries' && view.value === 'donut'
+    ? { ...currentTab.value.options, topCount: TOP_COUNT }
+    : currentTab.value.options
+)
+
 const rows = computed(() => {
   const result = compareBreakdown(
     props.breakdowns[currentTab.value.key],
     compared.value ? (props.benchmark?.[currentTab.value.key] ?? null) : null,
-    currentTab.value.options
+    options.value
   )
   const rows = currentTab.value.key === 'holdings' ? result.map(unlessAbsent) : result
   return rows.map((row, index) => ({ ...row, color: DONUT_COLORS[index % DONUT_COLORS.length] }))

@@ -556,4 +556,39 @@ describe('etf-breakdown', () => {
 
     expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('WEBN')
   })
+
+  it('narrows the industry donut to the top count the other dimensions use', async () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      ...buildTwoHoldings()[0],
+      holdingUuid: `uuid-${index}`,
+      holdingName: `Holding ${index}`,
+      holdingIndustry: `Industry ${index}`,
+      percentageOfTotal: 5,
+    }))
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(many)
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('chartData')).toHaveLength(16)
+  })
+
+  it('widens the industry bars past the donut top count', async () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      ...buildTwoHoldings()[0],
+      holdingUuid: `uuid-${index}`,
+      holdingName: `Holding ${index}`,
+      holdingIndustry: `Industry ${index}`,
+      percentageOfTotal: 5,
+    }))
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(many)
+    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('chartData')).toHaveLength(20)
+  })
 })

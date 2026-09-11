@@ -22,7 +22,7 @@ export interface CompareOptions {
 }
 
 export const TOP_COUNT = 15
-export const INDUSTRY_TOP_COUNT = 40
+export const INDUSTRY_TOP_COUNT = 30
 export const SECTOR_MIN_PERCENTAGE = 0.5
 export const COUNTRY_MIN_PERCENTAGE = 0.2
 export const INDUSTRY_MIN_PERCENTAGE = 0.1

@@ -89,11 +89,12 @@ export function buildSectorChartData(
 
 export function buildIndustryChartData(
   holdings: EtfHoldingBreakdownDto[],
-  benchmark: EtfHoldingBreakdownDto[] = []
+  benchmark: EtfHoldingBreakdownDto[] = [],
+  topCount: number = INDUSTRY_TOP_COUNT
 ): ChartDataItem[] {
   return toChartItems(
     build(holdings, benchmark, industryItems, {
-      topCount: INDUSTRY_TOP_COUNT,
+      topCount,
       minPercentage: INDUSTRY_MIN_PERCENTAGE,
       withOther: true,
     })

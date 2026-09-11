@@ -201,4 +201,23 @@ describe('BreakdownPanel', () => {
     localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
     expect(mountPanel().find('canvas').exists()).toBe(true)
   })
+
+  it('narrows the industry donut to the top count the other dimensions use', async () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      label: `Industry ${index}`,
+      value: 5,
+    }))
+    localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
+    const wrapper = mountPanel({ breakdowns: { ...breakdowns, industries: many }, benchmark: null })
+    expect(wrapper.findAll('.legend-item')).toHaveLength(16)
+  })
+
+  it('widens the industry bars past the donut top count', () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      label: `Industry ${index}`,
+      value: 5,
+    }))
+    const wrapper = mountPanel({ breakdowns: { ...breakdowns, industries: many }, benchmark: null })
+    expect(wrapper.findAll('.breakdown-row')).toHaveLength(20)
+  })
 })

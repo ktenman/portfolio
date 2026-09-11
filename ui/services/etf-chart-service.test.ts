@@ -304,7 +304,7 @@ describe('etf-chart-service', () => {
       expect(result[0].label).toBe('Unclassified')
     })
 
-    it('should fold everything beyond the top 40 into Other so the chart sums to the holdings total', () => {
+    it('should fold everything beyond the top 30 into Other so the chart sums to the holdings total', () => {
       const holdings = Array.from({ length: 50 }, (_, i) =>
         createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 2 })
       )
@@ -313,7 +313,19 @@ describe('etf-chart-service', () => {
         result.length,
         result[result.length - 1].label,
         result.reduce((sum, item) => sum + item.value, 0),
-      ]).toEqual([41, 'Other', 100])
+      ]).toEqual([31, 'Other', 100])
+    })
+
+    it('should narrow to the given top count when the donut asks for fewer rows', () => {
+      const holdings = Array.from({ length: 50 }, (_, i) =>
+        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 2 })
+      )
+      const result = buildIndustryChartData(holdings, [], 15)
+      expect([
+        result.length,
+        result[result.length - 1].label,
+        result.reduce((sum, item) => sum + item.value, 0),
+      ]).toEqual([16, 'Other', 100])
     })
 
     it('should list an industry down to the same floor as the diversification breakdown', () => {
@@ -394,11 +406,11 @@ describe('etf-chart-service', () => {
     })
 
     it('should put the benchmark weight of unshown industries under Other without a ratio', () => {
-      const holdings = Array.from({ length: 41 }, (_, i) =>
+      const holdings = Array.from({ length: 31 }, (_, i) =>
         createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 2 })
       )
       const result = buildIndustryChartData(holdings, [
-        createHolding({ holdingIndustry: 'Industry 40', percentageOfTotal: 30 }),
+        createHolding({ holdingIndustry: 'Industry 30', percentageOfTotal: 30 }),
       ])
       const other = result[result.length - 1]
       expect([other.label, other.benchmark, other.ratio]).toEqual(['Other', 30, undefined])
