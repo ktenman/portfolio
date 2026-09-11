@@ -47,6 +47,7 @@ ui/coverage/
 
 ### Test Results ###
 test-results/
+ui/.vitest/
 
 ### Environment Variables ###
 .env
