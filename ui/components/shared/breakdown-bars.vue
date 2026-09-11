@@ -39,13 +39,11 @@ import { countryFlagUrl } from '../../utils/currency-flag'
 import {
   formatBenchmarkShare,
   isFlagged,
-  type ComparedRow,
+  type BreakdownRow,
 } from '../../services/diversification-chart-service'
 
-type BarRow = ComparedRow & { color?: string }
-
 const props = defineProps<{
-  rows: BarRow[]
+  rows: BreakdownRow[]
   benchmarkLabel?: string
 }>()
 
@@ -58,12 +56,12 @@ const scaleMax = computed(() =>
 const scaled = (value: number): number =>
   scaleMax.value === 0 ? 0 : (value / scaleMax.value) * 100
 
-const barStyle = (row: BarRow) => ({
+const barStyle = (row: BreakdownRow) => ({
   width: `${scaled(row.value)}%`,
   '--row-bar-color': row.color,
 })
 
-const rowTitle = (row: BarRow): string => {
+const rowTitle = (row: BreakdownRow): string => {
   const own = `${row.label} ${formatPercentage(row.value)}`
   if (row.benchmark === undefined) return own
   return `${own} · ${props.benchmarkLabel} ${row.benchmark.toFixed(2)}%`
@@ -128,7 +126,7 @@ const rowTitle = (row: BarRow): string => {
 .row-bar {
   position: absolute;
   inset: 0 auto 0 0;
-  background: var(--row-bar-color, var(--color-brass));
+  background: var(--row-bar-color);
   border-radius: 2px;
 }
 

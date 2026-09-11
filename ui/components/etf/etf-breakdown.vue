@@ -158,8 +158,8 @@ import EtfBreakdownTable from './etf-breakdown-table.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
-import ViewSwitch, { type BreakdownView } from '../shared/view-switch.vue'
-import { INDUSTRY_TOP_COUNT, TOP_COUNT } from '../../services/diversification-chart-service'
+import ViewSwitch from '../shared/view-switch.vue'
+import type { BreakdownView } from '../../services/diversification-chart-service'
 import { STORAGE_KEYS } from '../../constants'
 import { resolveBenchmark } from '../../constants/benchmarks'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
@@ -280,8 +280,6 @@ const activeTab = ref<BreakdownTab>('sectors')
 
 const view = useLocalStorage<BreakdownView>(STORAGE_KEYS.ETF_BREAKDOWN_VIEW, 'donut')
 
-const industryTopCount = computed(() => (view.value === 'donut' ? TOP_COUNT : INDUSTRY_TOP_COUNT))
-
 const benchmarkSymbol = computed(() => resolveBenchmark(availableEtfs.value))
 
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
@@ -301,7 +299,7 @@ const comparedHoldings = computed(() => {
 })
 
 const industryChartData = computed<ChartDataItem[]>(() =>
-  buildIndustryChartData(holdings.value, comparedHoldings.value, industryTopCount.value)
+  buildIndustryChartData(holdings.value, comparedHoldings.value, view.value)
 )
 
 const activeChartData = computed(() => {

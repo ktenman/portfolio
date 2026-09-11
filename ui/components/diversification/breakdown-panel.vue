@@ -39,24 +39,27 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { STORAGE_KEYS } from '../../constants'
-import { DONUT_COLORS } from '../../constants/chart-colors'
 import BreakdownBars from '../shared/breakdown-bars.vue'
-import BreakdownDonut from '../shared/breakdown-donut.vue'
-import ViewSwitch, { type BreakdownView } from '../shared/view-switch.vue'
+import ViewSwitch from '../shared/view-switch.vue'
 import {
   compareBreakdown,
+  optionsForView,
+  paint,
   unlessAbsent,
   COUNTRY_MIN_PERCENTAGE,
   INDUSTRY_MIN_PERCENTAGE,
   INDUSTRY_TOP_COUNT,
   SECTOR_MIN_PERCENTAGE,
   TOP_COUNT,
+  type BreakdownView,
   type CompareOptions,
 } from '../../services/diversification-chart-service'
 import type { Breakdowns } from '../../composables/use-diversification-result'
+
+const BreakdownDonut = defineAsyncComponent(() => import('../shared/breakdown-donut.vue'))
 
 const props = defineProps<{
   breakdowns: Breakdowns
@@ -110,20 +113,14 @@ const compared = computed(() => compare.value && props.benchmark !== null)
 
 const currentTab = computed(() => TABS.find(t => t.key === activeTab.value) ?? TABS[1])
 
-const options = computed<CompareOptions>(() =>
-  currentTab.value.key === 'industries' && view.value === 'donut'
-    ? { ...currentTab.value.options, topCount: TOP_COUNT }
-    : currentTab.value.options
-)
-
 const rows = computed(() => {
   const result = compareBreakdown(
     props.breakdowns[currentTab.value.key],
     compared.value ? (props.benchmark?.[currentTab.value.key] ?? null) : null,
-    options.value
+    optionsForView(currentTab.value.options, view.value)
   )
   const rows = currentTab.value.key === 'holdings' ? result.map(unlessAbsent) : result
-  return rows.map((row, index) => ({ ...row, color: DONUT_COLORS[index % DONUT_COLORS.length] }))
+  return paint(rows)
 })
 </script>
 

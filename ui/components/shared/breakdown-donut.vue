@@ -4,7 +4,7 @@
       <canvas ref="chartCanvas"></canvas>
       <div v-if="activeItem" class="chart-centre" aria-hidden="true">
         <span class="chart-centre-label">{{ activeItem.label }}</span>
-        <span class="chart-centre-value">{{ activeItem.value.toFixed(2) }}%</span>
+        <span class="chart-centre-value">{{ formatPercentage(activeItem.value) }}</span>
       </div>
     </div>
     <breakdown-legend
@@ -25,7 +25,8 @@ Chart.register(DoughnutController, ArcElement)
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import BreakdownLegend from './breakdown-legend.vue'
-import { DONUT_COLORS, withAlpha } from '../../constants/chart-colors'
+import { withAlpha } from '../../constants/chart-colors'
+import { formatPercentage } from '../../utils/formatters'
 import type { BreakdownRow } from '../../services/diversification-chart-service'
 
 const props = defineProps<{
@@ -44,14 +45,9 @@ const RING_FRACTION = 1 / 6
 const DIMMED_OPACITY = 0.3
 const GAP_PX = 6
 
-const colorOf = (row: BreakdownRow, index: number): string =>
-  row.color ?? DONUT_COLORS[index % DONUT_COLORS.length]
-
 const fills = (active: number | null) =>
   props.rows.map((row, index) =>
-    active === null || active === index
-      ? colorOf(row, index)
-      : withAlpha(colorOf(row, index), DIMMED_OPACITY)
+    active === null || active === index ? row.color : withAlpha(row.color, DIMMED_OPACITY)
   )
 
 const shapeArcs = {
@@ -146,8 +142,7 @@ watch(
   () => props.rows,
   () => {
     updateChartData()
-  },
-  { deep: true }
+  }
 )
 
 onBeforeUnmount(() => {

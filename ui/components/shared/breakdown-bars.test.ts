@@ -2,15 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import BreakdownBars from './breakdown-bars.vue'
 import { DONUT_COLORS } from '../../constants/chart-colors'
-import type { ComparedRow } from '../../services/diversification-chart-service'
+import { paint, type ComparedRow } from '../../services/diversification-chart-service'
 
-type Row = ComparedRow & { color?: string }
-
-const rows: Row[] = [
+const rows = paint([
   { label: 'Banken', value: 20.3, benchmark: 10, ratio: 2.03, isOther: false },
   { label: 'Ölwirtschaft', value: 4.4, benchmark: 10, ratio: 0.44, isOther: false },
   { label: 'Other', value: 6.5, isOther: true },
-]
+])
 
 const mountBars = (props: Record<string, unknown> = {}) =>
   mount(BreakdownBars, { props: { rows, benchmarkLabel: 'WEBN', ...props } })
@@ -37,15 +35,12 @@ describe('BreakdownBars', () => {
     expect(mountBars().findAll('.row-track.empty')).toHaveLength(1)
   })
 
-  it('paints a bar with the colour carried by its row', () => {
-    const coloured = rows.map(row => ({ ...row, color: DONUT_COLORS[0] }))
-    expect(mountBars({ rows: coloured }).find('.row-bar').attributes('style')).toContain(
-      `--row-bar-color: ${DONUT_COLORS[0]}`
-    )
-  })
-
-  it('leaves the bar unpainted when a row carries no colour', () => {
-    expect(mountBars().find('.row-bar').attributes('style')).not.toContain('--row-bar-color')
+  it('paints each bar with the colour carried by its row', () => {
+    const painted = mountBars()
+      .findAll('.row-bar')
+      .map(bar => bar.attributes('style'))
+    expect(painted[0]).toContain(`--row-bar-color: ${DONUT_COLORS[0]}`)
+    expect(painted[1]).toContain(`--row-bar-color: ${DONUT_COLORS[1]}`)
   })
 
   it('flags ratios above 2 and below 0.5', () => {
@@ -66,24 +61,28 @@ describe('BreakdownBars', () => {
   })
 
   it('puts a hover title without the benchmark on an uncompared row', () => {
-    const plain: Row[] = [{ label: 'Banken', value: 20.3, isOther: false }]
+    const plain = paint([{ label: 'Banken', value: 20.3, isOther: false }])
     expect(mountBars({ rows: plain }).find('.breakdown-row').attributes('title')).toBe(
       'Banken 20.30%'
     )
   })
 
   it('hides the benchmark text on a row without a benchmark', () => {
-    const plain: Row[] = [{ label: 'Banken', value: 20.3, isOther: false }]
+    const plain = paint([{ label: 'Banken', value: 20.3, isOther: false }])
     expect(mountBars({ rows: plain }).find('.row-benchmark').exists()).toBe(false)
   })
 
   it('shows a flag image on rows carrying a country code', () => {
-    const country: Row[] = [{ label: 'Spain', value: 5, code: 'ES', isOther: false }]
+    const country = paint([{ label: 'Spain', value: 5, code: 'ES', isOther: false }])
     expect(mountBars({ rows: country }).find('.row-flag').attributes('src')).toContain('/es.svg')
   })
 
   it('cannot divide by zero when every row is empty', () => {
-    const empty: Row[] = [{ label: 'Banken', value: 0, isOther: false }]
-    expect(mountBars({ rows: empty }).find('.row-bar').attributes('style')).toContain('width: 0%')
+    const empty: ComparedRow[] = [{ label: 'Banken', value: 0, isOther: false }]
+    expect(
+      mountBars({ rows: paint(empty) })
+        .find('.row-bar')
+        .attributes('style')
+    ).toContain('width: 0%')
   })
 })

@@ -185,6 +185,7 @@ describe('BreakdownPanel', () => {
   it('replaces the bars with the donut when the donut control is pressed', async () => {
     const wrapper = mountPanel()
     await wrapper.findAll('.view-btn')[0].trigger('click')
+    await vi.dynamicImportSettled()
     expect([wrapper.find('canvas').exists(), wrapper.find('.breakdown-row').exists()]).toEqual([
       true,
       false,
@@ -197,9 +198,11 @@ describe('BreakdownPanel', () => {
     expect(localStorage.getItem('portfolio_diversification_breakdown_view')).toBe('donut')
   })
 
-  it('restores the persisted breakdown view', () => {
+  it('restores the persisted breakdown view', async () => {
     localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
-    expect(mountPanel().find('canvas').exists()).toBe(true)
+    const wrapper = mountPanel()
+    await vi.dynamicImportSettled()
+    expect(wrapper.find('canvas').exists()).toBe(true)
   })
 
   it('narrows the industry donut to the top count the other dimensions use', async () => {
@@ -209,6 +212,7 @@ describe('BreakdownPanel', () => {
     }))
     localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
     const wrapper = mountPanel({ breakdowns: { ...breakdowns, industries: many }, benchmark: null })
+    await vi.dynamicImportSettled()
     expect(wrapper.findAll('.legend-item')).toHaveLength(16)
   })
 

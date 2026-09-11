@@ -267,7 +267,7 @@ describe('etf-chart-service', () => {
         [createHolding({ holdingName: 'Tiny Co', percentageOfTotal: 8 })],
         [createHolding({ holdingName: 'Nvidia', percentageOfTotal: 4 })]
       )
-      expect('benchmark' in result[0]).toBe(false)
+      expect([result[0].benchmark, result[0].ratio]).toEqual([undefined, undefined])
     })
 
     it('should report a zero benchmark share for a sector the benchmark lacks', () => {
@@ -280,7 +280,7 @@ describe('etf-chart-service', () => {
 
     it('should omit benchmark fields without a benchmark', () => {
       const result = buildSectorChartData([createHolding()])
-      expect('benchmark' in result[0]).toBe(false)
+      expect([result[0].benchmark, result[0].ratio]).toEqual([undefined, undefined])
     })
   })
 
@@ -316,11 +316,11 @@ describe('etf-chart-service', () => {
       ]).toEqual([31, 'Other', 100])
     })
 
-    it('should narrow to the given top count when the donut asks for fewer rows', () => {
+    it('should narrow to the shared top count when the donut is showing', () => {
       const holdings = Array.from({ length: 50 }, (_, i) =>
         createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 2 })
       )
-      const result = buildIndustryChartData(holdings, [], 15)
+      const result = buildIndustryChartData(holdings, [], 'donut')
       expect([
         result.length,
         result[result.length - 1].label,
