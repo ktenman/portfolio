@@ -15,7 +15,7 @@
       <img v-if="item.code" :src="countryFlagUrl(item.code)" :alt="item.code" class="legend-flag" />
       <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
       <span class="legend-label">{{ item.label }}</span>
-      <span class="legend-value">{{ item.percentage }}%</span>
+      <span class="legend-value">{{ formatPercentage(item.value) }}</span>
       <span
         v-if="item.benchmark !== undefined"
         class="legend-benchmark"
@@ -28,12 +28,16 @@
 </template>
 
 <script lang="ts" setup>
-import type { ChartDataItem } from '../../services/etf-chart-service'
-import { formatBenchmarkShare, isFlagged } from '../../services/diversification-chart-service'
+import {
+  formatBenchmarkShare,
+  isFlagged,
+  type BreakdownRow,
+} from '../../services/diversification-chart-service'
 import { countryFlagUrl } from '../../utils/currency-flag'
+import { formatPercentage } from '../../utils/formatters'
 
 const props = defineProps<{
-  items: ChartDataItem[]
+  items: BreakdownRow[]
   activeIndex: number | null
 }>()
 

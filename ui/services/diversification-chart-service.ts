@@ -1,3 +1,5 @@
+import { DONUT_COLORS } from '../constants/chart-colors'
+
 export interface BreakdownItem {
   label: string
   value: number
@@ -13,6 +15,10 @@ export interface ComparedRow {
   isOther: boolean
 }
 
+export type BreakdownRow = ComparedRow & { color: string }
+
+export type BreakdownView = 'donut' | 'bars'
+
 export interface CompareOptions {
   topCount: number
   minPercentage: number
@@ -20,14 +26,23 @@ export interface CompareOptions {
 }
 
 export const TOP_COUNT = 15
-export const INDUSTRY_TOP_COUNT = 40
+export const INDUSTRY_TOP_COUNT = 30
 export const SECTOR_MIN_PERCENTAGE = 0.5
 export const COUNTRY_MIN_PERCENTAGE = 0.2
 export const INDUSTRY_MIN_PERCENTAGE = 0.1
 const MIN_BENCHMARK_SHARE = 0.005
 
+export const paint = (rows: ComparedRow[]): BreakdownRow[] =>
+  rows.map((row, index) => ({ ...row, color: DONUT_COLORS[index % DONUT_COLORS.length] }))
+
+export const optionsForView = (options: CompareOptions, view: BreakdownView): CompareOptions =>
+  view === 'donut' && options.topCount > TOP_COUNT ? { ...options, topCount: TOP_COUNT } : options
+
 export const isFlagged = (ratio: number | undefined): boolean =>
   ratio !== undefined && (ratio > 2 || ratio < 0.5)
+
+export const unlessAbsent = (row: ComparedRow): ComparedRow =>
+  row.benchmark === 0 ? { ...row, benchmark: undefined, ratio: undefined } : row
 
 export const formatBenchmarkShare = (
   benchmark: number | undefined,

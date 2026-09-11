@@ -229,6 +229,8 @@ jobs:
           restore-keys: ${{ runner.os }}-npm-
       - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Install Playwright browser
+        run: npx playwright install chromium --only-shell
       - name: Run visual regression tests
         run: npx playwright test
       - uses: actions/upload-artifact@v7

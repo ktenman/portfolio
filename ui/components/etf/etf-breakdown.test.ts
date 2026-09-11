@@ -151,7 +151,7 @@ describe('etf-breakdown', () => {
       global: {
         stubs: {
           EtfBreakdownChart: {
-            props: ['chartData', 'benchmarkLabel'],
+            props: ['chartData', 'benchmarkLabel', 'view'],
             template: '<div><slot name="actions" /></div>',
           },
         },
@@ -494,5 +494,101 @@ describe('etf-breakdown', () => {
     await flushPromises()
 
     expect(wrapper.findComponent(EtfBreakdownTable).props('holdings')).toHaveLength(1)
+  })
+
+  it('opens the breakdown card on the donut', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('donut')
+  })
+
+  it('switches the breakdown card to bars when the bars control is pressed', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await wrapper.findAll('.view-btn')[1].trigger('click')
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('bars')
+  })
+
+  it('marks the pressed view control as active', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await wrapper.findAll('.view-btn')[1].trigger('click')
+
+    expect(wrapper.findAll('.view-btn').map(btn => btn.attributes('aria-pressed'))).toEqual([
+      'false',
+      'true',
+    ])
+  })
+
+  it('persists the chosen breakdown view', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await wrapper.findAll('.view-btn')[1].trigger('click')
+
+    expect(localStorage.getItem('portfolio_etf_breakdown_view')).toBe('bars')
+  })
+
+  it('restores the persisted breakdown view', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('bars')
+  })
+
+  it('hands the benchmark ticker to the breakdown card', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('WEBN')
+  })
+
+  it('narrows the industry donut to the top count the other dimensions use', async () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      ...buildTwoHoldings()[0],
+      holdingUuid: `uuid-${index}`,
+      holdingName: `Holding ${index}`,
+      holdingIndustry: `Industry ${index}`,
+      percentageOfTotal: 5,
+    }))
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(many)
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('chartData')).toHaveLength(16)
+  })
+
+  it('widens the industry bars past the donut top count', async () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      ...buildTwoHoldings()[0],
+      holdingUuid: `uuid-${index}`,
+      holdingName: `Holding ${index}`,
+      holdingIndustry: `Industry ${index}`,
+      percentageOfTotal: 5,
+    }))
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(many)
+    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Industries')
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('chartData')).toHaveLength(20)
   })
 })
