@@ -1,24 +1,22 @@
 import type { EtfHoldingBreakdownDto, InstrumentDto } from '../models/generated/domain-models'
-import { DONUT_COLORS } from '../constants/chart-colors'
 import {
   compareBreakdown,
+  optionsForView,
+  paint,
+  unlessAbsent,
   COUNTRY_MIN_PERCENTAGE,
+  INDUSTRY_MIN_PERCENTAGE,
+  INDUSTRY_TOP_COUNT,
   SECTOR_MIN_PERCENTAGE,
   TOP_COUNT,
   type BreakdownItem,
+  type BreakdownRow,
+  type BreakdownView,
   type ComparedRow,
   type CompareOptions,
 } from './diversification-chart-service'
 
-export interface ChartDataItem {
-  label: string
-  value: number
-  percentage: string
-  color: string
-  code?: string
-  benchmark?: number
-  ratio?: number
-}
+export type ChartDataItem = BreakdownRow
 
 type Items = BreakdownItem[]
 
@@ -53,16 +51,6 @@ const countryItems = (holdings: EtfHoldingBreakdownDto[]): Items => {
   }))
 }
 
-const toChartItems = (rows: ComparedRow[]): ChartDataItem[] =>
-  rows.map(({ label, value, benchmark: share, ratio, code }, index) => ({
-    label,
-    value,
-    percentage: value.toFixed(2),
-    color: DONUT_COLORS[index % DONUT_COLORS.length],
-    ...(code ? { code } : {}),
-    ...(share === undefined ? {} : { benchmark: share, ratio }),
-  }))
-
 const build = (
   holdings: EtfHoldingBreakdownDto[],
   benchmark: EtfHoldingBreakdownDto[],
@@ -75,7 +63,7 @@ export function buildSectorChartData(
   holdings: EtfHoldingBreakdownDto[],
   benchmark: EtfHoldingBreakdownDto[] = []
 ): ChartDataItem[] {
-  return toChartItems(
+  return paint(
     build(holdings, benchmark, sectorItems, {
       topCount: TOP_COUNT,
       minPercentage: SECTOR_MIN_PERCENTAGE,
@@ -84,27 +72,25 @@ export function buildSectorChartData(
   )
 }
 
-export function buildIndustryChartData(
-  holdings: EtfHoldingBreakdownDto[],
-  benchmark: EtfHoldingBreakdownDto[] = []
-): ChartDataItem[] {
-  return toChartItems(
-    build(holdings, benchmark, industryItems, {
-      topCount: TOP_COUNT,
-      minPercentage: SECTOR_MIN_PERCENTAGE,
-      withOther: true,
-    })
-  )
+const INDUSTRY_OPTIONS: CompareOptions = {
+  topCount: INDUSTRY_TOP_COUNT,
+  minPercentage: INDUSTRY_MIN_PERCENTAGE,
+  withOther: true,
 }
 
-const unlessAbsent = (row: ComparedRow): ComparedRow =>
-  row.benchmark === 0 ? { ...row, benchmark: undefined, ratio: undefined } : row
+export function buildIndustryChartData(
+  holdings: EtfHoldingBreakdownDto[],
+  benchmark: EtfHoldingBreakdownDto[] = [],
+  view: BreakdownView = 'bars'
+): ChartDataItem[] {
+  return paint(build(holdings, benchmark, industryItems, optionsForView(INDUSTRY_OPTIONS, view)))
+}
 
 export function buildCompanyChartData(
   holdings: EtfHoldingBreakdownDto[],
   benchmark: EtfHoldingBreakdownDto[] = []
 ): ChartDataItem[] {
-  return toChartItems(
+  return paint(
     build(holdings, benchmark, companyItems, {
       topCount: TOP_COUNT,
       minPercentage: 0,
@@ -117,7 +103,7 @@ export function buildCountryChartData(
   holdings: EtfHoldingBreakdownDto[],
   benchmark: EtfHoldingBreakdownDto[] = []
 ): ChartDataItem[] {
-  return toChartItems(
+  return paint(
     build(holdings, benchmark, countryItems, {
       topCount: TOP_COUNT,
       minPercentage: COUNTRY_MIN_PERCENTAGE,

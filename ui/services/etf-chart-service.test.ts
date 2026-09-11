@@ -267,7 +267,7 @@ describe('etf-chart-service', () => {
         [createHolding({ holdingName: 'Tiny Co', percentageOfTotal: 8 })],
         [createHolding({ holdingName: 'Nvidia', percentageOfTotal: 4 })]
       )
-      expect('benchmark' in result[0]).toBe(false)
+      expect([result[0].benchmark, result[0].ratio]).toEqual([undefined, undefined])
     })
 
     it('should report a zero benchmark share for a sector the benchmark lacks', () => {
@@ -280,7 +280,7 @@ describe('etf-chart-service', () => {
 
     it('should omit benchmark fields without a benchmark', () => {
       const result = buildSectorChartData([createHolding()])
-      expect('benchmark' in result[0]).toBe(false)
+      expect([result[0].benchmark, result[0].ratio]).toEqual([undefined, undefined])
     })
   })
 
@@ -304,11 +304,23 @@ describe('etf-chart-service', () => {
       expect(result[0].label).toBe('Unclassified')
     })
 
-    it('should fold everything beyond the top 15 into Other so the chart sums to the holdings total', () => {
-      const holdings = Array.from({ length: 20 }, (_, i) =>
-        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 5 })
+    it('should fold everything beyond the top 30 into Other so the chart sums to the holdings total', () => {
+      const holdings = Array.from({ length: 50 }, (_, i) =>
+        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 2 })
       )
       const result = buildIndustryChartData(holdings)
+      expect([
+        result.length,
+        result[result.length - 1].label,
+        result.reduce((sum, item) => sum + item.value, 0),
+      ]).toEqual([31, 'Other', 100])
+    })
+
+    it('should narrow to the shared top count when the donut is showing', () => {
+      const holdings = Array.from({ length: 50 }, (_, i) =>
+        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 2 })
+      )
+      const result = buildIndustryChartData(holdings, [], 'donut')
       expect([
         result.length,
         result[result.length - 1].label,
@@ -316,26 +328,31 @@ describe('etf-chart-service', () => {
       ]).toEqual([16, 'Other', 100])
     })
 
-    it('should fold industries below the 0.5% floor into Other instead of dropping them', () => {
+    it('should list an industry down to the same floor as the diversification breakdown', () => {
       const result = buildIndustryChartData([
         createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.7 }),
         createHolding({ holdingIndustry: 'Tobacco', percentageOfTotal: 0.3 }),
       ])
-      expect(result.map(item => [item.label, item.value])).toEqual([
-        ['Banks', 99.7],
-        ['Other', 0.3],
+      expect(result.map(item => item.label)).toEqual(['Banks', 'Tobacco'])
+    })
+
+    it('should fold industries below the 0.1% floor into Other instead of dropping them', () => {
+      const result = buildIndustryChartData([
+        createHolding({ holdingIndustry: 'Banks', percentageOfTotal: 99.95 }),
+        createHolding({ holdingIndustry: 'Tobacco', percentageOfTotal: 0.05 }),
       ])
+      expect(result.map(item => item.label)).toEqual(['Banks', 'Other'])
     })
 
     it('should fold every industry into Other when all are below the floor', () => {
       const result = buildIndustryChartData(
         ['Banks', 'Tobacco', 'Media'].map(holdingIndustry =>
-          createHolding({ holdingIndustry, percentageOfTotal: 0.2 })
+          createHolding({ holdingIndustry, percentageOfTotal: 0.05 })
         )
       )
       expect([result.map(item => item.label), result[0].value]).toEqual([
         ['Other'],
-        expect.closeTo(0.6, 5),
+        expect.closeTo(0.15, 5),
       ])
     })
 
@@ -389,11 +406,11 @@ describe('etf-chart-service', () => {
     })
 
     it('should put the benchmark weight of unshown industries under Other without a ratio', () => {
-      const holdings = Array.from({ length: 16 }, (_, i) =>
-        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 5 })
+      const holdings = Array.from({ length: 31 }, (_, i) =>
+        createHolding({ holdingIndustry: `Industry ${i}`, percentageOfTotal: 2 })
       )
       const result = buildIndustryChartData(holdings, [
-        createHolding({ holdingIndustry: 'Industry 15', percentageOfTotal: 30 }),
+        createHolding({ holdingIndustry: 'Industry 30', percentageOfTotal: 30 }),
       ])
       const other = result[result.length - 1]
       expect([other.label, other.benchmark, other.ratio]).toEqual(['Other', 30, undefined])
@@ -405,5 +422,33 @@ describe('etf-chart-service', () => {
       ])
       expect(result[0].benchmark).toBeUndefined()
     })
+  })
+})
+
+describe('other row', () => {
+  const holdings = (industries: [string, number][]): EtfHoldingBreakdownDto[] =>
+    industries.map(([industry, percentage], index) => ({
+      holdingUuid: `uuid-${index}`,
+      holdingTicker: `T${index}`,
+      holdingName: `Holding ${index}`,
+      percentageOfTotal: percentage,
+      totalValueEur: percentage * 100,
+      holdingSector: 'Technology',
+      holdingIndustry: industry,
+      holdingCountryCode: 'US',
+      holdingCountryName: 'United States',
+      inEtfs: 'VWCE:XETRA',
+      numEtfs: 1,
+      platforms: 'LIGHTYEAR',
+    }))
+
+  it('marks the residual industry row as other', () => {
+    const rows = buildIndustryChartData(
+      holdings([
+        ['Banken', 60],
+        ['Ölwirtschaft', 0.05],
+      ])
+    )
+    expect(rows.map(row => row.isOther)).toEqual([false, true])
   })
 })

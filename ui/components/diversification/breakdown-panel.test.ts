@@ -1,7 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import BreakdownPanel from './breakdown-panel.vue'
+import { DONUT_COLORS } from '../../constants/chart-colors'
 import type { Breakdowns } from '../../composables/use-diversification-result'
+
+vi.mock('chart.js', () => {
+  const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {
+    return { data: config.data, destroy: vi.fn(), update: vi.fn(), setActiveElements: vi.fn() }
+  })
+  mockChart.register = vi.fn()
+  return { Chart: mockChart, DoughnutController: vi.fn(), ArcElement: vi.fn() }
+})
 
 const breakdowns: Breakdowns = {
   sectors: [{ label: 'Finance', value: 30 }],
@@ -83,6 +92,14 @@ describe('BreakdownPanel', () => {
     expect(mountPanel().findAll('.row-benchmark')[0].text()).toBe('10.00% · 2.03×')
   })
 
+  it('paints each bar with its own colour from the shared palette', () => {
+    const bars = mountPanel()
+      .findAll('.row-bar')
+      .map(bar => bar.attributes('style'))
+    expect(bars[0]).toContain(`--row-bar-color: ${DONUT_COLORS[0]}`)
+    expect(bars[1]).toContain(`--row-bar-color: ${DONUT_COLORS[1]}`)
+  })
+
   it('renders the Other row without a bar', () => {
     const other = mountPanel().findAll('.breakdown-row').slice(-1)[0]
     expect(other.text()).toContain('Other')
@@ -159,5 +176,52 @@ describe('BreakdownPanel', () => {
     expect(wrapper.findAll('.breakdown-row').map(r => r.find('.row-label').text())).toEqual([
       'NVIDIA',
     ])
+  })
+
+  it('opens on the bars', () => {
+    expect(mountPanel().find('.breakdown-row').exists()).toBe(true)
+  })
+
+  it('replaces the bars with the donut when the donut control is pressed', async () => {
+    const wrapper = mountPanel()
+    await wrapper.findAll('.view-btn')[0].trigger('click')
+    await vi.dynamicImportSettled()
+    expect([wrapper.find('canvas').exists(), wrapper.find('.breakdown-row').exists()]).toEqual([
+      true,
+      false,
+    ])
+  })
+
+  it('persists the chosen breakdown view', async () => {
+    const wrapper = mountPanel()
+    await wrapper.findAll('.view-btn')[0].trigger('click')
+    expect(localStorage.getItem('portfolio_diversification_breakdown_view')).toBe('donut')
+  })
+
+  it('restores the persisted breakdown view', async () => {
+    localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
+    const wrapper = mountPanel()
+    await vi.dynamicImportSettled()
+    expect(wrapper.find('canvas').exists()).toBe(true)
+  })
+
+  it('narrows the industry donut to the top count the other dimensions use', async () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      label: `Industry ${index}`,
+      value: 5,
+    }))
+    localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
+    const wrapper = mountPanel({ breakdowns: { ...breakdowns, industries: many }, benchmark: null })
+    await vi.dynamicImportSettled()
+    expect(wrapper.findAll('.legend-item')).toHaveLength(16)
+  })
+
+  it('widens the industry bars past the donut top count', () => {
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      label: `Industry ${index}`,
+      value: 5,
+    }))
+    const wrapper = mountPanel({ breakdowns: { ...breakdowns, industries: many }, benchmark: null })
+    expect(wrapper.findAll('.breakdown-row')).toHaveLength(20)
   })
 })

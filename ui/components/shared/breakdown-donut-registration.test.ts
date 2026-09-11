@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { Chart } from 'chart.js'
-import './etf-breakdown-chart.vue'
+import './breakdown-donut.vue'
 
-describe('EtfBreakdownChart chart.js registration', () => {
+describe('BreakdownDonut chart.js registration', () => {
   it('should register the doughnut controller so the donut chart renders', () => {
     expect(() => Chart.registry.getController('doughnut')).not.toThrow()
   })

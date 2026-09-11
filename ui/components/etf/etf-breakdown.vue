@@ -49,7 +49,11 @@
     </div>
 
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
-      <etf-breakdown-chart :chart-data="activeChartData">
+      <etf-breakdown-chart
+        :chart-data="activeChartData"
+        :view="view"
+        :benchmark-label="benchmarkLabel"
+      >
         <template #actions>
           <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
             <button
@@ -74,6 +78,7 @@
                 </span>
               </label>
             </template>
+            <view-switch v-model="view" />
           </div>
         </template>
       </etf-breakdown-chart>
@@ -153,6 +158,8 @@ import EtfBreakdownTable from './etf-breakdown-table.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
+import ViewSwitch from '../shared/view-switch.vue'
+import type { BreakdownView } from '../../services/diversification-chart-service'
 import { STORAGE_KEYS } from '../../constants'
 import { resolveBenchmark } from '../../constants/benchmarks'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
@@ -271,6 +278,8 @@ type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = ref<BreakdownTab>('sectors')
 
+const view = useLocalStorage<BreakdownView>(STORAGE_KEYS.ETF_BREAKDOWN_VIEW, 'donut')
+
 const benchmarkSymbol = computed(() => resolveBenchmark(availableEtfs.value))
 
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
@@ -290,7 +299,7 @@ const comparedHoldings = computed(() => {
 })
 
 const industryChartData = computed<ChartDataItem[]>(() =>
-  buildIndustryChartData(holdings.value, comparedHoldings.value)
+  buildIndustryChartData(holdings.value, comparedHoldings.value, view.value)
 )
 
 const activeChartData = computed(() => {
