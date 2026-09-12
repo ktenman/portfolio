@@ -144,6 +144,11 @@ export const etfBreakdownService = {
     httpClient.get<EtfHoldingBreakdownDto[]>(API_ENDPOINTS.ETF_BREAKDOWN, {
       params: { ...(etfSymbols?.length ? { etfSymbols } : {}), ...platformParams(platforms) },
     }),
+
+  getBenchmark: (symbol: string) =>
+    httpClient.get<EtfHoldingBreakdownDto[]>(`${API_ENDPOINTS.ETF_BREAKDOWN}/benchmark`, {
+      params: { symbol },
+    }),
 }
 
 export const logoService = {

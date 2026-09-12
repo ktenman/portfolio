@@ -54,6 +54,33 @@ data class InternalHoldingData(
   val platforms: Set<Platform>,
 )
 
+fun EtfPosition.toHoldingData(
+  value: BigDecimal,
+  etfSymbol: String,
+  platforms: Set<Platform>,
+) = InternalHoldingData(
+  holdingUuid = holding.uuid,
+  ticker =
+    holding.ticker
+      ?.uppercase()
+      ?.trim()
+      ?.takeIf { it.isNotBlank() },
+  name = holding.name.trim(),
+  sector = holding.sector?.displayName,
+  industry = holding.industry,
+  countryCode =
+    holding.countryCode
+      ?.trim()
+      ?.takeIf { it.isNotBlank() },
+  countryName =
+    holding.countryName
+      ?.trim()
+      ?.takeIf { it.isNotBlank() },
+  value = value,
+  etfSymbol = etfSymbol,
+  platforms = platforms,
+)
+
 data class HoldingsAccumulator(
   val quantity: BigDecimal = BigDecimal.ZERO,
   val totalCost: BigDecimal = BigDecimal.ZERO,
