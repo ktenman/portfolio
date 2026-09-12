@@ -174,8 +174,8 @@ in the mask's left edge turned 14 captures red at 26 pixels each.
   re-records ten baselines: the benchmark stub added for the chart-mode toggle pulled
   `modal-confirm-desktop` into the fixture's blast radius (see below). The benchmark handler
   branches on the `index` query param — `apiRoute` ignores query strings, so the one registration
-  serves the S&P 500 payload by default and the World payload for `index=WORLD`. The toggle is two
-  chips, `€ | %`; `%` overlays Portfolio, S&P 500 and World as three rebased lines on one chart,
+  serves the S&P 500 payload by default and the VWCE payload for `index=VWCE`. The toggle is two
+  chips, `€ | %`; `%` overlays Portfolio, S&P 500 and VWCE as three rebased lines on one chart,
   which only `summary-performance-mode-desktop` compares unmasked.
 
 - **`/transactions` is served a fixture, not the database.** Masking could not have stabilised it
@@ -377,7 +377,7 @@ Desktop only.
 | -------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `dropdown-quick-dates-desktop.png`     | `/transactions` "Quick Dates" open | click `[data-bs-toggle="dropdown"]`, await `.dropdown-menu.show`; viewport shot over the fixture-backed table                                    |
 | `summary-performance-mode-desktop.png` | `/` chart vs S&P 500               | click `.platform-btn:text-is("% vs S&P 500")`, then settle; pins the single-benchmark view — Portfolio and S&P 500 rebased onto one percent axis |
-| `summary-benchmark-both-desktop.png`   | `/` chart vs both benchmarks       | click both `%` chips, then settle; pins the three-line view — Portfolio, S&P 500 and World anchored at 0% together                               |
+| `summary-benchmark-both-desktop.png`   | `/` chart vs both benchmarks       | click both `%` chips, then settle; pins the three-line view — Portfolio, S&P 500 and VWCE anchored at 0% together                               |
 | `toast-success-desktop.png`            | `/` + success toast                | `import('/composables/use-toast.ts')` then `useToast().success('Baseline success message')`                                                      |
 | `toast-error-desktop.png`              | `/` + error toast                  | same, `.error(...)`                                                                                                                              |
 | `toast-info-desktop.png`               | `/` + info toast                   | same, `.info(...)`                                                                                                                               |

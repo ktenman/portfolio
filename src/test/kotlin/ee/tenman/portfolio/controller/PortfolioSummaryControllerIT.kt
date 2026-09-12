@@ -344,7 +344,7 @@ class PortfolioSummaryControllerIT {
   }
 
   @Test
-  fun `should return benchmark points from the world etf when the world index is requested`() {
+  fun `should return benchmark points from the vwce etf when the vwce index is requested`() {
     every { clock.instant() } returns Instant.parse("2023-07-21T10:00:00Z")
     every { clock.zone } returns Clock.systemUTC().zone
     val vwce = instrumentRepository.save(Instrument("VWCE:GER:EUR", "Vanguard FTSE All-World", "ETF", "EUR"))
@@ -358,7 +358,7 @@ class PortfolioSummaryControllerIT {
       .perform(
         get("/api/portfolio-summary/benchmark")
           .param("range", "1M")
-          .param("index", "WORLD")
+          .param("index", "VWCE")
           .cookie(DEFAULT_COOKIE),
       ).andExpect(status().isOk)
       .andExpect(jsonPath("$.length()").value(2))

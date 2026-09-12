@@ -119,19 +119,19 @@ class BenchmarkSeriesServiceTest {
   }
 
   @Test
-  fun `should resolve the world index to the vwce instrument`() {
+  fun `should resolve the vwce index to the vwce instrument`() {
     val vwce = instrument("VWCE:GER:EUR")
     tracked(vwce, point(today.minusDays(2), "133.70"))
-    val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.WORLD)
+    val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.VWCE)
     expect(result.first().price).toEqualNumerically(BigDecimal("133.70"))
   }
 
   @Test
-  fun `should fall back to the sppw instrument when vwce is missing`() {
+  fun `should not substitute developed markets for an unavailable all world benchmark`() {
     val sppw = instrument("SPPW:GER:EUR")
     every { instrumentRepository.findBySymbol("VWCE:GER:EUR") } returns Optional.empty()
     tracked(sppw, point(today, "35.10"))
-    val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.WORLD)
-    expect(result).toHaveSize(1)
+    val result = service.getSeries(TimeRange.ONE_MONTH, BenchmarkIndex.VWCE)
+    expect(result).toBeEmpty()
   }
 }

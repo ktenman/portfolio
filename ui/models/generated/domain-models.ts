@@ -289,7 +289,7 @@ export enum TransactionType {
 
 export enum BenchmarkIndex {
     SP500 = "SP500",
-    WORLD = "WORLD",
+    VWCE = "VWCE",
 }
 
 export enum TimeRange {

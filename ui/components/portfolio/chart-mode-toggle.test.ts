@@ -18,7 +18,7 @@ describe('ChartModeToggle', () => {
       .findAll('.platform-btn')
       .map(button => button.text())
 
-    expect(labels).toEqual(['€', '% vs S&P 500', '% vs World'])
+    expect(labels).toEqual(['€', '% vs S&P 500', '% vs VWCE'])
   })
 
   it('should mark the euro chip active when no benchmark is selected', () => {
@@ -26,11 +26,11 @@ describe('ChartModeToggle', () => {
   })
 
   it('should mark a selected benchmark as active', () => {
-    expect(activeLabels(createWrapper(['world']))).toEqual(['% vs World'])
+    expect(activeLabels(createWrapper(['vwce']))).toEqual(['% vs VWCE'])
   })
 
   it('should mark both benchmarks active when both are selected', () => {
-    expect(activeLabels(createWrapper(['sp500', 'world']))).toEqual(['% vs S&P 500', '% vs World'])
+    expect(activeLabels(createWrapper(['sp500', 'vwce']))).toEqual(['% vs S&P 500', '% vs VWCE'])
   })
 
   it('should emit the clicked mode', async () => {
@@ -38,7 +38,7 @@ describe('ChartModeToggle', () => {
 
     await wrapper.findAll('.platform-btn')[2].trigger('click')
 
-    expect(wrapper.emitted('select')).toEqual([['world']])
+    expect(wrapper.emitted('select')).toEqual([['vwce']])
   })
 
   it('should emit null when the euro chip is clicked', async () => {

@@ -31,7 +31,7 @@ enum class ProviderName {
 
 enum class BenchmarkIndex {
   SP500,
-  WORLD,
+  VWCE,
 }
 
 enum class SectorSource {

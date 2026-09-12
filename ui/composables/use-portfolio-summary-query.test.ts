@@ -473,11 +473,11 @@ describe('usePortfolioSummaryQuery', () => {
         timeout: 5000,
       })
 
-      const [sp500, world] = queryResult.benchmarks.value
+      const [sp500, vwce] = queryResult.benchmarks.value
       expect(sp500.points[0].price).toBe(101.5)
-      expect(world.points[0].price).toBe(88.2)
+      expect(vwce.points[0].price).toBe(88.2)
       expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.SP500)
-      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.WORLD)
+      expect(portfolioSummaryService.getBenchmark).toHaveBeenCalledWith('1Y', BenchmarkIndex.VWCE)
     })
 
     it('should fetch benchmark series while only a subset of platforms is selected', async () => {

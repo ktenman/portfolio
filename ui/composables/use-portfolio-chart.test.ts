@@ -269,15 +269,15 @@ describe('usePerformanceChart', () => {
     const { performanceChartData } = usePerformanceChart(
       ref(buildSummaries()),
       ref<ChartBenchmark[]>([
-        { key: 'world', label: 'World', color: CHART_COLORS[3], points: buildBenchmark() },
+        { key: 'vwce', label: 'VWCE', color: CHART_COLORS[3], points: buildBenchmark() },
       ])
     )
 
-    expect(performanceChartData.value?.benchmarks[0].label).toBe('World')
+    expect(performanceChartData.value?.benchmarks[0].label).toBe('VWCE')
   })
 
   it('should build a series for every selected benchmark', () => {
-    const world = [
+    const vwce = [
       { date: '2024-01-02', price: 50 },
       { date: '2024-01-03', price: 55 },
     ]
@@ -285,7 +285,7 @@ describe('usePerformanceChart', () => {
       ref(buildSummaries()),
       ref<ChartBenchmark[]>([
         { key: 'sp500', label: 'S&P 500', color: CHART_COLORS[1], points: buildBenchmark() },
-        { key: 'world', label: 'World', color: CHART_COLORS[3], points: world },
+        { key: 'vwce', label: 'VWCE', color: CHART_COLORS[3], points: vwce },
       ])
     )
 
@@ -306,15 +306,15 @@ describe('useBenchmarkSelection', () => {
   })
 
   it('should keep a stored single benchmark', () => {
-    localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_MODE, 'world')
+    localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_MODE, 'vwce')
 
-    expect(useBenchmarkSelection().value).toEqual(['world'])
+    expect(useBenchmarkSelection().value).toEqual(['vwce'])
   })
 
   it('should keep both stored benchmarks in canonical order', () => {
-    localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_MODE, 'world,sp500')
+    localStorage.setItem(STORAGE_KEYS.SUMMARY_CHART_MODE, 'vwce,sp500')
 
-    expect(useBenchmarkSelection().value).toEqual(['sp500', 'world'])
+    expect(useBenchmarkSelection().value).toEqual(['sp500', 'vwce'])
   })
 
   it('should normalize a stale euro mode to no benchmarks', () => {
@@ -332,9 +332,9 @@ describe('useBenchmarkSelection', () => {
   it('should persist an updated selection', async () => {
     const selection = useBenchmarkSelection()
 
-    selection.value = ['sp500', 'world']
+    selection.value = ['sp500', 'vwce']
     await nextTick()
 
-    expect(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_MODE)).toBe('sp500,world')
+    expect(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_MODE)).toBe('sp500,vwce')
   })
 })
