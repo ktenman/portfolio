@@ -290,13 +290,13 @@ describe('PortfolioChart', () => {
     })
 
     it('should render one dataset per selected benchmark with its own color', async () => {
-      const worldValues = [null, 0, 3.4]
+      const vwceValues = [null, 0, 3.4]
       await createWrapper({
         data: {
           ...mockPerformanceData,
           benchmarks: [
             ...mockPerformanceData.benchmarks,
-            { key: 'world', label: 'World', color: CHART_COLORS[3], values: worldValues },
+            { key: 'vwce', label: 'VWCE', color: CHART_COLORS[3], values: vwceValues },
           ],
         },
       })
@@ -304,9 +304,9 @@ describe('PortfolioChart', () => {
 
       expect(datasets).toHaveLength(3)
       expect(datasets[2]).toMatchObject({
-        label: 'World',
+        label: 'VWCE',
         borderColor: CHART_COLORS[3],
-        data: worldValues,
+        data: vwceValues,
         yAxisID: 'y',
       })
     })
