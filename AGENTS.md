@@ -8,12 +8,12 @@ Portfolio Management System - full-stack app for tracking investment portfolios 
 
 **Tech Stack:**
 
-- Backend: Kotlin 2.3, Spring Boot 4.0, Java 21
+- Backend: Kotlin 2.3, Spring Boot 4.0, Java 25
 - Frontend: Vue.js 3.5, TypeScript 6.0, Vite 8, Tailwind CSS 4.3 (Node 24)
 - Database: PostgreSQL 17 with Flyway migrations (200+, timestamp-named `VYYYYMMDDHHMM__*.sql`)
 - Cache: Redis 8 (multi-level caching strategy)
 - Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, MockK, Kotest (property-based), PITest (mutation), Selenide, Vitest
-- Build: Gradle 9.5 with Version Catalogs (libs.versions.toml)
+- Build: Gradle 9.7 with Version Catalogs (libs.versions.toml)
 - Authentication: Custom Spring Boot auth service (https://github.com/ktenman/auth)
 - Infrastructure: Docker, Caddy reverse proxy
 - Additional Services: Google Cloud Vision API
