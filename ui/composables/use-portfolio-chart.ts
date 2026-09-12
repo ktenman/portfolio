@@ -12,7 +12,7 @@ import { CHART_COLORS } from '../constants/chart-colors'
 
 export const BENCHMARKS = [
   { key: 'sp500', index: BenchmarkIndex.SP500, label: 'S&P 500', color: CHART_COLORS[1] },
-  { key: 'world', index: BenchmarkIndex.WORLD, label: 'World', color: CHART_COLORS[3] },
+  { key: 'vwce', index: BenchmarkIndex.VWCE, label: 'VWCE', color: CHART_COLORS[3] },
 ] as const
 
 export type BenchmarkKey = (typeof BENCHMARKS)[number]['key']

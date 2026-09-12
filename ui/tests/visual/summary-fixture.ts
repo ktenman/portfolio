@@ -268,7 +268,7 @@ const BENCHMARK_RESPONSE = [...HISTORICAL_ROWS]
   .filter((_, index) => index % 2 === 0)
   .map(([date], index) => ({ date, price: 95 + index * 0.45 })) satisfies BenchmarkPointDto[]
 
-const WORLD_RESPONSE = BENCHMARK_RESPONSE.map(({ date, price }, index) => ({
+const VWCE_RESPONSE = BENCHMARK_RESPONSE.map(({ date, price }, index) => ({
   date,
   price: price * (0.9 + index * 0.001),
 })) satisfies BenchmarkPointDto[]
@@ -282,7 +282,7 @@ export const stubPortfolioSummary: RouteStub = async page => {
   )
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_BENCHMARK), route =>
     route.fulfill({
-      json: route.request().url().includes('index=WORLD') ? WORLD_RESPONSE : BENCHMARK_RESPONSE,
+      json: route.request().url().includes('index=VWCE') ? VWCE_RESPONSE : BENCHMARK_RESPONSE,
     })
   )
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_CURRENT), route =>

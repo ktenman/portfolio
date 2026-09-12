@@ -212,7 +212,7 @@ test.describe('desktop states', () => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
     await page.click('.platform-btn:text-is("% vs S&P 500")')
-    await page.click('.platform-btn:text-is("% vs World")')
+    await page.click('.platform-btn:text-is("% vs VWCE")')
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('summary-benchmark-both.png')
   })

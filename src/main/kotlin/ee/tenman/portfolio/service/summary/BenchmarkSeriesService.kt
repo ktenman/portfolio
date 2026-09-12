@@ -22,7 +22,7 @@ class BenchmarkSeriesService(
     private val BENCHMARK_SYMBOLS =
       mapOf(
         BenchmarkIndex.SP500 to listOf("VUAA:GER:EUR", "SPYL:GER:EUR"),
-        BenchmarkIndex.WORLD to listOf("VWCE:GER:EUR", "SPPW:GER:EUR"),
+        BenchmarkIndex.VWCE to listOf("VWCE:GER:EUR"),
       )
   }
 
