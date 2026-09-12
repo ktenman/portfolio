@@ -34,7 +34,7 @@ describe('useDiversificationResult', () => {
 
   it('fetches the benchmark once with a single 100 percent allocation and not again on edits', async () => {
     const allocations = ref([{ instrumentId: 1, value: 60 }])
-    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'WEBN:GER:EUR')])
+    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'VWCE:GER:EUR')])
     const { debouncedCalculate } = useDiversificationResult(allocations, etfs)
     await debouncedCalculate()
     allocations.value = [{ instrumentId: 1, value: 70 }]
@@ -54,7 +54,7 @@ describe('useDiversificationResult', () => {
   })
 
   it('exposes no benchmark when the allocation is only the benchmark fund', async () => {
-    const etfs = ref([etf(7, 'WEBN:GER:EUR')])
+    const etfs = ref([etf(7, 'VWCE:GER:EUR')])
     const { debouncedCalculate, benchmarkBreakdowns } = useDiversificationResult(
       ref([{ instrumentId: 7, value: 100 }]),
       etfs
@@ -64,7 +64,7 @@ describe('useDiversificationResult', () => {
   })
 
   it('exposes the benchmark breakdowns once loaded', async () => {
-    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'WEBN:GER:EUR')])
+    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'VWCE:GER:EUR')])
     const { debouncedCalculate, benchmarkBreakdowns } = useDiversificationResult(
       ref([{ instrumentId: 1, value: 60 }]),
       etfs
@@ -74,7 +74,7 @@ describe('useDiversificationResult', () => {
   })
 
   it('hides the comparison when the benchmark fund leaves the ETF list', async () => {
-    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'WEBN:GER:EUR')])
+    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'VWCE:GER:EUR')])
     const { debouncedCalculate, benchmarkBreakdowns } = useDiversificationResult(
       ref([{ instrumentId: 1, value: 60 }]),
       etfs
@@ -90,7 +90,7 @@ describe('useDiversificationResult', () => {
         ? Promise.reject(new Error('boom'))
         : Promise.resolve(response('Finance', 10))
     )
-    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'WEBN:GER:EUR')])
+    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'VWCE:GER:EUR')])
     const { debouncedCalculate, benchmarkBreakdowns, result } = useDiversificationResult(
       ref([{ instrumentId: 1, value: 60 }]),
       etfs
@@ -117,13 +117,13 @@ describe('useDiversificationResult', () => {
   })
 
   it('resolves the benchmark label to the symbol part', () => {
-    const { benchmarkLabel } = useDiversificationResult(ref([]), ref([etf(7, 'WEBN:GER:EUR')]))
-    expect(benchmarkLabel.value).toBe('WEBN')
+    const { benchmarkLabel } = useDiversificationResult(ref([]), ref([etf(7, 'VWCE:GER:EUR')]))
+    expect(benchmarkLabel.value).toBe('VWCE')
   })
 
-  it('falls back to VWCE when WEBN is not held', () => {
-    const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(3, 'VWCE:GER:EUR')])
+  it('leaves the benchmark unnamed when the catalogue has no VWCE', () => {
+    const etfs = ref([etf(1, 'TSTA:GER:EUR')])
     const { benchmarkLabel } = useDiversificationResult(ref([]), etfs)
-    expect(benchmarkLabel.value).toBe('VWCE')
+    expect(benchmarkLabel.value).toBeUndefined()
   })
 })

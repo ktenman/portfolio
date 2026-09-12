@@ -67,7 +67,7 @@
             >
               {{ tab.label }}
             </button>
-            <template v-if="benchmarkLabel">
+            <template v-if="!benchmarkUnavailable">
               <span class="platform-separator" aria-hidden="true"></span>
               <label class="compare-switch compare-toggle">
                 <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
@@ -161,7 +161,7 @@ import FilterToggle from '../shared/filter-toggle.vue'
 import ViewSwitch from '../shared/view-switch.vue'
 import type { BreakdownView } from '../../services/diversification-chart-service'
 import { STORAGE_KEYS } from '../../constants'
-import { resolveBenchmark } from '../../constants/benchmarks'
+import { BENCHMARK_SYMBOL } from '../../constants/benchmarks'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
 
 const holdings = ref<EtfHoldingBreakdownDto[]>([])
@@ -276,13 +276,13 @@ const breakdownTabs = [
 
 type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
-const activeTab = ref<BreakdownTab>('sectors')
+const activeTab = useLocalStorage<BreakdownTab>(STORAGE_KEYS.ETF_BREAKDOWN_TAB, 'sectors')
 
 const view = useLocalStorage<BreakdownView>(STORAGE_KEYS.ETF_BREAKDOWN_VIEW, 'donut')
 
-const benchmarkSymbol = computed(() => resolveBenchmark(availableEtfs.value))
-
 const benchmarkHoldings = ref<EtfHoldingBreakdownDto[]>([])
+
+const benchmarkUnavailable = ref(false)
 
 const compare = useLocalStorage(STORAGE_KEYS.BENCHMARK_COMPARE, true)
 
@@ -292,9 +292,8 @@ const chartedFunds = computed(
 
 const comparedHoldings = computed(() => {
   if (!compare.value) return []
-  const symbol = benchmarkSymbol.value
   const onlyBenchmarkCharted =
-    symbol !== undefined && chartedFunds.value.size === 1 && chartedFunds.value.has(symbol)
+    chartedFunds.value.size === 1 && chartedFunds.value.has(BENCHMARK_SYMBOL)
   return onlyBenchmarkCharted ? [] : benchmarkHoldings.value
 })
 
@@ -370,27 +369,26 @@ const toggleAllEtfs = () => {
   }
 }
 
-const benchmarkLabel = computed(
-  () => benchmarkSymbol.value && formatTickerSymbol(benchmarkSymbol.value)
-)
+const benchmarkLabel = formatTickerSymbol(BENCHMARK_SYMBOL)
 
 let benchmarkRequested = false
 
 const loadBenchmark = async () => {
-  const symbol = benchmarkSymbol.value
-  if (!symbol || benchmarkRequested) return
+  if (benchmarkRequested) return
   benchmarkRequested = true
-  try {
-    benchmarkHoldings.value = await etfBreakdownService.getBreakdown([symbol], undefined)
-  } catch {
-    benchmarkHoldings.value = []
-  }
+  benchmarkHoldings.value = await etfBreakdownService
+    .getBenchmark(BENCHMARK_SYMBOL)
+    .catch(error => {
+      console.error(`Failed to load the ${benchmarkLabel} benchmark:`, error)
+      return []
+    })
+  benchmarkUnavailable.value = benchmarkHoldings.value.length === 0
 }
 
 watch(
-  [compare, benchmarkSymbol],
-  ([on, symbol]) => {
-    if (on && symbol) loadBenchmark()
+  compare,
+  on => {
+    if (on) loadBenchmark()
   },
   { immediate: true }
 )

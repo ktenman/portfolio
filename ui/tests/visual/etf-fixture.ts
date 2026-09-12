@@ -207,10 +207,11 @@ const LOGO_BY_UUID =
   /\/api\/logos\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\?|$)/
 
 export const stubEtfBreakdown: RouteStub = async page => {
+  await page.route(apiRoute(`${API_ENDPOINTS.ETF_BREAKDOWN}/benchmark`), route =>
+    route.fulfill({ json: BENCHMARK_HOLDINGS })
+  )
   await page.route(apiRoute(API_ENDPOINTS.ETF_BREAKDOWN), route =>
-    route.fulfill({
-      json: route.request().url().includes('WEBN') ? BENCHMARK_HOLDINGS : HOLDINGS,
-    })
+    route.fulfill({ json: HOLDINGS })
   )
   await page.route(apiRoute(API_ENDPOINTS.INSTRUMENTS), route =>
     route.fulfill({ json: { instruments: ETF_INSTRUMENTS, portfolioXirr: null } })

@@ -10,6 +10,7 @@ import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
 import ee.tenman.portfolio.model.holding.HoldingKey
 import ee.tenman.portfolio.model.holding.HoldingValue
 import ee.tenman.portfolio.model.holding.InternalHoldingData
+import ee.tenman.portfolio.model.holding.toHoldingData
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.transaction.TransactionCalculationService
@@ -126,44 +127,13 @@ class EtfBreakdownService(
     val etfPrice = dailyPriceService.getCurrentPrice(etf)
     val etfPlatforms = transactionData.platformsForFilter(platformFilter)
     return positions.map { position ->
-      buildInternalHoldingData(
-        position,
-        etfQuantity,
-        etfPrice,
+      position.toHoldingData(
+        calculateHoldingValue(position, etfQuantity, etfPrice),
         etf.symbol,
         etfPlatforms,
       )
     }
   }
-
-  private fun buildInternalHoldingData(
-    position: EtfPosition,
-    etfQuantity: BigDecimal,
-    etfPrice: BigDecimal,
-    etfSymbol: String,
-    etfPlatforms: Set<Platform>,
-  ) = InternalHoldingData(
-    holdingUuid = position.holding.uuid,
-    ticker =
-      position.holding.ticker
-        ?.uppercase()
-        ?.trim()
-        ?.takeIf { it.isNotBlank() },
-    name = position.holding.name.trim(),
-    sector = position.holding.sector?.displayName,
-    industry = position.holding.industry,
-    countryCode =
-      position.holding.countryCode
-        ?.trim()
-        ?.takeIf { it.isNotBlank() },
-    countryName =
-      position.holding.countryName
-        ?.trim()
-        ?.takeIf { it.isNotBlank() },
-    value = calculateHoldingValue(position, etfQuantity, etfPrice),
-    etfSymbol = etfSymbol,
-    platforms = etfPlatforms,
-  )
 
   private fun calculateHoldingValue(
     position: EtfPosition,
