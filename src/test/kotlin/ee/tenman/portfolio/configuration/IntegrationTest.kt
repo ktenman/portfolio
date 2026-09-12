@@ -55,8 +55,11 @@ annotation class IntegrationTest {
         .apply { start() }
 
     private val MINIO_CONTAINER: MinIOContainer =
-      MinIOContainer("minio/minio:latest")
-        .withUserName(MINIO_ACCESS_KEY)
+      MinIOContainer(
+        DockerImageName
+          .parse("quay.io/minio/minio:latest")
+          .asCompatibleSubstituteFor("minio/minio"),
+      ).withUserName(MINIO_ACCESS_KEY)
         .withPassword(MINIO_SECRET_KEY)
         .apply { start() }
 
