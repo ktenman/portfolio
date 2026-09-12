@@ -38,7 +38,7 @@ const benchmark: Breakdowns = {
 
 const mountPanel = (props = {}) =>
   mount(BreakdownPanel, {
-    props: { breakdowns, benchmark, benchmarkLabel: 'WEBN', ...props },
+    props: { breakdowns, benchmark, benchmarkLabel: 'VWCE', ...props },
   })
 
 describe('BreakdownPanel', () => {
@@ -118,7 +118,7 @@ describe('BreakdownPanel', () => {
 
   it('puts a hover title on each row', () => {
     expect(mountPanel().find('.breakdown-row').attributes('title')).toBe(
-      'Banks 20.30% · WEBN 10.00%'
+      'Banks 20.30% · VWCE 10.00%'
     )
   })
 
@@ -148,7 +148,7 @@ describe('BreakdownPanel', () => {
   })
 
   it('labels the toggle with the benchmark ticker', () => {
-    expect(mountPanel().find('.compare-toggle').text()).toBe('vs WEBN')
+    expect(mountPanel().find('.compare-toggle').text()).toBe('vs VWCE')
   })
 
   it('hides the toggle without a benchmark', () => {

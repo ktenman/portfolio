@@ -12,6 +12,7 @@ import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generat
 vi.mock('../../services/api', () => ({
   etfBreakdownService: {
     getBreakdown: vi.fn(),
+    getBenchmark: vi.fn(),
   },
   instrumentsService: {
     getAll: vi.fn(),
@@ -72,6 +73,7 @@ describe('etf-breakdown', () => {
       instruments: [mockInstrument],
       portfolioXirr: null,
     })
+    vi.mocked(etfBreakdownService.getBenchmark).mockResolvedValue([])
   })
 
   it('keeps the filter chips hidden until the filters toggle is pressed', async () => {
@@ -163,15 +165,21 @@ describe('etf-breakdown', () => {
     await tab!.trigger('click')
   }
 
-  const BENCHMARK = 'WEBN:GER:EUR'
+  const BENCHMARK = 'VWCE:GER:EUR'
 
-  const withBenchmarkFund = (): EtfHoldingBreakdownDto[] =>
-    buildTwoHoldings().map(holding => ({ ...holding, inEtfs: `${BENCHMARK}, VWCE:XETRA` }))
+  const withBenchmarkFund = (): EtfHoldingBreakdownDto[] => {
+    const holdings = buildTwoHoldings()
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(holdings)
+    vi.mocked(etfBreakdownService.getBenchmark).mockResolvedValue(holdings)
+    return holdings
+  }
 
-  const benchmarkCalls = () =>
-    vi
-      .mocked(etfBreakdownService.getBreakdown)
-      .mock.calls.filter(([etfs]) => etfs?.[0] === BENCHMARK)
+  const benchmarkCalls = () => vi.mocked(etfBreakdownService.getBenchmark).mock.calls
+
+  const failBenchmarkRequest = () => {
+    withBenchmarkFund()
+    vi.mocked(etfBreakdownService.getBenchmark).mockRejectedValue(new Error('unavailable'))
+  }
 
   it('does not shrink the summary total value when search narrows the table', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
@@ -243,6 +251,16 @@ describe('etf-breakdown', () => {
     ])
   })
 
+  it('restores the persisted breakdown tab', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    localStorage.setItem('portfolio_etf_breakdown_tab', 'companies')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.find('.breakdown-tab.active').text()).toBe('Holdings')
+  })
+
   it('renders the four breakdown tabs in order', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
 
@@ -258,7 +276,7 @@ describe('etf-breakdown', () => {
   })
 
   it('fetches the benchmark fund breakdown once on load', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    withBenchmarkFund()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -267,11 +285,11 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Sectors')
     await flushPromises()
 
-    expect(benchmarkCalls()).toEqual([[[BENCHMARK], undefined]])
+    expect(benchmarkCalls()).toEqual([[BENCHMARK]])
   })
 
   it('does not fetch the benchmark while the comparison is switched off', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    withBenchmarkFund()
     localStorage.setItem('portfolio_benchmark_compare', 'false')
 
     const wrapper = mountWithChartStub()
@@ -282,7 +300,7 @@ describe('etf-breakdown', () => {
   })
 
   it('fetches the benchmark once when the comparison is switched on', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    withBenchmarkFund()
     localStorage.setItem('portfolio_benchmark_compare', 'false')
 
     const wrapper = mountWithChartStub()
@@ -294,7 +312,7 @@ describe('etf-breakdown', () => {
   })
 
   it('compares sectors against the benchmark without opening Industries', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    withBenchmarkFund()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -304,7 +322,7 @@ describe('etf-breakdown', () => {
   })
 
   it('strips the comparison from the chart when switched off', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    withBenchmarkFund()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -315,7 +333,7 @@ describe('etf-breakdown', () => {
   })
 
   it('labels the toggle with the benchmark ticker and persists its state', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    withBenchmarkFund()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -324,11 +342,12 @@ describe('etf-breakdown', () => {
     expect([
       wrapper.find('.compare-toggle').text(),
       localStorage.getItem('portfolio_benchmark_compare'),
-    ]).toEqual(['vs WEBN', 'false'])
+    ]).toEqual(['vs VWCE', 'false'])
   })
 
-  it('hides the toggle when no benchmark fund is held', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+  it('hides the compare toggle when the benchmark fund returns no holdings', async () => {
+    withBenchmarkFund()
+    vi.mocked(etfBreakdownService.getBenchmark).mockResolvedValue([])
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -336,11 +355,30 @@ describe('etf-breakdown', () => {
     expect(wrapper.find('.compare-toggle').exists()).toBe(false)
   })
 
+  it('hides the compare toggle after the benchmark request fails', async () => {
+    failBenchmarkRequest()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.find('.compare-toggle').exists()).toBe(false)
+  })
+
+  it('keeps the compare toggle while the comparison is switched off and never fetched', async () => {
+    withBenchmarkFund()
+    localStorage.setItem('portfolio_benchmark_compare', 'false')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.find('.compare-toggle').text()).toBe('vs VWCE')
+  })
+
   it('attaches the benchmark ratio to each industry once the benchmark is loaded', async () => {
     const holdings = withBenchmarkFund()
-    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(async etfs =>
-      etfs?.[0] === BENCHMARK ? [{ ...holdings[0], percentageOfTotal: 20 }] : holdings
-    )
+    vi.mocked(etfBreakdownService.getBenchmark).mockResolvedValue([
+      { ...holdings[0], percentageOfTotal: 20 },
+    ])
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -356,9 +394,7 @@ describe('etf-breakdown', () => {
 
   it('hides the benchmark comparison when only the benchmark fund is selected', async () => {
     const holdings = withBenchmarkFund()
-    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(etfs =>
-      Promise.resolve(etfs?.[0] === BENCHMARK ? benchmarkOnly(holdings) : holdings)
-    )
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(benchmarkOnly(holdings))
     localStorage.setItem('portfolio_selected_etfs', JSON.stringify([BENCHMARK]))
 
     const wrapper = mountWithChartStub()
@@ -375,9 +411,7 @@ describe('etf-breakdown', () => {
       ...holding,
       platforms: 'LIGHTYEAR,SWEDBANK',
     }))
-    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation((etfs, platforms) =>
-      Promise.resolve(platforms || etfs?.[0] === BENCHMARK ? benchmarkOnly(holdings) : holdings)
-    )
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(benchmarkOnly(holdings))
     localStorage.setItem('portfolio_etf_breakdown_platforms', JSON.stringify(['LIGHTYEAR']))
 
     const wrapper = mountWithChartStub()
@@ -390,46 +424,7 @@ describe('etf-breakdown', () => {
   })
 
   it('names the benchmark fund on the compare toggle once it is loaded', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Industries')
-    await flushPromises()
-
-    expect(wrapper.find('.compare-label').text()).toBe('vs WEBN')
-  })
-
-  it('hides the compare toggle when no benchmark fund is held', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Industries')
-    await flushPromises()
-
-    expect(wrapper.find('.compare-label').exists()).toBe(false)
-  })
-
-  it('does not fetch the benchmark again while the first request is still in flight', async () => {
-    const holdings = withBenchmarkFund()
-    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(etfs =>
-      etfs?.[0] === BENCHMARK ? new Promise(() => {}) : Promise.resolve(holdings)
-    )
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Industries')
-    await clickTab(wrapper, 'Sectors')
-    await clickTab(wrapper, 'Industries')
-
-    expect(benchmarkCalls()).toHaveLength(1)
-  })
-
-  it('falls back to VWCE when WEBN is not held', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(
-      buildTwoHoldings().map(holding => ({ ...holding, inEtfs: 'VWCE:GER:EUR, VWCE:XETRA' }))
-    )
+    withBenchmarkFund()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
@@ -439,25 +434,18 @@ describe('etf-breakdown', () => {
     expect(wrapper.find('.compare-label').text()).toBe('vs VWCE')
   })
 
-  it('prefers WEBN when both benchmark funds are held', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(
-      buildTwoHoldings().map(holding => ({ ...holding, inEtfs: `${BENCHMARK}, VWCE:GER:EUR` }))
-    )
+  it('does not fetch the benchmark again while the first request is still in flight', async () => {
+    withBenchmarkFund()
+    vi.mocked(etfBreakdownService.getBenchmark).mockReturnValue(new Promise(() => {}))
 
     const wrapper = mountWithChartStub()
     await flushPromises()
     await clickTab(wrapper, 'Industries')
-    await flushPromises()
+    await clickTab(wrapper, 'Sectors')
+    await clickTab(wrapper, 'Industries')
 
-    expect(wrapper.find('.compare-label').text()).toBe('vs WEBN')
+    expect(benchmarkCalls()).toHaveLength(1)
   })
-
-  const failBenchmarkRequest = () => {
-    const holdings = withBenchmarkFund()
-    vi.mocked(etfBreakdownService.getBreakdown).mockImplementation(etfs =>
-      etfs?.[0] === BENCHMARK ? Promise.reject(new Error('unavailable')) : Promise.resolve(holdings)
-    )
-  }
 
   it('hides the comparison after the benchmark request fails', async () => {
     failBenchmarkRequest()
@@ -549,12 +537,12 @@ describe('etf-breakdown', () => {
   })
 
   it('hands the benchmark ticker to the breakdown card', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(withBenchmarkFund())
+    withBenchmarkFund()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('WEBN')
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('VWCE')
   })
 
   it('narrows the industry donut to the top count the other dimensions use', async () => {

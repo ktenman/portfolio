@@ -2,6 +2,7 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.dto.EtfDiagnosticDto
 import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
+import ee.tenman.portfolio.service.etf.EtfBenchmarkService
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -13,12 +14,18 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/etf-breakdown")
 class EtfBreakdownController(
   private val etfBreakdownService: EtfBreakdownService,
+  private val etfBenchmarkService: EtfBenchmarkService,
 ) {
   @GetMapping
   fun getEtfHoldingsBreakdown(
     @RequestParam(required = false) etfSymbols: List<String>?,
     @RequestParam(required = false) platforms: List<String>?,
   ): List<EtfHoldingBreakdownDto> = etfBreakdownService.getHoldingsBreakdown(etfSymbols, platforms)
+
+  @GetMapping("/benchmark")
+  fun getBenchmarkHoldings(
+    @RequestParam symbol: String,
+  ): List<EtfHoldingBreakdownDto> = etfBenchmarkService.getBenchmarkHoldings(symbol)
 
   @DeleteMapping("/cache")
   fun evictCache() {

@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { diversificationService } from '../services/api'
-import { resolveBenchmark } from '../constants/benchmarks'
+import { BENCHMARK_SYMBOL } from '../constants/benchmarks'
 import { formatTickerSymbol } from '../utils/ticker-symbol'
 import type { BreakdownItem } from '../services/diversification-chart-service'
 import type {
@@ -56,10 +56,7 @@ export function useDiversificationResult(
   const isCalculating = ref(false)
   let benchmarkRequested = false
 
-  const benchmarkEtf = computed(() => {
-    const symbol = resolveBenchmark(availableEtfs.value.map(e => e.symbol))
-    return availableEtfs.value.find(e => e.symbol === symbol)
-  })
+  const benchmarkEtf = computed(() => availableEtfs.value.find(e => e.symbol === BENCHMARK_SYMBOL))
 
   const benchmarkLabel = computed(
     () => benchmarkEtf.value && formatTickerSymbol(benchmarkEtf.value.symbol)

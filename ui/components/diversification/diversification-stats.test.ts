@@ -31,11 +31,11 @@ describe('DiversificationStats', () => {
     it('shows the tile only with a benchmark', () => {
       const without = mount(DiversificationStats, { props: defaultProps })
       const withBenchmark = mount(DiversificationStats, {
-        props: { ...defaultProps, benchmarkLabel: 'WEBN', activeShare: 38.4 },
+        props: { ...defaultProps, benchmarkLabel: 'VWCE', activeShare: 38.4 },
       })
       expect(without.text()).not.toContain('Active share')
       expect(withBenchmark.findAll('.stat-label').map(l => l.text())).toContain(
-        'Active share vs WEBN'
+        'Active share vs VWCE'
       )
       expect(withBenchmark.findAll('.stat-value')[4].text()).toBe('38%')
     })
