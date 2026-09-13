@@ -174,7 +174,7 @@ jobs:
           attempt_limit: 3
           attempt_delay: 30000
       - uses: actions/upload-artifact@v7
-        if: always() && matrix.type == 'backend'
+        if: failure() && matrix.type == 'backend'
         continue-on-error: true
         with:
           name: Backend Unit Test Reports
@@ -184,7 +184,7 @@ jobs:
             build/reports/jacoco/test/html/
           retention-days: 7
       - uses: actions/upload-artifact@v7
-        if: always() && matrix.type == 'frontend'
+        if: failure() && matrix.type == 'frontend'
         continue-on-error: true
         with:
           name: Frontend Unit Test Reports
@@ -193,14 +193,14 @@ jobs:
             test-results/
           retention-days: 7
       - uses: actions/upload-artifact@v7
-        if: always() && matrix.type == 'cloudflare'
+        if: failure() && matrix.type == 'cloudflare'
         continue-on-error: true
         with:
           name: Cloudflare Bypass Proxy Test Reports
           path: cloudflare-bypass-proxy/coverage/
           retention-days: 7
       - uses: actions/upload-artifact@v7
-        if: always() && matrix.type == 'e2e'
+        if: failure() && matrix.type == 'e2e'
         continue-on-error: true
         with:
           name: E2E Test Reports
