@@ -67,33 +67,12 @@ class MinioServiceIT {
   }
 
   @Test
-  fun `logoExists should return true when logo exists`() {
-    val holdingUuid = UUID.randomUUID()
-    val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-
-    minioService.uploadLogo(holdingUuid, testData)
-
-    val exists = minioService.logoExists(holdingUuid)
-    expect(exists).toEqual(true)
-  }
-
-  @Test
-  fun `logoExists should return false when logo does not exist`() {
-    val exists = minioService.logoExists(UUID.randomUUID())
-    expect(exists).toEqual(false)
-  }
-
-  @Test
   fun `should overwrite logo if uploaded again`() {
     val holdingUuid = UUID.randomUUID()
     val originalData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x01)
     val newData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x02)
 
     minioService.uploadLogo(holdingUuid, originalData)
-
-    val existsBefore = minioService.logoExists(holdingUuid)
-    expect(existsBefore).toEqual(true)
-
     minioService.uploadLogo(holdingUuid, newData)
 
     val downloaded = minioService.downloadLogo(holdingUuid)

@@ -5,7 +5,6 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_LOGOS_
 import io.minio.GetObjectArgs
 import io.minio.MinioClient
 import io.minio.PutObjectArgs
-import io.minio.StatObjectArgs
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
@@ -21,40 +20,21 @@ class MinioService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun logoExists(uuid: UUID): Boolean = objectExists("logos/$uuid.png")
-
   @CachePut(value = [ETF_LOGOS_CACHE], key = "#uuid.toString()")
   fun uploadLogo(
     uuid: UUID,
     logoData: ByteArray,
-    contentType: String = "image/png",
   ): ByteArray {
-    uploadObject("logos/$uuid.png", logoData, contentType)
+    uploadObject("logos/$uuid.png", logoData)
     return logoData
   }
 
   @Cacheable(value = [ETF_LOGOS_CACHE], key = "#uuid.toString()")
   fun downloadLogo(uuid: UUID): ByteArray? = downloadObject("logos/$uuid.png")
 
-  private fun objectExists(objectName: String): Boolean =
-    try {
-      minioClient.statObject(
-        StatObjectArgs
-          .builder()
-          .bucket(minioProperties.bucketName)
-          .`object`(objectName)
-          .build(),
-      )
-      true
-    } catch (e: Exception) {
-      log.trace("Object not found: $objectName, reason: ${e.message}")
-      false
-    }
-
   private fun uploadObject(
     objectName: String,
     data: ByteArray,
-    contentType: String,
   ) {
     minioClient.putObject(
       PutObjectArgs
@@ -62,7 +42,7 @@ class MinioService(
         .bucket(minioProperties.bucketName)
         .`object`(objectName)
         .stream(ByteArrayInputStream(data), data.size.toLong(), -1)
-        .contentType(contentType)
+        .contentType("image/png")
         .build(),
     )
     log.debug("Uploaded object: $objectName")
