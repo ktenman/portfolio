@@ -17,6 +17,7 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
 
@@ -244,5 +245,23 @@ class SummaryServiceIT {
     val result = summaryService.getDailySummariesBetween(start, end)
 
     expect(result.size).toEqual(2)
+  }
+
+  @Test
+  fun `should getCurrentDaySummary survive a holding without any price a year ago`() {
+    transactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("90.00"),
+        transactionDate = LocalDate.now(clock).minusDays(400),
+        platform = Platform.TRADING212,
+      ),
+    )
+
+    val summary = summaryService.getCurrentDaySummary()
+
+    expect(summary.earningsPerDay).toEqualNumerically(summary.totalProfit.divide(BigDecimal(365), 10, RoundingMode.HALF_UP))
   }
 }

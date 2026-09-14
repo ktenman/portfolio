@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
+import ee.tenman.portfolio.service.pricing.PriceLookup
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import io.mockk.every
 import io.mockk.mockk
@@ -66,6 +67,17 @@ class DailySummaryCalculatorTest {
     val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(400))), date)
 
     expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("-1"))
+  }
+
+  @Test
+  fun `baseline metrics receive the same price lookup as the current metrics`() {
+    val lookup = PriceLookup(emptyList())
+    every { investmentMetricsService.calculatePortfolioMetrics(any(), date.minusDays(365), lookup) } returns metrics("270")
+    every { investmentMetricsService.calculatePortfolioMetrics(any(), date, lookup) } returns metrics("1000")
+
+    val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(500))), date, lookup)
+
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("2"))
   }
 
   @Test

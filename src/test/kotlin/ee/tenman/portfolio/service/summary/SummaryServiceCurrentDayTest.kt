@@ -49,7 +49,20 @@ class SummaryServiceCurrentDayTest : SummaryServiceTestBase() {
 
     expect(result.totalValue).toEqualNumerically(BigDecimal("1200.00"))
     expect(result.totalProfit).toEqualNumerically(BigDecimal("200.00"))
+    expect(result.earningsPerDay).toEqualNumerically(BigDecimal("40"))
     verify { transactionService.getAllTransactions(listOf("LIGHTYEAR")) }
+  }
+
+  @Test
+  fun `getCurrentDaySummary subtracts the profit held one year earlier for a portfolio older than a year`() {
+    val testTransaction = createBuyTransaction(BigDecimal("10"), BigDecimal("50.00"), testDate.minusDays(400))
+    every { transactionService.getAllTransactions() } returns listOf(testTransaction)
+    stubMetrics(testDate, BigDecimal("21870.94"), BigDecimal("-1762.39"))
+    stubMetrics(testDate.minusDays(365), BigDecimal.ZERO, BigDecimal("1000"))
+
+    val summary = summaryService.getCurrentDaySummary()
+
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("-7.5681917808"))
   }
 
   @Test
