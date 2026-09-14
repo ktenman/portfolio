@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.service.pricing
 
-import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -56,11 +56,11 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getPrice(testInstrument, testDate)
 
-    expect(result).toEqualNumerically(BigDecimal("150.50"))
+    expect(result).notToEqualNull().toEqualNumerically(BigDecimal("150.50"))
   }
 
   @Test
-  fun `should getPrice throws NoSuchElementException when no price found`() {
+  fun `should getPrice return null when no price found`() {
     every {
       dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
         testInstrument,
@@ -69,12 +69,9 @@ class DailyPriceServiceTest {
       )
     } returns null
 
-    val exception =
-      org.junit.jupiter.api.assertThrows<NoSuchElementException> {
-        dailyPriceService.getPrice(testInstrument, testDate)
-      }
+    val result = dailyPriceService.getPrice(testInstrument, testDate)
 
-    expect(exception.message!!).toContain("No price found for AAPL on or before $testDate")
+    expect(result).toEqual(null)
   }
 
   @Test
@@ -215,7 +212,7 @@ class DailyPriceServiceTest {
 
     val result = dailyPriceService.getPrice(cashInstrument, testDate)
 
-    expect(result).toEqualNumerically(BigDecimal.ONE)
+    expect(result).notToEqualNull().toEqualNumerically(BigDecimal.ONE)
     verify(exactly = 0) { dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(any(), any(), any()) }
   }
 

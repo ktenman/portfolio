@@ -42,7 +42,7 @@ class RedisConfiguration {
 
   companion object {
     const val INSTRUMENT_CACHE = "instrument-cache-v3"
-    const val SUMMARY_CACHE = "summary-cache-v3"
+    const val SUMMARY_CACHE = "summary-cache-v4"
     const val TRANSACTION_CACHE = "transaction-cache-v3"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
     const val ETF_LOGOS_CACHE: String = "etf-logos-v3"
@@ -52,7 +52,7 @@ class RedisConfiguration {
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v3"
     const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs-v5"
     const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config-v3"
-    const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v3"
+    const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v4"
     const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"
     const val VEEGO_TAX_CACHE: String = "veego-tax-v1"
     const val AUTO24_PRICE_CACHE: String = "auto24-price-v2"

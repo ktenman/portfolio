@@ -192,6 +192,7 @@ class InvestmentMetricsService(
   ): BigDecimal =
     priceLookup?.priceOnOrBefore(instrument.id, date)
       ?: dailyPriceService.getPrice(instrument, date)
+      ?: throw NoSuchElementException("No price found for ${instrument.symbol} on or before $date")
 
   private fun calculateRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
     InvestmentMath.calculateRealizedProfit(transactions)

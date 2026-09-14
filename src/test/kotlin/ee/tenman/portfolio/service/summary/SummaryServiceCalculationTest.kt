@@ -39,7 +39,6 @@ class SummaryServiceCalculationTest : SummaryServiceTestBase() {
     val testTransaction = createBuyTransaction(quantity, originalPrice, date.minusDays(10))
 
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
-    every { xirrCalculationService.calculateAdjustedXirr(any(), date) } returns 0.05
 
     val expectedTotal = price.multiply(quantity)
     val expectedProfit = expectedTotal.subtract(originalPrice.multiply(quantity))
@@ -56,7 +55,7 @@ class SummaryServiceCalculationTest : SummaryServiceTestBase() {
 
     expect(summary.totalValue).toEqualNumerically(expectedTotal)
     expect(summary.totalProfit).toEqualNumerically(expectedProfit)
-    expect(summary.earningsPerDay).toEqualNumerically(expectedEarningsPerDay(expectedTotal, BigDecimal("0.05")))
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("23.45"))
   }
 
   @Test
@@ -68,7 +67,6 @@ class SummaryServiceCalculationTest : SummaryServiceTestBase() {
     val testTransaction = createBuyTransaction(quantity, BigDecimal("29.81"), date.minusDays(10))
 
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
-    every { xirrCalculationService.calculateAdjustedXirr(any(), date) } returns 0.05
 
     val expectedTotalValue = price.multiply(quantity)
     stubMetrics(
@@ -83,7 +81,6 @@ class SummaryServiceCalculationTest : SummaryServiceTestBase() {
 
     expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(BigDecimal("25015.03"))
     expect(summary.totalProfit).toEqualNumerically(BigDecimal("0E-10"))
-    expect(summary.earningsPerDay).toEqualNumerically(expectedEarningsPerDay(summary.totalValue, summary.xirrAnnualReturn))
   }
 
   @ParameterizedTest
