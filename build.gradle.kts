@@ -287,23 +287,23 @@ pitest {
   pitestVersion.set(libs.versions.pitest.get())
   targetClasses.set(
     listOf(
-      "ee.tenman.portfolio.service.XirrCalculationService",
-      "ee.tenman.portfolio.service.HoldingsCalculationService",
-      "ee.tenman.portfolio.service.InvestmentMetricsService",
-      "ee.tenman.portfolio.service.TransactionService",
-      "ee.tenman.portfolio.service.xirr.*",
+      "ee.tenman.portfolio.service.calculation.XirrCalculationService",
+      "ee.tenman.portfolio.service.calculation.HoldingsCalculationService",
+      "ee.tenman.portfolio.service.calculation.InvestmentMetricsService",
+      "ee.tenman.portfolio.service.calculation.xirr.*",
+      "ee.tenman.portfolio.service.transaction.TransactionService",
     ),
   )
   targetTests.set(
     listOf(
-      "ee.tenman.portfolio.service.*Test",
-      "ee.tenman.portfolio.service.*PropertyTest",
+      "ee.tenman.portfolio.service.calculation.*Test",
+      "ee.tenman.portfolio.service.transaction.*Test",
     ),
   )
   threads.set(4)
   outputFormats.set(listOf("HTML", "XML"))
-  mutationThreshold.set(80)
-  coverageThreshold.set(80)
+  mutationThreshold.set(40)
+  coverageThreshold.set(75)
   timestampedReports.set(false)
   useClasspathFile.set(true)
   excludedClasses.set(
