@@ -1,0 +1,40 @@
+INSERT INTO instrument (
+    symbol,
+    name,
+    instrument_category,
+    base_currency,
+    fund_currency,
+    provider_name,
+    provider_external_id,
+    ter,
+    current_price,
+    created_at,
+    updated_at,
+    version
+) VALUES (
+    'VGLA:GER:EUR',
+    'Vanguard FTSE Global All-Cap',
+    'ETF',
+    'EUR',
+    'USD',
+    'LIGHTYEAR',
+    '1f1a07ba-aa44-690a-bc0c-05e2425f8ab8',
+    0.07,
+    0,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    0
+), (
+    'VXUS:GER:EUR',
+    'Vanguard FTSE All-World Ex USA',
+    'ETF',
+    'EUR',
+    'USD',
+    'LIGHTYEAR',
+    '1f1a5e78-d59c-625c-9dd3-ab6a18f976ac',
+    0.12,
+    0,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    0
+);
