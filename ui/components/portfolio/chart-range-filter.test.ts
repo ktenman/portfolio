@@ -16,9 +16,15 @@ describe('ChartRangeFilter', () => {
       '1D',
       '2D',
       '3D',
+      '4D',
+      '5D',
+      '6D',
       '1W',
       '1M',
+      '2M',
       '3M',
+      '4M',
+      '5M',
       '6M',
       'YTD',
       '1Y',
@@ -26,6 +32,7 @@ describe('ChartRangeFilter', () => {
       '3Y',
       '4Y',
       '5Y',
+      '6Y',
       'MAX',
     ])
   })

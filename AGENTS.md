@@ -56,6 +56,11 @@ npm run lint-format         # Type check, lint, format, knip + backend ktlint/de
 npm test -- --run           # All UI tests, no watch mode
 npm run build               # Production build
 
+# Visual baselines - ALWAYS regenerate after any change that alters rendered UI
+# (markup, styles, or backend enums/data the UI renders); CI gates them at 0 pixels
+npm run visual                                   # Check (Docker, matches CI)
+npm run visual:update -- --grep "<test titles>"  # Regenerate, then review and commit the PNGs
+
 # Testing
 npm run test:all            # ALL tests: backend + frontend + E2E
 npm run test:unit           # Backend unit + frontend UI + proxy tests
