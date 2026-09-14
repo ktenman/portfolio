@@ -39,7 +39,6 @@ class SummaryServiceCalculationTest : SummaryServiceTestBase() {
     val testTransaction = createBuyTransaction(quantity, originalPrice, date.minusDays(10))
 
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
-    every { xirrCalculationService.calculateAdjustedXirr(any(), date) } returns 0.05
 
     val expectedTotal = price.multiply(quantity)
     val expectedProfit = expectedTotal.subtract(originalPrice.multiply(quantity))
@@ -68,7 +67,6 @@ class SummaryServiceCalculationTest : SummaryServiceTestBase() {
     val testTransaction = createBuyTransaction(quantity, BigDecimal("29.81"), date.minusDays(10))
 
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
-    every { xirrCalculationService.calculateAdjustedXirr(any(), date) } returns 0.05
 
     val expectedTotalValue = price.multiply(quantity)
     stubMetrics(

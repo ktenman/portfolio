@@ -23,10 +23,11 @@ class DailySummaryCalculator(
     priceLookup: PriceLookup? = null,
   ): PortfolioDailySummary {
     if (transactions.isEmpty()) return createEmptySummary(date)
-    val baselineProfit = calculateBaselineProfit(transactions, date, priceLookup)
-    val metrics = investmentMetricsService.calculatePortfolioMetrics(transactions.groupBy { it.instrument }, date, priceLookup)
-    val inception = transactions.minOf { it.transactionDate }
-    val earningsPerDay = calculateEarningsPerDay(metrics.totalProfit, baselineProfit, inception, date)
+    val baselineDate = date.minusDays(TRAILING_WINDOW_DAYS)
+    val baselineProfit = calculateBaselineProfit(transactions, baselineDate, priceLookup)
+    val metrics = metricsOn(transactions, date, priceLookup)
+    val windowStart = maxOf(transactions.minOf { it.transactionDate }, baselineDate)
+    val earningsPerDay = calculateEarningsPerDay(metrics.totalProfit, baselineProfit, windowStart, date)
     return buildSummary(date, metrics, earningsPerDay)
   }
 
@@ -34,17 +35,6 @@ class DailySummaryCalculator(
     yesterdaySummary: PortfolioDailySummary,
     todaySummary: PortfolioDailySummary,
   ): Boolean = yesterdaySummary.totalValue.compareTo(todaySummary.totalValue) == 0
-
-  fun calculateEarningsPerDay(
-    totalProfit: BigDecimal,
-    baselineProfit: BigDecimal,
-    inception: LocalDate,
-    date: LocalDate,
-  ): BigDecimal {
-    val age = ChronoUnit.DAYS.between(inception, date).coerceAtLeast(1)
-    val window = minOf(age, TRAILING_WINDOW_DAYS)
-    return totalProfit.subtract(baselineProfit).divide(BigDecimal(window), CALCULATION_SCALE, RoundingMode.HALF_UP)
-  }
 
   fun createEmptySummary(date: LocalDate): PortfolioDailySummary =
     PortfolioDailySummary(
@@ -59,13 +49,28 @@ class DailySummaryCalculator(
 
   private fun calculateBaselineProfit(
     transactions: List<PortfolioTransaction>,
-    date: LocalDate,
+    baselineDate: LocalDate,
     priceLookup: PriceLookup?,
   ): BigDecimal {
-    val baselineDate = date.minusDays(TRAILING_WINDOW_DAYS)
     val earlier = transactions.filter { !it.transactionDate.isAfter(baselineDate) }
     if (earlier.isEmpty()) return BigDecimal.ZERO
-    return investmentMetricsService.calculatePortfolioMetrics(earlier.groupBy { it.instrument }, baselineDate, priceLookup).totalProfit
+    return metricsOn(earlier, baselineDate, priceLookup).totalProfit
+  }
+
+  private fun metricsOn(
+    transactions: List<PortfolioTransaction>,
+    date: LocalDate,
+    priceLookup: PriceLookup?,
+  ): PortfolioMetrics = investmentMetricsService.calculatePortfolioMetrics(transactions.groupBy { it.instrument }, date, priceLookup)
+
+  private fun calculateEarningsPerDay(
+    totalProfit: BigDecimal,
+    baselineProfit: BigDecimal,
+    windowStart: LocalDate,
+    date: LocalDate,
+  ): BigDecimal {
+    val days = ChronoUnit.DAYS.between(windowStart, date).coerceAtLeast(1)
+    return totalProfit.subtract(baselineProfit).divide(BigDecimal(days), CALCULATION_SCALE, RoundingMode.HALF_UP)
   }
 
   private fun buildSummary(

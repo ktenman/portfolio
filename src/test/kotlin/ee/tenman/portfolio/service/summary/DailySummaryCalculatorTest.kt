@@ -2,7 +2,6 @@ package ee.tenman.portfolio.service.summary
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
@@ -19,14 +18,7 @@ class DailySummaryCalculatorTest {
   private val xirrCalculationService = mockk<XirrCalculationService>(relaxed = true)
   private val calculator = DailySummaryCalculator(investmentMetricsService, xirrCalculationService)
   private val date = LocalDate.of(2026, 9, 13)
-  private val instrument =
-    TransactionFixtures.createInstrument(
-      symbol = "VWCE:GER:EUR",
-      name = "Vanguard FTSE All-World UCITS ETF",
-      category = "ETF",
-      baseCurrency = "EUR",
-      currentPrice = BigDecimal("130"),
-    )
+  private val instrument = TransactionFixtures.createInstrument()
 
   @Test
   fun `earnings per day is total profit divided by portfolio age when younger than a year`() {
@@ -52,6 +44,15 @@ class DailySummaryCalculatorTest {
     stubProfit(date.minusDays(365), "270")
 
     val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(500))), date)
+
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("2"))
+  }
+
+  @Test
+  fun `earnings per day has no baseline one day short of a year`() {
+    stubProfit(date, "728")
+
+    val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(364))), date)
 
     expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("2"))
   }
@@ -97,15 +98,8 @@ class DailySummaryCalculatorTest {
     every { investmentMetricsService.calculatePortfolioMetrics(any(), on, null) } returns metrics(profit)
   }
 
-  private fun metrics(profit: String) = PortfolioMetrics(totalValue = BigDecimal("1000"), totalProfit = BigDecimal(profit))
+  private fun metrics(profit: String) = PortfolioMetrics(totalProfit = BigDecimal(profit))
 
   private fun buy(on: LocalDate): PortfolioTransaction =
-    TransactionFixtures.createBuyTransaction(
-      instrument,
-      BigDecimal.ONE,
-      BigDecimal("100"),
-      on,
-      Platform.LIGHTYEAR,
-      TransactionFixtures.ZERO_COMMISSION,
-    )
+    TransactionFixtures.createBuyTransaction(instrument, BigDecimal.ONE, BigDecimal.ONE, on)
 }
