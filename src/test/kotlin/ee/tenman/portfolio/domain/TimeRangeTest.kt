@@ -6,6 +6,9 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 import java.time.LocalDate
 
 class TimeRangeTest {
@@ -157,6 +160,21 @@ class TimeRangeTest {
     expect(TimeRange.from(TimeRange.DEFAULT_CODE)).toEqual(TimeRange.ONE_MONTH)
   }
 
+  @ParameterizedTest
+  @CsvSource("4D, 2026-08-10", "5D, 2026-08-09", "6D, 2026-08-08", "2M, 2026-06-14", "4M, 2026-04-14", "5M, 2026-03-14", "6Y, 2020-08-14")
+  fun `should start the new ranges at their offset before today`(
+    code: String,
+    expected: LocalDate,
+  ) {
+    expect(TimeRange.from(code).startDate(today)).toEqual(expected)
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = ["4D", "5D", "6D", "2M", "4M", "5M", "6Y"])
+  fun `should round trip the new range codes`(code: String) {
+    expect(TimeRange.from(code).code).toEqual(code)
+  }
+
   @Test
   fun `should declare the ranges in chip order`() {
     expect(TimeRange.entries.map { it.code })
@@ -164,9 +182,15 @@ class TimeRangeTest {
         "1D",
         "2D",
         "3D",
+        "4D",
+        "5D",
+        "6D",
         "1W",
         "1M",
+        "2M",
         "3M",
+        "4M",
+        "5M",
         "6M",
         "YTD",
         "1Y",
@@ -174,6 +198,7 @@ class TimeRangeTest {
         "3Y",
         "4Y",
         "5Y",
+        "6Y",
         "MAX",
       )
   }
