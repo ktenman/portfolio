@@ -16,7 +16,6 @@ import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.cache.CacheManager
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
@@ -84,11 +83,6 @@ abstract class SummaryServiceTestBase {
     instrument: Instrument = this.instrument,
   ): PortfolioTransaction =
     TransactionFixtures.createBuyTransaction(instrument, quantity, price, date, platform, TransactionFixtures.ZERO_COMMISSION)
-
-  protected fun expectedEarningsPerDay(
-    totalValue: BigDecimal,
-    annualReturn: BigDecimal,
-  ): BigDecimal = totalValue.multiply(annualReturn).divide(BigDecimal("365.25"), 10, RoundingMode.HALF_UP)
 
   protected fun createSummary(
     date: LocalDate,

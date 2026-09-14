@@ -22,12 +22,11 @@ class DailyPriceService(
   fun getPrice(
     instrument: Instrument,
     date: LocalDate,
-  ): BigDecimal =
+  ): BigDecimal? =
     instrument.cashPriceOrNull()
       ?: dailyPriceRepository
         .findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(instrument, date.minusYears(10), date)
         ?.closePrice
-      ?: throw NoSuchElementException("No price found for ${instrument.symbol} on or before $date")
 
   @Transactional
   fun saveDailyPrice(dailyPrice: DailyPrice) {
@@ -119,7 +118,6 @@ class DailyPriceService(
   fun getCurrentPrice(instrument: Instrument): BigDecimal =
     instrument.cashPriceOrNull()
       ?: instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
-      ?: runCatching { getPrice(instrument, LocalDate.now(clock)) }
-        .onFailure { log.warn("No price found for ${instrument.symbol}, using zero") }
-        .getOrDefault(BigDecimal.ZERO)
+      ?: getPrice(instrument, LocalDate.now(clock))
+      ?: BigDecimal.ZERO.also { log.warn("No price found for ${instrument.symbol}, using zero") }
 }
