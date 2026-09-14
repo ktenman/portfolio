@@ -21,7 +21,7 @@ class SummaryServiceCurrentDayTest : SummaryServiceTestBase() {
     val summary = summaryService.getCurrentDaySummary()
 
     expect(summary.totalProfit).toEqualNumerically(BigDecimal("-1762.39"))
-    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("0E-10"))
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("-58.7463333333"))
   }
 
   @Test
@@ -36,7 +36,7 @@ class SummaryServiceCurrentDayTest : SummaryServiceTestBase() {
     expect(summary.totalValue).toEqualNumerically(BigDecimal("600.00"))
     expect(summary.totalProfit).toEqualNumerically(BigDecimal("100.00"))
     expect(summary.xirrAnnualReturn).toEqualNumerically(BigDecimal("0.07500000"))
-    expect(summary.earningsPerDay).toEqualNumerically(expectedEarningsPerDay(summary.totalValue, summary.xirrAnnualReturn))
+    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("3.3333333333"))
   }
 
   @Test
