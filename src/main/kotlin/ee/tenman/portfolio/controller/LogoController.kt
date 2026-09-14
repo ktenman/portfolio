@@ -3,7 +3,7 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.dto.LogoCandidateDto
 import ee.tenman.portfolio.dto.LogoReplacementRequest
 import ee.tenman.portfolio.dto.PrefetchRequest
-import ee.tenman.portfolio.service.logo.LogoCacheService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import ee.tenman.portfolio.service.logo.LogoReplacementService
 import org.slf4j.LoggerFactory
 import org.springframework.http.CacheControl
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
 @RestController
 @RequestMapping("/api/logos")
 class LogoController(
-  private val logoCacheService: LogoCacheService,
+  private val minioService: MinioService,
   private val logoReplacementService: LogoReplacementService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -32,7 +32,7 @@ class LogoController(
     @PathVariable uuid: UUID,
   ): ResponseEntity<ByteArray> {
     log.debug("Fetching logo for holding UUID: $uuid")
-    val logoData = logoCacheService.getLogo(uuid)
+    val logoData = minioService.downloadLogo(uuid)
     if (logoData != null) {
       return ResponseEntity
         .ok()

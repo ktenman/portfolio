@@ -6,6 +6,7 @@ import ee.tenman.portfolio.dto.LogoCandidateDto
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -14,7 +15,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.util.Base64
 import java.util.UUID
 
@@ -25,7 +25,7 @@ class LogoReplacementService(
   private val imageDownloadService: ImageDownloadService,
   private val logoValidationService: LogoValidationService,
   private val imageProcessingService: ImageProcessingService,
-  private val logoCacheService: LogoCacheService,
+  private val minioService: MinioService,
   private val logoCandidateCacheService: LogoCandidateCacheService,
   private val properties: LogoReplacementProperties,
 ) {
@@ -109,7 +109,6 @@ class LogoReplacementService(
         .filterNotNull()
     }
 
-  @Transactional
   fun replaceLogo(
     holdingUuid: UUID,
     candidateIndex: Int,
@@ -162,7 +161,7 @@ class LogoReplacementService(
     holdingUuid: UUID,
     processedImage: ByteArray,
   ): Boolean {
-    logoCacheService.saveLogo(holdingUuid, processedImage)
+    minioService.uploadLogo(holdingUuid, processedImage)
     val holding = etfHoldingRepository.findByUuid(holdingUuid)
     if (holding == null) {
       log.warn("Holding not found for UUID: $holdingUuid")

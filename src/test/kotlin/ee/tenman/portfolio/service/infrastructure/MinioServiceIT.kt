@@ -100,4 +100,15 @@ class MinioServiceIT {
     expect(downloaded).notToEqualNull()
     assertTrue(downloaded.contentEquals(newData))
   }
+
+  @Test
+  fun `should return uploaded logo when an earlier download missed`() {
+    val holdingUuid = UUID.randomUUID()
+    val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x03)
+    minioService.downloadLogo(holdingUuid)
+    minioService.uploadLogo(holdingUuid, testData)
+    val downloaded = minioService.downloadLogo(holdingUuid)
+    expect(downloaded).notToEqualNull()
+    assertTrue(downloaded.contentEquals(testData))
+  }
 }

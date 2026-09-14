@@ -7,6 +7,7 @@ import io.minio.MinioClient
 import io.minio.PutObjectArgs
 import io.minio.StatObjectArgs
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.io.ByteArrayInputStream
@@ -22,13 +23,17 @@ class MinioService(
 
   fun logoExists(uuid: UUID): Boolean = objectExists("logos/$uuid.png")
 
+  @CachePut(value = [ETF_LOGOS_CACHE], key = "#uuid.toString()")
   fun uploadLogo(
     uuid: UUID,
     logoData: ByteArray,
     contentType: String = "image/png",
-  ) = uploadObject("logos/$uuid.png", logoData, contentType)
+  ): ByteArray {
+    uploadObject("logos/$uuid.png", logoData, contentType)
+    return logoData
+  }
 
-  @Cacheable(value = [ETF_LOGOS_CACHE], key = "'uuid-' + #uuid.toString()")
+  @Cacheable(value = [ETF_LOGOS_CACHE], key = "#uuid.toString()")
   fun downloadLogo(uuid: UUID): ByteArray? = downloadObject("logos/$uuid.png")
 
   private fun objectExists(objectName: String): Boolean =
