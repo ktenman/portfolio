@@ -273,6 +273,12 @@ detekt {
   config.setFrom(files("$projectDir/detekt.yml"))
 }
 
+configurations.matching { it.name == "detekt" || it.name == "ktlint" }.configureEach {
+  resolutionStrategy.eachDependency {
+    if (requested.group == "org.jetbrains.kotlin") requested.version?.let { useVersion(it) }
+  }
+}
+
 tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
   reports {
     html.required.set(true)
