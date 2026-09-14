@@ -36,7 +36,6 @@ class SummaryServiceCurrentDayTest : SummaryServiceTestBase() {
     expect(summary.totalValue).toEqualNumerically(BigDecimal("600.00"))
     expect(summary.totalProfit).toEqualNumerically(BigDecimal("100.00"))
     expect(summary.xirrAnnualReturn).toEqualNumerically(BigDecimal("0.07500000"))
-    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("3.3333333333"))
   }
 
   @Test

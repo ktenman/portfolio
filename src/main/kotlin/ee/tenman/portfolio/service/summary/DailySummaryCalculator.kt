@@ -26,8 +26,8 @@ class DailySummaryCalculator(
     val baselineDate = date.minusDays(TRAILING_WINDOW_DAYS)
     val baselineProfit = calculateBaselineProfit(transactions, baselineDate, priceLookup)
     val metrics = metricsOn(transactions, date, priceLookup)
-    val windowStart = maxOf(transactions.minOf { it.transactionDate }, baselineDate)
-    val earningsPerDay = calculateEarningsPerDay(metrics.totalProfit, baselineProfit, windowStart, date)
+    val days = ChronoUnit.DAYS.between(transactions.minOf { it.transactionDate }, date).coerceIn(1, TRAILING_WINDOW_DAYS)
+    val earningsPerDay = metrics.totalProfit.subtract(baselineProfit).divide(BigDecimal(days), CALCULATION_SCALE, RoundingMode.HALF_UP)
     return buildSummary(date, metrics, earningsPerDay)
   }
 
@@ -62,16 +62,6 @@ class DailySummaryCalculator(
     date: LocalDate,
     priceLookup: PriceLookup?,
   ): PortfolioMetrics = investmentMetricsService.calculatePortfolioMetrics(transactions.groupBy { it.instrument }, date, priceLookup)
-
-  private fun calculateEarningsPerDay(
-    totalProfit: BigDecimal,
-    baselineProfit: BigDecimal,
-    windowStart: LocalDate,
-    date: LocalDate,
-  ): BigDecimal {
-    val days = ChronoUnit.DAYS.between(windowStart, date).coerceAtLeast(1)
-    return totalProfit.subtract(baselineProfit).divide(BigDecimal(days), CALCULATION_SCALE, RoundingMode.HALF_UP)
-  }
 
   private fun buildSummary(
     date: LocalDate,

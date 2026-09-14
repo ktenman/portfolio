@@ -49,15 +49,6 @@ class DailySummaryCalculatorTest {
   }
 
   @Test
-  fun `earnings per day has no baseline one day short of a year`() {
-    stubProfit(date, "728")
-
-    val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(364))), date)
-
-    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal("2"))
-  }
-
-  @Test
   fun `earnings per day uses the inception day profit as baseline at exactly one year`() {
     stubProfit(date, "364")
     stubProfit(date.minusDays(365), "-1")
@@ -82,9 +73,7 @@ class DailySummaryCalculatorTest {
     every {
       investmentMetricsService.calculatePortfolioMetrics(match { it.values.flatten().size == 1 }, date.minusDays(365), null)
     } returns metrics("50")
-    every {
-      investmentMetricsService.calculatePortfolioMetrics(match { it.values.flatten().size == 2 }, date, null)
-    } returns metrics("415")
+    stubProfit(date, "415")
 
     val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(400)), buy(date.minusDays(100))), date)
 

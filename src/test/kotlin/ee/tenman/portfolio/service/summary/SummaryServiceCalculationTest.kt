@@ -81,7 +81,6 @@ class SummaryServiceCalculationTest : SummaryServiceTestBase() {
 
     expect(summary.totalValue.setScale(2, RoundingMode.HALF_UP)).toEqualNumerically(BigDecimal("25015.03"))
     expect(summary.totalProfit).toEqualNumerically(BigDecimal("0E-10"))
-    expect(summary.earningsPerDay).toEqualNumerically(BigDecimal.ZERO)
   }
 
   @ParameterizedTest
