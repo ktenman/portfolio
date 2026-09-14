@@ -78,7 +78,7 @@ telegrambots-spring-boot-starter = { module = "org.telegram:telegrambots-spring-
 minio = { module = "io.minio:minio", version.ref = "minio" }
 
 # WireMock
-wiremock-spring-boot = { module = "org.wiremock.integrations:wiremock-spring-boot", version = "4.2.1" }
+wiremock-spring-boot = { module = "org.wiremock.integrations:wiremock-spring-boot", version = "4.2.3" }
 
 # Testing
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
