@@ -58,7 +58,7 @@ private val TICKERS: Map<String, String> =
     "GOOGL:NSQ:USD" to "140864",
     "VVSM:GER:EUR" to "632140093",
     "AUCO:AEX:EUR" to "13187420",
-    "VGLA:GER:EUR" to "1102721118",
+    "VGLA:GER:EUR" to "1104794933",
     "VXUS:GER:EUR" to "1102678227",
   )
 
