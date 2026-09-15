@@ -205,15 +205,16 @@ const onValueChange = (event: Event) => {
 }
 
 .allocation-card-name {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
   gap: 0.3rem;
   font-size: 0.8125rem;
   color: var(--color-gray-600);
   margin-bottom: 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.allocation-card-name .currency-flag {
+  margin-top: calc((1lh - 14px) / 2);
 }
 
 .allocation-card-metrics {

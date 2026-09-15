@@ -261,20 +261,6 @@ describe('etf-breakdown', () => {
     expect(wrapper.find('.breakdown-tab.active').text()).toBe('Holdings')
   })
 
-  it('renders the four breakdown tabs in order', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-
-    expect(wrapper.findAll('.breakdown-tab').map(btn => btn.text())).toEqual([
-      'Sectors',
-      'Industries',
-      'Holdings',
-      'Countries',
-    ])
-  })
-
   it('fetches the benchmark fund breakdown once on load', async () => {
     withBenchmarkFund()
 
@@ -513,6 +499,21 @@ describe('etf-breakdown', () => {
     expect(wrapper.findAll('.view-btn').map(btn => btn.attributes('aria-pressed'))).toEqual([
       'false',
       'true',
+    ])
+  })
+
+  it('renders the four breakdown tabs in order as the only dimension controls', async () => {
+    withBenchmarkFund()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    const group = wrapper.find('[role="group"][aria-label="Breakdown dimension"]')
+    expect(group.findAll('button, input').map(control => control.text())).toEqual([
+      'Sectors',
+      'Industries',
+      'Holdings',
+      'Countries',
     ])
   })
 

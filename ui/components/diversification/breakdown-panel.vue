@@ -1,36 +1,34 @@
 <template>
   <div class="breakdown-panel card-shell">
     <div class="panel-header">
-      <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
-        <button
-          v-for="tab in TABS"
-          :key="tab.key"
-          class="breakdown-tab"
-          :class="{ active: currentTab.key === tab.key }"
-          :aria-pressed="currentTab.key === tab.key"
-          type="button"
-          @click="activeTab = tab.key"
-        >
-          {{ tab.label }}
-        </button>
-        <template v-if="benchmarkLabel">
-          <span class="platform-separator" aria-hidden="true"></span>
-          <label class="compare-switch compare-toggle">
-            <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
-            <span class="compare-track" aria-hidden="true"></span>
-            <span class="compare-label">
-              <span class="compare-prefix">vs</span>
-              {{ benchmarkLabel }}
-            </span>
-          </label>
-        </template>
-        <view-switch v-model="view" />
-      </div>
-      <div v-if="compared && view === 'bars'" class="panel-legend">
-        <span class="legend-bar"></span>
-        <span>This allocation</span>
-        <span class="legend-tick"></span>
-        <span>{{ benchmarkLabel }}</span>
+      <div class="breakdown-toolbar">
+        <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
+          <button
+            v-for="tab in TABS"
+            :key="tab.key"
+            class="breakdown-tab"
+            :class="{ active: currentTab.key === tab.key }"
+            :aria-pressed="currentTab.key === tab.key"
+            type="button"
+            @click="activeTab = tab.key"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
+        <div class="breakdown-controls">
+          <template v-if="benchmarkLabel">
+            <span class="platform-separator" aria-hidden="true"></span>
+            <label class="compare-switch compare-toggle">
+              <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
+              <span class="compare-track" aria-hidden="true"></span>
+              <span class="compare-label">
+                <span class="compare-prefix">vs</span>
+                {{ benchmarkLabel }}
+              </span>
+            </label>
+          </template>
+          <view-switch v-model="view" />
+        </div>
       </div>
     </div>
     <breakdown-bars v-if="view === 'bars'" :rows="rows" :benchmark-label="benchmarkLabel" />
@@ -127,21 +125,23 @@ const rows = computed(() => {
 <style scoped>
 .panel-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
-.breakdown-tabs {
+.breakdown-toolbar,
+.breakdown-tabs,
+.breakdown-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
 }
 
-.breakdown-tabs .platform-separator {
+.breakdown-controls {
+  margin-left: auto;
+}
+
+.breakdown-controls .platform-separator {
   margin: 0 0.25rem;
 }
 
@@ -167,33 +167,13 @@ const rows = computed(() => {
   color: var(--color-brass-deep);
 }
 
-.panel-legend {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: var(--text-label);
-  color: var(--color-ink-muted);
-  white-space: nowrap;
-}
-
-.legend-bar {
-  width: 1rem;
-  height: 0.5rem;
-  border-radius: 2px;
-  background: var(--color-brass);
-}
-
-.legend-tick {
-  width: 2px;
-  height: 0.75rem;
-  margin-left: 0.5rem;
-  background: var(--color-ink);
-}
-
 @media (max-width: 639px) {
-  .breakdown-tabs {
-    flex-wrap: nowrap;
+  .breakdown-toolbar {
     width: 100%;
+  }
+
+  .breakdown-tabs,
+  .breakdown-controls {
     gap: 0.375rem;
   }
 
@@ -210,18 +190,6 @@ const rows = computed(() => {
     background: transparent;
   }
 
-  .breakdown-tabs .platform-separator {
-    display: none;
-  }
-
-  .compare-prefix {
-    display: none;
-  }
-
-  .compare-toggle {
-    margin-left: auto;
-  }
-
   .compare-switch {
     gap: 0.25rem;
     padding-inline: 0.125rem;
@@ -229,13 +197,34 @@ const rows = computed(() => {
   }
 }
 
-@media (max-width: 359px) {
-  .breakdown-tabs {
-    flex-wrap: wrap;
+@media (min-width: 576px) and (max-width: 639px) {
+  .compare-prefix {
+    display: none;
+  }
+}
+
+@media (max-width: 575px) {
+  .breakdown-toolbar {
+    row-gap: 0.75rem;
   }
 
-  .compare-toggle {
-    margin-left: 0;
+  .breakdown-tabs {
+    flex-basis: 100%;
+    justify-content: space-between;
+    column-gap: 0.75rem;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+
+  .breakdown-tab {
+    margin-bottom: -1px;
+  }
+
+  .breakdown-controls {
+    flex-basis: 100%;
+  }
+
+  .breakdown-controls .view-switch {
+    margin-left: auto;
   }
 }
 </style>
