@@ -4,7 +4,7 @@ import { type TransactionsWithSummaryDto } from '../../models/generated/domain-m
 import { freeze, openRoute, settleAndFreeze, waitForBoxHeightToSettle } from './settle'
 import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
-import { stubDiversification } from './diversification-fixture'
+import { stubDiversification, stubDiversificationWithLongFundName } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
@@ -16,6 +16,7 @@ const MODAL_CONTENT_TIMEOUT_MS = 60000
 const STATE_TIMEOUT_MS = 30000
 const TOAST_MODULE_PATH = '/composables/use-toast.ts'
 const LOADING_HOLD_MS = 20000
+const SUBPIXEL_PX = 0.5
 
 const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
   transactions: [],
@@ -276,5 +277,37 @@ test.describe('desktop states', () => {
     await expect(alert).toHaveScreenshot('state-error.png', {
       timeout: STATE_TIMEOUT_MS,
     })
+  })
+})
+
+test.describe('mobile states', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+  })
+
+  test.beforeEach(async ({ page }) => {
+    await stubBuildInfo(page)
+    await stubEnums(page)
+  })
+
+  test('state long fund name wraps inside its allocation card', async ({ page }) => {
+    await stubDiversificationWithLongFundName(page)
+    await openRoute(page, '/diversification')
+    const layout = await page.evaluate(subpixel => {
+      const names = Array.from(document.querySelectorAll<HTMLElement>('.allocation-card-name'))
+      const misfits = names
+        .filter(name => {
+          const card = name.closest<HTMLElement>('.allocation-card')!
+          const contentRight =
+            card.getBoundingClientRect().right - parseFloat(getComputedStyle(card).paddingRight)
+          return (
+            name.getBoundingClientRect().right > contentRight + subpixel ||
+            name.scrollWidth > name.clientWidth
+          )
+        })
+        .map(name => name.textContent?.trim())
+      return { cards: names.length, misfits }
+    }, SUBPIXEL_PX)
+    expect(layout).toEqual({ cards: 5, misfits: [] })
   })
 })

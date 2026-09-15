@@ -54,6 +54,7 @@ const emit = defineEmits<{
 <style scoped>
 .view-switch {
   display: inline-flex;
+  flex-shrink: 0;
   margin-left: 0.5rem;
   border: 1px solid var(--color-control-border);
   border-radius: var(--radius-container);

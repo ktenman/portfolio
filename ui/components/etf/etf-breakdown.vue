@@ -55,30 +55,34 @@
         :benchmark-label="benchmarkLabel"
       >
         <template #actions>
-          <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
-            <button
-              v-for="tab in breakdownTabs"
-              :key="tab.key"
-              class="breakdown-tab"
-              :class="{ active: activeTab === tab.key }"
-              :aria-pressed="activeTab === tab.key"
-              type="button"
-              @click="activeTab = tab.key"
-            >
-              {{ tab.label }}
-            </button>
-            <template v-if="!benchmarkUnavailable">
-              <span class="platform-separator" aria-hidden="true"></span>
-              <label class="compare-switch compare-toggle">
-                <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
-                <span class="compare-track" aria-hidden="true"></span>
-                <span class="compare-label">
-                  <span class="compare-prefix">vs</span>
-                  {{ benchmarkLabel }}
-                </span>
-              </label>
-            </template>
-            <view-switch v-model="view" />
+          <div class="breakdown-toolbar">
+            <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
+              <button
+                v-for="tab in breakdownTabs"
+                :key="tab.key"
+                class="breakdown-tab"
+                :class="{ active: activeTab === tab.key }"
+                :aria-pressed="activeTab === tab.key"
+                type="button"
+                @click="activeTab = tab.key"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+            <div class="breakdown-controls">
+              <template v-if="!benchmarkUnavailable">
+                <span class="platform-separator" aria-hidden="true"></span>
+                <label class="compare-switch compare-toggle">
+                  <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
+                  <span class="compare-track" aria-hidden="true"></span>
+                  <span class="compare-label">
+                    <span class="compare-prefix">vs</span>
+                    {{ benchmarkLabel }}
+                  </span>
+                </label>
+              </template>
+              <view-switch v-model="view" />
+            </div>
           </div>
         </template>
       </etf-breakdown-chart>
@@ -485,15 +489,20 @@ onMounted(async () => {
   display: inline-block;
 }
 
-.breakdown-tabs {
+.breakdown-toolbar,
+.breakdown-tabs,
+.breakdown-controls {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
   align-items: center;
   gap: 0.25rem;
 }
 
-.breakdown-tabs .platform-separator {
+.breakdown-controls {
+  margin-left: auto;
+}
+
+.breakdown-controls .platform-separator {
   margin: 0 0.25rem;
 }
 
@@ -623,16 +632,16 @@ onMounted(async () => {
     max-width: none;
   }
 
-  .breakdown-tabs {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
+  .breakdown-toolbar {
     width: 100%;
+  }
+
+  .breakdown-tabs,
+  .breakdown-controls {
     gap: 0.375rem;
   }
 
   .breakdown-tab {
-    flex-shrink: 1;
-    min-width: 0;
     padding: 0.3125rem 0;
     border: 0;
     border-bottom: 0.125rem solid transparent;
@@ -645,19 +654,6 @@ onMounted(async () => {
     background: transparent;
   }
 
-  .compare-toggle {
-    flex-shrink: 0;
-    margin-left: auto;
-  }
-
-  .breakdown-tabs .platform-separator {
-    display: none;
-  }
-
-  .compare-prefix {
-    display: none;
-  }
-
   .compare-switch {
     gap: 0.25rem;
     padding-inline: 0.125rem;
@@ -665,13 +661,34 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 359px) {
-  .breakdown-tabs {
-    flex-wrap: wrap;
+@media (min-width: 576px) and (max-width: 768px) {
+  .compare-prefix {
+    display: none;
+  }
+}
+
+@media (max-width: 575px) {
+  .breakdown-toolbar {
+    row-gap: 0.75rem;
   }
 
-  .compare-toggle {
-    margin-left: 0;
+  .breakdown-tabs {
+    flex-basis: 100%;
+    justify-content: space-between;
+    column-gap: 0.75rem;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+
+  .breakdown-tab {
+    margin-bottom: -1px;
+  }
+
+  .breakdown-controls {
+    flex-basis: 100%;
+  }
+
+  .breakdown-controls .view-switch {
+    margin-left: auto;
   }
 }
 
