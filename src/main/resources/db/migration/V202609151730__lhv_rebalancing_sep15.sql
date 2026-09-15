@@ -15,4 +15,5 @@ VALUES
     ((SELECT id FROM instrument WHERE symbol = 'WEBN:GER:EUR'), 'BUY', 48, 12.760, '2026-09-15', 'LHV', 0),
     ((SELECT id FROM instrument WHERE symbol = 'WEBN:GER:EUR'), 'BUY', 48, 12.760, '2026-09-15', 'LHV', 0),
     ((SELECT id FROM instrument WHERE symbol = 'WEBN:GER:EUR'), 'BUY', 3, 12.762, '2026-09-15', 'LHV', 0),
-    ((SELECT id FROM instrument WHERE symbol = 'WEBN:GER:EUR'), 'BUY', 201, 12.766, '2026-09-15', 'LHV', 0);
+    ((SELECT id FROM instrument WHERE symbol = 'WEBN:GER:EUR'), 'BUY', 201, 12.766, '2026-09-15', 'LHV', 0),
+    ((SELECT id FROM instrument WHERE symbol = 'EUR'), 'BUY', 4.37, 1, '2026-09-15', 'LHV', 0);
