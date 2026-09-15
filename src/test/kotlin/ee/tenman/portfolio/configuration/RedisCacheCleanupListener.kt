@@ -15,7 +15,7 @@ class RedisCacheCleanupListener : AbstractTestExecutionListener() {
   override fun beforeTestMethod(testContext: TestContext) {
     val cacheManager = testContext.applicationContext.getBean(CacheManager::class.java)
     cacheManager.cacheNames.forEach { cacheName ->
-      cacheManager.getCache(cacheName)?.clear()
+      cacheManager.getCache(cacheName)?.invalidate()
     }
 
     val connectionFactory = testContext.applicationContext.getBean(RedisConnectionFactory::class.java)
