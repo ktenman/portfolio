@@ -116,14 +116,9 @@ describe('BreakdownPanel', () => {
     expect(other.find('.row-bar').exists()).toBe(false)
   })
 
-  it('hides the legend and benchmark text without a benchmark', () => {
+  it('hides the benchmark text without a benchmark', () => {
     const wrapper = mountPanel({ benchmark: null, benchmarkLabel: undefined })
-    expect(wrapper.find('.panel-legend').exists()).toBe(false)
     expect(wrapper.find('.row-benchmark').exists()).toBe(false)
-  })
-
-  it('places the legend in the panel header', () => {
-    expect(mountPanel().find('.panel-header .panel-legend').exists()).toBe(true)
   })
 
   it('puts a hover title on each row', () => {
@@ -142,13 +137,9 @@ describe('BreakdownPanel', () => {
     expect(mountPanel().find('.row-tick').attributes('style')).toContain('left: 49.26')
   })
 
-  it('hides the legend and benchmark text while the comparison is switched off', () => {
+  it('hides the benchmark text while the comparison is switched off', () => {
     localStorage.setItem('portfolio_benchmark_compare', 'false')
-    const wrapper = mountPanel()
-    expect([
-      wrapper.find('.panel-legend').exists(),
-      wrapper.find('.row-benchmark').exists(),
-    ]).toEqual([false, false])
+    expect(mountPanel().find('.row-benchmark').exists()).toBe(false)
   })
 
   it('persists the comparison toggle', async () => {

@@ -30,12 +30,6 @@
           <view-switch v-model="view" />
         </div>
       </div>
-      <div v-if="compared && view === 'bars'" class="panel-legend">
-        <span class="legend-bar"></span>
-        <span>This allocation</span>
-        <span class="legend-tick"></span>
-        <span>{{ benchmarkLabel }}</span>
-      </div>
     </div>
     <breakdown-bars v-if="view === 'bars'" :rows="rows" :benchmark-label="benchmarkLabel" />
     <breakdown-donut v-else :rows="rows" />
@@ -177,29 +171,6 @@ const rows = computed(() => {
   color: var(--color-brass-deep);
 }
 
-.panel-legend {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: var(--text-label);
-  color: var(--color-ink-muted);
-  white-space: nowrap;
-}
-
-.legend-bar {
-  width: 1rem;
-  height: 0.5rem;
-  border-radius: 2px;
-  background: var(--color-brass);
-}
-
-.legend-tick {
-  width: 2px;
-  height: 0.75rem;
-  margin-left: 0.5rem;
-  background: var(--color-ink);
-}
-
 @media (max-width: 639px) {
   .breakdown-toolbar {
     width: 100%;
@@ -246,6 +217,7 @@ const rows = computed(() => {
 
   .breakdown-tabs {
     flex-basis: 100%;
+    justify-content: space-between;
     column-gap: 0.75rem;
     border-bottom: 1px solid var(--color-hairline);
   }
