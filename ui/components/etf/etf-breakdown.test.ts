@@ -516,6 +516,21 @@ describe('etf-breakdown', () => {
     ])
   })
 
+  it('keeps the comparison and view switches out of the breakdown dimension group', async () => {
+    withBenchmarkFund()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    const group = wrapper.find('[role="group"][aria-label="Breakdown dimension"]')
+    expect(group.findAll('button, input').map(control => control.text())).toEqual([
+      'Sectors',
+      'Industries',
+      'Holdings',
+      'Countries',
+    ])
+  })
+
   it('persists the chosen breakdown view', async () => {
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
 

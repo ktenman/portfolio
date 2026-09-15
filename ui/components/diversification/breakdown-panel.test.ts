@@ -51,6 +51,16 @@ describe('BreakdownPanel', () => {
     expect(labels).toEqual(['Sectors', 'Industries', 'Holdings', 'Countries'])
   })
 
+  it('keeps the comparison and view switches out of the breakdown dimension group', () => {
+    const group = mountPanel().find('[role="group"][aria-label="Breakdown dimension"]')
+    expect(group.findAll('button, input').map(control => control.text())).toEqual([
+      'Sectors',
+      'Industries',
+      'Holdings',
+      'Countries',
+    ])
+  })
+
   it('opens on Industries by default', () => {
     expect(mountPanel().find('.breakdown-tab.active').text()).toBe('Industries')
   })
