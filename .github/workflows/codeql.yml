@@ -107,6 +107,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+          tools: ${{ matrix.language == 'java-kotlin' && 'nightly' || 'linked' }}
           queries: security-extended,security-and-quality
           threads: 8
           config-file: ./.github/codeql/codeql-config.yml
