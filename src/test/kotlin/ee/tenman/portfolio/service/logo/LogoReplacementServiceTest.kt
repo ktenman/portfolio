@@ -9,6 +9,7 @@ import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -23,7 +24,7 @@ class LogoReplacementServiceTest {
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val logoValidationService = mockk<LogoValidationService>()
   private val imageProcessingService = mockk<ImageProcessingService>()
-  private val logoCacheService = mockk<LogoCacheService>()
+  private val minioService = mockk<MinioService>(relaxed = true)
   private val logoCandidateCacheService = mockk<LogoCandidateCacheService>()
   private val properties = LogoReplacementProperties()
   private lateinit var service: LogoReplacementService
@@ -37,7 +38,7 @@ class LogoReplacementServiceTest {
         imageDownloadService,
         logoValidationService,
         imageProcessingService,
-        logoCacheService,
+        minioService,
         logoCandidateCacheService,
         properties,
       )
@@ -120,7 +121,6 @@ class LogoReplacementServiceTest {
       val holding = createHolding(uuid, "Apple Inc", "AAPL")
       every { logoCandidateCacheService.getCachedData(uuid) } returns cachedData
       every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-      every { logoCacheService.saveLogo(uuid, processedImage) } returns processedImage
       every { etfHoldingRepository.findByUuid(uuid) } returns holding
       every { etfHoldingRepository.save(holding) } returns holding
       every { logoCandidateCacheService.clearCache(uuid) } returns Unit
@@ -129,12 +129,12 @@ class LogoReplacementServiceTest {
 
       expect(result).toEqual(true)
       expect(holding.logoSource).toEqual(LogoSource.MANUAL)
-      verify { logoCacheService.saveLogo(uuid, processedImage) }
+      verify { minioService.uploadLogo(uuid, processedImage) }
       verify { logoCandidateCacheService.clearCache(uuid) }
     }
 
     @Test
-    fun `should return false when holding not found after processing`() {
+    fun `should return false without uploading logo when holding not found`() {
       val uuid = UUID.randomUUID()
       val imageData = "test-image".toByteArray()
       val processedImage = "processed".toByteArray()
@@ -142,12 +142,12 @@ class LogoReplacementServiceTest {
       val cachedData = CachedLogoData(candidates = listOf(cachedCandidate), images = mapOf(0 to imageData))
       every { logoCandidateCacheService.getCachedData(uuid) } returns cachedData
       every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-      every { logoCacheService.saveLogo(uuid, processedImage) } returns processedImage
       every { etfHoldingRepository.findByUuid(uuid) } returns null
 
       val result = service.replaceLogo(uuid, 0)
 
       expect(result).toEqual(false)
+      verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
     }
   }
 

@@ -7,7 +7,7 @@ import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
-import ee.tenman.portfolio.service.logo.LogoCacheService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -20,7 +20,7 @@ import java.util.UUID
 class EtfHoldingServiceTest {
   private val etfHoldingPersistenceService = mockk<EtfHoldingPersistenceService>()
   private val holdingIdentityService = mockk<HoldingIdentityService>(relaxed = true)
-  private val logoCacheService = mockk<LogoCacheService>()
+  private val minioService = mockk<MinioService>(relaxed = true)
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val imageProcessingService = mockk<ImageProcessingService>()
   private lateinit var service: EtfHoldingService
@@ -34,7 +34,7 @@ class EtfHoldingServiceTest {
       EtfHoldingService(
         etfHoldingPersistenceService,
         holdingIdentityService,
-        logoCacheService,
+        minioService,
         imageDownloadService,
         imageProcessingService,
       )
@@ -59,13 +59,12 @@ class EtfHoldingServiceTest {
       mapOf("NVIDIA Corp" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-    every { logoCacheService.saveLogo(holdingUuid, processedImage) } returns processedImage
     every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
-    verify { logoCacheService.saveLogo(holdingUuid, processedImage) }
+    verify { minioService.uploadLogo(holdingUuid, processedImage) }
     verify { etfHoldingPersistenceService.saveHolding(holding) }
   }
 
@@ -79,7 +78,7 @@ class EtfHoldingServiceTest {
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     verify(exactly = 0) { imageDownloadService.download(any()) }
-    verify(exactly = 0) { logoCacheService.saveLogo(any(), any()) }
+    verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
   }
 
   @Test
@@ -121,13 +120,12 @@ class EtfHoldingServiceTest {
       mapOf("Apple Inc" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-    every { logoCacheService.saveLogo(holdingUuid, processedImage) } returns processedImage
     every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoSource).toEqual(LogoSource.LIGHTYEAR)
-    verify { logoCacheService.saveLogo(holdingUuid, processedImage) }
+    verify { minioService.uploadLogo(holdingUuid, processedImage) }
     verify { etfHoldingPersistenceService.saveHolding(holding) }
   }
 
@@ -150,7 +148,7 @@ class EtfHoldingServiceTest {
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
 
     expect(holding.logoSource).toEqual(null)
-    verify(exactly = 0) { logoCacheService.saveLogo(any(), any()) }
+    verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
   }
 
   private fun createHolding(
