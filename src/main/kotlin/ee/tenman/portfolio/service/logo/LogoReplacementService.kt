@@ -161,12 +161,12 @@ class LogoReplacementService(
     holdingUuid: UUID,
     processedImage: ByteArray,
   ): Boolean {
-    minioService.uploadLogo(holdingUuid, processedImage)
     val holding = etfHoldingRepository.findByUuid(holdingUuid)
     if (holding == null) {
       log.warn("Holding not found for UUID: $holdingUuid")
       return false
     }
+    minioService.uploadLogo(holdingUuid, processedImage)
     holding.logoSource = LogoSource.MANUAL
     etfHoldingRepository.save(holding)
     logoCandidateCacheService.clearCache(holdingUuid)

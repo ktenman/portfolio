@@ -20,7 +20,7 @@ import java.util.UUID
 class EtfHoldingServiceTest {
   private val etfHoldingPersistenceService = mockk<EtfHoldingPersistenceService>()
   private val holdingIdentityService = mockk<HoldingIdentityService>(relaxed = true)
-  private val minioService = mockk<MinioService>()
+  private val minioService = mockk<MinioService>(relaxed = true)
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val imageProcessingService = mockk<ImageProcessingService>()
   private lateinit var service: EtfHoldingService
@@ -59,7 +59,6 @@ class EtfHoldingServiceTest {
       mapOf("NVIDIA Corp" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-    every { minioService.uploadLogo(holdingUuid, processedImage) } returns processedImage
     every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))
@@ -121,7 +120,6 @@ class EtfHoldingServiceTest {
       mapOf("Apple Inc" to holding)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns imageData
     every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-    every { minioService.uploadLogo(holdingUuid, processedImage) } returns processedImage
     every { etfHoldingPersistenceService.saveHolding(holding) } returns holding
 
     service.saveHoldings("VWCE", testDate, listOf(holdingData))

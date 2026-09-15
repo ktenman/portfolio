@@ -24,7 +24,7 @@ class LogoReplacementServiceTest {
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val logoValidationService = mockk<LogoValidationService>()
   private val imageProcessingService = mockk<ImageProcessingService>()
-  private val minioService = mockk<MinioService>()
+  private val minioService = mockk<MinioService>(relaxed = true)
   private val logoCandidateCacheService = mockk<LogoCandidateCacheService>()
   private val properties = LogoReplacementProperties()
   private lateinit var service: LogoReplacementService
@@ -121,7 +121,6 @@ class LogoReplacementServiceTest {
       val holding = createHolding(uuid, "Apple Inc", "AAPL")
       every { logoCandidateCacheService.getCachedData(uuid) } returns cachedData
       every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-      every { minioService.uploadLogo(uuid, processedImage) } returns processedImage
       every { etfHoldingRepository.findByUuid(uuid) } returns holding
       every { etfHoldingRepository.save(holding) } returns holding
       every { logoCandidateCacheService.clearCache(uuid) } returns Unit
@@ -135,7 +134,7 @@ class LogoReplacementServiceTest {
     }
 
     @Test
-    fun `should return false when holding not found after processing`() {
+    fun `should return false without uploading logo when holding not found`() {
       val uuid = UUID.randomUUID()
       val imageData = "test-image".toByteArray()
       val processedImage = "processed".toByteArray()
@@ -143,12 +142,12 @@ class LogoReplacementServiceTest {
       val cachedData = CachedLogoData(candidates = listOf(cachedCandidate), images = mapOf(0 to imageData))
       every { logoCandidateCacheService.getCachedData(uuid) } returns cachedData
       every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
-      every { minioService.uploadLogo(uuid, processedImage) } returns processedImage
       every { etfHoldingRepository.findByUuid(uuid) } returns null
 
       val result = service.replaceLogo(uuid, 0)
 
       expect(result).toEqual(false)
+      verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
     }
   }
 

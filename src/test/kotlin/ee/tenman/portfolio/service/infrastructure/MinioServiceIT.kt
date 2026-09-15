@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.infrastructure
 
+import ch.tutteli.atrium.api.fluent.en_GB.asList
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
@@ -10,7 +11,6 @@ import io.minio.MinioClient
 import io.minio.RemoveObjectArgs
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -56,8 +56,7 @@ class MinioServiceIT {
     minioService.uploadLogo(holdingUuid, testData)
 
     val downloaded = minioService.downloadLogo(holdingUuid)
-    expect(downloaded).notToEqualNull()
-    assertTrue(downloaded.contentEquals(testData))
+    expect(downloaded).notToEqualNull().asList().toEqual(testData.asList())
   }
 
   @Test
@@ -76,8 +75,7 @@ class MinioServiceIT {
     minioService.uploadLogo(holdingUuid, newData)
 
     val downloaded = minioService.downloadLogo(holdingUuid)
-    expect(downloaded).notToEqualNull()
-    assertTrue(downloaded.contentEquals(newData))
+    expect(downloaded).notToEqualNull().asList().toEqual(newData.asList())
   }
 
   @Test
@@ -87,7 +85,6 @@ class MinioServiceIT {
     minioService.downloadLogo(holdingUuid)
     minioService.uploadLogo(holdingUuid, testData)
     val downloaded = minioService.downloadLogo(holdingUuid)
-    expect(downloaded).notToEqualNull()
-    assertTrue(downloaded.contentEquals(testData))
+    expect(downloaded).notToEqualNull().asList().toEqual(testData.asList())
   }
 }

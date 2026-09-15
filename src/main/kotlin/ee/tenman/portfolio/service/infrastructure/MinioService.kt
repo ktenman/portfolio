@@ -8,6 +8,7 @@ import io.minio.PutObjectArgs
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -42,7 +43,7 @@ class MinioService(
         .bucket(minioProperties.bucketName)
         .`object`(objectName)
         .stream(ByteArrayInputStream(data), data.size.toLong(), -1)
-        .contentType("image/png")
+        .contentType(MediaType.IMAGE_PNG_VALUE)
         .build(),
     )
     log.debug("Uploaded object: $objectName")
