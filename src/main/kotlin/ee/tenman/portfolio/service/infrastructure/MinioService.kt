@@ -5,6 +5,7 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_LOGOS_
 import io.minio.GetObjectArgs
 import io.minio.MinioClient
 import io.minio.PutObjectArgs
+import io.minio.errors.ErrorResponseException
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
@@ -50,19 +51,27 @@ class MinioService(
   }
 
   private fun downloadObject(objectName: String): ByteArray? =
-    try {
-      minioClient
-        .getObject(
-          GetObjectArgs
-            .builder()
-            .bucket(minioProperties.bucketName)
-            .`object`(objectName)
-            .build(),
-        ).use { stream: InputStream ->
-          stream.readBytes()
-        }
-    } catch (e: Exception) {
-      log.trace("Object not found: $objectName, reason: ${e.message}")
-      null
-    }
+    runCatching { readObject(objectName) }
+      .getOrElse {
+        if (it.isMissingObject()) return null
+        throw IllegalStateException("Failed to download MinIO object $objectName from bucket ${minioProperties.bucketName}", it)
+      }
+
+  private fun readObject(objectName: String): ByteArray =
+    minioClient
+      .getObject(
+        GetObjectArgs
+          .builder()
+          .bucket(minioProperties.bucketName)
+          .`object`(objectName)
+          .build(),
+      ).use { stream: InputStream ->
+        stream.readBytes()
+      }
+
+  private fun Throwable.isMissingObject(): Boolean = this is ErrorResponseException && errorResponse().code() == NO_SUCH_KEY
+
+  companion object {
+    private const val NO_SUCH_KEY = "NoSuchKey"
+  }
 }
