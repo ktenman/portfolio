@@ -675,6 +675,34 @@ onMounted(async () => {
   }
 }
 
+@media (max-width: 575px) {
+  .breakdown-toolbar {
+    row-gap: 0.75rem;
+  }
+
+  .breakdown-tabs {
+    flex-basis: 100%;
+    column-gap: 0.75rem;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+
+  .breakdown-tab {
+    margin-bottom: -1px;
+  }
+
+  .breakdown-controls {
+    flex-basis: 100%;
+  }
+
+  .breakdown-controls .view-switch {
+    margin-left: auto;
+  }
+
+  .compare-prefix {
+    display: inline;
+  }
+}
+
 @media (min-width: 769px) {
   .etf-filter-container {
     align-items: center;

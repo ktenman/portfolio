@@ -8,7 +8,7 @@ import { type CachedState } from '../../components/diversification/types'
 import { stubInstruments } from './instruments-fixture'
 import { apiRoute, type RouteStub } from './stub'
 
-const AVAILABLE_ETFS: EtfDetailDto[] = [
+export const AVAILABLE_ETFS: EtfDetailDto[] = [
   {
     instrumentId: 101,
     symbol: 'TSTWLD:GER:EUR',
