@@ -238,9 +238,6 @@ describe('usePerformanceChart', () => {
     { key: 'sp500', label: 'S&P 500', color: CHART_COLORS[1], points },
   ]
 
-  const dateAt = (offset: number) =>
-    new Date(Date.UTC(2024, 0, 1 + offset)).toISOString().slice(0, 10)
-
   const valueAt = (offset: number) => {
     if (offset < 30) return 1000
     if (offset === 30) return 2000
