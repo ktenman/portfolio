@@ -31,6 +31,7 @@ describe('PortfolioChart', () => {
     profitValues: [3000, 4000, 5000],
     xirrValues: [10.5, 11.2, 12.0],
     earningsValues: [2500, 2750, 3000],
+    extremes: { low: 0, high: 2 },
   }
 
   const createWrapper = async (props = {}) => {
@@ -249,6 +250,7 @@ describe('PortfolioChart', () => {
         profitValues: [],
         xirrValues: [],
         earningsValues: [],
+        extremes: null,
       }
 
       await createWrapper({ data: emptyData })

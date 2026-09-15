@@ -37,6 +37,24 @@ const mockSummaries = [
     earningsPerMonth: 140,
   }),
 ]
+
+const dateAt = (offset: number) =>
+  new Date(Date.UTC(2024, 0, 1 + offset)).toISOString().slice(0, 10)
+
+const SPIKE_LOW_OFFSET = 55
+const SPIKE_HIGH_OFFSET = 100
+
+const spikyValueAt = (offset: number) => {
+  if (offset === SPIKE_LOW_OFFSET) return 1
+  if (offset === SPIKE_HIGH_OFFSET) return 50000
+  return 10000 + offset
+}
+
+const buildSpikyHistory = () =>
+  Array.from({ length: 200 }, (_, offset) =>
+    createPortfolioSummaryDto({ date: dateAt(offset), totalValue: spikyValueAt(offset) })
+  )
+
 describe('usePortfolioChart', () => {
   it('should return null when summaries are empty', () => {
     const summaries = ref<PortfolioSummaryDto[]>([])
@@ -123,6 +141,43 @@ describe('usePortfolioChart', () => {
       expect(processedChartData.value?.labels?.[0]).toBe('2023-01-01')
       expect(processedChartData.value?.labels?.[30]).toBe('2023-02-01')
     })
+
+    it('should keep the lowest and highest total value between sampled points', () => {
+      const { processedChartData } = usePortfolioChart(ref(buildSpikyHistory()))
+
+      expect(processedChartData.value?.totalValues).toEqual(expect.arrayContaining([1, 50000]))
+    })
+
+    it('should add only the two extremes to the evenly sampled points', () => {
+      const { processedChartData } = usePortfolioChart(ref(buildSpikyHistory()))
+
+      expect(processedChartData.value?.labels).toHaveLength(62)
+    })
+  })
+
+  describe('range extremes', () => {
+    it('should point the extremes at the lowest and highest drawn total value', () => {
+      const { processedChartData } = usePortfolioChart(ref(buildSpikyHistory()))
+      const data = processedChartData.value
+      const extremes = data?.extremes
+
+      expect(
+        extremes && [data?.totalValues[extremes.low], data?.totalValues[extremes.high]]
+      ).toEqual([1, 50000])
+    })
+
+    it('should not mark extremes with fewer than three points', () => {
+      const { processedChartData } = usePortfolioChart(ref(mockSummaries.slice(0, 2)))
+
+      expect(processedChartData.value?.extremes).toBeNull()
+    })
+
+    it('should not mark extremes when the total value never changes', () => {
+      const flat = mockSummaries.map(summary => ({ ...summary, totalValue: 10000 }))
+      const { processedChartData } = usePortfolioChart(ref(flat))
+
+      expect(processedChartData.value?.extremes).toBeNull()
+    })
   })
 
   it('should react to summaries changes', () => {
@@ -182,9 +237,6 @@ describe('usePerformanceChart', () => {
   const sp500 = (points: { date: string; price: number }[]): ChartBenchmark[] => [
     { key: 'sp500', label: 'S&P 500', color: CHART_COLORS[1], points },
   ]
-
-  const dateAt = (offset: number) =>
-    new Date(Date.UTC(2024, 0, 1 + offset)).toISOString().slice(0, 10)
 
   const valueAt = (offset: number) => {
     if (offset < 30) return 1000
@@ -293,6 +345,16 @@ describe('usePerformanceChart', () => {
       expect.closeTo(2),
       expect.closeTo(10),
     ])
+  })
+
+  it('should keep the euro chart extremes in the sampled labels', () => {
+    const history = buildSpikyHistory()
+    const benchmark = history.map(summary => ({ date: summary.date, price: 100 }))
+    const { performanceChartData } = usePerformanceChart(ref(history), ref(sp500(benchmark)))
+
+    expect(performanceChartData.value?.labels).toEqual(
+      expect.arrayContaining([dateAt(SPIKE_LOW_OFFSET), dateAt(SPIKE_HIGH_OFFSET)])
+    )
   })
 })
 
