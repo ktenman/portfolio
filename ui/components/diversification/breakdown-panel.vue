@@ -125,10 +125,6 @@ const rows = computed(() => {
 <style scoped>
 .panel-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
@@ -176,7 +172,6 @@ const rows = computed(() => {
     width: 100%;
   }
 
-  .breakdown-toolbar,
   .breakdown-tabs,
   .breakdown-controls {
     gap: 0.375rem;
@@ -195,18 +190,16 @@ const rows = computed(() => {
     background: transparent;
   }
 
-  .breakdown-controls .platform-separator {
-    display: none;
-  }
-
-  .compare-prefix {
-    display: none;
-  }
-
   .compare-switch {
     gap: 0.25rem;
     padding-inline: 0.125rem;
     font-size: var(--text-label);
+  }
+}
+
+@media (min-width: 576px) and (max-width: 639px) {
+  .compare-prefix {
+    display: none;
   }
 }
 
@@ -232,10 +225,6 @@ const rows = computed(() => {
 
   .breakdown-controls .view-switch {
     margin-left: auto;
-  }
-
-  .compare-prefix {
-    display: inline;
   }
 }
 </style>

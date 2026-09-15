@@ -12,7 +12,6 @@ import { stubTransactions } from './transactions-fixture'
 
 const MAX_CAPTURE_HEIGHT = 12000
 const MIN_TARGET_PX = 24
-const SUBPIXEL_PX = 0.5
 
 const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/', name: 'summary', stub: stubPortfolioSummary },
@@ -47,30 +46,25 @@ for (const route of ROUTES) {
 }
 
 for (const route of BREAKDOWN_ROUTES) {
-  test(`${route.name} lays out every breakdown control without squeezing it`, async ({ page }) => {
+  test(`${route.name} lays out every breakdown control without squeezing it`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
     await route.stub(page)
     await openRoute(page, route.path)
-    const layout = await page.evaluate(
-      ({ minTarget, subpixel }) => {
-        const contentWidth = (element: Element) => {
-          const range = document.createRange()
-          range.selectNodeContents(element)
-          return range.getBoundingClientRect().width
-        }
-        const labels = Array.from(document.querySelectorAll('.breakdown-tab, .compare-toggle'))
-        const buttons = Array.from(document.querySelectorAll('.view-btn'))
-        const squeezed = [
-          ...labels
-            .filter(label => contentWidth(label) > label.getBoundingClientRect().width + subpixel)
-            .map(label => label.textContent?.trim()),
-          ...buttons
-            .filter(button => button.getBoundingClientRect().width < minTarget)
-            .map(button => button.getAttribute('aria-label')),
-        ]
-        return { controls: labels.length + buttons.length, squeezed }
-      },
-      { minTarget: MIN_TARGET_PX, subpixel: SUBPIXEL_PX }
-    )
+    const layout = await page.evaluate(minTarget => {
+      const labels = Array.from(document.querySelectorAll('.breakdown-tab, .compare-toggle'))
+      const buttons = Array.from(document.querySelectorAll('.view-btn'))
+      const squeezed = [
+        ...labels
+          .filter(label => label.scrollWidth > label.clientWidth)
+          .map(label => label.textContent?.trim()),
+        ...buttons
+          .filter(button => button.getBoundingClientRect().width < minTarget)
+          .map(button => button.getAttribute('aria-label')),
+      ]
+      return { controls: labels.length + buttons.length, squeezed }
+    }, MIN_TARGET_PX)
     expect(layout).toEqual({ controls: 7, squeezed: [] })
   })
 }

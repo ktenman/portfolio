@@ -8,7 +8,7 @@ import { type CachedState } from '../../components/diversification/types'
 import { stubInstruments } from './instruments-fixture'
 import { apiRoute, type RouteStub } from './stub'
 
-export const AVAILABLE_ETFS: EtfDetailDto[] = [
+const AVAILABLE_ETFS: EtfDetailDto[] = [
   {
     instrumentId: 101,
     symbol: 'TSTWLD:GER:EUR',
@@ -295,19 +295,29 @@ const BENCHMARK_CALCULATION: DiversificationCalculatorResponseDto = {
 const isBenchmarkRequest = (body: { allocations: { instrumentId: number }[] }) =>
   body.allocations.length === 1 && body.allocations[0].instrumentId === BENCHMARK_ID
 
-export const stubDiversification: RouteStub = async page => {
-  await stubInstruments(page)
-  await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/available-etfs`), route =>
-    route.fulfill({ json: AVAILABLE_ETFS })
-  )
-  await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/calculate`), route =>
-    route.fulfill({
-      json: isBenchmarkRequest(route.request().postDataJSON())
-        ? BENCHMARK_CALCULATION
-        : CALCULATION,
-    })
-  )
-  await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/config`), route =>
-    route.fulfill({ json: CONFIG })
-  )
-}
+const LONG_FUND_NAME = 'Test Aquila World Equity Index Tracker 6 Pension Fund – Ålandsbanken Series'
+
+const stubDiversificationWith =
+  (etfs: EtfDetailDto[]): RouteStub =>
+  async page => {
+    await stubInstruments(page)
+    await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/available-etfs`), route =>
+      route.fulfill({ json: etfs })
+    )
+    await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/calculate`), route =>
+      route.fulfill({
+        json: isBenchmarkRequest(route.request().postDataJSON())
+          ? BENCHMARK_CALCULATION
+          : CALCULATION,
+      })
+    )
+    await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/config`), route =>
+      route.fulfill({ json: CONFIG })
+    )
+  }
+
+export const stubDiversification = stubDiversificationWith(AVAILABLE_ETFS)
+
+export const stubDiversificationWithLongFundName = stubDiversificationWith(
+  AVAILABLE_ETFS.map(etf => (etf.instrumentId === 101 ? { ...etf, name: LONG_FUND_NAME } : etf))
+)

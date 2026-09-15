@@ -498,10 +498,6 @@ onMounted(async () => {
   gap: 0.25rem;
 }
 
-.breakdown-toolbar {
-  justify-content: flex-end;
-}
-
 .breakdown-controls {
   margin-left: auto;
 }
@@ -637,11 +633,9 @@ onMounted(async () => {
   }
 
   .breakdown-toolbar {
-    justify-content: flex-start;
     width: 100%;
   }
 
-  .breakdown-toolbar,
   .breakdown-tabs,
   .breakdown-controls {
     gap: 0.375rem;
@@ -660,18 +654,16 @@ onMounted(async () => {
     background: transparent;
   }
 
-  .breakdown-controls .platform-separator {
-    display: none;
-  }
-
-  .compare-prefix {
-    display: none;
-  }
-
   .compare-switch {
     gap: 0.25rem;
     padding-inline: 0.125rem;
     font-size: var(--text-label);
+  }
+}
+
+@media (min-width: 576px) and (max-width: 768px) {
+  .compare-prefix {
+    display: none;
   }
 }
 
@@ -697,10 +689,6 @@ onMounted(async () => {
 
   .breakdown-controls .view-switch {
     margin-left: auto;
-  }
-
-  .compare-prefix {
-    display: inline;
   }
 }
 

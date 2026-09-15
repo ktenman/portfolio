@@ -4,7 +4,7 @@ import { type TransactionsWithSummaryDto } from '../../models/generated/domain-m
 import { freeze, openRoute, settleAndFreeze, waitForBoxHeightToSettle } from './settle'
 import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
-import { AVAILABLE_ETFS, stubDiversification } from './diversification-fixture'
+import { stubDiversification, stubDiversificationWithLongFundName } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
@@ -17,7 +17,6 @@ const STATE_TIMEOUT_MS = 30000
 const TOAST_MODULE_PATH = '/composables/use-toast.ts'
 const LOADING_HOLD_MS = 20000
 const SUBPIXEL_PX = 0.5
-const LONG_FUND_NAME = 'Test Aquila World Equity Index Tracker 6 Pension Fund – Ålandsbanken Series'
 
 const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
   transactions: [],
@@ -292,14 +291,7 @@ test.describe('mobile states', () => {
   })
 
   test('state long fund name wraps inside its allocation card', async ({ page }) => {
-    await stubDiversification(page)
-    await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/available-etfs`), route =>
-      route.fulfill({
-        json: AVAILABLE_ETFS.map(etf =>
-          etf.instrumentId === 101 ? { ...etf, name: LONG_FUND_NAME } : etf
-        ),
-      })
-    )
+    await stubDiversificationWithLongFundName(page)
     await openRoute(page, '/diversification')
     const layout = await page.evaluate(subpixel => {
       const names = Array.from(document.querySelectorAll<HTMLElement>('.allocation-card-name'))

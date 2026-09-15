@@ -44,14 +44,7 @@ const mountPanel = (props = {}) =>
 describe('BreakdownPanel', () => {
   beforeEach(() => localStorage.clear())
 
-  it('renders four tabs in order', () => {
-    const labels = mountPanel()
-      .findAll('.breakdown-tab:not(.compare-toggle)')
-      .map(t => t.text())
-    expect(labels).toEqual(['Sectors', 'Industries', 'Holdings', 'Countries'])
-  })
-
-  it('keeps the comparison and view switches out of the breakdown dimension group', () => {
+  it('renders the four tabs in order as the only dimension controls', () => {
     const group = mountPanel().find('[role="group"][aria-label="Breakdown dimension"]')
     expect(group.findAll('button, input').map(control => control.text())).toEqual([
       'Sectors',
