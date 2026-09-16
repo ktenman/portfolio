@@ -14,6 +14,7 @@ import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
 import {
   crosshair,
+  rangeExtremes,
   tooltipStyle,
   gridColor,
   labelColor,
@@ -29,6 +30,10 @@ interface Props {
 const props = defineProps<Props>()
 
 const isPerformance = computed(() => props.data !== null && 'benchmarks' in props.data)
+
+const valueExtremes = computed(() =>
+  props.data && !('benchmarks' in props.data) ? props.data.extremes : null
+)
 
 const hiddenSeries = useLocalStorage<string[]>(STORAGE_KEYS.SUMMARY_CHART_HIDDEN, [])
 
@@ -92,6 +97,7 @@ const chartData = computed(() => {
         pointHoverBackgroundColor: CHART_COLORS[0],
         fill: true,
         data: props.data.totalValues,
+        rangeExtremes: props.data.extremes,
         yAxisID: 'y',
       },
       {
@@ -151,7 +157,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       hoverBorderColor: surfaceColor,
     },
     line: {
-      tension: 0.4,
+      cubicInterpolationMode: 'monotone',
       borderWidth: 2,
     },
   },
@@ -199,6 +205,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       type: 'linear' as const,
       display: true,
       position: 'left' as const,
+      grace: valueExtremes.value ? '10%' : 0,
       border: { display: false },
       grid: { color: gridColor },
       ticks: {
@@ -243,7 +250,7 @@ watchEffect(
       chart.update('none')
       return
     }
-    chart = new Chart(element, { type: 'line', data, options, plugins: [crosshair] })
+    chart = new Chart(element, { type: 'line', data, options, plugins: [crosshair, rangeExtremes] })
   },
   { flush: 'post' }
 )

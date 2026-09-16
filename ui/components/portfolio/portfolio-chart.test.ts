@@ -5,6 +5,7 @@ import { Chart, type ChartConfiguration } from 'chart.js'
 import PortfolioChart from './portfolio-chart.vue'
 import { CHART_COLORS } from '../../constants/chart-colors'
 import { STORAGE_KEYS } from '../../constants'
+import { rangeExtremes } from '../../plugins/chart'
 
 vi.mock('chart.js', async importOriginal => {
   const actual = await importOriginal<typeof import('chart.js')>()
@@ -31,6 +32,7 @@ describe('PortfolioChart', () => {
     profitValues: [3000, 4000, 5000],
     xirrValues: [10.5, 11.2, 12.0],
     earningsValues: [2500, 2750, 3000],
+    extremes: { low: 0, high: 2 },
   }
 
   const createWrapper = async (props = {}) => {
@@ -117,6 +119,12 @@ describe('PortfolioChart', () => {
         undefined,
       ])
     })
+
+    it('should hand the range extremes to the total value series', async () => {
+      await createWrapper()
+
+      expect(chartData().datasets[0]).toMatchObject({ rangeExtremes: { low: 0, high: 2 } })
+    })
   })
 
   describe('chart configuration', () => {
@@ -178,6 +186,30 @@ describe('PortfolioChart', () => {
       expect(scales.x.ticks.maxTicksLimit).toBe(5)
       expect(scales.y.ticks.maxTicksLimit).toBe(8)
       expect(scales.y1.ticks.maxTicksLimit).toBe(8)
+    })
+
+    it('should draw the range extremes over the datasets', async () => {
+      await createWrapper()
+
+      expect(chartConfig().plugins).toContain(rangeExtremes)
+    })
+
+    it('should draw monotone curves so extremes stay on their points', async () => {
+      await createWrapper()
+
+      expect(chartOptions().elements.line.cubicInterpolationMode).toBe('monotone')
+    })
+
+    it('should not add room when the range has no extremes to mark', async () => {
+      await createWrapper({ data: { ...mockChartData, extremes: null } })
+
+      expect(chartOptions().scales.y.grace).toBe(0)
+    })
+
+    it('should leave room around the value line for the extreme labels', async () => {
+      await createWrapper()
+
+      expect(chartOptions().scales.y.grace).toBe('10%')
     })
   })
 
@@ -249,6 +281,7 @@ describe('PortfolioChart', () => {
         profitValues: [],
         xirrValues: [],
         earningsValues: [],
+        extremes: null,
       }
 
       await createWrapper({ data: emptyData })
@@ -345,6 +378,12 @@ describe('PortfolioChart', () => {
       await createWrapper({ data: mockPerformanceData })
 
       expect(chartData().datasets.map(dataset => dataset.hidden)).toEqual([false, true])
+    })
+
+    it('should not add room for extreme labels in performance mode', async () => {
+      await createWrapper({ data: mockPerformanceData })
+
+      expect(chartOptions().scales.y.grace).toBe(0)
     })
   })
 })

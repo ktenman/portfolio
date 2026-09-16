@@ -11,6 +11,8 @@ import {
   Legend,
   Filler,
 } from 'chart.js'
+import type { RangeExtremes } from '../composables/use-portfolio-chart'
+import { formatCurrencyWithSymbol } from '../utils/formatters'
 
 Chart.register(
   LineController,
@@ -29,6 +31,7 @@ Chart.defaults.font.family =
 
 const rootStyles = getComputedStyle(document.documentElement)
 const crosshairColor = rootStyles.getPropertyValue('--color-ink-faint').trim()
+const inkColor = rootStyles.getPropertyValue('--color-ink').trim()
 
 export const gridColor = rootStyles.getPropertyValue('--color-hairline').trim()
 export const labelColor = rootStyles.getPropertyValue('--color-ink-soft').trim()
@@ -58,6 +61,22 @@ export const tooltipStyle = {
   usePointStyle: true,
 } as const
 
+const strokeVerticalLine = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  from: number,
+  to: number,
+  dash: number[] = []
+) => {
+  ctx.lineWidth = 1
+  ctx.strokeStyle = crosshairColor
+  ctx.setLineDash(dash)
+  ctx.beginPath()
+  ctx.moveTo(x, from)
+  ctx.lineTo(x, to)
+  ctx.stroke()
+}
+
 export const crosshair: Plugin = {
   id: 'crosshair',
   afterDatasetsDraw(chart) {
@@ -67,13 +86,119 @@ export const crosshair: Plugin = {
     const { top, bottom } = chart.chartArea
     const { ctx } = chart
     ctx.save()
-    ctx.beginPath()
-    ctx.setLineDash([2, 4])
-    ctx.lineWidth = 1
-    ctx.strokeStyle = crosshairColor
-    ctx.moveTo(x, top)
-    ctx.lineTo(x, bottom)
-    ctx.stroke()
+    strokeVerticalLine(ctx, x, top, bottom, [2, 4])
+    ctx.restore()
+  },
+}
+
+const ABOVE = -1
+const BELOW = 1
+type Direction = typeof ABOVE | typeof BELOW
+
+const MARKER_RADIUS = 3.5
+const TICK_START = 7
+const TICK_END = 14
+const LABEL_OFFSET = 17
+const LABEL_GAP = 13
+
+const amountFont = `600 11px ${Chart.defaults.font.family}`
+const dateFont = `400 11px ${Chart.defaults.font.family}`
+
+interface ExtremeMarker {
+  x: number
+  y: number
+  amount: string
+  date: string
+  direction: Direction
+}
+
+interface ExtremesDataset {
+  rangeExtremes?: RangeExtremes | null
+}
+
+interface HaloText {
+  text: string
+  x: number
+  y: number
+  font: string
+  color: string
+}
+
+const extremesOf = (dataset: unknown) => (dataset as ExtremesDataset | undefined)?.rangeExtremes
+
+const markerAt = (
+  chart: Chart,
+  datasetIndex: number,
+  index: number,
+  direction: Direction
+): ExtremeMarker => {
+  const { x, y } = chart.getDatasetMeta(datasetIndex).data[index]
+  return {
+    x,
+    y,
+    amount: formatCurrencyWithSymbol(chart.data.datasets[datasetIndex].data[index] as number),
+    date: String(chart.data.labels?.[index] ?? ''),
+    direction,
+  }
+}
+
+const drawTick = (ctx: CanvasRenderingContext2D, { x, y, direction }: ExtremeMarker) => {
+  strokeVerticalLine(ctx, x, y + direction * TICK_START, y + direction * TICK_END)
+}
+
+const drawDot = (ctx: CanvasRenderingContext2D, { x, y }: ExtremeMarker, color: string) => {
+  ctx.lineWidth = 2
+  ctx.fillStyle = surfaceColor
+  ctx.strokeStyle = color
+  ctx.beginPath()
+  ctx.arc(x, y, MARKER_RADIUS, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+}
+
+const drawHaloText = (ctx: CanvasRenderingContext2D, { text, x, y, font, color }: HaloText) => {
+  ctx.font = font
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = 3
+  ctx.strokeStyle = surfaceColor
+  ctx.strokeText(text, x, y)
+  ctx.fillStyle = color
+  ctx.fillText(text, x, y)
+}
+
+const drawLabel = (chart: Chart, marker: ExtremeMarker) => {
+  const { ctx, chartArea } = chart
+  ctx.font = amountFont
+  const dateOffset = ctx.measureText(marker.amount).width + LABEL_GAP
+  ctx.font = dateFont
+  const width = dateOffset + ctx.measureText(marker.date).width
+  const x = Math.min(Math.max(marker.x - width / 2, chartArea.left), chartArea.right - width)
+  const y = marker.y + marker.direction * LABEL_OFFSET
+  ctx.textAlign = 'left'
+  ctx.textBaseline = marker.direction === ABOVE ? 'bottom' : 'top'
+  drawHaloText(ctx, { text: marker.amount, x, y, font: amountFont, color: inkColor })
+  drawHaloText(ctx, { text: marker.date, x: x + dateOffset, y, font: dateFont, color: labelColor })
+}
+
+export const rangeExtremes: Plugin = {
+  id: 'rangeExtremes',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart
+    const { datasets } = chart.data
+    const datasetIndex = datasets.findIndex(extremesOf)
+    const extremes = extremesOf(datasets[datasetIndex])
+    if (!extremes || !chart.isDatasetVisible(datasetIndex)) return
+    const color = String(datasets[datasetIndex].borderColor)
+    const markers = [
+      markerAt(chart, datasetIndex, extremes.high, ABOVE),
+      markerAt(chart, datasetIndex, extremes.low, BELOW),
+    ]
+    ctx.save()
+    markers.forEach(marker => {
+      drawTick(ctx, marker)
+      drawDot(ctx, marker, color)
+      drawLabel(chart, marker)
+    })
     ctx.restore()
   },
 }
