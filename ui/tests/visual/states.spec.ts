@@ -173,6 +173,16 @@ test.describe('modals', () => {
   })
 })
 
+test('summary chart marks the high and low of the range', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubPortfolioSummary(page)
+  await openRoute(page, '/')
+  await freeze(page)
+  await expect(page.getByTestId('summary-chart')).toHaveScreenshot('summary-range-extremes.png')
+})
+
 test.describe('desktop states', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop')
