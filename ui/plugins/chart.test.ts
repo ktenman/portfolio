@@ -67,21 +67,16 @@ const draw = (options: FakeChartOptions = {}) => {
 }
 
 describe('rangeExtremes', () => {
-  it('should label the high and the low with their amount and date', () => {
-    expect(draw().map(drawn => drawn.text)).toEqual([
-      '€178,204.06',
-      '31.12.25',
-      '€102,060.28',
-      '29.12.25',
-    ])
+  it('should label the high and the low with only their amount', () => {
+    expect(draw().map(drawn => drawn.text)).toEqual(['€178,204.06', '€102,060.28'])
   })
 
   it('should keep labels inside the chart area when the extremes sit on its edges', () => {
-    expect(draw().map(drawn => drawn.x)).toEqual([233, 312, 40, 119])
+    expect(draw().map(drawn => drawn.x)).toEqual([294, 40])
   })
 
   it('should place the high label above its point and the low label below', () => {
-    expect(draw().map(drawn => drawn.y)).toEqual([83, 83, 217, 217])
+    expect(draw().map(drawn => drawn.y)).toEqual([83, 217])
   })
 
   it('should draw nothing when the total value series is hidden', () => {
