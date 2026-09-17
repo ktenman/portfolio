@@ -99,16 +99,13 @@ const MARKER_RADIUS = 3.5
 const TICK_START = 7
 const TICK_END = 14
 const LABEL_OFFSET = 17
-const LABEL_GAP = 13
 
 const amountFont = `600 11px ${Chart.defaults.font.family}`
-const dateFont = `400 11px ${Chart.defaults.font.family}`
 
 interface ExtremeMarker {
   x: number
   y: number
   amount: string
-  date: string
   direction: Direction
 }
 
@@ -137,7 +134,6 @@ const markerAt = (
     x,
     y,
     amount: formatCurrencyWithSymbol(chart.data.datasets[datasetIndex].data[index] as number),
-    date: String(chart.data.labels?.[index] ?? ''),
     direction,
   }
 }
@@ -169,15 +165,12 @@ const drawHaloText = (ctx: CanvasRenderingContext2D, { text, x, y, font, color }
 const drawLabel = (chart: Chart, marker: ExtremeMarker) => {
   const { ctx, chartArea } = chart
   ctx.font = amountFont
-  const dateOffset = ctx.measureText(marker.amount).width + LABEL_GAP
-  ctx.font = dateFont
-  const width = dateOffset + ctx.measureText(marker.date).width
+  const width = ctx.measureText(marker.amount).width
   const x = Math.min(Math.max(marker.x - width / 2, chartArea.left), chartArea.right - width)
   const y = marker.y + marker.direction * LABEL_OFFSET
   ctx.textAlign = 'left'
   ctx.textBaseline = marker.direction === ABOVE ? 'bottom' : 'top'
   drawHaloText(ctx, { text: marker.amount, x, y, font: amountFont, color: inkColor })
-  drawHaloText(ctx, { text: marker.date, x: x + dateOffset, y, font: dateFont, color: labelColor })
 }
 
 export const rangeExtremes: Plugin = {
