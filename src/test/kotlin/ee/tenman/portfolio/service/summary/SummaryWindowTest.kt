@@ -56,7 +56,7 @@ class PortfolioXirrWindowServiceTest {
 
     val result = service.calculate(platforms = null)
 
-    expect(result.windows.map { it.period }).toContainExactly("1M", "3M", "6M", "YTD", "1Y", "2Y", "3Y")
+    expect(result.windows.map { it.period }).toContainExactly("1M", "3M", "6M", "YTD", "1Y", "2Y", "3Y", "5Y")
     result.windows.forEach { window ->
       expect(window.xirr).toEqual(null)
       expect(window.fromDate).toEqual(null)
@@ -204,7 +204,7 @@ class PortfolioAnnualWindowServiceTest {
 
     val result = service.calculate(platforms = null)
 
-    expect(result.windows.map { it.period }).toContainExactly("1M", "3M", "6M", "YTD", "1Y", "2Y", "3Y")
+    expect(result.windows.map { it.period }).toContainExactly("1M", "3M", "6M", "YTD", "1Y", "2Y", "3Y", "5Y")
     result.windows.forEach { window ->
       expect(window.annualReturn).toEqual(null)
       expect(window.fromDate).toEqual(null)
@@ -373,4 +373,24 @@ class PortfolioAnnualWindowServiceTest {
       quantity = quantity,
       currentValue = currentValue,
     )
+}
+
+class XirrWindowDefinitionTest {
+  @ParameterizedTest
+  @CsvSource(
+    "1M, 2026-04-06",
+    "3M, 2026-02-06",
+    "6M, 2025-11-06",
+    "YTD, 2026-01-01",
+    "1Y, 2025-05-06",
+    "2Y, 2024-05-06",
+    "3Y, 2023-05-06",
+    "5Y, 2021-05-06",
+  )
+  fun `starts each window the labelled distance before the given day`(
+    label: String,
+    start: LocalDate,
+  ) {
+    expect(XirrWindowDefinition.entries.first { it.label == label }.start(LocalDate.of(2026, 5, 6))).toEqual(start)
+  }
 }

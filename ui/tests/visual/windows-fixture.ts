@@ -10,6 +10,7 @@ const WINDOWS = [
   { period: '1Y', fromDate: '2025-08-07', xirr: 0.329316, annualReturn: 0.187415 },
   { period: '2Y', fromDate: '2024-08-07', xirr: 0.259209, annualReturn: 0.204862 },
   { period: '3Y', fromDate: null, xirr: 0.246688, annualReturn: 0.198337 },
+  { period: '5Y', fromDate: null, xirr: null, annualReturn: null },
 ]
 
 const XIRR_WINDOWS: XirrWindowsDto = {
