@@ -57,7 +57,9 @@
             class="xirr-trigger"
             :class="getTotalsChangeClass('totalXirr')"
             :disabled="totalXirr === null"
-            :title="totalXirr === null ? '' : 'Show XIRR over 1M / 3M / 6M / 1Y / 2Y / 3Y'"
+            :title="
+              totalXirr === null ? '' : 'Show XIRR over 1M / 3M / 6M / YTD / 1Y / 2Y / 3Y / 5Y'
+            "
             @click="emit('show-xirr-windows')"
           >
             {{ totalXirr === null ? 'N/A' : formatPercentageFromDecimal(animatedTotalXirr) }}
@@ -71,7 +73,7 @@
             :title="
               totalAnnualReturn === null
                 ? ''
-                : 'Show buy-and-hold annualized return over 1M / 3M / 6M / 1Y / 2Y / 3Y'
+                : 'Show buy-and-hold annualized return over 1M / 3M / 6M / YTD / 1Y / 2Y / 3Y / 5Y'
             "
             @click="emit('show-annual-windows')"
           >

@@ -13,4 +13,5 @@ enum class XirrWindowDefinition(
   ONE_YEAR("1Y", { it.minusYears(1) }),
   TWO_YEARS("2Y", { it.minusYears(2) }),
   THREE_YEARS("3Y", { it.minusYears(3) }),
+  FIVE_YEARS("5Y", { it.minusYears(5) }),
 }
