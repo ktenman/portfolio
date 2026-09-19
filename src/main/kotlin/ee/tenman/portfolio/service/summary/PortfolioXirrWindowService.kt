@@ -14,7 +14,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
-import java.time.Period
+import java.time.temporal.ChronoUnit
 
 @Service
 class PortfolioXirrWindowService(
@@ -24,21 +24,11 @@ class PortfolioXirrWindowService(
   private val xirrCalculationService: XirrCalculationService,
   private val clock: Clock,
 ) {
-  private val windows: List<XirrWindowDefinition> =
-    listOf(
-      XirrWindowDefinition("1M", Period.ofMonths(1)),
-      XirrWindowDefinition("3M", Period.ofMonths(3)),
-      XirrWindowDefinition("6M", Period.ofMonths(6)),
-      XirrWindowDefinition("1Y", Period.ofYears(1)),
-      XirrWindowDefinition("2Y", Period.ofYears(2)),
-      XirrWindowDefinition("3Y", Period.ofYears(3)),
-    )
-
   @Transactional(readOnly = true)
   fun calculate(platforms: List<Platform>?): XirrWindowsDto {
     val today = LocalDate.now(clock)
     val currentValue = lookupCurrentTotalValue(platforms, today)
-    val rows = windows.map { window -> calculateWindow(window, today, currentValue, platforms) }
+    val rows = XirrWindowDefinition.entries.map { window -> calculateWindow(window, today, currentValue, platforms) }
     return XirrWindowsDto(rows)
   }
 
@@ -48,9 +38,10 @@ class PortfolioXirrWindowService(
     currentValue: BigDecimal,
     platforms: List<Platform>?,
   ): XirrWindowDto {
-    val targetStart = today.minus(window.length)
+    val targetStart = window.start(today)
     val opening = lookupOpening(platforms, targetStart) ?: return notAvailable(window.label)
-    if (currentValue <= BigDecimal.ZERO || opening.totalValue <= BigDecimal.ZERO) {
+    val elapsed = ChronoUnit.DAYS.between(opening.entryDate, today)
+    if (elapsed < MIN_DAYS || currentValue <= BigDecimal.ZERO || opening.totalValue <= BigDecimal.ZERO) {
       return notAvailable(window.label)
     }
     val cashFlows = buildCashFlows(opening.entryDate, today, opening.totalValue, currentValue, platforms)
@@ -112,5 +103,6 @@ class PortfolioXirrWindowService(
 
   companion object {
     private const val SCALE = 6
+    private const val MIN_DAYS = 7L
   }
 }

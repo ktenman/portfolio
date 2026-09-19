@@ -13,7 +13,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
-import java.time.Period
 import java.time.temporal.ChronoUnit
 import kotlin.math.pow
 
@@ -23,19 +22,10 @@ class PortfolioAnnualWindowService(
   private val dailyPriceRepository: DailyPriceRepository,
   private val clock: Clock,
 ) {
-  private val windows: List<XirrWindowDefinition> =
-    listOf(
-      XirrWindowDefinition("1M", Period.ofMonths(1)),
-      XirrWindowDefinition("3M", Period.ofMonths(3)),
-      XirrWindowDefinition("6M", Period.ofMonths(6)),
-      XirrWindowDefinition("1Y", Period.ofYears(1)),
-      XirrWindowDefinition("2Y", Period.ofYears(2)),
-      XirrWindowDefinition("3Y", Period.ofYears(3)),
-    )
-
   @Transactional(readOnly = true)
   fun calculate(platforms: List<Platform>?): AnnualWindowsDto {
     val today = LocalDate.now(clock)
+    val windows = XirrWindowDefinition.entries
     val held =
       instrumentSnapshotService
         .getAllSnapshots(platforms?.map { it.name })
@@ -54,7 +44,7 @@ class PortfolioAnnualWindowService(
     held: List<InstrumentSnapshot>,
     totalCurrentValue: BigDecimal,
   ): AnnualWindowDto {
-    val targetStart = today.minus(window.length)
+    val targetStart = window.start(today)
     val perInstrument =
       held.mapNotNull { snapshot ->
         priceForOpening(snapshot.instrument, targetStart)?.let { (date, price) ->
