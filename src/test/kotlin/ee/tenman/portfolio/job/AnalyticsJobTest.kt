@@ -14,6 +14,7 @@ import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
+import ee.tenman.portfolio.service.summary.IntradaySummaryService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import io.mockk.Runs
@@ -33,7 +34,9 @@ class CurrentDaySummaryRefreshJobTest {
   private val currentDayCache = mockk<CurrentDaySummaryCacheService>(relaxed = true)
   private val platformCache = mockk<PlatformSummaryCacheService>(relaxed = true)
   private val transactionService = mockk<TransactionService>()
-  private val job = CurrentDaySummaryRefreshJob(currentDayCache, platformCache, transactionService)
+  private val intradaySummaryService = mockk<IntradaySummaryService>(relaxed = true)
+  private val job =
+    CurrentDaySummaryRefreshJob(currentDayCache, platformCache, intradaySummaryService, transactionService)
 
   @Test
   fun `should refresh current day summary cache when scheduled refresh runs`() {
@@ -57,6 +60,32 @@ class CurrentDaySummaryRefreshJobTest {
     every { transactionService.getDistinctPlatforms() } returns emptyList()
     job.refresh()
     verify(exactly = 0) { platformCache.putCurrentDaySummaryForPlatforms(any(), any()) }
+  }
+
+  @Test
+  fun `should record an intraday snapshot of the refreshed summary`() {
+    val summary = summaryOn(LocalDate.of(2024, 3, 11))
+    every { currentDayCache.refreshCurrentDaySummary() } returns summary
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV)
+    job.refresh()
+    verify { intradaySummaryService.record(summary) }
+  }
+
+  @Test
+  fun `should still record an intraday snapshot when caching platform summaries throws`() {
+    val summary = summaryOn(LocalDate.of(2024, 3, 11))
+    every { currentDayCache.refreshCurrentDaySummary() } returns summary
+    every { transactionService.getDistinctPlatforms() } throws RuntimeException("database unavailable")
+    job.refresh()
+    verify { intradaySummaryService.record(summary) }
+  }
+
+  @Test
+  fun `should dont propagate failures when recording the intraday snapshot throws`() {
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV)
+    every { intradaySummaryService.record(any()) } throws RuntimeException("database unavailable")
+    job.refresh()
+    verify { currentDayCache.refreshCurrentDaySummary() }
   }
 
   @Test
