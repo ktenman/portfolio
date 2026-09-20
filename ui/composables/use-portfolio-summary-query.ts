@@ -27,6 +27,8 @@ const INTRADAY_RANGES: TimeRange[] = [
   TimeRange.SIX_DAYS,
 ]
 
+const MIN_INTRADAY_POINTS = 2
+
 export function usePortfolioSummaryQuery(
   selectedPlatforms?: Ref<string[]>,
   selectedRange?: Ref<TimeRange>
@@ -83,7 +85,11 @@ export function usePortfolioSummaryQuery(
 
   const isIntradayRange = computed(() => INTRADAY_RANGES.includes(rangeKey.value))
 
-  const { data: intradayData } = useQuery({
+  const {
+    data: intradayData,
+    error: intradayError,
+    isPlaceholderData: isIntradayStale,
+  } = useQuery({
     queryKey: ['portfolio-summary', 'intraday', platformsKey, rangeKey],
     queryFn: () => portfolioSummaryService.getIntraday(rangeKey.value, activePlatforms.value),
     placeholderData: keepPreviousData,
@@ -137,11 +143,13 @@ export function usePortfolioSummaryQuery(
     mergeHistoricalWithCurrent(seriesData.value ?? [], currentSummary.value)
   )
 
-  const chartSummaries = computed<ChartSummary[]>(() =>
-    isIntradayRange.value && intradayData.value?.length
-      ? intradayData.value
-      : performanceSummaries.value
-  )
+  const chartSummaries = computed<ChartSummary[]>(() => {
+    const points = intradayData.value ?? []
+    if (!isIntradayRange.value || points.length < MIN_INTRADAY_POINTS) {
+      return performanceSummaries.value
+    }
+    return [...(seriesData.value?.slice(0, 1) ?? []), ...points]
+  })
 
   const benchmarks = computed<ChartBenchmark[]>(() =>
     benchmarkQueries.map(({ benchmark, query }) => ({
@@ -159,7 +167,11 @@ export function usePortfolioSummaryQuery(
   const isLoading = computed(() => isLoadingHistorical.value || isLoadingCurrent.value)
   const error = computed(() => historicalError.value?.message || null)
   const rangeError = computed(
-    () => seriesError.value?.message || rangeChangeError.value?.message || null
+    () =>
+      seriesError.value?.message ||
+      rangeChangeError.value?.message ||
+      intradayError.value?.message ||
+      null
   )
 
   return {
@@ -172,7 +184,9 @@ export function usePortfolioSummaryQuery(
     reversedSummaries,
     isLoading,
     isFetching: isFetchingNextPage,
-    isRangeLoading: isFetchingSeries,
+    isRangeLoading: computed(
+      () => isFetchingSeries.value || (isIntradayRange.value && isIntradayStale.value)
+    ),
     isRecalculating: recalculateMutation.isPending,
     error,
     rangeError,
