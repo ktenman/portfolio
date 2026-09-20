@@ -157,14 +157,11 @@ class IntradaySummaryServiceTest {
   }
 
   @Test
-  fun `should read the platforms in alphabetical order when several platforms are selected`() {
+  fun `should return no points when a partial selection of several platforms is requested`() {
     val selection = listOf(Platform.LIGHTYEAR, Platform.LHV)
     every { transactionService.coversEveryPlatform(selection) } returns false
-    stubRead()
 
-    service.getPoints(TimeRange.ONE_DAY, selection)
-
-    verify { portfolioIntradaySummaryRepository.findBucketed(any(), any(), "LHV,LIGHTYEAR") }
+    expect(service.getPoints(TimeRange.ONE_DAY, selection)).toBeEmpty()
   }
 
   @Test

@@ -29,7 +29,7 @@ class IntradaySummaryService(
   ) {
     portfolioIntradaySummaryRepository.upsert(
       capturedAt = Instant.now(clock).truncatedTo(ChronoUnit.MINUTES),
-      platformKey = listOfNotNull(platform).toPlatformKey(),
+      platformKey = platform?.name.orEmpty(),
       totalValue = summary.totalValue,
       xirrAnnualReturn = summary.xirrAnnualReturn,
       totalProfit = summary.totalProfit,
@@ -43,15 +43,16 @@ class IntradaySummaryService(
     platforms: List<Platform>?,
   ): List<IntradaySummaryPointDto> {
     val days = range.intradayDays(LocalDate.now(clock)) ?: return emptyList()
+    val platformKey = platformKey(platforms) ?: return emptyList()
     val from = Instant.now(clock).minus(days, ChronoUnit.DAYS)
     return portfolioIntradaySummaryRepository
-      .findBucketed(from, Duration.ofDays(days).seconds / MAX_POINTS, platformKey(platforms))
+      .findBucketed(from, Duration.ofDays(days).seconds / MAX_POINTS, platformKey)
       .map { it.toIntradayPointDto() }
   }
 
-  private fun platformKey(platforms: List<Platform>?): String {
-    val selection = platforms?.takeUnless { transactionService.coversEveryPlatform(it) } ?: emptyList()
-    return selection.toPlatformKey()
+  private fun platformKey(platforms: List<Platform>?): String? {
+    if (platforms == null || transactionService.coversEveryPlatform(platforms)) return ""
+    return platforms.singleOrNull()?.name
   }
 
   @Transactional

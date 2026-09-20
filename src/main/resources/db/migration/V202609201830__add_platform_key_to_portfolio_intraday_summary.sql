@@ -5,4 +5,4 @@ ALTER TABLE portfolio_intraday_summary
     DROP CONSTRAINT portfolio_intraday_summary_captured_at_key;
 
 ALTER TABLE portfolio_intraday_summary
-    ADD CONSTRAINT uk_intraday_summary_capture UNIQUE (captured_at, platform_key);
+    ADD CONSTRAINT uk_intraday_summary_capture UNIQUE (platform_key, captured_at);

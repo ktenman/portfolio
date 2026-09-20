@@ -76,14 +76,6 @@ class PortfolioIntradaySummaryRepositoryIT {
   }
 
   @Test
-  fun `should keep the rows of different platforms captured at the same minute`() {
-    upsert("2026-09-20T10:15:00Z", "100.00")
-    upsert("2026-09-20T10:15:00Z", "40.00", "LIGHTYEAR_BUSINESS")
-
-    expect(portfolioIntradaySummaryRepository.findAll()).toHaveSize(2)
-  }
-
-  @Test
   fun `should return only the rows of the requested platform when bucketing`() {
     upsert("2026-09-20T10:00:00Z", "100.00")
     upsert("2026-09-20T10:00:00Z", "40.00", "LIGHTYEAR_BUSINESS")

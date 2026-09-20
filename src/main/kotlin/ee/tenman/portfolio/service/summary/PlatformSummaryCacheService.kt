@@ -69,7 +69,5 @@ class PlatformSummaryCacheService(
     range: TimeRange,
   ): List<PortfolioDailySummary> = summaryService.getSeriesForPlatforms(platforms, range)
 
-  fun platformKey(platforms: List<Platform>): String = platforms.toPlatformKey()
+  fun platformKey(platforms: List<Platform>): String = platforms.map { it.name }.sorted().joinToString(",")
 }
-
-fun List<Platform>.toPlatformKey(): String = map { it.name }.sorted().joinToString(",")
