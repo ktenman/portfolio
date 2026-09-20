@@ -64,11 +64,6 @@ class IntradaySummaryCleanupJobTest {
   private val intradaySummaryService = mockk<IntradaySummaryService>()
   private val clock = Clock.fixed(Instant.parse("2026-09-20T04:30:00Z"), ZoneId.of("UTC"))
 
-  @BeforeEach
-  fun setUp() {
-    clearMocks(jobExecutionService, intradaySummaryService)
-  }
-
   @Test
   fun `should delete intraday summaries older than 30 days by default`() {
     val job = IntradaySummaryCleanupJob(jobExecutionService, intradaySummaryService, clock, 30)

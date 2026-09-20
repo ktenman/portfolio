@@ -14,12 +14,7 @@ import {
 } from '../services/summary-aggregator'
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
-import {
-  BENCHMARKS,
-  useBenchmarkSelection,
-  type ChartBenchmark,
-  type ChartSummary,
-} from './use-portfolio-chart'
+import { BENCHMARKS, type ChartBenchmark, type ChartSummary } from './use-portfolio-chart'
 import { REFETCH_INTERVALS } from '../constants/api'
 import { type BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
 
@@ -86,11 +81,7 @@ export function usePortfolioSummaryQuery(
     enabled: isAuthenticated,
   })
 
-  const selectedBenchmarks = useBenchmarkSelection()
-
-  const isIntradayRange = computed(
-    () => INTRADAY_RANGES.includes(rangeKey.value) && selectedBenchmarks.value.length === 0
-  )
+  const isIntradayRange = computed(() => INTRADAY_RANGES.includes(rangeKey.value))
 
   const { data: intradayData } = useQuery({
     queryKey: ['portfolio-summary', 'intraday', platformsKey, rangeKey],

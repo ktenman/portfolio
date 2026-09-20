@@ -10,13 +10,13 @@ import java.time.Instant
 @Table(name = "portfolio_intraday_summary")
 class PortfolioIntradaySummary(
   @Column(name = "captured_at", nullable = false, unique = true)
-  var capturedAt: Instant,
+  val capturedAt: Instant,
   @Column(name = "total_value", nullable = false)
-  var totalValue: BigDecimal,
+  val totalValue: BigDecimal,
   @Column(name = "xirr_annual_return", nullable = false)
-  var xirrAnnualReturn: BigDecimal,
+  val xirrAnnualReturn: BigDecimal,
   @Column(name = "total_profit", nullable = false)
-  var totalProfit: BigDecimal,
+  val totalProfit: BigDecimal,
   @Column(name = "earnings_per_day", nullable = false)
-  var earningsPerDay: BigDecimal,
+  val earningsPerDay: BigDecimal,
 ) : BaseEntity()
