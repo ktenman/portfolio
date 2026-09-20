@@ -105,6 +105,7 @@ const amountFont = `600 11px ${Chart.defaults.font.family}`
 interface ExtremeMarker {
   x: number
   y: number
+  index: number
   amount: string
   direction: Direction
 }
@@ -133,6 +134,7 @@ const markerAt = (
   return {
     x,
     y,
+    index,
     amount: formatCurrencyWithSymbol(chart.data.datasets[datasetIndex].data[index] as number),
     direction,
   }
@@ -182,6 +184,7 @@ export const rangeExtremes: Plugin = {
     const extremes = extremesOf(datasets[datasetIndex])
     if (!extremes || !chart.isDatasetVisible(datasetIndex)) return
     const color = String(datasets[datasetIndex].borderColor)
+    const hovered = chart.tooltip?.getActiveElements()[0]?.index
     const markers = [
       markerAt(chart, datasetIndex, extremes.high, ABOVE),
       markerAt(chart, datasetIndex, extremes.low, BELOW),
@@ -189,7 +192,7 @@ export const rangeExtremes: Plugin = {
     ctx.save()
     markers.forEach(marker => {
       drawTick(ctx, marker)
-      drawDot(ctx, marker, color)
+      if (marker.index !== hovered) drawDot(ctx, marker, color)
       drawLabel(chart, marker)
     })
     ctx.restore()
