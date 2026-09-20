@@ -116,6 +116,14 @@ export interface RangeChangeDto {
     changePercent: number;
 }
 
+export interface IntradaySummaryPointDto {
+    date: DateAsString;
+    totalValue: number;
+    xirrAnnualReturn: number;
+    totalProfit: number;
+    earningsPerMonth: number;
+}
+
 export interface BenchmarkPointDto extends Serializable {
     date: DateAsString;
     price: number;

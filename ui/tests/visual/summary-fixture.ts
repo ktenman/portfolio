@@ -277,6 +277,9 @@ export const stubPortfolioSummary: RouteStub = async page => {
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), route =>
     route.fulfill({ json: SERIES_RESPONSE })
   )
+  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_INTRADAY), route =>
+    route.fulfill({ json: [] })
+  )
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_HISTORICAL), route =>
     route.fulfill({ json: HISTORICAL_RESPONSE })
   )

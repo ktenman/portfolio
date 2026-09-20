@@ -2,6 +2,7 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
+import ee.tenman.portfolio.service.summary.IntradaySummaryService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
@@ -11,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled
 class CurrentDaySummaryRefreshJob(
   private val currentDaySummaryCacheService: CurrentDaySummaryCacheService,
   private val platformSummaryCacheService: PlatformSummaryCacheService,
+  private val intradaySummaryService: IntradaySummaryService,
   private val transactionService: TransactionService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -23,6 +25,8 @@ class CurrentDaySummaryRefreshJob(
         .getOrNull() ?: return
     runCatching { cacheForKnownPlatforms(summary) }
       .onFailure { log.warn("Failed to refresh platform current day summary cache", it) }
+    runCatching { intradaySummaryService.record(summary) }
+      .onFailure { log.warn("Failed to record intraday summary snapshot", it) }
   }
 
   private fun cacheForKnownPlatforms(summary: PortfolioDailySummary) {

@@ -23,6 +23,10 @@ vi.mock('../../utils/formatters', () => ({
     const d = new Date(date)
     return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`
   }),
+  formatDateTime: vi.fn((date: string) => {
+    const d = new Date(date)
+    return `${d.getDate()}.${d.getMonth() + 1} ${d.getHours()}:${d.getMinutes()}`
+  }),
 }))
 
 describe('PortfolioChart', () => {
@@ -76,6 +80,14 @@ describe('PortfolioChart', () => {
       await createWrapper()
 
       expect(chartData().labels).toEqual(['29.12.2023', '30.12.2023', '31.12.2023'])
+    })
+
+    it('should format intraday labels with the time of day', async () => {
+      await createWrapper({
+        data: { ...mockChartData, labels: ['2023-12-31T09:05:00', '2023-12-31T09:10:00'] },
+      })
+
+      expect(chartData().labels).toEqual(['31.12 9:5', '31.12 9:10'])
     })
 
     it('should create correct datasets structure', async () => {

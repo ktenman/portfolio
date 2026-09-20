@@ -31,6 +31,11 @@ export interface ChartDataPoint {
   extremes: RangeExtremes | null
 }
 
+export type ChartSummary = Pick<
+  PortfolioSummaryDto,
+  'date' | 'totalValue' | 'totalProfit' | 'xirrAnnualReturn' | 'earningsPerMonth'
+>
+
 const MAX_CHART_POINTS = 60
 const MIN_EXTREME_POINTS = 3
 
@@ -41,7 +46,7 @@ function findExtremes(values: number[]): RangeExtremes | null {
   return values[low] === values[high] ? null : { low, high }
 }
 
-function sampleIndices(summaries: PortfolioSummaryDto[]): number[] {
+function sampleIndices(summaries: ChartSummary[]): number[] {
   if (summaries.length <= MAX_CHART_POINTS) return summaries.map((_, index) => index)
 
   const step = (summaries.length - 1) / (MAX_CHART_POINTS - 1)
@@ -55,7 +60,7 @@ function pick<T>(array: T[], indices: number[]): T[] {
   return indices.map(index => array[index])
 }
 
-export function usePortfolioChart(summaries: Ref<PortfolioSummaryDto[]>) {
+export function usePortfolioChart(summaries: Ref<ChartSummary[]>) {
   const processedChartData = computed<ChartDataPoint | null>(() => {
     if (summaries.value.length === 0) return null
 
