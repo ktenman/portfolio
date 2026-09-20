@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.summary
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
@@ -10,11 +11,13 @@ import ee.tenman.portfolio.domain.PortfolioIntradaySummary
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.repository.PortfolioIntradaySummaryRepository
 import ee.tenman.portfolio.service.transaction.TransactionService
+import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Clock
@@ -90,8 +93,15 @@ class IntradaySummaryServiceTest {
   }
 
   @Test
-  fun `should return no points when the range is wider than a week`() {
-    expect(service.getPoints(TimeRange.ONE_MONTH, null)).toBeEmpty()
+  fun `should return no points when the range is wider than six days`() {
+    expect(service.getPoints(TimeRange.ONE_WEEK, null)).toBeEmpty()
+  }
+
+  @Test
+  fun `should return points when the range is six days`() {
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any()) } returns listOf(point())
+
+    expect(service.getPoints(TimeRange.SIX_DAYS, null)).toHaveSize(1)
   }
 
   @Test
@@ -123,10 +133,10 @@ class IntradaySummaryServiceTest {
 
     service.deleteOlderThan(cutoff)
 
-    expect(portfolioIntradaySummaryRepository.deleteOlderThan(cutoff)).toEqual(7)
+    verify { portfolioIntradaySummaryRepository.deleteOlderThan(cutoff) }
   }
 
-  private fun captureBucketSeconds(): io.mockk.CapturingSlot<Long> {
+  private fun captureBucketSeconds(): CapturingSlot<Long> {
     val bucketSeconds = slot<Long>()
     every { portfolioIntradaySummaryRepository.findBucketed(any(), capture(bucketSeconds)) } returns emptyList()
     return bucketSeconds

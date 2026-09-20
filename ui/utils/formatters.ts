@@ -1,3 +1,4 @@
+import { formatDate as formatWithPattern } from '@vueuse/core'
 import type { InstrumentDto } from '../models/generated/domain-models'
 
 const SUPERSCRIPT_DIGITS: Record<string, string> = {
@@ -200,17 +201,8 @@ export const formatDate = (dateString: string): string => {
   return `${day}.${month}.${year}`
 }
 
-export const formatDateTime = (dateString: string): string => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-
-  return `${day}.${month} ${hours}:${minutes}`
-}
+export const formatDateTime = (dateString: string): string =>
+  dateString ? formatWithPattern(new Date(dateString), 'DD.MM HH:mm') : ''
 
 export const formatQuantity = (value: number | string | undefined | null): string => {
   if (value === null || value === undefined) return '0.0000'

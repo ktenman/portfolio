@@ -23,7 +23,7 @@ fun PortfolioDailySummary.toSummaryDto(profitChange24h: BigDecimal? = null) =
 
 fun PortfolioIntradaySummary.toIntradayPointDto() =
   IntradaySummaryPointDto(
-    capturedAt = capturedAt,
+    date = capturedAt,
     totalValue = totalValue,
     xirrAnnualReturn = xirrAnnualReturn,
     totalProfit = totalProfit,

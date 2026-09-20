@@ -117,7 +117,7 @@ export interface RangeChangeDto {
 }
 
 export interface IntradaySummaryPointDto {
-    capturedAt: DateAsString;
+    date: DateAsString;
     totalValue: number;
     xirrAnnualReturn: number;
     totalProfit: number;

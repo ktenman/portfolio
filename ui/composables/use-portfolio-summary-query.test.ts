@@ -50,14 +50,14 @@ const mockHistoricalSummaries = [
 ]
 const mockIntradayPoints: IntradaySummaryPointDto[] = [
   {
-    capturedAt: '2023-12-31T09:00:00Z',
+    date: '2023-12-31T09:00:00Z',
     totalValue: 49900,
     totalProfit: 4900,
     xirrAnnualReturn: 0.1859,
     earningsPerMonth: 3000,
   },
   {
-    capturedAt: '2023-12-31T09:05:00Z',
+    date: '2023-12-31T09:05:00Z',
     totalValue: 50100,
     totalProfit: 5100,
     xirrAnnualReturn: 0.1861,

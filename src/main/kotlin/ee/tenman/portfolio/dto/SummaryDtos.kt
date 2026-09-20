@@ -19,7 +19,7 @@ data class PortfolioSummaryDto(
 )
 
 data class IntradaySummaryPointDto(
-  val capturedAt: Instant,
+  val date: Instant,
   val totalValue: BigDecimal,
   val xirrAnnualReturn: BigDecimal,
   val totalProfit: BigDecimal,

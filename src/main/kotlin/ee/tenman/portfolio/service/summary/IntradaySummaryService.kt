@@ -9,11 +9,11 @@ import ee.tenman.portfolio.service.transaction.TransactionService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-private const val SECONDS_PER_DAY = 86400L
 private const val MAX_POINTS = 300L
 
 @Service
@@ -42,7 +42,7 @@ class IntradaySummaryService(
     if (platforms != null && !transactionService.coversEveryPlatform(platforms)) return emptyList()
     val from = Instant.now(clock).minus(days, ChronoUnit.DAYS)
     return portfolioIntradaySummaryRepository
-      .findBucketed(from, days * SECONDS_PER_DAY / MAX_POINTS)
+      .findBucketed(from, Duration.ofDays(days).seconds / MAX_POINTS)
       .map { it.toIntradayPointDto() }
   }
 

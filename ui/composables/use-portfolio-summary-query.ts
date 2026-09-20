@@ -88,7 +88,7 @@ export function usePortfolioSummaryQuery(
     queryFn: () => portfolioSummaryService.getIntraday(rangeKey.value, activePlatforms.value),
     placeholderData: keepPreviousData,
     enabled: computed(() => isAuthenticated.value && isIntradayRange.value),
-    refetchInterval: REFETCH_INTERVALS.SUMMARY,
+    refetchInterval: REFETCH_INTERVALS.INTRADAY,
   })
 
   const benchmarkQuery = (index: BenchmarkIndex) =>
@@ -137,16 +137,9 @@ export function usePortfolioSummaryQuery(
     mergeHistoricalWithCurrent(seriesData.value ?? [], currentSummary.value)
   )
 
-  const intradaySummaries = computed<ChartSummary[]>(() => {
-    if (!isIntradayRange.value) return []
-    return (intradayData.value ?? []).map(point => ({
-      date: point.capturedAt,
-      totalValue: point.totalValue,
-      totalProfit: point.totalProfit,
-      xirrAnnualReturn: point.xirrAnnualReturn,
-      earningsPerMonth: point.earningsPerMonth,
-    }))
-  })
+  const intradaySummaries = computed<ChartSummary[]>(() =>
+    isIntradayRange.value ? (intradayData.value ?? []) : []
+  )
 
   const chartSummaries = computed<ChartSummary[]>(() =>
     intradaySummaries.value.length > 0 ? intradaySummaries.value : performanceSummaries.value

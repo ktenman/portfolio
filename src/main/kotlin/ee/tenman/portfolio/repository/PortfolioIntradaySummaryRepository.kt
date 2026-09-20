@@ -37,15 +37,10 @@ interface PortfolioIntradaySummaryRepository : JpaRepository<PortfolioIntradaySu
 
   @Query(
     """
-    SELECT DISTINCT ON (bucketed.bucket)
-      bucketed.id, bucketed.captured_at, bucketed.total_value, bucketed.xirr_annual_return,
-      bucketed.total_profit, bucketed.earnings_per_day, bucketed.created_at, bucketed.updated_at, bucketed.version
-    FROM (
-      SELECT s.*, FLOOR(EXTRACT(EPOCH FROM s.captured_at) / :bucketSeconds) AS bucket
-      FROM portfolio_intraday_summary s
-      WHERE s.captured_at >= :from
-    ) bucketed
-    ORDER BY bucketed.bucket, bucketed.captured_at DESC
+    SELECT DISTINCT ON (bucket) s.*, FLOOR(EXTRACT(EPOCH FROM s.captured_at) / :bucketSeconds) AS bucket
+    FROM portfolio_intraday_summary s
+    WHERE s.captured_at >= :from
+    ORDER BY bucket, s.captured_at DESC
     """,
     nativeQuery = true,
   )

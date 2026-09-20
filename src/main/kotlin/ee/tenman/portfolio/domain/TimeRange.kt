@@ -73,7 +73,7 @@ enum class TimeRange(
 
   companion object {
     const val DEFAULT_CODE = "1M"
-    private const val MAX_INTRADAY_DAYS = 7L
+    private const val MAX_INTRADAY_DAYS = 6L
 
     fun from(code: String): TimeRange =
       entries.firstOrNull { it.code.equals(code, ignoreCase = true) }
