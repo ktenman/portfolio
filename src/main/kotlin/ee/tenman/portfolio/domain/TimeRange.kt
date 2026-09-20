@@ -2,6 +2,7 @@ package ee.tenman.portfolio.domain
 
 import com.fasterxml.jackson.annotation.JsonValue
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 enum class TimeRange(
   @get:JsonValue val code: String,
@@ -64,8 +65,15 @@ enum class TimeRange(
     return start.datesUntil(end.plusDays(1)).toList()
   }
 
+  fun intradayDays(today: LocalDate): Long? {
+    val start = startDate(today) ?: return null
+    val days = ChronoUnit.DAYS.between(start, today)
+    return days.takeIf { it in 1..MAX_INTRADAY_DAYS }
+  }
+
   companion object {
     const val DEFAULT_CODE = "1M"
+    private const val MAX_INTRADAY_DAYS = 7L
 
     fun from(code: String): TimeRange =
       entries.firstOrNull { it.code.equals(code, ignoreCase = true) }

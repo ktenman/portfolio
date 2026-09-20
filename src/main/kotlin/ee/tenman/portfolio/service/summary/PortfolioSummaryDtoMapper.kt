@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.service.summary
 
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.PortfolioIntradaySummary
+import ee.tenman.portfolio.dto.IntradaySummaryPointDto
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import java.math.BigDecimal
 
@@ -17,4 +19,13 @@ fun PortfolioDailySummary.toSummaryDto(profitChange24h: BigDecimal? = null) =
     earningsPerDay = earningsPerDay,
     earningsPerMonth = earningsPerDay.multiply(DAYS_PER_MONTH),
     totalProfitChange24h = profitChange24h,
+  )
+
+fun PortfolioIntradaySummary.toIntradayPointDto() =
+  IntradaySummaryPointDto(
+    capturedAt = capturedAt,
+    totalValue = totalValue,
+    xirrAnnualReturn = xirrAnnualReturn,
+    totalProfit = totalProfit,
+    earningsPerMonth = earningsPerDay.multiply(DAYS_PER_MONTH),
   )
