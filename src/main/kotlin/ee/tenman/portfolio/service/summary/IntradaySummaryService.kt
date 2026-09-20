@@ -15,7 +15,6 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 private const val MAX_POINTS = 300L
-private const val ALL_PLATFORMS = ""
 
 @Service
 class IntradaySummaryService(
@@ -30,7 +29,7 @@ class IntradaySummaryService(
   ) {
     portfolioIntradaySummaryRepository.upsert(
       capturedAt = Instant.now(clock).truncatedTo(ChronoUnit.MINUTES),
-      platformKey = platform?.name ?: ALL_PLATFORMS,
+      platformKey = listOfNotNull(platform).toPlatformKey(),
       totalValue = summary.totalValue,
       xirrAnnualReturn = summary.xirrAnnualReturn,
       totalProfit = summary.totalProfit,
@@ -44,16 +43,15 @@ class IntradaySummaryService(
     platforms: List<Platform>?,
   ): List<IntradaySummaryPointDto> {
     val days = range.intradayDays(LocalDate.now(clock)) ?: return emptyList()
-    val key = platformKey(platforms) ?: return emptyList()
     val from = Instant.now(clock).minus(days, ChronoUnit.DAYS)
     return portfolioIntradaySummaryRepository
-      .findBucketed(from, Duration.ofDays(days).seconds / MAX_POINTS, key)
+      .findBucketed(from, Duration.ofDays(days).seconds / MAX_POINTS, platformKey(platforms))
       .map { it.toIntradayPointDto() }
   }
 
-  private fun platformKey(platforms: List<Platform>?): String? {
-    if (platforms == null || transactionService.coversEveryPlatform(platforms)) return ALL_PLATFORMS
-    return platforms.singleOrNull()?.name
+  private fun platformKey(platforms: List<Platform>?): String {
+    val selection = platforms?.takeUnless { transactionService.coversEveryPlatform(it) } ?: emptyList()
+    return selection.toPlatformKey()
   }
 
   @Transactional

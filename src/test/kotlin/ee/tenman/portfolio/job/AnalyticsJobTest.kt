@@ -85,16 +85,6 @@ class CurrentDaySummaryRefreshJobTest {
   }
 
   @Test
-  fun `should record the supplied summary for the only platform rather than recalculating it`() {
-    val summary = summaryOn(LocalDate.of(2024, 3, 11))
-    every { currentDayCache.refreshCurrentDaySummary() } returns summary
-    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV)
-    job.refresh()
-    verify(exactly = 0) { platformCache.refreshCurrentDaySummaryForPlatforms(any()) }
-    verify { intradaySummaryService.record(summary, Platform.LHV) }
-  }
-
-  @Test
   fun `should record the second platform when the first platform summary throws`() {
     val binance = summaryOn(LocalDate.of(2024, 3, 13))
     every { currentDayCache.refreshCurrentDaySummary() } returns summaryOn(LocalDate.of(2024, 3, 11))

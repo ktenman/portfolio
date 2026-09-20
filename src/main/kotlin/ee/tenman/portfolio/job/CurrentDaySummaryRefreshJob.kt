@@ -24,21 +24,16 @@ class CurrentDaySummaryRefreshJob(
       runCatching { currentDaySummaryCacheService.refreshCurrentDaySummary() }
         .onFailure { log.warn("Failed to refresh current day summary cache", it) }
         .getOrNull() ?: return
-    runCatching { refreshKnownPlatforms(summary) }
-      .onFailure { log.warn("Failed to refresh platform current day summaries", it) }
     runCatching { intradaySummaryService.record(summary) }
       .onFailure { log.warn("Failed to record intraday summary snapshot", it) }
+    runCatching { refreshKnownPlatforms(summary) }
+      .onFailure { log.warn("Failed to refresh platform current day summaries", it) }
   }
 
   private fun refreshKnownPlatforms(summary: PortfolioDailySummary) {
     val platforms = transactionService.getDistinctPlatforms()
     if (platforms.isEmpty()) return
     platformSummaryCacheService.putCurrentDaySummaryForPlatforms(platforms, summary)
-    val only = platforms.singleOrNull()
-    if (only != null) {
-      intradaySummaryService.record(summary, only)
-      return
-    }
     platforms.forEach { platform ->
       runCatching { record(platform) }
         .onFailure { log.warn("Failed to record intraday summary for platform $platform", it) }

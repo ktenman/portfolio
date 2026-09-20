@@ -70,6 +70,16 @@ class SummaryCacheTest {
   }
 
   @Test
+  fun `should serve the recomputed platform summary from cache after a refresh`() {
+    every { summaryService.getCurrentDaySummaryForPlatforms(platforms) } returns summaryOn(LocalDate.of(2024, 3, 11))
+    platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
+    every { summaryService.getCurrentDaySummaryForPlatforms(platforms) } returns summaryOn(LocalDate.of(2024, 3, 12))
+    platformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(platforms)
+    val served = platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms)
+    expect(served.entryDate).toEqual(LocalDate.of(2024, 3, 12))
+  }
+
+  @Test
   fun `should serve cached current day summary without recomputing when the day advances`() {
     every { summaryService.getCurrentDaySummary() } returns summaryOn(LocalDate.of(2024, 3, 11))
     currentDaySummaryCacheService.getCurrentDaySummary()
