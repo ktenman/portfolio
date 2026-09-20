@@ -35,7 +35,7 @@ class IntradaySummaryServiceTest {
   fun `should truncate the capture timestamp to the minute when recording a summary`() {
     val capturedAt = slot<Instant>()
     every {
-      portfolioIntradaySummaryRepository.upsert(capture(capturedAt), any(), any(), any(), any())
+      portfolioIntradaySummaryRepository.upsert(capture(capturedAt), any(), any(), any(), any(), any())
     } just runs
 
     service.record(summary())
@@ -47,12 +47,30 @@ class IntradaySummaryServiceTest {
   fun `should record the daily earnings rate rather than the monthly rate`() {
     val earningsPerDay = slot<BigDecimal>()
     every {
-      portfolioIntradaySummaryRepository.upsert(any(), any(), any(), any(), capture(earningsPerDay))
+      portfolioIntradaySummaryRepository.upsert(any(), any(), any(), any(), any(), capture(earningsPerDay))
     } just runs
 
     service.record(summary())
 
     expect(earningsPerDay.captured).toEqualNumerically(BigDecimal("3.25"))
+  }
+
+  @Test
+  fun `should record the whole portfolio key when no platform is given`() {
+    val platformKey = captureRecordedKey()
+
+    service.record(summary())
+
+    expect(platformKey.captured).toEqual("")
+  }
+
+  @Test
+  fun `should record the platform key of the platform the summary belongs to`() {
+    val platformKey = captureRecordedKey()
+
+    service.record(summary(), Platform.LIGHTYEAR_BUSINESS)
+
+    expect(platformKey.captured).toEqual("LIGHTYEAR_BUSINESS")
   }
 
   @Test
@@ -76,7 +94,7 @@ class IntradaySummaryServiceTest {
   @Test
   fun `should read from the start of the requested range`() {
     val from = slot<Instant>()
-    every { portfolioIntradaySummaryRepository.findBucketed(capture(from), any()) } returns emptyList()
+    every { portfolioIntradaySummaryRepository.findBucketed(capture(from), any(), any()) } returns emptyList()
 
     service.getPoints(TimeRange.TWO_DAYS, null)
 
@@ -85,7 +103,7 @@ class IntradaySummaryServiceTest {
 
   @Test
   fun `should expose the monthly earnings rate for a captured point`() {
-    every { portfolioIntradaySummaryRepository.findBucketed(any(), any()) } returns listOf(point())
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns listOf(point())
 
     val points = service.getPoints(TimeRange.ONE_DAY, null)
 
@@ -99,7 +117,7 @@ class IntradaySummaryServiceTest {
 
   @Test
   fun `should return points when the range is six days`() {
-    every { portfolioIntradaySummaryRepository.findBucketed(any(), any()) } returns listOf(point())
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns listOf(point())
 
     expect(service.getPoints(TimeRange.SIX_DAYS, null)).toHaveSize(1)
   }
@@ -110,18 +128,48 @@ class IntradaySummaryServiceTest {
   }
 
   @Test
-  fun `should return no points when the platform filter dont cover every platform`() {
-    every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns false
+  fun `should read the whole portfolio key when no platform filter is given`() {
+    val platformKey = captureReadKey()
 
-    expect(service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))).toBeEmpty()
+    service.getPoints(TimeRange.ONE_DAY, null)
+
+    expect(platformKey.captured).toEqual("")
   }
 
   @Test
-  fun `should return points when the platform filter covers every platform`() {
+  fun `should read the whole portfolio key when the platform filter covers every platform`() {
     every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns true
-    every { portfolioIntradaySummaryRepository.findBucketed(any(), any()) } returns listOf(point())
+    val platformKey = captureReadKey()
+
+    service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))
+
+    expect(platformKey.captured).toEqual("")
+  }
+
+  @Test
+  fun `should read the platform key when a single platform is selected`() {
+    every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns false
+    val platformKey = captureReadKey()
+
+    service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))
+
+    expect(platformKey.captured).toEqual("LIGHTYEAR")
+  }
+
+  @Test
+  fun `should return the points captured for a single selected platform`() {
+    every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns false
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns listOf(point())
 
     expect(service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))).toHaveSize(1)
+  }
+
+  @Test
+  fun `should return no points when several platforms are selected`() {
+    val selection = listOf(Platform.LIGHTYEAR, Platform.LHV)
+    every { transactionService.coversEveryPlatform(selection) } returns false
+
+    expect(service.getPoints(TimeRange.ONE_DAY, selection)).toBeEmpty()
   }
 
   @Test
@@ -136,13 +184,28 @@ class IntradaySummaryServiceTest {
 
   private fun captureBucketSeconds(): CapturingSlot<Long> {
     val bucketSeconds = slot<Long>()
-    every { portfolioIntradaySummaryRepository.findBucketed(any(), capture(bucketSeconds)) } returns emptyList()
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), capture(bucketSeconds), any()) } returns emptyList()
     return bucketSeconds
+  }
+
+  private fun captureReadKey(): CapturingSlot<String> {
+    val platformKey = slot<String>()
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), capture(platformKey)) } returns emptyList()
+    return platformKey
+  }
+
+  private fun captureRecordedKey(): CapturingSlot<String> {
+    val platformKey = slot<String>()
+    every {
+      portfolioIntradaySummaryRepository.upsert(any(), capture(platformKey), any(), any(), any(), any())
+    } just runs
+    return platformKey
   }
 
   private fun point() =
     PortfolioIntradaySummary(
       capturedAt = Instant.parse("2026-09-20T12:00:00Z"),
+      platformKey = "",
       totalValue = BigDecimal("1000.00"),
       xirrAnnualReturn = BigDecimal("0.1857"),
       totalProfit = BigDecimal("250.00"),

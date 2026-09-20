@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.IntradaySummaryService
@@ -23,15 +24,29 @@ class CurrentDaySummaryRefreshJob(
       runCatching { currentDaySummaryCacheService.refreshCurrentDaySummary() }
         .onFailure { log.warn("Failed to refresh current day summary cache", it) }
         .getOrNull() ?: return
-    runCatching { cacheForKnownPlatforms(summary) }
-      .onFailure { log.warn("Failed to refresh platform current day summary cache", it) }
+    runCatching { refreshKnownPlatforms(summary) }
+      .onFailure { log.warn("Failed to refresh platform current day summaries", it) }
     runCatching { intradaySummaryService.record(summary) }
       .onFailure { log.warn("Failed to record intraday summary snapshot", it) }
   }
 
-  private fun cacheForKnownPlatforms(summary: PortfolioDailySummary) {
+  private fun refreshKnownPlatforms(summary: PortfolioDailySummary) {
     val platforms = transactionService.getDistinctPlatforms()
     if (platforms.isEmpty()) return
     platformSummaryCacheService.putCurrentDaySummaryForPlatforms(platforms, summary)
+    val only = platforms.singleOrNull()
+    if (only != null) {
+      intradaySummaryService.record(summary, only)
+      return
+    }
+    platforms.forEach { platform ->
+      runCatching { record(platform) }
+        .onFailure { log.warn("Failed to record intraday summary for platform $platform", it) }
+    }
+  }
+
+  private fun record(platform: Platform) {
+    val summary = platformSummaryCacheService.refreshCurrentDaySummaryForPlatforms(listOf(platform))
+    intradaySummaryService.record(summary, platform)
   }
 }

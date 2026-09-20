@@ -72,6 +72,42 @@ class CurrentDaySummaryRefreshJobTest {
   }
 
   @Test
+  fun `should record an intraday snapshot for every platform holding transactions`() {
+    val lhv = summaryOn(LocalDate.of(2024, 3, 12))
+    val lightyear = summaryOn(LocalDate.of(2024, 3, 13))
+    every { currentDayCache.refreshCurrentDaySummary() } returns summaryOn(LocalDate.of(2024, 3, 11))
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV, Platform.LIGHTYEAR)
+    every { platformCache.refreshCurrentDaySummaryForPlatforms(listOf(Platform.LHV)) } returns lhv
+    every { platformCache.refreshCurrentDaySummaryForPlatforms(listOf(Platform.LIGHTYEAR)) } returns lightyear
+    job.refresh()
+    verify(exactly = 1) { intradaySummaryService.record(lhv, Platform.LHV) }
+    verify(exactly = 1) { intradaySummaryService.record(lightyear, Platform.LIGHTYEAR) }
+  }
+
+  @Test
+  fun `should record the supplied summary for the only platform rather than recalculating it`() {
+    val summary = summaryOn(LocalDate.of(2024, 3, 11))
+    every { currentDayCache.refreshCurrentDaySummary() } returns summary
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV)
+    job.refresh()
+    verify(exactly = 0) { platformCache.refreshCurrentDaySummaryForPlatforms(any()) }
+    verify { intradaySummaryService.record(summary, Platform.LHV) }
+  }
+
+  @Test
+  fun `should record the second platform when the first platform summary throws`() {
+    val binance = summaryOn(LocalDate.of(2024, 3, 13))
+    every { currentDayCache.refreshCurrentDaySummary() } returns summaryOn(LocalDate.of(2024, 3, 11))
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV, Platform.BINANCE)
+    every {
+      platformCache.refreshCurrentDaySummaryForPlatforms(listOf(Platform.LHV))
+    } throws RuntimeException("price provider unavailable")
+    every { platformCache.refreshCurrentDaySummaryForPlatforms(listOf(Platform.BINANCE)) } returns binance
+    job.refresh()
+    verify { intradaySummaryService.record(binance, Platform.BINANCE) }
+  }
+
+  @Test
   fun `should still record an intraday snapshot when caching platform summaries throws`() {
     val summary = summaryOn(LocalDate.of(2024, 3, 11))
     every { currentDayCache.refreshCurrentDaySummary() } returns summary
