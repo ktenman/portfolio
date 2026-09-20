@@ -129,7 +129,7 @@ class IntradaySummaryServiceTest {
 
   @Test
   fun `should read the whole portfolio key when no platform filter is given`() {
-    stubRead()
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns emptyList()
 
     service.getPoints(TimeRange.ONE_DAY, null)
 
@@ -139,7 +139,7 @@ class IntradaySummaryServiceTest {
   @Test
   fun `should read the whole portfolio key when the platform filter covers every platform`() {
     every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns true
-    stubRead()
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns emptyList()
 
     service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))
 
@@ -149,7 +149,7 @@ class IntradaySummaryServiceTest {
   @Test
   fun `should read the platform key when a single platform is selected`() {
     every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns false
-    stubRead()
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns emptyList()
 
     service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))
 
@@ -178,10 +178,6 @@ class IntradaySummaryServiceTest {
     val bucketSeconds = slot<Long>()
     every { portfolioIntradaySummaryRepository.findBucketed(any(), capture(bucketSeconds), any()) } returns emptyList()
     return bucketSeconds
-  }
-
-  private fun stubRead() {
-    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns emptyList()
   }
 
   private fun point() =
