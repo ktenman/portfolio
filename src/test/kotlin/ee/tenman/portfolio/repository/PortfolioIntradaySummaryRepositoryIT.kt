@@ -22,9 +22,11 @@ class PortfolioIntradaySummaryRepositoryIT {
   private fun upsert(
     capturedAt: String,
     totalValue: String,
+    platformKey: String = "",
   ) = transactionRunner.runInTransaction {
     portfolioIntradaySummaryRepository.upsert(
       Instant.parse(capturedAt),
+      platformKey,
       BigDecimal(totalValue),
       BigDecimal("0.1857"),
       BigDecimal("42.5"),
@@ -58,7 +60,7 @@ class PortfolioIntradaySummaryRepositoryIT {
     upsert("2026-09-20T10:04:00Z", "2")
     upsert("2026-09-20T10:06:00Z", "3")
 
-    val bucketed = portfolioIntradaySummaryRepository.findBucketed(Instant.parse("2026-09-20T09:00:00Z"), 300)
+    val bucketed = portfolioIntradaySummaryRepository.findBucketed(Instant.parse("2026-09-20T09:00:00Z"), 300, "")
 
     expect(bucketed.map { it.totalValue.toInt() }).toEqual(listOf(2, 3))
   }
@@ -68,9 +70,24 @@ class PortfolioIntradaySummaryRepositoryIT {
     upsert("2026-09-20T08:00:00Z", "1")
     upsert("2026-09-20T10:00:00Z", "2")
 
-    val bucketed = portfolioIntradaySummaryRepository.findBucketed(Instant.parse("2026-09-20T09:00:00Z"), 300)
+    val bucketed = portfolioIntradaySummaryRepository.findBucketed(Instant.parse("2026-09-20T09:00:00Z"), 300, "")
 
     expect(bucketed).toHaveSize(1)
+  }
+
+  @Test
+  fun `should return only the rows of the requested platform when bucketing`() {
+    upsert("2026-09-20T10:00:00Z", "100.00")
+    upsert("2026-09-20T10:00:00Z", "40.00", "LIGHTYEAR_BUSINESS")
+
+    val bucketed =
+      portfolioIntradaySummaryRepository.findBucketed(
+        Instant.parse("2026-09-20T09:00:00Z"),
+        300,
+        "LIGHTYEAR_BUSINESS",
+      )
+
+    expect(bucketed.single().totalValue).toEqualNumerically(BigDecimal("40.00"))
   }
 
   @Test

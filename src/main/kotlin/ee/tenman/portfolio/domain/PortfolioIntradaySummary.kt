@@ -9,8 +9,10 @@ import java.time.Instant
 @Entity
 @Table(name = "portfolio_intraday_summary")
 class PortfolioIntradaySummary(
-  @Column(name = "captured_at", nullable = false, unique = true)
+  @Column(name = "captured_at", nullable = false)
   val capturedAt: Instant,
+  @Column(name = "platform_key", nullable = false)
+  val platformKey: String,
   @Column(name = "total_value", nullable = false)
   val totalValue: BigDecimal,
   @Column(name = "xirr_annual_return", nullable = false)

@@ -14,9 +14,9 @@ interface PortfolioIntradaySummaryRepository : JpaRepository<PortfolioIntradaySu
   @Query(
     """
     INSERT INTO portfolio_intraday_summary
-      (captured_at, total_value, xirr_annual_return, total_profit, earnings_per_day, created_at, updated_at, version)
-    VALUES (:capturedAt, :totalValue, :xirrAnnualReturn, :totalProfit, :earningsPerDay, NOW(), NOW(), 0)
-    ON CONFLICT (captured_at)
+      (captured_at, platform_key, total_value, xirr_annual_return, total_profit, earnings_per_day, created_at, updated_at, version)
+    VALUES (:capturedAt, :platformKey, :totalValue, :xirrAnnualReturn, :totalProfit, :earningsPerDay, NOW(), NOW(), 0)
+    ON CONFLICT (captured_at, platform_key)
     DO UPDATE SET
       total_value = :totalValue,
       xirr_annual_return = :xirrAnnualReturn,
@@ -29,6 +29,7 @@ interface PortfolioIntradaySummaryRepository : JpaRepository<PortfolioIntradaySu
   )
   fun upsert(
     capturedAt: Instant,
+    platformKey: String,
     totalValue: BigDecimal,
     xirrAnnualReturn: BigDecimal,
     totalProfit: BigDecimal,
@@ -39,7 +40,7 @@ interface PortfolioIntradaySummaryRepository : JpaRepository<PortfolioIntradaySu
     """
     SELECT DISTINCT ON (bucket) s.*, date_bin(:bucketSeconds * INTERVAL '1 second', s.captured_at, TIMESTAMPTZ 'epoch') AS bucket
     FROM portfolio_intraday_summary s
-    WHERE s.captured_at >= :from
+    WHERE s.captured_at >= :from AND s.platform_key = :platformKey
     ORDER BY bucket, s.captured_at DESC
     """,
     nativeQuery = true,
@@ -47,6 +48,7 @@ interface PortfolioIntradaySummaryRepository : JpaRepository<PortfolioIntradaySu
   fun findBucketed(
     from: Instant,
     bucketSeconds: Long,
+    platformKey: String,
   ): List<PortfolioIntradaySummary>
 
   @Modifying
