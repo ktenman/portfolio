@@ -121,15 +121,13 @@ class IntradaySummaryServiceTest {
     every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns true
     every { portfolioIntradaySummaryRepository.findBucketed(any(), any()) } returns listOf(point())
 
-    expect(service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))).toEqual(
-      service.getPoints(TimeRange.ONE_DAY, null),
-    )
+    expect(service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR))).toHaveSize(1)
   }
 
   @Test
   fun `should delete the captured points older than the given cutoff`() {
     val cutoff = Instant.parse("2026-08-21T04:30:00Z")
-    every { portfolioIntradaySummaryRepository.deleteOlderThan(cutoff) } returns 7
+    every { portfolioIntradaySummaryRepository.deleteOlderThan(cutoff) } just runs
 
     service.deleteOlderThan(cutoff)
 

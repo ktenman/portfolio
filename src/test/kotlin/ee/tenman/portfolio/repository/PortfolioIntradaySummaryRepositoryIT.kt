@@ -7,7 +7,6 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.job.TransactionRunner
 import jakarta.annotation.Resource
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
@@ -19,11 +18,6 @@ class PortfolioIntradaySummaryRepositoryIT {
 
   @Resource
   private lateinit var transactionRunner: TransactionRunner
-
-  @BeforeEach
-  fun setUp() {
-    transactionRunner.runInTransaction { portfolioIntradaySummaryRepository.deleteAll() }
-  }
 
   private fun upsert(
     capturedAt: String,

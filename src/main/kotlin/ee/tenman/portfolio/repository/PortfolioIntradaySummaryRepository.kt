@@ -37,7 +37,7 @@ interface PortfolioIntradaySummaryRepository : JpaRepository<PortfolioIntradaySu
 
   @Query(
     """
-    SELECT DISTINCT ON (bucket) s.*, FLOOR(EXTRACT(EPOCH FROM s.captured_at) / :bucketSeconds) AS bucket
+    SELECT DISTINCT ON (bucket) s.*, date_bin(:bucketSeconds * INTERVAL '1 second', s.captured_at, TIMESTAMPTZ 'epoch') AS bucket
     FROM portfolio_intraday_summary s
     WHERE s.captured_at >= :from
     ORDER BY bucket, s.captured_at DESC
@@ -51,5 +51,5 @@ interface PortfolioIntradaySummaryRepository : JpaRepository<PortfolioIntradaySu
 
   @Modifying
   @Query("DELETE FROM portfolio_intraday_summary WHERE captured_at < :cutoff", nativeQuery = true)
-  fun deleteOlderThan(cutoff: Instant): Int
+  fun deleteOlderThan(cutoff: Instant)
 }
