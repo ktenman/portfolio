@@ -14,6 +14,7 @@ import {
   getGainLossClass,
   getAmountClass,
   formatDate,
+  formatDateTime,
   formatQuantity,
   formatScientific,
   formatPriceChange,
@@ -263,6 +264,17 @@ describe('formatDate', () => {
     ['', ''],
   ] as const)('formats %s as %s', (dateString, expected) => {
     expect(formatDate(dateString)).toBe(expected)
+  })
+})
+
+describe('formatDateTime', () => {
+  it.each([
+    ['2023-01-15T10:30:00', '15.01 10:30'],
+    ['2023-12-31T23:59:59.999', '31.12 23:59'],
+    ['2023-02-05T00:05:00', '05.02 00:05'],
+    ['', ''],
+  ] as const)('formats %s as %s', (dateString, expected) => {
+    expect(formatDateTime(dateString)).toBe(expected)
   })
 })
 

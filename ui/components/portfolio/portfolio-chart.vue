@@ -8,7 +8,7 @@
 import { computed, onBeforeUnmount, ref, watchEffect } from 'vue'
 import { useLocalStorage, useMediaQuery } from '@vueuse/core'
 import { Chart, type ChartOptions } from 'chart.js'
-import { formatDate, formatCurrencyWithSymbol } from '../../utils/formatters'
+import { formatDate, formatDateTime, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { STORAGE_KEYS } from '../../constants'
 import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
@@ -71,7 +71,9 @@ let chart: Chart<'line'> | null = null
 const chartData = computed(() => {
   if (!props.data) return null
 
-  const labels = props.data.labels.map(label => formatDate(label))
+  const labels = props.data.labels.map(label =>
+    label.includes('T') ? formatDateTime(label) : formatDate(label)
+  )
 
   if ('benchmarks' in props.data) {
     return {

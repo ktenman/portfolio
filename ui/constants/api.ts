@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   PORTFOLIO_SUMMARY_HISTORICAL: '/portfolio-summary/historical',
   PORTFOLIO_SUMMARY_CURRENT: '/portfolio-summary/current',
   PORTFOLIO_SUMMARY_SERIES: '/portfolio-summary/series',
+  PORTFOLIO_SUMMARY_INTRADAY: '/portfolio-summary/intraday',
   PORTFOLIO_SUMMARY_BENCHMARK: '/portfolio-summary/benchmark',
   PORTFOLIO_SUMMARY_RANGE_CHANGE: '/portfolio-summary/range-change',
   PORTFOLIO_SUMMARY_RECALCULATE: '/portfolio-summary/recalculate',
@@ -22,6 +23,7 @@ export const API_ENDPOINTS = {
 export const REFETCH_INTERVALS = {
   INSTRUMENTS: 2000,
   SUMMARY: 5000,
+  INTRADAY: 60 * 1000,
   DIVERSIFICATION_ETFS: 60 * 60 * 1000,
   PLATFORMS: 60 * 60 * 1000,
 } as const

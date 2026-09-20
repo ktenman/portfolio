@@ -20,7 +20,7 @@ export function mergeHistoricalWithCurrent(
   return result
 }
 
-export function sortSummariesByDateAsc(summaries: PortfolioSummaryDto[]): PortfolioSummaryDto[] {
+export function sortSummariesByDateAsc<T extends { date: string }>(summaries: T[]): T[] {
   return [...summaries].sort((a, b) => a.date.localeCompare(b.date))
 }
 

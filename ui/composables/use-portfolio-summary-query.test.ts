@@ -4,7 +4,10 @@ import { flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/api'
 import { renderWithProviders } from '../tests/test-utils'
-import type { PortfolioSummaryDto } from '../models/generated/domain-models'
+import type {
+  IntradaySummaryPointDto,
+  PortfolioSummaryDto,
+} from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
 import { BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
@@ -45,6 +48,23 @@ const mockHistoricalSummaries = [
     earningsPerMonth: 3000,
   }),
 ]
+const mockIntradayPoints: IntradaySummaryPointDto[] = [
+  {
+    date: '2023-12-31T09:00:00Z',
+    totalValue: 49900,
+    totalProfit: 4900,
+    xirrAnnualReturn: 0.1859,
+    earningsPerMonth: 3000,
+  },
+  {
+    date: '2023-12-31T09:05:00Z',
+    totalValue: 50100,
+    totalProfit: 5100,
+    xirrAnnualReturn: 0.1861,
+    earningsPerMonth: 3010,
+  },
+]
+
 const mockPage: Page<PortfolioSummaryDto> = {
   content: mockHistoricalSummaries,
   totalElements: 100,
@@ -64,6 +84,7 @@ describe('usePortfolioSummaryQuery', () => {
       changePercent: 1.25,
     })
     vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
+    vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue([])
   })
 
   const setupQuery = (platforms?: Ref<string[]>, range?: Ref<TimeRange>) => {
@@ -290,6 +311,18 @@ describe('usePortfolioSummaryQuery', () => {
       })
     })
 
+    it('should expose the range error when the intraday request fails', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockRejectedValue(
+        new Error('Intraday unavailable')
+      )
+
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(queryResult.rangeError.value).toBe('Intraday unavailable'), {
+        timeout: 5000,
+      })
+    })
+
     it('should expose the range error when the range change request fails', async () => {
       vi.mocked(portfolioSummaryService.getRangeChange).mockRejectedValue(
         new Error('Range change unavailable')
@@ -491,6 +524,134 @@ describe('usePortfolioSummaryQuery', () => {
           ),
         { timeout: 5000 }
       )
+    })
+
+    it('should open the intraday chart series with the daily summary the range starts from', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(queryResult.chartSummaries.value).toEqual([
+        mockHistoricalSummaries[0],
+        ...mockIntradayPoints,
+      ])
+    })
+
+    it('should keep the performance series daily while the chart series is intraday', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(queryResult.performanceSummaries.value.map(s => s.date)).toEqual([
+        '2023-12-29',
+        '2023-12-30',
+        '2023-12-31',
+      ])
+    })
+
+    it('should fall back to the daily series when a single intraday point cannot draw a line', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue([mockIntradayPoints[0]])
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(queryResult.chartSummaries.value.map(s => s.date)).toEqual([
+        '2023-12-29',
+        '2023-12-30',
+        '2023-12-31',
+      ])
+    })
+
+    it('should fall back to the daily series when no intraday points exist', async () => {
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(portfolioSummaryService.getIntraday).toHaveBeenCalled(), {
+        timeout: 5000,
+      })
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(queryResult.chartSummaries.value.map(s => s.date)).toEqual([
+        '2023-12-29',
+        '2023-12-30',
+        '2023-12-31',
+      ])
+    })
+
+    it('should request intraday points with the selected platforms', async () => {
+      setupQuery(ref(['LIGHTYEAR']), ref(TimeRange.THREE_DAYS))
+
+      await vi.waitFor(
+        () => expect(portfolioSummaryService.getIntraday).toHaveBeenCalledWith('3D', ['LIGHTYEAR']),
+        { timeout: 5000 }
+      )
+    })
+
+    it('should not request intraday points for ranges wider than six days', async () => {
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_WEEK))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(portfolioSummaryService.getIntraday).not.toHaveBeenCalled()
+    })
+
+    it('should stay range loading while the intraday points still belong to the previous platforms', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const platforms = ref(['LIGHTYEAR'])
+      const { queryResult } = setupQuery(platforms, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(queryResult.isRangeLoading.value).toBe(false), {
+        timeout: 5000,
+      })
+
+      vi.mocked(portfolioSummaryService.getIntraday).mockImplementation(() => new Promise(() => {}))
+      platforms.value = ['TRADING212']
+
+      await vi.waitFor(() => expect(queryResult.isRangeLoading.value).toBe(true), { timeout: 5000 })
+    })
+
+    it('should stop range loading after switching to a range that cannot have intraday points', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const range = ref(TimeRange.ONE_DAY)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+      range.value = TimeRange.ONE_MONTH
+
+      await vi.waitFor(() => expect(queryResult.isRangeLoading.value).toBe(false), {
+        timeout: 5000,
+      })
+    })
+
+    it('should drop intraday points after switching to a range without them', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const range = ref(TimeRange.ONE_DAY)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+      range.value = TimeRange.ONE_MONTH
+      await flushPromises()
+
+      expect(queryResult.chartSummaries.value.map(s => s.date)).toEqual([
+        '2023-12-29',
+        '2023-12-30',
+        '2023-12-31',
+      ])
     })
   })
 })

@@ -3,6 +3,7 @@ package ee.tenman.portfolio.dto
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import java.io.Serializable
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDate
 
 data class PortfolioSummaryDto(
@@ -15,6 +16,14 @@ data class PortfolioSummaryDto(
   val earningsPerDay: BigDecimal,
   val earningsPerMonth: BigDecimal,
   val totalProfitChange24h: BigDecimal? = null,
+)
+
+data class IntradaySummaryPointDto(
+  val date: Instant,
+  val totalValue: BigDecimal,
+  val xirrAnnualReturn: BigDecimal,
+  val totalProfit: BigDecimal,
+  val earningsPerMonth: BigDecimal,
 )
 
 data class RangeChangeDto(

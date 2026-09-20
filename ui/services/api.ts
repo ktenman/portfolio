@@ -11,6 +11,7 @@ import {
   type EtfHoldingBreakdownDto,
   type InstrumentDto,
   type InstrumentsResponse,
+  type IntradaySummaryPointDto,
   type PortfolioSummaryDto,
   type RangeChangeDto,
   TimeRange,
@@ -93,6 +94,11 @@ export const portfolioSummaryService = {
 
   getSeries: (range: TimeRange, platforms?: string[]) =>
     httpClient.get<PortfolioSummaryDto[]>(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES, {
+      params: { range, ...platformParams(platforms) },
+    }),
+
+  getIntraday: (range: TimeRange, platforms?: string[]) =>
+    httpClient.get<IntradaySummaryPointDto[]>(API_ENDPOINTS.PORTFOLIO_SUMMARY_INTRADAY, {
       params: { range, ...platformParams(platforms) },
     }),
 

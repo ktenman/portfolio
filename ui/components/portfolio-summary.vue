@@ -183,6 +183,7 @@ const selectedRange = useChartRange()
 const {
   summaries,
   chartSummaries,
+  performanceSummaries,
   benchmarks,
   rangeChange,
   reversedSummaries,
@@ -210,7 +211,7 @@ const activeBenchmarks = computed<ChartBenchmark[]>(() =>
   )
 )
 
-const { performanceChartData } = usePerformanceChart(chartSummaries, activeBenchmarks)
+const { performanceChartData } = usePerformanceChart(performanceSummaries, activeBenchmarks)
 
 const activeChartData = computed(() => performanceChartData.value ?? processedChartData.value)
 
