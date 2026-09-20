@@ -14,9 +14,18 @@ import {
 } from '../services/summary-aggregator'
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
-import { BENCHMARKS, type ChartBenchmark } from './use-portfolio-chart'
+import { BENCHMARKS, type ChartBenchmark, type ChartSummary } from './use-portfolio-chart'
 import { REFETCH_INTERVALS } from '../constants/api'
-import { type BenchmarkIndex, type TimeRange } from '../models/generated/domain-models'
+import { type BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
+
+const INTRADAY_RANGES: TimeRange[] = [
+  TimeRange.ONE_DAY,
+  TimeRange.TWO_DAYS,
+  TimeRange.THREE_DAYS,
+  TimeRange.FOUR_DAYS,
+  TimeRange.FIVE_DAYS,
+  TimeRange.SIX_DAYS,
+]
 
 export function usePortfolioSummaryQuery(
   selectedPlatforms?: Ref<string[]>,
@@ -72,6 +81,16 @@ export function usePortfolioSummaryQuery(
     enabled: isAuthenticated,
   })
 
+  const isIntradayRange = computed(() => INTRADAY_RANGES.includes(rangeKey.value))
+
+  const { data: intradayData } = useQuery({
+    queryKey: ['portfolio-summary', 'intraday', platformsKey, rangeKey],
+    queryFn: () => portfolioSummaryService.getIntraday(rangeKey.value, activePlatforms.value),
+    placeholderData: keepPreviousData,
+    enabled: computed(() => isAuthenticated.value && isIntradayRange.value),
+    refetchInterval: REFETCH_INTERVALS.SUMMARY,
+  })
+
   const benchmarkQuery = (index: BenchmarkIndex) =>
     useQuery({
       queryKey: ['portfolio-summary', 'benchmark', rangeKey, index],
@@ -114,8 +133,23 @@ export function usePortfolioSummaryQuery(
     return mergeHistoricalWithCurrent(historicalSummaries, currentSummary.value)
   })
 
-  const chartSummaries = computed(() =>
+  const performanceSummaries = computed(() =>
     mergeHistoricalWithCurrent(seriesData.value ?? [], currentSummary.value)
+  )
+
+  const intradaySummaries = computed<ChartSummary[]>(() => {
+    if (!isIntradayRange.value) return []
+    return (intradayData.value ?? []).map(point => ({
+      date: point.capturedAt,
+      totalValue: point.totalValue,
+      totalProfit: point.totalProfit,
+      xirrAnnualReturn: point.xirrAnnualReturn,
+      earningsPerMonth: point.earningsPerMonth,
+    }))
+  })
+
+  const chartSummaries = computed<ChartSummary[]>(() =>
+    intradaySummaries.value.length > 0 ? intradaySummaries.value : performanceSummaries.value
   )
 
   const benchmarks = computed<ChartBenchmark[]>(() =>
@@ -140,6 +174,7 @@ export function usePortfolioSummaryQuery(
   return {
     summaries,
     chartSummaries,
+    performanceSummaries,
     benchmarks,
     rangeChange,
     sortedSummaries,

@@ -4,7 +4,10 @@ import { flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/api'
 import { renderWithProviders } from '../tests/test-utils'
-import type { PortfolioSummaryDto } from '../models/generated/domain-models'
+import type {
+  IntradaySummaryPointDto,
+  PortfolioSummaryDto,
+} from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
 import { BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
@@ -45,6 +48,23 @@ const mockHistoricalSummaries = [
     earningsPerMonth: 3000,
   }),
 ]
+const mockIntradayPoints: IntradaySummaryPointDto[] = [
+  {
+    capturedAt: '2023-12-31T09:00:00Z',
+    totalValue: 49900,
+    totalProfit: 4900,
+    xirrAnnualReturn: 0.1859,
+    earningsPerMonth: 3000,
+  },
+  {
+    capturedAt: '2023-12-31T09:05:00Z',
+    totalValue: 50100,
+    totalProfit: 5100,
+    xirrAnnualReturn: 0.1861,
+    earningsPerMonth: 3010,
+  },
+]
+
 const mockPage: Page<PortfolioSummaryDto> = {
   content: mockHistoricalSummaries,
   totalElements: 100,
@@ -64,6 +84,7 @@ describe('usePortfolioSummaryQuery', () => {
       changePercent: 1.25,
     })
     vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
+    vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue([])
   })
 
   const setupQuery = (platforms?: Ref<string[]>, range?: Ref<TimeRange>) => {
@@ -491,6 +512,101 @@ describe('usePortfolioSummaryQuery', () => {
           ),
         { timeout: 5000 }
       )
+    })
+
+    it('should build the chart series from intraday points on a one day range', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(2), {
+        timeout: 5000,
+      })
+
+      expect(queryResult.chartSummaries.value).toEqual([
+        {
+          date: '2023-12-31T09:00:00Z',
+          totalValue: 49900,
+          totalProfit: 4900,
+          xirrAnnualReturn: 0.1859,
+          earningsPerMonth: 3000,
+        },
+        {
+          date: '2023-12-31T09:05:00Z',
+          totalValue: 50100,
+          totalProfit: 5100,
+          xirrAnnualReturn: 0.1861,
+          earningsPerMonth: 3010,
+        },
+      ])
+    })
+
+    it('should keep the performance series daily while the chart series is intraday', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(2), {
+        timeout: 5000,
+      })
+
+      expect(queryResult.performanceSummaries.value.map(s => s.date)).toEqual([
+        '2023-12-29',
+        '2023-12-30',
+        '2023-12-31',
+      ])
+    })
+
+    it('should fall back to the daily series when no intraday points exist', async () => {
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_DAY))
+
+      await vi.waitFor(() => expect(portfolioSummaryService.getIntraday).toHaveBeenCalled(), {
+        timeout: 5000,
+      })
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(queryResult.chartSummaries.value.map(s => s.date)).toEqual([
+        '2023-12-29',
+        '2023-12-30',
+        '2023-12-31',
+      ])
+    })
+
+    it('should request intraday points with the selected platforms', async () => {
+      setupQuery(ref(['LIGHTYEAR']), ref(TimeRange.THREE_DAYS))
+
+      await vi.waitFor(
+        () => expect(portfolioSummaryService.getIntraday).toHaveBeenCalledWith('3D', ['LIGHTYEAR']),
+        { timeout: 5000 }
+      )
+    })
+
+    it('should not request intraday points for ranges wider than six days', async () => {
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_WEEK))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(portfolioSummaryService.getIntraday).not.toHaveBeenCalled()
+    })
+
+    it('should drop intraday points after switching to a range without them', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
+      const range = ref(TimeRange.ONE_DAY)
+      const { queryResult } = setupQuery(undefined, range)
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(2), {
+        timeout: 5000,
+      })
+      range.value = TimeRange.ONE_MONTH
+      await flushPromises()
+
+      expect(queryResult.chartSummaries.value.map(s => s.date)).toEqual([
+        '2023-12-29',
+        '2023-12-30',
+        '2023-12-31',
+      ])
     })
   })
 })
