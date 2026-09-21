@@ -180,9 +180,11 @@ export const rangeExtremes: Plugin = {
   afterDatasetsDraw(chart) {
     const { ctx } = chart
     const { datasets } = chart.data
-    const datasetIndex = datasets.findIndex(extremesOf)
+    const datasetIndex = datasets.findIndex(
+      (dataset, index) => extremesOf(dataset) && chart.isDatasetVisible(index)
+    )
     const extremes = extremesOf(datasets[datasetIndex])
-    if (!extremes || !chart.isDatasetVisible(datasetIndex)) return
+    if (!extremes) return
     const color = String(datasets[datasetIndex].borderColor)
     const hovered = chart.tooltip?.getActiveElements()[0]?.index
     const markers = [
