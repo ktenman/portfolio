@@ -29,6 +29,7 @@ export interface ChartDataPoint {
   xirrValues: number[]
   earningsValues: number[]
   extremes: RangeExtremes | null
+  profitExtremes: RangeExtremes | null
 }
 
 export type ChartSummary = Pick<
@@ -51,8 +52,10 @@ function sampleIndices(summaries: ChartSummary[]): number[] {
 
   const step = (summaries.length - 1) / (MAX_CHART_POINTS - 1)
   const evenlySpaced = Array.from({ length: MAX_CHART_POINTS }, (_, i) => Math.round(i * step))
-  const extremes = findExtremes(summaries.map(summary => summary.totalValue))
-  const kept = extremes ? [extremes.low, extremes.high] : []
+  const kept = [
+    findExtremes(summaries.map(summary => summary.totalValue)),
+    findExtremes(summaries.map(summary => summary.totalProfit)),
+  ].flatMap(extremes => (extremes ? [extremes.low, extremes.high] : []))
   return [...new Set([...evenlySpaced, ...kept])].sort((a, b) => a - b)
 }
 
@@ -68,14 +71,16 @@ export function usePortfolioChart(summaries: Ref<ChartSummary[]>) {
 
     const sampledData = pick(chronologicalSummaries, sampleIndices(chronologicalSummaries))
     const totalValues = sampledData.map(item => item.totalValue)
+    const profitValues = sampledData.map(item => item.totalProfit)
 
     return {
       labels: sampledData.map(item => item.date),
       totalValues,
-      profitValues: sampledData.map(item => item.totalProfit),
+      profitValues,
       xirrValues: sampledData.map(item => item.xirrAnnualReturn * 100),
       earningsValues: sampledData.map(item => item.earningsPerMonth),
       extremes: findExtremes(totalValues),
+      profitExtremes: findExtremes(profitValues),
     }
   })
 
