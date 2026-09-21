@@ -95,29 +95,29 @@ describe('usePortfolioChart', () => {
 
   describe('data sampling', () => {
     it('should keep every point when under the limit', () => {
-      const manySummaries = Array.from({ length: 50 }, (_, i) => ({
+      const manySummaries = Array.from({ length: 80 }, (_, i) => ({
         ...mockSummaries[0],
-        date: `2023-01-${String(i + 1).padStart(2, '0')}`,
+        date: dateAt(i),
         totalValue: 10000 + i * 100,
       }))
 
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(50)
+      expect(processedChartData.value?.labels).toHaveLength(80)
     })
 
-    it('should limit data points to 60 regardless of window width', () => {
-      const manySummaries = Array.from({ length: 90 }, (_, i) => ({
+    it('should limit data points to 90 regardless of window width', () => {
+      const manySummaries = Array.from({ length: 120 }, (_, i) => ({
         ...mockSummaries[0],
-        date: `2023-01-${String(i + 1).padStart(2, '0')}`,
+        date: dateAt(i),
         totalValue: 10000 + i * 100,
       }))
 
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(60)
+      expect(processedChartData.value?.labels).toHaveLength(90)
     })
 
     it('should not sample when data points are less than max', () => {
@@ -128,18 +128,18 @@ describe('usePortfolioChart', () => {
     })
 
     it('should sample evenly distributed points', () => {
-      const manySummaries = Array.from({ length: 61 }, (_, i) => ({
+      const manySummaries = Array.from({ length: 91 }, (_, i) => ({
         ...mockSummaries[0],
-        date: `2023-${String(Math.floor(i / 31) + 1).padStart(2, '0')}-${String((i % 31) + 1).padStart(2, '0')}`,
+        date: dateAt(i),
         totalValue: 10000 + i * 100,
       }))
 
       const summaries = ref(manySummaries)
       const { processedChartData } = usePortfolioChart(summaries)
 
-      expect(processedChartData.value?.labels).toHaveLength(60)
-      expect(processedChartData.value?.labels?.[0]).toBe('2023-01-01')
-      expect(processedChartData.value?.labels?.[30]).toBe('2023-02-01')
+      expect(processedChartData.value?.labels).toHaveLength(90)
+      expect(processedChartData.value?.labels?.[0]).toBe('2024-01-01')
+      expect(processedChartData.value?.labels?.[45]).toBe('2024-02-16')
     })
 
     it('should keep the lowest and highest total value between sampled points', () => {
@@ -151,7 +151,7 @@ describe('usePortfolioChart', () => {
     it('should add only the two extremes to the evenly sampled points', () => {
       const { processedChartData } = usePortfolioChart(ref(buildSpikyHistory()))
 
-      expect(processedChartData.value?.labels).toHaveLength(62)
+      expect(processedChartData.value?.labels).toHaveLength(92)
     })
 
     it('should keep the lowest and highest total profit days between sampled points', () => {
@@ -268,22 +268,22 @@ describe('usePerformanceChart', () => {
   ]
 
   const valueAt = (offset: number) => {
-    if (offset < 30) return 1000
-    if (offset === 30) return 2000
+    if (offset < 45) return 1000
+    if (offset === 45) return 2000
     return 2100
   }
 
   const buildDepositHistory = () =>
-    Array.from({ length: 61 }, (_, offset) =>
+    Array.from({ length: 91 }, (_, offset) =>
       createPortfolioSummaryDto({
         date: dateAt(offset),
         totalValue: valueAt(offset),
-        totalProfit: offset > 30 ? 100 : 0,
+        totalProfit: offset > 45 ? 100 : 0,
       })
     )
 
   const buildLongBenchmark = () =>
-    Array.from({ length: 61 }, (_, offset) => ({ date: dateAt(offset), price: 100 }))
+    Array.from({ length: 91 }, (_, offset) => ({ date: dateAt(offset), price: 100 }))
 
   it('should return null when no benchmark is selected', () => {
     const { performanceChartData } = usePerformanceChart(ref(buildSummaries()), ref([]))
@@ -332,7 +332,7 @@ describe('usePerformanceChart', () => {
       ref(sp500(buildLongBenchmark()))
     )
 
-    expect(performanceChartData.value?.portfolioValues).toHaveLength(60)
+    expect(performanceChartData.value?.portfolioValues).toHaveLength(90)
   })
 
   it('should keep long history labels identical to the euro chart', () => {
