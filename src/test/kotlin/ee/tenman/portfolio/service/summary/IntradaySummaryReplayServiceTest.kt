@@ -10,7 +10,6 @@ import ee.tenman.portfolio.domain.InstrumentMinutePrice
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioIntradaySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.repository.InstrumentMinutePriceRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
@@ -46,14 +45,14 @@ class IntradaySummaryReplayServiceTest {
   @Test
   fun `should replay changing captured prices instead of the live price`() {
     val service = service(listOf(price("2026-09-21T12:20:00Z", "110"), price("2026-09-21T12:24:00Z", "130")))
-    val points = service.getPoints(TimeRange.ONE_DAY, selection)
+    val points = service.getPoints(1, selection)
     expect(points.map { it.totalValue.toInt() }).toEqual(listOf(1100, 1300, 1300, 1300))
   }
 
   @Test
   fun `should use the last whole minute of each epoch aligned bin`() {
     val service = service(listOf(price("2026-09-21T12:20:00Z", "110")))
-    val points = service.getPoints(TimeRange.ONE_DAY, selection)
+    val points = service.getPoints(1, selection)
     expect(points.map { it.date }).toEqual(
       listOf("2026-09-21T12:23:00Z", "2026-09-21T12:28:00Z", "2026-09-21T12:33:00Z", "2026-09-21T12:34:00Z")
         .map(Instant::parse),
@@ -61,22 +60,22 @@ class IntradaySummaryReplayServiceTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = ["1D", "1W"])
-  fun `should cap a full window at three hundred points`(range: String) {
+  @ValueSource(longs = [1, 7])
+  fun `should cap a full window at three hundred points`(days: Long) {
     val service = service(listOf(price("2026-09-01T00:00:00Z", "110")))
-    expect(service.getPoints(TimeRange.from(range), selection)).toHaveSize(300)
+    expect(service.getPoints(days, selection)).toHaveSize(300)
   }
 
   @Test
   fun `should carry the latest price from before the window into the first point`() {
     val service = service(listOf(price("2026-09-19T12:00:00Z", "110"), price("2026-09-21T12:24:00Z", "130")))
-    expect(service.getPoints(TimeRange.ONE_DAY, selection).first().totalValue).toEqualNumerically(BigDecimal("1100"))
+    expect(service.getPoints(1, selection).first().totalValue).toEqualNumerically(BigDecimal("1100"))
   }
 
   @Test
   fun `should align weekly bins to two thousand and sixteen epoch seconds`() {
     val service = service(listOf(price("2026-09-21T11:00:00Z", "110")))
-    expect(service.getPoints(TimeRange.ONE_WEEK, selection).map { it.date }).toEqual(
+    expect(service.getPoints(7, selection).map { it.date }).toEqual(
       listOf("2026-09-21T11:31:00Z", "2026-09-21T12:04:00Z", "2026-09-21T12:34:00Z").map(Instant::parse),
     )
   }
@@ -84,7 +83,7 @@ class IntradaySummaryReplayServiceTest {
   @Test
   fun `should query only the selected instruments with the complete time window`() {
     val service = service(listOf(price("2026-09-21T12:20:00Z", "110")))
-    service.getPoints(TimeRange.ONE_WEEK, selection)
+    service.getPoints(7, selection)
     verify(exactly = 1) {
       repository.findForReplay(listOf(1L), Instant.parse("2026-09-14T12:34:56Z"), Instant.parse("2026-09-21T12:34:00Z"))
     }
@@ -93,13 +92,13 @@ class IntradaySummaryReplayServiceTest {
   @Test
   fun `should start short history at the first capture without inventing earlier points`() {
     val service = service(listOf(price("2026-09-21T12:34:00Z", "110")))
-    expect(service.getPoints(TimeRange.ONE_WEEK, selection).map { it.date }).toEqual(listOf(Instant.parse("2026-09-21T12:34:00Z")))
+    expect(service.getPoints(7, selection).map { it.date }).toEqual(listOf(Instant.parse("2026-09-21T12:34:00Z")))
   }
 
   @Test
   fun `should not duplicate the latest minute when now has crossed a bin boundary`() {
     val service = service(listOf(price("2026-09-21T12:20:00Z", "110")), now = "2026-09-21T12:33:56Z")
-    expect(service.getPoints(TimeRange.ONE_DAY, selection).map { it.date }).toEqual(
+    expect(service.getPoints(1, selection).map { it.date }).toEqual(
       listOf("2026-09-21T12:23:00Z", "2026-09-21T12:28:00Z", "2026-09-21T12:33:00Z").map(Instant::parse),
     )
   }
@@ -107,17 +106,12 @@ class IntradaySummaryReplayServiceTest {
   @Test
   fun `should return no points without transactions`() {
     val service = service(emptyList(), trades = emptyList())
-    expect(service.getPoints(TimeRange.ONE_DAY, selection)).toBeEmpty()
+    expect(service.getPoints(1, selection)).toBeEmpty()
   }
 
   @Test
   fun `should return no points before any selected instrument has a capture`() {
-    expect(service(emptyList()).getPoints(TimeRange.ONE_DAY, selection)).toBeEmpty()
-  }
-
-  @Test
-  fun `should leave monthly ranges on daily data`() {
-    expect(service(emptyList()).getPoints(TimeRange.ONE_MONTH, selection)).toBeEmpty()
+    expect(service(emptyList()).getPoints(1, selection)).toBeEmpty()
   }
 
   @Test
@@ -127,21 +121,21 @@ class IntradaySummaryReplayServiceTest {
       listOf(price("2026-09-21T00:00:00Z", "110")),
       trades = listOf(buy(LocalDate.of(2026, 9, 21))),
     )
-    expect(service.getPoints(TimeRange.ONE_DAY, selection).map { it.totalValue.toInt() }.distinct()).toEqual(listOf(1100))
+    expect(service.getPoints(1, selection).map { it.totalValue.toInt() }.distinct()).toEqual(listOf(1100))
   }
 
   @Test
   fun `should exclude trades dated after a point`() {
     val trades = listOf(buy(LocalDate.of(2026, 9, 1)), buy(LocalDate.of(2026, 9, 22)))
     val service = service(listOf(price("2026-09-21T12:20:00Z", "110")), trades = trades)
-    expect(service.getPoints(TimeRange.ONE_DAY, selection).last().totalValue).toEqualNumerically(BigDecimal("1100"))
+    expect(service.getPoints(1, selection).last().totalValue).toEqualNumerically(BigDecimal("1100"))
   }
 
   @Test
   fun `should switch transaction eligibility and earnings age at Tallinn midnight`() {
     val trades = listOf(buy(LocalDate.of(2026, 9, 19)), buy(LocalDate.of(2026, 9, 21), "5"))
     val service = service(listOf(price("2026-09-20T20:40:00Z", "110")), trades, "2026-09-20T21:10:56Z")
-    val points = service.getPoints(TimeRange.ONE_DAY, selection)
+    val points = service.getPoints(1, selection)
     expect(points.first().totalValue).toEqualNumerically(BigDecimal("1100"))
     expect(points.first().earningsPerMonth).toEqualNumerically(BigDecimal("3043.75"))
     expect(points.last().totalValue).toEqualNumerically(BigDecimal("1650"))
@@ -162,7 +156,7 @@ class IntradaySummaryReplayServiceTest {
       "2026-09-20T21:10:56Z",
       dailyPrices,
     )
-    val points = service.getPoints(TimeRange.ONE_DAY, selection)
+    val points = service.getPoints(1, selection)
     expect(points.first().earningsPerMonth).toEqualNumerically(BigDecimal("16.67808219240625"))
     expect(points.last().earningsPerMonth).toEqualNumerically(BigDecimal("8.33904109468125"))
   }
@@ -176,7 +170,7 @@ class IntradaySummaryReplayServiceTest {
       trades = listOf(buy(LocalDate.parse(date))),
       now = "${date}T01:10:56Z",
     )
-    val points = service.getPoints(TimeRange.ONE_DAY, selection)
+    val points = service.getPoints(1, selection)
     expect(points.map { it.date }.distinct().sorted()).toEqual(points.map { it.date })
     expect(points.first().totalValue).toEqualNumerically(BigDecimal("1100"))
     expect(points.last().totalValue).toEqualNumerically(BigDecimal("1300"))
@@ -188,7 +182,7 @@ class IntradaySummaryReplayServiceTest {
     val trades = listOf(buy(LocalDate.of(2026, 9, 1)), createBuyTransaction(other, BigDecimal.ONE, BigDecimal.TEN))
     val prices = listOf(DailyPricePoint(2L, LocalDate.of(2026, 9, 20), BigDecimal("77")))
     val service = service(listOf(price("2026-09-20T12:20:00Z", "110")), trades, "2026-09-20T12:34:56Z", prices)
-    expect(service.getPoints(TimeRange.ONE_DAY, selection).last().totalValue).toEqualNumerically(BigDecimal("1177"))
+    expect(service.getPoints(1, selection).last().totalValue).toEqualNumerically(BigDecimal("1177"))
   }
 
   @Test
@@ -197,7 +191,7 @@ class IntradaySummaryReplayServiceTest {
     val trades = listOf(buy(date.minusDays(400)))
     val dailyPrices = listOf(DailyPricePoint(1L, date.minusDays(365), BigDecimal("110")))
     val service = service(listOf(price("2026-09-21T12:20:00Z", "130")), trades, dailyPrices = dailyPrices)
-    val point = service.getPoints(TimeRange.ONE_DAY, selection).last()
+    val point = service.getPoints(1, selection).last()
     val lookup = PriceLookup(dailyPrices).pinnedAt(date, mapOf(1L to BigDecimal("130")))
     val summary = calculator(clock()).calculateFromTransactions(trades, date, lookup)
     expect(point.totalValue).toEqualNumerically(summary.totalValue)
@@ -211,7 +205,7 @@ class IntradaySummaryReplayServiceTest {
     stock.currentPrice = BigDecimal("110")
     val trades = listOf(buy(LocalDate.of(2026, 9, 1)))
     val service = service(listOf(price("2026-09-21T12:20:00Z", "110")), trades)
-    val point = service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR)).last()
+    val point = service.getPoints(1, listOf(Platform.LIGHTYEAR)).last()
     val summary = calculator(clock()).calculateFromTransactions(trades, LocalDate.of(2026, 9, 21))
     val stored =
       PortfolioIntradaySummary(
@@ -242,14 +236,7 @@ class IntradaySummaryReplayServiceTest {
     val captures = listOf(InstrumentMinutePrice(cash, Instant.parse("2026-09-20T12:20:00Z"), BigDecimal.ONE))
     val dailyPrices = listOf(DailyPricePoint(1L, LocalDate.of(2026, 9, 20), BigDecimal.ZERO))
     val service = service(captures, trades, "2026-09-20T12:34:56Z", dailyPrices)
-    expect(service.getPoints(TimeRange.ONE_DAY, selection).last().totalProfit).toEqualNumerically(BigDecimal("-90"))
-  }
-
-  @Test
-  fun `should normalize platform order and duplicates for caching`() {
-    val service = service(emptyList())
-    expect(service.selectionKey(listOf(Platform.LIGHTYEAR_BUSINESS, Platform.LIGHTYEAR, Platform.LIGHTYEAR)))
-      .toEqual("LIGHTYEAR,LIGHTYEAR_BUSINESS")
+    expect(service.getPoints(1, selection).last().totalProfit).toEqualNumerically(BigDecimal("-90"))
   }
 
   private fun service(

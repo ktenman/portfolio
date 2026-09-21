@@ -4,7 +4,6 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INTRADAY_R
 import ee.tenman.portfolio.domain.InstrumentMinutePrice
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.IntradaySummaryPointDto
 import ee.tenman.portfolio.repository.InstrumentMinutePriceRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
@@ -15,9 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
-import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 @Service
@@ -30,45 +27,28 @@ class IntradaySummaryReplayService(
 ) {
   @Cacheable(
     value = [INTRADAY_REPLAY_CACHE],
-    key = "#root.target.selectionKey(#platforms) + ':' + #range.name()",
+    key = "#days + ':' + #platforms",
     unless = "#result.isEmpty()",
   )
   @Transactional(readOnly = true)
   fun getPoints(
-    range: TimeRange,
-    platforms: List<Platform>,
-  ): List<IntradaySummaryPointDto> {
-    val now = Instant.now(clock)
-    val days = range.intradayDays(now.atZone(clock.zone).toLocalDate()) ?: return emptyList()
-    if (platforms.isEmpty()) return emptyList()
-    return load(platforms, now, days)
-  }
-
-  private fun load(
-    platforms: List<Platform>,
-    now: Instant,
     days: Long,
+    platforms: List<Platform>,
   ): List<IntradaySummaryPointDto> {
     val transactions =
       portfolioTransactionRepository
-      .findAllByPlatformsWithInstruments(platforms.distinct().sortedBy { it.name })
+      .findAllByPlatformsWithInstruments(platforms)
       .sortedWith(compareBy({ it.transactionDate }, { it.id }))
     if (transactions.isEmpty()) return emptyList()
     val instruments = transactions.map { it.instrument }.distinctBy { it.id }
+    val now = Instant.now(clock)
     val from = now.minus(days, ChronoUnit.DAYS)
     val until = now.truncatedTo(ChronoUnit.MINUTES)
     val captures = instrumentMinutePriceRepository.findForReplay(instruments.map { it.id }, from, until)
     if (captures.isEmpty()) return emptyList()
-    val times = timestamps(maxOf(from, captures.first().capturedAt), until, Duration.ofDays(days).seconds / MAX_POINTS)
+    val times = timestamps(maxOf(from, captures.first().capturedAt), until, bucketSeconds(days))
     return replay(times, captures, transactions, dailyPriceService.buildPriceLookup(instruments))
   }
-
-  fun selectionKey(platforms: List<Platform>): String =
-    platforms
-    .map { it.name }
-    .distinct()
-    .sorted()
-    .joinToString(",")
 
   private fun timestamps(
     from: Instant,
@@ -80,7 +60,7 @@ class IntradaySummaryReplayService(
     return (first..last step width)
       .map { start -> minOf(Instant.ofEpochSecond(start + width - 1).truncatedTo(ChronoUnit.MINUTES), until) }
       .filter { !it.isBefore(from) }
-      .takeLast(MAX_POINTS.toInt())
+      .takeLast(MAX_INTRADAY_POINTS)
   }
 
   private fun replay(
@@ -90,23 +70,15 @@ class IntradaySummaryReplayService(
     lookup: PriceLookup,
   ): List<IntradaySummaryPointDto> {
     val prices = mutableMapOf<Long, BigDecimal>()
-    val dates = mutableMapOf<LocalDate, List<PortfolioTransaction>>()
-    val iterator = captures.iterator()
-    var capture = iterator.next()
-    var available = true
+    var next = 0
     return times.map { time ->
-      while (available && !capture.capturedAt.isAfter(time)) {
-        prices[capture.instrument.id] = capture.price
-        available = iterator.hasNext()
-        if (available) capture = iterator.next()
+      while (next < captures.size && !captures[next].capturedAt.isAfter(time)) {
+        prices[captures[next].instrument.id] = captures[next].price
+        next++
       }
       val date = time.atZone(clock.zone).toLocalDate()
-      val eligible = dates.getOrPut(date) { transactions.filter { !it.transactionDate.isAfter(date) } }
+      val eligible = transactions.filter { !it.transactionDate.isAfter(date) }
       dailySummaryCalculator.calculateFromTransactions(eligible, date, lookup.pinnedAt(date, prices)).toIntradayPointDto(time)
     }
-  }
-
-  companion object {
-    private const val MAX_POINTS = 300L
   }
 }

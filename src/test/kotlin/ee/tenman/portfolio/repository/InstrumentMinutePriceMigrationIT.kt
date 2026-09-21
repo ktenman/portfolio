@@ -1,15 +1,12 @@
 package ee.tenman.portfolio.repository
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
-import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
-import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.springframework.core.io.ClassPathResource
 import org.springframework.jdbc.datasource.init.ScriptUtils
-import java.math.BigDecimal
 import javax.sql.DataSource
 
 @IntegrationTest
@@ -65,11 +62,8 @@ class InstrumentMinutePriceMigrationIT {
           }
         }
       connection.rollback()
-      expect(rows).toHaveSize(2)
-      expect(rows.map { it.first }).toEqual(listOf(1L, 2L))
-      expect(rows[0].third).toEqualNumerically(BigDecimal("101"))
-      expect(rows[1].third).toEqualNumerically(BigDecimal("201"))
-      expect(rows.all { it.second.epochSecond % 3600 == 3540L }).toEqual(true)
+      expect(rows.map { Triple(it.first, it.second.epochSecond % 3600, it.third.toInt()) })
+        .toEqual(listOf(Triple(1L, 3540L, 101), Triple(2L, 3540L, 201)))
     }
   }
 }

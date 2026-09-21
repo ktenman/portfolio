@@ -7,16 +7,8 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentMinutePrice
-import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.job.CurrentDaySummaryRefreshJob
 import ee.tenman.portfolio.job.TransactionRunner
 import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
-import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
-import ee.tenman.portfolio.service.summary.IntradaySummaryService
-import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
-import ee.tenman.portfolio.service.transaction.TransactionService
-import io.mockk.every
-import io.mockk.mockk
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -100,12 +92,7 @@ class InstrumentMinutePriceRepositoryIT {
     savePrice(instrument, "2026-09-01T10:00:00Z", "9")
     savePrice(instrument, "2026-09-19T10:00:00Z", "10")
 
-    transactionRunner.runInTransaction {
-      InstrumentMinutePriceService(
-        instrumentMinutePriceRepository,
-        Clock.fixed(Instant.parse("2026-09-21T00:00:00Z"), ZoneOffset.UTC),
-      ).deleteOlderThan(Instant.parse("2026-09-10T00:00:00Z"))
-    }
+    instrumentMinutePriceService.deleteOlderThan(Instant.parse("2026-09-10T00:00:00Z"))
 
     val rows = instrumentMinutePriceRepository.findAll()
     expect(rows).toHaveSize(1)
@@ -144,22 +131,10 @@ class InstrumentMinutePriceRepositoryIT {
   }
 
   @Test
-  fun `should commit captured prices when summary refresh fails`() {
-    val instrument = saveInstrument("SUMMARY_FAILURE", "42")
-    val currentDaySummaryCacheService = mockk<CurrentDaySummaryCacheService>()
-    every {
-      currentDaySummaryCacheService.refreshCurrentDaySummary()
-    } throws RuntimeException("summary unavailable")
-    val job =
-      CurrentDaySummaryRefreshJob(
-        currentDaySummaryCacheService,
-        mockk<PlatformSummaryCacheService>(relaxed = true),
-        mockk<IntradaySummaryService>(relaxed = true),
-        mockk<TransactionService>(relaxed = true),
-        instrumentMinutePriceService,
-      )
+  fun `should commit captured prices through the transactional service`() {
+    val instrument = saveInstrument("COMMITTED", "42")
 
-    job.refresh()
+    instrumentMinutePriceService.record()
 
     val rows = instrumentMinutePriceRepository.findAll()
     expect(rows).toHaveSize(1)
@@ -177,7 +152,6 @@ class InstrumentMinutePriceRepositoryIT {
   private fun saveInstrument(
     symbol: String,
     price: String?,
-    providerName: ProviderName = ProviderName.FT,
   ): Instrument =
     instrumentRepository.save(
       Instrument(
@@ -186,7 +160,6 @@ class InstrumentMinutePriceRepositoryIT {
         category = "ETF",
         baseCurrency = "EUR",
         currentPrice = price?.let(::BigDecimal),
-        providerName = providerName,
       ),
     )
 

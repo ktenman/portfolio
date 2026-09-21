@@ -52,7 +52,7 @@ class IntradaySummaryReplayIT {
   private lateinit var clock: Clock
 
   private val selection = listOf(Platform.LIGHTYEAR, Platform.LIGHTYEAR_BUSINESS)
-  private val key = "$INTRADAY_REPLAY_CACHE::LIGHTYEAR,LIGHTYEAR_BUSINESS:ONE_DAY"
+  private val key = "$INTRADAY_REPLAY_CACHE::1:LIGHTYEAR,LIGHTYEAR_BUSINESS"
 
   @Test
   fun `should serve partial platform summaries through the public service`() {

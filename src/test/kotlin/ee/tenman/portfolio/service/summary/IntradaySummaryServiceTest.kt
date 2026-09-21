@@ -167,14 +167,6 @@ class IntradaySummaryServiceTest {
   }
 
   @Test
-  fun `should return points when a partial selection of several platforms is requested`() {
-    val selection = listOf(Platform.LHV, Platform.LIGHTYEAR)
-    every { transactionService.coversEveryPlatform(selection) } returns false
-    every { replay.getPoints(TimeRange.ONE_DAY, selection) } returns listOf(point().toIntradayPointDto(), point().toIntradayPointDto())
-    expect(service.getPoints(TimeRange.ONE_DAY, selection)).toHaveSize(2)
-  }
-
-  @Test
   fun `should still read a stored single platform when the selection contains duplicates`() {
     every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns false
     every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), "LIGHTYEAR") } returns listOf(point())
@@ -185,7 +177,7 @@ class IntradaySummaryServiceTest {
   fun `should normalize a partial selection before replaying it`() {
     val normalized = listOf(Platform.LHV, Platform.LIGHTYEAR)
     every { transactionService.coversEveryPlatform(normalized) } returns false
-    every { replay.getPoints(TimeRange.ONE_DAY, normalized) } returns listOf(point().toIntradayPointDto())
+    every { replay.getPoints(1, normalized) } returns listOf(point().toIntradayPointDto())
     expect(service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR, Platform.LHV, Platform.LIGHTYEAR))).toHaveSize(1)
   }
 
