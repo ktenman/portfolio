@@ -29,7 +29,8 @@ class IntradaySummaryServiceTest {
   private val portfolioIntradaySummaryRepository = mockk<PortfolioIntradaySummaryRepository>()
   private val transactionService = mockk<TransactionService>()
   private val clock = Clock.fixed(Instant.parse("2026-09-20T12:34:56Z"), ZoneId.of("UTC"))
-  private val service = IntradaySummaryService(portfolioIntradaySummaryRepository, transactionService, clock)
+  private val replay = mockk<IntradaySummaryReplayService>()
+  private val service = IntradaySummaryService(portfolioIntradaySummaryRepository, transactionService, clock, replay)
 
   @Test
   fun `should truncate the capture timestamp to the minute when recording a summary`() {
@@ -166,11 +167,18 @@ class IntradaySummaryServiceTest {
   }
 
   @Test
-  fun `should return no points when a partial selection of several platforms is requested`() {
-    val selection = listOf(Platform.LIGHTYEAR, Platform.LHV)
-    every { transactionService.coversEveryPlatform(selection) } returns false
+  fun `should still read a stored single platform when the selection contains duplicates`() {
+    every { transactionService.coversEveryPlatform(listOf(Platform.LIGHTYEAR)) } returns false
+    every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), "LIGHTYEAR") } returns listOf(point())
+    expect(service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR, Platform.LIGHTYEAR))).toHaveSize(1)
+  }
 
-    expect(service.getPoints(TimeRange.ONE_DAY, selection)).toBeEmpty()
+  @Test
+  fun `should normalize a partial selection before replaying it`() {
+    val normalized = listOf(Platform.LHV, Platform.LIGHTYEAR)
+    every { transactionService.coversEveryPlatform(normalized) } returns false
+    every { replay.getPoints(1, normalized) } returns listOf(point().toIntradayPointDto())
+    expect(service.getPoints(TimeRange.ONE_DAY, listOf(Platform.LIGHTYEAR, Platform.LHV, Platform.LIGHTYEAR))).toHaveSize(1)
   }
 
   @Test

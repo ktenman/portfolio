@@ -14,14 +14,17 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-private const val MAX_POINTS = 300L
+internal const val MAX_INTRADAY_POINTS = 300
 private const val WHOLE_PORTFOLIO = ""
+
+internal fun bucketSeconds(days: Long) = Duration.ofDays(days).seconds / MAX_INTRADAY_POINTS
 
 @Service
 class IntradaySummaryService(
   private val portfolioIntradaySummaryRepository: PortfolioIntradaySummaryRepository,
   private val transactionService: TransactionService,
   private val clock: Clock,
+  private val intradaySummaryReplayService: IntradaySummaryReplayService,
 ) {
   @Transactional
   fun record(
@@ -44,10 +47,11 @@ class IntradaySummaryService(
     platforms: List<Platform>?,
   ): List<IntradaySummaryPointDto> {
     val days = range.intradayDays(LocalDate.now(clock)) ?: return emptyList()
-    val platformKey = platformKey(platforms) ?: return emptyList()
+    val selection = platforms?.distinct()?.sortedBy { it.name }
+    val platformKey = platformKey(selection) ?: return intradaySummaryReplayService.getPoints(days, selection.orEmpty())
     val from = Instant.now(clock).minus(days, ChronoUnit.DAYS)
     return portfolioIntradaySummaryRepository
-      .findBucketed(from, Duration.ofDays(days).seconds / MAX_POINTS, platformKey)
+      .findBucketed(from, bucketSeconds(days), platformKey)
       .map { it.toIntradayPointDto() }
   }
 
