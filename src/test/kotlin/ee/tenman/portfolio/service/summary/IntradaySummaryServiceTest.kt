@@ -92,6 +92,15 @@ class IntradaySummaryServiceTest {
   }
 
   @Test
+  fun `should bucket a one week range into two thousand and sixteen second windows`() {
+    val bucketSeconds = captureBucketSeconds()
+
+    service.getPoints(TimeRange.ONE_WEEK, null)
+
+    expect(bucketSeconds.captured).toEqual(2016L)
+  }
+
+  @Test
   fun `should read from the start of the requested range`() {
     val from = slot<Instant>()
     every { portfolioIntradaySummaryRepository.findBucketed(capture(from), any(), any()) } returns emptyList()
@@ -111,15 +120,15 @@ class IntradaySummaryServiceTest {
   }
 
   @Test
-  fun `should return no points when the range is wider than six days`() {
-    expect(service.getPoints(TimeRange.ONE_WEEK, null)).toBeEmpty()
+  fun `should return no points when the range is wider than one week`() {
+    expect(service.getPoints(TimeRange.ONE_MONTH, null)).toBeEmpty()
   }
 
   @Test
-  fun `should return points when the range is six days`() {
+  fun `should return points when the range is one week`() {
     every { portfolioIntradaySummaryRepository.findBucketed(any(), any(), any()) } returns listOf(point())
 
-    expect(service.getPoints(TimeRange.SIX_DAYS, null)).toHaveSize(1)
+    expect(service.getPoints(TimeRange.ONE_WEEK, null)).toHaveSize(1)
   }
 
   @Test

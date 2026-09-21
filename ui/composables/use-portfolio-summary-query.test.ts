@@ -596,8 +596,23 @@ describe('usePortfolioSummaryQuery', () => {
       )
     })
 
-    it('should not request intraday points for ranges wider than six days', async () => {
+    it('should request and render intraday points for one week', async () => {
+      vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue(mockIntradayPoints)
       const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_WEEK))
+
+      await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
+        timeout: 5000,
+      })
+
+      expect(portfolioSummaryService.getIntraday).toHaveBeenCalledWith('1W', undefined)
+      expect(queryResult.chartSummaries.value).toEqual([
+        mockHistoricalSummaries[0],
+        ...mockIntradayPoints,
+      ])
+    })
+
+    it('should not request intraday points for ranges wider than one week', async () => {
+      const { queryResult } = setupQuery(undefined, ref(TimeRange.ONE_MONTH))
 
       await vi.waitFor(() => expect(queryResult.chartSummaries.value).toHaveLength(3), {
         timeout: 5000,

@@ -25,6 +25,7 @@ const INTRADAY_RANGES: TimeRange[] = [
   TimeRange.FOUR_DAYS,
   TimeRange.FIVE_DAYS,
   TimeRange.SIX_DAYS,
+  TimeRange.ONE_WEEK,
 ]
 
 const MIN_INTRADAY_POINTS = 2
