@@ -24,7 +24,11 @@ data class IntradaySummaryPointDto(
   val xirrAnnualReturn: BigDecimal,
   val totalProfit: BigDecimal,
   val earningsPerMonth: BigDecimal,
-)
+) : Serializable {
+  companion object {
+    private const val serialVersionUID: Long = 1L
+  }
+}
 
 data class RangeChangeDto(
   val changeAmount: BigDecimal,

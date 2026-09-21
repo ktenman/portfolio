@@ -9,6 +9,7 @@ import ee.tenman.portfolio.ft.HistoricalPricesService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import ee.tenman.portfolio.service.summary.IntradaySummaryService
 import io.mockk.clearMocks
@@ -62,33 +63,38 @@ class PriceSnapshotCleanupJobTest {
 class IntradaySummaryCleanupJobTest {
   private val jobExecutionService = mockk<JobExecutionService>()
   private val intradaySummaryService = mockk<IntradaySummaryService>()
+  private val instrumentMinutePriceService = mockk<InstrumentMinutePriceService>()
   private val clock = Clock.fixed(Instant.parse("2026-09-20T04:30:00Z"), ZoneId.of("UTC"))
 
   @Test
   fun `should delete intraday summaries older than 30 days by default`() {
-    val job = IntradaySummaryCleanupJob(jobExecutionService, intradaySummaryService, clock, 30)
+    val job = IntradaySummaryCleanupJob(jobExecutionService, intradaySummaryService, instrumentMinutePriceService, clock, 30)
     val expectedCutoff = Instant.parse("2026-08-21T04:30:00Z")
     every { intradaySummaryService.deleteOlderThan(expectedCutoff) } just runs
+    every { instrumentMinutePriceService.deleteOlderThan(expectedCutoff) } just runs
 
     job.execute()
 
     verify { intradaySummaryService.deleteOlderThan(expectedCutoff) }
+    verify { instrumentMinutePriceService.deleteOlderThan(expectedCutoff) }
   }
 
   @Test
-  fun `should use configurable intraday retention days`() {
-    val job = IntradaySummaryCleanupJob(jobExecutionService, intradaySummaryService, clock, 7)
-    val expectedCutoff = Instant.parse("2026-09-13T04:30:00Z")
+  fun `should clamp intraday retention to nine days`() {
+    val job = IntradaySummaryCleanupJob(jobExecutionService, intradaySummaryService, instrumentMinutePriceService, clock, 7)
+    val expectedCutoff = Instant.parse("2026-09-11T04:30:00Z")
     every { intradaySummaryService.deleteOlderThan(expectedCutoff) } just runs
+    every { instrumentMinutePriceService.deleteOlderThan(expectedCutoff) } just runs
 
     job.execute()
 
     verify { intradaySummaryService.deleteOlderThan(expectedCutoff) }
+    verify { instrumentMinutePriceService.deleteOlderThan(expectedCutoff) }
   }
 
   @Test
   fun `should record the cleanup run through the job execution service`() {
-    val job = IntradaySummaryCleanupJob(jobExecutionService, intradaySummaryService, clock, 30)
+    val job = IntradaySummaryCleanupJob(jobExecutionService, intradaySummaryService, instrumentMinutePriceService, clock, 30)
     every { jobExecutionService.executeJob(job) } just runs
 
     job.runJob()

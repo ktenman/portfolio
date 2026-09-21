@@ -37,7 +37,7 @@ export type ChartSummary = Pick<
   'date' | 'totalValue' | 'totalProfit' | 'xirrAnnualReturn' | 'earningsPerMonth'
 >
 
-const MAX_CHART_POINTS = 60
+const MAX_CHART_POINTS = 90
 const MIN_EXTREME_POINTS = 3
 
 function findExtremes(values: number[]): RangeExtremes | null {

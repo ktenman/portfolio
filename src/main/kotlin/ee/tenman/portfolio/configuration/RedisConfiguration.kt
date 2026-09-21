@@ -17,6 +17,7 @@ class RedisConfiguration {
     cacheConfigurations[ONE_DAY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[INSTRUMENT_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(1))
     cacheConfigurations[SUMMARY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(3))
+    cacheConfigurations[INTRADAY_REPLAY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(1))
     cacheConfigurations[TRANSACTION_CACHE] =
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5))
     cacheConfigurations[PLATFORM_SUMMARY_CACHE] =
@@ -43,6 +44,7 @@ class RedisConfiguration {
   companion object {
     const val INSTRUMENT_CACHE = "instrument-cache-v3"
     const val SUMMARY_CACHE = "summary-cache-v4"
+    const val INTRADAY_REPLAY_CACHE = "intraday-replay-v1"
     const val TRANSACTION_CACHE = "transaction-cache-v3"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
     const val ETF_LOGOS_CACHE: String = "etf-logos-v4"

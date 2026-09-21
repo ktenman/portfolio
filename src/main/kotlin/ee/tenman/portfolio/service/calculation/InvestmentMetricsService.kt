@@ -181,7 +181,10 @@ class InvestmentMetricsService(
     when {
       currentHoldings <= BigDecimal.ZERO -> BigDecimal.ZERO
       instrument.isCash() -> currentHoldings
-      isToday(date) -> currentHoldings.multiply(livePrice(instrument) ?: resolvePrice(instrument, date, priceLookup))
+      isToday(date) ->
+        currentHoldings.multiply(
+          priceLookup?.pinnedPrice(instrument.id, date) ?: livePrice(instrument) ?: resolvePrice(instrument, date, priceLookup),
+        )
       else -> currentHoldings.multiply(resolvePrice(instrument, date, priceLookup))
     }
 

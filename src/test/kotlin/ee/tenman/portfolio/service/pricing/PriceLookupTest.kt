@@ -13,6 +13,49 @@ class PriceLookupTest {
   private val queryDate = LocalDate.of(2024, 6, 18)
 
   @Test
+  fun `should prefer the pinned price on the pinned date`() {
+    val lookup = PriceLookup(listOf(DailyPricePoint(1L, queryDate, BigDecimal("150"))))
+    val pinned = lookup.pinnedAt(queryDate, mapOf(1L to BigDecimal("123.45")))
+    expect(pinned.priceOnOrBefore(1L, queryDate)).notToEqualNull().toEqualNumerically(BigDecimal("123.45"))
+  }
+
+  @Test
+  fun `should preserve the daily baseline when a price is pinned`() {
+    val baseline = queryDate.minusDays(365)
+    val lookup = PriceLookup(listOf(DailyPricePoint(1L, baseline, BigDecimal("80"))))
+    val pinned = lookup.pinnedAt(queryDate, mapOf(1L to BigDecimal("123.45")))
+    expect(pinned.priceOnOrBefore(1L, baseline)).notToEqualNull().toEqualNumerically(BigDecimal("80"))
+  }
+
+  @Test
+  fun `should fall back to daily prices for an instrument without a pin`() {
+    val lookup = PriceLookup(listOf(DailyPricePoint(2L, queryDate, BigDecimal("150"))))
+    val pinned = lookup.pinnedAt(queryDate, mapOf(1L to BigDecimal("123.45")))
+    expect(pinned.priceOnOrBefore(2L, queryDate)).notToEqualNull().toEqualNumerically(BigDecimal("150"))
+  }
+
+  @Test
+  fun `should leave the original lookup unchanged when pinning prices`() {
+    val lookup = PriceLookup(listOf(DailyPricePoint(1L, queryDate, BigDecimal("150"))))
+    lookup.pinnedAt(queryDate, mapOf(1L to BigDecimal("123.45")))
+    expect(lookup.priceOnOrBefore(1L, queryDate)).notToEqualNull().toEqualNumerically(BigDecimal("150"))
+  }
+
+  @Test
+  fun `should keep pinned views independent of later price vector changes`() {
+    val prices = mutableMapOf(1L to BigDecimal("123.45"))
+    val pinned = PriceLookup(emptyList()).pinnedAt(queryDate, prices)
+    prices[1L] = BigDecimal("200")
+    expect(pinned.pinnedPrice(1L, queryDate)).notToEqualNull().toEqualNumerically(BigDecimal("123.45"))
+  }
+
+  @Test
+  fun `should return no pin for a different date`() {
+    val pinned = PriceLookup(emptyList()).pinnedAt(queryDate, mapOf(1L to BigDecimal("123.45")))
+    expect(pinned.pinnedPrice(1L, queryDate.minusDays(1))).toEqual(null)
+  }
+
+  @Test
   fun `should priceOnOrBefore return the close price on an exact date match`() {
     val lookup = PriceLookup(listOf(DailyPricePoint(1L, queryDate, BigDecimal("150.25"))))
     expect(lookup.priceOnOrBefore(1L, queryDate)).notToEqualNull().toEqualNumerically(BigDecimal("150.25"))

@@ -5,22 +5,34 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.TreeMap
 
-class PriceLookup(
-  prices: List<DailyPricePoint>,
+class PriceLookup private constructor(
+  private val pricesByInstrument: Map<Long, TreeMap<LocalDate, BigDecimal>>,
+  private val pinnedDate: LocalDate? = null,
+  private val pinnedPrices: Map<Long, BigDecimal> = emptyMap(),
 ) {
-  private val pricesByInstrument: Map<Long, TreeMap<LocalDate, BigDecimal>> =
+  constructor(prices: List<DailyPricePoint>) : this(
     prices
       .groupBy { it.instrumentId }
-      .mapValues { (_, rows) -> rows.associateTo(TreeMap()) { it.entryDate to it.closePrice } }
+      .mapValues { (_, rows) -> rows.associateTo(TreeMap()) { it.entryDate to it.closePrice } },
+  )
+
+  fun pinnedAt(
+    date: LocalDate,
+    prices: Map<Long, BigDecimal>,
+  ): PriceLookup = PriceLookup(pricesByInstrument, date, prices.toMap())
+
+  fun pinnedPrice(
+    instrumentId: Long,
+    date: LocalDate,
+  ): BigDecimal? = pinnedPrices[instrumentId].takeIf { date == pinnedDate }
 
   fun priceOnOrBefore(
     instrumentId: Long,
     date: LocalDate,
   ): BigDecimal? {
-    val prices = pricesByInstrument[instrumentId] ?: return null
-    val entry = prices.floorEntry(date) ?: return null
-    if (entry.key.isBefore(date.minusYears(LOOKBACK_YEARS))) return null
-    return entry.value
+    pinnedPrice(instrumentId, date)?.let { return it }
+    val entry = pricesByInstrument[instrumentId]?.floorEntry(date) ?: return null
+    return entry.value.takeUnless { entry.key.isBefore(date.minusYears(LOOKBACK_YEARS)) }
   }
 
   companion object {

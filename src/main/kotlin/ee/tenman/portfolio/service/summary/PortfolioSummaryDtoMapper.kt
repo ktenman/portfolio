@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.PortfolioIntradaySummary
 import ee.tenman.portfolio.dto.IntradaySummaryPointDto
 import ee.tenman.portfolio.dto.PortfolioSummaryDto
 import java.math.BigDecimal
+import java.time.Instant
 
 private val DAYS_PER_MONTH = BigDecimal(365.25 / 12)
 
@@ -22,6 +23,15 @@ fun PortfolioDailySummary.toSummaryDto(profitChange24h: BigDecimal? = null) =
   )
 
 fun PortfolioIntradaySummary.toIntradayPointDto() =
+  IntradaySummaryPointDto(
+    date = capturedAt,
+    totalValue = totalValue,
+    xirrAnnualReturn = xirrAnnualReturn,
+    totalProfit = totalProfit,
+    earningsPerMonth = earningsPerDay.multiply(DAYS_PER_MONTH),
+  )
+
+fun PortfolioDailySummary.toIntradayPointDto(capturedAt: Instant) =
   IntradaySummaryPointDto(
     date = capturedAt,
     totalValue = totalValue,

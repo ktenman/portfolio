@@ -13,6 +13,7 @@ import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
+import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.IntradaySummaryService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
@@ -35,13 +36,39 @@ class CurrentDaySummaryRefreshJobTest {
   private val platformCache = mockk<PlatformSummaryCacheService>(relaxed = true)
   private val transactionService = mockk<TransactionService>()
   private val intradaySummaryService = mockk<IntradaySummaryService>(relaxed = true)
+  private val instrumentMinutePriceService = mockk<InstrumentMinutePriceService>(relaxed = true)
   private val job =
-    CurrentDaySummaryRefreshJob(currentDayCache, platformCache, intradaySummaryService, transactionService)
+    CurrentDaySummaryRefreshJob(
+      currentDayCache,
+      platformCache,
+      intradaySummaryService,
+      transactionService,
+      instrumentMinutePriceService,
+    )
 
   @Test
   fun `should refresh current day summary cache when scheduled refresh runs`() {
     every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV)
     job.refresh()
+    verify { currentDayCache.refreshCurrentDaySummary() }
+  }
+
+  @Test
+  fun `should capture instrument prices before refreshing summaries`() {
+    every { currentDayCache.refreshCurrentDaySummary() } throws RuntimeException("summary unavailable")
+
+    job.refresh()
+
+    verify { instrumentMinutePriceService.record() }
+  }
+
+  @Test
+  fun `should refresh summaries when instrument price capture fails`() {
+    every { instrumentMinutePriceService.record() } throws RuntimeException("capture unavailable")
+    every { transactionService.getDistinctPlatforms() } returns emptyList()
+
+    job.refresh()
+
     verify { currentDayCache.refreshCurrentDaySummary() }
   }
 
