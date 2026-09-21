@@ -110,6 +110,7 @@ const chartData = computed(() => {
         backgroundColor: CHART_COLORS[1],
         pointHoverBackgroundColor: CHART_COLORS[1],
         data: props.data.profitValues,
+        rangeExtremes: props.data.profitExtremes,
         yAxisID: 'y',
       },
       {
@@ -196,7 +197,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
   scales: {
     x: {
       border: { display: false },
-      grid: { display: false },
+      grid: { display: false, tickLength: isPerformance.value ? 8 : 25 },
       ticks: {
         maxTicksLimit: 5,
         color: labelColor,

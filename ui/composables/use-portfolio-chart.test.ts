@@ -50,9 +50,9 @@ const spikyValueAt = (offset: number) => {
   return 10000 + offset
 }
 
-const buildSpikyHistory = () =>
+const buildSpikyHistory = (field: 'totalValue' | 'totalProfit' = 'totalValue') =>
   Array.from({ length: 200 }, (_, offset) =>
-    createPortfolioSummaryDto({ date: dateAt(offset), totalValue: spikyValueAt(offset) })
+    createPortfolioSummaryDto({ date: dateAt(offset), [field]: spikyValueAt(offset) })
   )
 
 describe('usePortfolioChart', () => {
@@ -153,6 +153,12 @@ describe('usePortfolioChart', () => {
 
       expect(processedChartData.value?.labels).toHaveLength(62)
     })
+
+    it('should keep the lowest and highest total profit days between sampled points', () => {
+      const { processedChartData } = usePortfolioChart(ref(buildSpikyHistory('totalProfit')))
+
+      expect(processedChartData.value?.profitValues).toEqual(expect.arrayContaining([1, 50000]))
+    })
   })
 
   describe('range extremes', () => {
@@ -177,6 +183,29 @@ describe('usePortfolioChart', () => {
       const { processedChartData } = usePortfolioChart(ref(flat))
 
       expect(processedChartData.value?.extremes).toBeNull()
+    })
+
+    it('should point the profit extremes at the lowest and highest drawn total profit', () => {
+      const { processedChartData } = usePortfolioChart(ref(buildSpikyHistory('totalProfit')))
+      const data = processedChartData.value
+
+      expect(data?.profitExtremes).toEqual({
+        low: data?.profitValues.indexOf(1),
+        high: data?.profitValues.indexOf(50000),
+      })
+    })
+
+    it('should not mark profit extremes with fewer than three points', () => {
+      const { processedChartData } = usePortfolioChart(ref(mockSummaries.slice(0, 2)))
+
+      expect(processedChartData.value?.profitExtremes).toBeNull()
+    })
+
+    it('should not mark profit extremes when the total profit never changes', () => {
+      const flat = mockSummaries.map(summary => ({ ...summary, totalProfit: 1000 }))
+      const { processedChartData } = usePortfolioChart(ref(flat))
+
+      expect(processedChartData.value?.profitExtremes).toBeNull()
     })
   })
 

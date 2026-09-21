@@ -33,10 +33,11 @@ describe('PortfolioChart', () => {
   const mockChartData = {
     labels: ['2023-12-29', '2023-12-30', '2023-12-31'],
     totalValues: [45000, 47500, 50000],
-    profitValues: [3000, 4000, 5000],
+    profitValues: [4000, 3000, 5000],
     xirrValues: [10.5, 11.2, 12.0],
     earningsValues: [2500, 2750, 3000],
     extremes: { low: 0, high: 2 },
+    profitExtremes: { low: 1, high: 2 },
   }
 
   const createWrapper = async (props = {}) => {
@@ -137,6 +138,12 @@ describe('PortfolioChart', () => {
 
       expect(chartData().datasets[0]).toMatchObject({ rangeExtremes: { low: 0, high: 2 } })
     })
+
+    it('should hand the profit extremes to the total profit series', async () => {
+      await createWrapper()
+
+      expect(chartData().datasets[1]).toMatchObject({ rangeExtremes: { low: 1, high: 2 } })
+    })
   })
 
   describe('chart configuration', () => {
@@ -223,6 +230,12 @@ describe('PortfolioChart', () => {
 
       expect(chartOptions().scales.y.grace).toBe('10%')
     })
+
+    it('should reserve room under the plot for the low extreme label', async () => {
+      await createWrapper()
+
+      expect(chartOptions().scales.x.grid.tickLength).toBe(25)
+    })
   })
 
   describe('chart lifecycle', () => {
@@ -294,6 +307,7 @@ describe('PortfolioChart', () => {
         xirrValues: [],
         earningsValues: [],
         extremes: null,
+        profitExtremes: null,
       }
 
       await createWrapper({ data: emptyData })
@@ -396,6 +410,12 @@ describe('PortfolioChart', () => {
       await createWrapper({ data: mockPerformanceData })
 
       expect(chartOptions().scales.y.grace).toBe(0)
+    })
+
+    it('should not reserve room under the plot in performance mode', async () => {
+      await createWrapper({ data: mockPerformanceData })
+
+      expect(chartOptions().scales.x.grid.tickLength).toBe(8)
     })
   })
 })

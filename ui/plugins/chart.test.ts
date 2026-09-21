@@ -11,12 +11,14 @@ interface DrawnText {
 
 interface FakeChartOptions {
   visible?: boolean
+  profitVisible?: boolean
   extremes?: RangeExtremes | null
   hovered?: number
 }
 
 const CHARACTER_WIDTH = 6
 const SERIES_COLOR = 'oklch(0.55 0.09 74)'
+const PROFIT_COLOR = 'oklch(0.55 0.09 119)'
 
 const fakeContext = (texts: DrawnText[], fills: string[]) => ({
   fillStyle: '',
@@ -41,7 +43,12 @@ const fakeContext = (texts: DrawnText[], fills: string[]) => ({
 const fakeChart = (
   texts: DrawnText[],
   fills: string[],
-  { visible = true, extremes = { low: 0, high: 2 }, hovered }: FakeChartOptions
+  {
+    visible = true,
+    profitVisible = false,
+    extremes = { low: 0, high: 2 },
+    hovered,
+  }: FakeChartOptions
 ) =>
   ({
     ctx: fakeContext(texts, fills),
@@ -54,9 +61,14 @@ const fakeChart = (
           borderColor: SERIES_COLOR,
           data: [102060.28, 150000, 178204.06],
         },
+        {
+          rangeExtremes: { low: 0, high: 2 },
+          borderColor: PROFIT_COLOR,
+          data: [-412.3, 4000, 5000],
+        },
       ],
     },
-    isDatasetVisible: () => visible,
+    isDatasetVisible: (index: number) => (index === 0 ? visible : profitVisible),
     tooltip: {
       getActiveElements: () => (hovered === undefined ? [] : [{ index: hovered }]),
     },
@@ -97,11 +109,25 @@ describe('rangeExtremes', () => {
     expect(draw({ hovered: 2 }).fills).toEqual([surfaceColor])
   })
 
-  it('should draw nothing when the total value series is hidden', () => {
+  it('should draw nothing when every series with extremes is hidden', () => {
     expect(draw({ visible: false }).texts).toEqual([])
   })
 
   it('should draw nothing for a series that carries no extremes', () => {
     expect(draw({ extremes: null }).texts).toEqual([])
+  })
+
+  it('should mark total profit when total value is hidden', () => {
+    expect(draw({ visible: false, profitVisible: true }).texts.map(drawn => drawn.text)).toEqual([
+      '€5,000.00',
+      '-€412.30',
+    ])
+  })
+
+  it('should mark only total value while both are visible', () => {
+    expect(draw({ profitVisible: true }).texts.map(drawn => drawn.text)).toEqual([
+      '€178,204.06',
+      '€102,060.28',
+    ])
   })
 })

@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
+import { STORAGE_KEYS } from '../../constants/storage-keys'
 import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
 import { freeze, openRoute, settleAndFreeze, waitForBoxHeightToSettle } from './settle'
 import { apiRoute, type RouteStub } from './stub'
@@ -181,6 +182,24 @@ test('summary chart marks the high and low of the range', async ({ page }, testI
   await openRoute(page, '/')
   await freeze(page)
   await expect(page.getByTestId('summary-chart')).toHaveScreenshot('summary-range-extremes.png')
+})
+
+test('summary chart marks the high and low of total profit when total value is hidden', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubPortfolioSummary(page)
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+    key: STORAGE_KEYS.SUMMARY_CHART_HIDDEN,
+    value: JSON.stringify(['totalValue', 'xirrAnnualReturn', 'earningsPerMonth']),
+  })
+  await openRoute(page, '/')
+  await freeze(page)
+  await expect(page.getByTestId('summary-chart')).toHaveScreenshot(
+    'summary-range-extremes-profit.png'
+  )
 })
 
 test.describe('desktop states', () => {
