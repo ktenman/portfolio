@@ -116,7 +116,7 @@ export interface RangeChangeDto {
     changePercent: number;
 }
 
-export interface IntradaySummaryPointDto {
+export interface IntradaySummaryPointDto extends Serializable {
     date: DateAsString;
     totalValue: number;
     xirrAnnualReturn: number;

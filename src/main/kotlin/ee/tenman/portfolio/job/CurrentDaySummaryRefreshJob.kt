@@ -2,6 +2,7 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.IntradaySummaryService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
@@ -15,11 +16,14 @@ class CurrentDaySummaryRefreshJob(
   private val platformSummaryCacheService: PlatformSummaryCacheService,
   private val intradaySummaryService: IntradaySummaryService,
   private val transactionService: TransactionService,
+  private val instrumentMinutePriceService: InstrumentMinutePriceService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Scheduled(fixedDelayString = "\${scheduling.jobs.summary-interval:60000}")
   fun refresh() {
+    runCatching { instrumentMinutePriceService.record() }
+      .onFailure { log.warn("Failed to record instrument minute prices", it) }
     val summary =
       runCatching { currentDaySummaryCacheService.refreshCurrentDaySummary() }
         .onFailure { log.warn("Failed to refresh current day summary cache", it) }

@@ -22,6 +22,7 @@ class IntradaySummaryService(
   private val portfolioIntradaySummaryRepository: PortfolioIntradaySummaryRepository,
   private val transactionService: TransactionService,
   private val clock: Clock,
+  private val intradaySummaryReplayService: IntradaySummaryReplayService,
 ) {
   @Transactional
   fun record(
@@ -44,7 +45,8 @@ class IntradaySummaryService(
     platforms: List<Platform>?,
   ): List<IntradaySummaryPointDto> {
     val days = range.intradayDays(LocalDate.now(clock)) ?: return emptyList()
-    val platformKey = platformKey(platforms) ?: return emptyList()
+    val selection = platforms?.distinct()?.sortedBy { it.name }
+    val platformKey = platformKey(selection) ?: return intradaySummaryReplayService.getPoints(range, selection.orEmpty())
     val from = Instant.now(clock).minus(days, ChronoUnit.DAYS)
     return portfolioIntradaySummaryRepository
       .findBucketed(from, Duration.ofDays(days).seconds / MAX_POINTS, platformKey)
