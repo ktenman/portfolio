@@ -39,6 +39,9 @@ class EtfHoldingIndustryService(
     log.info("Incremented industry fetch attempts for holding id=$holdingId to ${holding.industryFetchAttempts}")
   }
 
+  @Transactional
+  fun deriveMissingSectors(): Int = etfHoldingRepository.findBySectorIsNullAndIndustryIsNotNull().onEach { it.deriveSector() }.size
+
   companion object {
     const val MAX_INDUSTRY_FETCH_ATTEMPTS = 3
   }

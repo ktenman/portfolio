@@ -106,4 +106,6 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   """,
   )
   fun findHoldingsWithoutLogosForCurrentPortfolio(): List<EtfHolding>
+
+  fun findBySectorIsNullAndIndustryIsNotNull(): List<EtfHolding>
 }

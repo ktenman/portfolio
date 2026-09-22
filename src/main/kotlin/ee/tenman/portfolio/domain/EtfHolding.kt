@@ -59,10 +59,18 @@ class EtfHolding(
 ) : BaseEntity() {
   @PrePersist
   @PreUpdate
-  fun applyNameBlockKey() {
+  fun applyDerivedFields() {
     nameBlockKey = HoldingBlockKey.of(name)
+    deriveSector()
+  }
+
+  fun deriveSector() {
+    if (sector != null) return
+    sector = industry?.industrySector ?: return
+    sectorSource = SectorSource.INDUSTRY
+    classifiedByModel = null
   }
 
   fun acceptsSectorFrom(source: SectorSource?): Boolean =
-    sector == null || (source == SectorSource.LIGHTYEAR && sectorSource == SectorSource.LLM)
+    sector == null || (source == SectorSource.LIGHTYEAR && sectorSource != SectorSource.LIGHTYEAR)
 }
