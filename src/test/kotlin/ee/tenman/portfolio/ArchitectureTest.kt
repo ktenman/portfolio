@@ -58,6 +58,7 @@ class ArchitectureTest {
         "..veego..",
         "..trading212..",
         "..openfigi..",
+        "..vanguard..",
       ).layer("Configuration")
       .definedBy("..configuration..")
       .layer("Jobs")

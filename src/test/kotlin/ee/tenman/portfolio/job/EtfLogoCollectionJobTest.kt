@@ -101,6 +101,28 @@ class EtfLogoCollectionJobTest {
     verify(exactly = 0) { logoFallbackService.fetchLogo(any(), any(), any()) }
   }
 
+  @Test
+  fun `cannot look up a logo by the ticker of a holding listed outside the United States`() {
+    val holding = createHolding(id = 1L, name = "Allianz SE", ticker = "ALV", countryCode = "DE")
+    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
+    every { logoFallbackService.fetchLogo("Allianz SE", null, null) } returns null
+
+    job.processHolding(1L)
+
+    verify(exactly = 1) { logoFallbackService.fetchLogo("Allianz SE", null, null) }
+  }
+
+  @Test
+  fun `should look up a logo by the ticker of a holding listed in the United States`() {
+    val holding = createHolding(id = 1L, name = "Autoliv Inc", ticker = "ALV", countryCode = "US")
+    every { etfHoldingRepository.findById(1L) } returns Optional.of(holding)
+    every { logoFallbackService.fetchLogo("Autoliv Inc", "ALV", null) } returns null
+
+    job.processHolding(1L)
+
+    verify(exactly = 1) { logoFallbackService.fetchLogo("Autoliv Inc", "ALV", null) }
+  }
+
   private fun createHolding(
     id: Long = 1L,
     name: String = "Test Company",

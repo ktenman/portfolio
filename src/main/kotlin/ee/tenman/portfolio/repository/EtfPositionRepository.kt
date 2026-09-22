@@ -16,6 +16,8 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
     snapshotDate: LocalDate,
   ): EtfPosition?
 
+  fun existsByEtfInstrumentSymbol(symbol: String): Boolean
+
   fun findByHoldingId(holdingId: Long): List<EtfPosition>
 
   fun findByHoldingIdIn(holdingIds: List<Long>): List<EtfPosition>
