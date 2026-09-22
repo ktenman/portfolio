@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.common.orNull
+import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component
 
 private const val DEFAULT_INITIAL_DELAY = "3600000"
 private const val DEFAULT_FIXED_DELAY = "14400000"
+private const val US_COUNTRY_CODE = "US"
 
 @Component
 @ScheduledJob
@@ -47,7 +49,7 @@ class EtfLogoCollectionJob(
       return
     }
     val result =
-      runCatching { logoFallbackService.fetchLogo(holding.name, holding.ticker, null) }
+      runCatching { logoFallbackService.fetchLogo(holding.name, usTicker(holding), null) }
         .onFailure { log.warn("Logo fetch failed for ${holding.name}: ${it.message}") }
         .getOrNull() ?: return
     val processedImage = imageProcessingService.resizeToMaxDimension(result.imageData)
@@ -56,4 +58,6 @@ class EtfLogoCollectionJob(
     holding.logoSource = result.source
     etfHoldingRepository.save(holding)
   }
+
+  private fun usTicker(holding: EtfHolding): String? = holding.ticker.takeIf { holding.countryCode == US_COUNTRY_CODE }
 }

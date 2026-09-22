@@ -25,6 +25,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.support.CronExpression
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class EtfHoldingsClassificationJobTest {
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService = mockk(relaxed = true)
@@ -273,6 +277,32 @@ class EtfHoldingsClassificationJobTest {
     job.execute()
 
     verify(exactly = 0) { etfHoldingPersistenceService.incrementSectorFetchAttempts(any()) }
+  }
+
+  @Test
+  fun `cannot classify the same holdings from two runs at once`() {
+    val classifying = CountDownLatch(1)
+    val inFlight = AtomicInteger()
+    val peakInFlight = AtomicInteger()
+    every { etfHoldingPersistenceService.findUnclassifiedHoldingIds() } returns listOf(1L)
+    every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(createHolding(1L, "Apple Inc", "AAPL"))
+    every { industryClassificationService.classifyBatch(any()) } answers {
+      val running = inFlight.incrementAndGet()
+      peakInFlight.updateAndGet { peak -> maxOf(peak, running) }
+      classifying.countDown()
+      Thread.sleep(200)
+      inFlight.decrementAndGet()
+      BatchClassificationOutcome(mapOf(1L to SectorClassificationResult(sector = IndustrySector.FINANCE, model = null)), true)
+    }
+    val executor = Executors.newFixedThreadPool(2)
+    val firstRun = executor.submit { job.execute() }
+    classifying.await(5, TimeUnit.SECONDS)
+    val secondRun = executor.submit { job.execute() }
+    firstRun.get(10, TimeUnit.SECONDS)
+    secondRun.get(10, TimeUnit.SECONDS)
+    executor.shutdownNow()
+
+    expect(peakInFlight.get()).toEqual(1)
   }
 
   @Test

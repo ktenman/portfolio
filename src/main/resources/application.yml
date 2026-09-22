@@ -269,5 +269,8 @@ ecb:
 blackrock:
   url: https://www.blackrock.com
 
+vanguard:
+  url: https://www.vanguardinvestor.co.uk
+
 veego:
   url: https://api.veego.ee/api

@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.vanguard.VanguardHoldingsService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
@@ -76,6 +77,12 @@ class LightyearDataFetchJob(
     etfConfig: LightyearScrapingProperties.EtfConfig,
     today: LocalDate,
   ): String {
+    if (etfConfig.symbol in VanguardHoldingsService.FUNDS) {
+      val msg = "Holdings for ${etfConfig.symbol} come from Vanguard, skipping"
+      log.info(msg)
+      return msg
+    }
+
     if (etfHoldingService.hasHoldingsForDate(etfConfig.symbol, today)) {
       val msg = "Holdings for ${etfConfig.symbol} already exist for $today, skipping"
       log.info(msg)

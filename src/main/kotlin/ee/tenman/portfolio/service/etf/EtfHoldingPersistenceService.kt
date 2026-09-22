@@ -5,6 +5,7 @@ import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.HoldingBlockKey
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
@@ -61,6 +62,7 @@ class EtfHoldingPersistenceService(
         holdingData.countryCode,
         holdingData.countryName,
         holdingData.sectorSource,
+        holdingData.industry,
       )
       return hinted
     }
@@ -71,6 +73,7 @@ class EtfHoldingPersistenceService(
       holdingData.countryCode,
       holdingData.countryName,
       holdingData.sectorSource,
+      holdingData.industry,
     )
   }
 
@@ -109,14 +112,15 @@ class EtfHoldingPersistenceService(
     countryCode: String? = null,
     countryName: String? = null,
     sectorSource: SectorSource? = null,
+    industry: GicsIndustry? = null,
   ): EtfHolding {
     val existing = etfHoldingRepository.findByNameIgnoreCase(name)
     if (existing != null) {
-      applySourceFields(existing, ticker, sector, countryCode, countryName, sectorSource)
+      applySourceFields(existing, ticker, sector, countryCode, countryName, sectorSource, industry)
       return existing
     }
     log.debug("Creating new holding: name='$name', ticker='$ticker'")
-    val holding = EtfHolding(name = name, ticker = ticker, countryCode = countryCode, countryName = countryName)
+    val holding = EtfHolding(name = name, ticker = ticker, countryCode = countryCode, countryName = countryName, industry = industry)
     updateSectorFromSource(holding, sector, sectorSource)
     return etfHoldingRepository.save(holding)
   }
@@ -138,10 +142,12 @@ class EtfHoldingPersistenceService(
     countryCode: String?,
     countryName: String?,
     sectorSource: SectorSource?,
+    industry: GicsIndustry?,
   ) {
     updateTickerIfMissing(holding, ticker)
     updateSectorFromSource(holding, sector, sectorSource)
     updateCountryFromSourceIfMissing(holding, countryCode, countryName)
+    updateIndustryIfMissing(holding, industry)
   }
 
   fun hasHoldingsForDate(
@@ -277,5 +283,14 @@ class EtfHoldingPersistenceService(
     if (!holding.ticker.isNullOrBlank()) return
     log.info("Updating ticker for '${holding.name}': $ticker")
     holding.ticker = ticker
+  }
+
+  private fun updateIndustryIfMissing(
+    holding: EtfHolding,
+    industry: GicsIndustry?,
+  ) {
+    if (industry == null) return
+    if (holding.industry != null) return
+    holding.industry = industry
   }
 }
