@@ -28,6 +28,7 @@ import ee.tenman.portfolio.lightyear.LightyearUuidCacheService
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import ee.tenman.portfolio.trading212.Trading212Service
 import feign.FeignException
+import feign.RetryableException
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -128,6 +129,13 @@ class RetryIT {
   fun `should not retry binance ticker price after 429`() {
     stubFor(get(urlPathEqualTo(TICKER_PATH)).willReturn(status(429)))
     expect { binanceService.getCurrentPrice("BTCEUR") }.toThrow<FeignException.TooManyRequests>()
+    verify(1, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
+  }
+
+  @Test
+  fun `should not retry binance ticker price after 429 with retry-after header`() {
+    stubFor(get(urlPathEqualTo(TICKER_PATH)).willReturn(status(429).withHeader("Retry-After", "1")))
+    expect { binanceService.getCurrentPrice("BTCEUR") }.toThrow<RetryableException>()
     verify(1, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
   }
 
