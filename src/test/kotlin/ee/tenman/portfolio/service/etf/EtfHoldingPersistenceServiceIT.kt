@@ -568,19 +568,7 @@ class EtfHoldingPersistenceServiceIT {
 
   @Test
   fun `should saveHoldings store a supplied industry on a new holding`() {
-    val holdings =
-      listOf(
-        HoldingData(
-          name = "Rheinmetall AG",
-          ticker = "RHM",
-          sector = null,
-          weight = BigDecimal("1.25"),
-          rank = 1,
-          industry = GicsIndustry.AEROSPACE_AND_DEFENSE,
-        ),
-      )
-
-    etfHoldingPersistenceService.saveHoldings("VWCE", LocalDate.of(2026, 8, 31), holdings)
+    feed("Rheinmetall AG", "RHM", null, null, GicsIndustry.AEROSPACE_AND_DEFENSE)
 
     val saved = etfHoldingRepository.findByNameIgnoreCase("Rheinmetall AG")
     expect(saved?.industry).toEqual(GicsIndustry.AEROSPACE_AND_DEFENSE)
@@ -590,38 +578,15 @@ class EtfHoldingPersistenceServiceIT {
   fun `cannot saveHoldings overwrite an industry that a holding already has`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
     etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.MACHINERY, AiModel.GPT_5_6_LUNA)
-    val holdings =
-      listOf(
-        HoldingData(
-          name = "Rheinmetall AG",
-          ticker = "RHM",
-          sector = null,
-          weight = BigDecimal("1.25"),
-          rank = 1,
-          industry = GicsIndustry.AEROSPACE_AND_DEFENSE,
-        ),
-      )
 
-    etfHoldingPersistenceService.saveHoldings("VWCE", LocalDate.of(2026, 8, 31), holdings)
+    feed("Rheinmetall AG", "RHM", null, null, GicsIndustry.AEROSPACE_AND_DEFENSE)
 
     expect(etfHoldingRepository.findById(holding.id).orElseThrow().industry).toEqual(GicsIndustry.MACHINERY)
   }
 
   @Test
   fun `cannot saveHoldings record a model for a supplied industry`() {
-    val holdings =
-      listOf(
-        HoldingData(
-          name = "Rheinmetall AG",
-          ticker = "RHM",
-          sector = null,
-          weight = BigDecimal("1.25"),
-          rank = 1,
-          industry = GicsIndustry.AEROSPACE_AND_DEFENSE,
-        ),
-      )
-
-    etfHoldingPersistenceService.saveHoldings("VWCE", LocalDate.of(2026, 8, 31), holdings)
+    feed("Rheinmetall AG", "RHM", null, null, GicsIndustry.AEROSPACE_AND_DEFENSE)
 
     expect(etfHoldingRepository.findByNameIgnoreCase("Rheinmetall AG")?.industryClassifiedByModel).toEqual(null)
   }
@@ -708,6 +673,7 @@ class EtfHoldingPersistenceServiceIT {
     ticker: String,
     sector: String?,
     sectorSource: SectorSource?,
+    industry: GicsIndustry? = null,
   ) = etfHoldingPersistenceService.saveHoldings(
     "VWCE",
     LocalDate.of(2024, 7, 1),
@@ -719,6 +685,7 @@ class EtfHoldingPersistenceServiceIT {
         weight = BigDecimal("0.42"),
         rank = 1,
         sectorSource = sectorSource,
+        industry = industry,
       ),
     ),
   )

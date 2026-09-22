@@ -131,7 +131,7 @@ class VanguardHoldingsServiceTest {
 
     val snapshot = service.fetchHoldings(VXUS_PORT_ID)
 
-    expect(totalWeight(snapshot)).toEqualNumerically(BigDecimal("100"))
+    expect(snapshot.holdings.sumOf { it.weight }).toEqualNumerically(BigDecimal("100"))
   }
 
   @Test
@@ -315,9 +315,6 @@ class VanguardHoldingsServiceTest {
   private fun stubSinglePage(items: List<VanguardHoldingItem>) {
     every { vanguardHoldingsClient.getHoldings(any()) } returns response(items)
   }
-
-  private fun totalWeight(snapshot: VanguardFundSnapshot): BigDecimal =
-    snapshot.holdings.fold(BigDecimal.ZERO) { sum, holding -> sum.add(holding.weight) }
 
   private fun response(
     items: List<VanguardHoldingItem>,

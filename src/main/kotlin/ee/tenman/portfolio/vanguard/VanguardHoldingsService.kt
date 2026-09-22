@@ -1,11 +1,12 @@
 package ee.tenman.portfolio.vanguard
 
+import ee.tenman.portfolio.common.percentOf
 import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 
 @Service
@@ -60,10 +61,8 @@ class VanguardHoldingsService(
     items.map { item ->
       val name = item.issuerName?.trim()
       check(!name.isNullOrEmpty()) { "Vanguard fund $portId returned a holding without an issuer name" }
-      val weight = item.marketValuePercentage
-      check(weight != null) { "Vanguard fund $portId returned holding '$name' without a weight" }
-      val effectiveDate = item.effectiveDate
-      check(effectiveDate != null) { "Vanguard fund $portId returned holding '$name' without an effective date" }
+      val weight = item.marketValuePercentage ?: error("Vanguard fund $portId returned holding '$name' without a weight")
+      val effectiveDate = item.effectiveDate ?: error("Vanguard fund $portId returned holding '$name' without an effective date")
       VanguardHolding(
         name = name,
         ticker = item.ticker?.trim()?.takeIf { it.isNotEmpty() },
@@ -78,8 +77,7 @@ class VanguardHoldingsService(
     rows: List<VanguardHolding>,
   ): LocalDate {
     val dates = rows.map { it.effectiveDate }.distinct().sorted()
-    check(dates.size == 1) { "Vanguard fund $portId returned mixed effective dates $dates" }
-    return dates.first()
+    return dates.singleOrNull() ?: error("Vanguard fund $portId returned mixed effective dates $dates")
   }
 
   private fun mergeByIssuer(rows: List<VanguardHolding>): List<VanguardHolding> =
@@ -91,7 +89,7 @@ class VanguardHoldingsService(
   private fun mergeShareClasses(shareClasses: List<VanguardHolding>): VanguardHolding {
     val ordered = shareClasses.sortedWith(compareByDescending<VanguardHolding> { it.weight }.thenBy { it.ticker ?: "" })
     return ordered.first().copy(
-      weight = shareClasses.fold(BigDecimal.ZERO) { sum, row -> sum.add(row.weight) },
+      weight = shareClasses.sumOf { it.weight },
       industry = ordered.firstNotNullOfOrNull { it.industry },
     )
   }
@@ -100,7 +98,7 @@ class VanguardHoldingsService(
     portId: String,
     issuers: List<VanguardHolding>,
   ): List<HoldingData> {
-    val total = issuers.fold(BigDecimal.ZERO) { sum, issuer -> sum.add(issuer.weight) }
+    val total = issuers.sumOf { it.weight }
     check(total > BigDecimal.ZERO) { "Vanguard fund $portId returned a total weight of $total" }
     return issuers
       .sortedWith(compareByDescending<VanguardHolding> { it.weight }.thenBy { it.name })
@@ -109,7 +107,7 @@ class VanguardHoldingsService(
           name = issuer.name,
           ticker = issuer.ticker,
           sector = null,
-          weight = issuer.weight.multiply(HUNDRED).divide(total, WEIGHT_SCALE, RoundingMode.HALF_UP),
+          weight = issuer.weight.percentOf(total, CALCULATION_SCALE),
           rank = index + 1,
           industry = issuer.industry,
         )
@@ -138,8 +136,6 @@ class VanguardHoldingsService(
     val FUNDS = mapOf("VGLA:GER:EUR" to "E161", "VXUS:GER:EUR" to "E165")
     private const val MAX_PAGES = 20
     private const val PAGE_LIMIT = 1500
-    private const val WEIGHT_SCALE = 10
-    private val HUNDRED = BigDecimal(100)
 
     private val SECURITY_TYPES =
       listOf("EQ.DRCPT", "EQ.ETF", "EQ.FSH", "EQ.PREF", "EQ.PSH", "EQ.REIT", "EQ.STOCK", "EQ.RIGHT", "EQ.WRT")
