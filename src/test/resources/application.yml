@@ -17,6 +17,9 @@ server:
 binance:
   url: http://localhost:${wiremock.server.port}
 
+blackrock:
+  url: http://localhost:${wiremock.server.port}
+
 ecb:
   url: http://localhost:${wiremock.server.port}
 

@@ -1,9 +1,9 @@
 package ee.tenman.portfolio.blackrock
 
 import ee.tenman.portfolio.dto.HoldingData
+import feign.FeignException
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 
 @Service
@@ -12,7 +12,7 @@ class CsusHoldingsService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchHoldings(): List<HoldingData> {
     val csv = blackRockHoldingsClient.getHoldingsCsv(PRODUCT_ID, "${FUND}_holdings", "csv", "fund")
     val holdings = BlackRockCsvParser.parse(csv)

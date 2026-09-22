@@ -1,12 +1,12 @@
 package ee.tenman.portfolio.binance
 
 import ee.tenman.portfolio.common.DailyPriceData
+import feign.FeignException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -33,7 +33,7 @@ class BinanceService(
     private const val VOLUME = 5
   }
 
-  @Retryable(backoff = Backoff(delay = 1000))
+  @Retryable(maxRetries = 2, excludes = [FeignException.FeignClientException::class])
   fun getCurrentPrice(symbol: String): BigDecimal {
     log.debug("Getting current price for symbol: $symbol")
     val tickerPrice = binanceClient.getTickerPrice(symbol)
@@ -90,7 +90,7 @@ class BinanceService(
       mergedResult
     }
 
-  @Retryable(backoff = Backoff(delay = 1000))
+  @Retryable(maxRetries = 2, excludes = [FeignException.FeignClientException::class])
   fun getHourlyPrices(
     symbol: String,
     hours: Long = 48,
@@ -116,8 +116,7 @@ class BinanceService(
     return result
   }
 
-  @Retryable(backoff = Backoff(delay = 1000))
-  fun getDailyPrices(
+  private fun getDailyPrices(
     symbol: String,
     startDate: LocalDate? = null,
     endDate: LocalDate? = null,

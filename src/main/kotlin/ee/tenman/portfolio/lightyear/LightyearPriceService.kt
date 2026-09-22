@@ -8,9 +8,9 @@ import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.currency.CurrencyConversionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import feign.FeignException
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.Clock
@@ -32,7 +32,6 @@ class LightyearPriceService(
     private const val MAX_HOLDING_VALUE = 100.0
   }
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchCurrentPrices(): Map<String, BigDecimal> {
     val symbols = properties.getAllSymbols()
     log.info("Fetching prices for ${symbols.size} Lightyear instruments")
@@ -66,7 +65,7 @@ class LightyearPriceService(
     return currencyConversionService.convertToEur(price, currency, LocalDate.now(clock))
   }
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchHoldingsAsDto(symbol: String): List<HoldingData> {
     val apiHoldings = fetchHoldingsRaw(symbol)
     val validHoldings = filterAnomalousValues(apiHoldings)
@@ -139,8 +138,7 @@ class LightyearPriceService(
     return null
   }
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
-  fun fetchHoldingsRaw(symbol: String): List<LightyearHoldingResponse> {
+  private fun fetchHoldingsRaw(symbol: String): List<LightyearHoldingResponse> {
     val uuid = resolveUuid(symbol)
     if (uuid == null) {
       log.warn("No UUID mapping found for symbol: $symbol")
@@ -153,7 +151,6 @@ class LightyearPriceService(
     return holdings
   }
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
   fun fetchFundInfo(symbol: String): LightyearFundInfoData? {
     val uuid = resolveUuid(symbol)
     if (uuid == null) {
