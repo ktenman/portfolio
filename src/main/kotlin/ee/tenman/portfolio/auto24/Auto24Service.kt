@@ -4,8 +4,6 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.AUTO24_PRI
 import ee.tenman.portfolio.exception.CaptchaException
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 
 @Service
@@ -15,7 +13,6 @@ class Auto24Service(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Cacheable(value = [AUTO24_PRICE_CACHE], key = "#regNr", unless = "#result.error != null")
-  @Retryable(backoff = Backoff(delay = 1000))
   fun findCarPrice(regNr: String): CarPriceResult {
     log.info("Fetching market price for registration number: $regNr")
     val response = auto24Client.getMarketPrice(regNr)

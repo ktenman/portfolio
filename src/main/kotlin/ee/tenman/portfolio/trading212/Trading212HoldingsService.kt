@@ -1,9 +1,9 @@
 package ee.tenman.portfolio.trading212
 
 import ee.tenman.portfolio.dto.HoldingData
+import feign.FeignException
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
@@ -14,7 +14,7 @@ class Trading212HoldingsService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchHoldings(ticker: String): List<HoldingData> {
     val raw = etfClient.getHoldings(ticker)
     if (raw.isEmpty()) {
@@ -25,6 +25,6 @@ class Trading212HoldingsService(
     return sorted.mapIndexed { index, holding -> enricher.enrich(holding, rank = index + 1) }
   }
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchTer(ticker: String): BigDecimal? = etfClient.getSummary(ticker).expenseRatio
 }
