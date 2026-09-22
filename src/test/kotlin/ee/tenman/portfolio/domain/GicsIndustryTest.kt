@@ -1,11 +1,14 @@
 package ee.tenman.portfolio.domain
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToContain
 import ch.tutteli.atrium.api.fluent.en_GB.notToThrow
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 class GicsIndustryTest {
   @Test
@@ -59,5 +62,32 @@ class GicsIndustryTest {
     val lines = GicsIndustry.promptCatalogue().lines()
     expect(lines).toHaveSize(74)
     expect(lines).toContain("201010 Aerospace & Defense")
+  }
+
+  @Test
+  fun `cannot map any industry to cryptocurrency`() {
+    expect(GicsIndustry.entries.map { it.industrySector }).notToContain(IndustrySector.CRYPTOCURRENCY)
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "GROUND_TRANSPORTATION, MOBILITY",
+    "AIR_FREIGHT_AND_LOGISTICS, MOBILITY",
+    "AUTOMOBILES, MOBILITY",
+    "COMMUNICATIONS_EQUIPMENT, COMMUNICATION",
+    "IT_SERVICES, BUSINESS_SERVICES",
+    "SPECIALIZED_REITS, BUSINESS_SERVICES",
+    "BROADLINE_RETAIL, CONSUMER_ESSENTIALS",
+    "SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT, SEMICONDUCTORS",
+    "INTERACTIVE_MEDIA_AND_SERVICES, SOFTWARE_CLOUD_SERVICES",
+    "METALS_AND_MINING, INDUSTRIALS",
+    "INDEPENDENT_POWER_AND_RENEWABLE_ELECTRICITY_PRODUCERS, ENERGY",
+    "REAL_ESTATE_MANAGEMENT_AND_DEVELOPMENT, FINANCE",
+  )
+  fun `should map an industry onto its portfolio sector`(
+    industry: GicsIndustry,
+    sector: IndustrySector,
+  ) {
+    expect(industry.industrySector).toEqual(sector)
   }
 }

@@ -37,6 +37,7 @@ enum class BenchmarkIndex {
 enum class SectorSource {
   LLM,
   LIGHTYEAR,
+  INDUSTRY,
 }
 
 enum class LogoSource {

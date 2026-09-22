@@ -10,6 +10,7 @@ import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
+import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
@@ -37,6 +38,7 @@ class EtfHoldingsClassificationJobTest {
   private val circuitBreaker: OpenRouterCircuitBreaker = mockk()
   private val properties: IndustryClassificationProperties = mockk(relaxed = true)
   private val cacheInvalidationService: CacheInvalidationService = mockk(relaxed = true)
+  private val etfHoldingIndustryService: EtfHoldingIndustryService = mockk(relaxed = true)
 
   private lateinit var job: EtfHoldingsClassificationJob
 
@@ -54,6 +56,7 @@ class EtfHoldingsClassificationJobTest {
         circuitBreaker = circuitBreaker,
         properties = properties,
         cacheInvalidationService = cacheInvalidationService,
+        etfHoldingIndustryService = etfHoldingIndustryService,
       )
   }
 
@@ -252,12 +255,42 @@ class EtfHoldingsClassificationJobTest {
   }
 
   @Test
-  fun `should skip job entirely when classification disabled`() {
+  fun `should skip llm classification when classification disabled`() {
     every { properties.enabled } returns false
 
     job.execute()
 
     verify(exactly = 0) { etfHoldingPersistenceService.findUnclassifiedHoldingIds() }
+  }
+
+  @Test
+  fun `should derive sectors from industry when classification disabled`() {
+    every { properties.enabled } returns false
+
+    job.execute()
+
+    verify(exactly = 1) { etfHoldingIndustryService.deriveMissingSectors() }
+  }
+
+  @Test
+  fun `should evict caches when sectors were derived from industry`() {
+    every { properties.enabled } returns false
+    every { etfHoldingIndustryService.deriveMissingSectors() } returns 3
+
+    job.execute()
+
+    verify(exactly = 1) { cacheInvalidationService.evictEtfBreakdownCache() }
+    verify(exactly = 1) { cacheInvalidationService.evictDiversificationEtfsCache() }
+  }
+
+  @Test
+  fun `should not evict caches when no sector was derived from industry`() {
+    every { properties.enabled } returns false
+    every { etfHoldingIndustryService.deriveMissingSectors() } returns 0
+
+    job.execute()
+
+    verify(exactly = 0) { cacheInvalidationService.evictDiversificationEtfsCache() }
   }
 
   @Test
