@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.model.ClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
+import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
@@ -22,6 +23,7 @@ class EtfHoldingsClassificationJob(
   private val circuitBreaker: OpenRouterCircuitBreaker,
   private val properties: IndustryClassificationProperties,
   private val cacheInvalidationService: CacheInvalidationService,
+  private val etfHoldingIndustryService: EtfHoldingIndustryService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -39,6 +41,7 @@ class EtfHoldingsClassificationJob(
 
   @Synchronized
   override fun execute() {
+    deriveSectorsFromIndustry()
     if (!properties.enabled) {
       log.info("Sector classification disabled, skipping job")
       return
@@ -59,6 +62,14 @@ class EtfHoldingsClassificationJob(
     }
     result.requireAnySuccess("Sector")
     log.info("Sector classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
+  }
+
+  private fun deriveSectorsFromIndustry() {
+    val derived = etfHoldingIndustryService.deriveMissingSectors()
+    if (derived == 0) return
+    log.info("Derived sectors from industry for $derived holdings")
+    cacheInvalidationService.evictEtfBreakdownCache()
+    cacheInvalidationService.evictDiversificationEtfsCache()
   }
 
   private fun loadHoldingsMap(holdingIds: List<Long>): Map<Long, EtfHolding> =

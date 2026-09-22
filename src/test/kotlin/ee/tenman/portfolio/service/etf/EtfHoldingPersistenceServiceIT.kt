@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import javax.sql.DataSource
 
 @IntegrationTest
 class EtfHoldingPersistenceServiceIT {
@@ -44,6 +45,9 @@ class EtfHoldingPersistenceServiceIT {
 
   @Resource
   private lateinit var etfPositionRepository: EtfPositionRepository
+
+  @Resource
+  private lateinit var dataSource: DataSource
 
   private lateinit var etfInstrument: Instrument
 
@@ -666,6 +670,63 @@ class EtfHoldingPersistenceServiceIT {
   @Test
   fun `cannot updateIndustry a holding that does not exist`() {
     expect { etfHoldingIndustryService.updateIndustry(999_999L, GicsIndustry.BANKS, null) }.toThrow<EntityNotFoundException>()
+  }
+
+  @Test
+  fun `should saveHoldings derive the sector of a new holding from its industry`() {
+    feed("Rheinmetall AG", "RHM", null, null, GicsIndustry.AEROSPACE_AND_DEFENSE)
+
+    val saved = etfHoldingRepository.findByNameIgnoreCase("Rheinmetall AG")
+    expect(saved?.sector to saved?.sectorSource).toEqual(IndustrySector.INDUSTRIALS to SectorSource.INDUSTRY)
+  }
+
+  @Test
+  fun `should replace an industry derived sector with the one provided by lightyear`() {
+    feed("Amazon.com Inc", "AMZN", null, null, GicsIndustry.BROADLINE_RETAIL)
+
+    feed("Amazon.com Inc", "AMZN", "Consumer Discretionary", SectorSource.LIGHTYEAR)
+
+    val updated = etfHoldingRepository.findByNameIgnoreCase("Amazon.com Inc")
+    expect(updated?.sector to updated?.sectorSource).toEqual(IndustrySector.CONSUMER_DISCRETIONARY to SectorSource.LIGHTYEAR)
+  }
+
+  @Test
+  fun `should updateIndustry derive the sector of a holding without one`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
+
+    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
+
+    expect(etfHoldingRepository.findById(holding.id).orElseThrow().sector).toEqual(IndustrySector.INDUSTRIALS)
+  }
+
+  @Test
+  fun `should deriveMissingSectors fill the sector of a holding that only has an industry`() {
+    val holding =
+      etfHoldingPersistenceService.saveHolding(
+        EtfHolding(name = "Ørsted A/S", ticker = "ORSTED", industry = GicsIndustry.ELECTRIC_UTILITIES),
+      )
+    forgetSectors()
+
+    etfHoldingIndustryService.deriveMissingSectors()
+
+    expect(etfHoldingRepository.findById(holding.id).orElseThrow().sector).toEqual(IndustrySector.UTILITIES)
+  }
+
+  @Test
+  fun `should deriveMissingSectors count only holdings that have an industry`() {
+    etfHoldingPersistenceService.saveHolding(
+      EtfHolding(name = "Ørsted A/S", ticker = "ORSTED", industry = GicsIndustry.ELECTRIC_UTILITIES),
+    )
+    etfHoldingPersistenceService.saveHolding(EtfHolding(name = "Tundmatu Ühistu OÜ", ticker = "TÜO"))
+    forgetSectors()
+
+    expect(etfHoldingIndustryService.deriveMissingSectors()).toEqual(1)
+  }
+
+  private fun forgetSectors() {
+    dataSource.connection.use { connection ->
+      connection.createStatement().use { it.executeUpdate("UPDATE etf_holding SET sector = NULL, sector_source = NULL") }
+    }
   }
 
   private fun feed(
