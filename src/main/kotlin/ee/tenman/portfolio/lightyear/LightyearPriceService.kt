@@ -138,7 +138,7 @@ class LightyearPriceService(
     return null
   }
 
-  fun fetchHoldingsRaw(symbol: String): List<LightyearHoldingResponse> {
+  private fun fetchHoldingsRaw(symbol: String): List<LightyearHoldingResponse> {
     val uuid = resolveUuid(symbol)
     if (uuid == null) {
       log.warn("No UUID mapping found for symbol: $symbol")

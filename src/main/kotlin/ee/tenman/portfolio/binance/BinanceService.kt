@@ -116,7 +116,7 @@ class BinanceService(
     return result
   }
 
-  fun getDailyPrices(
+  private fun getDailyPrices(
     symbol: String,
     startDate: LocalDate? = null,
     endDate: LocalDate? = null,

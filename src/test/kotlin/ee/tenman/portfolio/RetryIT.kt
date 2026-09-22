@@ -5,7 +5,6 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
@@ -15,23 +14,22 @@ import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.okJson
 import com.github.tomakehurst.wiremock.client.WireMock.serviceUnavailable
 import com.github.tomakehurst.wiremock.client.WireMock.status
+import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.Scenario
 import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.blackrock.CsusHoldingsService
 import ee.tenman.portfolio.configuration.IntegrationTest
-import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
 import ee.tenman.portfolio.lightyear.LightyearPriceService
-import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.lightyear.LightyearUuidCacheService
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import ee.tenman.portfolio.trading212.Trading212Service
 import feign.FeignException
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
-import org.wiremock.spring.InjectWireMock
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -48,6 +46,9 @@ class RetryIT {
   private lateinit var lightyearHistoricalPricesService: LightyearHistoricalPricesService
 
   @Resource
+  private lateinit var lightyearUuidCacheService: LightyearUuidCacheService
+
+  @Resource
   private lateinit var csusHoldingsService: CsusHoldingsService
 
   @Resource
@@ -56,56 +57,41 @@ class RetryIT {
   @Resource
   private lateinit var trading212HoldingsService: Trading212HoldingsService
 
-  @Resource
-  private lateinit var instrumentRepository: InstrumentRepository
-
-  @InjectWireMock
-  private lateinit var wireMockServer: WireMockServer
-
   @Test
   fun `should return binance ticker price after one 503`() {
     stubFailingOnce({ get(urlPathEqualTo(TICKER_PATH)) }, okJson("""{"symbol":"BTCEUR","price":"61234.5"}"""))
     expect(binanceService.getCurrentPrice("BTCEUR")).toEqualNumerically(BigDecimal("61234.5"))
-    wireMockServer.verify(2, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
+    verify(2, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
   }
 
   @Test
   fun `should return binance hourly prices after one 503`() {
     stubFailingOnce({ get(urlPathEqualTo(KLINES_PATH)) }, okJson(KLINES))
     expect(binanceService.getHourlyPrices("BTCEUR").keys).toContainExactly(Instant.ofEpochMilli(1758499200000))
-    wireMockServer.verify(2, getRequestedFor(urlPathEqualTo(KLINES_PATH)))
+    verify(2, getRequestedFor(urlPathEqualTo(KLINES_PATH)))
   }
 
   @Test
   fun `should return lightyear holdings after one 503`() {
-    instrumentRepository.save(
-      Instrument(
-        symbol = "VXUS:XNAS:USD",
-        name = "Vanguard Total International Stock ETF",
-        category = "ETF",
-        baseCurrency = "USD",
-        providerName = ProviderName.LIGHTYEAR,
-        providerExternalId = LIGHTYEAR_UUID,
-      ),
-    )
+    lightyearUuidCacheService.cacheUuid("VXUS:XNAS:USD", LIGHTYEAR_UUID)
     stubFailingOnce({ lightyear(HOLDINGS) }, okJson("""[{"name":"Nestlé SA","value":2.5,"instrumentId":null}]"""))
     expect(lightyearPriceService.fetchHoldingsAsDto("VXUS:XNAS:USD").map { it.name }).toContainExactly("Nestlé SA")
-    wireMockServer.verify(2, lightyearRequests(HOLDINGS))
+    verify(2, lightyearRequests(HOLDINGS))
   }
 
   @Test
   fun `should return lightyear historical prices after one 503`() {
-    wireMockServer.stubFor(lightyear(chart("max")).willReturn(okJson(CHART)))
+    stubFor(lightyear(chart("max")).willReturn(okJson(CHART)))
     stubFailingOnce({ lightyear(chart("5y")) }, okJson(CHART))
     expect(lightyearHistoricalPricesService.fetchHistoricalPrices(LIGHTYEAR_UUID).keys).toContainExactly(LocalDate.of(2026, 9, 21))
-    wireMockServer.verify(2, lightyearRequests(chart("5y")))
+    verify(2, lightyearRequests(chart("5y")))
   }
 
   @Test
   fun `should return csus holdings after one 503`() {
     stubFailingOnce({ get(urlPathEqualTo(CSUS_PATH)) }, ok("Ticker,Name,Asset Class,Weight (%)\nAAPL,APPLE INC,Equity,6.5\n"))
     expect(csusHoldingsService.fetchHoldings().map { it.name }).toContainExactly("APPLE INC")
-    wireMockServer.verify(2, getRequestedFor(urlPathEqualTo(CSUS_PATH)))
+    verify(2, getRequestedFor(urlPathEqualTo(CSUS_PATH)))
   }
 
   @Test
@@ -113,50 +99,50 @@ class RetryIT {
     stubFailingOnce({ get(urlPathEqualTo(PRICES_PATH)) }, okJson(PRICES))
     val prices = trading212Service.fetchCurrentPrices(setOf("VUAA:GER:EUR"))
     expect(prices.getValue("VUAA:GER:EUR")).toEqualNumerically(BigDecimal("112.34"))
-    wireMockServer.verify(2, getRequestedFor(urlPathEqualTo(PRICES_PATH)))
+    verify(2, getRequestedFor(urlPathEqualTo(PRICES_PATH)))
   }
 
   @Test
   fun `should return trading212 holdings after one 503`() {
-    wireMockServer.stubFor(get(urlPathEqualTo(CATALOGUE_PATH)).willReturn(okJson("[]")))
+    stubFor(get(urlPathEqualTo(CATALOGUE_PATH)).willReturn(okJson("[]")))
     stubFailingOnce({ get(urlPathEqualTo(ETF_HOLDINGS_PATH)) }, okJson(ETF_HOLDINGS))
     expect(trading212HoldingsService.fetchHoldings("VUAAm_EQ").map { it.name }).toContainExactly("Société Générale")
-    wireMockServer.verify(2, getRequestedFor(urlPathEqualTo(ETF_HOLDINGS_PATH)))
+    verify(2, getRequestedFor(urlPathEqualTo(ETF_HOLDINGS_PATH)))
   }
 
   @Test
   fun `should return trading212 ter after one 503`() {
     stubFailingOnce({ get(urlPathEqualTo(ETF_SUMMARY_PATH)) }, okJson("""{"expenseRatio":0.07}"""))
     expect(trading212HoldingsService.fetchTer("VUAAm_EQ")).notToEqualNull().toEqualNumerically(BigDecimal("0.07"))
-    wireMockServer.verify(2, getRequestedFor(urlPathEqualTo(ETF_SUMMARY_PATH)))
+    verify(2, getRequestedFor(urlPathEqualTo(ETF_SUMMARY_PATH)))
   }
 
   @Test
-  fun `should give up on csus holdings after three 503 responses`() {
-    wireMockServer.stubFor(get(urlPathEqualTo(CSUS_PATH)).willReturn(serviceUnavailable()))
-    expect { csusHoldingsService.fetchHoldings() }.toThrow<FeignException.ServiceUnavailable>()
-    wireMockServer.verify(3, getRequestedFor(urlPathEqualTo(CSUS_PATH)))
+  fun `should give up on binance ticker price after three 503 responses`() {
+    stubFor(get(urlPathEqualTo(TICKER_PATH)).willReturn(serviceUnavailable()))
+    expect { binanceService.getCurrentPrice("BTCEUR") }.toThrow<FeignException.ServiceUnavailable>()
+    verify(3, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
   }
 
   @Test
   fun `should not retry binance ticker price after 429`() {
-    wireMockServer.stubFor(get(urlPathEqualTo(TICKER_PATH)).willReturn(status(429)))
+    stubFor(get(urlPathEqualTo(TICKER_PATH)).willReturn(status(429)))
     expect { binanceService.getCurrentPrice("BTCEUR") }.toThrow<FeignException.TooManyRequests>()
-    wireMockServer.verify(1, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
+    verify(1, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
   }
 
   private fun stubFailingOnce(
     request: () -> MappingBuilder,
     response: ResponseDefinitionBuilder,
   ) {
-    wireMockServer.stubFor(
+    stubFor(
       request()
         .inScenario(SCENARIO)
         .whenScenarioStateIs(Scenario.STARTED)
         .willReturn(serviceUnavailable())
         .willSetStateTo(RECOVERED),
     )
-    wireMockServer.stubFor(
+    stubFor(
       request()
         .inScenario(SCENARIO)
         .whenScenarioStateIs(RECOVERED)
