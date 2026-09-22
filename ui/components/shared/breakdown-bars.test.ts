@@ -11,7 +11,7 @@ const rows = paint([
 ])
 
 const mountBars = (props: Record<string, unknown> = {}) =>
-  mount(BreakdownBars, { props: { rows, benchmarkLabel: 'VWCE', ...props } })
+  mount(BreakdownBars, { props: { rows, benchmarkLabel: 'VGLA', ...props } })
 
 describe('BreakdownBars', () => {
   it('renders one row per item', () => {
@@ -56,7 +56,7 @@ describe('BreakdownBars', () => {
 
   it('puts a hover title naming the benchmark on each compared row', () => {
     expect(mountBars().find('.breakdown-row').attributes('title')).toBe(
-      'Banken 20.30% · VWCE 10.00%'
+      'Banken 20.30% · VGLA 10.00%'
     )
   })
 
