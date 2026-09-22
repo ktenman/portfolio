@@ -43,7 +43,6 @@ dependencies {
   implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
   implementation(libs.kotlin.reflect)
-  implementation(libs.spring.retry)
   implementation(libs.resilience4j.circuitbreaker)
   implementation(libs.resilience4j.retry)
   implementation(libs.resilience4j.kotlin)

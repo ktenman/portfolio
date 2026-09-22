@@ -1,9 +1,9 @@
 package ee.tenman.portfolio.trading212
 
 import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
+import feign.FeignException
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
@@ -14,7 +14,7 @@ class Trading212Service(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchCurrentPrices(eligibleSymbols: Set<String>): Map<String, BigDecimal> {
     if (eligibleSymbols.isEmpty()) {
       log.info("No Trading212-provider instruments to price, skipping fetch")

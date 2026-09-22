@@ -1,12 +1,12 @@
 package ee.tenman.portfolio.lightyear
 
 import ee.tenman.portfolio.common.DailyPriceData
+import feign.FeignException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -19,7 +19,7 @@ class LightyearHistoricalPricesService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Retryable(backoff = Backoff(delay = 1000, multiplier = 2.0, maxDelay = 5000))
+  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchHistoricalPrices(uuid: String): Map<LocalDate, DailyPriceData> =
     runBlocking {
       log.info("Fetching historical prices for Lightyear instrument: $uuid")

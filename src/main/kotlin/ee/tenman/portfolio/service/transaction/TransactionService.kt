@@ -6,13 +6,9 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.ProfitCalculationEngine
-import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
-import org.springframework.orm.ObjectOptimisticLockingFailureException
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
@@ -27,62 +23,38 @@ class TransactionService(
   private val transactionCacheService: TransactionCacheService,
   private val clock: Clock,
 ) {
-  private val log = LoggerFactory.getLogger(javaClass)
-
   @Transactional(readOnly = true)
   @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
   fun getTransactionById(id: Long): PortfolioTransaction = portfolioTransactionRepository.findById(id).orNotFound(id)
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
-  @Retryable(
-    value = [ObjectOptimisticLockingFailureException::class],
-    maxAttempts = 5,
-    backoff = Backoff(delay = 100),
-  )
   @Caching(
     evict = [
       CacheEvict(value = [TRANSACTION_CACHE], key = "#transaction.id", condition = "#transaction.id != null"),
       CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
     ],
   )
-  fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction =
-    runCatching {
-      val saved = portfolioTransactionRepository.save(transaction)
-      val relatedTransactions =
-        portfolioTransactionRepository
-          .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
-      calculateTransactionProfits(relatedTransactions)
-      requireNotNull(
-        portfolioTransactionRepository
-          .saveAll(relatedTransactions)
-          .find { it.id == saved.id },
-      ) { "Transaction not found after save: ${saved.id}" }
-    }.onFailure { e ->
-      if (e is ObjectOptimisticLockingFailureException) {
-        log.warn("Optimistic locking failure while saving transaction. Will retry.", e)
-      }
-    }.getOrThrow()
+  fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction {
+    val saved = portfolioTransactionRepository.save(transaction)
+    val relatedTransactions =
+      portfolioTransactionRepository
+        .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
+    calculateTransactionProfits(relatedTransactions)
+    return requireNotNull(
+      portfolioTransactionRepository
+        .saveAll(relatedTransactions)
+        .find { it.id == saved.id },
+    ) { "Transaction not found after save: ${saved.id}" }
+  }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
-  @Retryable(
-    value = [ObjectOptimisticLockingFailureException::class],
-    maxAttempts = 5,
-    backoff = Backoff(delay = 100),
-  )
   @Caching(
     evict = [
       CacheEvict(value = [TRANSACTION_CACHE], key = "#id"),
       CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
     ],
   )
-  fun deleteTransaction(id: Long) =
-    runCatching {
-      portfolioTransactionRepository.deleteById(id)
-    }.onFailure { e ->
-      if (e is ObjectOptimisticLockingFailureException) {
-        log.warn("Optimistic locking failure while deleting transaction. Will retry.", e)
-      }
-    }.getOrThrow()
+  fun deleteTransaction(id: Long) = portfolioTransactionRepository.deleteById(id)
 
   @Transactional(readOnly = true)
   fun getDistinctPlatforms(): List<Platform> = portfolioTransactionRepository.findDistinctPlatforms()
@@ -140,25 +112,14 @@ class TransactionService(
   }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
-  @Retryable(
-    value = [ObjectOptimisticLockingFailureException::class],
-    maxAttempts = 5,
-    backoff = Backoff(delay = 100),
-  )
   fun calculateTransactionProfits(
     transactions: List<PortfolioTransaction>,
     currentPrice: BigDecimal = BigDecimal.ZERO,
-  ) = runCatching {
-      transactions
-        .groupBy { it.platform to it.instrument.id }
-        .forEach { (_, platformTransactions) ->
-          profitCalculationEngine.calculateProfitsForPlatform(platformTransactions, currentPrice)
-        }
-    }.onFailure { e ->
-      if (e is ObjectOptimisticLockingFailureException) {
-        log.warn("Optimistic locking failure while calculating profits. Will retry.", e)
-      }
-    }.getOrThrow()
+  ) = transactions
+    .groupBy { it.platform to it.instrument.id }
+    .forEach { (_, platformTransactions) ->
+      profitCalculationEngine.calculateProfitsForPlatform(platformTransactions, currentPrice)
+    }
 
   @Transactional(readOnly = true)
   fun getFullTransactionHistoryForProfitCalculation(
