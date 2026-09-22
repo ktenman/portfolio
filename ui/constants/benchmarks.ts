@@ -1,1 +1,1 @@
-export const BENCHMARK_SYMBOL = 'VWCE:GER:EUR'
+export const BENCHMARK_SYMBOL = 'VGLA:GER:EUR'

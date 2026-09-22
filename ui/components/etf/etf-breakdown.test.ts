@@ -165,7 +165,7 @@ describe('etf-breakdown', () => {
     await tab!.trigger('click')
   }
 
-  const BENCHMARK = 'VWCE:GER:EUR'
+  const BENCHMARK = 'VGLA:GER:EUR'
 
   const withBenchmarkFund = (): EtfHoldingBreakdownDto[] => {
     const holdings = buildTwoHoldings()
@@ -328,7 +328,7 @@ describe('etf-breakdown', () => {
     expect([
       wrapper.find('.compare-toggle').text(),
       localStorage.getItem('portfolio_benchmark_compare'),
-    ]).toEqual(['vs VWCE', 'false'])
+    ]).toEqual(['vs VGLA', 'false'])
   })
 
   it('hides the compare toggle when the benchmark fund returns no holdings', async () => {
@@ -357,7 +357,7 @@ describe('etf-breakdown', () => {
     const wrapper = mountWithChartStub()
     await flushPromises()
 
-    expect(wrapper.find('.compare-toggle').text()).toBe('vs VWCE')
+    expect(wrapper.find('.compare-toggle').text()).toBe('vs VGLA')
   })
 
   it('attaches the benchmark ratio to each industry once the benchmark is loaded', async () => {
@@ -417,7 +417,7 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
     await flushPromises()
 
-    expect(wrapper.find('.compare-label').text()).toBe('vs VWCE')
+    expect(wrapper.find('.compare-label').text()).toBe('vs VGLA')
   })
 
   it('does not fetch the benchmark again while the first request is still in flight', async () => {
@@ -543,7 +543,7 @@ describe('etf-breakdown', () => {
     const wrapper = mountWithChartStub()
     await flushPromises()
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('VWCE')
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('benchmarkLabel')).toBe('VGLA')
   })
 
   it('narrows the industry donut to the top count the other dimensions use', async () => {

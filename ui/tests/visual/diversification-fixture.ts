@@ -143,7 +143,7 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
   },
   {
     instrumentId: 115,
-    symbol: 'VWCE:GER:EUR',
+    symbol: 'VGLA:GER:EUR',
     name: 'Test World Benchmark',
     allocation: 0,
     ter: 0.07,
