@@ -8,7 +8,7 @@ data class OpenRouterProperties(
   val apiKey: String = "",
   val url: String = "https://openrouter.ai/api/v1",
   val primaryModel: AiModel = AiModel.primarySectorModel(),
-  val fallbackModel: AiModel = AiModel.CLAUDE_SONNET_5,
+  val fallbackModel: AiModel = AiModel.CLAUDE_OPUS_5_5,
   val visionModel: String = AiModel.GEMINI_3_5_FLASH_LITE.modelId,
   val circuitBreaker: CircuitBreakerProperties = CircuitBreakerProperties(),
   val apiTimeoutMs: Long = 30000,
