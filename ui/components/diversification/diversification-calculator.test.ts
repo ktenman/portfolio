@@ -9,8 +9,8 @@ vi.mock('@tanstack/vue-query', () => ({
     data: ref([
       {
         instrumentId: 1,
-        symbol: 'VWCE:GER:EUR',
-        name: 'Vanguard FTSE All-World',
+        symbol: 'VGLA:GER:EUR',
+        name: 'Vanguard FTSE Global All Cap',
         allocation: 0,
         ter: 0.22,
         annualReturn: 12.5,

@@ -415,9 +415,9 @@ describe('EtfBreakdownChart', () => {
 
     it('names the benchmark in the title of a compared bar', () => {
       const wrapper = mount(EtfBreakdownChart, {
-        props: { chartData: [comparedItem], view: 'bars', benchmarkLabel: 'VWCE' },
+        props: { chartData: [comparedItem], view: 'bars', benchmarkLabel: 'VGLA' },
       })
-      expect(wrapper.find('.breakdown-row').attributes('title')).toBe('Banks 9.20% · VWCE 4.00%')
+      expect(wrapper.find('.breakdown-row').attributes('title')).toBe('Banks 9.20% · VGLA 4.00%')
     })
 
     it('keeps the donut when no view is given', () => {
