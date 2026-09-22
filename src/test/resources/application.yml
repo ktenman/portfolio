@@ -20,6 +20,9 @@ binance:
 blackrock:
   url: http://localhost:${wiremock.server.port}
 
+vanguard:
+  url: http://localhost:${wiremock.server.port}
+
 ecb:
   url: http://localhost:${wiremock.server.port}
 

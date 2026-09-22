@@ -5,6 +5,7 @@ import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.HoldingBlockKey
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
@@ -62,16 +63,28 @@ class EtfHoldingPersistenceService(
         holdingData.countryName,
         holdingData.sectorSource,
       )
-      return hinted
+      return applyIndustryIfMissing(hinted, holdingData.industry)
     }
-    return findOrCreateHolding(
-      holdingData.name,
-      holdingData.ticker,
-      holdingData.sector,
-      holdingData.countryCode,
-      holdingData.countryName,
-      holdingData.sectorSource,
-    )
+    val holding =
+      findOrCreateHolding(
+        holdingData.name,
+        holdingData.ticker,
+        holdingData.sector,
+        holdingData.countryCode,
+        holdingData.countryName,
+        holdingData.sectorSource,
+      )
+    return applyIndustryIfMissing(holding, holdingData.industry)
+  }
+
+  private fun applyIndustryIfMissing(
+    holding: EtfHolding,
+    industry: GicsIndustry?,
+  ): EtfHolding {
+    if (industry == null) return holding
+    if (holding.industry != null) return holding
+    holding.industry = industry
+    return holding
   }
 
   private fun upsertPosition(

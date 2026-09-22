@@ -37,6 +37,7 @@ class EtfHoldingsClassificationJob(
     log.info("Completed ETF holdings classification job")
   }
 
+  @Synchronized
   override fun execute() {
     if (!properties.enabled) {
       log.info("Sector classification disabled, skipping job")

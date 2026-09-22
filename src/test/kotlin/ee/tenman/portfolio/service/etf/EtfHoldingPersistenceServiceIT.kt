@@ -567,6 +567,66 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
+  fun `should saveHoldings store a supplied industry on a new holding`() {
+    val holdings =
+      listOf(
+        HoldingData(
+          name = "Rheinmetall AG",
+          ticker = "RHM",
+          sector = null,
+          weight = BigDecimal("1.25"),
+          rank = 1,
+          industry = GicsIndustry.AEROSPACE_AND_DEFENSE,
+        ),
+      )
+
+    etfHoldingPersistenceService.saveHoldings("VWCE", LocalDate.of(2026, 8, 31), holdings)
+
+    val saved = etfHoldingRepository.findByNameIgnoreCase("Rheinmetall AG")
+    expect(saved?.industry).toEqual(GicsIndustry.AEROSPACE_AND_DEFENSE)
+  }
+
+  @Test
+  fun `cannot saveHoldings overwrite an industry that a holding already has`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
+    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.MACHINERY, AiModel.GPT_5_6_LUNA)
+    val holdings =
+      listOf(
+        HoldingData(
+          name = "Rheinmetall AG",
+          ticker = "RHM",
+          sector = null,
+          weight = BigDecimal("1.25"),
+          rank = 1,
+          industry = GicsIndustry.AEROSPACE_AND_DEFENSE,
+        ),
+      )
+
+    etfHoldingPersistenceService.saveHoldings("VWCE", LocalDate.of(2026, 8, 31), holdings)
+
+    expect(etfHoldingRepository.findById(holding.id).orElseThrow().industry).toEqual(GicsIndustry.MACHINERY)
+  }
+
+  @Test
+  fun `cannot saveHoldings record a model for a supplied industry`() {
+    val holdings =
+      listOf(
+        HoldingData(
+          name = "Rheinmetall AG",
+          ticker = "RHM",
+          sector = null,
+          weight = BigDecimal("1.25"),
+          rank = 1,
+          industry = GicsIndustry.AEROSPACE_AND_DEFENSE,
+        ),
+      )
+
+    etfHoldingPersistenceService.saveHoldings("VWCE", LocalDate.of(2026, 8, 31), holdings)
+
+    expect(etfHoldingRepository.findByNameIgnoreCase("Rheinmetall AG")?.industryClassifiedByModel).toEqual(null)
+  }
+
+  @Test
   fun `should updateIndustry store industry and model on the holding`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
 

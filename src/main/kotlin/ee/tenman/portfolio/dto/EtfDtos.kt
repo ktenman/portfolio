@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.dto
 
 import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.SectorSource
 import java.io.Serializable
@@ -66,4 +67,5 @@ data class HoldingData(
   val countryCode: String? = null,
   val countryName: String? = null,
   val sectorSource: SectorSource? = null,
+  val industry: GicsIndustry? = null,
 )
