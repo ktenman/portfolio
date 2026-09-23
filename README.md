@@ -473,6 +473,18 @@ HEALTHCHECK_URL=https://hc-ping.com/your-check-uuid
 - **Health Checks**: All services expose `/actuator/health` endpoints
 - **Logging**: Centralized logging with correlation IDs
 - **Performance**: Redis caching with configurable TTL
+- **Slow Queries**: Production Postgres (`docker-compose.yml`) preloads `pg_stat_statements` and `auto_explain`. Statements slower than 500 ms are logged with their parameters, and those slower than 1 s also log their plan with actual row counts
+- **Postgres Logs**: Written to `$PGDATA/log/postgresql-<weekday>.log` on the data volume, so they survive deploys and each file is overwritten a week later. After startup, `docker logs postgres` only points to that directory
+
+On the production host:
+
+```bash
+# Slowest statements
+docker exec postgres sh -c 'psql -U "$POSTGRES_USER" -d portfolio -c "SELECT calls, round(mean_exec_time) AS mean_ms, round(max_exec_time) AS max_ms, left(query, 100) AS query FROM pg_stat_statements ORDER BY max_exec_time DESC LIMIT 20"'
+
+# Latest log lines, including slow statements and their plans
+docker exec postgres sh -c 'tail -n 100 $PGDATA/log/postgresql-*.log'
+```
 
 ## Security Features
 
