@@ -3,9 +3,11 @@ package ee.tenman.portfolio.job
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.VanguardHoldingUpdates
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.EtfPositionRepository
+import ee.tenman.portfolio.service.etf.EtfHoldingCountryService
 import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
@@ -46,6 +48,7 @@ class VanguardHoldingsRetrievalJobTest {
       etfHoldingService = etfHoldingService,
       cacheInvalidationService = cacheInvalidationService,
       etfHoldingIndustryService = etfHoldingIndustryService,
+      etfHoldingCountryService = mockk<EtfHoldingCountryService>(relaxed = true),
       etfHoldingsClassificationJob = etfHoldingsClassificationJob,
       jobExecutionService = jobExecutionService,
       etfPositionRepository = etfPositionRepository,
@@ -55,6 +58,7 @@ class VanguardHoldingsRetrievalJobTest {
 
   @BeforeEach
   fun setup() {
+    every { etfHoldingService.resolveVanguardUpdates(any()) } returns VanguardHoldingUpdates(emptyList(), emptyList())
     every { etfHoldingService.hasHoldingsForDate(any(), any()) } returns false
     every { etfPositionRepository.deleteBySymbolAndSnapshotDateAfter(any(), any()) } returns 0
     every { etfPositionRepository.findLatestSnapshotDate(any()) } returns EFFECTIVE_DATE
@@ -63,12 +67,15 @@ class VanguardHoldingsRetrievalJobTest {
   }
 
   @Test
-  fun `should skip the startup import when all funds already have positions`() {
+  fun `should reconcile metadata at startup even when all funds already have positions`() {
     every { etfPositionRepository.existsByEtfInstrumentSymbol(any()) } returns true
 
     job.runStartupImport()
 
-    verify(exactly = 0) { jobExecutionService.executeJob(any()) }
+    verifyOrder {
+      jobExecutionService.executeJob(job)
+      jobExecutionService.executeJob(etfHoldingsClassificationJob)
+    }
   }
 
   @Test

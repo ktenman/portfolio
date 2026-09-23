@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.Locale
 
 @Service
 class VanguardHoldingsService(
@@ -21,9 +22,10 @@ class VanguardHoldingsService(
     warnAboutUnmappedIndustries(portId, items)
     val rows = parse(portId, items)
     val effectiveDate = resolveEffectiveDate(portId, rows)
-    val holdings = normalize(portId, mergeByIssuer(rows))
+    val issuers = mergeByIssuer(rows)
+    val holdings = normalize(portId, issuers)
     log.info("Fetched ${holdings.size} Vanguard issuers from ${rows.size} rows for fund $portId effective $effectiveDate")
-    return VanguardFundSnapshot(effectiveDate = effectiveDate, holdings = holdings)
+    return VanguardFundSnapshot(effectiveDate, holdings, issuers.associate { it.name to it.countryCodes })
   }
 
   private fun fetchAllItems(portId: String): List<VanguardHoldingItem> {
@@ -69,7 +71,14 @@ class VanguardHoldingsService(
         weight = weight,
         effectiveDate = effectiveDate,
         industry = industryOf(item),
-      )
+        countryCodes =
+          setOfNotNull(
+            item.bloombergIsoCountry
+          ?.trim()
+          ?.uppercase(Locale.ROOT)
+          ?.takeIf { it in COUNTRY_CODES },
+              ),
+          )
     }
 
   private fun resolveEffectiveDate(
@@ -93,6 +102,7 @@ class VanguardHoldingsService(
     return ordered.first().copy(
       weight = shareClasses.sumOf { it.weight },
       industry = industries.singleOrNull(),
+      countryCodes = shareClasses.flatMap { it.countryCodes }.toSet(),
     )
   }
 
@@ -147,6 +157,7 @@ class VanguardHoldingsService(
       )
     private const val MAX_PAGES = 20
     private const val PAGE_LIMIT = 1500
+    private val COUNTRY_CODES = Locale.getISOCountries().toSet()
 
     private val SECURITY_TYPES =
       listOf("EQ.DRCPT", "EQ.ETF", "EQ.FSH", "EQ.PREF", "EQ.PSH", "EQ.REIT", "EQ.STOCK", "EQ.RIGHT", "EQ.WRT")
@@ -160,7 +171,7 @@ class VanguardHoldingsService(
       query FundHoldings(${'$'}portIds: [String!], ${'$'}securityTypes: [String!], ${'$'}lastItemKey: String) {
         borHoldings(portIds: ${'$'}portIds) {
           holdings(limit: $PAGE_LIMIT, securityTypes: ${'$'}securityTypes, lastItemKey: ${'$'}lastItemKey) {
-            items { issuerName ticker marketValuePercentage gicsIndustryDescription effectiveDate }
+            items { issuerName ticker marketValuePercentage gicsIndustryDescription bloombergIsoCountry effectiveDate }
             lastItemKey
           }
         }

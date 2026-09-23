@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.common.orNotFound
+import ee.tenman.portfolio.domain.CountrySource
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.repository.EtfHoldingRepository
@@ -15,6 +16,7 @@ class HoldingMergeService(
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
   private val etfHoldingIndustryService: EtfHoldingIndustryService,
+  private val etfHoldingCountryService: EtfHoldingCountryService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -31,6 +33,7 @@ class HoldingMergeService(
     etfHoldingRepository.flush()
     duplicates.forEach { applyMissingFields(canonical, it) }
     etfHoldingIndustryService.inheritVanguardIndustry(canonical, duplicates)
+    etfHoldingCountryService.inheritVanguardCountry(canonical, duplicates)
     etfHoldingRepository.save(canonical)
     log.info("Merged ${duplicates.size} duplicate holdings into canonical id=$canonicalId")
   }
@@ -102,8 +105,11 @@ class HoldingMergeService(
   ) {
     if (!canonical.countryCode.isNullOrBlank()) return
     if (duplicate.countryCode.isNullOrBlank()) return
+    if (duplicate.countrySource == CountrySource.VANGUARD) return
     canonical.countryCode = duplicate.countryCode
     canonical.countryName = duplicate.countryName
     canonical.countryClassifiedByModel = duplicate.countryClassifiedByModel
+    canonical.countrySource = duplicate.countrySource
+    canonical.countryEffectiveDate = duplicate.countryEffectiveDate
   }
 }

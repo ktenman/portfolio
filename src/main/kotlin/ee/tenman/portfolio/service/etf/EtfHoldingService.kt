@@ -3,11 +3,14 @@ package ee.tenman.portfolio.service.etf
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_ETFS_CACHE
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.domain.VanguardCountryUpdate
+import ee.tenman.portfolio.domain.VanguardHoldingUpdates
 import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -56,17 +59,20 @@ class EtfHoldingService(
       .mapNotNull { (index, holdingData) -> resolveMatchingHoldingId(holdingData)?.let { index to it } }
       .toMap()
 
-  fun resolveIndustryUpdates(
-    holdings: List<HoldingData>,
-    date: LocalDate,
-  ): List<VanguardIndustryUpdate> =
-    holdings.mapNotNull { data ->
-      val industry = data.industry ?: return@mapNotNull null
-      val holding = resolveIndustryHolding(data) ?: return@mapNotNull null
-      VanguardIndustryUpdate(holding.uuid, industry, date)
+  fun resolveVanguardUpdates(snapshot: VanguardFundSnapshot): VanguardHoldingUpdates {
+    val industries = mutableListOf<VanguardIndustryUpdate>()
+    val countries = mutableListOf<VanguardCountryUpdate>()
+    snapshot.holdings.forEach { data ->
+      val codes = snapshot.countryCodes[data.name].orEmpty()
+      if (data.industry == null && codes.isEmpty()) return@forEach
+      val holding = resolveVanguardHolding(data) ?: return@forEach
+      data.industry?.let { industries += VanguardIndustryUpdate(holding.uuid, it, snapshot.effectiveDate) }
+      countries += codes.map { VanguardCountryUpdate(holding.uuid, it, snapshot.effectiveDate) }
     }
+    return VanguardHoldingUpdates(industries, countries)
+  }
 
-  private fun resolveIndustryHolding(data: HoldingData): EtfHolding? {
+  private fun resolveVanguardHolding(data: HoldingData): EtfHolding? {
     val candidates = collectCandidates(data)
     val exact = candidates.filter { it.name.equals(data.name, ignoreCase = true) }
     if (exact.isNotEmpty()) return exact.singleOrNull()

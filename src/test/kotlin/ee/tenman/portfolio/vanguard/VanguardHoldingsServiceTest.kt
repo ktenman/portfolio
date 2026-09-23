@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.vanguard
 
 import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
@@ -21,6 +22,43 @@ import java.time.LocalDate
 class VanguardHoldingsServiceTest {
   private val vanguardHoldingsClient: VanguardHoldingsClient = mockk()
   private val service = VanguardHoldingsService(vanguardHoldingsClient)
+
+  @Test
+  fun `should request the country field provided by Vanguard`() {
+    val requests = mutableListOf<VanguardHoldingsRequest>()
+    every { vanguardHoldingsClient.getHoldings(capture(requests)) } returns response(listOf(item("Apple Inc", "AAPL", "100")))
+    service.fetchHoldings(VGLA_PORT_ID)
+    expect(requests.single().query).toContain("bloombergIsoCountry")
+  }
+
+  @Test
+  fun `should preserve conflicting share class countries for reconciliation`() {
+    stubSinglePage(
+      listOf(item("Shopify Inc", "SHOP", "90", country = "CA"), item("SHOPIFY INC", "SHOP", "10", country = "US")),
+    )
+    val snapshot = service.fetchHoldings(VGLA_PORT_ID)
+    expect(snapshot.countryCodes).toEqual(mapOf("Shopify Inc" to setOf("CA", "US")))
+    expect(snapshot.holdings.single().countryCode).toEqual(null)
+  }
+
+  @Test
+  fun `should normalize country codes while ignoring missing and invalid codes`() {
+    stubSinglePage(
+      listOf(
+        item("Apple Inc", "AAPL", "60", country = " us "),
+        item("Apple Inc", "AAPL", "10"),
+        item("Microsoft Corp", "MSFT", "30", country = "ZZ"),
+      ),
+    )
+    val snapshot = service.fetchHoldings(VGLA_PORT_ID)
+    expect(snapshot.countryCodes).toEqual(mapOf("Apple Inc" to setOf("US"), "Microsoft Corp" to emptySet()))
+  }
+
+  @Test
+  fun `cannot treat a zero weight share class as a country conflict`() {
+    stubSinglePage(listOf(item("Ferrari NV", "RACE", "100", country = "IT"), item("Ferrari NV", "RACE", "0", country = "US")))
+    expect(service.fetchHoldings(VGLA_PORT_ID).countryCodes).toEqual(mapOf("Ferrari NV" to setOf("IT")))
+  }
 
   @Test
   fun `should follow the cursor until a page reports no further key`() {
@@ -369,6 +407,7 @@ class VanguardHoldingsServiceTest {
     weight: String,
     industry: String? = null,
     effectiveDate: LocalDate = EFFECTIVE_DATE,
+    country: String? = null,
   ): VanguardHoldingItem =
     VanguardHoldingItem(
       issuerName = name,
@@ -376,6 +415,7 @@ class VanguardHoldingsServiceTest {
       marketValuePercentage = BigDecimal(weight),
       gicsIndustryDescription = industry,
       effectiveDate = effectiveDate,
+      bloombergIsoCountry = country,
     )
 
   companion object {

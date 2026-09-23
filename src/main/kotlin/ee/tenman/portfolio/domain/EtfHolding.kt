@@ -40,6 +40,11 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "country_classified_by_model", length = 100)
   var countryClassifiedByModel: AiModel? = null,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "country_source", length = 20)
+  var countrySource: CountrySource? = null,
+  @Column(name = "country_effective_date")
+  var countryEffectiveDate: LocalDate? = null,
   @Column(name = "country_fetch_attempts", nullable = false)
   var countryFetchAttempts: Int = 0,
   @Column(name = "sector_fetch_attempts", nullable = false)
@@ -70,13 +75,18 @@ class EtfHolding(
     deriveSector()
   }
 
-  fun deriveSector() {
-    if (sector != null) return
-    sector = industry?.industrySector ?: return
+  fun deriveSector(): Boolean {
+    val derived = industry?.industrySector ?: return false
+    if (sector != null && industrySource != IndustrySource.VANGUARD) return false
+    if (sector == derived && sectorSource == SectorSource.INDUSTRY && classifiedByModel == null) return false
+    sector = derived
     sectorSource = SectorSource.INDUSTRY
     classifiedByModel = null
+    return true
   }
 
-  fun acceptsSectorFrom(source: SectorSource?): Boolean =
-    sector == null || (source == SectorSource.LIGHTYEAR && sectorSource != SectorSource.LIGHTYEAR)
+  fun acceptsSectorFrom(source: SectorSource?): Boolean {
+    if (industrySource == IndustrySource.VANGUARD && industry != null) return false
+    return sector == null || (source == SectorSource.LIGHTYEAR && sectorSource != SectorSource.LIGHTYEAR)
+  }
 }

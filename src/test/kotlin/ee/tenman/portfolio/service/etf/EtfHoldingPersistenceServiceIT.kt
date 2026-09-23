@@ -700,27 +700,27 @@ class EtfHoldingPersistenceServiceIT {
   }
 
   @Test
-  fun `should deriveMissingSectors fill the sector of a holding that only has an industry`() {
+  fun `should deriveSectorsFromIndustries fill the sector of a holding that only has an industry`() {
     val holding =
       etfHoldingPersistenceService.saveHolding(
         EtfHolding(name = "Ørsted A/S", ticker = "ORSTED", industry = GicsIndustry.ELECTRIC_UTILITIES),
       )
     forgetSectors()
 
-    etfHoldingIndustryService.deriveMissingSectors()
+    etfHoldingIndustryService.deriveSectorsFromIndustries()
 
     expect(etfHoldingRepository.findById(holding.id).orElseThrow().sector).toEqual(IndustrySector.UTILITIES)
   }
 
   @Test
-  fun `should deriveMissingSectors count only holdings that have an industry`() {
+  fun `should deriveSectorsFromIndustries count only holdings that have an industry`() {
     etfHoldingPersistenceService.saveHolding(
       EtfHolding(name = "Ørsted A/S", ticker = "ORSTED", industry = GicsIndustry.ELECTRIC_UTILITIES),
     )
     etfHoldingPersistenceService.saveHolding(EtfHolding(name = "Tundmatu Ühistu OÜ", ticker = "TÜO"))
     forgetSectors()
 
-    expect(etfHoldingIndustryService.deriveMissingSectors()).toEqual(1)
+    expect(etfHoldingIndustryService.deriveSectorsFromIndustries()).toEqual(1)
   }
 
   private fun forgetSectors() {

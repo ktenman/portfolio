@@ -122,5 +122,12 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   )
   fun findHoldingsWithoutLogosForCurrentPortfolio(): List<EtfHolding>
 
-  fun findBySectorIsNullAndIndustryIsNotNull(): List<EtfHolding>
+  @Query(
+    """
+    SELECT h FROM EtfHolding h
+    WHERE h.industry IS NOT NULL
+      AND (h.sector IS NULL OR h.industrySource = ee.tenman.portfolio.domain.IndustrySource.VANGUARD)
+  """,
+  )
+  fun findHoldingsForSectorDerivation(): List<EtfHolding>
 }

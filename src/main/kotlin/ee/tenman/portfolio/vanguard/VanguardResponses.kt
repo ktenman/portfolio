@@ -44,6 +44,7 @@ data class VanguardHoldingItem(
   val marketValuePercentage: BigDecimal? = null,
   val gicsIndustryDescription: String? = null,
   val effectiveDate: LocalDate? = null,
+  val bloombergIsoCountry: String? = null,
 )
 
 data class VanguardHolding(
@@ -52,11 +53,13 @@ data class VanguardHolding(
   val weight: BigDecimal,
   val effectiveDate: LocalDate,
   val industry: GicsIndustry?,
+  val countryCodes: Set<String> = emptySet(),
 )
 
 data class VanguardFundSnapshot(
   val effectiveDate: LocalDate,
   val holdings: List<HoldingData>,
+  val countryCodes: Map<String, Set<String>> = emptyMap(),
 ) {
   fun holdingsWithoutIndustries(): List<HoldingData> = holdings.map { it.copy(industry = null) }
 }
