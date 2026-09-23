@@ -168,37 +168,35 @@ class DiversificationCalculatorService(
     positionsByEtfId: Map<Long, List<EtfPosition>>,
     instruments: Map<Long, Instrument>,
   ): Map<String, AggregatedHolding> =
-    allocations.fold(emptyMap()) { acc, allocation ->
-      val positions = positionsByEtfId[allocation.instrumentId] ?: return@fold acc
-      val instrument = instruments[allocation.instrumentId] ?: return@fold acc
-      weightedPositions(instrument, positions).fold(acc) { innerAcc, (position, weight) ->
-        val key = normalizeHoldingName(position.holding.name)
-        val weightedPercentage =
-          weight
-            .multiply(allocation.percentage)
-            .divide(HUNDRED, CALCULATION_SCALE, RoundingMode.HALF_UP)
-        val existing = innerAcc[key]
-        val updated =
-          if (existing != null) {
-            existing.copy(
-              percentage = existing.percentage.add(weightedPercentage),
-              etfSymbols = existing.etfSymbols + instrument.symbol,
-            )
-          } else {
-            AggregatedHolding(
-              name = position.holding.name,
-              ticker = position.holding.ticker,
-              sector = position.holding.sector?.displayName,
-              industry = resolveIndustry(position.holding),
-              countryCode = position.holding.countryCode,
-              countryName = position.holding.countryName,
-              percentage = weightedPercentage,
-              etfSymbols = setOf(instrument.symbol),
-            )
-          }
-        innerAcc + (key to updated)
+    allocations
+      .flatMap { allocation -> weightedHoldings(allocation, positionsByEtfId, instruments) }
+      .groupBy { normalizeHoldingName(it.name) }
+      .mapValues { (_, holdings) ->
+        holdings.reduce { first, next ->
+          first.copy(percentage = first.percentage.add(next.percentage), etfSymbols = first.etfSymbols + next.etfSymbols)
+        }
       }
+
+  private fun weightedHoldings(
+    allocation: AllocationDto,
+    positionsByEtfId: Map<Long, List<EtfPosition>>,
+    instruments: Map<Long, Instrument>,
+  ): List<AggregatedHolding> {
+    val positions = positionsByEtfId[allocation.instrumentId] ?: return emptyList()
+    val instrument = instruments[allocation.instrumentId] ?: return emptyList()
+    return weightedPositions(instrument, positions).map { (position, weight) ->
+      AggregatedHolding(
+        name = position.holding.name,
+        ticker = position.holding.ticker,
+        sector = position.holding.sector?.displayName,
+        industry = resolveIndustry(position.holding),
+        countryCode = position.holding.countryCode,
+        countryName = position.holding.countryName,
+        percentage = weight.multiply(allocation.percentage).divide(HUNDRED, CALCULATION_SCALE, RoundingMode.HALF_UP),
+        etfSymbols = setOf(instrument.symbol),
+      )
     }
+  }
 
   private fun normalizeHoldingName(name: String): String = name.lowercase().replace(Regex("\\s+"), " ").trim()
 
