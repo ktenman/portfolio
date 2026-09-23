@@ -8,6 +8,40 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 
 class EtfHoldingTest {
+  @ParameterizedTest
+  @EnumSource(SectorSource::class)
+  fun `should replace existing sectors with the sector of a Vanguard industry`(source: SectorSource) {
+    val holding =
+      EtfHolding(
+        name = "SoftBank Group Corp",
+        industry = GicsIndustry.WIRELESS_TELECOMMUNICATION_SERVICES,
+        industrySource = IndustrySource.VANGUARD,
+        sector = IndustrySector.FINANCE,
+        sectorSource = source,
+        classifiedByModel = AiModel.GPT_5_6_LUNA,
+      )
+
+    holding.deriveSector()
+
+    expect(holding.sector to holding.sectorSource).toEqual(IndustrySector.COMMUNICATION to SectorSource.INDUSTRY)
+    expect(holding.classifiedByModel).toEqual(null)
+  }
+
+  @ParameterizedTest
+  @EnumSource(SectorSource::class)
+  fun `cannot accept an independent sector when the industry comes from Vanguard`(source: SectorSource) {
+    val holding =
+      EtfHolding(
+        name = "Shopify Inc",
+        industry = GicsIndustry.IT_SERVICES,
+        industrySource = IndustrySource.VANGUARD,
+        sector = IndustrySector.BUSINESS_SERVICES,
+        sectorSource = SectorSource.INDUSTRY,
+      )
+
+    expect(holding.acceptsSectorFrom(source)).toEqual(false)
+  }
+
   @Test
   fun `should derive a missing sector from the industry`() {
     val holding = EtfHolding(name = "Škoda Auto a.s.", industry = GicsIndustry.AUTOMOBILES)

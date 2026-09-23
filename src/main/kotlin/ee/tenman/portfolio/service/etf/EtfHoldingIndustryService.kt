@@ -100,7 +100,7 @@ class EtfHoldingIndustryService(
     holding: EtfHolding,
     update: VanguardIndustryUpdate,
   ): Boolean {
-    if (!accepts(holding, update) || matches(holding, update)) return false
+    if (!accepts(holding, update) || (matches(holding, update) && !holding.deriveSector())) return false
     if (holding.industry != update.industry && holding.sectorSource == SectorSource.INDUSTRY) holding.sector = null
     holding.industry = update.industry
     holding.industrySource = IndustrySource.VANGUARD
@@ -153,7 +153,7 @@ class EtfHoldingIndustryService(
   }
 
   @Transactional
-  fun deriveMissingSectors(): Int = etfHoldingRepository.findBySectorIsNullAndIndustryIsNotNull().onEach { it.deriveSector() }.size
+  fun deriveSectorsFromIndustries(): Int = etfHoldingRepository.findHoldingsForSectorDerivation().count { it.deriveSector() }
 
   companion object {
     const val MAX_INDUSTRY_FETCH_ATTEMPTS = 3

@@ -4,7 +4,9 @@ import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.model.ClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
+import ee.tenman.portfolio.service.etf.EtfHoldingCountryService
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.integration.CompanyClassificationInput
 import ee.tenman.portfolio.service.integration.CountryClassificationService
@@ -16,6 +18,8 @@ import org.springframework.scheduling.annotation.Scheduled
 @ScheduledJob
 class EtfCountryClassificationJob(
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService,
+  private val etfHoldingCountryService: EtfHoldingCountryService,
+  private val cacheInvalidationService: CacheInvalidationService,
   private val countryClassificationService: CountryClassificationService,
   private val jobExecutionService: JobExecutionService,
   private val circuitBreaker: OpenRouterCircuitBreaker,
@@ -50,6 +54,10 @@ class EtfCountryClassificationJob(
     val etfNamesMap = etfHoldingPersistenceService.findEtfNamesForHoldings(holdingIds)
     log.info("Loaded ${holdings.size} holdings and ETF names")
     val result = processInBatches(holdingIds, holdings, etfNamesMap)
+    if (result.success > 0) {
+      cacheInvalidationService.evictEtfBreakdownCache()
+      cacheInvalidationService.evictDiversificationEtfsCache()
+    }
     result.requireAnySuccess("Country")
     log.info("Country classification done: ${result.success} ok, ${result.failure} failed, ${result.skipped} skipped")
   }
@@ -117,22 +125,13 @@ class EtfCountryClassificationJob(
       return ClassificationResult(success = 0, failure = 0, skipped = skippedIds.size)
     }
     val outcome = countryClassificationService.classifyBatch(inputs)
-    var successCount = 0
-    var failureCount = 0
-    inputs.forEach { input ->
-      val result = outcome.results[input.holdingId]
-      when {
-        result != null -> {
-          etfHoldingPersistenceService.updateCountry(input.holdingId, result.countryCode, result.countryName, result.model)
-          successCount++
-        }
-        outcome.llmAnswered -> {
-          etfHoldingPersistenceService.incrementCountryFetchAttempts(input.holdingId)
-          failureCount++
-        }
-        else -> failureCount++
+    val (classified, missing) = inputs.partition { outcome.results.containsKey(it.holdingId) }
+    val success =
+      classified.count { input ->
+        val result = outcome.results.getValue(input.holdingId)
+        etfHoldingCountryService.updateCountry(input.holdingId, result.countryCode, result.countryName, result.model)
       }
-    }
-    return ClassificationResult(success = successCount, failure = failureCount, skipped = skippedIds.size)
+    if (outcome.llmAnswered) missing.forEach { etfHoldingPersistenceService.incrementCountryFetchAttempts(it.holdingId) }
+    return ClassificationResult(success = success, failure = missing.size, skipped = skippedIds.size + classified.size - success)
   }
 }

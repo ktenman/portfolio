@@ -6,7 +6,9 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.openrouter.OpenRouterCircuitBreaker
+import ee.tenman.portfolio.service.etf.EtfHoldingCountryService
 import ee.tenman.portfolio.service.etf.EtfHoldingPersistenceService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.integration.BatchClassificationOutcome
 import ee.tenman.portfolio.service.integration.CountryClassificationResult
@@ -21,6 +23,8 @@ import org.springframework.scheduling.support.CronExpression
 
 class EtfCountryClassificationJobTest {
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService = mockk(relaxed = true)
+  private val countries = mockk<EtfHoldingCountryService>(relaxed = true)
+  private val caches = mockk<CacheInvalidationService>(relaxed = true)
   private val countryClassificationService: CountryClassificationService = mockk()
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val circuitBreaker: OpenRouterCircuitBreaker = mockk()
@@ -29,6 +33,7 @@ class EtfCountryClassificationJobTest {
 
   @BeforeEach
   fun setup() {
+    every { countries.updateCountry(any(), any(), any(), any()) } returns true
     every { circuitBreaker.getWaitTimeMs(any()) } returns 0L
     every { circuitBreaker.isUsingFallback() } returns false
     every { properties.rateLimitBufferMs } returns 100L
@@ -36,6 +41,8 @@ class EtfCountryClassificationJobTest {
     job =
       EtfCountryClassificationJob(
         etfHoldingPersistenceService = etfHoldingPersistenceService,
+        etfHoldingCountryService = countries,
+        cacheInvalidationService = caches,
         countryClassificationService = countryClassificationService,
         jobExecutionService = jobExecutionService,
         circuitBreaker = circuitBreaker,
@@ -55,7 +62,7 @@ class EtfCountryClassificationJobTest {
     runCatching { job.execute() }
 
     verify(exactly = 0) { etfHoldingPersistenceService.incrementCountryFetchAttempts(any()) }
-    verify(exactly = 0) { etfHoldingPersistenceService.updateCountry(any(), any(), any(), any()) }
+    verify(exactly = 0) { countries.updateCountry(any(), any(), any(), any()) }
   }
 
   @Test
@@ -71,7 +78,9 @@ class EtfCountryClassificationJobTest {
     job.execute()
 
     verify(exactly = 0) { etfHoldingPersistenceService.incrementCountryFetchAttempts(any()) }
-    verify(exactly = 1) { etfHoldingPersistenceService.updateCountry(1L, "US", "United States", null) }
+    verify(exactly = 1) { countries.updateCountry(1L, "US", "United States", null) }
+    verify(exactly = 1) { caches.evictEtfBreakdownCache() }
+    verify(exactly = 1) { caches.evictDiversificationEtfsCache() }
   }
 
   @Test
@@ -85,7 +94,7 @@ class EtfCountryClassificationJobTest {
     job.execute()
 
     verify(exactly = 0) { etfHoldingPersistenceService.incrementCountryFetchAttempts(any()) }
-    verify(exactly = 0) { etfHoldingPersistenceService.updateCountry(any(), any(), any(), any()) }
+    verify(exactly = 0) { countries.updateCountry(any(), any(), any(), any()) }
     verify(exactly = 0) { countryClassificationService.classifyBatch(any()) }
   }
 
@@ -125,7 +134,7 @@ class EtfCountryClassificationJobTest {
 
     job.execute()
 
-    verify(exactly = 1) { etfHoldingPersistenceService.updateCountry(1L, "DE", "Germany", null) }
+    verify(exactly = 1) { countries.updateCountry(1L, "DE", "Germany", null) }
     verify(exactly = 1) { etfHoldingPersistenceService.incrementCountryFetchAttempts(2L) }
   }
 
@@ -161,6 +170,21 @@ class EtfCountryClassificationJobTest {
     CronExpression.parse(cron.substringAfter(":").removeSuffix("}"))
 
     expect(cron).toEqual("\${scheduling.jobs.etf-country-classification-cron:0 30 4 * * *}")
+  }
+
+  @Test
+  fun `cannot count a delayed country result as a successful write`() {
+    val holdings = listOf(createHolding(1L, "Haleon", "HLN"), createHolding(2L, "Unknown Corp", "UNK"))
+    every { etfHoldingPersistenceService.findUnclassifiedByCountryHoldingIds() } returns listOf(1L, 2L)
+    every { etfHoldingPersistenceService.findAllByIds(any()) } returns holdings
+    every { countryClassificationService.isNonCompanyHolding(any()) } returns false
+    every { countryClassificationService.classifyBatch(any()) } returns
+      BatchClassificationOutcome(mapOf(1L to CountryClassificationResult("US", "United States", null)), true)
+    every { countries.updateCountry(any(), any(), any(), any()) } returns false
+    expect { job.execute() }.toThrow<IllegalStateException>()
+    verify(exactly = 1) { countries.updateCountry(1L, "US", "United States", null) }
+    verify(exactly = 0) { etfHoldingPersistenceService.incrementCountryFetchAttempts(1L) }
+    verify(exactly = 0) { caches.evictEtfBreakdownCache() }
   }
 
   private fun createHolding(

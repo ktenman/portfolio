@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.jdbc.core.JdbcTemplate
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -34,6 +35,9 @@ class EtfHoldingIndustryServiceIT {
 
   @Resource
   private lateinit var repository: EtfHoldingRepository
+
+  @Resource
+  private lateinit var jdbc: JdbcTemplate
 
   @MockkBean
   private lateinit var clock: Clock
@@ -115,7 +119,7 @@ class EtfHoldingIndustryServiceIT {
   }
 
   @Test
-  fun `should preserve unrelated identity country and independent sector fields`() {
+  fun `should rebuild an independent sector while preserving identity and country fields`() {
     val holding =
       repository.save(
         EtfHolding(
@@ -133,7 +137,29 @@ class EtfHoldingIndustryServiceIT {
     update(holding)
     val saved = repository.findById(holding.id).orElseThrow()
     expect(listOf(saved.uuid, saved.name, saved.ticker, saved.countryCode, saved.countryName, saved.sector, saved.sectorSource))
-      .toEqual(listOf(holding.uuid, "Haleon Ü", "HLN", "GB", "United Kingdom", IndustrySector.CONSUMER_ESSENTIALS, SectorSource.LIGHTYEAR))
+      .toEqual(listOf(holding.uuid, "Haleon Ü", "HLN", "GB", "United Kingdom", IndustrySector.HEALTH, SectorSource.INDUSTRY))
+  }
+
+  @Test
+  fun `should repair an existing sector even when the Vanguard industry observation is unchanged`() {
+    val holding = vanguardHolding()
+    jdbc.update("UPDATE etf_holding SET sector = 'Consumer Essentials', sector_source = 'LLM' WHERE id = ?", holding.id)
+    val changed = update(holding)
+    val saved = repository.findById(holding.id).orElseThrow()
+    expect(changed).toEqual(1)
+    expect(saved.sector to saved.sectorSource).toEqual(IndustrySector.HEALTH to SectorSource.INDUSTRY)
+  }
+
+  @Test
+  fun `should backfill existing Vanguard sectors without another holdings import`() {
+    val holding = vanguardHolding()
+    jdbc.update("UPDATE etf_holding SET sector = 'Consumer Essentials', sector_source = 'LIGHTYEAR' WHERE id = ?", holding.id)
+    val changed = service.deriveSectorsFromIndustries()
+    val repeated = service.deriveSectorsFromIndustries()
+    val saved = repository.findById(holding.id).orElseThrow()
+    expect(changed).toEqual(1)
+    expect(repeated).toEqual(0)
+    expect(saved.sector to saved.sectorSource).toEqual(IndustrySector.HEALTH to SectorSource.INDUSTRY)
   }
 
   @ParameterizedTest

@@ -212,20 +212,6 @@ class EtfHoldingPersistenceService(
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun updateCountry(
-    holdingId: Long,
-    countryCode: String,
-    countryName: String,
-    classifiedByModel: AiModel? = null,
-  ) {
-    val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
-    holding.countryCode = countryCode
-    holding.countryName = countryName
-    holding.countryClassifiedByModel = classifiedByModel
-    etfHoldingRepository.save(holding)
-  }
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun incrementCountryFetchAttempts(holdingId: Long) {
     val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
     holding.countryFetchAttempts++

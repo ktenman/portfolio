@@ -4,10 +4,13 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.GicsIndustry
+import ee.tenman.portfolio.domain.VanguardCountryUpdate
+import ee.tenman.portfolio.domain.VanguardHoldingUpdates
 import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.EtfPositionRepository
+import ee.tenman.portfolio.service.etf.EtfHoldingCountryService
 import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
@@ -30,10 +33,12 @@ class VanguardIndustryReconciliationJobTest {
   private val vanguard = mockk<VanguardHoldingsService>()
   private val holdings = mockk<EtfHoldingService>(relaxed = true)
   private val industries = mockk<EtfHoldingIndustryService>(relaxed = true)
+  private val countries = mockk<EtfHoldingCountryService>(relaxed = true)
   private val positions = mockk<EtfPositionRepository>(relaxed = true)
   private val caches = mockk<CacheInvalidationService>(relaxed = true)
   private val date = LocalDate.of(2026, 8, 31)
   private val update = VanguardIndustryUpdate(UUID.randomUUID(), GicsIndustry.PHARMACEUTICALS, date)
+  private val country = VanguardCountryUpdate(update.holdingUuid, "GB", date)
   private val snapshot =
     VanguardFundSnapshot(
       date,
@@ -45,6 +50,7 @@ class VanguardIndustryReconciliationJobTest {
       holdings,
       caches,
       industries,
+      countries,
       mockk<EtfHoldingsClassificationJob>(),
       mockk<JobExecutionService>(),
       positions,
@@ -56,7 +62,7 @@ class VanguardIndustryReconciliationJobTest {
   fun setup() {
     every { vanguard.fetchHoldings(any()) } returns snapshot
     every { holdings.hasHoldingsForDate(any(), any()) } returns true
-    every { holdings.resolveIndustryUpdates(snapshot.holdings, date) } returns listOf(update)
+    every { holdings.resolveVanguardUpdates(snapshot) } returns VanguardHoldingUpdates(listOf(update), listOf(country))
     every { positions.findLatestSnapshotDate(any()) } returns date
   }
 
@@ -65,6 +71,7 @@ class VanguardIndustryReconciliationJobTest {
     job.execute()
 
     verify(exactly = 1) { industries.updateVanguardIndustries(List(7) { update }) }
+    verify(exactly = 1) { countries.updateVanguardCountries(List(7) { country }) }
     verify(exactly = 0) { holdings.saveHoldings(any(), any(), any()) }
   }
 
@@ -77,7 +84,7 @@ class VanguardIndustryReconciliationJobTest {
     verify(exactly = 1) {
       holdings.saveHoldings("VGLA:GER:EUR", date, snapshot.holdings.map { it.copy(industry = null) })
     }
-    verify(exactly = 7) { holdings.resolveIndustryUpdates(snapshot.holdings, date) }
+    verify(exactly = 7) { holdings.resolveVanguardUpdates(snapshot) }
   }
 
   @Test
@@ -107,6 +114,7 @@ class VanguardIndustryReconciliationJobTest {
     expect { job.execute() }.toThrow<IllegalStateException>().toEqual(failure)
 
     verify(exactly = 1) { industries.updateVanguardIndustries(List(6) { update }) }
+    verify(exactly = 0) { countries.updateVanguardCountries(any()) }
     verify(exactly = 1) { caches.evictEtfBreakdownCache() }
     verify(exactly = 1) { caches.evictDiversificationEtfsCache() }
   }
@@ -140,5 +148,33 @@ class VanguardIndustryReconciliationJobTest {
     expect { job.execute() }.toThrow<IllegalStateException>().toEqual(failure)
 
     verify(exactly = 1) { industries.updateVanguardIndustries(List(7) { update }) }
+    verify(exactly = 0) { countries.updateVanguardCountries(any()) }
+  }
+
+  @Test
+  fun `should invalidate both caches after only countries change`() {
+    every { countries.updateVanguardCountries(any()) } returns 1
+    job.execute()
+    verify(exactly = 1) { caches.evictEtfBreakdownCache() }
+    verify(exactly = 1) { caches.evictDiversificationEtfsCache() }
+  }
+
+  @Test
+  fun `should reconcile conflicting countries from different funds together`() {
+    val conflicting = country.copy(countryCode = "US")
+    every { holdings.resolveVanguardUpdates(snapshot) } returnsMany
+      listOf(VanguardHoldingUpdates(listOf(update), listOf(conflicting)), VanguardHoldingUpdates(listOf(update), listOf(country)))
+    job.execute()
+    verify(exactly = 1) { countries.updateVanguardCountries(listOf(conflicting) + List(6) { country }) }
+  }
+
+  @Test
+  fun `should invalidate committed industry changes when country reconciliation fails`() {
+    val failure = IllegalStateException("Country update failed")
+    every { industries.updateVanguardIndustries(any()) } returns 1
+    every { countries.updateVanguardCountries(any()) } throws failure
+    expect { job.execute() }.toThrow<IllegalStateException>().toEqual(failure)
+    verify(exactly = 1) { caches.evictEtfBreakdownCache() }
+    verify(exactly = 1) { caches.evictDiversificationEtfsCache() }
   }
 }

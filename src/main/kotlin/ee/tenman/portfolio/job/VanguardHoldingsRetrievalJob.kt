@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.VanguardCountryUpdate
 import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.EtfPositionRepository
+import ee.tenman.portfolio.service.etf.EtfHoldingCountryService
 import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
@@ -20,6 +22,7 @@ class VanguardHoldingsRetrievalJob(
   private val etfHoldingService: EtfHoldingService,
   private val cacheInvalidationService: CacheInvalidationService,
   private val etfHoldingIndustryService: EtfHoldingIndustryService,
+  private val etfHoldingCountryService: EtfHoldingCountryService,
   private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob,
   private val jobExecutionService: JobExecutionService,
   private val etfPositionRepository: EtfPositionRepository,
@@ -30,10 +33,6 @@ class VanguardHoldingsRetrievalJob(
 
   @Scheduled(initialDelay = 60000, fixedDelay = Long.MAX_VALUE)
   fun runStartupImport() {
-    if (VanguardHoldingsService.FUNDS.keys.all { etfPositionRepository.existsByEtfInstrumentSymbol(it) }) {
-      log.info("Vanguard funds already have positions, skipping startup import")
-      return
-    }
     runCatching { jobExecutionService.executeJob(this) }
       .onFailure { log.error("Vanguard holdings startup import failed", it) }
     log.info("Classifying sectors for newly imported Vanguard holdings")
@@ -49,11 +48,14 @@ class VanguardHoldingsRetrievalJob(
     var changed = false
     var failure: Throwable? = null
     val industries = mutableListOf<VanguardIndustryUpdate>()
+    val countries = mutableListOf<VanguardCountryUpdate>()
     VanguardHoldingsService.FUNDS.forEach { (symbol, portId) ->
       runCatching {
         val snapshot = vanguardHoldingsService.fetchHoldings(portId)
         changed = save(symbol, snapshot) || changed
-        industries += etfHoldingService.resolveIndustryUpdates(snapshot.holdings, snapshot.effectiveDate)
+        val updates = etfHoldingService.resolveVanguardUpdates(snapshot)
+        industries += updates.industries
+        countries += updates.countries
         changed = deleteNewerSnapshots(symbol, snapshot.effectiveDate) || changed
       }.onFailure { throwable ->
         log.error("Vanguard holdings import failed for $symbol", throwable)
@@ -66,6 +68,13 @@ class VanguardHoldingsRetrievalJob(
         log.error("Vanguard industry reconciliation failed", throwable)
         failure = failure ?: throwable
       }
+    if (failure == null) {
+      runCatching { changed = etfHoldingCountryService.updateVanguardCountries(countries) > 0 || changed }
+        .onFailure { throwable ->
+          log.error("Vanguard country reconciliation failed", throwable)
+          failure = throwable
+        }
+    }
     if (changed) {
       cacheInvalidationService.evictEtfBreakdownCache()
       cacheInvalidationService.evictDiversificationEtfsCache()
