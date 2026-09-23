@@ -25,6 +25,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -382,6 +383,19 @@ class DiversificationCalculatorServiceTest {
     val result = service.calculate(request)
 
     expect(result.holdings).toHaveSize(1)
+  }
+
+  @Test
+  @Timeout(value = 5, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+  fun `should aggregate fifty thousand distinct holdings within five seconds`() {
+    val etf = createInstrument(1L, "VGLA")
+    val positions =
+      (1L..50_000L).map { createPosition(etf, createHolding(it, null, "Osalus №$it", null, null, null), BigDecimal("0.002")) }
+    setupMocks(listOf(etf), positions)
+
+    val result = service.calculate(createRequest(AllocationDto(1L, BigDecimal("100"))))
+
+    expect(result.totalUniqueHoldings).toEqual(50_000)
   }
 
   @Test
