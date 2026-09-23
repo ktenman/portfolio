@@ -65,7 +65,7 @@ class EtfHoldingsClassificationJob(
   }
 
   private fun deriveSectorsFromIndustry() {
-    val derived = etfHoldingIndustryService.deriveMissingSectors()
+    val derived = etfHoldingIndustryService.deriveSectorsFromIndustries()
     if (derived == 0) return
     log.info("Derived sectors from industry for $derived holdings")
     cacheInvalidationService.evictEtfBreakdownCache()

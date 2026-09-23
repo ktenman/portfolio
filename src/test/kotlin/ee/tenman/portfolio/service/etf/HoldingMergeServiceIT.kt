@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.CountrySource
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.GicsIndustry
@@ -242,6 +243,59 @@ class HoldingMergeServiceIT {
     val surviving = etfHoldingRepository.findAll().single()
     expect(surviving.industry to surviving.industrySource).toEqual(GicsIndustry.PERSONAL_CARE_PRODUCTS to IndustrySource.LLM)
   }
+
+  @Test
+  fun `should inherit dated Vanguard country provenance on the canonical UUID`() {
+    val canonical =
+      etfHoldingRepository.save(
+      EtfHolding(name = "Haleon", countryCode = "US", countrySource = CountrySource.LLM, countryClassifiedByModel = AiModel.GPT_5_6_LUNA),
+    )
+    val duplicate = vanguardCountry("Haleon PLC", "GB", firstDate)
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.uuid).toEqual(canonical.uuid)
+    expect(surviving.countryCode to surviving.countryName).toEqual("GB" to "United Kingdom")
+    expect(surviving.countrySource to surviving.countryEffectiveDate).toEqual(CountrySource.VANGUARD to firstDate)
+    expect(surviving.countryClassifiedByModel).toEqual(null)
+  }
+
+  @Test
+  fun `cannot downgrade a newer Vanguard country while merging`() {
+    val canonical = vanguardCountry("Haleon", "GB", secondDate)
+    val duplicate = vanguardCountry("Haleon PLC", "US", firstDate)
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.countryCode to surviving.countryEffectiveDate).toEqual("GB" to secondDate)
+  }
+
+  @Test
+  fun `should select the newest Vanguard country among duplicate holdings`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "Haleon"))
+    val older = vanguardCountry("Haleon PLC", "US", firstDate)
+    val newer = vanguardCountry("Haleon Plc Ord", "GB", secondDate)
+    holdingMergeService.merge(canonical.id, listOf(older.id, newer.id))
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.countryCode to surviving.countryEffectiveDate).toEqual("GB" to secondDate)
+  }
+
+  @Test
+  fun `cannot arbitrarily fill a missing country from conflicting Vanguard duplicates`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "Shopify"))
+    val canadian = vanguardCountry("Shopify Inc", "CA", firstDate)
+    val american = vanguardCountry("Shopify Inc Class A", "US", firstDate)
+    holdingMergeService.merge(canonical.id, listOf(canadian.id, american.id))
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.countryCode to surviving.countrySource).toEqual(null to null)
+  }
+
+  private fun vanguardCountry(
+    name: String,
+    country: String,
+    date: LocalDate,
+  ): EtfHolding =
+    etfHoldingRepository.save(
+      EtfHolding(name = name, countryCode = country, countrySource = CountrySource.VANGUARD, countryEffectiveDate = date),
+    )
 
   private fun savePosition(
     holding: EtfHolding,

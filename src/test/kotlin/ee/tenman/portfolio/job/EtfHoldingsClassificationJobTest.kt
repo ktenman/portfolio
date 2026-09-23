@@ -269,13 +269,13 @@ class EtfHoldingsClassificationJobTest {
 
     job.execute()
 
-    verify(exactly = 1) { etfHoldingIndustryService.deriveMissingSectors() }
+    verify(exactly = 1) { etfHoldingIndustryService.deriveSectorsFromIndustries() }
   }
 
   @Test
   fun `should evict caches when sectors were derived from industry`() {
     every { properties.enabled } returns false
-    every { etfHoldingIndustryService.deriveMissingSectors() } returns 3
+    every { etfHoldingIndustryService.deriveSectorsFromIndustries() } returns 3
 
     job.execute()
 
@@ -286,7 +286,7 @@ class EtfHoldingsClassificationJobTest {
   @Test
   fun `should not evict caches when no sector was derived from industry`() {
     every { properties.enabled } returns false
-    every { etfHoldingIndustryService.deriveMissingSectors() } returns 0
+    every { etfHoldingIndustryService.deriveSectorsFromIndustries() } returns 0
 
     job.execute()
 
