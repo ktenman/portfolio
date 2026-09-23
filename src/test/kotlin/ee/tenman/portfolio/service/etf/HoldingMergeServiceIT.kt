@@ -5,9 +5,12 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.IndustrySector
+import ee.tenman.portfolio.domain.IndustrySource
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
@@ -154,6 +157,90 @@ class HoldingMergeServiceIT {
     holdingMergeService.merge(canonical.id, emptyList())
 
     expect(etfHoldingRepository.findAll()).toHaveSize(1)
+  }
+
+  @Test
+  fun `should retain Vanguard authority when merging into an LLM classified holding`() {
+    val canonical =
+      etfHoldingRepository.save(
+      EtfHolding(
+        name = "Haleon",
+        industry = GicsIndustry.PERSONAL_CARE_PRODUCTS,
+        industrySource = IndustrySource.LLM,
+        industryClassifiedByModel = AiModel.GPT_5_6_LUNA,
+      ),
+    )
+    val duplicate =
+      etfHoldingRepository.save(
+      EtfHolding(
+        name = "Haleon PLC",
+        industry = GicsIndustry.PHARMACEUTICALS,
+        industrySource = IndustrySource.VANGUARD,
+        industryEffectiveDate = firstDate,
+      ),
+    )
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.uuid).toEqual(canonical.uuid)
+    expect(surviving.industry to surviving.industrySource).toEqual(GicsIndustry.PHARMACEUTICALS to IndustrySource.VANGUARD)
+    expect(surviving.industryEffectiveDate to surviving.industryClassifiedByModel).toEqual(firstDate to null)
+  }
+
+  @Test
+  fun `cannot downgrade a newer Vanguard classification while merging`() {
+    val canonical =
+      etfHoldingRepository.save(
+      EtfHolding(
+        name = "Haleon",
+        industry = GicsIndustry.PHARMACEUTICALS,
+        industrySource = IndustrySource.VANGUARD,
+        industryEffectiveDate = secondDate,
+      ),
+    )
+    val duplicate =
+      etfHoldingRepository.save(
+      EtfHolding(
+        name = "Haleon PLC",
+        industry = GicsIndustry.PERSONAL_CARE_PRODUCTS,
+        industrySource = IndustrySource.VANGUARD,
+        industryEffectiveDate = firstDate,
+      ),
+    )
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.industry to surviving.industryEffectiveDate).toEqual(GicsIndustry.PHARMACEUTICALS to secondDate)
+  }
+
+  @Test
+  fun `cannot choose between conflicting Vanguard industries while merging duplicates`() {
+    val canonical =
+      etfHoldingRepository.save(
+      EtfHolding(name = "Haleon", industry = GicsIndustry.PERSONAL_CARE_PRODUCTS, industrySource = IndustrySource.LLM),
+    )
+    val duplicates =
+      listOf(
+      EtfHolding(
+        name = "Haleon PLC",
+        industry = GicsIndustry.PHARMACEUTICALS,
+        industrySource = IndustrySource.VANGUARD,
+        industryEffectiveDate = firstDate,
+      ),
+      EtfHolding(
+        name = "Haleon Plc Ord",
+        industry = GicsIndustry.BIOTECHNOLOGY,
+        industrySource = IndustrySource.VANGUARD,
+        industryEffectiveDate = firstDate,
+      ),
+    ).map(etfHoldingRepository::save)
+
+    holdingMergeService.merge(canonical.id, duplicates.map { it.id })
+
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(surviving.industry to surviving.industrySource).toEqual(GicsIndustry.PERSONAL_CARE_PRODUCTS to IndustrySource.LLM)
   }
 
   private fun savePosition(

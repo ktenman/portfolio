@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.etf
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_ETFS_CACHE
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
@@ -54,6 +55,23 @@ class EtfHoldingService(
       .withIndex()
       .mapNotNull { (index, holdingData) -> resolveMatchingHoldingId(holdingData)?.let { index to it } }
       .toMap()
+
+  fun resolveIndustryUpdates(
+    holdings: List<HoldingData>,
+    date: LocalDate,
+  ): List<VanguardIndustryUpdate> =
+    holdings.mapNotNull { data ->
+      val industry = data.industry ?: return@mapNotNull null
+      val holding = resolveIndustryHolding(data) ?: return@mapNotNull null
+      VanguardIndustryUpdate(holding.uuid, industry, date)
+    }
+
+  private fun resolveIndustryHolding(data: HoldingData): EtfHolding? {
+    val candidates = collectCandidates(data)
+    val exact = candidates.filter { it.name.equals(data.name, ignoreCase = true) }
+    if (exact.isNotEmpty()) return exact.singleOrNull()
+    return candidates.filter { holdingIdentityService.isSameCompany(it.name, data.name, data.ticker) == true }.singleOrNull()
+  }
 
   private fun resolveMatchingHoldingId(holdingData: HoldingData): Long? {
     val candidates = collectCandidates(holdingData)

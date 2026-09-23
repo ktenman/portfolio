@@ -3,9 +3,11 @@ package ee.tenman.portfolio.repository
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 @Repository
@@ -17,6 +19,25 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
   ): EtfPosition?
 
   fun existsByEtfInstrumentSymbol(symbol: String): Boolean
+
+  @Query("SELECT MAX(ep.snapshotDate) FROM EtfPosition ep WHERE ep.etfInstrument.symbol = :symbol")
+  fun findLatestSnapshotDate(
+    @Param("symbol") symbol: String,
+  ): LocalDate?
+
+  @Modifying
+  @Transactional
+  @Query(
+    """
+    DELETE FROM EtfPosition ep
+    WHERE ep.etfInstrument.id IN (SELECT i.id FROM Instrument i WHERE i.symbol = :symbol)
+    AND ep.snapshotDate > :snapshotDate
+  """,
+  )
+  fun deleteBySymbolAndSnapshotDateAfter(
+    @Param("symbol") symbol: String,
+    @Param("snapshotDate") snapshotDate: LocalDate,
+  ): Int
 
   fun findByHoldingId(holdingId: Long): List<EtfPosition>
 

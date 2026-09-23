@@ -42,6 +42,7 @@ class LightyearDataFetchJobTest {
         EtfConfig("VGLA:GER:EUR", "1f1a07ba-aa44-690a-bc0c-05e2425f8ab8"),
         EtfConfig("VXUS:GER:EUR", "1f1a5e78-d59c-625c-9dd3-ab6a18f976ac"),
         EtfConfig("VWCE:GER:EUR", "1eda0a07-10b3-63e0-b568-6deedaa217e7"),
+        EtfConfig("IUSQ:GER:EUR", "1eda0a07-10b3-63e0-b568-6deedaa217e8"),
       )
     every { etfHoldingService.hasHoldingsForDate(any(), any()) } returns false
     every { lightyearPriceService.fetchHoldingsAsDto(any()) } returns
@@ -66,6 +67,18 @@ class LightyearDataFetchJobTest {
   fun `should fetch Lightyear holdings for funds that Vanguard does not cover`() {
     job.execute()
 
-    verify(exactly = 1) { lightyearPriceService.fetchHoldingsAsDto("VWCE:GER:EUR") }
+    verify(exactly = 1) { lightyearPriceService.fetchHoldingsAsDto("IUSQ:GER:EUR") }
+  }
+
+  @Test
+  fun `cannot fetch Lightyear holdings for VWCE`() {
+    job.execute()
+    verify(exactly = 0) { lightyearPriceService.fetchHoldingsAsDto("VWCE:GER:EUR") }
+  }
+
+  @Test
+  fun `cannot save Lightyear holdings for VWCE`() {
+    job.execute()
+    verify(exactly = 0) { etfHoldingService.saveHoldings("VWCE:GER:EUR", any(), any()) }
   }
 }

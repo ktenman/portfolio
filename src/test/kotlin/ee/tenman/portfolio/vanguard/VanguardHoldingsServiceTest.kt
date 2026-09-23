@@ -11,6 +11,9 @@ import ee.tenman.portfolio.domain.GicsIndustry
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.NullAndEmptySource
+import org.junit.jupiter.params.provider.ValueSource
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -69,11 +72,13 @@ class VanguardHoldingsServiceTest {
 
   @Test
   fun `should sum the weights of merged share classes`() {
-    stubSinglePage(listOf(item("Alphabet Inc", "GOOGL", "2"), item("alphabet inc", "GOOG", "1")))
+    stubSinglePage(
+      listOf(item("Alphabet Inc", "GOOGL", "2"), item("alphabet inc", "GOOG", "1"), item("Microsoft Corp", "MSFT", "1")),
+    )
 
     val snapshot = service.fetchHoldings(VGLA_PORT_ID)
 
-    expect(snapshot.holdings.single().weight).toEqualNumerically(BigDecimal("100"))
+    expect(snapshot.holdings.first { it.name == "Alphabet Inc" }.weight).toEqualNumerically(BigDecimal("75"))
   }
 
   @Test
@@ -203,6 +208,18 @@ class VanguardHoldingsServiceTest {
   }
 
   @Test
+  fun `cannot choose an authoritative industry from conflicting share classes`() {
+    stubSinglePage(
+      listOf(
+        item("Roche Holding AG", "ROG", "3", industry = "Pharmaceuticals"),
+        item("Roche Holding AG", "ROGP", "1", industry = "Biotechnology"),
+      ),
+    )
+
+    expect { service.fetchHoldings(VGLA_PORT_ID) }.toThrow<IllegalStateException>()
+  }
+
+  @Test
   fun `should leave the sector empty for the sector classification job`() {
     stubSinglePage(listOf(item("Apple Inc", "AAPL", "100", industry = "Software")))
 
@@ -239,9 +256,11 @@ class VanguardHoldingsServiceTest {
     }.toThrow<IllegalStateException>().messageToContain("no equity holdings")
   }
 
-  @Test
-  fun `should throw when an issuer name is blank`() {
-    stubSinglePage(listOf(item("   ", "AAPL", "100")))
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = ["   "])
+  fun `should throw when a weighted holding has no issuer name`(name: String?) {
+    stubSinglePage(listOf(item(name, "AAPL", "100")))
 
     expect {
       service.fetchHoldings(VGLA_PORT_ID)
@@ -284,11 +303,31 @@ class VanguardHoldingsServiceTest {
 
   @Test
   fun `should throw when the total weight is not positive`() {
-    stubSinglePage(listOf(item("Apple Inc", "AAPL", "0")))
+    stubSinglePage(listOf(item("Apple Inc", "AAPL", "-1")))
 
     expect {
       service.fetchHoldings(VGLA_PORT_ID)
     }.toThrow<IllegalStateException>().messageToContain("total weight")
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = ["0", "0.00000", "0E+5"])
+  fun `should drop zero weight holdings before validating their fields`(weight: String) {
+    stubSinglePage(
+      listOf(
+        item("Apple Inc", "AAPL", "100"),
+        VanguardHoldingItem(marketValuePercentage = BigDecimal(weight)),
+        item("Hologic Inc", "HOLX", weight, effectiveDate = EFFECTIVE_DATE.minusMonths(1)),
+      ),
+    )
+    val snapshot = service.fetchHoldings(VGLA_PORT_ID)
+    expect(snapshot.holdings.map { it.name }).toContainExactly("Apple Inc")
+  }
+
+  @Test
+  fun `should throw when all equity holdings have zero weight`() {
+    stubSinglePage(listOf(item("Apple Inc", "AAPL", "0")))
+    expect { service.fetchHoldings(VGLA_PORT_ID) }.toThrow<IllegalStateException>().messageToContain("no equity holdings")
   }
 
   @Test
@@ -325,7 +364,7 @@ class VanguardHoldingsServiceTest {
     )
 
   private fun item(
-    name: String,
+    name: String?,
     ticker: String?,
     weight: String,
     industry: String? = null,

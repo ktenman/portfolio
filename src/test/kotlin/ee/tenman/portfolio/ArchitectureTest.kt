@@ -2,6 +2,7 @@ package ee.tenman.portfolio
 
 import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass
+import com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage
 import com.tngtech.archunit.core.domain.JavaClasses
 import com.tngtech.archunit.core.domain.JavaMethod
 import com.tngtech.archunit.junit.AnalyzeClasses
@@ -10,6 +11,8 @@ import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ArchRule
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
+import com.tngtech.archunit.lang.conditions.ArchConditions.beAnnotatedWith
+import com.tngtech.archunit.lang.conditions.ArchConditions.beDeclaredInClassesThat
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
@@ -27,6 +30,7 @@ import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
@@ -149,7 +153,10 @@ class ArchitectureTest {
       .orShould()
       .beDeclaredInClassesThat()
       .resideInAPackage("..job..")
-      .because("Transaction management belongs in the service or job layer")
+      .orShould(
+        beDeclaredInClassesThat(resideInAPackage("..repository.."))
+          .and(beAnnotatedWith(Modifying::class.java)),
+      ).because("Transactions belong in services or jobs except for modifying repository queries")
 
   @ArchTest
   val `repositories should be interfaces extending Spring Data repositories`: ArchRule =

@@ -78,12 +78,13 @@ class EtfIndustryClassificationJob(
     if (inputs.isEmpty()) return ClassificationResult(success = 0, failure = 0, skipped = skipped)
     val outcome = classificationService.classifyBatch(inputs)
     val (classified, missing) = inputs.partition { outcome.results.containsKey(it.holdingId) }
-    classified.forEach { input ->
-      val result = outcome.results.getValue(input.holdingId)
-      etfHoldingIndustryService.updateIndustry(input.holdingId, result.industry, result.model)
-    }
+    val success =
+      classified.count { input ->
+        val result = outcome.results.getValue(input.holdingId)
+        etfHoldingIndustryService.updateIndustry(input.holdingId, result.industry, result.model)
+      }
     if (outcome.llmAnswered) missing.forEach { etfHoldingIndustryService.incrementIndustryFetchAttempts(it.holdingId) }
-    return ClassificationResult(success = classified.size, failure = missing.size, skipped = skipped)
+    return ClassificationResult(success = success, failure = missing.size, skipped = skipped + classified.size - success)
   }
 
   private companion object {

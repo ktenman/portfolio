@@ -3,7 +3,9 @@ package ee.tenman.portfolio.service.etf
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
@@ -149,6 +151,69 @@ class EtfHoldingServiceTest {
 
     expect(holding.logoSource).toEqual(null)
     verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
+  }
+
+  @Test
+  fun `should resolve an exact industry holding to its existing uuid`() {
+    val holding = createHolding(17L, "HLN", "Haleon PLC")
+    val data = createHoldingData("HALEON PLC", "HLN", null).copy(industry = GicsIndustry.PHARMACEUTICALS)
+    every { etfHoldingPersistenceService.findByTicker("HLN") } returns listOf(holding)
+
+    expect(service.resolveIndustryUpdates(listOf(data), testDate)).toEqual(
+      listOf(VanguardIndustryUpdate(holding.uuid, GicsIndustry.PHARMACEUTICALS, testDate)),
+    )
+  }
+
+  @Test
+  fun `should resolve an industry alias only after confirming company identity`() {
+    val holding = createHolding(29L, "LONN", "Lonza")
+    val data = createHoldingData("Lonza Group AG", "LONN", null).copy(industry = GicsIndustry.LIFE_SCIENCES_TOOLS_AND_SERVICES)
+    every { etfHoldingPersistenceService.findByTicker("LONN") } returns listOf(holding)
+    every { holdingIdentityService.isSameCompany("Lonza", "Lonza Group AG", "LONN") } returns true
+
+    expect(service.resolveIndustryUpdates(listOf(data), testDate)).toEqual(
+      listOf(VanguardIndustryUpdate(holding.uuid, GicsIndustry.LIFE_SCIENCES_TOOLS_AND_SERVICES, testDate)),
+    )
+  }
+
+  @Test
+  fun `cannot resolve an industry from a ticker without matching company identity`() {
+    val holding = createHolding(31L, "SU", "Suncor")
+    val data = createHoldingData("Schneider Electric SE", "SU", null).copy(industry = GicsIndustry.ELECTRICAL_EQUIPMENT)
+    every { etfHoldingPersistenceService.findByTicker("SU") } returns listOf(holding)
+    every { holdingIdentityService.isSameCompany("Suncor", "Schneider Electric SE", "SU") } returns false
+
+    expect(service.resolveIndustryUpdates(listOf(data), testDate)).toEqual(emptyList())
+  }
+
+  @Test
+  fun `cannot resolve an industry when multiple company identities match`() {
+    val data = createHoldingData("Merck Inc", "MRK", null).copy(industry = GicsIndustry.PHARMACEUTICALS)
+    val holdings = listOf(createHolding(43L, "MRK", "Merck & Co"), createHolding(47L, "MRK", "Merck KGaA"))
+    every { etfHoldingPersistenceService.findByTicker("MRK") } returns holdings
+    every { holdingIdentityService.isSameCompany(any(), "Merck Inc", "MRK") } returns true
+
+    expect(service.resolveIndustryUpdates(listOf(data), testDate)).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should prefer an exact name over other companies sharing the ticker`() {
+    val expected = createHolding(53L, "CFR", "Cie Financiere Richemont SA")
+    val other = createHolding(59L, "CFR", "Cullen Frost")
+    val data = createHoldingData(expected.name, "CFR", null).copy(industry = GicsIndustry.TEXTILES_APPAREL_AND_LUXURY_GOODS)
+    every { etfHoldingPersistenceService.findByTicker("CFR") } returns listOf(other, expected)
+    every { holdingIdentityService.isSameCompany(any(), any(), any()) } returns true
+
+    expect(service.resolveIndustryUpdates(listOf(data), testDate)).toEqual(
+      listOf(VanguardIndustryUpdate(expected.uuid, GicsIndustry.TEXTILES_APPAREL_AND_LUXURY_GOODS, testDate)),
+    )
+  }
+
+  @Test
+  fun `cannot resolve an industry when Vanguard supplies no classification`() {
+    val data = createHoldingData("Tundmatu Ühistu OÜ", null, null)
+
+    expect(service.resolveIndustryUpdates(listOf(data), testDate)).toEqual(emptyList())
   }
 
   private fun createHolding(

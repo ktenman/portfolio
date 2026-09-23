@@ -16,7 +16,7 @@ class VanguardHoldingsService(
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun fetchHoldings(portId: String): VanguardFundSnapshot {
-    val items = fetchAllItems(portId)
+    val items = fetchAllItems(portId).filter { it.marketValuePercentage?.signum() != 0 }
     check(items.isNotEmpty()) { "Vanguard fund $portId returned no equity holdings" }
     warnAboutUnmappedIndustries(portId, items)
     val rows = parse(portId, items)
@@ -88,9 +88,11 @@ class VanguardHoldingsService(
 
   private fun mergeShareClasses(shareClasses: List<VanguardHolding>): VanguardHolding {
     val ordered = shareClasses.sortedWith(compareByDescending<VanguardHolding> { it.weight }.thenBy { it.ticker ?: "" })
+    val industries = shareClasses.mapNotNull { it.industry }.distinct()
+    check(industries.size <= 1) { "Vanguard issuer '${ordered.first().name}' returned conflicting industries $industries" }
     return ordered.first().copy(
       weight = shareClasses.sumOf { it.weight },
-      industry = ordered.firstNotNullOfOrNull { it.industry },
+      industry = industries.singleOrNull(),
     )
   }
 
@@ -133,7 +135,16 @@ class VanguardHoldingsService(
   }
 
   companion object {
-    val FUNDS = mapOf("VGLA:GER:EUR" to "E161", "VXUS:GER:EUR" to "E165")
+    val FUNDS =
+      mapOf(
+        "VGLA:GER:EUR" to "E161",
+        "VXUS:GER:EUR" to "E165",
+        "VUAA:GER:EUR" to "9694",
+        "VWCE:GER:EUR" to "9679",
+        "VNRA:GER:EUR" to "9680",
+        "VNRT:AEX:EUR" to "9523",
+        "VWCG:GER:EUR" to "9681",
+      )
     private const val MAX_PAGES = 20
     private const val PAGE_LIMIT = 1500
 

@@ -8,6 +8,7 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import java.time.LocalDate
 import java.util.UUID
 
 @Entity
@@ -49,6 +50,11 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "industry_classified_by_model", length = 100)
   var industryClassifiedByModel: AiModel? = null,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "industry_source", length = 20)
+  var industrySource: IndustrySource? = null,
+  @Column(name = "industry_effective_date")
+  var industryEffectiveDate: LocalDate? = null,
   @Column(name = "industry_fetch_attempts", nullable = false)
   var industryFetchAttempts: Int = 0,
   @Enumerated(EnumType.STRING)
