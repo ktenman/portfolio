@@ -88,9 +88,11 @@ class VanguardHoldingsService(
 
   private fun mergeShareClasses(shareClasses: List<VanguardHolding>): VanguardHolding {
     val ordered = shareClasses.sortedWith(compareByDescending<VanguardHolding> { it.weight }.thenBy { it.ticker ?: "" })
+    val industries = shareClasses.mapNotNull { it.industry }.distinct()
+    check(industries.size <= 1) { "Vanguard issuer '${ordered.first().name}' returned conflicting industries $industries" }
     return ordered.first().copy(
       weight = shareClasses.sumOf { it.weight },
-      industry = ordered.firstNotNullOfOrNull { it.industry },
+      industry = industries.singleOrNull(),
     )
   }
 

@@ -57,4 +57,6 @@ data class VanguardHolding(
 data class VanguardFundSnapshot(
   val effectiveDate: LocalDate,
   val holdings: List<HoldingData>,
-)
+) {
+  fun holdingsWithoutIndustries(): List<HoldingData> = holdings.map { it.copy(industry = null) }
+}

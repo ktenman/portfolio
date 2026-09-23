@@ -6,8 +6,9 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.EtfPositionRepository
-import ee.tenman.portfolio.service.etf.EtfBreakdownService
+import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
@@ -31,7 +32,8 @@ import java.time.ZoneOffset
 class VanguardHoldingsRetrievalJobTest {
   private val vanguardHoldingsService: VanguardHoldingsService = mockk()
   private val etfHoldingService: EtfHoldingService = mockk(relaxed = true)
-  private val etfBreakdownService: EtfBreakdownService = mockk(relaxed = true)
+  private val cacheInvalidationService: CacheInvalidationService = mockk(relaxed = true)
+  private val etfHoldingIndustryService: EtfHoldingIndustryService = mockk(relaxed = true)
   private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob = mockk(relaxed = true)
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val etfPositionRepository: EtfPositionRepository = mockk()
@@ -42,7 +44,8 @@ class VanguardHoldingsRetrievalJobTest {
     VanguardHoldingsRetrievalJob(
       vanguardHoldingsService = vanguardHoldingsService,
       etfHoldingService = etfHoldingService,
-      etfBreakdownService = etfBreakdownService,
+      cacheInvalidationService = cacheInvalidationService,
+      etfHoldingIndustryService = etfHoldingIndustryService,
       etfHoldingsClassificationJob = etfHoldingsClassificationJob,
       jobExecutionService = jobExecutionService,
       etfPositionRepository = etfPositionRepository,
@@ -174,7 +177,7 @@ class VanguardHoldingsRetrievalJobTest {
 
     job.execute()
 
-    verify(exactly = 1) { etfBreakdownService.evictBreakdownCache() }
+    verify(exactly = 1) { cacheInvalidationService.evictEtfBreakdownCache() }
   }
 
   @Test
@@ -185,7 +188,7 @@ class VanguardHoldingsRetrievalJobTest {
 
     job.execute()
 
-    verify(exactly = 0) { etfBreakdownService.evictBreakdownCache() }
+    verify(exactly = 0) { cacheInvalidationService.evictEtfBreakdownCache() }
   }
 
   @Test
@@ -259,7 +262,7 @@ class VanguardHoldingsRetrievalJobTest {
     every { etfHoldingService.hasHoldingsForDate(any(), EFFECTIVE_DATE) } returns true
     every { etfPositionRepository.deleteBySymbolAndSnapshotDateAfter(VGLA, EFFECTIVE_DATE) } returns 3
     job.execute()
-    verify(exactly = 1) { etfBreakdownService.evictBreakdownCache() }
+    verify(exactly = 1) { cacheInvalidationService.evictEtfBreakdownCache() }
   }
 
   @Test
@@ -274,7 +277,7 @@ class VanguardHoldingsRetrievalJobTest {
     verifyOrder {
       etfHoldingService.saveHoldings(VGLA, EFFECTIVE_DATE, any())
       etfPositionRepository.deleteBySymbolAndSnapshotDateAfter(VGLA, EFFECTIVE_DATE)
-      etfBreakdownService.evictBreakdownCache()
+      cacheInvalidationService.evictEtfBreakdownCache()
       etfPositionRepository.deleteBySymbolAndSnapshotDateAfter(VGLA, EFFECTIVE_DATE)
     }
   }
@@ -339,7 +342,7 @@ class VanguardHoldingsRetrievalJobTest {
     runCatching { job.execute() }
     verifyOrder {
       etfHoldingService.saveHoldings(VGLA, TODAY, any())
-      etfBreakdownService.evictBreakdownCache()
+      cacheInvalidationService.evictEtfBreakdownCache()
     }
   }
 
@@ -348,7 +351,7 @@ class VanguardHoldingsRetrievalJobTest {
     every { vanguardHoldingsService.fetchHoldings(any()) } throws IllegalStateException("Vanguard unavailable")
     every { etfPositionRepository.findLatestSnapshotDate(any()) } returns null
     runCatching { job.execute() }
-    verify(exactly = 0) { etfBreakdownService.evictBreakdownCache() }
+    verify(exactly = 0) { cacheInvalidationService.evictEtfBreakdownCache() }
   }
 
   @Test

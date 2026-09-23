@@ -14,6 +14,7 @@ import java.math.BigDecimal
 class HoldingMergeService(
   private val etfHoldingRepository: EtfHoldingRepository,
   private val etfPositionRepository: EtfPositionRepository,
+  private val etfHoldingIndustryService: EtfHoldingIndustryService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -29,6 +30,7 @@ class HoldingMergeService(
     duplicates.forEach { etfHoldingRepository.delete(it) }
     etfHoldingRepository.flush()
     duplicates.forEach { applyMissingFields(canonical, it) }
+    etfHoldingIndustryService.inheritVanguardIndustry(canonical, duplicates)
     etfHoldingRepository.save(canonical)
     log.info("Merged ${duplicates.size} duplicate holdings into canonical id=$canonicalId")
   }

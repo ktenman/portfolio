@@ -208,6 +208,18 @@ class VanguardHoldingsServiceTest {
   }
 
   @Test
+  fun `cannot choose an authoritative industry from conflicting share classes`() {
+    stubSinglePage(
+      listOf(
+        item("Roche Holding AG", "ROG", "3", industry = "Pharmaceuticals"),
+        item("Roche Holding AG", "ROGP", "1", industry = "Biotechnology"),
+      ),
+    )
+
+    expect { service.fetchHoldings(VGLA_PORT_ID) }.toThrow<IllegalStateException>()
+  }
+
+  @Test
   fun `should leave the sector empty for the sector classification job`() {
     stubSinglePage(listOf(item("Apple Inc", "AAPL", "100", industry = "Software")))
 

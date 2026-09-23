@@ -1,9 +1,11 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.EtfPositionRepository
-import ee.tenman.portfolio.service.etf.EtfBreakdownService
+import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
@@ -16,7 +18,8 @@ import java.time.LocalDate
 class VanguardHoldingsRetrievalJob(
   private val vanguardHoldingsService: VanguardHoldingsService,
   private val etfHoldingService: EtfHoldingService,
-  private val etfBreakdownService: EtfBreakdownService,
+  private val cacheInvalidationService: CacheInvalidationService,
+  private val etfHoldingIndustryService: EtfHoldingIndustryService,
   private val etfHoldingsClassificationJob: EtfHoldingsClassificationJob,
   private val jobExecutionService: JobExecutionService,
   private val etfPositionRepository: EtfPositionRepository,
@@ -45,10 +48,12 @@ class VanguardHoldingsRetrievalJob(
   override fun execute() {
     var changed = false
     var failure: Throwable? = null
+    val industries = mutableListOf<VanguardIndustryUpdate>()
     VanguardHoldingsService.FUNDS.forEach { (symbol, portId) ->
       runCatching {
         val snapshot = vanguardHoldingsService.fetchHoldings(portId)
         changed = save(symbol, snapshot) || changed
+        industries += etfHoldingService.resolveIndustryUpdates(snapshot.holdings, snapshot.effectiveDate)
         changed = deleteNewerSnapshots(symbol, snapshot.effectiveDate) || changed
       }.onFailure { throwable ->
         log.error("Vanguard holdings import failed for $symbol", throwable)
@@ -56,7 +61,15 @@ class VanguardHoldingsRetrievalJob(
         changed = fallBack(symbol) || changed
       }
     }
-    if (changed) etfBreakdownService.evictBreakdownCache()
+    runCatching { changed = etfHoldingIndustryService.updateVanguardIndustries(industries) > 0 || changed }
+      .onFailure { throwable ->
+        log.error("Vanguard industry reconciliation failed", throwable)
+        failure = failure ?: throwable
+      }
+    if (changed) {
+      cacheInvalidationService.evictEtfBreakdownCache()
+      cacheInvalidationService.evictDiversificationEtfsCache()
+    }
     failure?.let { throw it }
   }
 
@@ -77,7 +90,7 @@ class VanguardHoldingsRetrievalJob(
       log.info("Holdings for $symbol already exist for ${snapshot.effectiveDate}, skipping")
       return false
     }
-    etfHoldingService.saveHoldings(symbol, snapshot.effectiveDate, snapshot.holdings)
+    etfHoldingService.saveHoldings(symbol, snapshot.effectiveDate, snapshot.holdingsWithoutIndustries())
     log.info("Saved ${snapshot.holdings.size} Vanguard holdings for $symbol on ${snapshot.effectiveDate}")
     return true
   }

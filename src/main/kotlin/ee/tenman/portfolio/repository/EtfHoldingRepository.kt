@@ -1,15 +1,30 @@
 package ee.tenman.portfolio.repository
 
 import ee.tenman.portfolio.domain.EtfHolding
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.util.Optional
 import java.util.UUID
 
 @Repository
 interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
   fun findByUuid(uuid: UUID): EtfHolding?
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT h FROM EtfHolding h WHERE h.id = :id")
+  fun findByIdForUpdate(
+    @Param("id") id: Long,
+  ): Optional<EtfHolding>
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT h FROM EtfHolding h WHERE h.uuid = :uuid")
+  fun findByUuidForUpdate(
+    @Param("uuid") uuid: UUID,
+  ): EtfHolding?
 
   @Query("SELECT h FROM EtfHolding h WHERE LOWER(h.name) = LOWER(:name) ORDER BY h.id ASC")
   fun findByNameIgnoreCase(
