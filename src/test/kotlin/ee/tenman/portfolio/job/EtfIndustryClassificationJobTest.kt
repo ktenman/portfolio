@@ -43,6 +43,7 @@ class EtfIndustryClassificationJobTest {
     every { properties.rateLimitBufferMs } returns 100L
     every { properties.enabled } returns true
     every { properties.gicsEnabled } returns true
+    every { etfHoldingIndustryService.updateIndustry(any(), any(), any()) } returns true
     job =
       EtfIndustryClassificationJob(
         etfHoldingIndustryService = etfHoldingIndustryService,
@@ -153,6 +154,31 @@ class EtfIndustryClassificationJobTest {
 
     verify(exactly = 1) { cacheInvalidationService.evictEtfBreakdownCache() }
     verify(exactly = 1) { cacheInvalidationService.evictDiversificationEtfsCache() }
+  }
+
+  @Test
+  fun `should skip late classifications without evicting caches when a source already supplied the industry`() {
+    unclassified(holding(1L, "Samsung Electronics", "005930"))
+    every { classificationService.classifyBatch(any()) } returns
+      answered(1L to GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT)
+    every { etfHoldingIndustryService.updateIndustry(1L, any(), any()) } returns false
+    expect { job.execute() }.notToThrow()
+    verify(exactly = 0) { etfHoldingIndustryService.incrementIndustryFetchAttempts(any()) }
+    verify(exactly = 0) { cacheInvalidationService.evictEtfBreakdownCache() }
+    verify(exactly = 0) { cacheInvalidationService.evictDiversificationEtfsCache() }
+  }
+
+  @Test
+  fun `should fail when a skipped source classification leaves only unanswered holdings`() {
+    unclassified(holding(1L, "Samsung Electronics", "005930"), holding(2L, "Mystery Corp", "XXX"))
+    every { classificationService.classifyBatch(any()) } returns
+      answered(1L to GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT)
+    every { etfHoldingIndustryService.updateIndustry(1L, any(), any()) } returns false
+    expect { job.execute() }.toThrow<IllegalStateException>()
+    verify(exactly = 1) { etfHoldingIndustryService.incrementIndustryFetchAttempts(2L) }
+    verify(exactly = 0) { etfHoldingIndustryService.incrementIndustryFetchAttempts(1L) }
+    verify(exactly = 0) { cacheInvalidationService.evictEtfBreakdownCache() }
+    verify(exactly = 0) { cacheInvalidationService.evictDiversificationEtfsCache() }
   }
 
   @Test

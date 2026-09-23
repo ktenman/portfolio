@@ -1,5 +1,20 @@
 package ee.tenman.portfolio.domain
 
+import java.time.LocalDate
+import java.util.UUID
+
+enum class IndustrySource {
+  LLM,
+  VANGUARD,
+  UNKNOWN,
+}
+
+data class VanguardIndustryUpdate(
+  val holdingUuid: UUID,
+  val industry: GicsIndustry,
+  val effectiveDate: LocalDate,
+)
+
 enum class GicsSector(
   val code: Int,
   val displayName: String,
