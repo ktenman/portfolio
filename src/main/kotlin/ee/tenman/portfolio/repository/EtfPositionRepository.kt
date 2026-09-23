@@ -54,16 +54,17 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
 
   @Query(
     """
-    SELECT ep FROM EtfPosition ep
-    JOIN FETCH ep.etfInstrument
-    JOIN FETCH ep.holding
-    WHERE ep.etfInstrument.id IN :etfInstrumentIds
-    AND (ep.etfInstrument.id, ep.snapshotDate) IN (
-      SELECT ep2.etfInstrument.id, MAX(ep2.snapshotDate)
+    WITH latest AS MATERIALIZED (
+      SELECT ep2.etfInstrument.id AS etfInstrumentId, MAX(ep2.snapshotDate) AS snapshotDate
       FROM EtfPosition ep2
       WHERE ep2.etfInstrument.id IN :etfInstrumentIds
       GROUP BY ep2.etfInstrument.id
     )
+    SELECT ep FROM EtfPosition ep
+    JOIN FETCH ep.etfInstrument
+    JOIN FETCH ep.holding
+    JOIN latest l ON l.etfInstrumentId = ep.etfInstrument.id AND l.snapshotDate = ep.snapshotDate
+    WHERE ep.etfInstrument.id IN :etfInstrumentIds
     ORDER BY ep.etfInstrument.id, ep.weightPercentage DESC
   """,
   )
