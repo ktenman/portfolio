@@ -4,6 +4,7 @@ import ee.tenman.portfolio.common.orNotFound
 import ee.tenman.portfolio.domain.CountrySource
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.IndustrySource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import org.slf4j.LoggerFactory
@@ -77,6 +78,7 @@ class HoldingMergeService(
     applyMissingTicker(canonical, duplicate)
     applySector(canonical, duplicate)
     applyMissingCountry(canonical, duplicate)
+    applyMissingIndustry(canonical, duplicate)
   }
 
   private fun applyMissingTicker(
@@ -111,5 +113,17 @@ class HoldingMergeService(
     canonical.countryClassifiedByModel = duplicate.countryClassifiedByModel
     canonical.countrySource = duplicate.countrySource
     canonical.countryEffectiveDate = duplicate.countryEffectiveDate
+  }
+
+  private fun applyMissingIndustry(
+    canonical: EtfHolding,
+    duplicate: EtfHolding,
+  ) {
+    if (canonical.industry != null) return
+    if (duplicate.industry == null) return
+    if (duplicate.industrySource == IndustrySource.VANGUARD) return
+    canonical.industry = duplicate.industry
+    canonical.industryClassifiedByModel = duplicate.industryClassifiedByModel
+    canonical.industrySource = duplicate.industrySource
   }
 }

@@ -138,6 +138,26 @@ class HoldingMergeServiceIT {
   }
 
   @Test
+  fun `should backfill missing llm industry onto canonical and delete duplicate`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "AngloGold Ashanti"))
+    val duplicate =
+      etfHoldingRepository.save(
+        EtfHolding(
+          name = "AngloGold Ashanti PLC",
+          industry = GicsIndustry.METALS_AND_MINING,
+          industrySource = IndustrySource.LLM,
+          industryClassifiedByModel = AiModel.GPT_6_LUNA,
+        ),
+      )
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    val surviving = etfHoldingRepository.findAll().single()
+    expect(Triple(surviving.industry, surviving.industrySource, surviving.industryClassifiedByModel))
+      .toEqual(Triple(GicsIndustry.METALS_AND_MINING, IndustrySource.LLM, AiModel.GPT_6_LUNA))
+  }
+
+  @Test
   fun `should keep lower id duplicate position when two duplicates collide on same date`() {
     val canonical = etfHoldingRepository.save(EtfHolding(name = "Beta"))
     val firstDuplicate = etfHoldingRepository.save(EtfHolding(name = "Beta Corp", ticker = "BTA"))
