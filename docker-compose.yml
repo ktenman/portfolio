@@ -38,20 +38,19 @@ services:
       retries: 5
     restart: always
 
-  minio:
-    container_name: minio
-    image: quay.io/minio/minio:latest
+  seaweedfs:
+    container_name: seaweedfs
+    image: docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882
     ports:
       - '9000:9000'
-      - '9001:9001'
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    command: server /data --console-address ":9001"
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    command: mini -dir=/data -s3.port=9000 -s3.autoCreateBucket=false -s3.iam=false -s3.port.iceberg=0 -s3.port.lance=0 -webdav=false -master.telemetry=false
     volumes:
-      - minio_data:/data
+      - seaweedfs_data:/data
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: [ 'CMD-SHELL', 'wget -S -O /dev/null http://127.0.0.1:9000/ 2>&1 | grep -q "HTTP/1.1 403"' ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -69,9 +68,9 @@ services:
       TELEGRAM_BOT_ENABLED: true
       BUILD_HASH: ${BUILD_HASH:-local}
       BUILD_TIME: ${BUILD_TIME:-local}
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://seaweedfs:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-portfolio-logos}
       TRADING212_ENABLED: true
       CLOUDFLARE_BYPASS_PROXY_URL: http://cloudflare-bypass-proxy:3000
@@ -87,7 +86,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      minio:
+      seaweedfs:
         condition: service_healthy
       cloudflare-bypass-proxy:
         condition: service_healthy
@@ -184,7 +183,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
+      seaweedfs:
         condition: service_healthy
       backend:
         condition: service_healthy
@@ -209,4 +208,5 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
-  minio_data:
+  seaweedfs_data:
+    name: portfolio_seaweedfs_data
