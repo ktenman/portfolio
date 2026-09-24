@@ -3,14 +3,17 @@ package ee.tenman.portfolio.service.infrastructure
 import ch.tutteli.atrium.api.fluent.en_GB.asList
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
-import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.MinioProperties
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_LOGOS_CACHE
+import io.minio.BucketExistsArgs
 import io.minio.ListObjectsArgs
+import io.minio.MakeBucketArgs
 import io.minio.MinioClient
 import io.minio.RemoveObjectArgs
+import io.minio.StatObjectArgs
+import io.minio.errors.ErrorResponseException
 import jakarta.annotation.Resource
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterEach
@@ -62,6 +65,7 @@ class MinioServiceIT {
     val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
 
     minioService.uploadLogo(holdingUuid, testData)
+    evictCachedLogo(holdingUuid)
 
     val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull().asList().toEqual(testData.asList())
@@ -76,7 +80,8 @@ class MinioServiceIT {
   @Test
   fun `should throw instead of reporting a missing logo when the bucket is unreachable`() {
     val service = MinioService(minioClient, MinioProperties(bucketName = "missing-${UUID.randomUUID()}"))
-    expect { service.downloadLogo(UUID.randomUUID()) }.toThrow<IllegalStateException>()
+    val failure = runCatching { service.downloadLogo(UUID.randomUUID()) }.exceptionOrNull()
+    expect(((failure as? IllegalStateException)?.cause as? ErrorResponseException)?.errorResponse()?.code()).toEqual("NoSuchBucket")
   }
 
   @Test
@@ -88,6 +93,7 @@ class MinioServiceIT {
     minioService.uploadLogo(holdingUuid, originalData)
     minioService.uploadLogo(holdingUuid, newData)
     awaitCachedLogo(holdingUuid, newData)
+    evictCachedLogo(holdingUuid)
 
     val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull().asList().toEqual(newData.asList())
@@ -100,8 +106,83 @@ class MinioServiceIT {
     minioService.downloadLogo(holdingUuid)
     minioService.uploadLogo(holdingUuid, testData)
     awaitCachedLogo(holdingUuid, testData)
+    evictCachedLogo(holdingUuid)
     val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull().asList().toEqual(testData.asList())
+  }
+
+  @Test
+  fun `should store uploaded logos with PNG content type`() {
+    val uuid = UUID.randomUUID()
+    minioService.uploadLogo(uuid, byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47))
+    val metadata =
+      minioClient.statObject(
+        StatObjectArgs
+          .builder()
+          .bucket(minioProperties.bucketName)
+          .`object`("logos/$uuid.png")
+          .build(),
+      )
+    expect(metadata.contentType()).toEqual("image/png")
+  }
+
+  @Test
+  fun `should list uploaded logos`() {
+    val uuid = UUID.randomUUID()
+    val name = "logos/$uuid.png"
+    minioService.uploadLogo(uuid, byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47))
+    val names =
+      minioClient
+        .listObjects(
+          ListObjectsArgs
+            .builder()
+            .bucket(minioProperties.bucketName)
+            .prefix(name)
+            .build(),
+        ).map { it.get().objectName() }
+    expect(names).toEqual(listOf(name))
+  }
+
+  @Test
+  fun `should return a missing logo after deleting its object`() {
+    val uuid = UUID.randomUUID()
+    val name = "logos/$uuid.png"
+    minioService.uploadLogo(uuid, byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47))
+    minioClient.removeObject(
+      RemoveObjectArgs
+        .builder()
+        .bucket(minioProperties.bucketName)
+        .`object`(name)
+        .build(),
+    )
+    evictCachedLogo(uuid)
+    expect(minioService.downloadLogo(uuid)).toEqual(null)
+  }
+
+  @Test
+  fun `should create and find a new bucket`() {
+    val bucket = "logos-${UUID.randomUUID()}"
+    val arguments = BucketExistsArgs.builder().bucket(bucket).build()
+    minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build())
+    expect(minioClient.bucketExists(arguments)).toEqual(true)
+  }
+
+  @Test
+  fun `should reject an invalid storage credential`() {
+    val client =
+      MinioClient
+        .builder()
+        .endpoint(minioProperties.endpoint)
+        .credentials("invalid", "invalid")
+        .build()
+    val service = MinioService(client, minioProperties)
+    val failure = runCatching { service.downloadLogo(UUID.randomUUID()) }.exceptionOrNull()
+    expect(((failure as? IllegalStateException)?.cause as? ErrorResponseException)?.errorResponse()?.code()).toEqual("InvalidAccessKeyId")
+  }
+
+  private fun evictCachedLogo(uuid: UUID) {
+    val cache = cacheManager.getCache(ETF_LOGOS_CACHE) ?: error("$ETF_LOGOS_CACHE not configured")
+    cache.evict(uuid.toString())
   }
 
   private fun awaitCachedLogo(

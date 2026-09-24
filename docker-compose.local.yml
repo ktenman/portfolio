@@ -31,22 +31,21 @@ services:
       timeout: 1s
       retries: 5
 
-  minio:
-    image: quay.io/minio/minio:latest
-    container_name: portfolio-minio
+  seaweedfs:
+    image: docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882
+    container_name: portfolio-seaweedfs
     ports:
       - "61242:9000"
-      - "61243:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-    command: server /data --console-address ":9001"
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: mini -dir=/data -s3.port=9000 -s3.autoCreateBucket=false -s3.iam=false -s3.port.iceberg=0 -s3.port.lance=0 -webdav=false -master.telemetry=false
     volumes:
-      - minio-data:/data
+      - seaweedfs-data:/data
     networks:
       - portfolio-network
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: [ 'CMD-SHELL', 'wget -S -O /dev/null http://127.0.0.1:9000/ 2>&1 | grep -q "HTTP/1.1 403"' ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -115,7 +114,7 @@ services:
       - SCHEDULING_ENABLED=false
       - SERVER_PORT=8081
       - SECURITY_ENABLED=false
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://minio:9000}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://seaweedfs:9000}
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
@@ -125,7 +124,7 @@ services:
     depends_on:
       - postgres
       - redis
-      - minio
+      - seaweedfs
       - cloudflare-bypass-proxy
     networks:
       - portfolio-network
@@ -184,4 +183,4 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
-  minio-data:
+  seaweedfs-data:

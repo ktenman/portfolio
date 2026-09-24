@@ -16,11 +16,12 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.MinIOContainer
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 import org.wiremock.spring.ConfigureWireMock
 import org.wiremock.spring.EnableWireMock
+import java.time.Duration
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
@@ -54,13 +55,24 @@ annotation class IntegrationTest {
         .withExposedPorts(6379)
         .apply { start() }
 
-    private val MINIO_CONTAINER: MinIOContainer =
-      MinIOContainer(
-        DockerImageName
-          .parse("quay.io/minio/minio:latest")
-          .asCompatibleSubstituteFor("minio/minio"),
-      ).withUserName(MINIO_ACCESS_KEY)
-        .withPassword(MINIO_SECRET_KEY)
+    private val S3_CONTAINER: GenericContainer<*> =
+      GenericContainer(
+        DockerImageName.parse("docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882"),
+      ).withCommand(
+        "mini",
+        "-dir=/data",
+        "-s3.port=9000",
+        "-s3.autoCreateBucket=false",
+        "-s3.iam=false",
+        "-s3.port.iceberg=0",
+        "-s3.port.lance=0",
+        "-webdav=false",
+        "-master.telemetry=false",
+      ).withEnv("AWS_ACCESS_KEY_ID", MINIO_ACCESS_KEY)
+        .withEnv("AWS_SECRET_ACCESS_KEY", MINIO_SECRET_KEY)
+        .withExposedPorts(9000)
+        .waitingFor(Wait.forHttp("/").forPort(9000).forStatusCode(403))
+        .withStartupTimeout(Duration.ofMinutes(2))
         .apply { start() }
 
     private fun createBucketIfNotExists(
@@ -88,7 +100,7 @@ annotation class IntegrationTest {
 
   class Initializer : ApplicationContextInitializer<ConfigurableApplicationContext> {
     override fun initialize(applicationContext: ConfigurableApplicationContext) {
-      val minioUrl = MINIO_CONTAINER.s3URL
+      val minioUrl = "http://${S3_CONTAINER.host}:${S3_CONTAINER.getMappedPort(9000)}"
 
       TestPropertyValues
         .of(
