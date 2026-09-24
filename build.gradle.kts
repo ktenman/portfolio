@@ -72,7 +72,6 @@ dependencies {
   testImplementation(libs.testcontainers.junit.jupiter)
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.testcontainers.postgresql)
-  testImplementation(libs.testcontainers.minio)
   testImplementation(libs.mockk)
   testImplementation(libs.spring.mockk)
   testImplementation(libs.archunit.junit5)
