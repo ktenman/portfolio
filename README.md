@@ -3,536 +3,260 @@
 [![Build & Test](https://github.com/ktenman/portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/ktenman/portfolio/actions/workflows/ci.yml)
 [![Security Scan](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml/badge.svg?branch=main)](https://github.com/ktenman/portfolio/actions/workflows/trivy-scan.yml)
 
-## Introduction
-
-The Portfolio Management System is a production-ready, full-stack application for managing investment portfolios with automated market data retrieval and sophisticated performance analytics. Built with modern technologies and best practices, it provides real-time portfolio tracking, XIRR calculations, and multi-platform transaction management.
+Track investments across brokers, review portfolio performance, and look through ETFs to their underlying holdings. The application combines a Kotlin/Spring Boot API with a Vue/TypeScript frontend, automated price retrieval, and XIRR calculations.
 
 <img src="screenshots/app.png" width="600" alt="Portfolio Management System application home page">
 
-## Key Features
+## Features
 
-- **Instrument Management**: Add, update, and delete financial instruments (stocks, ETFs, cryptocurrencies)
-- **Transaction Tracking**: Record buy and sell transactions across multiple trading platforms
-- **Performance Metrics**: Calculate portfolio performance with XIRR, daily earnings, and profit tracking
-- **Multi-Provider Data Sync**: Fetch data from Financial Times (stocks/ETFs) and Binance (crypto)
-- **Advanced Caching**: Redis-based caching with Spring Cache annotations for optimal performance
-- **OAuth 2.0 Authentication**: Secure login via Google and GitHub with session management
-- **Responsive UI**: Vue.js 3 SPA with Tailwind CSS 4 for desktop and mobile
-- **Automated Jobs**: Scheduled tasks for price updates and portfolio calculations
-- **Telegram Bot Integration**: Notifications and alerts via Telegram
-- **Public Calculator**: Standalone XIRR calculator available at calculator.fov.ee
+- **Portfolio history:** platform filters, daily and intraday charts, profit and earnings, annual and rolling XIRR windows, and comparisons against the S&P 500 and VWCE.
+- **Instruments and transactions:** stocks, ETFs, cryptocurrencies, and cash; buy/sell records, commissions, realized and unrealized profit, date filters, and platform-specific holdings.
+- **Broker coverage:** Aviva, Binance, LHV, Lightyear, Lightyear Business, Swedbank, and Trading 212.
+- **ETF analysis:** underlying companies, sectors, industries, countries, and expense ratios. Holdings come from Vanguard, Lightyear, and Trading 212, with source provenance for classifications.
+- **Diversification:** allocation planning against existing holdings and a portfolio comparison against VGLA.
+- **Market data:** scheduled price retrieval from Financial Times, Binance, Lightyear, and Trading 212, plus historical gap filling and intraday price storage.
+- **Calculator:** investment projections with XIRR, also exposed through the public calculator routes in [Caddyfile](Caddyfile).
+- **Supporting services:** company logos in S3 storage, OpenRouter classification and logo selection, Google Cloud Vision OCR, Telegram notifications, and vehicle valuation integrations.
 
-## Technical Stack
+## Quick start
 
-### Backend
+### Requirements
 
-- Spring Boot 4.0
-- Kotlin 2.2
-- Java 21
-- Gradle 8.8 with Version Catalogs
-- Atrium 1.3 (Kotlin test assertions)
+- Java 25; Gradle is provided by `./gradlew`.
+- Node.js 24 and npm.
+- Docker with Docker Compose. The Cloudflare proxy runs as a Linux AMD64 container, including on Apple Silicon.
 
-### Frontend
-
-- Vue.js 3.5
-- TypeScript 5.9
-- Tailwind CSS 4.3
-- Vite 7.3
-- Vue Router 4.6
-- Chart.js 4.5
-
-### Database & Caching
-
-- PostgreSQL 17 with Flyway migrations
-- Redis 8 for caching
-- Spring Data JPA with Hibernate
-
-### Testing
-
-**Backend:**
-
-- JUnit 5 with Spring Boot Test
-- Atrium for fluent assertions (Kotlin-native)
-- MockK for mocking
-- Selenide for E2E tests
-- Testcontainers for integration tests (PostgreSQL, Redis, MinIO)
-- WireMock for API mocking
-
-**Frontend:**
-
-- Vitest for component testing
-- Vue Test Utils for component mounting
-- Comprehensive test coverage focusing on business logic
-
-**E2E:**
-
-- Selenide-based browser automation
-- Retry mechanism for flaky tests
-- Screenshot capture on failure
-
-**Unified Test Runner:**
-
-- `npm run test:all` - Runs comprehensive test suite across backend, frontend, and E2E
-- `npm run test:e2e` - Automatic environment setup (Docker, backend, frontend) with health checks
-- `npm run test:setup` - Setup E2E environment without running tests
-- Proper exit code preservation for CI/CD pipelines
-
-### Code Quality Tools
-
-**Frontend:**
+Install dependencies and start the application from the repository root:
 
 ```bash
-npm run lint-format        # Type check, lint, and format (recommended before commits)
-npm run check-unused       # Detect unused exports and dependencies with Knip
+npm ci
+npm run dev
 ```
 
-**Backend:**
+The `predev` hook stops and removes **all Docker containers on the host**, stops processes listening on ports 8081 and 61234, and builds the Cloudflare proxy image. The development command then starts the backend and frontend. Spring Boot's Docker Compose support starts the services in [compose.yaml](compose.yaml): PostgreSQL, Redis, SeaweedFS, and the Cloudflare proxy.
+
+| Service                 | Local address                         |
+| ----------------------- | ------------------------------------- |
+| Frontend                | http://localhost:61234                |
+| Backend API             | http://localhost:8081/api             |
+| Swagger UI              | http://localhost:8081/swagger-ui.html |
+| OpenAPI JSON            | http://localhost:8081/api-docs        |
+| Backend health          | http://localhost:8081/actuator/health |
+| PostgreSQL              | `localhost:5432`                      |
+| Redis                   | `localhost:6379`                      |
+| SeaweedFS S3 endpoint   | http://localhost:9000                 |
+| Cloudflare proxy health | http://localhost:3000/health          |
+
+Vite proxies `/api` requests to the backend. This local development path connects directly to the API; the deployed application authenticates requests through Caddy and the auth service.
+
+### Start processes separately
+
+To manage infrastructure and application processes separately, build the proxy image and start the development services:
 
 ```bash
-./gradlew detekt          # Static code analysis for Kotlin
+npm ci
+npm run docker:build-proxy
+npm run docker:up
+npm run dev:backend
 ```
 
-### CI/CD & Containerization
-
-- GitHub Actions for CI/CD pipeline
-- Docker with multi-stage builds
-- Docker Compose for orchestration
-- Caddy 2 as reverse proxy
-- Nginx for frontend serving
-
-### API Integration
-
-- Financial Times API for stock/ETF market data
-- Binance API for cryptocurrency prices
-- Lightyear for ETF holdings and prices
-- Google Cloud Vision API for OCR/captcha solving
-- Telegram Bot API for notifications
-- OpenRouter API for AI classification (Claude Haiku)
-- Auto24 API for vehicle valuation (Estonian market)
-- Veego API for tax reporting
-
-## Architecture 🏗️
-
-### Overview
-
-The system follows a clean microservices architecture with strong separation of concerns:
-
-- **Frontend**: Vue.js 3 SPA served by Nginx
-- **Backend API**: Spring Boot REST API with comprehensive business logic
-- **Authentication Service**: OAuth 2.0 proxy handling Google/GitHub login
-- **Database**: PostgreSQL 17 with optimized indexes and constraints
-- **Cache**: Redis 8 for session storage and data caching
-- **Object Storage**: MinIO for ETF/stock logo storage with Redis caching
-- **Captcha Solver**: ML-based service for automated captcha resolution
-- **Reverse Proxy**: Caddy handling SSL, routing, and authentication
-- **Scheduled Jobs**: Background tasks for price updates and XIRR calculations
-
-### System Architecture
-
-![System Architecture](docs/architecture/architecture.svg)
-
-**Key Integration Technologies:**
-
-- **Cloudflare Bypass Proxy**: Node.js/TypeScript service with curl-impersonate for Cloudflare bypass (TLS fingerprint spoofing)
-- **Market Data**: FT Markets (HTML scraping with Jsoup), Binance API (JSON)
-- **ETF Holdings**: Lightyear (via Cloudflare Bypass Proxy)
-- **AI Services**: OpenRouter (Claude Haiku for sector classification), Google Cloud Vision (OCR)
-- **Storage**: MinIO (S3-compatible) for company logos
-
-### Architecture Diagrams
-
-Comprehensive PlantUML diagrams are available in the `docs/architecture/` directory:
-
-1. **[System Context](docs/architecture/system-context.puml)** - High-level view of external systems and integrations
-2. **[Container Diagram](docs/architecture/container-diagram.puml)** - Internal containers and their interactions
-3. **[Component Diagram](docs/architecture/component-diagram.puml)** - Detailed component structure of the API application
-4. **[Database ERD](docs/architecture/database-erd.puml)** - Entity relationship diagram with constraints
-5. **[Price Update Sequence](docs/architecture/price-update-sequence.puml)** - Flow of scheduled price updates
-6. **[XIRR Calculation Sequence](docs/architecture/xirr-calculation-sequence.puml)** - Portfolio performance calculation flow
-7. **[Frontend Architecture](docs/architecture/frontend-architecture.puml)** - Vue.js component structure
-
-To view these diagrams, use any PlantUML viewer or IDE plugin (VS Code, IntelliJ IDEA).
-
-### Database 🗄️
-
-PostgreSQL stores portfolio data, including instruments, transactions, and daily price information. The backend performs
-CRUD operations using Spring Data JPA.
-
-### Cache 🚀
-
-Redis serves as a caching layer to improve data retrieval performance, storing frequently accessed data like instrument
-details and portfolio summaries.
-
-### Scheduled Jobs ⚙️
-
-1. **FT Data Retrieval**: Fetches stock/ETF prices from Financial Times (adaptive scheduling)
-2. **Binance Data Retrieval**: Updates cryptocurrency prices
-3. **Trading212 Data Retrieval**: Syncs prices from Trading212 platform
-4. **Lightyear Price Retrieval**: Fetches prices from Lightyear platform
-5. **Daily Portfolio XIRR Job**: Calculates portfolio performance metrics
-6. **Instrument XIRR Job**: Per-instrument performance calculations
-7. **ETF Holdings Classification**: AI-powered sector and country classification
-8. **ETF Logo Collection**: Automated logo retrieval for ETF holdings
-
-### Authentication & Security 🔐
-
-- OAuth 2.0 with Google and GitHub providers
-- Session-based authentication with Redis storage
-- Role-based access control with allowed email/login lists
-- Caddy-based forward authentication
-- HTTPS enforcement with automatic SSL certificates
-- Security headers (HSTS, X-Frame-Options, CSP)
-
-### Interaction Flow 📊
-
-1. User logs in via the frontend.
-2. Frontend redirects to OAuth service for authentication.
-3. User is redirected back with an authentication token.
-4. Frontend includes this token in backend requests.
-5. Backend validates the token with the Auth service.
-6. Frontend displays portfolio data to the user.
-7. Periodic jobs update the database and calculate metrics.
-
-## Setup and Running Instructions
-
-### Prerequisites
-
-- Java 21 (required for backend)
-- Node.js 22+ and npm 10+ (required for frontend)
-- Docker and Docker Compose (for containerized services)
-- Gradle (included via wrapper)
-
-### Quick Start
-
-Run backend and frontend together with a single command:
+In another terminal:
 
 ```bash
-npm run dev                 # Starts both backend and frontend with colored output
+npm run dev:ui
 ```
 
-This command automatically:
-
-- Cleans up any existing Docker containers and processes on ports 8081/61234
-- Starts Spring Boot backend on http://localhost:8081
-- Starts Vite frontend dev server on http://localhost:61234
-- Shows color-coded, prefixed output for easy debugging
-
-You can also run services individually:
+To start the backend without scheduled imports and price updates:
 
 ```bash
-npm run dev:ui              # Start frontend only (Vite)
-npm run dev:backend         # Start backend only (Gradle bootRun)
+SCHEDULING_ENABLED=false npm run dev:backend
 ```
 
-### Local Development Setup
+`npm run docker:down` stops the development infrastructure. `npm run test:cleanup` also terminates running `bootRun` and Vite processes.
 
-1. **Environment Variables**: Copy `.env.example` to `.env` and configure:
+## Configuration
 
-   ```bash
-   cp .env.local.example .env
-   ```
+Backend defaults are in [application.yml](src/main/resources/application.yml). Development infrastructure has local database and storage credentials in [compose.yaml](compose.yaml). External services use the environment variables below.
 
-   Required variables:
-   - `POSTGRES_USER` and `POSTGRES_PASSWORD`
-   - `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` (for logo storage)
-   - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (for OAuth)
-   - `VISION_BASE64_ENCODED_KEY` (for Google Cloud Vision)
-   - `TELEGRAM_BOT_TOKEN` (optional, for Telegram integration)
+| Variables                                                                           | Purpose                                                          |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | Override the backend database connection.                        |
+| `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT`                                  | Override the backend Redis connection.                           |
+| `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME`       | Backend S3 connection and logo bucket.                           |
+| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`                                            | SeaweedFS credentials used by the Compose stacks.                |
+| `OPENROUTER_API_KEY`                                                                | Enable model-backed classification and logo selection.           |
+| `GOOGLE_VISION_API_KEY`                                                             | Enable Google Cloud Vision OCR.                                  |
+| `TRADING212_API_KEY_ID`, `TRADING212_API_KEY_SECRET`                                | Trading 212 API authentication for integrations that use it.     |
+| `TELEGRAM_BOT_ENABLED`, `TELEGRAM_BOT_TOKEN`                                        | Enable and configure Telegram notifications.                     |
+| `SCHEDULING_ENABLED`                                                                | Enable or disable scheduled jobs; defaults to `true`.            |
+| `CLOUDFLARE_BYPASS_PROXY_URL`                                                       | Override the proxy address; defaults to `http://localhost:3000`. |
 
-2. **Start Infrastructure Services**:
-   ```bash
-   docker compose -f compose.yaml up -d
-   ```
-   This starts PostgreSQL, Redis, and MinIO containers.
+The storage service is **SeaweedFS**. The `MINIO_*` names remain for configuration compatibility, and the backend continues to use the MinIO Java SDK to access its S3 endpoint. For a backend running on the host, use the host-accessible endpoint and matching access/secret keys.
 
-### Backend Setup
+[.env.local.example](.env.local.example) provides OAuth and storage settings for Compose-based setups. Docker Compose reads `.env` for interpolation; backend processes launched on the host receive configuration through their shell environment. OAuth deployment also uses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `ALLOWED_EMAILS`; see the Compose files for access-list and redirect settings.
 
-Navigate to the root directory and compile the Java application using Gradle:
+## Technical stack
+
+Versions are declared in [the Gradle version catalog](gradle/libs.versions.toml), [the Gradle wrapper](gradle/wrapper/gradle-wrapper.properties), and [package.json](package.json), with frontend resolutions in [package-lock.json](package-lock.json).
+
+| Area                         | Technologies                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| Backend                      | Kotlin 2.4, Spring Boot 4.1, Java 25, Gradle 9.7                              |
+| Frontend                     | Vue 3.5, TypeScript 6.0, Vite 8, Tailwind CSS 4.3, Vue Router 5, Chart.js 4.5 |
+| Client data and state        | TanStack Vue Query, VueUse                                                    |
+| Persistence                  | PostgreSQL 17, Flyway, Spring Data JPA/Hibernate                              |
+| Cache                        | Redis 8 and Spring Cache                                                      |
+| Object storage               | SeaweedFS 4.47 with the MinIO Java SDK                                        |
+| Proxy                        | Express 5, TypeScript, curl-impersonate, ONNX Runtime                         |
+| Backend testing              | JUnit, Atrium, MockK, Kotest, ArchUnit, Testcontainers, WireMock, PITest      |
+| Frontend and browser testing | Vitest, Vue Test Utils, Selenide, Playwright                                  |
+| Delivery                     | GitHub Actions, Docker Compose, Caddy, Nginx                                  |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Browser --> Caddy
+    Caddy -->|Session validation| Auth[Auth service]
+    Caddy -->|Static application| Frontend[Vue application / Nginx]
+    Caddy -->|API requests| Backend[Spring Boot API and scheduled jobs]
+    Auth --> Redis
+    Backend --> PostgreSQL
+    Backend --> Redis
+    Backend -->|S3| SeaweedFS
+    Backend --> Proxy[Cloudflare bypass proxy]
+    Proxy --> Brokers[Lightyear / Trading 212]
+    Backend --> Providers[Financial Times / Binance / Vanguard]
+```
+
+The backend separates controllers, services, and repositories. Scheduled jobs update market data and holdings, calculate portfolio metrics, and clean up retained intraday data. Redis caches instruments, transactions, summaries, and ETF analysis; PostgreSQL stores the underlying records and historical prices.
+
+In the deployed application, the browser sends session cookies to Caddy. Caddy asks the auth service's `/validate` endpoint to check the session and forwards authenticated requests with `X-User-Id`. Google and GitHub login routes are handled by the auth service. Calculator routes are public as configured in [Caddyfile](Caddyfile).
+
+Additional PlantUML reference diagrams are in [docs/architecture](docs/architecture). Their SVGs can be regenerated with:
 
 ```bash
-./gradlew clean build
-./gradlew bootRun
+./scripts/generate-diagrams.sh
 ```
 
-### Frontend Setup
+### Project layout
 
-Install frontend dependencies and start the development server:
+| Location                                                           | Contents                                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| [src/main/kotlin](src/main/kotlin)                                 | Domain model, API, calculations, scheduled jobs, and integrations |
+| [src/main/resources/db/migration](src/main/resources/db/migration) | Flyway schema and portfolio data migrations                       |
+| [src/test/kotlin](src/test/kotlin)                                 | Backend unit, integration, architecture, and Selenide tests       |
+| [ui](ui)                                                           | Vue components, composables, services, and Vitest tests           |
+| [ui/tests/visual](ui/tests/visual)                                 | Playwright visual tests and deterministic fixtures                |
+| [cloudflare-bypass-proxy](cloudflare-bypass-proxy)                 | Broker scraping proxy and captcha handling                        |
+| [.github/workflows](.github/workflows)                             | CI, deployment, and security workflows                            |
+
+## Development and testing
+
+### Build and code quality
+
+| Command                        | Purpose                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| `./gradlew compileKotlin`      | Compile the backend and regenerate TypeScript DTOs.                           |
+| `./gradlew bootJar`            | Build the executable backend JAR for deployment.                              |
+| `npm run build`                | Type-check and build the frontend into `dist/`.                               |
+| `npm run lint-format`          | Run TypeScript checks, ESLint, Prettier, Knip, ktlint formatting, and Detekt. |
+| `./gradlew ktlintCheck detekt` | Check Kotlin style and static analysis.                                       |
+| `npm run check-unused`         | Check unused frontend files, exports, and dependencies.                       |
+
+TypeScript domain types are generated from Kotlin DTOs into `ui/models/generated/domain-models.ts`. Add DTOs to the generator's `classes` list in [build.gradle.kts](build.gradle.kts), then compile; do not edit the generated file manually.
+
+Flyway runs on backend startup. Migrations include this portfolio's instruments and transaction history as well as schema changes. Name new migrations `VYYYYMMDDHHMM__description.sql` using the creation timestamp so they run after existing migrations. Put the actual trade date in `transaction_date` and leave previously applied migration files unchanged.
+
+### Automated tests
+
+| Command                                                | Scope                                                                       |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `./gradlew test`                                       | Backend unit and integration tests; excludes Selenide E2E tests by default. |
+| `./gradlew test --tests '*DailySummaryCalculatorTest'` | A targeted backend test class.                                              |
+| `npm test -- --run`                                    | All frontend tests without watch mode.                                      |
+| `npm run test:coverage`                                | Frontend tests with coverage.                                               |
+| `npm run test:proxy`                                   | Cloudflare proxy Jest tests.                                                |
+| `npm run test:unit`                                    | Backend, frontend, and proxy tests.                                         |
+| `npm run test:e2e`                                     | Start local services, run Selenide tests, and clean up.                     |
+| `npm run test:all`                                     | Run `test:unit` followed by `test:e2e`.                                     |
+| `./gradlew pitest`                                     | Backend mutation testing.                                                   |
+
+Install the proxy's test dependencies before running its tests or the combined test commands:
 
 ```bash
-npm install
-npm run dev:ui              # Start frontend only
+npm ci --prefix cloudflare-bypass-proxy
 ```
 
-You can access it in your web browser at http://localhost:61234
+Backend integration tests use Testcontainers for PostgreSQL, Redis, and SeaweedFS, with WireMock for external APIs. Docker must be running. Selenide E2E tests use Chrome/Chromium.
 
-### Running and Updating the Application
-
-To update the application or its services after making changes:
-
-1. Rebuild the services:
+For manual E2E setup:
 
 ```bash
-docker compose -f docker-compose.local.yml build
+npm run test:setup
+E2E=true ./gradlew test --info -Pheadless=true
+npm run test:cleanup
 ```
 
-2. Restart the services for the changes to take effect:
+The E2E scripts restart the local development services. Logs are written to `/tmp/portfolio-backend.log` and `/tmp/portfolio-frontend.log`. Backend test reports are under `build/reports/tests/test/`, JaCoCo coverage under `build/reports/jacoco/test/html/`, and frontend coverage under `coverage/`.
+
+### Visual regression tests
+
+Playwright checks desktop, tablet, and mobile layouts with zero pixel tolerance. The npm scripts use the same Linux ARM64 Playwright Docker image as CI:
 
 ```bash
-docker compose -f docker-compose.local.yml up -d
+npm run visual
+npm run visual:update -- --grep "route summary"
 ```
 
-Once all services are running, access the application at:
+Regenerate affected baselines after changes to rendered markup, styles, or data, and review the resulting images. Run `npm run lint-format` and `npm test -- --run` after frontend changes.
 
-- Main application: http://localhost
-- Backend API: http://localhost:8081/api
-- Frontend dev server: http://localhost:61234
+## Deployment and CI
 
-### Production Deployment with Docker
+The Compose configurations serve different purposes:
 
-For a full production-like setup locally:
+| File                                                             | Purpose                                                                        |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [compose.yaml](compose.yaml)                                     | Infrastructure for backend and frontend processes running on the host.         |
+| [docker-compose.yml](docker-compose.yml)                         | Production services using published application images, OAuth, and Caddy.      |
+| [docker-compose.e2e-minimal.yml](docker-compose.e2e-minimal.yml) | Containerized backend, frontend, Nginx, and dependencies used by CI E2E tests. |
+| [docker-compose.local.yml](docker-compose.local.yml)             | Alternate local container definitions, including auth and Caddy.               |
+
+[The CI workflow](.github/workflows/ci.yml) runs on pull requests and pushes to `main`. It checks formatting and static analysis, backend and frontend tests, proxy tests, Selenide E2E tests, and Playwright visual baselines. Successful main-branch runs build changed application images for Docker Hub and GHCR and invoke [the deployment workflow](.github/workflows/deploy-pipeline.yml). Manual workflow dispatch can also build images and optionally deploy.
+
+Production deployment creates its `.env` from GitHub secrets, pulls images, restarts services, and verifies container health. It requires the prepared `portfolio_seaweedfs_data` volume with the `.portfolio-storage-ready` marker from the storage cutover. PostgreSQL and SeaweedFS data are stored in persistent Docker volumes.
+
+For an already configured production host, the underlying Compose commands are:
 
 ```bash
-# Build all services
-docker compose -f docker-compose.local.yml build
-
-# Start the complete stack
-docker compose -f docker-compose.local.yml up -d
+docker compose -f docker-compose.yml config --quiet
+docker compose -f docker-compose.yml pull
+docker compose -f docker-compose.yml up -d
 ```
 
-This includes all services: backend, frontend, auth, and captcha solver.
+The production Compose file and Caddy configuration target `fov.ee`; review their hostnames, access settings, and environment variables when deploying elsewhere.
 
-### End-to-End Tests
+[CodeQL](.github/workflows/codeql.yml) provides code scanning. [Trivy](.github/workflows/trivy-scan.yml) scans the published backend and frontend images on Mondays at 02:00 UTC and on manual dispatch, uploads security findings, and generates SBOM artifacts. Dependabot maintains dependency update PRs.
 
-To run end-to-end tests:
+## Monitoring
 
-```bash
-docker compose -f docker-compose.e2e-minimal.yml down
-docker volume rm portfolio_postgres_data_e2e
-docker compose -f docker-compose.e2e-minimal.yml up -d && sleep 30
-export E2E=true && ./gradlew test --info -Pheadless=true
-```
-
-Or use the npm script:
-
-```bash
-npm run test:e2e
-```
-
-### Testing
-
-**Backend Unit and Integration Tests:**
-
-```bash
-./gradlew test
-```
-
-**Run Specific Backend Test:**
-
-```bash
-./gradlew test --tests "PortfolioSummaryServiceTest"
-```
-
-**Backend Test Coverage Report:**
-
-```bash
-./gradlew jacocoTestReport
-# Report available at: build/reports/jacoco/test/html/index.html
-```
-
-**Frontend Tests:**
-
-```bash
-npm test                    # Run all UI tests in watch mode
-npm test -- --run           # Run tests once (no watch mode)
-npm test -- --coverage      # Run tests with coverage report
-```
-
-**Unified Test Runner:**
-
-```bash
-npm run test:all            # Run all tests (unit + E2E)
-npm run test:unit           # Run only unit tests
-npm run test:e2e            # Run E2E tests (auto-starts Docker, backend, frontend)
-npm run test:proxy          # Run cloudflare-bypass-proxy tests
-npm run test:setup          # Setup E2E environment only
-npm run test:cleanup        # Stop all services
-```
-
-### Continuous Integration
-
-- GitHub Actions workflow runs on every push and PR
-- Automated testing includes unit, integration, and E2E tests
-- Dependabot manages dependency updates
-- Docker images are built and pushed to Docker Hub on successful builds
-- Trivy security scanning runs automatically after Docker image builds
-- Daily vulnerability scans to catch newly discovered CVEs
-
-### Security Scanning
-
-The project uses **Trivy** for automated container vulnerability scanning:
-
-**Automatic Scanning:**
-
-- Triggers after successful CI builds when images are pushed to DockerHub
-- Daily scans at 2 AM UTC to catch new vulnerabilities
-- Scans all Docker images: backend and frontend
-
-**Security Features:**
-
-- Vulnerability detection for OS packages and application dependencies
-- Secret scanning to detect hardcoded credentials
-- SBOM (Software Bill of Materials) generation
-- Integration with GitHub Security tab for vulnerability tracking
-- Automatic issue creation for critical vulnerabilities
-
-**Manual Scanning:**
-
-```bash
-# Scan a specific image locally
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-  aquasec/trivy image ktenman/portfolio-be:latest
-
-# Generate SBOM
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-  aquasec/trivy image --format spdx-json --output sbom.json ktenman/portfolio-be:latest
-```
-
-**Configuration:**
-
-- `.trivy.yaml` - Trivy configuration for scan settings
-- `.trivyignore` - Ignore specific CVEs if needed
-
-## Deployment
-
-1. Rename the `.env.example` file to `.env` and fill in the necessary information.
-2. Create a shell script (e.g., deploy.sh) to deploy the application:
-
-   ```bash
-   #!/bin/bash
-
-   cd portfolio
-   git pull
-   docker compose -f docker-compose.yml down
-   docker compose -f docker-compose.yml pull
-   docker compose -f docker-compose.yml build
-   docker compose -f docker-compose.yml up -d
-   docker rmi $(docker images -f "dangling=true" -q)
-   ```
-
-3. Make the shell script executable:
-
-   ```bash
-   chmod +x deploy.sh
-   ```
-
-4. Run the shell script to deploy the application:
-   ```bash
-   ./deploy.sh
-   ```
-
-### Environment Variables
-
-Create `.env` file with these required variables:
-
-```bash
-# Database
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_secure_password
-
-# MinIO Object Storage (for logo storage)
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=your_secure_minio_password
-MINIO_BUCKET_NAME=portfolio-logos
-
-# OAuth Providers
-GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
-
-# Google Cloud Vision (Base64 encoded service account key)
-VISION_BASE64_ENCODED_KEY=your_base64_encoded_key
-
-# Telegram Bot (optional)
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-
-# Allowed Users
-ALLOWED_EMAILS=user1@example.com,user2@example.com
-
-# Health Check URL (optional)
-HEALTHCHECK_URL=https://hc-ping.com/your-check-uuid
-```
-
-### API Keys Setup
-
-1. **Google Cloud Vision**: Create service account at https://console.cloud.google.com/apis/credentials
-2. **OAuth Setup**: Configure OAuth apps in Google Cloud Console and GitHub settings
-
-## Monitoring & Observability
-
-- **Health Checks**: All services expose `/actuator/health` endpoints
-- **Logging**: Centralized logging with correlation IDs
-- **Performance**: Redis caching with configurable TTL
-- **Slow Queries**: Production Postgres (`docker-compose.yml`) preloads `pg_stat_statements` and `auto_explain`. Statements slower than 500 ms are logged with their parameters, and those slower than 1 s also log their plan with actual row counts
-- **Postgres Logs**: Written to `$PGDATA/log/postgresql-<weekday>.log` on the data volume, so they survive deploys and each file is overwritten a week later. After startup, `docker logs postgres` only points to that directory
+- Backend health: `/actuator/health`; build details: `/api/build-info`.
+- Cloudflare proxy health: `/health` on its service port.
+- Redis cache names and expiration times: [RedisConfiguration.kt](src/main/kotlin/ee/tenman/portfolio/configuration/RedisConfiguration.kt).
+- Scheduled job intervals and retention settings: [application.yml](src/main/resources/application.yml) and the [job implementations](src/main/kotlin/ee/tenman/portfolio/job).
+- Production PostgreSQL enables `pg_stat_statements` and `auto_explain`. Statements over 500 ms are logged; those over one second include plans with actual row counts. Logs persist under `$PGDATA/log` and rotate weekly by filename.
 
 On the production host:
 
 ```bash
-# Slowest statements
 docker exec postgres sh -c 'psql -U "$POSTGRES_USER" -d portfolio -c "SELECT calls, round(mean_exec_time) AS mean_ms, round(max_exec_time) AS max_ms, left(query, 100) AS query FROM pg_stat_statements ORDER BY max_exec_time DESC LIMIT 20"'
-
-# Latest log lines, including slow statements and their plans
-docker exec postgres sh -c 'tail -n 100 $PGDATA/log/postgresql-*.log'
+docker exec postgres sh -c 'tail -n 100 "$PGDATA"/log/postgresql-*.log'
 ```
-
-## Security Features
-
-- OAuth 2.0 authentication with session management
-- HTTPS enforcement in production
-- Security headers via Caddy
-- Input validation and sanitization
-- Rate limiting on API endpoints
-- Secure credential storage
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Follow [AGENTS.md](AGENTS.md) and the applicable backend, frontend, or proxy guidance. Use issue-based `feature/<issue-number>-<description>` or `fix/<issue-number>-<description>` branches. Keep changes focused, verify the affected behavior, and include a summary and test plan in the pull request. CI must pass before review.
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## Known Issues & Roadmap
-
-### Planned Enhancements
-
-- **OpenAPI Documentation**: Adding Swagger/OpenAPI specs for all REST endpoints
-- **Distributed Tracing**: Implementing Zipkin/Jaeger for better observability
-- **Application Rate Limiting**: Adding rate limiting at the application level
-- **Database Rollbacks**: Documenting rollback procedures for migrations
-- **Performance Optimization**: Optimizing XIRR calculations for large portfolios (1000+ transactions)
-
-## Performance Considerations
-
-- **Caching Strategy**: Multi-level caching with Redis reduces database load by ~70%
-- **Batch Processing**: Transactions processed in 30-item batches for optimal memory usage
-- **Database Indexing**: Strategic indexes on foreign keys, dates, and composite queries
-- **Scheduled Jobs**: Configurable intervals prevent API rate limit issues
-
-## Security Measures
-
-- **OAuth 2.0**: Secure authentication with Google/GitHub providers
-- **Session Management**: Redis-based sessions with configurable TTL
-- **Access Control**: Email whitelist for user authorization
-- **HTTPS Enforcement**: Automatic SSL via Caddy reverse proxy
-- **Security Headers**: HSTS, X-Frame-Options, CSP properly configured
-- **Container Scanning**: Daily Trivy scans for vulnerabilities
-
----
-
-For more information or support, please open an issue on GitHub.
+Licensed under the Apache License 2.0. See [LICENSE](LICENSE).
