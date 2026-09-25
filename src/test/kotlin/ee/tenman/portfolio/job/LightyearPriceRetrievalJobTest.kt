@@ -6,11 +6,13 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.lightyear.LightyearPriceService
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.pricing.LightyearPriceUpdateService
 import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -30,10 +32,13 @@ class LightyearPriceRetrievalJobTest {
   @Test
   fun `should preserve available prices before reporting a partial collection failure`() {
     val persisted = mutableListOf<String>()
-    val job = job(mapOf("VGLA:GER:EUR" to BigDecimal("4.38")), persisted)
+    val runs = mutableListOf<CollectionRunResult>()
+    val job = job(mapOf("VGLA:GER:EUR" to BigDecimal("4.38")), persisted, runs)
 
     expect { job.execute() }.toThrow<PriceRefreshException>()
     expect(persisted).toContainExactly("VGLA:GER:EUR")
+    expect(runs.single().persisted).toContainExactly("VGLA:GER:EUR")
+    expect(runs.single().failed).toContainExactly("WEBN:GER:EUR")
   }
 
   @Test
@@ -49,12 +54,13 @@ class LightyearPriceRetrievalJobTest {
   private fun job(
     prices: Map<String, BigDecimal>,
     persisted: MutableList<String> = mutableListOf(),
+    runs: MutableList<CollectionRunResult> = mutableListOf(),
   ): LightyearPriceRetrievalJob {
     val clock = Clock.fixed(Instant.parse("2026-09-25T13:30:00Z"), ZoneOffset.UTC)
     val service = mockk<LightyearPriceService>()
     val updates = mockk<LightyearPriceUpdateService>()
     val market = mockk<MarketPhaseDetectionService>()
-    every { service.fetchCurrentPrices() } returns prices
+    every { service.fetchCurrentPrices(any()) } returns prices
     every { market.isWeekendPhase() } returns false
     every { updates.processSymbol(any(), any(), any(), any()) } answers {
       persisted.add(firstArg())
@@ -68,6 +74,6 @@ class LightyearPriceRetrievalJobTest {
           LightyearScrapingProperties.EtfConfig("WEBN:GER:EUR", "webn-uuid"),
         ),
       )
-    return LightyearPriceRetrievalJob(mockk<JobExecutionService>(), service, updates, processor, clock, properties)
+    return LightyearPriceRetrievalJob(mockk<JobExecutionService>(), service, updates, processor, clock, properties, monitorForTests(runs))
   }
 }

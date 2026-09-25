@@ -35,6 +35,8 @@ class EtfHoldingPersistenceService(
     holdings: List<HoldingData>,
     reuseHints: Map<Int, Long> = emptyMap(),
   ): Map<String, EtfHolding> {
+    require(holdings.isNotEmpty()) { "Empty holdings for ETF $etfSymbol on $date" }
+    require(holdings.all { it.name.isNotBlank() }) { "Unnamed holding for ETF $etfSymbol on $date" }
     val etf = findOrCreateEtf(etfSymbol)
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
     val savedHoldings = mutableMapOf<String, EtfHolding>()
@@ -45,6 +47,7 @@ class EtfHoldingPersistenceService(
       savedHoldings[holdingData.name] = holding
       upsertPosition(etf, holding, date, holdingData)
     }
+    etfPositionRepository.deleteMissingHoldings(etf.id, date, claimedHoldingIds)
     log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
     return savedHoldings
   }

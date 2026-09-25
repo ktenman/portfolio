@@ -1,11 +1,14 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.lightyear.LightyearPriceService
+import ee.tenman.portfolio.model.CollectionRun
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
-import ee.tenman.portfolio.vanguard.VanguardHoldingsService
+import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
@@ -20,11 +23,12 @@ class LightyearDataFetchJob(
   private val etfHoldingService: EtfHoldingService,
   private val etfBreakdownService: ee.tenman.portfolio.service.etf.EtfBreakdownService,
   private val clock: Clock,
+  private val collectionMonitor: CollectionMonitorService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 15000, fixedDelay = Long.MAX_VALUE)
-  @Scheduled(cron = "0 50 23 * * ?")
+  @Scheduled(initialDelay = CollectionSchedules.HOLDINGS_STARTUP_SECONDS * 1000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(cron = CollectionSchedules.LIGHTYEAR_HOLDINGS_CRON, zone = CollectionSchedules.TIME_ZONE)
   fun runJob() {
     log.info("Running Lightyear data fetch job for ${properties.etfs.size} ETFs")
     val startTime = Instant.now(clock)
@@ -58,53 +62,44 @@ class LightyearDataFetchJob(
   private fun fetchAllEtfs(): String {
     val today = LocalDate.now(clock)
     val results = mutableListOf<String>()
-
-    properties.etfs.forEach { etfConfig ->
-      try {
-        val msg = processEtf(etfConfig, today)
-        results.add(msg)
-      } catch (e: Exception) {
-        val msg = "Failed to process ${etfConfig.symbol}: ${e.message}"
-        log.error(msg, e)
-        results.add(msg)
+    val symbols = properties.getHoldingsSymbols()
+    collectionMonitor.collect(CollectionKey.LIGHTYEAR_HOLDINGS, symbols) { run ->
+      symbols.forEach { symbol ->
+        run.attempted(symbol)
+        runCatching { processEtf(symbol, today, run) }
+          .onSuccess { results.add(it) }
+          .onFailure { e ->
+            run.failed(symbol, e)
+            val msg = "Failed to process $symbol: ${e.message}"
+            log.error(msg, e)
+            results.add(msg)
+          }
       }
     }
-
     return results.joinToString("\n")
   }
 
   private fun processEtf(
-    etfConfig: LightyearScrapingProperties.EtfConfig,
+    symbol: String,
     today: LocalDate,
+    run: CollectionRun,
   ): String {
-    if (etfConfig.symbol in VanguardHoldingsService.FUNDS) {
-      val msg = "Holdings for ${etfConfig.symbol} come from Vanguard, skipping"
-      log.info(msg)
-      return msg
-    }
-
-    if (etfHoldingService.hasHoldingsForDate(etfConfig.symbol, today)) {
-      val msg = "Holdings for ${etfConfig.symbol} already exist for $today, skipping"
-      log.info(msg)
-      return msg
-    }
-
-    log.info("Fetching holdings for ETF: ${etfConfig.symbol}")
-    val holdings = lightyearPriceService.fetchHoldingsAsDto(etfConfig.symbol)
-
+    log.info("Fetching holdings for ETF: $symbol")
+    val holdings = lightyearPriceService.fetchHoldingsAsDto(symbol)
     if (holdings.isEmpty()) {
-      val msg = "No holdings found for ${etfConfig.symbol}"
+      val msg = "No holdings found for $symbol"
       log.warn(msg)
+      run.failed(symbol, IllegalArgumentException(msg))
       return msg
     }
-
+    run.fetched(symbol)
     etfHoldingService.saveHoldings(
-      etfSymbol = etfConfig.symbol,
+      etfSymbol = symbol,
       date = today,
       holdings = holdings,
     )
-
-    val msg = "Successfully fetched and saved ${holdings.size} holdings for ${etfConfig.symbol}"
+    run.persisted(symbol)
+    val msg = "Successfully fetched and saved ${holdings.size} holdings for $symbol"
     log.info(msg)
     return msg
   }

@@ -39,6 +39,7 @@ dependencies {
   implementation(libs.jackson.module.kotlin)
 
   implementation(libs.spring.boot.starter.actuator)
+  implementation(libs.micrometer.registry.prometheus)
   implementation(libs.spring.boot.starter.aspectj)
   implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
