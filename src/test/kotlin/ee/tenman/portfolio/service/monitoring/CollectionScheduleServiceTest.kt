@@ -8,6 +8,8 @@ import ee.tenman.portfolio.model.CollectionSnapshot
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.context.ApplicationContext
 import java.time.Clock
 import java.time.Instant
@@ -130,6 +132,56 @@ class CollectionScheduleServiceTest {
         )
     every { clock.instant() } returns Instant.parse("2026-09-25T10:36:00Z")
     expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-26T02:30:00Z"))
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "2026-09-25T00:00:00Z, 2026-09-25T10:05:00Z, 2026-09-25T10:36:00Z, 2026-09-26T02:30:00Z",
+    "2026-09-25T11:00:00Z, 2026-09-25T10:05:00Z, 2026-09-25T11:05:00Z, 2026-09-26T02:30:00Z",
+    "2026-10-23T10:00:00Z, 2026-10-24T10:05:00Z, 2026-10-24T11:00:00Z, 2026-10-25T03:30:00Z",
+  )
+  fun `should wait for the next cron when all current items were added after the historical full success`(
+    started: String,
+    configured: String,
+    now: String,
+    deadline: String,
+  ) {
+    val clock = clock(started)
+    val service = service(clock)
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      initializedAt = Instant.parse("2026-09-19T00:00:00Z"),
+      expected = setOf("NEW:GER:EUR", "NEXT:GER:EUR"),
+      lastFullSuccess = Instant.parse("2026-09-20T02:05:00Z"),
+      itemSuccesses = mapOf("NEW:GER:EUR" to null, "NEXT:GER:EUR" to null),
+      itemInitializedAt =
+        mapOf(
+        "NEW:GER:EUR" to Instant.parse(configured),
+        "NEXT:GER:EUR" to Instant.parse(configured).plusSeconds(60),
+      ),
+        )
+    every { clock.instant() } returns Instant.parse(now)
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse(deadline))
+  }
+
+  @Test
+  fun `should retain an overdue later configured item when historical full success belongs to removed inventory`() {
+    val clock = clock("2026-09-25T11:00:00Z")
+    val service = service(clock)
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      initializedAt = Instant.parse("2026-09-19T00:00:00Z"),
+      expected = setOf("FAILED:GER:EUR", "NEW:GER:EUR"),
+      lastFullSuccess = Instant.parse("2026-09-20T02:05:00Z"),
+      itemSuccesses = mapOf("FAILED:GER:EUR" to null, "NEW:GER:EUR" to null),
+      itemInitializedAt =
+        mapOf(
+        "FAILED:GER:EUR" to Instant.parse("2026-09-23T10:05:00Z"),
+        "NEW:GER:EUR" to Instant.parse("2026-09-25T10:05:00Z"),
+      ),
+        )
+    every { clock.instant() } returns Instant.parse("2026-09-25T11:05:00Z")
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-24T02:30:00Z"))
   }
 
   @Test

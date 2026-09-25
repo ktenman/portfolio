@@ -76,6 +76,7 @@ class CollectionScheduleService(
 
   private fun dailyDeadline(snapshot: CollectionSnapshot): Instant {
     val success = snapshot.lastFullSuccess ?: return initialDeadline(snapshot)
+    if (configuredAt(snapshot).isAfter(success)) return initialDeadline(snapshot)
     val configured =
       snapshot.itemInitializedAt
       .filter { (symbol, _) -> snapshot.itemSuccesses[symbol] == null }
