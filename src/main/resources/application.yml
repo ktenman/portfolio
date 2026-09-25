@@ -32,6 +32,7 @@ spring:
     compose:
       enabled: true
       file: ./compose.yaml
+      lifecycle-management: start-only
   jackson:
     default-property-inclusion: non_null
   datasource:

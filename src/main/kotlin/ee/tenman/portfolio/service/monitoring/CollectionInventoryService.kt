@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.job.CsusHoldingsRetrievalJob
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
 import org.springframework.stereotype.Service
@@ -30,12 +31,8 @@ class CollectionInventoryService(
   private fun holdings(trading: Set<String>): Map<CollectionKey, Set<String>> =
     mapOf(
       CollectionKey.LIGHTYEAR_HOLDINGS to lightyear.getHoldingsSymbols(),
-      CollectionKey.TRADING212_HOLDINGS to
-        trading212.symbols
-        .map { it.symbol }
-        .toSet()
-        .intersect(trading),
-        CollectionKey.BLACKROCK_HOLDINGS to setOf("GB00B0ZDNB53:GBP"),
+      CollectionKey.TRADING212_HOLDINGS to trading212.symbols.map { it.symbol }.intersect(trading),
+      CollectionKey.BLACKROCK_HOLDINGS to setOf(CsusHoldingsRetrievalJob.AVIVA_SYMBOL),
       CollectionKey.VANGUARD_HOLDINGS to VanguardHoldingsService.FUNDS.keys,
     )
 }

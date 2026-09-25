@@ -4,11 +4,13 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.CollectionMonitoringProperties
 import ee.tenman.portfolio.domain.CollectionKey
+import ee.tenman.portfolio.dto.CollectionStatus
 import ee.tenman.portfolio.model.CollectionSnapshot
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.context.ApplicationContext
 import java.time.Clock
@@ -129,6 +131,83 @@ class CollectionMetricsServiceTest {
       .gauge()
       ?.value(),
         ).toEqual(1.0)
+  }
+
+  @Test
+  fun `should reinitialize only the collection whose configured instruments changed`() {
+    val fixture = fixture()
+    every { fixture.inventory.configured() } returns inventory(setOf("VGLA:GER:EUR", "ŽALG:VSE:EUR"))
+    fixture.metrics.refresh()
+    verify(exactly = 1) { fixture.state.initialize(any(), any()) }
+  }
+
+  @Test
+  fun `should report every collection as ok before any scheduled deadline passes`() {
+    val fixture = fixture()
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .map { it.status }
+      .toSet(),
+        ).toEqual(setOf(CollectionStatus.OK))
+  }
+
+  @Test
+  fun `should report an open job circuit breaker in the collection status`() {
+    val fixture = fixture()
+    fixture.metrics.refresh()
+    fixture.breakers.circuitBreaker("job-execution:LightyearPriceRetrievalJob").transitionToOpenState()
+    expect(
+      fixture.metrics
+      .collections()
+      .first()
+      .status,
+        ).toEqual(CollectionStatus.BREAKER_OPEN)
+  }
+
+  @Test
+  fun `should report a collection with failed items as a partial failure`() {
+    val fixture = fixture()
+    every { fixture.state.snapshots() } returns snapshots().map { if (it.key == CollectionKey.FT_HISTORY) it.copy(failed = 2) else it }
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .first { it.provider == "ft" }
+      .status,
+        ).toEqual(CollectionStatus.PARTIAL_FAILURE)
+  }
+
+  @Test
+  fun `should name the items not persisted since the last attempt`() {
+    val fixture = fixture()
+    val snapshot =
+      snapshots(setOf("ÄRI:TLN:EUR", "VGLA:GER:EUR"))
+      .first()
+      .copy(failed = 1, lastAttempt = NOW, itemSuccesses = mapOf("ÄRI:TLN:EUR" to NOW.minusSeconds(60), "VGLA:GER:EUR" to NOW))
+    every { fixture.inventory.configured() } returns inventory(snapshot.expected)
+    every { fixture.state.snapshots() } returns listOf(snapshot) + snapshots().drop(1)
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .first()
+      .failedItems,
+        ).toEqual(listOf("ÄRI:TLN:EUR"))
+  }
+
+  @Test
+  fun `should report an expected collection past its deadline as overdue`() {
+    val fixture = fixture()
+    fixture.metrics.refresh()
+    every { fixture.clock.instant() } returns NOW.plusSeconds(3 * 86400)
+    expect(
+      fixture.metrics
+      .collections()
+      .first()
+      .status,
+        ).toEqual(CollectionStatus.OVERDUE)
   }
 
   private fun fixture(): MetricsFixture {

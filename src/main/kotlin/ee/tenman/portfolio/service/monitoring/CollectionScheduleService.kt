@@ -19,8 +19,8 @@ class CollectionScheduleService(
   private val clock: Clock,
   private val properties: CollectionMonitoringProperties,
   @param:Value("\${scheduling.enabled:true}") private val enabled: Boolean,
-  @param:Value("\${scheduling.jobs.binance-interval:120000}") private val binanceInterval: Long,
-  @param:Value("\${scheduling.jobs.trading212-interval:60000}") private val trading212Interval: Long,
+  @param:Value(CollectionSchedules.BINANCE_PRICE_INTERVAL) private val binanceInterval: Long,
+  @param:Value(CollectionSchedules.TRADING212_PRICE_INTERVAL) private val trading212Interval: Long,
   context: ApplicationContext,
 ) {
   private val started = Instant.ofEpochMilli(context.startupDate)

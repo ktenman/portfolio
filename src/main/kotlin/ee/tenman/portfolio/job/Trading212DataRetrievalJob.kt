@@ -40,7 +40,7 @@ class Trading212DataRetrievalJob(
     )
   }
 
-  @Scheduled(fixedDelayString = "\${scheduling.jobs.trading212-interval:60000}")
+  @Scheduled(fixedDelayString = CollectionSchedules.TRADING212_PRICE_INTERVAL)
   fun runJob() {
     log.info("Running Trading212 price update job")
     jobExecutionService.executeJob(this)
