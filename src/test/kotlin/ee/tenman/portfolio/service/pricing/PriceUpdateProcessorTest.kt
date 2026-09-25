@@ -2,9 +2,11 @@ package ee.tenman.portfolio.service.pricing
 
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
@@ -32,6 +34,20 @@ class PriceUpdateProcessorTest {
 
   private val processor =
     PriceUpdateProcessor(marketPhaseDetectionService, clock, instrumentService, dailyPriceService, priceSnapshotService)
+
+  @Test
+  fun `should fail the refresh when no fetched prices can be persisted`() {
+    every { marketPhaseDetectionService.isWeekendPhase() } returns false
+
+    expect {
+      processor.processPriceUpdates(
+        platform = Platform.LIGHTYEAR,
+        log = log,
+        fetchPrices = { mapOf("VGLA:GER:EUR" to BigDecimal("4.38")) },
+        processSymbol = { _, _, _, _ -> ProcessResult.FAILED },
+      )
+    }.toThrow<IllegalStateException>()
+  }
 
   @Test
   fun `processPriceUpdates should process all symbols successfully on weekday`() {
@@ -77,21 +93,40 @@ class PriceUpdateProcessorTest {
   }
 
   @Test
-  fun `processPriceUpdates should warn on failures`() {
+  fun `should report persistence failures after processing the available prices`() {
     every { marketPhaseDetectionService.isWeekendPhase() } returns false
 
     val prices = mapOf("AAPL" to BigDecimal("150.00"), "INVALID" to BigDecimal("0.00"))
 
-    processor.processPriceUpdates(
-      platform = Platform.TRADING212,
-      log = log,
-      fetchPrices = { prices },
-      processSymbol = { symbol, _, _, _ ->
-        if (symbol == "INVALID") ProcessResult.FAILED else ProcessResult.SUCCESS_WITH_DAILY_PRICE
-      },
-    )
+    expect {
+      processor.processPriceUpdates(
+        platform = Platform.TRADING212,
+        log = log,
+        fetchPrices = { prices },
+        processSymbol = { symbol, _, _, _ ->
+          if (symbol == "INVALID") ProcessResult.FAILED else ProcessResult.SUCCESS_WITH_DAILY_PRICE
+        },
+      )
+    }.toThrow<IllegalStateException>()
+  }
 
-    verify { log.warn(match { it.contains("1 failed") }) }
+  @Test
+  fun `should continue persisting prices after a transaction throws`() {
+    every { marketPhaseDetectionService.isWeekendPhase() } returns false
+    val persisted = mutableListOf<String>()
+    expect {
+      processor.processPriceUpdates(
+        platform = Platform.LIGHTYEAR,
+        log = log,
+        fetchPrices = { mapOf("VGLA" to BigDecimal("4.38"), "WEBN" to BigDecimal("13.12")) },
+        processSymbol = { symbol, _, _, _ ->
+          if (symbol == "VGLA") error("Transaction commit failed")
+          persisted.add(symbol)
+          ProcessResult.SUCCESS_WITH_DAILY_PRICE
+        },
+      )
+    }.toThrow<PriceRefreshException>()
+    expect(persisted).toContainExactly("WEBN")
   }
 
   @Test
@@ -126,20 +161,23 @@ class PriceUpdateProcessorTest {
         "FAILED" to BigDecimal("300.00"),
       )
 
-    processor.processPriceUpdates(
-      platform = Platform.BINANCE,
-      log = log,
-      fetchPrices = { prices },
-      processSymbol = { symbol, _, _, _ ->
-        when (symbol) {
-          "SUCCESS_WITH_DAILY" -> ProcessResult.SUCCESS_WITH_DAILY_PRICE
-          "SUCCESS_WITHOUT_DAILY" -> ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
-          else -> ProcessResult.FAILED
-        }
-      },
-    )
+    val failure =
+      runCatching {
+        processor.processPriceUpdates(
+          platform = Platform.BINANCE,
+          log = log,
+          fetchPrices = { prices },
+          processSymbol = { symbol, _, _, _ ->
+            when (symbol) {
+              "SUCCESS_WITH_DAILY" -> ProcessResult.SUCCESS_WITH_DAILY_PRICE
+              "SUCCESS_WITHOUT_DAILY" -> ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
+              else -> ProcessResult.FAILED
+            }
+          },
+        )
+      }.exceptionOrNull()
 
-    verify { log.warn(match { it.contains("Updated current prices for 2/3 instruments") && it.contains("1 failed") }) }
+    expect(failure?.message).toEqual("BINANCE price refresh incomplete: requested=3, fetched=3, persisted=2, failed=1")
   }
 
   @Test

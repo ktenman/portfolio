@@ -197,6 +197,22 @@ class LightyearPriceServiceTest : LightyearPriceServiceTestBase() {
   }
 
   @Test
+  fun `should exclude a nonpositive price from the collected prices`() {
+    stubSymbols("VGLA:GER:EUR" to "vgla-uuid")
+    every { lightyearPriceClient.getPrice(any()) } returns createPriceResponse(BigDecimal.ZERO)
+
+    expect(service.fetchCurrentPrices()).toBeEmpty()
+  }
+
+  @Test
+  fun `should exclude prices with an unknown currency instead of treating them as euros`() {
+    stubSymbols("VGLA:GER:EUR" to "vgla-uuid")
+    every { lightyearPriceClient.getPrice(any()) } returns createPriceResponse(BigDecimal("4.38"), "UNKNOWN")
+
+    expect(service.fetchCurrentPrices()).toBeEmpty()
+  }
+
+  @Test
   fun `should convert non-eur price to eur using exchange rate`() {
     stubSymbols("GOOGL:NSQ:USD" to "googl-uuid")
     every { lightyearPriceClient.getPrice("/v1/market-data/googl-uuid/price") } returns createPriceResponse(BigDecimal("356.70"), "USD")

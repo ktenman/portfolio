@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.pricing
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
@@ -28,6 +29,7 @@ class PriceUpdateProcessor(
     log: Logger,
     fetchPrices: () -> Map<String, BigDecimal>,
     processSymbol: (String, BigDecimal, Boolean, LocalDate) -> ProcessResult,
+    expectedCount: Int? = null,
   ) {
     log.info("Starting ${platform.name} price update execution")
     val isWeekend = marketPhaseDetectionService.isWeekendPhase()
@@ -37,6 +39,7 @@ class PriceUpdateProcessor(
     }
 
     val prices = fetchPrices()
+    val requested = expectedCount ?: prices.size
     val today = LocalDate.now(clock)
 
     var updatedCount = 0
@@ -44,7 +47,11 @@ class PriceUpdateProcessor(
     var failedCount = 0
 
     prices.forEach { (symbol, price) ->
-      val result = processSymbol(symbol, price, isWeekend, today)
+      val result =
+        runCatching { processSymbol(symbol, price, isWeekend, today) }.getOrElse {
+          log.warn("Failed to persist $platform price for $symbol: ${it.message}")
+          ProcessResult.FAILED
+        }
       when (result) {
         ProcessResult.SUCCESS_WITH_DAILY_PRICE -> {
           updatedCount++
@@ -60,10 +67,13 @@ class PriceUpdateProcessor(
       "Updated current prices for $updatedCount/${prices.size} instruments" +
         if (!isWeekend) ", saved $dailyPricesSaved ${platform.name} daily prices" else ""
 
-    when {
-      failedCount > 0 -> log.warn("$successMessage, $failedCount failed")
-      else -> log.info("Successfully $successMessage")
+    if (updatedCount < requested || failedCount > 0) {
+      throw PriceRefreshException(
+        "$platform price refresh incomplete: requested=$requested, fetched=${prices.size}, " +
+          "persisted=$updatedCount, failed=${requested - updatedCount}",
+      )
     }
+    log.info("Successfully $successMessage")
   }
 
   fun processSymbolUpdate(

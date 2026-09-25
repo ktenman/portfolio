@@ -12,6 +12,8 @@ export interface CurlOptions {
 export interface CurlResult {
   stdout: string
   duration: number
+  statusCode: number
+  contentType: string
 }
 
 export interface RateLimitConfig {

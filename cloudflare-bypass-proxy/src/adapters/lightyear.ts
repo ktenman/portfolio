@@ -1,12 +1,12 @@
 import { Request, Response } from 'express'
 import { ServiceAdapter } from '../types'
-import { handleProxyRequest, validateParam, ResponseType } from '../utils/adapter-helper'
+import { validateParam } from '../utils/adapter-helper'
 import { sanitizeLogInput } from '../utils/log-sanitizer'
 import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
-import { execCurl } from '../utils/curl-executor'
+import { handleLightyearRequest, LightyearResponseError } from '../utils/lightyear-client'
 
-const LIGHTYEAR_PROXY_URL = 'https://lightyear.com/proxy'
+const LIGHTYEAR_PUBLIC_API_URL = 'https://lightyear.com/site-api/public'
 const LIGHTYEAR_BATCH_URL = 'https://api.lightyear.com/v1/instrument/batch'
 const CHROME_USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
@@ -16,20 +16,23 @@ async function fetchHandler(req: Request, res: Response): Promise<void> {
   if (!rawPath) return
 
   const path = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
-  logger.info(`Fetching data for path: ${sanitizeLogInput(path)}`)
+  logger.info(`Fetching data for path: ${sanitizeLogInput(path.split('?')[0])}`)
 
-  await handleProxyRequest(req, res, {
-    url: `${LIGHTYEAR_PROXY_URL}${path}`,
-    timeout: 10000,
-    maxBuffer: 1024 * 1024,
-    responseType: ResponseType.JSON,
-    headers: {
-      'user-agent': CHROME_USER_AGENT,
-      referer: 'https://lightyear.com/',
-      accept: '*/*',
-      'accept-language': 'en-US,en;q=0.9',
+  await handleLightyearRequest(
+    res,
+    {
+      url: `${LIGHTYEAR_PUBLIC_API_URL}${path}`,
+      timeout: 10000,
+      maxBuffer: 1024 * 1024,
+      headers: {
+        'user-agent': CHROME_USER_AGENT,
+        referer: 'https://lightyear.com/',
+        accept: '*/*',
+        'accept-language': 'en-US,en;q=0.9',
+      },
     },
-  })
+    data => res.json(data)
+  )
 }
 
 async function batchHandler(req: Request, res: Response): Promise<void> {
@@ -40,11 +43,11 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const startTime = Date.now()
   logger.info(`Fetching batch instrument data for ${instrumentIds.length} instruments`)
 
-  try {
-    const result = await execCurl({
+  await handleLightyearRequest(
+    res,
+    {
       url: LIGHTYEAR_BATCH_URL,
       method: 'POST',
       headers: {
@@ -58,24 +61,17 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
       body: JSON.stringify(instrumentIds),
       timeout: 10000,
       maxBuffer: 5 * 1024 * 1024,
-    })
-
-    const data: unknown = JSON.parse(result)
-    const duration = Date.now() - startTime
-    if (!Array.isArray(data)) {
-      logger.error(`Batch fetch returned non-array response after ${duration}ms`)
-      res.status(502).json({ error: 'Invalid response format from Lightyear API' })
-      return
+    },
+    (data, result) => {
+      if (!Array.isArray(data)) {
+        throw new LightyearResponseError('UPSTREAM_INVALID_PAYLOAD', 502, result)
+      }
+      logger.info(
+        `Batch fetch completed: ${data.length}/${instrumentIds.length} instruments returned in ${result.duration}ms`
+      )
+      res.json(data)
     }
-    logger.info(
-      `Batch fetch completed: ${data.length}/${instrumentIds.length} instruments returned in ${duration}ms`
-    )
-    res.json(data)
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.error(`Failed to fetch batch instrument data after ${duration}ms: ${error}`)
-    res.status(500).json({ error: 'Failed to fetch batch instrument data' })
-  }
+  )
 }
 
 export const lightyearAdapter: ServiceAdapter = {
@@ -125,10 +121,10 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
     `Looking up UUID for symbol: ${sanitizeLogInput(symbol)} (ticker: ${ticker}, exchange: ${targetExchange || 'any'}, currency: ${currency || 'any'})`
   )
 
-  let result: string
-  try {
-    const searchUrl = `${LIGHTYEAR_PROXY_URL}/v1/instrument/search?value=${encodeURIComponent(ticker)}`
-    result = await execCurl({
+  const searchUrl = `${LIGHTYEAR_PUBLIC_API_URL}/v1/instrument/search?value=${encodeURIComponent(ticker)}`
+  await handleLightyearRequest(
+    res,
+    {
       url: searchUrl,
       timeout: 10000,
       maxBuffer: 1024 * 1024,
@@ -138,56 +134,49 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
         'Accept-Language': 'en',
         Referer: 'https://lightyear.com/',
       },
-    })
-  } catch (error) {
-    logger.error(`Network error looking up UUID for ${sanitizeLogInput(symbol)}: ${error}`)
-    res.status(502).json({ error: 'Failed to connect to Lightyear API', symbol })
-    return
-  }
+    },
+    (payload, result) => {
+      const data = payload as SearchResult | null
+      if (!data || !Array.isArray(data.results)) {
+        throw new LightyearResponseError('UPSTREAM_INVALID_PAYLOAD', 502, result)
+      }
 
-  let data: SearchResult
-  try {
-    data = JSON.parse(result)
-  } catch (error) {
-    logger.error(`Failed to parse response for ${sanitizeLogInput(symbol)}: ${error}`)
-    res.status(502).json({ error: 'Invalid response from Lightyear API', symbol })
-    return
-  }
+      if (!data.results || data.results.length === 0) {
+        logger.warn(`No instruments found for symbol: ${sanitizeLogInput(symbol)}`)
+        res.status(404).json({ error: 'Instrument not found', symbol })
+        return
+      }
 
-  if (!data.results || data.results.length === 0) {
-    logger.warn(`No instruments found for symbol: ${sanitizeLogInput(symbol)}`)
-    res.status(404).json({ error: 'Instrument not found', symbol })
-    return
-  }
+      const tickerMatches = data.results.filter(
+        r => r.instrument?.symbol?.toUpperCase() === ticker.toUpperCase()
+      )
+      let match = tickerMatches[0]
+      if (tickerMatches.length > 1 && targetExchange) {
+        const exchangeMatch = tickerMatches.find(
+          r => r.instrument?.exchange?.toUpperCase() === targetExchange
+        )
+        if (exchangeMatch) match = exchangeMatch
+      }
+      if (tickerMatches.length > 1 && !match && currency) {
+        const currencyMatch = tickerMatches.find(
+          r => r.instrument?.currency?.toUpperCase() === currency
+        )
+        if (currencyMatch) match = currencyMatch
+      }
 
-  const tickerMatches = data.results.filter(
-    r => r.instrument?.symbol?.toUpperCase() === ticker.toUpperCase()
+      const instrument = match?.instrument
+      if (!instrument || !instrument.id) {
+        logger.warn(`No matching instrument found for symbol: ${sanitizeLogInput(symbol)}`)
+        res.status(404).json({ error: 'Matching instrument not found', symbol })
+        return
+      }
+
+      logger.info(
+        `Found UUID ${instrument.id} for symbol: ${sanitizeLogInput(symbol)} (exchange: ${instrument.exchange})`
+      )
+      res.json({ symbol, uuid: instrument.id })
+    }
   )
-  let match = tickerMatches[0]
-  if (tickerMatches.length > 1 && targetExchange) {
-    const exchangeMatch = tickerMatches.find(
-      r => r.instrument?.exchange?.toUpperCase() === targetExchange
-    )
-    if (exchangeMatch) match = exchangeMatch
-  }
-  if (tickerMatches.length > 1 && !match && currency) {
-    const currencyMatch = tickerMatches.find(
-      r => r.instrument?.currency?.toUpperCase() === currency
-    )
-    if (currencyMatch) match = currencyMatch
-  }
-
-  const instrument = match?.instrument
-  if (!instrument || !instrument.id) {
-    logger.warn(`No matching instrument found for symbol: ${sanitizeLogInput(symbol)}`)
-    res.status(404).json({ error: 'Matching instrument not found', symbol })
-    return
-  }
-
-  logger.info(
-    `Found UUID ${instrument.id} for symbol: ${sanitizeLogInput(symbol)} (exchange: ${instrument.exchange})`
-  )
-  res.json({ symbol, uuid: instrument.id })
 }
 
 export const lightyearLookupAdapter: ServiceAdapter = {
