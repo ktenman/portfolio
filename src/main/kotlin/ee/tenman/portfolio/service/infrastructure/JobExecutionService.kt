@@ -21,7 +21,7 @@ class JobExecutionService(
 
   fun executeJob(job: Job) {
     val jobName = job.getName()
-    val circuitBreaker = circuitBreakerRegistry.circuitBreaker("job-execution")
+    val circuitBreaker = circuitBreakerRegistry.circuitBreaker("job-execution:$jobName")
     val retry = retryRegistry.retry("job-execution")
     val startTime = Instant.now(clock)
 
