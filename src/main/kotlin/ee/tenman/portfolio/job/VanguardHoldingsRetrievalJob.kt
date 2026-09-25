@@ -1,14 +1,18 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.VanguardCountryUpdate
 import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.lightyear.LightyearPriceService
+import ee.tenman.portfolio.model.CollectionRun
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.service.etf.EtfHoldingCountryService
 import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
 import org.slf4j.LoggerFactory
@@ -28,10 +32,11 @@ class VanguardHoldingsRetrievalJob(
   private val etfPositionRepository: EtfPositionRepository,
   private val lightyearPriceService: LightyearPriceService,
   private val clock: Clock,
+  private val collectionMonitor: CollectionMonitorService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Scheduled(initialDelay = 60000, fixedDelay = Long.MAX_VALUE)
+  @Scheduled(initialDelay = CollectionSchedules.VANGUARD_HOLDINGS_STARTUP_SECONDS * 1000, fixedDelay = Long.MAX_VALUE)
   fun runStartupImport() {
     runCatching { jobExecutionService.executeJob(this) }
       .onFailure { log.error("Vanguard holdings startup import failed", it) }
@@ -39,25 +44,36 @@ class VanguardHoldingsRetrievalJob(
     jobExecutionService.executeJob(etfHoldingsClassificationJob)
   }
 
-  @Scheduled(cron = "0 30 2 * * *")
+  @Scheduled(cron = CollectionSchedules.VANGUARD_HOLDINGS_CRON, zone = CollectionSchedules.TIME_ZONE)
   fun runNightlyImport() {
     jobExecutionService.executeJob(this)
   }
 
   override fun execute() {
+    collectionMonitor.collect(CollectionKey.VANGUARD_HOLDINGS, VanguardHoldingsService.FUNDS.keys) { run ->
+      executeCollection(run)
+    }
+  }
+
+  private fun executeCollection(run: CollectionRun) {
     var changed = false
     var failure: Throwable? = null
     val industries = mutableListOf<VanguardIndustryUpdate>()
     val countries = mutableListOf<VanguardCountryUpdate>()
     VanguardHoldingsService.FUNDS.forEach { (symbol, portId) ->
+      run.attempted(symbol)
       runCatching {
         val snapshot = vanguardHoldingsService.fetchHoldings(portId)
+        require(snapshot.holdings.isNotEmpty()) { "Empty Vanguard holdings for $symbol" }
+        run.fetched(symbol)
         changed = save(symbol, snapshot) || changed
         val updates = etfHoldingService.resolveVanguardUpdates(snapshot)
         industries += updates.industries
         countries += updates.countries
         changed = deleteNewerSnapshots(symbol, snapshot.effectiveDate) || changed
+        run.persisted(symbol)
       }.onFailure { throwable ->
+        run.failed(symbol, throwable)
         log.error("Vanguard holdings import failed for $symbol", throwable)
         failure = failure ?: throwable
         changed = fallBack(symbol) || changed

@@ -1,13 +1,18 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
@@ -32,6 +37,7 @@ class FtDataRetrievalJobTest {
   private val priceSnapshotService = mockk<PriceSnapshotService>()
   private val taskScheduler = mockk<TaskScheduler>(relaxed = true)
   private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
+  private val collections = mutableListOf<CollectionRunResult>()
 
   private val job =
     FtDataRetrievalJob(
@@ -42,6 +48,7 @@ class FtDataRetrievalJobTest {
       priceSnapshotService,
       taskScheduler,
       clock,
+      monitorForTests(collections),
     )
 
   private lateinit var instrument: Instrument
@@ -87,6 +94,8 @@ class FtDataRetrievalJobTest {
     job.execute()
 
     verify(exactly = 1) { dataProcessingUtil.processDailyData(instrument, ftData, ProviderName.FT) }
+    expect(collections.single().failed).toContainExactly("AAPL")
+    expect(collections.single().persisted).toBeEmpty()
   }
 
   private fun testPriceData(close: BigDecimal): DailyPriceData =

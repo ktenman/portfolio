@@ -17,7 +17,7 @@ while true; do
     fi
   done
   if ${all_healthy}; then
-    echo "$(date): All services are healthy. Sending ping to ${HEALTHCHECK_URL}"
+    echo "$(date): All services are healthy. Sending heartbeat"
     if curl -fsS -m 10 --retry 5 -o /dev/null "${HEALTHCHECK_URL}"; then
       echo "$(date): Health check ping sent successfully"
     else

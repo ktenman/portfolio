@@ -63,6 +63,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_PROFILES_ACTIVE: default
+      MANAGEMENT_SERVER_PORT: 9090
       SPRING_FLYWAY_ENABLED: "true"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_BOT_ENABLED: true
@@ -93,7 +94,7 @@ services:
     restart: always
     mem_limit: 2048m
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9090/actuator/health || exit 1" ]
       interval: 8s
       timeout: 2s
       retries: 15
@@ -203,6 +204,60 @@ services:
     command: /usr/local/bin/healthcheck.sh
     restart: always
 
+  alertmanager:
+    image: prom/alertmanager:v0.34.1@sha256:e9733bafb1bdef9b00e25a21f8f99dc26a22224bf16641ad754d1649f4c3357a
+    profiles: [monitoring]
+    user: "0:0"
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./monitoring/secrets:/run/monitoring-secrets:ro
+      - alertmanager_data:/alertmanager
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    cap_add: [DAC_OVERRIDE]
+    mem_limit: 128m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9093/-/ready"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  prometheus:
+    image: prom/prometheus:v3.13.3@sha256:6976aa8a60fec930796ce5772b8d12da7a318a5daa8d40d69c5c7819a05eeed7
+    profiles: [monitoring]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=2GB
+      - --rules.alert.resend-delay=15s
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      alertmanager:
+        condition: service_started
+      backend:
+        condition: service_started
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    mem_limit: 512m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
 volumes:
   postgres_data:
   redis_data:
@@ -210,3 +265,5 @@ volumes:
   caddy_config:
   seaweedfs_data:
     name: portfolio_seaweedfs_data
+  prometheus_data:
+  alertmanager_data:

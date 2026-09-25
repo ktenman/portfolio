@@ -1,17 +1,20 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.VanguardHoldingUpdates
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.lightyear.LightyearPriceService
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.service.etf.EtfHoldingCountryService
 import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
 import io.mockk.every
@@ -41,6 +44,7 @@ class VanguardHoldingsRetrievalJobTest {
   private val etfPositionRepository: EtfPositionRepository = mockk()
   private val lightyearPriceService: LightyearPriceService = mockk()
   private val clock = Clock.fixed(Instant.parse("2026-09-23T00:15:00Z"), ZoneOffset.UTC)
+  private val collections = mutableListOf<CollectionRunResult>()
 
   private val job =
     VanguardHoldingsRetrievalJob(
@@ -54,6 +58,7 @@ class VanguardHoldingsRetrievalJobTest {
       etfPositionRepository = etfPositionRepository,
       lightyearPriceService = lightyearPriceService,
       clock = clock,
+      collectionMonitor = monitorForTests(collections),
     )
 
   @BeforeEach
@@ -214,6 +219,8 @@ class VanguardHoldingsRetrievalJobTest {
     stubFund(VXUS_PORT_ID, EFFECTIVE_DATE)
 
     expect { job.execute() }.toThrow<IllegalStateException>()
+    expect(collections.single().failed).toContain(VGLA)
+    expect(collections.single().persisted).toContain(VXUS)
   }
 
   @Test
