@@ -76,20 +76,30 @@ class CollectionScheduleService(
 
   private fun dailyDeadline(snapshot: CollectionSnapshot): Instant {
     val success = snapshot.lastFullSuccess ?: return initialDeadline(snapshot)
-    val next = requireNotNull(CRONS.getValue(snapshot.key).next(success.atZone(ZONE)))
     val configured =
       snapshot.itemInitializedAt
       .filter { (symbol, _) -> snapshot.itemSuccesses[symbol] == null }
       .values
         .minOrNull()
-      ?.plusSeconds(startup(snapshot.key))
-      ?.plus(properties.dailyGrace)
-    val scheduled = next.toInstant().plus(properties.dailyGrace)
+      ?.let { initialDeadline(snapshot, it) }
+    val scheduled = scheduledDeadline(snapshot.key, success)
     return configured?.let { minOf(it, scheduled) } ?: scheduled
   }
 
-  private fun initialDeadline(snapshot: CollectionSnapshot): Instant =
-    configuredAt(snapshot).plusSeconds(startup(snapshot.key)).plus(properties.dailyGrace)
+  private fun initialDeadline(
+    snapshot: CollectionSnapshot,
+    configured: Instant = configuredAt(snapshot),
+  ): Instant =
+    if (configured.isAfter(snapshot.initializedAt)) {
+      scheduledDeadline(snapshot.key, configured)
+    } else {
+      snapshot.initializedAt.plusSeconds(startup(snapshot.key)).plus(properties.dailyGrace)
+    }
+
+  private fun scheduledDeadline(
+    key: CollectionKey,
+    after: Instant,
+  ): Instant = requireNotNull(CRONS.getValue(key).next(after.atZone(ZONE))).toInstant().plus(properties.dailyGrace)
 
   private fun configuredAt(snapshot: CollectionSnapshot): Instant =
     maxOf(snapshot.initializedAt, snapshot.itemInitializedAt.values.minOrNull() ?: snapshot.initializedAt)

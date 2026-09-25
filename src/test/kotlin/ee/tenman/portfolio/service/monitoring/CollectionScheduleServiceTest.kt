@@ -103,12 +103,107 @@ class CollectionScheduleServiceTest {
   }
 
   @Test
-  fun `should start a first daily deadline when an empty provider receives its first instrument`() {
+  fun `should wait for the next cron when a long empty provider receives its first instrument`() {
     val clock = clock("2026-09-25T10:00:00Z")
     val service = service(clock)
     val configured = Instant.parse("2026-09-25T10:05:00Z")
+    every { clock.instant() } returns Instant.parse("2026-09-25T10:36:00Z")
     val snapshot = snapshot(CollectionKey.FT_HISTORY).copy(itemInitializedAt = mapOf("VGLA:GER:EUR" to configured))
-    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-25T10:35:10Z"))
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-26T02:30:00Z"))
+  }
+
+  @Test
+  fun `should wait for the next cron for an item added to a successful daily provider`() {
+    val clock = clock("2026-09-25T00:00:00Z")
+    val service = service(clock)
+    val success = Instant.parse("2026-09-25T02:05:00Z")
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      expected = setOf("VGLA:GER:EUR", "NEW:GER:EUR"),
+      lastFullSuccess = success,
+      itemSuccesses = mapOf("VGLA:GER:EUR" to success, "NEW:GER:EUR" to null),
+      itemInitializedAt =
+        mapOf(
+        "VGLA:GER:EUR" to Instant.parse("2026-09-24T00:00:00Z"),
+        "NEW:GER:EUR" to Instant.parse("2026-09-25T10:05:00Z"),
+      ),
+        )
+    every { clock.instant() } returns Instant.parse("2026-09-25T10:36:00Z")
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-26T02:30:00Z"))
+  }
+
+  @Test
+  fun `should preserve an overdue initial deadline when another daily item is added`() {
+    val clock = clock("2026-09-24T00:00:00Z")
+    val service = service(clock)
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      expected = setOf("VGLA:GER:EUR", "NEW:GER:EUR"),
+      itemSuccesses = mapOf("VGLA:GER:EUR" to null, "NEW:GER:EUR" to null),
+      itemInitializedAt =
+        mapOf(
+        "VGLA:GER:EUR" to Instant.parse("2026-09-24T00:00:00Z"),
+        "NEW:GER:EUR" to Instant.parse("2026-09-25T10:05:00Z"),
+      ),
+        )
+    every { clock.instant() } returns Instant.parse("2026-09-25T10:36:00Z")
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-24T00:30:10Z"))
+  }
+
+  @Test
+  fun `should preserve a missed cron deadline when another daily item is added`() {
+    val clock = clock("2026-09-24T00:00:00Z")
+    val service = service(clock)
+    val success = Instant.parse("2026-09-24T02:05:00Z")
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      expected = setOf("VGLA:GER:EUR", "NEW:GER:EUR"),
+      lastFullSuccess = success,
+      itemSuccesses = mapOf("VGLA:GER:EUR" to success, "NEW:GER:EUR" to null),
+      itemInitializedAt =
+        mapOf(
+        "VGLA:GER:EUR" to Instant.parse("2026-09-24T00:00:00Z"),
+        "NEW:GER:EUR" to Instant.parse("2026-09-25T10:05:00Z"),
+      ),
+        )
+    every { clock.instant() } returns Instant.parse("2026-09-25T10:36:00Z")
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-25T02:30:00Z"))
+  }
+
+  @Test
+  fun `should preserve the next cron deadline for a later configured daily item across restarts`() {
+    val clock = clock("2026-09-25T11:00:00Z")
+    val service = service(clock)
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      itemInitializedAt = mapOf("VGLA:GER:EUR" to Instant.parse("2026-09-25T10:05:00Z")),
+    )
+    every { clock.instant() } returns Instant.parse("2026-09-25T11:05:00Z")
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-26T02:30:00Z"))
+  }
+
+  @Test
+  fun `should preserve an overdue initial daily deadline across restarts`() {
+    val clock = clock("2026-09-25T11:00:00Z")
+    val service = service(clock)
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      itemInitializedAt = mapOf("VGLA:GER:EUR" to Instant.parse("2026-09-24T00:00:00Z")),
+    )
+    every { clock.instant() } returns Instant.parse("2026-09-25T11:05:00Z")
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-09-24T00:30:10Z"))
+  }
+
+  @Test
+  fun `should follow daylight saving for the first cron of a later configured daily item`() {
+    val clock = clock("2026-10-23T10:00:00Z")
+    val service = service(clock)
+    val snapshot =
+      snapshot(CollectionKey.FT_HISTORY).copy(
+      itemInitializedAt = mapOf("VGLA:GER:EUR" to Instant.parse("2026-10-24T10:05:00Z")),
+    )
+    every { clock.instant() } returns Instant.parse("2026-10-24T11:00:00Z")
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-10-25T03:30:00Z"))
   }
 
   @Test
