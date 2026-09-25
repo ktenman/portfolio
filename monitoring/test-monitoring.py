@@ -1,5 +1,7 @@
 import json
 import re
+import socket
+import struct
 import subprocess
 import tempfile
 import threading
@@ -38,6 +40,17 @@ def request(url, body=None):
     headers = {'Content-Type': 'application/json'} if data is not None else {}
     with urllib.request.urlopen(urllib.request.Request(url, data, headers), timeout=2) as response:
         return response.read()
+
+
+def wait_until_ready(base):
+    def ready():
+        try:
+            request(base + '/-/ready')
+            return True
+        except (urllib.error.URLError, ConnectionError, TimeoutError):
+            return False
+
+    wait_for(ready)
 
 
 class Receiver(BaseHTTPRequestHandler):
@@ -96,30 +109,90 @@ def alert(name, ends_after, provider=None, operation=None, environment='producti
     }
 
 
+def check_readiness_recovery():
+    listener = socket.socket()
+    listener.bind(('127.0.0.1', 0))
+    listener.listen(2)
+    listener.settimeout(3)
+    attempts = []
+
+    def serve():
+        for attempt in range(2):
+            try:
+                connection, _address = listener.accept()
+            except OSError:
+                return
+            with connection:
+                connection.recv(4096)
+                attempts.append(attempt)
+                if attempt == 0:
+                    connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
+                    continue
+                connection.sendall(b'HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK')
+
+    thread = threading.Thread(target=serve, daemon=True)
+    thread.start()
+    try:
+        wait_until_ready(f'http://127.0.0.1:{listener.getsockname()[1]}')
+    finally:
+        listener.close()
+        thread.join(timeout=4)
+    assert attempts == [0, 1]
+    print('Readiness retries a TCP reset and then accepts a healthy response')
+
+
 def start_alertmanager(directory, network):
     container = run(
-        'docker', 'run', '-d', '--rm', '--user', '0:0', '--read-only',
+        'docker', 'run', '-d', '--user', '0:0', '--read-only',
         '--tmpfs', '/tmp', '--network', network, '--network-alias', 'alertmanager',
         '--add-host', 'host.docker.internal:host-gateway',
         '-p', '127.0.0.1::9093', '-v', f'{directory}:/test',
         '--entrypoint', 'alertmanager', ALERTMANAGER,
         '--config.file=/test/alertmanager.yml', '--storage.path=/test/data',
     ).stdout.strip()
-    mapping = run('docker', 'port', container, '9093/tcp').stdout.strip()
-    port = int(re.search(r':(\d+)$', mapping).group(1))
-    base = f'http://127.0.0.1:{port}'
+    try:
+        mapping = run('docker', 'port', container, '9093/tcp').stdout.strip()
+        port = int(re.search(r':(\d+)$', mapping).group(1))
+        base = f'http://127.0.0.1:{port}'
+        wait_until_ready(base)
+        run('docker', 'exec', container, 'wget', '-q', '-O', '/dev/null',
+            'http://127.0.0.1:9093/-/ready')
+        return container, base
+    except Exception as failure:
+        logs = run('docker', 'logs', container, check=False)
+        stop_alertmanager(container, check=False)
+        raise AssertionError(f'Alertmanager startup failed: {failure}\n{logs.stdout}\n{logs.stderr}') from failure
 
-    def ready():
+
+def stop_alertmanager(container, check=True):
+    try:
+        run('docker', 'stop', container, check=check)
+    finally:
+        run('docker', 'rm', '-f', container, check=False)
+
+
+def check_failed_startup_logs():
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        directory.chmod(0o755)
+        (directory / 'alertmanager.yml').write_text('not_valid: true\n')
+        (directory / 'data').mkdir()
+        network = 'monitoring-failed-start-' + uuid.uuid4().hex[:12]
+        run('docker', 'network', 'create', network)
+        container = None
         try:
-            request(base + '/-/ready')
-            return True
-        except (urllib.error.URLError, TimeoutError):
-            return False
-
-    wait_for(ready)
-    run('docker', 'exec', container, 'wget', '-q', '-O', '/dev/null',
-        'http://127.0.0.1:9093/-/ready')
-    return container, base
+            try:
+                container, _base = start_alertmanager(directory, network)
+            except AssertionError as failure:
+                assert 'not_valid' in str(failure), str(failure)
+                assert not run('docker', 'ps', '-aq', '--filter', f'network={network}').stdout.strip()
+            else:
+                raise AssertionError('Invalid Alertmanager configuration started successfully')
+        finally:
+            if container:
+                stop_alertmanager(container, check=False)
+            run('docker', 'network', 'rm', network, check=False)
+    print('Failed Alertmanager startup reports logs and removes its container')
 
 
 def check_prometheus_loss(directory, network, heartbeat_count):
@@ -321,7 +394,7 @@ def check_delivery():
             restarted_incident = alert('CollectionDeadlineMissed', 60, 'trading212', 'prices')
             request(base + '/api/v2/alerts', [restarted_incident])
             wait_for(lambda: len(notifications('CollectionDeadlineMissed', 'firing', 'trading212')) == 1)
-            run('docker', 'stop', container)
+            stop_alertmanager(container)
             container, base = start_alertmanager(directory, network)
             request(base + '/api/v2/alerts', [restarted_incident])
             time.sleep(2)
@@ -349,7 +422,7 @@ def check_delivery():
             time.sleep(2)
             assert not notifications('CollectionInventoryUnavailable', 'firing')
             assert not notifications('CollectionMetricsIncomplete', 'firing')
-            run('docker', 'stop', container)
+            stop_alertmanager(container)
             (directory / 'alertmanager.yml').write_text(production_config)
             container, base = start_alertmanager(directory, network)
             batch_outage = alert('CollectionPricesUnavailable', 90, 'binance', 'prices', 'simultaneous')
@@ -363,7 +436,7 @@ def check_delivery():
             print('Mock Telegram and watchdog delivery, deduplication, and recovery passed')
     finally:
         if container:
-            run('docker', 'stop', container, check=False)
+            stop_alertmanager(container, check=False)
         if 'network' in locals():
             run('docker', 'network', 'rm', network, check=False)
         server.shutdown()
@@ -375,4 +448,6 @@ if __name__ == '__main__':
     check_compose()
     check_production_permissions()
     check_metric_coverage()
+    check_readiness_recovery()
+    check_failed_startup_logs()
     check_delivery()
