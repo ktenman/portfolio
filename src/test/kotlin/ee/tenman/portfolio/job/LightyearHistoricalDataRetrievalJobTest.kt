@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.common.DailyPriceDataImpl
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
@@ -7,9 +9,11 @@ import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.service.currency.CurrencyConversionService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -30,6 +34,7 @@ class LightyearHistoricalDataRetrievalJobTest {
   private val taskScheduler: TaskScheduler = mockk(relaxed = true)
   private val lightyearProperties: LightyearScrapingProperties = mockk()
   private val clock: Clock = Clock.fixed(Instant.parse("2026-07-17T10:00:00Z"), ZoneId.of("UTC"))
+  private val runs = mutableListOf<CollectionRunResult>()
 
   private val job =
     LightyearHistoricalDataRetrievalJob(
@@ -41,6 +46,7 @@ class LightyearHistoricalDataRetrievalJobTest {
       taskScheduler = taskScheduler,
       lightyearProperties = lightyearProperties,
       clock = clock,
+      collectionMonitor = monitorForTests(runs),
     )
 
   private val historicalData: Map<LocalDate, DailyPriceData> =
@@ -65,6 +71,7 @@ class LightyearHistoricalDataRetrievalJobTest {
 
     verify(exactly = 1) { currencyConversionService.convertDailyPricesToEur(historicalData, Currency.EUR) }
     verify(exactly = 1) { dataProcessingUtil.processDailyData(instrument, historicalData, ProviderName.LIGHTYEAR) }
+    expect(runs.single().persisted).toContainExactly("QDVE:GER:EUR")
   }
 
   @Test

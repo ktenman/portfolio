@@ -112,4 +112,16 @@ class LightyearScrapingPropertiesTest {
 
     expect(result).toBeEmpty()
   }
+
+  @Test
+  fun `getHoldingsSymbols should exclude Vanguard funds and unsupported instruments`() {
+    val properties =
+      LightyearScrapingProperties(
+        etfs =
+          listOf("VWCE:GER:EUR", "GOOGL:NSQ:USD", "WBIT:GER:EUR", "WTAI:MIL:EUR")
+            .map { LightyearScrapingProperties.EtfConfig(it, "uuid") },
+      )
+
+    expect(properties.getHoldingsSymbols()).toContainExactly("WTAI:MIL:EUR")
+  }
 }

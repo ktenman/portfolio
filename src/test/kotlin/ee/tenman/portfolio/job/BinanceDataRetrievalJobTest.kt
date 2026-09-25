@@ -1,15 +1,18 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotBackfillService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -31,6 +34,7 @@ class BinanceDataRetrievalJobTest {
   private val priceSnapshotBackfillService: PriceSnapshotBackfillService = mockk(relaxed = true)
   private val fixedInstant: Instant = Instant.parse("2025-12-23T10:00:00Z")
   private val clock: Clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
+  private val runs = mutableListOf<CollectionRunResult>()
 
   private val job =
     BinanceDataRetrievalJob(
@@ -42,6 +46,7 @@ class BinanceDataRetrievalJobTest {
       priceSnapshotService = priceSnapshotService,
       priceSnapshotBackfillService = priceSnapshotBackfillService,
       clock = clock,
+      collectionMonitor = monitorForTests(runs),
     )
 
   @Test
@@ -103,6 +108,8 @@ class BinanceDataRetrievalJobTest {
     verify(exactly = 1) { binanceService.getCurrentPrice("BTCEUR") }
     verify(exactly = 1) { binanceService.getCurrentPrice("BNBEUR") }
     verify(exactly = 1) { instrumentService.updateCurrentPrice(2L, BigDecimal("750.00")) }
+    expect(runs.single().persisted).toContainExactly("BNBEUR")
+    expect(runs.single().failed).toContainExactly("BTCEUR")
   }
 
   @Test

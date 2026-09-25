@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.trading212
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
@@ -67,6 +68,16 @@ class Trading212ServiceTest {
     val prices = service.fetchCurrentPrices(setOf("BNKE:PAR:EUR", "VUAA:GER:EUR"))
 
     expect(prices.size).toEqual(0)
+  }
+
+  @Test
+  fun `should report missing configured prices as invalid responses`() {
+    every { client.getPrices("BNKEp_EQ") } returns Trading212Response(data = emptyMap())
+    val errors = mutableListOf<String>()
+
+    service.fetchCurrentPrices(setOf("BNKE:PAR:EUR")) { symbol, _ -> errors += symbol }
+
+    expect(errors).toContainExactly("BNKE:PAR:EUR")
   }
 }
 

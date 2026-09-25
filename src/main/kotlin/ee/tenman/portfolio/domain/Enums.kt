@@ -29,6 +29,21 @@ enum class ProviderName {
   TRADING212,
 }
 
+enum class CollectionKey(
+  val provider: String,
+  val operation: String,
+) {
+  LIGHTYEAR_PRICES("lightyear", "prices"),
+  TRADING212_PRICES("trading212", "prices"),
+  BINANCE_PRICES("binance", "prices"),
+  FT_HISTORY("ft", "history"),
+  LIGHTYEAR_HISTORY("lightyear", "history"),
+  LIGHTYEAR_HOLDINGS("lightyear", "holdings"),
+  TRADING212_HOLDINGS("trading212", "holdings"),
+  BLACKROCK_HOLDINGS("blackrock", "holdings"),
+  VANGUARD_HOLDINGS("vanguard", "holdings"),
+}
+
 enum class BenchmarkIndex {
   SP500,
   VWCE,

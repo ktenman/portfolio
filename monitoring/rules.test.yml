@@ -1,0 +1,309 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 15s
+tests:
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="lightyear",operation="prices"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="trading212",operation="prices"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="binance",operation="prices"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="ft",operation="history"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="lightyear",operation="history"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="lightyear",operation="holdings"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="trading212",operation="holdings"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="blackrock",operation="holdings"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="vanguard",operation="holdings"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_expected_now{provider="lightyear",operation="prices"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_expected_items{provider="lightyear",operation="prices"}'
+        values: '2+0x40'
+      - series: 'portfolio_collection_window_start_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '0+0x40'
+      - series: 'portfolio_collection_last_persisted_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '0+0x40'
+      - series: 'portfolio_collection_consecutive_empty_runs{provider="lightyear",operation="prices"}'
+        values: '3+0x40'
+      - series: 'portfolio_collection_last_completion_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '10+0x40'
+      - series: 'portfolio_collection_failures_total{provider="lightyear",operation="prices",category="timeout",status="none"}'
+        values: '0+1x40'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: CollectionPricesUnavailable
+        exp_alerts:
+          - exp_labels:
+              provider: lightyear
+              operation: prices
+              severity: critical
+            exp_annotations:
+              summary: 'No prices persisted for lightyear prices (2 expected items)'
+              last_persistence: never
+              recent_failure: timeout/none
+      - eval_time: 5m
+        alertname: CollectionPricesUnavailable
+        exp_alerts:
+          - exp_labels:
+              provider: lightyear
+              operation: prices
+              severity: critical
+            exp_annotations:
+              summary: 'No prices persisted for lightyear prices (2 expected items)'
+              last_persistence: never
+              recent_failure: timeout/none
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '1+0x80'
+      - series: 'portfolio_collection_expected_now{provider="trading212",operation="prices"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_enabled{provider="trading212",operation="prices"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_window_start_timestamp_seconds{provider="trading212",operation="prices"}'
+        values: '0+0x80'
+      - series: 'portfolio_collection_item_last_success_timestamp_seconds{provider="trading212",operation="prices",instrument="A"}'
+        values: '0+0x48 720+0x38'
+      - series: 'portfolio_collection_item_initialized_timestamp_seconds{provider="trading212",operation="prices",instrument="A"}'
+        values: '0+0x80'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: CollectionItemsStale
+        exp_alerts: []
+      - eval_time: 11m
+        alertname: CollectionItemsStale
+        exp_alerts:
+          - exp_labels:
+              provider: trading212
+              operation: prices
+              severity: warning
+            exp_annotations:
+              summary: '1 stale items for trading212 prices'
+              last_success: unknown
+              recent_failure: unknown
+      - eval_time: 13m
+        alertname: CollectionItemsStale
+        exp_alerts:
+          - exp_labels:
+              provider: trading212
+              operation: prices
+              severity: warning
+            exp_annotations:
+              summary: '1 stale items for trading212 prices'
+              last_success: unknown
+              recent_failure: unknown
+      - eval_time: 16m
+        alertname: CollectionItemsStale
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '1+0x80'
+      - series: 'portfolio_collection_expected_now{provider="trading212",operation="prices"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_enabled{provider="trading212",operation="prices"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_window_start_timestamp_seconds{provider="trading212",operation="prices"}'
+        values: '0+0x80'
+      - series: 'portfolio_collection_item_last_success_timestamp_seconds{provider="trading212",operation="prices",instrument="new"}'
+        values: '0+0x80'
+      - series: 'portfolio_collection_item_initialized_timestamp_seconds{provider="trading212",operation="prices",instrument="new"}'
+        values: '300+0x80'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: CollectionItemsStale
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: CollectionItemsStale
+        exp_alerts:
+          - exp_labels:
+              provider: trading212
+              operation: prices
+              severity: warning
+            exp_annotations:
+              summary: '1 stale items for trading212 prices'
+              last_success: unknown
+              recent_failure: unknown
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '1+0x80'
+      - series: 'portfolio_collection_expected_now{provider="lightyear",operation="prices"}'
+        values: '0+0x80'
+      - series: 'portfolio_collection_expected_items{provider="lightyear",operation="prices"}'
+        values: '2+0x80'
+      - series: 'portfolio_collection_window_start_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '0+0x80'
+      - series: 'portfolio_collection_last_persisted_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '0+0x80'
+      - series: 'portfolio_collection_last_completion_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '0+0x80'
+      - series: 'portfolio_collection_consecutive_empty_runs{provider="lightyear",operation="prices"}'
+        values: '3+0x80'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: CollectionPricesUnavailable
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x130'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '1+0x130'
+      - series: 'portfolio_collection_expected_now{provider="ft",operation="history"}'
+        values: '1+0x130'
+      - series: 'portfolio_collection_expected_items{provider="ft",operation="history"}'
+        values: '2+0x130'
+      - series: 'portfolio_collection_window_start_timestamp_seconds{provider="ft",operation="history"}'
+        values: '10+0x130'
+      - series: 'portfolio_collection_deadline_timestamp_seconds{provider="ft",operation="history"}'
+        values: '600+0x130'
+      - series: 'portfolio_collection_last_full_success_timestamp_seconds{provider="ft",operation="history"}'
+        values: '0+0x130'
+      - series: 'portfolio_collection_last_attempt_timestamp_seconds{provider="ft",operation="history"}'
+        values: '60+0x130'
+      - series: 'portfolio_collection_last_completion_timestamp_seconds{provider="ft",operation="history"}'
+        values: '0+0x130'
+      - series: 'portfolio_collection_enabled{provider="ft",operation="history"}'
+        values: '1+0x130'
+      - series: 'portfolio_collection_item_last_success_timestamp_seconds{provider="ft",operation="history",instrument="daily"}'
+        values: '0+0x130'
+      - series: 'portfolio_collection_item_initialized_timestamp_seconds{provider="ft",operation="history",instrument="daily"}'
+        values: '0+0x130'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: CollectionDeadlineMissed
+        exp_alerts: []
+      - eval_time: 11m
+        alertname: CollectionDeadlineMissed
+        exp_alerts:
+          - exp_labels:
+              provider: ft
+              operation: history
+              severity: warning
+            exp_annotations:
+              summary: 'Collection deadline missed for ft history (2 expected items)'
+              last_success: never
+              recent_failure: unknown
+      - eval_time: 31m15s
+        alertname: CollectionRunHung
+        exp_alerts:
+          - exp_labels:
+              provider: ft
+              operation: history
+              severity: warning
+            exp_annotations:
+              summary: 'Collection run has not completed for ft history'
+              last_success: never
+              recent_failure: unknown
+      - eval_time: 11m
+        alertname: CollectionItemsStale
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '1+0x80'
+      - series: 'portfolio_collection_expected_now{provider="ft",operation="history"}'
+        values: '1+0x80'
+      - series: 'portfolio_collection_expected_items{provider="ft",operation="history"}'
+        values: '2+0x80'
+      - series: 'portfolio_collection_window_start_timestamp_seconds{provider="ft",operation="history"}'
+        values: '10+0x80'
+      - series: 'portfolio_collection_deadline_timestamp_seconds{provider="ft",operation="history"}'
+        values: '600+0x80'
+      - series: 'portfolio_collection_last_full_success_timestamp_seconds{provider="ft",operation="history"}'
+        values: '300+0x80'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: CollectionDeadlineMissed
+        exp_alerts:
+          - exp_labels:
+              provider: ft
+              operation: history
+              severity: warning
+            exp_annotations:
+              summary: 'Collection deadline missed for ft history (2 expected items)'
+              last_success: '1970-01-01 00:05:00 +0000 UTC'
+              recent_failure: unknown
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '1+0x40'
+      - series: 'portfolio_collection_expected_now{provider="lightyear",operation="prices"}'
+        values: '1+0x40'
+      - series: 'portfolio_collection_expected_items{provider="lightyear",operation="prices"}'
+        values: '2+0x40'
+      - series: 'portfolio_collection_window_start_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '100+0x40'
+      - series: 'portfolio_collection_last_persisted_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '0+0x40'
+      - series: 'portfolio_collection_last_completion_timestamp_seconds{provider="lightyear",operation="prices"}'
+        values: '50+0x40'
+      - series: 'portfolio_collection_consecutive_empty_runs{provider="lightyear",operation="prices"}'
+        values: '3+0x40'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: CollectionPricesUnavailable
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '0+0x20'
+      - series: 'portfolio_collection_inventory_ready'
+        values: '0+0x20'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: PortfolioBackendDown
+        exp_alerts:
+          - exp_labels:
+              job: portfolio-backend
+              severity: critical
+            exp_annotations:
+              summary: 'Portfolio backend metrics are unavailable'
+      - eval_time: 3m
+        alertname: CollectionInventoryUnavailable
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: 'Collection inventory is unavailable'
+      - eval_time: 3m
+        alertname: CollectionMetricsIncomplete
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: 'Collection metrics are incomplete'
+  - interval: 15s
+    input_series:
+      - series: 'up{job="portfolio-backend"}'
+        values: '1+0x20'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: CollectionInventoryUnavailable
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: 'Collection inventory is unavailable'

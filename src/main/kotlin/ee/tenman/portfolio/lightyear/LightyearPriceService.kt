@@ -32,7 +32,7 @@ class LightyearPriceService(
     private const val MAX_HOLDING_VALUE = 100.0
   }
 
-  fun fetchCurrentPrices(): Map<String, BigDecimal> {
+  fun fetchCurrentPrices(onFailure: (String, Throwable) -> Unit = { _, _ -> }): Map<String, BigDecimal> {
     val symbols = properties.getAllSymbols().distinct()
     log.info("Fetching prices for ${symbols.size} Lightyear instruments")
     val prices = mutableMapOf<String, BigDecimal>()
@@ -40,7 +40,10 @@ class LightyearPriceService(
     symbols.forEach { symbol ->
       runCatching { fetchPrice(symbol) }
         .onSuccess { prices[symbol] = it }
-        .onFailure { failures[symbol] = it }
+        .onFailure {
+          failures[symbol] = it
+          onFailure(symbol, it)
+        }
     }
     logPriceCollection(symbols.size, prices.size, failures)
     return prices

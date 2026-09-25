@@ -1,0 +1,137 @@
+groups:
+  - name: portfolio-collection
+    interval: 15s
+    rules:
+      - record: portfolio:collection_operation_metrics_missing
+        expr: |
+          count(
+            (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_enabled)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_expected_now)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_expected_items)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_window_start_timestamp_seconds)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_deadline_timestamp_seconds)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_attempt_timestamp_seconds)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_completion_timestamp_seconds)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_persisted_timestamp_seconds)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_full_success_timestamp_seconds)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_run_attempted_items)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_run_fetched_items)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_run_persisted_items)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_run_failed_items)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_consecutive_empty_runs)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_run_duration_seconds)
+            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_circuit_breaker_state)
+          ) or vector(0)
+      - record: portfolio:collection_item_metrics_missing
+        expr: |
+          count(
+            (
+              portfolio_collection_expected_items > on(provider, operation) (
+                count by(provider, operation) (portfolio_collection_item_last_success_timestamp_seconds)
+                or on(provider, operation) (portfolio_collection_expected_items * 0)
+              )
+            )
+            or (
+              portfolio_collection_expected_items > on(provider, operation) (
+                count by(provider, operation) (portfolio_collection_item_initialized_timestamp_seconds)
+                or on(provider, operation) (portfolio_collection_expected_items * 0)
+              )
+            )
+          ) or vector(0)
+      - alert: CollectionPricesUnavailable
+        expr: |
+          portfolio_collection_expected_items{operation="prices"} > 0
+            and on(provider, operation) (portfolio_collection_expected_now == 1)
+            and on(provider, operation) (
+              (portfolio_collection_consecutive_empty_runs >= 3
+                and on(provider, operation) (portfolio_collection_last_completion_timestamp_seconds >= portfolio_collection_window_start_timestamp_seconds))
+              or (time() - (
+                (portfolio_collection_last_persisted_timestamp_seconds > portfolio_collection_window_start_timestamp_seconds)
+                or portfolio_collection_window_start_timestamp_seconds
+              ) >= 300)
+            )
+            and on() (portfolio_collection_inventory_ready == 1)
+            and on() (up{job="portfolio-backend"} == 1)
+        labels:
+          severity: critical
+        annotations:
+          summary: 'No prices persisted for {{ $labels.provider }} {{ $labels.operation }} ({{ printf "%.0f" $value }} expected items)'
+          last_persistence: '{{ with query (printf "portfolio_collection_last_persisted_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+        keep_firing_for: 2m
+      - alert: CollectionItemsStale
+        expr: |
+          count by (provider, operation) (
+            (time() - portfolio_collection_item_last_success_timestamp_seconds{operation="prices"} > 600)
+              and on(provider, operation) (time() - portfolio_collection_window_start_timestamp_seconds > 600)
+              and on(provider, operation, instrument) (time() - portfolio_collection_item_initialized_timestamp_seconds > 600)
+          ) > 0
+            and on(provider, operation) (portfolio_collection_expected_now == 1)
+            and on(provider, operation) (portfolio_collection_enabled == 1)
+            and on() (portfolio_collection_inventory_ready == 1)
+            and on() (up{job="portfolio-backend"} == 1)
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ printf "%.0f" $value }} stale items for {{ $labels.provider }} {{ $labels.operation }}'
+          last_success: '{{ with query (printf "portfolio_collection_last_full_success_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+        keep_firing_for: 2m
+      - alert: CollectionDeadlineMissed
+        expr: |
+          portfolio_collection_expected_items > 0
+            and on(provider, operation) (portfolio_collection_expected_now == 1)
+            and on(provider, operation) (time() > portfolio_collection_deadline_timestamp_seconds)
+            and on() (portfolio_collection_inventory_ready == 1)
+            and on() (up{job="portfolio-backend"} == 1)
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Collection deadline missed for {{ $labels.provider }} {{ $labels.operation }} ({{ printf "%.0f" $value }} expected items)'
+          last_success: '{{ with query (printf "portfolio_collection_last_full_success_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+        keep_firing_for: 2m
+      - alert: CollectionRunHung
+        expr: |
+          portfolio_collection_last_attempt_timestamp_seconds > portfolio_collection_last_completion_timestamp_seconds
+            and on(provider, operation) (time() - portfolio_collection_last_attempt_timestamp_seconds > 1800)
+            and on(provider, operation) (portfolio_collection_expected_now == 1)
+            and on() (portfolio_collection_inventory_ready == 1)
+            and on() (up{job="portfolio-backend"} == 1)
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Collection run has not completed for {{ $labels.provider }} {{ $labels.operation }}'
+          last_success: '{{ with query (printf "portfolio_collection_last_full_success_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+        keep_firing_for: 2m
+      - alert: CollectionInventoryUnavailable
+        expr: portfolio_collection_inventory_ready != 1 or absent(portfolio_collection_inventory_ready)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Collection inventory is unavailable'
+      - alert: CollectionMetricsIncomplete
+        expr: |
+          (count(portfolio_collection_operation_info) or vector(0)) != 9
+            or portfolio:collection_operation_metrics_missing > 0
+            or portfolio:collection_item_metrics_missing > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Collection metrics are incomplete'
+      - alert: PortfolioBackendDown
+        expr: up{job="portfolio-backend"} == 0 or absent(up{job="portfolio-backend"})
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Portfolio backend metrics are unavailable'
+      - alert: MonitoringWatchdog
+        expr: vector(1)
+        labels:
+          severity: watchdog
+        annotations:
+          summary: 'Monitoring heartbeat'

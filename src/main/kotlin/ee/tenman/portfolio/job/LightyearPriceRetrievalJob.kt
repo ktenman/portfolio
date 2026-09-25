@@ -1,9 +1,12 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.lightyear.LightyearPriceService
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import ee.tenman.portfolio.service.pricing.LightyearPriceUpdateService
 import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import jakarta.annotation.PostConstruct
@@ -23,6 +26,7 @@ class LightyearPriceRetrievalJob(
   private val priceUpdateProcessor: PriceUpdateProcessor,
   private val clock: Clock,
   private val properties: LightyearScrapingProperties,
+  private val collectionMonitor: CollectionMonitorService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
   private val estonianZone = ZoneId.of("Europe/Tallinn")
@@ -34,7 +38,7 @@ class LightyearPriceRetrievalJob(
     log.info("LightyearPriceRetrievalJob initialized. Will start polling after 4 minutes.")
   }
 
-  @Scheduled(cron = "0/30 * 6-23 * * MON-FRI", zone = "Europe/Tallinn")
+  @Scheduled(cron = CollectionSchedules.LIGHTYEAR_PRICE_CRON, zone = CollectionSchedules.TIME_ZONE)
   fun runJob() {
     if (!shouldRun()) {
       return
@@ -52,7 +56,7 @@ class LightyearPriceRetrievalJob(
       .between(startupTime, now)
       .toMinutes()
 
-    if (minutesSinceStartup < 4) {
+    if (minutesSinceStartup < CollectionSchedules.LIGHTYEAR_PRICE_STARTUP_SECONDS / 60) {
       log.debug("Skipping job execution. Only $minutesSinceStartup minutes since startup. Waiting for 4 minutes.")
       return false
     }
@@ -68,12 +72,16 @@ class LightyearPriceRetrievalJob(
   }
 
   override fun execute() {
-    priceUpdateProcessor.processPriceUpdates(
-      platform = Platform.LIGHTYEAR,
-      log = log,
-      fetchPrices = { lightyearPriceService.fetchCurrentPrices() },
-      processSymbol = lightyearPriceUpdateService::processSymbol,
-      expectedCount = properties.getAllSymbols().distinct().size,
-    )
+    val symbols = properties.getAllSymbols().toSet()
+    collectionMonitor.collect(CollectionKey.LIGHTYEAR_PRICES, symbols) { run ->
+      priceUpdateProcessor.processPriceUpdates(
+        platform = Platform.LIGHTYEAR,
+        log = log,
+        fetchPrices = { lightyearPriceService.fetchCurrentPrices(run::failed) },
+        processSymbol = lightyearPriceUpdateService::processSymbol,
+        expectedSymbols = symbols,
+        run = run,
+      )
+    }
   }
 }

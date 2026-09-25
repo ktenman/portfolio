@@ -19,6 +19,7 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -85,6 +86,7 @@ class Trading212HoldingsRetrievalJobIT {
         etfBreakdownService = etfBreakdownService,
         instrumentRepository = instrumentRepository,
         clock = clock,
+        collectionMonitor = monitorForTests(),
       )
     instrumentRepository.save(
       Instrument(

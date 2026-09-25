@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.vanguard.VanguardHoldingsService
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Configuration
 
@@ -17,6 +18,9 @@ data class LightyearScrapingProperties(
     etfs
       .map { it.symbol }
       .filter { it.isNotBlank() }
+
+  fun getHoldingsSymbols(): Set<String> =
+    getAllSymbols().toSet() - VanguardHoldingsService.FUNDS.keys - setOf("GOOGL:NSQ:USD", "WBIT:GER:EUR")
 
   fun getAllInstruments(): Map<String, String> =
     etfs

@@ -1,0 +1,39 @@
+global:
+  resolve_timeout: 1m
+route:
+  receiver: telegram
+  group_by: [environment, provider, operation]
+  group_wait: 30s
+  group_interval: 1m
+  repeat_interval: 1h
+  routes:
+    - receiver: watchdog
+      matchers:
+        - alertname="MonitoringWatchdog"
+      group_by: [environment]
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 1m
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token_file: /run/monitoring-secrets/bot_token
+        chat_id_file: /run/monitoring-secrets/chat_id
+        send_resolved: true
+        parse_mode: ''
+        message: '{{ range .Alerts }}{{ .Labels.environment }} {{ .Labels.severity }} {{ .Status }} {{ .Labels.alertname }} {{ .Labels.provider }} {{ .Labels.operation }}: {{ .Annotations.summary }}{{ if .Annotations.last_persistence }} Last persisted: {{ .Annotations.last_persistence }}.{{ end }}{{ if .Annotations.last_success }} Last full success: {{ .Annotations.last_success }}.{{ end }}{{ if .Annotations.recent_failure }} Recent failure: {{ .Annotations.recent_failure }}.{{ end }} Details: https://github.com/ktenman/portfolio/issues/1936{{ end }}'
+  - name: watchdog
+    webhook_configs:
+      - url_file: /run/monitoring-secrets/heartbeat_url
+        send_resolved: false
+inhibit_rules:
+  - source_matchers:
+      - alertname="CollectionPricesUnavailable"
+    target_matchers:
+      - alertname=~"CollectionItemsStale|CollectionDeadlineMissed"
+    equal: [environment, provider, operation]
+  - source_matchers:
+      - alertname="PortfolioBackendDown"
+    target_matchers:
+      - alertname=~"CollectionPricesUnavailable|CollectionItemsStale|CollectionDeadlineMissed|CollectionRunHung|CollectionInventoryUnavailable|CollectionMetricsIncomplete"
+    equal: [environment]
