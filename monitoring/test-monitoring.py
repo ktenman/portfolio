@@ -262,6 +262,7 @@ def check_metric_coverage():
                 + fixture(expected_item=True, item_metrics=True, missing_item_initialization=True)
                 + fixture(expected_item=True, item_metrics=True))
     with tempfile.TemporaryDirectory() as temporary:
+        Path(temporary).chmod(0o755)
         (Path(temporary) / 'coverage.test.yml').write_text(document)
         run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/prometheus:ro',
             '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
@@ -279,6 +280,7 @@ def check_delivery():
     try:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
+            directory.chmod(0o755)
             production_config = (ROOT / 'alertmanager.yml').read_text()
             production_config = production_config.replace('        chat_id_file:',
                                                           f'        api_url: http://host.docker.internal:{port}\n        chat_id_file:')
