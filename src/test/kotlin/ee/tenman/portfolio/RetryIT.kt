@@ -12,6 +12,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.okJson
+import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.serviceUnavailable
 import com.github.tomakehurst.wiremock.client.WireMock.status
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
@@ -31,6 +33,8 @@ import feign.FeignException
 import feign.RetryableException
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -86,6 +90,25 @@ class RetryIT {
     stubFailingOnce({ lightyear(chart("5y")) }, okJson(CHART))
     expect(lightyearHistoricalPricesService.fetchHistoricalPrices(LIGHTYEAR_UUID).keys).toContainExactly(LocalDate.of(2026, 9, 21))
     verify(2, lightyearRequests(chart("5y")))
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = [401, 404, 429])
+  fun `should not retry lightyear holdings after a client error`(code: Int) {
+    lightyearUuidCacheService.cacheUuid("VXUS:XNAS:USD", LIGHTYEAR_UUID)
+    stubFor(lightyear(HOLDINGS).willReturn(status(code)))
+    expect { lightyearPriceService.fetchHoldingsAsDto("VXUS:XNAS:USD") }.toThrow<FeignException.FeignClientException>()
+    verify(1, lightyearRequests(HOLDINGS))
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = [401, 404, 429])
+  fun `should not retry lightyear instrument batches after a client error`(code: Int) {
+    lightyearUuidCacheService.cacheUuid("VXUS:XNAS:USD", LIGHTYEAR_UUID)
+    stubFor(lightyear(HOLDINGS).willReturn(okJson("""[{"name":"Nestlé SA","value":2.5,"instrumentId":"nestle"}]""")))
+    stubFor(post(urlPathEqualTo("/lightyear/batch")).willReturn(status(code)))
+    expect(lightyearPriceService.fetchHoldingsAsDto("VXUS:XNAS:USD").map { it.name }).toContainExactly("Nestlé SA")
+    verify(1, postRequestedFor(urlPathEqualTo("/lightyear/batch")))
   }
 
   @Test

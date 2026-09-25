@@ -33,34 +33,47 @@ class LightyearPriceService(
   }
 
   fun fetchCurrentPrices(): Map<String, BigDecimal> {
-    val symbols = properties.getAllSymbols()
+    val symbols = properties.getAllSymbols().distinct()
     log.info("Fetching prices for ${symbols.size} Lightyear instruments")
     val prices = mutableMapOf<String, BigDecimal>()
+    val failures = mutableMapOf<String, Throwable>()
     symbols.forEach { symbol ->
-      val uuid = resolveUuid(symbol)
-      if (uuid == null) {
-        log.warn("No UUID found for symbol: $symbol")
-        return@forEach
-      }
-      runCatching {
-        val path = "/v1/market-data/$uuid/price"
-        val response = lightyearPriceClient.getPrice(path)
-        val priceInEur = toEur(response.price, response.currency)
-        prices[symbol] = priceInEur
-        log.debug("Fetched price for $symbol: $priceInEur (${response.price} ${response.currency})")
-      }.onFailure { e ->
-        log.warn("Failed to fetch price for symbol: $symbol", e)
-      }
+      runCatching { fetchPrice(symbol) }
+        .onSuccess { prices[symbol] = it }
+        .onFailure { failures[symbol] = it }
     }
-    log.info("Successfully fetched prices for ${prices.size}/${symbols.size} instruments")
+    logPriceCollection(symbols.size, prices.size, failures)
     return prices
+  }
+
+  private fun fetchPrice(symbol: String): BigDecimal {
+    val uuid = checkNotNull(resolveUuid(symbol)) { "No UUID found for symbol: $symbol" }
+    val response = lightyearPriceClient.getPrice("/v1/market-data/$uuid/price")
+    require(response.price > BigDecimal.ZERO) { "Nonpositive price for $symbol: ${response.price}" }
+    val price = toEur(response.price, response.currency)
+    require(price > BigDecimal.ZERO) { "Nonpositive converted price for $symbol: $price" }
+    return price
+  }
+
+  private fun logPriceCollection(
+    requested: Int,
+    fetched: Int,
+    failures: Map<String, Throwable>,
+  ) {
+    val first = failures.entries.firstOrNull()
+    if (first == null) {
+      log.info("Fetched $fetched/$requested Lightyear prices")
+      return
+    }
+    val reason = (first.value as? FeignException)?.let { "HTTP ${it.status()}" } ?: first.value.javaClass.simpleName
+    log.warn("Fetched $fetched/$requested Lightyear prices, failed symbols=${failures.keys}, first failure=${first.key}: $reason")
   }
 
   private fun toEur(
     price: BigDecimal,
     currencyCode: String,
   ): BigDecimal {
-    val currency = Currency.fromCodeOrNull(currencyCode) ?: Currency.EUR
+    val currency = requireNotNull(Currency.fromCodeOrNull(currencyCode)) { "Unknown price currency: $currencyCode" }
     if (currency == Currency.EUR) return price
     return currencyConversionService.convertToEur(price, currency, LocalDate.now(clock))
   }
@@ -126,6 +139,10 @@ class LightyearPriceService(
         log.info("Fetched batch $batchNumber/$totalBatches (${instruments.size} instruments)")
         return instruments
       }.onFailure { e ->
+        if (e is FeignException && e.status() in 400..499) {
+          log.warn("Batch $batchNumber/$totalBatches rejected with HTTP ${e.status()}")
+          return null
+        }
         val retriesLeft = maxRetries - attempt - 1
         if (retriesLeft > 0) {
           log.warn("Batch $batchNumber/$totalBatches failed (attempt ${attempt + 1}), retrying: ${e.message}")

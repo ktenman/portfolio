@@ -1,34 +1,37 @@
-import { executeCurl } from '../curl-executor'
+import { execCurl, executeCurl } from '../curl-executor'
 
 const mockExecFile = jest.fn()
 
 jest.mock('child_process', () => ({
-  execFile: (...args: any[]) => mockExecFile(...args),
+  execFile: (...args: unknown[]) => mockExecFile(...args),
 }))
 
 jest.mock('util', () => ({
   ...jest.requireActual('util'),
-  promisify: (fn: any) => {
-    return jest.fn((...args) => {
-      return new Promise((resolve, reject) => {
-        fn(...args, (error: Error | null, result: any) => {
+  promisify:
+    (fn: (...args: unknown[]) => void) =>
+    (...args: unknown[]) =>
+      new Promise((resolve, reject) => {
+        fn(...args, (error: Error | null, result: unknown) => {
           if (error) reject(error)
           else resolve(result)
         })
-      })
-    })
-  },
+      }),
 }))
+
+function respond(stdout: string): void {
+  mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
+    callback(null, { stdout, stderr: '' })
+  })
+}
 
 describe('Curl Executor', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.resetAllMocks()
   })
 
-  it('should execute curl with correct arguments', async () => {
-    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
-      callback(null, { stdout: '{"result": "success"}', stderr: '' })
-    })
+  it('should separate the response body from HTTP status and content type', async () => {
+    respond('{"result":"success"}\n200\napplication/json; charset=utf-8')
 
     const result = await executeCurl({
       url: 'https://example.com/api',
@@ -36,83 +39,121 @@ describe('Curl Executor', () => {
       maxBuffer: 512 * 1024,
     })
 
-    expect(result.stdout).toBe('{"result": "success"}')
+    expect(result).toEqual({
+      stdout: '{"result":"success"}',
+      duration: expect.any(Number),
+      statusCode: 200,
+      contentType: 'application/json; charset=utf-8',
+    })
     expect(result.duration).toBeGreaterThanOrEqual(0)
     expect(mockExecFile).toHaveBeenCalledWith(
       expect.any(String),
-      ['-s', 'https://example.com/api'],
-      {
-        timeout: 5000,
-        maxBuffer: 512 * 1024,
-      },
+      ['-s', '--write-out', '\n%{http_code}\n%{content_type}', 'https://example.com/api'],
+      { timeout: 5000, maxBuffer: 512 * 1024 },
       expect.any(Function)
     )
   })
 
-  it('should include headers when provided', async () => {
-    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
-      callback(null, { stdout: 'response', stderr: '' })
+  it('should preserve the status and content type of an HTTP error', async () => {
+    respond('<!DOCTYPE html><html>Not found</html>\n404\ntext/html; charset=utf-8')
+
+    const result = await executeCurl({ url: 'https://example.com/missing' })
+
+    expect(result).toEqual({
+      stdout: '<!DOCTYPE html><html>Not found</html>',
+      duration: expect.any(Number),
+      statusCode: 404,
+      contentType: 'text/html; charset=utf-8',
     })
+  })
+
+  it('should preserve trailing newlines in the response body', async () => {
+    respond('first\n200\napplication/json\nlast\n\n\n200\ntext/plain')
+
+    const result = await executeCurl({ url: 'https://example.com' })
+
+    expect(result.stdout).toBe('first\n200\napplication/json\nlast\n\n')
+  })
+
+  it('should retain an empty response and missing content type', async () => {
+    respond('\n204\n')
+
+    expect(await executeCurl({ url: 'https://example.com' })).toEqual({
+      stdout: '',
+      duration: expect.any(Number),
+      statusCode: 204,
+      contentType: '',
+    })
+  })
+
+  it('should keep the body-only wrapper compatible with existing consumers', async () => {
+    respond('{"price":42}\n200\napplication/json')
+
+    expect(await execCurl({ url: 'https://example.com' })).toBe('{"price":42}')
+  })
+
+  it('should pass POST data and headers without shell interpolation', async () => {
+    respond('[]\n200\napplication/json')
 
     await executeCurl({
       url: 'https://example.com',
-      headers: {
-        'user-agent': 'test-agent',
-        accept: 'application/json',
-      },
+      method: 'post',
+      body: '["instrument"]',
+      headers: { 'Content-Type': 'application/json', accept: 'application/json' },
     })
 
     expect(mockExecFile).toHaveBeenCalledWith(
       expect.any(String),
       [
         '-s',
+        '--write-out',
+        '\n%{http_code}\n%{content_type}',
+        '-X',
+        'POST',
         '-H',
-        'user-agent: test-agent',
+        'Content-Type: application/json',
         '-H',
         'accept: application/json',
+        '-d',
+        '["instrument"]',
         'https://example.com',
       ],
-      expect.any(Object),
+      { timeout: 10000, maxBuffer: 1024 * 1024 },
       expect.any(Function)
     )
   })
 
-  it('should use default timeout and maxBuffer when not specified', async () => {
-    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
-      callback(null, { stdout: 'data', stderr: '' })
-    })
+  it.each([
+    ['curl timeout', { code: 28 }, true],
+    ['node timeout', { code: null, killed: true, signal: 'SIGTERM' }, true],
+    ['socket timeout', { code: 'ETIMEDOUT' }, true],
+    ['DNS failure', { code: 6 }, false],
+    ['buffer overflow', { code: 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER', killed: true }, false],
+  ])(
+    'should classify %s without exposing the command or response',
+    async (_name, fields, timedOut) => {
+      const error = Object.assign(
+        new Error('curl -H Authorization: secret https://private'),
+        fields,
+        {
+          stdout: 'private response',
+          stderr: 'private diagnostics',
+        }
+      )
+      mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => callback(error, null))
 
-    await executeCurl({ url: 'https://example.com' })
+      const failure = await executeCurl({ url: 'https://example.com' }).catch(error => error)
 
-    expect(mockExecFile).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(Array),
-      {
-        timeout: 10000,
-        maxBuffer: 1024 * 1024,
-      },
-      expect.any(Function)
-    )
-  })
+      expect(failure).toBeInstanceOf(Error)
+      expect(failure).toHaveProperty('timedOut', timedOut)
+      expect(failure.message).not.toMatch(/secret|private|Authorization/)
+      expect(JSON.stringify(failure)).not.toMatch(/secret|private|Authorization/)
+    }
+  )
 
-  it('should handle execution errors', async () => {
-    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
-      callback(new Error('Network timeout'), null)
-    })
+  it('should reject output without valid HTTP metadata', async () => {
+    respond('private upstream body')
 
-    await expect(executeCurl({ url: 'https://example.com' })).rejects.toThrow(
-      'curl execution failed: Network timeout'
-    )
-  })
-
-  it('should measure execution duration', async () => {
-    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
-      setTimeout(() => callback(null, { stdout: 'ok', stderr: '' }), 100)
-    })
-
-    const result = await executeCurl({ url: 'https://example.com' })
-
-    expect(result.duration).toBeGreaterThanOrEqual(90)
-    expect(result.duration).toBeLessThan(200)
+    await expect(executeCurl({ url: 'https://example.com' })).rejects.toThrow('curl request failed')
   })
 })

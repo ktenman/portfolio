@@ -2,138 +2,180 @@ import request from 'supertest'
 import express from 'express'
 import { lightyearAdapter } from '../lightyear'
 
-jest.mock('../../utils/curl-executor', () => ({
-  executeCurl: jest.fn(),
+const mockExecFile = jest.fn()
+
+jest.mock('child_process', () => ({
+  execFile: (...args: unknown[]) => mockExecFile(...args),
 }))
 
-const { executeCurl } = require('../../utils/curl-executor')
+jest.mock('util', () => ({
+  ...jest.requireActual('util'),
+  promisify:
+    (fn: (...args: unknown[]) => void) =>
+    (...args: unknown[]) =>
+      new Promise((resolve, reject) => {
+        fn(...args, (error: Error | null, result: unknown) => {
+          if (error) reject(error)
+          else resolve(result)
+        })
+      }),
+}))
 
-describe('Lightyear Adapter', () => {
+function respond(body: string, status = 200, contentType = 'application/json'): void {
+  mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
+    callback(null, { stdout: `${body}\n${status}\n${contentType}`, stderr: '' })
+  })
+}
+
+describe('Lightyear fetch route', () => {
   let app: express.Application
+  let logSpy: jest.SpyInstance
+  let errorSpy: jest.SpyInstance
 
   beforeEach(() => {
+    jest.resetAllMocks()
+    logSpy = jest.spyOn(console, 'log').mockImplementation()
+    errorSpy = jest.spyOn(console, 'error').mockImplementation()
     app = express()
-    app.use(express.json())
     app.get(lightyearAdapter.path, ...(lightyearAdapter.middleware || []), lightyearAdapter.handler)
-    jest.clearAllMocks()
   })
 
-  it('should return 400 if path parameter is missing', async () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('should reject a missing path without contacting Lightyear', async () => {
     const response = await request(app).get('/lightyear/fetch')
 
     expect(response.status).toBe(400)
     expect(response.body).toEqual({ error: 'Missing path parameter' })
+    expect(mockExecFile).not.toHaveBeenCalled()
   })
 
-  it('should successfully fetch price data via proxy URL', async () => {
-    const mockResponse = {
-      timestamp: '2025-11-14T16:00:00Z',
-      price: 36.26,
-      change: 0.31,
-      changePercent: 0.0087,
-      currency: 'EUR',
+  it.each([
+    [
+      '/v1/market-data/instrument-id/price',
+      'https://lightyear.com/site-api/public/v1/market-data/instrument-id/price',
+      { price: '42.50', currency: 'EUR' },
+    ],
+    [
+      'v1/instrument/instrument-id/fund-info',
+      'https://lightyear.com/site-api/public/v1/instrument/instrument-id/fund-info',
+      { name: 'Example fund' },
+    ],
+    [
+      '/v1/instrument/instrument-id/holdings',
+      'https://lightyear.com/site-api/public/v1/instrument/instrument-id/holdings',
+      { holdings: [{ name: 'Example', weight: '0.25' }] },
+    ],
+    [
+      '/v1/market-data/instrument-id/chart?range=5y',
+      'https://lightyear.com/site-api/public/v1/market-data/instrument-id/chart?range=5y',
+      { data: [{ date: '2025-01-02', value: '123.45' }] },
+    ],
+    [
+      '/v1/market-data/instrument-id/chart?range=max&currency=EUR',
+      'https://lightyear.com/site-api/public/v1/market-data/instrument-id/chart?range=max&currency=EUR',
+      { data: [{ date: '2025-01-02', value: '123.45' }] },
+    ],
+  ])('should fetch %s through the public site API', async (path, upstreamUrl, payload) => {
+    respond(JSON.stringify(payload), 200, 'application/json; charset=utf-8')
+
+    const response = await request(app).get('/lightyear/fetch').query({ path })
+
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual(payload)
+    expect(mockExecFile).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([upstreamUrl, '-H', 'referer: https://lightyear.com/']),
+      { timeout: 10000, maxBuffer: 1024 * 1024 },
+      expect.any(Function)
+    )
+    expect(logSpy.mock.calls.flat().join(' ')).toMatch(/completed/i)
+  })
+
+  it.each([
+    [404, 'text/html; charset=utf-8', '<!DOCTYPE html><html>sensitive-upstream-token</html>'],
+    [401, 'application/json', '{"error":"sensitive-upstream-token"}'],
+    [429, 'application/json', '{"error":"sensitive-upstream-token"}'],
+    [502, 'text/html', '<html>sensitive-upstream-token</html>'],
+  ])(
+    'should preserve upstream HTTP %i without leaking its body',
+    async (status, contentType, body) => {
+      respond(body, status, contentType)
+
+      const response = await request(app)
+        .get('/lightyear/fetch')
+        .query({ path: '/v1/test?access_token=request-secret' })
+
+      expect(response.status).toBe(status)
+      expect(response.body).toEqual({
+        error: 'Lightyear upstream request failed',
+        code: 'UPSTREAM_HTTP_ERROR',
+        upstreamStatus: status,
+        contentType,
+      })
+      expect(response.headers['content-type']).toContain('application/json')
+      const logs = [...logSpy.mock.calls, ...errorSpy.mock.calls].flat().join(' ')
+      expect(logs).toContain('UPSTREAM_HTTP_ERROR')
+      expect(logs).toContain(String(status))
+      expect(logs).not.toMatch(/sensitive-upstream-token|request-secret|completed/i)
+      expect(response.text).not.toMatch(/sensitive-upstream-token|request-secret/)
     }
+  )
 
-    executeCurl.mockResolvedValue({
-      stdout: JSON.stringify(mockResponse),
-      duration: 150,
+  it.each([
+    [200, 'text/html', '<html>sensitive-upstream-token</html>', 'UPSTREAM_UNEXPECTED_CONTENT_TYPE'],
+    [200, 'text/plain', '{"price":42}', 'UPSTREAM_UNEXPECTED_CONTENT_TYPE'],
+    [200, '', '{"price":42}', 'UPSTREAM_UNEXPECTED_CONTENT_TYPE'],
+    [200, 'application/json', '{sensitive-upstream-token', 'UPSTREAM_INVALID_JSON'],
+    [200, 'application/json', '', 'UPSTREAM_EMPTY_RESPONSE'],
+    [204, '', '', 'UPSTREAM_EMPTY_RESPONSE'],
+  ])('should reject invalid upstream JSON: %i %s %s', async (status, contentType, body, code) => {
+    respond(body, status, contentType)
+
+    const response = await request(app).get('/lightyear/fetch').query({ path: '/v1/test' })
+
+    expect(response.status).toBe(502)
+    expect(response.body).toEqual({
+      error: 'Lightyear returned an invalid response',
+      code,
+      upstreamStatus: status,
+      contentType,
     })
+    const logs = [...logSpy.mock.calls, ...errorSpy.mock.calls].flat().join(' ')
+    expect(logs).toContain(code)
+    expect(logs).not.toMatch(/sensitive-upstream-token|completed/i)
+    expect(response.text).not.toContain('sensitive-upstream-token')
+  })
 
-    const path = '/v1/market-data/1ef27f9a-bde6-6dda-a873-3946ca86bd5c/price'
-    const response = await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
+  it.each([
+    [{ code: 28 }, 504, 'UPSTREAM_TIMEOUT'],
+    [{ code: null, killed: true, signal: 'SIGTERM' }, 504, 'UPSTREAM_TIMEOUT'],
+    [{ code: 6 }, 502, 'UPSTREAM_NETWORK_ERROR'],
+  ])('should classify transport failures %j', async (fields, status, code) => {
+    const failure = Object.assign(
+      new Error('curl -H Authorization: sensitive-upstream-token'),
+      fields
+    )
+    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => callback(failure, null))
+
+    const response = await request(app).get('/lightyear/fetch').query({ path: '/v1/test' })
+
+    expect(response.status).toBe(status)
+    expect(response.body).toEqual({ error: 'Lightyear upstream request failed', code })
+    const logs = [...logSpy.mock.calls, ...errorSpy.mock.calls].flat().join(' ')
+    expect(logs).toContain(code)
+    expect(logs).not.toMatch(/sensitive-upstream-token|Authorization|completed/i)
+    expect(response.text).not.toMatch(/sensitive-upstream-token|Authorization/)
+  })
+
+  it('should accept structured JSON media types', async () => {
+    respond('{"price":42}', 200, 'application/vnd.lightyear+json; charset=utf-8')
+
+    const response = await request(app).get('/lightyear/fetch').query({ path: '/v1/test' })
 
     expect(response.status).toBe(200)
-    expect(response.body).toEqual(mockResponse)
-
-    expect(executeCurl).toHaveBeenCalledWith({
-      url: `https://lightyear.com/proxy${path}`,
-      timeout: 10000,
-      maxBuffer: 1024 * 1024,
-      headers: {
-        'user-agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-        referer: 'https://lightyear.com/',
-        accept: '*/*',
-        'accept-language': 'en-US,en;q=0.9',
-      },
-    })
-  })
-
-  it('should pass path directly to proxy URL without encoding', async () => {
-    executeCurl.mockResolvedValue({
-      stdout: JSON.stringify({ price: 100 }),
-      duration: 100,
-    })
-
-    const path = '/v1/market-data/test/price'
-    await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
-
-    const callArgs = executeCurl.mock.calls[0][0]
-    expect(callArgs.url).toBe(`https://lightyear.com/proxy${path}`)
-  })
-
-  it('should successfully fetch chart data with query parameters', async () => {
-    const mockChartData = [
-      { timestamp: '2025-01-01', price: 100 },
-      { timestamp: '2025-01-02', price: 101 },
-    ]
-
-    executeCurl.mockResolvedValue({
-      stdout: JSON.stringify(mockChartData),
-      duration: 200,
-    })
-
-    const path = '/v1/market-data/1f02fdcc-38f9-67b8-ad1b-a71ae2564bd4/chart?range=max'
-    const response = await request(app).get(`/lightyear/fetch?path=${encodeURIComponent(path)}`)
-
-    expect(response.status).toBe(200)
-    expect(response.body).toEqual(mockChartData)
-  })
-
-  it('should handle curl execution errors', async () => {
-    executeCurl.mockRejectedValue(new Error('Cloudflare blocked'))
-
-    const response = await request(app).get('/lightyear/fetch?path=/v1/test')
-
-    expect(response.status).toBe(500)
-    expect(response.body).toHaveProperty('error', 'Failed to fetch data')
-    expect(response.body).toHaveProperty('message')
-  })
-
-  it('should include all required headers for Cloudflare bypass', async () => {
-    executeCurl.mockResolvedValue({
-      stdout: JSON.stringify({ price: 50 }),
-      duration: 100,
-    })
-
-    await request(app).get('/lightyear/fetch?path=/v1/test')
-
-    const callArgs = executeCurl.mock.calls[0][0]
-    expect(callArgs.headers).toHaveProperty('user-agent')
-    expect(callArgs.headers).toHaveProperty('referer', 'https://lightyear.com/')
-    expect(callArgs.headers).toHaveProperty('accept', '*/*')
-    expect(callArgs.headers).toHaveProperty('accept-language', 'en-US,en;q=0.9')
-  })
-
-  it('should have correct adapter configuration', () => {
-    expect(lightyearAdapter.path).toBe('/lightyear/fetch')
-    expect(lightyearAdapter.method).toBe('GET')
-    expect(lightyearAdapter.middleware).toBeDefined()
-    expect(Array.isArray(lightyearAdapter.middleware)).toBe(true)
-    expect(lightyearAdapter.middleware?.length).toBeGreaterThan(0)
-  })
-
-  it('should sanitize log input for security', async () => {
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation()
-
-    executeCurl.mockResolvedValue({
-      stdout: JSON.stringify({ price: 50 }),
-      duration: 100,
-    })
-
-    await request(app).get('/lightyear/fetch?path=/v1/test')
-
-    expect(consoleSpy).toHaveBeenCalled()
-    consoleSpy.mockRestore()
+    expect(response.body).toEqual({ price: 42 })
   })
 })

@@ -12,3 +12,7 @@ class XirrCalculationException(
   message: String,
   cause: Throwable? = null,
 ) : Exception(message, cause)
+
+class PriceRefreshException(
+  message: String,
+) : IllegalStateException(message)

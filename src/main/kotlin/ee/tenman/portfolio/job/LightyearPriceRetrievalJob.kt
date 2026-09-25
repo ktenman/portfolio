@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
@@ -21,6 +22,7 @@ class LightyearPriceRetrievalJob(
   private val lightyearPriceUpdateService: LightyearPriceUpdateService,
   private val priceUpdateProcessor: PriceUpdateProcessor,
   private val clock: Clock,
+  private val properties: LightyearScrapingProperties,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
   private val estonianZone = ZoneId.of("Europe/Tallinn")
@@ -71,6 +73,7 @@ class LightyearPriceRetrievalJob(
       log = log,
       fetchPrices = { lightyearPriceService.fetchCurrentPrices() },
       processSymbol = lightyearPriceUpdateService::processSymbol,
+      expectedCount = properties.getAllSymbols().distinct().size,
     )
   }
 }
