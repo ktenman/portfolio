@@ -42,7 +42,7 @@ class EtfPositionRepositoryIT {
     val positions =
       transactionRunner.runInTransaction {
         insertPositions(saveFund("VWCE"), 2000)
-        execute("ANALYZE etf_position")
+        execute("ANALYZE etf_position, etf_holding")
         val fund = saveFund("VGLA")
         insertPositions(fund, 5000)
         execute("SET LOCAL statement_timeout = '1s'")
