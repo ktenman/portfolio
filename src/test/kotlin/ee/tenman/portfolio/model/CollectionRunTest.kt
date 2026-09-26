@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.model
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 
@@ -28,8 +29,7 @@ class CollectionRunTest {
   @Test
   fun `should record persistence only after durable callback succeeds`() {
     val run = CollectionRun(listOf("A")) { throw IllegalStateException("database unavailable") }
-    org.junit.jupiter.api
-      .assertThrows<IllegalStateException> { run.persisted("A") }
+    expect { run.persisted("A") }.toThrow<IllegalStateException>()
     expect(run.result().persisted).toEqual(emptySet())
   }
 }

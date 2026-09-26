@@ -5,6 +5,7 @@ import {
   BenchmarkIndex,
   type BenchmarkPointDto,
   type CalculationResult,
+  type CollectionStatusDto,
   type DiversificationCalculatorResponseDto,
   type EnumsResponse,
   type EtfDetailDto,
@@ -182,4 +183,10 @@ export const utilityService = {
   getCalculationResult: () => httpClient.get<CalculationResult>(API_ENDPOINTS.CALCULATOR),
 
   getBuildInfo: () => httpClient.get<BuildInfo>(API_ENDPOINTS.BUILD_INFO),
+}
+
+export const monitoringService = {
+  getCollections: () => httpClient.get<CollectionStatusDto[]>(API_ENDPOINTS.MONITORING_COLLECTIONS),
+  rerun: (key: string) =>
+    httpClient.post<void>(`${API_ENDPOINTS.MONITORING_COLLECTIONS}/${key}/rerun`),
 }

@@ -1,6 +1,17 @@
 package ee.tenman.portfolio.service.monitoring
 
 import ee.tenman.portfolio.domain.CollectionKey
+import ee.tenman.portfolio.dto.CollectionStatus
+import ee.tenman.portfolio.dto.CollectionStatusDto
+import ee.tenman.portfolio.job.BinanceDataRetrievalJob
+import ee.tenman.portfolio.job.CsusHoldingsRetrievalJob
+import ee.tenman.portfolio.job.FtDataRetrievalJob
+import ee.tenman.portfolio.job.LightyearDataFetchJob
+import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
+import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
+import ee.tenman.portfolio.job.Trading212DataRetrievalJob
+import ee.tenman.portfolio.job.Trading212HoldingsRetrievalJob
+import ee.tenman.portfolio.job.VanguardHoldingsRetrievalJob
 import ee.tenman.portfolio.model.CollectionExpectation
 import ee.tenman.portfolio.model.CollectionSnapshot
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
@@ -43,8 +54,7 @@ class CollectionMetricsService(
     if (!::registry.isInitialized) return
     runCatching {
       val configured = inventory.configured()
-      configured.forEach { (key, symbols) -> state.initialize(key, symbols) }
-      val loaded = state.snapshots().associateBy { it.key }
+      val loaded = synchronize(configured)
       check(loaded.keys == CollectionKey.entries.toSet()) { "Collection inventory is incomplete" }
       check(configured.all { (key, symbols) -> loaded.getValue(key).expected == symbols }) { "Collection inventory changed during refresh" }
       snapshots = loaded
@@ -54,6 +64,71 @@ class CollectionMetricsService(
       refreshed = null
       log.warn("Collection monitoring refresh failed: ${it.javaClass.simpleName}")
     }
+  }
+
+  fun collections(): List<CollectionStatusDto> = snapshots.values.sortedBy { it.key.ordinal }.map { status(it) }
+
+  private fun status(snapshot: CollectionSnapshot): CollectionStatusDto {
+    val expectation = schedules.expectation(snapshot)
+    val open = breaker(snapshot.key) == 1.0
+    return CollectionStatusDto(
+      key = snapshot.key.name,
+      provider = snapshot.key.provider,
+      operation = snapshot.key.operation,
+      status = classify(snapshot, expectation, open),
+      expected = snapshot.expected.size,
+      fetched = snapshot.fetched,
+      persisted = snapshot.persisted,
+      failed = snapshot.failed,
+      failedItems = failedItems(snapshot),
+      consecutiveEmptyRuns = snapshot.consecutiveEmptyRuns,
+      durationSeconds = snapshot.durationSeconds,
+      lastAttempt = snapshot.lastAttempt,
+      lastCompletion = snapshot.lastCompletion,
+      lastFullSuccess = snapshot.lastFullSuccess,
+      deadline = expectation.deadline,
+      breakerOpen = open,
+    )
+  }
+
+  private fun failedItems(snapshot: CollectionSnapshot): List<String> {
+    if (snapshot.failed == 0) return emptyList()
+    val completion = snapshot.lastCompletion ?: return emptyList()
+    val start = completion.minusMillis((snapshot.durationSeconds * 1000).toLong())
+    return snapshot.expected.filter { snapshot.itemSuccesses[it]?.isBefore(start) ?: true }.sorted()
+  }
+
+  private fun classify(
+    snapshot: CollectionSnapshot,
+    expectation: CollectionExpectation,
+    open: Boolean,
+  ): CollectionStatus =
+    when {
+      !expectation.enabled -> CollectionStatus.DISABLED
+      open -> CollectionStatus.BREAKER_OPEN
+      running(snapshot) -> CollectionStatus.RUNNING
+      overdue(snapshot, expectation) -> CollectionStatus.OVERDUE
+      snapshot.failed > 0 -> CollectionStatus.PARTIAL_FAILURE
+      else -> CollectionStatus.OK
+    }
+
+  private fun running(snapshot: CollectionSnapshot): Boolean {
+    val attempt = snapshot.lastAttempt ?: return false
+    val completion = snapshot.lastCompletion ?: return true
+    return attempt.isAfter(completion)
+  }
+
+  private fun overdue(
+    snapshot: CollectionSnapshot,
+    expectation: CollectionExpectation,
+  ): Boolean = snapshot.expected.isNotEmpty() && expectation.expectedNow && clock.instant().isAfter(expectation.deadline)
+
+  private fun synchronize(configured: Map<CollectionKey, Set<String>>): Map<CollectionKey, CollectionSnapshot> {
+    val current = state.snapshots().associateBy { it.key }
+    val drifted = configured.filter { (key, symbols) -> current[key]?.expected != symbols }
+    if (drifted.isEmpty()) return current
+    drifted.forEach { (key, symbols) -> state.initialize(key, symbols) }
+    return state.snapshots().associateBy { it.key }
   }
 
   private fun readiness(): Double {
@@ -130,17 +205,17 @@ class CollectionMetricsService(
   private fun seconds(instant: Instant?): Double = instant?.epochSecond?.toDouble() ?: 0.0
 
   companion object {
-    private val JOBS =
+    val JOBS =
       mapOf(
-      CollectionKey.LIGHTYEAR_PRICES to "LightyearPriceRetrievalJob",
-      CollectionKey.TRADING212_PRICES to "Trading212DataRetrievalJob",
-      CollectionKey.BINANCE_PRICES to "BinanceDataRetrievalJob",
-      CollectionKey.FT_HISTORY to "FtDataRetrievalJob",
-      CollectionKey.LIGHTYEAR_HISTORY to "LightyearHistoricalDataRetrievalJob",
-      CollectionKey.LIGHTYEAR_HOLDINGS to "LightyearDataFetchJob",
-      CollectionKey.TRADING212_HOLDINGS to "Trading212HoldingsRetrievalJob",
-      CollectionKey.BLACKROCK_HOLDINGS to "CsusHoldingsRetrievalJob",
-      CollectionKey.VANGUARD_HOLDINGS to "VanguardHoldingsRetrievalJob",
+      CollectionKey.LIGHTYEAR_PRICES to LightyearPriceRetrievalJob::class.java.simpleName,
+      CollectionKey.TRADING212_PRICES to Trading212DataRetrievalJob::class.java.simpleName,
+      CollectionKey.BINANCE_PRICES to BinanceDataRetrievalJob::class.java.simpleName,
+      CollectionKey.FT_HISTORY to FtDataRetrievalJob::class.java.simpleName,
+      CollectionKey.LIGHTYEAR_HISTORY to LightyearHistoricalDataRetrievalJob::class.java.simpleName,
+      CollectionKey.LIGHTYEAR_HOLDINGS to LightyearDataFetchJob::class.java.simpleName,
+      CollectionKey.TRADING212_HOLDINGS to Trading212HoldingsRetrievalJob::class.java.simpleName,
+      CollectionKey.BLACKROCK_HOLDINGS to CsusHoldingsRetrievalJob::class.java.simpleName,
+      CollectionKey.VANGUARD_HOLDINGS to VanguardHoldingsRetrievalJob::class.java.simpleName,
     )
   }
 }

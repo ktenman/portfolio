@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 class CollectionInventoryServiceTest {
   @Test
   fun `should initialize every operation when no database instruments exist`() {
-    val repository = mockk<InstrumentRepository> { every { findAll() } returns emptyList() }
+    val repository = mockk<InstrumentRepository> { every { findByProviderNameIn(any()) } returns emptyList() }
     val service = CollectionInventoryService(repository, LightyearScrapingProperties(), Trading212ScrapingProperties())
     expect(service.configured().keys).toEqual(CollectionKey.entries.toSet())
   }
@@ -25,7 +25,8 @@ class CollectionInventoryServiceTest {
   fun `should monitor only Trading212 holdings configured for an active provider instrument`() {
     val repository =
       mockk<InstrumentRepository> {
-      every { findAll() } returns listOf(instrument("BNKE:PAR:EUR", ProviderName.TRADING212), instrument("OTHER", ProviderName.FT))
+      every { findByProviderNameIn(any()) } returns
+        listOf(instrument("BNKE:PAR:EUR", ProviderName.TRADING212), instrument("OTHER", ProviderName.FT))
     }
     val properties =
       Trading212ScrapingProperties().apply {
@@ -37,7 +38,7 @@ class CollectionInventoryServiceTest {
 
   @Test
   fun `should distinguish Lightyear price coverage from supported equity holdings`() {
-    val repository = mockk<InstrumentRepository> { every { findAll() } returns emptyList() }
+    val repository = mockk<InstrumentRepository> { every { findByProviderNameIn(any()) } returns emptyList() }
     val lightyear =
       LightyearScrapingProperties(
         listOf("WEBN:GER:EUR", "VGLA:GER:EUR", "GOOGL:NSQ:USD", "WBIT:GER:EUR")

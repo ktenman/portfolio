@@ -87,7 +87,9 @@ class LightyearPriceService(
     val validHoldings = filterAnomalousValues(apiHoldings)
     val instrumentMap = fetchInstrumentsBatch(validHoldings)
     val totalValue = validHoldings.sumOf { it.value }
-    return validHoldings.mapIndexed { index, holding ->
+    val (named, unnamed) = validHoldings.partition { it.name.isNotBlank() }
+    unnamed.forEach { log.warn("Skipping unnamed holding of $symbol with value: ${it.value}") }
+    return named.mapIndexed { index, holding ->
       val instrument = holding.instrumentId?.let { instrumentMap[it] }
       val weightPercentage = calculateWeightPercentage(holding.value, totalValue)
       HoldingData(

@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   LOGOS: '/logos',
   CALCULATOR: '/calculator',
   BUILD_INFO: '/build-info',
+  MONITORING_COLLECTIONS: '/monitoring/collections',
 } as const
 
 export const REFETCH_INTERVALS = {
@@ -26,4 +27,5 @@ export const REFETCH_INTERVALS = {
   INTRADAY: 60 * 1000,
   DIVERSIFICATION_ETFS: 60 * 60 * 1000,
   PLATFORMS: 60 * 60 * 1000,
+  MONITORING: 15 * 1000,
 } as const

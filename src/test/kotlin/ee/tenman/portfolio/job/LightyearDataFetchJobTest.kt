@@ -51,7 +51,6 @@ class LightyearDataFetchJobTest {
         EtfConfig("IUSQ:GER:EUR", "1eda0a07-10b3-63e0-b568-6deedaa217e8"),
       )
     every { properties.getHoldingsSymbols() } returns setOf("IUSQ:GER:EUR")
-    every { etfHoldingService.hasHoldingsForDate(any(), any()) } returns false
     every { lightyearPriceService.fetchHoldingsAsDto(any()) } returns
       listOf(HoldingData(name = "Apple Inc", ticker = "AAPL", sector = null, weight = BigDecimal("100"), rank = 1))
   }

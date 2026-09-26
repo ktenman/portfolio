@@ -268,4 +268,16 @@ class LightyearPriceServiceTest : LightyearPriceServiceTestBase() {
     expect(result[1].name).toEqual("Another Normal")
     expect(result[1].weight).toEqualNumerically(BigDecimal("43.298969"))
   }
+
+  @Test
+  fun `should skip unnamed holdings`() {
+    stubHoldings(
+      LightyearHoldingResponse(name = "Ärikeskus AS", value = 3.0, instrumentId = null),
+      LightyearHoldingResponse(name = " ", value = 1.0, instrumentId = null),
+    )
+
+    val result = service.fetchHoldingsAsDto("WEBN")
+
+    expect(result.map { it.name }).toEqual(listOf("Ärikeskus AS"))
+  }
 }

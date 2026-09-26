@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.common.hasPositiveCloses
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
 import ee.tenman.portfolio.model.CollectionRun
@@ -84,7 +86,7 @@ class LightyearHistoricalDataRetrievalJob(
   }
 
   private fun processInstrument(
-    instrument: ee.tenman.portfolio.domain.Instrument,
+    instrument: Instrument,
     run: CollectionRun,
   ) {
     val uuid = lightyearProperties.findUuidBySymbol(instrument.symbol)
@@ -95,14 +97,14 @@ class LightyearHistoricalDataRetrievalJob(
     }
     log.info("Retrieving Lightyear historical data for instrument: ${instrument.symbol}")
     val historicalData = lightyearHistoricalPricesService.fetchHistoricalPrices(uuid)
-    if (historicalData.isEmpty() || historicalData.values.any { it.close <= java.math.BigDecimal.ZERO }) {
+    if (!historicalData.hasPositiveCloses()) {
       log.warn("No historical data found for instrument: ${instrument.symbol}")
       run.failed(instrument.symbol, IllegalArgumentException("Invalid historical data for ${instrument.symbol}"))
       return
     }
     run.fetched(instrument.symbol)
     val pricesInEur = currencyConversionService.convertDailyPricesToEur(historicalData, listingCurrency(instrument.symbol))
-    require(pricesInEur.isNotEmpty() && pricesInEur.values.all { it.close > java.math.BigDecimal.ZERO }) {
+    require(pricesInEur.hasPositiveCloses()) {
       "Invalid converted historical data for ${instrument.symbol}"
     }
     dataProcessingUtil.processDailyData(instrument, pricesInEur, ProviderName.LIGHTYEAR)

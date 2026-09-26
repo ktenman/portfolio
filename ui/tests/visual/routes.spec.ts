@@ -7,6 +7,7 @@ import { stubDiversification } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
+import { stubMonitoring } from './monitoring-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 
@@ -20,6 +21,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/etf-breakdown', name: 'etf-breakdown', stub: stubEtfBreakdown },
   { path: '/diversification', name: 'diversification', stub: stubDiversification },
   { path: '/calculator', name: 'calculator', stub: stubCalculator },
+  { path: '/monitoring', name: 'monitoring', stub: stubMonitoring },
 ]
 
 const BREAKDOWN_ROUTES = ROUTES.filter(route =>
