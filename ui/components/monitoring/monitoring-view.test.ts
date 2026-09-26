@@ -1,15 +1,29 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
-import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import MonitoringView from './monitoring-view.vue'
 import { monitoringService } from '../../services/api'
-import { renderWithProviders } from '../../tests/test-utils'
 import { CollectionStatus, type CollectionStatusDto } from '../../models/generated/domain-models'
 
 enableAutoUnmount(afterEach)
 
 vi.mock('../../services/api', () => ({
-  monitoringService: { getCollections: vi.fn(), rerun: vi.fn() },
+  monitoringService: { streamUrl: '/api/monitoring/collections/stream', rerun: vi.fn() },
 }))
+
+class FakeEventSource {
+  static instances: FakeEventSource[] = []
+  readyState = 0
+  onerror: ((event: Event) => void) | null = null
+  onmessage: ((event: MessageEvent) => void) | null = null
+
+  constructor() {
+    FakeEventSource.instances.push(this)
+  }
+
+  close() {}
+}
+
+vi.stubGlobal('EventSource', FakeEventSource)
 
 const collection = (overrides: Partial<CollectionStatusDto> = {}): CollectionStatusDto => ({
   key: 'LIGHTYEAR_PRICES',
@@ -33,25 +47,39 @@ const collection = (overrides: Partial<CollectionStatusDto> = {}): CollectionSta
   ...overrides,
 })
 
-const render = async (items: CollectionStatusDto[]) => {
-  vi.mocked(monitoringService.getCollections).mockResolvedValue(items)
-  const wrapper = renderWithProviders(MonitoringView)
+const stream = () => FakeEventSource.instances[FakeEventSource.instances.length - 1]
+
+const push = async (items: CollectionStatusDto[]) => {
+  stream().onmessage?.({ data: JSON.stringify(items) } as MessageEvent)
   await flushPromises()
-  return wrapper
 }
 
-const runAllState = (wrapper: Awaited<ReturnType<typeof render>>) => {
-  const button = wrapper.find('[data-testid="monitoring-run-all"]')
-  return {
-    title: button.attributes('title'),
-    spinning: button.find('svg').classes('motion-safe:animate-spin'),
-  }
+const drop = async () => {
+  stream().onerror?.(new Event('error'))
+  await flushPromises()
+}
+
+const refuse = async () => {
+  stream().readyState = 2
+  await drop()
+}
+
+const render = async (items: CollectionStatusDto[]) => {
+  const wrapper = mount(MonitoringView)
+  await push(items)
+  return wrapper
 }
 
 describe('monitoring-view', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     vi.clearAllMocks()
+    FakeEventSource.instances = []
     vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('reports every collection healthy when all are ok', async () => {
@@ -87,12 +115,18 @@ describe('monitoring-view', () => {
     expect(monitoringService.rerun).toHaveBeenCalledWith('VANGUARD_HOLDINGS')
   })
 
-  it('shows the row as running until the job completes', async () => {
-    const wrapper = await render([collection()])
-    await wrapper.find('[data-testid="monitoring-rerun"]').trigger('click')
-    await flushPromises()
+  it('shows the row as running while the server reports the run in progress', async () => {
+    const wrapper = await render([collection({ status: CollectionStatus.RUNNING })])
     expect(wrapper.find('[data-testid="monitoring-rerun"]').attributes('aria-label')).toBe(
       'Lightyear prices running'
+    )
+  })
+
+  it('offers run now again once the server reports the run finished', async () => {
+    const wrapper = await render([collection({ status: CollectionStatus.RUNNING })])
+    await push([collection()])
+    expect(wrapper.find('[data-testid="monitoring-rerun"]').attributes('aria-label')).toBe(
+      'Run Lightyear prices now'
     )
   })
 
@@ -148,51 +182,6 @@ describe('monitoring-view', () => {
     ])
   })
 
-  it('refreshes the collections as soon as run all has started the jobs', async () => {
-    const wrapper = await render([collection()])
-    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
-    await flushPromises()
-    expect(monitoringService.getCollections).toHaveBeenCalledTimes(2)
-  })
-
-  it('offers run all while no rerun is in flight', async () => {
-    const wrapper = await render([collection()])
-    expect(runAllState(wrapper)).toEqual({ title: 'Run all', spinning: false })
-  })
-
-  it('counts down the reruns in flight on a spinning run all as each collection completes', async () => {
-    const wrapper = await render([
-      collection({ key: 'LIGHTYEAR_PRICES' }),
-      collection({ key: 'FT_HISTORY' }),
-    ])
-    vi.mocked(monitoringService.getCollections).mockResolvedValue([
-      collection({ key: 'LIGHTYEAR_PRICES' }),
-      collection({ key: 'FT_HISTORY', lastCompletion: '2999-01-01T00:00:00Z' }),
-    ])
-    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
-    await flushPromises()
-    expect(runAllState(wrapper)).toEqual({ title: 'Running · 1 left', spinning: true })
-  })
-
-  it('keeps run all idle while a single collection reruns', async () => {
-    const wrapper = await render([collection()])
-    await wrapper.find('tbody [data-testid="monitoring-rerun"]').trigger('click')
-    expect(runAllState(wrapper)).toEqual({ title: 'Run all', spinning: false })
-  })
-
-  it('starts the remaining collections when run all is clicked while one is already rerunning', async () => {
-    const wrapper = await render([
-      collection({ key: 'LIGHTYEAR_PRICES' }),
-      collection({ key: 'FT_HISTORY' }),
-    ])
-    await wrapper.find('tbody [data-testid="monitoring-rerun"]').trigger('click')
-    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
-    expect(vi.mocked(monitoringService.rerun).mock.calls).toEqual([
-      ['LIGHTYEAR_PRICES'],
-      ['FT_HISTORY'],
-    ])
-  })
-
   it('names every collection that run all could not start', async () => {
     vi.mocked(monitoringService.rerun).mockRejectedValue(new Error('Bad gateway'))
     const wrapper = await render([
@@ -221,5 +210,63 @@ describe('monitoring-view', () => {
     const wrapper = await render([collection()])
     await wrapper.find('tbody tr').trigger('click')
     expect(wrapper.find('[data-testid="monitoring-job"]').text()).toBe('LightyearPriceRetrieval')
+  })
+
+  it('reports that the status cannot be loaded when the stream fails before sending any', async () => {
+    const wrapper = mount(MonitoringView)
+    await drop()
+    expect(wrapper.text()).toContain(
+      'Could not load collection status. It reconnects automatically.'
+    )
+  })
+
+  it('keeps showing the last status while the stream reconnects', async () => {
+    const wrapper = await render([collection()])
+    await drop()
+    expect(wrapper.find('[data-testid="monitoring-verdict"]').text()).toBe(
+      'All 1 collections healthy'
+    )
+  })
+
+  it('keeps reconnecting every 45 seconds while the server stays silent', async () => {
+    await render([collection()])
+    vi.advanceTimersByTime(90_000)
+    expect(FakeEventSource.instances).toHaveLength(3)
+  })
+
+  it('does not open a second stream while the failed one is reconnecting', async () => {
+    await render([collection()])
+    await drop()
+    vi.advanceTimersByTime(45_000)
+    expect(FakeEventSource.instances).toHaveLength(1)
+  })
+
+  it('keeps the stream open while the server keeps sending', async () => {
+    await render([collection()])
+    vi.advanceTimersByTime(30_000)
+    await push([collection()])
+    vi.advanceTimersByTime(30_000)
+    expect(FakeEventSource.instances).toHaveLength(1)
+  })
+
+  it('waits 15 seconds before retrying a stream the server refused', async () => {
+    mount(MonitoringView)
+    await refuse()
+    vi.advanceTimersByTime(14_999)
+    expect(FakeEventSource.instances).toHaveLength(1)
+  })
+
+  it('retries a stream the server refused after 15 seconds', async () => {
+    mount(MonitoringView)
+    await refuse()
+    vi.advanceTimersByTime(15_000)
+    expect(FakeEventSource.instances).toHaveLength(2)
+  })
+
+  it('drops the stale status once the server has been silent for 45 seconds', async () => {
+    const wrapper = await render([collection()])
+    vi.advanceTimersByTime(45_000)
+    await flushPromises()
+    expect(wrapper.find('[data-testid="monitoring-verdict"]').exists()).toBe(false)
   })
 })

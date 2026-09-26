@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalManagementPort
 import org.springframework.boot.test.web.server.LocalServerPort
+import java.net.HttpURLConnection
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -27,6 +28,8 @@ class MonitoringEndpointIT {
 
   @Resource private lateinit var metrics: CollectionMetricsService
 
+  @Resource private lateinit var stream: CollectionStreamService
+
   @Test
   fun `should expose complete collection metrics on the management listener`() {
     metrics.refresh()
@@ -44,6 +47,35 @@ class MonitoringEndpointIT {
   @Test
   fun `should keep collection metrics off the application listener`() {
     expect(get(applicationPort, "/actuator/prometheus").statusCode()).toEqual(404)
+  }
+
+  @Test
+  fun `should stream the collection status as soon as a client subscribes`() {
+    metrics.refresh()
+    expect(subscribe { it.next() }).toContain("\"key\":\"LIGHTYEAR_PRICES\"")
+  }
+
+  @Test
+  fun `should stream the collection status again when it is published`() {
+    val event =
+      subscribe { events ->
+        events.next()
+        stream.publish()
+        events.next()
+      }
+    expect(event).toContain("\"key\":\"LIGHTYEAR_PRICES\"")
+  }
+
+  private fun <T> subscribe(read: (Iterator<String>) -> T): T {
+    val connection =
+      URI(
+      "http://localhost:$applicationPort/api/monitoring/collections/stream",
+    ).toURL().openConnection() as HttpURLConnection
+    connection.connectTimeout = 3000
+    connection.readTimeout = 5000
+    return connection.inputStream.bufferedReader().use { reader ->
+      read(reader.lineSequence().filter { it.startsWith("data:") }.iterator())
+    }
   }
 
   private fun get(

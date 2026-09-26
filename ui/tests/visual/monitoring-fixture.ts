@@ -54,7 +54,10 @@ const COLLECTIONS = [
 
 export const stubMonitoring: RouteStub = async page => {
   await page.clock.setFixedTime(NOW)
-  await page.route(apiRoute(API_ENDPOINTS.MONITORING_COLLECTIONS), route =>
-    route.fulfill({ json: COLLECTIONS })
+  await page.route(apiRoute(`${API_ENDPOINTS.MONITORING_COLLECTIONS}/stream`), route =>
+    route.fulfill({
+      contentType: 'text/event-stream',
+      body: `data: ${JSON.stringify(COLLECTIONS)}\n\n`,
+    })
   )
 }

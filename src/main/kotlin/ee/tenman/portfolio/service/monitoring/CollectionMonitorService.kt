@@ -25,6 +25,7 @@ import java.util.concurrent.TimeoutException
 class CollectionMonitorService(
   private val stateService: CollectionStateService,
   private val registry: MeterRegistry,
+  private val stream: CollectionStreamService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -48,11 +49,13 @@ class CollectionMonitorService(
       recordStorageFailure(key, it)
       throw it
     }
+    stream.publish()
     val run = CollectionRun(expected) { stateService.recordPersistence(key, it) }
     val outcome = runCatching { action(run) }
     val result = run.result()
     val storage = runCatching { stateService.finish(key, started, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     storage?.let { recordStorageFailure(key, it) }
+    stream.publish()
     val metrics = runCatching { recordFailures(key, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     val errors = listOfNotNull(outcome.exceptionOrNull(), storage, metrics)
     errors.firstOrNull()?.let { first ->
