@@ -49,7 +49,7 @@
       :row-class="() => 'cursor-pointer'"
       :is-loading="isLoading"
       :is-error="isError"
-      error-message="Could not load collection status. It retries every 15 seconds."
+      error-message="Could not load collection status. It reconnects automatically."
       empty-message="No collections are configured."
       data-testid="monitoring-table"
     >
@@ -107,13 +107,12 @@
         <button
           type="button"
           class="-my-2 inline-flex size-8 cursor-pointer items-center justify-center rounded-control align-middle transition-colors hover:bg-brass-wash focus-visible:outline-2 focus-visible:outline-brass-deep"
-          :title="batch.size ? `Running · ${batch.size} left` : 'Run all'"
+          title="Run all"
           data-testid="monitoring-run-all"
           @click="runAll"
         >
           <svg
             class="size-4"
-            :class="{ 'motion-safe:animate-spin': batch.size }"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -131,15 +130,15 @@
         <button
           type="button"
           class="inline-flex size-8 cursor-pointer items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep disabled:cursor-default disabled:text-brass-deep disabled:hover:bg-transparent md-down:size-11"
-          :disabled="running.has(item.key)"
-          :title="running.has(item.key) ? 'Running…' : 'Run now'"
-          :aria-label="running.has(item.key) ? `${label(item)} running` : `Run ${label(item)} now`"
+          :disabled="running(item)"
+          :title="running(item) ? 'Running…' : 'Run now'"
+          :aria-label="running(item) ? `${label(item)} running` : `Run ${label(item)} now`"
           data-testid="monitoring-rerun"
           @click.stop="rerun(item)"
         >
           <svg
             class="size-4"
-            :class="{ 'motion-safe:animate-spin': running.has(item.key) }"
+            :class="{ 'motion-safe:animate-spin': running(item) }"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -162,12 +161,11 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useEventSource, useTimeoutFn } from '@vueuse/core'
 import { useSortableTable } from '../../composables/use-sortable-table'
-import { useQuery } from '@tanstack/vue-query'
 import MonitoringDetails from './monitoring-details.vue'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import { monitoringService } from '../../services/api'
-import { REFETCH_INTERVALS } from '../../constants'
 import { ago, formatDateTime } from '../../utils/formatters'
 import { CollectionStatus, type CollectionStatusDto } from '../../models/generated/domain-models'
 
@@ -176,7 +174,7 @@ const STATUS_STYLES: Record<CollectionStatus, { label: string; class: string }> 
   [CollectionStatus.PARTIAL_FAILURE]: { label: 'Partial', class: 'bg-brass-wash text-brass-deep' },
   [CollectionStatus.OVERDUE]: { label: 'Overdue', class: 'bg-loss-wash text-loss-deep' },
   [CollectionStatus.BREAKER_OPEN]: { label: 'Breaker open', class: 'bg-loss-wash text-loss-deep' },
-  [CollectionStatus.RUNNING]: { label: 'Running', class: 'bg-surface-sunken text-ink-soft' },
+  [CollectionStatus.RUNNING]: { label: 'Running', class: 'bg-notice-wash text-notice' },
   [CollectionStatus.DISABLED]: { label: 'Disabled', class: 'bg-surface-sunken text-ink-soft' },
 }
 
@@ -189,7 +187,9 @@ const SEVERITY: Record<CollectionStatus, number> = {
   [CollectionStatus.DISABLED]: 5,
 }
 
-const RERUN_TIMEOUT = 5 * 60 * 1000
+const STREAM_SILENCE_TIMEOUT = 45 * 1000
+
+const STREAM_RETRY_DELAY = 15 * 1000
 
 const PROVIDER_NAMES: Record<string, string> = { ft: 'FT', blackrock: 'BlackRock' }
 
@@ -218,29 +218,25 @@ const columns: ColumnDefinition[] = [
   { key: 'actions', label: '', class: 'text-right', sortable: false },
 ]
 
-const requested = ref(new Map<string, number>())
-const batch = ref(new Set<string>())
-const running = computed(
-  () =>
-    new Set([
-      ...requested.value.keys(),
-      ...(collections.value ?? [])
-        .filter(c => c.status === CollectionStatus.RUNNING)
-        .map(c => c.key),
-    ])
-)
 const rerunErrors = ref<string[]>([])
 
 const {
   data: collections,
-  isLoading,
-  isError,
-  refetch,
-} = useQuery({
-  queryKey: ['monitoring-collections'],
-  queryFn: monitoringService.getCollections,
-  refetchInterval: () => (requested.value.size ? 3000 : REFETCH_INTERVALS.MONITORING),
+  error,
+  status,
+  open,
+} = useEventSource(monitoringService.streamUrl, [], {
+  autoReconnect: { delay: STREAM_RETRY_DELAY },
+  serializer: { read: raw => JSON.parse(raw ?? 'null') as CollectionStatusDto[] },
 })
+const { start: arm } = useTimeoutFn(() => {
+  collections.value = null
+  if (status.value !== 'CLOSED') open()
+  arm()
+}, STREAM_SILENCE_TIMEOUT)
+watch(collections, () => arm())
+const isLoading = computed(() => !collections.value && !error.value)
+const isError = computed(() => !collections.value && !!error.value)
 
 const rows = computed(() =>
   (collections.value ?? [])
@@ -251,6 +247,8 @@ const { sortedItems, sortState, toggleSort } = useSortableTable(rows)
 
 const label = (item: CollectionStatusDto) => `${provider(item.provider)} ${item.operation}`
 
+const running = (item: CollectionStatusDto) => item.status === CollectionStatus.RUNNING
+
 const expanded = ref<string | null>(null)
 const toggle = (item: CollectionStatusDto) => {
   expanded.value = expanded.value === item.key ? null : item.key
@@ -258,39 +256,18 @@ const toggle = (item: CollectionStatusDto) => {
 
 const rerun = async (item: CollectionStatusDto) => {
   rerunErrors.value = []
-  requested.value = new Map(requested.value).set(item.key, Date.now())
   await monitoringService.rerun(item.key).catch(() => {
     rerunErrors.value = [...rerunErrors.value, label(item)]
-    finish(item.key)
   })
-}
-
-const finish = (key: string) => {
-  const next = new Map(requested.value)
-  next.delete(key)
-  requested.value = next
-  batch.value = new Set([...batch.value].filter(k => k !== key))
 }
 
 const runAll = async () => {
   const idle = (collections.value ?? []).filter(
     c =>
-      !running.value.has(c.key) &&
-      ![CollectionStatus.DISABLED, CollectionStatus.BREAKER_OPEN].includes(c.status)
+      !running(c) && ![CollectionStatus.DISABLED, CollectionStatus.BREAKER_OPEN].includes(c.status)
   )
-  batch.value = new Set([...batch.value, ...idle.map(c => c.key)])
   await Promise.all(idle.map(rerun))
-  await refetch()
 }
-
-watch(collections, current =>
-  current?.forEach(item => {
-    const since = requested.value.get(item.key)
-    if (!since) return
-    const completed = item.lastCompletion && new Date(item.lastCompletion).getTime() >= since
-    if (completed || Date.now() - since > RERUN_TIMEOUT) finish(item.key)
-  })
-)
 
 const failing = computed(
   () =>

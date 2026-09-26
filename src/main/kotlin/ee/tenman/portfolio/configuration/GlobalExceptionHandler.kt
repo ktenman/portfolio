@@ -8,6 +8,7 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.multipart.MultipartException
 import org.springframework.web.servlet.resource.NoResourceFoundException
@@ -25,6 +26,9 @@ class GlobalExceptionHandler {
     @Suppress("unused", "UNUSED_PARAMETER")
     exception: NoResourceFoundException,
   ): ResponseEntity<Void> = ResponseEntity.notFound().build()
+
+  @ExceptionHandler(AsyncRequestNotUsableException::class)
+  fun handleDisconnectedClient() = Unit
 
   @ExceptionHandler(MultipartException::class)
   fun handleMultipartException(exception: MultipartException): ResponseEntity<ApiError> {
