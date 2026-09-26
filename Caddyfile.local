@@ -18,6 +18,7 @@
     handle @protected {
         forward_auth auth:8083 {
             uri /validate
+            header_up Accept application/json
             copy_headers X-User-Id
         }
 
