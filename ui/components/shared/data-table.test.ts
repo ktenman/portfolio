@@ -311,7 +311,7 @@ describe('DataTable', () => {
           columns: mockColumns,
         },
         slots: {
-          'header-name': '<button class="header-action">Run</button>',
+          'header-name': '<button>Run</button>',
         },
       })
 

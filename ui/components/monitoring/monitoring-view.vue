@@ -264,14 +264,11 @@ const finish = (key: string) => {
   requested.value = next
 }
 
-const idle = computed(() =>
-  (collections.value ?? []).filter(
+const runAll = async () => {
+  const idle = (collections.value ?? []).filter(
     c => !running.value.has(c.key) && c.status !== CollectionStatus.DISABLED
   )
-)
-
-const runAll = async () => {
-  await Promise.all(idle.value.map(rerun))
+  await Promise.all(idle.map(rerun))
   await refetch()
 }
 
