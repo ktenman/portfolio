@@ -5,7 +5,13 @@
       :class="healthy ? 'items-center gap-3' : 'items-baseline justify-between gap-2'"
     >
       <h2 class="mb-0">
-        <button type="button" class="md:hidden" data-testid="monitoring-title" @click="runAll">
+        <button
+          type="button"
+          class="md:hidden"
+          title="Run all"
+          data-testid="monitoring-title"
+          @click="runAll"
+        >
           Monitoring
         </button>
         <span class="hidden md:inline">Monitoring</span>
@@ -101,13 +107,13 @@
         <button
           type="button"
           class="-my-2 inline-flex size-8 cursor-pointer items-center justify-center rounded-control align-middle transition-colors hover:bg-brass-wash focus-visible:outline-2 focus-visible:outline-brass-deep"
-          :title="requested.size ? `Running · ${requested.size} left` : 'Run all'"
+          :title="batch.size ? `Running · ${batch.size} left` : 'Run all'"
           data-testid="monitoring-run-all"
           @click="runAll"
         >
           <svg
             class="size-4"
-            :class="{ 'motion-safe:animate-spin': requested.size }"
+            :class="{ 'motion-safe:animate-spin': batch.size }"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -213,6 +219,7 @@ const columns: ColumnDefinition[] = [
 ]
 
 const requested = ref(new Map<string, number>())
+const batch = ref(new Set<string>())
 const running = computed(
   () =>
     new Set([
@@ -262,12 +269,16 @@ const finish = (key: string) => {
   const next = new Map(requested.value)
   next.delete(key)
   requested.value = next
+  batch.value = new Set([...batch.value].filter(k => k !== key))
 }
 
 const runAll = async () => {
   const idle = (collections.value ?? []).filter(
-    c => !running.value.has(c.key) && c.status !== CollectionStatus.DISABLED
+    c =>
+      !running.value.has(c.key) &&
+      ![CollectionStatus.DISABLED, CollectionStatus.BREAKER_OPEN].includes(c.status)
   )
+  batch.value = new Set([...batch.value, ...idle.map(c => c.key)])
   await Promise.all(idle.map(rerun))
   await refetch()
 }

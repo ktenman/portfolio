@@ -133,12 +133,13 @@ describe('monitoring-view', () => {
     expect(wrapper.find('tbody [data-testid="monitoring-items"]').exists()).toBe(false)
   })
 
-  it('starts every collection that is neither running nor disabled when run all is clicked', async () => {
+  it('starts every collection that is not running, disabled or breaker open when run all is clicked', async () => {
     const wrapper = await render([
       collection({ key: 'LIGHTYEAR_PRICES' }),
       collection({ key: 'FT_HISTORY', status: CollectionStatus.OVERDUE }),
       collection({ key: 'BINANCE_PRICES', status: CollectionStatus.RUNNING }),
       collection({ key: 'VANGUARD_HOLDINGS', status: CollectionStatus.DISABLED }),
+      collection({ key: 'TRADING212_PRICES', status: CollectionStatus.BREAKER_OPEN }),
     ])
     await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
     expect(vi.mocked(monitoringService.rerun).mock.calls).toEqual([
@@ -173,6 +174,12 @@ describe('monitoring-view', () => {
     expect(runAllState(wrapper)).toEqual({ title: 'Running · 1 left', spinning: true })
   })
 
+  it('keeps run all idle while a single collection reruns', async () => {
+    const wrapper = await render([collection()])
+    await wrapper.find('tbody [data-testid="monitoring-rerun"]').trigger('click')
+    expect(runAllState(wrapper)).toEqual({ title: 'Run all', spinning: false })
+  })
+
   it('starts the remaining collections when run all is clicked while one is already rerunning', async () => {
     const wrapper = await render([
       collection({ key: 'LIGHTYEAR_PRICES' }),
@@ -203,6 +210,11 @@ describe('monitoring-view', () => {
     const wrapper = await render([collection({ key: 'VANGUARD_HOLDINGS', provider: 'vanguard' })])
     await wrapper.find('[data-testid="monitoring-title"]').trigger('click')
     expect(monitoringService.rerun).toHaveBeenCalledWith('VANGUARD_HOLDINGS')
+  })
+
+  it('hints that tapping the title runs all collections', async () => {
+    const wrapper = await render([collection()])
+    expect(wrapper.find('[data-testid="monitoring-title"]').attributes('title')).toBe('Run all')
   })
 
   it('names the job without its Job suffix when a row is expanded', async () => {
