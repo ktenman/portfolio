@@ -20,6 +20,7 @@ data class CollectionSnapshot(
   val durationSeconds: Double,
   val itemSuccesses: Map<String, Instant?>,
   val itemInitializedAt: Map<String, Instant> = emptyMap(),
+  val itemErrors: Map<String, String?> = emptyMap(),
 )
 
 data class CollectionRunResult(

@@ -22,4 +22,6 @@ class CollectionItem(
   var active: Boolean = true,
   @Column(name = "last_success")
   var lastSuccess: Instant? = null,
+  @Column(name = "last_error")
+  var lastError: String? = null,
 ) : BaseEntity()

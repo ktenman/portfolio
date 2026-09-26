@@ -1,9 +1,29 @@
 <template>
   <div class="mx-auto mt-4 w-full max-w-app px-3 pb-20 md:pb-0">
-    <div class="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+    <div
+      class="mb-6 flex flex-wrap"
+      :class="healthy ? 'items-center gap-3' : 'items-baseline justify-between gap-2'"
+    >
       <h2 class="mb-0">Monitoring</h2>
-      <p v-if="collections" class="mb-0 text-body-secondary" data-testid="monitoring-verdict">
-        {{ verdict }}
+      <p
+        v-if="collections"
+        class="mb-0 inline-flex items-center gap-1.5 text-body-secondary"
+        data-testid="monitoring-verdict"
+      >
+        <svg
+          v-if="healthy"
+          class="size-5 text-gain-deep"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+        <span :class="{ 'sr-only': healthy }">{{ verdict }}</span>
       </p>
     </div>
     <data-table
@@ -13,12 +33,41 @@
       :sortable="true"
       :sort-state="sortState"
       :on-sort="toggleSort"
+      :expanded-key="expanded"
+      :on-row-click="toggle"
+      :row-class="() => 'cursor-pointer'"
       :is-loading="isLoading"
       :is-error="isError"
       error-message="Could not load collection status. It retries every 15 seconds."
       empty-message="No collections are configured."
       data-testid="monitoring-table"
     >
+      <template #cell-provider="{ item, value }">
+        <button
+          type="button"
+          class="inline-flex cursor-pointer items-center gap-1.5 text-left focus-visible:outline-2 focus-visible:outline-brass-deep"
+          :aria-expanded="expanded === item.key"
+          data-testid="monitoring-toggle"
+        >
+          <svg
+            class="size-3.5 text-ink-soft transition-transform motion-reduce:transition-none"
+            :class="{ 'rotate-90': expanded === item.key }"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+          {{ provider(value) }}
+        </button>
+      </template>
+      <template #row-details="{ item }">
+        <monitoring-details :collection="item" />
+      </template>
       <template #cell-status="{ item }">
         <span
           class="inline-block rounded-control px-2 py-0.5 text-label font-semibold tracking-wide uppercase"
@@ -51,7 +100,7 @@
           :title="running.has(item.key) ? 'Running…' : 'Run now'"
           :aria-label="running.has(item.key) ? `${label(item)} running` : `Run ${label(item)} now`"
           data-testid="monitoring-rerun"
-          @click="rerun(item)"
+          @click.stop="rerun(item)"
         >
           <svg
             class="size-4"
@@ -80,10 +129,11 @@
 import { computed, ref, watch } from 'vue'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useQuery } from '@tanstack/vue-query'
+import MonitoringDetails from './monitoring-details.vue'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import { monitoringService } from '../../services/api'
 import { REFETCH_INTERVALS } from '../../constants'
-import { formatDateTime } from '../../utils/formatters'
+import { ago, formatDateTime } from '../../utils/formatters'
 import { CollectionStatus, type CollectionStatusDto } from '../../models/generated/domain-models'
 
 const STATUS_STYLES: Record<CollectionStatus, { label: string; class: string }> = {
@@ -110,11 +160,13 @@ const PROVIDER_NAMES: Record<string, string> = { ft: 'FT', blackrock: 'BlackRock
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 
+const provider = (value: string) => PROVIDER_NAMES[value] ?? capitalize(value)
+
 const columns: ColumnDefinition[] = [
   {
     key: 'provider',
     label: 'Provider',
-    formatter: (value: string) => PROVIDER_NAMES[value] ?? capitalize(value),
+    formatter: (value: string) => provider(value),
   },
   { key: 'operation', label: 'Operation', formatter: (value: string) => capitalize(value) },
   { key: 'status', label: 'Status', sortKey: 'severity' },
@@ -128,7 +180,6 @@ const columns: ColumnDefinition[] = [
     hideOnMobile: true,
     formatter: (value: number) => `${value.toFixed(1)} s`,
   },
-  { key: 'consecutiveEmptyRuns', label: 'Empty runs', class: 'text-right', hideOnMobile: true },
   { key: 'actions', label: '', class: 'text-right', sortable: false },
 ]
 
@@ -161,8 +212,12 @@ const rows = computed(() =>
 )
 const { sortedItems, sortState, toggleSort } = useSortableTable(rows)
 
-const label = (item: CollectionStatusDto) =>
-  `${PROVIDER_NAMES[item.provider] ?? capitalize(item.provider)} ${item.operation}`
+const label = (item: CollectionStatusDto) => `${provider(item.provider)} ${item.operation}`
+
+const expanded = ref<string | null>(null)
+const toggle = (item: CollectionStatusDto) => {
+  expanded.value = expanded.value === item.key ? null : item.key
+}
 
 const rerun = async (item: CollectionStatusDto) => {
   rerunError.value = null
@@ -188,29 +243,25 @@ watch(collections, current =>
   })
 )
 
+const failing = computed(
+  () =>
+    (collections.value ?? []).filter(c =>
+      [
+        CollectionStatus.PARTIAL_FAILURE,
+        CollectionStatus.OVERDUE,
+        CollectionStatus.BREAKER_OPEN,
+      ].includes(c.status)
+    ).length
+)
+const healthy = computed(() => failing.value === 0)
+
 const verdict = computed(() => {
-  const failing = (collections.value ?? []).filter(c =>
-    [
-      CollectionStatus.PARTIAL_FAILURE,
-      CollectionStatus.OVERDUE,
-      CollectionStatus.BREAKER_OPEN,
-    ].includes(c.status)
-  ).length
-  if (failing === 0) return `All ${collections.value?.length ?? 0} collections healthy`
-  return `${failing} of ${collections.value?.length ?? 0} need attention`
+  if (healthy.value) return `All ${collections.value?.length ?? 0} collections healthy`
+  return `${failing.value} of ${collections.value?.length ?? 0} need attention`
 })
 
 const items = (item: CollectionStatusDto) =>
   item.failed > 0
     ? `${item.persisted} / ${item.expected} · ${item.failed} failed`
     : `${item.persisted} / ${item.expected}`
-
-const ago = (value: string | null): string => {
-  if (!value) return 'Never'
-  const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000)
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes} min ago`
-  if (minutes < 48 * 60) return `${Math.round(minutes / 60)} h ago`
-  return `${Math.round(minutes / 1440)} d ago`
-}
 </script>

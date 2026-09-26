@@ -196,12 +196,14 @@ export interface CollectionStatusDto {
     key: string;
     provider: string;
     operation: string;
+    job: string;
     status: CollectionStatus;
     expected: number;
     fetched: number;
     persisted: number;
     failed: number;
     failedItems: string[];
+    items: CollectionItemStatusDto[];
     consecutiveEmptyRuns: number;
     durationSeconds: number;
     lastAttempt: DateAsString | null;
@@ -209,6 +211,13 @@ export interface CollectionStatusDto {
     lastFullSuccess: DateAsString | null;
     deadline: DateAsString | null;
     breakerOpen: boolean;
+}
+
+export interface CollectionItemStatusDto {
+    symbol: string;
+    lastSuccess: DateAsString | null;
+    failed: boolean;
+    error: string | null;
 }
 
 export interface PlatformDto {

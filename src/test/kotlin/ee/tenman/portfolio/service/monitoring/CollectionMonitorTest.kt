@@ -34,7 +34,7 @@ class CollectionMonitorTest {
     val storageError = DataAccessResourceFailureException("database unavailable")
     every { state.initialize(CollectionKey.BINANCE_PRICES, any()) } returns mockk<CollectionSnapshot>()
     every { state.begin(CollectionKey.BINANCE_PRICES) } returns Instant.EPOCH
-    every { state.finish(CollectionKey.BINANCE_PRICES, any(), any(), false) } throws storageError
+    every { state.finish(CollectionKey.BINANCE_PRICES, any(), any(), any()) } throws storageError
     val registry = SimpleMeterRegistry()
     val thrown =
       assertThrows<IllegalStateException> {
