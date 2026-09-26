@@ -51,7 +51,7 @@ class CollectionMonitorService(
     val run = CollectionRun(expected) { stateService.recordPersistence(key, it) }
     val outcome = runCatching { action(run) }
     val result = run.result()
-    val storage = runCatching { stateService.finish(key, started, result, outcome.isSuccess) }.exceptionOrNull()
+    val storage = runCatching { stateService.finish(key, started, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     storage?.let { recordStorageFailure(key, it) }
     val metrics = runCatching { recordFailures(key, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     val errors = listOfNotNull(outcome.exceptionOrNull(), storage, metrics)

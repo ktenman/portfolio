@@ -204,6 +204,15 @@ export const formatDate = (dateString: string): string => {
 export const formatDateTime = (dateString: string): string =>
   dateString ? formatWithPattern(new Date(dateString), 'DD.MM HH:mm') : ''
 
+export const ago = (value: string | null): string => {
+  if (!value) return 'Never'
+  const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes} min ago`
+  if (minutes < 48 * 60) return `${Math.round(minutes / 60)} h ago`
+  return `${Math.round(minutes / 1440)} d ago`
+}
+
 export const formatQuantity = (value: number | string | undefined | null): string => {
   if (value === null || value === undefined) return '0.0000'
 
