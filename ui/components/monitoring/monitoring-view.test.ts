@@ -1,9 +1,11 @@
-import { describe, it, expect, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import MonitoringView from './monitoring-view.vue'
 import { monitoringService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import { CollectionStatus, type CollectionStatusDto } from '../../models/generated/domain-models'
+
+enableAutoUnmount(afterEach)
 
 vi.mock('../../services/api', () => ({
   monitoringService: { getCollections: vi.fn(), rerun: vi.fn() },
@@ -39,6 +41,8 @@ const render = async (items: CollectionStatusDto[]) => {
 }
 
 describe('monitoring-view', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   it('reports every collection healthy when all are ok', async () => {
     const wrapper = await render([collection(), collection({ provider: 'ft' })])
     expect(wrapper.find('[data-testid="monitoring-verdict"]').text()).toBe(
@@ -119,5 +123,101 @@ describe('monitoring-view', () => {
     const wrapper = await render([collection()])
     await wrapper.find('tbody [data-testid="monitoring-rerun"]').trigger('click')
     expect(wrapper.find('tbody [data-testid="monitoring-items"]').exists()).toBe(false)
+  })
+
+  it('starts every collection that is neither running nor disabled when run all is clicked', async () => {
+    vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
+    const wrapper = await render([
+      collection({ key: 'LIGHTYEAR_PRICES' }),
+      collection({ key: 'FT_HISTORY', status: CollectionStatus.OVERDUE }),
+      collection({ key: 'BINANCE_PRICES', status: CollectionStatus.RUNNING }),
+      collection({ key: 'VANGUARD_HOLDINGS', status: CollectionStatus.DISABLED }),
+    ])
+    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
+    expect(vi.mocked(monitoringService.rerun).mock.calls).toEqual([
+      ['LIGHTYEAR_PRICES'],
+      ['FT_HISTORY'],
+    ])
+  })
+
+  it('refreshes the collections as soon as run all has started the jobs', async () => {
+    vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
+    const wrapper = await render([collection()])
+    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
+    await flushPromises()
+    expect(monitoringService.getCollections).toHaveBeenCalledTimes(2)
+  })
+
+  it('offers run all while no rerun is in flight', async () => {
+    const wrapper = await render([collection()])
+    const button = wrapper.find('[data-testid="monitoring-run-all"]')
+    expect({
+      title: button.attributes('title'),
+      spinning: button.find('svg').classes('motion-safe:animate-spin'),
+    }).toEqual({ title: 'Run all', spinning: false })
+  })
+
+  it('counts down the reruns in flight on a spinning run all as each collection completes', async () => {
+    vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
+    const wrapper = await render([
+      collection({ key: 'LIGHTYEAR_PRICES' }),
+      collection({ key: 'FT_HISTORY', provider: 'ft', operation: 'history' }),
+    ])
+    vi.mocked(monitoringService.getCollections).mockResolvedValue([
+      collection({ key: 'LIGHTYEAR_PRICES' }),
+      collection({
+        key: 'FT_HISTORY',
+        provider: 'ft',
+        operation: 'history',
+        lastCompletion: '2999-01-01T00:00:00Z',
+      }),
+    ])
+    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
+    await flushPromises()
+    const button = wrapper.find('[data-testid="monitoring-run-all"]')
+    expect({
+      title: button.attributes('title'),
+      spinning: button.find('svg').classes('motion-safe:animate-spin'),
+    }).toEqual({ title: 'Running · 1 left', spinning: true })
+  })
+
+  it('starts the remaining collections when run all is clicked while one is already rerunning', async () => {
+    vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
+    const wrapper = await render([
+      collection({ key: 'LIGHTYEAR_PRICES' }),
+      collection({ key: 'FT_HISTORY', provider: 'ft', operation: 'history' }),
+    ])
+    await wrapper.find('tbody [data-testid="monitoring-rerun"]').trigger('click')
+    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
+    expect(vi.mocked(monitoringService.rerun).mock.calls).toEqual([
+      ['LIGHTYEAR_PRICES'],
+      ['FT_HISTORY'],
+    ])
+  })
+
+  it('names every collection that run all could not start', async () => {
+    vi.mocked(monitoringService.rerun).mockRejectedValue(new Error('Bad gateway'))
+    const wrapper = await render([
+      collection({ key: 'LIGHTYEAR_PRICES' }),
+      collection({ key: 'FT_HISTORY', provider: 'ft', operation: 'history' }),
+    ])
+    await wrapper.find('[data-testid="monitoring-run-all"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').text()).toBe(
+      'Could not start Lightyear prices, FT history. Check the backend log and try again.'
+    )
+  })
+
+  it('starts the collection jobs when the title is tapped', async () => {
+    vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
+    const wrapper = await render([collection({ key: 'VANGUARD_HOLDINGS', provider: 'vanguard' })])
+    await wrapper.find('[data-testid="monitoring-title"]').trigger('click')
+    expect(monitoringService.rerun).toHaveBeenCalledWith('VANGUARD_HOLDINGS')
+  })
+
+  it('names the job without its Job suffix when a row is expanded', async () => {
+    const wrapper = await render([collection()])
+    await wrapper.find('tbody tr').trigger('click')
+    expect(wrapper.find('[data-testid="monitoring-job"]').text()).toBe('LightyearPriceRetrieval')
   })
 })

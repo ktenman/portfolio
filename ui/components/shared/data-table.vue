@@ -77,21 +77,23 @@
                 :class="[column.class, { sortable: sortable && column.sortable !== false }]"
                 @click="handleSort(column)"
               >
-                <span class="th-content">
-                  {{ column.label }}
-                  <span
-                    v-if="sortable && column.sortable !== false"
-                    class="sort-indicator"
-                    :class="{
-                      active: sortState?.key === column.key,
-                      asc: sortState?.key === column.key && sortState?.direction === 'asc',
-                      desc: sortState?.key === column.key && sortState?.direction === 'desc',
-                    }"
-                  >
-                    <i class="sort-arrow-up">▲</i>
-                    <i class="sort-arrow-down">▼</i>
+                <slot :name="`header-${column.key}`">
+                  <span class="th-content">
+                    {{ column.label }}
+                    <span
+                      v-if="sortable && column.sortable !== false"
+                      class="sort-indicator"
+                      :class="{
+                        active: sortState?.key === column.key,
+                        asc: sortState?.key === column.key && sortState?.direction === 'asc',
+                        desc: sortState?.key === column.key && sortState?.direction === 'desc',
+                      }"
+                    >
+                      <i class="sort-arrow-up">▲</i>
+                      <i class="sort-arrow-down">▼</i>
+                    </span>
                   </span>
-                </span>
+                </slot>
               </th>
               <th v-if="$slots.actions" class="hidden! text-right! md:table-cell!">Actions</th>
             </tr>

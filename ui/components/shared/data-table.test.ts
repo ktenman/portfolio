@@ -303,6 +303,20 @@ describe('DataTable', () => {
       const priceCells = wrapper.findAll('.price-slot')
       expect(priceCells[0].text()).toBe('Item 1: 100')
     })
+
+    it('should render header slot in place of the column label', () => {
+      const wrapper = mount(DataTable, {
+        props: {
+          items: mockItems,
+          columns: mockColumns,
+        },
+        slots: {
+          'header-name': '<button class="header-action">Run</button>',
+        },
+      })
+
+      expect(wrapper.findAll('thead th')[1].text()).toBe('Run')
+    })
   })
 
   describe('responsive behavior', () => {
