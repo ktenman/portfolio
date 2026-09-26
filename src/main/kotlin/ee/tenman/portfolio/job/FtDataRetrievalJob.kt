@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.common.hasPositiveCloses
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
@@ -92,7 +93,7 @@ class FtDataRetrievalJob(
   ) {
     log.info("Retrieving FT data for instrument: ${instrument.symbol}")
     val ftData = historicalPricesService.fetchPrices(instrument.symbol)
-    if (ftData.isEmpty() || ftData.values.any { it.close <= java.math.BigDecimal.ZERO }) {
+    if (!ftData.hasPositiveCloses()) {
       log.warn("No FT data found for instrument: ${instrument.symbol}")
       run.failed(instrument.symbol, IllegalArgumentException("Invalid FT price data for ${instrument.symbol}"))
       return

@@ -163,7 +163,6 @@ class Trading212HoldingsRetrievalJobTest {
       )
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
-    every { etfHoldingService.hasHoldingsForDate("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16)) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } returns holdings
 
     job.runJob()
@@ -195,7 +194,6 @@ class Trading212HoldingsRetrievalJobTest {
         createInstrument("BNKE:PAR:EUR"),
         createInstrument("OTHER:X:EUR"),
       )
-    every { etfHoldingService.hasHoldingsForDate(any(), any()) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } throws RuntimeException("network")
     every { holdingsService.fetchHoldings("OTHERp_EQ") } returns emptyList()
 
@@ -208,7 +206,6 @@ class Trading212HoldingsRetrievalJobTest {
   fun `should skip symbols with empty holdings without writing`() {
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
-    every { etfHoldingService.hasHoldingsForDate("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16)) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } returns emptyList()
 
     job.runJob()
@@ -221,7 +218,6 @@ class Trading212HoldingsRetrievalJobTest {
     scrapingProperties.symbols.add(Trading212SymbolEntry(symbol = "VUAA:LON:EUR", ticker = "VUAAl_EQ"))
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
-    every { etfHoldingService.hasHoldingsForDate("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16)) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } returns emptyList()
 
     job.runJob()

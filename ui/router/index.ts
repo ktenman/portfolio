@@ -33,6 +33,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../components/calculator.vue'),
   },
   {
+    path: '/monitoring',
+    name: 'Monitoring',
+    component: () => import('../components/monitoring/monitoring-view.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

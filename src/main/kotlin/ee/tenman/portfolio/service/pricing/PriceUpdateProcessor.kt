@@ -30,7 +30,6 @@ class PriceUpdateProcessor(
     log: Logger,
     fetchPrices: () -> Map<String, BigDecimal>,
     processSymbol: (String, BigDecimal, Boolean, LocalDate) -> ProcessResult,
-    expectedCount: Int? = null,
     expectedSymbols: Set<String>? = null,
     run: CollectionRun? = null,
   ) {
@@ -43,7 +42,7 @@ class PriceUpdateProcessor(
 
     expectedSymbols?.forEach { run?.attempted(it) }
     val prices = fetchPrices()
-    val requested = expectedSymbols?.size ?: expectedCount ?: prices.size
+    val requested = expectedSymbols?.size ?: prices.size
     val today = LocalDate.now(clock)
 
     var updatedCount = 0
@@ -56,7 +55,6 @@ class PriceUpdateProcessor(
         failedCount++
         return@forEach
       }
-      run?.attempted(symbol)
       run?.fetched(symbol)
       val result =
         runCatching { processSymbol(symbol, price, isWeekend, today) }.getOrElse {

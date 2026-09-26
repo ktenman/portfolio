@@ -1,10 +1,12 @@
 package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.binance.BinanceService
+import ee.tenman.portfolio.common.hasPositiveCloses
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.CollectionRun
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
@@ -13,6 +15,7 @@ import ee.tenman.portfolio.service.pricing.PriceSnapshotBackfillService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 
@@ -33,7 +36,7 @@ class BinanceDataRetrievalJob(
   @Volatile
   private var isExecuting = false
 
-  @Scheduled(fixedDelayString = "\${scheduling.jobs.binance-interval:120000}")
+  @Scheduled(fixedDelayString = CollectionSchedules.BINANCE_PRICE_INTERVAL)
   fun runJob() {
     log.debug("Running Binance data retrieval job")
     jobExecutionService.executeJob(this)
@@ -85,7 +88,7 @@ class BinanceDataRetrievalJob(
   ) {
     log.debug("Refreshing current price for instrument: ${instrument.symbol}")
     val currentPrice = binanceService.getCurrentPrice(instrument.symbol)
-    require(currentPrice > java.math.BigDecimal.ZERO) { "Nonpositive Binance price for ${instrument.symbol}" }
+    require(currentPrice > BigDecimal.ZERO) { "Nonpositive Binance price for ${instrument.symbol}" }
     run.fetched(instrument.symbol)
     val today = LocalDate.now(clock)
     dailyPriceService.saveCurrentPrice(instrument, currentPrice, today, ProviderName.BINANCE)
@@ -106,7 +109,7 @@ class BinanceDataRetrievalJob(
   ) {
     log.info("Fetching full history for instrument: ${instrument.symbol} (no historical data found)")
     val dailyData = binanceService.getDailyPricesAsync(instrument.symbol)
-    if (dailyData.isEmpty() || dailyData.values.any { it.close <= java.math.BigDecimal.ZERO }) {
+    if (!dailyData.hasPositiveCloses()) {
       log.warn("No daily data found for instrument: ${instrument.symbol}")
       run.failed(instrument.symbol, IllegalArgumentException("Invalid Binance history for ${instrument.symbol}"))
       return

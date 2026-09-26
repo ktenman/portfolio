@@ -73,12 +73,9 @@ class CollectionStateService(
   ) {
     val operation = requireNotNull(operationRepository.findLockedByKey(key))
     val now = clock.instant()
-    operation.lastFullSuccess =
-      if (succeeded && result.expected.isNotEmpty() && result.failed.isEmpty()) {
-        later(operation.lastFullSuccess, now)
-      } else {
-        operation.lastFullSuccess
-      }
+    if (succeeded && result.expected.isNotEmpty() && result.failed.isEmpty()) {
+      operation.lastFullSuccess = later(operation.lastFullSuccess, now)
+    }
     if (operation.lastCompletion != null && now.isBefore(operation.lastCompletion)) return
     operation.attempted = result.attempted.size
     operation.fetched = result.fetched.size
@@ -120,5 +117,5 @@ class CollectionStateService(
   private fun later(
     previous: Instant?,
     current: Instant,
-  ): Instant = if (previous == null || current.isAfter(previous)) current else previous
+  ): Instant = maxOf(previous ?: current, current)
 }

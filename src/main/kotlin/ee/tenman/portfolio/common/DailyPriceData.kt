@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.common
 
 import java.math.BigDecimal
+import java.time.LocalDate
 
 interface DailyPriceData {
   val open: BigDecimal
@@ -17,3 +18,5 @@ data class DailyPriceDataImpl(
   override val close: BigDecimal,
   override val volume: Long,
 ) : DailyPriceData
+
+fun Map<LocalDate, DailyPriceData>.hasPositiveCloses(): Boolean = isNotEmpty() && values.all { it.close > BigDecimal.ZERO }

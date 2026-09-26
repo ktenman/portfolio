@@ -7,6 +7,7 @@ import ee.tenman.portfolio.model.CollectionRunResult
 import feign.FeignException
 import io.micrometer.core.instrument.MeterRegistry
 import jakarta.persistence.PersistenceException
+import org.slf4j.LoggerFactory
 import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.TransactionException
@@ -25,6 +26,8 @@ class CollectionMonitorService(
   private val stateService: CollectionStateService,
   private val registry: MeterRegistry,
 ) {
+  private val log = LoggerFactory.getLogger(javaClass)
+
   companion object {
     private val locks = CollectionKey.entries.associateWith { Any() }
   }
@@ -51,17 +54,11 @@ class CollectionMonitorService(
     val storage = runCatching { stateService.finish(key, started, result, outcome.isSuccess) }.exceptionOrNull()
     storage?.let { recordStorageFailure(key, it) }
     val metrics = runCatching { recordFailures(key, result, outcome.exceptionOrNull()) }.exceptionOrNull()
-    val original = outcome.exceptionOrNull()
-    if (original != null) {
-      storage?.let(original::addSuppressed)
-      metrics?.let(original::addSuppressed)
-      throw original
+    val errors = listOfNotNull(outcome.exceptionOrNull(), storage, metrics)
+    errors.firstOrNull()?.let { first ->
+      errors.drop(1).forEach(first::addSuppressed)
+      throw first
     }
-    if (storage != null) {
-      metrics?.let(storage::addSuppressed)
-      throw storage
-    }
-    if (metrics != null) throw metrics
     outcome.getOrThrow()
   }
 
@@ -79,6 +76,10 @@ class CollectionMonitorService(
     result: CollectionRunResult,
     actionError: Throwable?,
   ) {
+    if (result.failed.isNotEmpty()) {
+      val reasons = result.failed.associateWith { (result.failures[it] ?: actionError)?.message ?: "not persisted" }
+      log.warn("Collection ${key.provider} ${key.operation} failed ${result.failed.size}/${result.expected.size} items: $reasons")
+    }
     result.failed.forEach { symbol ->
       val error = result.failures[symbol] ?: actionError
       val (category, status) = classify(error)

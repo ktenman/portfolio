@@ -24,13 +24,12 @@ class Trading212Service(
       return emptyMap()
     }
     val entries = scrapingProperties.symbols.filter { it.symbol in eligibleSymbols }
-    if (entries.isEmpty()) {
-      log.warn("No Trading212 symbols configured for eligible instruments: $eligibleSymbols")
-      eligibleSymbols.forEach { onFailure(it, IllegalArgumentException("No Trading212 ticker configured for $it")) }
-      return emptyMap()
-    }
     (eligibleSymbols - entries.map { it.symbol }.toSet()).forEach {
       onFailure(it, IllegalArgumentException("No Trading212 ticker configured for $it"))
+    }
+    if (entries.isEmpty()) {
+      log.warn("No Trading212 symbols configured for eligible instruments: $eligibleSymbols")
+      return emptyMap()
     }
     val tickers = entries.joinToString(",") { it.ticker }
     log.info("Fetching prices for Trading212 tickers: $tickers")
@@ -42,10 +41,6 @@ class Trading212Service(
           if (priceData == null) {
             log.warn("No price data found for ticker: ${entry.ticker} (symbol: ${entry.symbol})")
             onFailure(entry.symbol, IllegalArgumentException("Missing Trading212 price for ${entry.symbol}"))
-            return@mapNotNull null
-          }
-          if (priceData.bid <= BigDecimal.ZERO) {
-            onFailure(entry.symbol, IllegalArgumentException("Nonpositive Trading212 price for ${entry.symbol}"))
             return@mapNotNull null
           }
           entry.symbol to priceData.bid

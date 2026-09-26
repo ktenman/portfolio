@@ -87,7 +87,6 @@ class CsusHoldingsRetrievalJobTest {
       listOf(
         HoldingData(name = "NVIDIA CORP", ticker = "NVDA", sector = "Information Technology", weight = BigDecimal("7.42"), rank = 1),
       )
-    every { etfHoldingService.hasHoldingsForDate(symbol, today) } returns false
     every { csusHoldingsService.fetchHoldings() } returns holdings
     every { etfHoldingService.saveHoldings(symbol, today, holdings) } just Runs
 
