@@ -13,12 +13,14 @@ const collection = (overrides: Partial<CollectionStatusDto> = {}): CollectionSta
   key: 'LIGHTYEAR_PRICES',
   provider: 'lightyear',
   operation: 'prices',
+  job: 'LightyearPriceRetrievalJob',
   status: CollectionStatus.OK,
   expected: 12,
   fetched: 12,
   persisted: 12,
   failed: 0,
   failedItems: [],
+  items: [],
   consecutiveEmptyRuns: 0,
   durationSeconds: 1.5,
   lastAttempt: null,
@@ -42,6 +44,11 @@ describe('monitoring-view', () => {
     expect(wrapper.find('[data-testid="monitoring-verdict"]').text()).toBe(
       'All 2 collections healthy'
     )
+  })
+
+  it('shows a checkmark when every collection is healthy', async () => {
+    const wrapper = await render([collection()])
+    expect(wrapper.find('[data-testid="monitoring-verdict"] svg').exists()).toBe(true)
   })
 
   it('counts overdue collections as needing attention', async () => {
@@ -91,5 +98,26 @@ describe('monitoring-view', () => {
     ])
     await wrapper.find('th').trigger('click')
     expect(wrapper.find('tbody tr').text()).toContain('Binance')
+  })
+
+  it('shows the failure reason of each item when a row is expanded', async () => {
+    const wrapper = await render([
+      collection({
+        failed: 1,
+        items: [
+          { symbol: 'WEBN', lastSuccess: null, failed: true, error: 'Nimetu osalus' },
+          { symbol: 'VWCE', lastSuccess: null, failed: false, error: null },
+        ],
+      }),
+    ])
+    await wrapper.find('tbody tr').trigger('click')
+    expect(wrapper.find('[data-testid="monitoring-item-error"]').text()).toBe('Nimetu osalus')
+  })
+
+  it('does not expand the row when run now is clicked', async () => {
+    vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
+    const wrapper = await render([collection()])
+    await wrapper.find('tbody [data-testid="monitoring-rerun"]').trigger('click')
+    expect(wrapper.find('tbody [data-testid="monitoring-items"]').exists()).toBe(false)
   })
 })

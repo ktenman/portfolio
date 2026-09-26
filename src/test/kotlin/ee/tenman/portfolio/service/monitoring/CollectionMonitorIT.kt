@@ -43,6 +43,16 @@ class CollectionMonitorIT {
   }
 
   @Test
+  fun `should store the failure reason of each unpersisted item`() {
+    monitor.collect(CollectionKey.BINANCE_PRICES, listOf("A", "B")) {
+      it.persisted("A")
+      it.failed("B", IllegalStateException("Ölihind puudub"))
+    }
+    val snapshot = stateService.snapshots().single { it.key == CollectionKey.BINANCE_PRICES }
+    expect(snapshot.itemErrors).toEqual(mapOf("A" to null, "B" to "Ölihind puudub"))
+  }
+
+  @Test
   fun `should keep last full success through a later partial run`() {
     monitor.collect(CollectionKey.BINANCE_PRICES, listOf("A")) { it.persisted("A") }
     val previous = stateService.snapshots().single { it.key == CollectionKey.BINANCE_PRICES }.lastFullSuccess

@@ -15,12 +15,14 @@ data class CollectionStatusDto(
   val key: String,
   val provider: String,
   val operation: String,
+  val job: String,
   val status: CollectionStatus,
   val expected: Int,
   val fetched: Int,
   val persisted: Int,
   val failed: Int,
   val failedItems: List<String>,
+  val items: List<CollectionItemStatusDto>,
   val consecutiveEmptyRuns: Int,
   val durationSeconds: Double,
   val lastAttempt: Instant?,
@@ -28,4 +30,11 @@ data class CollectionStatusDto(
   val lastFullSuccess: Instant?,
   val deadline: Instant?,
   val breakerOpen: Boolean,
+)
+
+data class CollectionItemStatusDto(
+  val symbol: String,
+  val lastSuccess: Instant?,
+  val failed: Boolean,
+  val error: String?,
 )

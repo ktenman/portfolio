@@ -225,6 +225,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.dto.EtfDetailDto",
       "ee.tenman.portfolio.dto.CollectionStatusDto",
       "ee.tenman.portfolio.dto.CollectionStatus",
+      "ee.tenman.portfolio.dto.CollectionItemStatusDto",
       "ee.tenman.portfolio.domain.Currency",
       "ee.tenman.portfolio.domain.Platform",
       "ee.tenman.portfolio.domain.PlatformDto",

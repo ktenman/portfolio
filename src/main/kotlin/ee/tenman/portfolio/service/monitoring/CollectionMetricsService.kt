@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.monitoring
 
 import ee.tenman.portfolio.domain.CollectionKey
+import ee.tenman.portfolio.dto.CollectionItemStatusDto
 import ee.tenman.portfolio.dto.CollectionStatus
 import ee.tenman.portfolio.dto.CollectionStatusDto
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
@@ -71,16 +72,19 @@ class CollectionMetricsService(
   private fun status(snapshot: CollectionSnapshot): CollectionStatusDto {
     val expectation = schedules.expectation(snapshot)
     val open = breaker(snapshot.key) == 1.0
+    val failed = failedItems(snapshot)
     return CollectionStatusDto(
       key = snapshot.key.name,
       provider = snapshot.key.provider,
       operation = snapshot.key.operation,
+      job = JOBS.getValue(snapshot.key),
       status = classify(snapshot, expectation, open),
       expected = snapshot.expected.size,
       fetched = snapshot.fetched,
       persisted = snapshot.persisted,
       failed = snapshot.failed,
-      failedItems = failedItems(snapshot),
+      failedItems = failed,
+      items = items(snapshot, failed.toSet()),
       consecutiveEmptyRuns = snapshot.consecutiveEmptyRuns,
       durationSeconds = snapshot.durationSeconds,
       lastAttempt = snapshot.lastAttempt,
@@ -97,6 +101,19 @@ class CollectionMetricsService(
     val start = completion.minusMillis((snapshot.durationSeconds * 1000).toLong())
     return snapshot.expected.filter { snapshot.itemSuccesses[it]?.isBefore(start) ?: true }.sorted()
   }
+
+  private fun items(
+    snapshot: CollectionSnapshot,
+    failed: Set<String>,
+  ): List<CollectionItemStatusDto> =
+    snapshot.expected.sorted().map { symbol ->
+      CollectionItemStatusDto(
+        symbol = symbol,
+        lastSuccess = snapshot.itemSuccesses[symbol],
+        failed = symbol in failed,
+        error = if (symbol in failed) snapshot.itemErrors[symbol] else null,
+      )
+    }
 
   private fun classify(
     snapshot: CollectionSnapshot,

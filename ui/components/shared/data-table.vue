@@ -24,6 +24,7 @@
           :key="getItemKey(item, index)"
           class="mobile-card mb-2 overflow-hidden rounded-container border border-gray-200 bg-surface px-3 py-5 shadow-[0_1px_2px_0_rgb(0_0_0/0.03)] transition-all min-[389px]:px-2 min-[389px]:py-3 hover:border-gray-300 hover:shadow-lifted"
           :class="rowClass?.(item, index)"
+          @click="onRowClick?.(item)"
         >
           <slot name="mobile-card" :item="item" :index="index" :columns="columns">
             <div class="mobile-card-body p-4">
@@ -55,6 +56,9 @@
               <slot name="actions" :item="item" :index="index"></slot>
             </div>
           </slot>
+          <div v-if="isExpanded(item, index)" class="mt-3" @click.stop>
+            <slot name="row-details" :item="item"></slot>
+          </div>
         </div>
         <!-- Mobile Footer -->
         <div v-if="$slots['mobile-footer']" class="mobile-footer">
@@ -93,29 +97,36 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(item, index) in items"
-              :key="getItemKey(item, index)"
-              :class="rowClass?.(item, index)"
-            >
-              <td
-                v-for="column in columns"
-                :key="column.key"
-                :class="column.class"
-                :data-label="column.label"
-              >
-                <slot :name="`cell-${column.key}`" :item="item" :value="getCellValue(item, column)">
-                  {{ formatCellValue(item, column) }}
-                </slot>
-              </td>
-              <td
-                v-if="$slots.actions"
-                class="hidden! text-right! md:table-cell!"
-                data-label="Actions"
-              >
-                <slot name="actions" :item="item" :index="index"></slot>
-              </td>
-            </tr>
+            <template v-for="(item, index) in items" :key="getItemKey(item, index)">
+              <tr :class="rowClass?.(item, index)" @click="onRowClick?.(item)">
+                <td
+                  v-for="column in columns"
+                  :key="column.key"
+                  :class="column.class"
+                  :data-label="column.label"
+                >
+                  <slot
+                    :name="`cell-${column.key}`"
+                    :item="item"
+                    :value="getCellValue(item, column)"
+                  >
+                    {{ formatCellValue(item, column) }}
+                  </slot>
+                </td>
+                <td
+                  v-if="$slots.actions"
+                  class="hidden! text-right! md:table-cell!"
+                  data-label="Actions"
+                >
+                  <slot name="actions" :item="item" :index="index"></slot>
+                </td>
+              </tr>
+              <tr v-if="isExpanded(item, index)" class="row-details">
+                <td :colspan="columns.length + ($slots.actions ? 1 : 0)">
+                  <slot name="row-details" :item="item"></slot>
+                </td>
+              </tr>
+            </template>
           </tbody>
           <tfoot v-if="$slots.footer">
             <slot name="footer"></slot>
@@ -154,6 +165,8 @@ interface Props {
   sortable?: boolean
   sortState?: SortState
   onSort?: (key: string, sortKey?: string) => void
+  expandedKey?: string | number | null
+  onRowClick?: (item: T) => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -172,6 +185,9 @@ const getItemKey = (item: T, index: number): string | number => {
   }
   return index
 }
+
+const isExpanded = (item: T, index: number): boolean =>
+  props.expandedKey != null && getItemKey(item, index) === props.expandedKey
 
 const getCellValue = (item: T, column: ColumnDefinition): any => {
   const keys = column.key.split('.')

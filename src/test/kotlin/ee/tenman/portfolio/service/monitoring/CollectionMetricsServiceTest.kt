@@ -180,6 +180,32 @@ class CollectionMetricsServiceTest {
   }
 
   @Test
+  fun `should expose the last error of each failed item`() {
+    val fixture = fixture()
+    val snapshot =
+      snapshots(setOf("ÄRI:TLN:EUR", "VGLA:GER:EUR"))
+      .first()
+      .copy(
+        failed = 1,
+        lastAttempt = NOW.plusSeconds(10),
+        lastCompletion = NOW.plusSeconds(10),
+        durationSeconds = 10.0,
+        itemSuccesses = mapOf("ÄRI:TLN:EUR" to NOW.minusSeconds(60), "VGLA:GER:EUR" to NOW.plusSeconds(5)),
+        itemErrors = mapOf("ÄRI:TLN:EUR" to "Unnamed holding", "VGLA:GER:EUR" to "stale"),
+      )
+    every { fixture.inventory.configured() } returns inventory(snapshot.expected)
+    every { fixture.state.snapshots() } returns listOf(snapshot) + snapshots().drop(1)
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .first()
+      .items
+      .map { it.error },
+    ).toEqual(listOf(null, "Unnamed holding"))
+  }
+
+  @Test
   fun `should name the items not persisted during the last completed run`() {
     val fixture = fixture()
     val snapshot =

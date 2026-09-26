@@ -69,11 +69,11 @@ class CollectionStateService(
     key: CollectionKey,
     started: Instant,
     result: CollectionRunResult,
-    succeeded: Boolean,
+    error: Throwable?,
   ) {
     val operation = requireNotNull(operationRepository.findLockedByKey(key))
     val now = clock.instant()
-    if (succeeded && result.expected.isNotEmpty() && result.failed.isEmpty()) {
+    if (error == null && result.expected.isNotEmpty() && result.failed.isEmpty()) {
       operation.lastFullSuccess = later(operation.lastFullSuccess, now)
     }
     if (operation.lastCompletion != null && now.isBefore(operation.lastCompletion)) return
@@ -88,6 +88,22 @@ class CollectionStateService(
       .coerceAtLeast(0)
       .toDouble() / 1000
     operation.lastCompletion = now
+    recordErrors(key, result, error)
+  }
+
+  private fun recordErrors(
+    key: CollectionKey,
+    result: CollectionRunResult,
+    error: Throwable?,
+  ) {
+    itemRepository.findAllByKey(key).filter { it.active }.forEach { item ->
+      item.lastError = if (item.symbol in result.failed) reason(result.failures[item.symbol] ?: error) else null
+    }
+  }
+
+  private fun reason(error: Throwable?): String {
+    val message = error?.let { it.message ?: it.javaClass.simpleName } ?: "Not persisted"
+    return message.take(MAX_ERROR_LENGTH)
   }
 
   private fun snapshot(
@@ -111,6 +127,7 @@ class CollectionStateService(
       durationSeconds = operation.durationSeconds,
       itemSuccesses = active.associate { it.symbol to it.lastSuccess },
       itemInitializedAt = active.associate { it.symbol to it.initializedAt },
+      itemErrors = active.associate { it.symbol to it.lastError },
     )
   }
 
@@ -118,4 +135,8 @@ class CollectionStateService(
     previous: Instant?,
     current: Instant,
   ): Instant = maxOf(previous ?: current, current)
+
+  companion object {
+    private const val MAX_ERROR_LENGTH = 500
+  }
 }
