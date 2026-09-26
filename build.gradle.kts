@@ -39,6 +39,7 @@ dependencies {
   implementation(libs.jackson.module.kotlin)
 
   implementation(libs.spring.boot.starter.actuator)
+  implementation(libs.micrometer.registry.prometheus)
   implementation(libs.spring.boot.starter.aspectj)
   implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
@@ -222,6 +223,8 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto",
       "ee.tenman.portfolio.dto.DiversificationCalculatorResponseDto",
       "ee.tenman.portfolio.dto.EtfDetailDto",
+      "ee.tenman.portfolio.dto.CollectionStatusDto",
+      "ee.tenman.portfolio.dto.CollectionStatus",
       "ee.tenman.portfolio.domain.Currency",
       "ee.tenman.portfolio.domain.Platform",
       "ee.tenman.portfolio.domain.PlatformDto",

@@ -192,6 +192,25 @@ export interface EtfDetailDto extends Serializable {
     constituentSymbols: string[];
 }
 
+export interface CollectionStatusDto {
+    key: string;
+    provider: string;
+    operation: string;
+    status: CollectionStatus;
+    expected: number;
+    fetched: number;
+    persisted: number;
+    failed: number;
+    failedItems: string[];
+    consecutiveEmptyRuns: number;
+    durationSeconds: number;
+    lastAttempt: DateAsString | null;
+    lastCompletion: DateAsString | null;
+    lastFullSuccess: DateAsString | null;
+    deadline: DateAsString | null;
+    breakerOpen: boolean;
+}
+
 export interface PlatformDto {
     name: string;
     displayName: string;
@@ -252,6 +271,15 @@ export interface LargestPositionDto extends Serializable {
 }
 
 type DateAsString = string;
+
+export enum CollectionStatus {
+    OK = "OK",
+    DISABLED = "DISABLED",
+    BREAKER_OPEN = "BREAKER_OPEN",
+    RUNNING = "RUNNING",
+    OVERDUE = "OVERDUE",
+    PARTIAL_FAILURE = "PARTIAL_FAILURE",
+}
 
 export enum Currency {
     EUR = "EUR",

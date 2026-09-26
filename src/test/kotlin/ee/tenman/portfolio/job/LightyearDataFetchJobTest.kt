@@ -1,12 +1,16 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties.EtfConfig
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.lightyear.LightyearPriceService
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -24,6 +28,7 @@ class LightyearDataFetchJobTest {
   private val etfHoldingService: EtfHoldingService = mockk(relaxed = true)
   private val etfBreakdownService: EtfBreakdownService = mockk(relaxed = true)
   private val clock: Clock = Clock.fixed(Instant.parse("2026-09-22T09:00:00Z"), ZoneOffset.UTC)
+  private val runs = mutableListOf<CollectionRunResult>()
 
   private val job =
     LightyearDataFetchJob(
@@ -33,6 +38,7 @@ class LightyearDataFetchJobTest {
       etfHoldingService = etfHoldingService,
       etfBreakdownService = etfBreakdownService,
       clock = clock,
+      collectionMonitor = monitorForTests(runs),
     )
 
   @BeforeEach
@@ -44,7 +50,7 @@ class LightyearDataFetchJobTest {
         EtfConfig("VWCE:GER:EUR", "1eda0a07-10b3-63e0-b568-6deedaa217e7"),
         EtfConfig("IUSQ:GER:EUR", "1eda0a07-10b3-63e0-b568-6deedaa217e8"),
       )
-    every { etfHoldingService.hasHoldingsForDate(any(), any()) } returns false
+    every { properties.getHoldingsSymbols() } returns setOf("IUSQ:GER:EUR")
     every { lightyearPriceService.fetchHoldingsAsDto(any()) } returns
       listOf(HoldingData(name = "Apple Inc", ticker = "AAPL", sector = null, weight = BigDecimal("100"), rank = 1))
   }
@@ -68,6 +74,7 @@ class LightyearDataFetchJobTest {
     job.execute()
 
     verify(exactly = 1) { lightyearPriceService.fetchHoldingsAsDto("IUSQ:GER:EUR") }
+    expect(runs.single().persisted).toContainExactly("IUSQ:GER:EUR")
   }
 
   @Test
@@ -80,5 +87,14 @@ class LightyearDataFetchJobTest {
   fun `cannot save Lightyear holdings for VWCE`() {
     job.execute()
     verify(exactly = 0) { etfHoldingService.saveHoldings("VWCE:GER:EUR", any(), any()) }
+  }
+
+  @Test
+  fun `should exclude unsupported equity and synthetic holdings from collection`() {
+    every { properties.getHoldingsSymbols() } returns emptySet()
+
+    job.execute()
+
+    verify(exactly = 0) { lightyearPriceService.fetchHoldingsAsDto(any()) }
   }
 }

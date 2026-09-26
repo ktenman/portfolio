@@ -1,9 +1,12 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import ee.tenman.portfolio.service.pricing.Trading212PriceUpdateService
 import ee.tenman.portfolio.trading212.Trading212Service
@@ -24,6 +27,7 @@ class Trading212DataRetrievalJob(
   private val instrumentRepository: InstrumentRepository,
   private val taskScheduler: TaskScheduler,
   private val clock: Clock,
+  private val collectionMonitor: CollectionMonitorService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -36,7 +40,7 @@ class Trading212DataRetrievalJob(
     )
   }
 
-  @Scheduled(fixedDelayString = "\${scheduling.jobs.trading212-interval:60000}")
+  @Scheduled(fixedDelayString = CollectionSchedules.TRADING212_PRICE_INTERVAL)
   fun runJob() {
     log.info("Running Trading212 price update job")
     jobExecutionService.executeJob(this)
@@ -49,15 +53,19 @@ class Trading212DataRetrievalJob(
         .findByProviderName(ProviderName.TRADING212)
         .map { it.symbol }
         .toSet()
-    priceUpdateProcessor.processPriceUpdates(
-      platform = Platform.TRADING212,
-      log = log,
-      fetchPrices = { trading212Service.fetchCurrentPrices(eligibleSymbols) },
-      processSymbol = trading212PriceUpdateService::processSymbol,
-    )
+    collectionMonitor.collect(CollectionKey.TRADING212_PRICES, eligibleSymbols) { run ->
+      priceUpdateProcessor.processPriceUpdates(
+        platform = Platform.TRADING212,
+        log = log,
+        fetchPrices = { trading212Service.fetchCurrentPrices(eligibleSymbols, run::failed) },
+        processSymbol = trading212PriceUpdateService::processSymbol,
+        expectedSymbols = eligibleSymbols,
+        run = run,
+      )
+    }
   }
 
   companion object {
-    private const val INITIAL_DELAY_SECONDS = 15L
+    private const val INITIAL_DELAY_SECONDS = CollectionSchedules.TRADING212_PRICE_STARTUP_SECONDS
   }
 }

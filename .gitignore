@@ -93,3 +93,4 @@ scripts/model-benchmark/
 docs/*
 !docs/architecture/
 .env.sync
+/monitoring/secrets/

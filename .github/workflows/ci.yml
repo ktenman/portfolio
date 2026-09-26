@@ -101,6 +101,8 @@ jobs:
             name: Frontend Unit Tests
           - type: cloudflare
             name: Cloudflare Bypass Proxy Tests
+          - type: monitoring
+            name: Monitoring Rule and Delivery Tests
           - type: e2e
             name: E2E Tests
       fail-fast: false
@@ -140,6 +142,9 @@ jobs:
         if: matrix.type == 'cloudflare'
         run: npm test && npm run test:coverage
         working-directory: cloudflare-bypass-proxy
+      - name: Run monitoring tests
+        if: matrix.type == 'monitoring'
+        run: python3 monitoring/test-monitoring.py
       - name: Build JAR for E2E
         if: matrix.type == 'e2e'
         run: |
@@ -430,6 +435,9 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       TRADING212_API_KEY_ID: ${{ secrets.TRADING212_API_KEY_ID }}
       TRADING212_API_KEY_SECRET: ${{ secrets.TRADING212_API_KEY_SECRET }}
+      MONITORING_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITORING_TELEGRAM_BOT_TOKEN }}
+      MONITORING_TELEGRAM_CHAT_ID: ${{ secrets.MONITORING_TELEGRAM_CHAT_ID }}
+      MONITORING_HEARTBEAT_URL: ${{ secrets.MONITORING_HEARTBEAT_URL }}
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot

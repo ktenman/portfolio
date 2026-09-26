@@ -1,10 +1,15 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.common.hasPositiveCloses
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
+import ee.tenman.portfolio.model.CollectionRun
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
@@ -23,6 +28,7 @@ class FtDataRetrievalJob(
   private val priceSnapshotService: PriceSnapshotService,
   private val taskScheduler: TaskScheduler,
   private val clock: Clock = Clock.systemDefaultZone(),
+  private val collectionMonitor: CollectionMonitorService,
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -34,11 +40,11 @@ class FtDataRetrievalJob(
     log.info("Scheduling initial FT data retrieval job to run in 10 seconds")
     taskScheduler.schedule(
       { runScheduledJob() },
-      Instant.now(clock).plus(Duration.ofSeconds(10)),
+      Instant.now(clock).plus(Duration.ofSeconds(CollectionSchedules.FT_HISTORY_STARTUP_SECONDS)),
     )
   }
 
-  @Scheduled(cron = "0 0 5 * * *")
+  @Scheduled(cron = CollectionSchedules.FT_HISTORY_CRON, zone = CollectionSchedules.TIME_ZONE)
   fun runDailyJob() {
     log.info("Running daily FT data retrieval job at 05:00")
     runScheduledJob()
@@ -60,37 +66,42 @@ class FtDataRetrievalJob(
     try {
       log.info("Starting FT data retrieval execution")
       val instruments = instrumentService.getInstrumentsByProvider(ProviderName.FT)
-
-      if (instruments.isEmpty()) {
-        log.info("No FT instruments found to process")
-        return
+      collectionMonitor.collect(CollectionKey.FT_HISTORY, instruments.map { it.symbol }) { run ->
+        instruments.forEach { instrument -> processInstrument(instrument, run) }
       }
-
-      instruments.forEach { instrument ->
-        processInstrument(instrument)
-      }
-
       log.info("Completed FT data retrieval execution. Processed ${instruments.size} instruments")
     } finally {
       isExecuting = false
     }
   }
 
-  private fun processInstrument(instrument: Instrument) {
-    runCatching { retrieveAndProcess(instrument) }
-      .onFailure { e -> log.error("Error processing instrument ${instrument.symbol}", e) }
+  private fun processInstrument(
+    instrument: Instrument,
+    run: CollectionRun,
+  ) {
+    run.attempted(instrument.symbol)
+    runCatching { retrieveAndProcess(instrument, run) }
+      .onFailure { e ->
+        run.failed(instrument.symbol, e)
+        log.error("Error processing instrument ${instrument.symbol}", e)
+      }
   }
 
-  private fun retrieveAndProcess(instrument: Instrument) {
+  private fun retrieveAndProcess(
+    instrument: Instrument,
+    run: CollectionRun,
+  ) {
     log.info("Retrieving FT data for instrument: ${instrument.symbol}")
     val ftData = historicalPricesService.fetchPrices(instrument.symbol)
-    if (ftData.isEmpty()) {
+    if (!ftData.hasPositiveCloses()) {
       log.warn("No FT data found for instrument: ${instrument.symbol}")
+      run.failed(instrument.symbol, IllegalArgumentException("Invalid FT price data for ${instrument.symbol}"))
       return
     }
+    run.fetched(instrument.symbol)
     dataProcessingUtil.processDailyData(instrument, ftData, ProviderName.FT)
     val latestPrice = ftData.maxByOrNull { it.key }?.value?.close ?: return
-    runCatching { priceSnapshotService.saveSnapshot(instrument, latestPrice, ProviderName.FT) }
-      .onFailure { e -> log.warn("Failed to save price snapshot for ${instrument.symbol}: ${e.message}") }
+    priceSnapshotService.saveSnapshot(instrument, latestPrice, ProviderName.FT)
+    run.persisted(instrument.symbol)
   }
 }

@@ -15,6 +15,7 @@ import ee.tenman.portfolio.service.etf.EtfHoldingIndustryService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
 import io.mockk.every
@@ -56,6 +57,7 @@ class VanguardIndustryReconciliationJobTest {
       positions,
       mockk<LightyearPriceService>(),
       Clock.fixed(Instant.parse("2026-09-23T12:00:00Z"), ZoneOffset.UTC),
+      monitorForTests(),
     )
 
   @BeforeEach

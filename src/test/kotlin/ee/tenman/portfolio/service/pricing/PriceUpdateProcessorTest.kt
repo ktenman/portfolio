@@ -7,6 +7,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.exception.PriceRefreshException
+import ee.tenman.portfolio.model.CollectionRun
 import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
@@ -130,6 +131,28 @@ class PriceUpdateProcessorTest {
   }
 
   @Test
+  fun `should count only validated fetched prices and committed updates`() {
+    every { marketPhaseDetectionService.isWeekendPhase() } returns false
+    val symbols = setOf("GOOD", "ZERO", "MISSING")
+    val run = CollectionRun(symbols)
+
+    runCatching {
+      processor.processPriceUpdates(
+        platform = Platform.LIGHTYEAR,
+        log = log,
+        fetchPrices = { mapOf("GOOD" to BigDecimal.ONE, "ZERO" to BigDecimal.ZERO) },
+        processSymbol = { _, _, _, _ -> ProcessResult.SUCCESS_WITH_DAILY_PRICE },
+        expectedSymbols = symbols,
+        run = run,
+      )
+    }
+
+    expect(run.result().persisted).toContainExactly("GOOD")
+    expect(run.result().fetched).toContainExactly("GOOD")
+    expect(run.result().failed).toContainExactly("ZERO", "MISSING")
+  }
+
+  @Test
   fun `processPriceUpdates should pass correct date to processSymbol`() {
     every { marketPhaseDetectionService.isWeekendPhase() } returns false
 
@@ -197,7 +220,7 @@ class PriceUpdateProcessorTest {
   }
 
   @Test
-  fun `processSymbolUpdate should continue when snapshot save fails`() {
+  fun `processSymbolUpdate should throw when snapshot save fails`() {
     val instrument = createInstrument()
     val price = BigDecimal("155.00")
     val today = LocalDate.of(2024, 1, 15)
@@ -206,8 +229,7 @@ class PriceUpdateProcessorTest {
     every { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) } throws RuntimeException("DB error")
     every { dailyPriceService.saveDailyPrice(any()) } just runs
 
-    val result = processor.processSymbolUpdate("AAPL", price, false, today, ProviderName.FT)
-
-    expect(result).toEqual(ProcessResult.SUCCESS_WITH_DAILY_PRICE)
+    expect { processor.processSymbolUpdate("AAPL", price, false, today, ProviderName.FT) }
+      .toThrow<RuntimeException>()
   }
 }

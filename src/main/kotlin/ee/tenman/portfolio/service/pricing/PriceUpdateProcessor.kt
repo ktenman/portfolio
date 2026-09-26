@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.exception.PriceRefreshException
+import ee.tenman.portfolio.model.CollectionRun
 import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
@@ -29,7 +30,8 @@ class PriceUpdateProcessor(
     log: Logger,
     fetchPrices: () -> Map<String, BigDecimal>,
     processSymbol: (String, BigDecimal, Boolean, LocalDate) -> ProcessResult,
-    expectedCount: Int? = null,
+    expectedSymbols: Set<String>? = null,
+    run: CollectionRun? = null,
   ) {
     log.info("Starting ${platform.name} price update execution")
     val isWeekend = marketPhaseDetectionService.isWeekendPhase()
@@ -38,8 +40,9 @@ class PriceUpdateProcessor(
       log.info("Skipping daily price save - weekend detected")
     }
 
+    expectedSymbols?.forEach { run?.attempted(it) }
     val prices = fetchPrices()
-    val requested = expectedCount ?: prices.size
+    val requested = expectedSymbols?.size ?: prices.size
     val today = LocalDate.now(clock)
 
     var updatedCount = 0
@@ -47,19 +50,33 @@ class PriceUpdateProcessor(
     var failedCount = 0
 
     prices.forEach { (symbol, price) ->
+      if (price <= BigDecimal.ZERO) {
+        run?.failed(symbol, IllegalArgumentException("Nonpositive price for $symbol"))
+        failedCount++
+        return@forEach
+      }
+      run?.fetched(symbol)
       val result =
         runCatching { processSymbol(symbol, price, isWeekend, today) }.getOrElse {
           log.warn("Failed to persist $platform price for $symbol: ${it.message}")
+          run?.failed(symbol, it)
           ProcessResult.FAILED
         }
       when (result) {
         ProcessResult.SUCCESS_WITH_DAILY_PRICE -> {
           updatedCount++
           dailyPricesSaved++
+          run?.persisted(symbol)
         }
 
-        ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE -> updatedCount++
-        ProcessResult.FAILED -> failedCount++
+        ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE -> {
+          updatedCount++
+          run?.persisted(symbol)
+        }
+        ProcessResult.FAILED -> {
+          failedCount++
+          run?.failed(symbol, IllegalStateException("Price persistence failed for $symbol"))
+        }
       }
     }
 
@@ -82,30 +99,25 @@ class PriceUpdateProcessor(
     isWeekend: Boolean,
     today: LocalDate,
     provider: ProviderName,
-  ): ProcessResult =
-    runCatching {
-      val instrument = instrumentService.findBySymbol(symbol)
-      instrumentService.updateCurrentPrice(instrument.id, price)
-      runCatching { priceSnapshotService.saveSnapshot(instrument, price, provider) }
-        .onFailure { log.warn("Failed to save price snapshot for $symbol: ${it.message}") }
-      log.debug("Updated current price for $symbol: $price")
-      if (isWeekend) return@runCatching ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
-      val dailyPrice =
-        DailyPrice(
-          instrument = instrument,
-          entryDate = today,
-          providerName = provider,
-          openPrice = price,
-          highPrice = price,
-          lowPrice = price,
-          closePrice = price,
-          volume = null,
-        )
-      dailyPriceService.saveDailyPrice(dailyPrice)
-      log.debug("Saved $provider daily price for $symbol: $price")
-      ProcessResult.SUCCESS_WITH_DAILY_PRICE
-    }.getOrElse {
-      log.warn("Failed to update price for symbol $symbol: ${it.message}")
-      ProcessResult.FAILED
-    }
+  ): ProcessResult {
+    val instrument = instrumentService.findBySymbol(symbol)
+    instrumentService.updateCurrentPrice(instrument.id, price)
+    priceSnapshotService.saveSnapshot(instrument, price, provider)
+    log.debug("Updated current price for $symbol: $price")
+    if (isWeekend) return ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
+    val dailyPrice =
+      DailyPrice(
+        instrument = instrument,
+        entryDate = today,
+        providerName = provider,
+        openPrice = price,
+        highPrice = price,
+        lowPrice = price,
+        closePrice = price,
+        volume = null,
+      )
+    dailyPriceService.saveDailyPrice(dailyPrice)
+    log.debug("Saved $provider daily price for $symbol: $price")
+    return ProcessResult.SUCCESS_WITH_DAILY_PRICE
+  }
 }

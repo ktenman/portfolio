@@ -9,6 +9,7 @@ import ee.tenman.portfolio.job.FtDataRetrievalJob
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -43,6 +44,7 @@ class FtDataRetrievalJobConcurrencyTest {
         priceSnapshotService,
         taskScheduler,
         fixedClock,
+        monitorForTests(),
       )
   }
 

@@ -15,12 +15,18 @@ class Trading212Service(
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
-  fun fetchCurrentPrices(eligibleSymbols: Set<String>): Map<String, BigDecimal> {
+  fun fetchCurrentPrices(
+    eligibleSymbols: Set<String>,
+    onFailure: (String, Throwable) -> Unit = { _, _ -> },
+  ): Map<String, BigDecimal> {
     if (eligibleSymbols.isEmpty()) {
       log.info("No Trading212-provider instruments to price, skipping fetch")
       return emptyMap()
     }
     val entries = scrapingProperties.symbols.filter { it.symbol in eligibleSymbols }
+    (eligibleSymbols - entries.map { it.symbol }.toSet()).forEach {
+      onFailure(it, IllegalArgumentException("No Trading212 ticker configured for $it"))
+    }
     if (entries.isEmpty()) {
       log.warn("No Trading212 symbols configured for eligible instruments: $eligibleSymbols")
       return emptyMap()
@@ -34,6 +40,7 @@ class Trading212Service(
           val priceData = response.data[entry.ticker]
           if (priceData == null) {
             log.warn("No price data found for ticker: ${entry.ticker} (symbol: ${entry.symbol})")
+            onFailure(entry.symbol, IllegalArgumentException("Missing Trading212 price for ${entry.symbol}"))
             return@mapNotNull null
           }
           entry.symbol to priceData.bid

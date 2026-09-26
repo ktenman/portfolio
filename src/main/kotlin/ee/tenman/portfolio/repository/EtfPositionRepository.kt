@@ -39,6 +39,21 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
     @Param("snapshotDate") snapshotDate: LocalDate,
   ): Int
 
+  @Modifying(flushAutomatically = true)
+  @Query(
+    """
+    DELETE FROM EtfPosition ep
+    WHERE ep.etfInstrument.id = :etfInstrumentId
+    AND ep.snapshotDate = :snapshotDate
+    AND ep.holding.id NOT IN :holdingIds
+  """,
+  )
+  fun deleteMissingHoldings(
+    @Param("etfInstrumentId") etfInstrumentId: Long,
+    @Param("snapshotDate") snapshotDate: LocalDate,
+    @Param("holdingIds") holdingIds: Set<Long>,
+  ): Int
+
   fun findByHoldingId(holdingId: Long): List<EtfPosition>
 
   fun findByHoldingIdIn(holdingIds: List<Long>): List<EtfPosition>

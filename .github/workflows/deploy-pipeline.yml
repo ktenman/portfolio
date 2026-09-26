@@ -37,6 +37,12 @@ on:
         required: true
       TRADING212_API_KEY_SECRET:
         required: true
+      MONITORING_TELEGRAM_BOT_TOKEN:
+        required: false
+      MONITORING_TELEGRAM_CHAT_ID:
+        required: false
+      MONITORING_HEARTBEAT_URL:
+        required: false
   workflow_dispatch:
     inputs:
       deploy:
@@ -80,13 +86,58 @@ jobs:
           echo "TRADING212_API_KEY_SECRET=${{ secrets.TRADING212_API_KEY_SECRET }}" >> .env
           echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> .env
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> .env
+      - name: Prepare monitoring secrets
+        env:
+          MONITORING_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITORING_TELEGRAM_BOT_TOKEN }}
+          MONITORING_TELEGRAM_CHAT_ID: ${{ secrets.MONITORING_TELEGRAM_CHAT_ID }}
+          MONITORING_HEARTBEAT_URL: ${{ secrets.MONITORING_HEARTBEAT_URL }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          from urllib.parse import urlparse
+
+          names = {
+              'MONITORING_TELEGRAM_BOT_TOKEN': 'bot_token',
+              'MONITORING_TELEGRAM_CHAT_ID': 'chat_id',
+              'MONITORING_HEARTBEAT_URL': 'heartbeat_url',
+          }
+          values = {name: os.environ.get(name, '').strip() for name in names}
+          enabled = all(values.values())
+          if enabled:
+              int(values['MONITORING_TELEGRAM_CHAT_ID'])
+              heartbeat = urlparse(values['MONITORING_HEARTBEAT_URL'])
+              if heartbeat.scheme != 'https' or not heartbeat.netloc:
+                  raise ValueError('Monitoring heartbeat URL must be HTTPS')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as output:
+              output.write(f'MONITORING_ENABLED={str(enabled).lower()}\n')
+          if enabled:
+              directory = Path('monitoring/secrets')
+              directory.mkdir(mode=0o700, exist_ok=True)
+              directory.chmod(0o700)
+              for name, filename in names.items():
+                  path = directory / filename
+                  descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                  with os.fdopen(descriptor, 'w', encoding='utf-8') as target:
+                      target.write(values[name] + '\n')
+                  path.chmod(0o600)
+          PY
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
+          ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring'
+          scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml githubuser@fov.ee:~/monitoring/
+          if [ "$MONITORING_ENABLED" = true ]; then
+            ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring/secrets'
+            scp -p monitoring/secrets/bot_token monitoring/secrets/chat_id monitoring/secrets/heartbeat_url githubuser@fov.ee:~/monitoring/secrets/
+            ssh githubuser@fov.ee 'chmod 700 ~/monitoring/secrets && chmod 600 ~/monitoring/secrets/bot_token ~/monitoring/secrets/chat_id ~/monitoring/secrets/heartbeat_url'
+          fi
       - name: Deploy with Docker Compose
         run: |
           ssh githubuser@fov.ee "\
             set -eu; \
+            export COMPOSE_FILE=docker-compose.yml; \
+            if [ '$MONITORING_ENABLED' = true ]; then export COMPOSE_PROFILES=monitoring; else docker compose --profile monitoring stop prometheus alertmanager; fi; \
             docker volume inspect portfolio_seaweedfs_data >/dev/null; \
             docker run --rm --network none --read-only --mount type=volume,src=portfolio_seaweedfs_data,dst=/data,readonly --entrypoint sh docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882 -c 'test -f /data/.portfolio-storage-ready'; \
             echo 'Pulling latest images (with retry)...' && \
@@ -111,6 +162,8 @@ jobs:
               sleep 10; \
             done && \
             if [ \"\$OK\" -ne 1 ]; then echo 'Services failed to become healthy after 40 checks'; docker ps; exit 1; fi && \
+            if [ '$MONITORING_ENABLED' = true ]; then MONITORING_HEALTHY=0; for i in \$(seq 1 20); do READY=0; for service in prometheus alertmanager; do CID=\$(docker compose ps -q \$service); if [ -n \"\$CID\" ] && [ \"\$(docker inspect -f '{{.State.Health.Status}}' \$CID)\" = healthy ]; then READY=\$((READY + 1)); fi; done; if [ \"\$READY\" -eq 2 ]; then MONITORING_HEALTHY=1; break; fi; sleep 3; done; test \"\$MONITORING_HEALTHY\" -eq 1; fi && \
             docker ps --format 'table {{.Names}}\t{{.Status}}'"
       - name: Cleanup on runner
-        run: rm .env
+        if: always()
+        run: rm -f .env monitoring/secrets/bot_token monitoring/secrets/chat_id monitoring/secrets/heartbeat_url

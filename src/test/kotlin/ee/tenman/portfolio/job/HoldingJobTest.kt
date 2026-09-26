@@ -1,13 +1,17 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.blackrock.CsusHoldingsService
 import ee.tenman.portfolio.configuration.HoldingReconciliationProperties
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.model.ReconciliationResult
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
 import ee.tenman.portfolio.service.etf.HoldingReconciliationService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -58,13 +62,21 @@ class HoldingReconciliationJobTest {
 }
 
 class CsusHoldingsRetrievalJobTest {
+  private val collections = mutableListOf<CollectionRunResult>()
   private val jobTransactionService = mockk<JobTransactionService>(relaxed = true)
   private val csusHoldingsService = mockk<CsusHoldingsService>()
   private val etfHoldingService = mockk<EtfHoldingService>()
   private val etfBreakdownService = mockk<EtfBreakdownService>(relaxed = true)
   private val clock = Clock.fixed(LocalDate.of(2026, 6, 13).atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
   private val job =
-    CsusHoldingsRetrievalJob(jobTransactionService, csusHoldingsService, etfHoldingService, etfBreakdownService, clock)
+    CsusHoldingsRetrievalJob(
+      jobTransactionService,
+      csusHoldingsService,
+      etfHoldingService,
+      etfBreakdownService,
+      clock,
+      monitorForTests(collections),
+    )
 
   private val today = LocalDate.of(2026, 6, 13)
   private val symbol = "GB00B0ZDNB53:GBP"
@@ -75,22 +87,25 @@ class CsusHoldingsRetrievalJobTest {
       listOf(
         HoldingData(name = "NVIDIA CORP", ticker = "NVDA", sector = "Information Technology", weight = BigDecimal("7.42"), rank = 1),
       )
-    every { etfHoldingService.hasHoldingsForDate(symbol, today) } returns false
     every { csusHoldingsService.fetchHoldings() } returns holdings
     every { etfHoldingService.saveHoldings(symbol, today, holdings) } just Runs
 
     job.execute()
 
     verify(exactly = 1) { etfHoldingService.saveHoldings(symbol, today, holdings) }
+    expect(collections.single().persisted).toContainExactly(symbol)
   }
 
   @Test
-  fun `should skip fetch when holdings already exist for today`() {
+  fun `should refresh holdings when they already exist for today`() {
     every { etfHoldingService.hasHoldingsForDate(symbol, today) } returns true
+    every { csusHoldingsService.fetchHoldings() } returns
+      listOf(HoldingData(name = "NVIDIA CORP", ticker = "NVDA", sector = null, weight = BigDecimal.ONE, rank = 1))
+    every { etfHoldingService.saveHoldings(symbol, today, any()) } just Runs
 
     job.execute()
 
-    verify(exactly = 0) { csusHoldingsService.fetchHoldings() }
-    verify(exactly = 0) { etfHoldingService.saveHoldings(any(), any(), any()) }
+    verify(exactly = 1) { csusHoldingsService.fetchHoldings() }
+    verify(exactly = 1) { etfHoldingService.saveHoldings(symbol, today, any()) }
   }
 }

@@ -1,14 +1,17 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
 import ee.tenman.portfolio.configuration.Trading212SymbolEntry
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
@@ -17,6 +20,7 @@ import ee.tenman.portfolio.service.infrastructure.JobTransactionService
 import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import ee.tenman.portfolio.service.pricing.Trading212PriceUpdateService
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures
+import ee.tenman.portfolio.testing.fixture.monitorForTests
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import ee.tenman.portfolio.trading212.Trading212Service
 import io.mockk.every
@@ -41,6 +45,7 @@ class Trading212DataRetrievalJobTest {
   private val priceUpdateProcessor = mockk<PriceUpdateProcessor>(relaxed = true)
   private val instrumentRepository = mockk<InstrumentRepository>()
   private val taskScheduler = mockk<TaskScheduler>(relaxed = true)
+  private val monitor = monitorForTests()
 
   private val job =
     Trading212DataRetrievalJob(
@@ -51,6 +56,7 @@ class Trading212DataRetrievalJobTest {
       instrumentRepository = instrumentRepository,
       taskScheduler = taskScheduler,
       clock = clock,
+      collectionMonitor = monitor,
     )
 
   @Test
@@ -81,23 +87,24 @@ class Trading212DataRetrievalJobTest {
       )
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns listOf(bnke)
     invokeFetchPricesWhenProcessed()
-    every { trading212Service.fetchCurrentPrices(setOf("BNKE:PAR:EUR")) } returns
+    every { trading212Service.fetchCurrentPrices(setOf("BNKE:PAR:EUR"), any()) } returns
       mapOf("BNKE:PAR:EUR" to BigDecimal("327.23"))
 
     job.execute()
 
-    verify { trading212Service.fetchCurrentPrices(setOf("BNKE:PAR:EUR")) }
+    verify { trading212Service.fetchCurrentPrices(setOf("BNKE:PAR:EUR"), any()) }
+    verify { monitor.collect<Any?>(CollectionKey.TRADING212_PRICES, setOf("BNKE:PAR:EUR"), any()) }
   }
 
   @Test
   fun `execute passes an empty filter when no Trading212 instruments exist`() {
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns emptyList()
     invokeFetchPricesWhenProcessed()
-    every { trading212Service.fetchCurrentPrices(emptySet()) } returns emptyMap()
+    every { trading212Service.fetchCurrentPrices(emptySet(), any()) } returns emptyMap()
 
     job.execute()
 
-    verify { trading212Service.fetchCurrentPrices(emptySet()) }
+    verify { trading212Service.fetchCurrentPrices(emptySet(), any()) }
   }
 
   private fun invokeFetchPricesWhenProcessed() {
@@ -108,6 +115,8 @@ class Trading212DataRetrievalJobTest {
         log = any(),
         fetchPrices = capture(fetchPricesSlot),
         processSymbol = any(),
+        expectedSymbols = any(),
+        run = any(),
       )
     } answers {
       fetchPricesSlot.captured.invoke()
@@ -116,6 +125,7 @@ class Trading212DataRetrievalJobTest {
 }
 
 class Trading212HoldingsRetrievalJobTest {
+  private val runs = mutableListOf<CollectionRunResult>()
   private val holdingsService = mockk<Trading212HoldingsService>()
   private val etfHoldingService = mockk<EtfHoldingService>(relaxed = true)
   private val etfBreakdownService = mockk<EtfBreakdownService>(relaxed = true)
@@ -135,6 +145,7 @@ class Trading212HoldingsRetrievalJobTest {
       etfBreakdownService = etfBreakdownService,
       instrumentRepository = instrumentRepository,
       clock = clock,
+      collectionMonitor = monitorForTests(runs),
     )
 
   @Test
@@ -152,25 +163,27 @@ class Trading212HoldingsRetrievalJobTest {
       )
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
-    every { etfHoldingService.hasHoldingsForDate("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16)) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } returns holdings
 
     job.runJob()
 
     verify { etfHoldingService.saveHoldings("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16), holdings) }
     verify { etfBreakdownService.evictBreakdownCache() }
+    expect(runs.single().persisted).toContainExactly("BNKE:PAR:EUR")
   }
 
   @Test
-  fun `should skip symbols already processed for today`() {
+  fun `should refresh and persist holdings already processed for today`() {
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
     every { etfHoldingService.hasHoldingsForDate("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16)) } returns true
+    every { holdingsService.fetchHoldings("BNKEp_EQ") } returns
+      listOf(HoldingData(name = "Banco Santander", ticker = "SAN", sector = null, weight = BigDecimal.ONE, rank = 1))
 
     job.runJob()
 
-    verify(exactly = 0) { holdingsService.fetchHoldings(any()) }
-    verify(exactly = 0) { etfHoldingService.saveHoldings(any(), any(), any()) }
+    verify(exactly = 1) { holdingsService.fetchHoldings("BNKEp_EQ") }
+    verify(exactly = 1) { etfHoldingService.saveHoldings("BNKE:PAR:EUR", any(), any()) }
   }
 
   @Test
@@ -181,7 +194,6 @@ class Trading212HoldingsRetrievalJobTest {
         createInstrument("BNKE:PAR:EUR"),
         createInstrument("OTHER:X:EUR"),
       )
-    every { etfHoldingService.hasHoldingsForDate(any(), any()) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } throws RuntimeException("network")
     every { holdingsService.fetchHoldings("OTHERp_EQ") } returns emptyList()
 
@@ -194,7 +206,6 @@ class Trading212HoldingsRetrievalJobTest {
   fun `should skip symbols with empty holdings without writing`() {
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
-    every { etfHoldingService.hasHoldingsForDate("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16)) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } returns emptyList()
 
     job.runJob()
@@ -207,7 +218,6 @@ class Trading212HoldingsRetrievalJobTest {
     scrapingProperties.symbols.add(Trading212SymbolEntry(symbol = "VUAA:LON:EUR", ticker = "VUAAl_EQ"))
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
-    every { etfHoldingService.hasHoldingsForDate("BNKE:PAR:EUR", LocalDate.of(2026, 4, 16)) } returns false
     every { holdingsService.fetchHoldings("BNKEp_EQ") } returns emptyList()
 
     job.runJob()

@@ -197,6 +197,18 @@ class LightyearPriceServiceTest : LightyearPriceServiceTestBase() {
   }
 
   @Test
+  fun `should report the original error for a failed price fetch`() {
+    stubSymbols("VUAA" to "uuid-1")
+    val failure = IllegalStateException("Upstream unavailable")
+    every { lightyearPriceClient.getPrice(any()) } throws failure
+    val errors = mutableListOf<Pair<String, Throwable>>()
+
+    service.fetchCurrentPrices { symbol, error -> errors += symbol to error }
+
+    expect(errors).toContainExactly("VUAA" to failure)
+  }
+
+  @Test
   fun `should exclude a nonpositive price from the collected prices`() {
     stubSymbols("VGLA:GER:EUR" to "vgla-uuid")
     every { lightyearPriceClient.getPrice(any()) } returns createPriceResponse(BigDecimal.ZERO)
@@ -255,5 +267,17 @@ class LightyearPriceServiceTest : LightyearPriceServiceTestBase() {
     expect(result[0].weight).toEqualNumerically(BigDecimal("56.701031"))
     expect(result[1].name).toEqual("Another Normal")
     expect(result[1].weight).toEqualNumerically(BigDecimal("43.298969"))
+  }
+
+  @Test
+  fun `should skip unnamed holdings`() {
+    stubHoldings(
+      LightyearHoldingResponse(name = "Ärikeskus AS", value = 3.0, instrumentId = null),
+      LightyearHoldingResponse(name = " ", value = 1.0, instrumentId = null),
+    )
+
+    val result = service.fetchHoldingsAsDto("WEBN")
+
+    expect(result.map { it.name }).toEqual(listOf("Ärikeskus AS"))
   }
 }
