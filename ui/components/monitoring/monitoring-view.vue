@@ -4,7 +4,18 @@
       class="mb-6 flex flex-wrap"
       :class="healthy ? 'items-center gap-3' : 'items-baseline justify-between gap-2'"
     >
-      <h2 class="mb-0">Monitoring</h2>
+      <h2 class="mb-0">
+        <button
+          type="button"
+          class="md:hidden"
+          title="Run all"
+          data-testid="monitoring-title"
+          @click="runAll"
+        >
+          Monitoring
+        </button>
+        <span class="hidden md:inline">Monitoring</span>
+      </h2>
       <p
         v-if="collections"
         class="mb-0 inline-flex items-center gap-1.5 text-body-secondary"
@@ -92,6 +103,30 @@
       <template #cell-deadline="{ value }">
         <time :datetime="value" :title="value ?? ''">{{ formatDateTime(value ?? '') || '—' }}</time>
       </template>
+      <template #header-actions>
+        <button
+          type="button"
+          class="-my-2 inline-flex size-8 cursor-pointer items-center justify-center rounded-control align-middle transition-colors hover:bg-brass-wash focus-visible:outline-2 focus-visible:outline-brass-deep"
+          :title="batch.size ? `Running · ${batch.size} left` : 'Run all'"
+          data-testid="monitoring-run-all"
+          @click="runAll"
+        >
+          <svg
+            class="size-4"
+            :class="{ 'motion-safe:animate-spin': batch.size }"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+          </svg>
+        </button>
+      </template>
       <template #cell-actions="{ item }">
         <button
           type="button"
@@ -119,8 +154,8 @@
         </button>
       </template>
     </data-table>
-    <p v-if="rerunError" class="mt-3 mb-0 text-loss-deep" role="alert">
-      Could not start {{ rerunError }}. Check the backend log and try again.
+    <p v-if="rerunErrors.length" class="mt-3 mb-0 text-loss-deep" role="alert">
+      Could not start {{ rerunErrors.join(', ') }}. Check the backend log and try again.
     </p>
   </div>
 </template>
@@ -184,6 +219,7 @@ const columns: ColumnDefinition[] = [
 ]
 
 const requested = ref(new Map<string, number>())
+const batch = ref(new Set<string>())
 const running = computed(
   () =>
     new Set([
@@ -193,12 +229,13 @@ const running = computed(
         .map(c => c.key),
     ])
 )
-const rerunError = ref<string | null>(null)
+const rerunErrors = ref<string[]>([])
 
 const {
   data: collections,
   isLoading,
   isError,
+  refetch,
 } = useQuery({
   queryKey: ['monitoring-collections'],
   queryFn: monitoringService.getCollections,
@@ -220,10 +257,10 @@ const toggle = (item: CollectionStatusDto) => {
 }
 
 const rerun = async (item: CollectionStatusDto) => {
-  rerunError.value = null
+  rerunErrors.value = []
   requested.value = new Map(requested.value).set(item.key, Date.now())
   await monitoringService.rerun(item.key).catch(() => {
-    rerunError.value = label(item)
+    rerunErrors.value = [...rerunErrors.value, label(item)]
     finish(item.key)
   })
 }
@@ -232,6 +269,18 @@ const finish = (key: string) => {
   const next = new Map(requested.value)
   next.delete(key)
   requested.value = next
+  batch.value = new Set([...batch.value].filter(k => k !== key))
+}
+
+const runAll = async () => {
+  const idle = (collections.value ?? []).filter(
+    c =>
+      !running.value.has(c.key) &&
+      ![CollectionStatus.DISABLED, CollectionStatus.BREAKER_OPEN].includes(c.status)
+  )
+  batch.value = new Set([...batch.value, ...idle.map(c => c.key)])
+  await Promise.all(idle.map(rerun))
+  await refetch()
 }
 
 watch(collections, current =>
