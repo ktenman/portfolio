@@ -2,7 +2,9 @@
   <div class="grid gap-6 px-1 py-2 text-sm md:grid-cols-[22rem_minmax(0,32rem)]">
     <dl class="m-0 grid grid-cols-[auto_1fr] content-start gap-x-4 gap-y-1.5">
       <dt class="text-label text-body-secondary">Job</dt>
-      <dd class="m-0 font-mono wrap-anywhere" data-testid="monitoring-job">{{ collection.job }}</dd>
+      <dd class="m-0 font-mono wrap-anywhere" data-testid="monitoring-job">
+        {{ collection.job.replace(/Job$/, '') }}
+      </dd>
       <template v-for="row in timing" :key="row.label">
         <dt class="text-label text-body-secondary">{{ row.label }}</dt>
         <dd class="m-0 tabular-nums">
