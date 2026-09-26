@@ -221,6 +221,7 @@ const rerunErrors = ref<string[]>([])
 const {
   data: collections,
   error,
+  status,
   open,
 } = useEventSource(monitoringService.streamUrl, [], {
   autoReconnect: true,
@@ -228,7 +229,7 @@ const {
 })
 const { start: arm } = useTimeoutFn(() => {
   collections.value = null
-  open()
+  if (status.value !== 'CLOSED') open()
   arm()
 }, STREAM_SILENCE_TIMEOUT)
 watch(collections, () => arm())

@@ -13,18 +13,14 @@ vi.mock('../../services/api', () => ({
 
 class FakeEventSource {
   static instances: FakeEventSource[] = []
-  readyState = 0
-  onopen: (() => void) | null = null
   onerror: ((event: Event) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null
 
-  constructor(readonly url: string) {
+  constructor() {
     FakeEventSource.instances.push(this)
   }
 
-  close() {
-    this.readyState = 2
-  }
+  close() {}
 }
 
 vi.stubGlobal('EventSource', FakeEventSource)
@@ -231,6 +227,14 @@ describe('monitoring-view', () => {
     await render([collection()])
     vi.advanceTimersByTime(90_000)
     expect(FakeEventSource.instances).toHaveLength(3)
+  })
+
+  it('does not open a second stream while the failed one is reconnecting', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    await render([collection()])
+    await drop()
+    vi.advanceTimersByTime(45_000)
+    expect(FakeEventSource.instances).toHaveLength(1)
   })
 
   it('keeps the stream open while the server keeps sending', async () => {

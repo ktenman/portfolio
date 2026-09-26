@@ -15,6 +15,6 @@ class CollectionMonitoringJob(
   @Scheduled(fixedDelay = 15000, initialDelay = 0)
   fun refresh() {
     metrics.refresh()
-    stream.publish()
+    stream.broadcast()
   }
 }

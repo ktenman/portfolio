@@ -1,6 +1,5 @@
 package ee.tenman.portfolio.configuration.exception
 
-import ch.tutteli.atrium.api.fluent.en_GB.notToEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.GlobalExceptionHandler
@@ -43,7 +42,7 @@ class GlobalExceptionHandlerTest {
 
     val handler = ExceptionHandlerMethodResolver(GlobalExceptionHandler::class.java).resolveMethod(exception)
 
-    expect(handler?.name).notToEqual("handleAllExceptions")
+    expect(handler?.name).toEqual("handleDisconnectedClient")
   }
 
   @Test

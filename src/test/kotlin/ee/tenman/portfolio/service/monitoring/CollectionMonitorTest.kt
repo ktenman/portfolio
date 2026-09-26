@@ -6,9 +6,7 @@ import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.model.CollectionSnapshot
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verifyOrder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -54,11 +52,9 @@ class CollectionMonitorTest {
 
   @Test
   fun `should publish the collection status when the run begins and when it finishes`() {
-    val state = mockk<CollectionStateService>()
+    val state = mockk<CollectionStateService>(relaxed = true)
     val stream = mockk<CollectionStreamService>(relaxed = true)
-    every { state.initialize(CollectionKey.BINANCE_PRICES, any()) } returns mockk<CollectionSnapshot>()
     every { state.begin(CollectionKey.BINANCE_PRICES) } returns Instant.EPOCH
-    every { state.finish(CollectionKey.BINANCE_PRICES, any(), any(), any()) } just runs
     CollectionMonitorService(state, SimpleMeterRegistry(), stream).collect(CollectionKey.BINANCE_PRICES, listOf("Ärikinnisvara")) { }
     verifyOrder {
       state.begin(CollectionKey.BINANCE_PRICES)

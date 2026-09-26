@@ -28,12 +28,18 @@ class CollectionStreamService(
     executor.execute {
       if (emitters.isEmpty()) return@execute
       metrics.refresh()
-      val collections = metrics.collections()
-      emitters.forEach { send(it, collections) }
+      emit()
     }
+
+  fun broadcast() = executor.execute { emit() }
 
   @EventListener(ContextClosedEvent::class)
   fun close() = emitters.forEach { it.complete() }
+
+  private fun emit() {
+    val collections = metrics.collections()
+    emitters.forEach { send(it, collections) }
+  }
 
   private fun send(
     emitter: SseEmitter,
