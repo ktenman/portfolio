@@ -31,7 +31,7 @@ class CollectionStreamService(
       emit()
     }
 
-  fun broadcast() = executor.execute { emit() }
+  fun broadcast() = executor.execute { if (emitters.isNotEmpty()) emit() }
 
   @EventListener(ContextClosedEvent::class)
   fun close() = emitters.forEach { it.complete() }

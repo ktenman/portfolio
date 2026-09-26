@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
-import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import MonitoringView from './monitoring-view.vue'
 import { monitoringService } from '../../services/api'
-import { renderWithProviders } from '../../tests/test-utils'
 import { CollectionStatus, type CollectionStatusDto } from '../../models/generated/domain-models'
 
 enableAutoUnmount(afterEach)
@@ -13,6 +12,7 @@ vi.mock('../../services/api', () => ({
 
 class FakeEventSource {
   static instances: FakeEventSource[] = []
+  readyState = 0
   onerror: ((event: Event) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null
 
@@ -59,14 +59,20 @@ const drop = async () => {
   await flushPromises()
 }
 
+const refuse = async () => {
+  stream().readyState = 2
+  await drop()
+}
+
 const render = async (items: CollectionStatusDto[]) => {
-  const wrapper = renderWithProviders(MonitoringView)
+  const wrapper = mount(MonitoringView)
   await push(items)
   return wrapper
 }
 
 describe('monitoring-view', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     vi.clearAllMocks()
     FakeEventSource.instances = []
     vi.mocked(monitoringService.rerun).mockResolvedValue(undefined)
@@ -207,7 +213,7 @@ describe('monitoring-view', () => {
   })
 
   it('reports that the status cannot be loaded when the stream fails before sending any', async () => {
-    const wrapper = renderWithProviders(MonitoringView)
+    const wrapper = mount(MonitoringView)
     await drop()
     expect(wrapper.text()).toContain(
       'Could not load collection status. It reconnects automatically.'
@@ -223,14 +229,12 @@ describe('monitoring-view', () => {
   })
 
   it('keeps reconnecting every 45 seconds while the server stays silent', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     await render([collection()])
     vi.advanceTimersByTime(90_000)
     expect(FakeEventSource.instances).toHaveLength(3)
   })
 
   it('does not open a second stream while the failed one is reconnecting', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     await render([collection()])
     await drop()
     vi.advanceTimersByTime(45_000)
@@ -238,7 +242,6 @@ describe('monitoring-view', () => {
   })
 
   it('keeps the stream open while the server keeps sending', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     await render([collection()])
     vi.advanceTimersByTime(30_000)
     await push([collection()])
@@ -246,8 +249,21 @@ describe('monitoring-view', () => {
     expect(FakeEventSource.instances).toHaveLength(1)
   })
 
+  it('waits 15 seconds before retrying a stream the server refused', async () => {
+    mount(MonitoringView)
+    await refuse()
+    vi.advanceTimersByTime(14_999)
+    expect(FakeEventSource.instances).toHaveLength(1)
+  })
+
+  it('retries a stream the server refused after 15 seconds', async () => {
+    mount(MonitoringView)
+    await refuse()
+    vi.advanceTimersByTime(15_000)
+    expect(FakeEventSource.instances).toHaveLength(2)
+  })
+
   it('drops the stale status once the server has been silent for 45 seconds', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const wrapper = await render([collection()])
     vi.advanceTimersByTime(45_000)
     await flushPromises()

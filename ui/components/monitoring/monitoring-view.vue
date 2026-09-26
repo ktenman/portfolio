@@ -189,6 +189,8 @@ const SEVERITY: Record<CollectionStatus, number> = {
 
 const STREAM_SILENCE_TIMEOUT = 45 * 1000
 
+const STREAM_RETRY_DELAY = 15 * 1000
+
 const PROVIDER_NAMES: Record<string, string> = { ft: 'FT', blackrock: 'BlackRock' }
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
@@ -224,7 +226,7 @@ const {
   status,
   open,
 } = useEventSource(monitoringService.streamUrl, [], {
-  autoReconnect: true,
+  autoReconnect: { delay: STREAM_RETRY_DELAY },
   serializer: { read: raw => JSON.parse(raw ?? 'null') as CollectionStatusDto[] },
 })
 const { start: arm } = useTimeoutFn(() => {
@@ -262,11 +264,7 @@ const rerun = async (item: CollectionStatusDto) => {
 const runAll = async () => {
   const idle = (collections.value ?? []).filter(
     c =>
-      ![
-        CollectionStatus.RUNNING,
-        CollectionStatus.DISABLED,
-        CollectionStatus.BREAKER_OPEN,
-      ].includes(c.status)
+      !running(c) && ![CollectionStatus.DISABLED, CollectionStatus.BREAKER_OPEN].includes(c.status)
   )
   await Promise.all(idle.map(rerun))
 }
