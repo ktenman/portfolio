@@ -33,7 +33,13 @@ const COLLECTIONS = [
     failedItems: ['AAPL', 'NVDA'],
     status: 'PARTIAL_FAILURE',
   }),
-  collection('binance', 'prices', { expected: 3, fetched: 3, persisted: 3 }),
+  collection('binance', 'prices', {
+    expected: 3,
+    fetched: 3,
+    persisted: 3,
+    status: 'RUNNING',
+    lastAttempt: '2026-09-25T09:59:50Z',
+  }),
   collection('ft', 'history', {
     lastFullSuccess: '2026-09-24T22:10:00Z',
     deadline: '2026-09-25T23:30:00Z',
@@ -54,7 +60,10 @@ const COLLECTIONS = [
 
 export const stubMonitoring: RouteStub = async page => {
   await page.clock.setFixedTime(NOW)
-  await page.route(apiRoute(API_ENDPOINTS.MONITORING_COLLECTIONS), route =>
-    route.fulfill({ json: COLLECTIONS })
+  await page.route(apiRoute(`${API_ENDPOINTS.MONITORING_COLLECTIONS}/stream`), route =>
+    route.fulfill({
+      contentType: 'text/event-stream',
+      body: `data: ${JSON.stringify(COLLECTIONS)}\n\n`,
+    })
   )
 }

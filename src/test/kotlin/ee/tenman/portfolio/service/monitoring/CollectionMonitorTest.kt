@@ -7,6 +7,7 @@ import ee.tenman.portfolio.model.CollectionSnapshot
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.dao.DataAccessResourceFailureException
@@ -21,7 +22,7 @@ class CollectionMonitorTest {
     val registry = SimpleMeterRegistry()
     val thrown =
       assertThrows<DataAccessResourceFailureException> {
-      CollectionMonitorService(state, registry).collect(CollectionKey.BINANCE_PRICES, listOf("A")) { }
+      CollectionMonitorService(state, registry, mockk(relaxed = true)).collect(CollectionKey.BINANCE_PRICES, listOf("A")) { }
     }
     expect(thrown).toEqual(error)
     expect(persistenceFailures(registry)).toEqual(1.0)
@@ -38,11 +39,29 @@ class CollectionMonitorTest {
     val registry = SimpleMeterRegistry()
     val thrown =
       assertThrows<IllegalStateException> {
-      CollectionMonitorService(state, registry).collect(CollectionKey.BINANCE_PRICES, listOf("A")) { throw actionError }
+      CollectionMonitorService(
+        state,
+        registry,
+        mockk(relaxed = true),
+      ).collect(CollectionKey.BINANCE_PRICES, listOf("A")) { throw actionError }
     }
     expect(thrown).toEqual(actionError)
     expect(thrown.suppressed.toList()).toEqual(listOf(storageError))
     expect(persistenceFailures(registry)).toEqual(1.0)
+  }
+
+  @Test
+  fun `should publish the collection status when the run begins and when it finishes`() {
+    val state = mockk<CollectionStateService>(relaxed = true)
+    val stream = mockk<CollectionStreamService>(relaxed = true)
+    every { state.begin(CollectionKey.BINANCE_PRICES) } returns Instant.EPOCH
+    CollectionMonitorService(state, SimpleMeterRegistry(), stream).collect(CollectionKey.BINANCE_PRICES, listOf("Ärikinnisvara")) { }
+    verifyOrder {
+      state.begin(CollectionKey.BINANCE_PRICES)
+      stream.publish()
+      state.finish(CollectionKey.BINANCE_PRICES, any(), any(), any())
+      stream.publish()
+    }
   }
 
   private fun persistenceFailures(registry: SimpleMeterRegistry): Double =

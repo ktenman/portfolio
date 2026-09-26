@@ -30,6 +30,7 @@ import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
+import org.springframework.context.event.EventListener
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -923,6 +924,7 @@ class ArchitectureTest {
       method.isAnnotatedWith(Cacheable::class.java) ||
       method.isAnnotatedWith(CacheEvict::class.java) ||
       method.isAnnotatedWith(CachePut::class.java) ||
+      method.isAnnotatedWith(EventListener::class.java) ||
       method.isAnnotatedWith("jakarta.annotation.PostConstruct")
 
   private fun collectCalledMethods(classes: JavaClasses): Set<String> =

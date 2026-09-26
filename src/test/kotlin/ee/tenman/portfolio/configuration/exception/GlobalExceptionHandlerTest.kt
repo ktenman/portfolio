@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.validation.BindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException
+import org.springframework.web.method.annotation.ExceptionHandlerMethodResolver
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.multipart.MultipartException
 
@@ -32,6 +34,15 @@ class GlobalExceptionHandlerTest {
     expect(response.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR)
     expect(response.body?.message).toEqual("Test exception")
     expect(response.body?.debugMessage).toEqual("An internal error occurred")
+  }
+
+  @Test
+  fun `should not report a disconnected client as an unhandled exception`() {
+    val exception = AsyncRequestNotUsableException("Broken pipe")
+
+    val handler = ExceptionHandlerMethodResolver(GlobalExceptionHandler::class.java).resolveMethod(exception)
+
+    expect(handler?.name).toEqual("handleDisconnectedClient")
   }
 
   @Test

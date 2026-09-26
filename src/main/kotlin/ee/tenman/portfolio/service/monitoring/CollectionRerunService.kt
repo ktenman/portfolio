@@ -5,6 +5,7 @@ import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class CollectionRerunService(
@@ -12,13 +13,16 @@ class CollectionRerunService(
   private val jobExecutionService: JobExecutionService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+  private val active = ConcurrentHashMap.newKeySet<CollectionKey>()
 
   fun rerun(key: CollectionKey) {
     val name = CollectionMetricsService.JOBS.getValue(key)
     val job = jobs.find { it.getName() == name } ?: throw IllegalStateException("Job $name is not scheduled in this environment")
+    if (!active.add(key)) return
     log.info("Manual rerun requested for ${key.provider} ${key.operation}")
     Thread.ofVirtual().name("rerun-$name").start {
       runCatching { jobExecutionService.executeJob(job) }.onFailure { log.error("Manual rerun of $name failed", it) }
+      active.remove(key)
     }
   }
 }
