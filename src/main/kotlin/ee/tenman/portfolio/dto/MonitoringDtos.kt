@@ -6,6 +6,7 @@ enum class CollectionStatus {
   OK,
   DISABLED,
   BREAKER_OPEN,
+  RUNNING,
   OVERDUE,
   PARTIAL_FAILURE,
 }

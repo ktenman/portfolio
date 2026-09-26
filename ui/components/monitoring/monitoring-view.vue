@@ -86,6 +86,7 @@ const STATUS_STYLES: Record<CollectionStatus, { label: string; class: string }> 
   [CollectionStatus.PARTIAL_FAILURE]: { label: 'Partial', class: 'bg-brass-wash text-brass-deep' },
   [CollectionStatus.OVERDUE]: { label: 'Overdue', class: 'bg-loss-wash text-loss-deep' },
   [CollectionStatus.BREAKER_OPEN]: { label: 'Breaker open', class: 'bg-loss-wash text-loss-deep' },
+  [CollectionStatus.RUNNING]: { label: 'Running', class: 'bg-surface-sunken text-ink-soft' },
   [CollectionStatus.DISABLED]: { label: 'Disabled', class: 'bg-surface-sunken text-ink-soft' },
 }
 
@@ -118,7 +119,15 @@ const columns: ColumnDefinition[] = [
 ]
 
 const requested = ref(new Map<string, number>())
-const running = computed(() => new Set(requested.value.keys()))
+const running = computed(
+  () =>
+    new Set([
+      ...requested.value.keys(),
+      ...(collections.value ?? [])
+        .filter(c => c.status === CollectionStatus.RUNNING)
+        .map(c => c.key),
+    ])
+)
 const rerunError = ref<string | null>(null)
 
 const {
@@ -159,8 +168,12 @@ watch(collections, current =>
 )
 
 const verdict = computed(() => {
-  const failing = (collections.value ?? []).filter(
-    c => c.status !== CollectionStatus.OK && c.status !== CollectionStatus.DISABLED
+  const failing = (collections.value ?? []).filter(c =>
+    [
+      CollectionStatus.PARTIAL_FAILURE,
+      CollectionStatus.OVERDUE,
+      CollectionStatus.BREAKER_OPEN,
+    ].includes(c.status)
   ).length
   if (failing === 0) return `All ${collections.value?.length ?? 0} collections healthy`
   return `${failing} of ${collections.value?.length ?? 0} need attention`

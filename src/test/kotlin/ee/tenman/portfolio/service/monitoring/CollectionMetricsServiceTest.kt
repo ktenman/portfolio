@@ -180,12 +180,18 @@ class CollectionMetricsServiceTest {
   }
 
   @Test
-  fun `should name the items not persisted since the last attempt`() {
+  fun `should name the items not persisted during the last completed run`() {
     val fixture = fixture()
     val snapshot =
       snapshots(setOf("ÄRI:TLN:EUR", "VGLA:GER:EUR"))
       .first()
-      .copy(failed = 1, lastAttempt = NOW, itemSuccesses = mapOf("ÄRI:TLN:EUR" to NOW.minusSeconds(60), "VGLA:GER:EUR" to NOW))
+      .copy(
+        failed = 1,
+        lastAttempt = NOW.plusSeconds(30),
+        lastCompletion = NOW.plusSeconds(10),
+        durationSeconds = 10.0,
+        itemSuccesses = mapOf("ÄRI:TLN:EUR" to NOW.minusSeconds(60), "VGLA:GER:EUR" to NOW.plusSeconds(5)),
+      )
     every { fixture.inventory.configured() } returns inventory(snapshot.expected)
     every { fixture.state.snapshots() } returns listOf(snapshot) + snapshots().drop(1)
     fixture.metrics.refresh()
@@ -195,6 +201,20 @@ class CollectionMetricsServiceTest {
       .first()
       .failedItems,
         ).toEqual(listOf("ÄRI:TLN:EUR"))
+  }
+
+  @Test
+  fun `should report a collection whose attempt is newer than its completion as running`() {
+    val fixture = fixture()
+    val snapshot = snapshots().first().copy(lastAttempt = NOW, lastCompletion = NOW.minusSeconds(60))
+    every { fixture.state.snapshots() } returns listOf(snapshot) + snapshots().drop(1)
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .first()
+      .status,
+    ).toEqual(CollectionStatus.RUNNING)
   }
 
   @Test

@@ -93,8 +93,9 @@ class CollectionMetricsService(
 
   private fun failedItems(snapshot: CollectionSnapshot): List<String> {
     if (snapshot.failed == 0) return emptyList()
-    val attempt = snapshot.lastAttempt ?: return emptyList()
-    return snapshot.expected.filter { snapshot.itemSuccesses[it]?.isBefore(attempt) ?: true }.sorted()
+    val completion = snapshot.lastCompletion ?: return emptyList()
+    val start = completion.minusMillis((snapshot.durationSeconds * 1000).toLong())
+    return snapshot.expected.filter { snapshot.itemSuccesses[it]?.isBefore(start) ?: true }.sorted()
   }
 
   private fun classify(
@@ -105,10 +106,17 @@ class CollectionMetricsService(
     when {
       !expectation.enabled -> CollectionStatus.DISABLED
       open -> CollectionStatus.BREAKER_OPEN
+      running(snapshot) -> CollectionStatus.RUNNING
       overdue(snapshot, expectation) -> CollectionStatus.OVERDUE
       snapshot.failed > 0 -> CollectionStatus.PARTIAL_FAILURE
       else -> CollectionStatus.OK
     }
+
+  private fun running(snapshot: CollectionSnapshot): Boolean {
+    val attempt = snapshot.lastAttempt ?: return false
+    val completion = snapshot.lastCompletion ?: return true
+    return attempt.isAfter(completion)
+  }
 
   private fun overdue(
     snapshot: CollectionSnapshot,

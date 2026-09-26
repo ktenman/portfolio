@@ -276,6 +276,7 @@ export enum CollectionStatus {
     OK = "OK",
     DISABLED = "DISABLED",
     BREAKER_OPEN = "BREAKER_OPEN",
+    RUNNING = "RUNNING",
     OVERDUE = "OVERDUE",
     PARTIAL_FAILURE = "PARTIAL_FAILURE",
 }
