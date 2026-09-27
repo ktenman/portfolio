@@ -97,9 +97,9 @@ class BinanceDataRetrievalJob(
         .onFailure { e -> log.warn("Failed to backfill snapshots for ${instrument.symbol}: ${e.message}") }
         .exceptionOrNull()
     priceSnapshotService.saveSnapshot(instrument, currentPrice, ProviderName.BINANCE)
-    instrumentService.updateCurrentPrice(instrument.id, currentPrice)
+    val changed = instrumentService.updateCurrentPrice(instrument.id, currentPrice)
     backfillFailure?.let { throw it }
-    run.persisted(instrument.symbol)
+    run.persisted(instrument.symbol, changed)
     log.debug("Updated current price for ${instrument.symbol}: $currentPrice")
   }
 

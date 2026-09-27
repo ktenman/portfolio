@@ -5,7 +5,6 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.model.CollectionRun
-import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import org.slf4j.Logger
@@ -29,7 +28,7 @@ class PriceUpdateProcessor(
     platform: Platform,
     log: Logger,
     fetchPrices: () -> Map<String, BigDecimal>,
-    processSymbol: (String, BigDecimal, Boolean, LocalDate) -> ProcessResult,
+    processSymbol: (String, BigDecimal, Boolean, LocalDate) -> Boolean,
     expectedSymbols: Set<String>? = null,
     run: CollectionRun? = null,
   ) {
@@ -46,7 +45,6 @@ class PriceUpdateProcessor(
     val today = LocalDate.now(clock)
 
     var updatedCount = 0
-    var dailyPricesSaved = 0
     var failedCount = 0
 
     prices.forEach { (symbol, price) ->
@@ -56,33 +54,16 @@ class PriceUpdateProcessor(
         return@forEach
       }
       run?.fetched(symbol)
-      val result =
-        runCatching { processSymbol(symbol, price, isWeekend, today) }.getOrElse {
+      runCatching { processSymbol(symbol, price, isWeekend, today) }
+        .onSuccess { changed ->
+          updatedCount++
+          run?.persisted(symbol, changed)
+        }.onFailure {
           log.warn("Failed to persist $platform price for $symbol: ${it.message}")
           run?.failed(symbol, it)
-          ProcessResult.FAILED
-        }
-      when (result) {
-        ProcessResult.SUCCESS_WITH_DAILY_PRICE -> {
-          updatedCount++
-          dailyPricesSaved++
-          run?.persisted(symbol)
-        }
-
-        ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE -> {
-          updatedCount++
-          run?.persisted(symbol)
-        }
-        ProcessResult.FAILED -> {
           failedCount++
-          run?.failed(symbol, IllegalStateException("Price persistence failed for $symbol"))
         }
-      }
     }
-
-    val successMessage =
-      "Updated current prices for $updatedCount/${prices.size} instruments" +
-        if (!isWeekend) ", saved $dailyPricesSaved ${platform.name} daily prices" else ""
 
     if (updatedCount < requested || failedCount > 0) {
       throw PriceRefreshException(
@@ -90,7 +71,7 @@ class PriceUpdateProcessor(
           "persisted=$updatedCount, failed=${requested - updatedCount}",
       )
     }
-    log.info("Successfully $successMessage")
+    log.info("Successfully Updated current prices for $updatedCount/${prices.size} instruments")
   }
 
   fun processSymbolUpdate(
@@ -99,12 +80,12 @@ class PriceUpdateProcessor(
     isWeekend: Boolean,
     today: LocalDate,
     provider: ProviderName,
-  ): ProcessResult {
+  ): Boolean {
     val instrument = instrumentService.findBySymbol(symbol)
-    instrumentService.updateCurrentPrice(instrument.id, price)
+    val changed = instrumentService.updateCurrentPrice(instrument.id, price)
     priceSnapshotService.saveSnapshot(instrument, price, provider)
     log.debug("Updated current price for $symbol: $price")
-    if (isWeekend) return ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
+    if (isWeekend) return changed
     val dailyPrice =
       DailyPrice(
         instrument = instrument,
@@ -118,6 +99,6 @@ class PriceUpdateProcessor(
       )
     dailyPriceService.saveDailyPrice(dailyPrice)
     log.debug("Saved $provider daily price for $symbol: $price")
-    return ProcessResult.SUCCESS_WITH_DAILY_PRICE
+    return changed
   }
 }

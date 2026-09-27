@@ -19,7 +19,7 @@ const QUERIES: Record<LiveUpdate, QueryKey[]> = {
     ['portfolio-summary', 'current'],
     ['portfolio-summary', 'intraday'],
     ['portfolio-summary', 'range-change'],
-    ['instruments', 'range-change'],
+    ['instruments'],
   ],
 }
 

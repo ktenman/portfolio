@@ -3,11 +3,14 @@ package ee.tenman.portfolio.service.summary
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.CurrentDaySummaryCacheTestConfiguration
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.PLATFORM_SUMMARY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.domain.TimeRange
 import io.mockk.clearMocks
 import io.mockk.every
+import io.mockk.verify
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -17,7 +20,12 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 @ExtendWith(SpringExtension::class)
 @ContextConfiguration(classes = [CurrentDaySummaryCacheTestConfiguration::class])
@@ -35,12 +43,16 @@ class SummaryCacheTest {
   @Resource
   private lateinit var testCacheManager: CacheManager
 
+  @Resource
+  private lateinit var clock: Clock
+
   private val platforms = listOf(Platform.TRADING212, Platform.BINANCE)
 
   @BeforeEach
   fun setup() {
-    clearMocks(summaryService)
+    clearMocks(summaryService, clock)
     testCacheManager.getCache(SUMMARY_CACHE)?.clear()
+    testCacheManager.getCache(PLATFORM_SUMMARY_CACHE)?.clear()
   }
 
   @Test
@@ -109,6 +121,19 @@ class SummaryCacheTest {
     expect(servedFromCache.entryDate).toEqual(LocalDate.of(2024, 3, 12))
   }
 
+  @Test
+  fun `should recompute the platform series after midnight so the previous day series cannot be served`() {
+    val lightyear = listOf(Platform.LIGHTYEAR)
+    val tallinn = ZoneId.of("Europe/Tallinn")
+    every { clock.zone } returns tallinn
+    every { clock.instant() } returns LocalDateTime.of(2024, 3, 11, 23, 59).atZone(tallinn).toInstant()
+    every { summaryService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY) } returns listOf(summaryOn(LocalDate.of(2024, 3, 11)))
+    platformSummaryCacheService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY)
+    every { clock.instant() } returns LocalDateTime.of(2024, 3, 12, 0, 1).atZone(tallinn).toInstant()
+    platformSummaryCacheService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY)
+    verify(exactly = 2) { summaryService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY) }
+  }
+
   private fun summaryOn(date: LocalDate): PortfolioDailySummary =
     PortfolioDailySummary(
       entryDate = date,
@@ -122,14 +147,14 @@ class SummaryCacheTest {
 class PlatformSummaryCacheServiceTest {
   @Test
   fun `should platformKey sort platforms alphabetically`() {
-    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk())
+    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
     val key = service.platformKey(listOf(Platform.TRADING212, Platform.BINANCE, Platform.LIGHTYEAR))
     expect(key).toEqual("BINANCE,LIGHTYEAR,TRADING212")
   }
 
   @Test
   fun `should platformKey produce same key regardless of input order`() {
-    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk())
+    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
     val key1 = service.platformKey(listOf(Platform.LIGHTYEAR, Platform.TRADING212))
     val key2 = service.platformKey(listOf(Platform.TRADING212, Platform.LIGHTYEAR))
     expect(key1).toEqual(key2)
@@ -137,8 +162,15 @@ class PlatformSummaryCacheServiceTest {
 
   @Test
   fun `should platformKey handle single platform`() {
-    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk())
+    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
     val key = service.platformKey(listOf(Platform.LHV))
     expect(key).toEqual("LHV")
+  }
+
+  @Test
+  fun `should today resolve the date in the clock zone`() {
+    val clock = Clock.fixed(Instant.parse("2024-03-11T22:30:00Z"), ZoneId.of("Europe/Tallinn"))
+    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = clock)
+    expect(service.today()).toEqual(LocalDate.of(2024, 3, 12))
   }
 }

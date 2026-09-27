@@ -6,12 +6,14 @@ import ee.tenman.portfolio.common.DailyPriceDataImpl
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
 import ee.tenman.portfolio.service.pricing.PriceSnapshotService
 import ee.tenman.portfolio.service.summary.IntradaySummaryService
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
@@ -109,6 +111,7 @@ class InstrumentPriceGapFillingJobTest {
   private val ftHistoricalPricesService: HistoricalPricesService = mockk()
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val taskScheduler: TaskScheduler = mockk(relaxed = true)
+  private val cacheInvalidationService: CacheInvalidationService = mockk(relaxed = true)
 
   private lateinit var job: InstrumentPriceGapFillingJob
 
@@ -121,6 +124,7 @@ class InstrumentPriceGapFillingJobTest {
       ftHistoricalPricesService,
       jobExecutionService,
       taskScheduler,
+      cacheInvalidationService,
     )
     every { instrumentService.getInstrumentsByProvider(ProviderName.TRADING212) } returns emptyList()
   }
@@ -207,8 +211,43 @@ class InstrumentPriceGapFillingJobTest {
   }
 
   @Test
+  fun `should evict derived caches after saving a missing price`() {
+    fill(saved = true)
+    verify(exactly = 1) { cacheInvalidationService.evictAllRelatedCaches(null, null) }
+  }
+
+  @Test
+  fun `should not evict caches when no missing price was saved`() {
+    fill(saved = false)
+    verify(exactly = 0) { cacheInvalidationService.evictAllRelatedCaches(any(), any()) }
+  }
+
+  @Test
+  fun `should evict derived caches when a later save fails after an earlier price was saved`() {
+    stubPrices(LocalDate.of(2026, 9, 24), LocalDate.of(2026, 9, 25))
+    every { dailyPriceService.saveDailyPriceIfNotExists(any()) } returns true andThenThrows RuntimeException("Ühendus katkes")
+    job.execute()
+    verify(exactly = 1) { cacheInvalidationService.evictAllRelatedCaches(null, null) }
+  }
+
+  @Test
   fun `should have correct job name`() {
     expect(job.getName()).toEqual("InstrumentPriceGapFillingJob")
+  }
+
+  private fun fill(saved: Boolean) {
+    stubPrices(LocalDate.of(2026, 9, 24))
+    every { dailyPriceService.saveDailyPriceIfNotExists(any()) } returns saved
+    job.execute()
+  }
+
+  private fun stubPrices(vararg dates: LocalDate) {
+    val instrument = createInstrument("Ärikinnisvara", ProviderName.TRADING212)
+    val price = DailyPriceDataImpl(BigDecimal("4.38"), BigDecimal("4.40"), BigDecimal("4.30"), BigDecimal("4.35"), 100L)
+    every { instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) } returns emptyList()
+    every { instrumentService.getInstrumentsByProvider(ProviderName.TRADING212) } returns listOf(instrument)
+    every { dailyPriceService.findAllExistingDates(instrument) } returns emptySet()
+    every { ftHistoricalPricesService.fetchPrices("Ärikinnisvara") } returns dates.associateWith { price }
   }
 
   private fun createInstrument(
@@ -223,4 +262,32 @@ class InstrumentPriceGapFillingJobTest {
       currentPrice = BigDecimal("100.00"),
       providerName = providerName,
     ).apply { id = symbol.hashCode().toLong() }
+}
+
+class DataProcessingUtilTest {
+  private val dailyPriceService: DailyPriceService = mockk(relaxed = true)
+  private val instrumentService: InstrumentService = mockk()
+  private val cacheInvalidationService: CacheInvalidationService = mockk(relaxed = true)
+  private val clock = Clock.fixed(Instant.parse("2026-09-25T02:00:00Z"), ZoneId.of("UTC"))
+  private val util = DataProcessingUtil(dailyPriceService, instrumentService, TransactionRunner(), cacheInvalidationService, clock)
+
+  @Test
+  fun `should evict derived caches when history leaves the current price unchanged`() {
+    process(changed = false)
+    verify(exactly = 1) { cacheInvalidationService.evictAllRelatedCaches(7L, "Ärikinnisvara") }
+  }
+
+  @Test
+  fun `should leave eviction to the price update when history changes the current price`() {
+    process(changed = true)
+    verify(exactly = 0) { cacheInvalidationService.evictAllRelatedCaches(any(), any()) }
+  }
+
+  private fun process(changed: Boolean) {
+    val instrument = TransactionFixtures.createInstrument(symbol = "Ärikinnisvara", id = 7L)
+    val price = DailyPriceDataImpl(BigDecimal("4.38"), BigDecimal("4.40"), BigDecimal("4.30"), BigDecimal("4.35"), 100L)
+    every { dailyPriceService.findLastDailyPrice(instrument, LocalDate.of(2026, 9, 25)) } returns null
+    every { instrumentService.updateCurrentPrice(7L, null) } returns changed
+    util.processDailyData(instrument, mapOf(LocalDate.of(2026, 9, 24) to price), ProviderName.FT)
+  }
 }

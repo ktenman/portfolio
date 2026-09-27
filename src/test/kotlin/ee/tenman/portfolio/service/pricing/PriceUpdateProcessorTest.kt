@@ -8,7 +8,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.model.CollectionRun
-import ee.tenman.portfolio.model.ProcessResult
+import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
@@ -45,7 +45,7 @@ class PriceUpdateProcessorTest {
         platform = Platform.LIGHTYEAR,
         log = log,
         fetchPrices = { mapOf("VGLA:GER:EUR" to BigDecimal("4.38")) },
-        processSymbol = { _, _, _, _ -> ProcessResult.FAILED },
+        processSymbol = { _, _, _, _ -> error("Price persistence failed") },
       )
     }.toThrow<IllegalStateException>()
   }
@@ -63,14 +63,13 @@ class PriceUpdateProcessorTest {
       fetchPrices = { prices },
       processSymbol = { symbol, _, _, _ ->
         processedSymbols.add(symbol)
-        ProcessResult.SUCCESS_WITH_DAILY_PRICE
+        true
       },
     )
 
     expect(processedSymbols).toContainExactly("AAPL", "GOOGL")
     verify { log.info("Starting LIGHTYEAR price update execution") }
     verify { log.info(match { it.contains("Updated current prices for 2/2 instruments") }) }
-    verify { log.info(match { it.contains("saved 2 LIGHTYEAR daily prices") }) }
   }
 
   @Test
@@ -85,12 +84,11 @@ class PriceUpdateProcessorTest {
       fetchPrices = { prices },
       processSymbol = { _, _, isWeekend, _ ->
         expect(isWeekend).toEqual(true)
-        ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
+        false
       },
     )
 
     verify { log.info("Skipping daily price save - weekend detected") }
-    verify(exactly = 0) { log.info(match { it.contains("saved") && it.contains("daily prices") }) }
   }
 
   @Test
@@ -105,7 +103,7 @@ class PriceUpdateProcessorTest {
         log = log,
         fetchPrices = { prices },
         processSymbol = { symbol, _, _, _ ->
-          if (symbol == "INVALID") ProcessResult.FAILED else ProcessResult.SUCCESS_WITH_DAILY_PRICE
+          if (symbol == "INVALID") error("Price persistence failed") else true
         },
       )
     }.toThrow<IllegalStateException>()
@@ -123,7 +121,7 @@ class PriceUpdateProcessorTest {
         processSymbol = { symbol, _, _, _ ->
           if (symbol == "VGLA") error("Transaction commit failed")
           persisted.add(symbol)
-          ProcessResult.SUCCESS_WITH_DAILY_PRICE
+          true
         },
       )
     }.toThrow<PriceRefreshException>()
@@ -141,7 +139,7 @@ class PriceUpdateProcessorTest {
         platform = Platform.LIGHTYEAR,
         log = log,
         fetchPrices = { mapOf("GOOD" to BigDecimal.ONE, "ZERO" to BigDecimal.ZERO) },
-        processSymbol = { _, _, _, _ -> ProcessResult.SUCCESS_WITH_DAILY_PRICE },
+        processSymbol = { _, _, _, _ -> true },
         expectedSymbols = symbols,
         run = run,
       )
@@ -150,6 +148,21 @@ class PriceUpdateProcessorTest {
     expect(run.result().persisted).toContainExactly("GOOD")
     expect(run.result().fetched).toContainExactly("GOOD")
     expect(run.result().failed).toContainExactly("ZERO", "MISSING")
+  }
+
+  @Test
+  fun `should count an unchanged price as persisted`() {
+    expect(refresh(changed = false).persisted).toContainExactly("Ärikinnisvara")
+  }
+
+  @Test
+  fun `should not record an unchanged price as changed`() {
+    expect(refresh(changed = false).changed).toEqual(emptySet())
+  }
+
+  @Test
+  fun `should record a changed price as changed`() {
+    expect(refresh(changed = true).changed).toContainExactly("Ärikinnisvara")
   }
 
   @Test
@@ -166,7 +179,7 @@ class PriceUpdateProcessorTest {
       fetchPrices = { prices },
       processSymbol = { _, _, _, date ->
         capturedDate = date
-        ProcessResult.SUCCESS_WITH_DAILY_PRICE
+        true
       },
     )
 
@@ -179,8 +192,8 @@ class PriceUpdateProcessorTest {
 
     val prices =
       mapOf(
-        "SUCCESS_WITH_DAILY" to BigDecimal("100.00"),
-        "SUCCESS_WITHOUT_DAILY" to BigDecimal("200.00"),
+        "CHANGED" to BigDecimal("100.00"),
+        "UNCHANGED" to BigDecimal("200.00"),
         "FAILED" to BigDecimal("300.00"),
       )
 
@@ -192,9 +205,9 @@ class PriceUpdateProcessorTest {
           fetchPrices = { prices },
           processSymbol = { symbol, _, _, _ ->
             when (symbol) {
-              "SUCCESS_WITH_DAILY" -> ProcessResult.SUCCESS_WITH_DAILY_PRICE
-              "SUCCESS_WITHOUT_DAILY" -> ProcessResult.SUCCESS_WITHOUT_DAILY_PRICE
-              else -> ProcessResult.FAILED
+              "CHANGED" -> true
+              "UNCHANGED" -> false
+              else -> error("Price persistence failed")
             }
           },
         )
@@ -209,14 +222,31 @@ class PriceUpdateProcessorTest {
     val price = BigDecimal("155.00")
     val today = LocalDate.of(2024, 1, 15)
     every { instrumentService.findBySymbol("AAPL") } returns instrument
-    every { instrumentService.updateCurrentPrice(1L, price) } just runs
+    every { instrumentService.updateCurrentPrice(1L, price) } returns true
     every { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) } just runs
     every { dailyPriceService.saveDailyPrice(any()) } just runs
 
     val result = processor.processSymbolUpdate("AAPL", price, false, today, ProviderName.FT)
 
-    expect(result).toEqual(ProcessResult.SUCCESS_WITH_DAILY_PRICE)
+    expect(result).toEqual(true)
     verify(exactly = 1) { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) }
+  }
+
+  @Test
+  fun `processSymbolUpdate should report an unchanged price`() {
+    expect(update(isWeekend = false)).toEqual(false)
+  }
+
+  @Test
+  fun `processSymbolUpdate should report an unchanged price on a weekend`() {
+    expect(update(isWeekend = true)).toEqual(false)
+  }
+
+  @Test
+  fun `processSymbolUpdate should still save the snapshot and daily price for an unchanged price`() {
+    update(isWeekend = false)
+    verify { priceSnapshotService.saveSnapshot(any(), BigDecimal("155.00"), ProviderName.FT) }
+    verify { dailyPriceService.saveDailyPrice(match { it.closePrice.compareTo(BigDecimal("155.00")) == 0 }) }
   }
 
   @Test
@@ -225,11 +255,35 @@ class PriceUpdateProcessorTest {
     val price = BigDecimal("155.00")
     val today = LocalDate.of(2024, 1, 15)
     every { instrumentService.findBySymbol("AAPL") } returns instrument
-    every { instrumentService.updateCurrentPrice(1L, price) } just runs
+    every { instrumentService.updateCurrentPrice(1L, price) } returns true
     every { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) } throws RuntimeException("DB error")
     every { dailyPriceService.saveDailyPrice(any()) } just runs
 
     expect { processor.processSymbolUpdate("AAPL", price, false, today, ProviderName.FT) }
       .toThrow<RuntimeException>()
+  }
+
+  private fun refresh(changed: Boolean): CollectionRunResult {
+    every { marketPhaseDetectionService.isWeekendPhase() } returns false
+    val run = CollectionRun(setOf("Ärikinnisvara"))
+    processor.processPriceUpdates(
+      platform = Platform.LIGHTYEAR,
+      log = log,
+      fetchPrices = { mapOf("Ärikinnisvara" to BigDecimal("4.38")) },
+      processSymbol = { _, _, _, _ -> changed },
+      expectedSymbols = setOf("Ärikinnisvara"),
+      run = run,
+    )
+    return run.result()
+  }
+
+  private fun update(isWeekend: Boolean): Boolean {
+    val instrument = createInstrument()
+    val price = BigDecimal("155.00")
+    every { instrumentService.findBySymbol("AAPL") } returns instrument
+    every { instrumentService.updateCurrentPrice(1L, price) } returns false
+    every { priceSnapshotService.saveSnapshot(instrument, price, ProviderName.FT) } just runs
+    if (!isWeekend) every { dailyPriceService.saveDailyPrice(any()) } just runs
+    return processor.processSymbolUpdate("AAPL", price, isWeekend, LocalDate.of(2024, 1, 15), ProviderName.FT)
   }
 }

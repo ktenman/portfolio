@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
@@ -23,6 +24,7 @@ class InstrumentPriceGapFillingJob(
   private val ftHistoricalPricesService: HistoricalPricesService,
   private val jobExecutionService: JobExecutionService,
   private val taskScheduler: TaskScheduler,
+  private val cacheInvalidationService: CacheInvalidationService,
   private val clock: Clock = Clock.systemDefaultZone(),
 ) : Job {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -69,12 +71,14 @@ class InstrumentPriceGapFillingJob(
         totalSaved += saved
       }
       log.info("Instrument price gap filling completed: $totalSaved prices saved")
+      if (totalSaved > 0) cacheInvalidationService.evictAllRelatedCaches(null, null)
     } finally {
       isExecuting.set(false)
     }
   }
 
   private fun fillGapsForInstrument(instrument: Instrument): Int {
+    var savedCount = 0
     try {
       log.debug("Filling price gaps for instrument: ${instrument.symbol}")
       val existingDates = dailyPriceService.findAllExistingDates(instrument)
@@ -83,7 +87,6 @@ class InstrumentPriceGapFillingJob(
         log.warn("No FT data found for instrument: ${instrument.symbol}")
         return 0
       }
-      var savedCount = 0
       ftData.forEach { (date, data) ->
         if (existingDates.contains(date)) return@forEach
         val dailyPrice =
@@ -107,7 +110,7 @@ class InstrumentPriceGapFillingJob(
       return savedCount
     } catch (e: Exception) {
       log.error("Error filling gaps for instrument ${instrument.symbol}: ${e.message}")
-      return 0
+      return savedCount
     }
   }
 

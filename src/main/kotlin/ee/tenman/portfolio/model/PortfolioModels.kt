@@ -42,12 +42,6 @@ data class TransactionState(
   val currentQuantity: BigDecimal,
 )
 
-enum class ProcessResult {
-  SUCCESS_WITH_DAILY_PRICE,
-  SUCCESS_WITHOUT_DAILY_PRICE,
-  FAILED,
-}
-
 data class ReconciliationResult(
   val mergedGroups: Int,
   val mergedDuplicates: Int,

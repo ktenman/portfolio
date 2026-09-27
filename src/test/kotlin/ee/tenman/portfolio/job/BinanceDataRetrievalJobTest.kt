@@ -71,6 +71,21 @@ class BinanceDataRetrievalJobTest {
   }
 
   @Test
+  fun `should not record an unchanged current price as changed`() {
+    expect(refresh(changed = false).changed).toEqual(emptySet())
+  }
+
+  @Test
+  fun `should count an unchanged current price as persisted`() {
+    expect(refresh(changed = false).persisted).toContainExactly("BTCEUR")
+  }
+
+  @Test
+  fun `should record a changed current price as changed`() {
+    expect(refresh(changed = true).changed).toContainExactly("BTCEUR")
+  }
+
+  @Test
   fun `should fetch full history when no historical data exists`() {
     val instrument = createInstrument("BNBEUR")
     every { instrumentService.getInstrumentsByProvider(ProviderName.BINANCE) } returns listOf(instrument)
@@ -130,6 +145,16 @@ class BinanceDataRetrievalJobTest {
   @Test
   fun `should have correct job name`() {
     expect(job.getName()).toEqual("BinanceDataRetrievalJob")
+  }
+
+  private fun refresh(changed: Boolean): CollectionRunResult {
+    val instrument = createInstrument("BTCEUR")
+    every { instrumentService.getInstrumentsByProvider(ProviderName.BINANCE) } returns listOf(instrument)
+    every { dailyPriceService.hasHistoricalData(instrument) } returns true
+    every { binanceService.getCurrentPrice("BTCEUR") } returns BigDecimal("95000.50")
+    every { instrumentService.updateCurrentPrice(1L, BigDecimal("95000.50")) } returns changed
+    job.execute()
+    return runs.single()
   }
 
   private fun createInstrument(

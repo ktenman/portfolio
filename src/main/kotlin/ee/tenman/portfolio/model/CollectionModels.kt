@@ -28,6 +28,7 @@ data class CollectionRunResult(
   val attempted: Set<String>,
   val fetched: Set<String>,
   val persisted: Set<String>,
+  val changed: Set<String>,
   val failed: Set<String>,
   val failures: Map<String, Throwable>,
 )
@@ -40,6 +41,7 @@ class CollectionRun(
   private val attempted = mutableSetOf<String>()
   private val fetched = mutableSetOf<String>()
   private val persisted = mutableSetOf<String>()
+  private val changed = mutableSetOf<String>()
   private val failures = mutableMapOf<String, Throwable>()
 
   @Synchronized
@@ -55,11 +57,15 @@ class CollectionRun(
   }
 
   @Synchronized
-  fun persisted(symbol: String) {
+  fun persisted(
+    symbol: String,
+    changed: Boolean = true,
+  ) {
     if (symbol !in expected) return
     check(!TransactionSynchronizationManager.isActualTransactionActive()) {
       "Collection persistence must be recorded after the transaction commits"
     }
+    if (changed) this.changed.add(symbol)
     if (symbol in persisted) return
     onPersisted(symbol)
     attempted.add(symbol)
@@ -85,6 +91,7 @@ class CollectionRun(
       attempted = attempted.toSet(),
       fetched = fetched.toSet(),
       persisted = persisted.toSet(),
+      changed = changed.toSet(),
       failed = expected - persisted,
       failures = failures.toMap(),
     )

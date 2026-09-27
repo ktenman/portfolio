@@ -99,6 +99,16 @@ class CollectionMonitorTest {
   }
 
   @Test
+  fun `should not announce prices when every persisted price was unchanged`() {
+    val state = mockk<CollectionStateService>(relaxed = true)
+    val liveUpdates = mockk<LiveUpdateService>(relaxed = true)
+    every { state.begin(CollectionKey.BINANCE_PRICES) } returns Instant.EPOCH
+    CollectionMonitorService(state, SimpleMeterRegistry(), mockk(relaxed = true), liveUpdates)
+      .collect(CollectionKey.BINANCE_PRICES, listOf("Ärikinnisvara")) { it.persisted("Ärikinnisvara", changed = false) }
+    verify(exactly = 0) { liveUpdates.publish(any()) }
+  }
+
+  @Test
   fun `should not announce prices after a holdings collection`() {
     val state = mockk<CollectionStateService>(relaxed = true)
     val liveUpdates = mockk<LiveUpdateService>(relaxed = true)

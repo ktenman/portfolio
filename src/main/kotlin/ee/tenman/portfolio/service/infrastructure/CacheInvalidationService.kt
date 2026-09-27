@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 class CacheInvalidationService(
@@ -54,6 +56,14 @@ class CacheInvalidationService(
     evictTransactionCaches()
     evictSummaryCaches()
     evictXirrCache()
+  }
+
+  fun evictAllRelatedCachesAfterCommit() {
+    TransactionSynchronizationManager.registerSynchronization(
+      object : TransactionSynchronization {
+        override fun afterCommit() = evictAllRelatedCaches(null, null)
+      },
+    )
   }
 
   fun evictEtfBreakdownCache() {
