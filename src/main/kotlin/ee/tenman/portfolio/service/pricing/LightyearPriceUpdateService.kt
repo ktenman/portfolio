@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.service.pricing
 
 import ee.tenman.portfolio.domain.ProviderName
-import ee.tenman.portfolio.model.ProcessResult
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -18,5 +17,5 @@ class LightyearPriceUpdateService(
     price: BigDecimal,
     isWeekend: Boolean,
     today: LocalDate,
-  ): ProcessResult = priceUpdateProcessor.processSymbolUpdate(symbol, price, isWeekend, today, ProviderName.LIGHTYEAR)
+  ): Boolean = priceUpdateProcessor.processSymbolUpdate(symbol, price, isWeekend, today, ProviderName.LIGHTYEAR)
 }

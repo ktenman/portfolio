@@ -9,11 +9,13 @@ import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
+import java.time.Clock
 import java.time.LocalDate
 
 @Service
 class PlatformSummaryCacheService(
   private val summaryService: SummaryService,
+  private val clock: Clock,
 ) {
   @Cacheable(
     value = [SUMMARY_CACHE],
@@ -41,7 +43,7 @@ class PlatformSummaryCacheService(
 
   @Cacheable(
     value = [PLATFORM_SUMMARY_CACHE],
-    key = "'platform-historical-' + #root.target.platformKey(#platforms) + '-' + #page + '-' + #size",
+    key = "'platform-historical-' + #root.target.platformKey(#platforms) + '-' + #page + '-' + #size + '-' + #root.target.today()",
     unless = "#result.isEmpty()",
   )
   fun getHistoricalSummariesForPlatforms(
@@ -61,7 +63,7 @@ class PlatformSummaryCacheService(
 
   @Cacheable(
     value = [PLATFORM_SUMMARY_CACHE],
-    key = "'platform-series-' + #root.target.platformKey(#platforms) + '-' + #range.name()",
+    key = "'platform-series-' + #root.target.platformKey(#platforms) + '-' + #range.name() + '-' + #root.target.today()",
     unless = "#result.isEmpty()",
   )
   fun getSeriesForPlatforms(
@@ -70,4 +72,6 @@ class PlatformSummaryCacheService(
   ): List<PortfolioDailySummary> = summaryService.getSeriesForPlatforms(platforms, range)
 
   fun platformKey(platforms: List<Platform>): String = platforms.map { it.name }.sorted().joinToString(",")
+
+  fun today(): LocalDate = LocalDate.now(clock)
 }

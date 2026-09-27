@@ -1,16 +1,20 @@
 package ee.tenman.portfolio.configuration
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToThrow
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import com.sun.net.httpserver.HttpServer
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.redis.RedisConnectionFailureException
 import org.springframework.mock.env.MockEnvironment
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -18,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class PortfolioSummaryWarmupTest {
   private val requestedPaths = ConcurrentLinkedQueue<String>()
   private val transactionService = mockk<TransactionService>()
+  private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private lateinit var server: HttpServer
 
   @BeforeEach
@@ -39,9 +44,7 @@ class PortfolioSummaryWarmupTest {
   @Test
   fun `should warm up filtered and unfiltered summary endpoints the frontend requests on application ready`() {
     every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR, Platform.TRADING212)
-    val environment = MockEnvironment().withProperty("server.port", server.address.port.toString())
-    val warmup = PortfolioSummaryWarmup(environment, transactionService)
-    warmup.warmUp()
+    warm()
     expect(requestedPaths.toSet()).toContain(
       "/api/transactions/platforms",
       "/api/portfolio-summary/historical?page=0&size=30",
@@ -56,9 +59,7 @@ class PortfolioSummaryWarmupTest {
   @Test
   fun `should warm up only unfiltered endpoints when no platforms exist`() {
     every { transactionService.getDistinctPlatforms() } returns emptyList()
-    val environment = MockEnvironment().withProperty("server.port", server.address.port.toString())
-    val warmup = PortfolioSummaryWarmup(environment, transactionService)
-    warmup.warmUp()
+    warm()
     expect(requestedPaths.toSet()).toEqual(
       setOf(
         "/api/transactions/platforms",
@@ -74,9 +75,27 @@ class PortfolioSummaryWarmupTest {
   @Test
   fun `should not propagate failures when the warmup target is unreachable`() {
     every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR)
-    val environment = MockEnvironment().withProperty("server.port", "1")
-    val warmup = PortfolioSummaryWarmup(environment, transactionService)
-    warmup.warmUp()
+    warm(1)
     expect(requestedPaths.size).toEqual(0)
+  }
+
+  @Test
+  fun `should evict derived caches once before sending any warmup request`() {
+    val requestsBeforeEviction = mutableListOf<Int>()
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LIGHTYEAR)
+    every { cacheInvalidationService.evictAllRelatedCaches(null, null) } answers { requestsBeforeEviction.add(requestedPaths.size) }
+    warm()
+    expect(requestsBeforeEviction).toContainExactly(0)
+  }
+
+  @Test
+  fun `should not propagate failures when cache eviction fails`() {
+    every { cacheInvalidationService.evictAllRelatedCaches(null, null) } throws RedisConnectionFailureException("Redis unavailable")
+    expect { warm() }.notToThrow()
+  }
+
+  private fun warm(port: Int = server.address.port) {
+    val environment = MockEnvironment().withProperty("server.port", "$port")
+    PortfolioSummaryWarmup(environment, transactionService, cacheInvalidationService).warmUp()
   }
 }

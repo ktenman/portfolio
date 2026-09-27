@@ -4,6 +4,7 @@ import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import org.slf4j.LoggerFactory
@@ -16,6 +17,7 @@ class DataProcessingUtil(
   private val dailyPriceService: DailyPriceService,
   private val instrumentService: InstrumentService,
   private val transactionRunner: TransactionRunner,
+  private val cacheInvalidationService: CacheInvalidationService,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -56,6 +58,7 @@ class DataProcessingUtil(
   private fun updateInstrumentPrice(instrument: Instrument) {
     val currentDate = LocalDate.now(clock)
     val dailyPrice = dailyPriceService.findLastDailyPrice(instrument, currentDate)
-    instrumentService.updateCurrentPrice(instrument.id, dailyPrice?.closePrice)
+    if (instrumentService.updateCurrentPrice(instrument.id, dailyPrice?.closePrice)) return
+    cacheInvalidationService.evictAllRelatedCaches(instrument.id, instrument.symbol)
   }
 }
