@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import MonitoringView from './monitoring-view.vue'
 import { monitoringService } from '../../services/api'
+import { FakeEventSource } from '../../tests/fixtures'
 import { CollectionStatus, type CollectionStatusDto } from '../../models/generated/domain-models'
 
 enableAutoUnmount(afterEach)
@@ -9,19 +10,6 @@ enableAutoUnmount(afterEach)
 vi.mock('../../services/api', () => ({
   monitoringService: { streamUrl: '/api/monitoring/collections/stream', rerun: vi.fn() },
 }))
-
-class FakeEventSource {
-  static instances: FakeEventSource[] = []
-  readyState = 0
-  onerror: ((event: Event) => void) | null = null
-  onmessage: ((event: MessageEvent) => void) | null = null
-
-  constructor() {
-    FakeEventSource.instances.push(this)
-  }
-
-  close() {}
-}
 
 vi.stubGlobal('EventSource', FakeEventSource)
 

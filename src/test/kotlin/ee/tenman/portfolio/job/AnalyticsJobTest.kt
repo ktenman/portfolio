@@ -6,11 +6,13 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
@@ -37,6 +39,7 @@ class CurrentDaySummaryRefreshJobTest {
   private val transactionService = mockk<TransactionService>()
   private val intradaySummaryService = mockk<IntradaySummaryService>(relaxed = true)
   private val instrumentMinutePriceService = mockk<InstrumentMinutePriceService>(relaxed = true)
+  private val liveUpdates = mockk<LiveUpdateService>(relaxed = true)
   private val job =
     CurrentDaySummaryRefreshJob(
       currentDayCache,
@@ -44,6 +47,7 @@ class CurrentDaySummaryRefreshJobTest {
       intradaySummaryService,
       transactionService,
       instrumentMinutePriceService,
+      liveUpdates,
     )
 
   @Test
@@ -153,6 +157,21 @@ class CurrentDaySummaryRefreshJobTest {
     every { transactionService.getDistinctPlatforms() } throws RuntimeException("database unavailable")
     job.refresh()
     verify { currentDayCache.refreshCurrentDaySummary() }
+  }
+
+  @Test
+  fun `should announce the refreshed summary to live update subscribers`() {
+    every { currentDayCache.refreshCurrentDaySummary() } returns summaryOn(LocalDate.of(2026, 9, 27))
+    every { transactionService.getDistinctPlatforms() } returns emptyList()
+    job.refresh()
+    verify { liveUpdates.publish(LiveUpdate.SUMMARY) }
+  }
+
+  @Test
+  fun `should not announce a summary that failed to refresh`() {
+    every { currentDayCache.refreshCurrentDaySummary() } throws IllegalStateException("cache unavailable")
+    job.refresh()
+    verify(exactly = 0) { liveUpdates.publish(any()) }
   }
 
   private fun summaryOn(date: LocalDate): PortfolioDailySummary =

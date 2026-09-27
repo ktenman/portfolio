@@ -49,6 +49,11 @@ enum class BenchmarkIndex {
   VWCE,
 }
 
+enum class LiveUpdate {
+  PRICES,
+  SUMMARY,
+}
+
 enum class SectorSource {
   LLM,
   LIGHTYEAR,

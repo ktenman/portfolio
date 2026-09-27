@@ -360,3 +360,8 @@ export enum TimeRange {
     SIX_YEARS = "6Y",
     MAX = "MAX",
 }
+
+export enum LiveUpdate {
+    PRICES = "PRICES",
+    SUMMARY = "SUMMARY",
+}

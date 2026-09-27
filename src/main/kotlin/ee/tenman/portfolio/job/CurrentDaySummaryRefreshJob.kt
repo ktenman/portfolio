@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.IntradaySummaryService
@@ -17,6 +19,7 @@ class CurrentDaySummaryRefreshJob(
   private val intradaySummaryService: IntradaySummaryService,
   private val transactionService: TransactionService,
   private val instrumentMinutePriceService: InstrumentMinutePriceService,
+  private val liveUpdates: LiveUpdateService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -32,6 +35,7 @@ class CurrentDaySummaryRefreshJob(
       .onFailure { log.warn("Failed to record intraday summary snapshot", it) }
     runCatching { refreshKnownPlatforms(summary) }
       .onFailure { log.warn("Failed to refresh platform current day summaries", it) }
+    liveUpdates.publish(LiveUpdate.SUMMARY)
   }
 
   private fun refreshKnownPlatforms(summary: PortfolioDailySummary) {

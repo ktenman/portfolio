@@ -2,8 +2,10 @@ package ee.tenman.portfolio.service.monitoring
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import ee.tenman.portfolio.domain.CollectionKey
+import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.model.CollectionRun
 import ee.tenman.portfolio.model.CollectionRunResult
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import feign.FeignException
 import io.micrometer.core.instrument.MeterRegistry
 import jakarta.persistence.PersistenceException
@@ -26,6 +28,7 @@ class CollectionMonitorService(
   private val stateService: CollectionStateService,
   private val registry: MeterRegistry,
   private val stream: CollectionStreamService,
+  private val liveUpdates: LiveUpdateService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -56,6 +59,7 @@ class CollectionMonitorService(
     val storage = runCatching { stateService.finish(key, started, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     storage?.let { recordStorageFailure(key, it) }
     stream.publish()
+    if (key.operation != "holdings" && result.persisted.isNotEmpty()) liveUpdates.publish(LiveUpdate.PRICES)
     val metrics = runCatching { recordFailures(key, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     val errors = listOfNotNull(outcome.exceptionOrNull(), storage, metrics)
     errors.firstOrNull()?.let { first ->

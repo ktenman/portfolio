@@ -189,3 +189,7 @@ export const monitoringService = {
   rerun: (key: string) =>
     httpClient.post<void>(`${API_ENDPOINTS.MONITORING_COLLECTIONS}/${key}/rerun`),
 }
+
+export const liveUpdatesService = {
+  streamUrl: `/api${API_ENDPOINTS.LIVE_UPDATES}`,
+}
