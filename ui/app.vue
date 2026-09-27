@@ -37,6 +37,7 @@ import ToastContainer from './components/shared/toast-container.vue'
 import { provideConfirm } from './composables/use-confirm'
 import { useAuthState } from './composables/use-auth-state'
 import { useEnumValues } from './composables/use-enum-values'
+import { useLiveUpdates } from './composables/use-live-updates'
 
 const ConfirmDialog = defineAsyncComponent(() => import('./components/shared/confirm-dialog.vue'))
 
@@ -44,6 +45,7 @@ const currentYear = new Date().getFullYear()
 const confirmState = provideConfirm()
 const { isAuthChecking, checkAuth } = useAuthState()
 const { loadAll } = useEnumValues()
+useLiveUpdates()
 
 onMounted(() => {
   checkAuth()

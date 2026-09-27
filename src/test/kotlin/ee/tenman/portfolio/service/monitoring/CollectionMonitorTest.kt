@@ -3,10 +3,13 @@ package ee.tenman.portfolio.service.monitoring
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.CollectionKey
+import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.model.CollectionSnapshot
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import io.mockk.verifyOrder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -22,7 +25,12 @@ class CollectionMonitorTest {
     val registry = SimpleMeterRegistry()
     val thrown =
       assertThrows<DataAccessResourceFailureException> {
-      CollectionMonitorService(state, registry, mockk(relaxed = true)).collect(CollectionKey.BINANCE_PRICES, listOf("A")) { }
+      CollectionMonitorService(
+        state,
+        registry,
+        mockk(relaxed = true),
+        mockk(relaxed = true),
+      ).collect(CollectionKey.BINANCE_PRICES, listOf("A")) { }
     }
     expect(thrown).toEqual(error)
     expect(persistenceFailures(registry)).toEqual(1.0)
@@ -43,6 +51,7 @@ class CollectionMonitorTest {
         state,
         registry,
         mockk(relaxed = true),
+        mockk(relaxed = true),
       ).collect(CollectionKey.BINANCE_PRICES, listOf("A")) { throw actionError }
     }
     expect(thrown).toEqual(actionError)
@@ -55,13 +64,48 @@ class CollectionMonitorTest {
     val state = mockk<CollectionStateService>(relaxed = true)
     val stream = mockk<CollectionStreamService>(relaxed = true)
     every { state.begin(CollectionKey.BINANCE_PRICES) } returns Instant.EPOCH
-    CollectionMonitorService(state, SimpleMeterRegistry(), stream).collect(CollectionKey.BINANCE_PRICES, listOf("Ärikinnisvara")) { }
+    CollectionMonitorService(
+      state,
+      SimpleMeterRegistry(),
+      stream,
+      mockk(relaxed = true),
+    ).collect(CollectionKey.BINANCE_PRICES, listOf("Ärikinnisvara")) { }
     verifyOrder {
       state.begin(CollectionKey.BINANCE_PRICES)
       stream.publish()
       state.finish(CollectionKey.BINANCE_PRICES, any(), any(), any())
       stream.publish()
     }
+  }
+
+  @Test
+  fun `should announce new prices once a price collection persisted a symbol`() {
+    val state = mockk<CollectionStateService>(relaxed = true)
+    val liveUpdates = mockk<LiveUpdateService>(relaxed = true)
+    every { state.begin(CollectionKey.BINANCE_PRICES) } returns Instant.EPOCH
+    CollectionMonitorService(state, SimpleMeterRegistry(), mockk(relaxed = true), liveUpdates)
+      .collect(CollectionKey.BINANCE_PRICES, listOf("Ärikinnisvara")) { it.persisted("Ärikinnisvara") }
+    verify { liveUpdates.publish(LiveUpdate.PRICES) }
+  }
+
+  @Test
+  fun `should not announce prices when the collection persisted nothing`() {
+    val state = mockk<CollectionStateService>(relaxed = true)
+    val liveUpdates = mockk<LiveUpdateService>(relaxed = true)
+    every { state.begin(CollectionKey.BINANCE_PRICES) } returns Instant.EPOCH
+    CollectionMonitorService(state, SimpleMeterRegistry(), mockk(relaxed = true), liveUpdates)
+      .collect(CollectionKey.BINANCE_PRICES, listOf("Ärikinnisvara")) { }
+    verify(exactly = 0) { liveUpdates.publish(any()) }
+  }
+
+  @Test
+  fun `should not announce prices after a holdings collection`() {
+    val state = mockk<CollectionStateService>(relaxed = true)
+    val liveUpdates = mockk<LiveUpdateService>(relaxed = true)
+    every { state.begin(CollectionKey.VANGUARD_HOLDINGS) } returns Instant.EPOCH
+    CollectionMonitorService(state, SimpleMeterRegistry(), mockk(relaxed = true), liveUpdates)
+      .collect(CollectionKey.VANGUARD_HOLDINGS, listOf("Ärikinnisvara")) { it.persisted("Ärikinnisvara") }
+    verify(exactly = 0) { liveUpdates.publish(any()) }
   }
 
   private fun persistenceFailures(registry: SimpleMeterRegistry): Double =

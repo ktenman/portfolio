@@ -101,7 +101,7 @@ import XirrWindowsModal from './xirr-windows-modal.vue'
 import AnnualWindowsModal from './annual-windows-modal.vue'
 import { instrumentsService, portfolioSummaryService } from '../../services/api'
 import { InstrumentDto } from '../../models/generated/domain-models'
-import { STORAGE_KEYS, REFETCH_INTERVALS } from '../../constants'
+import { STORAGE_KEYS } from '../../constants'
 
 const selectedItem = ref<InstrumentDto | null>(null)
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
@@ -151,7 +151,6 @@ const {
 } = useQuery({
   queryKey: computed(() => ['instruments', activePlatforms.value, selectedPeriod.value]),
   queryFn: () => instrumentsService.getAll(activePlatforms.value, selectedPeriod.value),
-  refetchInterval: REFETCH_INTERVALS.INSTRUMENTS,
   enabled: isAuthenticated,
 })
 
@@ -165,7 +164,6 @@ const { data: rangeChange } = useQuery({
   queryFn: () =>
     portfolioSummaryService.getRangeChange(selectedPeriod.value, activePlatforms.value),
   placeholderData: keepPreviousData,
-  refetchInterval: REFETCH_INTERVALS.SUMMARY,
   enabled: isAuthenticated,
 })
 
@@ -219,11 +217,6 @@ const handleTitleClick = async () => {
   try {
     await instrumentsService.refreshPrices()
     toast.success('Price refresh triggered! Data will update shortly.')
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['instruments'] })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['summaries'] })
-    }, 2000)
   } catch {
     toast.error('Failed to trigger price refresh')
   }
