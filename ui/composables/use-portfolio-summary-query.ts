@@ -15,7 +15,6 @@ import {
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
 import { BENCHMARKS, type ChartBenchmark, type ChartSummary } from './use-portfolio-chart'
-import { REFETCH_INTERVALS } from '../constants/api'
 import { type BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
 
 const INTRADAY_RANGES: TimeRange[] = [
@@ -70,7 +69,6 @@ export function usePortfolioSummaryQuery(
     queryKey: ['portfolio-summary', 'current', platformsKey],
     queryFn: () => portfolioSummaryService.getCurrent(activePlatforms.value),
     enabled: isAuthenticated,
-    refetchInterval: REFETCH_INTERVALS.SUMMARY,
   })
 
   const {
@@ -95,7 +93,6 @@ export function usePortfolioSummaryQuery(
     queryFn: () => portfolioSummaryService.getIntraday(rangeKey.value, activePlatforms.value),
     placeholderData: keepPreviousData,
     enabled: computed(() => isAuthenticated.value && isIntradayRange.value),
-    refetchInterval: REFETCH_INTERVALS.INTRADAY,
   })
 
   const benchmarkQuery = (index: BenchmarkIndex) =>
@@ -120,7 +117,6 @@ export function usePortfolioSummaryQuery(
     }),
     placeholderData: keepPreviousData,
     enabled: isAuthenticated,
-    refetchInterval: REFETCH_INTERVALS.SUMMARY,
   })
 
   const recalculateMutation = useMutation({

@@ -234,6 +234,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.domain.TransactionType",
       "ee.tenman.portfolio.domain.BenchmarkIndex",
       "ee.tenman.portfolio.domain.TimeRange",
+      "ee.tenman.portfolio.domain.LiveUpdate",
     ),
   )
   outputKind.set(cz.habarta.typescript.generator.TypeScriptOutputKind.module)

@@ -108,3 +108,20 @@ export const createPortfolioSummaryDto = (
   totalProfitChange24h: null,
   ...overrides,
 })
+
+export class FakeEventSource extends EventTarget {
+  static readonly CLOSED = 2
+  static instances: FakeEventSource[] = []
+  readyState = 0
+  onerror: ((event: Event) => void) | null = null
+  onmessage: ((event: MessageEvent) => void) | null = null
+
+  constructor(readonly url: string) {
+    super()
+    FakeEventSource.instances.push(this)
+  }
+
+  close() {
+    this.readyState = FakeEventSource.CLOSED
+  }
+}
