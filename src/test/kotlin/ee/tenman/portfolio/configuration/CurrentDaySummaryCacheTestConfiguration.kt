@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.PLATFORM_SUMMARY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.service.summary.CurrentDaySummaryCacheService
 import ee.tenman.portfolio.service.summary.PlatformSummaryCacheService
@@ -11,6 +12,7 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import java.time.Clock
 
 @Configuration
 @EnableCaching
@@ -20,12 +22,18 @@ class CurrentDaySummaryCacheTestConfiguration {
   fun summaryService(): SummaryService = mockk()
 
   @Bean
-  fun testCacheManager(): CacheManager = ConcurrentMapCacheManager(SUMMARY_CACHE)
+  fun clock(): Clock = mockk()
+
+  @Bean
+  fun testCacheManager(): CacheManager = ConcurrentMapCacheManager(SUMMARY_CACHE, PLATFORM_SUMMARY_CACHE)
 
   @Bean
   fun currentDaySummaryCacheService(summaryService: SummaryService): CurrentDaySummaryCacheService =
     CurrentDaySummaryCacheService(summaryService)
 
   @Bean
-  fun platformSummaryCacheService(summaryService: SummaryService): PlatformSummaryCacheService = PlatformSummaryCacheService(summaryService)
+  fun platformSummaryCacheService(
+    summaryService: SummaryService,
+    clock: Clock,
+  ): PlatformSummaryCacheService = PlatformSummaryCacheService(summaryService, clock)
 }

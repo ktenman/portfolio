@@ -2,6 +2,7 @@ package ee.tenman.portfolio.configuration
 
 import ee.tenman.portfolio.domain.BenchmarkIndex
 import ee.tenman.portfolio.domain.TimeRange
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -18,6 +19,7 @@ import java.time.Duration
 class PortfolioSummaryWarmup(
   private val environment: Environment,
   private val transactionService: TransactionService,
+  private val cacheInvalidationService: CacheInvalidationService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -25,6 +27,7 @@ class PortfolioSummaryWarmup(
   fun warmUp() {
     val startTime = System.currentTimeMillis()
     runCatching {
+      cacheInvalidationService.evictAllRelatedCaches(null, null)
       val baseUrl = "http://localhost:${resolvePort()}"
       val client = HttpClient.newBuilder().connectTimeout(REQUEST_TIMEOUT).build()
       val paths = warmupPaths()

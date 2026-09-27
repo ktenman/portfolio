@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.ProfitCalculationEngine
+import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
@@ -21,6 +22,7 @@ class TransactionService(
   private val portfolioTransactionRepository: PortfolioTransactionRepository,
   private val profitCalculationEngine: ProfitCalculationEngine,
   private val transactionCacheService: TransactionCacheService,
+  private val cacheInvalidationService: CacheInvalidationService,
   private val clock: Clock,
 ) {
   @Transactional(readOnly = true)
@@ -40,11 +42,9 @@ class TransactionService(
       portfolioTransactionRepository
         .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
     calculateTransactionProfits(relatedTransactions)
-    return requireNotNull(
-      portfolioTransactionRepository
-        .saveAll(relatedTransactions)
-        .find { it.id == saved.id },
-    ) { "Transaction not found after save: ${saved.id}" }
+    val updated = portfolioTransactionRepository.saveAll(relatedTransactions)
+    cacheInvalidationService.evictAllRelatedCachesAfterCommit()
+    return requireNotNull(updated.find { it.id == saved.id }) { "Transaction not found after save: ${saved.id}" }
   }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
@@ -54,7 +54,10 @@ class TransactionService(
       CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
     ],
   )
-  fun deleteTransaction(id: Long) = portfolioTransactionRepository.deleteById(id)
+  fun deleteTransaction(id: Long) {
+    portfolioTransactionRepository.deleteById(id)
+    cacheInvalidationService.evictAllRelatedCachesAfterCommit()
+  }
 
   @Transactional(readOnly = true)
   fun getDistinctPlatforms(): List<Platform> = portfolioTransactionRepository.findDistinctPlatforms()

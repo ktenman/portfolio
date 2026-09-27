@@ -59,7 +59,7 @@ class CollectionMonitorService(
     val storage = runCatching { stateService.finish(key, started, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     storage?.let { recordStorageFailure(key, it) }
     stream.publish()
-    if (key.operation != "holdings" && result.persisted.isNotEmpty()) liveUpdates.publish(LiveUpdate.PRICES)
+    if (key.operation != "holdings" && result.changed.isNotEmpty()) liveUpdates.publish(LiveUpdate.PRICES)
     val metrics = runCatching { recordFailures(key, result, outcome.exceptionOrNull()) }.exceptionOrNull()
     val errors = listOfNotNull(outcome.exceptionOrNull(), storage, metrics)
     errors.firstOrNull()?.let { first ->

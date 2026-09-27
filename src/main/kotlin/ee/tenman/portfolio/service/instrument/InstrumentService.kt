@@ -76,15 +76,17 @@ class InstrumentService(
   fun updateCurrentPrice(
     instrumentId: Long,
     price: BigDecimal?,
-  ) {
-    instrumentRepository.updateCurrentPrice(instrumentId, price)
+  ): Boolean {
     val instrument = instrumentRepository.findById(instrumentId).orNull()
     if (instrument == null) {
       cacheInvalidationService.evictInstrumentCaches(instrumentId, null)
-      return
+      return false
     }
+    if (compareValues(instrument.currentPrice, price) == 0) return false
+    instrumentRepository.updateCurrentPrice(instrumentId, price)
     transactionProfitService.recalculateProfitsForInstrument(instrumentId)
     cacheInvalidationService.evictAllRelatedCaches(instrumentId, instrument.symbol)
+    return true
   }
 
   @Transactional

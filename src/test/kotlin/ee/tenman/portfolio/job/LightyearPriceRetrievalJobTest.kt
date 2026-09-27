@@ -7,7 +7,6 @@ import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.model.CollectionRunResult
-import ee.tenman.portfolio.model.ProcessResult
 import ee.tenman.portfolio.scheduler.MarketPhaseDetectionService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.pricing.LightyearPriceUpdateService
@@ -64,7 +63,7 @@ class LightyearPriceRetrievalJobTest {
     every { market.isWeekendPhase() } returns false
     every { updates.processSymbol(any(), any(), any(), any()) } answers {
       persisted.add(firstArg())
-      ProcessResult.SUCCESS_WITH_DAILY_PRICE
+      true
     }
     val processor = PriceUpdateProcessor(market, clock, mockk(), mockk(), mockk())
     val properties =

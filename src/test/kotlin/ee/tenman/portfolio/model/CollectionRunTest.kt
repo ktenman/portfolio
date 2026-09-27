@@ -27,6 +27,27 @@ class CollectionRunTest {
   }
 
   @Test
+  fun `should record a persisted symbol as changed by default`() {
+    val run = CollectionRun(listOf("Ärikinnisvara"))
+    run.persisted("Ärikinnisvara")
+    expect(run.result().changed).toEqual(setOf("Ärikinnisvara"))
+  }
+
+  @Test
+  fun `should not record a symbol persisted without a change as changed`() {
+    val run = CollectionRun(listOf("Ärikinnisvara"))
+    run.persisted("Ärikinnisvara", changed = false)
+    expect(run.result().changed).toEqual(emptySet())
+  }
+
+  @Test
+  fun `should count a symbol persisted without a change as persisted`() {
+    val run = CollectionRun(listOf("Ärikinnisvara"))
+    run.persisted("Ärikinnisvara", changed = false)
+    expect(run.result().persisted).toEqual(setOf("Ärikinnisvara"))
+  }
+
+  @Test
   fun `should record persistence only after durable callback succeeds`() {
     val run = CollectionRun(listOf("A")) { throw IllegalStateException("database unavailable") }
     expect { run.persisted("A") }.toThrow<IllegalStateException>()

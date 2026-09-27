@@ -242,6 +242,29 @@ class TransactionServiceTest : TransactionServiceTestBase() {
   }
 
   @Test
+  fun `should evict all related caches after saving a transaction`() {
+    val transaction = createBuyCashFlow(quantity = BigDecimal("10"), price = BigDecimal("100"))
+    transaction.id = 1L
+    every { portfolioTransactionRepository.save(transaction) } returns transaction
+    every { portfolioTransactionRepository.findAllByInstrumentIdAndPlatformOrderByTransactionDate(1L, any()) } returns
+      listOf(transaction)
+    every { portfolioTransactionRepository.saveAll(any<List<PortfolioTransaction>>()) } returns listOf(transaction)
+
+    transactionService.saveTransaction(transaction)
+
+    verify { cacheInvalidationService.evictAllRelatedCachesAfterCommit() }
+  }
+
+  @Test
+  fun `should evict all related caches after deleting a transaction`() {
+    every { portfolioTransactionRepository.deleteById(1L) } returns Unit
+
+    transactionService.deleteTransaction(1L)
+
+    verify { cacheInvalidationService.evictAllRelatedCachesAfterCommit() }
+  }
+
+  @Test
   fun `should calculateTransactionProfits with sell before current price updates works correctly`() {
     val buyTx = createBuyCashFlow(quantity = BigDecimal("100"), price = BigDecimal("50"), date = testDate.minusDays(30))
     val sellTx = createSellCashFlow(quantity = BigDecimal("40"), price = BigDecimal("55"), date = testDate.minusDays(15))

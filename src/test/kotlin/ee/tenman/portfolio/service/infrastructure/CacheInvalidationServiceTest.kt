@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
 import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 class CacheInvalidationServiceTest {
   private val cacheManager = mockk<CacheManager>()
@@ -96,6 +97,17 @@ class CacheInvalidationServiceTest {
     verify { redisTemplate.keys("$TRANSACTION_CACHE::*") }
     verify { redisTemplate.keys("$SUMMARY_CACHE::*") }
     verify { cacheManager.getCache(ONE_DAY_CACHE) }
+  }
+
+  @Test
+  fun `evictAllRelatedCachesAfterCommit should delete entries cached before the transaction commits`() {
+    TransactionSynchronizationManager.initSynchronization()
+    cacheInvalidationService.evictAllRelatedCachesAfterCommit()
+    every { redisTemplate.keys("$SUMMARY_CACHE::*") } returns setOf("$SUMMARY_CACHE::Ülevaade")
+    val synchronizations = TransactionSynchronizationManager.getSynchronizations()
+    TransactionSynchronizationManager.clearSynchronization()
+    synchronizations.forEach { it.afterCommit() }
+    verify { redisTemplate.delete(setOf("$SUMMARY_CACHE::Ülevaade")) }
   }
 
   @Test

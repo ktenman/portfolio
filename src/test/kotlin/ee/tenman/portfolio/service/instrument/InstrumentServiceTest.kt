@@ -195,14 +195,45 @@ class InstrumentServiceTest {
   }
 
   @Test
-  fun `should not recalculate profits when instrument not found after price update but still evict cache`() {
-    val newPrice = BigDecimal("175.50")
-    every { instrumentRepository.updateCurrentPrice(999L, newPrice) } returns Unit
+  fun `should leave the stored price untouched when the new price differs only in scale`() {
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+
+    instrumentService.updateCurrentPrice(1L, BigDecimal("150.0"))
+
+    verify(exactly = 0) { instrumentRepository.updateCurrentPrice(any(), any()) }
+    verify(exactly = 0) { transactionProfitService.recalculateProfitsForInstrument(any()) }
+    verify(exactly = 0) { cacheInvalidationService.evictAllRelatedCaches(any(), any()) }
+  }
+
+  @Test
+  fun `should report a new price as changed`() {
+    every { instrumentRepository.updateCurrentPrice(1L, BigDecimal("175.50")) } returns Unit
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+
+    expect(instrumentService.updateCurrentPrice(1L, BigDecimal("175.50"))).toEqual(true)
+  }
+
+  @Test
+  fun `should report the stored price at a different scale as unchanged`() {
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+
+    expect(instrumentService.updateCurrentPrice(1L, BigDecimal("150.0000"))).toEqual(false)
+  }
+
+  @Test
+  fun `should report a missing price as unchanged when none is stored`() {
+    testInstrument.currentPrice = null
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+
+    expect(instrumentService.updateCurrentPrice(1L, null)).toEqual(false)
+  }
+
+  @Test
+  fun `should not recalculate profits when instrument not found but still evict cache`() {
     every { instrumentRepository.findById(999L) } returns Optional.empty()
 
-    instrumentService.updateCurrentPrice(999L, newPrice)
+    instrumentService.updateCurrentPrice(999L, BigDecimal("175.50"))
 
-    verify { instrumentRepository.updateCurrentPrice(999L, newPrice) }
     verify(exactly = 0) { transactionProfitService.recalculateProfitsForInstrument(any()) }
     verify(exactly = 0) { cacheInvalidationService.evictAllRelatedCaches(any(), any()) }
     verify { cacheInvalidationService.evictInstrumentCaches(999L, null) }

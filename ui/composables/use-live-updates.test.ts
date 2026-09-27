@@ -90,7 +90,7 @@ describe('useLiveUpdates', () => {
       [{ queryKey: ['portfolio-summary', 'current'] }],
       [{ queryKey: ['portfolio-summary', 'intraday'] }],
       [{ queryKey: ['portfolio-summary', 'range-change'] }],
-      [{ queryKey: ['instruments', 'range-change'] }],
+      [{ queryKey: ['instruments'] }],
     ])
   })
 

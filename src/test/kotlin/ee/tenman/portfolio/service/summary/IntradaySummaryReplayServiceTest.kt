@@ -252,7 +252,7 @@ class IntradaySummaryReplayServiceTest {
   }
 
   private fun calculator(clock: Clock): DailySummaryCalculator {
-    val transactionService = TransactionService(transactions, ProfitCalculationEngine(), mockk(), clock)
+    val transactionService = TransactionService(transactions, ProfitCalculationEngine(), mockk(), mockk(), clock)
     val xirr = XirrCalculationService(clock)
     val metrics = InvestmentMetricsService(daily, transactionService, xirr, HoldingsCalculationService(), clock)
     return DailySummaryCalculator(metrics, xirr)
