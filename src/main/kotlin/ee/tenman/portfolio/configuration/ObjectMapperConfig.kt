@@ -5,6 +5,7 @@ import feign.codec.DecodeException
 import feign.codec.Decoder
 import feign.codec.EncodeException
 import feign.codec.Encoder
+import org.springframework.cloud.openfeign.support.ResponseEntityDecoder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders
@@ -21,15 +22,18 @@ class ObjectMapperConfig {
   @Bean
   fun feignDecoder(): Decoder {
     val mapper = JsonMapperFactory.instance
-    return Decoder { response: Response, type: Type ->
-      if (response.body() == null) return@Decoder null
-      if (type == String::class.java) {
-        return@Decoder response.body().asInputStream().use { stream -> stream.readBytes().toString(StandardCharsets.UTF_8) }
-      }
-      runCatching<Any?> {
-        response.body().asInputStream().use { stream -> mapper.readValue<Any>(stream, mapper.constructType(type)) }
-      }.getOrElse { throw DecodeException(response.status(), "Failed to decode response", response.request(), it) }
-    }
+    return ResponseEntityDecoder(
+      Decoder { response: Response, type: Type ->
+        if (response.body() == null) return@Decoder null
+        if (type == String::class.java) {
+          return@Decoder response.body().asInputStream().use { stream -> stream.readBytes().toString(StandardCharsets.UTF_8) }
+        }
+        if (type == ByteArray::class.java) return@Decoder response.body().asInputStream().use { it.readBytes() }
+        runCatching<Any?> {
+          response.body().asInputStream().use { stream -> mapper.readValue<Any>(stream, mapper.constructType(type)) }
+        }.getOrElse { throw DecodeException(response.status(), "Failed to decode response", response.request(), it) }
+      },
+    )
   }
 
   @Bean

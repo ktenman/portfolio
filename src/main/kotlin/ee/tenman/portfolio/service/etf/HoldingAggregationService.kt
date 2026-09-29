@@ -20,7 +20,7 @@ class HoldingAggregationService {
   fun normalizeHoldingName(name: String): String =
     name
       .lowercase()
-      .replace(Regex("\\s+"), " ")
+      .replace(WHITESPACE, " ")
       .trim()
 
   private fun buildHoldingEntry(groupedHoldings: List<InternalHoldingData>): Pair<HoldingKey, HoldingValue> {
@@ -68,4 +68,8 @@ class HoldingAggregationService {
       etfSymbols = groupedHoldings.map { it.etfSymbol }.toMutableSet(),
       platforms = groupedHoldings.flatMap { it.platforms }.toMutableSet(),
     )
+
+  companion object {
+    private val WHITESPACE = Regex("\\s+")
+  }
 }

@@ -9,6 +9,14 @@ data class BlackRockHolding(
   val weight: BigDecimal,
 )
 
+enum class BlackRockFund(
+  val productId: String,
+) {
+  CSUS("253740"),
+  SAWD("305419"),
+  SAEM("305397"),
+}
+
 object BlackRockCsvParser {
   private val log = LoggerFactory.getLogger(javaClass)
   private const val EQUITY = "Equity"
