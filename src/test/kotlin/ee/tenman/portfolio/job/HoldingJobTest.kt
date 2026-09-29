@@ -2,7 +2,8 @@ package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.verbs.expect
-import ee.tenman.portfolio.blackrock.CsusHoldingsService
+import ee.tenman.portfolio.blackrock.BlackRockFund
+import ee.tenman.portfolio.blackrock.BlackRockHoldingsService
 import ee.tenman.portfolio.configuration.HoldingReconciliationProperties
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.model.CollectionRunResult
@@ -64,14 +65,14 @@ class HoldingReconciliationJobTest {
 class CsusHoldingsRetrievalJobTest {
   private val collections = mutableListOf<CollectionRunResult>()
   private val jobTransactionService = mockk<JobTransactionService>(relaxed = true)
-  private val csusHoldingsService = mockk<CsusHoldingsService>()
+  private val blackRockHoldingsService = mockk<BlackRockHoldingsService>()
   private val etfHoldingService = mockk<EtfHoldingService>()
   private val etfBreakdownService = mockk<EtfBreakdownService>(relaxed = true)
   private val clock = Clock.fixed(LocalDate.of(2026, 6, 13).atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
   private val job =
     CsusHoldingsRetrievalJob(
       jobTransactionService,
-      csusHoldingsService,
+      blackRockHoldingsService,
       etfHoldingService,
       etfBreakdownService,
       clock,
@@ -87,7 +88,7 @@ class CsusHoldingsRetrievalJobTest {
       listOf(
         HoldingData(name = "NVIDIA CORP", ticker = "NVDA", sector = "Information Technology", weight = BigDecimal("7.42"), rank = 1),
       )
-    every { csusHoldingsService.fetchHoldings() } returns holdings
+    every { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) } returns holdings
     every { etfHoldingService.saveHoldings(symbol, today, holdings) } just Runs
 
     job.execute()
@@ -99,13 +100,13 @@ class CsusHoldingsRetrievalJobTest {
   @Test
   fun `should refresh holdings when they already exist for today`() {
     every { etfHoldingService.hasHoldingsForDate(symbol, today) } returns true
-    every { csusHoldingsService.fetchHoldings() } returns
+    every { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) } returns
       listOf(HoldingData(name = "NVIDIA CORP", ticker = "NVDA", sector = null, weight = BigDecimal.ONE, rank = 1))
     every { etfHoldingService.saveHoldings(symbol, today, any()) } just Runs
 
     job.execute()
 
-    verify(exactly = 1) { csusHoldingsService.fetchHoldings() }
+    verify(exactly = 1) { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) }
     verify(exactly = 1) { etfHoldingService.saveHoldings(symbol, today, any()) }
   }
 }

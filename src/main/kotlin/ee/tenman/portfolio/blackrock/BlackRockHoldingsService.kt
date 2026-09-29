@@ -7,17 +7,17 @@ import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 
 @Service
-class CsusHoldingsService(
+class BlackRockHoldingsService(
   private val blackRockHoldingsClient: BlackRockHoldingsClient,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
-  fun fetchHoldings(): List<HoldingData> {
-    val csv = blackRockHoldingsClient.getHoldingsCsv(PRODUCT_ID, "${FUND}_holdings", "csv", "fund")
+  fun fetchHoldings(fund: BlackRockFund): List<HoldingData> {
+    val csv = blackRockHoldingsClient.getHoldingsCsv(fund.productId, "${fund}_holdings", "csv", "fund")
     val holdings = BlackRockCsvParser.parse(csv)
     if (holdings.isEmpty()) {
-      log.warn("BlackRock returned 0 equity holdings for $FUND")
+      log.warn("BlackRock returned 0 equity holdings for $fund")
       return emptyList()
     }
     return holdings
@@ -31,10 +31,5 @@ class CsusHoldingsService(
           rank = index + 1,
         )
       }
-  }
-
-  companion object {
-    private const val PRODUCT_ID = "253740"
-    private const val FUND = "CSUS"
   }
 }

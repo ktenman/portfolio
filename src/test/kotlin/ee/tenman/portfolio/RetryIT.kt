@@ -22,7 +22,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.Scenario
 import ee.tenman.portfolio.binance.BinanceService
-import ee.tenman.portfolio.blackrock.CsusHoldingsService
+import ee.tenman.portfolio.blackrock.BlackRockFund
+import ee.tenman.portfolio.blackrock.BlackRockHoldingsService
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
 import ee.tenman.portfolio.lightyear.LightyearPriceService
@@ -54,7 +55,7 @@ class RetryIT {
   private lateinit var lightyearUuidCacheService: LightyearUuidCacheService
 
   @Resource
-  private lateinit var csusHoldingsService: CsusHoldingsService
+  private lateinit var blackRockHoldingsService: BlackRockHoldingsService
 
   @Resource
   private lateinit var trading212Service: Trading212Service
@@ -114,7 +115,7 @@ class RetryIT {
   @Test
   fun `should return csus holdings after one 503`() {
     stubFailingOnce({ get(urlPathEqualTo(CSUS_PATH)) }, ok("Ticker,Name,Asset Class,Weight (%)\nAAPL,APPLE INC,Equity,6.5\n"))
-    expect(csusHoldingsService.fetchHoldings().map { it.name }).toContainExactly("APPLE INC")
+    expect(blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS).map { it.name }).toContainExactly("APPLE INC")
     verify(2, getRequestedFor(urlPathEqualTo(CSUS_PATH)))
   }
 

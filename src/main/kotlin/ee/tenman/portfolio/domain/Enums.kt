@@ -44,6 +44,7 @@ enum class CollectionKey(
   BLACKROCK_HOLDINGS("blackrock", "holdings"),
   VANGUARD_HOLDINGS("vanguard", "holdings"),
   TULEVA_HISTORY("tuleva", "history"),
+  TULEVA_HOLDINGS("tuleva", "holdings"),
 }
 
 enum class BenchmarkIndex {

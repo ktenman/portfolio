@@ -31,6 +31,7 @@ repositories {
 dependencies {
   implementation(libs.springdoc.openapi.starter.webmvc.ui)
   implementation(libs.jsoup)
+  implementation(libs.pdfbox)
   implementation(libs.spring.boot.starter.data.jpa)
   implementation(libs.spring.boot.starter.validation)
   implementation(libs.spring.boot.starter.data.redis)

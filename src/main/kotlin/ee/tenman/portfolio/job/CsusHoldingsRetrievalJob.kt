@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
-import ee.tenman.portfolio.blackrock.CsusHoldingsService
+import ee.tenman.portfolio.blackrock.BlackRockFund
+import ee.tenman.portfolio.blackrock.BlackRockHoldingsService
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.model.CollectionSchedules
@@ -17,7 +18,7 @@ import java.time.LocalDate
 @ScheduledJob
 class CsusHoldingsRetrievalJob(
   private val jobTransactionService: JobTransactionService,
-  private val csusHoldingsService: CsusHoldingsService,
+  private val blackRockHoldingsService: BlackRockHoldingsService,
   private val etfHoldingService: EtfHoldingService,
   private val etfBreakdownService: EtfBreakdownService,
   private val clock: Clock,
@@ -59,7 +60,7 @@ class CsusHoldingsRetrievalJob(
     return collectionMonitor.collect(CollectionKey.BLACKROCK_HOLDINGS, listOf(AVIVA_SYMBOL)) { run ->
       run.attempted(AVIVA_SYMBOL)
       val holdings =
-        runCatching { csusHoldingsService.fetchHoldings() }
+        runCatching { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) }
         .onFailure { run.failed(AVIVA_SYMBOL, it) }
         .getOrThrow()
       if (holdings.isEmpty()) {
