@@ -64,6 +64,7 @@ class ArchitectureTest {
         "..trading212..",
         "..openfigi..",
         "..vanguard..",
+        "..tuleva..",
       ).layer("Configuration")
       .definedBy("..configuration..")
       .layer("Jobs")

@@ -27,6 +27,7 @@ enum class ProviderName {
   MANUAL,
   SYNTHETIC,
   TRADING212,
+  TULEVA,
 }
 
 enum class CollectionKey(
@@ -42,6 +43,7 @@ enum class CollectionKey(
   TRADING212_HOLDINGS("trading212", "holdings"),
   BLACKROCK_HOLDINGS("blackrock", "holdings"),
   VANGUARD_HOLDINGS("vanguard", "holdings"),
+  TULEVA_HISTORY("tuleva", "history"),
 }
 
 enum class BenchmarkIndex {
@@ -134,6 +136,7 @@ enum class Platform(
   LIGHTYEAR_BUSINESS("Lightyear Business"),
   SWEDBANK("Swedbank"),
   TRADING212("Trading 212"),
+  TULEVA("Tuleva"),
   UNKNOWN("Unknown"),
   ;
 

@@ -288,7 +288,7 @@ def check_metric_coverage():
     operations = (
         ('lightyear', 'prices'), ('trading212', 'prices'), ('binance', 'prices'),
         ('ft', 'history'), ('lightyear', 'history'), ('lightyear', 'holdings'),
-        ('trading212', 'holdings'), ('blackrock', 'holdings'), ('vanguard', 'holdings'),
+        ('trading212', 'holdings'), ('blackrock', 'holdings'), ('vanguard', 'holdings'), ('tuleva', 'history'),
     )
     required = (
         'enabled', 'expected_now', 'expected_items', 'window_start_timestamp_seconds',
@@ -340,7 +340,7 @@ def check_metric_coverage():
         run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/prometheus:ro',
             '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
             'test', 'rules', '/test/coverage.test.yml')
-    print('Nine-operation and per-item metric coverage passed')
+    print(f'{len(operations)}-operation and per-item metric coverage passed')
 
 
 def check_delivery():

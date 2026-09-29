@@ -115,6 +115,7 @@ class CollectionScheduleService(
     CollectionKey.LIGHTYEAR_HOLDINGS, CollectionKey.TRADING212_HOLDINGS -> CollectionSchedules.HOLDINGS_STARTUP_SECONDS
     CollectionKey.BLACKROCK_HOLDINGS -> CollectionSchedules.BLACKROCK_HOLDINGS_STARTUP_SECONDS
     CollectionKey.VANGUARD_HOLDINGS -> CollectionSchedules.VANGUARD_HOLDINGS_STARTUP_SECONDS
+    CollectionKey.TULEVA_HISTORY -> CollectionSchedules.TULEVA_HISTORY_STARTUP_SECONDS
   }
 
   companion object {
@@ -128,6 +129,7 @@ class CollectionScheduleService(
       CollectionKey.TRADING212_HOLDINGS to CollectionSchedules.TRADING212_HOLDINGS_CRON,
       CollectionKey.BLACKROCK_HOLDINGS to CollectionSchedules.BLACKROCK_HOLDINGS_CRON,
       CollectionKey.VANGUARD_HOLDINGS to CollectionSchedules.VANGUARD_HOLDINGS_CRON,
+      CollectionKey.TULEVA_HISTORY to CollectionSchedules.TULEVA_HISTORY_CRON,
     ).mapValues { CronExpression.parse(it.value) }
   }
 }
