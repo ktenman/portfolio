@@ -23,6 +23,9 @@ blackrock:
 vanguard:
   url: http://localhost:${wiremock.server.port}
 
+tuleva:
+  url: http://localhost:${wiremock.server.port}
+
 ecb:
   url: http://localhost:${wiremock.server.port}
 
