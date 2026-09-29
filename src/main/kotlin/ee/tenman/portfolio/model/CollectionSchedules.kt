@@ -12,6 +12,7 @@ object CollectionSchedules {
   const val BLACKROCK_HOLDINGS_CRON = "0 50 23 * * *"
   const val VANGUARD_HOLDINGS_CRON = "0 30 2 * * *"
   const val TULEVA_HISTORY_CRON = "0 15 5 * * *"
+  const val TULEVA_HOLDINGS_CRON = "0 0 4 * * *"
   const val BINANCE_PRICE_INTERVAL = "\${scheduling.jobs.binance-interval:120000}"
   const val TRADING212_PRICE_INTERVAL = "\${scheduling.jobs.trading212-interval:60000}"
   const val LIGHTYEAR_PRICE_STARTUP_SECONDS = 240L
@@ -22,6 +23,7 @@ object CollectionSchedules {
   const val BLACKROCK_HOLDINGS_STARTUP_SECONDS = 20L
   const val VANGUARD_HOLDINGS_STARTUP_SECONDS = 60L
   const val TULEVA_HISTORY_STARTUP_SECONDS = 25L
+  const val TULEVA_HOLDINGS_STARTUP_SECONDS = 35L
 }
 
 data class CollectionExpectation(

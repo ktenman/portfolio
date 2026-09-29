@@ -17,10 +17,9 @@ class EtfBreakdownDataLoaderService(
   private val transactionCalculationService: TransactionCalculationService,
 ) {
   companion object {
-    private val BREAKDOWN_PROVIDERS =
-      listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.TRADING212, ProviderName.SYNTHETIC)
     private val DIAGNOSTIC_PROVIDERS =
-      listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.TRADING212)
+      listOf(ProviderName.LIGHTYEAR, ProviderName.FT, ProviderName.TRADING212, ProviderName.TULEVA)
+    private val BREAKDOWN_PROVIDERS = DIAGNOSTIC_PROVIDERS + ProviderName.SYNTHETIC
   }
 
   fun loadBreakdownData(

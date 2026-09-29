@@ -11,6 +11,7 @@ typescriptGenerator = "4.1.1"
 selenide = "7.18.1"
 resilience4j = "2.4.0"
 jsoup = "1.23.2"
+pdfbox = "3.0.8"
 telegramBots = "6.9.7.1"
 coroutines = "1.11.0"
 mockk = "1.14.11"
@@ -64,6 +65,7 @@ resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", v
 
 # Utilities
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 
 # Selenium
 selenide = { module = "com.codeborne:selenide", version.ref = "selenide" }
