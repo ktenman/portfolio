@@ -12,6 +12,7 @@ import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
 import ee.tenman.portfolio.job.Trading212DataRetrievalJob
 import ee.tenman.portfolio.job.Trading212HoldingsRetrievalJob
+import ee.tenman.portfolio.job.TulevaNavRetrievalJob
 import ee.tenman.portfolio.job.VanguardHoldingsRetrievalJob
 import ee.tenman.portfolio.model.CollectionExpectation
 import ee.tenman.portfolio.model.CollectionSnapshot
@@ -233,6 +234,7 @@ class CollectionMetricsService(
       CollectionKey.TRADING212_HOLDINGS to Trading212HoldingsRetrievalJob::class.java.simpleName,
       CollectionKey.BLACKROCK_HOLDINGS to CsusHoldingsRetrievalJob::class.java.simpleName,
       CollectionKey.VANGUARD_HOLDINGS to VanguardHoldingsRetrievalJob::class.java.simpleName,
+      CollectionKey.TULEVA_HISTORY to TulevaNavRetrievalJob::class.java.simpleName,
     )
   }
 }

@@ -16,19 +16,15 @@ class CollectionInventoryService(
   private val trading212: Trading212ScrapingProperties,
 ) {
   fun configured(): Map<CollectionKey, Set<String>> {
-    val instruments =
+    val symbols =
       repository
-        .findByProviderNameIn(listOf(ProviderName.TRADING212, ProviderName.BINANCE, ProviderName.FT, ProviderName.LIGHTYEAR))
-        .groupBy { it.providerName }
-    val symbols = instruments.mapValues { (_, items) -> items.mapTo(linkedSetOf()) { it.symbol } }
+        .findByProviderNameIn(DATABASE_COLLECTIONS.values.toList())
+        .groupBy({ it.providerName }, { it.symbol })
+        .mapValues { it.value.toSet() }
     val trading = symbols[ProviderName.TRADING212].orEmpty()
-    return mapOf(
-      CollectionKey.LIGHTYEAR_PRICES to lightyear.getAllSymbols().toSet(),
-      CollectionKey.TRADING212_PRICES to trading,
-      CollectionKey.BINANCE_PRICES to symbols[ProviderName.BINANCE].orEmpty(),
-      CollectionKey.FT_HISTORY to symbols[ProviderName.FT].orEmpty(),
-      CollectionKey.LIGHTYEAR_HISTORY to symbols[ProviderName.LIGHTYEAR].orEmpty(),
-    ) + holdings(trading)
+    return DATABASE_COLLECTIONS.mapValues { (_, provider) -> symbols[provider].orEmpty() } +
+      (CollectionKey.LIGHTYEAR_PRICES to lightyear.getAllSymbols().toSet()) +
+      holdings(trading)
   }
 
   private fun holdings(trading: Set<String>): Map<CollectionKey, Set<String>> =
@@ -38,4 +34,15 @@ class CollectionInventoryService(
       CollectionKey.BLACKROCK_HOLDINGS to setOf(CsusHoldingsRetrievalJob.AVIVA_SYMBOL),
       CollectionKey.VANGUARD_HOLDINGS to VanguardHoldingsService.FUNDS.keys,
     )
+
+  companion object {
+    private val DATABASE_COLLECTIONS =
+      mapOf(
+        CollectionKey.TRADING212_PRICES to ProviderName.TRADING212,
+        CollectionKey.BINANCE_PRICES to ProviderName.BINANCE,
+        CollectionKey.FT_HISTORY to ProviderName.FT,
+        CollectionKey.LIGHTYEAR_HISTORY to ProviderName.LIGHTYEAR,
+        CollectionKey.TULEVA_HISTORY to ProviderName.TULEVA,
+      )
+  }
 }

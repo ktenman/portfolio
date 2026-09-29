@@ -273,5 +273,8 @@ blackrock:
 vanguard:
   url: https://www.vanguardinvestor.co.uk
 
+tuleva:
+  url: https://onboarding-service.tuleva.ee
+
 veego:
   url: https://api.veego.ee/api

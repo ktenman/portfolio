@@ -315,6 +315,7 @@ export enum Platform {
     LIGHTYEAR_BUSINESS = "LIGHTYEAR_BUSINESS",
     SWEDBANK = "SWEDBANK",
     TRADING212 = "TRADING212",
+    TULEVA = "TULEVA",
     UNKNOWN = "UNKNOWN",
 }
 
@@ -325,6 +326,7 @@ export enum ProviderName {
     MANUAL = "MANUAL",
     SYNTHETIC = "SYNTHETIC",
     TRADING212 = "TRADING212",
+    TULEVA = "TULEVA",
 }
 
 export enum TransactionType {

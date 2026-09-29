@@ -26,7 +26,7 @@ class CollectionMetricsServiceTest {
       .find("portfolio.collection.operation.info")
       .gauges()
       .size,
-        ).toEqual(9)
+        ).toEqual(CollectionKey.entries.size)
   }
 
   @Test

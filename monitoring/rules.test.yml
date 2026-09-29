@@ -26,6 +26,8 @@ tests:
         values: '1+0x40'
       - series: 'portfolio_collection_operation_info{provider="vanguard",operation="holdings"}'
         values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="tuleva",operation="history"}'
+        values: '1+0x40'
       - series: 'portfolio_collection_expected_now{provider="lightyear",operation="prices"}'
         values: '1+0x40'
       - series: 'portfolio_collection_expected_items{provider="lightyear",operation="prices"}'
