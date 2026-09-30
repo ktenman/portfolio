@@ -14,6 +14,12 @@
           <span v-else>—</span>
         </dd>
       </template>
+      <template v-if="collection.error">
+        <dt class="text-label text-body-secondary">Error</dt>
+        <dd class="m-0 text-loss-deep wrap-anywhere" data-testid="monitoring-error">
+          {{ collection.error }}
+        </dd>
+      </template>
     </dl>
     <ul class="m-0 grid list-none content-start gap-1 p-0" data-testid="monitoring-items">
       <li

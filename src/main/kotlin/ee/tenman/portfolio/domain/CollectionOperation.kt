@@ -37,4 +37,6 @@ class CollectionOperation(
   var consecutiveEmptyRuns: Int = 0,
   @Column(name = "duration_seconds", nullable = false)
   var durationSeconds: Double = 0.0,
+  @Column(name = "last_error")
+  var lastError: String? = null,
 )

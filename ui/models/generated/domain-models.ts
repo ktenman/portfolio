@@ -211,6 +211,7 @@ export interface CollectionStatusDto {
     lastFullSuccess: DateAsString | null;
     deadline: DateAsString | null;
     breakerOpen: boolean;
+    error: string | null;
 }
 
 export interface CollectionItemStatusDto {

@@ -13,8 +13,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.TransactionException
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.core.JacksonException
 import java.net.SocketTimeoutException
@@ -36,7 +34,6 @@ class CollectionMonitorService(
     private val locks = CollectionKey.entries.associateWith { Any() }
   }
 
-  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   fun <T> collect(
     key: CollectionKey,
     symbols: Collection<String>,

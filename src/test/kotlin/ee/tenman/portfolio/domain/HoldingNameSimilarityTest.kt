@@ -41,4 +41,29 @@ class HoldingNameSimilarityTest {
   fun `should accept two letter tokens only when they match exactly`() {
     expect(HoldingNameSimilarity.mayBeSameCompany("Hp Enterprise Services", "Hp Enterprise Solutions")).toEqual(true)
   }
+
+  @Test
+  fun `should treat names differing only by dropped legal forms as the same name`() {
+    expect(HoldingNameSimilarity.isSameName("Taiwan Semiconductor Co Ltd", "TAIWAN SEMICONDUCTOR")).toEqual(true)
+  }
+
+  @Test
+  fun `cannot treat names with conflicting legal forms as the same name`() {
+    expect(HoldingNameSimilarity.isSameName("Merck & Co.", "Merck KGaA")).toEqual(false)
+  }
+
+  @Test
+  fun `cannot treat names differing in a single letter as the same name`() {
+    expect(HoldingNameSimilarity.isSameName("Samsung C&T Corporation", "SAMSUNG E&A LTD")).toEqual(false)
+  }
+
+  @Test
+  fun `should ignore diacritics when comparing whole names`() {
+    expect(HoldingNameSimilarity.isSameName("Nestlé SA", "NESTLE")).toEqual(true)
+  }
+
+  @Test
+  fun `cannot treat names without latin letters or digits as the same name`() {
+    expect(HoldingNameSimilarity.isSameName("腾讯控股", "阿里巴巴")).toEqual(false)
+  }
 }

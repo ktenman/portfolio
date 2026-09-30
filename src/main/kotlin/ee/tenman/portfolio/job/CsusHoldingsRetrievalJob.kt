@@ -34,7 +34,6 @@ class CsusHoldingsRetrievalJob(
     var message: String? = null
     try {
       message = retrieveHoldings()
-      etfBreakdownService.evictBreakdownCache()
       log.info("Completed CSUS holdings retrieval job successfully")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
@@ -57,7 +56,8 @@ class CsusHoldingsRetrievalJob(
 
   private fun retrieveHoldings(): String {
     val today = LocalDate.now(clock)
-    return collectionMonitor.collect(CollectionKey.BLACKROCK_HOLDINGS, listOf(AVIVA_SYMBOL)) { run ->
+    return collectionMonitor
+      .collect(CollectionKey.BLACKROCK_HOLDINGS, listOf(AVIVA_SYMBOL)) { run ->
       run.attempted(AVIVA_SYMBOL)
       val holdings =
         runCatching { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) }
@@ -77,7 +77,7 @@ class CsusHoldingsRetrievalJob(
       val message = "Saved ${holdings.size} CSUS holdings for Aviva pension on $today"
       log.info(message)
       message
-    }
+    }.also { etfBreakdownService.evictBreakdownCache() }
   }
 
   companion object {

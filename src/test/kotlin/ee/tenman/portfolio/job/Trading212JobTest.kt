@@ -173,6 +173,18 @@ class Trading212HoldingsRetrievalJobTest {
   }
 
   @Test
+  fun `should evict breakdown cache when holdings are refreshed manually`() {
+    every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
+      listOf(createInstrument("BNKE:PAR:EUR"))
+    every { holdingsService.fetchHoldings("BNKEp_EQ") } returns
+      listOf(HoldingData(name = "Banco Santander", ticker = "SANe_EQ", sector = null, weight = BigDecimal.ONE, rank = 1, logoUrl = null))
+
+    job.execute()
+
+    verify(exactly = 1) { etfBreakdownService.evictBreakdownCache() }
+  }
+
+  @Test
   fun `should refresh and persist holdings already processed for today`() {
     every { instrumentRepository.findByProviderName(ProviderName.TRADING212) } returns
       listOf(createInstrument("BNKE:PAR:EUR"))
