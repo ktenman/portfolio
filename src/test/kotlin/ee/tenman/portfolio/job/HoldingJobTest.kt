@@ -10,7 +10,9 @@ import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.model.ReconciliationResult
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
 import ee.tenman.portfolio.service.etf.EtfHoldingService
+import ee.tenman.portfolio.service.etf.HoldingImportService
 import ee.tenman.portfolio.service.etf.HoldingReconciliationService
+import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.infrastructure.JobTransactionService
 import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.Runs
@@ -119,5 +121,31 @@ class CsusHoldingsRetrievalJobTest {
     job.execute()
 
     verify(exactly = 1) { etfBreakdownService.evictBreakdownCache() }
+  }
+}
+
+class HoldingImportJobTest {
+  private val holdingImportService = mockk<HoldingImportService>(relaxed = true)
+  private val jobExecutionService = mockk<JobExecutionService>(relaxed = true)
+  private val job = HoldingImportJob(holdingImportService, jobExecutionService)
+
+  @Test
+  fun `should skip the execution when no snapshot is pending`() {
+    every { holdingImportService.hasPending() } returns false
+    job.runJob()
+    verify(exactly = 0) { jobExecutionService.executeJob(any()) }
+  }
+
+  @Test
+  fun `should execute the job when a snapshot is pending`() {
+    every { holdingImportService.hasPending() } returns true
+    job.runJob()
+    verify { jobExecutionService.executeJob(job) }
+  }
+
+  @Test
+  fun `should import pending snapshots when executed`() {
+    job.execute()
+    verify { holdingImportService.importPending() }
   }
 }

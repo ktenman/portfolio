@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.SectorSource
 import java.io.Serializable
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.UUID
 
 data class EtfDetailDto(
@@ -69,3 +70,11 @@ data class HoldingData(
   val sectorSource: SectorSource? = null,
   val industry: GicsIndustry? = null,
 )
+
+fun List<HoldingData>.requireImportable(
+  etfSymbol: String,
+  date: LocalDate,
+) {
+  require(isNotEmpty()) { "Empty holdings for ETF $etfSymbol on $date" }
+  require(all { it.name.isNotBlank() }) { "Unnamed holding for ETF $etfSymbol on $date" }
+}

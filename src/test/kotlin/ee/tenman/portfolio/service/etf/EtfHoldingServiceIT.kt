@@ -412,4 +412,12 @@ class EtfHoldingServiceIT {
     val updatedHolding = etfHoldingRepository.findAll().first()
     expect(updatedHolding.ticker).toEqual("TSLA")
   }
+
+  @Test
+  fun `should keep one position per holding when the same snapshot is saved twice`() {
+    val holdings = listOf(HoldingData(name = "Škoda Auto", ticker = "SKODA", sector = null, weight = BigDecimal("2.50"), rank = 1))
+    etfHoldingService.saveHoldings("IITU", testDate, holdings)
+    etfHoldingService.saveHoldings("IITU", testDate, holdings)
+    expect(etfPositionRepository.findAll()).toHaveSize(1)
+  }
 }
