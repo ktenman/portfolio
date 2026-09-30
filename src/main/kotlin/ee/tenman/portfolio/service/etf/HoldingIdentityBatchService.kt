@@ -60,7 +60,7 @@ class HoldingIdentityBatchService(
 
   private fun describe(pair: IdentityPair): String {
     val ticker = pair.ticker?.takeIf { it.isNotBlank() }?.let { " | Possible shared ticker: ${LogSanitizerUtil.sanitize(it)}" } ?: ""
-    return "Name 1: ${LogSanitizerUtil.sanitize(pair.existingName)} | Name 2: ${LogSanitizerUtil.sanitize(pair.candidateName)}$ticker"
+    return "Name 1: ${LogSanitizerUtil.sanitize(pair.existingLabel)} | Name 2: ${LogSanitizerUtil.sanitize(pair.candidateLabel)}$ticker"
   }
 
   private fun cache(): Cache =

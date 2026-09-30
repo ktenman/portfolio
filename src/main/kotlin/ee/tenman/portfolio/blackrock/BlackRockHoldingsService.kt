@@ -5,6 +5,7 @@ import feign.FeignException
 import org.slf4j.LoggerFactory
 import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
+import java.util.Locale
 
 @Service
 class BlackRockHoldingsService(
@@ -29,6 +30,8 @@ class BlackRockHoldingsService(
           sector = null,
           weight = holding.weight,
           rank = index + 1,
+          countryCode = holding.countryCode,
+          countryName = holding.countryCode?.let { Locale.of("", it).getDisplayCountry(Locale.ENGLISH) },
         )
       }
   }

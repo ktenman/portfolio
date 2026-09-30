@@ -303,6 +303,18 @@ class EtfHoldingServiceTest {
     expect(hints.captured).toEqual(mapOf(1 to 13L))
   }
 
+  @Test
+  fun `should pass both countries to the identity check`() {
+    val pairs = slot<List<IdentityPair>>()
+    val data = createHoldingData("MERCK", "MRK", null).copy(countryCode = "DE")
+    every { etfHoldingPersistenceService.findByTicker("MRK") } returns
+      listOf(createHolding(8L, "MRK", "Merck & Co.").apply { countryCode = "US" })
+    every { holdingIdentityService.resolveAll(capture(pairs)) } returns emptyMap()
+    every { etfHoldingPersistenceService.saveHoldings(any(), any(), any(), any()) } returns emptyMap()
+    service.saveHoldings("SAWD", testDate, listOf(data))
+    expect(pairs.captured).toEqual(listOf(IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE")))
+  }
+
   private fun createHolding(
     id: Long,
     ticker: String?,
