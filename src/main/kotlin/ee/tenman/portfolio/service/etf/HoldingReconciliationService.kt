@@ -65,7 +65,14 @@ class HoldingReconciliationService(
   private fun pairOf(
     representative: EtfHolding,
     candidate: EtfHolding,
-  ): IdentityPair = IdentityPair(representative.name, candidate.name, candidate.ticker ?: representative.ticker)
+  ): IdentityPair =
+    IdentityPair(
+      representative.name,
+      candidate.name,
+      candidate.ticker ?: representative.ticker,
+      representative.countryCode,
+      candidate.countryCode,
+    )
 
   private fun logPlan(plan: HoldingMergePlan) {
     log.info(

@@ -2,11 +2,13 @@ package ee.tenman.portfolio.blackrock
 
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
+import java.util.Locale
 
 data class BlackRockHolding(
   val ticker: String?,
   val name: String,
   val weight: BigDecimal,
+  val countryCode: String? = null,
 )
 
 enum class BlackRockFund(
@@ -20,7 +22,18 @@ enum class BlackRockFund(
 object BlackRockCsvParser {
   private val log = LoggerFactory.getLogger(javaClass)
   private const val EQUITY = "Equity"
+  private const val LOCATION = "Location"
   private val REQUIRED = listOf("Ticker", "Name", "Asset Class", "Weight (%)")
+  private val COUNTRY_CODES_BY_NAME =
+    Locale.getISOCountries().associateBy { Locale.of("", it).getDisplayCountry(Locale.ENGLISH).lowercase() } +
+      mapOf(
+        "korea (south)" to "KR",
+        "hong kong" to "HK",
+        "macau" to "MO",
+        "turkey" to "TR",
+        "russian federation" to "RU",
+        "czech republic" to "CZ",
+      )
 
   fun parse(csv: String): List<BlackRockHolding> {
     val lines = csv.lines().filter { it.isNotBlank() }
@@ -29,12 +42,14 @@ object BlackRockCsvParser {
     val columns = splitCsvLine(lines[headerIndex])
     val indices = REQUIRED.associateWith { columns.indexOf(it) }
     check(indices.values.all { it >= 0 }) { "BlackRock holdings CSV missing required columns, found: $columns" }
-    return lines.drop(headerIndex + 1).mapNotNull { parseRow(it, indices) }
+    val location = columns.indexOf(LOCATION)
+    return lines.drop(headerIndex + 1).mapNotNull { parseRow(it, indices, location) }
   }
 
   private fun parseRow(
     line: String,
     indices: Map<String, Int>,
+    location: Int,
   ): BlackRockHolding? {
     val cells = splitCsvLine(line)
     if (cells.size <= indices.values.max()) return null
@@ -44,6 +59,7 @@ object BlackRockCsvParser {
         ticker = cells[indices.getValue("Ticker")].trim().ifBlank { null },
         name = cells[indices.getValue("Name")].trim(),
         weight = BigDecimal(cells[indices.getValue("Weight (%)")].trim()),
+        countryCode = cells.getOrNull(location)?.let { COUNTRY_CODES_BY_NAME[it.trim().lowercase()] },
       )
     }.onFailure { log.warn("Skipping malformed BlackRock holding row '$line'") }.getOrNull()
   }

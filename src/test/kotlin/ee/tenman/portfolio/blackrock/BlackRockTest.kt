@@ -77,6 +77,32 @@ class BlackRockCsvParserTest {
   }
 
   @Test
+  fun `should map location to country code`() {
+    val csv =
+      csv(
+        "\"MRK\",\"MERCK\",\"Health Care\",\"Equity\",\"1\",\"0.03\",\"1\",\"1\"," +
+          "\"150.00\",\"Germany\",\"Xetra\",\"EUR\"",
+      )
+
+    val holdings = BlackRockCsvParser.parse(csv)
+
+    expect(holdings.single().countryCode).toEqual("DE")
+  }
+
+  @Test
+  fun `should map iShares country names that Locale spells differently`() {
+    val csv =
+      csv(
+        "\"005930\",\"SAMSUNG ELECTRONICS LTD\",\"Information Technology\",\"Equity\",\"1\",\"4.10\",\"1\",\"1\"," +
+          "\"70000.00\",\"Korea (South)\",\"Korea Exchange\",\"KRW\"",
+      )
+
+    val holdings = BlackRockCsvParser.parse(csv)
+
+    expect(holdings.single().countryCode).toEqual("KR")
+  }
+
+  @Test
   fun `should skip non equity rows`() {
     val csv =
       csv(
