@@ -7,14 +7,11 @@ import ee.tenman.portfolio.domain.VanguardCountryUpdate
 import ee.tenman.portfolio.domain.VanguardHoldingUpdates
 import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -58,43 +55,63 @@ class EtfHoldingService(
   }
 
   private fun resolveReuseHints(holdings: List<HoldingData>): Map<Int, Long> {
-    val work = holdings.map { it to collectCandidates(it) }
-    return runBlocking(Dispatchers.IO.limitedParallelism(IDENTITY_CHECK_PARALLELISM)) {
-      work
-        .mapIndexed { index, (holding, candidates) -> async { resolveMatchingHoldingId(holding, candidates)?.let { index to it } } }
-        .awaitAll()
-    }.filterNotNull().toMap()
+    val work =
+      holdings.map { holding ->
+        holding to
+      collectCandidates(holding).takeUnless { exactMatches(it, holding).isNotEmpty() }.orEmpty()
+          }
+    val answers = holdingIdentityService.resolveAll(identityPairs(work))
+    return work
+      .mapIndexedNotNull { index, (holding, candidates) ->
+        candidates.firstOrNull { answers[pairOf(it, holding)] == true }?.let { index to it.id }
+      }.toMap()
   }
 
   fun resolveVanguardUpdates(snapshot: VanguardFundSnapshot): VanguardHoldingUpdates {
+    val work =
+      snapshot.holdings
+        .filter { it.industry != null || snapshot.countryCodes[it.name].orEmpty().isNotEmpty() }
+        .map { it to collectCandidates(it) }
+    val answers =
+      holdingIdentityService.resolveAll(
+      identityPairs(
+        work.filter { (data, candidates) ->
+      exactMatches(candidates, data).isEmpty()
+    },
+      ),
+    )
     val industries = mutableListOf<VanguardIndustryUpdate>()
     val countries = mutableListOf<VanguardCountryUpdate>()
-    snapshot.holdings.forEach { data ->
-      val codes = snapshot.countryCodes[data.name].orEmpty()
-      if (data.industry == null && codes.isEmpty()) return@forEach
-      val holding = resolveVanguardHolding(data) ?: return@forEach
+    work.forEach { (data, candidates) ->
+      val holding = resolveVanguardHolding(data, candidates, answers) ?: return@forEach
       data.industry?.let { industries += VanguardIndustryUpdate(holding.uuid, it, snapshot.effectiveDate) }
-      countries += codes.map { VanguardCountryUpdate(holding.uuid, it, snapshot.effectiveDate) }
+      countries += snapshot.countryCodes[data.name].orEmpty().map { VanguardCountryUpdate(holding.uuid, it, snapshot.effectiveDate) }
     }
     return VanguardHoldingUpdates(industries, countries)
   }
 
-  private fun resolveVanguardHolding(data: HoldingData): EtfHolding? {
-    val candidates = collectCandidates(data)
-    val exact = candidates.filter { it.name.equals(data.name, ignoreCase = true) }
+  private fun resolveVanguardHolding(
+    data: HoldingData,
+    candidates: List<EtfHolding>,
+    answers: Map<IdentityPair, Boolean?>,
+  ): EtfHolding? {
+    val exact = exactMatches(candidates, data)
     if (exact.isNotEmpty()) return exact.singleOrNull()
-    return candidates.filter { holdingIdentityService.isSameCompany(it.name, data.name, data.ticker) == true }.singleOrNull()
+    return candidates.filter { answers[pairOf(it, data)] == true }.singleOrNull()
   }
 
-  private fun resolveMatchingHoldingId(
-    holdingData: HoldingData,
+  private fun identityPairs(work: List<Pair<HoldingData, List<EtfHolding>>>): List<IdentityPair> =
+    work.flatMap { (data, candidates) -> candidates.map { pairOf(it, data) } }
+
+  private fun pairOf(
+    candidate: EtfHolding,
+    data: HoldingData,
+  ): IdentityPair = IdentityPair(candidate.name, data.name, data.ticker)
+
+  private fun exactMatches(
     candidates: List<EtfHolding>,
-  ): Long? {
-    if (candidates.any { it.name.equals(holdingData.name, ignoreCase = true) }) return null
-    return candidates
-      .firstOrNull { holdingIdentityService.isSameCompany(it.name, holdingData.name, holdingData.ticker) == true }
-      ?.id
-  }
+    data: HoldingData,
+  ): List<EtfHolding> = candidates.filter { it.name.equals(data.name, ignoreCase = true) }
 
   private fun collectCandidates(holdingData: HoldingData): List<EtfHolding> {
     val byTicker =
@@ -121,9 +138,5 @@ class EtfHoldingService(
     log.info("Saved Lightyear logo for: ${holding.name}")
     holding.logoSource = LogoSource.LIGHTYEAR
     etfHoldingPersistenceService.saveHolding(holding)
-  }
-
-  companion object {
-    private const val IDENTITY_CHECK_PARALLELISM = 4
   }
 }
