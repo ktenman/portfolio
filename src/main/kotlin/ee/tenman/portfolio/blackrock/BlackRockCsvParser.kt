@@ -25,7 +25,15 @@ object BlackRockCsvParser {
   private const val LOCATION = "Location"
   private val REQUIRED = listOf("Ticker", "Name", "Asset Class", "Weight (%)")
   private val COUNTRY_CODES_BY_NAME =
-    Locale.getISOCountries().associateBy { Locale.of("", it).getDisplayCountry(Locale.ENGLISH).lowercase() }
+    Locale.getISOCountries().associateBy { Locale.of("", it).getDisplayCountry(Locale.ENGLISH).lowercase() } +
+      mapOf(
+        "korea (south)" to "KR",
+        "hong kong" to "HK",
+        "macau" to "MO",
+        "turkey" to "TR",
+        "russian federation" to "RU",
+        "czech republic" to "CZ",
+      )
 
   fun parse(csv: String): List<BlackRockHolding> {
     val lines = csv.lines().filter { it.isNotBlank() }

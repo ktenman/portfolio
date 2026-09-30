@@ -72,6 +72,7 @@ class HoldingIdentityCacheService(
       |- a ticker abbreviation or a rebrand of the same entity (GSK / GlaxoSmithKline, Strategy / MicroStrategy)
       |- translation, transliteration or a spelling variant (Sberbank Rossii / Sberbank of Russia, Munich Re / Muenchener Rueck)
       |- a dual listing of one company in two countries (Rio Tinto in the United Kingdom and Australia)
+      |- one company labelled with its listing country in one name and its home country in the other (Tencent Holdings in China vs Hong Kong)
       |
       |Answer NO when the names denote different legal entities, even if they are closely related:
       |- separate listed subsidiaries or affiliates of one group (Adani Ports vs Adani Enterprises, Alibaba vs Ant Group)
