@@ -8,9 +8,11 @@ import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.domain.VanguardCountryUpdate
 import ee.tenman.portfolio.domain.VanguardIndustryUpdate
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.testing.fixture.answerPairs
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
 import io.mockk.every
 import io.mockk.mockk
@@ -21,8 +23,6 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 class EtfHoldingServiceTest {
   private val etfHoldingPersistenceService = mockk<EtfHoldingPersistenceService>()
@@ -35,6 +35,7 @@ class EtfHoldingServiceTest {
 
   @BeforeEach
   fun setup() {
+    holdingIdentityService.answerPairs { null }
     every { etfHoldingPersistenceService.findByTicker(any()) } returns emptyList()
     every { etfHoldingPersistenceService.findByNameBlockKey(any()) } returns emptyList()
     service =
@@ -174,7 +175,7 @@ class EtfHoldingServiceTest {
     val holding = createHolding(29L, "LONN", "Lonza")
     val data = createHoldingData("Lonza Group AG", "LONN", null).copy(industry = GicsIndustry.LIFE_SCIENCES_TOOLS_AND_SERVICES)
     every { etfHoldingPersistenceService.findByTicker("LONN") } returns listOf(holding)
-    every { holdingIdentityService.isSameCompany("Lonza", "Lonza Group AG", "LONN") } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Lonza", "Lonza Group AG", "LONN") to true)::get)
 
     expect(service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data))).industries).toEqual(
       listOf(VanguardIndustryUpdate(holding.uuid, GicsIndustry.LIFE_SCIENCES_TOOLS_AND_SERVICES, testDate)),
@@ -186,7 +187,7 @@ class EtfHoldingServiceTest {
     val holding = createHolding(31L, "SU", "Suncor")
     val data = createHoldingData("Schneider Electric SE", "SU", null).copy(industry = GicsIndustry.ELECTRICAL_EQUIPMENT)
     every { etfHoldingPersistenceService.findByTicker("SU") } returns listOf(holding)
-    every { holdingIdentityService.isSameCompany("Suncor", "Schneider Electric SE", "SU") } returns false
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Suncor", "Schneider Electric SE", "SU") to false)::get)
 
     expect(service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data))).industries).toEqual(emptyList())
   }
@@ -196,7 +197,7 @@ class EtfHoldingServiceTest {
     val data = createHoldingData("Merck Inc", "MRK", null).copy(industry = GicsIndustry.PHARMACEUTICALS)
     val holdings = listOf(createHolding(43L, "MRK", "Merck & Co"), createHolding(47L, "MRK", "Merck KGaA"))
     every { etfHoldingPersistenceService.findByTicker("MRK") } returns holdings
-    every { holdingIdentityService.isSameCompany(any(), "Merck Inc", "MRK") } returns true
+    holdingIdentityService.answerPairs { it.candidateName == "Merck Inc" && it.ticker == "MRK" }
 
     expect(service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data))).industries).toEqual(emptyList())
   }
@@ -207,7 +208,7 @@ class EtfHoldingServiceTest {
     val other = createHolding(59L, "CFR", "Cullen Frost")
     val data = createHoldingData(expected.name, "CFR", null).copy(industry = GicsIndustry.TEXTILES_APPAREL_AND_LUXURY_GOODS)
     every { etfHoldingPersistenceService.findByTicker("CFR") } returns listOf(other, expected)
-    every { holdingIdentityService.isSameCompany(any(), any(), any()) } returns true
+    holdingIdentityService.answerPairs { true }
 
     expect(service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data))).industries).toEqual(
       listOf(VanguardIndustryUpdate(expected.uuid, GicsIndustry.TEXTILES_APPAREL_AND_LUXURY_GOODS, testDate)),
@@ -226,11 +227,11 @@ class EtfHoldingServiceTest {
     val holding = createHolding(67L, "HLN", "Haleon")
     val data = createHoldingData("Haleon PLC", "HLN", null).copy(industry = GicsIndustry.PHARMACEUTICALS)
     every { etfHoldingPersistenceService.findByTicker("HLN") } returns listOf(holding)
-    every { holdingIdentityService.isSameCompany("Haleon", "Haleon PLC", "HLN") } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Haleon", "Haleon PLC", "HLN") to true)::get)
     val updates = service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data), mapOf(data.name to setOf("GB"))))
     expect(updates.countries).toEqual(listOf(VanguardCountryUpdate(holding.uuid, "GB", testDate)))
     expect(updates.industries.single().holdingUuid).toEqual(holding.uuid)
-    verify(exactly = 1) { holdingIdentityService.isSameCompany("Haleon", "Haleon PLC", "HLN") }
+    verify(exactly = 1) { holdingIdentityService.resolveAll(listOf(IdentityPair("Haleon", "Haleon PLC", "HLN"))) }
   }
 
   @Test
@@ -250,26 +251,32 @@ class EtfHoldingServiceTest {
     val holding = createHolding(73L, "SU", "Suncor")
     val data = createHoldingData("Schneider Electric SE", "SU", null)
     every { etfHoldingPersistenceService.findByTicker("SU") } returns listOf(holding)
-    every { holdingIdentityService.isSameCompany("Suncor", data.name, "SU") } returns false
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Suncor", data.name, "SU") to false)::get)
     val updates = service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data), mapOf(data.name to setOf("FR"))))
     expect(updates.countries).toEqual(emptyList())
   }
 
   @Test
-  fun `should confirm identities of different holdings concurrently`() {
-    val latch = CountDownLatch(2)
-    val hints = slot<Map<Int, Long>>()
+  fun `should ask about every candidate pair of a snapshot in one batch`() {
     val first = createHoldingData("Õunake Grupp", "OUN", null)
     val second = createHoldingData("Škoda Auto Holding", "SKO", null)
     every { etfHoldingPersistenceService.findByTicker("OUN") } returns listOf(createHolding(3L, "OUN", "Õunake"))
     every { etfHoldingPersistenceService.findByTicker("SKO") } returns listOf(createHolding(5L, "SKO", "Škoda Auto"))
-    every { holdingIdentityService.isSameCompany(any(), any(), any()) } answers {
-      latch.countDown()
-      latch.await(5, TimeUnit.SECONDS)
-    }
-    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(first, second), capture(hints)) } returns emptyMap()
+    every { etfHoldingPersistenceService.saveHoldings(any(), any(), any(), any()) } returns emptyMap()
     service.saveHoldings("VWCE", testDate, listOf(first, second))
-    expect(hints.captured).toEqual(mapOf(0 to 3L, 1 to 5L))
+    verify(exactly = 1) { holdingIdentityService.resolveAll(any()) }
+  }
+
+  @Test
+  fun `should hint the lower id when two candidates are both confirmed`() {
+    val hints = slot<Map<Int, Long>>()
+    val data = createHoldingData("Žalgiris Grupė AB", "ZAL", null)
+    every { etfHoldingPersistenceService.findByTicker("ZAL") } returns
+      listOf(createHolding(19L, "ZAL", "Žalgiris Grupė Holding"), createHolding(7L, "ZAL", "Žalgiris Grupė"))
+    holdingIdentityService.answerPairs { it.candidateName == data.name && it.ticker == "ZAL" }
+    every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(data), capture(hints)) } returns emptyMap()
+    service.saveHoldings("VWCE", testDate, listOf(data))
+    expect(hints.captured).toEqual(mapOf(0 to 7L))
   }
 
   @Test
@@ -284,9 +291,13 @@ class EtfHoldingServiceTest {
         createHolding(17L, "ZAL", "Žalgiris"),
       )
     every { etfHoldingPersistenceService.findByTicker("ZAL") } returns candidates
-    every { holdingIdentityService.isSameCompany("Žalgiris Energija", matched.name, "ZAL") } returns false
-    every { holdingIdentityService.isSameCompany("Žalgiris Bankas", matched.name, "ZAL") } returns true
-    every { holdingIdentityService.isSameCompany("Žalgiris", matched.name, "ZAL") } returns true
+    holdingIdentityService.answerPairs(
+      mapOf(
+        IdentityPair("Žalgiris Energija", matched.name, "ZAL") to false,
+        IdentityPair("Žalgiris Bankas", matched.name, "ZAL") to true,
+        IdentityPair("Žalgiris", matched.name, "ZAL") to true,
+      )::get,
+    )
     every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(unmatched, matched), capture(hints)) } returns emptyMap()
     service.saveHoldings("VWCE", testDate, listOf(unmatched, matched))
     expect(hints.captured).toEqual(mapOf(1 to 13L))
