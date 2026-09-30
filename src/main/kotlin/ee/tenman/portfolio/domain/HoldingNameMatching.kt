@@ -34,9 +34,20 @@ object HoldingNameSimilarity {
     return left.count { token -> right.any { alike(token, it) } } >= REQUIRED_MATCHES
   }
 
-  private fun tokenize(name: String): List<String> =
-    words(Normalizer.normalize(name, Normalizer.Form.NFD).replace(COMBINING_MARKS, ""))
-      .filter { it.length > 1 && it !in LEGAL_FORMS }
+  fun isSameName(
+    first: String,
+    second: String,
+  ): Boolean {
+    val (leftCore, leftForms) = normalizedWords(first).partition { it !in LEGAL_FORMS }
+    val (rightCore, rightForms) = normalizedWords(second).partition { it !in LEGAL_FORMS }
+    if (leftCore.isEmpty() || leftCore != rightCore) return false
+    return rightForms.containsAll(leftForms) || leftForms.containsAll(rightForms)
+  }
+
+  private fun tokenize(name: String): List<String> = normalizedWords(name).filter { it.length > 1 && it !in LEGAL_FORMS }
+
+  private fun normalizedWords(name: String): List<String> =
+    words(Normalizer.normalize(name, Normalizer.Form.NFD).replace(COMBINING_MARKS, "")).filter { it.isNotEmpty() }
 
   private fun alike(
     first: String,

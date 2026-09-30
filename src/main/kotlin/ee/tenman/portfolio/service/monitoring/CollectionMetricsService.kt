@@ -69,6 +69,8 @@ class CollectionMetricsService(
     }
   }
 
+  fun ready(): Boolean = refreshed != null
+
   fun collections(): List<CollectionStatusDto> = snapshots.values.sortedBy { it.key.ordinal }.map { status(it) }
 
   private fun status(snapshot: CollectionSnapshot): CollectionStatusDto {
@@ -94,6 +96,7 @@ class CollectionMetricsService(
       lastFullSuccess = snapshot.lastFullSuccess,
       deadline = expectation.deadline,
       breakerOpen = open,
+      error = snapshot.error,
     )
   }
 
@@ -125,9 +128,10 @@ class CollectionMetricsService(
     when {
       !expectation.enabled -> CollectionStatus.DISABLED
       open -> CollectionStatus.BREAKER_OPEN
+      hung(snapshot) -> CollectionStatus.OVERDUE
       running(snapshot) -> CollectionStatus.RUNNING
       overdue(snapshot, expectation) -> CollectionStatus.OVERDUE
-      snapshot.failed > 0 -> CollectionStatus.PARTIAL_FAILURE
+      snapshot.failed > 0 || snapshot.error != null -> CollectionStatus.PARTIAL_FAILURE
       else -> CollectionStatus.OK
     }
 
@@ -135,6 +139,11 @@ class CollectionMetricsService(
     val attempt = snapshot.lastAttempt ?: return false
     val completion = snapshot.lastCompletion ?: return true
     return attempt.isAfter(completion)
+  }
+
+  private fun hung(snapshot: CollectionSnapshot): Boolean {
+    val attempt = snapshot.lastAttempt ?: return false
+    return running(snapshot) && Duration.between(attempt, clock.instant()) > HUNG_AFTER
   }
 
   private fun overdue(
@@ -224,6 +233,7 @@ class CollectionMetricsService(
   private fun seconds(instant: Instant?): Double = instant?.epochSecond?.toDouble() ?: 0.0
 
   companion object {
+    private val HUNG_AFTER = Duration.ofMinutes(30)
     val JOBS =
       mapOf(
       CollectionKey.LIGHTYEAR_PRICES to LightyearPriceRetrievalJob::class.java.simpleName,

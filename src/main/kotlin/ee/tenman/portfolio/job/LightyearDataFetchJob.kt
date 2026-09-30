@@ -37,7 +37,6 @@ class LightyearDataFetchJob(
 
     try {
       message = fetchAllEtfs()
-      etfBreakdownService.evictBreakdownCache()
       log.info("Completed Lightyear data fetch job successfully")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
@@ -76,6 +75,7 @@ class LightyearDataFetchJob(
           }
       }
     }
+    etfBreakdownService.evictBreakdownCache()
     return results.joinToString("\n")
   }
 

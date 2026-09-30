@@ -21,6 +21,7 @@ data class CollectionSnapshot(
   val itemSuccesses: Map<String, Instant?>,
   val itemInitializedAt: Map<String, Instant> = emptyMap(),
   val itemErrors: Map<String, String?> = emptyMap(),
+  val error: String? = null,
 )
 
 data class CollectionRunResult(

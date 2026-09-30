@@ -30,6 +30,7 @@ data class CollectionStatusDto(
   val lastFullSuccess: Instant?,
   val deadline: Instant?,
   val breakerOpen: Boolean,
+  val error: String?,
 )
 
 data class CollectionItemStatusDto(

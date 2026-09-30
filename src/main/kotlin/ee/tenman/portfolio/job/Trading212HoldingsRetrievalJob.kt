@@ -41,7 +41,6 @@ class Trading212HoldingsRetrievalJob(
     var message: String? = null
     try {
       message = fetchAllSymbols()
-      etfBreakdownService.evictBreakdownCache()
       log.info("Completed Trading212 holdings retrieval job successfully")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
@@ -86,6 +85,7 @@ class Trading212HoldingsRetrievalJob(
           }
       }
     }
+    etfBreakdownService.evictBreakdownCache()
     return results.joinToString("\n")
   }
 

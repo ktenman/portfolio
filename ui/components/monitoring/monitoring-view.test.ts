@@ -32,6 +32,7 @@ const collection = (overrides: Partial<CollectionStatusDto> = {}): CollectionSta
   lastFullSuccess: null,
   deadline: null,
   breakerOpen: false,
+  error: null,
   ...overrides,
 })
 
@@ -147,6 +148,14 @@ describe('monitoring-view', () => {
     ])
     await wrapper.find('tbody tr').trigger('click')
     expect(wrapper.find('[data-testid="monitoring-item-error"]').text()).toBe('Nimetu osalus')
+  })
+
+  it('shows the operation error when a row is expanded', async () => {
+    const wrapper = await render([collection({ error: 'Riikide ühildamine ebaõnnestus' })])
+    await wrapper.find('tbody tr').trigger('click')
+    expect(wrapper.find('[data-testid="monitoring-error"]').text()).toBe(
+      'Riikide ühildamine ebaõnnestus'
+    )
   })
 
   it('does not expand the row when run now is clicked', async () => {

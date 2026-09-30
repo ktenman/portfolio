@@ -180,6 +180,29 @@ class CollectionMetricsServiceTest {
   }
 
   @Test
+  fun `should report a completed collection with an operation error as a partial failure`() {
+    val fixture = fixture()
+    every { fixture.state.snapshots() } returns
+      snapshots().map { if (it.key == CollectionKey.FT_HISTORY) it.copy(error = "Ühildamine katkes") else it }
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .first { it.provider == "ft" }
+      .status,
+        ).toEqual(CollectionStatus.PARTIAL_FAILURE)
+  }
+
+  @Test
+  fun `should not be ready after a failed refresh`() {
+    val fixture = fixture()
+    fixture.metrics.refresh()
+    every { fixture.state.snapshots() } throws IllegalStateException("Unavailable")
+    fixture.metrics.refresh()
+    expect(fixture.metrics.ready()).toEqual(false)
+  }
+
+  @Test
   fun `should expose the last error of each failed item`() {
     val fixture = fixture()
     val snapshot =
@@ -241,6 +264,34 @@ class CollectionMetricsServiceTest {
       .first()
       .status,
     ).toEqual(CollectionStatus.RUNNING)
+  }
+
+  @Test
+  fun `should report an unfinished attempt older than thirty minutes as overdue`() {
+    val fixture = fixture()
+    val snapshot = snapshots().first().copy(lastAttempt = NOW.minusSeconds(1801), lastCompletion = NOW.minusSeconds(3600))
+    every { fixture.state.snapshots() } returns listOf(snapshot) + snapshots().drop(1)
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .first()
+      .status,
+    ).toEqual(CollectionStatus.OVERDUE)
+  }
+
+  @Test
+  fun `should report an old never completed attempt loaded after restart as overdue`() {
+    val fixture = fixture()
+    val snapshot = snapshots().first().copy(lastAttempt = NOW.minusSeconds(86400), lastCompletion = null)
+    every { fixture.state.snapshots() } returns listOf(snapshot) + snapshots().drop(1)
+    fixture.metrics.refresh()
+    expect(
+      fixture.metrics
+      .collections()
+      .first()
+      .status,
+    ).toEqual(CollectionStatus.OVERDUE)
   }
 
   @Test

@@ -8,6 +8,7 @@ import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.repository.CollectionItemRepository
 import ee.tenman.portfolio.repository.CollectionOperationRepository
 import jakarta.annotation.Resource
+import jakarta.persistence.EntityManagerFactory
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.transaction.PlatformTransactionManager
@@ -31,6 +32,8 @@ class CollectionMonitorIT {
 
   @Resource private lateinit var transactionManager: PlatformTransactionManager
 
+  @Resource private lateinit var entityManagerFactory: EntityManagerFactory
+
   @Test
   fun `should retain partial item success without advancing full success`() {
     monitor.collect(CollectionKey.BINANCE_PRICES, listOf("A", "B")) { it.persisted("A") }
@@ -50,6 +53,27 @@ class CollectionMonitorIT {
     }
     val snapshot = stateService.snapshots().single { it.key == CollectionKey.BINANCE_PRICES }
     expect(snapshot.itemErrors).toEqual(mapOf("A" to null, "B" to "Ölihind puudub"))
+  }
+
+  @Test
+  fun `should store an operation failure that happens after every item persisted`() {
+    assertThrows<IllegalStateException> {
+      monitor.collect(CollectionKey.VANGUARD_HOLDINGS, listOf("A")) {
+        it.persisted("A")
+        throw IllegalStateException("Riikide ühildamine ebaõnnestus")
+      }
+    }
+    val snapshot = stateService.snapshots().single { it.key == CollectionKey.VANGUARD_HOLDINGS }
+    expect(snapshot.failed).toEqual(0)
+    expect(snapshot.error).toEqual("Riikide ühildamine ebaõnnestus")
+  }
+
+  @Test
+  fun `should clear the operation failure after a successful run`() {
+    runCatching { monitor.collect(CollectionKey.FT_HISTORY, listOf("A")) { throw IllegalStateException("katki") } }
+    monitor.collect(CollectionKey.FT_HISTORY, listOf("A")) { it.persisted("A") }
+    val snapshot = stateService.snapshots().single { it.key == CollectionKey.FT_HISTORY }
+    expect(snapshot.error).toEqual(null)
   }
 
   @Test
@@ -102,12 +126,13 @@ class CollectionMonitorIT {
   }
 
   @Test
-  fun `should suspend caller transaction around collection work`() {
-    val active =
-      TransactionTemplate(transactionManager).execute {
-      monitor.collect(CollectionKey.BLACKROCK_HOLDINGS, listOf("A")) { TransactionSynchronizationManager.isActualTransactionActive() }
-    }
-    expect(active).toEqual(false)
+  fun `should not keep an entity manager bound after a query during collection work`() {
+    val bound =
+      monitor.collect(CollectionKey.BLACKROCK_HOLDINGS, listOf("A")) {
+        itemRepository.findByKeyAndSymbolAndActiveTrue(CollectionKey.BLACKROCK_HOLDINGS, "A")
+        TransactionSynchronizationManager.hasResource(entityManagerFactory)
+      }
+    expect(bound).toEqual(false)
   }
 
   @Test

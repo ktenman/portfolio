@@ -88,6 +88,7 @@ class CollectionStateService(
       .coerceAtLeast(0)
       .toDouble() / 1000
     operation.lastCompletion = now
+    operation.lastError = error?.let { reason(it) }
     recordErrors(key, result, error)
   }
 
@@ -128,6 +129,7 @@ class CollectionStateService(
       itemSuccesses = active.associate { it.symbol to it.lastSuccess },
       itemInitializedAt = active.associate { it.symbol to it.initializedAt },
       itemErrors = active.associate { it.symbol to it.lastError },
+      error = operation.lastError,
     )
   }
 
