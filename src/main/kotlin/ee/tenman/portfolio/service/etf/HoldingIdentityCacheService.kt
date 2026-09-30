@@ -53,8 +53,8 @@ class HoldingIdentityCacheService(
     return """
       |You are deduplicating ETF holding names coming from different data providers.
       |
-      |${tickerLine}Name 1: ${pair.existingName}${countrySuffix(pair.existingCountry, pair)}
-      |Name 2: ${pair.candidateName}${countrySuffix(pair.candidateCountry, pair)}
+      |${tickerLine}Name 1: ${pair.existingLabel}
+      |Name 2: ${pair.candidateLabel}
       |
       |$IDENTITY_RULES
       |
@@ -63,11 +63,6 @@ class HoldingIdentityCacheService(
   }
 
   companion object {
-    fun countrySuffix(
-      country: String?,
-      pair: IdentityPair,
-    ): String = if (pair.countryConflict) " (country: $country)" else ""
-
     val IDENTITY_RULES =
       """
       |Answer YES when both names denote the same legal entity. Providers mangle names, so YES still applies

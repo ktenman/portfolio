@@ -89,6 +89,17 @@ data class IdentityPair(
   val countryConflict: Boolean
     get() = !existingCountry.isNullOrBlank() && !candidateCountry.isNullOrBlank() && existingCountry != candidateCountry
 
+  val existingLabel: String
+    get() = label(existingName, existingCountry)
+
+  val candidateLabel: String
+    get() = label(candidateName, candidateCountry)
+
+  private fun label(
+    name: String,
+    country: String?,
+  ): String = if (countryConflict) "$name (country: $country)" else name
+
   val cacheKey: String
     get() {
       val key = "${existingName.length}|$existingName|${candidateName.length}|$candidateName|${ticker ?: ""}"
