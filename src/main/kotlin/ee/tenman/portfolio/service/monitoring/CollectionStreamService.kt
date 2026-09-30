@@ -20,7 +20,7 @@ class CollectionStreamService(
     val emitter = SseEmitter(0L)
     emitter.onCompletion { emitters.remove(emitter) }
     emitters.add(emitter)
-    executor.execute { send(emitter, metrics.collections()) }
+    executor.execute { if (metrics.ready()) send(emitter, metrics.collections()) }
     return emitter
   }
 
@@ -37,6 +37,7 @@ class CollectionStreamService(
   fun close() = emitters.forEach { it.complete() }
 
   private fun emit() {
+    if (!metrics.ready()) return
     val collections = metrics.collections()
     emitters.forEach { send(it, collections) }
   }

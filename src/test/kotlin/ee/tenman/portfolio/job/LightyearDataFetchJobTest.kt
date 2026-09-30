@@ -97,4 +97,11 @@ class LightyearDataFetchJobTest {
 
     verify(exactly = 0) { lightyearPriceService.fetchHoldingsAsDto(any()) }
   }
+
+  @Test
+  fun `should evict breakdown cache when holdings are refreshed manually`() {
+    job.execute()
+
+    verify(exactly = 1) { etfBreakdownService.evictBreakdownCache() }
+  }
 }

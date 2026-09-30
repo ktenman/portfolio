@@ -17,6 +17,7 @@ class HoldingIdentityService(
     if (!properties.enabled) return null
     if (existingName.isBlank() || candidateName.isBlank()) return null
     if (existingName.equals(candidateName, ignoreCase = true)) return true
+    if (HoldingNameSimilarity.isSameName(existingName, candidateName)) return true
     if (!HoldingNameSimilarity.mayBeSameCompany(existingName, candidateName)) return false
     return cacheService.resolve(existingName, candidateName, ticker)
   }

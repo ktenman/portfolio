@@ -109,4 +109,15 @@ class CsusHoldingsRetrievalJobTest {
     verify(exactly = 1) { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) }
     verify(exactly = 1) { etfHoldingService.saveHoldings(symbol, today, any()) }
   }
+
+  @Test
+  fun `should evict breakdown cache when holdings are refreshed manually`() {
+    every { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) } returns
+      listOf(HoldingData(name = "Škoda Auto", ticker = "SKODA", sector = null, weight = BigDecimal.ONE, rank = 1))
+    every { etfHoldingService.saveHoldings(symbol, today, any()) } just Runs
+
+    job.execute()
+
+    verify(exactly = 1) { etfBreakdownService.evictBreakdownCache() }
+  }
 }

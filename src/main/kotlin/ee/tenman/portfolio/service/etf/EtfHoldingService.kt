@@ -11,6 +11,10 @@ import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
 import ee.tenman.portfolio.vanguard.VanguardFundSnapshot
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -53,11 +57,14 @@ class EtfHoldingService(
     }
   }
 
-  private fun resolveReuseHints(holdings: List<HoldingData>): Map<Int, Long> =
-    holdings
-      .withIndex()
-      .mapNotNull { (index, holdingData) -> resolveMatchingHoldingId(holdingData)?.let { index to it } }
-      .toMap()
+  private fun resolveReuseHints(holdings: List<HoldingData>): Map<Int, Long> {
+    val work = holdings.map { it to collectCandidates(it) }
+    return runBlocking(Dispatchers.IO.limitedParallelism(IDENTITY_CHECK_PARALLELISM)) {
+      work
+        .mapIndexed { index, (holding, candidates) -> async { resolveMatchingHoldingId(holding, candidates)?.let { index to it } } }
+        .awaitAll()
+    }.filterNotNull().toMap()
+  }
 
   fun resolveVanguardUpdates(snapshot: VanguardFundSnapshot): VanguardHoldingUpdates {
     val industries = mutableListOf<VanguardIndustryUpdate>()
@@ -79,8 +86,10 @@ class EtfHoldingService(
     return candidates.filter { holdingIdentityService.isSameCompany(it.name, data.name, data.ticker) == true }.singleOrNull()
   }
 
-  private fun resolveMatchingHoldingId(holdingData: HoldingData): Long? {
-    val candidates = collectCandidates(holdingData)
+  private fun resolveMatchingHoldingId(
+    holdingData: HoldingData,
+    candidates: List<EtfHolding>,
+  ): Long? {
     if (candidates.any { it.name.equals(holdingData.name, ignoreCase = true) }) return null
     return candidates
       .firstOrNull { holdingIdentityService.isSameCompany(it.name, holdingData.name, holdingData.ticker) == true }
@@ -112,5 +121,9 @@ class EtfHoldingService(
     log.info("Saved Lightyear logo for: ${holding.name}")
     holding.logoSource = LogoSource.LIGHTYEAR
     etfHoldingPersistenceService.saveHolding(holding)
+  }
+
+  companion object {
+    private const val IDENTITY_CHECK_PARALLELISM = 4
   }
 }

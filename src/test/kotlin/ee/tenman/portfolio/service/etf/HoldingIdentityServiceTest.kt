@@ -36,7 +36,7 @@ class HoldingIdentityServiceTest {
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_3_5_FLASH_LITE)
 
-    val result = serviceFor(openRouterClient).isSameCompany("NVIDIA", "NVIDIA CORP", "NVDA")
+    val result = serviceFor(openRouterClient).isSameCompany("Alibaba", "ALIBABA GROUP HOLDING", "BABA")
 
     expect(result).toEqual(true)
   }
@@ -98,6 +98,15 @@ class HoldingIdentityServiceTest {
     val openRouterClient = mockk<OpenRouterClient>()
 
     val result = serviceFor(openRouterClient).isSameCompany("Évolution SA", "évolution sa", null)
+
+    expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `should confirm identity without consulting model when names differ only by legal form`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+
+    val result = serviceFor(openRouterClient).isSameCompany("Banco Santander SA", "BANCO SANTANDER", "SAN")
 
     expect(result).toEqual(true)
   }
@@ -168,8 +177,8 @@ class HoldingIdentityServiceCacheTest {
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "YES", model = AiModel.DEEPSEEK_V4_FLASH)
 
-    holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", "NVDA")
-    holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", "NVDA")
+    holdingIdentityService.isSameCompany("Alibaba", "ALIBABA GROUP HOLDING", "BABA")
+    holdingIdentityService.isSameCompany("Alibaba", "ALIBABA GROUP HOLDING", "BABA")
 
     verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
   }
