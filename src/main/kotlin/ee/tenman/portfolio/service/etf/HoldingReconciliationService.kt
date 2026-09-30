@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.model.HoldingMergePlan
 import ee.tenman.portfolio.model.ReconciliationResult
 import ee.tenman.portfolio.repository.EtfHoldingRepository
@@ -36,7 +37,9 @@ class HoldingReconciliationService(
   private fun planMergesForBlock(blockKey: String): List<HoldingMergePlan> {
     val holdings = etfHoldingRepository.findByNameBlockKey(blockKey).sortedBy { it.id }
     if (holdings.size < 2) return emptyList()
-    return clusterByIdentity(holdings)
+    val pairs = holdings.flatMapIndexed { index, candidate -> holdings.take(index).map { pairOf(it, candidate) } }
+    val answers = holdingIdentityService.resolveAll(pairs)
+    return clusterByIdentity(holdings, answers)
       .filter { it.size >= 2 }
       .map { cluster ->
         HoldingMergePlan(
@@ -47,19 +50,22 @@ class HoldingReconciliationService(
       }
   }
 
-  private fun clusterByIdentity(holdings: List<EtfHolding>): List<List<EtfHolding>> {
+  private fun clusterByIdentity(
+    holdings: List<EtfHolding>,
+    answers: Map<IdentityPair, Boolean?>,
+  ): List<List<EtfHolding>> {
     val clusters = mutableListOf<MutableList<EtfHolding>>()
     holdings.forEach { holding ->
-      val cluster = clusters.firstOrNull { members -> members.any { sameCompany(it, holding) } }
+      val cluster = clusters.firstOrNull { members -> members.any { answers[pairOf(it, holding)] == true } }
       if (cluster != null) cluster.add(holding) else clusters.add(mutableListOf(holding))
     }
     return clusters
   }
 
-  private fun sameCompany(
+  private fun pairOf(
     representative: EtfHolding,
     candidate: EtfHolding,
-  ): Boolean = holdingIdentityService.isSameCompany(representative.name, candidate.name, candidate.ticker ?: representative.ticker) == true
+  ): IdentityPair = IdentityPair(representative.name, candidate.name, candidate.ticker ?: representative.ticker)
 
   private fun logPlan(plan: HoldingMergePlan) {
     log.info(

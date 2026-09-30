@@ -2,6 +2,7 @@ package ee.tenman.portfolio.configuration
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.openrouter.OpenRouterClient
+import ee.tenman.portfolio.service.etf.HoldingIdentityBatchService
 import ee.tenman.portfolio.service.etf.HoldingIdentityCacheService
 import ee.tenman.portfolio.service.etf.HoldingIdentityService
 import io.mockk.mockk
@@ -27,6 +28,13 @@ class HoldingIdentityCacheTestConfiguration {
     HoldingIdentityCacheService(openRouterClient)
 
   @Bean
-  fun holdingIdentityService(cacheService: HoldingIdentityCacheService): HoldingIdentityService =
-    HoldingIdentityService(cacheService, IndustryClassificationProperties(enabled = true))
+  fun holdingIdentityBatchService(
+    openRouterClient: OpenRouterClient,
+    cacheService: HoldingIdentityCacheService,
+    testCacheManager: CacheManager,
+  ): HoldingIdentityBatchService = HoldingIdentityBatchService(openRouterClient, cacheService, testCacheManager)
+
+  @Bean
+  fun holdingIdentityService(batchService: HoldingIdentityBatchService): HoldingIdentityService =
+    HoldingIdentityService(batchService, IndustryClassificationProperties(enabled = true))
 }

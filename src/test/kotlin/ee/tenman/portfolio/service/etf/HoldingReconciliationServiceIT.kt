@@ -9,10 +9,11 @@ import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
-import io.mockk.every
+import ee.tenman.portfolio.testing.fixture.answerPairs
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -40,6 +41,7 @@ class HoldingReconciliationServiceIT {
 
   @BeforeEach
   fun setUp() {
+    holdingIdentityService.answerPairs { null }
     etfPositionRepository.deleteAll()
     etfHoldingRepository.deleteAll()
     instrumentRepository.deleteAll()
@@ -53,7 +55,7 @@ class HoldingReconciliationServiceIT {
   fun `should merge confirmed duplicate holdings sharing a block key`() {
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
-    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("NVIDIA", "NVIDIA CORP", "NVDA") to true)::get)
 
     holdingReconciliationService.reconcile(dryRun = false)
 
@@ -64,7 +66,7 @@ class HoldingReconciliationServiceIT {
   fun `cannot merge distinct companies that share a block key`() {
     etfHoldingRepository.save(EtfHolding(name = "Merck & Co"))
     etfHoldingRepository.save(EtfHolding(name = "Merck KGaA"))
-    every { holdingIdentityService.isSameCompany("Merck & Co", "Merck KGaA", any()) } returns false
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Merck & Co", "Merck KGaA", null) to false)::get)
 
     holdingReconciliationService.reconcile(dryRun = false)
 
@@ -75,7 +77,7 @@ class HoldingReconciliationServiceIT {
   fun `cannot merge holdings when identity verdict is unavailable`() {
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
-    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns null
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("NVIDIA", "NVIDIA CORP", "NVDA") to null)::get)
 
     holdingReconciliationService.reconcile(dryRun = false)
 
@@ -86,7 +88,7 @@ class HoldingReconciliationServiceIT {
   fun `dont modify holdings when reconciling in dry run mode`() {
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
-    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("NVIDIA", "NVIDIA CORP", "NVDA") to true)::get)
 
     holdingReconciliationService.reconcile(dryRun = true)
 
@@ -98,8 +100,12 @@ class HoldingReconciliationServiceIT {
     etfHoldingRepository.save(EtfHolding(name = "Alpha"))
     etfHoldingRepository.save(EtfHolding(name = "Alpha Inc"))
     etfHoldingRepository.save(EtfHolding(name = "Alpha Foods"))
-    every { holdingIdentityService.isSameCompany("Alpha", "Alpha Inc", any()) } returns true
-    every { holdingIdentityService.isSameCompany("Alpha", "Alpha Foods", any()) } returns false
+    holdingIdentityService.answerPairs(
+      mapOf(
+        IdentityPair("Alpha", "Alpha Inc", null) to true,
+        IdentityPair("Alpha", "Alpha Foods", null) to false,
+      )::get,
+    )
 
     holdingReconciliationService.reconcile(dryRun = false)
 
@@ -111,9 +117,13 @@ class HoldingReconciliationServiceIT {
     etfHoldingRepository.save(EtfHolding(name = "Beta"))
     etfHoldingRepository.save(EtfHolding(name = "Beta Corp"))
     etfHoldingRepository.save(EtfHolding(name = "Beta Industries"))
-    every { holdingIdentityService.isSameCompany("Beta", "Beta Corp", any()) } returns true
-    every { holdingIdentityService.isSameCompany("Beta", "Beta Industries", any()) } returns false
-    every { holdingIdentityService.isSameCompany("Beta Corp", "Beta Industries", any()) } returns true
+    holdingIdentityService.answerPairs(
+      mapOf(
+        IdentityPair("Beta", "Beta Corp", null) to true,
+        IdentityPair("Beta", "Beta Industries", null) to false,
+        IdentityPair("Beta Corp", "Beta Industries", null) to true,
+      )::get,
+    )
 
     holdingReconciliationService.reconcile(dryRun = false)
 
@@ -124,7 +134,7 @@ class HoldingReconciliationServiceIT {
   fun `should report would be merges in dry run mode without mutating`() {
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
-    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("NVIDIA", "NVIDIA CORP", "NVDA") to true)::get)
 
     val result = holdingReconciliationService.reconcile(dryRun = true)
 
@@ -144,7 +154,7 @@ class HoldingReconciliationServiceIT {
   fun `should be idempotent and report zero duplicates on a second reconcile`() {
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA"))
     etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
-    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("NVIDIA", "NVIDIA CORP", "NVDA") to true)::get)
     holdingReconciliationService.reconcile(dryRun = false)
 
     val second = holdingReconciliationService.reconcile(dryRun = false)
@@ -158,7 +168,7 @@ class HoldingReconciliationServiceIT {
     val duplicate = etfHoldingRepository.save(EtfHolding(name = "NVIDIA CORP", ticker = "NVDA"))
     savePosition(canonical, LocalDate.of(2024, 3, 1))
     savePosition(duplicate, LocalDate.of(2024, 3, 2))
-    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", any()) } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("NVIDIA", "NVIDIA CORP", "NVDA") to true)::get)
 
     holdingReconciliationService.reconcile(dryRun = false)
 

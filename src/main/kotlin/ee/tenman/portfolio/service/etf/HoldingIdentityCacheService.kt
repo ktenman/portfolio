@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
@@ -16,14 +17,11 @@ class HoldingIdentityCacheService(
 
   @Cacheable(
     value = [HOLDING_IDENTITY_CACHE],
-    key = "#existingName.length() + '|' + #existingName + '|' + #candidateName.length() + '|' + #candidateName + '|' + (#ticker ?: '')",
+    key = "#pair.cacheKey",
     unless = "#result == null",
   )
-  fun resolve(
-    existingName: String,
-    candidateName: String,
-    ticker: String?,
-  ): Boolean? {
+  fun resolve(pair: IdentityPair): Boolean? {
+    val (existingName, candidateName, ticker) = pair
     val prompt = buildPrompt(existingName, candidateName, ticker)
     val content = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel())?.content ?: return null
     val verdict = parseVerdict(content)
@@ -62,6 +60,15 @@ class HoldingIdentityCacheService(
       |${tickerLine}Name 1: $existingName
       |Name 2: $candidateName
       |
+      |$IDENTITY_RULES
+      |
+      |ANSWER WITH ONLY ONE WORD: YES or NO.
+      """.trimMargin()
+  }
+
+  companion object {
+    val IDENTITY_RULES =
+      """
       |Answer YES when both names denote the same legal entity. Providers mangle names, so YES still applies
       |when the only differences are:
       |- a truncated or abbreviated name ("Zhejiang Sanhua Intelligen-h", "Kingdee Intl Sft", "Bharat Heavy Ele")
@@ -73,8 +80,6 @@ class HoldingIdentityCacheService(
       |- separate listed subsidiaries or affiliates of one group (Adani Ports vs Adani Enterprises, Alibaba vs Ant Group)
       |- companies sharing a place name, family name, or industry word (China Merchants Bank vs China Life Insurance)
       |- a parent and its separately listed subsidiary
-      |
-      |ANSWER WITH ONLY ONE WORD: YES or NO.
       """.trimMargin()
   }
 }

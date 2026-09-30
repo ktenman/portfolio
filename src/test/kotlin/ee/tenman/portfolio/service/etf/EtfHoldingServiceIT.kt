@@ -10,10 +10,11 @@ import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
-import io.mockk.every
+import ee.tenman.portfolio.testing.fixture.answerPairs
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,6 +44,7 @@ class EtfHoldingServiceIT {
 
   @BeforeEach
   fun setup() {
+    holdingIdentityService.answerPairs { null }
     etfPositionRepository.deleteAll()
     etfHoldingRepository.deleteAll()
     instrumentRepository.deleteAll()
@@ -201,7 +203,7 @@ class EtfHoldingServiceIT {
       )
     etfHoldingService.saveHoldings("IITU", testDate, abbreviatedName)
     val originalId = etfHoldingRepository.findAll().first().id
-    every { holdingIdentityService.isSameCompany("Amazon", "Amazon.com Inc", "AMZN") } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Amazon", "Amazon.com Inc", "AMZN") to true)::get)
 
     val legalName =
       listOf(
@@ -228,7 +230,7 @@ class EtfHoldingServiceIT {
         HoldingData(name = "Amazon", ticker = "AMZN", sector = null, weight = BigDecimal("10.0"), rank = 1, logoUrl = null),
       )
     etfHoldingService.saveHoldings("IITU", testDate, abbreviatedName)
-    every { holdingIdentityService.isSameCompany("Amazon", "Amazon.com Inc", "AMZN") } returns null
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Amazon", "Amazon.com Inc", "AMZN") to null)::get)
 
     val legalName =
       listOf(
@@ -254,7 +256,7 @@ class EtfHoldingServiceIT {
       )
     etfHoldingService.saveHoldings("IITU", testDate, barePosition)
     val originalId = etfHoldingRepository.findAll().first().id
-    every { holdingIdentityService.isSameCompany("Micron Technology", "Micron Technology Inc", "MU") } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Micron Technology", "Micron Technology Inc", "MU") to true)::get)
 
     val richerPosition =
       listOf(
@@ -289,7 +291,7 @@ class EtfHoldingServiceIT {
       )
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), nvidiaCorp)
     val corpId = etfHoldingRepository.findAll().first { it.name == "NVIDIA CORP" }.id
-    every { holdingIdentityService.isSameCompany("NVIDIA", "NVIDIA CORP", null) } returns true
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("NVIDIA", "NVIDIA CORP", null) to true)::get)
 
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(2), nvidiaCorp)
 
@@ -306,8 +308,12 @@ class EtfHoldingServiceIT {
         HoldingData(name = "Alphabet", ticker = null, sector = null, weight = BigDecimal("10.0"), rank = 1, logoUrl = null),
       )
     etfHoldingService.saveHoldings("IITU", testDate, legacy)
-    every { holdingIdentityService.isSameCompany("Alphabet", "Alphabet Class A", "GOOGL") } returns true
-    every { holdingIdentityService.isSameCompany("Alphabet", "Alphabet Class C", "GOOG") } returns true
+    holdingIdentityService.answerPairs(
+      mapOf(
+        IdentityPair("Alphabet", "Alphabet Class A", "GOOGL") to true,
+        IdentityPair("Alphabet", "Alphabet Class C", "GOOG") to true,
+      )::get,
+    )
 
     val shareClasses =
       listOf(

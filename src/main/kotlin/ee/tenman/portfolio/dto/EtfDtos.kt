@@ -78,3 +78,12 @@ fun List<HoldingData>.requireImportable(
   require(isNotEmpty()) { "Empty holdings for ETF $etfSymbol on $date" }
   require(all { it.name.isNotBlank() }) { "Unnamed holding for ETF $etfSymbol on $date" }
 }
+
+data class IdentityPair(
+  val existingName: String,
+  val candidateName: String,
+  val ticker: String?,
+) {
+  val cacheKey: String
+    get() = "${existingName.length}|$existingName|${candidateName.length}|$candidateName|${ticker ?: ""}"
+}
