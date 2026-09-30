@@ -27,6 +27,7 @@ class HoldingIdentityService(
   private fun rule(pair: IdentityPair): Boolean? =
     when {
       pair.existingName.equals(pair.candidateName, ignoreCase = true) -> true
+      pair.countryConflict -> null
       HoldingNameSimilarity.isSameName(pair.existingName, pair.candidateName) -> true
       !HoldingNameSimilarity.mayBeSameCompany(pair.existingName, pair.candidateName) -> false
       else -> null

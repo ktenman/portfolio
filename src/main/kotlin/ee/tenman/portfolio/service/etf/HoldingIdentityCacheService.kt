@@ -21,8 +21,8 @@ class HoldingIdentityCacheService(
     unless = "#result == null",
   )
   fun resolve(pair: IdentityPair): Boolean? {
-    val (existingName, candidateName, ticker) = pair
-    val prompt = buildPrompt(existingName, candidateName, ticker)
+    val (existingName, candidateName) = pair
+    val prompt = buildPrompt(pair)
     val content = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel())?.content ?: return null
     val verdict = parseVerdict(content)
     if (verdict == null) {
@@ -48,17 +48,13 @@ class HoldingIdentityCacheService(
     }
   }
 
-  private fun buildPrompt(
-    existingName: String,
-    candidateName: String,
-    ticker: String?,
-  ): String {
-    val tickerLine = ticker?.takeIf { it.isNotBlank() }?.let { "They may share the ticker symbol $it.\n" } ?: ""
+  private fun buildPrompt(pair: IdentityPair): String {
+    val tickerLine = pair.ticker?.takeIf { it.isNotBlank() }?.let { "They may share the ticker symbol $it.\n" } ?: ""
     return """
       |You are deduplicating ETF holding names coming from different data providers.
       |
-      |${tickerLine}Name 1: $existingName
-      |Name 2: $candidateName
+      |${tickerLine}Name 1: ${pair.existingName}${countrySuffix(pair.existingCountry, pair)}
+      |Name 2: ${pair.candidateName}${countrySuffix(pair.candidateCountry, pair)}
       |
       |$IDENTITY_RULES
       |
@@ -67,6 +63,11 @@ class HoldingIdentityCacheService(
   }
 
   companion object {
+    fun countrySuffix(
+      country: String?,
+      pair: IdentityPair,
+    ): String = if (pair.countryConflict) " (country: $country)" else ""
+
     val IDENTITY_RULES =
       """
       |Answer YES when both names denote the same legal entity. Providers mangle names, so YES still applies
@@ -75,11 +76,13 @@ class HoldingIdentityCacheService(
       |- legal-form or listing suffixes (Ltd, Sa, Pcl, Pjsc, -a, Class B, ADR, GDR, Non-voting, Pref, Jpy50)
       |- a ticker abbreviation or a rebrand of the same entity (GSK / GlaxoSmithKline, Strategy / MicroStrategy)
       |- translation, transliteration or a spelling variant (Sberbank Rossii / Sberbank of Russia, Munich Re / Muenchener Rueck)
+      |- a dual listing of one company in two countries (Rio Tinto in the United Kingdom and Australia)
       |
       |Answer NO when the names denote different legal entities, even if they are closely related:
       |- separate listed subsidiaries or affiliates of one group (Adani Ports vs Adani Enterprises, Alibaba vs Ant Group)
       |- companies sharing a place name, family name, or industry word (China Merchants Bank vs China Life Insurance)
       |- a parent and its separately listed subsidiary
+      |- unrelated companies in different countries sharing a name or ticker (Merck & Co in the US vs Merck KGaA in Germany)
       """.trimMargin()
   }
 }

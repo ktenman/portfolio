@@ -83,7 +83,15 @@ data class IdentityPair(
   val existingName: String,
   val candidateName: String,
   val ticker: String?,
+  val existingCountry: String? = null,
+  val candidateCountry: String? = null,
 ) {
+  val countryConflict: Boolean
+    get() = !existingCountry.isNullOrBlank() && !candidateCountry.isNullOrBlank() && existingCountry != candidateCountry
+
   val cacheKey: String
-    get() = "${existingName.length}|$existingName|${candidateName.length}|$candidateName|${ticker ?: ""}"
+    get() {
+      val key = "${existingName.length}|$existingName|${candidateName.length}|$candidateName|${ticker ?: ""}"
+      return if (countryConflict) "$key|$existingCountry|$candidateCountry" else key
+    }
 }

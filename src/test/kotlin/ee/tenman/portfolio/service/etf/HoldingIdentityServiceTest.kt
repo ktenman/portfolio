@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.service.etf
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToContain
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.HoldingIdentityCacheTestConfiguration
@@ -128,6 +130,54 @@ class HoldingIdentityServiceTest {
     ).resolveAll(listOf(IdentityPair("Banco Santander SA", "BANCO SANTANDER", "SAN"))).values.single()
 
     expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `should ask model instead of legal form shortcut when same ticker names come from different countries`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    val prompt = slot<String>()
+    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_3_5_FLASH_LITE)
+
+    serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE")))
+
+    expect(prompt.captured).toContain("MERCK (country: DE)")
+  }
+
+  @Test
+  fun `should reject same ticker names from different countries when model answers no`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_3_5_FLASH_LITE)
+
+    val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE"))).values.single()
+
+    expect(result).toEqual(false)
+  }
+
+  @Test
+  fun `should confirm dual listing with identical names without consulting model`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+
+    val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Rio Tinto", "RIO TINTO", "RIO", "GB", "AU"))).values.single()
+
+    expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `should confirm bare name as same company when countries agree`() {
+    val openRouterClient = mockk<OpenRouterClient>()
+
+    val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Merck KGaA", "MERCK", "MRK", "DE", "DE"))).values.single()
+
+    expect(result).toEqual(true)
+  }
+
+  @Test
+  fun `should key conflicting countries apart from a pair without countries`() {
+    val result = IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE").cacheKey
+
+    expect(result).notToEqual(IdentityPair("Merck & Co.", "MERCK", "MRK").cacheKey)
   }
 
   @Test
