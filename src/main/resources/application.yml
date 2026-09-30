@@ -166,6 +166,11 @@ scheduling:
     intraday-summary-cleanup-cron: ${INTRADAY_SUMMARY_CLEANUP_CRON:0 30 4 * * *}
     intraday-summary-retention-days: ${INTRADAY_SUMMARY_RETENTION_DAYS:30}
 
+etf:
+  holding-reconciliation:
+    enabled: ${HOLDING_RECONCILIATION_ENABLED:true}
+    dry-run: ${HOLDING_RECONCILIATION_DRY_RUN:true}
+
 scraping:
   lightyear:
     etfs:
