@@ -11,6 +11,7 @@ import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.dto.requireImportable
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -35,8 +36,7 @@ class EtfHoldingPersistenceService(
     holdings: List<HoldingData>,
     reuseHints: Map<Int, Long> = emptyMap(),
   ): Map<String, EtfHolding> {
-    require(holdings.isNotEmpty()) { "Empty holdings for ETF $etfSymbol on $date" }
-    require(holdings.all { it.name.isNotBlank() }) { "Unnamed holding for ETF $etfSymbol on $date" }
+    holdings.requireImportable(etfSymbol, date)
     val etf = findOrCreateEtf(etfSymbol)
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
     val savedHoldings = mutableMapOf<String, EtfHolding>()

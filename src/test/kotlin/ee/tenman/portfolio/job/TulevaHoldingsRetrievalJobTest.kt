@@ -6,8 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.model.CollectionRunResult
-import ee.tenman.portfolio.service.etf.EtfHoldingService
-import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
+import ee.tenman.portfolio.service.etf.HoldingImportService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.testing.fixture.monitorForTests
 import ee.tenman.portfolio.tuleva.TulevaHoldingsService
@@ -22,13 +21,12 @@ import java.time.ZoneId
 
 class TulevaHoldingsRetrievalJobTest {
   private val service = mockk<TulevaHoldingsService>(relaxed = true) { every { lookThrough() } returns HOLDINGS }
-  private val etfHoldingService = mockk<EtfHoldingService>(relaxed = true)
+  private val holdingImportService = mockk<HoldingImportService>(relaxed = true)
   private val collections = mutableListOf<CollectionRunResult>()
   private val job =
     TulevaHoldingsRetrievalJob(
       service,
-      etfHoldingService,
-      mockk<CacheInvalidationService>(relaxed = true),
+      holdingImportService,
       mockk<JobExecutionService>(relaxed = true),
       Clock.fixed(TODAY.atStartOfDay(ZoneId.of("Europe/Tallinn")).toInstant(), ZoneId.of("Europe/Tallinn")),
       monitorForTests(collections),
@@ -41,15 +39,29 @@ class TulevaHoldingsRetrievalJobTest {
   }
 
   @Test
-  fun `should refresh holdings from the latest imported report when a new report fails to import`() {
+  fun `should queue the fetched holdings for today`() {
+    job.execute()
+    verify { holdingImportService.queue(TulevaHoldingsService.SYMBOL, TODAY, HOLDINGS) }
+  }
+
+  @Test
+  fun `should queue holdings from the latest imported report when a new report fails to import`() {
     every { service.importReports() } throws IllegalArgumentException("Tuleva report has no report date")
     runCatching { job.execute() }
-    verify { etfHoldingService.saveHoldings(TulevaHoldingsService.SYMBOL, TODAY, HOLDINGS) }
+    verify { holdingImportService.queue(TulevaHoldingsService.SYMBOL, TODAY, HOLDINGS) }
   }
 
   @Test
   fun `should mark the fund failed when a new report fails to import`() {
     every { service.importReports() } throws IllegalArgumentException("Tuleva report has no report date")
+    runCatching { job.execute() }
+    expect(collections.single().failed).toContainExactly(TulevaHoldingsService.SYMBOL)
+  }
+
+  @Test
+  fun `should mark the fund failed when the snapshot cannot be queued`() {
+    every { holdingImportService.queue(any(), any(), any()) } throws
+      IllegalArgumentException("Unnamed holding for ETF ${TulevaHoldingsService.SYMBOL} on $TODAY")
     runCatching { job.execute() }
     expect(collections.single().failed).toContainExactly(TulevaHoldingsService.SYMBOL)
   }
