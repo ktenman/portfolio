@@ -3,8 +3,7 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.model.CollectionRun
 import ee.tenman.portfolio.model.CollectionSchedules
-import ee.tenman.portfolio.service.etf.EtfHoldingService
-import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
+import ee.tenman.portfolio.service.etf.HoldingImportService
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import ee.tenman.portfolio.tuleva.TulevaHoldingsService
@@ -16,8 +15,7 @@ import java.time.LocalDate
 @ScheduledJob
 class TulevaHoldingsRetrievalJob(
   private val tulevaHoldingsService: TulevaHoldingsService,
-  private val etfHoldingService: EtfHoldingService,
-  private val cacheInvalidationService: CacheInvalidationService,
+  private val holdingImportService: HoldingImportService,
   private val jobExecutionService: JobExecutionService,
   private val clock: Clock,
   private val collectionMonitor: CollectionMonitorService,
@@ -46,8 +44,7 @@ class TulevaHoldingsRetrievalJob(
         throw imported.exceptionOrNull()?.also { if (it !== failure) it.addSuppressed(failure) } ?: failure
       }
     run.fetched(SYMBOL)
-    etfHoldingService.saveHoldings(SYMBOL, LocalDate.now(clock), holdings)
-    cacheInvalidationService.evictEtfBreakdownCache()
+    holdingImportService.queue(SYMBOL, LocalDate.now(clock), holdings)
     imported.getOrThrow()
     run.persisted(SYMBOL)
   }
