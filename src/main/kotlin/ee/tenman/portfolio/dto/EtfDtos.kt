@@ -85,24 +85,40 @@ data class IdentityPair(
   val ticker: String?,
   val existingCountry: String? = null,
   val candidateCountry: String? = null,
+  val existingTicker: String? = null,
 ) {
   val countryConflict: Boolean
     get() = !existingCountry.isNullOrBlank() && !candidateCountry.isNullOrBlank() && existingCountry != candidateCountry
 
+  val tickerConflict: Boolean
+    get() = !existingTicker.isNullOrBlank() && !ticker.isNullOrBlank() && !existingTicker.equals(ticker, ignoreCase = true)
+
+  val sharedTicker: String?
+    get() = ticker?.takeIf { it.isNotBlank() && !tickerConflict }
+
   val existingLabel: String
-    get() = label(existingName, existingCountry)
+    get() = label(existingName, existingCountry, existingTicker)
 
   val candidateLabel: String
-    get() = label(candidateName, candidateCountry)
+    get() = label(candidateName, candidateCountry, ticker)
 
   private fun label(
     name: String,
     country: String?,
-  ): String = if (countryConflict) "$name (country: $country)" else name
+    ticker: String?,
+  ): String {
+    val details =
+      listOfNotNull(
+        ticker.takeIf { tickerConflict }?.let { "ticker: $it" },
+        country.takeIf { countryConflict }?.let { "country: $it" },
+      )
+    return if (details.isEmpty()) name else "$name (${details.joinToString(", ")})"
+  }
 
   val cacheKey: String
     get() {
       val key = "${existingName.length}|$existingName|${candidateName.length}|$candidateName|${ticker ?: ""}"
-      return if (countryConflict) "$key|$existingCountry|$candidateCountry" else key
+      val countries = if (countryConflict) "$key|$existingCountry|$candidateCountry" else key
+      return if (tickerConflict) "$countries|ticker:$existingTicker" else countries
     }
 }

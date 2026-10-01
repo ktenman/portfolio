@@ -56,7 +56,7 @@ class HoldingReconciliationService(
   ): List<List<EtfHolding>> {
     val clusters = mutableListOf<MutableList<EtfHolding>>()
     holdings.forEach { holding ->
-      val cluster = clusters.firstOrNull { members -> members.any { answers[pairOf(it, holding)] == true } }
+      val cluster = clusters.firstOrNull { members -> members.all { answers[pairOf(it, holding)] == true } }
       if (cluster != null) cluster.add(holding) else clusters.add(mutableListOf(holding))
     }
     return clusters
@@ -69,9 +69,10 @@ class HoldingReconciliationService(
     IdentityPair(
       representative.name,
       candidate.name,
-      candidate.ticker ?: representative.ticker,
+      candidate.ticker,
       representative.countryCode,
       candidate.countryCode,
+      representative.ticker,
     )
 
   private fun logPlan(plan: HoldingMergePlan) {
