@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.blackrock.BlackRockFund
 import ee.tenman.portfolio.blackrock.BlackRockHoldingsService
@@ -21,6 +22,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.springframework.scheduling.annotation.Scheduled
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
@@ -61,6 +63,16 @@ class HoldingReconciliationJobTest {
     job(enabled = true, dryRun = false).runJob()
 
     verify(exactly = 1) { holdingReconciliationService.reconcile(false) }
+  }
+
+  @Test
+  fun `should schedule a single startup run after fifteen minutes`() {
+    val startup =
+      HoldingReconciliationJob::class.java
+        .getMethod("runJob")
+        .getAnnotationsByType(Scheduled::class.java)
+        .single { it.cron.isEmpty() }
+    expect(startup.timeUnit.toMinutes(startup.initialDelay) to startup.fixedDelay).toEqual(15L to -1L)
   }
 }
 

@@ -4,6 +4,7 @@ import ee.tenman.portfolio.configuration.HoldingReconciliationProperties
 import ee.tenman.portfolio.service.etf.HoldingReconciliationService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
+import java.util.concurrent.TimeUnit
 
 @ScheduledJob
 class HoldingReconciliationJob(
@@ -12,6 +13,7 @@ class HoldingReconciliationJob(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  @Scheduled(initialDelay = 15, timeUnit = TimeUnit.MINUTES)
   @Scheduled(cron = "\${scheduling.jobs.holding-reconciliation-cron:0 0 3 1 1,4,7,10 *}")
   fun runJob() {
     if (!properties.enabled) return
