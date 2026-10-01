@@ -106,7 +106,7 @@ class EtfHoldingService(
   private fun pairOf(
     candidate: EtfHolding,
     data: HoldingData,
-  ): IdentityPair = IdentityPair(candidate.name, data.name, data.ticker, candidate.countryCode, data.countryCode)
+  ): IdentityPair = IdentityPair(candidate.name, data.name, data.ticker, candidate.countryCode, data.countryCode, candidate.ticker)
 
   private fun exactMatches(
     candidates: List<EtfHolding>,

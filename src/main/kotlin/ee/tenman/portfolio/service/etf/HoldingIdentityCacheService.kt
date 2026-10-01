@@ -49,7 +49,7 @@ class HoldingIdentityCacheService(
   }
 
   private fun buildPrompt(pair: IdentityPair): String {
-    val tickerLine = pair.ticker?.takeIf { it.isNotBlank() }?.let { "They may share the ticker symbol $it.\n" } ?: ""
+    val tickerLine = pair.sharedTicker?.let { "They may share the ticker symbol $it.\n" } ?: ""
     return """
       |You are deduplicating ETF holding names coming from different data providers.
       |

@@ -174,6 +174,13 @@ class HoldingIdentityServiceTest {
   }
 
   @Test
+  fun `should key conflicting tickers apart from a pair with one ticker`() {
+    val result = IdentityPair("Quanta", "QUANTA COMPUTER", "2382", "US", "TW", "PWR").cacheKey
+
+    expect(result).notToEqual(IdentityPair("Quanta", "QUANTA COMPUTER", "2382", "US", "TW").cacheKey)
+  }
+
+  @Test
   fun `should key conflicting countries apart from a pair without countries`() {
     val result = IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE").cacheKey
 

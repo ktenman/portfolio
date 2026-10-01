@@ -203,7 +203,7 @@ class EtfHoldingServiceIT {
       )
     etfHoldingService.saveHoldings("IITU", testDate, abbreviatedName)
     val originalId = etfHoldingRepository.findAll().first().id
-    holdingIdentityService.answerPairs(mapOf(IdentityPair("Amazon", "Amazon.com Inc", "AMZN") to true)::get)
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Amazon", "Amazon.com Inc", "AMZN", null, null, "AMZN") to true)::get)
 
     val legalName =
       listOf(
