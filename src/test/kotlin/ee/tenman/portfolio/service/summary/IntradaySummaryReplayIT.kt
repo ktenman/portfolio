@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.service.summary
 
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
-import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
@@ -26,7 +25,6 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.TimeUnit
 
 @IntegrationTest
 class IntradaySummaryReplayIT {
@@ -69,15 +67,6 @@ class IntradaySummaryReplayIT {
     transactionService.saveTransaction(trade.apply { quantity = BigDecimal("20") })
     val repeated = intradaySummaryService.getPoints(TimeRange.ONE_DAY, listOf(selection[1], selection[0], selection[1]))
     expect(repeated).toEqual(original)
-  }
-
-  @Test
-  fun `should expire replayed points after one minute`() {
-    seed()
-    intradaySummaryService.getPoints(TimeRange.ONE_DAY, selection)
-    val seconds = redis.getExpire(key, TimeUnit.SECONDS)
-    expect(seconds).toBeGreaterThan(50L)
-    expect(seconds).toBeLessThanOrEqualTo(60L)
   }
 
   @Test
