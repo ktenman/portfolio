@@ -6,6 +6,7 @@
       </div>
       <breakdown-bars v-if="view === 'bars'" :rows="chartData" :benchmark-label="benchmarkLabel" />
       <breakdown-donut v-else :rows="chartData" />
+      <slot />
     </div>
   </div>
 </template>

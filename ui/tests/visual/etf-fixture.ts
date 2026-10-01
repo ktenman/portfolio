@@ -1,6 +1,7 @@
 import {
   Currency,
   type EtfHoldingBreakdownDto,
+  type FundReportDto,
   type InstrumentDto,
 } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
@@ -221,4 +222,50 @@ export const stubEtfBreakdown: RouteStub = async page => {
   )
   await page.route('**/api/logos/*/candidates', route => route.fulfill({ json: [] }))
   await page.route('**/api/logos/prefetch', route => route.fulfill({ status: 204 }))
+}
+
+const TULEVA = 'EE3600001707'
+
+const TULEVA_REPORTS: FundReportDto[] = [
+  {
+    asOfDate: '2026-08-31',
+    funds: [
+      { isin: 'IE000I9HGDZ3', name: 'Xtrackers MSCI World Screened UCITS ETF', weight: 29.36 },
+      { isin: 'IE000QWCYQT0', name: 'iShares MSCI World Screened UCITS ETF', weight: 28.9 },
+      { isin: 'LU0476289540', name: 'Amundi Prime Global UCITS ETF', weight: 26.95 },
+      { isin: 'IE00BKPTWY98', name: 'iShares Emerging Markets Screened Equity', weight: 12.55 },
+    ],
+  },
+  {
+    asOfDate: '2026-07-31',
+    funds: [
+      { isin: 'IE000I9HGDZ3', name: 'Xtrackers MSCI World Screened UCITS ETF', weight: 29.67 },
+      { isin: 'IE0009FT4LX4', name: 'CCF Developed World Screened Index Fund', weight: 29.39 },
+      { isin: 'LU0476289540', name: 'Amundi Prime Global UCITS ETF', weight: 26.4 },
+      { isin: 'IE00BKPTWY98', name: 'iShares Emerging Markets Screened Equity', weight: 11.61 },
+    ],
+  },
+]
+
+export const stubEtfBreakdownWithTuleva: RouteStub = async page => {
+  await stubEtfBreakdown(page)
+  await page.route(apiRoute(API_ENDPOINTS.ETF_BREAKDOWN), route =>
+    route.fulfill({
+      json: HOLDINGS.map(holding => ({ ...holding, inEtfs: `${holding.inEtfs}, ${TULEVA}` })),
+    })
+  )
+  await page.route(apiRoute(API_ENDPOINTS.INSTRUMENTS), route =>
+    route.fulfill({
+      json: {
+        instruments: [
+          ...ETF_INSTRUMENTS,
+          { symbol: TULEVA, fundCurrency: Currency.EUR, currentValue: 5120.35 },
+        ],
+        portfolioXirr: null,
+      },
+    })
+  )
+  await page.route(apiRoute(`${API_ENDPOINTS.FUNDS}/${TULEVA}/reports`), route =>
+    route.fulfill({ json: TULEVA_REPORTS })
+  )
 }
