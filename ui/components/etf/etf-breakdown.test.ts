@@ -6,6 +6,7 @@ import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import { etfBreakdownService, fundReportService, instrumentsService } from '../../services/api'
+import { TULEVA_SYMBOL } from '../../services/fund-allocation'
 import { Currency } from '../../models/generated/domain-models'
 import type {
   EtfHoldingBreakdownDto,
@@ -183,8 +184,6 @@ describe('etf-breakdown', () => {
     return holdings
   }
 
-  const TULEVA = 'EE3600001707'
-
   const FUND_REPORTS: FundReportDto[] = [
     {
       asOfDate: '2026-08-31',
@@ -203,7 +202,7 @@ describe('etf-breakdown', () => {
   ]
 
   const withTuleva = () => {
-    const holdings = buildTwoHoldings().map(holding => ({ ...holding, inEtfs: TULEVA }))
+    const holdings = buildTwoHoldings().map(holding => ({ ...holding, inEtfs: TULEVA_SYMBOL }))
     vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(holdings)
     vi.mocked(fundReportService.getReports).mockResolvedValue(FUND_REPORTS)
   }
@@ -636,7 +635,7 @@ describe('etf-breakdown', () => {
     await wrapper.find('.dropdown-toggle').trigger('click')
     await wrapper
       .findAll('.etf-btn')
-      .find(btn => btn.text().includes(TULEVA))!
+      .find(btn => btn.text().includes(TULEVA_SYMBOL))!
       .trigger('click')
 
     expect(tabLabels(wrapper)).not.toContain('Funds')

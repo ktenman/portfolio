@@ -17,17 +17,17 @@ import java.time.Duration
 import java.time.LocalDate
 
 @RestController
-@RequestMapping("/api/funds")
+@RequestMapping("/api/funds/{isin:[A-Z]{2}[A-Z0-9]{10}}/reports")
 class FundReportController(
   private val minioService: MinioService,
   private val fundReportService: FundReportService,
 ) {
-  @GetMapping("/{isin:[A-Z]{2}[A-Z0-9]{10}}/reports")
+  @GetMapping
   fun getReports(
     @PathVariable isin: String,
   ): List<FundReportDto> = fundReportService.reports(isin)
 
-  @GetMapping("/{isin:[A-Z]{2}[A-Z0-9]{10}}/reports/{asOfDate}")
+  @GetMapping("/{asOfDate}")
   fun getReport(
     @PathVariable isin: String,
     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) asOfDate: LocalDate,

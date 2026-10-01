@@ -5,6 +5,7 @@ import {
   type InstrumentDto,
 } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
+import { TULEVA_SYMBOL } from '../../services/fund-allocation'
 import { apiRoute, type RouteStub } from './stub'
 
 const ETF_INSTRUMENTS: Pick<InstrumentDto, 'symbol' | 'fundCurrency' | 'currentValue'>[] = [
@@ -224,8 +225,6 @@ export const stubEtfBreakdown: RouteStub = async page => {
   await page.route('**/api/logos/prefetch', route => route.fulfill({ status: 204 }))
 }
 
-const TULEVA = 'EE3600001707'
-
 const TULEVA_REPORTS: FundReportDto[] = [
   {
     asOfDate: '2026-08-31',
@@ -251,7 +250,10 @@ export const stubEtfBreakdownWithTuleva: RouteStub = async page => {
   await stubEtfBreakdown(page)
   await page.route(apiRoute(API_ENDPOINTS.ETF_BREAKDOWN), route =>
     route.fulfill({
-      json: HOLDINGS.map(holding => ({ ...holding, inEtfs: `${holding.inEtfs}, ${TULEVA}` })),
+      json: HOLDINGS.map(holding => ({
+        ...holding,
+        inEtfs: `${holding.inEtfs}, ${TULEVA_SYMBOL}`,
+      })),
     })
   )
   await page.route(apiRoute(API_ENDPOINTS.INSTRUMENTS), route =>
@@ -259,13 +261,13 @@ export const stubEtfBreakdownWithTuleva: RouteStub = async page => {
       json: {
         instruments: [
           ...ETF_INSTRUMENTS,
-          { symbol: TULEVA, fundCurrency: Currency.EUR, currentValue: 5120.35 },
+          { symbol: TULEVA_SYMBOL, fundCurrency: Currency.EUR, currentValue: 5120.35 },
         ],
         portfolioXirr: null,
       },
     })
   )
-  await page.route(apiRoute(`${API_ENDPOINTS.FUNDS}/${TULEVA}/reports`), route =>
+  await page.route(apiRoute(`${API_ENDPOINTS.FUNDS}/${TULEVA_SYMBOL}/reports`), route =>
     route.fulfill({ json: TULEVA_REPORTS })
   )
 }

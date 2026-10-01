@@ -51,7 +51,7 @@ class FundReportControllerIT {
 
   @Test
   fun `should serve an archived fund report as a PDF`() {
-    val isin = "EE${UUID.randomUUID().toString().filter(Char::isLetterOrDigit).take(10).uppercase()}"
+    val isin = isin()
     val pdf = "%PDF-1.7 Tuleva aruanne õ".toByteArray()
     minioService.uploadFundReport(isin, LocalDate.of(2026, 8, 31), pdf)
     mockMvc
@@ -70,7 +70,7 @@ class FundReportControllerIT {
 
   @Test
   fun `should list the fund allocation of each report`() {
-    val isin = "EE${UUID.randomUUID().toString().filter(Char::isLetterOrDigit).take(10).uppercase()}"
+    val isin = isin()
     fundAllocationRepository.save(
       FundAllocation(
         fundIsin = isin,
@@ -88,6 +88,8 @@ class FundReportControllerIT {
       .andExpect(jsonPath("$[0].asOfDate").value("2026-08-31"))
       .andExpect(jsonPath("$[0].funds[0].isin").value("IE00BKPTWY98"))
   }
+
+  private fun isin() = "EE${UUID.randomUUID().toString().filter(Char::isLetterOrDigit).take(10).uppercase()}"
 
   companion object {
     private const val SESSION = "NzEyYmI5ZTMtOTNkNy00MjQyLTgxYmItZWE4ZDA3OWI0N2Uz"

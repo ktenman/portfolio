@@ -3,6 +3,8 @@ import { paint, type BreakdownRow } from './diversification-chart-service'
 
 export const TULEVA_SYMBOL = 'EE3600001707'
 
+export const CASH = 'Cash'
+
 export type FundStatus = 'held' | 'new' | 'dropped'
 
 export interface FundRow {
@@ -32,7 +34,7 @@ export const buildFundChartData = (report: FundReportDto): BreakdownRow[] =>
   paint(
     [
       ...report.funds.map(fund => ({ label: fund.name, value: fund.weight, isOther: false })),
-      { label: 'Cash', value: cashWeight(report), isOther: false },
+      { label: CASH, value: cashWeight(report), isOther: false },
     ].filter(row => row.value > 0)
   )
 

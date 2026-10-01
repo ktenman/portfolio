@@ -61,6 +61,7 @@
 import { computed } from 'vue'
 import { fundReportService } from '../../services/api'
 import {
+  CASH,
   cashWeight,
   compareFunds,
   formatReportDate,
@@ -89,7 +90,7 @@ const report = computed(() => props.reports[reportIndex.value])
 const rows = computed(() => {
   const slices = new Map(props.slices.map((slice, index) => [slice.label, { index, ...slice }]))
   const funds = compareFunds(report.value, props.reports[reportIndex.value + 1])
-  const cash: FundRow = { isin: '', name: 'Cash', weight: cashWeight(report.value), status: 'held' }
+  const cash: FundRow = { isin: '', name: CASH, weight: cashWeight(report.value), status: 'held' }
   return [
     ...funds.filter(fund => fund.status !== 'dropped'),
     cash,
