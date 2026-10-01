@@ -162,7 +162,8 @@ describe('etf-breakdown', () => {
         stubs: {
           EtfBreakdownChart: {
             props: ['chartData', 'benchmarkLabel', 'view'],
-            template: '<div><slot name="actions" /><slot /></div>',
+            template:
+              '<div><slot name="actions" /><slot name="legend" :active-index="null" /></div>',
           },
         },
       },
@@ -699,7 +700,7 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Funds')
     await wrapper.find('.report-select').setValue('1')
 
-    expect(wrapper.find('.breakdown-controls .report-link').attributes('href')).toBe(
+    expect(wrapper.find('.fund-caption .report-link').attributes('href')).toBe(
       '/api/funds/EE3600001707/reports/2026-07-31'
     )
   })
@@ -714,6 +715,32 @@ describe('etf-breakdown', () => {
     expect(wrapper.findAll('.fund-table tr.new .fund-name').map(cell => cell.text())).toEqual([
       'Xtrackers MSCI World Screened',
     ])
+  })
+
+  it('lists cash before the funds dropped since the previous report on the Funds tab', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.findAll('.fund-table .fund-name').map(cell => cell.text())).toEqual([
+      'Xtrackers MSCI World Screened',
+      'iShares Emerging Market Screened',
+      'Cash',
+      'CCF Developed World',
+    ])
+  })
+
+  it('charts the Funds tab as a donut even when bars are the stored view', async () => {
+    withTuleva()
+    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('donut')
   })
 
   it('hides the compare toggle on the Funds tab', async () => {

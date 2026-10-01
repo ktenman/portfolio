@@ -73,6 +73,14 @@ const getDescription = (): string => {
 .report-link {
   margin-left: 0.5rem;
   white-space: nowrap;
-  color: var(--color-brass-deep);
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--color-hairline-strong);
+  text-underline-offset: 0.2em;
+}
+
+.report-link:hover {
+  color: var(--color-ink);
+  text-decoration-color: currentColor;
 }
 </style>

@@ -5,8 +5,11 @@
         <slot name="actions" />
       </div>
       <breakdown-bars v-if="view === 'bars'" :rows="chartData" :benchmark-label="benchmarkLabel" />
-      <breakdown-donut v-else :rows="chartData" />
-      <slot />
+      <breakdown-donut v-else :rows="chartData">
+        <template v-if="$slots.legend" #legend="legend">
+          <slot name="legend" v-bind="legend" />
+        </template>
+      </breakdown-donut>
     </div>
   </div>
 </template>
