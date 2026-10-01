@@ -9,6 +9,7 @@ import {
   type EnumsResponse,
   type EtfDetailDto,
   type EtfHoldingBreakdownDto,
+  type FundReportDto,
   type InstrumentDto,
   type InstrumentsResponse,
   type IntradaySummaryPointDto,
@@ -155,6 +156,14 @@ export const etfBreakdownService = {
     httpClient.get<EtfHoldingBreakdownDto[]>(`${API_ENDPOINTS.ETF_BREAKDOWN}/benchmark`, {
       params: { symbol },
     }),
+}
+
+export const fundReportService = {
+  getReports: (isin: string) =>
+    httpClient.get<FundReportDto[]>(`${API_ENDPOINTS.FUNDS}/${isin}/reports`),
+
+  getReportUrl: (isin: string, asOfDate: string): string =>
+    `/api${API_ENDPOINTS.FUNDS}/${isin}/reports/${asOfDate}`,
 }
 
 export const logoService = {

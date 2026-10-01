@@ -10,19 +10,22 @@ import ee.tenman.portfolio.domain.FundAllocation
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.FundAllocationRepository
 import ee.tenman.portfolio.service.etf.HoldingAggregationService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.http.ResponseEntity
 import java.math.BigDecimal
+import java.net.URI
 import java.time.LocalDate
 
 class TulevaHoldingsServiceTest {
   private val client = mockk<TulevaReportClient>()
   private val repository = mockk<FundAllocationRepository>()
   private val blackRock = mockk<BlackRockHoldingsService>()
-  private val service = TulevaHoldingsService(client, repository, blackRock, HoldingAggregationService(), "https://tuleva.ee")
+  private val minio = mockk<MinioService>(relaxed = true)
+  private val service = TulevaHoldingsService(client, repository, blackRock, HoldingAggregationService(), minio, "https://tuleva.ee")
 
   @Test
   fun `should scale proxy holdings by fund weight and merge the same company across proxies`() {
@@ -48,23 +51,32 @@ class TulevaHoldingsServiceTest {
   }
 
   @Test
-  fun `should not download a report that is already imported`() {
-    every { repository.findSourceUrls(TulevaHoldingsService.SYMBOL) } returns setOf(KNOWN)
+  fun `should not download a report that is already imported and archived`() {
+    givenKnown(archived = true)
     every { client.listMedia(1) } returns page(1, KNOWN)
     service.importReports()
     verify(exactly = 0) { client.download(any()) }
   }
 
   @Test
+  fun `should archive an imported report missing from storage without parsing it again`() {
+    givenKnown(archived = false)
+    every { client.listMedia(1) } returns page(1, KNOWN)
+    every { client.download(URI(KNOWN)) } returns PDF
+    service.importReports()
+    verify { minio.uploadFundReport(TulevaHoldingsService.SYMBOL, DATE, PDF) }
+  }
+
+  @Test
   fun `should reject a report hosted outside the Tuleva site`() {
-    every { repository.findSourceUrls(TulevaHoldingsService.SYMBOL) } returns emptySet()
+    every { repository.findByFundIsin(TulevaHoldingsService.SYMBOL) } returns emptyList()
     every { client.listMedia(1) } returns page(1, "https://evil.example/aruanne.pdf")
     expect { service.importReports() }.toThrow<IllegalArgumentException>().messageToContain("evil.example")
   }
 
   @Test
   fun `should reject a report served over plain http`() {
-    every { repository.findSourceUrls(TulevaHoldingsService.SYMBOL) } returns emptySet()
+    every { repository.findByFundIsin(TulevaHoldingsService.SYMBOL) } returns emptyList()
     every { client.listMedia(1) } returns page(1, "http://tuleva.ee/aruanne.pdf")
     expect { service.importReports() }.toThrow<IllegalArgumentException>().messageToContain("http://tuleva.ee/aruanne.pdf")
   }
@@ -72,7 +84,8 @@ class TulevaHoldingsServiceTest {
   @Test
   fun `should not request a page past the last one when the listing fills a page exactly`() {
     val urls = (1..MEDIA_PAGE_SIZE).map { "https://tuleva.ee/aruanne-$it.pdf" }
-    every { repository.findSourceUrls(TulevaHoldingsService.SYMBOL) } returns urls.toSet()
+    every { repository.findByFundIsin(TulevaHoldingsService.SYMBOL) } returns urls.map { allocation("IE00BFG1TM61", "100", it) }
+    every { minio.fundReportDates(TulevaHoldingsService.SYMBOL) } returns setOf(DATE)
     every { client.listMedia(1) } returns page(1, *urls.toTypedArray())
     service.importReports()
     verify(exactly = 0) { client.listMedia(2) }
@@ -80,7 +93,7 @@ class TulevaHoldingsServiceTest {
 
   @Test
   fun `should import reports listed on later pages`() {
-    every { repository.findSourceUrls(TulevaHoldingsService.SYMBOL) } returns setOf(KNOWN)
+    givenKnown(archived = true)
     every { client.listMedia(1) } returns page(2, KNOWN)
     every { client.listMedia(2) } returns page(2, "https://evil.example/aruanne.pdf")
     expect { service.importReports() }.toThrow<IllegalArgumentException>().messageToContain("evil.example")
@@ -91,6 +104,11 @@ class TulevaHoldingsServiceTest {
     vararg urls: String,
   ): ResponseEntity<List<TulevaMedia>> = ResponseEntity.ok().header(TOTAL_PAGES_HEADER, "$total").body(urls.map(::TulevaMedia))
 
+  private fun givenKnown(archived: Boolean) {
+    every { repository.findByFundIsin(TulevaHoldingsService.SYMBOL) } returns listOf(allocation("IE00BFG1TM61", "100"))
+    every { minio.fundReportDates(TulevaHoldingsService.SYMBOL) } returns if (archived) setOf(DATE) else emptySet()
+  }
+
   private fun givenAllocations(vararg allocations: FundAllocation) {
     every { repository.findFirstByFundIsinOrderByAsOfDateDescIdDesc(TulevaHoldingsService.SYMBOL) } returns allocations.first()
     every { repository.findBySourceUrl(KNOWN) } returns allocations.toList()
@@ -99,10 +117,11 @@ class TulevaHoldingsServiceTest {
   private fun allocation(
     isin: String,
     weight: String,
+    url: String = KNOWN,
   ) = FundAllocation(
     fundIsin = TulevaHoldingsService.SYMBOL,
-    asOfDate = LocalDate.of(2026, 8, 31),
-    sourceUrl = KNOWN,
+    asOfDate = DATE,
+    sourceUrl = url,
     reportedTotal = BigDecimal(100),
     underlyingIsin = isin,
     underlyingName = "Fond $isin",
@@ -116,5 +135,7 @@ class TulevaHoldingsServiceTest {
 
   companion object {
     private const val KNOWN = "https://tuleva.ee/wp-content/uploads/2026/09/aruanne-2026-08.pdf"
+    private val DATE = LocalDate.of(2026, 8, 31)
+    private val PDF = "%PDF-1.7 Tuleva aruanne õ".toByteArray()
   }
 }

@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   PORTFOLIO_SUMMARY_XIRR_WINDOWS: '/portfolio-summary/xirr-windows',
   PORTFOLIO_SUMMARY_ANNUAL_WINDOWS: '/portfolio-summary/annual-windows',
   ETF_BREAKDOWN: '/etf-breakdown',
+  FUNDS: '/funds',
   DIVERSIFICATION: '/diversification',
   ENUMS: '/enums',
   LOGOS: '/logos',

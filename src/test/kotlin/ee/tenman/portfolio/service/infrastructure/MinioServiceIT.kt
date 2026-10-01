@@ -20,6 +20,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.cache.CacheManager
 import java.time.Duration
+import java.time.LocalDate
 import java.util.UUID
 
 @IntegrationTest
@@ -157,6 +158,14 @@ class MinioServiceIT {
     )
     evictCachedLogo(uuid)
     expect(minioService.downloadLogo(uuid)).toEqual(null)
+  }
+
+  @Test
+  fun `should list the dates of archived fund reports`() {
+    val isin = "EE${UUID.randomUUID().toString().take(10)}"
+    minioService.uploadFundReport(isin, LocalDate.of(2026, 7, 31), byteArrayOf(0x25, 0x50, 0x44, 0x46))
+    minioService.uploadFundReport(isin, LocalDate.of(2026, 8, 31), byteArrayOf(0x25, 0x50, 0x44, 0x46))
+    expect(minioService.fundReportDates(isin)).toEqual(setOf(LocalDate.of(2026, 7, 31), LocalDate.of(2026, 8, 31)))
   }
 
   @Test

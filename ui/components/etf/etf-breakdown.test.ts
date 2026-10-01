@@ -5,14 +5,23 @@ import EtfBreakdown from './etf-breakdown.vue'
 import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
-import { etfBreakdownService, instrumentsService } from '../../services/api'
+import { etfBreakdownService, fundReportService, instrumentsService } from '../../services/api'
+import { TULEVA_SYMBOL } from '../../services/fund-allocation'
 import { Currency } from '../../models/generated/domain-models'
-import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
+import type {
+  EtfHoldingBreakdownDto,
+  FundReportDto,
+  InstrumentDto,
+} from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   etfBreakdownService: {
     getBreakdown: vi.fn(),
     getBenchmark: vi.fn(),
+  },
+  fundReportService: {
+    getReports: vi.fn(),
+    getReportUrl: (isin: string, asOfDate: string) => `/api/funds/${isin}/reports/${asOfDate}`,
   },
   instrumentsService: {
     getAll: vi.fn(),
@@ -154,7 +163,8 @@ describe('etf-breakdown', () => {
         stubs: {
           EtfBreakdownChart: {
             props: ['chartData', 'benchmarkLabel', 'view'],
-            template: '<div><slot name="actions" /></div>',
+            template:
+              '<div><slot name="actions" /><slot name="legend" :active-index="null" /></div>',
           },
         },
       },
@@ -173,6 +183,32 @@ describe('etf-breakdown', () => {
     vi.mocked(etfBreakdownService.getBenchmark).mockResolvedValue(holdings)
     return holdings
   }
+
+  const FUND_REPORTS: FundReportDto[] = [
+    {
+      asOfDate: '2026-08-31',
+      funds: [
+        { isin: 'IE000I9HGDZ3', name: 'Xtrackers MSCI World Screened', weight: 58.26 },
+        { isin: 'IE00BKPTWY98', name: 'iShares Emerging Market Screened', weight: 41.62 },
+      ],
+    },
+    {
+      asOfDate: '2026-07-31',
+      funds: [
+        { isin: 'IE0009FT4LX4', name: 'CCF Developed World', weight: 88.2 },
+        { isin: 'IE00BKPTWY98', name: 'iShares Emerging Market Screened', weight: 11.61 },
+      ],
+    },
+  ]
+
+  const withTuleva = () => {
+    const holdings = buildTwoHoldings().map(holding => ({ ...holding, inEtfs: TULEVA_SYMBOL }))
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(holdings)
+    vi.mocked(fundReportService.getReports).mockResolvedValue(FUND_REPORTS)
+  }
+
+  const tabLabels = (wrapper: VueWrapper) =>
+    wrapper.findAll('.breakdown-tab').map(tab => tab.text())
 
   const benchmarkCalls = () => vi.mocked(etfBreakdownService.getBenchmark).mock.calls
 
@@ -579,5 +615,150 @@ describe('etf-breakdown', () => {
     await clickTab(wrapper, 'Industries')
 
     expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('chartData')).toHaveLength(20)
+  })
+
+  it('shows the Funds tab after Countries while Tuleva is selected', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(tabLabels(wrapper)).toEqual(['Sectors', 'Industries', 'Holdings', 'Countries', 'Funds'])
+  })
+
+  it('hides the Funds tab once Tuleva is deselected', async () => {
+    withTuleva()
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    localStorage.setItem('portfolio_selected_etfs', JSON.stringify(['VWCE:XETRA']))
+    await wrapper.find('.dropdown-toggle').trigger('click')
+    await wrapper
+      .findAll('.etf-btn')
+      .find(btn => btn.text().includes(TULEVA_SYMBOL))!
+      .trigger('click')
+
+    expect(tabLabels(wrapper)).not.toContain('Funds')
+  })
+
+  it('does not request Tuleva reports when no selected fund is Tuleva', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+
+    mountWithChartStub()
+    await flushPromises()
+
+    expect(fundReportService.getReports).not.toHaveBeenCalled()
+  })
+
+  it('falls back to Sectors when the stored tab is Funds and Tuleva is not selected', async () => {
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+    localStorage.setItem('portfolio_etf_breakdown_tab', 'funds')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.find('.breakdown-tab.active').text()).toBe('Sectors')
+  })
+
+  it('charts the funds of the latest Tuleva report on the Funds tab', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(
+      wrapper
+        .findAllComponents(EtfBreakdownChart)[0]
+        .props('chartData')
+        .map(item => item.label)
+    ).toEqual(['Xtrackers MSCI World Screened', 'iShares Emerging Market Screened', 'Cash'])
+  })
+
+  it('charts the funds of the month picked on the Funds tab', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+    await wrapper.find('.report-select').setValue('1')
+
+    expect(
+      wrapper
+        .findAllComponents(EtfBreakdownChart)[0]
+        .props('chartData')
+        .map(item => item.label)
+    ).toEqual(['CCF Developed World', 'iShares Emerging Market Screened', 'Cash'])
+  })
+
+  it('links the PDF of the month picked on the Funds tab', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+    await wrapper.find('.report-select').setValue('1')
+
+    expect(wrapper.find('.fund-caption .report-link').attributes('href')).toBe(
+      '/api/funds/EE3600001707/reports/2026-07-31'
+    )
+  })
+
+  it('marks the funds that are new since the previous report on the Funds tab', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.findAll('.fund-table tr.new .fund-name').map(cell => cell.text())).toEqual([
+      'Xtrackers MSCI World Screened',
+    ])
+  })
+
+  it('lists cash before the funds dropped since the previous report on the Funds tab', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.findAll('.fund-table .fund-name').map(cell => cell.text())).toEqual([
+      'Xtrackers MSCI World Screened',
+      'iShares Emerging Market Screened',
+      'Cash',
+      'CCF Developed World',
+    ])
+  })
+
+  it('charts the Funds tab as a donut even when bars are the stored view', async () => {
+    withTuleva()
+    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('donut')
+  })
+
+  it('hides the compare toggle on the Funds tab', async () => {
+    withTuleva()
+    vi.mocked(etfBreakdownService.getBenchmark).mockResolvedValue(buildTwoHoldings())
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.find('.compare-toggle').exists()).toBe(false)
+  })
+
+  it('links the latest Tuleva report from the subtitle', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+
+    expect(wrapper.find('.page-subtitle .report-link').text()).toBe('Tuleva report 31.08.2026')
   })
 })
