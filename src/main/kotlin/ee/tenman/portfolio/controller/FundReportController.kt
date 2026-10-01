@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.dto.FundReportDto
+import ee.tenman.portfolio.service.etf.FundReportService
 import ee.tenman.portfolio.service.infrastructure.MinioService
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.CacheControl
@@ -14,11 +16,17 @@ import java.time.Duration
 import java.time.LocalDate
 
 @RestController
-@RequestMapping("/api/funds")
+@RequestMapping("/api/funds/{isin:[A-Z]{2}[A-Z0-9]{10}}/reports")
 class FundReportController(
   private val minioService: MinioService,
+  private val fundReportService: FundReportService,
 ) {
-  @GetMapping("/{isin:[A-Z]{2}[A-Z0-9]{10}}/reports/{asOfDate}")
+  @GetMapping
+  fun getReports(
+    @PathVariable isin: String,
+  ): List<FundReportDto> = fundReportService.reports(isin)
+
+  @GetMapping("/{asOfDate}")
   fun getReport(
     @PathVariable isin: String,
     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) asOfDate: LocalDate,
