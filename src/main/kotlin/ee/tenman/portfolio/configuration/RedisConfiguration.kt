@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
+import org.springframework.data.redis.cache.RedisCacheWriter
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import java.time.Duration
 
@@ -35,7 +36,7 @@ class RedisConfiguration {
     cacheConfigurations[HOLDING_IDENTITY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
-      .builder(connectionFactory)
+      .builder(RedisCacheWriter.create(connectionFactory) { it.immediateWrites() })
       .cacheDefaults(defaultConfig)
       .withInitialCacheConfigurations(cacheConfigurations)
       .build()
