@@ -192,6 +192,11 @@ export interface EtfDetailDto extends Serializable {
     constituentSymbols: string[];
 }
 
+export interface FundReportDto {
+    asOfDate: DateAsString;
+    funds: FundWeightDto[];
+}
+
 export interface CollectionStatusDto {
     key: string;
     provider: string;
@@ -273,6 +278,12 @@ export interface DiversificationCountryDto extends Serializable {
 export interface ConcentrationDto extends Serializable {
     top10Percentage: number;
     largestPosition: LargestPositionDto | null;
+}
+
+export interface FundWeightDto {
+    isin: string;
+    name: string;
+    weight: number;
 }
 
 export interface LargestPositionDto extends Serializable {

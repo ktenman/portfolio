@@ -7,12 +7,14 @@
         <span class="chart-centre-value">{{ formatPercentage(activeItem.value) }}</span>
       </div>
     </div>
-    <breakdown-legend
-      :items="rows"
-      :active-index="activeIndex"
-      @hover="focusSlice"
-      @leave="clearSlice"
-    />
+    <slot name="legend" :active-index="activeIndex" :focus="focusSlice" :clear="clearSlice">
+      <breakdown-legend
+        :items="rows"
+        :active-index="activeIndex"
+        @hover="focusSlice"
+        @leave="clearSlice"
+      />
+    </slot>
   </div>
 </template>
 

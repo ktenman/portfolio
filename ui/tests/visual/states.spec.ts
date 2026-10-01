@@ -7,7 +7,7 @@ import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubDiversification, stubDiversificationWithLongFundName } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
-import { stubEtfBreakdown } from './etf-fixture'
+import { stubEtfBreakdown, stubEtfBreakdownWithTuleva } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
@@ -236,6 +236,14 @@ test.describe('desktop states', () => {
     await page.click('.platform-btn:text-is("% vs S&P 500")')
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('summary-performance-mode.png')
+  })
+
+  test('the Funds tab shows the latest Tuleva report', async ({ page }) => {
+    await stubEtfBreakdownWithTuleva(page)
+    await openRoute(page, '/etf-breakdown')
+    await page.click('.breakdown-tab:text-is("Funds")')
+    await settleAndFreeze(page)
+    await expect(page).toHaveScreenshot('etf-breakdown-funds.png', { fullPage: true })
   })
 
   test('selecting both benchmarks overlays three lines', async ({ page }) => {

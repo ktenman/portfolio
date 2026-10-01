@@ -16,6 +16,7 @@
           v-if="!isLoading"
           :selected-etfs="selectedEtfs"
           :available-etfs="availableEtfs"
+          :report-date="fundsTabShown ? fundReports[0].asOfDate : undefined"
         />
       </div>
       <div v-if="filtersOpen && availableEtfs.length > 0" class="etf-filter-container mt-3">
@@ -51,25 +52,25 @@
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
       <etf-breakdown-chart
         :chart-data="activeChartData"
-        :view="view"
+        :view="shownTab === 'funds' ? 'donut' : view"
         :benchmark-label="benchmarkLabel"
       >
         <template #actions>
           <div class="breakdown-toolbar">
             <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
               <button
-                v-for="tab in breakdownTabs"
+                v-for="tab in visibleTabs"
                 :key="tab.key"
                 class="breakdown-tab"
-                :class="{ active: activeTab === tab.key }"
-                :aria-pressed="activeTab === tab.key"
+                :class="{ active: shownTab === tab.key }"
+                :aria-pressed="shownTab === tab.key"
                 type="button"
                 @click="activeTab = tab.key"
               >
                 {{ tab.label }}
               </button>
             </div>
-            <div class="breakdown-controls">
+            <div v-if="shownTab !== 'funds'" class="breakdown-controls">
               <template v-if="!benchmarkUnavailable">
                 <span class="platform-separator" aria-hidden="true"></span>
                 <label class="compare-switch compare-toggle">
@@ -84,6 +85,16 @@
               <view-switch v-model="view" />
             </div>
           </div>
+        </template>
+        <template v-if="shownTab === 'funds'" #legend="{ activeIndex, focus, clear }">
+          <fund-allocation-table
+            v-model:report-index="reportIndex"
+            :reports="fundReports"
+            :slices="activeChartData"
+            :active-index="activeIndex"
+            @hover="focus"
+            @leave="clear"
+          />
         </template>
       </etf-breakdown-chart>
       <etf-breakdown-stats
@@ -144,7 +155,12 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
-import { etfBreakdownService, instrumentsService, logoService } from '../../services/api'
+import {
+  etfBreakdownService,
+  fundReportService,
+  instrumentsService,
+  logoService,
+} from '../../services/api'
 import {
   buildSectorChartData,
   buildIndustryChartData,
@@ -154,11 +170,17 @@ import {
   getFilterParam,
   type ChartDataItem,
 } from '../../services/etf-chart-service'
-import type { EtfHoldingBreakdownDto, InstrumentDto } from '../../models/generated/domain-models'
+import { buildFundChartData, TULEVA_SYMBOL } from '../../services/fund-allocation'
+import type {
+  EtfHoldingBreakdownDto,
+  FundReportDto,
+  InstrumentDto,
+} from '../../models/generated/domain-models'
 import EtfBreakdownHeader from './etf-breakdown-header.vue'
 import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
+import FundAllocationTable from './fund-allocation-table.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
@@ -276,11 +298,30 @@ const breakdownTabs = [
   { key: 'industries', label: 'Industries' },
   { key: 'companies', label: 'Holdings' },
   { key: 'countries', label: 'Countries' },
+  { key: 'funds', label: 'Funds' },
 ] as const
 
 type BreakdownTab = (typeof breakdownTabs)[number]['key']
 
 const activeTab = useLocalStorage<BreakdownTab>(STORAGE_KEYS.ETF_BREAKDOWN_TAB, 'sectors')
+
+const fundReports = ref<FundReportDto[]>([])
+
+const reportIndex = ref(0)
+
+const fundReport = computed(() => fundReports.value[reportIndex.value])
+
+const fundsTabShown = computed(
+  () => selectedEtfs.value.includes(TULEVA_SYMBOL) && fundReports.value.length > 0
+)
+
+const visibleTabs = computed(() =>
+  fundsTabShown.value ? breakdownTabs : breakdownTabs.filter(tab => tab.key !== 'funds')
+)
+
+const shownTab = computed<BreakdownTab>(() =>
+  activeTab.value === 'funds' && !fundsTabShown.value ? 'sectors' : activeTab.value
+)
 
 const view = useLocalStorage<BreakdownView>(STORAGE_KEYS.ETF_BREAKDOWN_VIEW, 'donut')
 
@@ -306,9 +347,10 @@ const industryChartData = computed<ChartDataItem[]>(() =>
 )
 
 const activeChartData = computed(() => {
-  if (activeTab.value === 'industries') return industryChartData.value
-  if (activeTab.value === 'companies') return companyChartData.value
-  if (activeTab.value === 'countries') return countryChartData.value
+  if (shownTab.value === 'funds') return buildFundChartData(fundReport.value)
+  if (shownTab.value === 'industries') return industryChartData.value
+  if (shownTab.value === 'companies') return companyChartData.value
+  if (shownTab.value === 'countries') return countryChartData.value
   return sectorChartData.value
 })
 
@@ -395,6 +437,20 @@ watch(
     if (on) loadBenchmark()
   },
   { immediate: true }
+)
+
+const loadFundReports = async () => {
+  fundReports.value = await fundReportService.getReports(TULEVA_SYMBOL).catch(error => {
+    console.error('Failed to load the Tuleva reports:', error)
+    return []
+  })
+}
+
+watch(
+  () => availableEtfs.value.includes(TULEVA_SYMBOL),
+  held => {
+    if (held) loadFundReports()
+  }
 )
 
 const clearSearch = () => {
@@ -496,6 +552,10 @@ onMounted(async () => {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
+}
+
+.breakdown-toolbar {
+  width: 100%;
 }
 
 .breakdown-controls {
@@ -630,10 +690,6 @@ onMounted(async () => {
   .search-input-wrapper {
     width: 100%;
     max-width: none;
-  }
-
-  .breakdown-toolbar {
-    width: 100%;
   }
 
   .breakdown-tabs,

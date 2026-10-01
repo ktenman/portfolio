@@ -1,13 +1,26 @@
 <template>
   <p class="page-subtitle text-body-secondary">
     {{ getDescription() }}
+    <a
+      v-if="reportDate"
+      class="report-link"
+      :href="fundReportService.getReportUrl(TULEVA_SYMBOL, reportDate)"
+      target="_blank"
+      rel="noopener"
+    >
+      Tuleva report {{ formatReportDate(reportDate) }}
+    </a>
   </p>
 </template>
 
 <script lang="ts" setup>
+import { fundReportService } from '../../services/api'
+import { formatReportDate, TULEVA_SYMBOL } from '../../services/fund-allocation'
+
 const props = defineProps<{
   selectedEtfs: string[]
   availableEtfs: string[]
+  reportDate?: string
 }>()
 
 const getSymbolOnly = (fullSymbol: string): string => {
@@ -55,5 +68,19 @@ const getDescription = (): string => {
 .page-subtitle {
   font-size: 0.95rem;
   margin: 0;
+}
+
+.report-link {
+  margin-left: 0.5rem;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--color-hairline-strong);
+  text-underline-offset: 0.2em;
+}
+
+.report-link:hover {
+  color: var(--color-ink);
+  text-decoration-color: currentColor;
 }
 </style>

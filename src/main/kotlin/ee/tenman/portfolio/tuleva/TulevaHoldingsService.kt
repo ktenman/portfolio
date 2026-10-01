@@ -6,11 +6,13 @@ import ee.tenman.portfolio.domain.FundAllocation
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.FundAllocationRepository
 import ee.tenman.portfolio.service.etf.HoldingAggregationService
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.net.URI
+import java.time.LocalDate
 
 @Service
 class TulevaHoldingsService(
@@ -18,19 +20,18 @@ class TulevaHoldingsService(
   private val fundAllocationRepository: FundAllocationRepository,
   private val blackRockHoldingsService: BlackRockHoldingsService,
   private val holdingAggregationService: HoldingAggregationService,
+  private val minioService: MinioService,
   @Value("\${tuleva.web-url}") webUrl: String,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
   private val base = URI(webUrl)
 
   fun importReports() {
-    val known = fundAllocationRepository.findSourceUrls(SYMBOL)
+    val known = fundAllocationRepository.findByFundIsin(SYMBOL).associate { it.sourceUrl to it.asOfDate }
+    val archived = minioService.fundReportDates(SYMBOL)
     val failures =
-      reportUrls()
-        .filterNot { it in known }
-        .mapNotNull { url ->
-          runCatching { import(url) }.onFailure { log.error("Tuleva report import failed for $url", it) }.exceptionOrNull()
-        }
+      reportUrls().filterNot { it in known }.mapNotNull { url -> attempt(url) { import(url) } } +
+        known.filterValues { it !in archived }.mapNotNull { (url, date) -> attempt(url) { archive(url, date) } }
     failures.firstOrNull()?.let { throw it }
   }
 
@@ -59,12 +60,31 @@ class TulevaHoldingsService(
       .filter { it.endsWith(".pdf") }
   }
 
+  private fun attempt(
+    url: String,
+    task: () -> Unit,
+  ): Throwable? = runCatching(task).onFailure { log.error("Tuleva report import failed for $url", it) }.exceptionOrNull()
+
   private fun import(url: String) {
+    val pdf = download(url)
+    val report = TulevaAllocationParser.parse(pdf)
+    fundAllocationRepository.saveAll(report.rows.map { it.toAllocation(url, report) })
+    minioService.uploadFundReport(SYMBOL, report.asOfDate, pdf)
+    log.info("Imported Tuleva allocation report of ${report.asOfDate} with ${report.rows.size} funds from $url")
+  }
+
+  private fun archive(
+    url: String,
+    asOfDate: LocalDate,
+  ) {
+    minioService.uploadFundReport(SYMBOL, asOfDate, download(url))
+    log.info("Archived Tuleva allocation report of $asOfDate from $url")
+  }
+
+  private fun download(url: String): ByteArray {
     val uri = URI(url)
     require(uri.scheme == base.scheme && uri.host == base.host) { "Tuleva report $url is not served from $base" }
-    val report = TulevaAllocationParser.parse(tulevaReportClient.download(uri))
-    fundAllocationRepository.saveAll(report.rows.map { it.toAllocation(url, report) })
-    log.info("Imported Tuleva allocation report of ${report.asOfDate} with ${report.rows.size} funds from $url")
+    return tulevaReportClient.download(uri)
   }
 
   private fun proxy(allocation: FundAllocation): BlackRockFund =
