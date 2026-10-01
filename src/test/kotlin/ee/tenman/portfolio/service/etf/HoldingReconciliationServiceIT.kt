@@ -113,7 +113,7 @@ class HoldingReconciliationServiceIT {
   }
 
   @Test
-  fun `should collapse a transitive duplicate cluster when a holding matches a non representative`() {
+  fun `should keep a holding apart when it matches only part of a cluster`() {
     etfHoldingRepository.save(EtfHolding(name = "Beta"))
     etfHoldingRepository.save(EtfHolding(name = "Beta Corp"))
     etfHoldingRepository.save(EtfHolding(name = "Beta Industries"))
@@ -127,7 +127,18 @@ class HoldingReconciliationServiceIT {
 
     holdingReconciliationService.reconcile(dryRun = false)
 
-    expect(etfHoldingRepository.findAll().map { it.name }).toContainExactly("Beta")
+    expect(etfHoldingRepository.findAll().map { it.name }.sorted()).toContainExactly("Beta", "Beta Industries")
+  }
+
+  @Test
+  fun `should ask about holdings with different tickers without claiming a shared ticker`() {
+    etfHoldingRepository.save(EtfHolding(name = "Southern", ticker = "SO"))
+    etfHoldingRepository.save(EtfHolding(name = "Southern Copper Corp", ticker = "SCCO"))
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Southern", "Southern Copper Corp", "SCCO", null, null, "SO") to false)::get)
+
+    holdingReconciliationService.reconcile(dryRun = false)
+
+    expect(etfHoldingRepository.findAll()).toHaveSize(2)
   }
 
   @Test

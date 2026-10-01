@@ -102,6 +102,15 @@ class HoldingIdentityBatchServiceTest {
   }
 
   @Test
+  fun `should show both tickers instead of a shared ticker when they differ`() {
+    val prompt = slot<String>()
+    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
+      OpenRouterClassificationResult(content = "1: NO\n2: NO", model = AiModel.DEEPSEEK_V4_FLASH)
+    service.resolve(listOf(IdentityPair("PTC", "PTC Therapeutics Inc", "PTCT", null, null, "PTC"), zalgiris))
+    expect(prompt.captured).toContain("1. Name 1: PTC (ticker: PTC) | Name 2: PTC Therapeutics Inc (ticker: PTCT)\n")
+  }
+
+  @Test
   fun `should keep the historical cache key format`() {
     expect(IdentityPair("Apple|Inc", "Corp", null).cacheKey).toEqual("9|Apple|Inc|4|Corp|")
   }

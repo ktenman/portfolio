@@ -175,7 +175,7 @@ class EtfHoldingServiceTest {
     val holding = createHolding(29L, "LONN", "Lonza")
     val data = createHoldingData("Lonza Group AG", "LONN", null).copy(industry = GicsIndustry.LIFE_SCIENCES_TOOLS_AND_SERVICES)
     every { etfHoldingPersistenceService.findByTicker("LONN") } returns listOf(holding)
-    holdingIdentityService.answerPairs(mapOf(IdentityPair("Lonza", "Lonza Group AG", "LONN") to true)::get)
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Lonza", "Lonza Group AG", "LONN", null, null, "LONN") to true)::get)
 
     expect(service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data))).industries).toEqual(
       listOf(VanguardIndustryUpdate(holding.uuid, GicsIndustry.LIFE_SCIENCES_TOOLS_AND_SERVICES, testDate)),
@@ -227,11 +227,11 @@ class EtfHoldingServiceTest {
     val holding = createHolding(67L, "HLN", "Haleon")
     val data = createHoldingData("Haleon PLC", "HLN", null).copy(industry = GicsIndustry.PHARMACEUTICALS)
     every { etfHoldingPersistenceService.findByTicker("HLN") } returns listOf(holding)
-    holdingIdentityService.answerPairs(mapOf(IdentityPair("Haleon", "Haleon PLC", "HLN") to true)::get)
+    holdingIdentityService.answerPairs(mapOf(IdentityPair("Haleon", "Haleon PLC", "HLN", null, null, "HLN") to true)::get)
     val updates = service.resolveVanguardUpdates(VanguardFundSnapshot(testDate, listOf(data), mapOf(data.name to setOf("GB"))))
     expect(updates.countries).toEqual(listOf(VanguardCountryUpdate(holding.uuid, "GB", testDate)))
     expect(updates.industries.single().holdingUuid).toEqual(holding.uuid)
-    verify(exactly = 1) { holdingIdentityService.resolveAll(listOf(IdentityPair("Haleon", "Haleon PLC", "HLN"))) }
+    verify(exactly = 1) { holdingIdentityService.resolveAll(listOf(IdentityPair("Haleon", "Haleon PLC", "HLN", null, null, "HLN"))) }
   }
 
   @Test
@@ -293,9 +293,9 @@ class EtfHoldingServiceTest {
     every { etfHoldingPersistenceService.findByTicker("ZAL") } returns candidates
     holdingIdentityService.answerPairs(
       mapOf(
-        IdentityPair("Žalgiris Energija", matched.name, "ZAL") to false,
-        IdentityPair("Žalgiris Bankas", matched.name, "ZAL") to true,
-        IdentityPair("Žalgiris", matched.name, "ZAL") to true,
+        IdentityPair("Žalgiris Energija", matched.name, "ZAL", null, null, "ZAL") to false,
+        IdentityPair("Žalgiris Bankas", matched.name, "ZAL", null, null, "ZAL") to true,
+        IdentityPair("Žalgiris", matched.name, "ZAL", null, null, "ZAL") to true,
       )::get,
     )
     every { etfHoldingPersistenceService.saveHoldings("VWCE", testDate, listOf(unmatched, matched), capture(hints)) } returns emptyMap()
@@ -312,7 +312,7 @@ class EtfHoldingServiceTest {
     every { holdingIdentityService.resolveAll(capture(pairs)) } returns emptyMap()
     every { etfHoldingPersistenceService.saveHoldings(any(), any(), any(), any()) } returns emptyMap()
     service.saveHoldings("SAWD", testDate, listOf(data))
-    expect(pairs.captured).toEqual(listOf(IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE")))
+    expect(pairs.captured).toEqual(listOf(IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE", "MRK")))
   }
 
   private fun createHolding(
