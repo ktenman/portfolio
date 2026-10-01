@@ -39,7 +39,7 @@ const collection = (overrides: Partial<CollectionStatusDto> = {}): CollectionSta
 const stream = () => FakeEventSource.instances[FakeEventSource.instances.length - 1]
 
 const push = async (items: CollectionStatusDto[]) => {
-  stream().onmessage?.({ data: JSON.stringify(items) } as MessageEvent)
+  stream().dispatchEvent(new MessageEvent('message', { data: JSON.stringify(items) }))
   await flushPromises()
 }
 
