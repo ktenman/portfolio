@@ -127,6 +127,30 @@ describe('monitoring-view', () => {
     expect(wrapper.find('tbody tr').text()).toContain('Vanguard')
   })
 
+  it('keeps a row in place while its run starts and finishes', async () => {
+    const binance = collection({ key: 'BINANCE_PRICES', provider: 'binance' })
+    const vanguard = collection({ key: 'VANGUARD_HOLDINGS', provider: 'vanguard' })
+    const wrapper = await render([binance, vanguard])
+    await push([binance, { ...vanguard, status: CollectionStatus.RUNNING }])
+    expect(wrapper.find('tbody tr').text()).toContain('Binance')
+  })
+
+  it('lists running collections first when the status header is clicked', async () => {
+    const wrapper = await render([
+      collection({ key: 'BINANCE_PRICES', provider: 'binance' }),
+      collection({
+        key: 'VANGUARD_HOLDINGS',
+        provider: 'vanguard',
+        status: CollectionStatus.RUNNING,
+      }),
+    ])
+    await wrapper
+      .findAll('th')
+      .find(th => th.text().includes('Status'))!
+      .trigger('click')
+    expect(wrapper.find('tbody tr').text()).toContain('Vanguard')
+  })
+
   it('sorts by provider when its header is clicked', async () => {
     const wrapper = await render([
       collection({ key: 'B', provider: 'vanguard' }),
