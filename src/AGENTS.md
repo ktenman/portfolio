@@ -49,7 +49,7 @@ export GRADLE_OPTS="--enable-native-access=ALL-UNNAMED"
 - Use `also`, `apply`, `let`, `run`, `with` appropriately
 - Prefer functional transformations (`map`, `filter`, `fold`) over imperative loops
 - Use `generateSequence` instead of while loops with mutable state
-- Prefer imports over fully qualified names (use `BigDecimal` not `java.math.BigDecimal`)
+- Never write fully qualified names in code — import the type: `method: Method`, not `method: java.lang.reflect.Method`; `BigDecimal`, not `java.math.BigDecimal`. Alias a clashing import with `import ... as ...`
 
 ## Spring Framework Guidelines
 
