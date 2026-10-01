@@ -100,7 +100,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, defineAsyncComponent, onMounted } from 'vue'
-import { useNow, useLocalStorage } from '@vueuse/core'
+import { useIntervalFn, useNow, useLocalStorage } from '@vueuse/core'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
 import { useDiversificationPlatforms } from '../../composables/use-diversification-platforms'
@@ -136,7 +136,7 @@ const {
   staleTime: REFETCH_INTERVALS.DIVERSIFICATION_ETFS,
 })
 
-const now = useNow({ interval: 60000 })
+const now = useNow({ scheduler: update => useIntervalFn(update, 60000) })
 const lastUpdatedText = computed(() => {
   if (!dataUpdatedAt.value) return ''
   return formatRelativeTime(dataUpdatedAt.value, now.value.getTime())

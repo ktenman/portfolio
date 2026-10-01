@@ -114,7 +114,6 @@ export class FakeEventSource extends EventTarget {
   static instances: FakeEventSource[] = []
   readyState = 0
   onerror: ((event: Event) => void) | null = null
-  onmessage: ((event: MessageEvent) => void) | null = null
 
   constructor(readonly url: string) {
     super()
