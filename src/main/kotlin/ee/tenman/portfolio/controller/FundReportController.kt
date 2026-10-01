@@ -4,7 +4,6 @@ import ee.tenman.portfolio.service.infrastructure.MinioService
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.CacheControl
 import org.springframework.http.ContentDisposition
-import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -34,13 +33,7 @@ class FundReportController(
     ResponseEntity
       .ok()
       .contentType(MediaType.APPLICATION_PDF)
-      .header(
-        HttpHeaders.CONTENT_DISPOSITION,
-        ContentDisposition
-        .inline()
-        .filename("$isin-$asOfDate.pdf")
-        .build()
-        .toString(),
-          ).cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
+      .headers { it.contentDisposition = ContentDisposition.inline().filename("$isin-$asOfDate.pdf").build() }
+      .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
       .body(report)
 }
