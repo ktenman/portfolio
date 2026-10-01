@@ -25,9 +25,10 @@ import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.blackrock.BlackRockFund
 import ee.tenman.portfolio.blackrock.BlackRockHoldingsService
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
 import ee.tenman.portfolio.lightyear.LightyearPriceService
-import ee.tenman.portfolio.lightyear.LightyearUuidCacheService
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import ee.tenman.portfolio.trading212.Trading212Service
 import feign.FeignException
@@ -52,7 +53,7 @@ class RetryIT {
   private lateinit var lightyearHistoricalPricesService: LightyearHistoricalPricesService
 
   @Resource
-  private lateinit var lightyearUuidCacheService: LightyearUuidCacheService
+  private lateinit var instrumentRepository: InstrumentRepository
 
   @Resource
   private lateinit var blackRockHoldingsService: BlackRockHoldingsService
@@ -79,7 +80,7 @@ class RetryIT {
 
   @Test
   fun `should return lightyear holdings after one 503`() {
-    lightyearUuidCacheService.cacheUuid("VXUS:XNAS:USD", LIGHTYEAR_UUID)
+    saveLightyearInstrument()
     stubFailingOnce({ lightyear(HOLDINGS) }, okJson("""[{"name":"Nestlé SA","value":2.5,"instrumentId":null}]"""))
     expect(lightyearPriceService.fetchHoldingsAsDto("VXUS:XNAS:USD").map { it.name }).toContainExactly("Nestlé SA")
     verify(2, lightyearRequests(HOLDINGS))
@@ -96,7 +97,7 @@ class RetryIT {
   @ParameterizedTest
   @ValueSource(ints = [401, 404, 429])
   fun `should not retry lightyear holdings after a client error`(code: Int) {
-    lightyearUuidCacheService.cacheUuid("VXUS:XNAS:USD", LIGHTYEAR_UUID)
+    saveLightyearInstrument()
     stubFor(lightyear(HOLDINGS).willReturn(status(code)))
     expect { lightyearPriceService.fetchHoldingsAsDto("VXUS:XNAS:USD") }.toThrow<FeignException.FeignClientException>()
     verify(1, lightyearRequests(HOLDINGS))
@@ -105,7 +106,7 @@ class RetryIT {
   @ParameterizedTest
   @ValueSource(ints = [401, 404, 429])
   fun `should not retry lightyear instrument batches after a client error`(code: Int) {
-    lightyearUuidCacheService.cacheUuid("VXUS:XNAS:USD", LIGHTYEAR_UUID)
+    saveLightyearInstrument()
     stubFor(lightyear(HOLDINGS).willReturn(okJson("""[{"name":"Nestlé SA","value":2.5,"instrumentId":"nestle"}]""")))
     stubFor(post(urlPathEqualTo("/lightyear/batch")).willReturn(status(code)))
     expect(lightyearPriceService.fetchHoldingsAsDto("VXUS:XNAS:USD").map { it.name }).toContainExactly("Nestlé SA")
@@ -186,6 +187,12 @@ class RetryIT {
 
   private fun lightyearRequests(path: String): RequestPatternBuilder =
     getRequestedFor(urlPathEqualTo(LIGHTYEAR_PATH)).withQueryParam("path", equalTo(path))
+
+  private fun saveLightyearInstrument() {
+    instrumentRepository.save(
+      Instrument("VXUS:XNAS:USD", "Vanguard Total International Stock", "ETF", "USD", providerExternalId = LIGHTYEAR_UUID),
+    )
+  }
 
   private fun chart(range: String): String = "/v1/market-data/$LIGHTYEAR_UUID/chart?range=$range"
 

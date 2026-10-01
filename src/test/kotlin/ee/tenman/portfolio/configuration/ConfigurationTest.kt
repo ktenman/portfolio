@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toStartWith
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INTRADAY_REPLAY_CACHE
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.TimeRange
 import org.junit.jupiter.api.Test
@@ -15,6 +16,8 @@ import org.springframework.boot.context.properties.source.ConfigurationPropertyS
 import org.springframework.boot.env.YamlPropertySourceLoader
 import org.springframework.cloud.openfeign.FeignClientProperties
 import org.springframework.core.io.FileSystemResource
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
+import java.time.Duration
 
 class TimeRangeConverterTest {
   private val converter = TimeRangeConverter()
@@ -27,6 +30,15 @@ class TimeRangeConverterTest {
   @Test
   fun `should throw when the range code is unknown`() {
     expect { converter.convert("42Y") }.toThrow<IllegalArgumentException>()
+  }
+}
+
+class RedisConfigurationTest {
+  @Test
+  fun `should expire replayed intraday points after one minute`() {
+    val manager = RedisConfiguration().cacheManager(LettuceConnectionFactory()).apply { initializeCaches() }
+    val ttl = manager.cacheConfigurations[INTRADAY_REPLAY_CACHE]?.ttlFunction
+    expect(ttl?.getTimeToLive("1:LIGHTYEAR", null)).toEqual(Duration.ofMinutes(1))
   }
 }
 
