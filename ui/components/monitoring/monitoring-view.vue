@@ -187,6 +187,9 @@ const SEVERITY: Record<CollectionStatus, number> = {
   [CollectionStatus.DISABLED]: 5,
 }
 
+const settledSeverity = (status: CollectionStatus) =>
+  SEVERITY[status === CollectionStatus.RUNNING ? CollectionStatus.OK : status]
+
 const STREAM_SILENCE_TIMEOUT = 45 * 1000
 
 const STREAM_RETRY_DELAY = 15 * 1000
@@ -241,7 +244,7 @@ const isError = computed(() => !collections.value && !!error.value)
 const rows = computed(() =>
   (collections.value ?? [])
     .map(item => ({ ...item, severity: SEVERITY[item.status] }))
-    .sort((a, b) => a.severity - b.severity)
+    .sort((a, b) => settledSeverity(a.status) - settledSeverity(b.status))
 )
 const { sortedItems, sortState, toggleSort } = useSortableTable(rows)
 
