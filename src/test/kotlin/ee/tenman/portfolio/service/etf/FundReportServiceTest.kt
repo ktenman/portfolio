@@ -42,18 +42,25 @@ class FundReportServiceTest {
   }
 
   @Test
-  fun `should show the short name of a known fund and the reported name of an unknown one`() {
+  fun `should show the short name of a known fund`() {
     val repository = mockk<FundAllocationRepository>()
-    every { repository.findByFundIsin(FUND) } returns
-      listOf(allocation(AUGUST, "IE00BKPTWY98", "12.55"), allocation(AUGUST, "LU0476289540", "2.10"))
-    expect(
-      FundReportService(repository)
+    every { repository.findByFundIsin(FUND) } returns listOf(allocation(AUGUST, "IE00BKPTWY98", "12.55"))
+    expect(names(repository)).toContainExactly("iShares Emerging Markets")
+  }
+
+  @Test
+  fun `should show the reported name of an unknown fund`() {
+    val repository = mockk<FundAllocationRepository>()
+    every { repository.findByFundIsin(FUND) } returns listOf(allocation(AUGUST, "LU0476289540", "2.10"))
+    expect(names(repository)).toContainExactly("Fond LU0476289540 õ")
+  }
+
+  private fun names(repository: FundAllocationRepository) =
+    FundReportService(repository)
       .reports(FUND)
       .single()
       .funds
-      .map { it.name },
-        ).toContainExactly("iShares Emerging Markets", "Fond LU0476289540 õ")
-  }
+      .map { it.name }
 
   private fun allocation(
     date: LocalDate,
