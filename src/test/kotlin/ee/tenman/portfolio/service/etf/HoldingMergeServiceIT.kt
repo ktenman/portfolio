@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.etf
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -68,7 +69,7 @@ class HoldingMergeServiceIT {
   }
 
   @Test
-  fun `should delete colliding duplicate position keeping canonical weight`() {
+  fun `should add colliding duplicate weight onto the canonical position`() {
     val canonical = etfHoldingRepository.save(EtfHolding(name = "Micron"))
     val duplicate = etfHoldingRepository.save(EtfHolding(name = "Micron Technology Inc", ticker = "MU"))
     savePosition(canonical, firstDate, BigDecimal("5.0"))
@@ -76,7 +77,44 @@ class HoldingMergeServiceIT {
 
     holdingMergeService.merge(canonical.id, listOf(duplicate.id))
 
-    expect(etfPositionRepository.findAll().single().weightPercentage).toEqualNumerically(BigDecimal("5.0"))
+    expect(etfPositionRepository.findAll().single().weightPercentage).toEqualNumerically(BigDecimal("14.9"))
+  }
+
+  @Test
+  fun `should add colliding duplicate weight when both positions weigh the same`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "Micron"))
+    val duplicate = etfHoldingRepository.save(EtfHolding(name = "Micron Technology Inc", ticker = "MU"))
+    savePosition(canonical, firstDate, BigDecimal("5.0"))
+    savePosition(duplicate, firstDate, BigDecimal("5.0"))
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    expect(etfPositionRepository.findAll().single().weightPercentage).toEqualNumerically(BigDecimal("10.0"))
+  }
+
+  @Test
+  fun `should keep the lowest rank of colliding positions`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "Micron"))
+    val duplicate = etfHoldingRepository.save(EtfHolding(name = "Micron Technology Inc", ticker = "MU"))
+    savePosition(canonical, firstDate, BigDecimal("5.0"), rank = 9)
+    savePosition(duplicate, firstDate, BigDecimal("9.9"), rank = 4)
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    expect(etfPositionRepository.findAll().single().positionRank).toEqual(4)
+  }
+
+  @Test
+  fun `should sum colliding weights separately on every snapshot date`() {
+    val canonical = etfHoldingRepository.save(EtfHolding(name = "Micron"))
+    val duplicate = etfHoldingRepository.save(EtfHolding(name = "Micron Technology Inc", ticker = "MU"))
+    listOf(firstDate to "5.0", secondDate to "6.0").forEach { (date, weight) -> savePosition(canonical, date, BigDecimal(weight)) }
+    listOf(firstDate to "1.0", secondDate to "2.0").forEach { (date, weight) -> savePosition(duplicate, date, BigDecimal(weight)) }
+
+    holdingMergeService.merge(canonical.id, listOf(duplicate.id))
+
+    val weights = etfPositionRepository.findAll().sortedBy { it.snapshotDate }.map { it.weightPercentage.toInt() }
+    expect(weights).toContainExactly(6, 8)
   }
 
   @Test
@@ -158,7 +196,7 @@ class HoldingMergeServiceIT {
   }
 
   @Test
-  fun `should keep lower id duplicate position when two duplicates collide on same date`() {
+  fun `should sum two duplicates colliding with each other onto the canonical holding`() {
     val canonical = etfHoldingRepository.save(EtfHolding(name = "Beta"))
     val firstDuplicate = etfHoldingRepository.save(EtfHolding(name = "Beta Corp", ticker = "BTA"))
     val secondDuplicate = etfHoldingRepository.save(EtfHolding(name = "Beta Inc", ticker = "BTB"))
@@ -168,7 +206,7 @@ class HoldingMergeServiceIT {
     holdingMergeService.merge(canonical.id, listOf(firstDuplicate.id, secondDuplicate.id))
 
     val surviving = etfPositionRepository.findAll().single()
-    expect(surviving.holding.id to surviving.weightPercentage.compareTo(BigDecimal("7.0"))).toEqual(canonical.id to 0)
+    expect(surviving.holding.id to surviving.weightPercentage.compareTo(BigDecimal("15.0"))).toEqual(canonical.id to 0)
   }
 
   @Test
@@ -321,9 +359,10 @@ class HoldingMergeServiceIT {
     holding: EtfHolding,
     date: LocalDate,
     weight: BigDecimal,
+    rank: Int = 1,
   ) {
     etfPositionRepository.save(
-      EtfPosition(etfInstrument = etf, holding = holding, snapshotDate = date, weightPercentage = weight, positionRank = 1),
+      EtfPosition(etfInstrument = etf, holding = holding, snapshotDate = date, weightPercentage = weight, positionRank = rank),
     )
   }
 }
