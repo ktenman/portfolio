@@ -420,6 +420,17 @@ describe('EtfBreakdownChart', () => {
       expect(wrapper.find('.breakdown-row').attributes('title')).toBe('Banks 9.20% · VGLA 4.00%')
     })
 
+    it('shows a supplied legend in place of the ranked bars', () => {
+      const wrapper = mount(EtfBreakdownChart, {
+        props: { chartData: mockChartData, view: 'bars' },
+        slots: { legend: '<table class="own-legend"></table>' },
+      })
+      expect([
+        wrapper.find('.own-legend').exists(),
+        wrapper.findAll('.breakdown-row').length,
+      ]).toEqual([true, 0])
+    })
+
     it('keeps the donut when no view is given', () => {
       const wrapper = mount(EtfBreakdownChart, { props: { chartData: mockChartData } })
       expect(wrapper.find('canvas').exists()).toBe(true)

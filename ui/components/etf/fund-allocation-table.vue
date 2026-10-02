@@ -24,6 +24,7 @@
         <tr>
           <th>Fund</th>
           <th class="num">Weight</th>
+          <th v-if="bars" aria-hidden="true"></th>
         </tr>
       </thead>
       <tbody>
@@ -51,6 +52,17 @@
             </div>
           </td>
           <td class="num">{{ row.weight === null ? '—' : formatPercentage(row.weight) }}</td>
+          <td v-if="bars" class="bar-cell" aria-hidden="true">
+            <span v-if="row.slice" class="fund-track">
+              <span
+                class="fund-bar"
+                :style="{
+                  width: `${(row.slice.value / scale) * 100}%`,
+                  backgroundColor: row.slice.color,
+                }"
+              ></span>
+            </span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -76,6 +88,7 @@ const props = defineProps<{
   reports: FundReportDto[]
   slices: BreakdownRow[]
   activeIndex: number | null
+  bars?: boolean
 }>()
 
 const reportIndex = defineModel<number>('reportIndex', { required: true })
@@ -86,6 +99,8 @@ const emit = defineEmits<{
 }>()
 
 const report = computed(() => props.reports[reportIndex.value])
+
+const scale = computed(() => Math.max(...props.slices.map(slice => slice.value)))
 
 const rows = computed(() => {
   const slices = new Map(props.slices.map((slice, index) => [slice.label, { index, ...slice }]))
@@ -161,6 +176,24 @@ const rows = computed(() => {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.fund-table .bar-cell {
+  width: 50%;
+  vertical-align: middle;
+}
+
+.fund-track {
+  display: block;
+  height: 0.5rem;
+  background: var(--color-surface-sunken);
+  border-radius: 2px;
+}
+
+.fund-bar {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
 }
 
 .fund-cell {

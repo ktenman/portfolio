@@ -175,6 +175,7 @@ onBeforeUnmount(() => {
   left: 50%;
   transform: translateX(-50%);
   aspect-ratio: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;

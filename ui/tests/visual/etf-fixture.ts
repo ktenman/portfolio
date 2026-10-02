@@ -232,7 +232,11 @@ const TULEVA_REPORTS: FundReportDto[] = [
       { isin: 'IE000I9HGDZ3', name: 'Xtrackers MSCI World Screened UCITS ETF', weight: 29.36 },
       { isin: 'IE000QWCYQT0', name: 'iShares MSCI World Screened UCITS ETF', weight: 28.9 },
       { isin: 'LU0476289540', name: 'Amundi Prime Global UCITS ETF', weight: 26.95 },
-      { isin: 'IE00BKPTWY98', name: 'iShares Emerging Markets Screened Equity', weight: 12.55 },
+      {
+        isin: 'IE00BKPTWY98',
+        name: 'iShares Emerging Market Screened Equity Index Fund (IE) BlackRock Asset Management Ireland Ltd',
+        weight: 12.55,
+      },
     ],
   },
   {
@@ -241,7 +245,11 @@ const TULEVA_REPORTS: FundReportDto[] = [
       { isin: 'IE000I9HGDZ3', name: 'Xtrackers MSCI World Screened UCITS ETF', weight: 29.67 },
       { isin: 'IE0009FT4LX4', name: 'CCF Developed World Screened Index Fund', weight: 29.39 },
       { isin: 'LU0476289540', name: 'Amundi Prime Global UCITS ETF', weight: 26.4 },
-      { isin: 'IE00BKPTWY98', name: 'iShares Emerging Markets Screened Equity', weight: 11.61 },
+      {
+        isin: 'IE00BKPTWY98',
+        name: 'iShares Emerging Market Screened Equity Index Fund (IE) BlackRock Asset Management Ireland Ltd',
+        weight: 11.61,
+      },
     ],
   },
 ]
