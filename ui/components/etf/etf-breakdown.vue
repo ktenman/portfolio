@@ -52,7 +52,7 @@
     <div v-if="!isLoading && holdings.length > 0" class="charts-section mb-6">
       <etf-breakdown-chart
         :chart-data="activeChartData"
-        :view="shownTab === 'funds' ? 'donut' : view"
+        :view="view"
         :benchmark-label="benchmarkLabel"
       >
         <template #actions>
@@ -70,8 +70,8 @@
                 {{ tab.label }}
               </button>
             </div>
-            <div v-if="shownTab !== 'funds'" class="breakdown-controls">
-              <template v-if="!benchmarkUnavailable">
+            <div class="breakdown-controls">
+              <template v-if="shownTab !== 'funds' && !benchmarkUnavailable">
                 <span class="platform-separator" aria-hidden="true"></span>
                 <label class="compare-switch compare-toggle">
                   <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
@@ -92,6 +92,7 @@
             :reports="fundReports"
             :slices="activeChartData"
             :active-index="activeIndex"
+            :bars="view === 'bars'"
             @hover="focus"
             @leave="clear"
           />

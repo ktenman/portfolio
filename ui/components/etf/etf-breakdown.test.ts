@@ -731,7 +731,7 @@ describe('etf-breakdown', () => {
     ])
   })
 
-  it('charts the Funds tab as a donut even when bars are the stored view', async () => {
+  it('charts the Funds tab as bars when bars are the stored view', async () => {
     withTuleva()
     localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
 
@@ -739,7 +739,39 @@ describe('etf-breakdown', () => {
     await flushPromises()
     await clickTab(wrapper, 'Funds')
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('donut')
+    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('bars')
+  })
+
+  it('scales the fund bars to the largest weight on the Funds tab', async () => {
+    withTuleva()
+    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    const widths = wrapper.findAll('.fund-bar').map(bar => (bar.element as HTMLElement).style.width)
+    expect(widths.map(width => Math.round(parseFloat(width)))).toEqual([100, 71, 0])
+  })
+
+  it('draws no fund bars on the Funds tab in the donut view', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.find('.fund-bar').exists()).toBe(false)
+  })
+
+  it('keeps the chart style switch on the Funds tab', async () => {
+    withTuleva()
+
+    const wrapper = mountWithChartStub()
+    await flushPromises()
+    await clickTab(wrapper, 'Funds')
+
+    expect(wrapper.find('.view-switch').exists()).toBe(true)
   })
 
   it('hides the compare toggle on the Funds tab', async () => {
