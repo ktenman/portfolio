@@ -152,26 +152,6 @@ class LogoReplacementServiceTest {
   }
 
   @Nested
-  inner class PrefetchCandidates {
-    @Test
-    fun `should prefetch candidates for multiple holdings`() {
-      val uuid1 = UUID.randomUUID()
-      val uuid2 = UUID.randomUUID()
-      every { logoCandidateCacheService.getCachedData(uuid1) } returns null
-      every { logoCandidateCacheService.getCachedData(uuid2) } returns null
-      every { etfHoldingRepository.findByUuid(uuid1) } returns null
-      every { etfHoldingRepository.findByUuid(uuid2) } returns null
-
-      service.prefetchCandidates(listOf(uuid1, uuid2))
-    }
-
-    @Test
-    fun `should handle empty list gracefully`() {
-      service.prefetchCandidates(emptyList())
-    }
-  }
-
-  @Nested
   inner class SearchByName {
     @Test
     fun `should return cached candidates when available`() {
