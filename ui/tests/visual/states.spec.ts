@@ -238,6 +238,15 @@ test.describe('desktop states', () => {
     await expect(page).toHaveScreenshot('summary-performance-mode.png')
   })
 
+  test('the Funds tab charts the Tuleva report as bars', async ({ page }) => {
+    await stubEtfBreakdownWithTuleva(page)
+    await openRoute(page, '/etf-breakdown')
+    await page.click('.breakdown-tab:text-is("Funds")')
+    await page.click('.view-btn[aria-label="Bars"]')
+    await settleAndFreeze(page)
+    await expect(page).toHaveScreenshot('etf-breakdown-funds-bars.png', { fullPage: true })
+  })
+
   test('the Funds tab shows the latest Tuleva report', async ({ page }) => {
     await stubEtfBreakdownWithTuleva(page)
     await openRoute(page, '/etf-breakdown')

@@ -4,7 +4,12 @@
       <div class="chart-header mb-4">
         <slot name="actions" />
       </div>
-      <breakdown-bars v-if="view === 'bars'" :rows="chartData" :benchmark-label="benchmarkLabel" />
+      <slot v-if="view === 'bars' && $slots.legend" name="legend" :active-index="null" />
+      <breakdown-bars
+        v-else-if="view === 'bars'"
+        :rows="chartData"
+        :benchmark-label="benchmarkLabel"
+      />
       <breakdown-donut v-else :rows="chartData">
         <template v-if="$slots.legend" #legend="legend">
           <slot name="legend" v-bind="legend" />
