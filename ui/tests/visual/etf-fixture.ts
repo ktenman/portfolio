@@ -222,7 +222,6 @@ export const stubEtfBreakdown: RouteStub = async page => {
     route.fulfill({ status: 200, contentType: 'image/svg+xml', body: LOGO_SVG })
   )
   await page.route('**/api/logos/*/candidates', route => route.fulfill({ json: [] }))
-  await page.route('**/api/logos/prefetch', route => route.fulfill({ status: 204 }))
 }
 
 const TULEVA_REPORTS: FundReportDto[] = [

@@ -15,10 +15,6 @@ data class LogoReplacementRequest(
   val candidateIndex: Int,
 )
 
-data class PrefetchRequest(
-  val holdingUuids: List<UUID>,
-)
-
 data class DetectionResult(
   val plateNumber: String? = null,
   val provider: VisionModel? = null,

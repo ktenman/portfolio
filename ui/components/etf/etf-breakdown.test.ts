@@ -28,7 +28,6 @@ vi.mock('../../services/api', () => ({
     refreshPrices: vi.fn().mockResolvedValue({ status: 'ok' }),
   },
   logoService: {
-    prefetchCandidates: vi.fn().mockResolvedValue(undefined),
     getLogoUrl: (uuid: string) => `/api/logos/${uuid}`,
   },
 }))

@@ -155,12 +155,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
-import {
-  etfBreakdownService,
-  fundReportService,
-  instrumentsService,
-  logoService,
-} from '../../services/api'
+import { etfBreakdownService, fundReportService, instrumentsService } from '../../services/api'
 import {
   buildSectorChartData,
   buildIndustryChartData,
@@ -457,15 +452,6 @@ const clearSearch = () => {
   searchQuery.value = ''
 }
 
-const prefetchLogoCandidates = () => {
-  const uuids = masterHoldings.value
-    .map(h => h.holdingUuid)
-    .filter((uuid): uuid is string => uuid !== null)
-  if (uuids.length > 0) {
-    logoService.prefetchCandidates(uuids)
-  }
-}
-
 const loadAllInstruments = async () => {
   try {
     const response = await instrumentsService.getAll()
@@ -504,7 +490,6 @@ const currencySplit = computed(() => {
 
 onMounted(async () => {
   await loadBreakdown()
-  prefetchLogoCandidates()
   loadAllInstruments()
   loadPlatformInstruments()
 })

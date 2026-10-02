@@ -181,9 +181,6 @@ export const logoService = {
   replaceLogo: (request: LogoReplacementRequest) =>
     httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/replace`, request),
 
-  prefetchCandidates: (holdingUuids: string[]) =>
-    httpClient.post<void>(`${API_ENDPOINTS.LOGOS}/prefetch`, { holdingUuids }),
-
   getLogoUrl: (uuid: string): string => `/api${API_ENDPOINTS.LOGOS}/${uuid}`,
 }
 

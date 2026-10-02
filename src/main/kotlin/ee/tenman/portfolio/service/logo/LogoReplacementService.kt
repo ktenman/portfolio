@@ -10,7 +10,6 @@ import ee.tenman.portfolio.service.infrastructure.MinioService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
@@ -172,25 +171,6 @@ class LogoReplacementService(
     logoCandidateCacheService.clearCache(holdingUuid)
     log.info("Successfully replaced logo for holding: ${holding.name}")
     return true
-  }
-
-  fun prefetchCandidates(holdingUuids: List<UUID>) {
-    log.info("Starting prefetch for ${holdingUuids.size} holdings")
-    val batches = holdingUuids.chunked(properties.prefetchBatchSize)
-    log.info("Processing ${batches.size} batches of ${properties.prefetchBatchSize}")
-    runBlocking(Dispatchers.IO.limitedParallelism(properties.parallelPrefetchThreads)) {
-      batches.forEachIndexed { index, batch ->
-        if (index > 0) delay(properties.prefetchBatchDelayMs)
-        batch
-          .map { uuid ->
-            async {
-              runCatching { getCandidates(uuid) }
-                .onFailure { log.debug("Prefetch failed for $uuid: ${it.message}") }
-            }
-          }.awaitAll()
-      }
-    }
-    log.info("Prefetch completed for ${holdingUuids.size} holdings")
   }
 
   @Suppress("ReturnCount")
