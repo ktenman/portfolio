@@ -10,7 +10,6 @@ import ee.tenman.portfolio.repository.EtfPositionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
 
 @Service
 class HoldingMergeService(
@@ -43,31 +42,26 @@ class HoldingMergeService(
     canonical: EtfHolding,
     duplicates: List<EtfHolding>,
   ) {
-    val retainedWeights =
+    val retained =
       etfPositionRepository
         .findByHoldingId(canonical.id)
-        .associateTo(mutableMapOf()) { (it.etfInstrument.id to it.snapshotDate) to it.weightPercentage }
+        .associateByTo(mutableMapOf()) { it.etfInstrument.id to it.snapshotDate }
     val positionsByDuplicate = etfPositionRepository.findByHoldingIdIn(duplicates.map { it.id }).groupBy { it.holding.id }
     duplicates.forEach { duplicate ->
       positionsByDuplicate[duplicate.id].orEmpty().forEach { position ->
-        val key = position.etfInstrument.id to position.snapshotDate
-        val retained = retainedWeights.putIfAbsent(key, position.weightPercentage)
-        if (retained != null) return@forEach discardCollidingPosition(position, retained)
+        val kept = retained.putIfAbsent(position.etfInstrument.id to position.snapshotDate, position)
+        if (kept != null) return@forEach absorb(kept, position)
         position.holding = canonical
       }
     }
   }
 
-  private fun discardCollidingPosition(
+  private fun absorb(
+    kept: EtfPosition,
     position: EtfPosition,
-    retainedWeight: BigDecimal,
   ) {
-    if (position.weightPercentage.compareTo(retainedWeight) != 0) {
-      log.warn(
-        "Discarding colliding holding position weight=${position.weightPercentage} keeping=$retainedWeight " +
-          "for etf=${position.etfInstrument.id} date=${position.snapshotDate}",
-      )
-    }
+    kept.weightPercentage = kept.weightPercentage.add(position.weightPercentage)
+    kept.positionRank = listOfNotNull(kept.positionRank, position.positionRank).minOrNull()
     etfPositionRepository.delete(position)
   }
 
