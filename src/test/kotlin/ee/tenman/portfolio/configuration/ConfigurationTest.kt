@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toStartWith
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INTRADAY_REPLAY_CACHE
+import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.LOGO_CANDIDATES_CACHE
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.TimeRange
 import org.junit.jupiter.api.Test
@@ -39,6 +40,13 @@ class RedisConfigurationTest {
     val manager = RedisConfiguration().cacheManager(LettuceConnectionFactory()).apply { initializeCaches() }
     val ttl = manager.cacheConfigurations[INTRADAY_REPLAY_CACHE]?.ttlFunction
     expect(ttl?.getTimeToLive("1:LIGHTYEAR", null)).toEqual(Duration.ofMinutes(1))
+  }
+
+  @Test
+  fun `should expire logo candidate images after one hour`() {
+    val manager = RedisConfiguration().cacheManager(LettuceConnectionFactory()).apply { initializeCaches() }
+    val ttl = manager.cacheConfigurations[LOGO_CANDIDATES_CACHE]?.ttlFunction
+    expect(ttl?.getTimeToLive("7c9e6679-7425-40de-944b-e07fc1f90ae7", null)).toEqual(Duration.ofHours(1))
   }
 }
 

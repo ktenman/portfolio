@@ -29,6 +29,7 @@ services:
   redis:
     container_name: redis
     image: redis:8-alpine
+    command: redis-server --maxmemory 768mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
@@ -37,6 +38,7 @@ services:
       timeout: 1s
       retries: 5
     restart: always
+    mem_limit: 1024m
 
   seaweedfs:
     container_name: seaweedfs

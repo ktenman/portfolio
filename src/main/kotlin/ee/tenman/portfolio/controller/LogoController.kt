@@ -2,7 +2,6 @@ package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.dto.LogoCandidateDto
 import ee.tenman.portfolio.dto.LogoReplacementRequest
-import ee.tenman.portfolio.dto.PrefetchRequest
 import ee.tenman.portfolio.service.infrastructure.MinioService
 import ee.tenman.portfolio.service.logo.LogoReplacementService
 import org.slf4j.LoggerFactory
@@ -73,14 +72,5 @@ class LogoController(
     } else {
       ResponseEntity.badRequest().body(mapOf("success" to false, "message" to "Failed to replace logo"))
     }
-  }
-
-  @PostMapping("/prefetch")
-  fun prefetchCandidates(
-    @RequestBody request: PrefetchRequest,
-  ): ResponseEntity<Map<String, Any>> {
-    log.info("Prefetching logo candidates for ${request.holdingUuids.size} holdings")
-    Thread.startVirtualThread { logoReplacementService.prefetchCandidates(request.holdingUuids) }
-    return ResponseEntity.ok(mapOf("success" to true, "message" to "Prefetch started"))
   }
 }
