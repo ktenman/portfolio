@@ -246,6 +246,15 @@ test.describe('desktop states', () => {
     await expect(page).toHaveScreenshot('etf-breakdown-funds.png', { fullPage: true })
   })
 
+  test('hovering a long fund name keeps the donut label inside the ring', async ({ page }) => {
+    await stubEtfBreakdownWithTuleva(page)
+    await openRoute(page, '/etf-breakdown')
+    await page.click('.breakdown-tab:text-is("Funds")')
+    await settleAndFreeze(page)
+    await page.hover('.fund-table tr:has-text("Emerging")')
+    await expect(page).toHaveScreenshot('etf-breakdown-funds-hover.png', { fullPage: true })
+  })
+
   test('selecting both benchmarks overlays three lines', async ({ page }) => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
