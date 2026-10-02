@@ -16,7 +16,6 @@
           v-if="!isLoading"
           :selected-etfs="selectedEtfs"
           :available-etfs="availableEtfs"
-          :report-date="fundsTabShown ? fundReports[0].asOfDate : undefined"
         />
       </div>
       <div v-if="filtersOpen && availableEtfs.length > 0" class="etf-filter-container mt-3">

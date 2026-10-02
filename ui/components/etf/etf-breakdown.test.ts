@@ -785,12 +785,12 @@ describe('etf-breakdown', () => {
     expect(wrapper.find('.compare-toggle').exists()).toBe(false)
   })
 
-  it('links the latest Tuleva report from the subtitle', async () => {
+  it('keeps the Tuleva report link out of the subtitle', async () => {
     withTuleva()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
 
-    expect(wrapper.find('.page-subtitle .report-link').text()).toBe('Tuleva report 31.08.2026')
+    expect(wrapper.find('.page-subtitle a').exists()).toBe(false)
   })
 })
