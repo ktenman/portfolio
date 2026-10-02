@@ -23,6 +23,7 @@ import java.time.LocalDate
 class EtfHoldingService(
   private val etfHoldingPersistenceService: EtfHoldingPersistenceService,
   private val holdingIdentityService: HoldingIdentityService,
+  private val holdingWriteLock: HoldingWriteLock,
   private val minioService: MinioService,
   private val imageDownloadService: ImageDownloadService,
   private val imageProcessingService: ImageProcessingService,
@@ -47,7 +48,7 @@ class EtfHoldingService(
     holdings: List<HoldingData>,
   ) {
     val reuseHints = resolveReuseHints(holdings)
-    val savedHoldings = etfHoldingPersistenceService.saveHoldings(etfSymbol, date, holdings, reuseHints)
+    val savedHoldings = holdingWriteLock.exclusively { etfHoldingPersistenceService.saveHoldings(etfSymbol, date, holdings, reuseHints) }
     holdings.forEach { holdingData ->
       val holding = savedHoldings[holdingData.name] ?: return@forEach
       downloadLightyearLogo(holding, holdingData.logoUrl)

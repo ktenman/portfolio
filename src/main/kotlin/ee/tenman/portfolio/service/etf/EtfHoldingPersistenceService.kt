@@ -39,17 +39,12 @@ class EtfHoldingPersistenceService(
     holdings.requireImportable(etfSymbol, date)
     val etf = findOrCreateEtf(etfSymbol)
     log.info("Saving ${holdings.size} holdings for ETF $etfSymbol on $date")
-    val savedHoldings = mutableMapOf<String, EtfHolding>()
-    val claimedHoldingIds = mutableSetOf<Long>()
-    holdings.forEachIndexed { index, holdingData ->
-      val holding = resolveHolding(holdingData, reuseHints[index]?.takeIf { it !in claimedHoldingIds })
-      claimedHoldingIds.add(holding.id)
-      savedHoldings[holdingData.name] = holding
-      upsertPosition(etf, holding, date, holdingData)
-    }
-    etfPositionRepository.deleteMissingHoldings(etf.id, date, claimedHoldingIds)
-    log.info("Successfully saved ${holdings.size} holdings for ETF $etfSymbol")
-    return savedHoldings
+    val resolved = holdings.mapIndexed { index, holdingData -> holdingData to resolveHolding(holdingData, reuseHints[index]) }
+    val rowsByHolding = resolved.groupBy { (_, holding) -> holding.id }
+    rowsByHolding.values.forEach { upsertPosition(etf, date, it) }
+    etfPositionRepository.deleteMissingHoldings(etf.id, date, rowsByHolding.keys)
+    log.info("Saved ${holdings.size} holdings as ${rowsByHolding.size} positions for ETF $etfSymbol on $date")
+    return resolved.associate { (holdingData, holding) -> holdingData.name to holding }
   }
 
   private fun resolveHolding(
@@ -82,28 +77,17 @@ class EtfHoldingPersistenceService(
 
   private fun upsertPosition(
     etf: Instrument,
-    holding: EtfHolding,
     date: LocalDate,
-    holdingData: HoldingData,
+    rows: List<Pair<HoldingData, EtfHolding>>,
   ) {
-    val existingPosition =
-      etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(
-        etfInstrument = etf,
-        holdingId = holding.id,
-        snapshotDate = date,
-      )
+    val holding = rows.first().second
+    val weight = rows.sumOf { it.first.weight }
+    val rank = rows.minOf { it.first.rank }
     val position =
-      existingPosition ?: EtfPosition(
-        etfInstrument = etf,
-        holding = holding,
-        snapshotDate = date,
-        weightPercentage = holdingData.weight,
-        positionRank = holdingData.rank,
-      )
-    if (existingPosition != null) {
-      position.weightPercentage = holdingData.weight
-      position.positionRank = holdingData.rank
-    }
+      etfPositionRepository.findByEtfInstrumentAndHoldingIdAndSnapshotDate(etf, holding.id, date)
+        ?: EtfPosition(etfInstrument = etf, holding = holding, snapshotDate = date, weightPercentage = weight, positionRank = rank)
+    position.weightPercentage = weight
+    position.positionRank = rank
     etfPositionRepository.save(position)
   }
 

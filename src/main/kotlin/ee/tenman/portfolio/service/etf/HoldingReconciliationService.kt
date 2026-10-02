@@ -14,6 +14,7 @@ class HoldingReconciliationService(
   private val etfHoldingRepository: EtfHoldingRepository,
   private val holdingIdentityService: HoldingIdentityService,
   private val holdingMergeService: HoldingMergeService,
+  private val holdingWriteLock: HoldingWriteLock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -29,7 +30,7 @@ class HoldingReconciliationService(
 
   private fun executeMerges(plans: List<HoldingMergePlan>): List<HoldingMergePlan> =
     plans.filter { plan ->
-      runCatching { holdingMergeService.merge(plan.canonicalId, plan.duplicateIds) }
+      runCatching { holdingWriteLock.exclusively { holdingMergeService.merge(plan.canonicalId, plan.duplicateIds) } }
         .onFailure { log.error("Failed to merge holding group canonical=${plan.canonicalId} duplicates=${plan.duplicateIds}", it) }
         .isSuccess
     }
@@ -46,6 +47,7 @@ class HoldingReconciliationService(
           canonicalId = cluster.first().id,
           canonicalName = cluster.first().name,
           duplicateIds = cluster.drop(1).map { it.id },
+          duplicateNames = cluster.drop(1).map { it.name },
         )
       }
   }
@@ -78,7 +80,7 @@ class HoldingReconciliationService(
   private fun logPlan(plan: HoldingMergePlan) {
     log.info(
       "Merge plan: canonical '${LogSanitizerUtil.sanitize(plan.canonicalName)}' (id=${plan.canonicalId}) " +
-        "absorbs ${plan.duplicateIds.size} duplicates ${plan.duplicateIds}",
+        "absorbs ${plan.duplicateIds.size} duplicates ${plan.duplicateIds} named '${LogSanitizerUtil.sanitize(plan.duplicateNames)}'",
     )
   }
 }

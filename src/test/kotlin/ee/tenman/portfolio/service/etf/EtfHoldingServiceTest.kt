@@ -42,6 +42,7 @@ class EtfHoldingServiceTest {
       EtfHoldingService(
         etfHoldingPersistenceService,
         holdingIdentityService,
+        HoldingWriteLock(),
         minioService,
         imageDownloadService,
         imageProcessingService,
