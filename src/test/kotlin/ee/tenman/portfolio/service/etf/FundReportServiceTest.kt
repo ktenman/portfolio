@@ -41,6 +41,20 @@ class FundReportServiceTest {
     expect(FundReportService(repository).reports(FUND).map { it.funds.size }).toContainExactly(1, 1)
   }
 
+  @Test
+  fun `should show the short name of a known fund and the reported name of an unknown one`() {
+    val repository = mockk<FundAllocationRepository>()
+    every { repository.findByFundIsin(FUND) } returns
+      listOf(allocation(AUGUST, "IE00BKPTWY98", "12.55"), allocation(AUGUST, "LU0476289540", "2.10"))
+    expect(
+      FundReportService(repository)
+      .reports(FUND)
+      .single()
+      .funds
+      .map { it.name },
+        ).toContainExactly("iShares Emerging Markets", "Fond LU0476289540 õ")
+  }
+
   private fun allocation(
     date: LocalDate,
     isin: String,

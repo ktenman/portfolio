@@ -23,6 +23,22 @@ class FundReportService(
   private fun report(rows: List<FundAllocation>): FundReportDto =
     FundReportDto(
       asOfDate = rows.first().asOfDate,
-      funds = rows.sortedByDescending { it.weight }.map { FundWeightDto(it.underlyingIsin, it.underlyingName, it.weight) },
+      funds = rows.sortedByDescending { it.weight }.map { FundWeightDto(it.underlyingIsin, name(it), it.weight) },
     )
+
+  private fun name(row: FundAllocation): String = NAMES[row.underlyingIsin] ?: row.underlyingName
+
+  companion object {
+    private val NAMES =
+      mapOf(
+        "IE00BFG1TM61" to "BlackRock ISF World",
+        "IE0009FT4LX4" to "BlackRock CCF World",
+        "IE000I9HGDZ3" to "Xtrackers World Screened",
+        "IE000QWCYQT0" to "Amundi World Screened",
+        "IE00BFNM3D14" to "iShares Europe Screened",
+        "IE00BFNM3G45" to "iShares USA Screened",
+        "IE00BFNM3L97" to "iShares Japan Screened",
+        "IE00BKPTWY98" to "iShares Emerging Markets",
+      )
+  }
 }
