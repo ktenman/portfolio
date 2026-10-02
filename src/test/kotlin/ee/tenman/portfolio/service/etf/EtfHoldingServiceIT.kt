@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.etf
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
@@ -302,28 +303,46 @@ class EtfHoldingServiceIT {
   }
 
   @Test
-  fun `should not collapse two distinct share classes onto one position within a single snapshot`() {
-    val legacy =
-      listOf(
-        HoldingData(name = "Alphabet", ticker = null, sector = null, weight = BigDecimal("10.0"), rank = 1, logoUrl = null),
-      )
-    etfHoldingService.saveHoldings("IITU", testDate, legacy)
-    holdingIdentityService.answerPairs(
-      mapOf(
-        IdentityPair("Alphabet", "Alphabet Class A", "GOOGL") to true,
-        IdentityPair("Alphabet", "Alphabet Class C", "GOOG") to true,
-      )::get,
-    )
-
-    val shareClasses =
-      listOf(
-        HoldingData(name = "Alphabet Class A", ticker = "GOOGL", sector = null, weight = BigDecimal("6.0"), rank = 1, logoUrl = null),
-        HoldingData(name = "Alphabet Class C", ticker = "GOOG", sector = null, weight = BigDecimal("4.0"), rank = 2, logoUrl = null),
-      )
+  fun `should sum share classes confirmed as one issuer into a single position`() {
+    etfHoldingService.saveHoldings("IITU", testDate, listOf(row("Alphabet", null, "10.0", 1)))
+    holdingIdentityService.answerPairs { true }
+    val shareClasses = listOf(row("Alphabet Class A", "GOOGL", "6.0", 1), row("Alphabet Class C", "GOOG", "4.0", 2))
     etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), shareClasses)
+    expect(weightsOn(testDate.plusDays(1))).toContainExactly(BigDecimal("10.0"))
+  }
 
-    val snapshotPositions = etfPositionRepository.findAll().filter { it.snapshotDate == testDate.plusDays(1) }
-    expect(snapshotPositions).toHaveSize(2)
+  @Test
+  fun `should sum a hinted share class with a later row carrying the holding name`() {
+    etfHoldingService.saveHoldings("IITU", testDate, listOf(row("Alphabet", null, "10.0", 1)))
+    holdingIdentityService.answerPairs { true }
+    val feed = listOf(row("Alphabet Class A", "GOOGL", "6.0", 1), row("Alphabet", null, "4.0", 2))
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), feed)
+    expect(weightsOn(testDate.plusDays(1))).toContainExactly(BigDecimal("10.0"))
+  }
+
+  @Test
+  fun `should sum a hinted share class with an earlier row carrying the holding name`() {
+    etfHoldingService.saveHoldings("IITU", testDate, listOf(row("Alphabet", null, "10.0", 1)))
+    holdingIdentityService.answerPairs { true }
+    val feed = listOf(row("Alphabet", null, "4.0", 1), row("Alphabet Class A", "GOOGL", "6.0", 2))
+    etfHoldingService.saveHoldings("IITU", testDate.plusDays(1), feed)
+    expect(weightsOn(testDate.plusDays(1))).toContainExactly(BigDecimal("10.0"))
+  }
+
+  @Test
+  fun `should sum rows repeating one name and keep the lowest rank`() {
+    val feed = listOf(row("Škoda Auto", "SKODA", "2.5", 3), row("Škoda Auto", "SKODA", "1.5", 7))
+    etfHoldingService.saveHoldings("IITU", testDate, feed)
+    val position = etfPositionRepository.findAll().single()
+    expect(position.weightPercentage.compareTo(BigDecimal("4.0")) to position.positionRank).toEqual(0 to 3)
+  }
+
+  @Test
+  fun `should replace summed weights when the same snapshot is saved twice`() {
+    val feed = listOf(row("Škoda Auto", "SKODA", "2.5", 1), row("Škoda Auto", "SKODA", "1.5", 2))
+    etfHoldingService.saveHoldings("IITU", testDate, feed)
+    etfHoldingService.saveHoldings("IITU", testDate, feed)
+    expect(weightsOn(testDate)).toContainExactly(BigDecimal("4.0"))
   }
 
   @Test
@@ -426,4 +445,14 @@ class EtfHoldingServiceIT {
     etfHoldingService.saveHoldings("IITU", testDate, holdings)
     expect(etfPositionRepository.findAll()).toHaveSize(1)
   }
+
+  private fun weightsOn(date: LocalDate): List<BigDecimal> =
+    etfPositionRepository.findAll().filter { it.snapshotDate == date }.map { it.weightPercentage.setScale(1) }
+
+  private fun row(
+    name: String,
+    ticker: String?,
+    weight: String,
+    rank: Int,
+  ) = HoldingData(name = name, ticker = ticker, sector = null, weight = BigDecimal(weight), rank = rank)
 }
