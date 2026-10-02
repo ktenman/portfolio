@@ -47,6 +47,7 @@ class HoldingReconciliationService(
           canonicalId = cluster.first().id,
           canonicalName = cluster.first().name,
           duplicateIds = cluster.drop(1).map { it.id },
+          duplicateNames = cluster.drop(1).map { it.name },
         )
       }
   }
@@ -79,7 +80,7 @@ class HoldingReconciliationService(
   private fun logPlan(plan: HoldingMergePlan) {
     log.info(
       "Merge plan: canonical '${LogSanitizerUtil.sanitize(plan.canonicalName)}' (id=${plan.canonicalId}) " +
-        "absorbs ${plan.duplicateIds.size} duplicates ${plan.duplicateIds}",
+        "absorbs ${plan.duplicateIds.size} duplicates ${plan.duplicateIds} named '${LogSanitizerUtil.sanitize(plan.duplicateNames)}'",
     )
   }
 }

@@ -51,6 +51,7 @@ data class HoldingMergePlan(
   val canonicalId: Long,
   val canonicalName: String,
   val duplicateIds: List<Long>,
+  val duplicateNames: List<String>,
 )
 
 data class ClassificationResult(
