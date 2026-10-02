@@ -111,12 +111,18 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
 
   @Query(
     """
+    WITH balances AS MATERIALIZED (
+      SELECT pt.instrument.id AS instrumentId,
+        SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) AS quantity
+      FROM PortfolioTransaction pt
+      GROUP BY pt.instrument.id
+    )
     SELECT h FROM EtfHolding h
     JOIN EtfPosition ep ON ep.holding.id = h.id
-    JOIN PortfolioTransaction pt ON pt.instrument.id = ep.etfInstrument.id
+    JOIN balances b ON b.instrumentId = ep.etfInstrument.id
     WHERE h.logoSource IS NULL
     GROUP BY h.id
-    HAVING SUM(CASE WHEN pt.transactionType = ee.tenman.portfolio.domain.TransactionType.BUY THEN pt.quantity ELSE -pt.quantity END) > 0.01
+    HAVING SUM(b.quantity) > 0.01
     ORDER BY MAX(ep.weightPercentage) DESC
   """,
   )
