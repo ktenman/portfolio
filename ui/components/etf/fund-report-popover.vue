@@ -160,13 +160,25 @@ const rows = computed(() => {
   gap: 0.75rem;
 }
 
-@supports (anchor-name: --fund-report) {
+@media (min-width: 769px) {
+  @supports (anchor-name: --fund-report) {
+    .report-popover {
+      position-anchor: --fund-report;
+      inset: auto;
+      top: calc(anchor(bottom) + 0.375rem);
+      left: clamp(1rem, anchor(left), calc(100% - 23rem));
+      margin: 0;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  :global(body:has(.report-popover:popover-open)) {
+    overflow: hidden;
+  }
+
   .report-popover {
-    position-anchor: --fund-report;
-    inset: auto;
-    top: calc(anchor(bottom) + 0.375rem);
-    left: clamp(1rem, anchor(left), calc(100% - 23rem));
-    margin: 0;
+    max-height: calc(100% - 2rem);
   }
 }
 
@@ -225,6 +237,7 @@ const rows = computed(() => {
 
 .fund-stack {
   display: flex;
+  flex-shrink: 0;
   gap: 2px;
   height: 0.5rem;
   overflow: hidden;
