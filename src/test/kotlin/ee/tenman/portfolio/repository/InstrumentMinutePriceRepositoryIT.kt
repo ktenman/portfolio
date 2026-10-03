@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.repository
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -10,11 +11,16 @@ import ee.tenman.portfolio.domain.InstrumentMinutePrice
 import ee.tenman.portfolio.job.TransactionRunner
 import ee.tenman.portfolio.service.pricing.InstrumentMinutePriceService
 import jakarta.annotation.Resource
+import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.Test
+import org.springframework.data.jpa.repository.Query
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import javax.sql.DataSource
 
 @IntegrationTest
 class InstrumentMinutePriceRepositoryIT {
@@ -29,6 +35,12 @@ class InstrumentMinutePriceRepositoryIT {
 
   @Resource
   private lateinit var instrumentMinutePriceService: InstrumentMinutePriceService
+
+  @Resource
+  private lateinit var entityManager: EntityManager
+
+  @Resource
+  private lateinit var dataSource: DataSource
 
   @Test
   fun `should capture only positive instrument prices`() {
@@ -131,6 +143,26 @@ class InstrumentMinutePriceRepositoryIT {
   }
 
   @Test
+  fun `should find the latest price of an idle instrument without walking other instruments prices`() {
+    repeat(20) { saveInstrument("AKTIIVNE$it", "10") }
+    repeat(20) { saveInstrument("SEISEV$it", "10") }
+    transactionRunner.runInTransaction {
+      execute(
+        """
+        INSERT INTO instrument_minute_price (instrument_id, captured_at, price)
+        SELECT i.id, TIMESTAMPTZ '2026-09-21 00:00:00+00' + make_interval(mins => m), 1 + m
+        FROM generate_series(0, 1439) m CROSS JOIN instrument i
+        WHERE i.symbol LIKE 'AKTIIVNE%' OR m = 0
+        ORDER BY m, i.id
+        """,
+      )
+      execute("ANALYZE instrument, instrument_minute_price")
+    }
+    val plan = explain(insertSql("2026-09-22 00:00:00+00"))
+    expect(plan.path("Shared Hit Blocks").asLong() + plan.path("Shared Read Blocks").asLong()).toBeLessThan(1500L)
+  }
+
+  @Test
   fun `should commit captured prices through the transactional service`() {
     val instrument = saveInstrument("COMMITTED", "42")
 
@@ -184,4 +216,26 @@ class InstrumentMinutePriceRepositoryIT {
         price = BigDecimal(price),
       ),
     )
+
+  private fun insertSql(capturedAt: String): String =
+    InstrumentMinutePriceRepository::class.java
+      .getMethod("insertChangedPrices", Instant::class.java)
+      .getAnnotation(Query::class.java)
+      .value
+      .replace(":capturedAt", "TIMESTAMPTZ '$capturedAt'")
+
+  private fun explain(sql: String): JsonNode =
+    dataSource.connection.use { connection ->
+      connection.createStatement().use { statement ->
+        statement.queryTimeout = 10
+        statement.executeQuery("EXPLAIN (ANALYZE, BUFFERS, TIMING OFF, FORMAT JSON) $sql").use { rows ->
+          check(rows.next()) { "No execution plan returned for $sql" }
+          ObjectMapper().readTree(rows.getString(1))[0].path("Plan")
+        }
+      }
+    }
+
+  private fun execute(sql: String) {
+    entityManager.createNativeQuery(sql).executeUpdate()
+  }
 }

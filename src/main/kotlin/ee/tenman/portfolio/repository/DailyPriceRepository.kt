@@ -66,6 +66,8 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
     VALUES (:instrumentId, :entryDate, :providerName, :openPrice, :highPrice, :lowPrice, :closePrice, :volume, NOW(), NOW(), 0)
     ON CONFLICT (instrument_id, entry_date, provider_name)
     DO UPDATE SET open_price = :openPrice, high_price = :highPrice, low_price = :lowPrice, close_price = :closePrice, volume = :volume, updated_at = NOW(), version = daily_price.version + 1
+    WHERE (daily_price.open_price, daily_price.high_price, daily_price.low_price, daily_price.close_price, daily_price.volume)
+      IS DISTINCT FROM (EXCLUDED.open_price, EXCLUDED.high_price, EXCLUDED.low_price, EXCLUDED.close_price, EXCLUDED.volume)
     """,
     nativeQuery = true,
   )

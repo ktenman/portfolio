@@ -18,6 +18,7 @@ interface PriceSnapshotRepository : JpaRepository<PriceSnapshot, Long> {
     VALUES (:instrumentId, :providerName, :snapshotHour, :price, NOW(), NOW(), 0)
     ON CONFLICT (instrument_id, provider_name, snapshot_hour)
     DO UPDATE SET price = :price, updated_at = NOW(), version = price_snapshot.version + 1
+    WHERE price_snapshot.price IS DISTINCT FROM EXCLUDED.price
     """,
     nativeQuery = true,
   )
