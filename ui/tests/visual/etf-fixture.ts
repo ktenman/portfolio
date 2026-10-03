@@ -253,13 +253,15 @@ const TULEVA_REPORTS: FundReportDto[] = [
   },
 ]
 
+const LEADING_ETF = 'ATST:GER:EUR'
+
 export const stubEtfBreakdownWithTuleva: RouteStub = async page => {
   await stubEtfBreakdown(page)
   await page.route(apiRoute(API_ENDPOINTS.ETF_BREAKDOWN), route =>
     route.fulfill({
       json: HOLDINGS.map(holding => ({
         ...holding,
-        inEtfs: `${holding.inEtfs}, ${TULEVA_SYMBOL}`,
+        inEtfs: `${LEADING_ETF}, ${holding.inEtfs}, ${TULEVA_SYMBOL}`,
       })),
     })
   )
@@ -268,7 +270,13 @@ export const stubEtfBreakdownWithTuleva: RouteStub = async page => {
       json: {
         instruments: [
           ...ETF_INSTRUMENTS,
-          { symbol: TULEVA_SYMBOL, fundCurrency: Currency.EUR, currentValue: 5120.35 },
+          { symbol: LEADING_ETF, fundCurrency: Currency.EUR, currentValue: 1890.4 },
+          {
+            symbol: TULEVA_SYMBOL,
+            name: 'Tuleva III Samba Pensionifond',
+            fundCurrency: Currency.EUR,
+            currentValue: 5120.35,
+          },
         ],
         portfolioXirr: null,
       },
