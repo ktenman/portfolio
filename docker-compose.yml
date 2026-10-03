@@ -43,8 +43,6 @@ services:
   seaweedfs:
     container_name: seaweedfs
     image: docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882
-    ports:
-      - '9000:9000'
     environment:
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
@@ -67,6 +65,7 @@ services:
       SPRING_PROFILES_ACTIVE: default
       MANAGEMENT_SERVER_PORT: 9090
       SPRING_FLYWAY_ENABLED: "true"
+      SPRINGDOC_APIDOCS_ENABLED: "false"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_BOT_ENABLED: true
       BUILD_HASH: ${BUILD_HASH:-local}
@@ -82,8 +81,6 @@ services:
       TRADING212_API_KEY_ID: ${TRADING212_API_KEY_ID}
       TRADING212_API_KEY_SECRET: ${TRADING212_API_KEY_SECRET}
     image: ktenman/portfolio-be:latest
-    ports:
-      - '8080:8080'
     depends_on:
       postgres:
         condition: service_healthy
@@ -130,8 +127,6 @@ services:
     depends_on:
       - redis
     restart: always
-    ports:
-      - '8083:8083'
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
       interval: 6s
@@ -165,8 +160,6 @@ services:
     container_name: cloudflare-bypass-proxy
     platform: linux/amd64
     image: ktenman/cloudflare-bypass-proxy:latest
-    ports:
-      - '3000:3000'
     restart: always
     healthcheck:
       test: [ 'CMD-SHELL', 'node -e "require(\"http\").get(\"http://localhost:3000/health\", (res) => process.exit(res.statusCode === 200 ? 0 : 1))"' ]
