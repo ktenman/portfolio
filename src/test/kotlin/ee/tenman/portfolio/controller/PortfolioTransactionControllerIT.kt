@@ -218,6 +218,66 @@ class PortfolioTransactionControllerIT {
   }
 
   @Test
+  fun `should calculate realized profit of a single sell from earlier buys on the same platform`() {
+    val instrument = setupInstrument()
+    val sell =
+      portfolioTransactionRepository
+        .saveAll(
+          listOf(
+            PortfolioTransaction(
+              instrument = instrument,
+              transactionType = TransactionType.BUY,
+              quantity = BigDecimal("10"),
+              price = BigDecimal("50"),
+              transactionDate = LocalDate.of(2023, 7, 17),
+              platform = Platform.TRADING212,
+            ),
+            PortfolioTransaction(
+              instrument = instrument,
+              transactionType = TransactionType.BUY,
+              quantity = BigDecimal("10"),
+              price = BigDecimal("100"),
+              transactionDate = LocalDate.of(2023, 7, 18),
+              platform = Platform.LHV,
+            ),
+            PortfolioTransaction(
+              instrument = instrument,
+              transactionType = TransactionType.SELL,
+              quantity = BigDecimal("5"),
+              price = BigDecimal("150"),
+              transactionDate = LocalDate.of(2023, 7, 19),
+              platform = Platform.LHV,
+            ),
+          ),
+        ).last()
+    mockMvc
+      .perform(get("/api/transactions/${sell.id}").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.realizedProfit").value(250))
+  }
+
+  @Test
+  fun `should return a transaction again when it is requested a second time`() {
+    val instrument = setupInstrument()
+    val transaction =
+      portfolioTransactionRepository.save(
+        PortfolioTransaction(
+          instrument = instrument,
+          transactionType = TransactionType.BUY,
+          quantity = BigDecimal("10"),
+          price = BigDecimal("100"),
+          transactionDate = LocalDate.of(2023, 7, 18),
+          platform = Platform.LHV,
+        ),
+      )
+    mockMvc.perform(get("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
+    mockMvc
+      .perform(get("/api/transactions/${transaction.id}").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.symbol").value(instrument.symbol))
+  }
+
+  @Test
   fun `should update an existing transaction`() {
     val instrument = setupInstrument()
     val transaction =
