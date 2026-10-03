@@ -30,6 +30,7 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
 }
 
 const OPEN_MODAL = 'dialog.modal[open]'
+const OPEN_REPORT = '.report-popover:popover-open'
 const QUICK_DATES_TOGGLE = '[data-testid="quickDatesToggle"]'
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
@@ -61,6 +62,17 @@ async function openQuickDates(page: Page): Promise<void> {
   await stubTransactions(page)
   await openRoute(page, '/transactions')
   await expect(page.locator(QUICK_DATES_TOGGLE)).toBeVisible()
+}
+
+async function openTulevaReport(page: Page): Promise<void> {
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+    key: STORAGE_KEYS.ETF_FILTERS_OPEN,
+    value: 'true',
+  })
+  await stubEtfBreakdownWithTuleva(page)
+  await openRoute(page, '/etf-breakdown')
+  await page.click('.report-btn')
+  await expect(page.locator(OPEN_REPORT)).toBeVisible()
 }
 
 const MODALS: {
@@ -238,30 +250,54 @@ test.describe('desktop states', () => {
     await expect(page).toHaveScreenshot('summary-performance-mode.png')
   })
 
-  test('the Funds tab charts the Tuleva report as bars', async ({ page }) => {
-    await stubEtfBreakdownWithTuleva(page)
-    await openRoute(page, '/etf-breakdown')
-    await page.click('.breakdown-tab:text-is("Funds")')
-    await page.click('.view-btn[aria-label="Bars"]')
+  test('the Tuleva chip opens its monthly report', async ({ page }) => {
+    await openTulevaReport(page)
     await settleAndFreeze(page)
-    await expect(page).toHaveScreenshot('etf-breakdown-funds-bars.png', { fullPage: true })
+    await expect(page).toHaveScreenshot('etf-breakdown-report.png')
   })
 
-  test('the Funds tab shows the latest Tuleva report', async ({ page }) => {
-    await stubEtfBreakdownWithTuleva(page)
-    await openRoute(page, '/etf-breakdown')
-    await page.click('.breakdown-tab:text-is("Funds")')
-    await settleAndFreeze(page)
-    await expect(page).toHaveScreenshot('etf-breakdown-funds.png', { fullPage: true })
+  test('pressing Escape closes the Tuleva report', async ({ page }) => {
+    await openTulevaReport(page)
+
+    await page.keyboard.press('Escape')
+
+    await expect(page.locator(OPEN_REPORT)).toHaveCount(0)
   })
 
-  test('hovering a long fund name keeps the donut label inside the ring', async ({ page }) => {
-    await stubEtfBreakdownWithTuleva(page)
+  test('clicking outside the Tuleva report closes it', async ({ page }) => {
+    await openTulevaReport(page)
+
+    await page.click('h2:text-is("ETF Breakdown")')
+
+    await expect(page.locator(OPEN_REPORT)).toHaveCount(0)
+  })
+
+  test('the close button closes the Tuleva report', async ({ page }) => {
+    await openTulevaReport(page)
+
+    await page.click(`${OPEN_REPORT} .btn-close`)
+
+    await expect(page.locator(OPEN_REPORT)).toHaveCount(0)
+  })
+
+  test('picking an earlier month keeps the Tuleva report open on that month', async ({ page }) => {
+    await openTulevaReport(page)
+
+    await page.click('#fund-report-month')
+    await page.click('#fund-report-month option:text-is("31.07.2026")')
+
+    await expect(page.locator(`${OPEN_REPORT} tr:has-text("CCF Developed World") .num`)).toHaveText(
+      '29.39%'
+    )
+  })
+
+  test('hovering a long industry name keeps the donut label inside the ring', async ({ page }) => {
+    await stubEtfBreakdown(page)
     await openRoute(page, '/etf-breakdown')
-    await page.click('.breakdown-tab:text-is("Funds")')
+    await page.click('.breakdown-tab:text-is("Industries")')
     await settleAndFreeze(page)
-    await page.hover('.fund-table tr:has-text("Emerging")')
-    await expect(page).toHaveScreenshot('etf-breakdown-funds-hover.png', { fullPage: true })
+    await page.hover('.legend-item:has-text("Semiconductors & Semiconductor Equipment")')
+    await expect(page).toHaveScreenshot('etf-breakdown-industry-hover.png', { fullPage: true })
   })
 
   test('selecting both benchmarks overlays three lines', async ({ page }) => {
@@ -343,6 +379,14 @@ test.describe('mobile states', () => {
   test.beforeEach(async ({ page }) => {
     await stubBuildInfo(page)
     await stubEnums(page)
+  })
+
+  test('the Tuleva report fits inside a phone screen', async ({ page }) => {
+    await openTulevaReport(page)
+
+    const box = await page.locator(OPEN_REPORT).boundingBox()
+
+    expect([box!.x >= 0, box!.x + box!.width <= page.viewportSize()!.width]).toEqual([true, true])
   })
 
   test('state long fund name wraps inside its allocation card', async ({ page }) => {
