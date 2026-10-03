@@ -9,6 +9,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.job.TransactionRunner
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
+import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -24,11 +25,36 @@ class DailyPriceRepositoryIT {
   @Resource
   private lateinit var runner: TransactionRunner
 
+  @Resource
+  private lateinit var jdbc: JdbcTemplate
+
   @Test
   fun `should keep the version when the same prices are written again`() {
     val fund = fund(instruments)
     repeat(2) { upsert(fund, null, "12.34") }
     expect(repository.findAll().single().version).toEqual(0L)
+  }
+
+  @Test
+  fun `should leave the row unlocked when the same prices are written again`() {
+    val fund = fund(instruments)
+    repeat(2) { upsert(fund, null, "12.34") }
+    expect(xmax(jdbc, "daily_price")).toEqual(0L)
+  }
+
+  @Test
+  fun `should keep the version when prices finer than the column scale are written again`() {
+    val fund = fund(instruments)
+    repeat(2) { upsert(fund, "12.3456789012345", "12.3456789012345") }
+    expect(repository.findAll().single().version).toEqual(0L)
+  }
+
+  @Test
+  fun `should raise the version when the close price changes`() {
+    val fund = fund(instruments)
+    upsert(fund, null, "12.34")
+    upsert(fund, null, "12.35")
+    expect(repository.findAll().single().version).toEqual(1L)
   }
 
   @Test
@@ -47,12 +73,29 @@ class DailyPriceRepositoryIT {
     expect(repository.findAll().single().openPrice).notToEqualNull().toEqualNumerically(BigDecimal("12.10"))
   }
 
+  @Test
+  fun `should clear the open price when a later write has none`() {
+    val fund = fund(instruments)
+    upsert(fund, "12.10", "12.34")
+    upsert(fund, null, "12.34")
+    expect(repository.findAll().single().openPrice).toEqual(null)
+  }
+
+  @Test
+  fun `should store a changed volume for the same day`() {
+    val fund = fund(instruments)
+    upsert(fund, null, "12.34", 100)
+    upsert(fund, null, "12.34", 250)
+    expect(repository.findAll().single().volume).toEqual(250L)
+  }
+
   private fun upsert(
     fund: Instrument,
     open: String?,
     close: String,
+    volume: Long? = null,
   ) = runner.runInTransaction {
-    repository.upsert(fund.id, LocalDate.of(2026, 10, 2), "FT", open?.let(::BigDecimal), null, null, BigDecimal(close), null)
+    repository.upsert(fund.id, LocalDate.of(2026, 10, 2), "FT", open?.let(::BigDecimal), null, null, BigDecimal(close), volume)
   }
 }
 
@@ -67,10 +110,27 @@ class PriceSnapshotRepositoryIT {
   @Resource
   private lateinit var runner: TransactionRunner
 
+  @Resource
+  private lateinit var jdbc: JdbcTemplate
+
   @Test
   fun `should keep the version when the same price is written again`() {
     val fund = fund(instruments)
     repeat(2) { upsert(fund, "45.67") }
+    expect(repository.findAll().single().version).toEqual(0L)
+  }
+
+  @Test
+  fun `should leave the row unlocked when the same price is written again`() {
+    val fund = fund(instruments)
+    repeat(2) { upsert(fund, "45.67") }
+    expect(xmax(jdbc, "price_snapshot")).toEqual(0L)
+  }
+
+  @Test
+  fun `should keep the version when a price finer than the column scale is written again`() {
+    val fund = fund(instruments)
+    repeat(2) { upsert(fund, "45.678901234567") }
     expect(repository.findAll().single().version).toEqual(0L)
   }
 
@@ -80,6 +140,14 @@ class PriceSnapshotRepositoryIT {
     upsert(fund, "45.67")
     upsert(fund, "45.68")
     expect(repository.findAll().single().price).toEqualNumerically(BigDecimal("45.68"))
+  }
+
+  @Test
+  fun `should raise the version when the price changes`() {
+    val fund = fund(instruments)
+    upsert(fund, "45.67")
+    upsert(fund, "45.68")
+    expect(repository.findAll().single().version).toEqual(1L)
   }
 
   private fun upsert(
@@ -92,3 +160,8 @@ class PriceSnapshotRepositoryIT {
 
 private fun fund(instruments: InstrumentRepository): Instrument =
   instruments.save(Instrument(symbol = "ÕUN", name = "Õunake fond", category = "ETF", baseCurrency = "EUR"))
+
+private fun xmax(
+  jdbc: JdbcTemplate,
+  table: String,
+): Long? = jdbc.queryForObject("SELECT xmax::text::bigint FROM $table", Long::class.java)
