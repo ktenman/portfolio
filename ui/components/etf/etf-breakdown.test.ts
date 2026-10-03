@@ -162,8 +162,7 @@ describe('etf-breakdown', () => {
         stubs: {
           EtfBreakdownChart: {
             props: ['chartData', 'benchmarkLabel', 'view'],
-            template:
-              '<div><slot name="actions" /><slot name="legend" :active-index="null" /></div>',
+            template: '<div><slot name="actions" /></div>',
           },
         },
       },
@@ -616,28 +615,13 @@ describe('etf-breakdown', () => {
     expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('chartData')).toHaveLength(20)
   })
 
-  it('shows the Funds tab after Countries while Tuleva is selected', async () => {
+  it('keeps the four breakdown tabs while Tuleva is selected', async () => {
     withTuleva()
 
     const wrapper = mountWithChartStub()
     await flushPromises()
 
-    expect(tabLabels(wrapper)).toEqual(['Sectors', 'Industries', 'Holdings', 'Countries', 'Funds'])
-  })
-
-  it('hides the Funds tab once Tuleva is deselected', async () => {
-    withTuleva()
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-
-    localStorage.setItem('portfolio_selected_etfs', JSON.stringify(['VWCE:XETRA']))
-    await wrapper.find('.dropdown-toggle').trigger('click')
-    await wrapper
-      .findAll('.etf-btn')
-      .find(btn => btn.text().includes(TULEVA_SYMBOL))!
-      .trigger('click')
-
-    expect(tabLabels(wrapper)).not.toContain('Funds')
+    expect(tabLabels(wrapper)).toEqual(['Sectors', 'Industries', 'Holdings', 'Countries'])
   })
 
   it('does not request Tuleva reports when no selected fund is Tuleva', async () => {
@@ -649,8 +633,8 @@ describe('etf-breakdown', () => {
     expect(fundReportService.getReports).not.toHaveBeenCalled()
   })
 
-  it('falls back to Sectors when the stored tab is Funds and Tuleva is not selected', async () => {
-    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue(buildTwoHoldings())
+  it('falls back to Sectors when the stored tab is no longer offered', async () => {
+    withTuleva()
     localStorage.setItem('portfolio_etf_breakdown_tab', 'funds')
 
     const wrapper = mountWithChartStub()
@@ -659,129 +643,50 @@ describe('etf-breakdown', () => {
     expect(wrapper.find('.breakdown-tab.active').text()).toBe('Sectors')
   })
 
-  it('charts the funds of the latest Tuleva report on the Funds tab', async () => {
-    withTuleva()
-
+  const mountWithOpenFilters = async () => {
     const wrapper = mountWithChartStub()
     await flushPromises()
-    await clickTab(wrapper, 'Funds')
+    await wrapper.find('.dropdown-toggle').trigger('click')
+    return wrapper
+  }
 
-    expect(
-      wrapper
-        .findAllComponents(EtfBreakdownChart)[0]
-        .props('chartData')
-        .map(item => item.label)
-    ).toEqual(['Xtrackers MSCI World Screened', 'iShares Emerging Market Screened', 'Cash'])
-  })
+  const reportButtons = (wrapper: VueWrapper) =>
+    wrapper.findAll('.etf-chip').map(chip => chip.find('.report-btn').exists())
 
-  it('charts the funds of the month picked on the Funds tab', async () => {
-    withTuleva()
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
-    await wrapper.find('.report-select').setValue('1')
-
-    expect(
-      wrapper
-        .findAllComponents(EtfBreakdownChart)[0]
-        .props('chartData')
-        .map(item => item.label)
-    ).toEqual(['CCF Developed World', 'iShares Emerging Market Screened', 'Cash'])
-  })
-
-  it('links the PDF of the month picked on the Funds tab', async () => {
-    withTuleva()
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
-    await wrapper.find('.report-select').setValue('1')
-
-    expect(wrapper.find('.fund-caption .report-link').attributes('href')).toBe(
-      '/api/funds/EE3600001707/reports/2026-07-31'
-    )
-  })
-
-  it('marks the funds that are new since the previous report on the Funds tab', async () => {
-    withTuleva()
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
-
-    expect(wrapper.findAll('.fund-table tr.new .fund-name').map(cell => cell.text())).toEqual([
-      'Xtrackers MSCI World Screened',
+  it('puts the report button on the Tuleva chip only', async () => {
+    const [apple, meta] = buildTwoHoldings()
+    vi.mocked(etfBreakdownService.getBreakdown).mockResolvedValue([
+      apple,
+      { ...meta, inEtfs: TULEVA_SYMBOL },
     ])
+    vi.mocked(fundReportService.getReports).mockResolvedValue(FUND_REPORTS)
+
+    const wrapper = await mountWithOpenFilters()
+
+    expect(reportButtons(wrapper)).toEqual([true, false])
   })
 
-  it('lists cash before the funds dropped since the previous report on the Funds tab', async () => {
+  it('leaves the Tuleva chip without a report button when it has no reports', async () => {
     withTuleva()
+    vi.mocked(fundReportService.getReports).mockResolvedValue([])
 
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
+    const wrapper = await mountWithOpenFilters()
 
-    expect(wrapper.findAll('.fund-table .fund-name').map(cell => cell.text())).toEqual([
-      'Xtrackers MSCI World Screened',
-      'iShares Emerging Market Screened',
-      'Cash',
-      'CCF Developed World',
-    ])
+    expect(reportButtons(wrapper)).toEqual([false])
   })
 
-  it('charts the Funds tab as bars when bars are the stored view', async () => {
+  it('heads the report popover with the name of the Tuleva instrument', async () => {
     withTuleva()
-    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [
+        { ...mockInstrument, symbol: TULEVA_SYMBOL, name: 'Tuleva III Samba Pensionifond' },
+      ],
+      portfolioXirr: null,
+    })
 
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
+    const wrapper = await mountWithOpenFilters()
 
-    expect(wrapper.findAllComponents(EtfBreakdownChart)[0].props('view')).toBe('bars')
-  })
-
-  it('scales the fund bars to the largest weight on the Funds tab', async () => {
-    withTuleva()
-    localStorage.setItem('portfolio_etf_breakdown_view', 'bars')
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
-
-    const widths = wrapper.findAll('.fund-bar').map(bar => (bar.element as HTMLElement).style.width)
-    expect(widths.map(width => Math.round(parseFloat(width)))).toEqual([100, 71, 0])
-  })
-
-  it('draws no fund bars on the Funds tab in the donut view', async () => {
-    withTuleva()
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
-
-    expect(wrapper.find('.fund-bar').exists()).toBe(false)
-  })
-
-  it('keeps the chart style switch on the Funds tab', async () => {
-    withTuleva()
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
-
-    expect(wrapper.find('.view-switch').exists()).toBe(true)
-  })
-
-  it('hides the compare toggle on the Funds tab', async () => {
-    withTuleva()
-    vi.mocked(etfBreakdownService.getBenchmark).mockResolvedValue(buildTwoHoldings())
-
-    const wrapper = mountWithChartStub()
-    await flushPromises()
-    await clickTab(wrapper, 'Funds')
-
-    expect(wrapper.find('.compare-toggle').exists()).toBe(false)
+    expect(wrapper.find('.report-title').text()).toBe('Tuleva III Samba Pensionifond')
   })
 
   it('keeps the Tuleva report link out of the subtitle', async () => {

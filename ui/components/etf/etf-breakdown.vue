@@ -20,18 +20,28 @@
       </div>
       <div v-if="filtersOpen && availableEtfs.length > 0" class="etf-filter-container mt-3">
         <div class="etf-buttons">
-          <button
+          <span
             v-for="etf in availableEtfs"
             :key="etf"
-            class="etf-btn"
-            :class="{ active: isEtfSelected(etf) }"
-            :title="symbolToName.get(etf) ?? etf"
-            @click="toggleEtf(etf)"
-            type="button"
+            class="etf-chip"
+            :class="{ reported: hasReport(etf) }"
           >
-            <currency-flag :currency="symbolToFundCurrency.get(etf)" :size="14" />
-            {{ formatTickerSymbol(etf) }}
-          </button>
+            <button
+              class="etf-btn"
+              :class="{ active: isEtfSelected(etf) }"
+              :title="symbolToName.get(etf) ?? etf"
+              @click="toggleEtf(etf)"
+              type="button"
+            >
+              <currency-flag :currency="symbolToFundCurrency.get(etf)" :size="14" />
+              {{ formatTickerSymbol(etf) }}
+            </button>
+            <fund-report-popover
+              v-if="hasReport(etf)"
+              :name="symbolToName.get(etf) ?? etf"
+              :reports="fundReports"
+            />
+          </span>
           <span class="etf-separator"></span>
           <button class="etf-btn etf-btn-ghost" @click="toggleAllEtfs" type="button">
             {{ selectedEtfs.length === availableEtfs.length ? 'Clear All' : 'Select All' }}
@@ -58,7 +68,7 @@
           <div class="breakdown-toolbar">
             <div class="breakdown-tabs" role="group" aria-label="Breakdown dimension">
               <button
-                v-for="tab in visibleTabs"
+                v-for="tab in breakdownTabs"
                 :key="tab.key"
                 class="breakdown-tab"
                 :class="{ active: shownTab === tab.key }"
@@ -70,7 +80,7 @@
               </button>
             </div>
             <div class="breakdown-controls">
-              <template v-if="shownTab !== 'funds' && !benchmarkUnavailable">
+              <template v-if="!benchmarkUnavailable">
                 <span class="platform-separator" aria-hidden="true"></span>
                 <label class="compare-switch compare-toggle">
                   <input v-model="compare" type="checkbox" role="switch" class="compare-input" />
@@ -84,17 +94,6 @@
               <view-switch v-model="view" />
             </div>
           </div>
-        </template>
-        <template v-if="shownTab === 'funds'" #legend="{ activeIndex, focus, clear }">
-          <fund-allocation-table
-            v-model:report-index="reportIndex"
-            :reports="fundReports"
-            :slices="activeChartData"
-            :active-index="activeIndex"
-            :bars="view === 'bars'"
-            @hover="focus"
-            @leave="clear"
-          />
         </template>
       </etf-breakdown-chart>
       <etf-breakdown-stats
@@ -165,7 +164,7 @@ import {
   getFilterParam,
   type ChartDataItem,
 } from '../../services/etf-chart-service'
-import { buildFundChartData, TULEVA_SYMBOL } from '../../services/fund-allocation'
+import { TULEVA_SYMBOL } from '../../services/fund-allocation'
 import type {
   EtfHoldingBreakdownDto,
   FundReportDto,
@@ -175,7 +174,7 @@ import EtfBreakdownHeader from './etf-breakdown-header.vue'
 import EtfBreakdownStats from './etf-breakdown-stats.vue'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
-import FundAllocationTable from './fund-allocation-table.vue'
+import FundReportPopover from './fund-report-popover.vue'
 import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
@@ -293,7 +292,6 @@ const breakdownTabs = [
   { key: 'industries', label: 'Industries' },
   { key: 'companies', label: 'Holdings' },
   { key: 'countries', label: 'Countries' },
-  { key: 'funds', label: 'Funds' },
 ] as const
 
 type BreakdownTab = (typeof breakdownTabs)[number]['key']
@@ -302,20 +300,10 @@ const activeTab = useLocalStorage<BreakdownTab>(STORAGE_KEYS.ETF_BREAKDOWN_TAB, 
 
 const fundReports = ref<FundReportDto[]>([])
 
-const reportIndex = ref(0)
-
-const fundReport = computed(() => fundReports.value[reportIndex.value])
-
-const fundsTabShown = computed(
-  () => selectedEtfs.value.includes(TULEVA_SYMBOL) && fundReports.value.length > 0
-)
-
-const visibleTabs = computed(() =>
-  fundsTabShown.value ? breakdownTabs : breakdownTabs.filter(tab => tab.key !== 'funds')
-)
+const hasReport = (etf: string) => etf === TULEVA_SYMBOL && fundReports.value.length > 0
 
 const shownTab = computed<BreakdownTab>(() =>
-  activeTab.value === 'funds' && !fundsTabShown.value ? 'sectors' : activeTab.value
+  breakdownTabs.some(tab => tab.key === activeTab.value) ? activeTab.value : 'sectors'
 )
 
 const view = useLocalStorage<BreakdownView>(STORAGE_KEYS.ETF_BREAKDOWN_VIEW, 'donut')
@@ -342,7 +330,6 @@ const industryChartData = computed<ChartDataItem[]>(() =>
 )
 
 const activeChartData = computed(() => {
-  if (shownTab.value === 'funds') return buildFundChartData(fundReport.value)
   if (shownTab.value === 'industries') return industryChartData.value
   if (shownTab.value === 'companies') return companyChartData.value
   if (shownTab.value === 'countries') return countryChartData.value
@@ -521,6 +508,19 @@ onMounted(async () => {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.375rem;
+}
+
+.etf-chip {
+  display: inline-flex;
+}
+
+.etf-chip.reported {
+  anchor-name: --fund-report;
+}
+
+.etf-chip.reported .etf-btn {
+  border-right: 0;
+  border-radius: var(--radius-container) 0 0 var(--radius-container);
 }
 
 .etf-separator {
