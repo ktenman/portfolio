@@ -239,9 +239,10 @@ def check_compose():
                                 '--profile', 'monitoring', 'config',
                                 '--no-interpolate', '--format', 'json').stdout)
     services = configured['services']
+    published = sorted(name for name, service in services.items() if 'ports' in service)
+    assert published == ['app'], f'only Caddy may publish host ports, found {published}'
     for name in ('prometheus', 'alertmanager'):
         assert services[name]['profiles'] == ['monitoring']
-        assert 'ports' not in services[name], f'{name} exposes a host port'
         assert services[name]['healthcheck'], f'{name} has no healthcheck'
     assert services['backend']['environment']['MANAGEMENT_SERVER_PORT'] == 9090
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
