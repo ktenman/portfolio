@@ -18,6 +18,9 @@ const STATE_TIMEOUT_MS = 30000
 const TOAST_MODULE_PATH = '/composables/use-toast.ts'
 const LOADING_HOLD_MS = 20000
 const SUBPIXEL_PX = 0.5
+const SMALL_PHONE = { width: 320, height: 568 }
+const WHEEL_DELTA_PX = 300
+const WHEEL_SETTLE_MS = 300
 
 const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
   transactions: [],
@@ -381,12 +384,35 @@ test.describe('mobile states', () => {
     await stubEnums(page)
   })
 
-  test('the Tuleva report fits inside a phone screen', async ({ page }) => {
+  test('the Tuleva report fits inside a small phone screen', async ({ page }) => {
+    await page.setViewportSize(SMALL_PHONE)
     await openTulevaReport(page)
 
     const box = await page.locator(OPEN_REPORT).boundingBox()
 
-    expect([box!.x >= 0, box!.x + box!.width <= page.viewportSize()!.width]).toEqual([true, true])
+    expect([
+      box!.x >= 0,
+      box!.y >= 0,
+      box!.x + box!.width <= SMALL_PHONE.width,
+      box!.y + box!.height <= SMALL_PHONE.height,
+    ]).toEqual([true, true, true, true])
+  })
+
+  test('the Tuleva report keeps its allocation bar on a small phone screen', async ({ page }) => {
+    await page.setViewportSize(SMALL_PHONE)
+    await openTulevaReport(page)
+
+    await expect(page.locator(`${OPEN_REPORT} .fund-stack`)).toBeVisible()
+  })
+
+  test('the page stays put behind the open Tuleva report', async ({ page }) => {
+    await openTulevaReport(page)
+
+    await page.locator('h2:text-is("ETF Breakdown")').hover()
+    await page.mouse.wheel(0, WHEEL_DELTA_PX)
+    await page.waitForTimeout(WHEEL_SETTLE_MS)
+
+    expect(await page.evaluate(() => window.scrollY)).toBe(0)
   })
 
   test('state long fund name wraps inside its allocation card', async ({ page }) => {
