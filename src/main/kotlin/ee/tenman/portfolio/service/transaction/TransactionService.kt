@@ -36,7 +36,7 @@ class TransactionService(
         .findAllByInstrumentIdAndPlatformOrderByTransactionDate(saved.instrument.id, saved.platform)
     calculateTransactionProfits(relatedTransactions)
     val updated = portfolioTransactionRepository.saveAll(relatedTransactions)
-    cacheInvalidationService.evictAllRelatedCachesAfterCommit()
+    cacheInvalidationService.evictAllRelatedCaches(null, null)
     return requireNotNull(updated.find { it.id == saved.id }) { "Transaction not found after save: ${saved.id}" }
   }
 
@@ -44,7 +44,7 @@ class TransactionService(
   @CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'")
   fun deleteTransaction(id: Long) {
     portfolioTransactionRepository.deleteById(id)
-    cacheInvalidationService.evictAllRelatedCachesAfterCommit()
+    cacheInvalidationService.evictAllRelatedCaches(null, null)
   }
 
   @Transactional(readOnly = true)

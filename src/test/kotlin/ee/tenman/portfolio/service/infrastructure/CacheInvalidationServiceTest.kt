@@ -1,5 +1,8 @@
 package ee.tenman.portfolio.service.infrastructure
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
+import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_BREAKDOWN_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ONE_DAY_CACHE
@@ -8,127 +11,122 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTIO
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
-import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.data.redis.RedisConnectionFailureException
 import org.springframework.transaction.support.TransactionSynchronizationManager
 
 class CacheInvalidationServiceTest {
   private val cacheManager = mockk<CacheManager>()
-  private val redisTemplate = mockk<StringRedisTemplate>()
-  private val mockCache = mockk<Cache>(relaxed = true)
+  private val caches = mutableMapOf<String, Cache>()
 
   private lateinit var cacheInvalidationService: CacheInvalidationService
 
   @BeforeEach
   fun setup() {
-    every { cacheManager.getCache(any()) } returns mockCache
-    every { redisTemplate.keys(any()) } returns emptySet()
-    every { redisTemplate.delete(any<Set<String>>()) } returns 0L
+    every { cacheManager.getCache(any()) } answers { cache(firstArg()) }
 
-    cacheInvalidationService = CacheInvalidationService(cacheManager, redisTemplate)
+    cacheInvalidationService = CacheInvalidationService(cacheManager)
   }
+
+  private fun cache(name: String): Cache = caches.getOrPut(name) { mockk(relaxed = true) }
 
   @Test
   fun `evictInstrumentCaches should evict instrument cache entries`() {
     cacheInvalidationService.evictInstrumentCaches(1L, "AAPL")
 
     verify { cacheManager.getCache(INSTRUMENT_CACHE) }
-    verify { mockCache.evict(1L) }
-    verify { mockCache.evict("AAPL") }
-    verify { mockCache.evict("allInstruments") }
+    verify { cache(INSTRUMENT_CACHE).evict(1L) }
+    verify { cache(INSTRUMENT_CACHE).evict("AAPL") }
+    verify { cache(INSTRUMENT_CACHE).evict("allInstruments") }
   }
 
   @Test
   fun `evictInstrumentCaches should handle null id`() {
     cacheInvalidationService.evictInstrumentCaches(null, "AAPL")
 
-    verify { mockCache.evict("AAPL") }
-    verify { mockCache.evict("allInstruments") }
-    verify(exactly = 2) { mockCache.evict(any()) }
+    verify { cache(INSTRUMENT_CACHE).evict("AAPL") }
+    verify { cache(INSTRUMENT_CACHE).evict("allInstruments") }
+    verify(exactly = 2) { cache(INSTRUMENT_CACHE).evict(any()) }
   }
 
   @Test
   fun `evictInstrumentCaches should handle null symbol`() {
     cacheInvalidationService.evictInstrumentCaches(1L, null)
 
-    verify { mockCache.evict(1L) }
-    verify { mockCache.evict("allInstruments") }
-    verify(exactly = 2) { mockCache.evict(any()) }
+    verify { cache(INSTRUMENT_CACHE).evict(1L) }
+    verify { cache(INSTRUMENT_CACHE).evict("allInstruments") }
+    verify(exactly = 2) { cache(INSTRUMENT_CACHE).evict(any()) }
   }
 
   @Test
-  fun `evictTransactionCaches should evict transaction cache by pattern`() {
-    every { redisTemplate.keys("$TRANSACTION_CACHE::*") } returns setOf("key1", "key2")
-    every { redisTemplate.delete(setOf("key1", "key2")) } returns 2L
-
+  fun `evictTransactionCaches should clear the transaction cache`() {
     cacheInvalidationService.evictTransactionCaches()
 
-    verify { redisTemplate.keys("$TRANSACTION_CACHE::*") }
-    verify { redisTemplate.delete(setOf("key1", "key2")) }
+    verify { cache(TRANSACTION_CACHE).clear() }
   }
 
   @Test
-  fun `evictSummaryCaches should evict summary cache by pattern`() {
-    every { redisTemplate.keys("$SUMMARY_CACHE::*") } returns setOf("summary1")
-    every { redisTemplate.delete(setOf("summary1")) } returns 1L
-
+  fun `evictSummaryCaches should clear the summary cache`() {
     cacheInvalidationService.evictSummaryCaches()
 
-    verify { redisTemplate.keys("$SUMMARY_CACHE::*") }
-    verify { redisTemplate.delete(setOf("summary1")) }
+    verify { cache(SUMMARY_CACHE).clear() }
   }
 
   @Test
   fun `evictXirrCache should evict xirr key from one day cache`() {
     cacheInvalidationService.evictXirrCache()
 
-    verify { cacheManager.getCache(ONE_DAY_CACHE) }
-    verify { mockCache.evict("xirr-v3") }
+    verify { cache(ONE_DAY_CACHE).evict("xirr-v3") }
   }
 
   @Test
   fun `evictAllRelatedCaches should evict all cache types`() {
     cacheInvalidationService.evictAllRelatedCaches(1L, "AAPL")
 
-    verify { cacheManager.getCache(INSTRUMENT_CACHE) }
-    verify { redisTemplate.keys("$TRANSACTION_CACHE::*") }
-    verify { redisTemplate.keys("$SUMMARY_CACHE::*") }
-    verify { cacheManager.getCache(ONE_DAY_CACHE) }
+    verify { cache(INSTRUMENT_CACHE).evict(1L) }
+    verify { cache(TRANSACTION_CACHE).clear() }
+    verify { cache(SUMMARY_CACHE).clear() }
+    verify { cache(ONE_DAY_CACHE).evict("xirr-v3") }
   }
 
   @Test
-  fun `evictAllRelatedCachesAfterCommit should delete entries cached before the transaction commits`() {
+  fun `evictAllRelatedCaches should wait for the commit inside a transaction`() {
     TransactionSynchronizationManager.initSynchronization()
-    cacheInvalidationService.evictAllRelatedCachesAfterCommit()
-    every { redisTemplate.keys("$SUMMARY_CACHE::*") } returns setOf("$SUMMARY_CACHE::Ülevaade")
+    cacheInvalidationService.evictAllRelatedCaches(7L, "ÕUN")
+    TransactionSynchronizationManager.clearSynchronization()
+
+    verify(exactly = 0) { cache(SUMMARY_CACHE).clear() }
+  }
+
+  @Test
+  fun `evictAllRelatedCaches should evict the instrument once the transaction commits`() {
+    TransactionSynchronizationManager.initSynchronization()
+    cacheInvalidationService.evictAllRelatedCaches(7L, "ÕUN")
     val synchronizations = TransactionSynchronizationManager.getSynchronizations()
     TransactionSynchronizationManager.clearSynchronization()
     synchronizations.forEach { it.afterCommit() }
-    verify { redisTemplate.delete(setOf("$SUMMARY_CACHE::Ülevaade")) }
+
+    verify { cache(INSTRUMENT_CACHE).evict("ÕUN") }
   }
 
   @Test
-  fun `evictEtfBreakdownCache should evict etf breakdown cache by pattern`() {
-    every { redisTemplate.keys("$ETF_BREAKDOWN_CACHE::*") } returns setOf("etf1", "etf2")
-    every { redisTemplate.delete(setOf("etf1", "etf2")) } returns 2L
+  fun `evictAllRelatedCaches should keep evicting the other caches when Redis rejects one`() {
+    every { cache(TRANSACTION_CACHE).clear() } throws RedisConnectionFailureException("Redis ühendus katkes")
 
+    cacheInvalidationService.evictAllRelatedCaches(1L, "AAPL")
+
+    verify { cache(SUMMARY_CACHE).clear() }
+  }
+
+  @Test
+  fun `evictEtfBreakdownCache should clear the etf breakdown cache`() {
     cacheInvalidationService.evictEtfBreakdownCache()
 
-    verify { redisTemplate.keys("$ETF_BREAKDOWN_CACHE::*") }
-    verify { redisTemplate.delete(setOf("etf1", "etf2")) }
-  }
-
-  @Test
-  fun `evictTransactionCaches should not delete when no keys found`() {
-    every { redisTemplate.keys("$TRANSACTION_CACHE::*") } returns emptySet()
-
-    cacheInvalidationService.evictTransactionCaches()
-
-    verify { redisTemplate.keys("$TRANSACTION_CACHE::*") }
-    verify(exactly = 0) { redisTemplate.delete(any<Set<String>>()) }
+    verify { cache(ETF_BREAKDOWN_CACHE).clear() }
   }
 
   @Test
@@ -138,6 +136,25 @@ class CacheInvalidationServiceTest {
     cacheInvalidationService.evictInstrumentCaches(1L, "AAPL")
 
     verify { cacheManager.getCache(INSTRUMENT_CACHE) }
-    verify(exactly = 0) { mockCache.evict(any()) }
+    verify(exactly = 0) { cache(INSTRUMENT_CACHE).evict(any()) }
+  }
+}
+
+@IntegrationTest
+class CacheInvalidationServiceIT {
+  @Resource
+  private lateinit var cacheInvalidationService: CacheInvalidationService
+
+  @Resource
+  private lateinit var cacheManager: CacheManager
+
+  @Test
+  fun `evictSummaryCaches should remove every cached summary from Redis`() {
+    val cache = cacheManager.getCache(SUMMARY_CACHE)!!
+    listOf("Ülevaade", "kokkuvõte").forEach { cache.put(it, "väärtus") }
+
+    cacheInvalidationService.evictSummaryCaches()
+
+    expect(listOf("Ülevaade", "kokkuvõte").mapNotNull { cache.get(it) }).toBeEmpty()
   }
 }

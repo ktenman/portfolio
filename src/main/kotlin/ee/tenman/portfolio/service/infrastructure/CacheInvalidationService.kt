@@ -8,8 +8,8 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.PLATFORM_S
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.TRANSACTION_CACHE
 import org.slf4j.LoggerFactory
+import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
-import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
@@ -17,38 +17,40 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Service
 class CacheInvalidationService(
   private val cacheManager: CacheManager,
-  private val redisTemplate: StringRedisTemplate,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun evictInstrumentCaches(
     instrumentId: Long?,
     symbol: String?,
-  ) {
-    val cache = cacheManager.getCache(INSTRUMENT_CACHE) ?: return
-    instrumentId?.let { cache.evict(it) }
-    symbol?.let { cache.evict(it) }
-    cache.evict(ALL_INSTRUMENTS_KEY)
-    log.debug("Evicted instrument cache for id=$instrumentId, symbol=$symbol")
-  }
+  ) = evict(INSTRUMENT_CACHE) { cache -> listOfNotNull(instrumentId, symbol, ALL_INSTRUMENTS_KEY).forEach(cache::evict) }
 
-  fun evictTransactionCaches() {
-    evictAllCacheKeys(TRANSACTION_CACHE)
-    log.debug("Evicted all transaction caches")
-  }
+  fun evictTransactionCaches() = evict(TRANSACTION_CACHE, Cache::clear)
 
   fun evictSummaryCaches() {
-    evictAllCacheKeys(SUMMARY_CACHE)
-    evictAllCacheKeys(PLATFORM_SUMMARY_CACHE)
-    log.debug("Evicted all summary caches")
+    evict(SUMMARY_CACHE, Cache::clear)
+    evict(PLATFORM_SUMMARY_CACHE, Cache::clear)
   }
 
-  fun evictXirrCache() {
-    cacheManager.getCache(ONE_DAY_CACHE)?.evict(XIRR_KEY)
-    log.debug("Evicted XIRR cache")
-  }
+  fun evictXirrCache() = evict(ONE_DAY_CACHE) { it.evict(XIRR_KEY) }
 
   fun evictAllRelatedCaches(
+    instrumentId: Long?,
+    symbol: String?,
+  ) {
+    if (!TransactionSynchronizationManager.isSynchronizationActive()) return evictRelated(instrumentId, symbol)
+    TransactionSynchronizationManager.registerSynchronization(
+      object : TransactionSynchronization {
+        override fun afterCommit() = evictRelated(instrumentId, symbol)
+      },
+    )
+  }
+
+  fun evictEtfBreakdownCache() = evict(ETF_BREAKDOWN_CACHE, Cache::clear)
+
+  fun evictDiversificationEtfsCache() = evict(DIVERSIFICATION_ETFS_CACHE, Cache::clear)
+
+  private fun evictRelated(
     instrumentId: Long?,
     symbol: String?,
   ) {
@@ -58,30 +60,14 @@ class CacheInvalidationService(
     evictXirrCache()
   }
 
-  fun evictAllRelatedCachesAfterCommit() {
-    TransactionSynchronizationManager.registerSynchronization(
-      object : TransactionSynchronization {
-        override fun afterCommit() = evictAllRelatedCaches(null, null)
-      },
-    )
-  }
-
-  fun evictEtfBreakdownCache() {
-    evictAllCacheKeys(ETF_BREAKDOWN_CACHE)
-    log.debug("Evicted ETF breakdown cache")
-  }
-
-  fun evictDiversificationEtfsCache() {
-    evictAllCacheKeys(DIVERSIFICATION_ETFS_CACHE)
-    log.debug("Evicted diversification ETFs cache")
-  }
-
-  private fun evictAllCacheKeys(cacheName: String) {
-    val keys = redisTemplate.keys("$cacheName::*")
-    if (keys.isNotEmpty()) {
-      redisTemplate.delete(keys)
-      log.debug("Evicted ${keys.size} keys from cache $cacheName")
-    }
+  private fun evict(
+    cacheName: String,
+    eviction: (Cache) -> Unit,
+  ) {
+    val cache = cacheManager.getCache(cacheName) ?: return
+    runCatching { eviction(cache) }
+      .onSuccess { log.debug("Evicted cache $cacheName") }
+      .onFailure { log.warn("Failed to evict cache $cacheName", it) }
   }
 
   companion object {

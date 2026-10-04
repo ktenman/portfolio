@@ -71,6 +71,7 @@ spring:
     redis:
       host: redis
       port: 6379
+      timeout: 3s
       repositories:
         enabled: false
 
