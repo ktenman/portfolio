@@ -4,6 +4,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.ft.HistoricalPricesService
@@ -18,6 +19,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -38,6 +40,7 @@ class FtDataRetrievalJobTest {
   private val taskScheduler = mockk<TaskScheduler>(relaxed = true)
   private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
   private val collections = mutableListOf<CollectionRunResult>()
+  private val monitor = monitorForTests(collections)
 
   private val job =
     FtDataRetrievalJob(
@@ -48,7 +51,7 @@ class FtDataRetrievalJobTest {
       priceSnapshotService,
       taskScheduler,
       clock,
-      monitorForTests(collections),
+      monitor,
     )
 
   private lateinit var instrument: Instrument
@@ -96,6 +99,29 @@ class FtDataRetrievalJobTest {
     verify(exactly = 1) { dataProcessingUtil.processDailyData(instrument, ftData, ProviderName.FT) }
     expect(collections.single().failed).toContainExactly("AAPL")
     expect(collections.single().persisted).toBeEmpty()
+  }
+
+  @Test
+  fun `should skip the startup run when the last full collection is still current`() {
+    every { instrumentService.getInstrumentsByProvider(ProviderName.FT) } returns listOf(instrument)
+    every { monitor.current(CollectionKey.FT_HISTORY, listOf("AAPL")) } returns true
+    startup().run()
+    verify(exactly = 0) { jobExecutionService.executeJob(any()) }
+  }
+
+  @Test
+  fun `should run at startup when the last full collection is stale`() {
+    every { instrumentService.getInstrumentsByProvider(ProviderName.FT) } returns listOf(instrument)
+    every { monitor.current(CollectionKey.FT_HISTORY, listOf("AAPL")) } returns false
+    startup().run()
+    verify(exactly = 1) { jobExecutionService.executeJob(job) }
+  }
+
+  private fun startup(): Runnable {
+    val task = slot<Runnable>()
+    job.scheduleInitialRun()
+    verify { taskScheduler.schedule(capture(task), any<Instant>()) }
+    return task.captured
   }
 
   private fun testPriceData(close: BigDecimal): DailyPriceData =

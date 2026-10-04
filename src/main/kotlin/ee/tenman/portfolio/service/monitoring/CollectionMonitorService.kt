@@ -27,6 +27,7 @@ class CollectionMonitorService(
   private val registry: MeterRegistry,
   private val stream: CollectionStreamService,
   private val liveUpdates: LiveUpdateService,
+  private val scheduleService: CollectionScheduleService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -65,6 +66,16 @@ class CollectionMonitorService(
     }
     outcome.getOrThrow()
   }
+
+  fun current(
+    key: CollectionKey,
+    symbols: Collection<String>,
+  ): Boolean =
+    runCatching { stateService.snapshots().any { it.key == key && scheduleService.current(it, symbols) } }
+      .getOrElse {
+        log.warn("Treating ${key.name} as stale because its collection state could not be read", it)
+        false
+      }
 
   private fun recordStorageFailure(
     key: CollectionKey,

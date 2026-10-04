@@ -22,7 +22,10 @@ data class CollectionSnapshot(
   val itemInitializedAt: Map<String, Instant> = emptyMap(),
   val itemErrors: Map<String, String?> = emptyMap(),
   val error: String? = null,
-)
+) {
+  val running: Boolean
+    get() = lastAttempt != null && (lastCompletion == null || lastAttempt.isAfter(lastCompletion))
+}
 
 data class CollectionRunResult(
   val expected: Set<String>,
