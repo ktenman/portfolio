@@ -98,13 +98,24 @@ class DailyPriceRepositoryIT {
     expect(repository.findAll().single().volume).toEqual(250L)
   }
 
+  @Test
+  fun `should return only the latest price point on or before the date`() {
+    val fund = fund(instruments)
+    upsert(fund, null, "11.00", date = LocalDate.of(2026, 10, 1))
+    upsert(fund, null, "12.00", date = LocalDate.of(2026, 10, 2))
+    upsert(fund, null, "13.00", date = LocalDate.of(2026, 10, 3))
+    val points = repository.findLatestPricePoints(listOf(fund), LocalDate.of(2026, 10, 2))
+    expect(points.single().closePrice).toEqualNumerically(BigDecimal("12.00"))
+  }
+
   private fun upsert(
     fund: Instrument,
     open: String?,
     close: String,
     volume: Long? = null,
+    date: LocalDate = LocalDate.of(2026, 10, 2),
   ) = runner.runInTransaction {
-    repository.upsert(fund.id, LocalDate.of(2026, 10, 2), "FT", open?.let(::BigDecimal), null, null, BigDecimal(close), volume)
+    repository.upsert(fund.id, date, "FT", open?.let(::BigDecimal), null, null, BigDecimal(close), volume)
   }
 }
 
