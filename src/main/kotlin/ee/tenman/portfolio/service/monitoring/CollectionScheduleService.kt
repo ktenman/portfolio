@@ -35,6 +35,16 @@ class CollectionScheduleService(
     return CollectionExpectation(enabled, expected, window, deadline)
   }
 
+  fun current(
+    snapshot: CollectionSnapshot,
+    symbols: Collection<String>,
+  ): Boolean {
+    if (snapshot.running) return false
+    val now = clock.instant()
+    val successes = symbols.map { snapshot.itemSuccesses[it] } + snapshot.lastFullSuccess
+    return successes.all { it != null && nextRun(snapshot.key, it).isAfter(now) }
+  }
+
   private fun window(
     snapshot: CollectionSnapshot,
     now: Instant,
@@ -100,7 +110,12 @@ class CollectionScheduleService(
   private fun scheduledDeadline(
     key: CollectionKey,
     after: Instant,
-  ): Instant = requireNotNull(CRONS.getValue(key).next(after.atZone(ZONE))).toInstant().plus(properties.dailyGrace)
+  ): Instant = nextRun(key, after).plus(properties.dailyGrace)
+
+  private fun nextRun(
+    key: CollectionKey,
+    after: Instant,
+  ): Instant = requireNotNull(CRONS.getValue(key).next(after.atZone(ZONE))).toInstant()
 
   private fun configuredAt(snapshot: CollectionSnapshot): Instant =
     maxOf(snapshot.initializedAt, snapshot.itemInitializedAt.values.minOrNull() ?: snapshot.initializedAt)

@@ -39,9 +39,18 @@ class FtDataRetrievalJob(
   fun scheduleInitialRun() {
     log.info("Scheduling initial FT data retrieval job to run in 10 seconds")
     taskScheduler.schedule(
-      { runScheduledJob() },
+      { runStartupJob() },
       Instant.now(clock).plus(Duration.ofSeconds(CollectionSchedules.FT_HISTORY_STARTUP_SECONDS)),
     )
+  }
+
+  private fun runStartupJob() {
+    val symbols = instrumentService.getInstrumentsByProvider(ProviderName.FT).map { it.symbol }
+    if (collectionMonitor.current(CollectionKey.FT_HISTORY, symbols)) {
+      log.info("Skipping startup FT data retrieval job because the last full collection is still current")
+      return
+    }
+    runScheduledJob()
   }
 
   @Scheduled(cron = CollectionSchedules.FT_HISTORY_CRON, zone = CollectionSchedules.TIME_ZONE)

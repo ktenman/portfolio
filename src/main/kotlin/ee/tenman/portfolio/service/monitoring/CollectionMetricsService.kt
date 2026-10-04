@@ -129,21 +129,15 @@ class CollectionMetricsService(
       !expectation.enabled -> CollectionStatus.DISABLED
       open -> CollectionStatus.BREAKER_OPEN
       hung(snapshot) -> CollectionStatus.OVERDUE
-      running(snapshot) -> CollectionStatus.RUNNING
+      snapshot.running -> CollectionStatus.RUNNING
       overdue(snapshot, expectation) -> CollectionStatus.OVERDUE
       snapshot.failed > 0 || snapshot.error != null -> CollectionStatus.PARTIAL_FAILURE
       else -> CollectionStatus.OK
     }
 
-  private fun running(snapshot: CollectionSnapshot): Boolean {
-    val attempt = snapshot.lastAttempt ?: return false
-    val completion = snapshot.lastCompletion ?: return true
-    return attempt.isAfter(completion)
-  }
-
   private fun hung(snapshot: CollectionSnapshot): Boolean {
     val attempt = snapshot.lastAttempt ?: return false
-    return running(snapshot) && Duration.between(attempt, clock.instant()) > HUNG_AFTER
+    return snapshot.running && Duration.between(attempt, clock.instant()) > HUNG_AFTER
   }
 
   private fun overdue(

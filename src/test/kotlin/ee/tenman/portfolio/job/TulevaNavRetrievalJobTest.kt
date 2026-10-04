@@ -4,10 +4,12 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.instrument.InstrumentService
+import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
 import ee.tenman.portfolio.testing.fixture.monitorForTests
 import ee.tenman.portfolio.tuleva.TulevaNav
@@ -53,11 +55,29 @@ class TulevaNavRetrievalJobTest {
     expect(fixture.collections.single().failed).toContainExactly(ISIN)
   }
 
+  @Test
+  fun `should skip the startup import when the last full collection is still current`() {
+    val fixture = fixture(emptyList())
+    every { fixture.monitor.current(CollectionKey.TULEVA_HISTORY, listOf(ISIN)) } returns true
+    fixture.job.runStartupImport()
+    verify(exactly = 0) { fixture.executions.executeJob(any()) }
+  }
+
+  @Test
+  fun `should import at startup when the last full collection is stale`() {
+    val fixture = fixture(emptyList())
+    every { fixture.monitor.current(CollectionKey.TULEVA_HISTORY, listOf(ISIN)) } returns false
+    fixture.job.runStartupImport()
+    verify(exactly = 1) { fixture.executions.executeJob(fixture.job) }
+  }
+
   private fun fixture(navs: List<TulevaNav>): Fixture {
     val instrumentService = mockk<InstrumentService>()
     val client = mockk<TulevaNavClient>()
     val dataProcessingUtil = mockk<DataProcessingUtil>(relaxed = true)
     val collections = mutableListOf<CollectionRunResult>()
+    val executions = mockk<JobExecutionService>(relaxed = true)
+    val monitor = monitorForTests(collections)
     every { instrumentService.getInstrumentsByProvider(ProviderName.TULEVA) } returns listOf(instrument)
     every { client.getNav(ISIN, any()) } returns navs
     val job =
@@ -65,16 +85,18 @@ class TulevaNavRetrievalJobTest {
         instrumentService,
         client,
         dataProcessingUtil,
-        mockk<JobExecutionService>(relaxed = true),
-        monitorForTests(collections),
+        executions,
+        monitor,
       )
-    return Fixture(job, dataProcessingUtil, collections)
+    return Fixture(job, dataProcessingUtil, collections, executions, monitor)
   }
 
   private data class Fixture(
     val job: TulevaNavRetrievalJob,
     val dataProcessingUtil: DataProcessingUtil,
     val collections: List<CollectionRunResult>,
+    val executions: JobExecutionService,
+    val monitor: CollectionMonitorService,
   )
 
   private companion object {

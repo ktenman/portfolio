@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.common.DailyPriceData
 import ee.tenman.portfolio.common.DailyPriceDataImpl
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
+import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
@@ -16,6 +17,7 @@ import ee.tenman.portfolio.service.instrument.InstrumentService
 import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.scheduling.TaskScheduler
@@ -35,6 +37,7 @@ class LightyearHistoricalDataRetrievalJobTest {
   private val lightyearProperties: LightyearScrapingProperties = mockk()
   private val clock: Clock = Clock.fixed(Instant.parse("2026-07-17T10:00:00Z"), ZoneId.of("UTC"))
   private val runs = mutableListOf<CollectionRunResult>()
+  private val monitor = monitorForTests(runs)
 
   private val job =
     LightyearHistoricalDataRetrievalJob(
@@ -46,7 +49,7 @@ class LightyearHistoricalDataRetrievalJobTest {
       taskScheduler = taskScheduler,
       lightyearProperties = lightyearProperties,
       clock = clock,
-      collectionMonitor = monitorForTests(runs),
+      collectionMonitor = monitor,
     )
 
   private val historicalData: Map<LocalDate, DailyPriceData> =
@@ -105,6 +108,29 @@ class LightyearHistoricalDataRetrievalJobTest {
     job.execute()
 
     verify(exactly = 1) { currencyConversionService.convertDailyPricesToEur(historicalData, Currency.EUR) }
+  }
+
+  @Test
+  fun `should skip the startup run when the last full collection is still current`() {
+    every { instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) } returns listOf(instrument("ÜKSUS", null))
+    every { monitor.current(CollectionKey.LIGHTYEAR_HISTORY, listOf("ÜKSUS")) } returns true
+    startup().run()
+    verify(exactly = 0) { jobExecutionService.executeJob(any()) }
+  }
+
+  @Test
+  fun `should run at startup when the last full collection is stale`() {
+    every { instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR) } returns listOf(instrument("ÜKSUS", null))
+    every { monitor.current(CollectionKey.LIGHTYEAR_HISTORY, listOf("ÜKSUS")) } returns false
+    startup().run()
+    verify(exactly = 1) { jobExecutionService.executeJob(job) }
+  }
+
+  private fun startup(): Runnable {
+    val task = slot<Runnable>()
+    job.scheduleInitialRun()
+    verify { taskScheduler.schedule(capture(task), any<Instant>()) }
+    return task.captured
   }
 
   private fun instrument(
