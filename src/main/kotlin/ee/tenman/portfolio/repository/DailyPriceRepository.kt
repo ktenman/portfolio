@@ -62,12 +62,18 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
   @Modifying
   @Query(
     """
+    WITH updated AS (
+      UPDATE daily_price
+      SET open_price = :openPrice, high_price = :highPrice, low_price = :lowPrice, close_price = :closePrice, volume = :volume, updated_at = NOW(), version = version + 1
+      WHERE instrument_id = :instrumentId AND entry_date = :entryDate AND provider_name = :providerName
+        AND (open_price, high_price, low_price, close_price, volume) IS DISTINCT FROM (
+          CAST(:openPrice AS NUMERIC(22, 12)), CAST(:highPrice AS NUMERIC(22, 12)), CAST(:lowPrice AS NUMERIC(22, 12)), CAST(:closePrice AS NUMERIC(22, 12)), :volume
+        )
+    )
     INSERT INTO daily_price (instrument_id, entry_date, provider_name, open_price, high_price, low_price, close_price, volume, created_at, updated_at, version)
-    VALUES (:instrumentId, :entryDate, :providerName, :openPrice, :highPrice, :lowPrice, :closePrice, :volume, NOW(), NOW(), 0)
-    ON CONFLICT (instrument_id, entry_date, provider_name)
-    DO UPDATE SET open_price = :openPrice, high_price = :highPrice, low_price = :lowPrice, close_price = :closePrice, volume = :volume, updated_at = NOW(), version = daily_price.version + 1
-    WHERE (daily_price.open_price, daily_price.high_price, daily_price.low_price, daily_price.close_price, daily_price.volume)
-      IS DISTINCT FROM (EXCLUDED.open_price, EXCLUDED.high_price, EXCLUDED.low_price, EXCLUDED.close_price, EXCLUDED.volume)
+    SELECT :instrumentId, :entryDate, :providerName, :openPrice, :highPrice, :lowPrice, :closePrice, :volume, NOW(), NOW(), 0
+    WHERE NOT EXISTS (SELECT 1 FROM daily_price WHERE instrument_id = :instrumentId AND entry_date = :entryDate AND provider_name = :providerName)
+    ON CONFLICT (instrument_id, entry_date, provider_name) DO NOTHING
     """,
     nativeQuery = true,
   )
