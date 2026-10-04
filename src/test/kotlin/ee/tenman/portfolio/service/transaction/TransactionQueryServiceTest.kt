@@ -139,7 +139,7 @@ class TransactionQueryServiceTest {
 
   @Test
   fun `should get single transaction with profits calculated from its full history`() {
-    val transaction =
+    fun sell() =
       TransactionFixtures
         .createSellTransaction(
           testInstrument,
@@ -148,18 +148,8 @@ class TransactionQueryServiceTest {
           testDate,
           commission = TransactionFixtures.ZERO_COMMISSION,
         ).apply { id = 1L }
-    val calculated =
-      TransactionFixtures
-        .createSellTransaction(
-          testInstrument,
-          BigDecimal("5"),
-          BigDecimal("150"),
-          testDate,
-          commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply {
-          id = 1L
-          realizedProfit = BigDecimal("250")
-        }
+    val transaction = sell()
+    val calculated = sell().apply { realizedProfit = BigDecimal("250") }
     every { transactionService.getTransactionById(1L) } returns transaction
     every { transactionService.getFullTransactionHistoryForProfitCalculation(listOf(transaction), null) } returns listOf(calculated)
     every { transactionService.calculateTransactionProfits(listOf(calculated)) } returns Unit
