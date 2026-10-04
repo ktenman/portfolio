@@ -19,11 +19,10 @@ interface PriceSnapshotRepository : JpaRepository<PriceSnapshot, Long> {
       SET price = :price, updated_at = NOW(), version = version + 1
       WHERE instrument_id = :instrumentId AND provider_name = :providerName AND snapshot_hour = :snapshotHour
         AND price IS DISTINCT FROM CAST(:price AS NUMERIC(20, 10))
-      RETURNING id
     )
     INSERT INTO price_snapshot (instrument_id, provider_name, snapshot_hour, price, created_at, updated_at, version)
     SELECT :instrumentId, :providerName, :snapshotHour, :price, NOW(), NOW(), 0
-    WHERE NOT EXISTS (SELECT 1 FROM updated)
+    WHERE NOT EXISTS (SELECT 1 FROM price_snapshot WHERE instrument_id = :instrumentId AND provider_name = :providerName AND snapshot_hour = :snapshotHour)
     ON CONFLICT (instrument_id, provider_name, snapshot_hour) DO NOTHING
     """,
     nativeQuery = true,

@@ -69,11 +69,10 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
         AND (open_price, high_price, low_price, close_price, volume) IS DISTINCT FROM (
           CAST(:openPrice AS NUMERIC(22, 12)), CAST(:highPrice AS NUMERIC(22, 12)), CAST(:lowPrice AS NUMERIC(22, 12)), CAST(:closePrice AS NUMERIC(22, 12)), :volume
         )
-      RETURNING id
     )
     INSERT INTO daily_price (instrument_id, entry_date, provider_name, open_price, high_price, low_price, close_price, volume, created_at, updated_at, version)
     SELECT :instrumentId, :entryDate, :providerName, :openPrice, :highPrice, :lowPrice, :closePrice, :volume, NOW(), NOW(), 0
-    WHERE NOT EXISTS (SELECT 1 FROM updated)
+    WHERE NOT EXISTS (SELECT 1 FROM daily_price WHERE instrument_id = :instrumentId AND entry_date = :entryDate AND provider_name = :providerName)
     ON CONFLICT (instrument_id, entry_date, provider_name) DO NOTHING
     """,
     nativeQuery = true,

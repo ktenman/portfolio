@@ -43,6 +43,15 @@ class DailyPriceRepositoryIT {
   }
 
   @Test
+  fun `should not consume an id when the same prices are written again`() {
+    val fund = fund(instruments)
+    upsert(fund, null, "12.34")
+    val id = lastId(jdbc, "daily_price")
+    upsert(fund, null, "12.34")
+    expect(lastId(jdbc, "daily_price")).toEqual(id)
+  }
+
+  @Test
   fun `should keep the version when prices finer than the column scale are written again`() {
     val fund = fund(instruments)
     repeat(2) { upsert(fund, "12.3456789012345", "12.3456789012345") }
@@ -128,6 +137,15 @@ class PriceSnapshotRepositoryIT {
   }
 
   @Test
+  fun `should not consume an id when the same price is written again`() {
+    val fund = fund(instruments)
+    upsert(fund, "45.67")
+    val id = lastId(jdbc, "price_snapshot")
+    upsert(fund, "45.67")
+    expect(lastId(jdbc, "price_snapshot")).toEqual(id)
+  }
+
+  @Test
   fun `should keep the version when a price finer than the column scale is written again`() {
     val fund = fund(instruments)
     repeat(2) { upsert(fund, "45.678901234567") }
@@ -160,6 +178,11 @@ class PriceSnapshotRepositoryIT {
 
 private fun fund(instruments: InstrumentRepository): Instrument =
   instruments.save(Instrument(symbol = "ÕUN", name = "Õunake fond", category = "ETF", baseCurrency = "EUR"))
+
+private fun lastId(
+  jdbc: JdbcTemplate,
+  table: String,
+): Long? = jdbc.queryForObject("SELECT last_value FROM ${table}_id_seq", Long::class.java)
 
 private fun xmax(
   jdbc: JdbcTemplate,
