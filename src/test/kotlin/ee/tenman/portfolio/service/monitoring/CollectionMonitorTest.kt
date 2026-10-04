@@ -121,6 +121,14 @@ class CollectionMonitorTest {
     verify(exactly = 0) { liveUpdates.publish(any()) }
   }
 
+  @Test
+  fun `should treat a collection as stale when its durable state cannot be read`() {
+    val state = mockk<CollectionStateService>()
+    every { state.snapshots() } throws DataAccessResourceFailureException("andmebaas ei vasta")
+    val monitor = CollectionMonitorService(state, SimpleMeterRegistry(), mockk(), mockk(), mockk())
+    expect(monitor.current(CollectionKey.FT_HISTORY, listOf("ÕUN"))).toEqual(false)
+  }
+
   private fun persistenceFailures(registry: SimpleMeterRegistry): Double =
     registry
       .get("portfolio.collection.failures")

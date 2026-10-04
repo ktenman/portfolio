@@ -70,7 +70,12 @@ class CollectionMonitorService(
   fun current(
     key: CollectionKey,
     symbols: Collection<String>,
-  ): Boolean = stateService.snapshots().any { it.key == key && scheduleService.current(it, symbols) }
+  ): Boolean =
+    runCatching { stateService.snapshots().any { it.key == key && scheduleService.current(it, symbols) } }
+      .getOrElse {
+        log.warn("Treating ${key.name} as stale because its collection state could not be read", it)
+        false
+      }
 
   private fun recordStorageFailure(
     key: CollectionKey,
