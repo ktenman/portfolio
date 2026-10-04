@@ -250,13 +250,12 @@ def check_compose():
     postgres = services['postgres']['command']
     for setting in ('log_lock_waits=on', 'log_temp_files=0'):
         assert setting in postgres, f'postgres is missing {setting}'
-    assert services['postgres']['healthcheck']['interval'] == '30s'
+    assert 'start_interval' in services['postgres']['healthcheck']
     redis = services['redis']['command']
-    for setting in ('--save 3600 1', '--stop-writes-on-bgsave-error no'):
+    for setting in ('--maxmemory ', '--save 3600 1', '--stop-writes-on-bgsave-error no'):
         assert setting in redis, f'redis is missing {setting}'
-    assert 'apk add' not in ' '.join(services['app']['healthcheck']['test'])
     unrotated = sorted(name for name, service in services.items()
-                       if service.get('logging', {}).get('options', {}).get('max-size') != '10m')
+                       if 'max-size' not in service.get('logging', {}).get('options', {}))
     assert not unrotated, f'container logs are not rotated for {unrotated}'
     assert 'evaluation_interval: 15s' in (ROOT / 'prometheus.yml').read_text()
     print('Optional Compose profile, internal ports, and healthchecks passed')

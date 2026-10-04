@@ -168,7 +168,7 @@ services:
       - frontend
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f -k http://localhost:80/healthz || exit 1" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:80/healthz" ]
       interval: 12s
       timeout: 3s
       retries: 5
