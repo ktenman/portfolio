@@ -1,5 +1,12 @@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   postgres:
+    logging: *logging
     container_name: postgres
     image: postgres:17-alpine
     command: >-
@@ -13,6 +20,8 @@ services:
       -c log_filename=postgresql-%a.log
       -c log_rotation_age=1d
       -c log_truncate_on_rotation=on
+      -c log_lock_waits=on
+      -c log_temp_files=0
     environment:
       POSTGRES_DB: portfolio
       POSTGRES_USER: ${POSTGRES_USER}
@@ -21,15 +30,18 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d portfolio" ]
-      interval: 3s
+      interval: 30s
       timeout: 1s
       retries: 5
+      start_period: 30s
+      start_interval: 3s
     restart: always
 
   redis:
+    logging: *logging
     container_name: redis
     image: redis:8-alpine
-    command: redis-server --maxmemory 768mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 768mb --maxmemory-policy allkeys-lru --save 3600 1 --stop-writes-on-bgsave-error no
     volumes:
       - redis_data:/data
     healthcheck:
@@ -41,6 +53,7 @@ services:
     mem_limit: 1024m
 
   seaweedfs:
+    logging: *logging
     container_name: seaweedfs
     image: docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882
     environment:
@@ -57,6 +70,7 @@ services:
     restart: always
 
   backend:
+    logging: *logging
     container_name: backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/portfolio
@@ -100,6 +114,7 @@ services:
       start_period: 60s
 
   frontend:
+    logging: *logging
     container_name: frontend
     image: ktenman/portfolio-fe:latest
     depends_on:
@@ -112,6 +127,7 @@ services:
       retries: 5
 
   auth:
+    logging: *logging
     container_name: auth
     image: ktenman/auth:latest
     environment:
@@ -135,6 +151,7 @@ services:
       start_period: 40s
 
   app:
+    logging: *logging
     container_name: app
     image: caddy:2.10-alpine
     ports:
@@ -151,12 +168,13 @@ services:
       - frontend
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "for i in 1 2 3 4 5; do apk add --no-cache curl && break || sleep 5; done && curl -f -k http://localhost:80/healthz || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f -k http://localhost:80/healthz || exit 1" ]
       interval: 12s
       timeout: 3s
       retries: 5
 
   cloudflare-bypass-proxy:
+    logging: *logging
     container_name: cloudflare-bypass-proxy
     platform: linux/amd64
     image: ktenman/cloudflare-bypass-proxy:latest
@@ -172,6 +190,7 @@ services:
       NODE_ENV: production
 
   healthcheck:
+    logging: *logging
     container_name: healthcheck
     image: alpine:latest
     depends_on:
@@ -200,6 +219,7 @@ services:
     restart: always
 
   alertmanager:
+    logging: *logging
     image: prom/alertmanager:v0.34.1@sha256:e9733bafb1bdef9b00e25a21f8f99dc26a22224bf16641ad754d1649f4c3357a
     profiles: [monitoring]
     user: "0:0"
@@ -224,6 +244,7 @@ services:
       start_period: 20s
 
   prometheus:
+    logging: *logging
     image: prom/prometheus:v3.13.3@sha256:6976aa8a60fec930796ce5772b8d12da7a318a5daa8d40d69c5c7819a05eeed7
     profiles: [monitoring]
     command:
