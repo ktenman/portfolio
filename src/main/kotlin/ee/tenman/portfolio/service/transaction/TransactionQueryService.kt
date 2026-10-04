@@ -34,7 +34,7 @@ class TransactionQueryService(
   @Transactional(readOnly = true)
   fun getTransactionWithProfits(id: Long): TransactionResponseDto {
     val transaction = transactionService.getTransactionById(id)
-    transactionService.calculateTransactionProfits(listOf(transaction))
+    calculateProfitsWithFullHistory(listOf(transaction), null)
     return TransactionResponseDto.fromEntity(transaction)
   }
 

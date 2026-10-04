@@ -9,7 +9,6 @@ import ee.tenman.portfolio.service.calculation.ProfitCalculationEngine
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
@@ -26,16 +25,10 @@ class TransactionService(
   private val clock: Clock,
 ) {
   @Transactional(readOnly = true)
-  @Cacheable(value = [TRANSACTION_CACHE], key = "#id")
   fun getTransactionById(id: Long): PortfolioTransaction = portfolioTransactionRepository.findById(id).orNotFound(id)
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
-  @Caching(
-    evict = [
-      CacheEvict(value = [TRANSACTION_CACHE], key = "#transaction.id", condition = "#transaction.id != null"),
-      CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
-    ],
-  )
+  @CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'")
   fun saveTransaction(transaction: PortfolioTransaction): PortfolioTransaction {
     val saved = portfolioTransactionRepository.save(transaction)
     val relatedTransactions =
@@ -48,12 +41,7 @@ class TransactionService(
   }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
-  @Caching(
-    evict = [
-      CacheEvict(value = [TRANSACTION_CACHE], key = "#id"),
-      CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'"),
-    ],
-  )
+  @CacheEvict(value = [TRANSACTION_CACHE], key = "'transactions'")
   fun deleteTransaction(id: Long) {
     portfolioTransactionRepository.deleteById(id)
     cacheInvalidationService.evictAllRelatedCachesAfterCommit()
