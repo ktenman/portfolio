@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.pricing
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToThrow
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
@@ -92,7 +93,7 @@ class PriceUpdateProcessorTest {
   }
 
   @Test
-  fun `should report persistence failures after processing the available prices`() {
+  fun `should finish when one price is invalid and the rest persist`() {
     every { marketPhaseDetectionService.isWeekendPhase() } returns false
 
     val prices = mapOf("AAPL" to BigDecimal("150.00"), "INVALID" to BigDecimal("0.00"))
@@ -106,26 +107,37 @@ class PriceUpdateProcessorTest {
           if (symbol == "INVALID") error("Price persistence failed") else true
         },
       )
-    }.toThrow<IllegalStateException>()
+    }.notToThrow()
   }
 
   @Test
   fun `should continue persisting prices after a transaction throws`() {
     every { marketPhaseDetectionService.isWeekendPhase() } returns false
     val persisted = mutableListOf<String>()
+    processor.processPriceUpdates(
+      platform = Platform.LIGHTYEAR,
+      log = log,
+      fetchPrices = { mapOf("VGLA" to BigDecimal("4.38"), "WEBN" to BigDecimal("13.12")) },
+      processSymbol = { symbol, _, _, _ ->
+        if (symbol == "VGLA") error("Transaction commit failed")
+        persisted.add(symbol)
+        true
+      },
+    )
+    expect(persisted).toContainExactly("WEBN")
+  }
+
+  @Test
+  fun `should fail when no price could be persisted`() {
+    every { marketPhaseDetectionService.isWeekendPhase() } returns false
     expect {
       processor.processPriceUpdates(
         platform = Platform.LIGHTYEAR,
         log = log,
-        fetchPrices = { mapOf("VGLA" to BigDecimal("4.38"), "WEBN" to BigDecimal("13.12")) },
-        processSymbol = { symbol, _, _, _ ->
-          if (symbol == "VGLA") error("Transaction commit failed")
-          persisted.add(symbol)
-          true
-        },
+        fetchPrices = { mapOf("VGLA" to BigDecimal("4.38")) },
+        processSymbol = { _, _, _, _ -> error("Transaction commit failed") },
       )
     }.toThrow<PriceRefreshException>()
-    expect(persisted).toContainExactly("WEBN")
   }
 
   @Test
@@ -187,14 +199,14 @@ class PriceUpdateProcessorTest {
   }
 
   @Test
-  fun `processPriceUpdates should count results correctly with mixed outcomes`() {
+  fun `processPriceUpdates should count every failed price when nothing persists`() {
     every { marketPhaseDetectionService.isWeekendPhase() } returns false
 
     val prices =
       mapOf(
-        "CHANGED" to BigDecimal("100.00"),
-        "UNCHANGED" to BigDecimal("200.00"),
+        "ZERO" to BigDecimal("0.00"),
         "FAILED" to BigDecimal("300.00"),
+        "KATKI" to BigDecimal("200.00"),
       )
 
     val failure =
@@ -203,17 +215,11 @@ class PriceUpdateProcessorTest {
           platform = Platform.BINANCE,
           log = log,
           fetchPrices = { prices },
-          processSymbol = { symbol, _, _, _ ->
-            when (symbol) {
-              "CHANGED" -> true
-              "UNCHANGED" -> false
-              else -> error("Price persistence failed")
-            }
-          },
+          processSymbol = { _, _, _, _ -> error("Price persistence failed") },
         )
       }.exceptionOrNull()
 
-    expect(failure?.message).toEqual("BINANCE price refresh incomplete: requested=3, fetched=3, persisted=2, failed=1")
+    expect(failure?.message).toEqual("BINANCE price refresh incomplete: requested=3, fetched=3, persisted=0, failed=3")
   }
 
   @Test

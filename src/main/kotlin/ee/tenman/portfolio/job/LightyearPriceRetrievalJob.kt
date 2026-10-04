@@ -45,8 +45,8 @@ class LightyearPriceRetrievalJob(
     }
 
     log.info("Running Lightyear price update job")
-    jobExecutionService.executeJob(this)
-    log.info("Completed Lightyear price update job")
+    runCatching { jobExecutionService.executeJob(this) }
+      .onSuccess { log.info("Completed Lightyear price update job") }
   }
 
   private fun shouldRun(): Boolean {
