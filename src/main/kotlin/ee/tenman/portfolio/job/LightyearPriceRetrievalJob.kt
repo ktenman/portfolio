@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
@@ -45,8 +46,9 @@ class LightyearPriceRetrievalJob(
     }
 
     log.info("Running Lightyear price update job")
-    jobExecutionService.executeJob(this)
-    log.info("Completed Lightyear price update job")
+    runCatching { jobExecutionService.executeJob(this) }
+      .onSuccess { log.info("Completed Lightyear price update job") }
+      .onFailure { if (it !is PriceRefreshException) throw it }
   }
 
   private fun shouldRun(): Boolean {

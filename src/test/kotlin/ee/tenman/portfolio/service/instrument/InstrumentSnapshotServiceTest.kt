@@ -69,7 +69,7 @@ class InstrumentSnapshotServiceTest {
 
     every { xirrCalculationService.convertToCashFlow(any()) } returns CashFlow(-1000.0, testDate)
     every { xirrCalculationService.calculateAdjustedXirr(any(), any()) } returns 0.15
-    every { dailyPriceService.buildPriceLookup(any()) } returns PriceLookup(emptyList())
+    every { dailyPriceService.buildLatestPriceLookup(any(), any()) } returns PriceLookup(emptyList())
     instrumentSnapshotService =
       InstrumentSnapshotService(
         instrumentRepository,

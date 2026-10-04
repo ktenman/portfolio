@@ -14,6 +14,7 @@ import ee.tenman.portfolio.service.pricing.PriceUpdateProcessor
 import ee.tenman.portfolio.testing.fixture.monitorForTests
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Clock
@@ -29,12 +30,13 @@ class LightyearPriceRetrievalJobTest {
   }
 
   @Test
-  fun `should preserve available prices before reporting a partial collection failure`() {
+  fun `should finish and record the missing instrument when only some prices arrive`() {
     val persisted = mutableListOf<String>()
     val runs = mutableListOf<CollectionRunResult>()
     val job = job(mapOf("VGLA:GER:EUR" to BigDecimal("4.38")), persisted, runs)
 
-    expect { job.execute() }.toThrow<PriceRefreshException>()
+    job.execute()
+
     expect(persisted).toContainExactly("VGLA:GER:EUR")
     expect(runs.single().persisted).toContainExactly("VGLA:GER:EUR")
     expect(runs.single().failed).toContainExactly("WEBN:GER:EUR")
@@ -48,6 +50,34 @@ class LightyearPriceRetrievalJobTest {
     job(prices, persisted).execute()
 
     expect(persisted).toContainExactly("VGLA:GER:EUR", "WEBN:GER:EUR")
+  }
+
+  @Test
+  fun `should not rethrow a failed run to the scheduler`() {
+    val executions = mockk<JobExecutionService>()
+    every { executions.executeJob(any()) } throws PriceRefreshException("LIGHTYEAR price refresh incomplete")
+    val job = started(executions)
+
+    job.runJob()
+
+    verify(exactly = 1) { executions.executeJob(job) }
+  }
+
+  @Test
+  fun `should rethrow an unexpected failure to the scheduler`() {
+    val executions = mockk<JobExecutionService>()
+    every { executions.executeJob(any()) } throws IllegalArgumentException("Job execution record not saved")
+    val job = started(executions)
+
+    expect { job.runJob() }.toThrow<IllegalArgumentException>()
+  }
+
+  private fun started(executions: JobExecutionService): LightyearPriceRetrievalJob {
+    val start = Instant.parse("2026-09-25T13:30:00Z")
+    val clock = mockk<Clock>()
+    every { clock.instant() } returnsMany listOf(start, start.plusSeconds(600))
+    every { clock.withZone(any()) } answers { Clock.fixed(start.plusSeconds(600), firstArg()) }
+    return LightyearPriceRetrievalJob(executions, mockk(), mockk(), mockk(), clock, mockk(), mockk()).also { it.init() }
   }
 
   private fun job(

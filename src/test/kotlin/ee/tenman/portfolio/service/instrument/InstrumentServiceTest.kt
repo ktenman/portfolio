@@ -170,7 +170,7 @@ class InstrumentServiceTest {
   }
 
   @Test
-  fun `should update current price using direct query and recalculate profits`() {
+  fun `should update current price using direct query and evict caches`() {
     val newPrice = BigDecimal("175.50")
     every { instrumentRepository.updateCurrentPrice(1L, newPrice) } returns Unit
     every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
@@ -178,20 +178,28 @@ class InstrumentServiceTest {
     instrumentService.updateCurrentPrice(1L, newPrice)
 
     verify { instrumentRepository.updateCurrentPrice(1L, newPrice) }
-    verify { transactionProfitService.recalculateProfitsForInstrument(1L) }
     verify { cacheInvalidationService.evictAllRelatedCaches(1L, "AAPL") }
   }
 
   @Test
-  fun `should update current price to null and still recalculate profits`() {
+  fun `should update current price to null and evict caches`() {
     every { instrumentRepository.updateCurrentPrice(1L, null) } returns Unit
     every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
 
     instrumentService.updateCurrentPrice(1L, null)
 
     verify { instrumentRepository.updateCurrentPrice(1L, null) }
-    verify { transactionProfitService.recalculateProfitsForInstrument(1L) }
     verify { cacheInvalidationService.evictAllRelatedCaches(1L, "AAPL") }
+  }
+
+  @Test
+  fun `should not rewrite transaction profits when the current price changes`() {
+    every { instrumentRepository.updateCurrentPrice(1L, any()) } returns Unit
+    every { instrumentRepository.findById(1L) } returns Optional.of(testInstrument)
+
+    instrumentService.updateCurrentPrice(1L, BigDecimal("175.50"))
+
+    verify(exactly = 0) { transactionProfitService.recalculateProfitsForInstrument(any()) }
   }
 
   @Test
@@ -201,7 +209,6 @@ class InstrumentServiceTest {
     instrumentService.updateCurrentPrice(1L, BigDecimal("150.0"))
 
     verify(exactly = 0) { instrumentRepository.updateCurrentPrice(any(), any()) }
-    verify(exactly = 0) { transactionProfitService.recalculateProfitsForInstrument(any()) }
     verify(exactly = 0) { cacheInvalidationService.evictAllRelatedCaches(any(), any()) }
   }
 
@@ -229,12 +236,11 @@ class InstrumentServiceTest {
   }
 
   @Test
-  fun `should not recalculate profits when instrument not found but still evict cache`() {
+  fun `should evict only the instrument cache when the instrument is not found`() {
     every { instrumentRepository.findById(999L) } returns Optional.empty()
 
     instrumentService.updateCurrentPrice(999L, BigDecimal("175.50"))
 
-    verify(exactly = 0) { transactionProfitService.recalculateProfitsForInstrument(any()) }
     verify(exactly = 0) { cacheInvalidationService.evictAllRelatedCaches(any(), any()) }
     verify { cacheInvalidationService.evictInstrumentCaches(999L, null) }
   }
