@@ -65,13 +65,15 @@ class PriceUpdateProcessor(
         }
     }
 
-    if (updatedCount < requested || failedCount > 0) {
-      throw PriceRefreshException(
-        "$platform price refresh incomplete: requested=$requested, fetched=${prices.size}, " +
-          "persisted=$updatedCount, failed=${requested - updatedCount}",
-      )
+    if (updatedCount == requested && failedCount == 0) {
+      log.info("Successfully Updated current prices for $updatedCount/${prices.size} instruments")
+      return
     }
-    log.info("Successfully Updated current prices for $updatedCount/${prices.size} instruments")
+    val summary =
+      "$platform price refresh incomplete: requested=$requested, fetched=${prices.size}, " +
+        "persisted=$updatedCount, failed=${requested - updatedCount}"
+    if (updatedCount == 0) throw PriceRefreshException(summary)
+    log.warn(summary)
   }
 
   fun processSymbolUpdate(

@@ -122,9 +122,13 @@ jobs:
                       target.write(values[name] + '\n')
                   path.chmod(0o600)
           PY
+      - name: Check host before deploy
+        run: |
+          scp healthcheck.sh deploy-check.sh githubuser@fov.ee:~/
+          ssh githubuser@fov.ee 'sh ./deploy-check.sh preflight'
       - name: Copy files to server
         run: |
-          scp .env docker-compose.yml Caddyfile healthcheck.sh githubuser@fov.ee:~/
+          scp .env docker-compose.yml Caddyfile githubuser@fov.ee:~/
           ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring'
           scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml githubuser@fov.ee:~/monitoring/
           if [ "$MONITORING_ENABLED" = true ]; then
@@ -155,10 +159,8 @@ jobs:
             echo 'Waiting for all services to become healthy...' && \
             OK=0 && \
             for i in \$(seq 1 40); do \
-              HEALTHY=\$(docker ps --filter 'health=healthy' --format '{{.Names}}' | wc -l); \
-              RUNNING=\$(docker ps --filter 'status=running' --format '{{.Names}}' | wc -l); \
-              echo \"Health check \$i/40: \$HEALTHY healthy, \$RUNNING running\"; \
-              if [ \"\$HEALTHY\" -ge 8 ] && [ \"\$RUNNING\" -ge 9 ]; then OK=1; echo 'All services healthy and running!'; break; fi; \
+              echo \"Health check \$i/40\"; \
+              if sh ./deploy-check.sh healthy; then OK=1; echo 'All services healthy and running!'; break; fi; \
               sleep 10; \
             done && \
             if [ \"\$OK\" -ne 1 ]; then echo 'Services failed to become healthy after 40 checks'; docker ps; exit 1; fi && \

@@ -247,8 +247,50 @@ def check_compose():
     assert services['backend']['environment']['MANAGEMENT_SERVER_PORT'] == 9090
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
     assert '--rules.alert.resend-delay=15s' in services['prometheus']['command']
+    postgres = services['postgres']['command']
+    for setting in ('log_lock_waits=on', 'log_temp_files=0'):
+        assert setting in postgres, f'postgres is missing {setting}'
+    assert 'start_interval' in services['postgres']['healthcheck']
+    redis = services['redis']['command']
+    for setting in ('--maxmemory ', '--save 3600 1', '--stop-writes-on-bgsave-error no'):
+        assert setting in redis, f'redis is missing {setting}'
+    unrotated = sorted(name for name, service in services.items()
+                       if 'max-size' not in service.get('logging', {}).get('options', {}))
+    assert not unrotated, f'container logs are not rotated for {unrotated}'
     assert 'evaluation_interval: 15s' in (ROOT / 'prometheus.yml').read_text()
     print('Optional Compose profile, internal ports, and healthchecks passed')
+
+
+def check_host_gates():
+    root = ROOT.parent
+    with tempfile.TemporaryDirectory() as directory:
+        meminfo = Path(directory) / 'meminfo'
+        meminfo.write_text('SwapTotal: 4000 kB\nSwapFree: 1000 kB\n')
+        cases = {
+            'disk_percent() { echo 10; }; redis_saves() { true; }': 'swap 75% used',
+            'disk_percent() { echo 91; }; redis_saves() { true; }': 'disk 91% used',
+            'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { false; }': 'Redis cannot save',
+            'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { true; }': '',
+        }
+        for stubs, expected in cases.items():
+            command = f'HEALTHCHECK_LIB=1 MEMINFO={meminfo}; . {root}/healthcheck.sh; {stubs}; host_problem'
+            assert run('sh', '-c', command).stdout.strip() == expected, stubs
+        refusal = run('env', f'MEMINFO={meminfo}', 'DISK_LIMIT=0', 'sh', str(root / 'deploy-check.sh'), 'preflight', check=False)
+        assert refusal.returncode == 1 and 'limits are disk 0% and swap 75%' in refusal.stdout, refusal
+        docker = Path(directory) / 'docker'
+        docker.write_text('#!/bin/sh\ncase "$*" in *Health.Status*) echo healthy ;; *) echo "$HEARTBEAT" ;; esac\n')
+        docker.chmod(0o755)
+        for heartbeat, code in {'running 0': 0, 'restarting 1': 1, 'running 1': 1}.items():
+            command = f'PATH={directory}:$PATH HEARTBEAT="{heartbeat}" sh {root}/deploy-check.sh healthy'
+            assert run('sh', '-c', command, check=False).returncode == code, heartbeat
+    for script in ('healthcheck.sh', 'deploy-check.sh', 'scripts/docker-cleanup.sh'):
+        run('sh', '-n', str(root / script))
+    assert 'container prune -f --filter until=1h' in (root / 'scripts/docker-cleanup.sh').read_text()
+    deploy = (root / '.github/workflows/deploy-pipeline.yml').read_text()
+    for step in ('deploy-check.sh preflight', 'deploy-check.sh healthy'):
+        assert step in deploy, f'deploy does not run {step}'
+    assert deploy.index('deploy-check.sh preflight') < deploy.index('scp .env'), 'deploy copies files before the preflight'
+    print('Heartbeat and deploy host gates passed')
 
 
 def check_production_permissions():
@@ -448,6 +490,7 @@ def check_delivery():
 if __name__ == '__main__':
     check_configurations()
     check_compose()
+    check_host_gates()
     check_production_permissions()
     check_metric_coverage()
     check_readiness_recovery()

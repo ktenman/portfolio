@@ -3,6 +3,7 @@ package ee.tenman.portfolio.configuration
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.redis.cache.BatchStrategies
 import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.cache.RedisCacheWriter
@@ -36,13 +37,14 @@ class RedisConfiguration {
     cacheConfigurations[HOLDING_IDENTITY_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     val defaultConfig = RedisCacheConfiguration.defaultCacheConfig().entryTtl(DEFAULT_TTL)
     return RedisCacheManager
-      .builder(RedisCacheWriter.create(connectionFactory) { it.immediateWrites() })
+      .builder(RedisCacheWriter.create(connectionFactory) { it.immediateWrites().batchStrategy(BatchStrategies.scan(SCAN_BATCH)) })
       .cacheDefaults(defaultConfig)
       .withInitialCacheConfigurations(cacheConfigurations)
       .build()
   }
 
   companion object {
+    private const val SCAN_BATCH = 1000
     const val INSTRUMENT_CACHE = "instrument-cache-v3"
     const val SUMMARY_CACHE = "summary-cache-v4"
     const val INTRADAY_REPLAY_CACHE = "intraday-replay-v1"

@@ -252,7 +252,7 @@ class TransactionServiceTest : TransactionServiceTestBase() {
 
     transactionService.saveTransaction(transaction)
 
-    verify { cacheInvalidationService.evictAllRelatedCachesAfterCommit() }
+    verify { cacheInvalidationService.evictAllRelatedCaches(null, null) }
   }
 
   @Test
@@ -261,7 +261,7 @@ class TransactionServiceTest : TransactionServiceTestBase() {
 
     transactionService.deleteTransaction(1L)
 
-    verify { cacheInvalidationService.evictAllRelatedCachesAfterCommit() }
+    verify { cacheInvalidationService.evictAllRelatedCaches(null, null) }
   }
 
   @Test

@@ -84,7 +84,6 @@ class InstrumentService(
     }
     if (compareValues(instrument.currentPrice, price) == 0) return false
     instrumentRepository.updateCurrentPrice(instrumentId, price)
-    transactionProfitService.recalculateProfitsForInstrument(instrumentId)
     cacheInvalidationService.evictAllRelatedCaches(instrumentId, instrument.symbol)
     return true
   }
