@@ -186,6 +186,13 @@ class CollectionMonitorIT {
   }
 
   @Test
+  fun `should treat a history collection as stale when a later run was interrupted`() {
+    monitor.collect(CollectionKey.LIGHTYEAR_HISTORY, listOf("Õ")) { it.persisted("Õ") }
+    stateService.begin(CollectionKey.LIGHTYEAR_HISTORY)
+    expect(monitor.current(CollectionKey.LIGHTYEAR_HISTORY, listOf("Õ"))).toEqual(false)
+  }
+
+  @Test
   fun `should treat a history collection which never ran as stale`() {
     expect(monitor.current(CollectionKey.FT_HISTORY, listOf("A"))).toEqual(false)
   }

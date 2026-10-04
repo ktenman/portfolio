@@ -39,6 +39,7 @@ class CollectionScheduleService(
     snapshot: CollectionSnapshot,
     symbols: Collection<String>,
   ): Boolean {
+    if (snapshot.running) return false
     val now = clock.instant()
     val successes = symbols.map { snapshot.itemSuccesses[it] } + snapshot.lastFullSuccess
     return successes.all { it != null && nextRun(snapshot.key, it).isAfter(now) }

@@ -329,6 +329,14 @@ class CollectionScheduleServiceTest {
     expect(service.current(snapshot, listOf("VGLA:GER:EUR"))).toEqual(false)
   }
 
+  @Test
+  fun `should treat a history collection as stale while a later run has not completed`() {
+    val service = service(clock("2026-09-25T10:00:00Z"))
+    val finished = collected(full = "2026-09-25T02:01:00Z", item = "2026-09-25T02:00:40Z")
+    val snapshot = finished.copy(lastAttempt = Instant.parse("2026-09-25T09:00:00Z"), lastCompletion = finished.lastFullSuccess)
+    expect(service.current(snapshot, listOf("VGLA:GER:EUR"))).toEqual(false)
+  }
+
   private fun collected(
     full: String?,
     item: String,
