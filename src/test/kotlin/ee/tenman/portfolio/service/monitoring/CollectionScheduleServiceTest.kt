@@ -304,7 +304,7 @@ class CollectionScheduleServiceTest {
   @Test
   fun `should treat a history collection as stale once a scheduled run has come due`() {
     val service = service(clock("2026-09-25T10:00:00Z"))
-    val snapshot = collected(full = "2026-09-24T02:01:00Z", item = "2026-09-24T02:00:40Z")
+    val snapshot = collected(full = "2026-09-24T02:01:00Z", item = "2026-09-25T02:00:40Z")
     expect(service.current(snapshot, listOf("VGLA:GER:EUR"))).toEqual(false)
   }
 

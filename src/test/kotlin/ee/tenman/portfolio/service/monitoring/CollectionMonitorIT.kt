@@ -182,7 +182,7 @@ class CollectionMonitorIT {
   @Test
   fun `should treat a history collection as stale after a run that failed an instrument`() {
     monitor.collect(CollectionKey.TULEVA_HISTORY, listOf("A", "Õ")) { it.persisted("A") }
-    expect(monitor.current(CollectionKey.TULEVA_HISTORY, listOf("A", "Õ"))).toEqual(false)
+    expect(monitor.current(CollectionKey.TULEVA_HISTORY, listOf("A"))).toEqual(false)
   }
 
   @Test

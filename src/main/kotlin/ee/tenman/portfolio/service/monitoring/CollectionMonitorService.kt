@@ -70,7 +70,7 @@ class CollectionMonitorService(
   fun current(
     key: CollectionKey,
     symbols: Collection<String>,
-  ): Boolean = stateService.snapshots().firstOrNull { it.key == key }?.let { scheduleService.current(it, symbols) } ?: false
+  ): Boolean = stateService.snapshots().any { it.key == key && scheduleService.current(it, symbols) }
 
   private fun recordStorageFailure(
     key: CollectionKey,
