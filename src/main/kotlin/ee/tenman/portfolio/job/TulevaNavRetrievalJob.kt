@@ -27,6 +27,11 @@ class TulevaNavRetrievalJob(
 
   @Scheduled(initialDelay = CollectionSchedules.TULEVA_HISTORY_STARTUP_SECONDS * 1000, fixedDelay = Long.MAX_VALUE)
   fun runStartupImport() {
+    val symbols = instrumentService.getInstrumentsByProvider(ProviderName.TULEVA).map { it.symbol }
+    if (collectionMonitor.current(CollectionKey.TULEVA_HISTORY, symbols)) {
+      log.info("Skipping startup Tuleva NAV import because the last full collection is still current")
+      return
+    }
     jobExecutionService.executeJob(this)
   }
 

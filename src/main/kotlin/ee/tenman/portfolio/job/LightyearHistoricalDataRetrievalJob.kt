@@ -42,9 +42,18 @@ class LightyearHistoricalDataRetrievalJob(
   fun scheduleInitialRun() {
     log.info("Scheduling initial Lightyear historical data retrieval job to run in 30 seconds")
     taskScheduler.schedule(
-      { runScheduledJob() },
+      { runStartupJob() },
       Instant.now(clock).plus(Duration.ofSeconds(CollectionSchedules.LIGHTYEAR_HISTORY_STARTUP_SECONDS)),
     )
+  }
+
+  private fun runStartupJob() {
+    val symbols = instrumentService.getInstrumentsByProvider(ProviderName.LIGHTYEAR).map { it.symbol }
+    if (collectionMonitor.current(CollectionKey.LIGHTYEAR_HISTORY, symbols)) {
+      log.info("Skipping startup Lightyear historical data retrieval job because the last full collection is still current")
+      return
+    }
+    runScheduledJob()
   }
 
   @Scheduled(cron = CollectionSchedules.LIGHTYEAR_HISTORY_CRON, zone = CollectionSchedules.TIME_ZONE)

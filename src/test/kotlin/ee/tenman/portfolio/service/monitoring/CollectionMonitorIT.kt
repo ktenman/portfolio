@@ -163,4 +163,30 @@ class CollectionMonitorIT {
     expect(snapshot.itemSuccesses["A"]).toEqual(null)
     expect(snapshot.failed).toEqual(1)
   }
+
+  @Test
+  fun `should treat a history collection as current right after a full run`() {
+    monitor.collect(CollectionKey.FT_HISTORY, listOf("A", "Õ")) {
+      it.persisted("A")
+      it.persisted("Õ")
+    }
+    expect(monitor.current(CollectionKey.FT_HISTORY, listOf("A", "Õ"))).toEqual(true)
+  }
+
+  @Test
+  fun `should treat a history collection as stale when an instrument was added after the last full run`() {
+    monitor.collect(CollectionKey.LIGHTYEAR_HISTORY, listOf("A")) { it.persisted("A") }
+    expect(monitor.current(CollectionKey.LIGHTYEAR_HISTORY, listOf("A", "Õ"))).toEqual(false)
+  }
+
+  @Test
+  fun `should treat a history collection as stale after a run that failed an instrument`() {
+    monitor.collect(CollectionKey.TULEVA_HISTORY, listOf("A", "Õ")) { it.persisted("A") }
+    expect(monitor.current(CollectionKey.TULEVA_HISTORY, listOf("A", "Õ"))).toEqual(false)
+  }
+
+  @Test
+  fun `should treat a history collection which never ran as stale`() {
+    expect(monitor.current(CollectionKey.FT_HISTORY, listOf("A"))).toEqual(false)
+  }
 }

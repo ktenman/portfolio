@@ -27,6 +27,7 @@ class CollectionMonitorService(
   private val registry: MeterRegistry,
   private val stream: CollectionStreamService,
   private val liveUpdates: LiveUpdateService,
+  private val scheduleService: CollectionScheduleService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -65,6 +66,11 @@ class CollectionMonitorService(
     }
     outcome.getOrThrow()
   }
+
+  fun current(
+    key: CollectionKey,
+    symbols: Collection<String>,
+  ): Boolean = stateService.snapshots().firstOrNull { it.key == key }?.let { scheduleService.current(it, symbols) } ?: false
 
   private fun recordStorageFailure(
     key: CollectionKey,

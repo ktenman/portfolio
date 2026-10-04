@@ -294,6 +294,50 @@ class CollectionScheduleServiceTest {
     expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-10-25T03:30:00Z"))
   }
 
+  @Test
+  fun `should treat a history collection as current until its next scheduled run`() {
+    val service = service(clock("2026-09-25T10:00:00Z"))
+    val snapshot = collected(full = "2026-09-25T02:01:00Z", item = "2026-09-25T02:00:40Z")
+    expect(service.current(snapshot, listOf("VGLA:GER:EUR"))).toEqual(true)
+  }
+
+  @Test
+  fun `should treat a history collection as stale once a scheduled run has come due`() {
+    val service = service(clock("2026-09-25T10:00:00Z"))
+    val snapshot = collected(full = "2026-09-24T02:01:00Z", item = "2026-09-24T02:00:40Z")
+    expect(service.current(snapshot, listOf("VGLA:GER:EUR"))).toEqual(false)
+  }
+
+  @Test
+  fun `should treat a history collection as stale when an instrument has never been collected`() {
+    val service = service(clock("2026-09-25T10:00:00Z"))
+    val snapshot = collected(full = "2026-09-25T02:01:00Z", item = "2026-09-25T02:00:40Z")
+    expect(service.current(snapshot, listOf("VGLA:GER:EUR", "ÕUN:GER:EUR"))).toEqual(false)
+  }
+
+  @Test
+  fun `should treat a history collection as stale when an instrument last succeeded before the latest scheduled run`() {
+    val service = service(clock("2026-09-25T10:00:00Z"))
+    val snapshot = collected(full = "2026-09-25T02:01:00Z", item = "2026-09-24T02:00:40Z")
+    expect(service.current(snapshot, listOf("VGLA:GER:EUR"))).toEqual(false)
+  }
+
+  @Test
+  fun `should treat a history collection as stale when it has never fully succeeded`() {
+    val service = service(clock("2026-09-25T10:00:00Z"))
+    val snapshot = collected(full = null, item = "2026-09-25T02:00:40Z")
+    expect(service.current(snapshot, listOf("VGLA:GER:EUR"))).toEqual(false)
+  }
+
+  private fun collected(
+    full: String?,
+    item: String,
+  ): CollectionSnapshot =
+    snapshot(CollectionKey.FT_HISTORY).copy(
+      lastFullSuccess = full?.let(Instant::parse),
+      itemSuccesses = mapOf("VGLA:GER:EUR" to Instant.parse(item)),
+    )
+
   private fun service(
     clock: Clock,
     enabled: Boolean = true,
