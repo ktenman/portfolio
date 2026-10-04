@@ -1,6 +1,6 @@
 package ee.tenman.portfolio.service.transaction
 
-import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
@@ -138,24 +138,23 @@ class TransactionQueryServiceTest {
   }
 
   @Test
-  fun `should get single transaction with profits`() {
-    val transaction =
+  fun `should get single transaction with profits calculated from its full history`() {
+    fun sell() =
       TransactionFixtures
-        .createBuyTransaction(
+        .createSellTransaction(
           testInstrument,
-          BigDecimal("10"),
-          BigDecimal("100"),
+          BigDecimal("5"),
+          BigDecimal("150"),
           testDate,
           commission = TransactionFixtures.ZERO_COMMISSION,
-        ).apply {
-          id = 1L
-          remainingQuantity = BigDecimal("10")
-        }
+        ).apply { id = 1L }
+    val transaction = sell()
+    val calculated = sell().apply { realizedProfit = BigDecimal("250") }
     every { transactionService.getTransactionById(1L) } returns transaction
-    every { transactionService.calculateTransactionProfits(any()) } returns Unit
+    every { transactionService.getFullTransactionHistoryForProfitCalculation(listOf(transaction), null) } returns listOf(calculated)
+    every { transactionService.calculateTransactionProfits(listOf(calculated)) } returns Unit
     val result = transactionQueryService.getTransactionWithProfits(1L)
-    expect(result.instrumentId).toEqual(1L)
-    verify { transactionService.calculateTransactionProfits(listOf(transaction)) }
+    expect(result.realizedProfit).notToEqualNull().toEqualNumerically(BigDecimal("250"))
   }
 
   @Test
