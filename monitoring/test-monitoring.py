@@ -251,6 +251,29 @@ def check_compose():
     print('Optional Compose profile, internal ports, and healthchecks passed')
 
 
+def check_host_gates():
+    root = ROOT.parent
+    with tempfile.TemporaryDirectory() as directory:
+        meminfo = Path(directory) / 'meminfo'
+        meminfo.write_text('SwapTotal: 4000 kB\nSwapFree: 1000 kB\n')
+        cases = {
+            'disk_percent() { echo 10; }; redis_saves() { true; }': 'swap 75% used',
+            'disk_percent() { echo 91; }; redis_saves() { true; }': 'disk 91% used',
+            'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { false; }': 'Redis cannot save',
+            'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { true; }': '',
+        }
+        for stubs, expected in cases.items():
+            command = f'HEALTHCHECK_LIB=1 MEMINFO={meminfo}; . {root}/healthcheck.sh; {stubs}; host_problem'
+            assert run('sh', '-c', command).stdout.strip() == expected, stubs
+    for script in ('healthcheck.sh', 'deploy-check.sh', 'scripts/docker-cleanup.sh'):
+        run('sh', '-n', str(root / script))
+    assert 'container prune -f --filter until=1h' in (root / 'scripts/docker-cleanup.sh').read_text()
+    deploy = (root / '.github/workflows/deploy-pipeline.yml').read_text()
+    for step in ('deploy-check.sh preflight', 'deploy-check.sh healthy'):
+        assert step in deploy, f'deploy does not run {step}'
+    print('Heartbeat and deploy host gates passed')
+
+
 def check_production_permissions():
     compose = ROOT.parent / 'docker-compose.yml'
     configured = json.loads(run('docker', 'compose', '-f', str(compose),
@@ -448,6 +471,7 @@ def check_delivery():
 if __name__ == '__main__':
     check_configurations()
     check_compose()
+    check_host_gates()
     check_production_permissions()
     check_metric_coverage()
     check_readiness_recovery()
