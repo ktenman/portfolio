@@ -65,6 +65,10 @@ vi.mock('../../utils/formatters', () => ({
   formatPercentage: vi.fn((value: number) => `${value.toFixed(2)}%`),
 }))
 
+vi.mock('./purchase-weights-history.vue', () => ({
+  default: { name: 'PurchaseWeightsHistory', props: ['etfs', 'platforms'], render: () => null },
+}))
+
 describe('DiversificationCalculator', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -227,5 +231,23 @@ describe('DiversificationCalculator', () => {
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'DiversificationStats' }).props('activeShare')).toBe(20)
+  })
+
+  it('hands the ETF list and the selected platforms to the purchase weights history', async () => {
+    const { diversificationService } = await import('../../services/api')
+    vi.mocked(diversificationService.getConfig).mockResolvedValue({
+      allocations: [{ instrumentId: 1, value: 100 }],
+      inputMode: 'percentage',
+      selectedPlatforms: ['LHV', 'SWEDBANK'],
+    })
+
+    const wrapper = mount(DiversificationCalculator)
+    await flushPromises()
+
+    const history = wrapper.findComponent({ name: 'PurchaseWeightsHistory' })
+    expect([history.props('etfs').length, history.props('platforms')]).toEqual([
+      2,
+      ['LHV', 'SWEDBANK'],
+    ])
   })
 })

@@ -1,7 +1,7 @@
 <template>
   <section v-if="shown" class="purchase-weights card-shell">
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <h3 class="m-0 text-base">Purchase weights</h3>
+      <h3 class="m-0 mr-auto text-base">Purchase weights</h3>
       <SpinnerRing
         v-if="isLoading"
         size="sm"
@@ -9,7 +9,7 @@
         label="Loading purchase weights..."
       />
       <template v-else>
-        <div class="ml-auto flex gap-1.5" role="group" aria-label="Share shown">
+        <div class="flex gap-1.5" role="group" aria-label="Share shown">
           <button
             v-for="option in METRICS"
             :key="option.key"
@@ -160,6 +160,11 @@ thead th {
   vertical-align: top;
 }
 
+thead th:first-child {
+  padding-bottom: 0.25rem;
+  vertical-align: bottom;
+}
+
 tbody th {
   font: 500 var(--text-2xs) var(--font-mono);
 }
@@ -172,7 +177,6 @@ th:first-child {
   padding: 0 0.75rem 0 0;
   background: var(--color-surface);
   text-align: left;
-  vertical-align: bottom;
   white-space: nowrap;
 }
 
