@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import DiversificationCalculator from './diversification-calculator.vue'
+import { toasts } from '../../composables/use-toast'
 import type { InstrumentDto } from '../../models/generated/domain-models'
+import type { AllocationInput } from './types'
 
 vi.mock('@tanstack/vue-query', () => ({
   useQuery: vi.fn(() => ({
@@ -66,7 +68,12 @@ vi.mock('../../utils/formatters', () => ({
 }))
 
 vi.mock('./purchase-weights-history.vue', () => ({
-  default: { name: 'PurchaseWeightsHistory', props: ['etfs', 'platforms'], render: () => null },
+  default: {
+    name: 'PurchaseWeightsHistory',
+    props: ['etfs', 'platforms'],
+    emits: ['apply'],
+    render: () => null,
+  },
 }))
 
 describe('DiversificationCalculator', () => {
@@ -249,5 +256,84 @@ describe('DiversificationCalculator', () => {
       2,
       ['LHV', 'SWEDBANK'],
     ])
+  })
+
+  const applyPurchaseDay = async (saved = [{ instrumentId: 1, value: 100 }]) => {
+    const { instrumentsService, diversificationService } = await import('../../services/api')
+    vi.mocked(instrumentsService.getAll).mockResolvedValue({
+      instruments: [
+        { id: 2, symbol: 'VUAA:GER:EUR', platforms: ['LHV'], currentValue: 450 } as InstrumentDto,
+      ],
+      portfolioXirr: null,
+    })
+    vi.mocked(diversificationService.calculate).mockResolvedValue(emptyResult())
+    vi.mocked(diversificationService.getConfig).mockResolvedValue({
+      allocations: saved,
+      inputMode: 'percentage',
+      selectedPlatforms: ['LHV'],
+    })
+    toasts.value = []
+    const wrapper = mount(DiversificationCalculator)
+    await flushPromises()
+    wrapper
+      .findComponent({ name: 'PurchaseWeightsHistory' })
+      .vm.$emit('apply', '14 Aug 2026', [{ instrumentId: 2, value: 100 }])
+    await flushPromises()
+    const rows = (): AllocationInput[] =>
+      wrapper.findComponent({ name: 'AllocationTable' }).props('allocations')
+    return { wrapper, rows, diversificationService, instrumentsService }
+  }
+
+  it('keeps a loaded ETF without a share on the clicked purchase day at a target of zero', async () => {
+    const { rows } = await applyPurchaseDay()
+    expect(rows()[0]).toEqual({ instrumentId: 1, value: 0, currentValue: 0 })
+  })
+
+  it('adds an ETF bought on the clicked purchase day with its current value', async () => {
+    const { rows } = await applyPurchaseDay()
+    expect(rows()[1]).toEqual({ instrumentId: 2, value: 100, currentValue: 450 })
+  })
+
+  it('leaves out the empty row when targets come from a purchase day', async () => {
+    const { rows } = await applyPurchaseDay([{ instrumentId: 0, value: 0 }])
+    expect(rows().map(row => row.instrumentId)).toEqual([2])
+  })
+
+  it('keeps the current value of a loaded ETF while the values of a purchase day reload', async () => {
+    const { wrapper, rows, instrumentsService } = await applyPurchaseDay()
+    vi.mocked(instrumentsService.getAll).mockReturnValue(new Promise(() => {}))
+    wrapper.findComponent({ name: 'PurchaseWeightsHistory' }).vm.$emit('apply', '14 Sep 2026', [
+      { instrumentId: 1, value: 40 },
+      { instrumentId: 2, value: 60 },
+    ])
+    await flushPromises()
+    expect(rows()).toEqual([
+      { instrumentId: 1, value: 40, currentValue: 0 },
+      { instrumentId: 2, value: 60, currentValue: 450 },
+    ])
+  })
+
+  it('saves the targets set from a purchase day', async () => {
+    const { diversificationService } = await applyPurchaseDay()
+    expect(diversificationService.saveConfig).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        allocations: [
+          expect.objectContaining({ instrumentId: 1, value: 0 }),
+          expect.objectContaining({ instrumentId: 2, value: 100 }),
+        ],
+      })
+    )
+  })
+
+  it('recalculates the breakdown for the targets of a purchase day', async () => {
+    const { diversificationService } = await applyPurchaseDay()
+    expect(diversificationService.calculate).toHaveBeenLastCalledWith([
+      { instrumentId: 2, percentage: 100 },
+    ])
+  })
+
+  it('says which purchase day the targets came from', async () => {
+    await applyPurchaseDay()
+    expect(toasts.value.map(toast => toast.message)).toEqual(['Targets set from 14 Aug 2026'])
   })
 })

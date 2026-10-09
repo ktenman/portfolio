@@ -24,7 +24,12 @@
     </div>
 
     <template v-else>
-      <PurchaseWeightsHistory :etfs="etfList" :platforms="selectedPlatforms" class="mb-6" />
+      <PurchaseWeightsHistory
+        :etfs="etfList"
+        :platforms="selectedPlatforms"
+        class="mb-6"
+        @apply="applyPurchaseWeights"
+      />
 
       <AllocationTable
         :allocations="allocations"
@@ -313,6 +318,19 @@ const loadFromPortfolio = async () => {
   } finally {
     isLoadingPortfolio.value = false
   }
+}
+
+const applyPurchaseWeights = async (day: string, targets: AllocationInput[]) => {
+  const shares = new Map(targets.map(target => [target.instrumentId, target.value]))
+  const loaded = allocations.value.filter(a => a.instrumentId > 0)
+  const known = new Set(loaded.map(a => a.instrumentId))
+  allocations.value = [
+    ...loaded.map(a => ({ ...a, value: shares.get(a.instrumentId) ?? 0 })),
+    ...targets.filter(target => !known.has(target.instrumentId)),
+  ]
+  onAllocationChange()
+  await syncCurrentValues()
+  toast.success(`Targets set from ${day}`)
 }
 
 const clearAllocations = () => {

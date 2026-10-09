@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { buildPurchaseWeights, shade, type WeightCell } from './purchase-weights-history'
+import {
+  buildPurchaseWeights,
+  dayTargets,
+  shade,
+  type WeightCell,
+} from './purchase-weights-history'
 import { createTransactionDto } from '../tests/fixtures'
 import {
   Platform,
@@ -273,6 +278,35 @@ describe('purchase-weights-history', () => {
       ['2026-07-16', AIFS, SELL, 0.3, 100]
     )
     expect(printed(weights.rows[0].invested)).toEqual(['100.0', '100.0', null])
+  })
+
+  it('names each day by its full date', () => {
+    expect(build(...SWAP).days.map(day => day.label)).toEqual(['16 Jun 2026', '14 Aug 2026'])
+  })
+
+  it('turns the shares shown for a day into targets and skips empty and sold cells', () => {
+    const { rows } = build(...SOLD_AND_BOUGHT)
+    expect([dayTargets(rows, 'bought', 0), dayTargets(rows, 'bought', 1)]).toEqual([
+      [{ instrumentId: 3, value: 100 }],
+      [
+        { instrumentId: 1, value: 25 },
+        { instrumentId: 4, value: 75 },
+      ],
+    ])
+  })
+
+  it('lets the largest target absorb the rounding so the targets total 100', () => {
+    const { rows } = build(
+      ['2026-06-16', AIFS, BUY, 1, 100],
+      ['2026-06-16', LSMC, BUY, 1, 100],
+      ['2026-06-16', VVSM, BUY, 4, 100]
+    )
+    expect(dayTargets(rows, 'invested', 0).map(target => target.value)).toEqual([16.7, 16.7, 66.6])
+  })
+
+  it('has no targets for a day that shows no share', () => {
+    const { rows } = build(['2026-06-16', AIFS, BUY, 10, 100], ['2026-07-16', AIFS, SELL, 5, 100])
+    expect(dayTargets(rows, 'bought', 1)).toEqual([])
   })
 
   it('shades a share of 40 and above with the darkest tint', () => {

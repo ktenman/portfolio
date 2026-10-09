@@ -79,6 +79,8 @@ const loaded = async (wrapper: History) => {
 const cells = (wrapper: History) =>
   wrapper.findAll('tbody tr').map(row => row.findAll('td').map(cell => cell.text()))
 
+const dayButtons = (wrapper: History) => wrapper.findAll('thead button')
+
 describe('PurchaseWeightsHistory', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -152,19 +154,50 @@ describe('PurchaseWeightsHistory', () => {
     ])
   })
 
-  it('shows the spinner instead of the previous grid while another selection loads', async () => {
+  it('keeps the previous grid with its day buttons disabled while another selection loads', async () => {
     const wrapper = await loaded(mountHistory(['LHV']))
     vi.mocked(transactionsService.getAll).mockReturnValue(new Promise(() => {}))
     await wrapper.setProps({ platforms: ['TRADING212'] })
-    await vi.waitFor(() => expect(spinner(wrapper)).toBe(true))
-    expect(wrapper.find('table').exists()).toBe(false)
+    await vi.waitFor(() => expect(transactionsService.getAll).toHaveBeenCalledTimes(2))
+    expect(dayButtons(wrapper).map(button => button.attributes('disabled'))).toEqual(['', ''])
   })
 
   it('titles each day column with its date, kind and money', async () => {
     const wrapper = await loaded(mountHistory())
-    expect(wrapper.findAll('thead th[title]').map(header => header.attributes('title'))).toEqual([
+    expect(dayButtons(wrapper).map(button => button.attributes('title'))).toEqual([
       '16 Jun 2026 · Buy · bought €2,000.00',
       '14 Aug 2026 · Swap or rebalance · bought €1,200.00, sold €1,200.00',
+    ])
+  })
+
+  it('hands the shares of the clicked day over as targets', async () => {
+    const wrapper = await loaded(mountHistory())
+    await dayButtons(wrapper)[1].trigger('click')
+    expect(wrapper.emitted('apply')).toEqual([
+      [
+        '14 Aug 2026',
+        [
+          { instrumentId: 1, value: 45.5 },
+          { instrumentId: 4, value: 54.5 },
+        ],
+      ],
+    ])
+  })
+
+  it('hands over the shares bought that day once that view is shown', async () => {
+    const wrapper = await loaded(mountHistory())
+    await wrapper.find('button[aria-pressed="false"]').trigger('click')
+    await dayButtons(wrapper)[1].trigger('click')
+    expect(wrapper.emitted('apply')).toEqual([['14 Aug 2026', [{ instrumentId: 4, value: 100 }]]])
+  })
+
+  it('offers no targets from a day that shows no share', async () => {
+    respond([trade(1, '2026-06-16', 1, BUY, 10, 100), trade(2, '2026-07-16', 1, SELL, 5, 100)])
+    const wrapper = await loaded(mountHistory())
+    await wrapper.find('button[aria-pressed="false"]').trigger('click')
+    expect(dayButtons(wrapper).map(button => button.attributes('disabled'))).toEqual([
+      undefined,
+      '',
     ])
   })
 
