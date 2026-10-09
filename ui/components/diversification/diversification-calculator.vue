@@ -24,6 +24,13 @@
     </div>
 
     <template v-else>
+      <PurchaseWeightsHistory
+        :etfs="etfList"
+        :platforms="selectedPlatforms"
+        class="mb-6"
+        @apply="applyPurchaseWeights"
+      />
+
       <AllocationTable
         :allocations="allocations"
         :available-etfs="etfList"
@@ -117,6 +124,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownPanel from './breakdown-panel.vue'
+import PurchaseWeightsHistory from './purchase-weights-history.vue'
 import AlertMessage from '../shared/alert-message.vue'
 import SpinnerRing from '../shared/spinner-ring.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
@@ -310,6 +318,21 @@ const loadFromPortfolio = async () => {
   } finally {
     isLoadingPortfolio.value = false
   }
+}
+
+const LEFT_OUT_TARGET = 0.00001
+
+const applyPurchaseWeights = async (day: string, targets: AllocationInput[]) => {
+  const shares = new Map(targets.map(target => [target.instrumentId, target.value]))
+  const loaded = allocations.value.filter(a => a.instrumentId > 0)
+  const known = new Set(loaded.map(a => a.instrumentId))
+  allocations.value = [
+    ...loaded.map(a => ({ ...a, value: shares.get(a.instrumentId) ?? LEFT_OUT_TARGET })),
+    ...targets.filter(target => !known.has(target.instrumentId)),
+  ]
+  onAllocationChange()
+  await syncCurrentValues()
+  toast.success(`Targets set from ${day}`)
 }
 
 const clearAllocations = () => {
