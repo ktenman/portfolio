@@ -24,6 +24,8 @@
     </div>
 
     <template v-else>
+      <PurchaseWeightsHistory :etfs="etfList" :platforms="selectedPlatforms" class="mb-6" />
+
       <AllocationTable
         :allocations="allocations"
         :available-etfs="etfList"
@@ -50,8 +52,6 @@
         @export="exportConfiguration"
         @import="importConfiguration"
       />
-
-      <PurchaseWeightsHistory :etfs="etfList" :platforms="selectedPlatforms" class="mb-6" />
 
       <div v-if="result" class="results-section">
         <DiversificationStats
