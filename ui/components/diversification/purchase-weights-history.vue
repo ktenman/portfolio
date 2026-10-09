@@ -78,7 +78,7 @@
                 :style="typeof cell === 'number' ? { background: tint(cell) } : undefined"
               >
                 <template v-if="cell === 'sold'">
-                  <svg class="inline size-2" viewBox="0 0 12 12" aria-hidden="true">
+                  <svg class="mr-0.5 inline size-2" viewBox="0 0 12 12" aria-hidden="true">
                     <path :d="GLYPHS.sold.path" :fill="GLYPHS.sold.fill" />
                   </svg>
                   <span class="text-[0.6875rem] text-ink-soft">sold</span>
