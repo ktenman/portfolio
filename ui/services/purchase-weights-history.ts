@@ -15,6 +15,7 @@ export interface PurchaseDay {
   day: number
   month: string
   year: number | null
+  label: string
   title: string
 }
 
@@ -180,6 +181,7 @@ const toDay = (trades: Trade[], previous: string | undefined): PurchaseDay => {
     day,
     month: MONTHS[month - 1],
     year: previous?.startsWith(`${year}-`) ? null : year,
+    label,
     title: [label, KIND_LABELS[kind], money(trades, kind)].filter(Boolean).join(' · '),
   }
 }
@@ -197,4 +199,16 @@ export const buildPurchaseWeights = (
     days: groups.map((group, index) => toDay(group, groups[index - 1]?.[0].date)),
     rows: etfs.filter(etf => traded.has(etf.instrumentId)).map(etf => toRow(etf, snapshots)),
   }
+}
+
+export const dayTargets = (rows: PurchaseRow[], metric: WeightMetric, index: number) => {
+  const shown = rows.flatMap(({ instrumentId, [metric]: cells }) => {
+    const cell = cells[index]
+    return typeof cell === 'number' ? [{ instrumentId, value: Number(cell.toFixed(1)) }] : []
+  })
+  const largest = shown.reduce((top, target) => (target.value > top.value ? target : top), shown[0])
+  const spare = 100 - sum(shown.map(target => target.value))
+  return shown.map(target =>
+    target === largest ? { ...target, value: Number((target.value + spare).toFixed(1)) } : target
+  )
 }

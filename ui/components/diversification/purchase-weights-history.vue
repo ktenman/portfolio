@@ -51,6 +51,7 @@
       </ul>
       <div
         class="mt-2 flex flex-row-reverse overflow-x-auto"
+        :class="{ 'opacity-50': isPlaceholderData }"
         role="region"
         aria-label="Purchase weights by trade day"
         tabindex="0"
@@ -58,22 +59,30 @@
         <table class="mr-auto flex-none border-separate border-spacing-0.5 text-2xs tabular-nums">
           <thead>
             <tr>
-              <th scope="col">Share, %</th>
-              <th v-for="day in weights.days" :key="day.date" scope="col" :title="day.title">
-                <svg class="mx-auto mb-0.5 block size-2.5" viewBox="0 0 12 12" aria-hidden="true">
-                  <path :d="GLYPHS[day.kind].path" :fill="GLYPHS[day.kind].fill" />
-                </svg>
-                <span class="sr-only">{{ KIND_LABELS[day.kind] }}</span>
-                {{ day.day }} {{ day.month }}
-                <span v-if="day.year" class="block">{{ day.year }}</span>
+              <th scope="col" class="pb-1! align-bottom!">Share, %</th>
+              <th v-for="(day, index) in weights.days" :key="day.date" scope="col">
+                <button
+                  type="button"
+                  class="flex w-full flex-col items-center rounded-sm enabled:cursor-pointer enabled:hover:bg-surface-hover enabled:hover:text-ink"
+                  :title="day.title"
+                  :disabled="isPlaceholderData || !targets(index).length"
+                  @click="emit('apply', day.label, targets(index))"
+                >
+                  <svg class="mb-0.5 size-2.5" viewBox="0 0 12 12" aria-hidden="true">
+                    <path :d="GLYPHS[day.kind].path" :fill="GLYPHS[day.kind].fill" />
+                  </svg>
+                  <span class="sr-only">{{ KIND_LABELS[day.kind] }}</span>
+                  {{ day.day }} {{ day.month }}
+                  <span v-if="day.year">{{ day.year }}</span>
+                </button>
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in rows" :key="row.instrumentId">
+            <tr v-for="row in weights.rows" :key="row.instrumentId">
               <th scope="row">{{ formatTickerSymbol(row.symbol) }}</th>
               <td
-                v-for="(cell, index) in row.cells"
+                v-for="(cell, index) in row[metric]"
                 :key="index"
                 :style="typeof cell === 'number' ? { background: tint(cell) } : undefined"
               >
@@ -95,13 +104,14 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { useLocalStorage } from '@vueuse/core'
 import SpinnerRing from '../shared/spinner-ring.vue'
 import { STORAGE_KEYS } from '../../constants'
 import { transactionsService } from '../../services/api'
 import {
   buildPurchaseWeights,
+  dayTargets,
   KIND_LABELS,
   shade,
   type DayKind,
@@ -109,8 +119,10 @@ import {
 } from '../../services/purchase-weights-history'
 import { formatTickerSymbol } from '../../utils/ticker-symbol'
 import type { EtfDetailDto } from '../../models/generated/domain-models'
+import type { AllocationInput } from './types'
 
 const props = defineProps<{ etfs: EtfDetailDto[]; platforms: string[] }>()
+const emit = defineEmits<{ apply: [day: string, targets: AllocationInput[]] }>()
 
 const KINDS: DayKind[] = ['buy', 'swap', 'cash']
 const METRICS: { key: WeightMetric; label: string }[] = [
@@ -131,20 +143,16 @@ const metric = computed<WeightMetric>(() => (stored.value === 'bought' ? 'bought
 const enabled = computed(() => props.platforms.length > 0)
 const platformsKey = computed(() => [...props.platforms].sort().join(','))
 
-const { data, isLoading } = useQuery({
+const { data, isLoading, isPlaceholderData } = useQuery({
   queryKey: ['transactions', 'purchase-weights-history', platformsKey],
   queryFn: () => transactionsService.getAll(props.platforms),
   enabled,
+  placeholderData: keepPreviousData,
 })
 
 const weights = computed(() => buildPurchaseWeights(props.etfs, data.value?.transactions ?? []))
 const shown = computed(() => enabled.value && (isLoading.value || weights.value.days.length > 0))
-const rows = computed(() =>
-  weights.value.rows.map(row => ({
-    ...row,
-    cells: metric.value === 'bought' ? row.bought : row.invested,
-  }))
-)
+const targets = (index: number) => dayTargets(weights.value.rows, metric.value, index)
 
 const tint = (share: number): string =>
   `color-mix(in oklch, var(--color-brass) ${shade(share)}%, var(--color-surface))`
@@ -158,11 +166,6 @@ thead th {
   color: var(--color-ink-soft);
   text-align: center;
   vertical-align: top;
-}
-
-thead th:first-child {
-  padding-bottom: 0.25rem;
-  vertical-align: bottom;
 }
 
 tbody th {
