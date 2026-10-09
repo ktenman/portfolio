@@ -284,9 +284,9 @@ describe('DiversificationCalculator', () => {
     return { wrapper, rows, diversificationService, instrumentsService }
   }
 
-  it('keeps a loaded ETF without a share on the clicked purchase day at a target of zero', async () => {
+  it('keeps a loaded ETF without a share on the clicked purchase day at a target of 0.00001', async () => {
     const { rows } = await applyPurchaseDay()
-    expect(rows()[0]).toEqual({ instrumentId: 1, value: 0, currentValue: 0 })
+    expect(rows()[0]).toEqual({ instrumentId: 1, value: 0.00001, currentValue: 0 })
   })
 
   it('adds an ETF bought on the clicked purchase day with its current value', async () => {
@@ -318,7 +318,7 @@ describe('DiversificationCalculator', () => {
     expect(diversificationService.saveConfig).toHaveBeenLastCalledWith(
       expect.objectContaining({
         allocations: [
-          expect.objectContaining({ instrumentId: 1, value: 0 }),
+          expect.objectContaining({ instrumentId: 1, value: 0.00001 }),
           expect.objectContaining({ instrumentId: 2, value: 100 }),
         ],
       })
@@ -328,6 +328,7 @@ describe('DiversificationCalculator', () => {
   it('recalculates the breakdown for the targets of a purchase day', async () => {
     const { diversificationService } = await applyPurchaseDay()
     expect(diversificationService.calculate).toHaveBeenLastCalledWith([
+      { instrumentId: 1, percentage: 0.00001 },
       { instrumentId: 2, percentage: 100 },
     ])
   })

@@ -320,12 +320,14 @@ const loadFromPortfolio = async () => {
   }
 }
 
+const LEFT_OUT_TARGET = 0.00001
+
 const applyPurchaseWeights = async (day: string, targets: AllocationInput[]) => {
   const shares = new Map(targets.map(target => [target.instrumentId, target.value]))
   const loaded = allocations.value.filter(a => a.instrumentId > 0)
   const known = new Set(loaded.map(a => a.instrumentId))
   allocations.value = [
-    ...loaded.map(a => ({ ...a, value: shares.get(a.instrumentId) ?? 0 })),
+    ...loaded.map(a => ({ ...a, value: shares.get(a.instrumentId) ?? LEFT_OUT_TARGET })),
     ...targets.filter(target => !known.has(target.instrumentId)),
   ]
   onAllocationChange()
