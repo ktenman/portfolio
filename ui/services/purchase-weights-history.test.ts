@@ -251,13 +251,14 @@ describe('purchase-weights-history', () => {
   it('ignores a sell on a platform that holds nothing and still shows its day', () => {
     const weights = build(
       ['2026-06-16', AIFS, BUY, 10, 100, LHV],
+      ['2026-06-16', LSMC, BUY, 10, 100, LHV],
       ['2026-07-16', AIFS, SELL, 5, 100, TRADING212]
     )
     expect([
       weights.days.map(day => day.kind),
       printed(weights.rows[0].invested),
       weights.rows[0].bought[1],
-    ]).toEqual([['buy', 'swap'], ['100.0', '100.0'], 'sold'])
+    ]).toEqual([['buy', 'swap'], ['50.0', '50.0'], 'sold'])
   })
 
   it('leaves every cell empty once everything is sold', () => {
