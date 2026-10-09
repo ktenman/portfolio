@@ -43,6 +43,12 @@ on:
         required: false
       MONITORING_HEARTBEAT_URL:
         required: false
+      NETDATA_POSTGRES_PASSWORD:
+        required: false
+      NETDATA_TELEGRAM_CHAT_ID:
+        required: false
+      NETDATA_CLAIM_TOKEN:
+        required: false
   workflow_dispatch:
     inputs:
       deploy:
@@ -84,6 +90,9 @@ jobs:
           echo "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" >> .env
           echo "TRADING212_API_KEY_ID=${{ secrets.TRADING212_API_KEY_ID }}" >> .env
           echo "TRADING212_API_KEY_SECRET=${{ secrets.TRADING212_API_KEY_SECRET }}" >> .env
+          echo "NETDATA_POSTGRES_PASSWORD=${{ secrets.NETDATA_POSTGRES_PASSWORD }}" >> .env
+          echo "NETDATA_TELEGRAM_CHAT_ID=${{ secrets.NETDATA_TELEGRAM_CHAT_ID }}" >> .env
+          echo "NETDATA_CLAIM_TOKEN=${{ secrets.NETDATA_CLAIM_TOKEN }}" >> .env
           echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> .env
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> .env
       - name: Prepare monitoring secrets
@@ -129,8 +138,9 @@ jobs:
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile githubuser@fov.ee:~/
-          ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring'
+          ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring ~/monitoring/netdata'
           scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml githubuser@fov.ee:~/monitoring/
+          scp monitoring/netdata/postgres.conf monitoring/netdata/redis.conf monitoring/netdata/health_alarm_notify.conf githubuser@fov.ee:~/monitoring/netdata/
           if [ "$MONITORING_ENABLED" = true ]; then
             ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring/secrets'
             scp -p monitoring/secrets/bot_token monitoring/secrets/chat_id monitoring/secrets/heartbeat_url githubuser@fov.ee:~/monitoring/secrets/
@@ -155,7 +165,7 @@ jobs:
               echo \"Start attempt \$i failed, retrying in 10s...\"; \
               sleep 10; \
             done && \
-            docker compose up -d --no-deps --force-recreate app healthcheck && \
+            docker compose up -d --no-deps --force-recreate app healthcheck netdata && \
             echo 'Waiting for all services to become healthy...' && \
             OK=0 && \
             for i in \$(seq 1 40); do \

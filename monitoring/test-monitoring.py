@@ -257,6 +257,9 @@ def check_compose():
     unrotated = sorted(name for name, service in services.items()
                        if 'max-size' not in service.get('logging', {}).get('options', {}))
     assert not unrotated, f'container logs are not rotated for {unrotated}'
+    for name in ('netdata', 'docker-socket-proxy'):
+        assert services[name].get('mem_limit'), f'{name} has no memory limit'
+    assert 'docker.sock' not in json.dumps(services['netdata']), 'netdata must reach Docker through the socket proxy'
     assert 'evaluation_interval: 15s' in (ROOT / 'prometheus.yml').read_text()
     print('Optional Compose profile, internal ports, and healthchecks passed')
 

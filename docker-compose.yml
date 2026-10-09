@@ -218,6 +218,43 @@ services:
     command: /usr/local/bin/healthcheck.sh
     restart: always
 
+  docker-socket-proxy:
+    logging: *logging
+    container_name: docker-socket-proxy
+    image: tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    environment:
+      CONTAINERS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    mem_limit: 64m
+    restart: always
+
+  netdata:
+    logging: *logging
+    container_name: netdata
+    hostname: fov-ee
+    image: netdata/netdata:v2.12.0@sha256:1e50cc0b11f0941a2a4d8b8592a71d67a8777a4a6ddefbbd024b4725543e4b19
+    environment:
+      DOCKER_HOST: docker-socket-proxy:2375
+      PGPASSWORD: ${NETDATA_POSTGRES_PASSWORD:-}
+      NETDATA_TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      NETDATA_TELEGRAM_CHAT_ID: ${NETDATA_TELEGRAM_CHAT_ID:-}
+      NETDATA_CLAIM_URL: https://app.netdata.cloud
+      NETDATA_CLAIM_TOKEN: ${NETDATA_CLAIM_TOKEN:-}
+    volumes:
+      - ./monitoring/netdata/postgres.conf:/etc/netdata/go.d/postgres.conf:ro
+      - ./monitoring/netdata/redis.conf:/etc/netdata/go.d/redis.conf:ro
+      - ./monitoring/netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro
+      - netdata_lib:/var/lib/netdata
+      - netdata_cache:/var/cache/netdata
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    depends_on:
+      - docker-socket-proxy
+    mem_limit: 384m
+    restart: always
+
   alertmanager:
     logging: *logging
     image: prom/alertmanager:v0.34.1@sha256:e9733bafb1bdef9b00e25a21f8f99dc26a22224bf16641ad754d1649f4c3357a
@@ -283,3 +320,5 @@ volumes:
     name: portfolio_seaweedfs_data
   prometheus_data:
   alertmanager_data:
+  netdata_lib:
+  netdata_cache:
