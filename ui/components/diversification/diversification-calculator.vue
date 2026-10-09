@@ -51,6 +51,8 @@
         @import="importConfiguration"
       />
 
+      <PurchaseWeightsHistory :etfs="etfList" :platforms="selectedPlatforms" class="mb-6" />
+
       <div v-if="result" class="results-section">
         <DiversificationStats
           :weighted-ter="result.weightedTer"
@@ -118,6 +120,7 @@ import { formatPlatformName } from '../../utils/platform-utils'
 import AllocationTable from './allocation-table.vue'
 import DiversificationStats from './diversification-stats.vue'
 import BreakdownPanel from './breakdown-panel.vue'
+import PurchaseWeightsHistory from './purchase-weights-history.vue'
 import AlertMessage from '../shared/alert-message.vue'
 import SpinnerRing from '../shared/spinner-ring.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
