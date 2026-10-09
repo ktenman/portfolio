@@ -52,7 +52,7 @@ interface Snapshot {
   nets: Map<number, number>
 }
 
-const KIND_LABELS: Record<DayKind, string> = { buy: 'Buy', swap: 'Swap or rebalance', cash: 'Cash' }
+export const KIND_LABELS = { buy: 'Buy', swap: 'Swap or rebalance', cash: 'Cash' }
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const CASH_SYMBOL = 'CASH'
 const DARKEST_SHARE = 40
