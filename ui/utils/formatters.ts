@@ -100,6 +100,18 @@ export const formatSignedCurrency = (value: number, currency: string | undefined
 export const formatSignedPercent = (value: number): string =>
   `${signFor(value)}${Math.abs(value).toFixed(2)}%`
 
+const plusFor = (value: number): string => (value > 0 ? '+' : '')
+
+export const formatCurrencyChange = (value: number): string => {
+  const rounded = Number(value.toFixed(2))
+  return `${plusFor(rounded)}${formatSignedCurrency(rounded, 'EUR')}`
+}
+
+export const formatPercentChange = (value: number): string => {
+  const rounded = Number(value.toFixed(2))
+  return `${plusFor(rounded)}${formatSignedPercent(rounded)}`
+}
+
 const PRICE_THRESHOLD_NO_DECIMALS = 10000
 const PRICE_THRESHOLD_ONE_DECIMAL = 1000
 
