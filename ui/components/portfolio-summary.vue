@@ -76,10 +76,17 @@
         Could not load the {{ selectedRange }} chart range: {{ rangeError }}
       </AlertMessage>
 
-      <div class="mt-3 flex flex-wrap items-center gap-3">
+      <div class="mt-3 mb-6 flex flex-wrap items-center gap-3 md:mb-10">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle :selected="selectedBenchmarks" @select="selectBenchmark" />
       </div>
+
+      <daily-profit-calendar
+        :key="selectedPlatforms.join()"
+        :rows="dailyCalendarRows"
+        :error="calendarError"
+        class="mb-2 md:mb-10"
+      />
 
       <data-table
         :items="sortedItems"
@@ -88,7 +95,6 @@
         :sortable="true"
         :sort-state="sortState"
         :on-sort="toggleSort"
-        class="mt-10"
       >
         <template #cell-totalProfitChange24h="{ value, item }">
           <span v-if="value && Math.abs(value) > 0.01" :class="getGainLossClass(value)">
@@ -129,6 +135,7 @@ import PortfolioActions from './portfolio/portfolio-actions.vue'
 import ChartRangeFilter from './portfolio/chart-range-filter.vue'
 import ChartModeToggle from './portfolio/chart-mode-toggle.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
+import DailyProfitCalendar from './portfolio/daily-profit-calendar.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
@@ -136,6 +143,7 @@ import PlatformFilter from './shared/platform-filter.vue'
 import FilterToggle from './shared/filter-toggle.vue'
 import AlertMessage from './shared/alert-message.vue'
 import { transactionsService } from '../services/api'
+import { percentOfPreviousValue } from '../services/summary-aggregator'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
 import {
@@ -186,6 +194,7 @@ const {
   performanceSummaries,
   benchmarks,
   rangeChange,
+  dailyCalendarRows,
   reversedSummaries,
   isLoading,
   isRecalculating,
@@ -193,6 +202,7 @@ const {
   isRangeLoading,
   error,
   rangeError,
+  calendarError,
   recalculationMessage,
   recalculate,
   fetchSummaries,
@@ -275,11 +285,11 @@ const format24hChangePercentage = (summary: PortfolioSummaryDto) => {
   if (change === null || Math.abs(change) <= 0.01) {
     return ''
   }
-  const previousValue = summary.totalValue - change
-  if (previousValue <= 0) {
+  const percent = percentOfPreviousValue(summary.totalValue, change)
+  if (percent === null) {
     return ''
   }
-  return `(${formatSignedPercent((change / previousValue) * 100)})`
+  return `(${formatSignedPercent(percent)})`
 }
 
 const summaryColumns: ColumnDefinition[] = [

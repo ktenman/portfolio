@@ -32,6 +32,7 @@ const PAIRS: ReadonlyArray<[string, string, number]> = [
   ['gain', 'surface-sunken', AA_TEXT],
   ['loss', 'surface-sunken', AA_TEXT],
   ['notice', 'surface', AA_TEXT],
+  ['notice', 'surface-sunken', AA_TEXT],
   ['brass', 'brass-wash', AA_TEXT],
   ['gain', 'gain-wash', AA_TEXT],
   ['loss', 'loss-wash', AA_TEXT],
@@ -84,8 +85,29 @@ describe('the Statement palette', () => {
     expect(failures).toEqual([])
   })
 
-  it('locks gain and loss to the same lightness so equal movements read with equal weight', () => {
+  it.each([
+    ['gain', 'loss', 0.52],
+    ['gain-step-1', 'loss-step-1', 0.93],
+    ['gain-step-2', 'loss-step-2', 0.84],
+    ['gain-step-3', 'loss-step-3', 0.68],
+  ] as const)(
+    'locks %s and %s to the same lightness so equal movements read with equal weight',
+    (gain, loss, lightness) => {
+      const tokens = declaredTokens()
+      expect([tokens.get(gain)?.l, tokens.get(loss)?.l]).toEqual([lightness, lightness])
+    }
+  )
+
+  it.each(['step-1', 'step-2', 'step-3'])('keeps %s of each side on the hue of its side', step => {
     const tokens = declaredTokens()
-    expect([tokens.get('gain')?.l, tokens.get('loss')?.l]).toEqual([0.52, 0.52])
+    expect([tokens.get(`gain-${step}`)?.h, tokens.get(`loss-${step}`)?.h]).toEqual([
+      tokens.get('gain')?.h,
+      tokens.get('loss')?.h,
+    ])
+  })
+
+  it('gives a flat day the neutral of gray-200', () => {
+    const tokens = declaredTokens()
+    expect(tokens.get('change-flat')).toEqual(tokens.get('gray-200'))
   })
 })

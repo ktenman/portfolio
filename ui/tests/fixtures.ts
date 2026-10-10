@@ -6,6 +6,10 @@ import {
   Platform,
   TransactionType,
 } from '../models/generated/domain-models'
+import {
+  buildDailyProfitCalendar,
+  type DailyProfitCalendar,
+} from '../services/daily-profit-calendar'
 
 export const mockPlatforms = [
   { name: 'AVIVA', displayName: 'Aviva' },
@@ -108,6 +112,33 @@ export const createPortfolioSummaryDto = (
   totalProfitChange24h: null,
   ...overrides,
 })
+
+export const createCalendarRow = (
+  date: string,
+  totalProfit: number,
+  totalValue = 100000
+): PortfolioSummaryDto =>
+  createPortfolioSummaryDto({ date, totalProfit, totalValue, xirrAnnualReturn: 0.2069 })
+
+export const createCalendarRows = (): PortfolioSummaryDto[] => [
+  createCalendarRow('2025-12-01', 1000),
+  createCalendarRow('2025-12-02', 1300),
+  createCalendarRow('2025-12-03', 700),
+  createCalendarRow('2025-12-04', 720),
+  createCalendarRow('2025-12-06', 1920),
+  createCalendarRow('2025-12-07', 1980),
+  createCalendarRow('2025-12-08', 1880),
+  createCalendarRow('2025-12-09', 2580),
+]
+
+export const createDailyProfitCalendar = (
+  rows: PortfolioSummaryDto[] = createCalendarRows(),
+  today = '2030-01-01'
+): DailyProfitCalendar => {
+  const calendar = buildDailyProfitCalendar(rows, today)
+  if (!calendar) throw new Error('expected a calendar')
+  return calendar
+}
 
 export class FakeEventSource extends EventTarget {
   static readonly CLOSED = 2

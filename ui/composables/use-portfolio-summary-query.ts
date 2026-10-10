@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, watchEffect, type Ref } from 'vue'
 import {
   useQuery,
   useMutation,
@@ -12,6 +12,8 @@ import {
   sortSummariesByDateAsc,
   flattenPages,
 } from '../services/summary-aggregator'
+import { lacksDayBeforeLatest } from '../services/daily-profit-calendar'
+import { REFETCH_INTERVALS } from '../constants'
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
 import { BENCHMARKS, type ChartBenchmark, type ChartSummary } from './use-portfolio-chart'
@@ -70,6 +72,52 @@ export function usePortfolioSummaryQuery(
     queryFn: () => portfolioSummaryService.getCurrent(activePlatforms.value),
     enabled: isAuthenticated,
   })
+
+  const calendarRefetchInterval = ref<number | false>(false)
+
+  const {
+    data: calendarSeries,
+    isFetched: isCalendarFetched,
+    isSuccess: isCalendarSuccess,
+    error: calendarQueryError,
+    refetch: refetchCalendar,
+  } = useQuery({
+    queryKey: ['portfolio-summary', 'daily-calendar', platformsKey],
+    queryFn: () => portfolioSummaryService.getSeries(TimeRange.SIX_MONTHS, activePlatforms.value),
+    refetchInterval: calendarRefetchInterval,
+    enabled: isAuthenticated,
+  })
+
+  const calendarError = ref<string | null>(null)
+
+  watchEffect(() => {
+    if (calendarQueryError.value) {
+      calendarError.value = calendarQueryError.value.message
+      return
+    }
+    if (isCalendarSuccess.value) calendarError.value = null
+  })
+
+  const mergedCalendarRows = computed(() =>
+    mergeHistoricalWithCurrent(calendarSeries.value ?? [], currentSummary.value)
+  )
+
+  const dailyCalendarRows = computed(() =>
+    isCalendarFetched.value ? mergedCalendarRows.value : undefined
+  )
+
+  watchEffect(() => {
+    calendarRefetchInterval.value = lacksDayBeforeLatest(mergedCalendarRows.value)
+      ? REFETCH_INTERVALS.DAILY_CALENDAR
+      : false
+  })
+
+  watch(
+    () => currentSummary.value?.date,
+    (date, previousDate) => {
+      if (date && previousDate) refetchCalendar()
+    }
+  )
 
   const {
     data: seriesData,
@@ -177,6 +225,7 @@ export function usePortfolioSummaryQuery(
     performanceSummaries,
     benchmarks,
     rangeChange,
+    dailyCalendarRows,
     sortedSummaries,
     reversedSummaries,
     isLoading,
@@ -187,6 +236,7 @@ export function usePortfolioSummaryQuery(
     isRecalculating: recalculateMutation.isPending,
     error,
     rangeError,
+    calendarError,
     recalculationMessage,
     hasMoreData: hasNextPage,
     fetchSummaries: fetchNextPage,
