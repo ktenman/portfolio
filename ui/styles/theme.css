@@ -47,6 +47,13 @@
   --color-loss-deep: oklch(0.45 0.16 26);
   --color-loss-wash: oklch(0.955 0.022 26);
   --color-loss-wash-deep: oklch(0.9 0.045 26);
+  --color-change-flat: oklch(0.93 0.008 85);
+  --color-gain-step-1: oklch(0.93 0.034 152);
+  --color-gain-step-2: oklch(0.84 0.07 152);
+  --color-gain-step-3: oklch(0.68 0.1 152);
+  --color-loss-step-1: oklch(0.93 0.035 26);
+  --color-loss-step-2: oklch(0.84 0.07 26);
+  --color-loss-step-3: oklch(0.68 0.13 26);
   --color-notice: oklch(0.52 0.11 250);
   --color-notice-wash: oklch(0.955 0.022 250);
 

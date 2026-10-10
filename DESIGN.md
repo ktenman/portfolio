@@ -26,6 +26,13 @@ colors:
   loss-deep: '#9b1e20'
   loss-wash: '#ffebe8'
   loss-wash-deep: '#fbd3cf'
+  change-flat: '#eae7e2'
+  gain-step-1: '#d8efdd'
+  gain-step-2: '#a9d8b4'
+  gain-step-3: '#66aa79'
+  loss-step-1: '#ffe0dc'
+  loss-step-2: '#f5bab3'
+  loss-step-3: '#dd766d'
   notice: '#316ca5'
   notice-wash: '#e5f2ff'
   series-1: '#8d621f'
@@ -274,6 +281,22 @@ its search clear-button hover (`etf-breakdown.vue:467,539`).
 destructive-button hovers — `.remove-btn:hover` at `allocation-card.vue:312` and `allocation-table.vue:876`,
 `.action-btn.danger:hover` at `allocation-table.vue:738`.
 
+### Change steps
+
+Fills of the daily profit calendar's cells and of its legend, one per size of a day's change. The fourth and
+darkest step of each side is `--color-gain` or `--color-loss` itself. `--color-change-flat` has the value of
+`--color-gray-200` under a name that says what it marks. No text is set on a step.
+
+| token                 | oklch                   | hex       | on surface | on paper |
+| --------------------- | ----------------------- | --------- | ---------- | -------- |
+| `--color-change-flat` | `oklch(0.93 0.008 85)`  | `#eae7e2` | 1.23       | 1.18     |
+| `--color-gain-step-1` | `oklch(0.93 0.034 152)` | `#d8efdd` | 1.21       | 1.16     |
+| `--color-gain-step-2` | `oklch(0.84 0.07 152)`  | `#a9d8b4` | 1.59       | 1.52     |
+| `--color-gain-step-3` | `oklch(0.68 0.1 152)`   | `#66aa79` | 2.76       | 2.64     |
+| `--color-loss-step-1` | `oklch(0.93 0.035 26)`  | `#ffe0dc` | 1.24       | 1.19     |
+| `--color-loss-step-2` | `oklch(0.84 0.07 26)`   | `#f5bab3` | 1.68       | 1.61     |
+| `--color-loss-step-3` | `oklch(0.68 0.13 26)`   | `#dd766d` | 3.05       | 2.92     |
+
 ### Quantitative series
 
 Six hue-spread tokens for series where a quantity is measured rather than a category is named. All clear 3:1
@@ -484,9 +507,10 @@ step that keeps a heading distinct from the 600 label gesture beneath it. `h1` a
 `letter-spacing: -0.01em`, matching the `-0.48px` Lightyear sets on its 48px display figure; the title and
 heading tiers stay at normal tracking, as Lightyear's 24px h1 does.
 
-**Display figures are weight 550, not 400.** `.stat-value` (now in the shared `stat-card.vue:25`) and
-`.chart-centre-value` (`etf-breakdown-chart.vue`) are the two places a number is set at `--text-title`, and
-both sit at 550. They were 400 until the Lightyear comparison, where a 30px total at 400 read as thin
+**Display figures are weight 550, not 400.** `.stat-value` (now in the shared `stat-card.vue:25`),
+`.chart-centre-value` (`breakdown-donut.vue`) and `.day-change` (`daily-profit-panel.vue`)
+are the three places a number is set at `--text-title`, and all three sit at 550.
+The first two were 400 until the Lightyear comparison, where a 30px total at 400 read as thin
 against the same figure at 550 — the single most visible difference between the two interfaces once the
 typeface matched. A number large enough to be the point of its card is not body text. The summary chart's
 range-change readout follows the same rule one step down: `range-change-header.vue:26` sets `--text-control` at
@@ -605,7 +629,9 @@ brass, and animates in with `transform: scaleX(0 → 1)` over 300ms; hover previ
 active link additionally goes brass and bold.
 
 **Focus is always a brass outline**: `outline: 2px solid var(--color-brass)`, `outline-offset: 2px`, on every
-link, button, input, select, and textarea. Never a glow, and never suppressed on anything tabbable.
+link, button, input, select, and textarea. Never a glow, and never suppressed on anything tabbable. The one
+exception is the daily profit calendar's grid (`daily-profit-grid.vue`), a single tab stop: it draws no outline
+of its own, and while it has keyboard focus its selected day carries the brass outline.
 
 **The select's dropdown is the browser's, restyled — not a rebuilt one.** `forms.css:53–111` opts into the
 native customizable select behind `@supports (appearance: base-select)`, so the whole block is inert on engines

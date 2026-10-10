@@ -24,6 +24,14 @@ describe('RangeChangeHeader', () => {
     expect(change.text()).toBe('−€8,431.20 (−8.46%)')
   })
 
+  it('should print the cents of the amount on their own so they can be set smaller', () => {
+    const wrapper = mount(RangeChangeHeader, {
+      props: { amount: -8431.2, percent: -8.46 },
+    })
+
+    expect(wrapper.find('.range-cents').text()).toBe('.20')
+  })
+
   it('should dont colour a flat range', () => {
     const wrapper = mount(RangeChangeHeader, {
       props: { amount: 0, percent: 0 },
