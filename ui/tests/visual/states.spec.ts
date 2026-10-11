@@ -19,6 +19,7 @@ const TOAST_MODULE_PATH = '/composables/use-toast.ts'
 const LOADING_HOLD_MS = 20000
 const SUBPIXEL_PX = 0.5
 const SMALL_PHONE = { width: 320, height: 568 }
+const PHONE = { width: 375, height: 667 }
 const WHEEL_DELTA_PX = 300
 const WHEEL_SETTLE_MS = 300
 
@@ -312,6 +313,34 @@ test.describe('desktop states', () => {
     await expect(page).toHaveScreenshot('summary-benchmark-both.png')
   })
 
+  test('going back to an earlier platform filter selects the best day again', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    const lhv = page.locator('.platform-buttons .platform-btn:text-is("LHV")')
+    const selectedDay = page.locator('.calendar-grid .selected')
+    const bestDay = (await selectedDay.getAttribute('aria-label'))!
+    await lhv.click()
+    await lhv.click()
+    await page.locator('.calendar-grid .selectable').first().click()
+    await expect(selectedDay).not.toHaveAttribute('aria-label', bestDay)
+
+    await lhv.click()
+
+    await expect(selectedDay).toHaveAttribute('aria-label', bestDay)
+  })
+
+  test('the calendar grid draws its keyboard focus on the selected day', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    const grid = page.locator('.calendar-grid[role="application"]')
+
+    await grid.focus()
+    await page.keyboard.press('ArrowUp')
+
+    await expect(grid.locator('.selected')).toHaveCSS('outline-style', 'solid')
+    await expect(grid.locator('.selected')).toHaveCSS('outline-width', '2px')
+  })
+
   for (const variant of ['success', 'error', 'info', 'warning'] as const) {
     test(`toast ${variant}`, async ({ page }) => {
       await stubPortfolioSummary(page)
@@ -434,5 +463,35 @@ test.describe('mobile states', () => {
       return { cards: names.length, misfits }
     }, SUBPIXEL_PX)
     expect(layout).toEqual({ cards: 5, misfits: [] })
+  })
+
+  test('the daily profit calendar fits a 375 by 667 phone screen', async ({ page }) => {
+    await page.setViewportSize(PHONE)
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    await expect(page.locator('.compact-heading')).toBeVisible()
+
+    const layout = await page.evaluate(() => {
+      const box = (selector: string) => document.querySelector(selector)!.getBoundingClientRect()
+      const heading = box('.compact-heading')
+      const counts = box('.compact-counts')
+      const lineHeight = parseFloat(
+        getComputedStyle(document.querySelector('.compact-heading')!).lineHeight
+      )
+      return {
+        scrollsSideways:
+          document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        headingLines: Math.round(heading.height / lineHeight),
+        countsBesideHeading: counts.top < heading.bottom && counts.left >= heading.right,
+        fitsScreen: box('.daily-profit-calendar').height <= window.innerHeight,
+      }
+    })
+
+    expect(layout).toEqual({
+      scrollsSideways: false,
+      headingLines: 1,
+      countsBesideHeading: true,
+      fitsScreen: true,
+    })
   })
 })

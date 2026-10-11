@@ -26,4 +26,5 @@ export const API_ENDPOINTS = {
 export const REFETCH_INTERVALS = {
   DIVERSIFICATION_ETFS: 60 * 60 * 1000,
   PLATFORMS: 60 * 60 * 1000,
+  DAILY_CALENDAR: 5 * 60 * 1000,
 } as const

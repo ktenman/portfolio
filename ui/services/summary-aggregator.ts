@@ -35,6 +35,11 @@ export function findSummaryByDate(
   return summaries.find(summary => summary.date === date)
 }
 
+export function percentOfPreviousValue(totalValue: number, change: number): number | null {
+  const previousValue = totalValue - change
+  return previousValue > 0 ? (change / previousValue) * 100 : null
+}
+
 export function flattenPages<T extends { content: PortfolioSummaryDto[] }>(
   pages: T[] | undefined
 ): PortfolioSummaryDto[] {

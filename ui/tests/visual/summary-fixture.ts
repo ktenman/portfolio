@@ -226,7 +226,7 @@ const toSummary = ([
   totalProfitChange24h,
 })
 
-const TODAY_SUMMARY: PortfolioSummaryDto = {
+export const TODAY_SUMMARY: PortfolioSummaryDto = {
   date: '2025-12-31',
   totalValue: 178204.06,
   xirrAnnualReturn: 0.2118,
@@ -253,7 +253,7 @@ const PLATFORMS = [
   'TRADING212',
 ]
 
-const SERIES_RESPONSE = HISTORICAL_ROWS.map(toSummary)
+export const SERIES_RESPONSE = HISTORICAL_ROWS.map(toSummary)
 
 const HISTORICAL_RESPONSE = {
   content: SERIES_RESPONSE,
