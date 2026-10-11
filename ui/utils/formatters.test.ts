@@ -5,6 +5,9 @@ import {
   formatCurrencyWithSign,
   formatSignedCurrency,
   formatSignedPercent,
+  formatCurrencyChange,
+  formatPercentChange,
+  splitCents,
   formatPrice,
   getCurrencySymbol,
   formatPercentageFromDecimal,
@@ -247,6 +250,49 @@ describe('formatSignedPercent', () => {
     [0, '0.00%'],
   ] as const)('formats %s as %s', (value, expected) => {
     expect(formatSignedPercent(value)).toBe(expected)
+  })
+})
+
+describe('formatCurrencyChange', () => {
+  it.each([
+    [1012.89, '+€1,012.89'],
+    [-425.21, '−€425.21'],
+    [0, '€0.00'],
+    [-0, '€0.00'],
+    [0.004, '€0.00'],
+    [-0.004, '€0.00'],
+    [0.005, '+€0.01'],
+    [49.99999999999999, '+€50.00'],
+    [-1234567.891, '−€1,234,567.89'],
+  ])('formats %s as %s', (value, expected) => {
+    expect(formatCurrencyChange(value)).toBe(expected)
+  })
+})
+
+describe('splitCents', () => {
+  it.each([
+    ['€195,698.45', ['€195,698', '.45']],
+    ['−€3,855.58', ['−€3,855', '.58']],
+    ['+€0.07', ['+€0', '.07']],
+    ['€12', ['€12', '']],
+  ])('should split %s into %j', (amount, expected) => {
+    expect(splitCents(amount)).toEqual(expected)
+  })
+})
+
+describe('formatPercentChange', () => {
+  it.each([
+    [0.58, '+0.58%'],
+    [-0.26, '−0.26%'],
+    [0, '0.00%'],
+    [-0, '0.00%'],
+    [0.004, '0.00%'],
+    [-0.004, '0.00%'],
+    [0.0497, '+0.05%'],
+    [-0.0497, '−0.05%'],
+    [12.345, '+12.35%'],
+  ])('formats %s as %s', (value, expected) => {
+    expect(formatPercentChange(value)).toBe(expected)
   })
 })
 
