@@ -12,7 +12,7 @@ import {
   sortSummariesByDateAsc,
   flattenPages,
 } from '../services/summary-aggregator'
-import { lacksDayBeforeLatest } from '../services/daily-profit-calendar'
+import { CALENDAR_RANGE, lacksDayBeforeLatest } from '../services/daily-profit-calendar'
 import { REFETCH_INTERVALS } from '../constants'
 import { useAuthState } from './use-auth-state'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
@@ -83,7 +83,7 @@ export function usePortfolioSummaryQuery(
     refetch: refetchCalendar,
   } = useQuery({
     queryKey: ['portfolio-summary', 'daily-calendar', platformsKey],
-    queryFn: () => portfolioSummaryService.getSeries(TimeRange.SIX_MONTHS, activePlatforms.value),
+    queryFn: () => portfolioSummaryService.getSeries(CALENDAR_RANGE, activePlatforms.value),
     refetchInterval: calendarRefetchInterval,
     enabled: isAuthenticated,
   })

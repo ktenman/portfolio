@@ -1,4 +1,4 @@
-import type { PortfolioSummaryDto } from '../models/generated/domain-models'
+import { TimeRange, type PortfolioSummaryDto } from '../models/generated/domain-models'
 import {
   formatCurrencyChange,
   formatCurrencyWithSymbol,
@@ -19,16 +19,10 @@ import { percentOfPreviousValue, sortSummariesByDateAsc } from './summary-aggreg
 export const CHANGE_STEPS = [0.05, 0.3, 0.75, 1.5]
 export const FLAT_HINT = `under ±${CHANGE_STEPS[0]}%`
 
-export type ChangeStep =
-  | 'flat'
-  | 'gain-1'
-  | 'gain-2'
-  | 'gain-3'
-  | 'gain-4'
-  | 'loss-1'
-  | 'loss-2'
-  | 'loss-3'
-  | 'loss-4'
+const GAIN_STEPS = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4'] as const
+const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
+
+export type ChangeStep = (typeof GAIN_STEPS)[number] | (typeof LOSS_STEPS)[number]
 
 interface DayTexts {
   date: string
@@ -85,10 +79,9 @@ interface RowChange {
 }
 
 const PERIOD_MONTHS = 6
+export const CALENDAR_RANGE = TimeRange.SIX_MONTHS
 const MONTH_NAME_COLUMNS = 3
 const SEPARATOR = ' · '
-const GAIN_STEPS: ChangeStep[] = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4']
-const LOSS_STEPS: ChangeStep[] = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4']
 const ORDINAL_RULES = new Intl.PluralRules('en-US', { type: 'ordinal' })
 const ORDINAL_SUFFIXES: Record<string, string> = { one: 'st', two: 'nd', few: 'rd', other: 'th' }
 

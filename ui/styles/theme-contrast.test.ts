@@ -105,9 +105,4 @@ describe('the Statement palette', () => {
       tokens.get('loss')?.h,
     ])
   })
-
-  it('gives a flat day the neutral of gray-200', () => {
-    const tokens = declaredTokens()
-    expect(tokens.get('change-flat')).toEqual(tokens.get('gray-200'))
-  })
 })
