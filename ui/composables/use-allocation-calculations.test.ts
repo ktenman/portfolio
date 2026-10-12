@@ -13,7 +13,6 @@ const makeEtf = (id: number, price: number): EtfDetailDto => ({
   annualReturn: 0,
   currentPrice: price,
   fundCurrency: Currency.EUR,
-  constituentSymbols: [],
 })
 
 describe('useAllocationCalculations - buy-only mode', () => {

@@ -27,6 +27,7 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.math.BigDecimal
@@ -267,20 +268,127 @@ class DiversificationCalculatorControllerIT {
       .andExpect(jsonPath("$.sectors[0].percentage").value(50.0))
   }
 
+  @Test
+  fun `should list the constituents of a synthetic fund in place of the fund`() {
+    createTrezorFund()
+
+    mockMvc
+      .perform(get("/api/diversification/available-etfs").cookie(DEFAULT_COOKIE))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.length()").value(2))
+      .andExpect(jsonPath("$[0].symbol").value("BNBEUR"))
+      .andExpect(jsonPath("$[0].name").value("Binance Coin"))
+      .andExpect(jsonPath("$[0].currentPrice").value(500.0))
+      .andExpect(jsonPath("$[1].symbol").value("BTCEUR"))
+      .andExpect(jsonPath("$[1].name").value("Bitcoin"))
+  }
+
+  @Test
+  fun `should show constituents as holdings under their sector`() {
+    val (bitcoin, binance) = createTrezorFund()
+    val etf = createAndSaveInstrument("VWCE", "Vanguard FTSE All-World")
+    createEtfPositions(etf)
+
+    mockMvc
+      .perform(calculation(etf.id to 50, bitcoin.id to 30, binance.id to 20))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.holdings[0].name").value("Bitcoin"))
+      .andExpect(jsonPath("$.holdings[0].percentage").value(30.0))
+      .andExpect(jsonPath("$.holdings[1].name").value("Binance Coin"))
+      .andExpect(jsonPath("$.holdings[1].percentage").value(20.0))
+      .andExpect(jsonPath("$.sectors[0].sector").value("Cryptocurrency"))
+      .andExpect(jsonPath("$.sectors[0].percentage").value(50.0))
+      .andExpect(jsonPath("$.countries[?(@.countryName == 'United Arab Emirates')].percentage").value(20.0))
+  }
+
+  @Test
+  fun `should count constituents in the weighted ter and return`() {
+    val (bitcoin, binance) = createTrezorFund()
+    val etf = createAndSaveInstrument("VWCE", "Vanguard FTSE All-World")
+    createEtfPositions(etf)
+
+    mockMvc
+      .perform(calculation(etf.id to 50, bitcoin.id to 30, binance.id to 20))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.weightedTer").value(0.1))
+      .andExpect(jsonPath("$.weightedAnnualReturn").value(0.26))
+  }
+
+  @Test
+  fun `should keep the saved configuration when a synthetic fund is saved over it`() {
+    val (bitcoin, _) = createTrezorFund()
+    val fund = instrumentRepository.findByProviderName(ProviderName.SYNTHETIC).single()
+    mockMvc.perform(configuration(bitcoin.id))
+    mockMvc.perform(configuration(fund.id))
+
+    mockMvc
+      .perform(get("/api/diversification/config").cookie(DEFAULT_COOKIE))
+      .andExpect(jsonPath("$.allocations[0].instrumentId").value(bitcoin.id.toInt()))
+  }
+
+  private fun configuration(instrumentId: Long) =
+    put("/api/diversification/config")
+      .cookie(DEFAULT_COOKIE)
+      .contentType(APPLICATION_JSON)
+      .content("""{"allocations":[{"instrumentId":$instrumentId,"value":2.5}],"inputMode":"percentage"}""")
+
+  private fun calculation(vararg allocations: Pair<Long, Int>) =
+    post("/api/diversification/calculate")
+      .cookie(DEFAULT_COOKIE)
+      .contentType(APPLICATION_JSON)
+      .content(
+        allocations.joinToString(",", """{"allocations":[""", "]}") { (id, percentage) ->
+          """{"instrumentId":$id,"percentage":$percentage}"""
+        },
+      )
+
+  private fun createTrezorFund(): Pair<Instrument, Instrument> {
+    val fund = createAndSaveInstrument("TREZOR", "Trezor Crypto Fund", null, null, null, "CRYPTO", ProviderName.SYNTHETIC)
+    val bitcoin =
+      createAndSaveInstrument(
+        "BTCEUR",
+        "BTC/EUR",
+        BigDecimal.ZERO,
+        BigDecimal("0.30"),
+        BigDecimal("60000.00"),
+        "CRYPTO",
+        ProviderName.BINANCE,
+      )
+    val binance =
+      createAndSaveInstrument(
+        "BNBEUR",
+        "BNB/EUR",
+        BigDecimal.ZERO,
+        BigDecimal("0.60"),
+        BigDecimal("500.00"),
+        "Cryptocurrency",
+        ProviderName.BINANCE,
+      )
+    createPosition(fund, createAndSaveHolding("BTCEUR", "Bitcoin", IndustrySector.CRYPTOCURRENCY, null, null), BigDecimal.ZERO)
+    createPosition(
+      fund,
+      createAndSaveHolding("BNBEUR", "Binance Coin", IndustrySector.CRYPTOCURRENCY, "AE", "United Arab Emirates"),
+      BigDecimal.ZERO,
+    )
+    return bitcoin to binance
+  }
+
   private fun createAndSaveInstrument(
     symbol: String,
     name: String,
     ter: BigDecimal? = BigDecimal("0.20"),
     annualReturn: BigDecimal? = BigDecimal("0.10"),
     currentPrice: BigDecimal? = BigDecimal("100.00"),
+    category: String = "ETF",
+    providerName: ProviderName = ProviderName.LIGHTYEAR,
   ): Instrument {
     val instrument =
       Instrument(
         symbol = symbol,
         name = name,
-        category = "ETF",
+        category = category,
         baseCurrency = "EUR",
-        providerName = ProviderName.LIGHTYEAR,
+        providerName = providerName,
       ).apply {
         this.ter = ter
         this.xirrAnnualReturn = annualReturn
