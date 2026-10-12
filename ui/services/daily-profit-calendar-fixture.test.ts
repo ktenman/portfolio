@@ -65,8 +65,61 @@ describe('daily profit calendar of the visual fixture', () => {
       change: null,
       percent: null,
       detail: 'Closed at €103,031.33 · XIRR 10.68%',
-      note: 'Starting day, not counted or ranked',
+      note: 'Starting day, counted in the earlier period',
     })
+  })
+})
+
+describe('earlier period of the visual fixture', () => {
+  const calendar = createDailyProfitCalendar(
+    mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY),
+    '2026-01-15',
+    '2025-06-30'
+  )
+  const { days } = calendar
+
+  it('lays the earlier period out in two week columns', () => {
+    expect([calendar.weeks, calendar.offset, calendar.months]).toEqual([
+      2,
+      4,
+      [{ column: 0, label: 'Jun' }],
+    ])
+  })
+
+  it('starts the earlier period on 27 Jun', () => {
+    expect([days[0].name, days[0].detail, days[0].note]).toEqual([
+      'Fri 27 Jun 2025, starting day',
+      'Closed at €102,060.28 · XIRR 10.25%',
+      'Starting day, not counted or ranked',
+    ])
+  })
+
+  it('counts three days up and none down or flat', () => {
+    expect([
+      calendar.upDays,
+      calendar.downDays,
+      calendar.flatDays,
+      calendar.averageDay,
+      calendar.worst,
+    ]).toEqual([3, 0, 0, 151.79, null])
+  })
+
+  it('ranks the three days of the earlier period', () => {
+    expect(days.slice(1).map(day => [day.name, day.detail])).toEqual([
+      ['Sat 28 Jun 2025, +€251.29, +0.25%', 'Best of 3 days · closed at €102,483.46 · XIRR 10.40%'],
+      [
+        'Sun 29 Jun 2025, +€137.07, +0.13%',
+        '2nd best of 3 days · closed at €102,792.42 · XIRR 10.54%',
+      ],
+      [
+        'Mon 30 Jun 2025, +€67.01, +0.07%',
+        '3rd best of 3 days · closed at €103,031.33 · XIRR 10.68%',
+      ],
+    ])
+  })
+
+  it('names 28 Jun the best day', () => {
+    expect(calendar.best?.date).toBe('2025-06-28')
   })
 })
 
