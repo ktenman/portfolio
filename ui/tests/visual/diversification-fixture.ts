@@ -1,12 +1,19 @@
 import {
   Currency,
+  Platform,
+  TransactionType,
   type DiversificationCalculatorResponseDto,
   type EtfDetailDto,
+  type TransactionsWithSummaryDto,
 } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type CachedState } from '../../components/diversification/types'
+import { createTransactionDto } from '../fixtures'
 import { stubInstruments } from './instruments-fixture'
 import { apiRoute, type RouteStub } from './stub'
+
+const { BUY, SELL } = TransactionType
+const { LHV, TRADING212 } = Platform
 
 const AVAILABLE_ETFS: EtfDetailDto[] = [
   {
@@ -152,6 +159,17 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     fundCurrency: Currency.EUR,
     constituentSymbols: [],
   },
+  {
+    instrumentId: 116,
+    symbol: 'CASH',
+    name: 'Test Cash Holdings',
+    allocation: 0,
+    ter: null,
+    annualReturn: null,
+    currentPrice: 1,
+    fundCurrency: Currency.EUR,
+    constituentSymbols: ['TSTEUR'],
+  },
 ]
 
 const BENCHMARK_ID = 115
@@ -292,6 +310,67 @@ const BENCHMARK_CALCULATION: DiversificationCalculatorResponseDto = {
   },
 }
 
+type Trade = [
+  date: string,
+  instrumentId: number,
+  type: TransactionType,
+  quantity: number,
+  price: number,
+  platform: Platform,
+]
+
+const TRADES: Trade[] = [
+  ['2025-11-17', 101, BUY, 200, 16, LHV],
+  ['2025-11-17', 103, BUY, 48, 50, LHV],
+  ['2025-11-17', 108, BUY, 60, 30, LHV],
+  ['2025-11-17', 109, BUY, 40, 40, LHV],
+  ['2025-11-17', 113, BUY, 50, 20, LHV],
+  ['2025-12-15', 101, BUY, 100, 16, LHV],
+  ['2025-12-15', 103, BUY, 24, 50, LHV],
+  ['2025-12-15', 108, BUY, 30, 30, LHV],
+  ['2025-12-15', 109, BUY, 20, 40, LHV],
+  ['2025-12-15', 113, BUY, 25, 20, LHV],
+  ['2026-01-15', 113, SELL, 75, 22, LHV],
+  ['2026-01-15', 104, BUY, 37.5, 44, LHV],
+  ['2026-02-16', 114, BUY, 3000, 1, TRADING212],
+  ['2026-03-16', 114, SELL, 2000, 1, TRADING212],
+  ['2026-03-16', 101, BUY, 62.5, 16, TRADING212],
+  ['2026-03-16', 108, BUY, 20, 30, TRADING212],
+  ['2026-03-16', 110, BUY, 16, 25, TRADING212],
+  ['2026-04-15', 109, SELL, 30, 44, LHV],
+  ['2026-04-15', 103, BUY, 26.4, 50, LHV],
+  ['2026-05-15', 101, BUY, 100, 16, LHV],
+  ['2026-05-15', 103, BUY, 24, 50, LHV],
+  ['2026-05-15', 108, BUY, 30, 30, LHV],
+  ['2026-05-15', 109, BUY, 10, 40, LHV],
+  ['2026-05-15', 104, BUY, 20, 44, LHV],
+  ['2026-06-15', 114, SELL, 500, 1, TRADING212],
+  ['2026-07-15', 101, BUY, 100, 16, LHV],
+  ['2026-07-15', 103, BUY, 24, 50, LHV],
+  ['2026-07-15', 108, BUY, 30, 30, LHV],
+  ['2026-07-15', 104, BUY, 20, 44, LHV],
+]
+
+const symbolOf = (instrumentId: number): string =>
+  AVAILABLE_ETFS.find(etf => etf.instrumentId === instrumentId)?.symbol ?? 'TSTEUR'
+
+const TRANSACTIONS = {
+  transactions: TRADES.map(
+    ([transactionDate, instrumentId, transactionType, quantity, price, platform], index) =>
+      createTransactionDto({
+        id: index + 1,
+        instrumentId,
+        symbol: symbolOf(instrumentId),
+        transactionType,
+        quantity,
+        price,
+        transactionDate,
+        platform,
+      })
+  ),
+  summary: { totalRealizedProfit: 0, totalUnrealizedProfit: 0, totalProfit: 0, netInvested: 0 },
+} satisfies TransactionsWithSummaryDto
+
 const isBenchmarkRequest = (body: { allocations: { instrumentId: number }[] }) =>
   body.allocations.length === 1 && body.allocations[0].instrumentId === BENCHMARK_ID
 
@@ -313,6 +392,9 @@ const stubDiversificationWith =
     )
     await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/config`), route =>
       route.fulfill({ json: CONFIG })
+    )
+    await page.route(apiRoute(API_ENDPOINTS.TRANSACTIONS), route =>
+      route.fulfill({ json: TRANSACTIONS })
     )
   }
 

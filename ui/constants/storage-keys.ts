@@ -19,4 +19,5 @@ export const STORAGE_KEYS = {
   DIVERSIFICATION_BREAKDOWN_TAB: 'portfolio_diversification_breakdown_tab',
   DIVERSIFICATION_BREAKDOWN_VIEW: 'portfolio_diversification_breakdown_view',
   BENCHMARK_COMPARE: 'portfolio_benchmark_compare',
+  PURCHASE_WEIGHTS_METRIC: 'portfolio_purchase_weights_metric',
 } as const
