@@ -1,20 +1,15 @@
 import { computed, ref, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
-import { STORAGE_KEYS } from '../constants/storage-keys'
+import { STORAGE_KEYS } from '../constants'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
-import {
-  buildDailyProfitCalendar,
-  dayOn,
-  periodLastDays,
-  type DailyProfitCalendar,
-} from '../services/daily-profit-calendar'
+import { buildDailyProfitCalendar, dayOn, periodLastDays } from '../services/daily-profit-calendar'
 import { formatDayRange } from '../utils/iso-dates'
 import { formatDateToString } from './use-quick-dates'
 import { useToast } from './use-toast'
 
 export type CalendarHistory = 'idle' | 'loading' | 'loaded'
 
-const isDate = (date: string | null): date is string =>
+const isDate = (date: string | null) =>
   !!date &&
   /^\d{4}-\d{2}-\d{2}$/.test(date) &&
   Number.isFinite(Date.parse(date)) &&
@@ -33,7 +28,7 @@ export const useDailyProfitCalendar = (
   const previewDate = ref<string | null>(null)
   const announcement = ref('')
   const back = ref(0)
-  const isRestoring = ref(true)
+  const isRestoring = ref(isDate(storedDate.value))
   const waiting = ref<'restore' | 'step' | null>(null)
 
   const lastDays = computed(() => periodLastDays(props.rows ?? []))
@@ -68,9 +63,10 @@ export const useDailyProfitCalendar = (
     storedDate.value = date && date !== lastDays.value[0] ? date : null
   }
 
-  const restore = (current: DailyProfitCalendar | null) => {
+  const restore = () => {
     if (!props.rows) return
-    const date = isDate(storedDate.value) ? storedDate.value : null
+    const current = calendar.value
+    const date = storedDate.value
     if (current && date && date <= current.days[0].date && props.history !== 'loaded') {
       if (waiting.value) return
       waiting.value = 'restore'
@@ -90,7 +86,7 @@ export const useDailyProfitCalendar = (
   watch(
     [calendar, index, () => props.history],
     ([current, shown], [, previous]) => {
-      if (isRestoring.value) return restore(current)
+      if (isRestoring.value) return restore()
       const isStep = previous !== undefined && shown !== previous
       announcement.value = isStep && current ? `Daily profit ${dates.value}` : ''
       if (isStep) previewDate.value = null
@@ -133,7 +129,7 @@ export const useDailyProfitCalendar = (
       if (state === 'loaded') return wasRestoring ? undefined : step(1)
       if (wasRestoring) {
         storedDate.value = null
-        restore(calendar.value)
+        restore()
       }
       toast.error('Could not load earlier days. Press the arrow to try again.')
     }
@@ -146,16 +142,5 @@ export const useDailyProfitCalendar = (
     busy: waiting.value !== null,
   }))
 
-  return {
-    calendar,
-    day,
-    preview,
-    previewDate,
-    announcement,
-    period,
-    isRestoring,
-    select,
-    earlier,
-    later,
-  }
+  return { calendar, day, preview, previewDate, announcement, period, select, earlier, later }
 }

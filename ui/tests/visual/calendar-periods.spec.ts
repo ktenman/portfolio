@@ -18,6 +18,18 @@ const TWO_YEAR_DATES = '28 Nov 2025 – 28 May 2026'
 const dates = (page: Page) => page.locator('.period-dates').filter({ visible: true })
 const arrow = (page: Page, name: string) => page.getByRole('button', { name })
 
+const isHistoryRequest = (url: string) =>
+  apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES).test(url) &&
+  new URL(url).searchParams.get('range') === 'MAX'
+
+const historyRequests = (page: Page) => {
+  const urls: string[] = []
+  page.on('request', request => {
+    if (isHistoryRequest(request.url())) urls.push(request.url())
+  })
+  return urls
+}
+
 async function openEarlierPeriod(page: Page): Promise<void> {
   await openRoute(page, '/')
   await arrow(page, 'Earlier period').click()
@@ -107,14 +119,7 @@ test('changing the platform filter keeps the picked day and period', async ({ pa
 
 test('reloading keeps the earlier period and requests history once', async ({ page }) => {
   await openEarlierPeriod(page)
-  const requests: string[] = []
-  page.on('request', request => {
-    if (
-      request.url().includes('/series?') &&
-      new URL(request.url()).searchParams.get('range') === 'MAX'
-    )
-      requests.push(request.url())
-  })
+  const requests = historyRequests(page)
 
   await page.reload()
 
@@ -133,7 +138,7 @@ test('a stored older day keeps the placeholder until its period loads', async ({
     resume = resolve
   })
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), async route => {
-    if (new URL(route.request().url()).searchParams.get('range') !== 'MAX') return route.fallback()
+    if (!isHistoryRequest(route.request().url())) return route.fallback()
     await pending
     await route.fulfill({ json: SERIES_RESPONSE })
   })
@@ -152,7 +157,7 @@ test('a failed restoration clears the saved day and does not request history on 
 }) => {
   await openEarlierPeriod(page)
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), route =>
-    new URL(route.request().url()).searchParams.get('range') === 'MAX'
+    isHistoryRequest(route.request().url())
       ? route.fulfill({ status: 500, json: { message: 'History unavailable' } })
       : route.fallback()
   )
@@ -166,14 +171,7 @@ test('a failed restoration clears the saved day and does not request history on 
   expect(
     await page.evaluate(key => localStorage.getItem(key), STORAGE_KEYS.SUMMARY_CALENDAR_DAY)
   ).toBeNull()
-  const requests: string[] = []
-  page.on('request', request => {
-    if (
-      request.url().includes('/series?') &&
-      new URL(request.url()).searchParams.get('range') === 'MAX'
-    )
-      requests.push(request.url())
-  })
+  const requests = historyRequests(page)
 
   await page.reload()
   await expect(dates(page)).toHaveText(LATEST_DATES)

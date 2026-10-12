@@ -136,19 +136,16 @@ describe('DailyProfitCalendar storage', () => {
     expect(selectedName(wrapper)).toBe('Mon 30 Jun 2025, +€600.00, +0.60%')
   })
 
-  it.each(['pick', 'Later period'])(
+  it.each([
+    ['pick', pick, 'Tue 30 Dec 2025', '2025-12-30', 'Wed 31 Dec 2025'],
+    ['Later period', press, 'Earlier period', '2025-06-30', 'Later period'],
+  ])(
     'should clear storage on returning to the latest day with %s',
-    async action => {
+    async (_, act, away, date, home) => {
       const wrapper = mountWith()
-      if (action === 'pick') {
-        await pick(wrapper, 'Tue 30 Dec 2025')
-        expect(saved()).toBe('2025-12-30')
-        await pick(wrapper, 'Wed 31 Dec 2025')
-      } else {
-        await press(wrapper, 'Earlier period')
-        expect(saved()).toBe('2025-06-30')
-        await press(wrapper, action)
-      }
+      await act(wrapper, away)
+      expect(saved()).toBe(date)
+      await act(wrapper, home)
       expect(saved()).toBeNull()
       wrapper.unmount()
 
@@ -238,6 +235,20 @@ describe('DailyProfitCalendar storage', () => {
     ])
     wrapper.unmount()
     expect(mountWith(sixMonthRows(), 'idle').emitted('loadHistory')).toBeUndefined()
+  })
+
+  it('should warn that the calendar could not load when a failed request follows a stored day', async () => {
+    localStorage.setItem(STORAGE_KEY, '2025-12-08')
+    const wrapper = mount(DailyProfitCalendar, {
+      props: { rows: undefined, error: 'Võrk on maas' },
+    })
+
+    await wrapper.setProps({ rows: [row('2025-12-09', 2580)] })
+
+    expect([wrapper.attributes('role'), wrapper.text()]).toEqual([
+      'alert',
+      'Could not load the daily profit calendar: Võrk on maas',
+    ])
   })
 
   it('should restore across platform selections that still contain the picked day', async () => {

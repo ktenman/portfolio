@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isRestoring && calendar && day" class="daily-profit-calendar card-shell p-0 md:p-6">
+  <div v-if="calendar && day" class="daily-profit-calendar card-shell p-0 md:p-6">
     <div class="calendar-body hidden md:flex">
       <div class="calendar-main" :style="{ '--weeks': calendar.weeks }">
         <div class="calendar-head">
@@ -33,7 +33,7 @@
     <p class="sr-only" role="status">{{ announcement }}</p>
   </div>
   <div
-    v-else-if="!rows || isRestoring"
+    v-else-if="!rows || calendar"
     class="daily-profit-calendar card-shell p-0 md:p-6"
     aria-hidden="true"
   >
@@ -81,18 +81,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ loadHistory: [] }>()
 
-const {
-  calendar,
-  day,
-  preview,
-  previewDate,
-  announcement,
-  period,
-  isRestoring,
-  select,
-  earlier,
-  later,
-} = useDailyProfitCalendar(props, () => emit('loadHistory'))
+const { calendar, day, preview, previewDate, announcement, period, select, earlier, later } =
+  useDailyProfitCalendar(props, () => emit('loadHistory'))
 </script>
 
 <style scoped>
