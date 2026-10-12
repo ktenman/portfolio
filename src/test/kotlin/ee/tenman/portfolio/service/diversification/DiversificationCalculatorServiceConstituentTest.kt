@@ -7,10 +7,11 @@ import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.dto.AllocationDto
+import ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto
 import ee.tenman.portfolio.dto.EtfDetailDto
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
-import ee.tenman.portfolio.service.etf.SyntheticEtfCalculationService
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
@@ -25,7 +26,7 @@ class DiversificationCalculatorServiceConstituentTest {
 
   @BeforeEach
   fun setup() {
-    service = DiversificationCalculatorService(instrumentRepository, etfPositionRepository, mockk<SyntheticEtfCalculationService>())
+    service = DiversificationCalculatorService(instrumentRepository, etfPositionRepository)
   }
 
   @Test
@@ -73,6 +74,40 @@ class DiversificationCalculatorServiceConstituentTest {
     expect(symbols).toEqual(listOf("BTCEUR"))
   }
 
+  @Test
+  fun `should count an allocation to a constituent as one holding at its full weight`() {
+    val trezor = fund(20L, "TREZOR", "CRYPTO")
+    allocated(listOf(bitcoin(), binance()), emptyList(), listOf(trezor), trezorPositions(trezor))
+    val request = request(2L to "60", 13L to "40")
+
+    val holdings = service.calculate(request).holdings.map { Triple(it.name, it.percentage.toPlainString(), it.inEtfs) }
+
+    expect(holdings).toEqual(listOf(Triple("Bitcoin", "60.0000", "BTCEUR"), Triple("Binance Coin", "40.0000", "BNBEUR")))
+  }
+
+  @Test
+  fun `should give an allocation to a synthetic fund no holdings`() {
+    val trezor = fund(20L, "TREZOR", "CRYPTO")
+    allocated(listOf(trezor), trezorPositions(trezor), listOf(trezor), trezorPositions(trezor))
+
+    val result = service.calculate(request(20L to "100"))
+
+    expect(result.totalUniqueHoldings).toEqual(0)
+  }
+
+  @Test
+  fun `should keep the own holdings of an etf that a synthetic fund also holds`() {
+    val wrapper = fund(24L, "WRAP", "ETF")
+    val etf = instrument(1L, "VWCE", "ETF", ProviderName.LIGHTYEAR)
+    val own = position(etf, holding("AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE), BigDecimal("100"))
+    val wrapped = position(wrapper, holding("VWCE", "Vanguard FTSE All-World", IndustrySector.FINANCE))
+    allocated(listOf(etf), listOf(own), listOf(wrapper), listOf(wrapped))
+
+    val names = service.calculate(request(1L to "100")).holdings.map { it.name }
+
+    expect(names).toEqual(listOf("Apple"))
+  }
+
   private fun listed(
     funds: List<Instrument>,
     positions: List<EtfPosition>,
@@ -87,6 +122,22 @@ class DiversificationCalculatorServiceConstituentTest {
     every { etfPositionRepository.findLatestPositionsByEtfIds(funds.map { it.id }) } returns positions
     every { instrumentRepository.findBySymbolIn(match { it.toSet() == tickers }) } returns coins
   }
+
+  private fun allocated(
+    instruments: List<Instrument>,
+    positions: List<EtfPosition>,
+    funds: List<Instrument>,
+    fundPositions: List<EtfPosition>,
+  ) {
+    val ids = instruments.map { it.id }
+    every { instrumentRepository.findAllById(ids) } returns instruments
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns funds
+    every { etfPositionRepository.findLatestPositionsByEtfIds(funds.map { it.id }) } returns fundPositions
+    every { etfPositionRepository.findLatestPositionsByEtfIds(ids) } returns positions
+  }
+
+  private fun request(vararg allocations: Pair<Long, String>) =
+    DiversificationCalculatorRequestDto(allocations.map { (id, percentage) -> AllocationDto(id, BigDecimal(percentage)) })
 
   private fun trezorPositions(fund: Instrument): List<EtfPosition> =
     listOf(
@@ -136,7 +187,8 @@ class DiversificationCalculatorServiceConstituentTest {
   private fun position(
     fund: Instrument,
     holding: EtfHolding,
-  ): EtfPosition = EtfPosition(etfInstrument = fund, holding = holding, weightPercentage = BigDecimal.ZERO, snapshotDate = SNAPSHOT_DATE)
+    weight: BigDecimal = BigDecimal.ZERO,
+  ): EtfPosition = EtfPosition(etfInstrument = fund, holding = holding, weightPercentage = weight, snapshotDate = SNAPSHOT_DATE)
 
   companion object {
     private val SNAPSHOT_DATE = LocalDate.of(2026, 8, 28)

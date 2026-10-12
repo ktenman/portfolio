@@ -1,9 +1,7 @@
 package ee.tenman.portfolio.service.diversification
 
-import ee.tenman.portfolio.common.percentOf
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.DIVERSIFICATION_ETFS_CACHE
 import ee.tenman.portfolio.domain.EtfHolding
-import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
@@ -20,7 +18,6 @@ import ee.tenman.portfolio.dto.LargestPositionDto
 import ee.tenman.portfolio.model.diversification.AggregatedHolding
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
-import ee.tenman.portfolio.service.etf.SyntheticEtfCalculationService
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,7 +28,6 @@ import java.math.RoundingMode
 class DiversificationCalculatorService(
   private val instrumentRepository: InstrumentRepository,
   private val etfPositionRepository: EtfPositionRepository,
-  private val syntheticEtfCalculationService: SyntheticEtfCalculationService,
 ) {
   @Transactional(readOnly = true)
   fun calculate(request: DiversificationCalculatorRequestDto): DiversificationCalculatorResponseDto {
@@ -39,12 +35,11 @@ class DiversificationCalculatorService(
     val allocations = normalizeAllocations(request.allocations)
     val instrumentIds = allocations.map { it.instrumentId }
     val instruments = instrumentRepository.findAllById(instrumentIds).associateBy { it.id }
-    val positions = etfPositionRepository.findLatestPositionsByEtfIds(instrumentIds)
-    val positionsByEtfId = positions.groupBy { it.etfInstrument.id }
+    val weights = holdingWeights(instrumentIds, instruments)
     val etfDetails = buildEtfDetails(allocations, instruments)
     val weightedTer = calculateWeightedTer(etfDetails)
     val weightedAnnualReturn = calculateWeightedAnnualReturn(etfDetails)
-    val holdingsData = aggregateHoldings(allocations, positionsByEtfId, instruments)
+    val holdingsData = aggregateHoldings(allocations, weights, instruments)
     val holdings = buildHoldingDtos(holdingsData)
     val sectors = aggregateSectors(holdingsData)
     val industries = aggregateIndustries(holdingsData)
@@ -104,15 +99,17 @@ class DiversificationCalculatorService(
       fundCurrency = instrument.fundCurrency,
     )
 
-  private fun weightedPositions(
-    instrument: Instrument,
-    positions: List<EtfPosition>,
-  ): List<Pair<EtfPosition, BigDecimal>> {
-    if (!instrument.isSynthetic()) return positions.map { it to it.weightPercentage }
-    val values = syntheticEtfCalculationService.calculateHoldingValues(positions)
-    val total = values.sumOf { it.value }
-    if (total.signum() == 0) return emptyList()
-    return values.map { it.position to it.value.percentOf(total, CALCULATION_SCALE) }
+  private fun holdingWeights(
+    instrumentIds: List<Long>,
+    instruments: Map<Long, Instrument>,
+  ): Map<Long, List<Pair<EtfHolding, BigDecimal>>> {
+    val own =
+      etfPositionRepository
+        .findLatestPositionsByEtfIds(instrumentIds)
+        .groupBy({ it.etfInstrument.id }, { it.holding to it.weightPercentage })
+    val coins = syntheticHoldings()
+    val single = instruments.values.mapNotNull { instrument -> coins[instrument.symbol]?.let { instrument.id to listOf(it to HUNDRED) } }
+    return single.toMap() + own
   }
 
   private fun validateRequest(request: DiversificationCalculatorRequestDto) {
@@ -167,11 +164,11 @@ class DiversificationCalculatorService(
 
   private fun aggregateHoldings(
     allocations: List<AllocationDto>,
-    positionsByEtfId: Map<Long, List<EtfPosition>>,
+    weights: Map<Long, List<Pair<EtfHolding, BigDecimal>>>,
     instruments: Map<Long, Instrument>,
   ): Map<String, AggregatedHolding> =
     allocations
-      .flatMap { allocation -> weightedHoldings(allocation, positionsByEtfId, instruments) }
+      .flatMap { allocation -> weightedHoldings(allocation, weights, instruments) }
       .groupBy { normalizeHoldingName(it.name) }
       .mapValues { (_, holdings) ->
         holdings.reduce { first, next ->
@@ -181,19 +178,18 @@ class DiversificationCalculatorService(
 
   private fun weightedHoldings(
     allocation: AllocationDto,
-    positionsByEtfId: Map<Long, List<EtfPosition>>,
+    weights: Map<Long, List<Pair<EtfHolding, BigDecimal>>>,
     instruments: Map<Long, Instrument>,
   ): List<AggregatedHolding> {
-    val positions = positionsByEtfId[allocation.instrumentId] ?: return emptyList()
     val instrument = instruments[allocation.instrumentId] ?: return emptyList()
-    return weightedPositions(instrument, positions).map { (position, weight) ->
+    return weights[allocation.instrumentId].orEmpty().map { (holding, weight) ->
       AggregatedHolding(
-        name = position.holding.name,
-        ticker = position.holding.ticker,
-        sector = position.holding.sector?.displayName,
-        industry = resolveIndustry(position.holding),
-        countryCode = position.holding.countryCode,
-        countryName = position.holding.countryName,
+        name = holding.name,
+        ticker = holding.ticker,
+        sector = holding.sector?.displayName,
+        industry = resolveIndustry(holding),
+        countryCode = holding.countryCode,
+        countryName = holding.countryName,
         percentage = weight.multiply(allocation.percentage).divide(HUNDRED, CALCULATION_SCALE, RoundingMode.HALF_UP),
         etfSymbols = setOf(instrument.symbol),
       )
