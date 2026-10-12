@@ -284,6 +284,24 @@ const isBenchmarkRequest = (body: { allocations: { instrumentId: number }[] }) =
 
 const LONG_FUND_NAME = 'Test Aquila World Equity Index Tracker 6 Pension Fund – Ålandsbanken Series'
 
+const HOLDINGS = [
+  ...CALCULATION.holdings,
+  { name: 'Nori Small', ticker: 'NORI', percentage: 0.0049, inEtfs: 'TSTWLD' },
+  { name: 'Nikko Rounded', ticker: null, percentage: 0, inEtfs: 'TSTWLD' },
+  ...Array.from(
+    { length: CALCULATION.totalUniqueHoldings - CALCULATION.holdings.length - 2 },
+    (_, index) => ({
+      name: `Test asset ${String(index + 1).padStart(4, '0')}`,
+      ticker: null,
+      percentage: 0.0001,
+      inEtfs: 'TSTWLD',
+    })
+  ),
+]
+
+const normalize = (value: string) =>
+  value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim()
+
 const stubDiversificationWith =
   (etfs: EtfDetailDto[]): RouteStub =>
   async page => {
@@ -298,6 +316,25 @@ const stubDiversificationWith =
           : CALCULATION,
       })
     )
+    await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/holdings`), route => {
+      const { query = '', page = 0 } = route.request().postDataJSON()
+      const holdings = HOLDINGS.filter(
+        holding =>
+          normalize(holding.name).includes(normalize(query)) ||
+          normalize(holding.ticker ?? '').includes(normalize(query))
+      ).sort(
+        (left, right) => right.percentage - left.percentage || left.name.localeCompare(right.name)
+      )
+      return route.fulfill({
+        json: {
+          content: holdings.slice(page * 100, (page + 1) * 100),
+          totalElements: holdings.length,
+          totalPages: Math.ceil(holdings.length / 100),
+          size: 100,
+          number: page,
+        },
+      })
+    })
     await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/config`), route =>
       route.fulfill({ json: CONFIG })
     )

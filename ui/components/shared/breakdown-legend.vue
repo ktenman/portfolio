@@ -15,7 +15,7 @@
       <img v-if="item.code" :src="countryFlagUrl(item.code)" :alt="item.code" class="legend-flag" />
       <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
       <span class="legend-label">{{ item.label }}</span>
-      <span class="legend-value">{{ formatPercentage(item.value) }}</span>
+      <span class="legend-value">{{ formatValue(item.value) }}</span>
       <span
         v-if="item.benchmark !== undefined"
         class="legend-benchmark"
@@ -36,10 +36,14 @@ import {
 import { countryFlagUrl } from '../../utils/currency-flag'
 import { formatPercentage } from '../../utils/formatters'
 
-const props = defineProps<{
-  items: BreakdownRow[]
-  activeIndex: number | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    items: BreakdownRow[]
+    activeIndex: number | null
+    formatValue?: (value: number) => string
+  }>(),
+  { formatValue: formatPercentage }
+)
 
 const emit = defineEmits<{
   hover: [index: number]

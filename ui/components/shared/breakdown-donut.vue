@@ -4,12 +4,13 @@
       <canvas ref="chartCanvas"></canvas>
       <div v-if="activeItem" class="chart-centre" aria-hidden="true">
         <span class="chart-centre-label">{{ activeItem.label }}</span>
-        <span class="chart-centre-value">{{ formatPercentage(activeItem.value) }}</span>
+        <span class="chart-centre-value">{{ formatValue(activeItem.value) }}</span>
       </div>
     </div>
     <breakdown-legend
       :items="rows"
       :active-index="activeIndex"
+      :format-value="formatValue"
       @hover="focusSlice"
       @leave="clearSlice"
     />
@@ -29,9 +30,13 @@ import { withAlpha } from '../../constants/chart-colors'
 import { formatPercentage } from '../../utils/formatters'
 import type { BreakdownRow } from '../../services/diversification-chart-service'
 
-const props = defineProps<{
-  rows: BreakdownRow[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    rows: BreakdownRow[]
+    formatValue?: (value: number) => string
+  }>(),
+  { formatValue: formatPercentage }
+)
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 const activeIndex = ref<number | null>(null)

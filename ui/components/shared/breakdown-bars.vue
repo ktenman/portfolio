@@ -1,5 +1,5 @@
 <template>
-  <div class="breakdown-rows">
+  <div class="breakdown-rows" :class="{ holdings, compared: hasBenchmark }">
     <div
       v-for="row in rows"
       :key="row.isOther ? '__other' : row.label"
@@ -10,7 +10,7 @@
         <img v-if="row.code" :src="countryFlagUrl(row.code)" :alt="row.code" class="row-flag" />
         <span class="row-label-text">{{ row.label }}</span>
       </span>
-      <span class="row-value">{{ formatPercentage(row.value) }}</span>
+      <span class="row-value">{{ formatValue(row.value) }}</span>
       <span class="row-track" :class="{ empty: row.isOther }">
         <template v-if="!row.isOther">
           <span class="row-bar" :style="barStyle(row)"></span>
@@ -34,7 +34,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { formatPercentage } from '../../utils/formatters'
+import { formatHoldingPercentage, formatPercentage } from '../../utils/formatters'
 import { countryFlagUrl } from '../../utils/currency-flag'
 import {
   formatBenchmarkShare,
@@ -45,7 +45,12 @@ import {
 const props = defineProps<{
   rows: BreakdownRow[]
   benchmarkLabel?: string
+  holdings?: boolean
 }>()
+
+const hasBenchmark = computed(() => props.rows.some(row => row.benchmark !== undefined))
+const formatValue = (value: number) =>
+  props.holdings ? formatHoldingPercentage(value) : formatPercentage(value)
 
 const scaleMax = computed(() =>
   props.rows
@@ -62,7 +67,7 @@ const barStyle = (row: BreakdownRow) => ({
 })
 
 const rowTitle = (row: BreakdownRow): string => {
-  const own = `${row.label} ${formatPercentage(row.value)}`
+  const own = `${row.label} ${formatValue(row.value)}`
   if (row.benchmark === undefined) return own
   return `${own} · ${props.benchmarkLabel} ${row.benchmark.toFixed(2)}%`
 }
@@ -80,6 +85,18 @@ const rowTitle = (row: BreakdownRow): string => {
 
 .breakdown-row:last-child {
   border-bottom: none;
+}
+
+.holdings .breakdown-row {
+  grid-template-columns: minmax(0, 14rem) 5.5rem minmax(0, 1fr);
+}
+
+.holdings.compared .breakdown-row {
+  grid-template-columns: minmax(0, 14rem) 5.5rem minmax(0, 1fr) 9rem;
+}
+
+.holdings .row-benchmark {
+  text-align: right;
 }
 
 .row-label {
@@ -155,6 +172,14 @@ const rowTitle = (row: BreakdownRow): string => {
   .breakdown-row {
     grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 0.25rem;
+  }
+
+  .holdings .breakdown-row {
+    grid-template-columns: minmax(0, 1fr) 5.5rem;
+  }
+
+  .holdings.compared .breakdown-row {
+    grid-template-columns: minmax(0, 1fr) 9rem;
   }
 
   .row-track {

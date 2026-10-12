@@ -1,8 +1,14 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import BreakdownPanel from './breakdown-panel.vue'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { diversificationService } from '../../services/api'
 import { DONUT_COLORS } from '../../constants/chart-colors'
 import type { Breakdowns } from '../../composables/use-diversification-result'
+
+enableAutoUnmount(afterEach)
+
+vi.mock('../../services/api', () => ({ diversificationService: { searchHoldings: vi.fn() } }))
 
 vi.mock('chart.js', () => {
   const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {
@@ -38,11 +44,38 @@ const benchmark: Breakdowns = {
 
 const mountPanel = (props = {}) =>
   mount(BreakdownPanel, {
-    props: { breakdowns, benchmark, benchmarkLabel: 'VGLA', ...props },
+    props: {
+      allocations: [{ instrumentId: 7, percentage: 100 }],
+      breakdowns,
+      benchmark,
+      benchmarkLabel: 'VGLA',
+      ...props,
+    },
+    global: {
+      plugins: [
+        [
+          VueQueryPlugin,
+          {
+            queryClient: new QueryClient({
+              defaultOptions: { queries: { retry: false, gcTime: 0 } },
+            }),
+          },
+        ],
+      ],
+    },
   })
 
 describe('BreakdownPanel', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    localStorage.clear()
+    vi.mocked(diversificationService.searchHoldings).mockResolvedValue({
+      content: [{ name: 'NVIDIA', ticker: 'NVDA', percentage: 4, inEtfs: 'VWCE' }],
+      totalElements: 1,
+      totalPages: 1,
+      size: 100,
+      number: 0,
+    })
+  })
 
   it('renders the four tabs in order as the only dimension controls', () => {
     const group = mountPanel().find('[role="group"][aria-label="Breakdown dimension"]')
@@ -151,6 +184,16 @@ describe('BreakdownPanel', () => {
   })
 
   it('shows no benchmark line for a holding the benchmark does not own', async () => {
+    vi.mocked(diversificationService.searchHoldings).mockResolvedValueOnce({
+      content: [
+        { name: 'NVIDIA', ticker: 'NVDA', percentage: 4, inEtfs: 'VWCE' },
+        { name: 'Tiny Co', ticker: null, percentage: 1, inEtfs: 'VWCE' },
+      ],
+      totalElements: 2,
+      totalPages: 1,
+      size: 100,
+      number: 0,
+    })
     const wrapper = mountPanel({
       breakdowns: {
         ...breakdowns,
@@ -158,6 +201,7 @@ describe('BreakdownPanel', () => {
       },
     })
     await wrapper.findAll('.breakdown-tab')[2].trigger('click')
+    await flushPromises()
     expect(wrapper.findAll('.breakdown-row').map(r => r.find('.row-benchmark').exists())).toEqual([
       true,
       false,
@@ -167,6 +211,7 @@ describe('BreakdownPanel', () => {
   it('shows no Other row on Holdings', async () => {
     const wrapper = mountPanel()
     await wrapper.findAll('.breakdown-tab')[2].trigger('click')
+    await flushPromises()
     expect(wrapper.findAll('.breakdown-row').map(r => r.find('.row-label').text())).toEqual([
       'NVIDIA',
     ])

@@ -4,7 +4,8 @@ import { ref } from 'vue'
 import DiversificationCalculator from './diversification-calculator.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
 
-vi.mock('@tanstack/vue-query', () => ({
+vi.mock('@tanstack/vue-query', async importOriginal => ({
+  ...(await importOriginal<typeof import('@tanstack/vue-query')>()),
   useQuery: vi.fn(() => ({
     data: ref([
       {
@@ -27,6 +28,8 @@ vi.mock('@tanstack/vue-query', () => ({
       },
     ]),
     isLoading: ref(false),
+    isFetching: ref(false),
+    error: ref(null),
     dataUpdatedAt: ref(Date.now()),
   })),
   useQueryClient: vi.fn(() => ({
@@ -61,6 +64,7 @@ vi.mock('../../utils/formatters', () => ({
   ),
   formatCurrencyWithSymbol: vi.fn((value?: number | null) => `€${(value ?? 0).toFixed(2)}`),
   formatPercentage: vi.fn((value: number) => `${value.toFixed(2)}%`),
+  formatHoldingPercentage: vi.fn((value: number) => `${value.toFixed(4)}%`),
 }))
 
 describe('DiversificationCalculator', () => {

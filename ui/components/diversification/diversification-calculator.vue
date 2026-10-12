@@ -63,6 +63,7 @@
         />
 
         <BreakdownPanel
+          :allocations="resultAllocations"
           :breakdowns="breakdowns"
           :benchmark="benchmarkBreakdowns"
           :benchmark-label="benchmarkLabel"
@@ -186,6 +187,7 @@ const etfList = computed(() => availableEtfs.value ?? [])
 
 const {
   result,
+  resultAllocations,
   error,
   isCalculating,
   debouncedCalculate,

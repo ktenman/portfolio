@@ -14,6 +14,26 @@ const mountBars = (props: Record<string, unknown> = {}) =>
   mount(BreakdownBars, { props: { rows, benchmarkLabel: 'VGLA', ...props } })
 
 describe('BreakdownBars', () => {
+  it('shows small holding weights with four decimals and rounded zero below the threshold', () => {
+    const rows = paint([
+      { label: 'Small', value: 0.0049, isOther: false },
+      { label: 'Rounded', value: 0, isOther: false },
+      { label: 'Boundary', value: 0.01, isOther: false },
+    ])
+    const wrapper = mountBars({ rows, holdings: true })
+    expect(wrapper.findAll('.row-value').map(row => row.text())).toEqual([
+      '0.0049%',
+      '<0.0001%',
+      '0.01%',
+    ])
+    expect(wrapper.find('.breakdown-row').attributes('title')).toBe('Small 0.0049%')
+  })
+
+  it('keeps two decimal places for the other breakdowns', () => {
+    const rows = paint([{ label: 'Small', value: 0.0049, isOther: false }])
+    expect(mountBars({ rows }).find('.row-value').text()).toBe('0.00%')
+  })
+
   it('renders one row per item', () => {
     expect(mountBars().findAll('.breakdown-row')).toHaveLength(3)
   })
