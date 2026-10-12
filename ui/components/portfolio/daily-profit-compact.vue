@@ -2,12 +2,11 @@
   <div>
     <div class="compact-head">
       <div class="compact-title">
-        <h2 class="compact-heading">
-          Daily profit since {{ formatDayMonth(calendar.days[0].date) }}
-        </h2>
+        <h2 class="compact-heading">Daily profit</h2>
         <span class="compact-counts">{{ calendar.upDays }} up · {{ calendar.downDays }} down</span>
       </div>
-      <daily-profit-grid :calendar="calendar" compact />
+      <div class="compact-period"><slot /></div>
+      <daily-profit-grid :calendar="calendar" compact :busy="busy" />
     </div>
     <div class="compact-row">
       <div class="compact-flat">
@@ -54,10 +53,10 @@ import {
   getGainLossClass,
   splitCents,
 } from '../../utils/formatters'
-import { formatDayMonth, formatWeekdayDate } from '../../utils/iso-dates'
+import { formatWeekdayDate } from '../../utils/iso-dates'
 import DailyProfitGrid from './daily-profit-grid.vue'
 
-const props = defineProps<{ calendar: DailyProfitCalendar }>()
+const props = defineProps<{ calendar: DailyProfitCalendar; busy?: boolean }>()
 
 const average = computed(() => splitCents(formatCurrencyChange(props.calendar.averageDay)))
 
@@ -80,7 +79,10 @@ const extremes = computed(() =>
   align-items: baseline;
   justify-content: space-between;
   column-gap: 8px;
-  margin-bottom: 12px;
+}
+
+.compact-period {
+  margin-inline: -14px;
 }
 
 .compact-heading {

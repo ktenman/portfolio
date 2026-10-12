@@ -44,10 +44,10 @@ describe('DailyProfitCalendar', () => {
     ])
   })
 
-  it('should head the module with the starting day', () => {
+  it('should head the module with its name', () => {
     const wrapper = createWrapper()
 
-    expect(wrapper.find('.calendar-heading').text()).toBe('Daily profit since 1 Dec')
+    expect(wrapper.find('.calendar-heading').text()).toBe('Daily profit')
   })
 
   it('should select the latest day when no single day has a gain', () => {
